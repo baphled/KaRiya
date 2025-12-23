@@ -444,49 +444,49 @@ var _ = Describe("FormModel", func() {
 			Expect(err).To(BeNil())
 			Expect(len(events)).To(Equal(1))
 		})
-			
-				Describe("Tag Selector Integration", func() {
-					It("should have a tag selector", func() {
-						tagSelector := form.TagSelector()
-						Expect(tagSelector).NotTo(BeNil())
-					})
-			
-					It("should allow selecting tags", func() {
-						tagSelector := form.TagSelector()
-						err := tagSelector.SelectTag("technical")
-						Expect(err).NotTo(HaveOccurred())
-						Expect(tagSelector.SelectedTags()).To(ContainElement("technical"))
-					})
-			
-					It("should include selected tags when submitting", func() {
-						// Select tags
-						tagSelector := form.TagSelector()
-						tagSelector.SelectTag("technical")
-						tagSelector.SelectTag("leadership")
-			
-						// Fill form
-						form = typeText(form, "Led technical implementation")
-			
-						// Navigate to submit (skip through all fields including tags)
-						for i := 0; i < 5; i++ {
-							form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
-						}
-			
-						// Submit
-						form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
-						Expect(cmd).NotTo(BeNil())
-						msg := cmd()
-						form, _ = updateForm(form, msg)
-			
-						Expect(form.Submitted()).To(BeTrue())
-			
-						// Verify tags were included
-						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-						Expect(err).To(BeNil())
-						Expect(len(events)).To(Equal(1))
-						Expect(events[0].Tags).To(HaveLen(2))
-						Expect(events[0].Tags).To(ContainElements("technical", "leadership"))
-					})
-				})
+
+		Describe("Tag Selector Integration", func() {
+			It("should have a tag selector", func() {
+				tagSelector := form.TagSelector()
+				Expect(tagSelector).NotTo(BeNil())
+			})
+
+			It("should allow selecting tags", func() {
+				tagSelector := form.TagSelector()
+				err := tagSelector.SelectTag("technical")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(tagSelector.SelectedTags()).To(ContainElement("technical"))
+			})
+
+			It("should include selected tags when submitting", func() {
+				// Select tags
+				tagSelector := form.TagSelector()
+				tagSelector.SelectTag("technical")
+				tagSelector.SelectTag("leadership")
+
+				// Fill form
+				form = typeText(form, "Led technical implementation")
+
+				// Navigate to submit (skip through all fields including tags)
+				for i := 0; i < 5; i++ {
+					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+				}
+
+				// Submit
+				form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
+				Expect(cmd).NotTo(BeNil())
+				msg := cmd()
+				form, _ = updateForm(form, msg)
+
+				Expect(form.Submitted()).To(BeTrue())
+
+				// Verify tags were included
+				events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+				Expect(err).To(BeNil())
+				Expect(len(events)).To(Equal(1))
+				Expect(events[0].Tags).To(HaveLen(2))
+				Expect(events[0].Tags).To(ContainElements("technical", "leadership"))
+			})
+		})
 	})
 })

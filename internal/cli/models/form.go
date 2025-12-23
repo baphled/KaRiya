@@ -366,33 +366,33 @@ func (m *FormModel) submitForm() tea.Cmd {
 		company := strings.TrimSpace(m.inputs[2].Value())
 		project := strings.TrimSpace(m.inputs[3].Value())
 
-			// Get selected tags
-			tags := m.tagSelector.SelectedTags()
-		
-			// Capture event through service
-			ctx := context.Background()
-			opts := []service.Option{}
-			if company != "" {
-				opts = append(opts, service.WithCompany(company))
-			}
-			if project != "" {
-				opts = append(opts, service.WithProject(project))
-			}
-			if len(tags) > 0 {
-				opts = append(opts, service.WithTags(tags))
-			}
-		
-			if err := m.cliService.CaptureEvent(ctx, text, eventDate, mode, opts...); err != nil {
-				return SubmitMsg{Err: fmt.Errorf("failed to capture event: %w", err)}
-			}
-		
-			// Build event for display (this is just for UI purposes)
-			event := &career.CareerEvent{
-				Text:    text,
-				Date:    eventDate,
-				Company: company,
-				Project: project,
-				Tags:    tags,
+		// Get selected tags
+		tags := m.tagSelector.SelectedTags()
+
+		// Capture event through service
+		ctx := context.Background()
+		opts := []service.Option{}
+		if company != "" {
+			opts = append(opts, service.WithCompany(company))
+		}
+		if project != "" {
+			opts = append(opts, service.WithProject(project))
+		}
+		if len(tags) > 0 {
+			opts = append(opts, service.WithTags(tags))
+		}
+
+		if err := m.cliService.CaptureEvent(ctx, text, eventDate, mode, opts...); err != nil {
+			return SubmitMsg{Err: fmt.Errorf("failed to capture event: %w", err)}
+		}
+
+		// Build event for display (this is just for UI purposes)
+		event := &career.CareerEvent{
+			Text:    text,
+			Date:    eventDate,
+			Company: company,
+			Project: project,
+			Tags:    tags,
 		}
 
 		return SubmitMsg{Event: event, Err: nil}
