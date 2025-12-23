@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 
 	"github.com/baphled/kariya/internal/cli/app"
@@ -17,11 +17,15 @@ const (
 )
 
 func main() {
+	os.Exit(run(os.Args[1:], os.Stdout))
+}
+
+func run(args []string, out io.Writer) int {
 	// Parse CLI flags
 	showVersion := false
 	showHelp := false
 
-	for _, arg := range os.Args[1:] {
+	for _, arg := range args {
 		switch arg {
 		case "--version", "-v":
 			showVersion = true
@@ -32,14 +36,14 @@ func main() {
 
 	// Handle version flag
 	if showVersion {
-		fmt.Printf("KaRiya CLI v%s\n", version)
-		os.Exit(0)
+		fmt.Fprintf(out, "KaRiya CLI v%s\n", version)
+		return 0
 	}
 
 	// Handle help flag
 	if showHelp {
-		printHelp()
-		os.Exit(0)
+		printHelpTo(out)
+		return 0
 	}
 
 	// Set up dependencies
@@ -54,17 +58,23 @@ func main() {
 	// Initialize BubbleTea program
 	p := tea.NewProgram(model)
 	if err := p.Start(); err != nil {
-		log.Fatalf("Error running program: %v", err)
+		fmt.Fprintf(out, "Error running program: %v\n", err)
+		return 1
 	}
+	return 0
 }
 
 func printHelp() {
-	fmt.Println("KaRiya CLI - Career Journaling Tool")
-	fmt.Println("\nUsage: kariya [options]")
-	fmt.Println("\nOptions:")
-	fmt.Println("  -v, --version   Show version information")
-	fmt.Println("  -h, --help      Show this help message")
-	fmt.Println("\nCommands:")
-	fmt.Println("  capture         Start a new career event capture")
-	fmt.Println("  list            List recent career events")
+	printHelpTo(os.Stdout)
+}
+
+func printHelpTo(out io.Writer) {
+	fmt.Fprintln(out, "KaRiya CLI - Career Journaling Tool")
+	fmt.Fprintln(out, "\nUsage: kariya [options]")
+	fmt.Fprintln(out, "\nOptions:")
+	fmt.Fprintln(out, "  -v, --version   Show version information")
+	fmt.Fprintln(out, "  -h, --help      Show this help message")
+	fmt.Fprintln(out, "\nCommands:")
+	fmt.Fprintln(out, "  capture         Start a new career event capture")
+	fmt.Fprintln(out, "  list            List recent career events")
 }
