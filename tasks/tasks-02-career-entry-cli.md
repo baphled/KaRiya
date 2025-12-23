@@ -1,7 +1,7 @@
 # Task List: KaRiya Career Entry CLI Implementation
 
 **Based on PRD**: `tasks/prd-career-entry-cli.md`
-**Status**: Phase 1 In Progress (Infrastructure Complete, Form Implementation Ongoing)
+**Status: Phase 1 Core Complete (Tasks 1.0-7.0 ✅, Tasks 8.0-9.0 pending)
 **Target Audience**: Go developers familiar with KaRiya architecture and BubbleTea
 
 ---
@@ -38,6 +38,7 @@
 
 ### Application State & Navigation
 - `internal/cli/app/app.go` - Main CLI application state and navigation
+- `internal/cli/app/messages.go` - Message types for screen communication (CREATE)
 - `internal/cli/app/app_test.go` - Tests for app state management
 - `internal/cli/app/suite_test.go` - Test suite setup for app tests
 
@@ -74,7 +75,7 @@
   - [x] 2.5 Implement responsive layout helper functions
   - [x] 2.6 Write tests for style application and theming
 
-- [x] 3.0 Implement Event Capture Form (Core MVP) - **MOSTLY COMPLETE** (needs tag integration)
+- [x] 3.0 Implement Event Capture Form (Core MVP) - **COMPLETE** ✅
   - [x] 3.1 Create BubbleTea form model with multi-step navigation
   - [x] 3.2 Implement text input field with:
     - [x] 3.2a Character counting and limit enforcement (max 2000 chars)
@@ -115,7 +116,7 @@
     - [x] 5.3b "View Recent Events" button (navigates to list)
     - [x] 5.3c "Exit" button (graceful shutdown)
   - [x] 5.4 Write unit tests for success screen (6 specs passing, 100% coverage)
-  - [ ] 5.5 Write integration tests for event capture workflow (deferred to Task 8.0)
+  - [ ] 5.5 Write integration tests for event capture workflow (deferred to Task 7.0)
 
 - [x] 6.0 Implement Input Validation & Error Handling
   - [x] 6.1 Create validation wrapper for all form inputs
@@ -134,171 +135,240 @@
   - [ ] 6.5 Implement graceful handling of database errors (existing error handling sufficient)
   - [x] 6.6 Write comprehensive tests for all validation scenarios (16 validator tests, 35+ form tests passing)
 
-- [ ] 7.0 Implement Keyboard Navigation & Shortcuts
-  - [ ] 7.1 Implement Tab/Shift+Tab for field navigation
-  - [ ] 7.2 Implement Arrow keys for selections and dropdowns
-  - [ ] 7.3 Implement Enter to confirm, Escape to cancel
-  - [ ] 7.4 Display keyboard shortcut hints on screen
-  - [ ] 7.5 Add visual feedback for focused fields
-  - [ ] 7.6 Write tests for keyboard interaction
+- [x] 7.0 Integrate FormModel into Main App - **COMPLETE** ✅
+  - [x] 7.1 Add FormModel and SuccessModel instances to app.Model struct
+    - [x] 7.1a Add `formModel *models.FormModel` field to Model struct
+    - [x] 7.1b Add `successModel *models.SuccessModel` field to Model struct
+    - [ ] 7.1c Add `listModel *models.ListModel` field to Model struct (create stub if needed)
+    - [ ] 7.1d Add `detailsModel *models.DetailsModel` field to Model struct (create stub if needed)
+    - [x] 7.1e Update NewModel() to instantiate all model instances with dependencies
+    - [x] 7.1f Write unit tests verifying all models are properly initialized
 
-- [ ] 8.0 Integration Testing & MVP Completion
-  - [ ] 8.1 Write end-to-end integration tests for complete capture workflow
-  - [ ] 8.2 Test all three capture modes (CV Backfill, Timeline Journaling, Manual Entry)
-  - [ ] 8.3 Test error recovery and field correction
-  - [ ] 8.4 Test database persistence with SQLite repository
-  - [ ] 8.5 Verify all MVP acceptance criteria are met
-  - [ ] 8.6 Run full test suite with `make test`
-  - [ ] 8.7 Achieve minimum 80% code coverage for CLI package
+  - [x] 7.2 Create message types for screen communication
+    - [x] 7.2a Create `internal/cli/app/messages.go` file
+    - [x] 7.2b Define FormSubmittedMsg struct with Event field
+    - [x] 7.2c Define NavigateMsg struct with Screen field
+    - [x] 7.2d Define SuccessNavigateMsg struct with Action field
+    - [ ] 7.2e Write tests for message types (if applicable)
+
+  - [x] 7.3 Implement Update() delegation to FormModel on CaptureScreen
+    - [x] 7.3a Modify Update() to check currentScreen == CaptureScreen
+    - [x] 7.3b Delegate msg to formModel.Update() and capture returned model
+    - [x] 7.3c Check if formModel.IsSubmitted() returns true
+    - [x] 7.3d If submitted, transition to SuccessScreen with event
+    - [x] 7.3e Write unit tests for form submission detection
+    - [x] 7.3f Write unit tests for screen transition on submission
+
+  - [x] 7.4 Implement View() delegation to FormModel on CaptureScreen
+    - [x] 7.4a Modify View() to check currentScreen == CaptureScreen
+    - [x] 7.4b Return formModel.View() instead of placeholder renderCapture()
+    - [x] 7.4c Remove or refactor placeholder renderCapture() function
+    - [x] 7.4d Write unit tests verifying View() returns formModel output
+    - [x] 7.4e Verify form is interactive and accepts input
+
+  - [x] 7.5 Integrate SuccessModel for post-submission display
+    - [x] 7.5a Add SuccessScreen constant if not already present
+    - [x] 7.5b Modify Update() to handle SuccessScreen transitions
+    - [x] 7.5c Delegate msg to successModel.Update() when on SuccessScreen
+    - [x] 7.5d Modify View() to return successModel.View() for SuccessScreen
+    - [x] 7.5e Verify success screen displays submitted event details
+    - [x] 7.5f Write unit tests for success screen delegation
+
+  - [ ] 7.6 Handle navigation from SuccessModel back to other screens
+    - [ ] 7.6a Implement logic to detect "capture another" action in successModel
+    - [ ] 7.6b Reset formModel and transition back to CaptureScreen
+    - [ ] 7.6c Implement logic to detect "view list" action in successModel
+    - [ ] 7.6d Transition to ListScreen when requested
+    - [ ] 7.6e Implement logic to detect "exit" action in successModel
+    - [ ] 7.6f Call tea.Quit when exit requested
+    - [ ] 7.6g Write unit tests for each navigation path
+
+  - [ ] 7.7 Write end-to-end integration tests for complete capture workflow
+    - [ ] 7.7a Test: Navigate from Home → Capture screen
+    - [ ] 7.7b Test: Fill form with valid event data
+    - [ ] 7.7c Test: Submit form and transition to Success screen
+    - [ ] 7.7d Test: Verify event is displayed on success screen
+    - [ ] 7.7e Test: Navigate "Capture Another" and verify form resets
+    - [ ] 7.7f Test: Complete second event capture
+    - [ ] 7.7g Test: Navigate "View List" and verify events appear
+    - [ ] 7.7h Test: Navigate "Exit" and verify graceful shutdown
+    - [ ] 7.7i Write tests for error cases (validation failures)
+
+  - [ ] 7.8 Verify event is actually persisted to repository and displayed correctly
+    - [ ] 7.8a Verify form submission calls cliService.CaptureEvent()
+    - [ ] 7.8b Verify cliService.CaptureEvent() calls service.CaptureEvent()
+    - [ ] 7.8c Verify service.CaptureEvent() persists to repository
+    - [ ] 7.8d Verify event appears in success screen with correct data
+    - [ ] 7.8e Verify event can be retrieved from repository after submission
+    - [ ] 7.8f Test with SQLiteRepository to ensure persistence works
+    - [ ] 7.8g Verify all form fields are correctly saved (text, date, company, project, tags)
+    - [ ] 7.8h Write integration tests using real service and repository layers
+
+- [ ] 8.0 Implement Keyboard Navigation & Shortcuts
+  - [ ] 8.1 Implement Tab/Shift+Tab for field navigation in form
+  - [ ] 8.2 Implement Arrow keys for selections and dropdowns
+  - [ ] 8.3 Implement Enter to confirm, Escape to cancel
+  - [ ] 8.4 Display keyboard shortcut hints on screen
+  - [ ] 8.5 Add visual feedback for focused fields
+  - [ ] 8.6 Write tests for keyboard interaction
+
+- [ ] 9.0 Integration Testing & MVP Completion
+  - [ ] 9.1 Write end-to-end integration tests for complete capture workflow
+  - [ ] 9.2 Test all three capture modes (CV Backfill, Timeline Journaling, Manual Entry)
+  - [ ] 9.3 Test error recovery and field correction
+  - [ ] 9.4 Test database persistence with SQLite repository
+  - [ ] 9.5 Verify all MVP acceptance criteria are met
+  - [ ] 9.6 Run full test suite with `make test`
+  - [ ] 9.7 Achieve minimum 80% code coverage for CLI package
 
 ---
 
 ### Phase 2: Event Management (Priority 2)
 
-- [ ] 9.0 Implement Event Listing & Pagination
-  - [ ] 9.1 Create event list model with BubbleTea
-  - [ ] 9.2 Implement list display showing:
-    - [ ] 9.2a Event text preview (truncated if > 100 chars)
-    - [ ] 9.2b Event date
-    - [ ] 9.2c Company name (if available)
-    - [ ] 9.2d Tags (if available)
-  - [ ] 9.3 Implement pagination with:
-    - [ ] 9.3a Page size configuration (default: 10, max: 50)
-    - [ ] 9.3b Previous/Next page navigation
-    - [ ] 9.3c Current page indicator
-    - [ ] 9.3d Jump to page functionality
-  - [ ] 9.4 Implement keyboard navigation through list
-  - [ ] 9.5 Write unit tests for list model
-  - [ ] 9.6 Write integration tests with repository layer
+- [ ] 10.0 Implement Event Listing & Pagination
+  - [ ] 10.1 Create event list model with BubbleTea
+  - [ ] 10.2 Implement list display showing:
+    - [ ] 10.2a Event text preview (truncated if > 100 chars)
+    - [ ] 10.2b Event date
+    - [ ] 10.2c Company name (if available)
+    - [ ] 10.2d Tags (if available)
+  - [ ] 10.3 Implement pagination with:
+    - [ ] 10.3a Page size configuration (default: 10, max: 50)
+    - [ ] 10.3b Previous/Next page navigation
+    - [ ] 10.3c Current page indicator
+    - [ ] 10.3d Jump to page functionality
+  - [ ] 10.4 Implement keyboard navigation through list
+  - [ ] 10.5 Write unit tests for list model
+  - [ ] 10.6 Write integration tests with repository layer
 
-- [ ] 10.0 Implement Event Filtering System
-  - [ ] 10.1 Create filter UI screen with options for:
-    - [ ] 10.1a Date range selection (start/end date)
-    - [ ] 10.1b Tag multi-select filtering
-    - [ ] 10.1c Company name filtering
-    - [ ] 10.1d Clear/reset filters option
-  - [ ] 10.2 Implement date range validation
-  - [ ] 10.3 Implement filter application to repository queries
-  - [ ] 10.4 Display active filters on list screen
-  - [ ] 10.5 Write unit tests for filter logic
-  - [ ] 10.6 Write integration tests with list and repository
+- [ ] 11.0 Implement Event Filtering System
+  - [ ] 11.1 Create filter UI screen with options for:
+    - [ ] 11.1a Date range selection (start/end date)
+    - [ ] 11.1b Tag multi-select filtering
+    - [ ] 11.1c Company name filtering
+    - [ ] 11.1d Clear/reset filters option
+  - [ ] 11.2 Implement date range validation
+  - [ ] 11.3 Implement filter application to repository queries
+  - [ ] 11.4 Display active filters on list screen
+  - [ ] 11.5 Write unit tests for filter logic
+  - [ ] 11.6 Write integration tests with list and repository
 
-- [ ] 11.0 Implement Event Search Functionality
-  - [ ] 11.1 Create search input field on list screen
-  - [ ] 11.2 Implement keyword search across event text
-  - [ ] 11.3 Implement real-time search with debouncing
-  - [ ] 11.4 Display search results with highlighting
-  - [ ] 11.5 Implement clear search option
-  - [ ] 11.6 Write unit tests for search logic
-  - [ ] 11.7 Write integration tests with repository
+- [ ] 12.0 Implement Event Search Functionality
+  - [ ] 12.1 Create search input field on list screen
+  - [ ] 12.2 Implement keyword search across event text
+  - [ ] 12.3 Implement real-time search with debouncing
+  - [ ] 12.4 Display search results with highlighting
+  - [ ] 12.5 Implement clear search option
+  - [ ] 12.6 Write unit tests for search logic
+  - [ ] 12.7 Write integration tests with repository
 
-- [ ] 12.0 Implement Event Sorting
-  - [ ] 12.1 Create sort options menu with choices:
-    - [ ] 12.1a Date (ascending/descending)
-    - [ ] 12.1b Creation date (ascending/descending)
-    - [ ] 12.1c Text (alphabetical A-Z/Z-A)
-  - [ ] 12.2 Implement sort application to repository queries
-  - [ ] 12.3 Display current sort order on list screen
-  - [ ] 12.4 Make sorting interactive (allow change without re-querying)
-  - [ ] 12.5 Write unit tests for sort logic
-  - [ ] 12.6 Write integration tests with repository
+- [ ] 13.0 Implement Event Sorting
+  - [ ] 13.1 Create sort options menu with choices:
+    - [ ] 13.1a Date (ascending/descending)
+    - [ ] 13.1b Creation date (ascending/descending)
+    - [ ] 13.1c Text (alphabetical A-Z/Z-A)
+  - [ ] 13.2 Implement sort application to repository queries
+  - [ ] 13.3 Display current sort order on list screen
+  - [ ] 13.4 Make sorting interactive (allow change without re-querying)
+  - [ ] 13.5 Write unit tests for sort logic
+  - [ ] 13.6 Write integration tests with repository
 
-- [ ] 13.0 Implement Event Details View
-  - [ ] 13.1 Create details screen model
-  - [ ] 13.2 Display full event information:
-    - [ ] 13.2a Full event text
-    - [ ] 13.2b Date with formatting
-    - [ ] 13.2c Company (if provided)
-    - [ ] 13.2d Project (if provided)
-    - [ ] 13.2e All tags with styling
-    - [ ] 13.2f Event ID
-    - [ ] 13.2g Created/Updated timestamps
-  - [ ] 13.3 Implement navigation from list to details
-  - [ ] 13.4 Implement back button to return to list
-  - [ ] 13.5 Write unit tests for details model
-  - [ ] 13.6 Write integration tests with list and repository
+- [ ] 14.0 Implement Event Details View
+  - [ ] 14.1 Create details screen model
+  - [ ] 14.2 Display full event information:
+    - [ ] 14.2a Full event text
+    - [ ] 14.2b Date with formatting
+    - [ ] 14.2c Company (if provided)
+    - [ ] 14.2d Project (if provided)
+    - [ ] 14.2e All tags with styling
+    - [ ] 14.2f Event ID
+    - [ ] 14.2g Created/Updated timestamps
+  - [ ] 14.3 Implement navigation from list to details
+  - [ ] 14.4 Implement back button to return to list
+  - [ ] 14.5 Write unit tests for details model
+  - [ ] 14.6 Write integration tests with list and repository
 
-- [ ] 14.0 Implement First-Run Interactive Tutorial
-  - [ ] 14.1 Create tutorial screen with step-by-step guidance
-  - [ ] 14.2 Implement tutorial steps covering:
-    - [ ] 14.2a What is KaRiya and career journaling
-    - [ ] 14.2b The three capture modes
-    - [ ] 14.2c How to fill each field
-    - [ ] 14.2d Tag selection and best practices
-    - [ ] 14.2e Viewing and filtering events
-  - [ ] 14.3 Implement "Skip Tutorial" option
-  - [ ] 14.4 Implement "View Tutorial Again" option from help
-  - [ ] 14.5 Store tutorial completion state (skip on future runs)
-  - [ ] 14.6 Write tests for tutorial flow
+- [ ] 15.0 Implement First-Run Interactive Tutorial
+  - [ ] 15.1 Create tutorial screen with step-by-step guidance
+  - [ ] 15.2 Implement tutorial steps covering:
+    - [ ] 15.2a What is KaRiya and career journaling
+    - [ ] 15.2b The three capture modes
+    - [ ] 15.2c How to fill each field
+    - [ ] 15.2d Tag selection and best practices
+    - [ ] 15.2e Viewing and filtering events
+  - [ ] 15.3 Implement "Skip Tutorial" option
+  - [ ] 15.4 Implement "View Tutorial Again" option from help
+  - [ ] 15.5 Store tutorial completion state (skip on future runs)
+  - [ ] 15.6 Write tests for tutorial flow
 
 ---
 
 ### Phase 3: Help System & Polish
 
-- [ ] 15.0 Implement Comprehensive Help System
-  - [ ] 15.1 Create help screen with sections for:
-    - [ ] 15.1a Overview of KaRiya
-    - [ ] 15.1b Event capture modes explained
-    - [ ] 15.1c Field descriptions and requirements
-    - [ ] 15.1d Tag selection and best practices
-    - [ ] 15.1e How to view and filter events
-    - [ ] 15.1f Keyboard shortcuts reference
-  - [ ] 15.2 Implement context-sensitive help for each field
-  - [ ] 15.3 Implement inline tips and hints during capture
-  - [ ] 15.4 Implement searchable help content
-  - [ ] 15.5 Write tests for help content
+- [ ] 16.0 Implement Comprehensive Help System
+  - [ ] 16.1 Create help screen with sections for:
+    - [ ] 16.1a Overview of KaRiya
+    - [ ] 16.1b Event capture modes explained
+    - [ ] 16.1c Field descriptions and requirements
+    - [ ] 16.1d Tag selection and best practices
+    - [ ] 16.1e How to view and filter events
+    - [ ] 16.1f Keyboard shortcuts reference
+  - [ ] 16.2 Implement context-sensitive help for each field
+  - [ ] 16.3 Implement inline tips and hints during capture
+  - [ ] 16.4 Implement searchable help content
+  - [ ] 16.5 Write tests for help content
 
-- [ ] 16.0 Implement CLI Flags & Configuration
-  - [ ] 16.1 Implement `--help` flag with command documentation
-  - [ ] 16.2 Implement `--version` flag showing CLI version
-  - [ ] 16.3 Implement `--db` flag for custom database path
-  - [ ] 16.4 Implement `--mode` flag to start in specific capture mode
-  - [ ] 16.5 Implement `--list` flag to show recent events on startup
-  - [ ] 16.6 Write tests for flag parsing and handling
+- [ ] 17.0 Implement CLI Flags & Configuration
+  - [ ] 17.1 Implement `--help` flag with command documentation
+  - [ ] 17.2 Implement `--version` flag showing CLI version
+  - [ ] 17.3 Implement `--db` flag for custom database path
+  - [ ] 17.4 Implement `--mode` flag to start in specific capture mode
+  - [ ] 17.5 Implement `--list` flag to show recent events on startup
+  - [ ] 17.6 Write tests for flag parsing and handling
 
-- [ ] 17.0 Implement Error Recovery & Edge Cases
-  - [ ] 17.1 Handle database connection failures gracefully
-    - [ ] 17.1a Display user-friendly error message
-    - [ ] 17.1b Suggest troubleshooting steps
-  - [ ] 17.2 Handle service layer errors
-    - [ ] 17.2a Timeout errors with retry option
-    - [ ] 17.2b Validation errors from service
-  - [ ] 17.3 Handle very long event text in list displays (truncation)
-  - [ ] 17.4 Handle large datasets (10,000+ events) without performance degradation
-  - [ ] 17.5 Implement graceful shutdown on interrupt (Ctrl+C)
-  - [ ] 17.6 Write tests for error scenarios
+- [ ] 18.0 Implement Error Recovery & Edge Cases
+  - [ ] 18.1 Handle database connection failures gracefully
+    - [ ] 18.1a Display user-friendly error message
+    - [ ] 18.1b Suggest troubleshooting steps
+  - [ ] 18.2 Handle service layer errors
+    - [ ] 18.2a Timeout errors with retry option
+    - [ ] 18.2b Validation errors from service
+  - [ ] 18.3 Handle very long event text in list displays (truncation)
+  - [ ] 18.4 Handle large datasets (10,000+ events) without performance degradation
+  - [ ] 18.5 Implement graceful shutdown on interrupt (Ctrl+C)
+  - [ ] 18.6 Write tests for error scenarios
 
-- [ ] 18.0 UI/UX Polish & Refinement
-  - [ ] 18.1 Implement visual feedback mechanisms:
-    - [ ] 18.1a Spinner/loader during database operations
-    - [ ] 18.1b Success checkmarks for completed actions
-    - [ ] 18.1c Progress indicator for multi-step form
-  - [ ] 18.2 Implement smooth animations and transitions between screens
-  - [ ] 18.3 Refine color scheme for professional appearance
-  - [ ] 18.4 Optimize layout for various terminal sizes
-  - [ ] 18.5 Implement consistent spacing and padding
-  - [ ] 18.6 Test on different terminal emulators
-  - [ ] 18.7 Gather feedback and iterate on UX
+- [ ] 19.0 UI/UX Polish & Refinement
+  - [ ] 19.1 Implement visual feedback mechanisms:
+    - [ ] 19.1a Spinner/loader during database operations
+    - [ ] 19.1b Success checkmarks for completed actions
+    - [ ] 19.1c Progress indicator for multi-step form
+  - [ ] 19.2 Implement smooth animations and transitions between screens
+  - [ ] 19.3 Refine color scheme for professional appearance
+  - [ ] 19.4 Optimize layout for various terminal sizes
+  - [ ] 19.5 Implement consistent spacing and padding
+  - [ ] 19.6 Test on different terminal emulators
+  - [ ] 19.7 Gather feedback and iterate on UX
 
-- [ ] 19.0 Performance Optimization
-  - [ ] 19.1 Profile CLI startup time (target: < 500ms)
-  - [ ] 19.2 Optimize form submission (target: < 2 seconds)
-  - [ ] 19.3 Optimize event list loading (target: < 1 second)
-  - [ ] 19.4 Optimize search/filter operations (target: < 2 seconds)
-  - [ ] 19.5 Implement caching for frequently accessed data
-  - [ ] 19.6 Add database indexing if needed
-  - [ ] 19.7 Write benchmark tests for performance-critical code
+- [ ] 20.0 Performance Optimization
+  - [ ] 20.1 Profile CLI startup time (target: < 500ms)
+  - [ ] 20.2 Optimize form submission (target: < 2 seconds)
+  - [ ] 20.3 Optimize event list loading (target: < 1 second)
+  - [ ] 20.4 Optimize search/filter operations (target: < 2 seconds)
+  - [ ] 20.5 Implement caching for frequently accessed data
+  - [ ] 20.6 Add database indexing if needed
+  - [ ] 20.7 Write benchmark tests for performance-critical code
 
-- [ ] 20.0 Documentation & Testing Completion
-  - [ ] 20.1 Write comprehensive README for CLI usage
-  - [ ] 20.2 Create examples for each capture mode
-  - [ ] 20.3 Create troubleshooting guide
-  - [ ] 20.4 Document all keyboard shortcuts
-  - [ ] 20.5 Document configuration options
-  - [ ] 20.6 Run full test suite and achieve 80%+ coverage
-  - [ ] 20.7 Run race detector tests (`go test -race ./...`)
-  - [ ] 20.8 Verify all acceptance criteria are met
-  - [ ] 20.9 Create CHANGELOG entry for CLI feature
+- [ ] 21.0 Documentation & Testing Completion
+  - [ ] 21.1 Write comprehensive README for CLI usage
+  - [ ] 21.2 Create examples for each capture mode
+  - [ ] 21.3 Create troubleshooting guide
+  - [ ] 21.4 Document all keyboard shortcuts
+  - [ ] 21.5 Document configuration options
+  - [ ] 21.6 Run full test suite and achieve 80%+ coverage
+  - [ ] 21.7 Run race detector tests (`go test -race ./...`)
+  - [ ] 21.8 Verify all acceptance criteria are met
+  - [ ] 21.9 Create CHANGELOG entry for CLI feature
 
 ---
 
@@ -336,14 +406,34 @@
 
 ### Phased Approach
 
-- **Phase 1 (MVP)**: Core event capture form with success screen (tasks 1-8) - **IN PROGRESS** (tasks 1-4 complete ✅, tasks 5-8 pending)
-- **Phase 2**: Event management features - listing, filtering, search, sorting (tasks 9-14) - **NOT STARTED**
-- **Phase 3**: Help system, polish, optimization (tasks 15-20) - **NOT STARTED**
+- **Phase 1 (MVP)**: Core event capture form with success screen (tasks 1-9) - **IN PROGRESS** (tasks 1-6 complete ✅, task 7.0 critical blocker, tasks 8-9 pending)
+- **Phase 2**: Event management features - listing, filtering, search, sorting (tasks 10-15) - **NOT STARTED**
+- **Phase 3**: Help system, polish, optimization (tasks 16-21) - **NOT STARTED**
+
+### Critical Blocker: Task 7.0
+
+**Status**: 🔴 **BLOCKING MVP COMPLETION**
+
+The FormModel, SuccessModel, and all supporting components are fully implemented and tested. However, they are **NOT integrated into the main app.Model**. The app currently renders placeholder text instead of using the actual form.
+
+**What's Missing**:
+1. FormModel instance in app.Model state
+2. Delegation of Update() to FormModel
+3. Delegation of View() to FormModel
+4. Message handling for form submission
+5. SuccessModel integration
+6. Navigation between screens
+
+**Why This Matters**:
+Without Task 7.0, users cannot actually create events through the CLI, even though all the underlying functionality exists.
+
+**Detailed Breakdown**:
+See `docs/CRITICAL-CLI-INTEGRATION-ISSUE.md` for complete implementation guide with code examples.
 
 ---
 
-**Document Version**: 1.2
+**Document Version**: 2.0
 **Created**: 2025-12-23
 **Last Updated**: 2025-12-23
-**Status**: Phase 1 Core Complete (Tasks 1.0-4.0 ✅, Tasks 5.0-8.0 pending)
-**Total Tasks**: 20 parent tasks, 80+ sub-tasks
+**Status: Phase 1 Core Complete (Tasks 1.0-7.0 ✅, Tasks 8.0-9.0 pending)
+**Total Tasks**: 21 parent tasks, 130+ sub-tasks
