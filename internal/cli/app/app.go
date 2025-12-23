@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,6 +21,8 @@ const (
 	ViewScreen Screen = "view"
 	// QuitScreen is the quit screen
 	QuitScreen Screen = "quit"
+	// SuccessScreen is the success screen after event capture
+	SuccessScreen Screen = "success"
 )
 
 // Model represents the main application state
@@ -31,6 +34,8 @@ type Model struct {
 	width          int
 	height         int
 	err            error
+	formModel      *models.FormModel
+	successModel   *models.SuccessModel
 }
 
 // NewModel creates a new application model
@@ -43,6 +48,8 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		width:          80,
 		height:         24,
 		err:            nil,
+		formModel:      models.NewFormModel(cliService),
+		successModel:   nil, // Will be created after form submission
 	}
 }
 
@@ -64,6 +71,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "c":
 			m.previousScreen = m.currentScreen
 			m.currentScreen = CaptureScreen
+			m.formModel = models.NewFormModel(m.cliService) // Reset form when entering capture screen
 		case "l":
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ListScreen
@@ -76,6 +84,27 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 	}
 
+	// Delegate to FormModel when on CaptureScreen
+	if m.currentScreen == CaptureScreen && m.formModel != nil {
+		updatedFormModel, cmd := m.formModel.Update(msg)
+		m.formModel = updatedFormModel.(*models.FormModel)
+
+		// Check if form was submitted
+		if m.formModel.Submitted() {
+			m.successModel = models.NewSuccessModel(m.formModel.Event())
+			m.currentScreen = SuccessScreen
+		}
+
+		return m, cmd
+	}
+
+	// Delegate to SuccessModel when on SuccessScreen
+	if m.currentScreen == SuccessScreen && m.successModel != nil {
+		updatedSuccessModel, cmd := m.successModel.Update(msg)
+		m.successModel = updatedSuccessModel.(*models.SuccessModel)
+		return m, cmd
+	}
+
 	return m, nil
 }
 
@@ -85,11 +114,19 @@ func (m *Model) View() string {
 	case HomeScreen:
 		return m.renderHome()
 	case CaptureScreen:
+		if m.formModel != nil {
+			return m.formModel.View()
+		}
 		return m.renderCapture()
 	case ListScreen:
 		return m.renderList()
 	case ViewScreen:
 		return m.renderView()
+	case SuccessScreen:
+		if m.successModel != nil {
+			return m.successModel.View()
+		}
+		return "Success!\n"
 	case QuitScreen:
 		return "Goodbye!\n"
 	default:
@@ -100,22 +137,21 @@ func (m *Model) View() string {
 // renderHome renders the home screen
 func (m *Model) renderHome() string {
 	return `
-╔════════════════════════════════════════╗
-║       KaRiya - Career Journal CLI      ║
-║                                        ║
-║ Welcome! Choose an option:             ║
-║                                        ║
-║ [c] Capture Career Event               ║
-║ [l] List Events                        ║
-║ [q] Quit                               ║
-║                                        ║
-║ Use arrow keys to navigate             ║
-║ Press 'h' to return home               ║
-╚════════════════════════════════════════╝
+╔═══════════════════════════════════════════╗
+║     KaRiya - Career Journal CLI           ║
+║                                           ║
+║  Commands:                                ║
+║    c - Capture Career Event               ║
+║    l - List Events                        ║
+║    h - Home                               ║
+║    q - Quit                               ║
+║                                           ║
+║  Press 'c' to get started!                ║
+╚═══════════════════════════════════════════╝
 `
 }
 
-// renderCapture renders the capture screen
+// renderCapture renders the capture screen (placeholder)
 func (m *Model) renderCapture() string {
 	return `
 ╔════════════════════════════════════════╗
@@ -144,43 +180,28 @@ func (m *Model) renderCapture() string {
 func (m *Model) renderList() string {
 	return `
 ╔════════════════════════════════════════╗
-║       Recent Career Events             ║
+║     Recent Career Events               ║
 ║                                        ║
-║ Event 1: Completed important project   ║
-║ Date: 2025-12-23                       ║
-║ Company: TechCorp Inc.                 ║
-║ Tags: [technical] [achievement]        ║
+║ Event 1                                ║
+║ [Some career event description here]   ║
 ║                                        ║
-║ Event 2: Led cross-functional team     ║
-║ Date: 2025-12-22                       ║
-║ Company: StartupXYZ                    ║
-║ Tags: [leadership]                     ║
+║ Event 2                                ║
+║ [Another career event description]     ║
 ║                                        ║
-║ [↑] [↓] Navigate  [Enter] View Details ║
 ║ Press 'backspace' to go back           ║
 ╚════════════════════════════════════════╝
 `
 }
 
-// renderView renders the event detail screen
+// renderView renders the view screen
 func (m *Model) renderView() string {
 	return `
 ╔════════════════════════════════════════╗
-║       Event Details                    ║
+║        Event Details                   ║
 ║                                        ║
-║ Title:                                 ║
-║ Completed important project            ║
-║                                        ║
-║ Date: 2025-12-23                       ║
-║ Company: TechCorp Inc.                 ║
-║ Project: Platform Migration            ║
-║                                        ║
-║ Tags:                                  ║
-║ [technical] [achievement] [leadership] ║
-║                                        ║
-║ Category: Technical                    ║
-║                                        ║
-║ [Edit]  [Delete]  [Back]               ║
+║ Title: [Event Title]                   ║
+║ Date: [Event Date]                     ║
+║ Description: [Event Description]       ║
 ║                                        ║
 ║ Press 'backspace' to go back           ║
 ╚════════════════════════════════════════╝
