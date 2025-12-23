@@ -118,7 +118,7 @@
   - [ ] 5.5 Write integration tests for event capture workflow (deferred to Task 8.0)
 
 - [ ] 6.0 Implement Input Validation & Error Handling
-  - [ ] 6.1 Create validation wrapper for all form inputs
+  - [x] 6.1 Create validation wrapper for all form inputs
   - [ ] 6.2 Implement error message display with:
     - [ ] 6.2a Clear explanation of what went wrong
     - [ ] 6.2b Suggestion for how to fix
