@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Commitlint hook - validates commit message format
+# This hook runs AFTER commit-msg hook (AI attribution validation)
+
+COMMIT_MSG_FILE=$1
+
+# Check if commitlint is available
+if ! command -v npx &> /dev/null; then
+    echo "⚠️  npx not found. Skipping commitlint validation."
+    echo "   Install Node.js and run 'npm install' to enable commitlint."
+    exit 0
+fi
+
+# Check if node_modules exists
+if [ ! -d "node_modules" ]; then
+    echo "⚠️  node_modules not found. Skipping commitlint validation."
+    echo "   Run 'npm install' to enable commitlint."
+    exit 0
+fi
+
+# Run commitlint
+if ! npx commitlint --edit "$COMMIT_MSG_FILE"; then
+    echo ""
+    echo "❌ Commit message does not follow conventional commits format"
+    echo ""
+    echo "Required format:"
+    echo "  <type>(<scope>): <subject>"
+    echo ""
+    echo "Examples:"
+    echo "  feat(service): add event filtering by date range"
+    echo "  fix(domain): prevent duplicate tags in validation"
+    echo "  docs(readme): update installation instructions"
+    echo ""
+    echo "Valid types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+    echo "Valid scopes: domain, service, repo, cli, logger, classification, deps, release"
+    echo ""
+    echo "See docs/rules/COMMIT_QUICK_REFERENCE.md for more examples."
+    exit 1
+fi
+
+exit 0
+
