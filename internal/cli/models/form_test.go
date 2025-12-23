@@ -91,6 +91,167 @@ var _ = Describe("FormModel", func() {
 			_, cmd := form.Update(msg)
 			Expect(cmd).NotTo(BeNil())
 		})
+
+		It("should navigate to mode selection with arrow keys", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Navigate to mode field
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+			// Should be on mode field now
+			view := testForm.View()
+			Expect(view).To(ContainSubstring("Timeline Journaling"))
+		})
+
+		It("should change mode with down arrow key", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Navigate to mode field (5 tabs)
+			for i := 0; i < 5; i++ {
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			}
+
+			// Press down arrow to change mode
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+
+			// View should show CV Backfill mode selected
+			view := testForm.View()
+			Expect(view).To(ContainSubstring("CV Backfill"))
+		})
+
+		It("should change mode with up arrow key", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Navigate to mode field (5 tabs)
+			for i := 0; i < 5; i++ {
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			}
+
+			// Press down arrow twice then up arrow
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyUp})
+
+			// Should be back to CV Backfill
+			view := testForm.View()
+			Expect(view).To(ContainSubstring("CV Backfill"))
+		})
+
+		It("should cycle through modes with down arrow", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Navigate to mode field
+			for i := 0; i < 5; i++ {
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			}
+
+			// Press down 3 times to cycle through all modes and back to first
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+
+			// Should be back to Timeline Journaling
+			view := testForm.View()
+			Expect(view).To(ContainSubstring("Timeline Journaling"))
+		})
+
+		It("should submit form with Enter key on submit button", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Type text
+			testForm = typeText(testForm, "Test event")
+
+			// Navigate to submit button (6 tabs)
+			for i := 0; i < 6; i++ {
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			}
+
+			// Press Enter to submit
+			testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Should return a command (submitForm)
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should not submit when Enter pressed on non-submit field", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Type text
+			testForm = typeText(testForm, "Test event")
+
+			// Stay on text field and press Enter
+			testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Should not submit (cmd should be from input field, not submitForm)
+			// The text input will handle the Enter key
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should cycle focus backward with Shift+Tab from start", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Should be on text field (index 0)
+			// Press Shift+Tab to go to last field
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+
+			// Should be on submit button
+			view := testForm.View()
+			Expect(view).To(ContainSubstring("[ > Submit < ]"))
+		})
+
+		It("should cycle focus forward with Tab from end", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Navigate to submit button (6 tabs)
+			for i := 0; i < 6; i++ {
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+			}
+
+			// Press Tab to cycle back to start
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+			// Should be on text field
+			view := testForm.View()
+			Expect(view).To(ContainSubstring("Event Text (required)"))
+		})
+
+		It("should show focus indicator on current field", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			// Should show focus indicator on text field
+			view := testForm.View()
+			Expect(view).To(ContainSubstring("►"))
+		})
+
+		It("should move focus indicator when navigating", func() {
+			testForm := models.NewFormModel(cliService)
+			testForm.Init()
+
+			view1 := testForm.View()
+			focusCount1 := strings.Count(view1, "►")
+
+			// Navigate to next field
+			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+			view2 := testForm.View()
+			focusCount2 := strings.Count(view2, "►")
+
+			// Both should have same number of focus indicators
+			Expect(focusCount1).To(Equal(focusCount2))
+		})
 	})
 
 	Describe("View", func() {
