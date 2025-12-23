@@ -60,6 +60,28 @@ func (m *Model) Init() tea.Cmd {
 
 // Update handles messages and updates the model state
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Delegate to FormModel when on CaptureScreen
+	if m.currentScreen == CaptureScreen && m.formModel != nil {
+		updatedFormModel, cmd := m.formModel.Update(msg)
+		m.formModel = updatedFormModel.(*models.FormModel)
+
+		// Check if form was submitted
+		if m.formModel.Submitted() {
+			m.successModel = models.NewSuccessModel(m.formModel.Event())
+			m.currentScreen = SuccessScreen
+		}
+
+		return m, cmd
+	}
+
+	// Delegate to SuccessModel when on SuccessScreen
+	if m.currentScreen == SuccessScreen && m.successModel != nil {
+		updatedSuccessModel, cmd := m.successModel.Update(msg)
+		m.successModel = updatedSuccessModel.(*models.SuccessModel)
+		return m, cmd
+	}
+
+	// Handle global navigation shortcuts (only on non-input screens)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -82,27 +104,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-	}
-
-	// Delegate to FormModel when on CaptureScreen
-	if m.currentScreen == CaptureScreen && m.formModel != nil {
-		updatedFormModel, cmd := m.formModel.Update(msg)
-		m.formModel = updatedFormModel.(*models.FormModel)
-
-		// Check if form was submitted
-		if m.formModel.Submitted() {
-			m.successModel = models.NewSuccessModel(m.formModel.Event())
-			m.currentScreen = SuccessScreen
-		}
-
-		return m, cmd
-	}
-
-	// Delegate to SuccessModel when on SuccessScreen
-	if m.currentScreen == SuccessScreen && m.successModel != nil {
-		updatedSuccessModel, cmd := m.successModel.Update(msg)
-		m.successModel = updatedSuccessModel.(*models.SuccessModel)
-		return m, cmd
 	}
 
 	return m, nil
