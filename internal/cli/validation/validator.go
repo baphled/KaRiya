@@ -5,9 +5,48 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
+
+// ValidationError represents a structured validation error with field context,
+// a user-friendly message, and a suggestion for how to fix the issue
+type ValidationError struct {
+	Field      string // The field that failed validation
+	Message    string // Clear explanation of what went wrong
+	Suggestion string // Helpful suggestion for how to fix
+}
+
+// NewValidationError creates a new ValidationError
+func NewValidationError(field, message, suggestion string) *ValidationError {
+	return &ValidationError{
+		Field:      field,
+		Message:    message,
+		Suggestion: suggestion,
+	}
+}
+
+// Error implements the error interface
+func (e *ValidationError) Error() string {
+	return e.Message
+}
+
+// Formatted returns a styled error message with explanation and suggestion
+func (e *ValidationError) Formatted() string {
+	var b strings.Builder
+
+	// Error message
+	b.WriteString(styles.ErrorText.Render("✗ " + e.Message))
+	b.WriteString("\n")
+
+	// Suggestion
+	if e.Suggestion != "" {
+		b.WriteString(styles.ErrorHint.Render("  💡 " + e.Suggestion))
+	}
+
+	return b.String()
+}
 
 // EventValidator provides validation for career event inputs
 type EventValidator struct{}
@@ -18,14 +57,22 @@ func NewEventValidator() *EventValidator {
 }
 
 // ValidateText validates event text field
-// Returns error if text is empty, whitespace-only, or exceeds 2000 characters
+// Returns ValidationError if text is empty, whitespace-only, or exceeds 2000 characters
 func (v *EventValidator) ValidateText(text string) error {
 	trimmed := strings.TrimSpace(text)
 	if trimmed == "" {
-		return fmt.Errorf("event text is required")
+		return NewValidationError(
+			"text",
+			"Event text is required",
+			"Please enter a description of your career event (e.g., 'Led team migration to Kubernetes')",
+		)
 	}
 	if len(text) > 2000 {
-		return fmt.Errorf("event text cannot exceed 2000 characters")
+		return NewValidationError(
+			"text",
+			"Event text cannot exceed 2000 characters",
+			fmt.Sprintf("Please shorten your text by %d characters", len(text)-2000),
+		)
 	}
 	return nil
 }
@@ -87,4 +134,3 @@ func (v *EventValidator) ValidateTags(tags []string) error {
 func isAllowedTag(tag string) bool {
 	return career.AllowedTags[tag]
 }
-
