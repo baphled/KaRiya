@@ -1,11 +1,13 @@
 package app
 
 import (
+	"context"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -297,6 +299,112 @@ var _ = Describe("Application Model", func() {
 			model = newModel.(*Model)
 			Expect(model.currentScreen).To(Equal(CaptureScreen))
 			Expect(model.formModel).NotTo(BeNil())
+		})
+	})
+
+
+	Context("Event Persistence and Display", func() {
+		It("should persist event to repository and display in SuccessModel", func() {
+			// Create repository and service
+			repo := careerrepo.NewMemoryRepository()
+			svc := careerservice.NewService(repo)
+			cliService := service.NewCLIEventService(svc)
+
+			// Create an event directly
+			ctx := context.Background()
+			event := &career.CareerEvent{
+				Text:    "Completed important project milestone",
+				Date:    time.Now().Add(-5 * 24 * time.Hour),
+				Company: "TechCorp Inc",
+				Project: "Platform Modernization",
+				Tags:    []string{"technical", "leadership"},
+			}
+
+			// Capture the event
+			err := cliService.CaptureEvent(ctx, event.Text, event.Date, careerservice.TimelineJournaling,
+				service.WithCompany(event.Company),
+				service.WithProject(event.Project),
+				service.WithTags(event.Tags),
+			)
+			Expect(err).To(BeNil())
+
+			// Verify event was persisted
+			events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+			Expect(err).To(BeNil())
+			Expect(len(events)).To(Equal(1))
+			Expect(events[0].Text).To(Equal("Completed important project milestone"))
+			Expect(events[0].Company).To(Equal("TechCorp Inc"))
+			Expect(events[0].Project).To(Equal("Platform Modernization"))
+
+			// Create SuccessModel with the persisted event
+			successModel := models.NewSuccessModel(events[0])
+			view := successModel.View()
+
+			// Verify event details are displayed
+			Expect(view).To(ContainSubstring("Completed important project milestone"))
+			Expect(view).To(ContainSubstring("TechCorp Inc"))
+			Expect(view).To(ContainSubstring("Platform Modernization"))
+			Expect(view).To(ContainSubstring("technical"))
+			Expect(view).To(ContainSubstring("leadership"))
+		})
+
+		It("should retrieve persisted events from repository", func() {
+			// Create repository and service
+			repo := careerrepo.NewMemoryRepository()
+			svc := careerservice.NewService(repo)
+			cliService := service.NewCLIEventService(svc)
+
+			ctx := context.Background()
+
+			// Create and persist multiple events
+			for i := 1; i <= 3; i++ {
+				event := &career.CareerEvent{
+					Text:    "Event " + string(rune('0'+i)),
+					Date:    time.Now().Add(-time.Duration(i) * 24 * time.Hour),
+					Company: "Company " + string(rune('0'+i)),
+				}
+				err := cliService.CaptureEvent(ctx, event.Text, event.Date, careerservice.TimelineJournaling,
+					service.WithCompany(event.Company),
+				)
+				Expect(err).To(BeNil())
+			}
+
+			// Retrieve all events
+			events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+			Expect(err).To(BeNil())
+			Expect(len(events)).To(Equal(3))
+
+			// Verify events are in correct order
+			Expect(events[0].Text).To(ContainSubstring("Event 1"))
+			Expect(events[1].Text).To(ContainSubstring("Event 2"))
+			Expect(events[2].Text).To(ContainSubstring("Event 3"))
+		})
+
+		It("should display all event fields in SuccessModel", func() {
+			// Create event with all fields
+			event := &career.CareerEvent{
+				ID:         "test-123",
+				Text:       "Complex event with all fields",
+				Date:       time.Date(2024, 12, 20, 0, 0, 0, 0, time.UTC),
+				Company:    "TechCorp",
+				Project:    "Project Alpha",
+				Tags:       []string{"technical", "leadership", "product"},
+				Categories: []string{"Technical"},
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
+			}
+
+			// Create SuccessModel
+			successModel := models.NewSuccessModel(event)
+			view := successModel.View()
+
+			// Verify all fields are displayed
+			Expect(view).To(ContainSubstring("Complex event with all fields"))
+			Expect(view).To(ContainSubstring("TechCorp"))
+			Expect(view).To(ContainSubstring("Project Alpha"))
+			Expect(view).To(ContainSubstring("technical"))
+			Expect(view).To(ContainSubstring("leadership"))
+			Expect(view).To(ContainSubstring("product"))
 		})
 	})
 
