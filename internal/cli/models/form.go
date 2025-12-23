@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -27,16 +28,17 @@ const (
 
 // FormModel represents the event capture form state
 type FormModel struct {
-	cliService *service.CLIEventService
-	inputs     []textinput.Model
-	focusIndex int
-	modeIndex  int // Index for capture mode selection
-	modes      []careerservice.EventCaptureMode
-	err        error
-	submitted  bool
-	event      *career.CareerEvent
-	charCount  int
-	maxChars   int
+	cliService  *service.CLIEventService
+	inputs      []textinput.Model
+	focusIndex  int
+	modeIndex   int // Index for capture mode selection
+	modes       []careerservice.EventCaptureMode
+	err         error
+	submitted   bool
+	event       *career.CareerEvent
+	charCount   int
+	maxChars    int
+	tagSelector *components.TagSelector
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -74,14 +76,15 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 	}
 
 	return &FormModel{
-		cliService: cliService,
-		inputs:     inputs,
-		focusIndex: 0,
-		modeIndex:  0,
-		modes:      modes,
-		err:        nil,
-		submitted:  false,
-		maxChars:   2000,
+		cliService:  cliService,
+		inputs:      inputs,
+		focusIndex:  0,
+		modeIndex:   0,
+		modes:       modes,
+		err:         nil,
+		submitted:   false,
+		maxChars:    2000,
+		tagSelector: components.NewTagSelector(),
 	}
 }
 
@@ -363,27 +366,33 @@ func (m *FormModel) submitForm() tea.Cmd {
 		company := strings.TrimSpace(m.inputs[2].Value())
 		project := strings.TrimSpace(m.inputs[3].Value())
 
-		// Capture event through service
-		ctx := context.Background()
-		opts := []service.Option{}
-		if company != "" {
-			opts = append(opts, service.WithCompany(company))
-		}
-		if project != "" {
-			opts = append(opts, service.WithProject(project))
-		}
-
-		if err := m.cliService.CaptureEvent(ctx, text, eventDate, mode, opts...); err != nil {
-			return SubmitMsg{Err: fmt.Errorf("failed to capture event: %w", err)}
-		}
-
-		// Build event for display (this is just for UI purposes)
-		event := &career.CareerEvent{
-			Text:    text,
-			Date:    eventDate,
-			Company: company,
-			Project: project,
-			Tags:    []string{}, // Will be handled in tag selector
+			// Get selected tags
+			tags := m.tagSelector.SelectedTags()
+		
+			// Capture event through service
+			ctx := context.Background()
+			opts := []service.Option{}
+			if company != "" {
+				opts = append(opts, service.WithCompany(company))
+			}
+			if project != "" {
+				opts = append(opts, service.WithProject(project))
+			}
+			if len(tags) > 0 {
+				opts = append(opts, service.WithTags(tags))
+			}
+		
+			if err := m.cliService.CaptureEvent(ctx, text, eventDate, mode, opts...); err != nil {
+				return SubmitMsg{Err: fmt.Errorf("failed to capture event: %w", err)}
+			}
+		
+			// Build event for display (this is just for UI purposes)
+			event := &career.CareerEvent{
+				Text:    text,
+				Date:    eventDate,
+				Company: company,
+				Project: project,
+				Tags:    tags,
 		}
 
 		return SubmitMsg{Event: event, Err: nil}
@@ -451,6 +460,11 @@ func (m *FormModel) GetInputValue(index int) string {
 	return ""
 }
 
+// TagSelector returns the tag selector instance
+func (m *FormModel) TagSelector() *components.TagSelector {
+	return m.tagSelector
+}
+
 // Reset resets the form to its initial state
 func (m *FormModel) Reset() {
 	m.focusIndex = 0
@@ -463,6 +477,9 @@ func (m *FormModel) Reset() {
 	for i := range m.inputs {
 		m.inputs[i].SetValue("")
 	}
+
+	// Reset tag selector
+	m.tagSelector.Reset()
 
 	m.inputs[0].Focus()
 }
