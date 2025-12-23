@@ -16,6 +16,37 @@ func TestValidation(t *testing.T) {
 	RunSpecs(t, "Validation Suite")
 }
 
+var _ = Describe("ValidationError", func() {
+	Describe("Error message formatting", func() {
+		It("should include explanation and suggestion", func() {
+			verr := validation.NewValidationError(
+				"text",
+				"Event text is required",
+				"Please enter a description of your career event",
+			)
+
+			Expect(verr.Field).To(Equal("text"))
+			Expect(verr.Message).To(Equal("Event text is required"))
+			Expect(verr.Suggestion).To(Equal("Please enter a description of your career event"))
+			Expect(verr.Error()).To(ContainSubstring("Event text is required"))
+		})
+	})
+
+	Describe("Formatted display", func() {
+		It("should format error with explanation and suggestion", func() {
+			verr := validation.NewValidationError(
+				"date",
+				"Date cannot be in the future",
+				"Please enter a past date or use 'today'",
+			)
+
+			formatted := verr.Formatted()
+			Expect(formatted).To(ContainSubstring("Date cannot be in the future"))
+			Expect(formatted).To(ContainSubstring("Please enter a past date or use 'today'"))
+		})
+	})
+})
+
 var _ = Describe("EventValidator", func() {
 	var validator *validation.EventValidator
 
@@ -32,30 +63,42 @@ var _ = Describe("EventValidator", func() {
 		})
 
 		Context("when text is empty", func() {
-			It("should return error", func() {
+			It("should return ValidationError with suggestion", func() {
 				err := validator.ValidateText("")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("required"))
+
+				verr, ok := err.(*validation.ValidationError)
+				Expect(ok).To(BeTrue())
+				Expect(verr.Field).To(Equal("text"))
+				Expect(verr.Message).To(ContainSubstring("required"))
+				Expect(verr.Suggestion).ToNot(BeEmpty())
 			})
 		})
 
 		Context("when text is whitespace only", func() {
-			It("should return error", func() {
+			It("should return ValidationError with suggestion", func() {
 				err := validator.ValidateText("   ")
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("required"))
+
+				verr, ok := err.(*validation.ValidationError)
+				Expect(ok).To(BeTrue())
+				Expect(verr.Suggestion).ToNot(BeEmpty())
 			})
 		})
 
 		Context("when text exceeds 2000 characters", func() {
-			It("should return error", func() {
+			It("should return ValidationError with suggestion", func() {
 				longText := make([]byte, 2001)
 				for i := range longText {
 					longText[i] = 'a'
 				}
 				err := validator.ValidateText(string(longText))
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("2000 characters"))
+
+				verr, ok := err.(*validation.ValidationError)
+				Expect(ok).To(BeTrue())
+				Expect(verr.Message).To(ContainSubstring("2000 characters"))
+				Expect(verr.Suggestion).ToNot(BeEmpty())
 			})
 		})
 	})
@@ -149,4 +192,3 @@ var _ = Describe("EventValidator", func() {
 		})
 	})
 })
-
