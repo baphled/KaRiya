@@ -302,7 +302,6 @@ var _ = Describe("Application Model", func() {
 		})
 	})
 
-
 	Context("Event Persistence and Display", func() {
 		It("should persist event to repository and display in SuccessModel", func() {
 			// Create repository and service
