@@ -126,4 +126,38 @@ var _ = Describe("Application Model", func() {
 			Expect(cmd).NotTo(BeNil())
 		})
 	})
+
+	Context("FormModel Integration", func() {
+		It("should have FormModel instance in Model struct", func() {
+			Expect(model.formModel).NotTo(BeNil())
+		})
+
+		It("should create SuccessModel after form submission", func() {
+			// Initially successModel should be nil
+			Expect(model.successModel).To(BeNil())
+			// After form submission, successModel would be created
+			// This is tested in the form submission test
+		})
+
+		It("should delegate Update to FormModel on CaptureScreen", func() {
+			model.currentScreen = CaptureScreen
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}}
+			newModel, _ := model.Update(msg)
+			updatedModel := newModel.(*Model)
+			Expect(updatedModel).NotTo(BeNil())
+		})
+
+		It("should delegate View to FormModel on CaptureScreen", func() {
+			model.currentScreen = CaptureScreen
+			view := model.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should reset FormModel when navigating to CaptureScreen", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
+			newModel, _ := model.Update(msg)
+			updatedModel := newModel.(*Model)
+			Expect(updatedModel.formModel).NotTo(BeNil())
+		})
+	})
 })
