@@ -2,6 +2,7 @@ package models_test
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/models"
@@ -486,6 +487,66 @@ var _ = Describe("FormModel", func() {
 				Expect(len(events)).To(Equal(1))
 				Expect(events[0].Tags).To(HaveLen(2))
 				Expect(events[0].Tags).To(ContainElements("technical", "leadership"))
+			})
+		})
+	})
+
+	Describe("Field-level validation with inline feedback", func() {
+		Context("when text field is empty on blur", func() {
+			It("should show validation error", func() {
+				testForm := models.NewFormModel(cliService)
+				testForm.Init()
+
+				// Navigate away from text field without entering text
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+				// View should contain error message
+				view := testForm.View()
+				Expect(view).To(ContainSubstring("required"))
+			})
+		})
+
+		Context("when text exceeds 2000 characters", func() {
+			It("should show validation error inline", func() {
+				testForm := models.NewFormModel(cliService)
+				testForm.Init()
+
+				// Type text that exceeds limit
+				longText := strings.Repeat("a", 2001)
+				testForm = typeText(testForm, longText)
+
+				// View should show error
+				view := testForm.View()
+				Expect(view).To(ContainSubstring("2000 characters"))
+			})
+		})
+
+		Context("when date is in future", func() {
+			It("should show validation error on blur", func() {
+				testForm := models.NewFormModel(cliService)
+				testForm.Init()
+
+				// Enter valid text first
+				testForm = typeText(testForm, "Valid event text")
+
+				// Navigate to date field
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+				// Enter future date
+				futureDate := time.Now().Add(24 * time.Hour).Format("2006-01-02")
+				for _, c := range futureDate {
+					testForm, _ = updateForm(testForm, tea.KeyMsg{
+						Type:  tea.KeyRunes,
+						Runes: []rune{c},
+					})
+				}
+
+				// Navigate away to trigger validation
+				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+				// View should contain error
+				view := testForm.View()
+				Expect(view).To(ContainSubstring("future"))
 			})
 		})
 	})
