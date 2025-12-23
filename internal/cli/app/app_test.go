@@ -36,31 +36,33 @@ var _ = Describe("Application Model", func() {
 		})
 	})
 
-	Context("Screen Navigation", func() {
-		It("should navigate to CaptureScreen", func() {
+	Context("Screen Navigation from HomeScreen", func() {
+		It("should navigate to CaptureScreen with 'c'", func() {
+			model.currentScreen = HomeScreen
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
 			newModel, _ := model.Update(msg)
 			updatedModel := newModel.(*Model)
 			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
 		})
 
-		It("should navigate to ListScreen", func() {
+		It("should navigate to ListScreen with 'l'", func() {
+			model.currentScreen = HomeScreen
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'l'}}
 			newModel, _ := model.Update(msg)
 			updatedModel := newModel.(*Model)
 			Expect(updatedModel.currentScreen).To(Equal(ListScreen))
 		})
 
-		It("should navigate back to HomeScreen", func() {
-			model.currentScreen = CaptureScreen
+		It("should stay on HomeScreen with 'h'", func() {
+			model.currentScreen = HomeScreen
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}}
 			newModel, _ := model.Update(msg)
 			updatedModel := newModel.(*Model)
 			Expect(updatedModel.currentScreen).To(Equal(HomeScreen))
 		})
 
-		It("should handle backspace navigation", func() {
-			model.currentScreen = CaptureScreen
+		It("should handle backspace navigation from ListScreen", func() {
+			model.currentScreen = ListScreen
 			model.previousScreen = HomeScreen
 			msg := tea.KeyMsg{Type: tea.KeyBackspace}
 			newModel, _ := model.Update(msg)
@@ -158,6 +160,45 @@ var _ = Describe("Application Model", func() {
 			newModel, _ := model.Update(msg)
 			updatedModel := newModel.(*Model)
 			Expect(updatedModel.formModel).NotTo(BeNil())
+		})
+	})
+
+	Context("Keyboard Input Handling on CaptureScreen", func() {
+		It("should allow 'h' character input in form without navigating", func() {
+			model.currentScreen = CaptureScreen
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}}
+			newModel, _ := model.Update(msg)
+			updatedModel := newModel.(*Model)
+			// Should still be on CaptureScreen, not navigated to HomeScreen
+			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
+		})
+
+		It("should allow 'l' character input in form without navigating", func() {
+			model.currentScreen = CaptureScreen
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'l'}}
+			newModel, _ := model.Update(msg)
+			updatedModel := newModel.(*Model)
+			// Should still be on CaptureScreen, not navigated to ListScreen
+			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
+		})
+
+		It("should allow 'backspace' character input in form without navigating", func() {
+			model.currentScreen = CaptureScreen
+			model.previousScreen = HomeScreen
+			msg := tea.KeyMsg{Type: tea.KeyBackspace}
+			newModel, _ := model.Update(msg)
+			updatedModel := newModel.(*Model)
+			// Should still be on CaptureScreen, not navigated back
+			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
+		})
+
+		It("should allow 'c' character input in form without navigating", func() {
+			model.currentScreen = CaptureScreen
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
+			newModel, _ := model.Update(msg)
+			updatedModel := newModel.(*Model)
+			// Should still be on CaptureScreen, not navigated to CaptureScreen again
+			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
 		})
 	})
 })
