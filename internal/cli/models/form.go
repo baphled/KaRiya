@@ -39,6 +39,7 @@ type FormModel struct {
 	charCount   int
 	maxChars    int
 	tagSelector *components.TagSelector
+	fieldErrors map[FormField]string // Track field-level validation errors
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -50,7 +51,7 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 	inputs[0] = textinput.New()
 	inputs[0].Placeholder = "Enter event description (required, max 2000 chars)"
 	inputs[0].Focus()
-	inputs[0].CharLimit = 2000
+	// inputs[0].CharLimit = 2000 // Allow detection of exceeding limit
 	inputs[0].Width = 60
 
 	// Date input (optional)
@@ -85,6 +86,7 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		submitted:   false,
 		maxChars:    2000,
 		tagSelector: components.NewTagSelector(),
+		fieldErrors: make(map[FormField]string),
 	}
 }
 
@@ -116,6 +118,11 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
+
+			// Validate current field before moving away
+			if s == "tab" || s == "shift+tab" || s == "enter" {
+				m.validateCurrentField()
+			}
 
 			// Handle mode selection when on mode field
 			if m.focusIndex == int(ModeField) {
@@ -162,7 +169,52 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmd := m.updateInputs(msg)
 	m.charCount = len(m.inputs[0].Value())
 
+	// Validate text field as user types
+	m.validateTextField()
+
 	return m, cmd
+}
+
+// validateCurrentField validates the currently focused field
+func (m *FormModel) validateCurrentField() {
+	switch FormField(m.focusIndex) {
+	case TextField:
+		m.validateTextField()
+	case DateField:
+		m.validateDateField()
+	}
+}
+
+// validateTextField validates the text field
+func (m *FormModel) validateTextField() {
+	text := m.inputs[0].Value()
+	if len(text) > m.maxChars {
+		m.fieldErrors[TextField] = fmt.Sprintf("Text exceeds 2000 characters limit")
+	} else {
+		delete(m.fieldErrors, TextField)
+	}
+}
+
+// validateDateField validates the date field
+func (m *FormModel) validateDateField() {
+	dateStr := strings.TrimSpace(m.inputs[1].Value())
+	if dateStr == "" {
+		delete(m.fieldErrors, DateField)
+		return
+	}
+
+	eventDate, err := m.parseDate(dateStr)
+	if err != nil {
+		m.fieldErrors[DateField] = fmt.Sprintf("Invalid date format")
+		return
+	}
+
+	if eventDate.After(time.Now()) {
+		m.fieldErrors[DateField] = fmt.Sprintf("Date cannot be in the future")
+		return
+	}
+
+	delete(m.fieldErrors, DateField)
 }
 
 // View renders the form
@@ -181,6 +233,11 @@ func (m *FormModel) View() string {
 	b.WriteString(fmt.Sprintf("║ %s%-74s║\n", m.inputs[0].View(), ""))
 	b.WriteString(fmt.Sprintf("║ Characters: %d/%d %s%-54s║\n",
 		m.charCount, m.maxChars, m.getCharCountIndicator(), ""))
+
+	// Show text field error if present
+	if fieldErr, ok := m.fieldErrors[TextField]; ok {
+		b.WriteString(fmt.Sprintf("║ Error: %-70s║\n", fieldErr))
+	}
 	b.WriteString("║                                                                               ║\n")
 
 	// Date field
@@ -188,6 +245,11 @@ func (m *FormModel) View() string {
 	b.WriteString(fmt.Sprintf("║ Date (optional): %s%-55s║\n",
 		m.getFocusIndicator(focused), ""))
 	b.WriteString(fmt.Sprintf("║ %s%-74s║\n", m.inputs[1].View(), ""))
+
+	// Show date field error if present
+	if fieldErr, ok := m.fieldErrors[DateField]; ok {
+		b.WriteString(fmt.Sprintf("║ Error: %-70s║\n", fieldErr))
+	}
 	b.WriteString("║                                                                               ║\n")
 
 	// Company field
@@ -473,6 +535,7 @@ func (m *FormModel) Reset() {
 	m.event = nil
 	m.err = nil
 	m.charCount = 0
+	m.fieldErrors = make(map[FormField]string)
 
 	for i := range m.inputs {
 		m.inputs[i].SetValue("")
