@@ -103,4 +103,3 @@ func (ts *TagSelector) IsSelected(tag string) bool {
 func (ts *TagSelector) Reset() {
 	ts.selected = make(map[string]bool)
 }
-
