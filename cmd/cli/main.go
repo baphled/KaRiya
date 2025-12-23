@@ -64,10 +64,6 @@ func run(args []string, out io.Writer) int {
 	return 0
 }
 
-func printHelp() {
-	printHelpTo(os.Stdout)
-}
-
 func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "KaRiya CLI - Career Journaling Tool")
 	fmt.Fprintln(out, "\nUsage: kariya [options]")
