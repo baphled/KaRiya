@@ -60,6 +60,24 @@ func (m *Model) Init() tea.Cmd {
 
 // Update handles messages and updates the model state
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle messages from SuccessModel first
+	switch msg.(type) {
+	case models.CaptureAnotherMsg:
+		// Reset form and return to capture screen
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CaptureScreen
+		m.formModel = models.NewFormModel(m.cliService)
+		m.successModel = nil
+		return m, nil
+
+	case models.ViewRecentMsg:
+		// Navigate to list screen
+		m.previousScreen = m.currentScreen
+		m.currentScreen = ListScreen
+		m.successModel = nil
+		return m, nil
+	}
+
 	// Delegate to FormModel when on CaptureScreen
 	if m.currentScreen == CaptureScreen && m.formModel != nil {
 		updatedFormModel, cmd := m.formModel.Update(msg)
