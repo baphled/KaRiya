@@ -234,4 +234,3 @@ type CaptureAnotherMsg struct{}
 
 // ViewRecentMsg signals to view recent events
 type ViewRecentMsg struct{}
-

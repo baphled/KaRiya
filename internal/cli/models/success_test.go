@@ -93,4 +93,3 @@ var _ = Describe("SuccessModel", func() {
 		})
 	})
 })
-
