@@ -1,0 +1,33 @@
+# <type>(<scope>): <subject line - 50 chars max>
+#
+# <body - explain WHY this change is needed>
+# <wrap at 72 characters>
+#
+# 🤖 AI ATTRIBUTION (if AI-generated, uncomment and fill):
+# AI-Generated-By: <Assistant Name> (<Model Version>)
+# Reviewed-By: <Your Name>
+#
+# <footer - issue references>
+# Closes #<issue>
+#
+# ───────────────────────────────────────────────────────────────
+# Types: feat, fix, docs, style, refactor, test, chore, perf
+# Scopes: domain, service, repo, cli, logger
+#
+# Examples of AI attribution:
+#   AI-Generated-By: Avante (Claude 3.5 Sonnet)
+#   AI-Generated-By: Claude (Claude 3.7 Sonnet)
+#   AI-Generated-By: GitHub Copilot (GPT-4)
+#   AI-Generated-By: ChatGPT (GPT-4 Turbo)
+#   AI-Generated-By: Cursor (Claude 3.5 Sonnet)
+#
+# Remember:
+# - Explain WHY, not just WHAT
+# - Include AI attribution for AI-generated code
+# - Include human review notes for AI-generated code
+# - Verify all tests pass before committing
+# - One logical change per commit
+#
+# See docs/rules/AI_COMMIT_ATTRIBUTION.md for details
+# ───────────────────────────────────────────────────────────────
+

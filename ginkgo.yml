@@ -1,0 +1,18 @@
+---
+suites:
+  - description: "KaRiya Test Suite"
+    labels:
+      - "domain"
+      - "service"
+    focus-strings:
+      - "CareerEvent"
+    skip-strings: []
+
+reporters:
+  - reporter: "progress"
+  - reporter: "verbose"
+
+coverprofile: "coverage.out"
+
+output-dir: "./test-results"
+

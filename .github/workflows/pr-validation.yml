@@ -1,0 +1,180 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Validate PR title follows conventional commits
+  validate-pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install commitlint
+        run: npm install --save-dev @commitlint/cli @commitlint/config-conventional
+
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "$PR_TITLE" | npx commitlint --config .commitlintrc.json
+
+  # Check for AI attribution in commits
+  check-ai-attribution:
+    name: Check AI Attribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commits for AI attribution
+        run: |
+          echo "Checking commits for AI attribution..."
+
+          # Get all commits in the PR
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          HEAD_SHA=${{ github.event.pull_request.head.sha }}
+
+          # Get commits between base and head
+          COMMITS=$(git log --format=%H $BASE_SHA..$HEAD_SHA)
+
+          echo "Commits to check:"
+          echo "$COMMITS"
+          echo ""
+
+          # Check each commit
+          AI_COMMITS=0
+          ATTRIBUTED_COMMITS=0
+          MISSING_ATTRIBUTION=()
+
+          for commit in $COMMITS; do
+            COMMIT_MSG=$(git log --format=%B -n 1 $commit)
+            COMMIT_SHORT=$(git log --format=%h -n 1 $commit)
+            COMMIT_SUBJECT=$(git log --format=%s -n 1 $commit)
+
+            # Check if commit has code files
+            CODE_FILES=$(git show --name-only --format= $commit | grep -E '\.(go|js|ts|py|java|c|cpp|rs)$' || true)
+
+            if [ -n "$CODE_FILES" ]; then
+              AI_COMMITS=$((AI_COMMITS + 1))
+
+              # Check for AI attribution
+              if echo "$COMMIT_MSG" | grep -q "AI-Generated-By:"; then
+                ATTRIBUTED_COMMITS=$((ATTRIBUTED_COMMITS + 1))
+                echo "✅ $COMMIT_SHORT: Has AI attribution"
+              else
+                echo "⚠️  $COMMIT_SHORT: Missing AI attribution (if AI-generated)"
+                MISSING_ATTRIBUTION+=("$COMMIT_SHORT: $COMMIT_SUBJECT")
+              fi
+            fi
+          done
+
+          echo ""
+          echo "Summary:"
+          echo "  Total commits with code: $AI_COMMITS"
+          echo "  Commits with AI attribution: $ATTRIBUTED_COMMITS"
+          echo ""
+
+          if [ ${#MISSING_ATTRIBUTION[@]} -gt 0 ]; then
+            echo "⚠️  Commits without AI attribution:"
+            printf '%s\n' "${MISSING_ATTRIBUTION[@]}"
+            echo ""
+            echo "If any of these commits contain AI-generated code, they should include:"
+            echo "  AI-Generated-By: <Assistant> (<Model>)"
+            echo "  Reviewed-By: <Your Name>"
+            echo ""
+            echo "See docs/rules/AI_COMMIT_ATTRIBUTION.md for details."
+          else
+            echo "✅ All code commits have AI attribution (if applicable)"
+          fi
+
+  # Validate conventional commits
+  conventional-commits:
+    name: Validate Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate all commits in PR
+        run: |
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  # Check for breaking changes
+  breaking-changes:
+    name: Check Breaking Changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for breaking changes
+        id: breaking
+        run: |
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          HEAD_SHA=${{ github.event.pull_request.head.sha }}
+
+          # Check commit messages for BREAKING CHANGE
+          if git log $BASE_SHA..$HEAD_SHA --format=%B | grep -qi "BREAKING CHANGE"; then
+            echo "has_breaking=true" >> $GITHUB_OUTPUT
+            echo "⚠️  This PR contains BREAKING CHANGES"
+          else
+            echo "has_breaking=false" >> $GITHUB_OUTPUT
+            echo "✅ No breaking changes detected"
+          fi
+
+      - name: Comment on PR if breaking changes detected
+        if: steps.breaking.outputs.has_breaking == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **BREAKING CHANGES DETECTED**\n\nThis PR contains breaking changes. Please ensure:\n- [ ] Breaking changes are clearly documented\n- [ ] Migration guide is provided (if needed)\n- [ ] Version will be bumped to next major version\n- [ ] Team has been notified'
+            });
+
+  # Size label
+  size-label:
+    name: PR Size Label
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add size label
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: 'size/xs'
+          xs_max_size: 10
+          s_label: 'size/s'
+          s_max_size: 100
+          m_label: 'size/m'
+          m_max_size: 500
+          l_label: 'size/l'
+          l_max_size: 1000
+          xl_label: 'size/xl'
+          fail_if_xl: false
+
