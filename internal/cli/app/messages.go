@@ -19,4 +19,3 @@ type NavigateMsg struct {
 type SuccessNavigateMsg struct {
 	Action string // "capture_another", "view_list", "exit"
 }
-

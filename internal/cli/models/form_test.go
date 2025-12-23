@@ -710,218 +710,217 @@ var _ = Describe("FormModel", func() {
 				Expect(view).To(ContainSubstring("future"))
 			})
 
+			Describe("End-to-End Capture Workflows", func() {
+				Context("Timeline Journaling mode", func() {
+					It("should capture event within 30 days", func() {
+						testForm := models.NewFormModel(cliService)
+						testForm.Init()
 
-	Describe("End-to-End Capture Workflows", func() {
-		Context("Timeline Journaling mode", func() {
-			It("should capture event within 30 days", func() {
-				testForm := models.NewFormModel(cliService)
-				testForm.Init()
+						// Fill form
+						testForm = typeText(testForm, "Implemented feature within 30 days")
 
-				// Fill form
-				testForm = typeText(testForm, "Implemented feature within 30 days")
+						// Navigate to date field
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
-				// Navigate to date field
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						// Enter date 10 days ago
+						pastDate := time.Now().Add(-10 * 24 * time.Hour).Format("2006-01-02")
+						for _, c := range pastDate {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{
+								Type:  tea.KeyRunes,
+								Runes: []rune{c},
+							})
+						}
 
-				// Enter date 10 days ago
-				pastDate := time.Now().Add(-10 * 24 * time.Hour).Format("2006-01-02")
-				for _, c := range pastDate {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{
-						Type:  tea.KeyRunes,
-						Runes: []rune{c},
+						// Navigate to submit
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+						// Submit
+						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+						Expect(cmd).NotTo(BeNil())
+						msg := cmd()
+						testForm, _ = updateForm(testForm, msg)
+
+						Expect(testForm.Submitted()).To(BeTrue())
+
+						// Verify event was captured
+						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+						Expect(err).To(BeNil())
+						Expect(len(events) > 0).To(BeTrue())
 					})
-				}
 
-				// Navigate to submit
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+					It("should reject event older than 30 days", func() {
+						testForm := models.NewFormModel(cliService)
+						testForm.Init()
 
-				// Submit
-				testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg := cmd()
-				testForm, _ = updateForm(testForm, msg)
+						// Fill form
+						testForm = typeText(testForm, "Attempted old event")
 
-				Expect(testForm.Submitted()).To(BeTrue())
+						// Navigate to date field
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
-				// Verify event was captured
-				events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-				Expect(err).To(BeNil())
-				Expect(len(events) > 0).To(BeTrue())
-			})
+						// Enter date 40 days ago
+						pastDate := time.Now().Add(-40 * 24 * time.Hour).Format("2006-01-02")
+						for _, c := range pastDate {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{
+								Type:  tea.KeyRunes,
+								Runes: []rune{c},
+							})
+						}
 
-			It("should reject event older than 30 days", func() {
-				testForm := models.NewFormModel(cliService)
-				testForm.Init()
+						// Navigate to submit
+						for i := 0; i < 4; i++ {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						}
 
-				// Fill form
-				testForm = typeText(testForm, "Attempted old event")
+						// Submit
+						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+						Expect(cmd).NotTo(BeNil())
+						msg := cmd()
+						testForm, _ = updateForm(testForm, msg)
 
-				// Navigate to date field
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
-				// Enter date 40 days ago
-				pastDate := time.Now().Add(-40 * 24 * time.Hour).Format("2006-01-02")
-				for _, c := range pastDate {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{
-						Type:  tea.KeyRunes,
-						Runes: []rune{c},
+						// Should not be submitted and have error
+						Expect(testForm.Error()).To(HaveOccurred())
+						Expect(testForm.Error().Error()).To(ContainSubstring("30 days"))
 					})
-				}
+				})
 
-				// Navigate to submit
-				for i := 0; i < 4; i++ {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				}
+				Context("CV Backfill mode", func() {
+					It("should accept events from any date in the past", func() {
+						testForm := models.NewFormModel(cliService)
+						testForm.Init()
 
-				// Submit
-				testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg := cmd()
-				testForm, _ = updateForm(testForm, msg)
+						// Fill form
+						testForm = typeText(testForm, "Old CV event from 5 years ago")
 
-				// Should not be submitted and have error
-				Expect(testForm.Error()).To(HaveOccurred())
-				Expect(testForm.Error().Error()).To(ContainSubstring("30 days"))
-			})
-		})
+						// Navigate to date field
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
-		Context("CV Backfill mode", func() {
-			It("should accept events from any date in the past", func() {
-				testForm := models.NewFormModel(cliService)
-				testForm.Init()
+						// Enter old date (5 years ago)
+						oldDate := time.Now().Add(-5 * 365 * 24 * time.Hour).Format("2006-01-02")
+						for _, c := range oldDate {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{
+								Type:  tea.KeyRunes,
+								Runes: []rune{c},
+							})
+						}
 
-				// Fill form
-				testForm = typeText(testForm, "Old CV event from 5 years ago")
+						// Navigate to mode field (3 tabs)
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
-				// Navigate to date field
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						// Select CVBackfill mode (down arrow)
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
 
-				// Enter old date (5 years ago)
-				oldDate := time.Now().Add(-5 * 365 * 24 * time.Hour).Format("2006-01-02")
-				for _, c := range oldDate {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{
-						Type:  tea.KeyRunes,
-						Runes: []rune{c},
+						// Navigate to submit
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+
+						// Submit
+						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+						Expect(cmd).NotTo(BeNil())
+						msg := cmd()
+						testForm, _ = updateForm(testForm, msg)
+
+						Expect(testForm.Submitted()).To(BeTrue())
+
+						// Verify event was captured
+						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+						Expect(err).To(BeNil())
+						Expect(len(events) > 0).To(BeTrue())
 					})
-				}
+				})
 
-				// Navigate to mode field (3 tabs)
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+				Context("Manual Entry mode", func() {
+					It("should accept events with flexible dates", func() {
+						testForm := models.NewFormModel(cliService)
+						testForm.Init()
 
-				// Select CVBackfill mode (down arrow)
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+						// Fill form
+						testForm = typeText(testForm, "Manual entry event")
 
-				// Navigate to submit
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						// Navigate to mode field (4 tabs from text)
+						for i := 0; i < 4; i++ {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						}
 
-				// Submit
-				testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg := cmd()
-				testForm, _ = updateForm(testForm, msg)
+						// Select ManualEntry mode (down arrow twice)
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
 
-				Expect(testForm.Submitted()).To(BeTrue())
+						// Navigate to submit
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
-				// Verify event was captured
-				events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-				Expect(err).To(BeNil())
-				Expect(len(events) > 0).To(BeTrue())
+						// Submit
+						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+						Expect(cmd).NotTo(BeNil())
+						msg := cmd()
+						testForm, _ = updateForm(testForm, msg)
+
+						Expect(testForm.Submitted()).To(BeTrue())
+
+						// Verify event was captured
+						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+						Expect(err).To(BeNil())
+						Expect(len(events) > 0).To(BeTrue())
+					})
+				})
+
+				Context("Error recovery and field correction", func() {
+					It("should allow user to correct invalid input", func() {
+						testForm := models.NewFormModel(cliService)
+						testForm.Init()
+
+						// Type invalid text (empty-ish)
+						testForm = typeText(testForm, "   ")
+
+						// Navigate to submit
+						for i := 0; i < 5; i++ {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						}
+
+						// Try to submit
+						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+						Expect(cmd).NotTo(BeNil())
+						msg := cmd()
+						testForm, _ = updateForm(testForm, msg)
+
+						// Should have error
+						Expect(testForm.Error()).To(HaveOccurred())
+
+						// Navigate back to text field
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+
+						// Clear and type valid text
+						for i := 0; i < 10; i++ {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyBackspace})
+						}
+
+						testForm = typeText(testForm, "Corrected event text")
+
+						// Navigate to submit
+						for i := 0; i < 5; i++ {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						}
+
+						// Submit again
+						testForm, cmd = updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+						Expect(cmd).NotTo(BeNil())
+						msg = cmd()
+						testForm, _ = updateForm(testForm, msg)
+
+						// Should now be submitted successfully
+						Expect(testForm.Submitted()).To(BeTrue())
+					})
+				})
 			})
+
 		})
-
-		Context("Manual Entry mode", func() {
-			It("should accept events with flexible dates", func() {
-				testForm := models.NewFormModel(cliService)
-				testForm.Init()
-
-				// Fill form
-				testForm = typeText(testForm, "Manual entry event")
-
-				// Navigate to mode field (4 tabs from text)
-				for i := 0; i < 4; i++ {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				}
-
-				// Select ManualEntry mode (down arrow twice)
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-
-				// Navigate to submit
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
-				// Submit
-				testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg := cmd()
-				testForm, _ = updateForm(testForm, msg)
-
-				Expect(testForm.Submitted()).To(BeTrue())
-
-				// Verify event was captured
-				events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-				Expect(err).To(BeNil())
-				Expect(len(events) > 0).To(BeTrue())
-			})
-		})
-
-		Context("Error recovery and field correction", func() {
-			It("should allow user to correct invalid input", func() {
-				testForm := models.NewFormModel(cliService)
-				testForm.Init()
-
-				// Type invalid text (empty-ish)
-				testForm = typeText(testForm, "   ")
-
-				// Navigate to submit
-				for i := 0; i < 5; i++ {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				}
-
-				// Try to submit
-				testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg := cmd()
-				testForm, _ = updateForm(testForm, msg)
-
-				// Should have error
-				Expect(testForm.Error()).To(HaveOccurred())
-
-				// Navigate back to text field
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-
-				// Clear and type valid text
-				for i := 0; i < 10; i++ {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyBackspace})
-				}
-
-				testForm = typeText(testForm, "Corrected event text")
-
-				// Navigate to submit
-				for i := 0; i < 5; i++ {
-					testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-				}
-
-				// Submit again
-				testForm, cmd = updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg = cmd()
-				testForm, _ = updateForm(testForm, msg)
-
-				// Should now be submitted successfully
-				Expect(testForm.Submitted()).To(BeTrue())
-			})
-		})
-	})
-
-			})
 	})
 })
