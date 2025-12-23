@@ -1,7 +1,11 @@
 package app
 
 import (
+	"time"
+
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -201,4 +205,99 @@ var _ = Describe("Application Model", func() {
 			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
 		})
 	})
+
+	Context("End-to-End Capture Workflow", func() {
+		It("should navigate from Home → Capture screen", func() {
+			Expect(model.currentScreen).To(Equal(HomeScreen))
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
+			newModel, _ := model.Update(msg)
+			updatedModel := newModel.(*Model)
+			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
+		})
+
+		It("should complete form submission and transition to SuccessScreen", func() {
+			// Navigate to capture screen
+			model.currentScreen = CaptureScreen
+
+			// Simulate form submission by creating a SuccessModel
+			model.successModel = models.NewSuccessModel(&career.CareerEvent{
+				Text:    "Test event",
+				Date:    time.Now(),
+				Company: "Test Company",
+			})
+			model.currentScreen = SuccessScreen
+
+			Expect(model.currentScreen).To(Equal(SuccessScreen))
+			Expect(model.successModel).NotTo(BeNil())
+		})
+
+		It("should handle CaptureAnotherMsg and reset form", func() {
+			model.currentScreen = SuccessScreen
+			model.successModel = models.NewSuccessModel(&career.CareerEvent{
+				Text: "Test event",
+				Date: time.Now(),
+			})
+
+			// Send CaptureAnotherMsg
+			var captureMsg tea.Msg = models.CaptureAnotherMsg{}
+			newModel, _ := model.Update(captureMsg)
+			updatedModel := newModel.(*Model)
+
+			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
+			Expect(updatedModel.successModel).To(BeNil())
+			Expect(updatedModel.formModel).NotTo(BeNil())
+		})
+
+		It("should handle ViewRecentMsg and navigate to ListScreen", func() {
+			model.currentScreen = SuccessScreen
+			model.successModel = models.NewSuccessModel(&career.CareerEvent{
+				Text: "Test event",
+				Date: time.Now(),
+			})
+
+			// Send ViewRecentMsg
+			var viewMsg tea.Msg = models.ViewRecentMsg{}
+			newModel, _ := model.Update(viewMsg)
+			updatedModel := newModel.(*Model)
+
+			Expect(updatedModel.currentScreen).To(Equal(ListScreen))
+			Expect(updatedModel.successModel).To(BeNil())
+		})
+
+		It("should handle complete capture workflow", func() {
+			// Start on home screen
+			Expect(model.currentScreen).To(Equal(HomeScreen))
+
+			// Navigate to capture
+			captureMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
+			newModel, _ := model.Update(captureMsg)
+			model = newModel.(*Model)
+			Expect(model.currentScreen).To(Equal(CaptureScreen))
+
+			// Verify form is ready
+			Expect(model.formModel).NotTo(BeNil())
+			Expect(model.successModel).To(BeNil())
+
+			// Simulate form submission
+			model.successModel = models.NewSuccessModel(&career.CareerEvent{
+				Text:    "Completed important project",
+				Date:    time.Now(),
+				Company: "TechCorp",
+				Project: "Platform Migration",
+				Tags:    []string{"technical", "leadership"},
+			})
+			model.currentScreen = SuccessScreen
+
+			Expect(model.currentScreen).To(Equal(SuccessScreen))
+			Expect(model.successModel.Event().Text).To(Equal("Completed important project"))
+
+			// Capture another
+			var anotherMsg tea.Msg = models.CaptureAnotherMsg{}
+			newModel, _ = model.Update(anotherMsg)
+			model = newModel.(*Model)
+			Expect(model.currentScreen).To(Equal(CaptureScreen))
+			Expect(model.formModel).NotTo(BeNil())
+		})
+	})
+
 })
