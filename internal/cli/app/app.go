@@ -33,7 +33,6 @@ type Model struct {
 	previousScreen Screen
 	width          int
 	height         int
-	err            error
 	formModel      *models.FormModel
 	successModel   *models.SuccessModel
 }
@@ -47,7 +46,6 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		previousScreen: HomeScreen,
 		width:          80,
 		height:         24,
-		err:            nil,
 		formModel:      models.NewFormModel(cliService),
 		successModel:   nil, // Will be created after form submission
 	}

@@ -37,9 +37,6 @@ var _ = Describe("Application Model", func() {
 			Expect(model.height).To(Equal(24))
 		})
 
-		It("should have no initial error", func() {
-			Expect(model.err).To(BeNil())
-		})
 	})
 
 	Context("Screen Navigation from HomeScreen", func() {

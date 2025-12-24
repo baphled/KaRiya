@@ -57,7 +57,7 @@ func run(args []string, out io.Writer) int {
 
 	// Initialize BubbleTea program
 	p := tea.NewProgram(model)
-	if err := p.Start(); err != nil {
+	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(out, "Error running program: %v\n", err)
 		return 1
 	}
