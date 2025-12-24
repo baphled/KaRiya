@@ -25,6 +25,7 @@ type ListModel struct {
 	err         error
 	filterModel *FilterModel
 	searchModel *SearchModel
+	sortModel  *SortModel
 }
 
 // NewListModel creates a new list model
@@ -37,6 +38,7 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		selectedIdx: 0,
 		filterModel: NewFilterModel(),
 		searchModel: NewSearchModel(),
+		sortModel:  NewSortModel(),
 	}
 
 	// Load events
@@ -293,4 +295,9 @@ func (m *ListModel) applySearch() {
 // FilterAndSearch applies both filters and search to the event list
 func (m *ListModel) FilterAndSearch() {
 	m.applySearch()
+}
+
+// GetSortModel returns the sort model for this list
+func (m *ListModel) GetSortModel() *SortModel {
+	return m.sortModel
 }
