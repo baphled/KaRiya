@@ -292,4 +292,3 @@ var _ = Describe("CLI App Integration", func() {
 		})
 	})
 })
-
