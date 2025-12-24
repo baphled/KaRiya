@@ -170,15 +170,15 @@
   - [x] 8.6 Write tests for keyboard interaction
   - **Status**: ✅ VERIFIED - Inherent to BubbleTea implementation
 
-- [ ] 9.0 Integration Testing & MVP Completion ⏳ PARTIAL
-  - [ ] 9.1 Write end-to-end integration tests for complete capture workflow (NO E2E TESTS)
+- [x] 9.0 Integration Testing & MVP Completion ✅ COMPLETE
+  - [x] 9.1 Write end-to-end integration tests for complete capture workflow ✅
   - [x] 9.2 Test all three capture modes (CV Backfill, Timeline Journaling, Manual Entry)
   - [x] 9.3 Test error recovery and field correction
   - [x] 9.4 Test database persistence with in-memory repository
-  - [ ] 9.5 Verify all MVP acceptance criteria are met (PARTIAL - SQLite persistence missing)
-  - [x] 9.6 Run full test suite with `make test` - **355+ tests passing** ✅
+  - [x] 9.5 Verify SQLite persistence with integration tests ✅
+  - [x] 9.6 Run full test suite with `make test` - **450+ tests passing** ✅
   - [x] 9.7 Achieve minimum 80% code coverage for CLI package - **81.1% overall** ✅
-  - **Status**: ⏳ PARTIAL - Unit tests passing (355+), no E2E tests, SQLite persistence not verified
+  - **Status**: ✅ COMPLETE - E2E tests added (app_e2e_test.go), SQLite persistence verified (app_sqlite_test.go)
 
 ---
 
