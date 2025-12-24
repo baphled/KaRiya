@@ -15,20 +15,20 @@ type HighlightPosition struct {
 
 // SearchModel manages event search with debouncing and highlighting
 type SearchModel struct {
-	query           string
-	lastUpdate      time.Time
-	debounceDelay   time.Duration
-	err             error
-	lastSearchTime  time.Time
+	query          string
+	lastUpdate     time.Time
+	debounceDelay  time.Duration
+	err            error
+	lastSearchTime time.Time
 }
 
 // NewSearchModel creates a new search model with default debounce delay
 func NewSearchModel() *SearchModel {
 	return &SearchModel{
-		query:         "",
-		lastUpdate:    time.Now(),
-		debounceDelay: 300 * time.Millisecond,
-		err:           nil,
+		query:          "",
+		lastUpdate:     time.Now(),
+		debounceDelay:  300 * time.Millisecond,
+		err:            nil,
 		lastSearchTime: time.Now(),
 	}
 }
@@ -156,4 +156,3 @@ func (m *SearchModel) MarkSearched() {
 func (m *SearchModel) GetLastSearchTime() time.Time {
 	return m.lastSearchTime
 }
-

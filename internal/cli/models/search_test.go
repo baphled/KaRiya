@@ -90,8 +90,8 @@ var _ = Describe("SearchModel", func() {
 		It("should match company name", func() {
 			model.SetQuery("acme")
 			event := &career.CareerEvent{
-				Text: "led project",
-				Date: time.Now(),
+				Text:    "led project",
+				Date:    time.Now(),
 				Company: "Acme Corp",
 			}
 			Expect(model.Matches(event)).To(BeTrue())
@@ -100,8 +100,8 @@ var _ = Describe("SearchModel", func() {
 		It("should match project name", func() {
 			model.SetQuery("platform")
 			event := &career.CareerEvent{
-				Text: "migration work",
-				Date: time.Now(),
+				Text:    "migration work",
+				Date:    time.Now(),
 				Project: "Platform Upgrade",
 			}
 			Expect(model.Matches(event)).To(BeTrue())
@@ -119,8 +119,8 @@ var _ = Describe("SearchModel", func() {
 		It("should match all searchable fields", func() {
 			model.SetQuery("xyz")
 			event := &career.CareerEvent{
-				Text: "XYZ corporation project",
-				Date: time.Now(),
+				Text:    "XYZ corporation project",
+				Date:    time.Now(),
 				Company: "XYZ Inc",
 				Project: "XYZ Platform",
 			}
@@ -225,4 +225,3 @@ var _ = Describe("SearchModel", func() {
 		})
 	})
 })
-

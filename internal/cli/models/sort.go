@@ -126,4 +126,3 @@ func (m *SortModel) ShouldReorder(event1, event2 *career.CareerEvent) bool {
 	// For ascending order, return true if comparison indicates we need to swap
 	return compare > 0
 }
-

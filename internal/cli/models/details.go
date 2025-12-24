@@ -6,8 +6,8 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // DetailsModel represents the event details screen
@@ -126,4 +126,3 @@ func (m *DetailsModel) View() string {
 func (m *DetailsModel) formatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
 }
-
