@@ -1,7 +1,7 @@
 # Task List: KaRiya Career Entry CLI Implementation
 
 **Based on PRD**: `tasks/prd-career-entry-cli.md`
-**Status**: ✅ Phase 1, 2 & 3 COMPLETE - All tasks finished!
+**Status**: ⏳ Phases 1, 2 & 3 PARTIALLY IMPLEMENTED - Needs polish and full integration
 **Target Audience**: Go developers familiar with KaRiya architecture and BubbleTea
 
 ---
@@ -65,7 +65,7 @@
 
 ## Tasks
 
-### Phase 1: MVP - Core Event Capture ✅ COMPLETE
+### Phase 1: MVP - Core Event Capture ⏳ PARTIAL - Needs SQLite persistence and UI polish
 
 - [x] 1.0 Set Up CLI Project Structure & Dependencies ✅
   - [x] 1.1 Create CLI package directories (`internal/cli/{models,components,styles,validation,app,service}`)
@@ -77,14 +77,14 @@
   - [x] 1.7 Write integration tests for CLI initialization
   - **Status**: ✅ VERIFIED - 6/6 tests passing
 
-- [x] 2.0 Implement Lipgloss Theme & Styling System ✅
+- [ ] 2.0 Implement Lipgloss Theme & Styling System ⏳ PARTIAL
   - [x] 2.1 Define color scheme (dark blue/gray background, muted teal/green/purple accents)
   - [x] 2.2 Create reusable Lipgloss style definitions for buttons, inputs, cards, headers
   - [x] 2.3 Implement error message styling (red/amber for warnings)
-  - [x] 2.4 Create component-level styles for consistency across screens
+  - [ ] 2.4 Apply Lipgloss styles to all UI components (form.go uses basic ASCII, list.go uses basic strings)
   - [x] 2.5 Implement responsive layout helper functions
-  - [x] 2.6 Write tests for style application and theming (63 tests, 100% coverage) ✅
-  - **Status**: ✅ VERIFIED - 63/63 tests passing, 100% coverage
+  - [x] 2.6 Write tests for style definitions (63 tests, 100% coverage) ✅
+  - **Status**: ⏳ PARTIAL - Styles defined but not fully applied to all screens
 
 - [x] 3.0 Implement Event Capture Form (Core MVP) ✅
   - [x] 3.1 Create BubbleTea form model with multi-step navigation
@@ -150,16 +150,16 @@
   - [x] 6.6 Write comprehensive tests for all validation scenarios (16 validator tests, 97.3% coverage) ✅
   - **Status**: ✅ VERIFIED - 16/16 tests passing, 97.3% coverage
 
-- [x] 7.0 Integrate FormModel into Main App ✅
+- [ ] 7.0 Integrate FormModel into Main App ⏳ PARTIAL
   - [x] 7.1 Add FormModel and SuccessModel instances to app.Model struct
   - [x] 7.2 Create message types for screen communication
   - [x] 7.3 Implement Update() delegation to FormModel on CaptureScreen
   - [x] 7.4 Implement View() delegation to FormModel on CaptureScreen
   - [x] 7.5 Integrate SuccessModel for post-submission display
   - [x] 7.6 Handle navigation from SuccessModel back to other screens
-  - [x] 7.7 Write end-to-end integration tests for complete capture workflow
-  - [x] 7.8 Verify event is actually persisted to repository and displayed correctly
-  - **Status**: ✅ VERIFIED - 39/39 tests passing, 84.9% coverage
+  - [ ] 7.7 Write integration tests for complete capture workflow (unit tests exist, no end-to-end tests)
+  - [ ] 7.8 Verify event is actually persisted to SQLite database (currently only in-memory)
+  - **Status**: ⏳ PARTIAL - Integration works but lacks e2e tests and SQLite persistence
 
 - [x] 8.0 Implement Keyboard Navigation & Shortcuts ✅
   - [x] 8.1 Implement Tab/Shift+Tab for field navigation in form
@@ -170,15 +170,15 @@
   - [x] 8.6 Write tests for keyboard interaction
   - **Status**: ✅ VERIFIED - Inherent to BubbleTea implementation
 
-- [x] 9.0 Integration Testing & MVP Completion ✅
-  - [x] 9.1 Write end-to-end integration tests for complete capture workflow
+- [ ] 9.0 Integration Testing & MVP Completion ⏳ PARTIAL
+  - [ ] 9.1 Write end-to-end integration tests for complete capture workflow (NO E2E TESTS)
   - [x] 9.2 Test all three capture modes (CV Backfill, Timeline Journaling, Manual Entry)
   - [x] 9.3 Test error recovery and field correction
   - [x] 9.4 Test database persistence with in-memory repository
-  - [x] 9.5 Verify all MVP acceptance criteria are met
-  - [x] 9.6 Run full test suite with `make test` - **399+ tests passing** ✅
+  - [ ] 9.5 Verify all MVP acceptance criteria are met (PARTIAL - SQLite persistence missing)
+  - [x] 9.6 Run full test suite with `make test` - **355+ tests passing** ✅
   - [x] 9.7 Achieve minimum 80% code coverage for CLI package - **81.1% overall** ✅
-  - **Status**: ✅ VERIFIED - ALL TESTS PASSING, 81.1% OVERALL COVERAGE
+  - **Status**: ⏳ PARTIAL - Unit tests passing (355+), no E2E tests, SQLite persistence not verified
 
 ---
 
@@ -383,20 +383,24 @@
 ### Testing Strategy
 
 1. **Unit Tests**: Individual models, components, and validation logic tested in isolation. ✅
-   - 174 model tests (form)
+   - 193 model tests (form)
    - 18 component tests (tag selector)
    - 16 validation tests
    - 63 style tests
    - 4 service tests
-   - 6 CLI entry point tests
+   - 10 CLI entry point tests
 
-2. **Integration Tests**: Complete workflows (capture → display → list) tested with real service layer. ✅
-   - 39 app integration tests
-   - Event capture to success display verified
+2. **Integration Tests**: Models interact with real service layer (no end-to-end tests). ⏳
+   - 61 app integration tests
+   - Event capture to service verified
    - Navigation between screens verified
    - Error recovery and validation tested
+   - **Note**: No end-to-end tests exist - user workflows not tested
 
-3. **Manual Testing**: UI/UX polish and terminal compatibility testing (TBD for Phase 3+).
+3. **Manual Testing**: UI/UX polish and terminal compatibility testing. ⚠️
+   - Basic UI works but Lipgloss not fully applied
+   - Form uses ASCII borders, not styled components
+   - List uses basic strings, not styled components
 
 ### Test Coverage Summary
 
@@ -496,12 +500,13 @@ OVERALL: 81.1% ✅
 
 ---
 
-**Document Version**: 5.0
+**Document Version**: 6.0
 **Created**: 2025-12-23
 **Last Updated**: 2025-12-24
-**Status**: ✅ Phase 1, 2 & 3 COMPLETE - All tasks finished!
-**Total Tasks**: 21 parent tasks, 130+ sub-tasks (21 completed)
-**Test Coverage**: 80%+ overall, 445+ tests passing (100% pass rate)
-**Build Status**: ✅ Successful (Production-Ready)
-**Files Implemented**: 50+ files with 4,500+ lines of code
+**Status**: ⏳ PARTIALLY IMPLEMENTED - Needs UI polish, SQLite persistence, and E2E tests
+**Total Tasks**: 21 parent tasks, 130+ sub-tasks (19 complete, 2 partial)
+**Test Coverage**: 80%+ overall, 355+ unit tests passing (100% pass rate, NO E2E TESTS)
+**Build Status**: ✅ Successful (Functional but needs polish)
+**Files Implemented**: 50+ files with 2,100+ lines of code (models, services, components)
 **Documentation**: 1000+ lines (Troubleshooting, Performance guides, CHANGELOG)
+**Key Gaps**: Lipgloss not fully applied to UI, SQLite persistence not verified, No end-to-end tests

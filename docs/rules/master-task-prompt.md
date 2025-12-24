@@ -157,6 +157,9 @@ make test
 
 # Check for race conditions
 go test -race ./...
+
+# Check off the corresponding task in your checklist
+sed -i '' '/- \[ \] Implement the feature/a\- [x] Implement the feature' your-checklist-file.md
 ```
 
 **Commit the implementation:**
