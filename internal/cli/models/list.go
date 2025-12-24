@@ -23,6 +23,7 @@ type ListModel struct {
 	width       int
 	height      int
 	err         error
+	filterModel *FilterModel
 }
 
 // NewListModel creates a new list model
@@ -33,6 +34,7 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		pageSize:    10,
 		currentPage: 1,
 		selectedIdx: 0,
+		filterModel: NewFilterModel(),
 	}
 
 	// Load events
@@ -187,4 +189,37 @@ func (m *ListModel) getTotalPages() int {
 	}
 	pages := (m.totalCount + m.pageSize - 1) / m.pageSize
 	return pages
+}
+// applyFilters applies the filter model's filters to the event list
+func (m *ListModel) applyFilters() {
+	filters := m.filterModel.ToListFilters()
+	filters.SortBy = "date"
+	filters.SortOrder = "desc"
+	filters.Limit = m.pageSize
+	filters.Offset = (m.currentPage - 1) * m.pageSize
+
+	events, err := m.service.ListEvents(m.ctx, filters)
+	if err != nil {
+		m.err = err
+		m.events = []*career.CareerEvent{}
+		return
+	}
+
+	m.events = events
+	m.selectedIdx = 0
+
+	// Get total count with filters for pagination calculation
+	totalCount, err := m.service.CountEvents(m.ctx, filters)
+	if err != nil {
+		m.totalCount = 0
+		return
+	}
+
+	m.totalCount = totalCount
+	m.currentPage = 1
+}
+
+// GetFilterModel returns the filter model for this list
+func (m *ListModel) GetFilterModel() *FilterModel {
+	return m.filterModel
 }
