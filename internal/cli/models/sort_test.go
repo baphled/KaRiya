@@ -155,4 +155,3 @@ var _ = Describe("SortModel", func() {
 		})
 	})
 })
-

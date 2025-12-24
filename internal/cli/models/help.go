@@ -262,4 +262,3 @@ func (m *HelpModel) SearchHelp(query string) string {
 func (m *HelpModel) IsClosed() bool {
 	return m.closed
 }
-

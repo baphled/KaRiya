@@ -13,9 +13,9 @@ import (
 
 var _ = Describe("ListModel", func() {
 	var (
-		repo   *careerrepo.MemoryRepository
-		svc    *careerservice.Service
-		ctx    context.Context
+		repo *careerrepo.MemoryRepository
+		svc  *careerservice.Service
+		ctx  context.Context
 	)
 
 	BeforeEach(func() {

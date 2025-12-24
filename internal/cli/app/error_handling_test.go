@@ -7,18 +7,18 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 var _ = Describe("Error Recovery & Edge Cases", func() {
 	var (
-		repo       *careerrepo.MemoryRepository
-		svc        *careerservice.Service
-		cliSvc     *service.CLIEventService
-		model      *Model
-		ctx        context.Context
+		repo   *careerrepo.MemoryRepository
+		svc    *careerservice.Service
+		cliSvc *service.CLIEventService
+		model  *Model
+		ctx    context.Context
 	)
 
 	BeforeEach(func() {

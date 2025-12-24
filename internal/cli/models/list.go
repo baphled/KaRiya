@@ -25,7 +25,7 @@ type ListModel struct {
 	err         error
 	filterModel *FilterModel
 	searchModel *SearchModel
-	sortModel  *SortModel
+	sortModel   *SortModel
 }
 
 // NewListModel creates a new list model
@@ -38,7 +38,7 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		selectedIdx: 0,
 		filterModel: NewFilterModel(),
 		searchModel: NewSearchModel(),
-		sortModel:  NewSortModel(),
+		sortModel:   NewSortModel(),
 	}
 
 	// Load events
@@ -194,6 +194,7 @@ func (m *ListModel) getTotalPages() int {
 	pages := (m.totalCount + m.pageSize - 1) / m.pageSize
 	return pages
 }
+
 // applyFilters applies the filter model's filters to the event list
 func (m *ListModel) applyFilters() {
 	filters := m.filterModel.ToListFilters()

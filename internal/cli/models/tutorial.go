@@ -17,14 +17,14 @@ type TutorialModel struct {
 
 // Tutorial step content
 const (
-	tutorialStepWelcome      = 0
-	tutorialStepModes        = 1
-	tutorialStepCapture      = 2
-	tutorialStepTags         = 3
-	tutorialStepFiltering    = 4
-	tutorialStepExporting    = 5
-	tutorialStepGettingHelp  = 6
-	tutorialTotalSteps       = 7
+	tutorialStepWelcome     = 0
+	tutorialStepModes       = 1
+	tutorialStepCapture     = 2
+	tutorialStepTags        = 3
+	tutorialStepFiltering   = 4
+	tutorialStepExporting   = 5
+	tutorialStepGettingHelp = 6
+	tutorialTotalSteps      = 7
 )
 
 // NewTutorialModel creates a new tutorial model
@@ -214,4 +214,3 @@ func (m *TutorialModel) renderGettingHelp() string {
 		"You're ready to start!\n" +
 		"Press SPACE to begin or ESC to skip"
 }
-
