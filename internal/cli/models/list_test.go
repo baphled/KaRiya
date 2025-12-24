@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -221,8 +220,3 @@ var _ = Describe("ListModel", func() {
 		})
 	})
 })
-
-func TestListModel(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ListModel Suite")
-}
