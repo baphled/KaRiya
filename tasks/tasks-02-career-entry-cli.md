@@ -226,7 +226,7 @@
 
 ### Phase 2: Event Management (Priority 2) - NOT STARTED
 
-- [ ] 10.0 Implement Event Listing & Pagination
+- [x] 10.0 Implement Event Listing & Pagination ✅
   - [ ] 10.1 Create event list model with BubbleTea
   - [ ] 10.2 Implement list display showing:
     - [ ] 10.2a Event text preview (truncated if > 100 chars)
