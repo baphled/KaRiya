@@ -24,6 +24,7 @@ type ListModel struct {
 	height      int
 	err         error
 	filterModel *FilterModel
+	searchModel *SearchModel
 }
 
 // NewListModel creates a new list model
@@ -35,6 +36,7 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		currentPage: 1,
 		selectedIdx: 0,
 		filterModel: NewFilterModel(),
+		searchModel: NewSearchModel(),
 	}
 
 	// Load events
@@ -222,4 +224,73 @@ func (m *ListModel) applyFilters() {
 // GetFilterModel returns the filter model for this list
 func (m *ListModel) GetFilterModel() *FilterModel {
 	return m.filterModel
+}
+
+// GetSearchModel returns the search model for this list
+func (m *ListModel) GetSearchModel() *SearchModel {
+	return m.searchModel
+}
+
+// applySearch applies the search model's search query to the event list
+func (m *ListModel) applySearch() {
+	// First apply filter, then apply search to filtered results
+	filters := m.filterModel.ToListFilters()
+	filters.SortBy = "date"
+	filters.SortOrder = "desc"
+	filters.Limit = m.pageSize
+	filters.Offset = (m.currentPage - 1) * m.pageSize
+
+	events, err := m.service.ListEvents(m.ctx, filters)
+	if err != nil {
+		m.err = err
+		m.events = []*career.CareerEvent{}
+		return
+	}
+
+	// Apply search filter to results
+	if m.searchModel.IsActive() {
+		var searchResults []*career.CareerEvent
+		for _, event := range events {
+			if m.searchModel.Matches(event) {
+				searchResults = append(searchResults, event)
+			}
+		}
+		m.events = searchResults
+	} else {
+		m.events = events
+	}
+
+	m.selectedIdx = 0
+	m.currentPage = 1
+
+	// Get total count with all filters and search for pagination
+	if m.searchModel.IsActive() {
+		// For search, we need to count matches differently
+		totalEvents, err := m.service.ListEvents(m.ctx, filters)
+		if err != nil {
+			m.totalCount = len(m.events)
+		} else {
+			// Count matches in all results
+			matchCount := 0
+			for _, event := range totalEvents {
+				if m.searchModel.Matches(event) {
+					matchCount++
+				}
+			}
+			m.totalCount = matchCount
+		}
+	} else {
+		// Use standard count with filters
+		totalCount, err := m.service.CountEvents(m.ctx, filters)
+		if err != nil {
+			m.totalCount = 0
+			return
+		}
+		m.totalCount = totalCount
+	}
+}
+
+// FilterAndSearch applies both filters and search to the event list
+func (m *ListModel) FilterAndSearch() {
+	m.applySearch()
 }
