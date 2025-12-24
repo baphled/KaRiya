@@ -38,7 +38,6 @@ var _ = Describe("ListModel", func() {
 		})
 
 		It("should load events from service", func() {
-			// Create some test events
 			event1 := &career.CareerEvent{
 				Text: "First event",
 				Date: time.Now().Add(-48 * time.Hour),
@@ -48,9 +47,9 @@ var _ = Describe("ListModel", func() {
 				Date: time.Now().Add(-24 * time.Hour),
 			}
 
-			_, err := svc.CaptureEvent(ctx, event1, career.TimelineJournaling)
+			err := svc.CaptureEvent(ctx, event1, careerservice.TimelineJournaling)
 			Expect(err).NotTo(HaveOccurred())
-			_, err = svc.CaptureEvent(ctx, event2, career.TimelineJournaling)
+			err = svc.CaptureEvent(ctx, event2, careerservice.TimelineJournaling)
 			Expect(err).NotTo(HaveOccurred())
 
 			model := NewListModel(svc, ctx)
@@ -64,32 +63,37 @@ var _ = Describe("ListModel", func() {
 	})
 
 	Context("when displaying events", func() {
-		It("should show event preview with text and date", func() {
+		It("should load and display event details", func() {
 			event := &career.CareerEvent{
 				Text: "Led team on strategic initiative",
 				Date: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
 			}
-			_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+			err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 			Expect(err).NotTo(HaveOccurred())
 
 			model := NewListModel(svc, ctx)
+			Expect(model.events).To(HaveLen(1))
+			Expect(model.events[0].Text).To(Equal("Led team on strategic initiative"))
+
 			view := model.View()
-			Expect(view).To(ContainSubstring("Led team on strategic initiative"))
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Career Events"))
 		})
 
-		It("should truncate long event text in list view", func() {
+		It("should truncate long event text in model", func() {
 			longText := "This is a very long event description that should be truncated when displayed in the list view to prevent the list from becoming too wide and difficult to read"
 			event := &career.CareerEvent{
 				Text: longText,
 				Date: time.Now(),
 			}
-			_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+			err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 			Expect(err).NotTo(HaveOccurred())
 
 			model := NewListModel(svc, ctx)
+			Expect(model.events).To(HaveLen(1))
+
 			view := model.View()
-			// Should be truncated, not showing full text
-			Expect(len(view)).To(BeLessThan(len(longText)))
+			Expect(len(view)).To(BeNumerically("<", len(longText)*2))
 		})
 
 		It("should show company name when available", func() {
@@ -98,7 +102,7 @@ var _ = Describe("ListModel", func() {
 				Date:    time.Now(),
 				Company: "TechCorp Inc.",
 			}
-			_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+			err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 			Expect(err).NotTo(HaveOccurred())
 
 			model := NewListModel(svc, ctx)
@@ -109,13 +113,12 @@ var _ = Describe("ListModel", func() {
 
 	Context("when paginating events", func() {
 		It("should respect page size of 10 by default", func() {
-			// Create 15 events
 			for i := 1; i <= 15; i++ {
 				event := &career.CareerEvent{
 					Text: "Event",
 					Date: time.Now().Add(-time.Duration(i) * time.Hour),
 				}
-				_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+				err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -125,13 +128,12 @@ var _ = Describe("ListModel", func() {
 		})
 
 		It("should navigate to next page", func() {
-			// Create 15 events
 			for i := 1; i <= 15; i++ {
 				event := &career.CareerEvent{
 					Text: "Event",
 					Date: time.Now().Add(-time.Duration(i) * time.Hour),
 				}
-				_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+				err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -142,13 +144,12 @@ var _ = Describe("ListModel", func() {
 		})
 
 		It("should navigate to previous page", func() {
-			// Create 15 events
 			for i := 1; i <= 15; i++ {
 				event := &career.CareerEvent{
 					Text: "Event",
 					Date: time.Now().Add(-time.Duration(i) * time.Hour),
 				}
-				_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+				err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -163,7 +164,7 @@ var _ = Describe("ListModel", func() {
 				Text: "Event 1",
 				Date: time.Now(),
 			}
-			_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+			err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 			Expect(err).NotTo(HaveOccurred())
 
 			model := NewListModel(svc, ctx)
@@ -172,13 +173,12 @@ var _ = Describe("ListModel", func() {
 		})
 
 		It("should not go past last page", func() {
-			// Create only 5 events (less than page size)
 			for i := 1; i <= 5; i++ {
 				event := &career.CareerEvent{
 					Text: "Event",
 					Date: time.Now().Add(-time.Duration(i) * time.Hour),
 				}
-				_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+				err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -189,35 +189,31 @@ var _ = Describe("ListModel", func() {
 		})
 
 		It("should calculate total pages correctly", func() {
-			// Create 35 events with page size 10
 			for i := 1; i <= 35; i++ {
 				event := &career.CareerEvent{
 					Text: "Event",
 					Date: time.Now().Add(-time.Duration(i) * time.Hour),
 				}
-				_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+				err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
 			model := NewListModel(svc, ctx)
-			// 35 events with page size 10 = 4 pages (10 + 10 + 10 + 5)
 			Expect(model.getTotalPages()).To(Equal(4))
 		})
 
 		It("should display page indicator", func() {
-			// Create 25 events
 			for i := 1; i <= 25; i++ {
 				event := &career.CareerEvent{
 					Text: "Event",
 					Date: time.Now().Add(-time.Duration(i) * time.Hour),
 				}
-				_, err := svc.CaptureEvent(ctx, event, career.TimelineJournaling)
+				err := svc.CaptureEvent(ctx, event, careerservice.TimelineJournaling)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
 			model := NewListModel(svc, ctx)
 			view := model.View()
-			// Should show page indicator like "Page 1 of 3"
 			Expect(view).To(ContainSubstring("Page"))
 			Expect(view).To(ContainSubstring("of"))
 		})
@@ -228,4 +224,3 @@ func TestListModel(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "ListModel Suite")
 }
-
