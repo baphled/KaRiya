@@ -64,6 +64,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added CHANGELOG.md documenting all changes
 
+
+### Added - Phase 3 (Continued: CLI Flags, Error Recovery, Documentation)
+
+#### CLI Flags & Configuration (Task 17)
+- Implemented `--db, --database PATH` flag for persistent SQLite storage
+  - Default: in-memory storage (no persistence)
+  - Custom path: `./kariya-cli --db ~/.kariya/events.db`
+  - Automatic database initialization on startup
+- Implemented `--mode MODE` flag to start in specific capture mode
+  - Valid modes: timeline, backfill, manual
+  - Example: `./kariya-cli --mode timeline`
+- Implemented `--list` flag to show events list on startup
+  - Example: `./kariya-cli --list --db events.db`
+- Enhanced help text with practical examples
+- Improved error messages for invalid flags
+
+#### Error Recovery & Edge Cases (Task 18)
+- Added 26 comprehensive error handling test cases
+  - Service layer validation errors (empty text, timeline window, future dates)
+  - Repository error recovery (non-existent events, nil filters)
+  - Application state recovery after errors
+  - Long text handling at 1999/2000/2001 character boundaries
+  - Navigation state consistency
+  - Message handling robustness (unknown messages, window resizes, rapid updates)
+  - Special character handling (unicode, newlines, tabs)
+  - Date boundary testing (timeline 30-day window, old/future dates)
+- Fixed ListEvents() to handle nil filters gracefully
+- Verified graceful error recovery for all failure scenarios
+- All error handling tests passing (26/26)
+
+#### Documentation (Task 21 - Partial)
+- Created comprehensive TROUBLESHOOTING.md guide covering:
+  - Database & persistence issues
+  - Form & input issues (date formats, character limits)
+  - Display & appearance problems
+  - Performance troubleshooting
+  - Navigation & workflow issues
+  - Capture mode constraints
+  - Advanced troubleshooting (debug logging, database integrity)
+  - FAQ section
+- Updated main README with CLI usage section
+- Enhanced CHANGELOG.md with complete version history
+- CLI_GUIDE.md already comprehensive (quick start, features, shortcuts)
+
+#### Testing Improvements
+- Expanded test suite with 26 error handling tests
+- All new tests passing (26/26 ✅)
+- Total test count: 419+ tests
+- Overall test pass rate: 100%
+- Code coverage maintained at 80%+
+
 ### Changed - Phase 3
 
 #### CLI Infrastructure
