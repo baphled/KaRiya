@@ -14,6 +14,8 @@ import (
 
 const (
 	version = "0.1.0"
+	// Default database path for SQLite
+	defaultDBPath = "./kariya.db"
 )
 
 func main() {
@@ -69,18 +71,37 @@ func run(args []string, out io.Writer) int {
 		return 0
 	}
 
-	// Set up dependencies
-	// TODO: Replace with proper dependency injection and SQLite when --db is provided
-	_ = dbPath // Currently ignored, would use for SQLite initialization
-	_ = mode   // Currently ignored, would set initial capture mode
-	_ = listEvents // Currently ignored, would show list screen on startup
+	// Set up repository based on --db flag
+	var repo career.Repository
+	var err error
 
-	repo := career.NewMemoryRepository()
+	if dbPath != "" {
+		// Use SQLite repository with specified path
+		repo, err = career.NewSQLiteRepository(dbPath)
+		if err != nil {
+			fmt.Fprintf(out, "Error initializing database at '%s': %v\n", dbPath, err)
+			return 1
+		}
+	} else {
+		// Use in-memory repository by default
+		repo = career.NewMemoryRepository()
+	}
+
 	svc := careerservice.NewService(repo)
 	cliSvc := cliservice.NewCLIEventService(svc)
 
 	// Initialize application model
 	model := app.NewModel(cliSvc, svc)
+
+	// Set initial capture mode if specified
+	if mode != "" {
+		model.SetInitialCaptureMode(mode)
+	}
+
+	// Set initial screen if --list flag is provided
+	if listEvents {
+		model.SetInitialScreen(app.ListScreen)
+	}
 
 	// Initialize BubbleTea program
 	p := tea.NewProgram(model)
@@ -98,10 +119,15 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "  -v, --version              Show version information")
 	fmt.Fprintln(out, "  -h, --help                 Show this help message")
 	fmt.Fprintln(out, "  --db, --database PATH      Use custom database path (SQLite)")
+	fmt.Fprintln(out, "                             Default: in-memory storage")
 	fmt.Fprintln(out, "  --mode MODE                Start in specific capture mode")
 	fmt.Fprintln(out, "                             Valid modes: timeline, backfill, manual")
 	fmt.Fprintln(out, "  --list                     Show recent events on startup")
-	fmt.Fprintln(out, "\nCommands:")
-	fmt.Fprintln(out, "  capture                    Start a new career event capture")
-	fmt.Fprintln(out, "  list                       List recent career events")
+	fmt.Fprintln(out, "\nExamples:")
+	fmt.Fprintln(out, "  kariya                                    # Start with in-memory storage")
+	fmt.Fprintln(out, "  kariya --db ./events.db                  # Use persistent SQLite database")
+	fmt.Fprintln(out, "  kariya --mode timeline                   # Start in timeline journaling mode")
+	fmt.Fprintln(out, "  kariya --db ./events.db --list           # Open with events list")
+	fmt.Fprintln(out, "  kariya --version                         # Show version")
+	fmt.Fprintln(out, "\nFor more information, visit: https://github.com/baphled/kariya")
 }

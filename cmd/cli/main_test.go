@@ -26,7 +26,6 @@ var _ = Describe("CLI Initialization", func() {
 			Expect(exitCode).To(Equal(0))
 			Expect(buf.String()).To(ContainSubstring("KaRiya CLI - Career Journaling Tool"))
 			Expect(buf.String()).To(ContainSubstring("Usage: kariya [options]"))
-			Expect(buf.String()).To(ContainSubstring("Commands:"))
 		})
 
 		It("should show database flag in help", func() {
@@ -59,6 +58,44 @@ var _ = Describe("CLI Initialization", func() {
 
 			Expect(exitCode).To(Equal(1))
 			Expect(buf.String()).To(ContainSubstring("Invalid mode"))
+		})
+	})
+
+	Context("Database Flag", func() {
+		It("should show database path options in help", func() {
+			var buf bytes.Buffer
+			run([]string{"--help"}, &buf)
+
+			Expect(buf.String()).To(ContainSubstring("Use custom database path"))
+			Expect(buf.String()).To(ContainSubstring("Default: in-memory storage"))
+		})
+	})
+
+	Context("List Flag", func() {
+		It("should show --list flag in help", func() {
+			var buf bytes.Buffer
+			run([]string{"--help"}, &buf)
+
+			Expect(buf.String()).To(ContainSubstring("--list"))
+			Expect(buf.String()).To(ContainSubstring("Show recent events on startup"))
+		})
+
+		It("should show example with --list and --db together", func() {
+			var buf bytes.Buffer
+			run([]string{"--help"}, &buf)
+
+			Expect(buf.String()).To(ContainSubstring("kariya --db ./events.db --list"))
+		})
+	})
+
+	Context("Help Examples", func() {
+		It("should show usage examples", func() {
+			var buf bytes.Buffer
+			run([]string{"--help"}, &buf)
+
+			Expect(buf.String()).To(ContainSubstring("Examples:"))
+			Expect(buf.String()).To(ContainSubstring("kariya"))
+			Expect(buf.String()).To(ContainSubstring("--mode timeline"))
 		})
 	})
 })

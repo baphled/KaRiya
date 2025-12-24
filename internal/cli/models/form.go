@@ -546,3 +546,13 @@ func (m *FormModel) Reset() {
 
 	m.inputs[0].Focus()
 }
+
+// SetInitialMode sets the initial capture mode for the form
+func (m *FormModel) SetInitialMode(mode string) {
+	for i, m_mode := range m.modes {
+		if string(m_mode) == mode {
+			m.modeIndex = i
+			break
+		}
+	}
+}

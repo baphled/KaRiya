@@ -224,3 +224,16 @@ func (m *Model) renderView() string {
 ╚════════════════════════════════════════╝
 `
 }
+
+// SetInitialScreen sets the initial screen to display on startup
+func (m *Model) SetInitialScreen(screen Screen) {
+	m.currentScreen = screen
+	m.previousScreen = screen
+}
+
+// SetInitialCaptureMode sets the initial capture mode for the form
+func (m *Model) SetInitialCaptureMode(mode string) {
+	if m.formModel != nil {
+		m.formModel.SetInitialMode(mode)
+	}
+}
