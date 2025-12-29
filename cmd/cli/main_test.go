@@ -67,7 +67,7 @@ var _ = Describe("CLI Initialization", func() {
 			run([]string{"--help"}, &buf)
 
 			Expect(buf.String()).To(ContainSubstring("Use custom database path"))
-			Expect(buf.String()).To(ContainSubstring("Default: in-memory storage"))
+			Expect(buf.String()).To(ContainSubstring("Default: ~/.kariya/events.db"))
 		})
 	})
 

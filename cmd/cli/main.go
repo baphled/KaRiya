@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
@@ -14,8 +15,6 @@ import (
 
 const (
 	version = "0.1.0"
-	// Default database path for SQLite
-	defaultDBPath = "./kariya.db"
 )
 
 func main() {
@@ -30,6 +29,7 @@ func run(args []string, out io.Writer) int {
 		dbPath      = ""
 		mode        = ""
 		listEvents  = false
+		inMemory    = false
 	)
 
 	// Parse command-line arguments
@@ -56,6 +56,8 @@ func run(args []string, out io.Writer) int {
 			}
 		case "--list":
 			listEvents = true
+		case "--in-memory":
+			inMemory = true
 		}
 	}
 
@@ -71,20 +73,38 @@ func run(args []string, out io.Writer) int {
 		return 0
 	}
 
-	// Set up repository based on --db flag
+	// Set up repository based on flags
 	var repo career.Repository
 	var err error
 
-	if dbPath != "" {
-		// Use SQLite repository with specified path
+	if inMemory {
+		// Use in-memory repository if explicitly requested
+		repo = career.NewMemoryRepository()
+	} else {
+		// Determine database path
+		if dbPath == "" {
+			// Use default path: ~/.kariya/events.db
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				fmt.Fprintf(out, "Error getting home directory: %v\n", err)
+				return 1
+			}
+			kariyaDir := filepath.Join(homeDir, ".kariya")
+			dbPath = filepath.Join(kariyaDir, "events.db")
+
+			// Create directory if it doesn't exist
+			if err := os.MkdirAll(kariyaDir, 0755); err != nil {
+				fmt.Fprintf(out, "Error creating kariya directory: %v\n", err)
+				return 1
+			}
+		}
+
+		// Use SQLite repository with specified or default path
 		repo, err = career.NewSQLiteRepository(dbPath)
 		if err != nil {
 			fmt.Fprintf(out, "Error initializing database at '%s': %v\n", dbPath, err)
 			return 1
 		}
-	} else {
-		// Use in-memory repository by default
-		repo = career.NewMemoryRepository()
 	}
 
 	svc := careerservice.NewService(repo)
@@ -119,15 +139,17 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "  -v, --version              Show version information")
 	fmt.Fprintln(out, "  -h, --help                 Show this help message")
 	fmt.Fprintln(out, "  --db, --database PATH      Use custom database path (SQLite)")
-	fmt.Fprintln(out, "                             Default: in-memory storage")
+	fmt.Fprintln(out, "                             Default: ~/.kariya/events.db")
 	fmt.Fprintln(out, "  --mode MODE                Start in specific capture mode")
 	fmt.Fprintln(out, "                             Valid modes: timeline, backfill, manual")
 	fmt.Fprintln(out, "  --list                     Show recent events on startup")
+	fmt.Fprintln(out, "  --in-memory                Use in-memory storage (data not persisted)")
 	fmt.Fprintln(out, "\nExamples:")
-	fmt.Fprintln(out, "  kariya                                    # Start with in-memory storage")
-	fmt.Fprintln(out, "  kariya --db ./events.db                  # Use persistent SQLite database")
+	fmt.Fprintln(out, "  kariya                                    # Start with default database")
+	fmt.Fprintln(out, "  kariya --db ./events.db                  # Use custom database path")
 	fmt.Fprintln(out, "  kariya --mode timeline                   # Start in timeline journaling mode")
 	fmt.Fprintln(out, "  kariya --db ./events.db --list           # Open with events list")
+	fmt.Fprintln(out, "  kariya --in-memory                       # Start with in-memory storage")
 	fmt.Fprintln(out, "  kariya --version                         # Show version")
 	fmt.Fprintln(out, "\nFor more information, visit: https://github.com/baphled/kariya")
 }
