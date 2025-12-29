@@ -1,0 +1,264 @@
+package main
+
+import (
+	"context"
+	"path/filepath"
+	"time"
+
+	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/service"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("Data Persistence", func() {
+	Context("when capturing events with SQLite", func() {
+		It("should persist events to SQLite database", func() {
+			// Create a temporary database
+			tmpDir := GinkgoT().TempDir()
+			dbPath := filepath.Join(tmpDir, "test-events.db")
+
+			// Create SQLite repository
+			repo, err := careerrepo.NewSQLiteRepository(dbPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Create service
+			svc := careerservice.NewService(repo)
+			cliSvc := service.NewCLIEventService(svc)
+
+			// Capture an event
+			ctx := context.Background()
+			eventText := "Led implementation of critical feature"
+			eventDate := time.Now().Add(-24 * time.Hour)
+
+			err = cliSvc.CaptureEvent(
+				ctx,
+				eventText,
+				eventDate,
+				careerservice.ManualEntry,
+				service.WithCompany("TechCorp"),
+				service.WithTags([]string{"technical", "leadership"}),
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify event was persisted to database
+			events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(events).To(HaveLen(1), "Event should be persisted to database")
+			Expect(events[0].Text).To(Equal(eventText))
+			Expect(events[0].Company).To(Equal("TechCorp"))
+			Expect(events[0].Tags).To(ContainElements("technical", "leadership"))
+		})
+
+		It("should survive application restart with SQLite", func() {
+			// Create a temporary database
+			tmpDir := GinkgoT().TempDir()
+			dbPath := filepath.Join(tmpDir, "persistent-events.db")
+
+			// Create first repository instance and add event
+			repo1, err := careerrepo.NewSQLiteRepository(dbPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			svc1 := careerservice.NewService(repo1)
+			cliSvc1 := service.NewCLIEventService(svc1)
+
+			ctx := context.Background()
+			eventText := "Architected microservices platform"
+			eventDate := time.Now().Add(-7 * 24 * time.Hour)
+
+			err = cliSvc1.CaptureEvent(
+				ctx,
+				eventText,
+				eventDate,
+				careerservice.CVBackfill,
+				service.WithCompany("StartupCo"),
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify event was saved in first instance
+			events1, err := svc1.ListEvents(ctx, careerrepo.ListFilters{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(events1).To(HaveLen(1))
+
+			// Create second repository instance pointing to same database
+			repo2, err := careerrepo.NewSQLiteRepository(dbPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			svc2 := careerservice.NewService(repo2)
+
+			// Verify event persists across instances
+			events2, err := svc2.ListEvents(ctx, careerrepo.ListFilters{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(events2).To(HaveLen(1), "Event should persist across database connections")
+			Expect(events2[0].Text).To(Equal(eventText))
+			Expect(events2[0].Company).To(Equal("StartupCo"))
+		})
+
+		It("should create database at custom path", func() {
+			// Create a temporary database
+			tmpDir := GinkgoT().TempDir()
+			dbPath := filepath.Join(tmpDir, "custom-location.db")
+
+			// Create SQLite repository at custom path
+			repo, err := careerrepo.NewSQLiteRepository(dbPath)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify database file was created
+			Expect(dbPath).To(BeAnExistingFile())
+
+			svc := careerservice.NewService(repo)
+			cliSvc := service.NewCLIEventService(svc)
+
+			ctx := context.Background()
+			err = cliSvc.CaptureEvent(
+				ctx,
+				"Test event at custom path",
+				time.Now().Add(-1 * time.Hour),
+				careerservice.ManualEntry,
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Verify persistence
+			events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(events).To(HaveLen(1))
+		})
+	})
+})
+
+var _ = Describe("Form Submission Persistence", func() {
+	Context("when user submits form", func() {
+		It("should persist event through form submission", func() {
+			// Create temporary repository
+			repo := careerrepo.NewMemoryRepository()
+			svc := careerservice.NewService(repo)
+			cliSvc := service.NewCLIEventService(svc)
+
+			// Create form model
+			form := models.NewFormModel(cliSvc)
+
+			// Helper to type text
+			typeText := func(f *models.FormModel, text string) *models.FormModel {
+				for _, r := range text {
+					m, _ := f.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+					f = m.(*models.FormModel)
+				}
+				return f
+			}
+
+			// Helper to update form
+			updateForm := func(f *models.FormModel, msg tea.Msg) (*models.FormModel, tea.Cmd) {
+				m, cmd := f.Update(msg)
+				return m.(*models.FormModel), cmd
+			}
+
+			// Simulate user input
+			form = typeText(form, "Led critical infrastructure upgrade")
+			Expect(form.GetInputValue(0)).To(Equal("Led critical infrastructure upgrade"))
+
+			// Navigate to date field
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form = typeText(form, "today")
+
+			// Navigate to company field
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form = typeText(form, "TechCorp")
+
+			// Navigate to project field
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form = typeText(form, "Infrastructure")
+
+			// Navigate to mode field and then to submit button
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+
+			// Submit form
+			form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command and process result
+			msg := cmd()
+			form, _ = updateForm(form, msg)
+
+			// Verify form submission succeeded
+			Expect(form.Submitted()).To(BeTrue(), "Form should be marked as submitted")
+			Expect(form.Error()).To(BeNil(), "Form submission should not have errors")
+
+			// NOW THE CRITICAL TEST: Verify event was actually persisted to repository
+			ctx := context.Background()
+			events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(events).To(HaveLen(1), "Event should be persisted after form submission")
+			Expect(events[0].Text).To(Equal("Led critical infrastructure upgrade"))
+			Expect(events[0].Company).To(Equal("TechCorp"))
+			Expect(events[0].Project).To(Equal("Infrastructure"))
+		})
+	})
+})
+
+var _ = Describe("Form Submission Debug", func() {
+	Context("debugging form persistence", func() {
+		It("should show what mode is being used in form submission", func() {
+			// Create temporary repository
+			repo := careerrepo.NewMemoryRepository()
+			svc := careerservice.NewService(repo)
+			cliSvc := service.NewCLIEventService(svc)
+
+			// Create form model
+			form := models.NewFormModel(cliSvc)
+
+			// Check initial mode
+			Expect(form.GetInputValue(0)).To(Equal(""))
+
+			// Helper to type text
+			typeText := func(f *models.FormModel, text string) *models.FormModel {
+				for _, r := range text {
+					m, _ := f.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+					f = m.(*models.FormModel)
+				}
+				return f
+			}
+
+			// Helper to update form
+			updateForm := func(f *models.FormModel, msg tea.Msg) (*models.FormModel, tea.Cmd) {
+				m, cmd := f.Update(msg)
+				return m.(*models.FormModel), cmd
+			}
+
+			// Simulate user input
+			form = typeText(form, "Test event for debugging")
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form = typeText(form, "today")
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form = typeText(form, "TestCorp")
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form = typeText(form, "TestProject")
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+
+			// Now we should be on the mode field - let's check what mode is selected
+			// Without navigating away, submit
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+
+			// Submit form
+			form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command and process result
+			msg := cmd()
+			form, _ = updateForm(form, msg)
+
+			// Check all events in repository (regardless of mode)
+			ctx := context.Background()
+			allEvents, err := repo.List(ctx, careerrepo.ListFilters{})
+			Expect(err).ToNot(HaveOccurred())
+
+			GinkgoT().Logf("Total events in repo: %d", len(allEvents))
+			for i, e := range allEvents {
+				GinkgoT().Logf("Event %d: %s (mode should be visible in capture logs)", i, e.Text)
+			}
+		})
+	})
+})

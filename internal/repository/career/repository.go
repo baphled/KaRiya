@@ -194,6 +194,11 @@ func (r *MemoryRepository) List(ctx context.Context, filters ListFilters) ([]*ca
 	start := filters.Offset
 	end := start + filters.Limit
 
+	// If Limit is 0, return all results (no pagination limit)
+	if filters.Limit == 0 {
+		end = len(filtered)
+	}
+
 	if start > len(filtered) {
 		return []*career.CareerEvent{}, nil
 	}
