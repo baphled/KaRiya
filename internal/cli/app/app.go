@@ -1,10 +1,17 @@
 package app
 
 import (
+	"context"
+	"fmt"
+	"strings"
+
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/styles"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Screen represents the different screens in the application
@@ -153,76 +160,212 @@ func (m *Model) View() string {
 
 // renderHome renders the home screen
 func (m *Model) renderHome() string {
-	return `
-╔═══════════════════════════════════════════╗
-║     KaRiya - Career Journal CLI           ║
-║                                           ║
-║  Commands:                                ║
-║    c - Capture Career Event               ║
-║    l - List Events                        ║
-║    h - Home                               ║
-║    q - Quit                               ║
-║                                           ║
-║  Press 'c' to get started!                ║
-╚═══════════════════════════════════════════╝
-`
+	// Title
+	title := styles.HeaderMain.
+		Render("KaRiya - Career Journal CLI")
+
+	// Commands section
+	commandsHeader := styles.HeaderSection.
+		Render("Commands:")
+
+	commands := []string{
+		styles.InfoText.Render("c") + " - Capture Career Event",
+		styles.InfoText.Render("l") + " - List Events",
+		styles.InfoText.Render("h") + " - Home",
+		styles.InfoText.Render("q") + " - Quit",
+	}
+	commandsList := strings.Join(commands, "\n")
+
+	// Call to action
+	cta := styles.SuccessBox.
+		Width(styles.MaxWidth(m.width) - 4).
+		Render("Press 'c' to get started!")
+
+	// Combine all sections
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		"",
+		commandsHeader,
+		commandsList,
+		"",
+		cta,
+	)
+
+	// Wrap in a card
+	card := styles.ResponsiveCard(m.width).
+		Render(content)
+
+	// Center the card on screen
+	return styles.Center(card, m.width, m.height)
 }
 
 // renderCapture renders the capture screen (placeholder)
 func (m *Model) renderCapture() string {
-	return `
-╔════════════════════════════════════════╗
-║       Capture Career Event             ║
-║                                        ║
-║ Event Text (required):                 ║
-║ [_____________________________________] ║
-║                                        ║
-║ Date (optional):                       ║
-║ [_____________________________________] ║
-║                                        ║
-║ Company (optional):                    ║
-║ [_____________________________________] ║
-║                                        ║
-║ Project (optional):                    ║
-║ [_____________________________________] ║
-║                                        ║
-║ [Submit]  [Cancel]                     ║
-║                                        ║
-║ Press 'backspace' to go back           ║
-╚════════════════════════════════════════╝
-`
+	// Title
+	title := styles.HeaderMain.
+		Render("Capture Career Event")
+
+	// Form fields (placeholder representation)
+	fields := []string{
+		styles.InputLabel.Render("Event Text (required):"),
+		styles.InputBase.Width(60).Render("_______________________________________________________"),
+		"",
+		styles.InputLabel.Render("Date (optional):"),
+		styles.InputBase.Width(60).Render("_______________________________________________________"),
+		"",
+		styles.InputLabel.Render("Company (optional):"),
+		styles.InputBase.Width(60).Render("_______________________________________________________"),
+		"",
+		styles.InputLabel.Render("Project (optional):"),
+		styles.InputBase.Width(60).Render("_______________________________________________________"),
+	}
+
+	// Buttons
+	submitBtn := styles.ButtonPrimary.Render("Submit")
+	cancelBtn := styles.ButtonSecondary.Render("Cancel")
+	buttons := lipgloss.JoinHorizontal(lipgloss.Left, submitBtn, cancelBtn)
+
+	// Navigation hint
+	navHint := styles.InfoHint.Render("Press 'backspace' to go back")
+
+	// Combine all sections
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		"",
+		strings.Join(fields, "\n"),
+		"",
+		buttons,
+		"",
+		navHint,
+	)
+
+	// Wrap in a card
+	card := styles.ResponsiveCard(m.width).
+		Render(content)
+
+	// Center the card on screen
+	return styles.Center(card, m.width, m.height)
 }
 
 // renderList renders the list screen
 func (m *Model) renderList() string {
-	return `
-╔════════════════════════════════════════╗
-║     Recent Career Events               ║
-║                                        ║
-║ Event 1                                ║
-║ [Some career event description here]   ║
-║                                        ║
-║ Event 2                                ║
-║ [Another career event description]     ║
-║                                        ║
-║ Press 'backspace' to go back           ║
-╚════════════════════════════════════════╝
-`
+	// Title
+	title := styles.HeaderMain.
+		Render("Recent Career Events")
+
+	// Fetch events from service
+	ctx := context.Background()
+	filters := &careerrepo.ListFilters{
+		SortBy:    "date",
+		SortOrder: "desc",
+		Limit:     10,
+		Offset:    0,
+	}
+
+	events, err := m.cliService.ListEvents(ctx, filters)
+
+	// Build event cards
+	var eventCards []string
+	if err != nil {
+		errorMsg := styles.ErrorText.Render(fmt.Sprintf("Error loading events: %v", err))
+		eventCards = append(eventCards, errorMsg)
+	} else if len(events) == 0 {
+		noEventsMsg := styles.InfoText.Render("No events found. Press 'c' to capture your first event!")
+		eventCards = append(eventCards, noEventsMsg)
+	} else {
+		for i, event := range events {
+			// Event header with date
+			eventHeader := styles.CardHeader.Render(fmt.Sprintf("Event %d - %s", i+1, event.Date.Format("2006-01-02")))
+
+			// Event text (truncate if too long)
+			eventText := event.Text
+			if len(eventText) > 100 {
+				eventText = eventText[:97] + "..."
+			}
+			eventContent := styles.CardContent.Render(eventText)
+
+			// Company info if available
+			var companyInfo string
+			if event.Company != "" {
+				companyInfo = styles.CardFooter.Render(fmt.Sprintf("Company: %s", event.Company))
+			}
+
+			// Combine event parts
+			var eventParts []string
+			eventParts = append(eventParts, eventHeader, eventContent)
+			if companyInfo != "" {
+				eventParts = append(eventParts, companyInfo)
+			}
+
+			// Create event card
+			eventCard := styles.CardBase.Copy().
+				Width(styles.MaxWidth(m.width) - 4).
+				Render(lipgloss.JoinVertical(lipgloss.Left, eventParts...))
+
+			eventCards = append(eventCards, eventCard)
+		}
+	}
+
+	// Navigation hint
+	navHint := styles.InfoHint.Render("Press 'backspace' to go back | 'c' to capture event")
+
+	// Combine all sections
+	sections := []string{title, ""}
+	sections = append(sections, eventCards...)
+	sections = append(sections, "", navHint)
+
+	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
+
+	// Wrap in a card
+	card := styles.ResponsiveCard(m.width).
+		Render(content)
+
+	// Center the card on screen
+	return styles.Center(card, m.width, m.height)
 }
 
 // renderView renders the view screen
 func (m *Model) renderView() string {
-	return `
-╔════════════════════════════════════════╗
-║        Event Details                   ║
-║                                        ║
-║ Title: [Event Title]                   ║
-║ Date: [Event Date]                     ║
-║ Description: [Event Description]       ║
-║                                        ║
-║ Press 'backspace' to go back           ║
-╚════════════════════════════════════════╝
-`
+	// Title
+	title := styles.HeaderMain.
+		Render("Event Details")
+
+	// Placeholder content
+	detailsHeader := styles.CardHeader.Render("Event Information")
+
+	details := []string{
+		styles.CardContent.Render("Title: [Event Title]"),
+		styles.CardContent.Render("Date: [Event Date]"),
+		styles.CardContent.Render("Description: [Event Description]"),
+	}
+	detailsContent := strings.Join(details, "\n")
+
+	// Event details card
+	eventCard := styles.CardBase.
+		Width(styles.MaxWidth(m.width) - 4).
+		Render(lipgloss.JoinVertical(lipgloss.Left, detailsHeader, "", detailsContent))
+
+	// Navigation hint
+	navHint := styles.InfoHint.Render("Press 'backspace' to go back")
+
+	// Combine all sections
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		"",
+		eventCard,
+		"",
+		navHint,
+	)
+
+	// Wrap in a card
+	card := styles.ResponsiveCard(m.width).
+		Render(content)
+
+	// Center the card on screen
+	return styles.Center(card, m.width, m.height)
 }
 
 // SetInitialScreen sets the initial screen to display on startup
