@@ -308,11 +308,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Handle SuccessModel messages
-	switch msg.(type) {
+	switch msg := msg.(type) {
 	case models.CaptureAnotherMsg:
 		m.previousScreen = m.currentScreen
 		m.currentScreen = CaptureScreen
 		m.formModel = models.NewFormModel(m.cliService)
+		m.successModel = nil
+		return m, nil
+	case models.ReviewMetadataMsg:
+		ctx := context.Background()
+		// Navigate to metadata review screen with just the captured event
+		m.metadataReviewModel = models.NewMetadataReviewModelForImport(m.service, ctx, []string{msg.EventID})
+		m.previousScreen = m.currentScreen
+		m.currentScreen = MetadataReviewScreen
 		m.successModel = nil
 		return m, nil
 	case models.ViewRecentMsg:
