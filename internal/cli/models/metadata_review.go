@@ -12,6 +12,11 @@ import (
 	"github.com/charmbracelet/bubbletea"
 )
 
+// BulkOperationsMsg is sent to open bulk operations for selected events
+type BulkOperationsMsg struct {
+	Events []*career.CareerEvent
+}
+
 // MetadataReviewModel represents the metadata review screen
 type MetadataReviewModel struct {
 	service       *careerservice.Service
@@ -217,6 +222,11 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return EditEventMsg{Event: m.events[m.selectedIdx]}
 				}
 			}
+		case "b":
+			// Trigger bulk operations on all events
+			return m, func() tea.Msg {
+				return BulkOperationsMsg{Events: m.events}
+			}
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -271,7 +281,7 @@ func (m *MetadataReviewModel) View() string {
 	}
 
 	// Footer
-	footer := styles.InputHint.Render("↑/↓ navigate | Space expand | f filter | s sort | Backspace back")
+	footer := styles.InputHint.Render("↑/↓ navigate | Space expand | f filter | s sort | b bulk | Backspace back")
 	content = append(content, "")
 	content = append(content, footer)
 

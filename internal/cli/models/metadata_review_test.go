@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 var _ = Describe("MetadataReviewModel", func() {
@@ -141,6 +142,19 @@ var _ = Describe("MetadataReviewModel", func() {
 		It("should handle key messages", func() {
 			_, cmd := model.Update(nil)
 			Expect(cmd).To(BeNil())
+		})
+
+		It("should trigger bulk operations with 'b' key", func() {
+			// Arrange: model has events
+			// Act: press 'b' key
+			_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+			// Assert: command should be returned to send BulkOperationsMsg
+			Expect(cmd).NotTo(BeNil())
+			// Execute the command to get the message
+			msg := cmd()
+			bulkMsg, ok := msg.(models.BulkOperationsMsg)
+			Expect(ok).To(BeTrue())
+			Expect(bulkMsg.Events).To(Equal(model.GetEvents()))
 		})
 
 		Describe("Displaying imported events", func() {
