@@ -2,7 +2,7 @@
 
 ## Overview
 
-KaRiya CLI is a terminal-based career journaling tool that helps you capture, organize, and manage your professional career events and milestones.
+KaRiya CLI is a terminal-based career journaling tool that helps you capture, organize, manage, and enrich your professional career events and milestones.
 
 ## Installation
 
@@ -83,226 +83,278 @@ Flexible entry for any event at any time
 ./kariya-cli --mode manual
 ```
 
-**Best for**: One-off events, special accomplishments, flexible entry
+**Best for**: Flexible event entry, capturing events from any time period
 
 **Features**:
-- Complete date flexibility
-- No constraints on event dates
-- Perfect for adding events anytime
+- No date restrictions
+- Can be used as default capture mode
+- Quick metadata enrichment after capture
 
-### 2. Event Fields
+### 2. Metadata Review & Enrichment
 
-When capturing an event, you can provide:
+After capturing an event, you can immediately review and enrich its metadata:
 
-- **Description** (required): What you did
-  - 1-2000 characters
-  - Be specific about the event
-  - Include context and impact
+#### Success Screen Options
 
-- **Date** (optional): When it happened
-  - Format: YYYY-MM-DD (e.g., 2025-12-24)
-  - Relative: "1 week ago", "3 months ago"
-  - Default: Today
+After capturing an event, you'll see the success screen with the following options:
 
-- **Company** (optional): Where it happened
-  - Company name or organization
-  - Helps with organization and filtering
+- **Capture Another**: Continue capturing more events
+- **Review Metadata**: Enrich the captured event with additional details
+- **View Recent**: See recent events
+- **Exit**: Exit the application
 
-- **Project** (optional): Related project
-  - Project or initiative name
-  - Additional context
+#### Metadata Review Screen
 
-- **Tags** (optional): Categorize the event
-  - Up to 8 tags per event
-  - Available tags:
-    - `project` - Major project work
-    - `achievement` - Notable accomplishments
-    - `leadership` - Leadership activities
-    - `technical` - Technical work
-    - `consulting` - Advisory/consulting
-    - `research` - Research activities
-    - `product` - Product management
-    - `mentoring` - Mentoring & coaching
+Access the metadata review screen to:
+- View all events with data quality indicators
+- See which events need metadata enrichment
+- Filter by quality level (Incomplete, Basic, Enriched, Complete)
+- Sort by date, company, or creation order
 
-### 3. Browsing Events
+**Keyboard shortcuts**:
+- `↑/↓`: Navigate through events
+- `Enter`: Edit selected event
+- `Space`: Select event for bulk operations
+- `a`: Select all events
+- `d`: Deselect all events
+- `e`: Enter bulk operations mode
+- `m`: Open metadata review from home screen
 
-View your captured events with multiple options:
+#### Individual Event Editor
 
-- **List**: See all recent events with pagination
-- **Filter**: Filter by date range, tags, company
-- **Search**: Keyword search across all fields
-- **Sort**: Order by date, creation time, or text
-- **Details**: View full event information
+Edit metadata for a single event:
+- **Date**: Change event date (format: YYYY-MM-DD or relative dates like "2 weeks ago")
+- **Company**: Add or update company name
+- **Project**: Add or update project name
+- **Tags**: Select from available tags (max 8)
+- **Categories**: Select event category
 
-### 4. Help System
+**Keyboard shortcuts**:
+- `Tab/Shift+Tab`: Navigate between fields
+- `Space`: Toggle tag/category selection
+- `Enter`: Save changes
+- `Esc`: Cancel without saving
+- `Ctrl+Z`: Undo changes
 
-Access comprehensive help directly from the CLI:
+#### Bulk Operations
 
-```
-Press 'h' to open help at any time
-```
+Edit metadata for multiple events at once:
 
-Help sections:
-1. Overview - What is KaRiya
-2. Event Capture - Capture modes explained
-3. Tagging - Tag system and best practices
-4. Listing - How to browse events
-5. Shortcuts - Keyboard reference
-6. Search - Search tips and examples
-7. Tips - Best practices and recommendations
+1. Select events (Space to toggle, 'a' to select all, 'd' to deselect all)
+2. Press 'e' to enter bulk edit mode
+3. Choose which fields to update
+4. Preview changes before confirming
+5. Confirm to apply changes to all selected events
 
-## Keyboard Shortcuts
+**Features**:
+- Conditional updates: "Apply if field is empty"
+- Preview changes before applying
+- Undo/revert functionality
+- Transaction-like behavior (all succeed or all fail)
 
-### Navigation
+### 3. Event Listing & Filtering
 
-| Key | Action |
-|-----|--------|
-| `h` | Open help |
-| `c` | Capture new event |
-| `l` | List events |
-| `q` | Quit |
-| `backspace` | Go back |
+View and filter your events:
 
-### Form Navigation
+- **List View**: See all captured events
+- **Filter by Company**: Find events from specific companies
+- **Filter by Date Range**: View events from specific time periods
+- **Search**: Full-text search across event descriptions
+- **Sort**: Order by date, company, or creation time
 
-| Key | Action |
-|-----|--------|
-| `tab` | Next field |
-| `shift+tab` | Previous field |
-| `up/down` | Navigate dropdowns |
-| `enter` | Confirm/Submit |
-| `esc` | Cancel |
+### 4. Event Details
 
-### List Navigation
+View detailed information for a single event:
 
-| Key | Action |
-|-----|--------|
-| `up/down` | Move between events |
-| `left/right` | Previous/Next page |
-| `pgup/pgdn` | Page navigation |
-| `enter` | View details |
+- Event description
+- Date captured
+- Company and project
+- Tags and categories
+- Data quality score
+- Event metadata completeness
 
-## Examples
+### 5. CSV Import
 
-### Example 1: Capture a Project Achievement
+Import events from CSV files:
 
-```
-1. Press 'c' to capture
-2. Enter description: "Led migration of legacy system to microservices architecture"
-3. Set date: "2025-11-15"
-4. Company: "TechCorp Inc."
-5. Project: "System Architecture Modernization"
-6. Tags: leadership, technical, achievement
-7. Submit
+1. Prepare CSV with columns: `description`, `date`, `company`, `project`, `tags`
+2. From home screen, select "Import from CSV"
+3. Choose CSV file
+4. Review parsed events
+5. Select which events to import
+6. Automatically navigate to metadata review for imported events
+7. Review and enrich imported event metadata
+
+**CSV Format Example**:
+```csv
+description,date,company,project,tags
+"Led team through migration",2024-06-15,TechCorp,Platform Migration,"technical,leadership"
+"Implemented critical fix",2024-06-10,TechCorp,Product,"technical,achievement"
 ```
 
-### Example 2: Backfill Historical Events
+## Keyboard Reference
 
-```
-./kariya-cli --mode backfill
+### Home Screen
+- `c`: Capture new event
+- `i`: Import from CSV
+- `l`: List recent events
+- `m`: Open metadata review
+- `q`: Quit application
 
-1. Enter historical achievement from 2023
-2. Use relative dates: "2 years ago" or ISO format
-3. Add company and project context
-4. Use appropriate tags for categorization
-5. Multiple tags help with searching later
-```
+### List View
+- `↑/↓`: Navigate through events
+- `Enter`: View event details
+- `/`: Search events
+- `f`: Filter events
+- `Esc`: Return to home
 
-### Example 3: Quick Manual Entry
+### Capture Screen
+- `Tab/Shift+Tab`: Navigate between fields
+- `Enter`: Submit event
+- `Esc`: Cancel capture
 
-```
-./kariya-cli --mode manual
+### Success Screen
+- `←/→`: Navigate between options
+- `Enter`: Select option
+- `Esc`: Return to home
 
-1. Enter recent accomplishment
-2. Leave date as today
-3. Add company if applicable
-4. Tag appropriately
-5. Submit quickly
-```
+### Metadata Review Screen
+- `↑/↓`: Navigate through events
+- `Enter`: Edit selected event
+- `Space`: Select/deselect event
+- `a`: Select all events
+- `d`: Deselect all events
+- `e`: Enter bulk operations mode
+- `f`: Filter by quality level
+- `s`: Change sort order
+- `Esc`: Return to previous screen
 
-## Best Practices
+### Metadata Editor
+- `Tab/Shift+Tab`: Navigate between fields
+- `Space`: Toggle tag/category selection
+- `Enter`: Save changes
+- `Esc`: Cancel without saving
+- `Ctrl+Z`: Undo changes
 
-### Event Capture
+### Bulk Operations
+- `↑/↓`: Navigate through events
+- `Space`: Toggle selection
+- `a`: Select all
+- `d`: Deselect all
+- `e`: Enter edit mode
+- `Enter`: Confirm changes
+- `Esc`: Cancel
 
-- **Be Specific**: Include concrete details, not generic statements
-- **Add Context**: Company and project help with organization
-- **Use Tags**: Multiple tags make finding events easier
-- **Regular Updates**: Capture events regularly, not just retroactively
-- **Consistent Format**: Try to maintain consistent style for easy reading
+For quick reference while in the app, press 'h' to open the help system which includes complete keyboard shortcuts.
 
-### Organization
+## Workflows
 
-- **Create Habits**: Capture events weekly or as they happen
-- **Review Regularly**: Look through events to refresh memory
-- **Use All Fields**: Complete entries are easier to search
-- **Tag Consistently**: Use same tags for similar events
-- **Combine Features**: Use search + filter + sort together
+### Quick Event Capture with Metadata Enrichment
 
-### CV Building
+1. Start application: `./kariya-cli`
+2. Press `c` to capture
+3. Enter event description
+4. (Optional) Add date, company, project
+5. Press `Enter` to submit
+6. On success screen, press `→` to select "Review Metadata"
+7. Press `Enter` to go to metadata editor
+8. Add company, project, tags, categories
+9. Press `Enter` to save
+10. Back at metadata review, press `Esc` to return home
 
-- **Export Filtered**: Show only relevant accomplishments
-- **Highlight Impact**: Ensure descriptions show value
-- **Chronological Order**: Sort by date for CV format
-- **Company Context**: Include company names for clarity
-- **Achievement Tags**: Use "achievement" tag for CV-worthy events
+### Bulk Metadata Enrichment
 
-## Configuration
+1. Press `m` to open metadata review
+2. See events with incomplete metadata (color-coded quality indicators)
+3. Press `Space` to select multiple events
+4. Press `a` to select all events needing enrichment
+5. Press `e` to enter bulk operations
+6. Select fields to update (e.g., Company, Tags)
+7. Enter values
+8. Press `Enter` to preview changes
+9. Press `Enter` to confirm and apply
 
-### Command-Line Flags
+### CSV Import with Metadata Review
 
-```bash
-# Custom database location
-./kariya-cli --db /home/user/my_events.db
+1. From home screen, press `i` for import
+2. Select CSV file with event data
+3. Review parsed rows
+4. Select which rows to import
+5. Automatically navigates to metadata review
+6. Review imported events
+7. Edit individual events or bulk edit multiple events
+8. Complete metadata enrichment
 
-# Start in specific capture mode
-./kariya-cli --mode timeline
-./kariya-cli --mode backfill
-./kariya-cli --mode manual
+### Export for CV
 
-# Show recent events on startup
-./kariya-cli --list
+1. Open list view (press `l`)
+2. Filter by "achievement" tag (press `f`)
+3. Select events you want to export
+4. (Future) Export to formatted document
 
-# Display help
-./kariya-cli --help
+## Data Quality Scoring
 
-# Display version
-./kariya-cli --version
-```
+Events are automatically scored for data completeness:
 
-### Default Behavior
+- **Incomplete** (0-25): Only event description
+- **Basic** (26-50): Description + date
+- **Enriched** (51-75): Description + date + company/project
+- **Complete** (76-100): All fields filled with tags/categories
 
-- Database: In-memory (data lost on exit)
-- Capture Mode: Manual (flexible entry)
-- Startup Screen: Home menu
-- Storage: MemoryRepository (configurable)
+Quality indicators show:
+- Current score as percentage
+- Quality level badge
+- Missing fields that would improve the score
+- Visual color coding (red → yellow → green)
+
+## Tips & Tricks
+
+1. **Quick Metadata**: Use "Review Metadata" option immediately after capture
+2. **Tag Strategy**: Use overlapping tags (e.g., "technical" + "achievement" for good technical wins)
+3. **Date Entry**: Use relative dates like "2 weeks ago" instead of calculating exact dates
+4. **Bulk Operations**: For similar events, capture one fully, then bulk-copy metadata to others
+5. **Company Consistency**: Use exact same company names for better filtering
+6. **Regular Backups**: Periodically backup your database file
+7. **CSV Templates**: Create reusable CSV templates for regular import workflows
 
 ## Troubleshooting
 
-### Issue: Events Not Showing Up
-
-**Causes**:
-- Using in-memory database (data not persisted)
-- Events filtered out by active filters
-
-**Solution**:
-1. Use `--db` flag to specify SQLite database
-2. Check active filters with 'f' key
-3. Clear filters to see all events
-
-### Issue: Can't Find an Event
-
-**Solutions**:
-1. Try search feature ('s' key) with keywords
-2. Use filters to narrow down by date or tags
-3. Sort by different fields to reorder
-4. Check company/project names
-
-### Issue: Date Not Accepted
+### Issue: Can't capture events
 
 **Check**:
-- Timeline Journaling mode limits to 30 days
+- Ensure you're in one of the three capture modes (Timeline, Backfill, Manual)
+- Timeline mode limits dates to last 30 days
 - Use CV Backfill or Manual Entry for older dates
-- Date format must be YYYY-MM-DD or relative
+
+### Issue: Metadata changes not saved
+
+**Check**:
+- Ensure you press `Enter` to save changes (not just `Esc`)
+- Check that all required fields are filled
+- Verify validation errors are resolved (shown in red)
+
+### Issue: Bulk operations failed
+
+**Check**:
+- Ensure at least one event is selected
+- Check that metadata values are valid
+- Review validation errors for specific fields
+- Try updating fewer fields at once
+
+### Issue: CSV import has parsing errors
+
+**Check**:
+- CSV format matches expected columns
+- Date format is YYYY-MM-DD or recognizable
+- No special characters in field values that might confuse parser
+- Try with smaller CSV file first
+
+### Issue: Search is slow
+
+**Check**:
+- For large databases (10,000+ events), search may take a moment
+- Use filters first to narrow down results
+- Try more specific search terms
 
 ### Issue: Application Crashes
 
@@ -311,50 +363,6 @@ Help sections:
 2. Try `./kariya-cli --help` to verify installation
 3. Check Go version: `go version` (1.24.0+)
 4. Review error message for hints
-
-## Advanced Usage
-
-### Importing Events from CSV
-
-```bash
-# Prepare CSV with: description, date, company, tags
-# Then use Manual Entry to add events (currently manual process)
-```
-
-### Exporting Events
-
-```bash
-# Events can be exported to JSON/CSV from list view
-# Use filter + search to select specific events
-# Then export for CV building or backup
-```
-
-### Database Management
-
-```bash
-# Backup database
-cp kariya.db kariya.db.backup
-
-# Use custom database
-./kariya-cli --db /path/to/my/events.db
-
-# Multiple databases
-./kariya-cli --db ~/career/work_events.db
-./kariya-cli --db ~/career/volunteer_events.db
-```
-
-## Keyboard Reference
-
-For quick reference while in the app, press 'h' to open the help system which includes complete keyboard shortcuts.
-
-## Tips & Tricks
-
-1. **Tag Strategy**: Use overlapping tags (e.g., "technical" + "achievement" for good technical wins)
-2. **Date Entry**: Use relative dates like "2 weeks ago" instead of calculating exact dates
-3. **Search First**: When looking for events, try search before filtering
-4. **Export for CV**: Filter by "achievement" tag, then export for CV building
-5. **Regular Backup**: Periodically backup your database file
-6. **Company Consistency**: Use exact same company names for better filtering
 
 ## File Locations
 
@@ -368,17 +376,30 @@ For quick reference while in the app, press 'h' to open the help system which in
 - **Event Listing**: Instant for 1000+ events
 - **Search**: Real-time with minimal lag
 - **Filter**: Immediate response
+- **Metadata Review**: Loads 100+ events in < 500ms
 - **Database**: SQLite supports 100,000+ events
 
-## Limitations
+## Features & Capabilities
 
-Current version:
-- No event editing after creation (reimport with new capture)
-- No bulk operations
-- Manual entry only (no CSV import)
-- Terminal UI only (no web interface yet)
+### Current Features ✅
+- Event capture (Timeline, Backfill, Manual)
+- Metadata review and enrichment
+- Individual event editing
+- Bulk metadata operations
+- CSV import with automatic metadata review
+- Data quality scoring
+- Event filtering and search
+- Keyboard-driven navigation
+- Multi-screen navigation
 
-Future versions will address these limitations.
+### Future Features 🚀
+- Web interface
+- Export to multiple formats (JSON, CSV, PDF)
+- Advanced analytics and reporting
+- Burst detection and grouping
+- Fact extraction from events
+- Integration with external services
+- Cloud synchronization
 
 ## Getting Help
 
@@ -386,6 +407,8 @@ Future versions will address these limitations.
 2. **This Guide**: `docs/CLI_GUIDE.md`
 3. **Help Flag**: `./kariya-cli --help`
 4. **Version**: `./kariya-cli --version`
+5. **Troubleshooting**: See section above
+6. **Code Examples**: Check `internal/cli/models/*_test.go`
 
 ## Support
 
@@ -398,4 +421,3 @@ For issues or suggestions:
 ## License
 
 KaRiya is part of the career journaling project.
-
