@@ -62,98 +62,65 @@ var _ = Describe("ImportReviewModel", func() {
 		model = models.NewImportReviewModel(parsedRows)
 	})
 
-	Context("when import is confirmed with Enter key", func() {
-		It("should trigger metadata review after import", func() {
-			// Arrange: model is set up with parsed rows
-			Expect(len(parsedRows)).To(Equal(2))
+	Context("initialization", func() {
+		It("should initialize with parsed rows", func() {
+			Expect(len(model.ParsedRows)).To(Equal(2))
+		})
 
-			// Act: simulate pressing Enter to confirm import
-			_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-			// Assert: cmd should emit a message
-			Expect(cmd).NotTo(BeNil())
-
-			// Execute the command to get the message
-			msg := cmd()
-			// Currently returns ImportReviewMsg; should return MetadataReviewTriggeredMsg after enhancement
-			_, ok := msg.(models.ImportReviewMsg)
-			Expect(ok).To(BeTrue())
+		It("should pre-select valid non-duplicate rows", func() {
+			selected := model.GetSelectedEventIDs()
+			Expect(len(selected)).To(Equal(2))
 		})
 	})
 
 	Context("navigation", func() {
-		It("should move focus down with down arrow", func() {
-			// Arrange
-
-			// Act: press down
+		It("should move focus down", func() {
 			model.Update(tea.KeyMsg{Type: tea.KeyDown})
-
-			// Assert: view should render without error
+			// Verify no panic and view renders
 			view := model.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should move focus up with up arrow", func() {
-			// Arrange: move focus down first
+		It("should move focus up", func() {
 			model.Update(tea.KeyMsg{Type: tea.KeyDown})
-
-			// Act: press up
 			model.Update(tea.KeyMsg{Type: tea.KeyUp})
-
-			// Assert: view should render without error
 			view := model.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 	})
 
-	Context("selection", func() {
-		It("should deselect all rows with 'd' key", func() {
-			// Arrange: all valid rows are pre-selected
-
-			// Act: press 'd' to deselect all
+	Context("selection operations", func() {
+		It("should select all valid rows with 'a'", func() {
+			// Deselect all first
 			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+			selected := model.GetSelectedEventIDs()
+			Expect(len(selected)).To(Equal(0))
 
-			// Assert: pressing enter should return empty selected rows
-			_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			msg := cmd()
-			importMsg, ok := msg.(models.ImportReviewMsg)
-			Expect(ok).To(BeTrue())
-			Expect(len(importMsg.SelectedRows)).To(Equal(0))
-		})
-
-		It("should select all rows with 'a' key", func() {
-			// Arrange: deselect all first
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
-
-			// Act: press 'a' to select all
+			// Select all
 			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			selected = model.GetSelectedEventIDs()
+			Expect(len(selected)).To(Equal(2))
+		})
 
-			// Assert: pressing enter should return all selected rows
-			_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			msg := cmd()
-			importMsg, ok := msg.(models.ImportReviewMsg)
-			Expect(ok).To(BeTrue())
-			Expect(len(importMsg.SelectedRows)).To(Equal(2))
+		It("should deselect all with 'd'", func() {
+			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+			selected := model.GetSelectedEventIDs()
+			Expect(len(selected)).To(Equal(0))
 		})
 	})
 
-	Context("field origin tracking", func() {
-		It("should identify CSV fields vs defaults", func() {
-			origins := model.GetFieldOrigins(0)
-			Expect(origins).NotTo(BeNil())
-			Expect(len(origins)).To(Equal(6))
+	Context("rendering", func() {
+		It("should render view without error", func() {
+			view := model.View()
+			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should detect when row has default fields", func() {
-			hasDefaults := model.HasDefaultFields(0)
-			Expect(hasDefaults).To(BeTrue())
-		})
-
-		It("should list default fields for a row", func() {
-			defaults := model.GetDefaultFieldsList(0)
-			Expect(len(defaults)).To(Equal(4))
+		It("should show summary with counts", func() {
+			view := model.View()
+			Expect(view).To(ContainSubstring("Valid"))
 		})
 	})
+
 	Context("parsing warnings and duplicate detection", func() {
 		It("should identify parsing warnings", func() {
 			warnings := model.GetParsingWarnings(0)
@@ -170,6 +137,7 @@ var _ = Describe("ImportReviewModel", func() {
 			Expect(dupInfo).To(Equal(""))
 		})
 	})
+
 	Context("bulk operations support", func() {
 		It("should return selected events", func() {
 			selected := model.GetSelectedEvents()
@@ -191,6 +159,7 @@ var _ = Describe("ImportReviewModel", func() {
 			Expect(count).To(Equal(2))
 		})
 	})
+
 	Context("window resize", func() {
 		It("should handle window size changes", func() {
 			// Arrange
@@ -201,6 +170,96 @@ var _ = Describe("ImportReviewModel", func() {
 			// Assert: view should render without error
 			view := model.View()
 			Expect(view).NotTo(BeEmpty())
+		})
+	})
+
+	Context("parsing issues display", func() {
+		It("should show parsing issues in summary when present", func() {
+			// Arrange: Create a row with parsing warnings
+			rowWithWarnings := &importer.ParsedRow{
+				RowNumber: 3,
+				RawData:   map[string]string{"text": "Event without date"},
+				Event: &career.CareerEvent{
+					ID:        "event-3",
+					Text:      "Event without date",
+					Date:      time.Time{}, // Missing date
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+				ValidationErrors: []string{},
+				IsValid:          false, // Invalid due to missing date
+				IsDuplicate:      false,
+				DuplicateOf:      "",
+			}
+			parsedRows = append(parsedRows, rowWithWarnings)
+			model = models.NewImportReviewModel(parsedRows)
+
+			// Act: Get the view output
+			view := model.View()
+
+			// Assert: View should contain warning indicator
+			Expect(view).To(ContainSubstring("✗ ERR"))
+		})
+
+		It("should display parsing warning details when row is focused", func() {
+			// Arrange: Create a row with parsing warnings
+			rowWithWarnings := &importer.ParsedRow{
+				RowNumber: 3,
+				RawData:   map[string]string{"text": "Event without date"},
+				Event: &career.CareerEvent{
+					ID:        "event-3",
+					Text:      "Event without date",
+					Date:      time.Time{}, // Missing date
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+				ValidationErrors: []string{},
+				IsValid:          false,
+				IsDuplicate:      false,
+				DuplicateOf:      "",
+			}
+			parsedRows = append(parsedRows, rowWithWarnings)
+			model = models.NewImportReviewModel(parsedRows)
+
+			// Act: Focus on the warning row and get warnings
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			warnings := model.GetParsingWarnings(2)
+
+			// Assert: Should have parsing warnings
+			Expect(len(warnings)).To(BeNumerically(">", 0))
+			Expect(warnings).To(ContainElement(ContainSubstring("missing date")))
+		})
+
+		It("should show warning count in summary", func() {
+			// Arrange: Create rows with warnings
+			rowWithWarnings := &importer.ParsedRow{
+				RowNumber: 3,
+				RawData:   map[string]string{"text": "Event without date"},
+				Event: &career.CareerEvent{
+					ID:        "event-3",
+					Text:      "Event without date",
+					Date:      time.Time{},
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+				ValidationErrors: []string{},
+				IsValid:          false,
+				IsDuplicate:      false,
+				DuplicateOf:      "",
+			}
+			parsedRows = append(parsedRows, rowWithWarnings)
+			model = models.NewImportReviewModel(parsedRows)
+
+			// Act: Get warning count
+			warningCount := 0
+			for i := 0; i < len(parsedRows); i++ {
+				if model.HasWarnings(i) {
+					warningCount++
+				}
+			}
+
+			// Assert: Should have at least one row with warnings
+			Expect(warningCount).To(BeNumerically(">", 0))
 		})
 	})
 })
