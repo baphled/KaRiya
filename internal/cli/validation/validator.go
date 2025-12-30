@@ -134,3 +134,160 @@ func (v *EventValidator) ValidateTags(tags []string) error {
 func isAllowedTag(tag string) bool {
 	return career.AllowedTags[tag]
 }
+
+// MetadataValidator provides validation for event metadata fields
+type MetadataValidator struct{}
+
+// NewMetadataValidator creates a new MetadataValidator instance
+func NewMetadataValidator() *MetadataValidator {
+	return &MetadataValidator{}
+}
+
+// ValidateDate validates a date is not in the future and within reasonable range
+// Accepts dates from 1900 to today
+func (mv *MetadataValidator) ValidateDate(date time.Time) error {
+	if date.After(time.Now()) {
+		return NewValidationError(
+			"date",
+			"Event date cannot be in the future",
+			"Please select a date on or before today",
+		)
+	}
+
+	// Check if date is before 1900 (unreasonable for career events)
+	minDate := time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
+	if date.Before(minDate) {
+		return NewValidationError(
+			"date",
+			"Event date is before 1900 (unreasonable for career events)",
+			"Please select a date after 1900",
+		)
+	}
+
+	return nil
+}
+
+// ValidateCompany validates company name field
+// Optional field: max 200 characters, whitespace trimmed
+func (mv *MetadataValidator) ValidateCompany(company string) error {
+	if company == "" {
+		// Company is optional, empty is valid
+		return nil
+	}
+
+	trimmed := strings.TrimSpace(company)
+	if len(trimmed) > 200 {
+		return NewValidationError(
+			"company",
+			"Company name cannot exceed 200 characters",
+			fmt.Sprintf("Please shorten the company name by %d characters", len(trimmed)-200),
+		)
+	}
+
+	return nil
+}
+
+// ValidateProject validates project name field
+// Optional field: max 200 characters, whitespace trimmed
+func (mv *MetadataValidator) ValidateProject(project string) error {
+	if project == "" {
+		// Project is optional, empty is valid
+		return nil
+	}
+
+	trimmed := strings.TrimSpace(project)
+	if len(trimmed) > 200 {
+		return NewValidationError(
+			"project",
+			"Project name cannot exceed 200 characters",
+			fmt.Sprintf("Please shorten the project name by %d characters", len(trimmed)-200),
+		)
+	}
+
+	return nil
+}
+
+// ValidateTags validates tags list
+// From AllowedTags set, max 8, no duplicates, case-insensitive
+func (mv *MetadataValidator) ValidateTags(tags []string) error {
+	if len(tags) == 0 {
+		// Tags are optional, empty is valid
+		return nil
+	}
+
+	// Check maximum tag count
+	if len(tags) > 8 {
+		return NewValidationError(
+			"tags",
+			"Cannot have more than 8 tags",
+			fmt.Sprintf("Please remove %d tags", len(tags)-8),
+		)
+	}
+
+	// Check for duplicates (case-insensitive)
+	seen := make(map[string]bool)
+	for _, tag := range tags {
+		tagLower := strings.ToLower(tag)
+		if seen[tagLower] {
+			return NewValidationError(
+				"tags",
+				fmt.Sprintf("Duplicate tag: %s", tag),
+				"Each tag should appear only once",
+			)
+		}
+		seen[tagLower] = true
+	}
+
+	// Check against allowed tags (case-insensitive)
+	for _, tag := range tags {
+		if !career.AllowedTags[strings.ToLower(tag)] {
+			return NewValidationError(
+				"tags",
+				fmt.Sprintf("Invalid tag: %s", tag),
+				fmt.Sprintf("Use one of: %v", getAllowedTagsList()),
+			)
+		}
+	}
+
+	return nil
+}
+
+// ValidateCategories validates categories list
+// From AllowedCategories set, case-insensitive
+func (mv *MetadataValidator) ValidateCategories(categories []string) error {
+	if len(categories) == 0 {
+		// Categories are optional, empty is valid
+		return nil
+	}
+
+	// Check against allowed categories (case-insensitive)
+	for _, category := range categories {
+		if !career.AllowedCategories[strings.ToLower(category)] {
+			return NewValidationError(
+				"categories",
+				fmt.Sprintf("Invalid category: %s", category),
+				fmt.Sprintf("Use one of: %v", getAllowedCategoriesList()),
+			)
+		}
+	}
+
+	return nil
+}
+
+// getAllowedTagsList returns a formatted list of allowed tags
+func getAllowedTagsList() string {
+	tags := []string{}
+	for tag := range career.AllowedTags {
+		tags = append(tags, tag)
+	}
+	return strings.Join(tags, ", ")
+}
+
+// getAllowedCategoriesList returns a formatted list of allowed categories
+func getAllowedCategoriesList() string {
+	categories := []string{}
+	for category := range career.AllowedCategories {
+		categories = append(categories, category)
+	}
+	return strings.Join(categories, ", ")
+}

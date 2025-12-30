@@ -1,6 +1,6 @@
-Use `process-task-list` and the memory-loaded language rules to process the atomic tasks for: ./tasks/01-career-event-capture.md
+Use `master-task-prompt` and the memory-loaded language rules to process the atomic tasks for: ./tasks/tasks-03-metadata-clarification.md
 
-  - Stick strictly to `process-task-list` guidelines
+  - Stick strictly to `master-task-prompt` guidelines
     - This means make sure we use it as a check-list only
     - Check that we follow all the rules below
   - Reference the codebase before task generation
