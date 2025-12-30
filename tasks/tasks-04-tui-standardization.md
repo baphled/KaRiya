@@ -65,18 +65,18 @@
 - [x] `internal/cli/components/list_item.go` - Standardized list item component
 - [x] `internal/cli/components/list_item_test.go` - 36 tests for list item
 
-### Models Integration Status
-- [ ] `internal/cli/models/form.go` - NEEDS: navigation constants, header, footer, Escape key
-- [ ] `internal/cli/models/list.go` - NEEDS: navigation constants, header, footer, list items
-- [x] `internal/cli/models/metadata_review.go` - INTEGRATED: uses navigation, header, footer
-- [x] `internal/cli/models/metadata_editor.go` - PARTIAL: uses navigation (needs Escape key)
-- [ ] `internal/cli/models/bulk_operations.go` - NEEDS: navigation constants, header, footer, Escape key
-- [ ] `internal/cli/models/help.go` - NEEDS: navigation constants, Escape key
-- [x] `internal/cli/models/import_review.go` - PARTIAL: uses navigation (needs header/footer)
-- [ ] `internal/cli/models/view_event.go` - NEEDS: navigation constants, Escape key
-- [ ] `internal/cli/models/details.go` - NEEDS: navigation constants, header, footer
-- [ ] `internal/cli/models/action_menu.go` - NEEDS: navigation constants
-- [x] `internal/cli/models/success.go` - PARTIAL: uses navigation (needs header/footer)
+### Models Integration Status ✅ ALL COMPLETE
+- [x] `internal/cli/models/form.go` - ✅ COMPLETE: j/k navigation, Tab/Shift+Tab, Escape key
+- [x] `internal/cli/models/list.go` - ✅ COMPLETE: j/k navigation, g/G shortcuts, Escape key
+- [x] `internal/cli/models/metadata_review.go` - ✅ COMPLETE: j/k navigation, Escape, header, footer
+- [x] `internal/cli/models/metadata_editor.go` - ✅ COMPLETE: Escape key, Tab navigation
+- [x] `internal/cli/models/bulk_operations.go` - ✅ COMPLETE: Escape key, Space selection, header, footer
+- [x] `internal/cli/models/help.go` - ✅ COMPLETE: Escape key, up/down navigation
+- [x] `internal/cli/models/import_review.go` - ✅ COMPLETE: Escape key, navigation, header, footer
+- [x] `internal/cli/models/view_event.go` - ✅ COMPLETE: Escape key, j/k navigation
+- [x] `internal/cli/models/details.go` - ✅ COMPLETE: Escape key, header, footer
+- [x] `internal/cli/models/action_menu.go` - ✅ COMPLETE: Escape key, left/right navigation
+- [x] `internal/cli/models/success.go` - ✅ COMPLETE: Escape key, arrow navigation, header, footer
 
 ### Test Coverage
 - **Navigation System**: 56 tests passing (56/56) ✅
