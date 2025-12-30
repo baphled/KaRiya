@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
+	"os"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -24,6 +26,8 @@ const (
 	SuccessScreen        Screen = "success"
 	ActionMenuScreen     Screen = "action_menu"
 	ConfirmationScreen   Screen = "confirmation"
+	ImportReviewScreen   Screen = "import_review"
+	ImportProgressScreen Screen = "import_progress"
 )
 
 // Model represents the main application state
@@ -42,6 +46,10 @@ type Model struct {
 	actionMenuModel         *models.ActionMenuModel
 	confirmationDialog      *models.ConfirmationDialog
 	deleteEventID           string // Track the event being deleted
+	importService           *importer.ImportService
+	importReviewModel       *models.ImportReviewModel
+	importProgressModel     *models.ImportProgressModel
+	importFilePath          string // Path to CSV file being imported
 }
 
 // NewModel creates a new application model
@@ -62,6 +70,10 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		actionMenuModel:         nil,
 		confirmationDialog:      nil,
 		deleteEventID:           "",
+		importService:           importer.NewImportService(careerService),
+		importReviewModel:       nil,
+		importProgressModel:     nil,
+		importFilePath:          "",
 	}
 }
 
@@ -87,6 +99,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.currentScreen = ActionMenuScreen
 			m.confirmationDialog = nil
 			m.deleteEventID = ""
+			return m, nil
+		}
+		// Special handling for ImportReviewScreen - go back to home
+		if m.currentScreen == ImportReviewScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			m.importReviewModel = nil
+			m.importFilePath = ""
 			return m, nil
 		}
 		// Special handling for ViewScreen that came from ActionMenuScreen
@@ -190,6 +210,60 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
+	// Handle ImportReviewMsg
+	if importMsg, ok := msg.(models.ImportReviewMsg); ok {
+		if importMsg.Action == "cancel" {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			m.importReviewModel = nil
+			m.importFilePath = ""
+			return m, nil
+		}
+
+		if importMsg.Action == "import" {
+			// Start import process
+			m.importProgressModel = models.NewImportProgressModel(len(importMsg.SelectedRows))
+			m.previousScreen = m.currentScreen
+			m.currentScreen = ImportProgressScreen
+
+			// Return command to perform the import
+			return m, func() tea.Msg {
+				ctx := context.Background()
+				result, err := m.importService.ImportRows(ctx, m.importReviewModel.ParsedRows, importMsg.SelectedRows)
+				return models.ImportResultMsg{
+					Result: result,
+					Error:  err,
+				}
+			}
+		}
+	}
+
+	// Handle ImportResultMsg
+	if _, ok := msg.(models.ImportResultMsg); ok {
+		if m.importProgressModel != nil {
+			updatedProgress, cmd := m.importProgressModel.Update(msg)
+			m.importProgressModel = updatedProgress.(*models.ImportProgressModel)
+
+			// If import completed, wait for user to press key to return home
+			if m.importProgressModel.Completed {
+				switch msg.(type) {
+				case tea.KeyMsg:
+					m.previousScreen = m.currentScreen
+					m.currentScreen = HomeScreen
+					m.importReviewModel = nil
+					m.importProgressModel = nil
+					m.importFilePath = ""
+					// Refresh list after import
+					ctx := context.Background()
+					m.listModel = models.NewListModel(m.service, ctx)
+					return m, nil
+				}
+			}
+
+			return m, cmd
+		}
+	}
+
 	// Handle FormSubmittedMsg
 	if submitMsg, ok := msg.(FormSubmittedMsg); ok {
 		m.successModel = models.NewSuccessModel(submitMsg.Event)
@@ -255,6 +329,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.actionMenuModel = updatedActionMenuModel.(*models.ActionMenuModel)
 			return m, cmd
 		}
+
+	case ImportReviewScreen:
+		if m.importReviewModel != nil {
+			updatedImportModel, cmd := m.importReviewModel.Update(msg)
+			m.importReviewModel = updatedImportModel.(*models.ImportReviewModel)
+			return m, cmd
+		}
+
+	case ImportProgressScreen:
+		if m.importProgressModel != nil {
+			updatedProgressModel, cmd := m.importProgressModel.Update(msg)
+			m.importProgressModel = updatedProgressModel.(*models.ImportProgressModel)
+			return m, cmd
+		}
 	}
 
 	// Handle global navigation shortcuts
@@ -273,6 +361,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.listModel = models.NewListModel(m.service, ctx)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ListScreen
+		case "i":
+			// Show import menu (requires user to select file)
+			// This will be handled through CLI flags for now
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -318,6 +410,16 @@ func (m *Model) View() string {
 			return m.confirmationDialog.View()
 		}
 		return "Error: Confirmation dialog not initialized\n"
+	case ImportReviewScreen:
+		if m.importReviewModel != nil {
+			return m.importReviewModel.View()
+		}
+		return "Error: Import review model not initialized\n"
+	case ImportProgressScreen:
+		if m.importProgressModel != nil {
+			return m.importProgressModel.View()
+		}
+		return "Error: Import progress model not initialized\n"
 	case QuitScreen:
 		return "Goodbye!\n"
 	default:
@@ -332,6 +434,7 @@ func (m *Model) renderHome() string {
 	commands := []string{
 		styles.InfoText.Render("c") + " - Capture Career Event",
 		styles.InfoText.Render("l") + " - List Events",
+		styles.InfoText.Render("i") + " - Import from CSV (use --import flag)",
 		styles.InfoText.Render("h") + " - Home",
 		styles.InfoText.Render("q") + " - Quit",
 	}
@@ -360,5 +463,31 @@ func (m *Model) SetInitialScreen(screen Screen) {
 func (m *Model) SetInitialCaptureMode(mode string) {
 	if m.formModel != nil {
 		m.formModel.SetInitialMode(mode)
+	}
+}
+
+// StartImport initiates the import process with a CSV file
+func (m *Model) StartImport(filePath string) tea.Cmd {
+	m.importFilePath = filePath
+	m.previousScreen = m.currentScreen
+	m.currentScreen = ImportReviewScreen
+
+	return func() tea.Msg {
+		// Open and parse the CSV file
+		file, err := os.Open(filePath)
+		if err != nil {
+			return models.ImportReviewMsg{Action: "error"}
+		}
+		defer file.Close()
+
+		ctx := context.Background()
+		parsedRows, err := m.importService.PrepareImport(ctx, file)
+		if err != nil {
+			return models.ImportReviewMsg{Action: "error"}
+		}
+
+		// Create import review model
+		m.importReviewModel = models.NewImportReviewModel(parsedRows)
+		return models.ImportReviewMsg{Action: "prepared"}
 	}
 }
