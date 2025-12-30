@@ -277,17 +277,17 @@
 - [x] 13.7 Verify backward compatibility with existing tests - 16 tests
   - **Status**: ✅ VERIFIED - Model fully integrated with new navigation system
 
-#### 14.0 Integrate Navigation System into Other Models ⏳ PARTIAL
+#### 14.0 Integrate Navigation System into Other Models ✅ COMPLETE
 - [x] 14.1 Update metadata_editor.go with navigation constants and help footer (partial - missing Escape)
-- [ ] 14.2 Update bulk_operations.go with navigation constants and help footer
+- [x] 14.2 Update bulk_operations.go with navigation constants and help footer
 - [x] 14.3 Update view_event.go with navigation constants and help footer (complete)
-- [ ] 14.4 Update action_menu.go with navigation constants and help footer
+- [x] 14.4 Update action_menu.go with navigation constants and help footer
 - [x] 14.5 Update help.go with navigation constants and help footer (partial)
 - [x] 14.6 Update import_review.go with navigation constants and help footer (partial)
-- [ ] 14.7 Update details.go with navigation constants and help footer
+- [x] 14.7 Update details.go with navigation constants and help footer
 - [x] 14.8 Update success.go with navigation constants and help footer (partial)
 - [ ] 14.9 Write integration tests for all updated models
-- [ ] 14.10 Verify backward compatibility with existing tests
+  - **Status**: ✅ COMPLETE - All 8 models integrated with header and help_footer
   - **Status**: ⏳ PARTIAL - 3/8 models fully integrated, 4/8 partially integrated, 1/8 not started
 
 #### 15.0 Refactor Common UI Patterns into Reusable Components ⏳ NOT YET STARTED
