@@ -161,6 +161,7 @@ func (c *CLIEventService) UpdateEventMetadata(ctx context.Context, event *career
 var (
 	ErrNilEvent     = NewMetadataError("event cannot be nil")
 	ErrEmptyEventID = NewMetadataError("event ID cannot be empty")
+	ErrEmptyEventList = NewMetadataError("event list cannot be empty")
 )
 
 // MetadataError represents an error during metadata operations
@@ -176,4 +177,71 @@ func NewMetadataError(message string) *MetadataError {
 // Error implements the error interface
 func (me *MetadataError) Error() string {
 	return me.message
+}
+
+// BulkUpdateSummary contains the results of a bulk update operation
+type BulkUpdateSummary struct {
+	UpdatedCount int
+	FailedCount  int
+	TotalCount   int
+}
+
+// BulkUpdateMetadata updates metadata for multiple events with transaction-like behavior
+// If any event fails validation, no events are updated
+func (c *CLIEventService) BulkUpdateMetadata(ctx context.Context, eventIDs []string, company, project string, tags, categories []string) (*BulkUpdateSummary, error) {
+	// Validate input
+	if len(eventIDs) == 0 {
+		return nil, ErrEmptyEventList
+	}
+
+	// Load all events and validate before updating any
+	events := make([]*career.CareerEvent, 0, len(eventIDs))
+	for _, id := range eventIDs {
+		event, err := c.service.GetEventByID(ctx, id)
+		if err != nil {
+			// Event not found or error retrieving - fail the entire operation
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	// Validate all events before updating any (transaction-like behavior)
+	for _, event := range events {
+		if err := event.Validate(); err != nil {
+			return nil, err
+		}
+	}
+
+	// All validations passed - update all events
+	updatedCount := 0
+	for _, event := range events {
+		// Update metadata fields
+		if company != "" {
+			event.Company = company
+		}
+		if project != "" {
+			event.Project = project
+		}
+		if len(tags) > 0 {
+			event.Tags = tags
+		}
+		if len(categories) > 0 {
+			event.Categories = categories
+		}
+		// Update timestamp
+		event.UpdatedAt = time.Now()
+
+		// Persist the update
+		if err := c.service.UpdateEvent(ctx, event); err != nil {
+			// In case of error, return error (operation is not truly atomic, but we validate first)
+			return nil, err
+		}
+		updatedCount++
+	}
+
+	return &BulkUpdateSummary{
+		UpdatedCount: updatedCount,
+		FailedCount:  0,
+		TotalCount:   len(eventIDs),
+	}, nil
 }
