@@ -1006,7 +1006,7 @@ var _ = Describe("Application Model", func() {
 			view := model.View()
 
 			Expect(view).NotTo(BeEmpty())
-			Expect(view).To(ContainSubstring("Review Metadata Quality"))
+			Expect(view).To(ContainSubstring("Metadata Review"))
 		})
 
 		It("should go back from metadata review screen with Backspace", func() {
