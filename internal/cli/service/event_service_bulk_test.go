@@ -2,31 +2,27 @@ package service_test
 
 import (
 	"context"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/repository/career"
+	careerdom "github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-func TestBulkOperations(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CLI Service Bulk Operations Suite")
-}
 
 var _ = Describe("CLI Event Service - Bulk Operations", func() {
 	var (
-		repo       *career.MemoryRepository
+		repo       *careerrepo.MemoryRepository
 		svc        *careerservice.Service
 		cliSvc     *service.CLIEventService
 		ctx        context.Context
 	)
 
 	BeforeEach(func() {
-		repo = career.NewMemoryRepository()
+		repo = careerrepo.NewMemoryRepository()
 		svc = careerservice.NewService(repo)
 		cliSvc = service.NewCLIEventService(svc)
 		ctx = context.Background()
@@ -54,7 +50,7 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 
 		It("should return error in summary when event ID does not exist", func() {
 			// Create one valid event
-			validEvent := &career.CareerEvent{
+			validEvent := &careerdom.CareerEvent{
 				Text: "Valid event",
 			}
 			err := svc.CaptureEvent(ctx, validEvent, careerservice.ManualEntry)
@@ -74,10 +70,10 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 
 		It("should successfully update company on all valid events", func() {
 			// Create two events
-			event1 := &career.CareerEvent{
+			event1 := &careerdom.CareerEvent{
 				Text: "Event 1",
 			}
-			event2 := &career.CareerEvent{
+			event2 := &careerdom.CareerEvent{
 				Text: "Event 2",
 			}
 			err := svc.CaptureEvent(ctx, event1, careerservice.ManualEntry)
@@ -107,7 +103,7 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 
 		It("should skip non-empty fields when applyIfEmpty is true", func() {
 			// Create event with existing company
-			event := &career.CareerEvent{
+			event := &careerdom.CareerEvent{
 				Text:    "Event with company",
 				Company: "ExistingCorp",
 			}
@@ -137,10 +133,10 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 
 		It("should validate all events before applying any changes", func() {
 			// Create two valid events
-			event1 := &career.CareerEvent{
+			event1 := &careerdom.CareerEvent{
 				Text: "Event 1",
 			}
-			event2 := &career.CareerEvent{
+			event2 := &careerdom.CareerEvent{
 				Text: "Event 2",
 			}
 			err := svc.CaptureEvent(ctx, event1, careerservice.ManualEntry)
@@ -163,7 +159,7 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 		})
 
 		It("should return summary with count, fields updated, and errors", func() {
-			event := &career.CareerEvent{
+			event := &careerdom.CareerEvent{
 				Text: "Test event",
 			}
 			err := svc.CaptureEvent(ctx, event, careerservice.ManualEntry)
@@ -190,7 +186,7 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 		})
 
 		It("should return error for invalid tags in bulk update", func() {
-			event := &career.CareerEvent{
+			event := &careerdom.CareerEvent{
 				Text: "Test event",
 			}
 			err := svc.CaptureEvent(ctx, event, careerservice.ManualEntry)
@@ -210,9 +206,9 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 
 		It("should handle multiple events with mixed success and failure", func() {
 			// Create three events
-			event1 := &career.CareerEvent{Text: "Event 1"}
-			event2 := &career.CareerEvent{Text: "Event 2"}
-			event3 := &career.CareerEvent{Text: "Event 3"}
+			event1 := &careerdom.CareerEvent{Text: "Event 1"}
+			event2 := &careerdom.CareerEvent{Text: "Event 2"}
+			event3 := &careerdom.CareerEvent{Text: "Event 3"}
 
 			err := svc.CaptureEvent(ctx, event1, careerservice.ManualEntry)
 			Expect(err).NotTo(HaveOccurred())
