@@ -778,6 +778,7 @@ var _ = Describe("FormModel", func() {
 					})
 				})
 
+
 				Context("CV Backfill mode", func() {
 					It("should accept events from any date in the past", func() {
 						testForm := models.NewFormModel(cliService)
@@ -786,7 +787,7 @@ var _ = Describe("FormModel", func() {
 						// Fill form
 						testForm = typeText(testForm, "Old CV event from 5 years ago")
 
-						// Navigate to date field
+						// Navigate to date field (1 tab)
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
 						// Enter old date (5 years ago)
@@ -798,15 +799,17 @@ var _ = Describe("FormModel", func() {
 							})
 						}
 
-						// Navigate to mode field (3 tabs)
+						// Navigate to mode field (5 more tabs: company, project, tags, categories, mode)
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
-						// Select CVBackfill mode (down arrow)
-							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						// Select CVBackfill mode (down arrow once from TimelineJournaling)
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
+
+						// Navigate to submit button (1 tab)
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
 						// Submit
@@ -832,16 +835,16 @@ var _ = Describe("FormModel", func() {
 						// Fill form
 						testForm = typeText(testForm, "Manual entry event")
 
-						// Navigate to mode field (4 tabs from text)
-						for i := 0; i < 4; i++ {
+						// Navigate to mode field (6 tabs from text)
+						for i := 0; i < 6; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
-						// Select ManualEntry mode (down arrow twice)
+						// Select ManualEntry mode (down arrow twice from TimelineJournaling)
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
 
-						// Navigate to submit
+						// Navigate to submit button (1 tab)
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
 						// Submit
@@ -867,7 +870,7 @@ var _ = Describe("FormModel", func() {
 						// Type invalid text (empty-ish)
 						testForm = typeText(testForm, "   ")
 
-						// Navigate to submit
+						// Navigate to submit button (7 tabs)
 						for i := 0; i < 7; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
@@ -881,12 +884,10 @@ var _ = Describe("FormModel", func() {
 						// Should have error
 						Expect(testForm.Error()).To(HaveOccurred())
 
-						// Navigate back to text field
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+						// Navigate back to text field (7 shift+tabs)
+						for i := 0; i < 7; i++ {
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
+						}
 
 						// Clear and type valid text
 						for i := 0; i < 10; i++ {
@@ -895,7 +896,7 @@ var _ = Describe("FormModel", func() {
 
 						testForm = typeText(testForm, "Corrected event text")
 
-						// Navigate to submit
+						// Navigate to submit button (7 tabs)
 						for i := 0; i < 7; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}

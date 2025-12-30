@@ -1,7 +1,6 @@
 package career
 
 import (
-	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -9,11 +8,6 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 )
-
-func TestDataQuality(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Data Quality Suite")
-}
 
 var _ = Describe("DataQualityCalculator", func() {
 	var (

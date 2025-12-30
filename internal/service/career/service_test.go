@@ -3,7 +3,6 @@ package career
 import (
 	"context"
 	"errors"
-	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -12,11 +11,6 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/repository/career/mocks"
 )
-
-func TestService(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Career Service Suite")
-}
 
 var _ = Describe("Career Service", func() {
 	var (
