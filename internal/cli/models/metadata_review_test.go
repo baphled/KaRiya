@@ -392,5 +392,65 @@ var _ = Describe("MetadataReviewModel", func() {
 		})
 	})
 
+	
+
+	Describe("Duplicate detection status display", func() {
+		It("should store and retrieve duplicate status for an event", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+			duplicateOf := "original-event-id"
+
+			// Act
+			model.SetDuplicateStatus(eventID, true, duplicateOf)
+			isDuplicate, originalID := model.GetDuplicateStatus(eventID)
+
+			// Assert
+			Expect(isDuplicate).To(BeTrue())
+			Expect(originalID).To(Equal(duplicateOf))
+		})
+
+		It("should indicate if an event is a duplicate", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+
+			// Act
+			model.SetDuplicateStatus(eventID, true, "original-id")
+			isDuplicate := model.IsDuplicate(eventID)
+
+			// Assert
+			Expect(isDuplicate).To(BeTrue())
+		})
+
+		It("should return original event ID for duplicates", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+			originalID := "original-event-id"
+
+			// Act
+			model.SetDuplicateStatus(eventID, true, originalID)
+			retrievedID := model.GetOriginalEventID(eventID)
+
+			// Assert
+			Expect(retrievedID).To(Equal(originalID))
+		})
+
+		It("should handle non-duplicate events gracefully", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+
+			// Act
+			isDuplicate := model.IsDuplicate(eventID)
+			originalID := model.GetOriginalEventID(eventID)
+
+			// Assert
+			Expect(isDuplicate).To(BeFalse())
+			Expect(originalID).To(BeEmpty())
+		})
+	})
+
 		})
 })
