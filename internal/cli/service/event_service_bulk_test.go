@@ -12,13 +12,12 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-
 var _ = Describe("CLI Event Service - Bulk Operations", func() {
 	var (
-		repo       *careerrepo.MemoryRepository
-		svc        *careerservice.Service
-		cliSvc     *service.CLIEventService
-		ctx        context.Context
+		repo   *careerrepo.MemoryRepository
+		svc    *careerservice.Service
+		cliSvc *service.CLIEventService
+		ctx    context.Context
 	)
 
 	BeforeEach(func() {
@@ -112,10 +111,10 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 
 			eventIDs := []string{event.ID}
 			update := &service.BulkMetadataUpdate{
-				Company:              "NewCorp",
-				ApplyIfEmptyCompany:  true,
-				Project:              "NewProject",
-				ApplyIfEmptyProject:  true,
+				Company:             "NewCorp",
+				ApplyIfEmptyCompany: true,
+				Project:             "NewProject",
+				ApplyIfEmptyProject: true,
 			}
 
 			summary, err := cliSvc.BulkUpdateMetadata(ctx, eventIDs, update)
@@ -232,4 +231,3 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 		})
 	})
 })
-

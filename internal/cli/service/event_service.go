@@ -181,12 +181,12 @@ func (me *MetadataError) Error() string {
 
 // BulkMetadataUpdate represents metadata fields to update in bulk
 type BulkMetadataUpdate struct {
-	Company              string
-	ApplyIfEmptyCompany  bool
-	Project              string
-	ApplyIfEmptyProject  bool
-	Tags                 []string
-	Categories           []string
+	Company             string
+	ApplyIfEmptyCompany bool
+	Project             string
+	ApplyIfEmptyProject bool
+	Tags                []string
+	Categories          []string
 }
 
 // BulkOperationsSummary contains the results of a bulk update operation

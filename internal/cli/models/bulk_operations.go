@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // BulkOperationsSummary represents the result of bulk operations
 type BulkOperationsSummary struct {
-	EventsAffected  int
-	FieldsUpdated   []string
-	Errors          []string
-	AppliedCount    int
-	SkippedCount    int
+	EventsAffected int
+	FieldsUpdated  []string
+	Errors         []string
+	AppliedCount   int
+	SkippedCount   int
 }
 
 // BulkOperationsModel manages bulk metadata editing for multiple events
