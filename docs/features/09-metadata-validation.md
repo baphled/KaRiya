@@ -7,6 +7,7 @@ Ensure data integrity, consistency, and quality throughout the career journal sy
 
 ### Allowed Metadata
 - Tags
+- Categories
 - Dates
 - Companies
 - Projects
