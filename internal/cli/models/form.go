@@ -49,6 +49,7 @@ type FormModel struct {
 	fieldErrors      map[FormField]string // Track field-level validation errors
 	editMode         bool                 // True if editing an existing event
 	editEventID      string               // ID of event being edited
+	helpFooter      components.HelpFooterModel // Help footer for keyboard shortcuts
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -99,6 +100,7 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		tagSelector:      components.NewTagSelector(),
 		categorySelector: components.NewCategorySelector(),
 		fieldErrors:      make(map[FormField]string),
+		helpFooter:       components.NewHelpFooter("form", 80),
 	}
 }
 
@@ -110,6 +112,10 @@ func (m *FormModel) Init() tea.Cmd {
 // Update handles messages and updates the form state
 func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.helpFooter.SetWidth(msg.Width)
+		
+		return m, nil
 	case SubmitMsg:
 		// Handle form submission result
 		if msg.Err != nil {
@@ -524,9 +530,9 @@ func (m *FormModel) View() string {
 	}
 
 	// Help text
-	helpText := styles.InfoHint.Render(
-		"Navigation: Tab/Shift+Tab to move, Space to toggle tags/categories, Up/Down for mode, Enter to submit, Esc to cancel",
-	)
+	// Help footer with keyboard shortcuts
+	m.helpFooter.SetWidth(styles.MaxWidth(80))
+	helpFooterContent := m.helpFooter.View()
 
 	// Combine all content
 	formContent := lipgloss.JoinVertical(
@@ -546,7 +552,7 @@ func (m *FormModel) View() string {
 		"",
 		formCard,
 		"",
-		helpText,
+		helpFooterContent,
 	)
 
 	return fullContent

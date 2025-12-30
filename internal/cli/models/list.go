@@ -9,8 +9,9 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/baphled/kariya/internal/cli/components"
 )
 
 // ListModel represents the event list screen
@@ -27,7 +28,8 @@ type ListModel struct {
 	err         error
 	filterModel *FilterModel
 	searchModel *SearchModel
-	sortModel   *SortModel
+	sortModel       *SortModel
+	helpFooter      components.HelpFooterModel // Help footer
 }
 
 // NewListModel creates a new list model
@@ -41,6 +43,7 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		filterModel: NewFilterModel(),
 		searchModel: NewSearchModel(),
 		sortModel:   NewSortModel(),
+		helpFooter:      components.NewHelpFooter("list", 80),
 	}
 
 	// Load events
@@ -85,6 +88,12 @@ func (m *ListModel) Init() tea.Cmd {
 // Update handles messages
 func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.helpFooter.SetWidth(msg.Width)
+		return m, nil
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
@@ -108,9 +117,6 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			return m, m.viewSelectedEvent()
 		}
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
 	}
 
 	return m, nil
@@ -181,9 +187,11 @@ func (m *ListModel) View() string {
 		)
 
 		// Instructions
-		instructions := "↑/↓ or j/k: Navigate items | PgUp/PgDn or Ctrl+F/B: Change pages | g/G: First/Last | Enter: View details"
+	// Help footer with keyboard shortcuts
+	m.helpFooter.SetWidth(styles.MaxWidth(80))
+	helpFooterContent := m.helpFooter.View()
 		content = append(content,
-			styles.InfoText.Render(instructions),
+			helpFooterContent,
 		)
 	}
 
