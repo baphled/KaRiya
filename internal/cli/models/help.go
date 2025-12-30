@@ -191,6 +191,12 @@ func (m *HelpModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "backspace", "escape":
+			// Signal back navigation to parent
+			return m, func() tea.Msg { return BackMsg{} }
+		case "ctrl+c", "q":
+			// Signal quit to parent
+			return m, func() tea.Msg { return QuitMsg{} }
 		case "right", "space", "enter":
 			if m.currentSection < len(m.sections)-1 {
 				m.currentSection++
@@ -199,8 +205,6 @@ func (m *HelpModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.currentSection > 0 {
 				m.currentSection--
 			}
-		case "q", "escape":
-			m.closed = true
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width

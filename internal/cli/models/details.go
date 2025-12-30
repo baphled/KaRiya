@@ -37,8 +37,11 @@ func (m *DetailsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "backspace":
-			// Return to list - handled by parent
-			return m, nil
+			// Signal back navigation to parent
+			return m, func() tea.Msg { return BackMsg{} }
+		case "ctrl+c", "q", "esc":
+			// Signal quit to parent
+			return m, func() tea.Msg { return QuitMsg{} }
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -125,4 +128,9 @@ func (m *DetailsModel) View() string {
 // formatTime formats a timestamp for display
 func (m *DetailsModel) formatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
+}
+
+// Event returns the event being displayed
+func (m *DetailsModel) Event() *career.CareerEvent {
+	return m.event
 }

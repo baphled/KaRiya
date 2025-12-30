@@ -56,6 +56,34 @@ func (c *CLIEventService) GetEventByID(ctx context.Context, eventID string) (*ca
 	return c.service.GetEventByID(ctx, eventID)
 }
 
+// UpdateEvent updates an existing career event
+func (c *CLIEventService) UpdateEvent(ctx context.Context, eventID string, text string, date time.Time, opts ...Option) error {
+	// Apply default and optional configurations
+	config := defaultConfig()
+	for _, opt := range opts {
+		opt(config)
+	}
+
+	// Create updated event
+	event := &career.CareerEvent{
+		ID:         eventID,
+		Text:       text,
+		Date:       date,
+		Company:    config.Company,
+		Project:    config.Project,
+		Tags:       config.Tags,
+		Categories: config.Categories,
+	}
+
+	// Update event using existing service
+	return c.service.UpdateEvent(ctx, event)
+}
+
+// DeleteEvent deletes a career event by ID
+func (c *CLIEventService) DeleteEvent(ctx context.Context, eventID string) error {
+	return c.service.DeleteEvent(ctx, eventID)
+}
+
 // Configuration options for event capture
 type Option func(*EventConfig)
 

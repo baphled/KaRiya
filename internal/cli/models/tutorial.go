@@ -49,18 +49,25 @@ func (m *TutorialModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "backspace", "escape":
+			// Skip tutorial and signal back navigation to parent
+			m.skipped = true
+			return m, func() tea.Msg { return BackMsg{} }
+		case "ctrl+c", "q":
+			// Signal quit to parent
+			return m, func() tea.Msg { return QuitMsg{} }
 		case "right", "space", "enter":
 			if m.currentStep < m.maxSteps-1 {
 				m.currentStep++
 			} else {
 				m.completed = true
+				// Tutorial completed, go back to previous screen
+				return m, func() tea.Msg { return BackMsg{} }
 			}
 		case "left":
 			if m.currentStep > 0 {
 				m.currentStep--
 			}
-		case "q", "escape":
-			m.skipped = true
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
