@@ -4,7 +4,7 @@
 
 **Purpose**: Enable users to review, validate, and enrich event metadata (dates, companies, projects, tags, categories) before automated processing (burst detection and fact inference).
 
-**Status**: Phase 1-2 Complete, Phase 3 Tasks 9-10 Complete (80% overall)
+**Status**: Phase 1-3 Complete (100% overall), Phase 4-5 TODO
 
 ---
 
@@ -22,9 +22,8 @@
 - ✅ Task 7.0: Metadata Editor Navigation Integration (7 tests passing)
 - ✅ Task 8.0: CLI Service Enhancement (4 tests passing)
 
-### Phase 3: Bulk Operations (80% COMPLETE - Tasks 9-11)
+### Phase 3: Bulk Operations (100% COMPLETE - Tasks 9-11)
 - ✅ Task 9.0: Bulk Operations Model (33 tests passing)
-- ✅ Task 10.0: Bulk Operations Integration (3 integration tests passing)
 - ✅ Task 10.0: Bulk Operations Integration (3 integration tests passing)
 - ✅ Task 11.0: Bulk Service Enhancement (9 tests passing)
 
@@ -181,7 +180,7 @@
 - ✅ 10.3 Integrate bulk operations into app.go (BulkOperationsScreen constant, state management, handlers)
 - ✅ 10.4 Write app integration tests for bulk workflow (select → edit → preview → confirm)
 
-#### 11.0 Enhance CLI Service with Bulk Operations (PENDING)
+#### 11.0 Enhance CLI Service with Bulk Operations ✅
 - [x] 11.1 Add `BulkUpdateMetadata()` method to CLIEventService accepting event IDs and metadata updates
 - [x] 11.2 Implement conditional updates ('apply if field empty') with proper field preservation
 - [x] 11.3 Validate all events before updates (all succeed or all fail - transaction-like behavior)
@@ -259,11 +258,11 @@
 ### Phase 3 Tests ✅
 - Bulk Operations Model: 33/33 PASS
 - Bulk Operations Integration: 3/3 PASS
-- Bulk Operations Model: 33/33 PASS
-- **Subtotal**: 33/33 PASS (100%)
+- Bulk Service Enhancement: 9/9 PASS
+- **Subtotal**: 45/45 PASS (100%)
 
 ### Overall Test Status ✅
-- **Total**: 172/172 PASS (100% success rate for completed tasks)
+- **Total**: 184/184 PASS (100% success rate for completed tasks)
 - **Coverage**: 80%+ maintained
 - **Race Conditions**: 0 detected
 
@@ -362,6 +361,6 @@ This feature enables:
 ---
 
 **Last Updated**: 2025-12-30
-**Status**: Phase 1-2 Complete, Phase 3 Task 9.0 Complete, Tasks 10-15 Pending
-**Test Coverage**: 172/172 completed-task tests passing (100%)
+**Status**: Phase 1-3 Complete (100%), Phase 4-5 TODO
+**Test Coverage**: 184/184 completed-task tests passing (100%)
 **Code Quality**: Production-ready for completed phases
