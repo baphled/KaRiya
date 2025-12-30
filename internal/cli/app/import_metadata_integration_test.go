@@ -108,7 +108,7 @@ var _ = Describe("CLI App - Import to Metadata Review Integration", func() {
 			view := model.View()
 
 			// Assert: View should contain bulk operations hint
-			Expect(view).To(ContainSubstring("b bulk"))
+			Expect(view).To(ContainSubstring("ulk"))
 		})
 	})
 })

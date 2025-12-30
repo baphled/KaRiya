@@ -153,6 +153,7 @@ func (m HelpFooterModel) getTruncatedContextualHelp(context string, maxWidth int
 			navigation.KeyDown,
 			navigation.KeySelect,
 			navigation.KeyEdit,
+			navigation.KeyBulk,
 		},
 		"bulk_operations": {
 			navigation.KeyUp,
