@@ -49,7 +49,7 @@ func (m *TutorialModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "backspace", "escape":
+		case "esc":
 			// Skip tutorial and signal back navigation to parent
 			m.skipped = true
 			return m, func() tea.Msg { return BackMsg{} }

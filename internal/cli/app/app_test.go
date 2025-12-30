@@ -68,10 +68,10 @@ var _ = Describe("Application Model", func() {
 			Expect(updatedModel.currentScreen).To(Equal(HomeScreen))
 		})
 
-		It("should handle backspace navigation from ListScreen", func() {
+		It("should handle escape navigation from ListScreen", func() {
 			model.currentScreen = ListScreen
 			model.previousScreen = HomeScreen
-			msg := tea.KeyMsg{Type: tea.KeyBackspace}
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
 
 			// First update delegates to ListModel, which returns BackMsg command
 			newModel, cmd := model.Update(msg)
@@ -241,7 +241,7 @@ var _ = Describe("Application Model", func() {
 		It("should allow 'backspace' character input in form without navigating", func() {
 			model.currentScreen = CaptureScreen
 			model.previousScreen = HomeScreen
-			msg := tea.KeyMsg{Type: tea.KeyBackspace}
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
 			newModel, _ := model.Update(msg)
 			updatedModel := newModel.(*Model)
 			// Should still be on CaptureScreen, not navigated back
@@ -553,8 +553,8 @@ var _ = Describe("Application Model", func() {
 			Expect(updatedModel.previousScreen).To(Equal(ListScreen))
 
 			// Send backspace to go back
-			backspaceMsg := tea.KeyMsg{Type: tea.KeyBackspace}
-			model2, cmd := updatedModel.Update(backspaceMsg)
+			escapeMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			model2, cmd := updatedModel.Update(escapeMsg)
 			model2Updated := model2.(*Model)
 
 			// Should get a BackMsg command from details model

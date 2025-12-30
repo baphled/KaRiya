@@ -185,7 +185,7 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "backspace", "q", "esc":
+		case "q", "esc":
 			return m, nil
 		case "ctrl+c":
 			return m, nil

@@ -64,7 +64,7 @@ func (m *ActionMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					Action: m.options[m.selectedIdx],
 				}
 			}
-		case "backspace", "esc":
+		case "esc":
 			// Go back to list
 			return m, func() tea.Msg { return BackMsg{} }
 		}
