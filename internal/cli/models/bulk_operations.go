@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -42,6 +43,7 @@ type BulkOperationsModel struct {
 	summary             *BulkOperationsSummary
 	fieldOrigins        map[string]map[string]bool // eventID -> field -> isFromCSV
 
+	helpFooter components.HelpFooterModel // Help footer
 }
 
 // NewBulkOperationsModel creates a new bulk operations model
@@ -52,15 +54,16 @@ func NewBulkOperationsModel(
 	ctx context.Context,
 ) *BulkOperationsModel {
 	return &BulkOperationsModel{
-		events:     events,
-		service:    service,
-		cliService: cliService,
-		ctx:        ctx,
-		selected:   make(map[int]bool),
-		focusIndex: 0,
-		width:      80,
-		height:     24,
-			fieldOrigins: make(map[string]map[string]bool),
+		events:      events,
+		service:     service,
+		cliService:  cliService,
+		ctx:         ctx,
+		selected:    make(map[int]bool),
+		focusIndex:  0,
+		width:       80,
+		height:      24,
+		fieldOrigins: make(map[string]map[string]bool),
+		helpFooter:  components.NewHelpFooter("bulk_operations", 80),
 }
 }
 
@@ -72,6 +75,11 @@ func (m *BulkOperationsModel) Init() tea.Cmd {
 // Update handles input and updates the model
 func (m *BulkOperationsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.helpFooter.SetWidth(msg.Width)
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyUp:
@@ -90,9 +98,7 @@ func (m *BulkOperationsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	
 	}
 	return m, nil
 }
@@ -159,7 +165,9 @@ func (m *BulkOperationsModel) View() string {
 
 	// Keyboard shortcuts
 	b.WriteString("\n")
-	b.WriteString(styles.InfoHint.Render("↑/↓: navigate | Space: select | a: all | d: none | e: edit"))
+	// Help footer
+	m.helpFooter.SetWidth(80)
+	b.WriteString(m.helpFooter.View())
 
 	return b.String()
 }

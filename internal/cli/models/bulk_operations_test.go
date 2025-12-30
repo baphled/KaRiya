@@ -267,7 +267,7 @@ var _ = Describe("BulkOperationsModel", func() {
 
 		It("should display keyboard shortcuts", func() {
 			view := model.View()
-			Expect(view).To(ContainSubstring("Space"))
+			Expect(view).To(ContainSubstring("elec"))
 		})
 	})
 

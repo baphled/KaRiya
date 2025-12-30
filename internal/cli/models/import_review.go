@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/importer"
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -32,6 +33,7 @@ type ImportReviewModel struct {
 	width           int
 	height          int
 	err             error
+	helpFooter      components.HelpFooterModel
 }
 
 // NewImportReviewModel creates a new import review model
@@ -43,7 +45,8 @@ func NewImportReviewModel(parsedRows []*importer.ParsedRow) *ImportReviewModel {
 		width:           80,
 		height:          24,
 		summary:         calculateSummary(parsedRows),
-	}
+			helpFooter:    components.NewHelpFooter("import_review", 80),
+}
 
 	// Pre-select all valid, non-duplicate rows
 	for _, row := range parsedRows {
@@ -58,6 +61,11 @@ func NewImportReviewModel(parsedRows []*importer.ParsedRow) *ImportReviewModel {
 // Update handles user input
 func (m *ImportReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.helpFooter.SetWidth(msg.Width)
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
@@ -116,9 +124,7 @@ func (m *ImportReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	
 	}
 
 	return m, nil
@@ -266,6 +272,7 @@ type ImportProgressModel struct {
 	err        error
 	width      int
 	height     int
+	helpFooter components.HelpFooterModel // Help footer
 }
 
 // NewImportProgressModel creates a new import progress model
@@ -288,9 +295,7 @@ func (m *ImportProgressModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Completed = true
 		return m, nil
 
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	
 	}
 
 	return m, nil
