@@ -727,6 +727,8 @@ var _ = Describe("FormModel", func() {
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
 						// Submit
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
 						Expect(cmd).NotTo(BeNil())
 						msg := cmd()
@@ -760,7 +762,7 @@ var _ = Describe("FormModel", func() {
 						}
 
 						// Navigate to submit
-						for i := 0; i < 7; i++ {
+						for i := 0; i < 6; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
@@ -802,9 +804,9 @@ var _ = Describe("FormModel", func() {
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
 						// Select CVBackfill mode (down arrow)
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-
-						// Navigate to submit
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
 						// Submit
