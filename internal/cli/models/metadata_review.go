@@ -35,6 +35,7 @@ type MetadataReviewModel struct {
 	isImportReview   bool            // True if reviewing only imported events
 	fieldOrigins map[string]map[string]bool // eventID -> field -> isFromCSV
 	parsingWarnings map[string][]string // eventID -> warnings
+	duplicateStatus map[string]string // eventID -> original event ID (empty if not duplicate)
 }
 
 // NewMetadataReviewModel creates a new metadata review model
@@ -51,6 +52,7 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 		qualityScores: make(map[string]*careerservice.QualityScore),
 			fieldOrigins: make(map[string]map[string]bool),
 		parsingWarnings: make(map[string][]string),
+		duplicateStatus: make(map[string]string),
 }
 
 	// Load events
@@ -83,6 +85,7 @@ func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Con
 		isImportReview:   true,
 			fieldOrigins: make(map[string]map[string]bool),
 		parsingWarnings: make(map[string][]string),
+		duplicateStatus: make(map[string]string),
 }
 
 	// Load events (will be filtered to only imported)
@@ -502,4 +505,40 @@ func (m *MetadataReviewModel) GetParsingWarnings(eventID string) []string {
 // HasParsingWarnings checks if an event has parsing warnings
 func (m *MetadataReviewModel) HasParsingWarnings(eventID string) bool {
 	return len(m.GetParsingWarnings(eventID)) > 0
+}
+
+// SetDuplicateStatus sets the duplicate status for an event
+func (m *MetadataReviewModel) SetDuplicateStatus(eventID string, isDuplicate bool, originalEventID string) {
+	if m.duplicateStatus == nil {
+		m.duplicateStatus = make(map[string]string)
+	}
+	if isDuplicate {
+		m.duplicateStatus[eventID] = originalEventID
+	} else {
+		m.duplicateStatus[eventID] = ""
+	}
+}
+
+// GetDuplicateStatus returns whether an event is a duplicate and its original event ID
+func (m *MetadataReviewModel) GetDuplicateStatus(eventID string) (bool, string) {
+	if m.duplicateStatus == nil {
+		return false, ""
+	}
+	originalID, exists := m.duplicateStatus[eventID]
+	if !exists || originalID == "" {
+		return false, ""
+	}
+	return true, originalID
+}
+
+// IsDuplicate checks if an event is a duplicate
+func (m *MetadataReviewModel) IsDuplicate(eventID string) bool {
+	isDuplicate, _ := m.GetDuplicateStatus(eventID)
+	return isDuplicate
+}
+
+// GetOriginalEventID returns the original event ID if this is a duplicate
+func (m *MetadataReviewModel) GetOriginalEventID(eventID string) string {
+	_, originalID := m.GetDuplicateStatus(eventID)
+	return originalID
 }
