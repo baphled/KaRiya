@@ -1076,3 +1076,55 @@ var _ = Describe("MetadataEditorScreen Navigation", func() {
 		Expect(model.previousScreen).To(Equal(previousScreen))
 	})
 })
+
+var _ = Describe("BulkOperationsScreen Navigation", func() {
+	var (
+		model *Model
+		repo  *careerrepo.MemoryRepository
+		svc   *careerservice.Service
+	)
+
+	BeforeEach(func() {
+		repo = careerrepo.NewMemoryRepository()
+		svc = careerservice.NewService(repo)
+		cliSvc := service.NewCLIEventService(svc)
+		model = NewModel(cliSvc, svc)
+
+		// Add test events to repository
+		for i := 0; i < 3; i++ {
+			event := &career.CareerEvent{
+				ID:   "event-" + string(rune(i)),
+				Text: "Test event " + string(rune(i)),
+				Date: time.Now().Add(-time.Duration(i) * time.Hour),
+			}
+			_ = svc.CaptureEvent(context.Background(), event, careerservice.ManualEntry)
+		}
+	})
+
+	It("should navigate to bulk operations when BulkOperationsMsg is received", func() {
+		events, _ := svc.ListEvents(context.Background(), careerrepo.ListFilters{})
+		msg := BulkOperationsMsg{Events: events}
+		model.Update(msg)
+
+		Expect(model.currentScreen).To(Equal(BulkOperationsScreen))
+		Expect(model.bulkOperationsModel).NotTo(BeNil())
+	})
+
+	It("should render bulk operations screen view", func() {
+		events, _ := svc.ListEvents(context.Background(), careerrepo.ListFilters{})
+		model.Update(BulkOperationsMsg{Events: events})
+		view := model.View()
+
+		Expect(view).To(ContainSubstring("Bulk Operations"))
+	})
+
+	It("should have previous screen set when navigating to bulk operations", func() {
+		model.currentScreen = MetadataReviewScreen
+		previousScreen := model.currentScreen
+
+		events, _ := svc.ListEvents(context.Background(), careerrepo.ListFilters{})
+		model.Update(BulkOperationsMsg{Events: events})
+
+		Expect(model.previousScreen).To(Equal(previousScreen))
+	})
+})
