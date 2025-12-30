@@ -123,9 +123,6 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			// Signal quit to parent
 			return m, func() tea.Msg { return QuitMsg{} }
-		case "esc":
-			// For form, esc can go back (cancel editing)
-			return m, func() tea.Msg { return BackMsg{} }
 
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
@@ -498,6 +495,8 @@ func (m *FormModel) submitForm() tea.Cmd {
 		// Get optional fields
 		company := strings.TrimSpace(m.inputs[2].Value())
 		project := strings.TrimSpace(m.inputs[3].Value())
+
+		fmt.Printf("Submitting form: text=%q, date=%v, company=%q, project=%q, mode=%v\n", text, eventDate, company, project, m.modes[m.modeIndex])
 
 		// Get selected tags
 		tags := m.tagSelector.SelectedTags()
