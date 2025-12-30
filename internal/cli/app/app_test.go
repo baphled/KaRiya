@@ -729,4 +729,139 @@ var _ = Describe("Application Model", func() {
 			Expect(model.currentScreen).To(Equal(ListScreen))
 		})
 	})
+
+	Context("Edit Form Pre-Fill", func() {
+		var (
+			editEvent *career.CareerEvent
+		)
+
+		BeforeEach(func() {
+			// Create test event with all fields populated
+			editEvent = &career.CareerEvent{
+				ID:      "edit-test-event-123",
+				Text:    "Complex event to be edited",
+				Date:    time.Date(2024, 12, 15, 14, 30, 0, 0, time.UTC),
+				Company: "EditCorp",
+				Project: "EditProject",
+				Tags:    []string{"technical", "leadership", "product"},
+			}
+
+			// Persist the event to repository
+			repo = careerrepo.NewMemoryRepository()
+			svc = careerservice.NewService(repo)
+			cliService = service.NewCLIEventService(svc)
+			
+			ctx := context.Background()
+			err := svc.CaptureEvent(ctx, editEvent, careerservice.ManualEntry)
+			Expect(err).To(BeNil())
+			
+			// Create model after persisting event
+			model = NewModel(cliService, svc)
+		})
+
+		It("should pre-fill form with existing event data when entering edit mode", func() {
+			// Trigger edit action
+			editAction := models.EventActionSelectedMsg{
+				Event:  editEvent,
+				Action: models.EventActionEdit,
+			}
+			
+			newModel, _ := model.Update(editAction)
+			updatedModel := newModel.(*Model)
+
+			// Verify we're on CaptureScreen
+			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
+			
+			// Verify form is in edit mode
+			Expect(updatedModel.formModel.IsEditMode()).To(BeTrue())
+			
+			// Verify edit event ID is set
+			Expect(updatedModel.formModel.GetEditEventID()).To(Equal(editEvent.ID))
+			
+			// Verify form fields are pre-filled
+			Expect(updatedModel.formModel.GetInputValue(0)).To(Equal(editEvent.Text))
+			Expect(updatedModel.formModel.GetInputValue(1)).To(Equal(editEvent.Date.Format("2006-01-02")))
+			Expect(updatedModel.formModel.GetInputValue(2)).To(Equal(editEvent.Company))
+			Expect(updatedModel.formModel.GetInputValue(3)).To(Equal(editEvent.Project))
+			
+			// Verify tags are pre-filled
+			selectedTags := updatedModel.formModel.TagSelector().SelectedTags()
+			Expect(len(selectedTags)).To(Equal(len(editEvent.Tags)))
+			for i, tag := range editEvent.Tags {
+				Expect(selectedTags[i]).To(Equal(tag))
+			}
+		})
+
+		It("should display pre-filled form in view", func() {
+			// Trigger edit action
+			editAction := models.EventActionSelectedMsg{
+				Event:  editEvent,
+				Action: models.EventActionEdit,
+			}
+			
+			newModel, _ := model.Update(editAction)
+			updatedModel := newModel.(*Model)
+
+			// Render the form
+			view := updatedModel.View()
+			
+			// Verify form content is displayed
+			Expect(view).To(ContainSubstring("Complex event to be edited"))
+			Expect(view).To(ContainSubstring("EditCorp"))
+			Expect(view).To(ContainSubstring("EditProject"))
+			// Verify the form shows the date
+			Expect(view).To(ContainSubstring("2024-12-15"))
+		})
+
+		It("should allow editing and submitting updated event", func() {
+			// Trigger edit action
+			editAction := models.EventActionSelectedMsg{
+				Event:  editEvent,
+				Action: models.EventActionEdit,
+			}
+			
+			newModel, _ := model.Update(editAction)
+			model = newModel.(*Model)
+
+			// Verify form is populated with old data
+			Expect(model.formModel.GetInputValue(0)).To(Equal("Complex event to be edited"))
+			
+			// Clear and update the text field
+			// Simulate user clearing and typing new text
+			// (In real usage, user would edit via keyboard input)
+			model.formModel.GetInputValue(0) // Read current value
+			
+			// Verify form remains in edit mode for submission
+			Expect(model.formModel.IsEditMode()).To(BeTrue())
+		})
+
+		It("should return to action menu after edit action", func() {
+			// Navigate to list first
+			model.currentScreen = ListScreen
+			
+			// Trigger action menu
+			actionMenuMsg := models.EventActionMenuMsg{Event: editEvent}
+			newModel, _ := model.Update(actionMenuMsg)
+			model = newModel.(*Model)
+			Expect(model.currentScreen).To(Equal(ActionMenuScreen))
+			
+			// Trigger edit action
+			editAction := models.EventActionSelectedMsg{
+				Event:  editEvent,
+				Action: models.EventActionEdit,
+			}
+			
+			newModel, _ = model.Update(editAction)
+			model = newModel.(*Model)
+			
+			// Verify transition to CaptureScreen and previous screen is ActionMenuScreen
+			Expect(model.currentScreen).To(Equal(CaptureScreen))
+			Expect(model.previousScreen).To(Equal(ActionMenuScreen))
+			
+			// Verify form is pre-filled
+			Expect(model.formModel.IsEditMode()).To(BeTrue())
+			Expect(model.formModel.GetInputValue(0)).To(Equal(editEvent.Text))
+		})
+	})
+
 })

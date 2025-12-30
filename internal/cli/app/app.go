@@ -114,6 +114,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = CaptureScreen
 			m.formModel = models.NewFormModel(m.cliService)
+			m.formModel.LoadEventForEditing(actionMsg.Event)
 		case models.EventActionDelete:
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ListScreen
