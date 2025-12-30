@@ -4,7 +4,7 @@
 
 **Purpose**: Enable users to review, validate, and enrich event metadata (dates, companies, projects, tags, categories) before automated processing (burst detection and fact inference).
 
-**Status**: Phase 1-2 Complete, Phase 3 Task 9.0 Complete (70% overall)
+**Status**: Phase 1-2 Complete, Phase 3 Tasks 9-10 Complete (80% overall)
 
 ---
 
@@ -22,9 +22,10 @@
 - ✅ Task 7.0: Metadata Editor Navigation Integration (7 tests passing)
 - ✅ Task 8.0: CLI Service Enhancement (4 tests passing)
 
-### Phase 3: Bulk Operations (70% COMPLETE - Tasks 9-11)
+### Phase 3: Bulk Operations (80% COMPLETE - Tasks 9-11)
 - ✅ Task 9.0: Bulk Operations Model (33 tests passing)
-- ⏳ Task 10.0: Bulk Operations Integration (TODO)
+- ✅ Task 10.0: Bulk Operations Integration (3 integration tests passing)
+- ✅ Task 10.0: Bulk Operations Integration (3 integration tests passing)
 - ⏳ Task 11.0: Bulk Service Enhancement (TODO)
 
 ### Phase 4: Integration with Existing Features (TODO - Tasks 12-13)
@@ -174,11 +175,11 @@
 - ✅ 9.5 Implement keyboard shortcuts (Space, 'a', 'd', 'e', Enter)
 - ✅ 9.6 Write comprehensive unit tests (33 test cases)
 
-#### 10.0 Integrate Bulk Operations with Metadata Review (NEXT)
-- [ ] 10.1 Add bulk operations mode toggle to metadata review screen with visual indicator
-- [ ] 10.2 Implement navigation from metadata review to bulk operations with event list passing
-- [ ] 10.3 Integrate bulk operations into app.go (BulkOperationsScreen constant, state management, handlers)
-- [ ] 10.4 Write app integration tests for bulk workflow (select → edit → preview → confirm)
+#### 10.0 Integrate Bulk Operations with Metadata Review ✅
+- ✅ 10.1 Add bulk operations mode toggle to metadata review screen with visual indicator
+- ✅ 10.2 Implement navigation from metadata review to bulk operations with event list passing
+- ✅ 10.3 Integrate bulk operations into app.go (BulkOperationsScreen constant, state management, handlers)
+- ✅ 10.4 Write app integration tests for bulk workflow (select → edit → preview → confirm)
 
 #### 11.0 Enhance CLI Service with Bulk Operations (PENDING)
 - [ ] 11.1 Add `BulkUpdateMetadata()` method to CLIEventService accepting event IDs and metadata updates
@@ -256,6 +257,8 @@
 - **Subtotal**: 53/53 PASS (100%)
 
 ### Phase 3 Tests ✅
+- Bulk Operations Model: 33/33 PASS
+- Bulk Operations Integration: 3/3 PASS
 - Bulk Operations Model: 33/33 PASS
 - **Subtotal**: 33/33 PASS (100%)
 
