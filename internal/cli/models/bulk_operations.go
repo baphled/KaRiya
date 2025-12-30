@@ -88,6 +88,9 @@ func (m *BulkOperationsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.MoveDown()
 		case tea.KeySpace:
 			m.ToggleSelection(m.focusIndex)
+		case tea.KeyEsc:
+			m.Cancel()
+			return m, nil
 		case tea.KeyRunes:
 			for _, r := range msg.Runes {
 				switch r {
