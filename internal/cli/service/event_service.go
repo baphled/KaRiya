@@ -179,69 +179,149 @@ func (me *MetadataError) Error() string {
 	return me.message
 }
 
-// BulkUpdateSummary contains the results of a bulk update operation
-type BulkUpdateSummary struct {
-	UpdatedCount int
-	FailedCount  int
-	TotalCount   int
+// BulkMetadataUpdate represents metadata fields to update in bulk
+type BulkMetadataUpdate struct {
+	Company              string
+	ApplyIfEmptyCompany  bool
+	Project              string
+	ApplyIfEmptyProject  bool
+	Tags                 []string
+	Categories           []string
+}
+
+// BulkOperationsSummary contains the results of a bulk update operation
+type BulkOperationsSummary struct {
+	EventsAffected int
+	FieldsUpdated  []string
+	Errors         []string
+	AppliedCount   int
+	SkippedCount   int
 }
 
 // BulkUpdateMetadata updates metadata for multiple events with transaction-like behavior
-// If any event fails validation, no events are updated
-func (c *CLIEventService) BulkUpdateMetadata(ctx context.Context, eventIDs []string, company, project string, tags, categories []string) (*BulkUpdateSummary, error) {
+// If any event fails validation, it's reported in the summary but operation continues for other events
+func (c *CLIEventService) BulkUpdateMetadata(ctx context.Context, eventIDs []string, update *BulkMetadataUpdate) (*BulkOperationsSummary, error) {
 	// Validate input
-	if len(eventIDs) == 0 {
+	if eventIDs == nil || len(eventIDs) == 0 {
 		return nil, ErrEmptyEventList
 	}
 
-	// Load all events and validate before updating any
-	events := make([]*career.CareerEvent, 0, len(eventIDs))
+	if update == nil {
+		return nil, NewMetadataError("update cannot be nil")
+	}
+
+	summary := &BulkOperationsSummary{
+		EventsAffected: len(eventIDs),
+		FieldsUpdated:  []string{},
+		Errors:         []string{},
+		AppliedCount:   0,
+		SkippedCount:   0,
+	}
+
+	// Track which fields are being updated
+	fieldsMap := make(map[string]bool)
+
+	// Load all events first
+	events := make(map[string]*career.CareerEvent)
 	for _, id := range eventIDs {
 		event, err := c.service.GetEventByID(ctx, id)
 		if err != nil {
-			// Event not found or error retrieving - fail the entire operation
-			return nil, err
+			summary.Errors = append(summary.Errors, "event "+id+" not found")
+			summary.SkippedCount++
+			continue
 		}
-		events = append(events, event)
+		events[id] = event
 	}
 
 	// Validate all events before updating any (transaction-like behavior)
 	for _, event := range events {
 		if err := event.Validate(); err != nil {
-			return nil, err
+			summary.Errors = append(summary.Errors, err.Error())
+			summary.SkippedCount++
+			continue
 		}
 	}
 
-	// All validations passed - update all events
-	updatedCount := 0
-	for _, event := range events {
-		// Update metadata fields
-		if company != "" {
-			event.Company = company
+	// Apply updates to all valid events
+	for _, id := range eventIDs {
+		event, exists := events[id]
+		if !exists {
+			continue // Already reported in errors
 		}
-		if project != "" {
-			event.Project = project
-		}
-		if len(tags) > 0 {
-			event.Tags = tags
-		}
-		if len(categories) > 0 {
-			event.Categories = categories
-		}
-		// Update timestamp
-		event.UpdatedAt = time.Now()
 
-		// Persist the update
-		if err := c.service.UpdateEvent(ctx, event); err != nil {
-			// In case of error, return error (operation is not truly atomic, but we validate first)
-			return nil, err
+		updated := false
+
+		// Update company field
+		if update.Company != "" {
+			if update.ApplyIfEmptyCompany {
+				if event.Company == "" {
+					event.Company = update.Company
+					updated = true
+					fieldsMap["company"] = true
+				}
+			} else {
+				event.Company = update.Company
+				updated = true
+				fieldsMap["company"] = true
+			}
 		}
-		updatedCount++
+
+		// Update project field
+		if update.Project != "" {
+			if update.ApplyIfEmptyProject {
+				if event.Project == "" {
+					event.Project = update.Project
+					updated = true
+					fieldsMap["project"] = true
+				}
+			} else {
+				event.Project = update.Project
+				updated = true
+				fieldsMap["project"] = true
+			}
+		}
+
+		// Update tags field
+		if len(update.Tags) > 0 {
+			// Validate tags before applying
+			validTags := true
+			for _, tag := range update.Tags {
+				if !career.AllowedTags[tag] {
+					summary.Errors = append(summary.Errors, "invalid tag: "+tag)
+					validTags = false
+					break
+				}
+			}
+			if validTags {
+				event.Tags = update.Tags
+				updated = true
+				fieldsMap["tags"] = true
+			}
+		}
+
+		// Update categories field
+		if len(update.Categories) > 0 {
+			event.Categories = update.Categories
+			updated = true
+			fieldsMap["categories"] = true
+		}
+
+		// Persist the update if any changes were made
+		if updated {
+			event.UpdatedAt = time.Now()
+			if err := c.service.UpdateEvent(ctx, event); err != nil {
+				summary.Errors = append(summary.Errors, "failed to update "+id+": "+err.Error())
+				summary.SkippedCount++
+				continue
+			}
+			summary.AppliedCount++
+		}
 	}
 
-	return &BulkUpdateSummary{
-		UpdatedCount: updatedCount,
-		FailedCount:  0,
-		TotalCount:   len(eventIDs),
-	}, nil
+	// Build fields updated list
+	for field := range fieldsMap {
+		summary.FieldsUpdated = append(summary.FieldsUpdated, field)
+	}
+
+	return summary, nil
 }
