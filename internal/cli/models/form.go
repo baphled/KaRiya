@@ -125,10 +125,10 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "backspace":
+		case "esc":
 			// Signal back navigation to parent
 			return m, func() tea.Msg { return BackMsg{} }
-		case "ctrl+c", "q", "esc":
+		case "ctrl+c", "q":
 			// Signal quit to parent
 			return m, func() tea.Msg { return QuitMsg{} }
 

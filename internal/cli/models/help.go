@@ -191,7 +191,7 @@ func (m *HelpModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "backspace", "escape":
+		case "esc":
 			// Signal back navigation to parent
 			return m, func() tea.Msg { return BackMsg{} }
 		case "ctrl+c", "q":

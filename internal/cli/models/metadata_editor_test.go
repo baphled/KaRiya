@@ -126,9 +126,9 @@ var _ = Describe("MetadataEditorModel", func() {
 			Expect(editor.IsCancelled()).To(BeTrue())
 		})
 
-		It("should cancel when Backspace is pressed", func() {
+		It("should cancel when Escape is pressed", func() {
 			editor = models.NewMetadataEditorModel(event, svc, cliSvc, ctx)
-			editor.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+			editor.Update(tea.KeyMsg{Type: tea.KeyEsc})
 			Expect(editor.IsCancelled()).To(BeTrue())
 		})
 	})

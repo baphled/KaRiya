@@ -53,15 +53,12 @@ func (m *SuccessModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "backspace":
+		case "esc":
 			// Signal back navigation to parent
 			return m, func() tea.Msg { return BackMsg{} }
 		case "ctrl+c", "q":
 			// Signal quit to parent
 			return m, func() tea.Msg { return QuitMsg{} }
-		case "esc":
-			// Go back
-			return m, func() tea.Msg { return BackMsg{} }
 		case "left":
 			// Navigate left through actions
 			if m.selectedAction > CaptureAnotherOption {

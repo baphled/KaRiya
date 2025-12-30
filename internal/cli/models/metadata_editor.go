@@ -192,7 +192,7 @@ func (m *MetadataEditorModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		}
 		return m, nil
 
-	case "esc", "backspace":
+	case "esc":
 		m.cancelled = true
 		return m, tea.Quit
 

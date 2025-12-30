@@ -94,7 +94,7 @@ func (m *ViewEventModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.nextAction()
 		case "enter":
 			return m, m.performAction()
-		case "backspace", "esc":
+		case "esc":
 			// Signal back navigation to parent
 			return m, func() tea.Msg { return BackMsg{} }
 		case "ctrl+c", "q":
