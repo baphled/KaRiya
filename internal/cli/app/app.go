@@ -70,12 +70,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle quit and back messages first
 	switch msg.(type) {
 	case models.BackMsg:
+		// Special handling for ListScreen - always go back to HomeScreen
+		if m.currentScreen == ListScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			return m, nil
+		}
 		// Special handling for ViewScreen that came from ActionMenuScreen
 		if m.currentScreen == ViewScreen && m.previousScreen == ActionMenuScreen {
 			// Skip ActionMenuScreen and go directly to the screen before it
-			m.currentScreen = m.screenBeforeActionMenu
+			targetScreen := m.screenBeforeActionMenu
+			m.previousScreen = m.currentScreen
+			m.currentScreen = targetScreen
 		} else {
-			m.currentScreen = m.previousScreen
+			targetScreen := m.previousScreen
+			m.previousScreen = m.currentScreen
+			m.currentScreen = targetScreen
 		}
 		return m, nil
 	case models.QuitMsg:
@@ -85,7 +95,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle models.ViewEventMsg
 	if viewMsg, ok := msg.(models.ViewEventMsg); ok {
 		m.detailsModel = models.NewDetailsModel(viewMsg.Event)
-		m.previousScreen = ListScreen
+		m.previousScreen = m.currentScreen
 		m.currentScreen = ViewScreen
 		return m, nil
 	}

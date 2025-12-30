@@ -34,6 +34,7 @@ func NewSQLiteRepository(dbPath string) (*SQLiteRepository, error) {
 			date DATETIME NOT NULL,
 			tags TEXT,
 			company TEXT,
+			project TEXT,
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL
 		)
@@ -84,9 +85,9 @@ func (r *SQLiteRepository) Create(ctx context.Context, event *domain.CareerEvent
 	// Insert the event
 	_, err = r.db.ExecContext(ctx, `
 		INSERT INTO career_events
-		(id, text, date, tags, company, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, event.ID, event.Text, event.Date, tagString, event.Company, event.CreatedAt, event.UpdatedAt)
+		(id, text, date, tags, company, project, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, event.ID, event.Text, event.Date, tagString, event.Company, event.Project, event.CreatedAt, event.UpdatedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to create event with ID %s: %w", event.ID, err)
@@ -101,7 +102,7 @@ func (r *SQLiteRepository) GetByID(ctx context.Context, id string) (*domain.Care
 	var tagString, categoriesString string
 
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, text, date, tags, company, created_at, updated_at
+		SELECT id, text, date, tags, company, project, created_at, updated_at
 		FROM career_events
 		WHERE id = ?
 	`, id)
@@ -112,6 +113,7 @@ func (r *SQLiteRepository) GetByID(ctx context.Context, id string) (*domain.Care
 		&event.Date,
 		&tagString,
 		&event.Company,
+		&event.Project,
 		&event.CreatedAt,
 		&event.UpdatedAt,
 	)
@@ -167,9 +169,9 @@ func (r *SQLiteRepository) Update(ctx context.Context, event *domain.CareerEvent
 	event.UpdatedAt = updatedTime
 	_, err = r.db.ExecContext(ctx, `
 		UPDATE career_events
-		SET text = ?, date = ?, tags = ?, company = ?, updated_at = ?
+		SET text = ?, date = ?, tags = ?, company = ?, project = ?, updated_at = ?
 		WHERE id = ?
-	`, event.Text, event.Date, tagString, event.Company, event.UpdatedAt, event.ID)
+	`, event.Text, event.Date, tagString, event.Company, event.Project, event.UpdatedAt, event.ID)
 
 	if err != nil {
 		return fmt.Errorf("failed to update event with ID %s: %w", event.ID, err)
@@ -202,7 +204,7 @@ func (r *SQLiteRepository) Delete(ctx context.Context, id string) error {
 // List retrieves career events with optional filtering
 func (r *SQLiteRepository) List(ctx context.Context, filters ListFilters) ([]*domain.CareerEvent, error) {
 	// Build query with dynamic filtering
-	query := "SELECT id, text, date, tags, company, created_at, updated_at FROM career_events WHERE 1=1"
+	query := "SELECT id, text, date, tags, company, project, created_at, updated_at FROM career_events WHERE 1=1"
 	args := []interface{}{}
 
 	// Tag filtering
@@ -268,6 +270,7 @@ func (r *SQLiteRepository) List(ctx context.Context, filters ListFilters) ([]*do
 			&event.Date,
 			&tagString,
 			&event.Company,
+			&event.Project,
 			&createdAt,
 			&updatedAt,
 		)
