@@ -215,7 +215,13 @@ go build -o kariya-cli ./cmd/cli
 
 - **Event Capture**: Three modes (Timeline Journaling, CV Backfill, Manual Entry)
 - **Event Browsing**: List, filter, search, sort, and view event details
+- **Metadata Review & Enrichment**: Review, validate, and enrich event metadata with data quality scoring
+- **Individual Event Editing**: Edit date, company, project, tags, categories for single events
+- **Bulk Operations**: Edit metadata for multiple events at once with conditional updates
+- **CSV Import**: Import events from CSV files with automatic metadata review
+- **Data Quality Scoring**: Automatic scoring (0-100) to track metadata completeness
 - **Tags**: Organize events with up to 8 tags per event
+- **Categories**: Competency-based categorization with up to 2 categories per event
 - **Interactive Help**: 7-section help system with keyboard shortcuts
 - **First-Run Tutorial**: Interactive guide for new users
 - **CLI Flags**: Configuration via command-line arguments
@@ -223,11 +229,15 @@ go build -o kariya-cli ./cmd/cli
 ### Keyboard Shortcuts
 
 - `c` - Capture new event
+- `i` - Import from CSV
 - `l` - List events
+- `m` - Open metadata review
 - `h` - Help system
 - `q` - Quit
 - `tab`/`shift+tab` - Navigate form fields
 - `up`/`down` - Move through lists
+- `space` - Select/deselect (bulk operations)
+- `a` - Select all / `d` - Deselect all
 
 For complete keyboard reference, see [CLI_GUIDE.md](docs/CLI_GUIDE.md) or press 'h' in the app.
 
@@ -277,7 +287,7 @@ go test -race ./... -coverprofile=cover.out
 go tool cover -func=cover.out
 ```
 
-**Current Test Status**: 180+ tests, 100% passing
+**Current Test Status**: 131+ tests, 100% passing (including metadata review and bulk operations)
 
 ### CLI Test Breakdown
 
