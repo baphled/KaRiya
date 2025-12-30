@@ -262,4 +262,71 @@ var _ = Describe("ImportReviewModel", func() {
 			Expect(warningCount).To(BeNumerically(">", 0))
 		})
 	})
+	Context("duplicate detection status display", func() {
+		It("should show duplicate indicator for duplicate rows", func() {
+			// Arrange: Create a duplicate row
+			duplicateRow := &importer.ParsedRow{
+				RowNumber:        3,
+				RawData:          map[string]string{"text": "Duplicate event"},
+				Event:            &career.CareerEvent{ID: "event-3", Text: "Duplicate event", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+				ValidationErrors: []string{},
+				IsValid:          true,
+				IsDuplicate:      true,
+				DuplicateOf:      "event-1",
+			}
+			parsedRows = append(parsedRows, duplicateRow)
+			model = models.NewImportReviewModel(parsedRows)
+
+			// Act: Get the view output
+			view := model.View()
+
+			// Assert: View should contain duplicate indicator
+			Expect(view).To(ContainSubstring("⚠ DUP"))
+		})
+
+		It("should display duplicate reference when focused", func() {
+			// Arrange: Create a duplicate row
+			duplicateRow := &importer.ParsedRow{
+				RowNumber:        3,
+				RawData:          map[string]string{"text": "Duplicate event"},
+				Event:            &career.CareerEvent{ID: "event-3", Text: "Duplicate event", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+				ValidationErrors: []string{},
+				IsValid:          true,
+				IsDuplicate:      true,
+				DuplicateOf:      "event-1",
+			}
+			parsedRows = append(parsedRows, duplicateRow)
+			model = models.NewImportReviewModel(parsedRows)
+
+			// Act: Navigate to duplicate row and get duplicate info
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			model.Update(tea.KeyMsg{Type: tea.KeyDown})
+			dupInfo := model.GetDuplicateInfo(2)
+
+			// Assert: Should return the duplicate reference
+			Expect(dupInfo).To(Equal("duplicate of event #event-1"))
+		})
+
+		It("should not allow selection of duplicate rows", func() {
+			// Arrange: Create a duplicate row
+			duplicateRow := &importer.ParsedRow{
+				RowNumber:        3,
+				RawData:          map[string]string{"text": "Duplicate event"},
+				Event:            &career.CareerEvent{ID: "event-3", Text: "Duplicate event", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+				ValidationErrors: []string{},
+				IsValid:          true,
+				IsDuplicate:      true,
+				DuplicateOf:      "event-1",
+			}
+			parsedRows = append(parsedRows, duplicateRow)
+			model = models.NewImportReviewModel(parsedRows)
+
+			// Act: Try to deselect all and check selection state
+			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+			selected := model.GetSelectedEventIDs()
+
+			// Assert: Should have 0 selected (duplicates not pre-selected)
+			Expect(len(selected)).To(Equal(0))
+		})
+	})
 })

@@ -205,11 +205,17 @@ func (m *ImportReviewModel) renderRows() string {
 			errorLine := styles.ErrorBox.Render("Error: " + errorText)
 			rows = append(rows, errorLine)
 		}
+
+		// Show duplicate info if row is duplicate and focused
+		if parsedRow.IsDuplicate && isFocused {
+			dupInfo := m.GetDuplicateInfo(i)
+			dupLine := styles.InfoBox.Render("Duplicate: " + dupInfo)
+			rows = append(rows, dupLine)
+		}
 	}
 
 	return strings.Join(rows, "\n")
 }
-
 // renderHelp renders the help text
 func (m *ImportReviewModel) renderHelp() string {
 	helpLines := []string{
