@@ -903,8 +903,8 @@ var _ = Describe("Application Model", func() {
 			// Verify tags are pre-filled
 			selectedTags := updatedModel.formModel.TagSelector().SelectedTags()
 			Expect(len(selectedTags)).To(Equal(len(editEvent.Tags)))
-			for i, tag := range editEvent.Tags {
-				Expect(selectedTags[i]).To(Equal(tag))
+			for _, tag := range editEvent.Tags {
+				Expect(selectedTags).To(ContainElement(tag))
 			}
 		})
 

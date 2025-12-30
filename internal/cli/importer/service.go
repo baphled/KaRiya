@@ -1,0 +1,136 @@
+package importer
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/baphled/kariya/internal/domain/career"
+	repo "github.com/baphled/kariya/internal/repository/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+)
+
+// ImportResult represents the result of an import operation
+type ImportResult struct {
+	TotalRows      int
+	SuccessCount   int
+	SkippedCount   int
+	FailedCount    int
+	CreatedEvents  []*career.CareerEvent
+	FailedRows     []*ParsedRow
+}
+
+// ImportService handles the import workflow
+type ImportService struct {
+	careerService *careerservice.Service
+	parser        *CSVParser
+}
+
+// NewImportService creates a new import service
+func NewImportService(careerService *careerservice.Service) *ImportService {
+	return &ImportService{
+		careerService: careerService,
+	}
+}
+
+// PrepareImport parses CSV and returns parsed rows for review
+func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) ([]*ParsedRow, error) {
+	// Get existing events to check for duplicates
+	filters := &repo.ListFilters{}
+	existingEvents, err := is.careerService.ListEvents(ctx, *filters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load existing events: %w", err)
+	}
+
+	// Create parser with existing events
+	is.parser = NewCSVParser(existingEvents)
+
+	// Try to convert reader to io.Reader
+	ioReader, ok := reader.(interface{ Read([]byte) (int, error) })
+	if !ok {
+		return nil, fmt.Errorf("invalid reader type")
+	}
+
+	// Parse CSV
+	parsedRows, err := is.parser.Parse(ioReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse CSV: %w", err)
+	}
+
+	return parsedRows, nil
+}
+
+// ImportRows imports the parsed rows into the database
+func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow, selectedRows []int) (*ImportResult, error) {
+	result := &ImportResult{
+		TotalRows:     len(selectedRows),
+		CreatedEvents: []*career.CareerEvent{},
+		FailedRows:    []*ParsedRow{},
+	}
+
+	// Create a set of selected row numbers for quick lookup
+	selectedSet := make(map[int]bool)
+	for _, rowNum := range selectedRows {
+		selectedSet[rowNum] = true
+	}
+
+	// Import each selected row
+	for _, rowNum := range selectedRows {
+		// Find the parsed row
+		var parsedRow *ParsedRow
+		for _, pr := range parsedRows {
+			if pr.RowNumber == rowNum {
+				parsedRow = pr
+				break
+			}
+		}
+
+		if parsedRow == nil {
+			result.FailedCount++
+			continue
+		}
+
+		// Skip invalid or duplicate rows
+		if !parsedRow.IsValid || parsedRow.IsDuplicate {
+			result.SkippedCount++
+			continue
+		}
+
+		// Create the event
+		event := parsedRow.Event
+		err := is.careerService.CaptureEvent(ctx, event, careerservice.ManualEntry)
+		if err != nil {
+			result.FailedCount++
+			parsedRow.ValidationErrors = append(parsedRow.ValidationErrors, fmt.Sprintf("Failed to create event: %v", err))
+			result.FailedRows = append(result.FailedRows, parsedRow)
+			continue
+		}
+
+		result.SuccessCount++
+		result.CreatedEvents = append(result.CreatedEvents, event)
+	}
+
+	return result, nil
+}
+
+// GetImportSummary returns a summary of the import preparation
+func (is *ImportService) GetImportSummary(parsedRows []*ParsedRow) map[string]int {
+	summary := map[string]int{
+		"total":      len(parsedRows),
+		"valid":      0,
+		"invalid":    0,
+		"duplicate":  0,
+	}
+
+	for _, row := range parsedRows {
+		if row.IsDuplicate {
+			summary["duplicate"]++
+		} else if row.IsValid {
+			summary["valid"]++
+		} else {
+			summary["invalid"]++
+		}
+	}
+
+	return summary
+}
+
