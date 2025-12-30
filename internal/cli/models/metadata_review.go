@@ -188,7 +188,7 @@ func (m *MetadataReviewModel) View() string {
 	var content []string
 
 	// Header
-	header := styles.HeaderMain.Render("Review Metadata Quality")
+	header := styles.HeaderMain.Render("Metadata Review")
 	content = append(content, header)
 
 	// Status bar
