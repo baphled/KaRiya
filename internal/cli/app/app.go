@@ -361,10 +361,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.listModel = models.NewListModel(m.service, ctx)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ListScreen
-		case "i":
-			// Show import menu (requires user to select file)
-			// This will be handled through CLI flags for now
-			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -434,7 +430,6 @@ func (m *Model) renderHome() string {
 	commands := []string{
 		styles.InfoText.Render("c") + " - Capture Career Event",
 		styles.InfoText.Render("l") + " - List Events",
-		styles.InfoText.Render("i") + " - Import from CSV (use --import flag)",
 		styles.InfoText.Render("h") + " - Home",
 		styles.InfoText.Render("q") + " - Quit",
 	}
