@@ -34,6 +34,7 @@ type MetadataReviewModel struct {
 	importedEventIDs map[string]bool // IDs of recently imported events
 	isImportReview   bool            // True if reviewing only imported events
 	fieldOrigins map[string]map[string]bool // eventID -> field -> isFromCSV
+	parsingWarnings map[string][]string // eventID -> warnings
 }
 
 // NewMetadataReviewModel creates a new metadata review model
@@ -49,6 +50,7 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 		sortBy:        "quality",
 		qualityScores: make(map[string]*careerservice.QualityScore),
 			fieldOrigins: make(map[string]map[string]bool),
+		parsingWarnings: make(map[string][]string),
 }
 
 	// Load events
@@ -80,6 +82,7 @@ func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Con
 		importedEventIDs: importedMap,
 		isImportReview:   true,
 			fieldOrigins: make(map[string]map[string]bool),
+		parsingWarnings: make(map[string][]string),
 }
 
 	// Load events (will be filtered to only imported)
@@ -474,4 +477,29 @@ func (m *MetadataReviewModel) GetDefaultFields(eventID string) []string {
 // HasDefaultFields checks if an event has any default fields
 func (m *MetadataReviewModel) HasDefaultFields(eventID string) bool {
 	return len(m.GetDefaultFields(eventID)) > 0
+}
+
+// SetParsingWarnings sets the parsing warnings for an imported event
+func (m *MetadataReviewModel) SetParsingWarnings(eventID string, warnings []string) {
+	if m.parsingWarnings == nil {
+		m.parsingWarnings = make(map[string][]string)
+	}
+	m.parsingWarnings[eventID] = warnings
+}
+
+// GetParsingWarnings returns the parsing warnings for an event
+func (m *MetadataReviewModel) GetParsingWarnings(eventID string) []string {
+	if m.parsingWarnings == nil {
+		return []string{}
+	}
+	warnings, exists := m.parsingWarnings[eventID]
+	if !exists {
+		return []string{}
+	}
+	return warnings
+}
+
+// HasParsingWarnings checks if an event has parsing warnings
+func (m *MetadataReviewModel) HasParsingWarnings(eventID string) bool {
+	return len(m.GetParsingWarnings(eventID)) > 0
 }
