@@ -142,7 +142,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle EditEventMsg - open metadata editor
 	if editMsg, ok := msg.(EditEventMsg); ok {
 		ctx := context.Background()
-		m.metadataEditorModel = models.NewMetadataEditorModel(editMsg.Event, m.service, ctx)
+		m.metadataEditorModel = models.NewMetadataEditorModel(editMsg.Event, m.service, m.cliService, ctx)
 		m.previousScreen = m.currentScreen
 		m.currentScreen = MetadataEditorScreen
 		return m, nil

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/validation"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -32,6 +33,7 @@ type MetadataEditorModel struct {
 	event                *career.CareerEvent
 	originalEvent        *career.CareerEvent // For reverting changes
 	service              *careerservice.Service
+	cliService           *cliservice.CLIEventService // For persisting metadata changes
 	ctx                  context.Context
 	inputs               []textinput.Model
 	focusIndex           int
@@ -50,7 +52,7 @@ type MetadataEditorModel struct {
 }
 
 // NewMetadataEditorModel creates a new metadata editor model
-func NewMetadataEditorModel(event *career.CareerEvent, service *careerservice.Service, ctx context.Context) *MetadataEditorModel {
+func NewMetadataEditorModel(event *career.CareerEvent, service *careerservice.Service, cliSvc *cliservice.CLIEventService, ctx context.Context) *MetadataEditorModel {
 	// Create input fields (3 fields: date, company, project)
 	inputs := make([]textinput.Model, 3)
 
@@ -87,6 +89,7 @@ func NewMetadataEditorModel(event *career.CareerEvent, service *careerservice.Se
 		event:            event,
 		originalEvent:    &eventCopy,
 		service:          service,
+		cliService:       cliSvc,
 		ctx:              ctx,
 		inputs:           inputs,
 		focusIndex:       0,
@@ -240,6 +243,14 @@ func (m *MetadataEditorModel) saveChanges() (tea.Model, tea.Cmd) {
 
 	// Update timestamps
 	m.event.UpdatedAt = time.Now()
+
+	// Persist metadata changes to service
+	if m.cliService != nil {
+		if err := m.cliService.UpdateEventMetadata(m.ctx, m.event); err != nil {
+			m.err = fmt.Errorf("failed to save metadata: %w", err)
+			return m, nil
+		}
+	}
 
 	m.submitted = true
 	return m, tea.Quit

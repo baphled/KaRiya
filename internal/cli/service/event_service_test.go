@@ -107,3 +107,81 @@ var _ = Describe("CLI Event Service", func() {
 		})
 	})
 })
+
+var _ = Describe("UpdateEventMetadata", func() {
+	var (
+		repo   *careerrepo.MemoryRepository
+		svc    *careerservice.Service
+		cliSvc *CLIEventService
+		ctx    context.Context
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		repo = careerrepo.NewMemoryRepository()
+		svc = careerservice.NewService(repo)
+		cliSvc = NewCLIEventService(svc)
+	})
+
+	It("should update event metadata without changing text or date", func() {
+		// Create an event
+		originalEvent := &career.CareerEvent{
+			ID:   "test-event-1",
+			Text: "Original text",
+			Date: time.Now().Add(-24 * time.Hour),
+		}
+		err := repo.Create(ctx, originalEvent)
+		Expect(err).To(BeNil())
+
+		// Update metadata
+		updatedEvent := &career.CareerEvent{
+			ID:         "test-event-1",
+			Text:       "This should be ignored",
+			Date:       time.Now(), // This should be ignored
+			Company:    "NewCompany",
+			Project:    "NewProject",
+			Tags:       []string{"technical", "leadership"},
+			Categories: []string{"Technical"},
+		}
+
+		err = cliSvc.UpdateEventMetadata(ctx, updatedEvent)
+		Expect(err).To(BeNil())
+
+		// Verify metadata was updated
+		retrieved, err := svc.GetEventByID(ctx, "test-event-1")
+		Expect(err).To(BeNil())
+		Expect(retrieved.Company).To(Equal("NewCompany"))
+		Expect(retrieved.Project).To(Equal("NewProject"))
+		Expect(retrieved.Tags).To(ContainElements("technical", "leadership"))
+
+		// Verify text and date were not changed
+		Expect(retrieved.Text).To(Equal("Original text"))
+		Expect(retrieved.Date).To(Equal(originalEvent.Date))
+	})
+
+	It("should return error when event is nil", func() {
+		err := cliSvc.UpdateEventMetadata(ctx, nil)
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(ContainSubstring("event cannot be nil"))
+	})
+
+	It("should return error when event ID is empty", func() {
+		event := &career.CareerEvent{
+			ID:      "",
+			Text:    "Test",
+			Company: "Company",
+		}
+		err := cliSvc.UpdateEventMetadata(ctx, event)
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(ContainSubstring("event ID cannot be empty"))
+	})
+
+	It("should return error when event does not exist", func() {
+		event := &career.CareerEvent{
+			ID:      "non-existent",
+			Company: "Company",
+		}
+		err := cliSvc.UpdateEventMetadata(ctx, event)
+		Expect(err).NotTo(BeNil())
+	})
+})

@@ -130,3 +130,50 @@ func WithCategories(categories []string) Option {
 		ec.Categories = categories
 	}
 }
+
+// UpdateEventMetadata updates only the metadata fields of an event (company, project, tags, categories)
+// This is used by the metadata editor to update event metadata without changing the text or date
+func (c *CLIEventService) UpdateEventMetadata(ctx context.Context, event *career.CareerEvent) error {
+	if event == nil {
+		return ErrNilEvent
+	}
+
+	if event.ID == "" {
+		return ErrEmptyEventID
+	}
+
+	// Get the existing event first
+	existingEvent, err := c.service.GetEventByID(ctx, event.ID)
+	if err != nil {
+		return err
+	}
+
+	// Preserve original text and date, only update metadata fields
+	event.Text = existingEvent.Text
+	event.Date = existingEvent.Date
+	event.CreatedAt = existingEvent.CreatedAt
+
+	// Update the event with the new metadata
+	return c.service.UpdateEvent(ctx, event)
+}
+
+// Error definitions for metadata operations
+var (
+	ErrNilEvent     = NewMetadataError("event cannot be nil")
+	ErrEmptyEventID = NewMetadataError("event ID cannot be empty")
+)
+
+// MetadataError represents an error during metadata operations
+type MetadataError struct {
+	message string
+}
+
+// NewMetadataError creates a new metadata error
+func NewMetadataError(message string) *MetadataError {
+	return &MetadataError{message: message}
+}
+
+// Error implements the error interface
+func (me *MetadataError) Error() string {
+	return me.message
+}
