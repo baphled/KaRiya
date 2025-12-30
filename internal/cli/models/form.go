@@ -386,9 +386,6 @@ func (m *FormModel) validateDateField() {
 
 // View renders the form
 func (m *FormModel) View() string {
-	// Title
-	title := styles.HeaderMain.Render("Capture Career Event")
-
 	// Form content
 	var content []string
 
@@ -552,11 +549,17 @@ func (m *FormModel) View() string {
 		Render(formContent)
 
 	// Combine all sections
+	// Use header and footer components
+	headerView := m.header.View()
+	footerView := m.footer.View()
+
 	fullContent := lipgloss.JoinVertical(
 		lipgloss.Left,
-		title,
+		headerView,
 		"",
 		formCard,
+		"",
+		footerView,
 		"",
 		helpFooterContent,
 	)
