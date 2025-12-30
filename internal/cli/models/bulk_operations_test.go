@@ -16,12 +16,12 @@ import (
 
 var _ = Describe("BulkOperationsModel", func() {
 	var (
-		repo      *careerrepo.MemoryRepository
-		svc       *careerservice.Service
-		cliSvc    *cliservice.CLIEventService
-		ctx       context.Context
-		events    []*career.CareerEvent
-		model     *models.BulkOperationsModel
+		repo   *careerrepo.MemoryRepository
+		svc    *careerservice.Service
+		cliSvc *cliservice.CLIEventService
+		ctx    context.Context
+		events []*career.CareerEvent
+		model  *models.BulkOperationsModel
 	)
 
 	BeforeEach(func() {
@@ -372,4 +372,3 @@ var _ = Describe("BulkOperationsModel", func() {
 		})
 	})
 })
-

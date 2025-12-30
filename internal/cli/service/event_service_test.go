@@ -185,4 +185,3 @@ var _ = Describe("UpdateEventMetadata", func() {
 		Expect(err).NotTo(BeNil())
 	})
 })
-

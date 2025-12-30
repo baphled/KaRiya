@@ -22,16 +22,16 @@ const (
 
 // QualityScore represents the calculated quality metrics for a CareerEvent
 type QualityScore struct {
-	Score           int      // Total score 0-100
+	Score           int          // Total score 0-100
 	Level           QualityLevel // Quality level based on score
-	TextScore       int      // Text field score (0-20)
-	DateScore       int      // Date field score (0-20)
-	CompanyScore    int      // Company field score (0-10)
-	ProjectScore    int      // Project field score (0-10)
-	TagsScore       int      // Tags field score (0-15)
-	CategoriesScore int      // Categories field score (0-15)
-	MatchScore      int      // Text-category match score (0-10)
-	MissingFields   []string // List of missing optional fields
+	TextScore       int          // Text field score (0-20)
+	DateScore       int          // Date field score (0-20)
+	CompanyScore    int          // Company field score (0-10)
+	ProjectScore    int          // Project field score (0-10)
+	TagsScore       int          // Tags field score (0-15)
+	CategoriesScore int          // Categories field score (0-15)
+	MatchScore      int          // Text-category match score (0-10)
+	MissingFields   []string     // List of missing optional fields
 }
 
 // DataQualityCalculator provides methods for calculating event metadata quality
@@ -105,12 +105,12 @@ func (dqc *DataQualityCalculator) CalculateQuality(event *career.CareerEvent) Qu
 		// Check if text contains keywords from categories
 		textLower := strings.ToLower(event.Text)
 		categoryKeywords := map[string][]string{
-			"technical":   {"develop", "engineer", "code", "implement", "architect", "backend", "frontend", "system", "algorithm", "build", "technical"},
-			"leadership":  {"lead", "manage", "strategy", "guide", "mentor", "direct", "coordinate", "transform", "vision", "roadmap", "lead"},
-			"product":     {"product", "feature", "roadmap", "design", "user experience", "customer", "mvp", "prototype", "innovation", "product"},
-			"consulting":  {"consult", "advise", "strategic", "transform", "client", "solution", "recommend", "optimize", "advise"},
-			"research":    {"research", "analyze", "investigate", "discover", "study", "prototype", "experiment", "innovation", "methodology"},
-			"mentoring":   {"mentor", "train", "coach", "develop", "guide", "support", "teach", "onboard", "grow", "skill"},
+			"technical":  {"develop", "engineer", "code", "implement", "architect", "backend", "frontend", "system", "algorithm", "build", "technical"},
+			"leadership": {"lead", "manage", "strategy", "guide", "mentor", "direct", "coordinate", "transform", "vision", "roadmap", "lead"},
+			"product":    {"product", "feature", "roadmap", "design", "user experience", "customer", "mvp", "prototype", "innovation", "product"},
+			"consulting": {"consult", "advise", "strategic", "transform", "client", "solution", "recommend", "optimize", "advise"},
+			"research":   {"research", "analyze", "investigate", "discover", "study", "prototype", "experiment", "innovation", "methodology"},
+			"mentoring":  {"mentor", "train", "coach", "develop", "guide", "support", "teach", "onboard", "grow", "skill"},
 		}
 
 		matchFound := false

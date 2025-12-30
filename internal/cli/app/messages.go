@@ -56,7 +56,6 @@ type BackMsg struct{}
 // QuitMsg is sent to quit the application
 type QuitMsg struct{}
 
-
 // BulkOperationsMsg is sent to open bulk operations for selected events
 type BulkOperationsMsg struct {
 	Events []*career.CareerEvent
@@ -64,12 +63,12 @@ type BulkOperationsMsg struct {
 
 // ApplyBulkOperationsMsg is sent when bulk operations are applied
 type ApplyBulkOperationsMsg struct {
-	EventIDs  []string
-	Company   string
-	Project   string
-	Tags      []string
+	EventIDs   []string
+	Company    string
+	Project    string
+	Tags       []string
 	Categories []string
-	Err       error
+	Err        error
 }
 
 // CancelBulkOperationsMsg is sent when bulk operations are cancelled

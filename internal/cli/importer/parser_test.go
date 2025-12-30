@@ -10,16 +10,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-
 var _ = Describe("CSV Parser", func() {
 	var (
 		parser *importer.CSVParser
-		
 	)
 
 	BeforeEach(func() {
 		parser = importer.NewCSVParser([]*career.CareerEvent{})
-		
+
 	})
 
 	Describe("Basic CSV Parsing", func() {

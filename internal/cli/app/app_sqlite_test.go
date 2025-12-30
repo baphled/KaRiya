@@ -27,11 +27,11 @@ var _ = Describe("SQLite Persistence Integration", func() {
 		// Create temporary SQLite database
 		tempDir := os.TempDir()
 		tempDBPath = filepath.Join(tempDir, "test_kariya.db")
-		
+
 		var err error
 		repo, err = careerrepo.NewSQLiteRepository(tempDBPath)
 		Expect(err).ToNot(HaveOccurred())
-		
+
 		svc = careerservice.NewService(repo)
 		cliService = service.NewCLIEventService(svc)
 	})
@@ -98,7 +98,7 @@ var _ = Describe("SQLite Persistence Integration", func() {
 
 		It("should survive repository reinitialization", func() {
 			eventText := "Critical production fix"
-			
+
 			// Capture event
 			err := cliService.CaptureEvent(
 				ctx,
@@ -122,4 +122,3 @@ var _ = Describe("SQLite Persistence Integration", func() {
 		})
 	})
 })
-

@@ -39,7 +39,7 @@ var _ = Describe("End-to-End Integration Tests", func() {
 				// Simulate filling form fields
 				eventText := "Led cross-functional team to deliver critical migration project"
 				eventDate := time.Now().Add(-24 * time.Hour)
-				
+
 				// Submit event through CLI service
 				err := cliService.CaptureEvent(
 					ctx,
@@ -67,20 +67,20 @@ var _ = Describe("End-to-End Integration Tests", func() {
 
 			It("should handle Timeline Journaling mode with date constraints", func() {
 				eventText := "Fixed critical production bug affecting 10k users"
-						// Use 1 hour ago to ensure we're well within the 30-day window
-						eventDate := time.Now().Add(-1 * time.Hour)
-			
-						err := cliService.CaptureEvent(
-							ctx,
-							eventText,
-							eventDate,
-							careerservice.TimelineJournaling,
-							service.WithTags([]string{"technical"}),
-						)
-						Expect(err).ToNot(HaveOccurred())
+				// Use 1 hour ago to ensure we're well within the 30-day window
+				eventDate := time.Now().Add(-1 * time.Hour)
 
-						// Verify event persisted - use service layer to query
-						events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
+				err := cliService.CaptureEvent(
+					ctx,
+					eventText,
+					eventDate,
+					careerservice.TimelineJournaling,
+					service.WithTags([]string{"technical"}),
+				)
+				Expect(err).ToNot(HaveOccurred())
+
+				// Verify event persisted - use service layer to query
+				events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(events).To(HaveLen(1))
 				Expect(events[0].Text).To(Equal(eventText))
@@ -211,4 +211,3 @@ var _ = Describe("End-to-End Integration Tests", func() {
 		})
 	})
 })
-

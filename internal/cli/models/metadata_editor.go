@@ -30,25 +30,25 @@ const (
 
 // MetadataEditorModel represents the metadata editor form state
 type MetadataEditorModel struct {
-	event                *career.CareerEvent
-	originalEvent        *career.CareerEvent // For reverting changes
-	service              *careerservice.Service
-	cliService           *cliservice.CLIEventService // For persisting metadata changes
-	ctx                  context.Context
-	inputs               []textinput.Model
-	focusIndex           int
-	tagIndex             int // Index for tag navigation within tags field
-	categoryIndex        int // Index for category navigation within categories field
-	err                  error
-	submitted            bool
-	cancelled            bool
-	tagSelector          *components.TagSelector
-	categorySelector     *components.CategorySelector
-	fieldErrors          map[int]string // Map of field index to error message
-	width                int
-	height               int
-	validator            *validation.MetadataValidator
-	calculator           *careerservice.DataQualityCalculator
+	event            *career.CareerEvent
+	originalEvent    *career.CareerEvent // For reverting changes
+	service          *careerservice.Service
+	cliService       *cliservice.CLIEventService // For persisting metadata changes
+	ctx              context.Context
+	inputs           []textinput.Model
+	focusIndex       int
+	tagIndex         int // Index for tag navigation within tags field
+	categoryIndex    int // Index for category navigation within categories field
+	err              error
+	submitted        bool
+	cancelled        bool
+	tagSelector      *components.TagSelector
+	categorySelector *components.CategorySelector
+	fieldErrors      map[int]string // Map of field index to error message
+	width            int
+	height           int
+	validator        *validation.MetadataValidator
+	calculator       *careerservice.DataQualityCalculator
 }
 
 // NewMetadataEditorModel creates a new metadata editor model

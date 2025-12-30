@@ -12,13 +12,13 @@ import (
 
 // ParsedRow represents a single CSV row with its parsed data and validation status
 type ParsedRow struct {
-	RowNumber    int              // 1-based row number in CSV (excluding header)
-	RawData      map[string]string
-	Event        *career.CareerEvent
+	RowNumber        int // 1-based row number in CSV (excluding header)
+	RawData          map[string]string
+	Event            *career.CareerEvent
 	ValidationErrors []string
-	IsValid      bool
-	IsDuplicate  bool
-	DuplicateOf  string // ID of duplicate event if found
+	IsValid          bool
+	IsDuplicate      bool
+	DuplicateOf      string // ID of duplicate event if found
 }
 
 // CSVParser handles parsing and validation of CSV files
@@ -32,12 +32,12 @@ func NewCSVParser(existingEvents []*career.CareerEvent) *CSVParser {
 	return &CSVParser{
 		existingEvents: existingEvents,
 		dateFormats: []string{
-			"2006-01",          // YYYY-MM
-			"2006-01-02",       // YYYY-MM-DD
-			"01/02/2006",       // MM/DD/YYYY
-			"02-01-2006",       // DD-MM-YYYY
-			"January 2006",     // Month YYYY
-			"Jan 2006",         // Mon YYYY
+			"2006-01",      // YYYY-MM
+			"2006-01-02",   // YYYY-MM-DD
+			"01/02/2006",   // MM/DD/YYYY
+			"02-01-2006",   // DD-MM-YYYY
+			"January 2006", // Month YYYY
+			"Jan 2006",     // Mon YYYY
 		},
 	}
 }
@@ -107,11 +107,11 @@ func (p *CSVParser) Parse(reader io.Reader) ([]*ParsedRow, error) {
 // parseRow parses a single row and creates a CareerEvent
 func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap map[string]int) *ParsedRow {
 	parsedRow := &ParsedRow{
-		RowNumber:    rowNumber,
-		RawData:      rawData,
+		RowNumber:        rowNumber,
+		RawData:          rawData,
 		ValidationErrors: []string{},
-		IsValid:      true,
-		IsDuplicate:  false,
+		IsValid:          true,
+		IsDuplicate:      false,
 	}
 
 	event := &career.CareerEvent{
@@ -305,4 +305,3 @@ func getAllowedCategoriesList() []string {
 	}
 	return categories
 }
-

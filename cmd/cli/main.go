@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/baphled/kariya/internal/cli/app"
-	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/importer"
+	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"

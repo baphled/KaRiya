@@ -887,7 +887,6 @@ func (m *FormModel) CategorySelector() *components.CategorySelector {
 	return m.categorySelector
 }
 
-
 // renderTagSelector renders the tag selector with available tags
 func (m *FormModel) renderTagSelector() string {
 	var b strings.Builder

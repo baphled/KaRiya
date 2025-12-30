@@ -10,12 +10,12 @@ import (
 
 // AllowedCategories defines the set of valid competency categories
 var AllowedCategories = map[string]bool{
-	"technical":   true,
-	"leadership":  true,
-	"product":     true,
-	"consulting":  true,
-	"research":    true,
-	"mentoring":   true,
+	"technical":  true,
+	"leadership": true,
+	"product":    true,
+	"consulting": true,
+	"research":   true,
+	"mentoring":  true,
 }
 
 // CategorySelector manages category selection for career events
@@ -134,12 +134,12 @@ func (cs *CategorySelector) SetSelected(categories []string) error {
 // GetCategoryDescription returns a human-friendly description of a category
 func GetCategoryDescription(category string) string {
 	descriptions := map[string]string{
-		"technical":   "Technical skills and engineering work",
-		"leadership":  "Leadership and management experience",
-		"product":     "Product management and strategy",
-		"consulting":  "Consulting and advisory work",
-		"research":    "Research and investigation",
-		"mentoring":   "Mentoring and coaching others",
+		"technical":  "Technical skills and engineering work",
+		"leadership": "Leadership and management experience",
+		"product":    "Product management and strategy",
+		"consulting": "Consulting and advisory work",
+		"research":   "Research and investigation",
+		"mentoring":  "Mentoring and coaching others",
 	}
 	if desc, ok := descriptions[strings.ToLower(category)]; ok {
 		return desc
@@ -169,4 +169,3 @@ func MapToClassificationCategories(categories []string) []classification.Compete
 	}
 	return result
 }
-

@@ -35,53 +35,53 @@ const (
 
 // Model represents the main application state
 type Model struct {
-	cliService              *service.CLIEventService
-	service                 *careerservice.Service
-	currentScreen           Screen
-	previousScreen          Screen
-	screenBeforeActionMenu  Screen // Track screen before action menu for proper back navigation
-	width                   int
-	height                  int
-	formModel               *models.FormModel
-	successModel            *models.SuccessModel
-	listModel               *models.ListModel
-	detailsModel            *models.DetailsModel
-	actionMenuModel         *models.ActionMenuModel
-	confirmationDialog      *models.ConfirmationDialog
-	deleteEventID           string // Track the event being deleted
-	importService           *importer.ImportService
-	importReviewModel       *models.ImportReviewModel
-	importProgressModel     *models.ImportProgressModel
-	importFilePath          string // Path to CSV file being imported
-	metadataReviewModel       *models.MetadataReviewModel
-	metadataEditorModel       *models.MetadataEditorModel
-	bulkOperationsModel     *models.BulkOperationsModel
+	cliService             *service.CLIEventService
+	service                *careerservice.Service
+	currentScreen          Screen
+	previousScreen         Screen
+	screenBeforeActionMenu Screen // Track screen before action menu for proper back navigation
+	width                  int
+	height                 int
+	formModel              *models.FormModel
+	successModel           *models.SuccessModel
+	listModel              *models.ListModel
+	detailsModel           *models.DetailsModel
+	actionMenuModel        *models.ActionMenuModel
+	confirmationDialog     *models.ConfirmationDialog
+	deleteEventID          string // Track the event being deleted
+	importService          *importer.ImportService
+	importReviewModel      *models.ImportReviewModel
+	importProgressModel    *models.ImportProgressModel
+	importFilePath         string // Path to CSV file being imported
+	metadataReviewModel    *models.MetadataReviewModel
+	metadataEditorModel    *models.MetadataEditorModel
+	bulkOperationsModel    *models.BulkOperationsModel
 }
 
 // NewModel creates a new application model
 func NewModel(cliService *service.CLIEventService, careerService *careerservice.Service) *Model {
 	ctx := context.Background()
 	return &Model{
-		cliService:              cliService,
-		service:                 careerService,
-		currentScreen:           HomeScreen,
-		previousScreen:          HomeScreen,
-		screenBeforeActionMenu:  HomeScreen,
-		width:                   80,
-		height:                  24,
-		formModel:               models.NewFormModel(cliService),
-		successModel:            nil,
-		listModel:               models.NewListModel(careerService, ctx),
-		detailsModel:            nil,
-		actionMenuModel:         nil,
-		confirmationDialog:      nil,
-		deleteEventID:           "",
-		importService:           importer.NewImportService(careerService),
-		importReviewModel:       nil,
-		importProgressModel:     nil,
-		importFilePath:          "",
-		metadataReviewModel:       models.NewMetadataReviewModel(careerService, ctx),
-		metadataEditorModel:       nil,
+		cliService:             cliService,
+		service:                careerService,
+		currentScreen:          HomeScreen,
+		previousScreen:         HomeScreen,
+		screenBeforeActionMenu: HomeScreen,
+		width:                  80,
+		height:                 24,
+		formModel:              models.NewFormModel(cliService),
+		successModel:           nil,
+		listModel:              models.NewListModel(careerService, ctx),
+		detailsModel:           nil,
+		actionMenuModel:        nil,
+		confirmationDialog:     nil,
+		deleteEventID:          "",
+		importService:          importer.NewImportService(careerService),
+		importReviewModel:      nil,
+		importProgressModel:    nil,
+		importFilePath:         "",
+		metadataReviewModel:    models.NewMetadataReviewModel(careerService, ctx),
+		metadataEditorModel:    nil,
 	}
 }
 

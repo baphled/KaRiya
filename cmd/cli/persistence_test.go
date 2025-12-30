@@ -116,7 +116,7 @@ var _ = Describe("Data Persistence", func() {
 			err = cliSvc.CaptureEvent(
 				ctx,
 				"Test event at custom path",
-				time.Now().Add(-1 * time.Hour),
+				time.Now().Add(-1*time.Hour),
 				careerservice.ManualEntry,
 			)
 			Expect(err).ToNot(HaveOccurred())

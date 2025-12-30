@@ -11,4 +11,3 @@ func TestImporter(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Importer Suite")
 }
-
