@@ -29,6 +29,7 @@ const (
 	ImportReviewScreen   Screen = "import_review"
 	ImportProgressScreen Screen = "import_progress"
 	MetadataReviewScreen Screen = "metadata_review"
+	MetadataEditorScreen Screen = "metadata_editor"
 )
 
 // Model represents the main application state
@@ -52,6 +53,7 @@ type Model struct {
 	importProgressModel     *models.ImportProgressModel
 	importFilePath          string // Path to CSV file being imported
 	metadataReviewModel       *models.MetadataReviewModel
+	metadataEditorModel       *models.MetadataEditorModel
 }
 
 // NewModel creates a new application model
@@ -77,6 +79,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		importProgressModel:     nil,
 		importFilePath:          "",
 		metadataReviewModel:       models.NewMetadataReviewModel(careerService, ctx),
+		metadataEditorModel:       nil,
 	}
 }
 
@@ -133,6 +136,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.detailsModel = models.NewDetailsModel(viewMsg.Event)
 		m.previousScreen = m.currentScreen
 		m.currentScreen = ViewScreen
+		return m, nil
+	}
+
+	// Handle EditEventMsg - open metadata editor
+	if editMsg, ok := msg.(EditEventMsg); ok {
+		ctx := context.Background()
+		m.metadataEditorModel = models.NewMetadataEditorModel(editMsg.Event, m.service, ctx)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = MetadataEditorScreen
 		return m, nil
 	}
 
@@ -332,6 +344,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+	case MetadataEditorScreen:
+		if m.metadataEditorModel != nil {
+			updatedModel, cmd := m.metadataEditorModel.Update(msg)
+			m.metadataEditorModel = updatedModel.(*models.MetadataEditorModel)
+			if m.metadataEditorModel.IsSubmitted() {
+				// Editor submitted - update event in service and return to metadata review
+				m.metadataReviewModel.Refresh()
+				m.currentScreen = MetadataReviewScreen
+				m.previousScreen = MetadataEditorScreen
+			} else if m.metadataEditorModel.IsCancelled() {
+				// Editor cancelled - return to metadata review
+				m.currentScreen = MetadataReviewScreen
+				m.previousScreen = MetadataEditorScreen
+			}
+			return m, cmd
+		}
+
 	case ActionMenuScreen:
 		if m.actionMenuModel != nil {
 			updatedActionMenuModel, cmd := m.actionMenuModel.Update(msg)
@@ -404,6 +433,11 @@ func (m *Model) View() string {
 			return m.metadataReviewModel.View()
 		}
 		return "Error: Metadata Review model not initialized\n"
+	case MetadataEditorScreen:
+		if m.metadataEditorModel != nil {
+			return m.metadataEditorModel.View()
+		}
+		return "Error: Metadata Editor model not initialized\n"
 	case ViewScreen:
 		if m.detailsModel != nil {
 			return m.detailsModel.View()

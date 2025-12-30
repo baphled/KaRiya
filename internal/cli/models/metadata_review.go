@@ -167,6 +167,13 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.sortBy = "quality"
 			}
 			m.sortEvents()
+		case "enter":
+			// Edit the selected event
+			if m.selectedIdx < len(m.events) {
+				return m, func() tea.Msg {
+					return EditEventMsg{Event: m.events[m.selectedIdx]}
+				}
+			}
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
