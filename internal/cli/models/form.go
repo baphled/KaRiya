@@ -159,6 +159,28 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
+		case "T", "t":
+			// Jump to tags field for selection (only if KeyType is not KeyRunes)
+			if msg.Type != tea.KeyRunes {
+				// Only if not typing in text field
+				if m.focusIndex != int(TextField) && m.focusIndex != int(CompanyField) && m.focusIndex != int(ProjectField) {
+					m.focusIndex = int(TagsField)
+					m.tagIndex = 0
+					return m, nil
+				}
+			}
+
+		case "G", "g":
+			// Jump to categories field for selection (only if KeyType is not KeyRunes)
+			if msg.Type != tea.KeyRunes {
+				// Only if not typing in text field
+				if m.focusIndex != int(TextField) && m.focusIndex != int(CompanyField) && m.focusIndex != int(ProjectField) {
+					m.focusIndex = int(CategoriesField)
+					m.categoryIndex = 0
+					return m, nil
+				}
+			}
+
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
 
