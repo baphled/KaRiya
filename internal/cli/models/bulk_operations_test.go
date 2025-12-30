@@ -4,22 +4,22 @@ import (
 	"context"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("BulkOperationsModel", func() {
 	var (
-		repo       *careerrepo.MemoryRepository
-		svc        *careerservice.Service
-		cliSvc     *service.CLIEventService
-		ctx        context.Context
-		events     []*career.CareerEvent
-		model      *BulkOperationsModel
+		repo   *careerrepo.MemoryRepository
+		svc    *careerservice.Service
+		cliSvc *service.CLIEventService
+		ctx    context.Context
+		events []*career.CareerEvent
+		model  *BulkOperationsModel
 	)
 
 	BeforeEach(func() {
