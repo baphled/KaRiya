@@ -137,6 +137,23 @@ var _ = Describe("ImportReviewModel", func() {
 		})
 	})
 
+	Context("field origin tracking", func() {
+		It("should identify CSV fields vs defaults", func() {
+			origins := model.GetFieldOrigins(0)
+			Expect(origins).NotTo(BeNil())
+			Expect(len(origins)).To(Equal(6))
+		})
+
+		It("should detect when row has default fields", func() {
+			hasDefaults := model.HasDefaultFields(0)
+			Expect(hasDefaults).To(BeTrue())
+		})
+
+		It("should list default fields for a row", func() {
+			defaults := model.GetDefaultFieldsList(0)
+			Expect(len(defaults)).To(Equal(4))
+		})
+	})
 	Context("window resize", func() {
 		It("should handle window size changes", func() {
 			// Arrange
