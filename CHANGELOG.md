@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Phase 4 (Metadata Review & Enrichment)
+
+#### Metadata Review System
+- Implemented comprehensive metadata review screen for event clarification
+  - View all events with data quality indicators
+  - Filter by quality level (Incomplete, Basic, Enriched, Complete)
+  - Sort by date, company, or creation order
+  - Visual color-coded quality bars
+  - Quick quality score and missing fields display
+
+#### Individual Event Metadata Editor
+- Created metadata editor for single event enrichment
+  - Edit date with flexible format support (YYYY-MM-DD or relative dates)
+  - Add/update company name with autocomplete
+  - Add/update project name with autocomplete
+  - Multi-select tags (max 8 from allowed tags)
+  - Multi-select categories (max 2 from allowed categories)
+  - Field validation with helpful error messages
+  - Tab/Shift+Tab navigation between fields
+  - Undo/revert functionality (Ctrl+Z)
+
+#### Bulk Operations
+- Implemented bulk metadata editing for multiple events
+  - Select multiple events (Space to toggle, 'a' for all, 'd' to deselect)
+  - Bulk edit with conditional updates ("Apply if empty" option)
+  - Change preview before applying
+  - Transaction-like behavior (all succeed or all fail)
+  - Undo/revert support
+  - Efficient metadata enrichment for imported or grouped events
+
+#### Data Quality Scoring System
+- Automatic quality scoring (0-100 scale) for all events
+  - Text field: 20 points
+  - Date field: 20 points
+  - Company field: 20 points
+  - Project field: 20 points
+  - Tags: 15 points
+  - Categories: 15 points
+  - Quality match bonus: 10 points
+- Four quality levels:
+  - Incomplete (0-25): Only description
+  - Basic (26-50): Description + date
+  - Enriched (51-75): Description + date + company/project
+  - Complete (76-100): All fields filled
+
+#### Metadata Validation System
+- Comprehensive field validation:
+  - Date validation (not future, reasonable range, format support)
+  - Company validation (optional, max 200 chars, normalization)
+  - Project validation (optional, max 200 chars, normalization)
+  - Tags validation (from allowed list, max 8, no duplicates)
+  - Categories validation (from allowed list, max 2)
+- Helpful error messages for user feedback
+- Real-time validation on field blur or submit
+
+#### Success Screen Enhancement
+- Added "Review Metadata" option to post-capture success screen
+  - Users can immediately enrich metadata after capture
+  - Direct navigation to metadata review for captured event
+  - Maintains capture flow without disruption
+
+#### CSV Import Integration
+- Automatic navigation to metadata review after CSV import
+  - All imported events pre-loaded in metadata review
+  - Ready for immediate enrichment and validation
+  - Bulk operations available for imported event batches
+  - Seamless workflow from import to enrichment
+
+#### Documentation
+- Created comprehensive METADATA_REVIEW_GUIDE.md covering:
+  - Data quality scoring system
+  - Individual event editing workflows
+  - Bulk operations with examples
+  - Filtering and sorting options
+  - Common workflows and best practices
+  - Troubleshooting section
+  - Advanced features
+
+- Updated CLI_GUIDE.md with:
+  - Metadata review and enrichment workflows
+  - Individual editor keyboard shortcuts
+  - Bulk operations guide
+  - Data quality scoring explanation
+  - Post-capture metadata enrichment workflow
+
+- Updated CSV_IMPORT_GUIDE.md with:
+  - Post-import metadata review integration
+  - Individual and bulk editing workflows
+  - Data quality improvement strategies
+  - Enrichment examples
+
+#### Testing
+- 6+ integration tests for capture → metadata review workflow
+- 131+ total tests passing (100% success rate)
+- Race condition detection: 0 detected
+- Test coverage: 80%+ maintained
+
+
 ### Added - Phase 3 (Help System & Configuration)
 
 #### CLI Help System
