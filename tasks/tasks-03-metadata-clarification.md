@@ -4,7 +4,7 @@
 
 **Purpose**: Enable users to review, validate, and enrich event metadata (dates, companies, projects, tags, categories) before automated processing (burst detection and fact inference).
 
-**Status**: Phase 1-3 Complete (100% overall), Phase 4 Partial (50%), Phase 5 Partial (30%)
+**Status**: Phase 1-4 Complete (100% overall), Phase 5 Partial (30%)
 
 ---
 
@@ -27,9 +27,9 @@
 - [x] Task 10.0: Bulk Operations Integration (3 integration tests passing)
 - [x] Task 11.0: Bulk Service Enhancement (9 tests passing)
 
-### Phase 4: Integration with Existing Features (50% COMPLETE - Tasks 12-13)
+### Phase 4: Integration with Existing Features (100% COMPLETE - Tasks 12-13)
 - [x] Task 12.0: CSV Import Integration (PARTIAL - 12.1-12.2 COMPLETE)
-- [ ] Task 13.0: Manual Capture Integration (TODO)
+- [x] Task 13.0: Manual Capture Integration (COMPLETE)
 
 ### Phase 5: Testing & Documentation (30% COMPLETE - Tasks 14-15)
 - [x] Task 14.0: Comprehensive Testing (PARTIAL - e2e & integration tests done)
