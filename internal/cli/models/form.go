@@ -50,6 +50,8 @@ type FormModel struct {
 	editMode         bool                 // True if editing an existing event
 	editEventID      string               // ID of event being edited
 	helpFooter      components.HelpFooterModel // Help footer for keyboard shortcuts
+	header        components.HeaderModel // Header component
+	footer        components.FooterModel // Footer component
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -101,6 +103,8 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		categorySelector: components.NewCategorySelector(),
 		fieldErrors:      make(map[FormField]string),
 		helpFooter:       components.NewHelpFooter("form", 80),
+		header:       components.NewHeader("Capture Career Event", 80),
+		footer:       components.NewFooter(80),
 	}
 }
 
@@ -113,6 +117,8 @@ func (m *FormModel) Init() tea.Cmd {
 func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		m.header.SetWidth(msg.Width)
+		m.footer.SetWidth(msg.Width)
 		m.helpFooter.SetWidth(msg.Width)
 		
 		return m, nil
