@@ -571,15 +571,15 @@ var _ = Describe("FormModel", func() {
 			// Fill text
 			form = typeText(form, "Mode test event")
 
-			// Navigate to mode field (4 tabs)
-			for i := 0; i < 4; i++ {
+			// Navigate to mode field (6 tabs: TextField→DateField→CompanyField→ProjectField→TagsField→CategoriesField→ModeField)
+			for i := 0; i < 6; i++ {
 				form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
 			// Select CVBackfill mode (down arrow)
 			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyDown})
 
-			// Navigate to submit
+			// Navigate to submit button (1 tab)
 			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 
 			// Submit
