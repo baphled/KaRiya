@@ -16,6 +16,7 @@ import (
 
 var _ = Describe("Application Model", func() {
 	var (
+		ctx        context.Context
 		repo       *careerrepo.MemoryRepository
 		cliService *service.CLIEventService
 		svc        *careerservice.Service
@@ -23,6 +24,7 @@ var _ = Describe("Application Model", func() {
 	)
 
 	BeforeEach(func() {
+		ctx = context.Background()
 		repo = careerrepo.NewMemoryRepository()
 		svc = careerservice.NewService(repo)
 		cliService = service.NewCLIEventService(svc)
@@ -97,7 +99,6 @@ var _ = Describe("Application Model", func() {
 			cliService = service.NewCLIEventService(svc)
 
 			// Add an event to the repository BEFORE creating the model
-			ctx := context.Background()
 			err := cliService.CaptureEvent(ctx, "Event 1", time.Now().Add(-24*time.Hour), careerservice.TimelineJournaling)
 			Expect(err).To(BeNil())
 
@@ -464,7 +465,6 @@ var _ = Describe("Application Model", func() {
 			cliService = service.NewCLIEventService(svc)
 
 			// Add test events
-			ctx := context.Background()
 			event1 := &career.CareerEvent{
 				Text:    "First test event",
 				Date:    time.Now().Add(-24 * time.Hour),
@@ -591,7 +591,6 @@ var _ = Describe("Application Model", func() {
 			svc = careerservice.NewService(repo)
 			cliService = service.NewCLIEventService(svc)
 
-			ctx := context.Background()
 			err := svc.CaptureEvent(ctx, testEvent, careerservice.ManualEntry)
 			Expect(err).To(BeNil())
 
@@ -867,7 +866,6 @@ var _ = Describe("Application Model", func() {
 			svc = careerservice.NewService(repo)
 			cliService = service.NewCLIEventService(svc)
 			
-			ctx := context.Background()
 			err := svc.CaptureEvent(ctx, editEvent, careerservice.ManualEntry)
 			Expect(err).To(BeNil())
 			
@@ -1022,5 +1020,59 @@ var _ = Describe("Application Model", func() {
 			
 			Expect(model.currentScreen).To(Equal(HomeScreen))
 		})
+	})
+})
+
+var _ = Describe("MetadataEditorScreen Navigation", func() {
+	var (
+		model *Model
+	)
+
+	BeforeEach(func() {
+		repo := careerrepo.NewMemoryRepository()
+		svc := careerservice.NewService(repo)
+		cliSvc := service.NewCLIEventService(svc)
+		model = NewModel(cliSvc, svc)
+	})
+
+	It("should navigate to metadata editor when EditEventMsg is received", func() {
+		event := &career.CareerEvent{
+			ID:   "test-event-1",
+			Text: "Test event",
+			Date: time.Now(),
+		}
+
+		model.Update(EditEventMsg{Event: event})
+
+		Expect(model.currentScreen).To(Equal(MetadataEditorScreen))
+		Expect(model.metadataEditorModel).NotTo(BeNil())
+	})
+
+	It("should render metadata editor screen view", func() {
+		event := &career.CareerEvent{
+			ID:   "test-event-1",
+			Text: "Test event",
+			Date: time.Now(),
+		}
+
+		model.Update(EditEventMsg{Event: event})
+		view := model.View()
+
+		Expect(view).To(ContainSubstring("Edit Event Metadata"))
+	})
+
+	It("should have previous screen set when navigating to editor", func() {
+		model.currentScreen = MetadataReviewScreen
+		previousScreen := model.currentScreen
+
+		event := &career.CareerEvent{
+			ID:   "test-event-1",
+			Text: "Test event",
+			Date: time.Now(),
+		}
+
+		model.Update(EditEventMsg{Event: event})
+
+		Expect(model.previousScreen).To(Equal(previousScreen))
 	})
 })
