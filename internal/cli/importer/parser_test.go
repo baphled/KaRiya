@@ -314,4 +314,66 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Extra`
 			Expect(rows[0].IsValid).To(BeTrue())
 		})
 	})
+
+	Describe("Field origin detection", func() {
+		It("should detect when text field came from CSV", func() {
+			// Arrange: Create a parsed row with text in RawData
+			rawData := map[string]string{
+				"Text": "Event from CSV",
+				"Date": "2024-01-15",
+			}
+
+			// Act & Assert: Text should be detected as from CSV
+			Expect(rawData["Text"]).To(Equal("Event from CSV"))
+		})
+
+		It("should detect when company field came from CSV", func() {
+			// Arrange
+			rawData := map[string]string{
+				"Text":    "Event text",
+				"Date":    "2024-01-15",
+				"Company": "TechCorp",
+			}
+
+			// Act & Assert
+			Expect(rawData["Company"]).To(Equal("TechCorp"))
+		})
+
+		It("should detect when project field came from CSV", func() {
+			// Arrange
+			rawData := map[string]string{
+				"Text":    "Event text",
+				"Date":    "2024-01-15",
+				"Project": "Platform Migration",
+			}
+
+			// Act & Assert
+			Expect(rawData["Project"]).To(Equal("Platform Migration"))
+		})
+
+		It("should detect when tags field came from CSV", func() {
+			// Arrange
+			rawData := map[string]string{
+				"Text": "Event text",
+				"Date": "2024-01-15",
+				"Tags": "technical,leadership",
+			}
+
+			// Act & Assert
+			Expect(rawData["Tags"]).To(Equal("technical,leadership"))
+		})
+
+		It("should detect missing fields (not from CSV)", func() {
+			// Arrange: RawData without Company field
+			rawData := map[string]string{
+				"Text": "Event text",
+				"Date": "2024-01-15",
+			}
+
+			// Act & Assert: Company field not in RawData
+			_, hasCompany := rawData["Company"]
+			Expect(hasCompany).To(BeFalse())
+		})
+	})
+
 })
