@@ -30,6 +30,8 @@ type ListModel struct {
 	searchModel *SearchModel
 	sortModel       *SortModel
 	helpFooter      components.HelpFooterModel // Help footer
+	header        components.HeaderModel // Header component
+	footer        components.FooterModel // Footer component
 }
 
 // NewListModel creates a new list model
@@ -44,6 +46,8 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		searchModel: NewSearchModel(),
 		sortModel:   NewSortModel(),
 		helpFooter:      components.NewHelpFooter("list", 80),
+		header:       components.NewHeader("Career Events", 80),
+		footer:       components.NewFooter(80),
 	}
 
 	// Load events
@@ -91,8 +95,9 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.header.SetWidth(msg.Width)
+		m.footer.SetWidth(msg.Width)
 		m.helpFooter.SetWidth(msg.Width)
-		return m, nil
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -124,9 +129,6 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the model
 func (m *ListModel) View() string {
-	// Title
-	title := styles.HeaderMain.Render("Career Events")
-
 	// Form content
 	var content []string
 
@@ -205,12 +207,18 @@ func (m *ListModel) View() string {
 	listCard := styles.CardBase.
 		Render(listContent)
 
+	// Use header and footer components
+	headerView := m.header.View()
+	footerView := m.footer.View()
+
 	// Combine all sections
 	fullContent := lipgloss.JoinVertical(
 		lipgloss.Left,
-		title,
+		headerView,
 		"",
 		listCard,
+		"",
+		footerView,
 	)
 
 	return fullContent
