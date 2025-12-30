@@ -159,6 +159,57 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
+		case "j", "k":
+			// Handle j/k navigation for tags, categories, and modes
+			// Only when focused on these fields, not in text input
+			if m.focusIndex == int(TagsField) {
+				availableTags := m.tagSelector.AvailableTags()
+				if msg.String() == "j" {
+					m.tagIndex++
+					if m.tagIndex >= len(availableTags) {
+						m.tagIndex = 0
+					}
+				} else if msg.String() == "k" {
+					m.tagIndex--
+					if m.tagIndex < 0 {
+						m.tagIndex = len(availableTags) - 1
+					}
+				}
+				return m, nil
+			}
+
+			if m.focusIndex == int(CategoriesField) {
+				availableCategories := m.categorySelector.AvailableCategories()
+				if msg.String() == "j" {
+					m.categoryIndex++
+					if m.categoryIndex >= len(availableCategories) {
+						m.categoryIndex = 0
+					}
+				} else if msg.String() == "k" {
+					m.categoryIndex--
+					if m.categoryIndex < 0 {
+						m.categoryIndex = len(availableCategories) - 1
+					}
+				}
+				return m, nil
+			}
+
+			if m.focusIndex == int(ModeField) {
+				if msg.String() == "j" {
+					m.modeIndex++
+					if m.modeIndex >= len(m.modes) {
+						m.modeIndex = 0
+					}
+				} else if msg.String() == "k" {
+					m.modeIndex--
+					if m.modeIndex < 0 {
+						m.modeIndex = len(m.modes) - 1
+					}
+				}
+				return m, nil
+			}
+			// If not in a navigation field, fall through to text input
+
 		case "T", "t":
 			// Jump to tags field for selection (only if KeyType is not KeyRunes)
 			if msg.Type != tea.KeyRunes {
@@ -256,15 +307,7 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focusIndex++
 			}
 
-			// Skip display-only fields (TagsField, CategoriesField)
-			for m.focusIndex == int(TagsField) || m.focusIndex == int(CategoriesField) {
-				if s == "up" || s == "shift+tab" {
-					m.focusIndex--
-				} else {
-					m.focusIndex++
-				}
-			}
-
+			// Wrap around
 			if m.focusIndex > int(SubmitButton) {
 				m.focusIndex = 0
 			} else if m.focusIndex < 0 {
@@ -855,13 +898,13 @@ func (m *FormModel) renderTagSelector() string {
 		if i == m.tagIndex {
 			selected = "►"
 		}
-		
+
 		isSelected := m.tagSelector.IsSelected(tag)
 		checkbox := "☐"
 		if isSelected {
 			checkbox = "☑"
 		}
-		
+
 		b.WriteString(fmt.Sprintf("║   %s %s %-20s║\n", selected, checkbox, tag))
 	}
 
@@ -878,13 +921,13 @@ func (m *FormModel) renderCategorySelector() string {
 		if i == m.categoryIndex {
 			selected = "►"
 		}
-		
+
 		isSelected := m.categorySelector.IsSelected(category)
 		checkbox := "☐"
 		if isSelected {
 			checkbox = "☑"
 		}
-		
+
 		b.WriteString(fmt.Sprintf("║   %s %s %-20s║\n", selected, checkbox, category))
 	}
 

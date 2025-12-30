@@ -18,6 +18,16 @@ var AllowedTags = map[string]bool{
 	"mentoring":   true,
 }
 
+// AllowedCategories defines the set of valid competency categories for a CareerEvent
+var AllowedCategories = map[string]bool{
+	"technical":   true,
+	"leadership":  true,
+	"product":     true,
+	"consulting":  true,
+	"research":    true,
+	"mentoring":   true,
+}
+
 // CareerEvent represents a professional event or milestone
 type CareerEvent struct {
 	ID         string    `json:"id"`
@@ -45,6 +55,11 @@ func (ce *CareerEvent) Validate() error {
 
 	// Validate tags
 	if err := ce.validateTags(); err != nil {
+		return err
+	}
+
+	// Validate categories
+	if err := ce.validateCategories(); err != nil {
 		return err
 	}
 
@@ -77,6 +92,16 @@ func (ce *CareerEvent) validateTags() error {
 	for _, tag := range ce.Tags {
 		if !AllowedTags[tag] {
 			return errors.New("invalid tag: " + tag)
+		}
+	}
+	return nil
+}
+
+// validateCategories checks that all categories are from the allowed set
+func (ce *CareerEvent) validateCategories() error {
+	for _, category := range ce.Categories {
+		if !AllowedCategories[strings.ToLower(category)] {
+			return errors.New("invalid category: " + category)
 		}
 	}
 	return nil

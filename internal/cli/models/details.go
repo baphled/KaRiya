@@ -102,6 +102,17 @@ func (m *DetailsModel) View() string {
 		sb.WriteString("\n\n")
 	}
 
+	// Categories (if available)
+	if len(m.event.Categories) > 0 {
+		sb.WriteString(styles.InputLabel.Render("Categories:"))
+		sb.WriteString("\n")
+		for _, category := range m.event.Categories {
+			sb.WriteString(styles.TagBase.Render(category))
+			sb.WriteString(" ")
+		}
+		sb.WriteString("\n\n")
+	}
+
 	// Event ID
 	sb.WriteString(styles.InputLabel.Render("Event ID:"))
 	sb.WriteString("\n")
