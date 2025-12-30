@@ -681,8 +681,10 @@ var _ = Describe("Application Model", func() {
 			newModel, _ = updatedModel.Update(deleteAction)
 			updatedModel = newModel.(*Model)
 
-			// Verify transition to ListScreen
-			Expect(updatedModel.currentScreen).To(Equal(ListScreen))
+			// Verify transition to ConfirmationScreen with confirmation dialog
+			Expect(updatedModel.currentScreen).To(Equal(ConfirmationScreen))
+			Expect(updatedModel.confirmationDialog).NotTo(BeNil())
+			Expect(updatedModel.deleteEventID).To(Equal(testEvent.ID))
 		})
 
 		It("should cancel action menu with BackMsg", func() {
@@ -729,6 +731,120 @@ var _ = Describe("Application Model", func() {
 			Expect(model.currentScreen).To(Equal(ListScreen))
 		})
 	})
+
+	Context("Delete Confirmation Dialog", func() {
+		var (
+			testEvent *career.CareerEvent
+		)
+
+		BeforeEach(func() {
+			// Create a test event for delete scenarios
+			testEvent = &career.CareerEvent{
+				ID:      "test-delete-event-1",
+				Text:    "Test event for delete",
+				Date:    time.Now().Add(-24 * time.Hour),
+				Company: "DeleteCorp",
+				Project: "Delete Testing",
+				Tags:    []string{"technical"},
+			}
+
+			// Setup repository with test event
+			repo = careerrepo.NewMemoryRepository()
+			err := repo.Create(context.Background(), testEvent)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Setup service and models
+			svc = careerservice.NewService(repo)
+			cliService = service.NewCLIEventService(svc)
+			model = NewModel(cliService, svc)
+			model.currentScreen = ListScreen
+			model.listModel = models.NewListModel(svc, context.Background())
+		})
+
+		It("should show confirmation dialog when delete action is selected", func() {
+			// Enter action menu
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
+			newModel, _ := model.Update(actionMenuMsg)
+			updatedModel := newModel.(*Model)
+
+			// Select Delete action
+			deleteAction := models.EventActionSelectedMsg{
+				Event:  testEvent,
+				Action: models.EventActionDelete,
+			}
+			newModel, _ = updatedModel.Update(deleteAction)
+			updatedModel = newModel.(*Model)
+
+			// Verify confirmation dialog is shown
+			Expect(updatedModel.currentScreen).To(Equal(ConfirmationScreen))
+			Expect(updatedModel.confirmationDialog).NotTo(BeNil())
+			Expect(updatedModel.deleteEventID).To(Equal(testEvent.ID))
+		})
+
+		It("should cancel delete and return to action menu on BackMsg", func() {
+			// Setup: Navigate to confirmation screen
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
+			newModel, _ := model.Update(actionMenuMsg)
+			updatedModel := newModel.(*Model)
+
+			deleteAction := models.EventActionSelectedMsg{
+				Event:  testEvent,
+				Action: models.EventActionDelete,
+			}
+			newModel, _ = updatedModel.Update(deleteAction)
+			updatedModel = newModel.(*Model)
+
+			// Verify we're on ConfirmationScreen
+			Expect(updatedModel.currentScreen).To(Equal(ConfirmationScreen))
+
+			// Send BackMsg to cancel
+			backMsg := models.BackMsg{}
+			newModel, _ = updatedModel.Update(backMsg)
+			updatedModel = newModel.(*Model)
+
+			// Verify we return to ActionMenuScreen
+			Expect(updatedModel.currentScreen).To(Equal(ActionMenuScreen))
+			Expect(updatedModel.confirmationDialog).To(BeNil())
+			Expect(updatedModel.deleteEventID).To(Equal(""))
+		})
+
+		It("should allow confirming deletion from confirmation screen", func() {
+			// Setup: Navigate to confirmation screen
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
+			newModel, _ := model.Update(actionMenuMsg)
+			updatedModel := newModel.(*Model)
+
+			deleteAction := models.EventActionSelectedMsg{
+				Event:  testEvent,
+				Action: models.EventActionDelete,
+			}
+			newModel, _ = updatedModel.Update(deleteAction)
+			updatedModel = newModel.(*Model)
+
+			// Verify we're on ConfirmationScreen with dialog
+			Expect(updatedModel.currentScreen).To(Equal(ConfirmationScreen))
+			Expect(updatedModel.confirmationDialog).NotTo(BeNil())
+
+			// Simulate user focusing on "Yes, Delete" button (move right)
+			keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'l'}} // 'l' moves right in confirmation dialog
+			newModel, _ = updatedModel.Update(keyMsg)
+			updatedModel = newModel.(*Model)
+
+			// Verify dialog processed the key
+			Expect(updatedModel.currentScreen).To(Equal(ConfirmationScreen))
+
+			// Simulate user pressing Enter to confirm
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+			newModel, _ = updatedModel.Update(enterMsg)
+			updatedModel = newModel.(*Model)
+
+			// After confirmation, should be on ListScreen
+			Expect(updatedModel.currentScreen).To(Equal(ListScreen))
+			Expect(updatedModel.confirmationDialog).To(BeNil())
+			Expect(updatedModel.deleteEventID).To(Equal(""))
+		})
+	})
+
 
 	Context("Edit Form Pre-Fill", func() {
 		var (
