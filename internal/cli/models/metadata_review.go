@@ -26,6 +26,8 @@ type MetadataReviewModel struct {
 	expandedIdx   int    // Index of expanded event (-1 if none)
 	filterMode    string // "all", "incomplete"
 	sortBy        string // "date", "company", "quality"
+	importedEventIDs map[string]bool // IDs of recently imported events
+	isImportReview   bool            // True if reviewing only imported events
 }
 
 // NewMetadataReviewModel creates a new metadata review model
@@ -49,6 +51,36 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 }
 
 // loadEvents loads events and calculates quality scores
+// NewMetadataReviewModelForImport creates a metadata review model for imported events
+func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Context, importedEventIDs []string) *MetadataReviewModel {
+	calculator := careerservice.NewDataQualityCalculator()
+	
+	// Convert slice to map for O(1) lookup
+	importedMap := make(map[string]bool)
+	for _, id := range importedEventIDs {
+		importedMap[id] = true
+	}
+	
+	model := &MetadataReviewModel{
+		service:          svc,
+		calculator:       calculator,
+		ctx:              ctx,
+		selectedIdx:      0,
+		expandedIdx:      -1,
+		filterMode:       "all",
+		sortBy:           "quality",
+		qualityScores:    make(map[string]*careerservice.QualityScore),
+		importedEventIDs: importedMap,
+		isImportReview:   true,
+	}
+
+	// Load events (will be filtered to only imported)
+	model.loadEvents()
+
+	return model
+}
+
+
 func (m *MetadataReviewModel) loadEvents() {
 	filters := careerrepo.ListFilters{
 		SortBy:    "date",
@@ -79,6 +111,17 @@ func (m *MetadataReviewModel) loadEvents() {
 
 // filterEvents filters events based on current filter mode
 func (m *MetadataReviewModel) filterEvents(events []*career.CareerEvent) []*career.CareerEvent {
+	// Filter by imported events if in import review mode
+	if m.isImportReview && len(m.importedEventIDs) > 0 {
+		filtered := make([]*career.CareerEvent, 0)
+		for _, event := range events {
+			if m.importedEventIDs[event.ID] {
+				filtered = append(filtered, event)
+			}
+		}
+		events = filtered
+	}
+
 	if m.filterMode == "incomplete" {
 		filtered := make([]*career.CareerEvent, 0)
 		for _, event := range events {
@@ -356,6 +399,11 @@ func (m *MetadataReviewModel) GetSelectedEvent() *career.CareerEvent {
 		return m.events[m.selectedIdx]
 	}
 	return nil
+}
+
+// GetEvents returns the current list of events
+func (m *MetadataReviewModel) GetEvents() []*career.CareerEvent {
+	return m.events
 }
 
 // Refresh reloads events from service
