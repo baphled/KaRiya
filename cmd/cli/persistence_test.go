@@ -171,9 +171,13 @@ var _ = Describe("Form Submission Persistence", func() {
 			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "Infrastructure")
 
-			// Navigate to mode field and then to submit button
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			// Navigate through Tags, Categories, Mode fields to reach Submit button
+			// Current position: ProjectField (3)
+			// Need to reach: SubmitButton (7)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // TagsField (4)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // CategoriesField (5)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // ModeField (6)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
 
 			// Submit form
 			form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
@@ -238,9 +242,13 @@ var _ = Describe("Form Submission Debug", func() {
 			form = typeText(form, "TestProject")
 			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 
-			// Now we should be on the mode field - let's check what mode is selected
-			// Without navigating away, submit
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			// Navigate through Tags, Categories, Mode fields to reach Submit button
+			// Current position: ProjectField (3)
+			// Need to reach: SubmitButton (7)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // TagsField (4)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // CategoriesField (5)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // ModeField (6)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
 
 			// Submit form
 			form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
