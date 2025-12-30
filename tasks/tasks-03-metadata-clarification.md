@@ -196,7 +196,7 @@
 
 - [ ] 12.0 Enhance CSV Import Integration
   - [x] 12.1 Modify `import_review.go` to show metadata review after import (COMPLETE)
-  - [ ] 12.2 Display all imported events pre-loaded in metadata review
+  - [x] 12.2 Display all imported events pre-loaded in metadata review (COMPLETE)
   - [ ] 12.3 Indicate which fields came from CSV vs. default values
   - [ ] 12.4 Show parsing issues or warnings for problematic imports
   - [ ] 12.5 Add duplicate detection status display
