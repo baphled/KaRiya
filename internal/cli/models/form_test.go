@@ -113,7 +113,7 @@ var _ = Describe("FormModel", func() {
 			testForm.Init()
 
 			// Navigate to mode field (5 tabs)
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -130,7 +130,7 @@ var _ = Describe("FormModel", func() {
 			testForm.Init()
 
 			// Navigate to mode field (5 tabs)
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -149,7 +149,7 @@ var _ = Describe("FormModel", func() {
 			testForm.Init()
 
 			// Navigate to mode field
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -170,8 +170,8 @@ var _ = Describe("FormModel", func() {
 			// Type text
 			testForm = typeText(testForm, "Test event")
 
-			// Navigate to submit button (6 tabs)
-			for i := 0; i < 6; i++ {
+			// Navigate to submit button (7 tabs)
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -214,8 +214,8 @@ var _ = Describe("FormModel", func() {
 			testForm := models.NewFormModel(cliService)
 			testForm.Init()
 
-			// Navigate to submit button (6 tabs)
-			for i := 0; i < 6; i++ {
+			// Navigate to submit button (7 tabs)
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
