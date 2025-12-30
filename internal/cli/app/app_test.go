@@ -980,4 +980,47 @@ var _ = Describe("Application Model", func() {
 		})
 	})
 
+
+	Describe("Metadata Review Screen Navigation", func() {
+		var (
+			model *Model
+		)
+
+		BeforeEach(func() {
+			repo := careerrepo.NewMemoryRepository()
+			svc := careerservice.NewService(repo)
+			cliSvc := service.NewCLIEventService(svc)
+			model = NewModel(cliSvc, svc)
+		})
+
+		It("should navigate to metadata review screen with 'm' key", func() {
+			Expect(model.currentScreen).To(Equal(HomeScreen))
+			
+			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
+			
+			Expect(model.currentScreen).To(Equal(MetadataReviewScreen))
+			Expect(model.previousScreen).To(Equal(HomeScreen))
+		})
+
+		It("should initialize metadata review model", func() {
+			Expect(model.metadataReviewModel).NotTo(BeNil())
+		})
+
+		It("should render metadata review screen", func() {
+			model.currentScreen = MetadataReviewScreen
+			view := model.View()
+			
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Review Metadata Quality"))
+		})
+
+		It("should go back from metadata review screen with Backspace", func() {
+			model.currentScreen = MetadataReviewScreen
+			model.previousScreen = HomeScreen
+			
+			model.Update(models.BackMsg{})
+			
+			Expect(model.currentScreen).To(Equal(HomeScreen))
+		})
+	})
 })
