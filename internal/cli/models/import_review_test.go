@@ -154,6 +154,22 @@ var _ = Describe("ImportReviewModel", func() {
 			Expect(len(defaults)).To(Equal(4))
 		})
 	})
+	Context("parsing warnings and duplicate detection", func() {
+		It("should identify parsing warnings", func() {
+			warnings := model.GetParsingWarnings(0)
+			Expect(len(warnings)).To(Equal(1))
+		})
+
+		It("should detect when row has warnings", func() {
+			hasWarnings := model.HasWarnings(0)
+			Expect(hasWarnings).To(BeTrue())
+		})
+
+		It("should provide duplicate information", func() {
+			dupInfo := model.GetDuplicateInfo(0)
+			Expect(dupInfo).To(Equal(""))
+		})
+	})
 	Context("window resize", func() {
 		It("should handle window size changes", func() {
 			// Arrange
