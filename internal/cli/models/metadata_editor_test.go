@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/models"
+	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -18,6 +19,7 @@ var _ = Describe("MetadataEditorModel", func() {
 		event  *career.CareerEvent
 		repo   *careerrepo.MemoryRepository
 		svc    *careerservice.Service
+		cliSvc *cliservice.CLIEventService
 		editor *models.MetadataEditorModel
 		ctx    context.Context
 	)
@@ -26,6 +28,7 @@ var _ = Describe("MetadataEditorModel", func() {
 		ctx = context.Background()
 		repo = careerrepo.NewMemoryRepository()
 		svc = careerservice.NewService(repo)
+		cliSvc = cliservice.NewCLIEventService(svc)
 
 		event = &career.CareerEvent{
 			ID:         "test-event-1",
@@ -39,7 +42,7 @@ var _ = Describe("MetadataEditorModel", func() {
 			UpdatedAt:  time.Now(),
 		}
 
-		editor = models.NewMetadataEditorModel(event, svc, ctx)
+		editor = models.NewMetadataEditorModel(event, svc, cliSvc, ctx)
 	})
 
 	Describe("Creation", func() {
@@ -124,7 +127,7 @@ var _ = Describe("MetadataEditorModel", func() {
 		})
 
 		It("should cancel when Backspace is pressed", func() {
-			editor = models.NewMetadataEditorModel(event, svc, ctx)
+			editor = models.NewMetadataEditorModel(event, svc, cliSvc, ctx)
 			editor.Update(tea.KeyMsg{Type: tea.KeyBackspace})
 			Expect(editor.IsCancelled()).To(BeTrue())
 		})
