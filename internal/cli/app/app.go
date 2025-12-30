@@ -270,18 +270,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			updatedProgress, cmd := m.importProgressModel.Update(msg)
 			m.importProgressModel = updatedProgress.(*models.ImportProgressModel)
 
-			// If import completed, wait for user to press key to return home
+			// If import completed, navigate to metadata review
 			if m.importProgressModel.Completed {
 				switch msg.(type) {
 				case tea.KeyMsg:
 					m.previousScreen = m.currentScreen
-					m.currentScreen = HomeScreen
+					m.currentScreen = MetadataReviewScreen
 					m.importReviewModel = nil
 					m.importProgressModel = nil
 					m.importFilePath = ""
-					// Refresh list after import
+					// Initialize metadata review model with imported events
 					ctx := context.Background()
-					m.listModel = models.NewListModel(m.service, ctx)
+					m.metadataReviewModel = models.NewMetadataReviewModel(m.service, ctx)
 					return m, nil
 				}
 			}

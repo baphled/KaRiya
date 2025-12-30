@@ -73,3 +73,8 @@ type ApplyBulkOperationsMsg struct {
 
 // CancelBulkOperationsMsg is sent when bulk operations are cancelled
 type CancelBulkOperationsMsg struct{}
+
+// MetadataReviewTriggeredMsg is sent when metadata review should be shown after import
+type MetadataReviewTriggeredMsg struct {
+	Events []*career.CareerEvent
+}
