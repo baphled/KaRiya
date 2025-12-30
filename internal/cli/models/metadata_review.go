@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // BulkOperationsMsg is sent to open bulk operations for selected events
@@ -36,6 +37,7 @@ type MetadataReviewModel struct {
 	fieldOrigins map[string]map[string]bool // eventID -> field -> isFromCSV
 	parsingWarnings map[string][]string // eventID -> warnings
 	duplicateStatus map[string]string // eventID -> original event ID (empty if not duplicate)
+	helpFooter components.HelpFooterModel // Help footer
 }
 
 // NewMetadataReviewModel creates a new metadata review model
@@ -53,7 +55,8 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 			fieldOrigins: make(map[string]map[string]bool),
 		parsingWarnings: make(map[string][]string),
 		duplicateStatus: make(map[string]string),
-}
+		helpFooter:       components.NewHelpFooter("metadata_review", 80),
+	}
 
 	// Load events
 	model.loadEvents()
@@ -183,6 +186,11 @@ func (m *MetadataReviewModel) Init() tea.Cmd {
 // Update handles messages
 func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.helpFooter.SetWidth(msg.Width)
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc":
@@ -237,9 +245,6 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return BulkOperationsMsg{Events: m.events}
 			}
 		}
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
 	}
 
 	return m, nil
@@ -290,7 +295,9 @@ func (m *MetadataReviewModel) View() string {
 	}
 
 	// Footer
-	footer := styles.InputHint.Render("↑/↓ navigate | Space expand | f filter | s sort | b bulk | Backspace back")
+	// Help footer
+	m.helpFooter.SetWidth(styles.MaxWidth(80))
+	footer := m.helpFooter.View()
 	content = append(content, "")
 	content = append(content, footer)
 
