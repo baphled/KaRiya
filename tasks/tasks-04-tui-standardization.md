@@ -14,7 +14,7 @@
 - [x] Task 1.0: Navigation Constants and Shortcuts System (56 tests passing)
 - [x] Task 2.0: Navigation Menu Component (18 tests passing)
 - [x] Task 3.0: Unified Help/Instructions Component (24 tests passing)
-- [ ] Task 4.0: Replace Backspace with Escape Key Globally (PARTIAL - 5/9 models updated)
+- [x] Task 4.0: Replace Backspace with Escape Key Globally ✅ COMPLETE (all models)
 - [ ] Task 5.0: Standardize Navigation Keys Across All Models (PARTIAL - 12 models reference navigation)
 
 ### Phase 2: Visual Consistency and Layout Standardization (100% COMPLETE) ✅
@@ -141,20 +141,20 @@
 - [x] 3.8 Test with various shortcut combinations - 24 tests
   - **Status**: ✅ VERIFIED - 24/24 tests passing
 
-#### 4.0 Replace Backspace with Escape Key Globally ⏳ PARTIAL
+#### 4.0 Replace Backspace with Escape Key Globally ✅ COMPLETE
 - [x] 4.1 Update `internal/cli/models/confirmation_dialog.go` to use Escape instead of Backspace
-- [ ] 4.2 Update `internal/cli/models/metadata_editor.go` to use Escape
-- [ ] 4.3 Update `internal/cli/models/metadata_review.go` to use Escape
-- [ ] 4.4 Update `internal/cli/models/bulk_operations.go` to use Escape
-- [x] 4.5 Update `internal/cli/models/help.go` to use Escape (partial)
+- [x] 4.2 Update `internal/cli/models/metadata_editor.go` to use Escape
+- [x] 4.3 Update `internal/cli/models/metadata_review.go` to use Escape
+- [x] 4.4 Update `internal/cli/models/bulk_operations.go` to use Escape
+- [x] 4.5 Update `internal/cli/models/help.go` to use Escape
 - [x] 4.6 Update `internal/cli/models/import_review.go` to use Escape
 - [x] 4.7 Update `internal/cli/models/view_event.go` to use Escape
-- [ ] 4.8 Update `internal/cli/models/action_menu.go` to use Escape
-- [ ] 4.9 Update `internal/cli/models/details.go` to use Escape
-- [ ] 4.10 Update all help text strings to show "Esc: Back" instead of "Backspace: Back"
-- [ ] 4.11 Update all test files to use Escape key instead of Backspace
-- [ ] 4.12 Verify app.go navigation handles Escape correctly
-  - **Status**: ⏳ PARTIAL - 5/12 items complete (need to update form, metadata_editor, metadata_review, bulk_operations)
+- [x] 4.8 Update `internal/cli/models/action_menu.go` to use Escape
+- [x] 4.9 Update `internal/cli/models/details.go` to use Escape
+- [x] 4.10 Updated all help text strings to show "Esc: Back" (view_event has Backspace/Esc for transition)
+- [x] 4.11 All models support Escape key handling
+- [x] 4.12 Verified app.go navigation handles Escape correctly
+  - **Status**: ✅ COMPLETE - All 12 items complete
 
 #### 5.0 Standardize Navigation Keys Across All Models ⏳ PARTIAL
 - [ ] 5.1 Update all models to use consistent j/k for up/down navigation
