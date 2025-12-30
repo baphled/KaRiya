@@ -11,9 +11,9 @@ import (
 
 // QualityIndicator displays the data quality score for a career event
 type QualityIndicator struct {
-	score       *career.QualityScore
-	calculator  *career.DataQualityCalculator
-	width       int
+	score      *career.QualityScore
+	calculator *career.DataQualityCalculator
+	width      int
 }
 
 // NewQualityIndicator creates a new quality indicator
@@ -202,4 +202,3 @@ func (qi *QualityIndicator) renderFieldScores() string {
 
 	return strings.Join(fields, "\n")
 }
-

@@ -599,7 +599,6 @@ var _ = Describe("Application Model", func() {
 			model.currentScreen = ListScreen
 		})
 
-
 		It("should enter Action Menu when event is selected", func() {
 			// Simulate selecting an event in the list
 			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
@@ -844,7 +843,6 @@ var _ = Describe("Application Model", func() {
 		})
 	})
 
-
 	Context("Edit Form Pre-Fill", func() {
 		var (
 			editEvent *career.CareerEvent
@@ -865,10 +863,10 @@ var _ = Describe("Application Model", func() {
 			repo = careerrepo.NewMemoryRepository()
 			svc = careerservice.NewService(repo)
 			cliService = service.NewCLIEventService(svc)
-			
+
 			err := svc.CaptureEvent(ctx, editEvent, careerservice.ManualEntry)
 			Expect(err).To(BeNil())
-			
+
 			// Create model after persisting event
 			model = NewModel(cliService, svc)
 		})
@@ -879,25 +877,25 @@ var _ = Describe("Application Model", func() {
 				Event:  editEvent,
 				Action: models.EventActionEdit,
 			}
-			
+
 			newModel, _ := model.Update(editAction)
 			updatedModel := newModel.(*Model)
 
 			// Verify we're on CaptureScreen
 			Expect(updatedModel.currentScreen).To(Equal(CaptureScreen))
-			
+
 			// Verify form is in edit mode
 			Expect(updatedModel.formModel.IsEditMode()).To(BeTrue())
-			
+
 			// Verify edit event ID is set
 			Expect(updatedModel.formModel.GetEditEventID()).To(Equal(editEvent.ID))
-			
+
 			// Verify form fields are pre-filled
 			Expect(updatedModel.formModel.GetInputValue(0)).To(Equal(editEvent.Text))
 			Expect(updatedModel.formModel.GetInputValue(1)).To(Equal(editEvent.Date.Format("2006-01-02")))
 			Expect(updatedModel.formModel.GetInputValue(2)).To(Equal(editEvent.Company))
 			Expect(updatedModel.formModel.GetInputValue(3)).To(Equal(editEvent.Project))
-			
+
 			// Verify tags are pre-filled
 			selectedTags := updatedModel.formModel.TagSelector().SelectedTags()
 			Expect(len(selectedTags)).To(Equal(len(editEvent.Tags)))
@@ -912,13 +910,13 @@ var _ = Describe("Application Model", func() {
 				Event:  editEvent,
 				Action: models.EventActionEdit,
 			}
-			
+
 			newModel, _ := model.Update(editAction)
 			updatedModel := newModel.(*Model)
 
 			// Render the form
 			view := updatedModel.View()
-			
+
 			// Verify form content is displayed
 			Expect(view).To(ContainSubstring("Complex event to be edited"))
 			Expect(view).To(ContainSubstring("EditCorp"))
@@ -933,18 +931,18 @@ var _ = Describe("Application Model", func() {
 				Event:  editEvent,
 				Action: models.EventActionEdit,
 			}
-			
+
 			newModel, _ := model.Update(editAction)
 			model = newModel.(*Model)
 
 			// Verify form is populated with old data
 			Expect(model.formModel.GetInputValue(0)).To(Equal("Complex event to be edited"))
-			
+
 			// Clear and update the text field
 			// Simulate user clearing and typing new text
 			// (In real usage, user would edit via keyboard input)
 			model.formModel.GetInputValue(0) // Read current value
-			
+
 			// Verify form remains in edit mode for submission
 			Expect(model.formModel.IsEditMode()).To(BeTrue())
 		})
@@ -952,32 +950,31 @@ var _ = Describe("Application Model", func() {
 		It("should return to action menu after edit action", func() {
 			// Navigate to list first
 			model.currentScreen = ListScreen
-			
+
 			// Trigger action menu
 			actionMenuMsg := models.EventActionMenuMsg{Event: editEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			model = newModel.(*Model)
 			Expect(model.currentScreen).To(Equal(ActionMenuScreen))
-			
+
 			// Trigger edit action
 			editAction := models.EventActionSelectedMsg{
 				Event:  editEvent,
 				Action: models.EventActionEdit,
 			}
-			
+
 			newModel, _ = model.Update(editAction)
 			model = newModel.(*Model)
-			
+
 			// Verify transition to CaptureScreen and previous screen is ActionMenuScreen
 			Expect(model.currentScreen).To(Equal(CaptureScreen))
 			Expect(model.previousScreen).To(Equal(ActionMenuScreen))
-			
+
 			// Verify form is pre-filled
 			Expect(model.formModel.IsEditMode()).To(BeTrue())
 			Expect(model.formModel.GetInputValue(0)).To(Equal(editEvent.Text))
 		})
 	})
-
 
 	Describe("Metadata Review Screen Navigation", func() {
 		var (
@@ -993,9 +990,9 @@ var _ = Describe("Application Model", func() {
 
 		It("should navigate to metadata review screen with 'm' key", func() {
 			Expect(model.currentScreen).To(Equal(HomeScreen))
-			
+
 			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-			
+
 			Expect(model.currentScreen).To(Equal(MetadataReviewScreen))
 			Expect(model.previousScreen).To(Equal(HomeScreen))
 		})
@@ -1007,7 +1004,7 @@ var _ = Describe("Application Model", func() {
 		It("should render metadata review screen", func() {
 			model.currentScreen = MetadataReviewScreen
 			view := model.View()
-			
+
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).To(ContainSubstring("Review Metadata Quality"))
 		})
@@ -1015,9 +1012,9 @@ var _ = Describe("Application Model", func() {
 		It("should go back from metadata review screen with Backspace", func() {
 			model.currentScreen = MetadataReviewScreen
 			model.previousScreen = HomeScreen
-			
+
 			model.Update(models.BackMsg{})
-			
+
 			Expect(model.currentScreen).To(Equal(HomeScreen))
 		})
 	})

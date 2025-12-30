@@ -155,7 +155,7 @@ func (m *ListModel) View() string {
 
 			// Render event text
 			content = append(content,
-				itemStyle.Render(marker + text),
+				itemStyle.Render(marker+text),
 			)
 
 			// Render date and company

@@ -13,8 +13,8 @@ import (
 
 var _ = Describe("QualityIndicator", func() {
 	var (
-		indicator   *models.QualityIndicator
-		calculator  *careerservice.DataQualityCalculator
+		indicator  *models.QualityIndicator
+		calculator *careerservice.DataQualityCalculator
 	)
 
 	BeforeEach(func() {
@@ -94,12 +94,12 @@ var _ = Describe("QualityIndicator", func() {
 
 		It("should use correct icon for Enriched level", func() {
 			event := &career.CareerEvent{
-				ID:       "test-id",
-				Text:     "Led development",
-				Date:     time.Now().Add(-24 * time.Hour),
-				Company:  "TechCorp",
-				Project:  "Migration",
-				Tags:     []string{"technical"},
+				ID:      "test-id",
+				Text:    "Led development",
+				Date:    time.Now().Add(-24 * time.Hour),
+				Company: "TechCorp",
+				Project: "Migration",
+				Tags:    []string{"technical"},
 			}
 			score := calculator.CalculateQuality(event)
 			indicator.SetScore(&score)

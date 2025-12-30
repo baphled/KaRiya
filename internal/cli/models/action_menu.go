@@ -135,4 +135,3 @@ type EventActionSelectedMsg struct {
 	Event  *career.CareerEvent
 	Action EventAction
 }
-

@@ -468,4 +468,3 @@ var _ = Describe("DataQualityCalculator", func() {
 		})
 	})
 })
-

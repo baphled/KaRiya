@@ -36,12 +36,12 @@ var _ = Describe("CLI App - Event Action Menu Integration", func() {
 
 		BeforeEach(func() {
 			testEvent = &career.CareerEvent{
-				ID:       "action-test-1",
-				Text:     "Test event for action menu",
-				Date:     time.Now().Add(-5 * 24 * time.Hour),
-				Company:  "TestCorp",
-				Project:  "TestProject",
-				Tags:     []string{"technical"},
+				ID:      "action-test-1",
+				Text:    "Test event for action menu",
+				Date:    time.Now().Add(-5 * 24 * time.Hour),
+				Company: "TestCorp",
+				Project: "TestProject",
+				Tags:    []string{"technical"},
 			}
 			err := svc.CaptureEvent(ctx, testEvent, careerservice.ManualEntry)
 			Expect(err).To(BeNil())

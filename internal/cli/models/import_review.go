@@ -12,7 +12,7 @@ import (
 
 // ImportReviewMsg signals that import review is complete
 type ImportReviewMsg struct {
-	SelectedRows []int // Row numbers to import
+	SelectedRows []int  // Row numbers to import
 	Action       string // "import", "cancel"
 }
 
@@ -26,7 +26,7 @@ type ImportResultMsg struct {
 type ImportReviewModel struct {
 	ParsedRows      []*importer.ParsedRow
 	selectedRows    map[int]bool // Track selected rows by row number
-	focusedRowIndex int           // Index in the display (0-based)
+	focusedRowIndex int          // Index in the display (0-based)
 	summary         map[string]int
 	width           int
 	height          int
@@ -252,13 +252,13 @@ func calculateSummary(parsedRows []*importer.ParsedRow) map[string]int {
 
 // ImportProgressModel shows the import progress
 type ImportProgressModel struct {
-	totalRows   int
-	currentRow  int
-	Completed   bool
-	result      *importer.ImportResult
-	err         error
-	width       int
-	height      int
+	totalRows  int
+	currentRow int
+	Completed  bool
+	result     *importer.ImportResult
+	err        error
+	width      int
+	height     int
 }
 
 // NewImportProgressModel creates a new import progress model
@@ -357,7 +357,6 @@ func (m *ImportProgressModel) renderResult() string {
 	card := styles.ResponsiveCard(m.width).Render(content)
 	return styles.Center(card, m.width, m.height)
 }
-
 
 // Init implements tea.Model
 func (m *ImportReviewModel) Init() tea.Cmd {

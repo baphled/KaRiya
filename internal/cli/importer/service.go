@@ -11,12 +11,12 @@ import (
 
 // ImportResult represents the result of an import operation
 type ImportResult struct {
-	TotalRows      int
-	SuccessCount   int
-	SkippedCount   int
-	FailedCount    int
-	CreatedEvents  []*career.CareerEvent
-	FailedRows     []*ParsedRow
+	TotalRows     int
+	SuccessCount  int
+	SkippedCount  int
+	FailedCount   int
+	CreatedEvents []*career.CareerEvent
+	FailedRows    []*ParsedRow
 }
 
 // ImportService handles the import workflow
@@ -115,10 +115,10 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 // GetImportSummary returns a summary of the import preparation
 func (is *ImportService) GetImportSummary(parsedRows []*ParsedRow) map[string]int {
 	summary := map[string]int{
-		"total":      len(parsedRows),
-		"valid":      0,
-		"invalid":    0,
-		"duplicate":  0,
+		"total":     len(parsedRows),
+		"valid":     0,
+		"invalid":   0,
+		"duplicate": 0,
 	}
 
 	for _, row := range parsedRows {
@@ -133,4 +133,3 @@ func (is *ImportService) GetImportSummary(parsedRows []*ParsedRow) map[string]in
 
 	return summary
 }
-

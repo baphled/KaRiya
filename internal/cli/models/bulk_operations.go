@@ -24,12 +24,12 @@ type BulkOperationsModel struct {
 	height           int
 
 	// Edit mode state
-	inEditMode        bool
-	bulkCompanyInput  string
-	bulkProjectInput  string
-	bulkTagsInput     []string
+	inEditMode          bool
+	bulkCompanyInput    string
+	bulkProjectInput    string
+	bulkTagsInput       []string
 	bulkCategoriesInput []string
-	bulkEditFieldIdx  int
+	bulkEditFieldIdx    int
 
 	// Preview and confirmation state
 	showPreview      bool
@@ -46,18 +46,18 @@ type BulkOperationsModel struct {
 // NewBulkOperationsModel creates a new bulk operations model
 func NewBulkOperationsModel(events []*career.CareerEvent, svc *careerservice.Service, cliSvc *service.CLIEventService, ctx context.Context) *BulkOperationsModel {
 	return &BulkOperationsModel{
-		events:          events,
-		service:         svc,
-		cliService:      cliSvc,
-		ctx:             ctx,
-		selectedIndices: make(map[int]bool),
-		previousState:   make(map[int]*career.CareerEvent),
+		events:           events,
+		service:          svc,
+		cliService:       cliSvc,
+		ctx:              ctx,
+		selectedIndices:  make(map[int]bool),
+		previousState:    make(map[int]*career.CareerEvent),
 		selectedEventIdx: 0,
-		inEditMode:      false,
-		showPreview:     false,
+		inEditMode:       false,
+		showPreview:      false,
 		showConfirmation: false,
-		appliedChanges:  false,
-		cancelled:       false,
+		appliedChanges:   false,
+		cancelled:        false,
 	}
 }
 
@@ -475,4 +475,3 @@ func truncateText(text string, maxLen int) string {
 	}
 	return text[:maxLen-3] + "..."
 }
-

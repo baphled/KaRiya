@@ -134,4 +134,3 @@ func (d *ConfirmationDialog) Reset() {
 	d.confirmed = false
 	d.cancelled = false
 }
-

@@ -20,12 +20,12 @@ var AllowedTags = map[string]bool{
 
 // AllowedCategories defines the set of valid competency categories for a CareerEvent
 var AllowedCategories = map[string]bool{
-	"technical":   true,
-	"leadership":  true,
-	"product":     true,
-	"consulting":  true,
-	"research":    true,
-	"mentoring":   true,
+	"technical":  true,
+	"leadership": true,
+	"product":    true,
+	"consulting": true,
+	"research":   true,
+	"mentoring":  true,
 }
 
 // CareerEvent represents a professional event or milestone

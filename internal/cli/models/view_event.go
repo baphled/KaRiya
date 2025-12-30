@@ -35,28 +35,28 @@ const (
 
 // ViewEventModel represents the event detail view screen
 type ViewEventModel struct {
-	service         *careerservice.Service
-	ctx             context.Context
-	event           *career.CareerEvent
-	selectedAction  int
-	actions         []string
+	service          *careerservice.Service
+	ctx              context.Context
+	event            *career.CareerEvent
+	selectedAction   int
+	actions          []string
 	showDeleteDialog bool
-	deleteDialog    *ConfirmationDialog
-	err             error
-	width           int
-	height          int
+	deleteDialog     *ConfirmationDialog
+	err              error
+	width            int
+	height           int
 }
 
 // NewViewEventModel creates a new view event model
 func NewViewEventModel(svc *careerservice.Service, ctx context.Context, event *career.CareerEvent) *ViewEventModel {
 	return &ViewEventModel{
-		service:         svc,
-		ctx:             ctx,
-		event:           event,
-		selectedAction:  0,
-		actions:         []string{"Edit Event", "Delete Event", "Back to List"},
+		service:          svc,
+		ctx:              ctx,
+		event:            event,
+		selectedAction:   0,
+		actions:          []string{"Edit Event", "Delete Event", "Back to List"},
 		showDeleteDialog: false,
-		deleteDialog:    NewConfirmationDialog("Confirm Delete", "Are you sure you want to delete this event? This action cannot be undone."),
+		deleteDialog:     NewConfirmationDialog("Confirm Delete", "Are you sure you want to delete this event? This action cannot be undone."),
 	}
 }
 
@@ -318,4 +318,3 @@ func (m *ViewEventModel) deleteEvent() tea.Cmd {
 func (m *ViewEventModel) GetEvent() *career.CareerEvent {
 	return m.event
 }
-

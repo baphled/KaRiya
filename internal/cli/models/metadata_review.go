@@ -14,18 +14,18 @@ import (
 
 // MetadataReviewModel represents the metadata review screen
 type MetadataReviewModel struct {
-	service              *careerservice.Service
-	calculator           *careerservice.DataQualityCalculator
-	ctx                  context.Context
-	events               []*career.CareerEvent
-	qualityScores        map[string]*careerservice.QualityScore
-	selectedIdx          int
-	width                int
-	height               int
-	err                  error
-	expandedIdx          int // Index of expanded event (-1 if none)
-	filterMode           string // "all", "incomplete"
-	sortBy               string // "date", "company", "quality"
+	service       *careerservice.Service
+	calculator    *careerservice.DataQualityCalculator
+	ctx           context.Context
+	events        []*career.CareerEvent
+	qualityScores map[string]*careerservice.QualityScore
+	selectedIdx   int
+	width         int
+	height        int
+	err           error
+	expandedIdx   int    // Index of expanded event (-1 if none)
+	filterMode    string // "all", "incomplete"
+	sortBy        string // "date", "company", "quality"
 }
 
 // NewMetadataReviewModel creates a new metadata review model
@@ -368,4 +368,3 @@ func (m *MetadataReviewModel) Refresh() {
 		m.selectedIdx = 0
 	}
 }
-

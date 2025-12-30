@@ -159,8 +159,8 @@ func (c *CLIEventService) UpdateEventMetadata(ctx context.Context, event *career
 
 // Error definitions for metadata operations
 var (
-	ErrNilEvent     = NewMetadataError("event cannot be nil")
-	ErrEmptyEventID = NewMetadataError("event ID cannot be empty")
+	ErrNilEvent       = NewMetadataError("event cannot be nil")
+	ErrEmptyEventID   = NewMetadataError("event ID cannot be empty")
 	ErrEmptyEventList = NewMetadataError("event list cannot be empty")
 )
 
