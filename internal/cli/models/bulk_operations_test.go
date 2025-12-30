@@ -291,5 +291,89 @@ var _ = Describe("BulkOperationsModel", func() {
 			view := model.View()
 			Expect(view).NotTo(BeEmpty())
 		})
+
+
+	Describe("Bulk operations with field origin awareness", func() {
+		It("should store field origins for bulk operations", func() {
+			// Arrange
+			events := []*career.CareerEvent{
+				{ID: "1", Text: "Event 1", Company: "CompanyA"},
+				{ID: "2", Text: "Event 2", Company: "CompanyB"},
+			}
+			model := NewBulkOperationsModel(events, svc, cliSvc, ctx)
+			eventID := "1"
+			origins := map[string]bool{
+				"company": false, // default
+				"project": false, // default
+			}
+
+			// Act
+			model.SetFieldOrigins(eventID, origins)
+			retrieved := model.GetFieldOrigins(eventID)
+
+			// Assert
+			Expect(retrieved).NotTo(BeNil())
+			Expect(retrieved["company"]).To(BeFalse())
+		})
+
+		It("should only allow updates to default fields in bulk operations", func() {
+			// Arrange
+			events := []*career.CareerEvent{
+				{ID: "1", Text: "Event 1", Company: ""},
+				{ID: "2", Text: "Event 2", Company: ""},
+			}
+			model := NewBulkOperationsModel(events, svc, cliSvc, ctx)
+			
+			// Mark company as default (not from CSV)
+			model.SetFieldOrigins("1", map[string]bool{"company": false})
+			model.SetFieldOrigins("2", map[string]bool{"company": false})
+
+			// Act
+			canUpdate := model.CanUpdateField("1", "company")
+
+			// Assert
+			Expect(canUpdate).To(BeTrue())
+		})
+
+		It("should prevent updates to CSV fields in bulk operations", func() {
+			// Arrange
+			events := []*career.CareerEvent{
+				{ID: "1", Text: "Event 1", Company: "CompanyA"},
+			}
+			model := NewBulkOperationsModel(events, svc, cliSvc, ctx)
+			
+			// Mark company as from CSV
+			model.SetFieldOrigins("1", map[string]bool{"company": true})
+
+			// Act
+			canUpdate := model.CanUpdateField("1", "company")
+
+			// Assert
+			Expect(canUpdate).To(BeFalse())
+		})
+
+		It("should get default fields for an event in bulk operations", func() {
+			// Arrange
+			events := []*career.CareerEvent{
+				{ID: "1", Text: "Event 1"},
+			}
+			model := NewBulkOperationsModel(events, svc, cliSvc, ctx)
+			origins := map[string]bool{
+				"company": false,
+				"project": false,
+				"tags":    true,
+			}
+			model.SetFieldOrigins("1", origins)
+
+			// Act
+			defaults := model.GetDefaultFields("1")
+
+			// Assert
+			Expect(defaults).To(HaveLen(2))
+			Expect(defaults).To(ContainElement("company"))
+			Expect(defaults).To(ContainElement("project"))
+		})
 	})
+
+		})
 })

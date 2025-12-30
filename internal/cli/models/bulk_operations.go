@@ -40,6 +40,8 @@ type BulkOperationsModel struct {
 	submitted           bool
 	cancelled           bool
 	summary             *BulkOperationsSummary
+	fieldOrigins        map[string]map[string]bool // eventID -> field -> isFromCSV
+
 }
 
 // NewBulkOperationsModel creates a new bulk operations model
@@ -58,7 +60,8 @@ func NewBulkOperationsModel(
 		focusIndex: 0,
 		width:      80,
 		height:     24,
-	}
+			fieldOrigins: make(map[string]map[string]bool),
+}
 }
 
 // Init initializes the model
@@ -377,4 +380,53 @@ func (m *BulkOperationsModel) ChangesApplied() bool {
 // WasCancelled returns whether the operation was cancelled
 func (m *BulkOperationsModel) WasCancelled() bool {
 	return m.cancelled
+}
+
+// SetFieldOrigins sets the field origins for an event
+func (m *BulkOperationsModel) SetFieldOrigins(eventID string, origins map[string]bool) {
+	if m.fieldOrigins == nil {
+		m.fieldOrigins = make(map[string]map[string]bool)
+	}
+	m.fieldOrigins[eventID] = origins
+}
+
+// GetFieldOrigins returns the field origins for an event
+func (m *BulkOperationsModel) GetFieldOrigins(eventID string) map[string]bool {
+	if m.fieldOrigins == nil {
+		return nil
+	}
+	return m.fieldOrigins[eventID]
+}
+
+// CanUpdateField checks if a field can be updated for an event
+// Returns true if field is from default (not from CSV), false if from CSV
+func (m *BulkOperationsModel) CanUpdateField(eventID, field string) bool {
+	origins := m.GetFieldOrigins(eventID)
+	if origins == nil {
+		// If no origin info, allow update
+		return true
+	}
+	fromCSV, exists := origins[field]
+	// Only allow updating fields that are NOT from CSV (are defaults)
+	return exists && !fromCSV
+}
+
+// GetDefaultFields returns the list of default fields for an event
+func (m *BulkOperationsModel) GetDefaultFields(eventID string) []string {
+	origins := m.GetFieldOrigins(eventID)
+	if origins == nil {
+		return []string{}
+	}
+	var defaults []string
+	for field, fromCSV := range origins {
+		if !fromCSV {
+			defaults = append(defaults, field)
+		}
+	}
+	return defaults
+}
+
+// GetUpdatableFields returns fields that can be updated for an event
+func (m *BulkOperationsModel) GetUpdatableFields(eventID string) []string {
+	return m.GetDefaultFields(eventID)
 }
