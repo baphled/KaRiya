@@ -331,5 +331,66 @@ var _ = Describe("MetadataReviewModel", func() {
 			Expect(defaultFields).To(ContainElement("company"))
 			Expect(defaultFields).To(ContainElement("project"))
 		})
+
+
+	Describe("Parsing warnings and issues display", func() {
+		It("should store and retrieve parsing warnings for an event", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+			warnings := []string{
+				"missing company field",
+				"date parsed from ambiguous format",
+			}
+
+			// Act
+			model.SetParsingWarnings(eventID, warnings)
+			retrieved := model.GetParsingWarnings(eventID)
+
+			// Assert
+			Expect(retrieved).To(HaveLen(2))
+			Expect(retrieved).To(ContainElement("missing company field"))
+			Expect(retrieved).To(ContainElement("date parsed from ambiguous format"))
+		})
+
+		It("should indicate if an event has parsing warnings", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+			warnings := []string{"missing company"}
+
+			// Act
+			model.SetParsingWarnings(eventID, warnings)
+			hasWarnings := model.HasParsingWarnings(eventID)
+
+			// Assert
+			Expect(hasWarnings).To(BeTrue())
+		})
+
+		It("should return empty list for events without warnings", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+
+			// Act
+			warnings := model.GetParsingWarnings(eventID)
+
+			// Assert
+			Expect(warnings).To(BeEmpty())
+		})
+
+		It("should check if event has parsing issues", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+
+			// Act & Assert
+			Expect(model.HasParsingWarnings(eventID)).To(BeFalse())
+
+			model.SetParsingWarnings(eventID, []string{"issue"})
+			Expect(model.HasParsingWarnings(eventID)).To(BeTrue())
+		})
 	})
+
+		})
 })
