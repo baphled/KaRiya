@@ -1,0 +1,368 @@
+package models
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/charmbracelet/bubbletea"
+)
+
+// MetadataReviewModel represents the metadata review screen
+type MetadataReviewModel struct {
+	service              *careerservice.Service
+	calculator           *careerservice.DataQualityCalculator
+	ctx                  context.Context
+	events               []*career.CareerEvent
+	qualityScores        map[string]*careerservice.QualityScore
+	selectedIdx          int
+	width                int
+	height               int
+	err                  error
+	expandedIdx          int // Index of expanded event (-1 if none)
+	filterMode           string // "all", "incomplete"
+	sortBy               string // "date", "company", "quality"
+}
+
+// NewMetadataReviewModel creates a new metadata review model
+func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *MetadataReviewModel {
+	calculator := careerservice.NewDataQualityCalculator()
+	model := &MetadataReviewModel{
+		service:       svc,
+		calculator:    calculator,
+		ctx:           ctx,
+		selectedIdx:   0,
+		expandedIdx:   -1,
+		filterMode:    "all",
+		sortBy:        "quality",
+		qualityScores: make(map[string]*careerservice.QualityScore),
+	}
+
+	// Load events
+	model.loadEvents()
+
+	return model
+}
+
+// loadEvents loads events and calculates quality scores
+func (m *MetadataReviewModel) loadEvents() {
+	filters := careerrepo.ListFilters{
+		SortBy:    "date",
+		SortOrder: "desc",
+		Limit:     100,
+	}
+
+	events, err := m.service.ListEvents(m.ctx, filters)
+	if err != nil {
+		m.err = err
+		m.events = []*career.CareerEvent{}
+		return
+	}
+
+	// Calculate quality scores for all events
+	m.qualityScores = make(map[string]*careerservice.QualityScore)
+	for _, event := range events {
+		score := m.calculator.CalculateQuality(event)
+		m.qualityScores[event.ID] = &score
+	}
+
+	// Apply filtering
+	m.events = m.filterEvents(events)
+
+	// Apply sorting
+	m.sortEvents()
+}
+
+// filterEvents filters events based on current filter mode
+func (m *MetadataReviewModel) filterEvents(events []*career.CareerEvent) []*career.CareerEvent {
+	if m.filterMode == "incomplete" {
+		filtered := make([]*career.CareerEvent, 0)
+		for _, event := range events {
+			score := m.qualityScores[event.ID]
+			if score != nil && (score.Level == careerservice.QualityIncomplete || score.Level == careerservice.QualityBasic) {
+				filtered = append(filtered, event)
+			}
+		}
+		return filtered
+	}
+	return events
+}
+
+// sortEvents sorts events based on current sort mode
+func (m *MetadataReviewModel) sortEvents() {
+	switch m.sortBy {
+	case "quality":
+		// Sort by quality score (ascending - worst first)
+		for i := 0; i < len(m.events)-1; i++ {
+			for j := i + 1; j < len(m.events); j++ {
+				scoreI := m.qualityScores[m.events[i].ID]
+				scoreJ := m.qualityScores[m.events[j].ID]
+				if scoreI != nil && scoreJ != nil && scoreI.Score > scoreJ.Score {
+					m.events[i], m.events[j] = m.events[j], m.events[i]
+				}
+			}
+		}
+	case "company":
+		// Sort by company name
+		for i := 0; i < len(m.events)-1; i++ {
+			for j := i + 1; j < len(m.events); j++ {
+				if m.events[i].Company > m.events[j].Company {
+					m.events[i], m.events[j] = m.events[j], m.events[i]
+				}
+			}
+		}
+	}
+}
+
+// Init initializes the model
+func (m *MetadataReviewModel) Init() tea.Cmd {
+	return nil
+}
+
+// Update handles messages
+func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "backspace", "q", "esc":
+			return m, nil
+		case "ctrl+c":
+			return m, nil
+		case "up", "k":
+			m.prevItem()
+		case "down", "j":
+			m.nextItem()
+		case "home", "g":
+			m.selectedIdx = 0
+		case "end", "G":
+			m.selectedIdx = len(m.events) - 1
+		case "space":
+			// Toggle expand/collapse
+			if m.expandedIdx == m.selectedIdx {
+				m.expandedIdx = -1
+			} else {
+				m.expandedIdx = m.selectedIdx
+			}
+		case "f":
+			// Toggle filter mode
+			if m.filterMode == "all" {
+				m.filterMode = "incomplete"
+			} else {
+				m.filterMode = "all"
+			}
+			m.loadEvents()
+			m.selectedIdx = 0
+		case "s":
+			// Cycle through sort modes
+			switch m.sortBy {
+			case "quality":
+				m.sortBy = "date"
+			case "date":
+				m.sortBy = "company"
+			case "company":
+				m.sortBy = "quality"
+			}
+			m.sortEvents()
+		}
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+	}
+
+	return m, nil
+}
+
+// View renders the model
+func (m *MetadataReviewModel) View() string {
+	var content []string
+
+	// Header
+	header := styles.HeaderMain.Render("Review Metadata Quality")
+	content = append(content, header)
+
+	// Status bar
+	statusText := fmt.Sprintf("Showing %d events | Filter: %s | Sort: %s | Press 'f' to filter, 's' to sort",
+		len(m.events), m.filterMode, m.sortBy)
+	content = append(content, styles.InputHint.Render(statusText))
+	content = append(content, "")
+
+	// Error handling
+	if m.err != nil {
+		content = append(content, styles.ErrorText.Render(fmt.Sprintf("Error loading events: %v", m.err)))
+		return strings.Join(content, "\n")
+	}
+
+	// Empty state
+	if len(m.events) == 0 {
+		content = append(content, styles.InfoText.Render("No events to review. Start capturing events to improve their metadata."))
+		return strings.Join(content, "\n")
+	}
+
+	// Events list
+	for i, event := range m.events {
+		var eventContent string
+
+		if i == m.selectedIdx {
+			eventContent = m.renderSelectedEvent(event, i)
+		} else {
+			eventContent = m.renderEventItem(event, i)
+		}
+
+		content = append(content, eventContent)
+
+		// Show expanded view if selected
+		if i == m.expandedIdx {
+			content = append(content, m.renderExpandedEvent(event))
+		}
+	}
+
+	// Footer
+	footer := styles.InputHint.Render("↑/↓ navigate | Space expand | f filter | s sort | Backspace back")
+	content = append(content, "")
+	content = append(content, footer)
+
+	return strings.Join(content, "\n")
+}
+
+// renderEventItem renders a compact event item
+func (m *MetadataReviewModel) renderEventItem(event *career.CareerEvent, idx int) string {
+	score := m.qualityScores[event.ID]
+	if score == nil {
+		return ""
+	}
+
+	// Truncate text to 60 chars
+	text := event.Text
+	if len(text) > 60 {
+		text = text[:57] + "..."
+	}
+
+	// Format date
+	dateStr := event.Date.Format("2006-01-02")
+
+	// Quality level
+	quality := string(score.Level)
+
+	// Build item
+	item := fmt.Sprintf("  %s | %s | %s | %s (%d%%)",
+		text,
+		dateStr,
+		event.Company,
+		quality,
+		score.Score,
+	)
+
+	return styles.ListItem.Render(item)
+}
+
+// renderSelectedEvent renders a selected event with highlight
+func (m *MetadataReviewModel) renderSelectedEvent(event *career.CareerEvent, idx int) string {
+	score := m.qualityScores[event.ID]
+	if score == nil {
+		return ""
+	}
+
+	// Truncate text to 60 chars
+	text := event.Text
+	if len(text) > 60 {
+		text = text[:57] + "..."
+	}
+
+	// Format date
+	dateStr := event.Date.Format("2006-01-02")
+
+	// Quality level
+	quality := string(score.Level)
+
+	// Build item with selection marker
+	item := fmt.Sprintf("▶ %s | %s | %s | %s (%d%%)",
+		text,
+		dateStr,
+		event.Company,
+		quality,
+		score.Score,
+	)
+
+	return styles.ListItemSelected.Render(item)
+}
+
+// renderExpandedEvent renders the full event details
+func (m *MetadataReviewModel) renderExpandedEvent(event *career.CareerEvent) string {
+	score := m.qualityScores[event.ID]
+	if score == nil {
+		return ""
+	}
+
+	var details []string
+	details = append(details, "")
+	details = append(details, "  Full Details:")
+	details = append(details, fmt.Sprintf("    Text: %s", event.Text))
+	details = append(details, fmt.Sprintf("    Date: %s", event.Date.Format("2006-01-02")))
+	details = append(details, fmt.Sprintf("    Company: %s", event.Company))
+	details = append(details, fmt.Sprintf("    Project: %s", event.Project))
+
+	if len(event.Tags) > 0 {
+		details = append(details, fmt.Sprintf("    Tags: %s", strings.Join(event.Tags, ", ")))
+	}
+
+	if len(event.Categories) > 0 {
+		details = append(details, fmt.Sprintf("    Categories: %s", strings.Join(event.Categories, ", ")))
+	}
+
+	// Quality score details
+	details = append(details, "")
+	details = append(details, "  Quality Score:")
+	details = append(details, fmt.Sprintf("    Text: %d/20", score.TextScore))
+	details = append(details, fmt.Sprintf("    Date: %d/20", score.DateScore))
+	details = append(details, fmt.Sprintf("    Company: %d/10", score.CompanyScore))
+	details = append(details, fmt.Sprintf("    Project: %d/10", score.ProjectScore))
+	details = append(details, fmt.Sprintf("    Tags: %d/15", score.TagsScore))
+	details = append(details, fmt.Sprintf("    Categories: %d/15", score.CategoriesScore))
+	details = append(details, fmt.Sprintf("    Match: %d/10", score.MatchScore))
+
+	return styles.CardContent.Render(strings.Join(details, "\n"))
+}
+
+// prevItem moves selection to previous item
+func (m *MetadataReviewModel) prevItem() {
+	if m.selectedIdx > 0 {
+		m.selectedIdx--
+		m.expandedIdx = -1 // Collapse on navigation
+	}
+}
+
+// nextItem moves selection to next item
+func (m *MetadataReviewModel) nextItem() {
+	if m.selectedIdx < len(m.events)-1 {
+		m.selectedIdx++
+		m.expandedIdx = -1 // Collapse on navigation
+	}
+}
+
+// GetSelectedEvent returns the currently selected event
+func (m *MetadataReviewModel) GetSelectedEvent() *career.CareerEvent {
+	if m.selectedIdx >= 0 && m.selectedIdx < len(m.events) {
+		return m.events[m.selectedIdx]
+	}
+	return nil
+}
+
+// Refresh reloads events from service
+func (m *MetadataReviewModel) Refresh() {
+	m.loadEvents()
+	if m.selectedIdx >= len(m.events) {
+		m.selectedIdx = len(m.events) - 1
+	}
+	if m.selectedIdx < 0 {
+		m.selectedIdx = 0
+	}
+}
+
+// EditEventMsg signals that an event should be edited
+type EditEventMsg struct {
+	EventID string
+}
