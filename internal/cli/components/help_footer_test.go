@@ -1,7 +1,6 @@
 package components
 
 import (
-	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -10,10 +9,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/navigation"
 )
 
-func TestComponents(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Components Suite")
-}
 
 var _ = Describe("HelpFooter Component", func() {
 	Describe("NewHelpFooter", func() {

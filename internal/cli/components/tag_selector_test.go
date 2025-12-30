@@ -1,17 +1,12 @@
 package components_test
 
 import (
-	"testing"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-func TestComponents(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Components Suite")
-}
 
 var _ = Describe("TagSelector", func() {
 	var selector *components.TagSelector
