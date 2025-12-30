@@ -27,34 +27,36 @@ const (
 
 // Model represents the main application state
 type Model struct {
-	cliService      *service.CLIEventService
-	service         *careerservice.Service
-	currentScreen   Screen
-	previousScreen  Screen
-	width           int
-	height          int
-	formModel       *models.FormModel
-	successModel    *models.SuccessModel
-	listModel       *models.ListModel
-	detailsModel    *models.DetailsModel
-	actionMenuModel *models.ActionMenuModel
+	cliService              *service.CLIEventService
+	service                 *careerservice.Service
+	currentScreen           Screen
+	previousScreen          Screen
+	screenBeforeActionMenu  Screen // Track screen before action menu for proper back navigation
+	width                   int
+	height                  int
+	formModel               *models.FormModel
+	successModel            *models.SuccessModel
+	listModel               *models.ListModel
+	detailsModel            *models.DetailsModel
+	actionMenuModel         *models.ActionMenuModel
 }
 
 // NewModel creates a new application model
 func NewModel(cliService *service.CLIEventService, careerService *careerservice.Service) *Model {
 	ctx := context.Background()
 	return &Model{
-		cliService:      cliService,
-		service:         careerService,
-		currentScreen:   HomeScreen,
-		previousScreen:  HomeScreen,
-		width:           80,
-		height:          24,
-		formModel:       models.NewFormModel(cliService),
-		successModel:    nil,
-		listModel:       models.NewListModel(careerService, ctx),
-		detailsModel:    nil,
-		actionMenuModel: nil,
+		cliService:              cliService,
+		service:                 careerService,
+		currentScreen:           HomeScreen,
+		previousScreen:          HomeScreen,
+		screenBeforeActionMenu:  HomeScreen,
+		width:                   80,
+		height:                  24,
+		formModel:               models.NewFormModel(cliService),
+		successModel:            nil,
+		listModel:               models.NewListModel(careerService, ctx),
+		detailsModel:            nil,
+		actionMenuModel:         nil,
 	}
 }
 
@@ -68,22 +70,28 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle quit and back messages first
 	switch msg.(type) {
 	case models.BackMsg:
-		m.currentScreen = m.previousScreen
+		// Special handling for ViewScreen that came from ActionMenuScreen
+		if m.currentScreen == ViewScreen && m.previousScreen == ActionMenuScreen {
+			// Skip ActionMenuScreen and go directly to the screen before it
+			m.currentScreen = m.screenBeforeActionMenu
+		} else {
+			m.currentScreen = m.previousScreen
+		}
 		return m, nil
 	case models.QuitMsg:
 		return m, tea.Quit
 	}
 
-	// Handle ViewEventMsg
-	if viewMsg, ok := msg.(ViewEventMsg); ok {
+	// Handle models.ViewEventMsg
+	if viewMsg, ok := msg.(models.ViewEventMsg); ok {
 		m.detailsModel = models.NewDetailsModel(viewMsg.Event)
 		m.previousScreen = ListScreen
 		m.currentScreen = ViewScreen
 		return m, nil
 	}
 
-	// Handle EventActionMenuMsg
-	if actionMenuMsg, ok := msg.(EventActionMenuMsg); ok {
+	// Handle models.EventActionMenuMsg
+	if actionMenuMsg, ok := msg.(models.EventActionMenuMsg); ok {
 		m.actionMenuModel = models.NewActionMenuModel(actionMenuMsg.Event)
 		m.previousScreen = m.currentScreen
 		m.currentScreen = ActionMenuScreen
@@ -95,6 +103,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch actionMsg.Action {
 		case models.EventActionView:
 			m.detailsModel = models.NewDetailsModel(actionMsg.Event)
+			// When transitioning from ActionMenuScreen to ViewScreen,
+			// preserve the screen before the action menu for back navigation
+			if m.currentScreen == ActionMenuScreen {
+				m.screenBeforeActionMenu = m.previousScreen
+			}
+			m.previousScreen = m.currentScreen
 			m.currentScreen = ViewScreen
 		case models.EventActionEdit:
 			m.previousScreen = m.currentScreen

@@ -56,13 +56,3 @@ type BackMsg struct{}
 // QuitMsg is sent to quit the application
 type QuitMsg struct{}
 
-// ViewEventMsg is sent to view a specific event's details
-type ViewEventMsg struct {
-	Event *career.CareerEvent
-}
-
-// EventActionMenuMsg is sent when an event is selected in the list to show its action menu
-type EventActionMenuMsg struct {
-	Event *career.CareerEvent
-}
-

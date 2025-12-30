@@ -482,7 +482,7 @@ var _ = Describe("Application Model", func() {
 			model = NewModel(cliService, svc)
 		})
 
-		It("should navigate to ViewScreen when ViewEventMsg is sent", func() {
+		It("should navigate to ViewScreen when models.ViewEventMsg is sent", func() {
 			// Set current screen to list
 			model.currentScreen = ListScreen
 			model.previousScreen = HomeScreen
@@ -496,8 +496,8 @@ var _ = Describe("Application Model", func() {
 				Project: "ViewProject",
 			}
 
-			// Send ViewEventMsg
-			viewMsg := ViewEventMsg{Event: testEvent}
+			// Send models.ViewEventMsg
+			viewMsg := models.ViewEventMsg{Event: testEvent}
 			newModel, _ := model.Update(viewMsg)
 			updatedModel := newModel.(*Model)
 
@@ -520,8 +520,8 @@ var _ = Describe("Application Model", func() {
 				Tags:    []string{"technical", "leadership"},
 			}
 
-			// Send ViewEventMsg
-			viewMsg := ViewEventMsg{Event: testEvent}
+			// Send models.ViewEventMsg
+			viewMsg := models.ViewEventMsg{Event: testEvent}
 			newModel, _ := model.Update(viewMsg)
 			updatedModel := newModel.(*Model)
 
@@ -543,7 +543,7 @@ var _ = Describe("Application Model", func() {
 				Text: "Event for back navigation test",
 				Date: time.Now().Add(-24 * time.Hour),
 			}
-			viewMsg := ViewEventMsg{Event: testEvent}
+			viewMsg := models.ViewEventMsg{Event: testEvent}
 			model.currentScreen = ListScreen
 			newModel, _ := model.Update(viewMsg)
 			updatedModel := newModel.(*Model)
@@ -600,9 +600,10 @@ var _ = Describe("Application Model", func() {
 			model.currentScreen = ListScreen
 		})
 
+
 		It("should enter Action Menu when event is selected", func() {
 			// Simulate selecting an event in the list
-			actionMenuMsg := EventActionMenuMsg{Event: testEvent}
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			updatedModel := newModel.(*Model)
 
@@ -614,7 +615,7 @@ var _ = Describe("Application Model", func() {
 
 		It("should display action menu options", func() {
 			// Enter action menu
-			actionMenuMsg := EventActionMenuMsg{Event: testEvent}
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			updatedModel := newModel.(*Model)
 
@@ -627,7 +628,7 @@ var _ = Describe("Application Model", func() {
 
 		It("should handle View action from action menu", func() {
 			// Enter action menu
-			actionMenuMsg := EventActionMenuMsg{Event: testEvent}
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			updatedModel := newModel.(*Model)
 
@@ -648,7 +649,7 @@ var _ = Describe("Application Model", func() {
 
 		It("should handle Edit action from action menu", func() {
 			// Enter action menu
-			actionMenuMsg := EventActionMenuMsg{Event: testEvent}
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			updatedModel := newModel.(*Model)
 
@@ -668,7 +669,7 @@ var _ = Describe("Application Model", func() {
 
 		It("should handle Delete action from action menu", func() {
 			// Enter action menu
-			actionMenuMsg := EventActionMenuMsg{Event: testEvent}
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			updatedModel := newModel.(*Model)
 
@@ -686,7 +687,7 @@ var _ = Describe("Application Model", func() {
 
 		It("should cancel action menu with BackMsg", func() {
 			// Enter action menu
-			actionMenuMsg := EventActionMenuMsg{Event: testEvent}
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			updatedModel := newModel.(*Model)
 
@@ -707,7 +708,7 @@ var _ = Describe("Application Model", func() {
 			Expect(model.currentScreen).To(Equal(ListScreen))
 
 			// Navigate to action menu
-			actionMenuMsg := EventActionMenuMsg{Event: testEvent}
+			actionMenuMsg := models.EventActionMenuMsg{Event: testEvent}
 			newModel, _ := model.Update(actionMenuMsg)
 			model = newModel.(*Model)
 			Expect(model.currentScreen).To(Equal(ActionMenuScreen))
