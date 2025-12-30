@@ -272,8 +272,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// If import completed, navigate to metadata review
 			if m.importProgressModel.Completed {
-				switch msg.(type) {
-				case tea.KeyMsg:
+				switch msg := msg.(type) {
+				case models.ImportResultMsg:
 					m.previousScreen = m.currentScreen
 					m.currentScreen = MetadataReviewScreen
 					m.importReviewModel = nil
@@ -281,7 +281,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.importFilePath = ""
 					// Initialize metadata review model with imported events
 					ctx := context.Background()
-					m.metadataReviewModel = models.NewMetadataReviewModel(m.service, ctx)
+					if msg.Result != nil && len(msg.Result.CreatedEvents) > 0 {
+						// Extract IDs from created events
+						importedIDs := make([]string, 0, len(msg.Result.CreatedEvents))
+						for _, event := range msg.Result.CreatedEvents {
+							importedIDs = append(importedIDs, event.ID)
+						}
+						m.metadataReviewModel = models.NewMetadataReviewModelForImport(m.service, ctx, importedIDs)
+					} else {
+						m.metadataReviewModel = models.NewMetadataReviewModel(m.service, ctx)
+					}
 					return m, nil
 				}
 			}
