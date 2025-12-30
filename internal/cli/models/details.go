@@ -53,7 +53,7 @@ func (m *DetailsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the details view
 func (m *DetailsModel) View() string {
 	if m.event == nil {
-		return styles.ErrorBox.Render("No event selected\n\nPress 'backspace' to return to list")
+		return styles.ErrorBox.Render("No event selected\n\nPress 'esc' to return to list")
 	}
 
 	var sb strings.Builder
@@ -131,7 +131,7 @@ func (m *DetailsModel) View() string {
 	sb.WriteString("\n\n")
 
 	// Footer
-	sb.WriteString(styles.InputHint.Render("Press 'backspace' to return to list"))
+	sb.WriteString(styles.InputHint.Render("Press 'esc' to return to list"))
 
 	return sb.String()
 }

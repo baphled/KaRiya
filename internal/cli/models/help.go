@@ -106,7 +106,7 @@ Navigation:
   • 'v' - View event details
   • 'h' - Show this help
   • 'q' - Quit application
-  • 'backspace' - Go back
+  • 'esc' - Go back
 
 Form Navigation:
   • Tab - Next field
