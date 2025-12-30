@@ -5,11 +5,23 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
+
+// EventActionMenuMsg is sent when an event is selected to show its action menu
+type EventActionMenuMsg struct {
+	Event *career.CareerEvent
+}
+
+// ViewEventMsg is sent when the user wants to view event details
+type ViewEventMsg struct {
+	Event *career.CareerEvent
+}
 
 // ListModel represents the event list screen
 type ListModel struct {
@@ -85,14 +97,26 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "up":
+		case "backspace":
+			// Signal back navigation to parent
+			return m, func() tea.Msg { return BackMsg{} }
+		case "ctrl+c", "q", "esc":
+			// Signal quit to parent
+			return m, func() tea.Msg { return QuitMsg{} }
+		case "up", "k":
 			m.prevItem()
-		case "down":
+		case "down", "j":
 			m.nextItem()
-		case "pgup":
+		case "pgup", "ctrl+b":
 			m.prevPage()
-		case "pgdn":
+		case "pgdn", "ctrl+f":
 			m.nextPage()
+		case "home", "g":
+			m.goToFirstItem()
+		case "end", "G":
+			m.goToLastItem()
+		case "enter":
+			return m, m.viewSelectedEvent()
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -104,53 +128,94 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the model
 func (m *ListModel) View() string {
-	if m.err != nil {
-		return fmt.Sprintf("Error loading events: %v", m.err)
-	}
-
-	if len(m.events) == 0 {
-		return "No events found. Start capturing your career journey!"
-	}
-
-	var sb strings.Builder
-
 	// Title
-	sb.WriteString("Career Events\n")
-	sb.WriteString(strings.Repeat("─", 40) + "\n\n")
+	title := styles.HeaderMain.Render("Career Events")
 
-	// Events
-	for i, event := range m.events {
-		marker := "  "
-		if i == m.selectedIdx {
-			marker = "▶ "
-		}
+	// Form content
+	var content []string
 
-		// Truncate text to 100 chars
-		text := event.Text
-		if len(text) > 100 {
-			text = text[:97] + "..."
-		}
-
-		sb.WriteString(marker)
-		sb.WriteString(text)
-		sb.WriteString("\n")
-
-		// Date and company on next line
-		dateStr := event.Date.Format("2006-01-02")
-		if event.Company != "" {
-			sb.WriteString(fmt.Sprintf("   %s | %s\n", dateStr, event.Company))
-		} else {
-			sb.WriteString(fmt.Sprintf("   %s\n", dateStr))
-		}
-		sb.WriteString("\n")
+	// Error handling
+	if m.err != nil {
+		content = append(content, styles.ErrorText.Render(fmt.Sprintf("Error loading events: %v", m.err)))
 	}
 
-	// Pagination info
-	sb.WriteString(strings.Repeat("─", 40) + "\n")
-	totalPages := m.getTotalPages()
-	sb.WriteString(fmt.Sprintf("Page %d of %d (%d total events)\n", m.currentPage, totalPages, m.totalCount))
+	// Empty state
+	if len(m.events) == 0 {
+		content = append(content, styles.InfoText.Render("No events found. Start capturing your career journey!"))
+	} else {
+		// Events
+		for i, event := range m.events {
+			// Determine styling based on selection
+			itemStyle := styles.ListItem
+			if i == m.selectedIdx {
+				itemStyle = styles.ListItemSelected
+			}
 
-	return sb.String()
+			// Truncate text to 100 chars
+			text := event.Text
+			if len(text) > 100 {
+				text = text[:97] + "..."
+			}
+
+			// Marker for selected item
+			marker := "  "
+			if i == m.selectedIdx {
+				marker = "▶ "
+			}
+
+			// Render event text
+			content = append(content,
+				itemStyle.Render(marker + text),
+			)
+
+			// Render date and company
+			dateStr := event.Date.Format("2006-01-02")
+			var detailLine string
+			if event.Company != "" || event.Project != "" {
+				detailLine = fmt.Sprintf("   %s | %s",
+					styles.ListItem.Foreground(styles.ColorTextSecondary).Render(dateStr),
+					styles.ListItem.Foreground(styles.ColorTextMuted).Render(event.Company),
+				)
+			} else {
+				detailLine = styles.ListItem.Foreground(styles.ColorTextSecondary).Render(fmt.Sprintf("   %s", dateStr))
+			}
+			content = append(content, detailLine, "")
+		}
+
+		// Pagination info
+		totalPages := m.getTotalPages()
+		paginationText := fmt.Sprintf("Page %d of %d (%d total events)", m.currentPage, totalPages, m.totalCount)
+		content = append(content,
+			styles.ListItem.Render(strings.Repeat("─", 40)),
+			styles.ListItem.Foreground(styles.ColorTextSecondary).Render(paginationText),
+		)
+
+		// Instructions
+		instructions := "↑/↓ or j/k: Navigate items | PgUp/PgDn or Ctrl+F/B: Change pages | g/G: First/Last | Enter: View details"
+		content = append(content,
+			styles.InfoText.Render(instructions),
+		)
+	}
+
+	// Combine all content
+	listContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		content...,
+	)
+
+	// Wrap in a card
+	listCard := styles.CardBase.
+		Render(listContent)
+
+	// Combine all sections
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		"",
+		listCard,
+	)
+
+	return fullContent
 }
 
 // nextItem moves to the next item in the current page
@@ -186,6 +251,18 @@ func (m *ListModel) prevPage() {
 	}
 }
 
+// goToFirstItem moves the selection to the first item on the current page
+func (m *ListModel) goToFirstItem() {
+	m.selectedIdx = 0
+}
+
+// goToLastItem moves the selection to the last item on the current page
+func (m *ListModel) goToLastItem() {
+	if len(m.events) > 0 {
+		m.selectedIdx = len(m.events) - 1
+	}
+}
+
 // getTotalPages calculates the total number of pages
 func (m *ListModel) getTotalPages() int {
 	if m.totalCount == 0 {
@@ -193,6 +270,19 @@ func (m *ListModel) getTotalPages() int {
 	}
 	pages := (m.totalCount + m.pageSize - 1) / m.pageSize
 	return pages
+}
+
+// viewSelectedEvent returns a command to show the action menu for the selected event
+func (m *ListModel) viewSelectedEvent() tea.Cmd {
+	if len(m.events) == 0 || m.selectedIdx < 0 || m.selectedIdx >= len(m.events) {
+		return nil
+	}
+
+	selectedEvent := m.events[m.selectedIdx]
+	return func() tea.Msg {
+		// Instead of directly viewing the event, send a message to show the action menu
+		return EventActionMenuMsg{Event: selectedEvent}
+	}
 }
 
 // applyFilters applies the filter model's filters to the event list
@@ -301,4 +391,12 @@ func (m *ListModel) FilterAndSearch() {
 // GetSortModel returns the sort model for this list
 func (m *ListModel) GetSortModel() *SortModel {
 	return m.sortModel
+}
+
+// GetSelectedEvent returns the currently selected event
+func (m *ListModel) GetSelectedEvent() *career.CareerEvent {
+	if len(m.events) == 0 || m.selectedIdx < 0 || m.selectedIdx >= len(m.events) {
+		return nil
+	}
+	return m.events[m.selectedIdx]
 }

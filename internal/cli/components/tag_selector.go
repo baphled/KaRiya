@@ -103,3 +103,13 @@ func (ts *TagSelector) IsSelected(tag string) bool {
 func (ts *TagSelector) Reset() {
 	ts.selected = make(map[string]bool)
 }
+
+// SetSelectedTags sets the selected tags directly (useful for editing)
+func (ts *TagSelector) SetSelectedTags(tags []string) {
+	ts.selected = make(map[string]bool)
+	for _, tag := range tags {
+		if career.AllowedTags[tag] && len(ts.selected) < 8 {
+			ts.selected[tag] = true
+		}
+	}
+}

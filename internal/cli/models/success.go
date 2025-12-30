@@ -51,27 +51,31 @@ func (m *SuccessModel) Init() tea.Cmd {
 func (m *SuccessModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyLeft:
+		switch msg.String() {
+		case "backspace":
+			// Signal back navigation to parent
+			return m, func() tea.Msg { return BackMsg{} }
+		case "ctrl+c", "q":
+			// Signal quit to parent
+			return m, func() tea.Msg { return QuitMsg{} }
+		case "esc":
+			// Go back
+			return m, func() tea.Msg { return BackMsg{} }
+		case "left":
 			// Navigate left through actions
 			if m.selectedAction > CaptureAnotherOption {
 				m.selectedAction--
 			}
 			return m, nil
-
-		case tea.KeyRight:
+		case "right":
 			// Navigate right through actions
 			if m.selectedAction < ExitOption {
 				m.selectedAction++
 			}
 			return m, nil
-
-		case tea.KeyEnter:
+		case "enter":
 			// Execute selected action
 			return m, m.executeAction()
-
-		case tea.KeyEsc, tea.KeyCtrlC:
-			return m, tea.Quit
 		}
 
 	case tea.WindowSizeMsg:
@@ -141,7 +145,7 @@ func (m *SuccessModel) renderEventCard() string {
 	// Event text
 	textLabel := textSecondary.Render("Event:")
 	textValue := textPrimary.Render(m.event.Text)
-	b.WriteString(fmt.Sprintf("%s\n%s\n\n", textLabel, textValue))
+	b.WriteString(fmt.Sprintf("%s %s\n\n", textLabel, textValue))
 
 	// Date
 	dateLabel := textSecondary.Render("Date:")
@@ -234,3 +238,9 @@ type CaptureAnotherMsg struct{}
 
 // ViewRecentMsg signals to view recent events
 type ViewRecentMsg struct{}
+
+// BackMsg signals the user wants to go back to the previous screen
+type BackMsg struct{}
+
+// QuitMsg signals the user wants to quit the application
+type QuitMsg struct{}

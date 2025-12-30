@@ -8,10 +8,12 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // FormField represents the different fields in the form
@@ -40,6 +42,8 @@ type FormModel struct {
 	maxChars    int
 	tagSelector *components.TagSelector
 	fieldErrors map[FormField]string // Track field-level validation errors
+	editMode    bool                 // True if editing an existing event
+	editEventID string               // ID of event being edited
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -113,8 +117,15 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
-			return m, tea.Quit
+		case "backspace":
+			// Signal back navigation to parent
+			return m, func() tea.Msg { return BackMsg{} }
+		case "ctrl+c", "q":
+			// Signal quit to parent
+			return m, func() tea.Msg { return QuitMsg{} }
+		case "esc":
+			// For form, esc can go back (cancel editing)
+			return m, func() tea.Msg { return BackMsg{} }
 
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
@@ -219,80 +230,138 @@ func (m *FormModel) validateDateField() {
 
 // View renders the form
 func (m *FormModel) View() string {
-	var b strings.Builder
+	// Title
+	title := styles.HeaderMain.Render("Capture Career Event")
 
-	b.WriteString("\n╔═══════════════════════════════════════════════════════════════════════════════╗\n")
-	b.WriteString("║                         Capture Career Event                                  ║\n")
-	b.WriteString("╠═══════════════════════════════════════════════════════════════════════════════╣\n")
-	b.WriteString("║                                                                               ║\n")
+	// Form content
+	var content []string
 
 	// Text field
 	focused := m.focusIndex == int(TextField)
-	b.WriteString(fmt.Sprintf("║ Event Text (required): %s%-41s║\n",
-		m.getFocusIndicator(focused), ""))
-	b.WriteString(fmt.Sprintf("║ %s%-74s║\n", m.inputs[0].View(), ""))
-	b.WriteString(fmt.Sprintf("║ Characters: %d/%d %s%-54s║\n",
-		m.charCount, m.maxChars, m.getCharCountIndicator(), ""))
+	textLabel := styles.InputLabel.Render("Event Text (required):")
+	textInput := styles.InputBase.
+		Width(styles.MaxWidth(80) - 10).
+		Render(m.inputs[0].View())
+
+	charInfo := fmt.Sprintf("Characters: %d/%d %s",
+		m.charCount, m.maxChars, m.getCharCountIndicator())
+	charCount := styles.InfoText.Render(charInfo)
+
+	content = append(content,
+		fmt.Sprintf("%s %s",
+			m.getFocusIndicator(focused),
+			textLabel),
+		textInput,
+		charCount,
+	)
 
 	// Show text field error if present
 	if fieldErr, ok := m.fieldErrors[TextField]; ok {
-		b.WriteString(fmt.Sprintf("║ Error: %-70s║\n", fieldErr))
+		content = append(content, styles.ErrorText.Render(fieldErr))
 	}
-	b.WriteString("║                                                                               ║\n")
 
 	// Date field
 	focused = m.focusIndex == int(DateField)
-	b.WriteString(fmt.Sprintf("║ Date (optional): %s%-55s║\n",
-		m.getFocusIndicator(focused), ""))
-	b.WriteString(fmt.Sprintf("║ %s%-74s║\n", m.inputs[1].View(), ""))
+	dateLabel := styles.InputLabel.Render("Date (optional):")
+	dateInput := styles.InputBase.
+		Width(styles.MaxWidth(80) - 10).
+		Render(m.inputs[1].View())
+
+	content = append(content,
+		fmt.Sprintf("%s %s",
+			m.getFocusIndicator(focused),
+			dateLabel),
+		dateInput,
+	)
 
 	// Show date field error if present
 	if fieldErr, ok := m.fieldErrors[DateField]; ok {
-		b.WriteString(fmt.Sprintf("║ Error: %-70s║\n", fieldErr))
+		content = append(content, styles.ErrorText.Render(fieldErr))
 	}
-	b.WriteString("║                                                                               ║\n")
 
 	// Company field
 	focused = m.focusIndex == int(CompanyField)
-	b.WriteString(fmt.Sprintf("║ Company (optional): %s%-52s║\n",
-		m.getFocusIndicator(focused), ""))
-	b.WriteString(fmt.Sprintf("║ %s%-74s║\n", m.inputs[2].View(), ""))
-	b.WriteString("║                                                                               ║\n")
+	companyLabel := styles.InputLabel.Render("Company (optional):")
+	companyInput := styles.InputBase.
+		Width(styles.MaxWidth(80) - 10).
+		Render(m.inputs[2].View())
+
+	content = append(content,
+		fmt.Sprintf("%s %s",
+			m.getFocusIndicator(focused),
+			companyLabel),
+		companyInput,
+	)
 
 	// Project field
 	focused = m.focusIndex == int(ProjectField)
-	b.WriteString(fmt.Sprintf("║ Project (optional): %s%-52s║\n",
-		m.getFocusIndicator(focused), ""))
-	b.WriteString(fmt.Sprintf("║ %s%-74s║\n", m.inputs[3].View(), ""))
-	b.WriteString("║                                                                               ║\n")
+	projectLabel := styles.InputLabel.Render("Project (optional):")
+	projectInput := styles.InputBase.
+		Width(styles.MaxWidth(80) - 10).
+		Render(m.inputs[3].View())
+
+	content = append(content,
+		fmt.Sprintf("%s %s",
+			m.getFocusIndicator(focused),
+			projectLabel),
+		projectInput,
+	)
 
 	// Mode selector
 	focused = m.focusIndex == int(ModeField)
-	b.WriteString(fmt.Sprintf("║ Capture Mode: %s%-58s║\n",
-		m.getFocusIndicator(focused), ""))
-	b.WriteString(m.renderModeSelector())
-	b.WriteString("║                                                                               ║\n")
+	modeLabel := styles.InputLabel.Render("Capture Mode:")
+	modeContent := m.renderModeSelector()
+
+	content = append(content,
+		fmt.Sprintf("%s %s",
+			m.getFocusIndicator(focused),
+			modeLabel),
+		modeContent,
+	)
 
 	// Submit button
 	focused = m.focusIndex == int(SubmitButton)
-	buttonText := "[ Submit ]"
+	var submitBtn string
 	if focused {
-		buttonText = "[ > Submit < ]"
+		submitBtn = styles.ButtonPrimary.Render("[ > Submit < ]")
+	} else {
+		submitBtn = styles.ButtonPrimary.Render("[ Submit ]")
 	}
-	b.WriteString(fmt.Sprintf("║ %s%-72s║\n", buttonText, ""))
-	b.WriteString("║                                                                               ║\n")
+
+	content = append(content, submitBtn)
 
 	// Error message
 	if m.err != nil {
-		b.WriteString(fmt.Sprintf("║ Error: %-70s║\n", m.err.Error()))
-		b.WriteString("║                                                                               ║\n")
+		content = append(content, styles.ErrorText.Render(m.err.Error()))
 	}
 
 	// Help text
-	b.WriteString("║ Navigation: Tab/Shift+Tab to move, Up/Down for mode, Enter to submit, Esc to cancel ║\n")
-	b.WriteString("╚═══════════════════════════════════════════════════════════════════════════════╝\n")
+	helpText := styles.InfoHint.Render(
+		"Navigation: Tab/Shift+Tab to move, Up/Down for mode, Enter to submit, Esc to cancel",
+	)
 
-	return b.String()
+	// Combine all content
+	formContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		content...,
+	)
+
+	// Wrap in a card
+	formCard := styles.CardBase.
+		Width(styles.MaxWidth(80) - 4).
+		Render(formContent)
+
+	// Combine all sections
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		"",
+		formCard,
+		"",
+		helpText,
+	)
+
+	return fullContent
 }
 
 // renderModeSelector renders the capture mode selector
@@ -415,12 +484,14 @@ func (m *FormModel) submitForm() tea.Cmd {
 			return SubmitMsg{Err: fmt.Errorf("date cannot be in the future")}
 		}
 
-		// Validate date based on capture mode
-		mode := m.modes[m.modeIndex]
-		if mode == careerservice.TimelineJournaling {
-			thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
-			if eventDate.Before(thirtyDaysAgo) {
-				return SubmitMsg{Err: fmt.Errorf("timeline journaling events must be within the last 30 days")}
+		// Validate date based on capture mode (only for new events)
+		if !m.editMode {
+			mode := m.modes[m.modeIndex]
+			if mode == careerservice.TimelineJournaling {
+				thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+				if eventDate.Before(thirtyDaysAgo) {
+					return SubmitMsg{Err: fmt.Errorf("timeline journaling events must be within the last 30 days")}
+				}
 			}
 		}
 
@@ -431,7 +502,7 @@ func (m *FormModel) submitForm() tea.Cmd {
 		// Get selected tags
 		tags := m.tagSelector.SelectedTags()
 
-		// Capture event through service
+		// Prepare options
 		ctx := context.Background()
 		opts := []service.Option{}
 		if company != "" {
@@ -444,12 +515,23 @@ func (m *FormModel) submitForm() tea.Cmd {
 			opts = append(opts, service.WithTags(tags))
 		}
 
-		if err := m.cliService.CaptureEvent(ctx, text, eventDate, mode, opts...); err != nil {
-			return SubmitMsg{Err: fmt.Errorf("failed to capture event: %w", err)}
+		// Handle edit mode vs create mode
+		if m.editMode {
+			// Update existing event
+			if err := m.cliService.UpdateEvent(ctx, m.editEventID, text, eventDate, opts...); err != nil {
+				return SubmitMsg{Err: fmt.Errorf("failed to update event: %w", err)}
+			}
+		} else {
+			// Create new event
+			mode := m.modes[m.modeIndex]
+			if err := m.cliService.CaptureEvent(ctx, text, eventDate, mode, opts...); err != nil {
+				return SubmitMsg{Err: fmt.Errorf("failed to capture event: %w", err)}
+			}
 		}
 
 		// Build event for display (this is just for UI purposes)
 		event := &career.CareerEvent{
+			ID:      m.editEventID, // Will be empty for new events
 			Text:    text,
 			Date:    eventDate,
 			Company: company,
@@ -555,4 +637,46 @@ func (m *FormModel) SetInitialMode(mode string) {
 			break
 		}
 	}
+}
+
+// LoadEventForEditing populates the form with an existing event's data
+func (m *FormModel) LoadEventForEditing(event *career.CareerEvent) {
+	m.editMode = true
+	m.editEventID = event.ID
+	m.event = event
+
+	// Populate text field
+	m.inputs[0].SetValue(event.Text)
+	m.charCount = len(event.Text)
+
+	// Populate date field
+	m.inputs[1].SetValue(event.Date.Format("2006-01-02"))
+
+	// Populate company field
+	if event.Company != "" {
+		m.inputs[2].SetValue(event.Company)
+	}
+
+	// Populate project field
+	if event.Project != "" {
+		m.inputs[3].SetValue(event.Project)
+	}
+
+	// Set tags in tag selector
+	if len(event.Tags) > 0 {
+		m.tagSelector.SetSelectedTags(event.Tags)
+	}
+
+	// Focus first input
+	m.inputs[0].Focus()
+}
+
+// IsEditMode returns whether the form is in edit mode
+func (m *FormModel) IsEditMode() bool {
+	return m.editMode
+}
+
+// GetEditEventID returns the ID of the event being edited
+func (m *FormModel) GetEditEventID() string {
+	return m.editEventID
 }
