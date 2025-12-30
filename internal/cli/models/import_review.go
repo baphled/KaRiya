@@ -399,6 +399,50 @@ func (m *ImportReviewModel) GetDefaultFieldsList(rowIndex int) []string {
 	return defaults
 }
 
+// GetParsingWarnings returns parsing-related warnings for a row
+func (m *ImportReviewModel) GetParsingWarnings(rowIndex int) []string {
+	if rowIndex < 0 || rowIndex >= len(m.ParsedRows) {
+		return []string{}
+	}
+
+	row := m.ParsedRows[rowIndex]
+	var warnings []string
+
+	// Check for missing required fields
+	if row.Event.Text == "" {
+		warnings = append(warnings, "missing text")
+	}
+	if row.Event.Date.IsZero() {
+		warnings = append(warnings, "missing date")
+	}
+
+	// Check for fields that are defaults (not in CSV)
+	defaults := m.GetDefaultFieldsList(rowIndex)
+	if len(defaults) > 0 {
+		warnings = append(warnings, fmt.Sprintf("using defaults for: %s", strings.Join(defaults, ", ")))
+	}
+
+	return warnings
+}
+
+// GetDuplicateInfo returns duplicate detection information for a row
+func (m *ImportReviewModel) GetDuplicateInfo(rowIndex int) string {
+	if rowIndex < 0 || rowIndex >= len(m.ParsedRows) {
+		return ""
+	}
+
+	row := m.ParsedRows[rowIndex]
+	if row.IsDuplicate {
+		return fmt.Sprintf("duplicate of event #%s", row.DuplicateOf)
+	}
+	return ""
+}
+
+// HasWarnings checks if a row has parsing warnings
+func (m *ImportReviewModel) HasWarnings(rowIndex int) bool {
+	return len(m.GetParsingWarnings(rowIndex)) > 0
+}
+
 // Init implements tea.Model
 func (m *ImportReviewModel) Init() tea.Cmd {
 	return nil
