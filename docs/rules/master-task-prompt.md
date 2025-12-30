@@ -8,9 +8,11 @@ Use this prompt for EVERY task to ensure:
 - ✅ All project rules are followed
 - ✅ Token efficiency is maintained
 - ✅ Code quality standards are met
-- ✅ Atomic commits are created
 - ✅ TDD principles are applied
 - ✅ Tasks are completed successfully
+- ✅ Documentation is updated
+- ✅ Check off tasks as we complete them
+- ✅ Atomic commits are created
 
 ---
 

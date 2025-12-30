@@ -30,6 +30,7 @@ const (
 	ImportProgressScreen Screen = "import_progress"
 	MetadataReviewScreen Screen = "metadata_review"
 	MetadataEditorScreen Screen = "metadata_editor"
+	BulkOperationsScreen Screen = "bulk_operations"
 )
 
 // Model represents the main application state
@@ -54,6 +55,7 @@ type Model struct {
 	importFilePath          string // Path to CSV file being imported
 	metadataReviewModel       *models.MetadataReviewModel
 	metadataEditorModel       *models.MetadataEditorModel
+	bulkOperationsModel     *models.BulkOperationsModel
 }
 
 // NewModel creates a new application model
@@ -145,6 +147,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.metadataEditorModel = models.NewMetadataEditorModel(editMsg.Event, m.service, m.cliService, ctx)
 		m.previousScreen = m.currentScreen
 		m.currentScreen = MetadataEditorScreen
+		return m, nil
+	}
+
+	// Handle BulkOperationsMsg - open bulk operations
+	if bulkMsg, ok := msg.(BulkOperationsMsg); ok {
+		ctx := context.Background()
+		m.bulkOperationsModel = models.NewBulkOperationsModel(bulkMsg.Events, m.service, m.cliService, ctx)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = BulkOperationsScreen
 		return m, nil
 	}
 
@@ -361,6 +372,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+	case BulkOperationsScreen:
+		if m.bulkOperationsModel != nil {
+			updatedModel, cmd := m.bulkOperationsModel.Update(msg)
+			m.bulkOperationsModel = updatedModel.(*models.BulkOperationsModel)
+			if m.bulkOperationsModel.ChangesApplied() {
+				// Changes applied - return to metadata review
+				m.metadataReviewModel.Refresh()
+				m.currentScreen = MetadataReviewScreen
+				m.previousScreen = BulkOperationsScreen
+			} else if m.bulkOperationsModel.WasCancelled() {
+				// Cancelled - return to metadata review
+				m.currentScreen = MetadataReviewScreen
+				m.previousScreen = BulkOperationsScreen
+			}
+			return m, cmd
+		}
+
 	case ActionMenuScreen:
 		if m.actionMenuModel != nil {
 			updatedActionMenuModel, cmd := m.actionMenuModel.Update(msg)
@@ -438,6 +466,11 @@ func (m *Model) View() string {
 			return m.metadataEditorModel.View()
 		}
 		return "Error: Metadata Editor model not initialized\n"
+	case BulkOperationsScreen:
+		if m.bulkOperationsModel != nil {
+			return m.bulkOperationsModel.View()
+		}
+		return "Error: Bulk Operations model not initialized\n"
 	case ViewScreen:
 		if m.detailsModel != nil {
 			return m.detailsModel.View()
