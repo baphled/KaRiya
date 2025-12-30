@@ -13,16 +13,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// EventActionMenuMsg is sent when an event is selected to show its action menu
-type EventActionMenuMsg struct {
-	Event *career.CareerEvent
-}
-
-// ViewEventMsg is sent when the user wants to view event details
-type ViewEventMsg struct {
-	Event *career.CareerEvent
-}
-
 // ListModel represents the event list screen
 type ListModel struct {
 	service     *careerservice.Service
