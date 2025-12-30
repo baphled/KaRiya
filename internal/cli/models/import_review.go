@@ -358,6 +358,47 @@ func (m *ImportProgressModel) renderResult() string {
 	return styles.Center(card, m.width, m.height)
 }
 
+// GetFieldOrigins returns which fields came from CSV vs defaults for a row
+func (m *ImportReviewModel) GetFieldOrigins(rowIndex int) map[string]bool {
+	if rowIndex < 0 || rowIndex >= len(m.ParsedRows) {
+		return make(map[string]bool)
+	}
+
+	row := m.ParsedRows[rowIndex]
+	origins := make(map[string]bool) // true = from CSV, false = default
+
+	// Check which fields are in RawData (came from CSV)
+	for _, field := range []string{"text", "date", "company", "project", "tags", "categories"} {
+		_, inRaw := row.RawData[field]
+		origins[field] = inRaw
+	}
+
+	return origins
+}
+
+// HasDefaultFields checks if a row has any default (non-CSV) fields
+func (m *ImportReviewModel) HasDefaultFields(rowIndex int) bool {
+	origins := m.GetFieldOrigins(rowIndex)
+	for _, fromCSV := range origins {
+		if !fromCSV {
+			return true
+		}
+	}
+	return false
+}
+
+// GetDefaultFieldsList returns a list of fields that are defaults for a row
+func (m *ImportReviewModel) GetDefaultFieldsList(rowIndex int) []string {
+	origins := m.GetFieldOrigins(rowIndex)
+	var defaults []string
+	for field, fromCSV := range origins {
+		if !fromCSV {
+			defaults = append(defaults, field)
+		}
+	}
+	return defaults
+}
+
 // Init implements tea.Model
 func (m *ImportReviewModel) Init() tea.Cmd {
 	return nil
