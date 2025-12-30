@@ -15,6 +15,7 @@ type ActionOption int
 
 const (
 	CaptureAnotherOption ActionOption = iota
+	ReviewMetadataOption
 	ViewRecentOption
 	ExitOption
 )
@@ -92,6 +93,10 @@ func (m *SuccessModel) executeAction() tea.Cmd {
 	case CaptureAnotherOption:
 		return func() tea.Msg {
 			return CaptureAnotherMsg{}
+		}
+	case ReviewMetadataOption:
+		return func() tea.Msg {
+			return ReviewMetadataMsg{EventID: m.event.ID}
 		}
 	case ViewRecentOption:
 		return func() tea.Msg {
@@ -211,6 +216,10 @@ func (m *SuccessModel) renderActions() string {
 	captureBtn := m.renderButton("Capture Another", m.selectedAction == CaptureAnotherOption)
 	buttons = append(buttons, captureBtn)
 
+	// Review Metadata button
+	reviewBtn := m.renderButton("Review Metadata", m.selectedAction == ReviewMetadataOption)
+	buttons = append(buttons, reviewBtn)
+
 	// View Recent button
 	viewBtn := m.renderButton("View Recent", m.selectedAction == ViewRecentOption)
 	buttons = append(buttons, viewBtn)
@@ -235,6 +244,11 @@ func (m *SuccessModel) renderButton(label string, selected bool) string {
 
 // CaptureAnotherMsg signals to capture another event
 type CaptureAnotherMsg struct{}
+
+// ReviewMetadataMsg signals to review metadata for the captured event
+type ReviewMetadataMsg struct {
+	EventID string
+}
 
 // ViewRecentMsg signals to view recent events
 type ViewRecentMsg struct{}
