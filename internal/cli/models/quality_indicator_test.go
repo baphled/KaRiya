@@ -66,10 +66,11 @@ var _ = Describe("QualityIndicator", func() {
 		})
 
 		It("should use correct icon for Incomplete level", func() {
+			// Create event with minimal fields to achieve Incomplete level (0-25 points)
 			event := &career.CareerEvent{
 				ID:   "test-id",
-				Text: "Event",
-				Date: time.Now().Add(-24 * time.Hour),
+				Text: "",
+				Date: time.Time{},
 			}
 			score := calculator.CalculateQuality(event)
 			indicator.SetScore(&score)
