@@ -26,7 +26,7 @@
 - ✅ Task 9.0: Bulk Operations Model (33 tests passing)
 - ✅ Task 10.0: Bulk Operations Integration (3 integration tests passing)
 - ✅ Task 10.0: Bulk Operations Integration (3 integration tests passing)
-- ⏳ Task 11.0: Bulk Service Enhancement (TODO)
+- ✅ Task 11.0: Bulk Service Enhancement (9 tests passing)
 
 ### Phase 4: Integration with Existing Features (TODO - Tasks 12-13)
 - ⏳ Task 12.0: CSV Import Integration (TODO)
@@ -182,11 +182,11 @@
 - ✅ 10.4 Write app integration tests for bulk workflow (select → edit → preview → confirm)
 
 #### 11.0 Enhance CLI Service with Bulk Operations (PENDING)
-- [ ] 11.1 Add `BulkUpdateMetadata()` method to CLIEventService accepting event IDs and metadata updates
-- [ ] 11.2 Implement conditional updates ('apply if field empty') with proper field preservation
-- [ ] 11.3 Validate all events before updates (all succeed or all fail - transaction-like behavior)
-- [ ] 11.4 Return summary of applied changes (count, fields updated, errors)
-- [ ] 11.5 Write unit tests for bulk operations covering success, validation, and error cases (8+ tests)
+- [x] 11.1 Add `BulkUpdateMetadata()` method to CLIEventService accepting event IDs and metadata updates
+- [x] 11.2 Implement conditional updates ('apply if field empty') with proper field preservation
+- [x] 11.3 Validate all events before updates (all succeed or all fail - transaction-like behavior)
+- [x] 11.4 Return summary of applied changes (count, fields updated, errors)
+- [x] 11.5 Write unit tests for bulk operations covering success, validation, and error cases (8+ tests)
 
 ---
 
