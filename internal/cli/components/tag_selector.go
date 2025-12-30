@@ -2,6 +2,7 @@ package components
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -19,21 +20,25 @@ func NewTagSelector() *TagSelector {
 	}
 }
 
-// SelectedTags returns a list of currently selected tags
+// SelectedTags returns a sorted list of currently selected tags
 func (ts *TagSelector) SelectedTags() []string {
 	tags := make([]string, 0, len(ts.selected))
 	for tag := range ts.selected {
 		tags = append(tags, tag)
 	}
+	// Sort for consistent output
+	sort.Strings(tags)
 	return tags
 }
 
-// AvailableTags returns all available tags from the domain
+// AvailableTags returns all available tags from the domain in alphabetical order
 func (ts *TagSelector) AvailableTags() []string {
 	tags := make([]string, 0, len(career.AllowedTags))
 	for tag := range career.AllowedTags {
 		tags = append(tags, tag)
 	}
+	// Sort for consistent output
+	sort.Strings(tags)
 	return tags
 }
 
@@ -68,7 +73,7 @@ func (ts *TagSelector) DeselectTag(tag string) error {
 	return nil
 }
 
-// FilterTags returns tags that match the given prefix
+// FilterTags returns tags that match the given prefix in alphabetical order
 func (ts *TagSelector) FilterTags(prefix string) []string {
 	if prefix == "" {
 		return ts.AvailableTags()
@@ -83,6 +88,8 @@ func (ts *TagSelector) FilterTags(prefix string) []string {
 		}
 	}
 
+	// Sort for consistent output
+	sort.Strings(filtered)
 	return filtered
 }
 

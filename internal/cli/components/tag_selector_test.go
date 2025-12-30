@@ -163,4 +163,72 @@ var _ = Describe("TagSelector", func() {
 			Expect(selector.SelectedTags()).To(BeEmpty())
 		})
 	})
+
+	Describe("Tag Ordering Consistency", func() {
+		It("should return available tags in alphabetical order", func() {
+			available := selector.AvailableTags()
+			Expect(available).To(Equal([]string{"achievement", "consulting", "leadership", "mentoring", "product", "project", "research", "technical"}))
+		})
+
+		It("should return the same order on multiple calls", func() {
+			first := selector.AvailableTags()
+			second := selector.AvailableTags()
+			third := selector.AvailableTags()
+
+			Expect(first).To(Equal(second))
+			Expect(second).To(Equal(third))
+		})
+
+		It("should return selected tags in alphabetical order", func() {
+			// Select tags in non-alphabetical order
+			selector.SelectTag("technical")
+			selector.SelectTag("achievement")
+			selector.SelectTag("leadership")
+
+			selected := selector.SelectedTags()
+			Expect(selected).To(Equal([]string{"achievement", "leadership", "technical"}))
+		})
+
+		It("should maintain alphabetical order after adding and removing tags", func() {
+			selector.SelectTag("technical")
+			selector.SelectTag("achievement")
+			selector.SelectTag("leadership")
+			selector.DeselectTag("achievement")
+			selector.SelectTag("mentoring")
+
+			selected := selector.SelectedTags()
+			Expect(selected).To(Equal([]string{"leadership", "mentoring", "technical"}))
+		})
+
+		It("should return filtered tags in alphabetical order", func() {
+			filtered := selector.FilterTags("te")
+			Expect(filtered).To(Equal([]string{"technical"}))
+
+			filtered = selector.FilterTags("a")
+			Expect(filtered).To(Equal([]string{"achievement"}))
+
+			filtered = selector.FilterTags("")
+			Expect(filtered).To(Equal([]string{"achievement", "consulting", "leadership", "mentoring", "product", "project", "research", "technical"}))
+		})
+
+		It("should not change order on selection/deselection", func() {
+			// Get the original order
+			originalOrder := selector.AvailableTags()
+
+			// Select some tags
+			selector.SelectTag("technical")
+			selector.SelectTag("leadership")
+
+			// Verify available tags order hasn't changed
+			afterSelection := selector.AvailableTags()
+			Expect(afterSelection).To(Equal(originalOrder))
+
+			// Deselect a tag
+			selector.DeselectTag("technical")
+
+			// Verify order is still the same
+			afterDeselection := selector.AvailableTags()
+			Expect(afterDeselection).To(Equal(originalOrder))
+		})
+	})
 })
