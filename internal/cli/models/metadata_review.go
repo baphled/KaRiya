@@ -33,6 +33,7 @@ type MetadataReviewModel struct {
 	sortBy        string // "date", "company", "quality"
 	importedEventIDs map[string]bool // IDs of recently imported events
 	isImportReview   bool            // True if reviewing only imported events
+	fieldOrigins map[string]map[string]bool // eventID -> field -> isFromCSV
 }
 
 // NewMetadataReviewModel creates a new metadata review model
@@ -47,7 +48,8 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 		filterMode:    "all",
 		sortBy:        "quality",
 		qualityScores: make(map[string]*careerservice.QualityScore),
-	}
+			fieldOrigins: make(map[string]map[string]bool),
+}
 
 	// Load events
 	model.loadEvents()
@@ -77,7 +79,8 @@ func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Con
 		qualityScores:    make(map[string]*careerservice.QualityScore),
 		importedEventIDs: importedMap,
 		isImportReview:   true,
-	}
+			fieldOrigins: make(map[string]map[string]bool),
+}
 
 	// Load events (will be filtered to only imported)
 	model.loadEvents()
@@ -425,4 +428,50 @@ func (m *MetadataReviewModel) Refresh() {
 	if m.selectedIdx < 0 {
 		m.selectedIdx = 0
 	}
+}
+
+// SetFieldOrigins sets the field origins for an imported event
+func (m *MetadataReviewModel) SetFieldOrigins(eventID string, origins map[string]bool) {
+	if m.fieldOrigins == nil {
+		m.fieldOrigins = make(map[string]map[string]bool)
+	}
+	m.fieldOrigins[eventID] = origins
+}
+
+// GetFieldOrigins returns the field origins for an event
+func (m *MetadataReviewModel) GetFieldOrigins(eventID string) map[string]bool {
+	if m.fieldOrigins == nil {
+		return nil
+	}
+	return m.fieldOrigins[eventID]
+}
+
+// IsFieldFromCSV returns whether a field came from CSV (true) or is a default (false)
+func (m *MetadataReviewModel) IsFieldFromCSV(eventID, field string) bool {
+	origins := m.GetFieldOrigins(eventID)
+	if origins == nil {
+		return false // Default assumption if no origin info
+	}
+	fromCSV, exists := origins[field]
+	return exists && fromCSV
+}
+
+// GetDefaultFields returns the list of fields that are defaults for an event
+func (m *MetadataReviewModel) GetDefaultFields(eventID string) []string {
+	origins := m.GetFieldOrigins(eventID)
+	if origins == nil {
+		return []string{}
+	}
+	var defaults []string
+	for field, fromCSV := range origins {
+		if !fromCSV {
+			defaults = append(defaults, field)
+		}
+	}
+	return defaults
+}
+
+// HasDefaultFields checks if an event has any default fields
+func (m *MetadataReviewModel) HasDefaultFields(eventID string) bool {
+	return len(m.GetDefaultFields(eventID)) > 0
 }
