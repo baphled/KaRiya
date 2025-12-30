@@ -113,6 +113,44 @@ var (
 			MarginTop(1)
 )
 
+// Modal/Dialog styles
+var (
+	ModalBase = lipgloss.NewStyle().
+			Padding(1, 2).
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(ColorBorder).
+			Background(ColorBackgroundCard)
+
+	ModalTitle = lipgloss.NewStyle().
+			Foreground(ColorTextPrimary).
+			Bold(true).
+			MarginBottom(1)
+
+	ModalMessage = lipgloss.NewStyle().
+			Foreground(ColorTextPrimary).
+			MarginBottom(2)
+
+	ModalButtonContainer = lipgloss.NewStyle().
+			MarginTop(2).
+			MarginBottom(1)
+
+	ModalInstructions = lipgloss.NewStyle().
+			Foreground(ColorTextMuted).
+			MarginTop(1)
+
+	// Destructive modal styles (for delete confirmations)
+	ModalDestructive = lipgloss.NewStyle().
+			Padding(1, 2).
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(ColorError).
+			Background(ColorBackgroundCard)
+
+	ModalDestructiveTitle = lipgloss.NewStyle().
+			Foreground(ColorError).
+			Bold(true).
+			MarginBottom(1)
+)
+
 // Header styles
 var (
 	HeaderMain = lipgloss.NewStyle().

@@ -62,15 +62,13 @@ func (d *ConfirmationDialog) Update(msg tea.Msg) (*ConfirmationDialog, tea.Cmd) 
 
 // View renders the confirmation dialog
 func (d *ConfirmationDialog) View() string {
-	// Title
-	title := styles.HeaderSection.Render(d.title)
+	// Title - use destructive style
+	title := styles.ModalDestructiveTitle.Render(d.title)
 
-	// Message
-	message := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary).
-		Render(d.message)
+	// Message - standard modal message style
+	message := styles.ModalMessage.Render(d.message)
 
-	// Buttons
+	// Buttons with consistent styling
 	cancelStyle := styles.ButtonSecondary
 	confirmStyle := styles.ButtonSecondary
 	if d.focused {
@@ -84,35 +82,33 @@ func (d *ConfirmationDialog) View() string {
 		Foreground(styles.ColorError).
 		Render(d.confirmText)
 
-	buttons := lipgloss.JoinHorizontal(
-		lipgloss.Left,
-		cancelButton,
-		"  ",
-		confirmButton,
+	buttons := styles.ModalButtonContainer.Render(
+		lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			cancelButton,
+			"  ",
+			confirmButton,
+		),
 	)
 
-	// Instructions
-	instructions := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
-		Render("Tab/←→: Switch | Enter: Confirm | Esc: Cancel")
+	// Instructions - standard modal instructions
+	instructions := styles.ModalInstructions.Render(
+		"Tab/←→: Switch | Enter: Confirm | Esc: Cancel",
+	)
 
-	// Combine all elements
+	// Combine all elements with consistent vertical spacing
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		title,
 		"",
 		message,
-		"",
-		"",
 		buttons,
-		"",
 		instructions,
 	)
 
-	// Wrap in a card
-	dialog := styles.CardBase.
+	// Wrap in destructive modal box
+	dialog := styles.ModalDestructive.
 		Width(60).
-		BorderForeground(styles.ColorError).
 		Render(content)
 
 	return dialog
