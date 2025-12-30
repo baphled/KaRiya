@@ -265,4 +265,71 @@ var _ = Describe("MetadataReviewModel", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 	})
+
+	Describe("Field origin tracking for imported events", func() {
+		It("should store field origins for imported events", func() {
+			// Arrange: create model
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+			origins := map[string]bool{
+				"text":       true,  // from CSV
+				"date":       true,  // from CSV
+				"company":    false, // default
+				"project":    false, // default
+				"tags":       true,  // from CSV
+				"categories": false, // default
+			}
+
+			// Act: set field origins
+			model.SetFieldOrigins(eventID, origins)
+
+			// Assert: origins should be stored
+			stored := model.GetFieldOrigins(eventID)
+			Expect(stored).NotTo(BeNil())
+			Expect(stored["text"]).To(BeTrue())
+			Expect(stored["company"]).To(BeFalse())
+		})
+
+		It("should indicate which fields came from CSV", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+			origins := map[string]bool{
+				"text":    true,
+				"company": false,
+			}
+			model.SetFieldOrigins(eventID, origins)
+
+			// Act
+			isFromCSV := model.IsFieldFromCSV(eventID, "text")
+			isDefault := model.IsFieldFromCSV(eventID, "company")
+
+			// Assert
+			Expect(isFromCSV).To(BeTrue())
+			Expect(isDefault).To(BeFalse())
+		})
+
+		It("should return default fields for an event", func() {
+			// Arrange
+			model := models.NewMetadataReviewModel(service, ctx)
+			eventID := "test-event-id"
+			origins := map[string]bool{
+				"text":       true,
+				"date":       true,
+				"company":    false,
+				"project":    false,
+				"tags":       true,
+				"categories": false,
+			}
+			model.SetFieldOrigins(eventID, origins)
+
+			// Act
+			defaultFields := model.GetDefaultFields(eventID)
+
+			// Assert
+			Expect(defaultFields).To(HaveLen(3))
+			Expect(defaultFields).To(ContainElement("company"))
+			Expect(defaultFields).To(ContainElement("project"))
+		})
+	})
 })

@@ -9,10 +9,10 @@ Use this prompt for EVERY task to ensure:
 - ✅ Token efficiency is maintained
 - ✅ Code quality standards are met
 - ✅ TDD principles are applied
-- ✅ Tasks are completed successfully
 - ✅ Documentation is updated
-- ✅ Check off tasks as we complete them
+- ✅ Check off tasks as we complete them in task file
 - ✅ Atomic commits are created
+  - Only when *all* checks pass
 
 ---
 
