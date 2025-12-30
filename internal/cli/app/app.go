@@ -16,13 +16,14 @@ import (
 type Screen string
 
 const (
-	HomeScreen       Screen = "home"
-	CaptureScreen    Screen = "capture"
-	ListScreen       Screen = "list"
-	ViewScreen       Screen = "view"
-	QuitScreen       Screen = "quit"
-	SuccessScreen    Screen = "success"
-	ActionMenuScreen Screen = "action_menu"
+	HomeScreen           Screen = "home"
+	CaptureScreen        Screen = "capture"
+	ListScreen           Screen = "list"
+	ViewScreen           Screen = "view"
+	QuitScreen           Screen = "quit"
+	SuccessScreen        Screen = "success"
+	ActionMenuScreen     Screen = "action_menu"
+	ConfirmationScreen   Screen = "confirmation"
 )
 
 // Model represents the main application state
@@ -39,6 +40,8 @@ type Model struct {
 	listModel               *models.ListModel
 	detailsModel            *models.DetailsModel
 	actionMenuModel         *models.ActionMenuModel
+	confirmationDialog      *models.ConfirmationDialog
+	deleteEventID           string // Track the event being deleted
 }
 
 // NewModel creates a new application model
@@ -57,6 +60,8 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		listModel:               models.NewListModel(careerService, ctx),
 		detailsModel:            nil,
 		actionMenuModel:         nil,
+		confirmationDialog:      nil,
+		deleteEventID:           "",
 	}
 }
 
@@ -74,6 +79,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.currentScreen == ListScreen {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = HomeScreen
+			return m, nil
+		}
+		// Special handling for ConfirmationScreen - go back to action menu or previous screen
+		if m.currentScreen == ConfirmationScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = ActionMenuScreen
+			m.confirmationDialog = nil
+			m.deleteEventID = ""
 			return m, nil
 		}
 		// Special handling for ViewScreen that came from ActionMenuScreen
@@ -126,10 +139,55 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.formModel = models.NewFormModel(m.cliService)
 			m.formModel.LoadEventForEditing(actionMsg.Event)
 		case models.EventActionDelete:
+			// Show confirmation dialog for deletion
+			m.deleteEventID = actionMsg.Event.ID
+			m.confirmationDialog = models.NewConfirmationDialog(
+				"Delete Event",
+				"Are you sure you want to delete this event? This action cannot be undone.",
+			)
 			m.previousScreen = m.currentScreen
-			m.currentScreen = ListScreen
+			m.currentScreen = ConfirmationScreen
 		}
 		return m, nil
+	}
+
+	// Handle confirmation dialog messages
+	if m.currentScreen == ConfirmationScreen && m.confirmationDialog != nil {
+		updatedDialog, cmd := m.confirmationDialog.Update(msg)
+		m.confirmationDialog = updatedDialog
+
+		if m.confirmationDialog.IsConfirmed() {
+			// User confirmed deletion - delete the event
+			ctx := context.Background()
+			err := m.service.DeleteEvent(ctx, m.deleteEventID)
+			if err != nil {
+				// Handle error - could show error message
+				m.previousScreen = m.currentScreen
+				m.currentScreen = ListScreen
+				m.confirmationDialog = nil
+				m.deleteEventID = ""
+				return m, nil
+			}
+
+			// Refresh the list after deletion
+			m.listModel = models.NewListModel(m.service, ctx)
+			m.previousScreen = m.currentScreen
+			m.currentScreen = ListScreen
+			m.confirmationDialog = nil
+			m.deleteEventID = ""
+			return m, nil
+		}
+
+		if m.confirmationDialog.IsCancelled() {
+			// User cancelled deletion - go back to action menu
+			m.previousScreen = m.currentScreen
+			m.currentScreen = ActionMenuScreen
+			m.confirmationDialog = nil
+			m.deleteEventID = ""
+			return m, nil
+		}
+
+		return m, cmd
 	}
 
 	// Handle FormSubmittedMsg
@@ -251,6 +309,11 @@ func (m *Model) View() string {
 			return m.actionMenuModel.View()
 		}
 		return "Error: Action menu not initialized\n"
+	case ConfirmationScreen:
+		if m.confirmationDialog != nil {
+			return m.confirmationDialog.View()
+		}
+		return "Error: Confirmation dialog not initialized\n"
 	case QuitScreen:
 		return "Goodbye!\n"
 	default:
