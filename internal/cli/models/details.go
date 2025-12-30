@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,17 +13,21 @@ import (
 
 // DetailsModel represents the event details screen
 type DetailsModel struct {
-	event  *career.CareerEvent
-	width  int
-	height int
+	event      *career.CareerEvent
+	width      int
+	height     int
+	header     components.HeaderModel
+	helpFooter components.HelpFooterModel
 }
 
 // NewDetailsModel creates a new details model
 func NewDetailsModel(event *career.CareerEvent) *DetailsModel {
 	return &DetailsModel{
-		event:  event,
-		width:  80,
-		height: 24,
+		event:      event,
+		width:      80,
+		height:     24,
+		header:     components.NewHeader("Event Details", 80),
+		helpFooter: components.NewHelpFooter("details", 80),
 	}
 }
 
@@ -34,18 +39,21 @@ func (m *DetailsModel) Init() tea.Cmd {
 // Update handles messages
 func (m *DetailsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.header.SetWidth(msg.Width)
+		m.helpFooter.SetWidth(msg.Width)
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
+		case "esc", "backspace":
 			// Signal back navigation to parent
 			return m, func() tea.Msg { return BackMsg{} }
 		case "ctrl+c", "q":
 			// Signal quit to parent
 			return m, func() tea.Msg { return QuitMsg{} }
 		}
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
 	}
 	return m, nil
 }
@@ -53,87 +61,114 @@ func (m *DetailsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the details view
 func (m *DetailsModel) View() string {
 	if m.event == nil {
-		return styles.ErrorBox.Render("No event selected\n\nPress 'esc' to return to list")
+		return styles.ErrorBox.Render("No event selected\n\nPress 'esc' to return")
 	}
 
-	var sb strings.Builder
+	// Header
+	headerContent := m.header.View()
 
-	// Title
-	sb.WriteString(styles.HeaderSection.Render("Event Details"))
-	sb.WriteString("\n\n")
+	var content []string
 
 	// Event Text
-	sb.WriteString(styles.InputLabel.Render("Description:"))
-	sb.WriteString("\n")
-	sb.WriteString(lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(m.event.Text))
-	sb.WriteString("\n\n")
+	content = append(content,
+		styles.InputLabel.Render("Description:"),
+		lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(m.event.Text),
+		"",
+	)
 
 	// Date
-	sb.WriteString(styles.InputLabel.Render("Date:"))
-	sb.WriteString("\n")
-	dateStr := m.event.Date.Format("2006-01-02")
-	sb.WriteString(lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(dateStr))
-	sb.WriteString("\n\n")
+	content = append(content,
+		styles.InputLabel.Render("Date:"),
+		lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(m.event.Date.Format("2006-01-02")),
+		"",
+	)
 
 	// Company (if available)
 	if m.event.Company != "" {
-		sb.WriteString(styles.InputLabel.Render("Company:"))
-		sb.WriteString("\n")
-		sb.WriteString(lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(m.event.Company))
-		sb.WriteString("\n\n")
+		content = append(content,
+			styles.InputLabel.Render("Company:"),
+			lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(m.event.Company),
+			"",
+		)
 	}
 
 	// Project (if available)
 	if m.event.Project != "" {
-		sb.WriteString(styles.InputLabel.Render("Project:"))
-		sb.WriteString("\n")
-		sb.WriteString(lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(m.event.Project))
-		sb.WriteString("\n\n")
+		content = append(content,
+			styles.InputLabel.Render("Project:"),
+			lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Render(m.event.Project),
+			"",
+		)
 	}
 
 	// Tags (if available)
 	if len(m.event.Tags) > 0 {
-		sb.WriteString(styles.InputLabel.Render("Tags:"))
-		sb.WriteString("\n")
+		tagLine := styles.InputLabel.Render("Tags:")
+		var tagContent strings.Builder
+		tagContent.WriteString(tagLine)
+		tagContent.WriteString("\n")
 		for _, tag := range m.event.Tags {
-			sb.WriteString(styles.TagBase.Render(tag))
-			sb.WriteString(" ")
+			tagContent.WriteString(styles.TagBase.Render(tag))
+			tagContent.WriteString(" ")
 		}
-		sb.WriteString("\n\n")
+		content = append(content, tagContent.String(), "")
 	}
 
 	// Categories (if available)
 	if len(m.event.Categories) > 0 {
-		sb.WriteString(styles.InputLabel.Render("Categories:"))
-		sb.WriteString("\n")
+		categoryLine := styles.InputLabel.Render("Categories:")
+		var categoryContent strings.Builder
+		categoryContent.WriteString(categoryLine)
+		categoryContent.WriteString("\n")
 		for _, category := range m.event.Categories {
-			sb.WriteString(styles.TagBase.Render(category))
-			sb.WriteString(" ")
+			categoryContent.WriteString(styles.TagBase.Render(category))
+			categoryContent.WriteString(" ")
 		}
-		sb.WriteString("\n\n")
+		content = append(content, categoryContent.String(), "")
 	}
 
 	// Event ID
-	sb.WriteString(styles.InputLabel.Render("Event ID:"))
-	sb.WriteString("\n")
-	sb.WriteString(lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render(m.event.ID))
-	sb.WriteString("\n\n")
+	content = append(content,
+		styles.InputLabel.Render("Event ID:"),
+		lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render(m.event.ID),
+		"",
+	)
 
 	// Timestamps
-	sb.WriteString(styles.InputLabel.Render("Created:"))
-	sb.WriteString("\n")
-	sb.WriteString(lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render(m.formatTime(m.event.CreatedAt)))
-	sb.WriteString("\n\n")
+	content = append(content,
+		styles.InputLabel.Render("Created:"),
+		lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render(m.formatTime(m.event.CreatedAt)),
+		"",
+	)
 
-	sb.WriteString(styles.InputLabel.Render("Last Updated:"))
-	sb.WriteString("\n")
-	sb.WriteString(lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render(m.formatTime(m.event.UpdatedAt)))
-	sb.WriteString("\n\n")
+	content = append(content,
+		styles.InputLabel.Render("Last Updated:"),
+		lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render(m.formatTime(m.event.UpdatedAt)),
+		"",
+	)
 
-	// Footer
-	sb.WriteString(styles.InputHint.Render("Press 'esc' to return to list"))
+	// Help footer
+	m.helpFooter.SetWidth(styles.MaxWidth(m.width))
+	helpFooterContent := m.helpFooter.View()
+	content = append(content, helpFooterContent)
 
-	return sb.String()
+	// Combine all content
+	detailsContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		content...,
+	)
+
+	// Wrap in card with header
+	card := styles.CardBase.
+		Width(styles.MaxWidth(m.width) - 4).
+		Render(lipgloss.JoinVertical(
+			lipgloss.Left,
+			headerContent,
+			"",
+			detailsContent,
+		))
+
+	return card
 }
 
 // formatTime formats a timestamp for display

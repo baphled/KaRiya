@@ -3,6 +3,7 @@ package models
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -25,6 +26,8 @@ type ActionMenuModel struct {
 	selectedIdx int
 	width       int
 	height      int
+	header      components.HeaderModel
+	helpFooter  components.HelpFooterModel
 }
 
 // NewActionMenuModel creates a new action menu for a given event
@@ -35,6 +38,8 @@ func NewActionMenuModel(event *career.CareerEvent) *ActionMenuModel {
 		selectedIdx: 0,
 		width:       40,
 		height:      10,
+		header:      components.NewHeader("Event Actions", 80),
+		helpFooter:  components.NewHelpFooter("action_menu", 80),
 	}
 }
 
@@ -46,6 +51,12 @@ func (m *ActionMenuModel) Init() tea.Cmd {
 // Update handles messages for the action menu
 func (m *ActionMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.header.SetWidth(msg.Width)
+		m.helpFooter.SetWidth(msg.Width)
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
@@ -64,7 +75,7 @@ func (m *ActionMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					Action: m.options[m.selectedIdx],
 				}
 			}
-		case "esc":
+		case "esc", "backspace":
 			// Go back to list
 			return m, func() tea.Msg { return BackMsg{} }
 		}
@@ -74,45 +85,50 @@ func (m *ActionMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the action menu
 func (m *ActionMenuModel) View() string {
-	var sb strings.Builder
-
-	// Title
-	title := styles.HeaderSection.Render("Event Actions")
-	sb.WriteString(title)
-	sb.WriteString("\n\n")
+	// Header
+	headerContent := m.header.View()
 
 	// Event summary
 	eventSummary := lipgloss.NewStyle().
 		Foreground(styles.ColorTextSecondary).
 		Render(m.truncateText(m.event.Text, 40))
-	sb.WriteString(eventSummary)
-	sb.WriteString("\n\n")
 
 	// Render options
+	var optionsContent strings.Builder
 	actionLabels := []string{"View Event", "Edit Event", "Delete Event"}
 	for i, option := range m.options {
 		var optionStyle lipgloss.Style
 		if i == m.selectedIdx {
 			optionStyle = styles.ListItemSelected
-			sb.WriteString("▶ ")
+			optionsContent.WriteString("▶ ")
 		} else {
 			optionStyle = styles.ListItem
-			sb.WriteString("  ")
+			optionsContent.WriteString("  ")
 		}
 
-		sb.WriteString(optionStyle.Render(actionLabels[option]))
-		sb.WriteString("\n")
+		optionsContent.WriteString(optionStyle.Render(actionLabels[option]))
+		optionsContent.WriteString("\n")
 	}
 
-	// Instructions
-	sb.WriteString("\n")
-	instructions := styles.InfoHint.Render("↑/↓ or j/k: Navigate | Enter: Select | Backspace: Cancel")
-	sb.WriteString(instructions)
+	// Help footer
+	m.helpFooter.SetWidth(styles.MaxWidth(m.width))
+	helpFooterContent := m.helpFooter.View()
+
+	// Combine all content
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		headerContent,
+		"",
+		eventSummary,
+		"",
+		optionsContent.String(),
+		helpFooterContent,
+	)
 
 	// Wrap in a card
 	card := styles.CardBase.
-		Width(m.width).
-		Render(sb.String())
+		Width(styles.MaxWidth(m.width) - 4).
+		Render(content)
 
 	return card
 }
