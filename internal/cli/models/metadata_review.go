@@ -362,7 +362,3 @@ func (m *MetadataReviewModel) Refresh() {
 	}
 }
 
-// EditEventMsg signals that an event should be edited
-type EditEventMsg struct {
-	EventID string
-}

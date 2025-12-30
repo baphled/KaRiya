@@ -28,6 +28,7 @@ const (
 	ConfirmationScreen   Screen = "confirmation"
 	ImportReviewScreen   Screen = "import_review"
 	ImportProgressScreen Screen = "import_progress"
+	MetadataReviewScreen Screen = "metadata_review"
 )
 
 // Model represents the main application state
@@ -50,6 +51,7 @@ type Model struct {
 	importReviewModel       *models.ImportReviewModel
 	importProgressModel     *models.ImportProgressModel
 	importFilePath          string // Path to CSV file being imported
+	metadataReviewModel       *models.MetadataReviewModel
 }
 
 // NewModel creates a new application model
@@ -74,6 +76,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		importReviewModel:       nil,
 		importProgressModel:     nil,
 		importFilePath:          "",
+		metadataReviewModel:       models.NewMetadataReviewModel(careerService, ctx),
 	}
 }
 
@@ -322,6 +325,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.listModel = updatedListModel.(*models.ListModel)
 			return m, cmd
 		}
+	case MetadataReviewScreen:
+		if m.metadataReviewModel != nil {
+			updatedModel, cmd := m.metadataReviewModel.Update(msg)
+			m.metadataReviewModel = updatedModel.(*models.MetadataReviewModel)
+			return m, cmd
+		}
 
 	case ActionMenuScreen:
 		if m.actionMenuModel != nil {
@@ -361,6 +370,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.listModel = models.NewListModel(m.service, ctx)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ListScreen
+		case "m":
+			m.metadataReviewModel.Refresh()
+			m.previousScreen = m.currentScreen
+			m.currentScreen = MetadataReviewScreen
 		}
 
 	case tea.WindowSizeMsg:
@@ -386,6 +399,11 @@ func (m *Model) View() string {
 			return m.listModel.View()
 		}
 		return "Error: List model not initialized\n"
+	case MetadataReviewScreen:
+		if m.metadataReviewModel != nil {
+			return m.metadataReviewModel.View()
+		}
+		return "Error: Metadata Review model not initialized\n"
 	case ViewScreen:
 		if m.detailsModel != nil {
 			return m.detailsModel.View()
