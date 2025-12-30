@@ -24,26 +24,31 @@ const (
 	DateField
 	CompanyField
 	ProjectField
+	TagsField
+	CategoriesField
 	ModeField
 	SubmitButton
 )
 
 // FormModel represents the event capture form state
 type FormModel struct {
-	cliService  *service.CLIEventService
-	inputs      []textinput.Model
-	focusIndex  int
-	modeIndex   int // Index for capture mode selection
-	modes       []careerservice.EventCaptureMode
-	err         error
-	submitted   bool
-	event       *career.CareerEvent
-	charCount   int
-	maxChars    int
-	tagSelector *components.TagSelector
-	fieldErrors map[FormField]string // Track field-level validation errors
-	editMode    bool                 // True if editing an existing event
-	editEventID string               // ID of event being edited
+	cliService       *service.CLIEventService
+	inputs           []textinput.Model
+	focusIndex       int
+	modeIndex        int // Index for capture mode selection
+	tagIndex         int // Index for tag navigation when TagsField is focused
+	categoryIndex    int // Index for category navigation when CategoriesField is focused
+	modes            []careerservice.EventCaptureMode
+	err              error
+	submitted        bool
+	event            *career.CareerEvent
+	charCount        int
+	maxChars         int
+	tagSelector      *components.TagSelector
+	categorySelector *components.CategorySelector
+	fieldErrors      map[FormField]string // Track field-level validation errors
+	editMode         bool                 // True if editing an existing event
+	editEventID      string               // ID of event being edited
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -81,16 +86,19 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 	}
 
 	return &FormModel{
-		cliService:  cliService,
-		inputs:      inputs,
-		focusIndex:  0,
-		modeIndex:   0,
-		modes:       modes,
-		err:         nil,
-		submitted:   false,
-		maxChars:    2000,
-		tagSelector: components.NewTagSelector(),
-		fieldErrors: make(map[FormField]string),
+		cliService:       cliService,
+		inputs:           inputs,
+		focusIndex:       0,
+		modeIndex:        0,
+		tagIndex:         0,
+		categoryIndex:    0,
+		modes:            modes,
+		err:              nil,
+		submitted:        false,
+		maxChars:         2000,
+		tagSelector:      components.NewTagSelector(),
+		categorySelector: components.NewCategorySelector(),
+		fieldErrors:      make(map[FormField]string),
 	}
 }
 
@@ -120,9 +128,36 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "backspace":
 			// Signal back navigation to parent
 			return m, func() tea.Msg { return BackMsg{} }
-		case "ctrl+c", "q":
+		case "ctrl+c", "q", "esc":
 			// Signal quit to parent
 			return m, func() tea.Msg { return QuitMsg{} }
+
+		case " ":
+			// Handle space key for tag/category selection
+			if m.focusIndex == int(TagsField) {
+				availableTags := m.tagSelector.AvailableTags()
+				if m.tagIndex < len(availableTags) {
+					tag := availableTags[m.tagIndex]
+					if m.tagSelector.IsSelected(tag) {
+						m.tagSelector.DeselectTag(tag)
+					} else {
+						m.tagSelector.SelectTag(tag)
+					}
+				}
+				return m, nil
+			}
+			if m.focusIndex == int(CategoriesField) {
+				availableCategories := m.categorySelector.AvailableCategories()
+				if m.categoryIndex < len(availableCategories) {
+					category := availableCategories[m.categoryIndex]
+					if m.categorySelector.IsSelected(category) {
+						m.categorySelector.DeselectCategory(category)
+					} else {
+						m.categorySelector.SelectCategory(category)
+					}
+				}
+				return m, nil
+			}
 
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
@@ -130,6 +165,44 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Validate current field before moving away
 			if s == "tab" || s == "shift+tab" || s == "enter" {
 				m.validateCurrentField()
+			}
+
+			// Handle tag selection when on tags field
+			if m.focusIndex == int(TagsField) {
+				availableTags := m.tagSelector.AvailableTags()
+				if s == "up" {
+					m.tagIndex--
+					if m.tagIndex < 0 {
+						m.tagIndex = len(availableTags) - 1
+					}
+					return m, nil
+				}
+				if s == "down" {
+					m.tagIndex++
+					if m.tagIndex >= len(availableTags) {
+						m.tagIndex = 0
+					}
+					return m, nil
+				}
+			}
+
+			// Handle category selection when on categories field
+			if m.focusIndex == int(CategoriesField) {
+				availableCategories := m.categorySelector.AvailableCategories()
+				if s == "up" {
+					m.categoryIndex--
+					if m.categoryIndex < 0 {
+						m.categoryIndex = len(availableCategories) - 1
+					}
+					return m, nil
+				}
+				if s == "down" {
+					m.categoryIndex++
+					if m.categoryIndex >= len(availableCategories) {
+						m.categoryIndex = 0
+					}
+					return m, nil
+				}
 			}
 
 			// Handle mode selection when on mode field
@@ -159,6 +232,15 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focusIndex--
 			} else {
 				m.focusIndex++
+			}
+
+			// Skip display-only fields (TagsField, CategoriesField)
+			for m.focusIndex == int(TagsField) || m.focusIndex == int(CategoriesField) {
+				if s == "up" || s == "shift+tab" {
+					m.focusIndex--
+				} else {
+					m.focusIndex++
+				}
 			}
 
 			if m.focusIndex > int(SubmitButton) {
@@ -305,6 +387,50 @@ func (m *FormModel) View() string {
 	)
 
 	// Mode selector
+	// Tags display
+	focused = m.focusIndex == int(TagsField)
+	tagsLabel := styles.InputLabel.Render("Tags (Use Up/Down to navigate, Space to toggle):")
+	var tagsDisplay string
+	if focused {
+		tagsDisplay = m.renderTagSelector()
+	} else {
+		selectedTags := m.tagSelector.SelectedTags()
+		if len(selectedTags) > 0 {
+			for _, tag := range selectedTags {
+				tagsDisplay += styles.TagBase.Render(tag) + " "
+			}
+		} else {
+			tagsDisplay = styles.InfoText.Render("(none selected)")
+		}
+	}
+	content = append(content,
+		fmt.Sprintf("%s %s",
+			m.getFocusIndicator(focused),
+			tagsLabel),
+		tagsDisplay)
+
+	// Categories display
+	focused = m.focusIndex == int(CategoriesField)
+	categoriesLabel := styles.InputLabel.Render("Categories (Use Up/Down to navigate, Space to toggle):")
+	var categoriesDisplay string
+	if focused {
+		categoriesDisplay = m.renderCategorySelector()
+	} else {
+		selectedCategories := m.categorySelector.SelectedCategories()
+		if len(selectedCategories) > 0 {
+			for _, category := range selectedCategories {
+				categoriesDisplay += styles.TagBase.Render(category) + " "
+			}
+		} else {
+			categoriesDisplay = styles.InfoText.Render("(none selected)")
+		}
+	}
+	content = append(content,
+		fmt.Sprintf("%s %s",
+			m.getFocusIndicator(focused),
+			categoriesLabel),
+		categoriesDisplay)
+
 	focused = m.focusIndex == int(ModeField)
 	modeLabel := styles.InputLabel.Render("Capture Mode:")
 	modeContent := m.renderModeSelector()
@@ -334,7 +460,7 @@ func (m *FormModel) View() string {
 
 	// Help text
 	helpText := styles.InfoHint.Render(
-		"Navigation: Tab/Shift+Tab to move, Up/Down for mode, Enter to submit, Esc to cancel",
+		"Navigation: Tab/Shift+Tab to move, Space to toggle tags/categories, Up/Down for mode, Enter to submit, Esc to cancel",
 	)
 
 	// Combine all content
@@ -498,8 +624,9 @@ func (m *FormModel) submitForm() tea.Cmd {
 
 		fmt.Printf("Submitting form: text=%q, date=%v, company=%q, project=%q, mode=%v\n", text, eventDate, company, project, m.modes[m.modeIndex])
 
-		// Get selected tags
+		// Get selected tags and categories
 		tags := m.tagSelector.SelectedTags()
+		categories := m.categorySelector.SelectedCategories()
 
 		// Prepare options
 		ctx := context.Background()
@@ -512,6 +639,9 @@ func (m *FormModel) submitForm() tea.Cmd {
 		}
 		if len(tags) > 0 {
 			opts = append(opts, service.WithTags(tags))
+		}
+		if len(categories) > 0 {
+			opts = append(opts, service.WithCategories(categories))
 		}
 
 		// Handle edit mode vs create mode
@@ -530,12 +660,13 @@ func (m *FormModel) submitForm() tea.Cmd {
 
 		// Build event for display (this is just for UI purposes)
 		event := &career.CareerEvent{
-			ID:      m.editEventID, // Will be empty for new events
-			Text:    text,
-			Date:    eventDate,
-			Company: company,
-			Project: project,
-			Tags:    tags,
+			ID:         m.editEventID, // Will be empty for new events
+			Text:       text,
+			Date:       eventDate,
+			Company:    company,
+			Project:    project,
+			Tags:       tags,
+			Categories: categories,
 		}
 
 		return SubmitMsg{Event: event, Err: nil}
@@ -622,8 +753,9 @@ func (m *FormModel) Reset() {
 		m.inputs[i].SetValue("")
 	}
 
-	// Reset tag selector
+	// Reset tag and category selectors
 	m.tagSelector.Reset()
+	m.categorySelector.Clear()
 
 	m.inputs[0].Focus()
 }
@@ -666,6 +798,11 @@ func (m *FormModel) LoadEventForEditing(event *career.CareerEvent) {
 		m.tagSelector.SetSelectedTags(event.Tags)
 	}
 
+	// Set categories in category selector
+	if len(event.Categories) > 0 {
+		m.categorySelector.SetSelected(event.Categories)
+	}
+
 	// Focus first input
 	m.inputs[0].Focus()
 }
@@ -678,4 +815,56 @@ func (m *FormModel) IsEditMode() bool {
 // GetEditEventID returns the ID of the event being edited
 func (m *FormModel) GetEditEventID() string {
 	return m.editEventID
+}
+
+// CategorySelector returns the category selector instance
+func (m *FormModel) CategorySelector() *components.CategorySelector {
+	return m.categorySelector
+}
+
+
+// renderTagSelector renders the tag selector with available tags
+func (m *FormModel) renderTagSelector() string {
+	var b strings.Builder
+	availableTags := m.tagSelector.AvailableTags()
+
+	for i, tag := range availableTags {
+		selected := ""
+		if i == m.tagIndex {
+			selected = "►"
+		}
+		
+		isSelected := m.tagSelector.IsSelected(tag)
+		checkbox := "☐"
+		if isSelected {
+			checkbox = "☑"
+		}
+		
+		b.WriteString(fmt.Sprintf("║   %s %s %-20s║\n", selected, checkbox, tag))
+	}
+
+	return b.String()
+}
+
+// renderCategorySelector renders the category selector with available categories
+func (m *FormModel) renderCategorySelector() string {
+	var b strings.Builder
+	availableCategories := m.categorySelector.AvailableCategories()
+
+	for i, category := range availableCategories {
+		selected := ""
+		if i == m.categoryIndex {
+			selected = "►"
+		}
+		
+		isSelected := m.categorySelector.IsSelected(category)
+		checkbox := "☐"
+		if isSelected {
+			checkbox = "☑"
+		}
+		
+		b.WriteString(fmt.Sprintf("║   %s %s %-20s║\n", selected, checkbox, category))
+	}
+
+	return b.String()
 }
