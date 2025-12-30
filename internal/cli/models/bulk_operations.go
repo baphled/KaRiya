@@ -103,7 +103,7 @@ func (m *BulkOperationsModel) View() string {
 	var b strings.Builder
 
 	// Header
-	b.WriteString(styles.HeaderMain.Render("Bulk Event Operations"))
+	b.WriteString(styles.HeaderMain.Render("Bulk Operations"))
 	b.WriteString("\n\n")
 
 	// Selection summary
@@ -367,4 +367,14 @@ func (m *BulkOperationsModel) GetWidth() int {
 // GetHeight returns the height
 func (m *BulkOperationsModel) GetHeight() int {
 	return m.height
+}
+
+// ChangesApplied returns whether changes were applied
+func (m *BulkOperationsModel) ChangesApplied() bool {
+	return m.submitted && !m.cancelled
+}
+
+// WasCancelled returns whether the operation was cancelled
+func (m *BulkOperationsModel) WasCancelled() bool {
+	return m.cancelled
 }
