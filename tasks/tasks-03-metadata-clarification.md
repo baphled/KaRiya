@@ -192,10 +192,10 @@
 
 ## Remaining Tasks
 
-### Phase 4: Integration with Existing Features
+### Phase 4: Integration with Existing Features (PARTIALLY COMPLETE - Task 12.1 Done)
 
 - [ ] 12.0 Enhance CSV Import Integration
-  - [ ] 12.1 Modify `import_review.go` to show metadata review after import
+  - [x] 12.1 Modify `import_review.go` to show metadata review after import (COMPLETE)
   - [ ] 12.2 Display all imported events pre-loaded in metadata review
   - [ ] 12.3 Indicate which fields came from CSV vs. default values
   - [ ] 12.4 Show parsing issues or warnings for problematic imports
