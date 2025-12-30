@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/domain/career"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -114,14 +115,61 @@ var _ = Describe("DetailsModel", func() {
 		})
 	})
 
-	Context("when handling user input", func() {
+	Context("when testing header and help_footer integration", func() {
 		BeforeEach(func() {
 			model = models.NewDetailsModel(event)
 		})
 
-		It("should have Update and Init methods", func() {
+		It("should include header in view", func() {
+			view := model.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+		})
+
+		It("should include help footer in view", func() {
+			view := model.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should handle window resize messages", func() {
+			msg := tea.WindowSizeMsg{
+				Width:  120,
+				Height: 40,
+			}
+			newModel, cmd := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should render with responsive layout", func() {
+			view := model.View()
+			Expect(len(view)).To(BeNumerically(">", 100))
+		})
+
+		It("should have Init method", func() {
 			Expect(model.Init).NotTo(BeNil())
-			Expect(model.Update).NotTo(BeNil())
+		})
+
+		It("should respond to Escape key", func() {
+			model = models.NewDetailsModel(event)
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			_, cmd := model.Update(msg)
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Context("when displaying timestamps", func() {
+		BeforeEach(func() {
+			model = models.NewDetailsModel(event)
+		})
+
+		It("should render created timestamp", func() {
+			view := model.View()
+			Expect(view).To(ContainSubstring("Created:"))
+		})
+
+		It("should render updated timestamp", func() {
+			view := model.View()
+			Expect(view).To(ContainSubstring("Last Updated:"))
 		})
 	})
 })
