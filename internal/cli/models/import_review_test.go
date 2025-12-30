@@ -170,6 +170,27 @@ var _ = Describe("ImportReviewModel", func() {
 			Expect(dupInfo).To(Equal(""))
 		})
 	})
+	Context("bulk operations support", func() {
+		It("should return selected events", func() {
+			selected := model.GetSelectedEvents()
+			Expect(len(selected)).To(Equal(2))
+		})
+
+		It("should return selected event IDs", func() {
+			ids := model.GetSelectedEventIDs()
+			Expect(len(ids)).To(Equal(2))
+		})
+
+		It("should check if bulk edit is available", func() {
+			canBulk := model.CanBulkEdit()
+			Expect(canBulk).To(BeTrue())
+		})
+
+		It("should apply bulk metadata updates", func() {
+			count := model.ApplyBulkMetadataUpdate("NewCorp", "NewProject", []string{"tag1"}, []string{})
+			Expect(count).To(Equal(2))
+		})
+	})
 	Context("window resize", func() {
 		It("should handle window size changes", func() {
 			// Arrange

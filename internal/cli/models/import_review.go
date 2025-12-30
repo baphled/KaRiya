@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/baphled/kariya/internal/domain/career"
 	"fmt"
 	"strings"
 
@@ -441,6 +442,56 @@ func (m *ImportReviewModel) GetDuplicateInfo(rowIndex int) string {
 // HasWarnings checks if a row has parsing warnings
 func (m *ImportReviewModel) HasWarnings(rowIndex int) bool {
 	return len(m.GetParsingWarnings(rowIndex)) > 0
+}
+
+// GetSelectedEvents returns the selected events for bulk operations
+func (m *ImportReviewModel) GetSelectedEvents() []*career.CareerEvent {
+	var selectedEvents []*career.CareerEvent
+	for _, row := range m.ParsedRows {
+		if m.selectedRows[row.RowNumber] {
+			selectedEvents = append(selectedEvents, row.Event)
+		}
+	}
+	return selectedEvents
+}
+
+// GetSelectedEventIDs returns the IDs of selected events
+func (m *ImportReviewModel) GetSelectedEventIDs() []string {
+	var ids []string
+	for _, event := range m.GetSelectedEvents() {
+		if event.ID != "" {
+			ids = append(ids, event.ID)
+		}
+	}
+	return ids
+}
+
+// CanBulkEdit checks if bulk operations are available
+func (m *ImportReviewModel) CanBulkEdit() bool {
+	return len(m.selectedRows) > 1
+}
+
+// ApplyBulkMetadataUpdate applies bulk metadata changes to selected events
+func (m *ImportReviewModel) ApplyBulkMetadataUpdate(company, project string, tags, categories []string) int {
+	count := 0
+	for _, row := range m.ParsedRows {
+		if m.selectedRows[row.RowNumber] {
+			if company != "" {
+				row.Event.Company = company
+			}
+			if project != "" {
+				row.Event.Project = project
+			}
+			if len(tags) > 0 {
+				row.Event.Tags = tags
+			}
+			if len(categories) > 0 {
+				row.Event.Categories = categories
+			}
+			count++
+		}
+	}
+	return count
 }
 
 // Init implements tea.Model
