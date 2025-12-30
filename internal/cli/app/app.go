@@ -207,6 +207,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.successModel = nil
 		return m, nil
 	case models.ViewRecentMsg:
+		ctx := context.Background()
+		m.listModel = models.NewListModel(m.service, ctx)
 		m.previousScreen = m.currentScreen
 		m.currentScreen = ListScreen
 		m.successModel = nil
@@ -267,6 +269,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.currentScreen = CaptureScreen
 			m.formModel = models.NewFormModel(m.cliService)
 		case "l":
+			ctx := context.Background()
+			m.listModel = models.NewListModel(m.service, ctx)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ListScreen
 		}
