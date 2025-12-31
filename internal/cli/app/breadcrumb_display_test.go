@@ -1,8 +1,12 @@
 package app
 
 import (
+	"time"
+
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -11,13 +15,13 @@ import (
 var _ = Describe("Breadcrumb Display", func() {
 	var (
 		model      *Model
-		repo       *career.MemoryRepository
+		repo       *careerrepo.MemoryRepository
 		svc        *careerservice.Service
 		cliService *service.CLIEventService
 	)
 
 	BeforeEach(func() {
-		repo = career.NewMemoryRepository()
+		repo = careerrepo.NewMemoryRepository()
 		svc = careerservice.NewService(repo)
 		cliService = service.NewCLIEventService(svc)
 		model = NewModel(cliService, svc)
@@ -68,6 +72,15 @@ var _ = Describe("Breadcrumb Display", func() {
 
 	Describe("Success Screen", func() {
 		It("should display breadcrumbs after event capture", func() {
+			// Create a test event for success model
+			testEvent := &career.CareerEvent{
+				ID:   "test-event-123",
+				Text: "Test event for breadcrumb display",
+				Date: time.Now(),
+			}
+
+			// Initialize success model (simulating FormSubmittedMsg handler)
+			model.successModel = models.NewSuccessModel(testEvent)
 			model.previousScreen = CaptureScreen
 			model.currentScreen = SuccessScreen
 			model.updateBreadcrumbs()
