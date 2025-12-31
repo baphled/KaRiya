@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/workflow"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -46,6 +47,7 @@ type Model struct {
 	breadcrumbs            []string // Navigation breadcrumb trail
 	width                  int
 	height                 int
+	workflowState          *workflow.WorkflowState // Track workflow progress and state
 	formModel              *models.FormModel
 	successModel           *models.SuccessModel
 	listModel              *models.ListModel
@@ -61,6 +63,8 @@ type Model struct {
 	metadataEditorModel    *models.MetadataEditorModel
 	bulkOperationsModel    *models.BulkOperationsModel
 	burstSuggestionModel   *models.BurstSuggestionModel
+	factListModel          *models.FactListModel     // Display facts for events/bursts
+	factEditorModel        *models.FactEditorModel   // Edit individual facts
 }
 
 // NewModel creates a new application model
