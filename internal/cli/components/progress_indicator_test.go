@@ -145,4 +145,3 @@ var _ = Describe("ProgressIndicator", func() {
 		})
 	})
 })
-

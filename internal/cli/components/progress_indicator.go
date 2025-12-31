@@ -10,14 +10,14 @@ import (
 
 // ProgressIndicator displays progress for multi-step workflows
 type ProgressIndicator struct {
-	current          int
-	total            int
-	label            string
-	status           string // "success", "warning", "error", "info", ""
-	showProgressBar  bool
-	showPercentage   bool
-	width            int
-	barWidth         int
+	current         int
+	total           int
+	label           string
+	status          string // "success", "warning", "error", "info", ""
+	showProgressBar bool
+	showPercentage  bool
+	width           int
+	barWidth        int
 }
 
 // NewProgressIndicator creates a new progress indicator
@@ -109,7 +109,7 @@ func (p ProgressIndicator) View() string {
 
 	// Build step indicator text
 	stepText := fmt.Sprintf("%d/%d", p.current, p.total)
-	
+
 	// Add label if present
 	if p.label != "" {
 		stepText = fmt.Sprintf("%s: %s", p.label, stepText)
@@ -185,4 +185,3 @@ func (p ProgressIndicator) getBarColor() lipgloss.Color {
 		return styles.ColorAccentTeal
 	}
 }
-
