@@ -46,6 +46,7 @@ type ViewEventModel struct {
 	err              error
 	width            int
 	height           int
+	helpFooter       components.HelpFooterModel
 }
 
 // NewViewEventModel creates a new view event model
@@ -58,6 +59,7 @@ func NewViewEventModel(svc *careerservice.Service, ctx context.Context, event *c
 		actions:          []string{"Edit Event", "Delete Event", "Back to List"},
 		showDeleteDialog: false,
 		deleteDialog:     NewConfirmationDialog("Confirm Delete", "Are you sure you want to delete this event? This action cannot be undone."),
+		helpFooter:       components.NewHelpFooter("view_event", 80),
 	}
 }
 
@@ -269,6 +271,10 @@ func (m *ViewEventModel) renderEventDetail() string {
 		"",
 		instructions,
 	)
+
+	// Help footer
+	m.helpFooter.SetWidth(m.width)
+	fullContent = lipgloss.JoinVertical(lipgloss.Left, fullContent, m.helpFooter.View())
 
 	return fullContent
 }
