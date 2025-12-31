@@ -13,11 +13,11 @@
 ### Phase 1: Foundation & Core Components
 
 #### 1.0 Create Burst Domain Model and Persistence
-- [x] 1.1 Define Burst struct with fields: ID, Name, Description, EventIDs (≥2 required), CreatedAt, UpdatedAt, CompetencyFocus
-- [x] 1.2 Implement Burst validation rules (≥2 related CareerEvents required, no duplicate event IDs)
-- [x] 1.3 Create repository interface methods for Burst (Create, GetByID, Update, Delete, List, Count)
-- [x] 1.4 Implement MemoryRepository for Burst operations (thread-safe with sync.RWMutex)
-- [x] 1.5 Implement SQLiteRepository for Burst persistence with schema:
+- [ ] 1.1 Define Burst struct with fields: ID, Name, Description, EventIDs (≥2 required), CreatedAt, UpdatedAt, CompetencyFocus
+- [ ] 1.2 Implement Burst validation rules (≥2 related CareerEvents required, no duplicate event IDs)
+- [ ] 1.3 Create repository interface methods for Burst (Create, GetByID, Update, Delete, List, Count)
+- [ ] 1.4 Implement MemoryRepository for Burst operations (thread-safe with sync.RWMutex)
+- [ ] 1.5 Implement SQLiteRepository for Burst persistence with schema:
   ```sql
   CREATE TABLE IF NOT EXISTS bursts (
       id TEXT PRIMARY KEY,
@@ -29,15 +29,15 @@
       updated_at DATETIME NOT NULL
   )
   ```
-- [x] 1.6 Write comprehensive unit tests for Burst model validation (edge cases, boundary conditions)
-- [x] 1.7 Write repository tests for all CRUD operations and filtering
+- [ ] 1.6 Write comprehensive unit tests for Burst model validation (edge cases, boundary conditions)
+- [ ] 1.7 Write repository tests for all CRUD operations and filtering
 
 #### 2.0 Create Fact Domain Model and Persistence
-- [x] 2.1 Define Fact struct with fields: ID, Text, CompetencyCategories ([]string), RoleFit (Principal/EM/Staff/Senior IC), AudienceRelevance ([]string), StrengthSignal (string), SourceEventID (optional), SourceBurstID (optional), CreatedAt, UpdatedAt
-- [x] 2.2 Implement Fact validation rules (must have valid references, no aspirational language, no ungrounded metrics)
-- [x] 2.3 Create repository interface methods for Fact (Create, GetByID, Update, Delete, List, Count, GetBySourceEventID, GetBySourceBurstID)
-- [x] 2.4 Implement MemoryRepository for Fact operations (thread-safe)
-- [x] 2.5 Implement SQLiteRepository for Fact persistence with schema:
+- [ ] 2.1 Define Fact struct with fields: ID, Text, CompetencyCategories ([]string), RoleFit (Principal/EM/Staff/Senior IC), AudienceRelevance ([]string), StrengthSignal (string), SourceEventID (optional), SourceBurstID (optional), CreatedAt, UpdatedAt
+- [ ] 2.2 Implement Fact validation rules (must have valid references, no aspirational language, no ungrounded metrics)
+- [ ] 2.3 Create repository interface methods for Fact (Create, GetByID, Update, Delete, List, Count, GetBySourceEventID, GetBySourceBurstID)
+- [ ] 2.4 Implement MemoryRepository for Fact operations (thread-safe)
+- [ ] 2.5 Implement SQLiteRepository for Fact persistence with schema:
   ```sql
   CREATE TABLE IF NOT EXISTS facts (
       id TEXT PRIMARY KEY,
@@ -52,160 +52,160 @@
       updated_at DATETIME NOT NULL
   )
   ```
-- [x] 2.6 Write comprehensive unit tests for Fact model validation
-- [x] 2.7 Write repository tests for all CRUD operations and filtering
+- [ ] 2.6 Write comprehensive unit tests for Fact model validation
+- [ ] 2.7 Write repository tests for all CRUD operations and filtering
 
 #### 3.0 Create Classification and Inference System
-- [x] 3.1 Implement role fit classifier (Principal, EM, Staff, Senior IC) based on event keywords and context
-- [x] 3.2 Implement audience relevance analyzer (Hiring Manager, Recruiter, Peer) based on fact type
-- [x] 3.3 Implement strength signal extractor (identifies key achievements and impact indicators)
-- [x] 3.4 Create inference rules engine for fact generation from events/bursts
-- [x] 3.5 Implement validation for aspirational language detection (reject "will", "should", "could")
-- [x] 3.6 Implement metrics validation (ensure metrics are grounded/measured, not speculative)
-- [x] 3.7 Write comprehensive unit tests for all classifiers and validators (edge cases, false positives)
-- [x] 3.8 Write integration tests for inference rules engine
+- [ ] 3.1 Implement role fit classifier (Principal, EM, Staff, Senior IC) based on event keywords and context
+- [ ] 3.2 Implement audience relevance analyzer (Hiring Manager, Recruiter, Peer) based on fact type
+- [ ] 3.3 Implement strength signal extractor (identifies key achievements and impact indicators)
+- [ ] 3.4 Create inference rules engine for fact generation from events/bursts
+- [ ] 3.5 Implement validation for aspirational language detection (reject "will", "should", "could")
+- [ ] 3.6 Implement metrics validation (ensure metrics are grounded/measured, not speculative)
+- [ ] 3.7 Write comprehensive unit tests for all classifiers and validators (edge cases, false positives)
+- [ ] 3.8 Write integration tests for inference rules engine
 
 ### Phase 2: Burst Detection and Management
 
 #### 4.0 Create Burst Detection Engine
-- [x] 4.1 Implement burst detection algorithm using event text similarity and temporal proximity
-- [x] 4.2 Create similarity scorer (text matching, keyword overlap, company/project matching)
-- [x] 4.3 Implement temporal grouping (events within 6 months considered related)
-- [x] 4.4 Create burst suggestion generation (returns list of suggested bursts with confidence scores)
-- [x] 4.5 Implement user confirmation workflow (suggest burst, user confirms or rejects)
-- [x] 4.6 Create service method: `SuggestBursts(ctx, eventIDs) -> []BurstSuggestion`
-- [x] 4.7 Create service method: `ConfirmBurst(ctx, burst) -> error` (validates and persists)
-- [x] 4.8 Create service method: `RejectBurstSuggestion(ctx, eventIDs) -> error` (records rejection to prevent re-suggesting)
-- [x] 4.9 Write unit tests for similarity scoring and temporal grouping
-- [x] 4.10 Write integration tests for burst suggestion workflow
+- [ ] 4.1 Implement burst detection algorithm using event text similarity and temporal proximity
+- [ ] 4.2 Create similarity scorer (text matching, keyword overlap, company/project matching)
+- [ ] 4.3 Implement temporal grouping (events within 6 months considered related)
+- [ ] 4.4 Create burst suggestion generation (returns list of suggested bursts with confidence scores)
+- [ ] 4.5 Implement user confirmation workflow (suggest burst, user confirms or rejects)
+- [ ] 4.6 Create service method: `SuggestBursts(ctx, eventIDs) -> []BurstSuggestion`
+- [ ] 4.7 Create service method: `ConfirmBurst(ctx, burst) -> error` (validates and persists)
+- [ ] 4.8 Create service method: `RejectBurstSuggestion(ctx, eventIDs) -> error` (records rejection to prevent re-suggesting)
+- [ ] 4.9 Write unit tests for similarity scoring and temporal grouping
+- [ ] 4.10 Write integration tests for burst suggestion workflow
 
 #### 5.0 Create Burst Display Component
-- [x] 5.1 Implement BurstListModel as BubbleTea Model for displaying burst list
-- [x] 5.2 Display burst name, event count, competency focus, creation date
-- [x] 5.3 Implement scrolling (up/down arrows) through burst list
-- [x] 5.4 Implement expand/collapse to show related events in burst
-- [x] 5.5 Implement filtering by competency focus
-- [x] 5.6 Implement sorting by creation date, event count, or name
-- [x] 5.7 Implement keyboard navigation (↑/↓ for bursts, Enter to view details, Space for select)
-- [x] 5.8 Add visual indicators for burst health/completeness
-- [x] 5.9 Write comprehensive unit tests for all interactions
-- [x] 5.10 Test edge cases (empty list, single burst, large burst list)
+- [ ] 5.1 Implement BurstListModel as BubbleTea Model for displaying burst list
+- [ ] 5.2 Display burst name, event count, competency focus, creation date
+- [ ] 5.3 Implement scrolling (up/down arrows) through burst list
+- [ ] 5.4 Implement expand/collapse to show related events in burst
+- [ ] 5.5 Implement filtering by competency focus
+- [ ] 5.6 Implement sorting by creation date, event count, or name
+- [ ] 5.7 Implement keyboard navigation (↑/↓ for bursts, Enter to view details, Space for select)
+- [ ] 5.8 Add visual indicators for burst health/completeness
+- [ ] 5.9 Write comprehensive unit tests for all interactions
+- [ ] 5.10 Test edge cases (empty list, single burst, large burst list)
 
 #### 6.0 Create Burst Suggestion and Confirmation Screen
-- [x] 6.1 Implement BurstSuggestionModel as BubbleTea Model for reviewing burst suggestions
-- [x] 6.2 Display suggested burst with related events and confidence score
-- [x] 6.3 Allow user to confirm or reject suggestion
-- [x] 6.4 Show related events with text preview
-- [x] 6.5 Implement optional burst name/description editing before confirmation
-- [x] 6.6 Implement keyboard navigation (↑/↓ for suggestions, 'y'/'n' for confirm/reject, 'e' to edit)
-- [x] 6.7 Add visual feedback for confidence score (color-coded, percentage)
-- [x] 6.8 Write comprehensive unit tests for suggestion workflow
-- [x] 6.9 Test edge cases (low confidence, single event suggestions, multiple suggestions)
+- [ ] 6.1 Implement BurstSuggestionModel as BubbleTea Model for reviewing burst suggestions
+- [ ] 6.2 Display suggested burst with related events and confidence score
+- [ ] 6.3 Allow user to confirm or reject suggestion
+- [ ] 6.4 Show related events with text preview
+- [ ] 6.5 Implement optional burst name/description editing before confirmation
+- [ ] 6.6 Implement keyboard navigation (↑/↓ for suggestions, 'y'/'n' for confirm/reject, 'e' to edit)
+- [ ] 6.7 Add visual feedback for confidence score (color-coded, percentage)
+- [ ] 6.8 Write comprehensive unit tests for suggestion workflow
+- [ ] 6.9 Test edge cases (low confidence, single event suggestions, multiple suggestions)
 
 ### Phase 3: Fact Extraction and Inference
 
 #### 7.0 Create Fact Extraction Engine
-- [x] 7.1 Implement fact extraction from single CareerEvent
-- [x] 7.2 Implement fact extraction from Burst (multiple related events)
-- [x] 7.3 Create competency inference from event text and tags
-- [x] 7.4 Create role fit inference (Principal/EM/Staff/Senior IC) from facts and context
-- [x] 7.5 Create audience relevance inference (Hiring Manager, Recruiter, Peer)
-- [x] 7.6 Create strength signal extraction (key achievements, impact indicators)
-- [x] 7.7 Implement fact validation and filtering (no aspirational language, grounded metrics)
-- [x] 7.8 Create service method: `ExtractFacts(ctx, event/burst) -> []Fact`
-- [x] 7.9 Create service method: `ValidateFact(ctx, fact) -> error` (validation rules)
-- [x] 7.10 Write unit tests for all extraction and inference components
-- [x] 7.11 Write integration tests for complete fact extraction workflow
+- [ ] 7.1 Implement fact extraction from single CareerEvent
+- [ ] 7.2 Implement fact extraction from Burst (multiple related events)
+- [ ] 7.3 Create competency inference from event text and tags
+- [ ] 7.4 Create role fit inference (Principal/EM/Staff/Senior IC) from facts and context
+- [ ] 7.5 Create audience relevance inference (Hiring Manager, Recruiter, Peer)
+- [ ] 7.6 Create strength signal extraction (key achievements, impact indicators)
+- [ ] 7.7 Implement fact validation and filtering (no aspirational language, grounded metrics)
+- [ ] 7.8 Create service method: `ExtractFacts(ctx, event/burst) -> []Fact`
+- [ ] 7.9 Create service method: `ValidateFact(ctx, fact) -> error` (validation rules)
+- [ ] 7.10 Write unit tests for all extraction and inference components
+- [ ] 7.11 Write integration tests for complete fact extraction workflow
 
 #### 8.0 Create Fact Display Components
-- [x] 8.1 Implement FactCardComponent for displaying individual fact
-- [x] 8.2 Display fact text, competencies (as badges), role fit (icon), audience relevance
-- [x] 8.3 Show strength signal and source reference (event ID or burst ID)
-- [x] 8.4 Implement FactListModel for displaying facts for an event/burst
-- [x] 8.5 Implement scrolling through fact list
-- [x] 8.6 Implement filtering by competency, role fit, or audience
-- [x] 8.7 Implement sorting by creation date or relevance
-- [x] 8.8 Add visual indicators for fact confidence/strength
-- [x] 8.9 Write comprehensive unit tests for display components
-- [x] 8.10 Test edge cases (no facts, single fact, large fact list)
+- [ ] 8.1 Implement FactCardComponent for displaying individual fact
+- [ ] 8.2 Display fact text, competencies (as badges), role fit (icon), audience relevance
+- [ ] 8.3 Show strength signal and source reference (event ID or burst ID)
+- [ ] 8.4 Implement FactListModel for displaying facts for an event/burst
+- [ ] 8.5 Implement scrolling through fact list
+- [ ] 8.6 Implement filtering by competency, role fit, or audience
+- [ ] 8.7 Implement sorting by creation date or relevance
+- [ ] 8.8 Add visual indicators for fact confidence/strength
+- [ ] 8.9 Write comprehensive unit tests for display components
+- [ ] 8.10 Test edge cases (no facts, single fact, large fact list)
 
 #### 9.0 Create Fact Management UI
-- [x] 9.1 Implement FactEditorModel for reviewing and editing extracted facts
-- [x] 9.2 Allow editing fact text with validation
-- [x] 9.3 Allow editing competency categories (from AllowedCompetencies)
-- [x] 9.4 Allow editing role fit (Principal/EM/Staff/Senior IC)
-- [x] 9.5 Allow editing audience relevance (Hiring Manager, Recruiter, Peer)
-- [x] 9.6 Implement accept/reject workflow for extracted facts
-- [x] 9.7 Implement keyboard navigation (Tab for fields, Enter to confirm, Escape to cancel)
-- [x] 9.8 Add helpful validation error messages
-- [x] 9.9 Implement undo/revert to original extracted fact
-- [x] 9.10 Write comprehensive unit tests for editor interactions
+- [ ] 9.1 Implement FactEditorModel for reviewing and editing extracted facts
+- [ ] 9.2 Allow editing fact text with validation
+- [ ] 9.3 Allow editing competency categories (from AllowedCompetencies)
+- [ ] 9.4 Allow editing role fit (Principal/EM/Staff/Senior IC)
+- [ ] 9.5 Allow editing audience relevance (Hiring Manager, Recruiter, Peer)
+- [ ] 9.6 Implement accept/reject workflow for extracted facts
+- [ ] 9.7 Implement keyboard navigation (Tab for fields, Enter to confirm, Escape to cancel)
+- [ ] 9.8 Add helpful validation error messages
+- [ ] 9.9 Implement undo/revert to original extracted fact
+- [ ] 9.10 Write comprehensive unit tests for editor interactions
 
 ### Phase 4: Integration with Existing Features
 
 #### 10.0 Integrate Burst Suggestions with Metadata Review
-- [x] 10.1 Add burst suggestion trigger after metadata clarification
-- [x] 10.2 Display burst suggestions in dedicated screen after user confirms metadata
-- [x] 10.3 Allow user to accept/reject each burst suggestion
-- [x] 10.4 Show related events for each suggested burst
-- [x] 10.5 Allow editing burst name/description before confirmation
-- [x] 10.6 Persist accepted bursts to database
-- [x] 10.7 Record rejected suggestions to prevent re-suggesting
-- [x] 10.8 Navigate back to metadata review or home after burst workflow
-- [x] 10.9 Write integration tests for metadata review → burst suggestion workflow
+- [ ] 10.1 Add burst suggestion trigger after metadata clarification
+- [ ] 10.2 Display burst suggestions in dedicated screen after user confirms metadata
+- [ ] 10.3 Allow user to accept/reject each burst suggestion
+- [ ] 10.4 Show related events for each suggested burst
+- [ ] 10.5 Allow editing burst name/description before confirmation
+- [ ] 10.6 Persist accepted bursts to database
+- [ ] 10.7 Record rejected suggestions to prevent re-suggesting
+- [ ] 10.8 Navigate back to metadata review or home after burst workflow
+- [ ] 10.9 Write integration tests for metadata review → burst suggestion workflow
 
 #### 11.0 Integrate Fact Display with Event Details
-- [x] 11.1 Add facts section to event detail view
-- [x] 11.2 Display extracted facts for selected event
-- [x] 11.3 Show facts grouped by source (inferred from event, inferred from burst)
-- [x] 11.4 Allow user to review and confirm facts
-- [x] 11.5 Allow user to edit individual facts (through FactEditorModel)
-- [x] 11.6 Allow user to reject facts (mark as not applicable)
-- [x] 11.7 Implement keyboard navigation for fact review
-- [x] 11.8 Persist fact confirmations to database
-- [x] 11.9 Write integration tests for event detail → facts view
+- [ ] 11.1 Add facts section to event detail view
+- [ ] 11.2 Display extracted facts for selected event
+- [ ] 11.3 Show facts grouped by source (inferred from event, inferred from burst)
+- [ ] 11.4 Allow user to review and confirm facts
+- [ ] 11.5 Allow user to edit individual facts (through FactEditorModel)
+- [ ] 11.6 Allow user to reject facts (mark as not applicable)
+- [ ] 11.7 Implement keyboard navigation for fact review
+- [ ] 11.8 Persist fact confirmations to database
+- [ ] 11.9 Write integration tests for event detail → facts view
 
 #### 12.0 Create User Confirmation and Workflow Integration
-- [x] 12.1 Design workflow: Capture/Import → Metadata Review → Burst Suggestions → Fact Extraction → Confirmation
-- [x] 12.2 Implement screen navigation for complete workflow
-- [x] 12.3 Add progress indicator showing current step in workflow
-- [x] 12.4 Allow skipping burst suggestions (user can enable/disable burst detection)
-- [x] 12.5 Allow skipping fact extraction (user can enable/disable fact extraction)
-- [x] 12.6 Implement "review later" option for bursts and facts
-- [x] 12.7 Create home screen menu option to review pending bursts and facts
-- [x] 12.8 Write integration tests for complete end-to-end workflow
+- [ ] 12.1 Design workflow: Capture/Import → Metadata Review → Burst Suggestions → Fact Extraction → Confirmation
+- [ ] 12.2 Implement screen navigation for complete workflow
+- [ ] 12.3 Add progress indicator showing current step in workflow
+- [ ] 12.4 Allow skipping burst suggestions (user can enable/disable burst detection)
+- [ ] 12.5 Allow skipping fact extraction (user can enable/disable fact extraction)
+- [ ] 12.6 Implement "review later" option for bursts and facts
+- [ ] 12.7 Create home screen menu option to review pending bursts and facts
+- [ ] 12.8 Write integration tests for complete end-to-end workflow
 
 ### Phase 5: Testing and Documentation
 
 #### 13.0 Comprehensive Testing Suite
-- [x] 13.1 Write end-to-end tests for complete burst detection workflow
-- [x] 13.2 Write end-to-end tests for fact extraction and confirmation
-- [x] 13.3 Test burst detection with various event similarity scenarios (high/medium/low similarity)
-- [x] 13.4 Test fact extraction with various event types and contexts
-- [x] 13.5 Test inference rules with edge cases (aspirational language, ungrounded metrics)
-- [x] 13.6 Test role fit classification with different event contexts
-- [x] 13.7 Test audience relevance inference for different fact types
-- [x] 13.8 Test integration with metadata review workflow
-- [x] 13.9 Test keyboard navigation for all burst and fact screens
-- [x] 13.10 Test edge cases (no similar events, low confidence suggestions, conflicting facts)
-- [x] 13.11 Run race detector: `go test -race ./...` (verify 0 race conditions)
-- [x] 13.12 Verify code coverage meets 80%+ threshold across all new code
-- [x] 13.13 Performance test: burst detection ≤2s for ≤500 events
-- [x] 13.14 Performance test: fact extraction ≤1s per event/burst
+- [ ] 13.1 Write end-to-end tests for complete burst detection workflow
+- [ ] 13.2 Write end-to-end tests for fact extraction and confirmation
+- [ ] 13.3 Test burst detection with various event similarity scenarios (high/medium/low similarity)
+- [ ] 13.4 Test fact extraction with various event types and contexts
+- [ ] 13.5 Test inference rules with edge cases (aspirational language, ungrounded metrics)
+- [ ] 13.6 Test role fit classification with different event contexts
+- [ ] 13.7 Test audience relevance inference for different fact types
+- [ ] 13.8 Test integration with metadata review workflow
+- [ ] 13.9 Test keyboard navigation for all burst and fact screens
+- [ ] 13.10 Test edge cases (no similar events, low confidence suggestions, conflicting facts)
+- [ ] 13.11 Run race detector: `go test -race ./...` (verify 0 race conditions)
+- [ ] 13.12 Verify code coverage meets 80%+ threshold across all new code
+- [ ] 13.13 Performance test: burst detection ≤2s for ≤500 events
+- [ ] 13.14 Performance test: fact extraction ≤1s per event/burst
 
 #### 14.0 Documentation and User Guidance
-- [x] 14.1 Create BURST_FACT_EXTRACTION_GUIDE.md with comprehensive feature overview
-- [x] 14.2 Document burst detection algorithm and how it works
-- [x] 14.3 Document fact extraction rules and inference process
-- [x] 14.4 Provide examples of burst suggestions (good/bad examples)
-- [x] 14.5 Provide examples of extracted facts (good/bad examples)
-- [x] 14.6 Document keyboard shortcuts for burst and fact screens
-- [x] 14.7 Document role fit classification and audience relevance
-- [x] 14.8 Update README.md with burst and fact features
-- [x] 14.9 Update CLI_GUIDE.md with burst/fact workflow shortcuts
-- [x] 14.10 Update CHANGELOG.md with feature description and test results
-- [x] 14.11 Create troubleshooting guide for common burst/fact issues
-- [x] 14.12 Document allowed competencies and their definitions
+- [ ] 14.1 Create BURST_FACT_EXTRACTION_GUIDE.md with comprehensive feature overview
+- [ ] 14.2 Document burst detection algorithm and how it works
+- [ ] 14.3 Document fact extraction rules and inference process
+- [ ] 14.4 Provide examples of burst suggestions (good/bad examples)
+- [ ] 14.5 Provide examples of extracted facts (good/bad examples)
+- [ ] 14.6 Document keyboard shortcuts for burst and fact screens
+- [ ] 14.7 Document role fit classification and audience relevance
+- [ ] 14.8 Update README.md with burst and fact features
+- [ ] 14.9 Update CLI_GUIDE.md with burst/fact workflow shortcuts
+- [ ] 14.10 Update CHANGELOG.md with feature description and test results
+- [ ] 14.11 Create troubleshooting guide for common burst/fact issues
+- [ ] 14.12 Document allowed competencies and their definitions
 
 ---
 
@@ -335,5 +335,5 @@ This feature enables:
 **Created**: 2025-12-30
 **Status**: Ready for Phase 1 Execution
 **Template Source**: tasks-03-metadata-clarification.md
-**Process Guide**: docs/rules/process-task-list.md
+**Process Guide**: docs/rules/master-task-prompt.md
 
