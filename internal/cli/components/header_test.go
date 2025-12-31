@@ -150,51 +150,51 @@ var _ = Describe("Header", func() {
 			Expect(view).To(ContainSubstring("événement"))
 		})
 	})
-		
-		Describe("Breadcrumb Click Detection", func() {
-			It("detects click on first breadcrumb", func() {
-				header := NewHeader("Main Title", 80)
-				header.SetBreadcrumbs([]string{"Home", "List", "Details"})
-		
-				// Simulate click at position where "Home" breadcrumb is rendered
-				clickIndex := header.GetClickedBreadcrumbIndex(0, 0)
-				Expect(clickIndex).To(Equal(0)) // Should detect "Home"
-			})
-		
-			It("detects click on middle breadcrumb", func() {
-				header := NewHeader("Main Title", 80)
-				header.SetBreadcrumbs([]string{"Home", "List", "Details"})
-		
-				// Simulate click at position where "List" breadcrumb is rendered
-				// "Home" (4 chars) + " > " (3 chars) = 7 chars offset
-				clickIndex := header.GetClickedBreadcrumbIndex(7, 0)
-				Expect(clickIndex).To(Equal(1)) // Should detect "List"
-			})
-		
-			It("detects click on last breadcrumb", func() {
-				header := NewHeader("Main Title", 80)
-				header.SetBreadcrumbs([]string{"Home", "List", "Details"})
-		
-				// Simulate click at position where "Details" breadcrumb is rendered
-				// "Home" (4) + " > " (3) + "List" (4) + " > " (3) = 14 chars offset
-				clickIndex := header.GetClickedBreadcrumbIndex(14, 0)
-				Expect(clickIndex).To(Equal(2)) // Should detect "Details"
-			})
-		
-			It("returns -1 when click is not on any breadcrumb", func() {
-				header := NewHeader("Main Title", 80)
-				header.SetBreadcrumbs([]string{"Home", "List"})
-		
-				// Click far outside breadcrumb area
-				clickIndex := header.GetClickedBreadcrumbIndex(100, 0)
-				Expect(clickIndex).To(Equal(-1))
-			})
-		
-			It("returns -1 when no breadcrumbs exist", func() {
-				header := NewHeader("Main Title", 80)
-		
-				clickIndex := header.GetClickedBreadcrumbIndex(0, 0)
-				Expect(clickIndex).To(Equal(-1))
-			})
+
+	Describe("Breadcrumb Click Detection", func() {
+		It("detects click on first breadcrumb", func() {
+			header := NewHeader("Main Title", 80)
+			header.SetBreadcrumbs([]string{"Home", "List", "Details"})
+
+			// Simulate click at position where "Home" breadcrumb is rendered
+			clickIndex := header.GetClickedBreadcrumbIndex(0, 0)
+			Expect(clickIndex).To(Equal(0)) // Should detect "Home"
 		})
+
+		It("detects click on middle breadcrumb", func() {
+			header := NewHeader("Main Title", 80)
+			header.SetBreadcrumbs([]string{"Home", "List", "Details"})
+
+			// Simulate click at position where "List" breadcrumb is rendered
+			// "Home" (4 chars) + " > " (3 chars) = 7 chars offset
+			clickIndex := header.GetClickedBreadcrumbIndex(7, 0)
+			Expect(clickIndex).To(Equal(1)) // Should detect "List"
+		})
+
+		It("detects click on last breadcrumb", func() {
+			header := NewHeader("Main Title", 80)
+			header.SetBreadcrumbs([]string{"Home", "List", "Details"})
+
+			// Simulate click at position where "Details" breadcrumb is rendered
+			// "Home" (4) + " > " (3) + "List" (4) + " > " (3) = 14 chars offset
+			clickIndex := header.GetClickedBreadcrumbIndex(14, 0)
+			Expect(clickIndex).To(Equal(2)) // Should detect "Details"
+		})
+
+		It("returns -1 when click is not on any breadcrumb", func() {
+			header := NewHeader("Main Title", 80)
+			header.SetBreadcrumbs([]string{"Home", "List"})
+
+			// Click far outside breadcrumb area
+			clickIndex := header.GetClickedBreadcrumbIndex(100, 0)
+			Expect(clickIndex).To(Equal(-1))
+		})
+
+		It("returns -1 when no breadcrumbs exist", func() {
+			header := NewHeader("Main Title", 80)
+
+			clickIndex := header.GetClickedBreadcrumbIndex(0, 0)
+			Expect(clickIndex).To(Equal(-1))
+		})
+	})
 })
