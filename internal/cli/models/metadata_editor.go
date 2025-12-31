@@ -285,7 +285,8 @@ func (m *MetadataEditorModel) View() string {
 	var sb strings.Builder
 
 	// Header
-	sb.WriteString(styles.HeaderMain.Render("Edit Event Metadata") + "\n\n")
+	header := components.NewHeader("Edit Event Metadata", m.width)
+	sb.WriteString(header.View() + "\n\n")
 
 	// Date field
 	sb.WriteString(m.renderDateField())
