@@ -72,8 +72,8 @@ var _ = Describe("MetadataReviewModel", func() {
 		})
 
 		It("should show header in view", func() {
-				// Set width so header renders
-				model.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+			// Set width so header renders
+			model.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 			view := model.View()
 			Expect(view).To(ContainSubstring("Metadata Review"))
 		})
