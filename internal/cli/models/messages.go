@@ -32,3 +32,40 @@ type EditBurstSuggestionMsg struct {
 	Suggestion burstfact.BurstSuggestion
 }
 
+// ViewFactsMsg is sent when user wants to view facts for an event
+type ViewFactsMsg struct {
+	EventID string
+}
+
+// EditFactMsg is sent when user wants to edit a specific fact
+type EditFactMsg struct {
+	Fact *career.Fact
+}
+
+// ConfirmFactMsg is sent when user confirms/accepts a fact
+type ConfirmFactMsg struct {
+	Fact *career.Fact
+}
+
+// RejectFactMsg is sent when user rejects a fact
+type RejectFactMsg struct {
+	FactID string
+}
+
+// FactConfirmedMsg is sent after a fact has been successfully confirmed
+type FactConfirmedMsg struct {
+	Fact *career.Fact
+	Err  error
+}
+
+// FactRejectedMsg is sent after a fact has been successfully rejected
+type FactRejectedMsg struct {
+	FactID string
+	Err    error
+}
+
+// SaveFactMsg is sent when a fact is saved from the editor
+type SaveFactMsg struct {
+	Fact *career.Fact
+}
+

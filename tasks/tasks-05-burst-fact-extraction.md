@@ -254,16 +254,16 @@
   - **Coverage**: Metadata review trigger, burst confirmation/rejection, navigation, error handling
   - **Note**: Tests compile successfully but currently failing in BeforeEach due to test data setup requiring investigation
 
-#### 11.0 Integrate Fact Display with Event Details
-- [ ] 11.1 Add facts section to event detail view
-- [ ] 11.2 Display extracted facts for selected event
-- [ ] 11.3 Show facts grouped by source (inferred from event, inferred from burst)
-- [ ] 11.4 Allow user to review and confirm facts
-- [ ] 11.5 Allow user to edit individual facts (through FactEditorModel)
-- [ ] 11.6 Allow user to reject facts (mark as not applicable)
-- [ ] 11.7 Implement keyboard navigation for fact review
-- [ ] 11.8 Persist fact confirmations to database
-- [ ] 11.9 Write integration tests for event detail → facts view
+#### 11.0 Integrate Fact Display with Event Details - ✅ **COMPLETE**
+- [x] 11.1 Add facts section to event detail view
+- [x] 11.2 Display extracted facts for selected event
+- [x] 11.3 Show facts grouped by source (inferred from event, inferred from burst)
+- [x] 11.4 Allow user to review and confirm facts
+- [x] 11.5 Allow user to edit individual facts (through FactEditorModel)
+- [x] 11.6 Allow user to reject facts (mark as not applicable)
+- [x] 11.7 Implement keyboard navigation for fact review
+- [x] 11.8 Persist fact confirmations to database
+- [x] 11.9 Write integration tests for event detail → facts view
 
 #### 12.0 Create User Confirmation and Workflow Integration
 - [ ] 12.1 Design workflow: Capture/Import → Metadata Review → Burst Suggestions → Fact Extraction → Confirmation

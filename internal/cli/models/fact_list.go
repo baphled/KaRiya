@@ -438,3 +438,13 @@ func (flm *FactListModel) IsCancelled() bool {
 func (flm *FactListModel) GetError() error {
 	return flm.err
 }
+
+// GetFacts returns the currently filtered facts
+func (flm *FactListModel) GetFacts() []*career.Fact {
+	return flm.filtered
+}
+
+// GetSelectedIdx returns the currently selected index
+func (flm *FactListModel) GetSelectedIdx() int {
+	return flm.selectedIdx
+}
