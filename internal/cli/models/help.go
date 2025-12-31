@@ -3,6 +3,8 @@ package models
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -14,6 +16,7 @@ type HelpModel struct {
 	width          int
 	height         int
 	closed         bool
+	helpFooter       components.HelpFooterModel
 }
 
 // HelpSection contains help content for a topic
@@ -178,6 +181,7 @@ CV Building:
 		width:          80,
 		height:         24,
 		closed:         false,
+		helpFooter:       components.NewHelpFooter("help", 80),
 	}
 }
 
@@ -224,13 +228,13 @@ func (m *HelpModel) View() string {
 	}
 
 	section := m.sections[m.currentSection]
-	footer := "Press SPACE/RIGHT for next, LEFT for previous, ESC to exit"
-	progressBar := "[ " + strings.Repeat("■", m.currentSection+1) + strings.Repeat("□", len(m.sections)-m.currentSection-1) + " ]"
 
-	return styles.HeaderSection.Render(section.title) + "\n\n" +
+	m.helpFooter.SetWidth(m.width)
+	progressBar := "[ " + strings.Repeat("■", m.currentSection+1) + strings.Repeat("□", len(m.sections)-m.currentSection-1) + " ]"
+	content := styles.HeaderSection.Render(section.title) + "\n\n" +
 		section.content + "\n\n" +
-		progressBar + "\n" +
-		styles.InputHint.Render(footer)
+		progressBar + "\n"
+	return lipgloss.JoinVertical(lipgloss.Left, content, m.helpFooter.View())
 }
 
 // SectionCount returns the total number of help sections
