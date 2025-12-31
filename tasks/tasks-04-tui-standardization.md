@@ -306,14 +306,11 @@
 - [x] 16.1 Implement breadcrumb display in header component ✅
 - [x] 16.2 Show current navigation path (e.g., "Home > List > Event Details") ✅
 - [x] 16.3 Allow breadcrumb navigation (click to go back) ✅
-  - **Implementation**: header.go GetClickedBreadcrumbIndex() (5 tests)
-  - **Integration**: app.go mouse event handler + navigation logic
-  - **Message Type**: BreadcrumbClickedMsg added
-  - **Mouse Support**: Enabled with tea.WithMouseCellMotion()
 - [x] 16.4 Implement consistent breadcrumb styling ✅
 - [x] 16.5 Write unit tests for breadcrumb display and navigation ✅
-  - **Total**: 31 tests (header: 19, breadcrumb_display: 5, breadcrumb_state: 7)
 - [x] 16.6 Test with various navigation paths ✅
+- [x] 16.7 Integration tests for breadcrumb navigation ✅
+- [x] 16.8 Integrate with all models' headers ✅
   - **Status**: ✅ COMPLETE (100%) - All items implemented and tested
 
 #### 17.0 Add Status and Progress Indicators ⏳ NOT YET STARTED
