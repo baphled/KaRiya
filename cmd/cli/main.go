@@ -243,6 +243,7 @@ func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 	fmt.Fprintf(out, "\n=== Burst Detection Results ===\n")
 	fmt.Fprintf(out, "Detected %d bursts from %d events:\n\n", len(suggestions), len(events))
 
+	// Display suggestions first
 	for i, burst := range suggestions {
 		burstName := burst.Name
 		if burstName == "" {
@@ -253,13 +254,24 @@ func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 		if burst.Description != "" {
 			fmt.Fprintf(out, "   Description: %s\n", burst.Description)
 		}
-		if burst.Description != "" {
-			fmt.Fprintf(out, "   Competency Focus: %s\n", burst.Description)
-		}
+		fmt.Fprintf(out, "   Confidence: %.1f%%\n", burst.ConfidenceScore*100)
 		fmt.Fprintf(out, "\n")
 	}
 
-	fmt.Fprintf(out, "✓ Burst detection complete!\n")
+	// Save all suggestions as bursts
+	savedBursts, err := svc.SaveBurstSuggestions(ctx, suggestions)
+	if err != nil {
+		fmt.Fprintf(errOut, "Error saving burst suggestions: %v\n", err)
+		return 1
+	}
+
+	savedCount := len(savedBursts)
+	if savedCount > 0 {
+		fmt.Fprintf(out, "✓ Burst detection complete! Saved %d of %d bursts to database.\n", savedCount, len(suggestions))
+	} else {
+		fmt.Fprintf(out, "⚠ Burst detection complete, but no bursts were saved (repository may not be configured).\n")
+	}
+
 	return 0
 }
 

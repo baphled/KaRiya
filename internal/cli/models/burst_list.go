@@ -8,10 +8,17 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
+
+// BurstsLoadedMsg is sent when bursts have been loaded from repository
+type BurstsLoadedMsg struct {
+	Bursts []*career.Burst
+	Err    error
+}
 
 // BurstListModel represents the burst list display screen
 type BurstListModel struct {
@@ -43,7 +50,22 @@ func NewBurstListModel(svc *careerservice.Service, ctx context.Context) *BurstLi
 
 // Init initializes the model
 func (m *BurstListModel) Init() tea.Cmd {
-	return nil
+	return m.loadBursts()
+}
+
+// loadBursts loads bursts from the service
+func (m *BurstListModel) loadBursts() tea.Cmd {
+	return func() tea.Msg {
+		// Get burst repository from service
+		burstRepo := m.service.GetBurstRepository()
+		if burstRepo == nil {
+			return BurstsLoadedMsg{Bursts: []*career.Burst{}, Err: fmt.Errorf("burst repository not configured")}
+		}
+
+		// Load bursts from repository
+		bursts, err := burstRepo.List(m.ctx, careerrepo.BurstListFilters{Limit: 1000})
+		return BurstsLoadedMsg{Bursts: bursts, Err: err}
+	}
 }
 
 // Update handles messages
@@ -52,6 +74,15 @@ func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		return m, nil
+
+	case BurstsLoadedMsg:
+		if msg.Err != nil {
+			// Handle error - for now just log it and continue with empty list
+			// In the future we could show an error message to the user
+		} else {
+			m.bursts = msg.Bursts
+		}
 		return m, nil
 
 	case tea.KeyMsg:
