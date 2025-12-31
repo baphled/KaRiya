@@ -1,8 +1,8 @@
 # Task List: Burst & Fact CLI Integration
 
 **Based on**: `BURST_FACTS_INTEGRATION_REPORT.md`
-**Status**: ✅ P1-P3 COMPLETE, ⏳ P4-P6 PENDING
-**Impact**: High - Users can access burst suggestions and facts after import/capture
+**Status**: ✅ P1-P4 COMPLETE, ⏳ P5-P6 PENDING (OPTIONAL)
+**Impact**: High - Users can access burst suggestions and facts after import/capture, and can re-run analysis via CLI commands
 
 ---
 
@@ -287,7 +287,7 @@ if result.ExtractedFactsCount > 0 {
 
 ---
 
-### Priority 4: CLI Commands for Re-running Extraction ⏳ PENDING
+### Priority 4: CLI Commands for Re-running Extraction ✅ COMPLETE
 
 #### 4.0 Add CLI Flags for Burst/Fact Operations
 - [ ] 7.1 Open `cmd/cli/main.go` and locate flag definitions
