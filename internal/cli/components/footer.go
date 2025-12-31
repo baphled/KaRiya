@@ -172,4 +172,3 @@ func (f FooterModel) renderMode() string {
 
 	return modeStyle.Render(mode)
 }
-

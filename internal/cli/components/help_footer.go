@@ -73,7 +73,7 @@ func (m HelpFooterModel) View() string {
 	if len(styledText) > m.width {
 		// Try to create a shortened version
 		if len(m.keys) > 0 {
-			helpText = m.getTruncatedHelp(m.keys, m.width - 4) // -4 for styling overhead
+			helpText = m.getTruncatedHelp(m.keys, m.width-4) // -4 for styling overhead
 		} else {
 			helpText = m.getTruncatedContextualHelp(m.context, m.width-4)
 		}

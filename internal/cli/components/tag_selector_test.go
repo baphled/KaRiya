@@ -1,12 +1,10 @@
 package components_test
 
 import (
-
 	"github.com/baphled/kariya/internal/cli/components"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
 
 var _ = Describe("TagSelector", func() {
 	var selector *components.TagSelector

@@ -5,27 +5,27 @@ type NavigationKey string
 
 const (
 	// Primary navigation keys
-	KeyBack   NavigationKey = "Esc"    // Go back to previous screen
-	KeyUp     NavigationKey = "↑/k"    // Navigate up in lists, menus, or forms
-	KeyDown   NavigationKey = "↓/j"    // Navigate down in lists, menus, or forms
-	KeyLeft   NavigationKey = "←/h"    // Navigate left in forms or menus
-	KeyRight  NavigationKey = "→/l"    // Navigate right in forms or menus
-	KeySelect NavigationKey = "Enter"  // Confirm selection or submit form
-	KeyToggle NavigationKey = "Space"  // Toggle checkbox, tag, or item selection
+	KeyBack   NavigationKey = "Esc"   // Go back to previous screen
+	KeyUp     NavigationKey = "↑/k"   // Navigate up in lists, menus, or forms
+	KeyDown   NavigationKey = "↓/j"   // Navigate down in lists, menus, or forms
+	KeyLeft   NavigationKey = "←/h"   // Navigate left in forms or menus
+	KeyRight  NavigationKey = "→/l"   // Navigate right in forms or menus
+	KeySelect NavigationKey = "Enter" // Confirm selection or submit form
+	KeyToggle NavigationKey = "Space" // Toggle checkbox, tag, or item selection
 
 	// Action keys
-	KeyFilter   NavigationKey = "f"  // Show/toggle filters
-	KeySort     NavigationKey = "s"  // Show/toggle sort options
+	KeyFilter   NavigationKey = "f" // Show/toggle filters
+	KeySort     NavigationKey = "s" // Show/toggle sort options
 	KeySearch   NavigationKey = "/" // Show/toggle search
-	KeyEdit     NavigationKey = "e"  // Edit selected item
-	KeyDelete   NavigationKey = "d"  // Delete selected item
-	KeyBulk     NavigationKey = "b"  // Enter bulk operations mode
-	KeyCapture  NavigationKey = "c"  // Capture new event
-	KeyList     NavigationKey = "l"  // List events
-	KeyMetadata NavigationKey = "m"  // Open metadata review
-	KeyHelp     NavigationKey = "?"  // Show help
-	KeyHome     NavigationKey = "h"  // Go to home screen
-	KeyQuit     NavigationKey = "q"  // Quit application
+	KeyEdit     NavigationKey = "e" // Edit selected item
+	KeyDelete   NavigationKey = "d" // Delete selected item
+	KeyBulk     NavigationKey = "b" // Enter bulk operations mode
+	KeyCapture  NavigationKey = "c" // Capture new event
+	KeyList     NavigationKey = "l" // List events
+	KeyMetadata NavigationKey = "m" // Open metadata review
+	KeyHelp     NavigationKey = "?" // Show help
+	KeyHome     NavigationKey = "h" // Go to home screen
+	KeyQuit     NavigationKey = "q" // Quit application
 )
 
 // AllNavigationKeys returns a slice of all defined navigation keys
@@ -75,4 +75,3 @@ var KeyDescription = map[NavigationKey]string{
 	KeyList:     "List all events",
 	KeyMetadata: "Open metadata review",
 }
-

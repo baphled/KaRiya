@@ -170,4 +170,3 @@ func (h HeaderModel) renderSubtitle() string {
 
 	return subtitleStyle.Render(h.subtitle)
 }
-
