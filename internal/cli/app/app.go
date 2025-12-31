@@ -79,6 +79,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		breadcrumbs:            []string{"Home"},
 		width:                  80,
 		height:                 24,
+		workflowState:          workflow.NewWorkflowState(),
 		formModel:              models.NewFormModel(cliService),
 		successModel:           nil,
 		listModel:              models.NewListModel(careerService, ctx),
@@ -194,6 +195,24 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+
+	// Handle BurstSuggestionsReadyMsg - display burst suggestions directly
+	if readyMsg, ok := msg.(BurstSuggestionsReadyMsg); ok {
+		ctx := context.Background()
+
+		// If there's an error, log it and return
+		if readyMsg.Err != nil {
+			// Continue without suggestions if error occurs
+			return m, nil
+		}
+
+		// Create burst suggestion model with suggestions (even if empty)
+		m.burstSuggestionModel = models.NewBurstSuggestionModel(m.service, readyMsg.Suggestions, ctx)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = BurstSuggestionScreen
+		return m, nil
+	}
+
 	// Handle ConfirmBurstMsg - persist confirmed burst
 	if confirmMsg, ok := msg.(models.ConfirmBurstMsg); ok {
 		ctx := context.Background()
@@ -215,14 +234,50 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Handle BurstProcessingCompleteMsg - navigate back to metadata review or home
+	// Handle BurstProcessingCompleteMsg - navigate back to previous screen or home
 	if _, ok := msg.(models.BurstProcessingCompleteMsg); ok {
-		// Return to metadata review screen if it exists, otherwise home
-		m.previousScreen = m.currentScreen
-		if m.metadataReviewModel != nil {
-			m.currentScreen = MetadataReviewScreen
+		// Return to previous screen if set, otherwise home
+		if m.previousScreen != "" && m.previousScreen != m.currentScreen {
+			// Navigate back to previous screen
+			nextScreen := m.previousScreen
+			m.previousScreen = m.currentScreen
+			m.currentScreen = nextScreen
 		} else {
+			// Go to home if no previous screen was set
+			m.previousScreen = m.currentScreen
 			m.currentScreen = HomeScreen
+		}
+		return m, nil
+	}
+
+	// Handle ViewPendingItemsMsg - navigate to review pending bursts or facts
+	if pendingMsg, ok := msg.(ViewPendingItemsMsg); ok {
+		ctx := context.Background()
+		m.previousScreen = m.currentScreen
+
+		if pendingMsg.ItemType == "bursts" && m.workflowState != nil {
+			// Get pending burst event IDs from workflow state
+			eventIDs := m.workflowState.GetEventIDs()
+			if len(eventIDs) > 0 {
+				// Generate burst suggestions
+				suggestions, err := m.service.SuggestBursts(ctx, eventIDs)
+				if err == nil && len(suggestions) > 0 {
+					m.burstSuggestionModel = models.NewBurstSuggestionModel(m.service, suggestions, ctx)
+					m.currentScreen = BurstSuggestionScreen
+				} else {
+					// No suggestions available, stay on home screen
+					m.currentScreen = HomeScreen
+				}
+			}
+		} else if pendingMsg.ItemType == "facts" && m.workflowState != nil {
+			// Get pending fact event IDs from workflow state
+			eventIDs := m.workflowState.GetEventIDs()
+			if len(eventIDs) > 0 {
+				// For now, navigate to metadata review where facts can be extracted
+				// In the future, this could navigate to a dedicated fact review screen
+				m.metadataReviewModel = models.NewMetadataReviewModelForImport(m.service, ctx, eventIDs)
+				m.currentScreen = MetadataReviewScreen
+			}
 		}
 		return m, nil
 	}
@@ -565,6 +620,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.metadataReviewModel.Refresh()
 			m.previousScreen = m.currentScreen
 			m.currentScreen = MetadataReviewScreen
+		case "p":
+			// Handle pending items review
+			if m.workflowState != nil && m.workflowState.HasPendingItems() {
+				// Determine which type of pending items to review
+				if m.workflowState.GetPendingBursts() > 0 {
+					return m, func() tea.Msg {
+						return ViewPendingItemsMsg{ItemType: "bursts"}
+					}
+				} else if m.workflowState.GetPendingFacts() > 0 {
+					return m, func() tea.Msg {
+						return ViewPendingItemsMsg{ItemType: "facts"}
+					}
+				}
+			}
 		}
 
 	case tea.WindowSizeMsg:
@@ -665,17 +734,35 @@ func (m *Model) renderHome() string {
 		styles.InfoText.Render("h") + " - Home",
 		styles.InfoText.Render("q") + " - Quit",
 	}
+
+	// Add pending items option if there are any
+	if m.workflowState != nil && m.workflowState.HasPendingItems() {
+		commands = append(commands, styles.InfoText.Render("p")+" - Review Pending Items")
+	}
+
 	commandsList := strings.Join(commands, "\n")
-	cta := styles.SuccessBox.Width(styles.MaxWidth(m.width) - 4).Render("Press 'c' to get started!")
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
+
+	// Build content sections
+	contentSections := []string{
 		title,
 		"",
 		commandsHeader,
 		commandsList,
-		"",
-		cta,
-	)
+	}
+
+	// Add pending items notification if applicable
+	if m.workflowState != nil && m.workflowState.HasPendingItems() {
+		pendingSummary := m.workflowState.GetPendingSummary()
+		pendingNotification := styles.WarningBox.Width(styles.MaxWidth(m.width) - 4).Render(
+			"⚠️  You have " + pendingSummary + " to review. Press 'p' to review.",
+		)
+		contentSections = append(contentSections, "", pendingNotification)
+	} else {
+		cta := styles.SuccessBox.Width(styles.MaxWidth(m.width) - 4).Render("Press 'c' to get started!")
+		contentSections = append(contentSections, "", cta)
+	}
+
+	content := lipgloss.JoinVertical(lipgloss.Left, contentSections...)
 	card := styles.ResponsiveCard(m.width).Render(content)
 	return styles.Center(card, m.width, m.height)
 }
