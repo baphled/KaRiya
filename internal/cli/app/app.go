@@ -35,6 +35,7 @@ const (
 	MetadataEditorScreen  Screen = "metadata_editor"
 	BulkOperationsScreen  Screen = "bulk_operations"
 	BurstSuggestionScreen Screen = "burst_suggestion"
+	FactsResultsScreen   Screen = "facts_results"
 )
 
 // Model represents the main application state
@@ -59,11 +60,13 @@ type Model struct {
 	importReviewModel      *models.ImportReviewModel
 	importProgressModel    *models.ImportProgressModel
 	importFilePath         string // Path to CSV file being imported
+	importResult           *importer.ImportResult // Results from import for processing
 	metadataReviewModel    *models.MetadataReviewModel
 	metadataEditorModel    *models.MetadataEditorModel
 	bulkOperationsModel    *models.BulkOperationsModel
 	burstSuggestionModel   *models.BurstSuggestionModel
 	factListModel          *models.FactListModel     // Display facts for events/bursts
+	factsResultsModel      *models.FactsResultsModel  // Review facts extracted after import
 	factEditorModel        *models.FactEditorModel   // Edit individual facts
 }
 
@@ -91,10 +94,12 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		importReviewModel:      nil,
 		importProgressModel:    nil,
 		importFilePath:         "",
+		importResult:           nil,
 		metadataReviewModel:    models.NewMetadataReviewModel(careerService, ctx),
 		metadataEditorModel:    nil,
 		bulkOperationsModel:    nil,
 		burstSuggestionModel:   nil,
+		factsResultsModel:      nil,
 	}
 }
 
@@ -563,6 +568,30 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+
+	case FactsResultsScreen:
+		if m.factsResultsModel != nil {
+			updatedModel, cmd := m.factsResultsModel.Update(msg)
+			m.factsResultsModel = updatedModel.(*models.FactsResultsModel)
+
+			if m.factsResultsModel.IsDone() {
+				// Facts processing is done
+				ctx := context.Background()
+
+				// Persist confirmed facts
+				for _, fact := range m.factsResultsModel.GetConfirmed() {
+					// Save the fact
+					if err := m.service.SaveFact(ctx, fact); err != nil {
+					}
+						// Skip error logging (service logs internally)
+				}
+
+				// Return to metadata review screen
+				m.currentScreen = MetadataReviewScreen
+				m.previousScreen = FactsResultsScreen
+			}
+			return m, cmd
+		}
 	case ActionMenuScreen:
 		if m.actionMenuModel != nil {
 			updatedActionMenuModel, cmd := m.actionMenuModel.Update(msg)
@@ -689,6 +718,11 @@ func (m *Model) View() string {
 			return m.detailsModel.View()
 		}
 		return "Error: Details model not initialized\n"
+	case FactsResultsScreen:
+		if m.factsResultsModel != nil {
+			return m.factsResultsModel.View()
+		}
+		return "Error: Facts Results model not initialized\n"
 	case SuccessScreen:
 		if m.successModel != nil {
 			m.successModel.SetBreadcrumbs(m.breadcrumbs)
@@ -837,6 +871,8 @@ func (m *Model) updateBreadcrumbs() {
 		m.breadcrumbs = []string{"Home", "Metadata Review", "Bulk Operations"}
 	case BurstSuggestionScreen:
 		m.breadcrumbs = []string{"Home", "Metadata Review", "Burst Suggestions"}
+	case FactsResultsScreen:
+		m.breadcrumbs = []string{"Home", "Metadata Review", "Facts Review"}
 	case SuccessScreen:
 		// Build breadcrumb based on previous screen
 		if m.previousScreen == CaptureScreen {
