@@ -25,7 +25,7 @@ var _ = Describe("WorkflowState", func() {
 		It("should create workflow state starting from capture", func() {
 			eventIDs := []string{"event1", "event2"}
 			ws = workflow.NewWorkflowStateFromCapture(eventIDs)
-			
+
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepCapture))
 			Expect(ws.IsStepCompleted(workflow.StepCapture)).To(BeTrue())
 			Expect(ws.GetEventIDs()).To(Equal(eventIDs))
@@ -36,7 +36,7 @@ var _ = Describe("WorkflowState", func() {
 		It("should create workflow state starting from import", func() {
 			eventIDs := []string{"event1", "event2", "event3"}
 			ws = workflow.NewWorkflowStateFromImport(eventIDs)
-			
+
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepImport))
 			Expect(ws.IsStepCompleted(workflow.StepImport)).To(BeTrue())
 			Expect(ws.GetEventIDs()).To(Equal(eventIDs))
@@ -46,7 +46,7 @@ var _ = Describe("WorkflowState", func() {
 	Describe("Step Completion", func() {
 		It("should mark step as completed and move to next step", func() {
 			ws.CompleteStep(workflow.StepCapture)
-			
+
 			Expect(ws.IsStepCompleted(workflow.StepCapture)).To(BeTrue())
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepMetadataReview))
 		})
@@ -54,13 +54,13 @@ var _ = Describe("WorkflowState", func() {
 		It("should progress through all steps", func() {
 			ws.CompleteStep(workflow.StepCapture)
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepMetadataReview))
-			
+
 			ws.CompleteStep(workflow.StepMetadataReview)
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepBurstSuggestion))
-			
+
 			ws.CompleteStep(workflow.StepBurstSuggestion)
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepFactExtraction))
-			
+
 			ws.CompleteStep(workflow.StepFactExtraction)
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepComplete))
 		})
@@ -87,7 +87,7 @@ var _ = Describe("WorkflowState", func() {
 			ws.CompleteStep(workflow.StepCapture)
 			ws.CompleteStep(workflow.StepMetadataReview)
 			ws.SkipStep(workflow.StepBurstSuggestion)
-			
+
 			Expect(ws.IsStepSkipped(workflow.StepBurstSuggestion)).To(BeTrue())
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepFactExtraction))
 		})
@@ -97,7 +97,7 @@ var _ = Describe("WorkflowState", func() {
 			ws.CompleteStep(workflow.StepMetadataReview)
 			ws.SkipStep(workflow.StepBurstSuggestion)
 			ws.SkipStep(workflow.StepFactExtraction)
-			
+
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepComplete))
 		})
 	})
@@ -105,19 +105,19 @@ var _ = Describe("WorkflowState", func() {
 	Describe("Progress Tracking", func() {
 		It("should calculate progress percentage", func() {
 			Expect(ws.GetProgress()).To(Equal(0))
-			
+
 			ws.CompleteStep(workflow.StepCapture)
 			Expect(ws.GetProgress()).To(Equal(20)) // 1/5 steps
-			
+
 			ws.CompleteStep(workflow.StepMetadataReview)
 			Expect(ws.GetProgress()).To(Equal(40)) // 2/5 steps
-			
+
 			ws.CompleteStep(workflow.StepBurstSuggestion)
 			Expect(ws.GetProgress()).To(Equal(60)) // 3/5 steps
-			
+
 			ws.CompleteStep(workflow.StepFactExtraction)
 			Expect(ws.GetProgress()).To(Equal(80)) // 4/5 steps
-			
+
 			ws.CompleteStep(workflow.StepComplete)
 			Expect(ws.GetProgress()).To(Equal(100)) // 5/5 steps
 		})
@@ -125,18 +125,18 @@ var _ = Describe("WorkflowState", func() {
 		It("should return progress steps", func() {
 			ws.CompleteStep(workflow.StepCapture)
 			ws.CompleteStep(workflow.StepMetadataReview)
-			
+
 			steps := ws.GetProgressSteps()
 			Expect(steps).To(HaveLen(5))
-			
+
 			// First step completed
 			Expect(steps[0].Completed).To(BeTrue())
 			Expect(steps[0].Current).To(BeFalse())
-			
+
 			// Second step completed and not current (moved to burst)
 			Expect(steps[1].Completed).To(BeTrue())
 			Expect(steps[1].Current).To(BeFalse())
-			
+
 			// Third step current
 			Expect(steps[2].Completed).To(BeFalse())
 			Expect(steps[2].Current).To(BeTrue())
@@ -159,7 +159,7 @@ var _ = Describe("WorkflowState", func() {
 		It("should return pending summary", func() {
 			ws.SetPendingBursts(3)
 			ws.SetPendingFacts(7)
-			
+
 			summary := ws.GetPendingSummary()
 			Expect(summary).To(Equal("3 burst suggestions, 7 fact extractions"))
 		})
@@ -176,7 +176,7 @@ var _ = Describe("WorkflowState", func() {
 			ws.CompleteStep(workflow.StepMetadataReview)
 			ws.SetPendingBursts(5)
 			ws.ReviewLater(workflow.StepBurstSuggestion)
-			
+
 			Expect(ws.IsStepSkipped(workflow.StepBurstSuggestion)).To(BeTrue())
 			Expect(ws.GetPendingBursts()).To(Equal(5))
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepFactExtraction))
@@ -188,7 +188,7 @@ var _ = Describe("WorkflowState", func() {
 			ws.CompleteStep(workflow.StepBurstSuggestion)
 			ws.SetPendingFacts(10)
 			ws.ReviewLater(workflow.StepFactExtraction)
-			
+
 			Expect(ws.IsStepSkipped(workflow.StepFactExtraction)).To(BeTrue())
 			Expect(ws.GetPendingFacts()).To(Equal(10))
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepComplete))
@@ -240,9 +240,9 @@ var _ = Describe("WorkflowState", func() {
 			ws.SetPendingBursts(5)
 			ws.SetPendingFacts(10)
 			ws.SetEventIDs([]string{"event1", "event2"})
-			
+
 			ws.Reset()
-			
+
 			Expect(ws.GetCurrentStep()).To(Equal(workflow.StepCapture))
 			Expect(ws.IsStepCompleted(workflow.StepCapture)).To(BeFalse())
 			Expect(ws.IsStepCompleted(workflow.StepMetadataReview)).To(BeFalse())
@@ -256,9 +256,8 @@ var _ = Describe("WorkflowState", func() {
 		It("should track event IDs", func() {
 			eventIDs := []string{"event1", "event2", "event3"}
 			ws.SetEventIDs(eventIDs)
-			
+
 			Expect(ws.GetEventIDs()).To(Equal(eventIDs))
 		})
 	})
 })
-

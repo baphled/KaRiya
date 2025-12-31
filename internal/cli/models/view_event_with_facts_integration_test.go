@@ -14,11 +14,11 @@ import (
 
 var _ = Describe("ViewEventWithFacts Integration Tests", func() {
 	var (
-		repo         *careerrepo.MemoryRepository
-		factRepo     *careerrepo.MemoryFactRepository
-		service      *careerservice.Service
-		ctx          context.Context
-		testEvent    *career.CareerEvent
+		repo      *careerrepo.MemoryRepository
+		factRepo  *careerrepo.MemoryFactRepository
+		service   *careerservice.Service
+		ctx       context.Context
+		testEvent *career.CareerEvent
 	)
 
 	BeforeEach(func() {
@@ -30,15 +30,15 @@ var _ = Describe("ViewEventWithFacts Integration Tests", func() {
 
 		// Create test event
 		testEvent = &career.CareerEvent{
-			ID:      "test-event-1",
-			Text:    "Led cross-functional team to deliver critical microservices architecture",
-			Date:    time.Now().Add(-1 * time.Hour),
-			Company: "TechCorp Inc.",
-			Project: "Platform Migration",
-			Tags:    []string{"leadership", "technical"},
+			ID:         "test-event-1",
+			Text:       "Led cross-functional team to deliver critical microservices architecture",
+			Date:       time.Now().Add(-1 * time.Hour),
+			Company:    "TechCorp Inc.",
+			Project:    "Platform Migration",
+			Tags:       []string{"leadership", "technical"},
 			Categories: []string{"technical", "leadership"},
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
 		}
 
 		// Persist event
@@ -309,7 +309,7 @@ var _ = Describe("ViewEventWithFacts Integration Tests", func() {
 
 				// Submit editor
 				// Move focus to Save button
-				model.factEditorModel.focusIndex = 5  // FactSaveButtonIdx
+				model.factEditorModel.focusIndex = 5 // FactSaveButtonIdx
 				model.factEditorModel.fact.CompetencyCategories = []string{"technical"}
 				model.factEditorModel.fact.RoleFit = career.RoleFitSeniorIC
 				model.factEditorModel.fact.AudienceRelevance = []string{"hiring_manager"}
@@ -319,8 +319,8 @@ var _ = Describe("ViewEventWithFacts Integration Tests", func() {
 				// Execute save command
 				if cmd != nil {
 					msg := cmd()
-				updatedModel, _ := model.Update(msg)
-				model = updatedModel.(*ViewEventWithFactsModel)
+					updatedModel, _ := model.Update(msg)
+					model = updatedModel.(*ViewEventWithFactsModel)
 				}
 
 				// Verify workflow completed
@@ -329,4 +329,3 @@ var _ = Describe("ViewEventWithFacts Integration Tests", func() {
 		})
 	})
 })
-

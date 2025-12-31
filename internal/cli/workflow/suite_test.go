@@ -11,4 +11,3 @@ func TestWorkflowSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Workflow Package Suite")
 }
-

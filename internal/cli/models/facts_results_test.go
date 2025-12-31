@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	careerservice "github.com/baphled/kariya/internal/service/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -276,4 +276,3 @@ var _ = Describe("FactsResultsModel", func() {
 		})
 	})
 })
-

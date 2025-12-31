@@ -230,16 +230,16 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		It("should continue saving other suggestions if one fails validation", func() {
 			suggestions := []burst_fact.BurstSuggestion{
 				{
-					Name:        "",  // Invalid: empty name
-					Description: "Invalid burst",
-					EventIDs:    []string{"event1"},  // Invalid: too few events
-					ConfidenceScore:  0.8,
+					Name:            "", // Invalid: empty name
+					Description:     "Invalid burst",
+					EventIDs:        []string{"event1"}, // Invalid: too few events
+					ConfidenceScore: 0.8,
 				},
 				{
-					Name:        "Valid Burst",
-					Description: "Valid burst description",
-					EventIDs:    []string{"event2", "event3"},
-					ConfidenceScore:  0.75,
+					Name:            "Valid Burst",
+					Description:     "Valid burst description",
+					EventIDs:        []string{"event2", "event3"},
+					ConfidenceScore: 0.75,
 				},
 			}
 

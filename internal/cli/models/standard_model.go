@@ -78,13 +78,13 @@ type NavigationHistoryItem struct {
 // BaseStandardModel provides a default implementation of StandardModel
 // to be embedded or extended by specific model implementations
 type BaseStandardModel struct {
-	ctx                context.Context
-	contextMetadata    *ContextMetadata
-	breadcrumbs        []BreadcrumbItem
-	navigationHistory  []NavigationHistoryItem
-	shortcuts          map[string]key.Binding
-	lastError          error
-	state              interface{}
+	ctx               context.Context
+	contextMetadata   *ContextMetadata
+	breadcrumbs       []BreadcrumbItem
+	navigationHistory []NavigationHistoryItem
+	shortcuts         map[string]key.Binding
+	lastError         error
+	state             interface{}
 }
 
 // NewBaseStandardModel creates a new instance of BaseStandardModel with initialized fields
@@ -270,4 +270,3 @@ func (b *BaseStandardModel) Reset() {
 	b.state = nil
 	b.contextMetadata = &ContextMetadata{Data: make(map[string]interface{})}
 }
-

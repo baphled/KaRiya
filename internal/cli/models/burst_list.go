@@ -22,15 +22,15 @@ type BurstsLoadedMsg struct {
 
 // BurstListModel represents the burst list display screen
 type BurstListModel struct {
-	service        *careerservice.Service
-	ctx            context.Context
-	bursts         []*career.Burst
-	selectedIdx    int
+	service         *careerservice.Service
+	ctx             context.Context
+	bursts          []*career.Burst
+	selectedIdx     int
 	expandedIndices map[int]bool
-	filterBy       string // Competency focus filter
-	sortBy         string // "date", "event_count", "name"
-	width          int
-	height         int
+	filterBy        string // Competency focus filter
+	sortBy          string // "date", "event_count", "name"
+	width           int
+	height          int
 }
 
 // NewBurstListModel creates a new burst list model
@@ -309,4 +309,3 @@ func (m *BurstListModel) SetFilter(competency string) {
 func (m *BurstListModel) SetSort(sortBy string) {
 	m.sortBy = sortBy
 }
-

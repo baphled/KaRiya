@@ -105,7 +105,7 @@ var _ = Describe("BurstDetector", func() {
 
 			matrix := detector.buildSimilarityMatrix(events)
 			suggestion := detector.clusterToSuggestion(events, matrix)
-			
+
 			Expect(suggestion.EventIDs).To(Equal([]string{"1", "2"}))
 			Expect(suggestion.ConfidenceScore).To(BeNumerically(">=", 0.0))
 			Expect(suggestion.ConfidenceScore).To(BeNumerically("<=", 1.0))

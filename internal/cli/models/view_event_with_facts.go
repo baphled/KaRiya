@@ -29,8 +29,8 @@ type ViewEventWithFactsModel struct {
 
 	// Facts display
 	factsLoaded     bool
-	eventFacts      []*career.Fact  // Facts extracted from this event
-	burstFacts      []*career.Fact  // Facts extracted from bursts containing this event
+	eventFacts      []*career.Fact // Facts extracted from this event
+	burstFacts      []*career.Fact // Facts extracted from bursts containing this event
 	showFactsList   bool
 	factListModel   *FactListModel
 	showFactEditor  bool
@@ -517,4 +517,3 @@ func (m *ViewEventWithFactsModel) deleteEvent() tea.Cmd {
 func (m *ViewEventWithFactsModel) GetEvent() *career.CareerEvent {
 	return m.event
 }
-

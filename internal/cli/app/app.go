@@ -36,7 +36,7 @@ const (
 	BulkOperationsScreen  Screen = "bulk_operations"
 	BurstSuggestionScreen Screen = "burst_suggestion"
 	BurstListScreen       Screen = "burst_list"
-	FactsResultsScreen   Screen = "facts_results"
+	FactsResultsScreen    Screen = "facts_results"
 )
 
 // Model represents the main application state
@@ -60,7 +60,7 @@ type Model struct {
 	importService          *importer.ImportService
 	importReviewModel      *models.ImportReviewModel
 	importProgressModel    *models.ImportProgressModel
-	importFilePath         string // Path to CSV file being imported
+	importFilePath         string                 // Path to CSV file being imported
 	importResult           *importer.ImportResult // Results from import for processing
 	metadataReviewModel    *models.MetadataReviewModel
 	metadataEditorModel    *models.MetadataEditorModel
@@ -68,7 +68,7 @@ type Model struct {
 	burstSuggestionModel   *models.BurstSuggestionModel
 	burstListModel         *models.BurstListModel    // Display existing bursts
 	factListModel          *models.FactListModel     // Display facts for events/bursts
-	factsResultsModel      *models.FactsResultsModel  // Review facts extracted after import
+	factsResultsModel      *models.FactsResultsModel // Review facts extracted after import
 	factEditorModel        *models.FactEditorModel   // Edit individual facts
 }
 
@@ -207,7 +207,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentScreen = BurstSuggestionScreen
 		return m, nil
 	}
-
 
 	// Handle BurstSuggestionsReadyMsg - display burst suggestions directly
 	if readyMsg, ok := msg.(BurstSuggestionsReadyMsg); ok {
@@ -576,26 +575,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-				case BurstListScreen:
-								// Check for global navigation keys first
-								if keyMsg, ok := msg.(tea.KeyMsg); ok {
-									switch keyMsg.String() {
-									case "h":
-										m.previousScreen = m.currentScreen
-										m.currentScreen = HomeScreen
-										return m, nil
-									case "backspace":
-										m.previousScreen = m.currentScreen
-										m.currentScreen = HomeScreen
-										return m, nil
-									}
-								}
-				
-					if m.burstListModel != nil {
-						updatedModel, cmd := m.burstListModel.Update(msg)
-						m.burstListModel = updatedModel.(*models.BurstListModel)
-						return m, cmd
-					}
+	case BurstListScreen:
+		// Check for global navigation keys first
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch keyMsg.String() {
+			case "h":
+				m.previousScreen = m.currentScreen
+				m.currentScreen = HomeScreen
+				return m, nil
+			case "backspace":
+				m.previousScreen = m.currentScreen
+				m.currentScreen = HomeScreen
+				return m, nil
+			}
+		}
+
+		if m.burstListModel != nil {
+			updatedModel, cmd := m.burstListModel.Update(msg)
+			m.burstListModel = updatedModel.(*models.BurstListModel)
+			return m, cmd
+		}
 
 	case FactsResultsScreen:
 		if m.factsResultsModel != nil {
@@ -611,7 +610,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// Save the fact
 					if err := m.service.SaveFact(ctx, fact); err != nil {
 					}
-						// Skip error logging (service logs internally)
+					// Skip error logging (service logs internally)
 				}
 
 				// Return to metadata review screen

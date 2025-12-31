@@ -144,7 +144,7 @@ var _ = Describe("BurstConfirmationWorkflow", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				pending := workflow.GetPendingSuggestions()
-				Expect(len(pending)).To(BeNumerically("<",len(suggestions)))
+				Expect(len(pending)).To(BeNumerically("<", len(suggestions)))
 			}
 		})
 
@@ -179,7 +179,7 @@ var _ = Describe("BurstConfirmationWorkflow", func() {
 
 				suggestions2, err := workflow.GenerateSuggestions(ctx, events, nil)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(suggestions2)).To(BeNumerically("<",initialCount))
+				Expect(len(suggestions2)).To(BeNumerically("<", initialCount))
 			}
 		})
 
@@ -236,7 +236,7 @@ var _ = Describe("BurstConfirmationWorkflow", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			Expect(len(workflow.GetConfirmedBursts())).To(BeNumerically(">",0))
+			Expect(len(workflow.GetConfirmedBursts())).To(BeNumerically(">", 0))
 
 			workflow.Reset()
 			Expect(len(workflow.GetPendingSuggestions())).To(Equal(0))

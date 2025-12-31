@@ -10,7 +10,6 @@ import (
 	"github.com/onsi/gomega"
 )
 
-
 var _ = ginkgo.Describe("FactCard", func() {
 	var (
 		fact *career.Fact

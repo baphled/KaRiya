@@ -6,9 +6,9 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/google/uuid"
 )
 
 var _ = Describe("Career Service - Fact Methods", func() {
@@ -543,12 +543,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 			// Verify by creating and retrieving a fact
 			fact := &career.Fact{
-				Text:                "Test fact for repository",
+				Text:                 "Test fact for repository",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       uuid.New().String(),
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        uuid.New().String(),
 			}
 
 			err := service.SaveFact(ctx, fact)
@@ -687,12 +687,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 		It("should save a valid fact", func() {
 			fact := &career.Fact{
-				Text:                "Led migration to microservices",
+				Text:                 "Led migration to microservices",
 				CompetencyCategories: []string{"technical", "leadership"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"hiring_manager", "peer"},
-				StrengthSignal:      "leadership",
-				SourceEventID:       uuid.New().String(),
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"hiring_manager", "peer"},
+				StrengthSignal:       "leadership",
+				SourceEventID:        uuid.New().String(),
 			}
 
 			err := service.SaveFact(ctx, fact)
@@ -710,12 +710,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 		It("should return error for invalid fact", func() {
 			fact := &career.Fact{
-				Text:                "", // Empty text
+				Text:                 "", // Empty text
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       uuid.New().String(),
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        uuid.New().String(),
 			}
 
 			err := service.SaveFact(ctx, fact)
@@ -724,12 +724,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 		It("should return error for fact with aspirational language", func() {
 			fact := &career.Fact{
-				Text:                "I will lead migration",
+				Text:                 "I will lead migration",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       uuid.New().String(),
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        uuid.New().String(),
 			}
 
 			err := service.SaveFact(ctx, fact)
@@ -739,12 +739,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 		It("should update existing fact if ID is set", func() {
 			fact := &career.Fact{
-				Text:                "Original text",
+				Text:                 "Original text",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       uuid.New().String(),
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        uuid.New().String(),
 			}
 
 			err := service.SaveFact(ctx, fact)
@@ -764,12 +764,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		It("should return error when repository is not set", func() {
 			serviceWithoutRepo := NewService(repo)
 			fact := &career.Fact{
-				Text:                "Test fact",
+				Text:                 "Test fact",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       uuid.New().String(),
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        uuid.New().String(),
 			}
 
 			err := serviceWithoutRepo.SaveFact(ctx, fact)
@@ -787,12 +787,12 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			service.SetFactRepository(factRepo)
 
 			fact = &career.Fact{
-				Text:                "Fact to delete",
+				Text:                 "Fact to delete",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       uuid.New().String(),
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        uuid.New().String(),
 			}
 			err := service.SaveFact(ctx, fact)
 			Expect(err).NotTo(HaveOccurred())
@@ -840,4 +840,3 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 	})
 })
-

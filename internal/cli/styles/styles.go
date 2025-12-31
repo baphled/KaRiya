@@ -301,6 +301,7 @@ var (
 	SpinnerStyle = lipgloss.NewStyle().
 		Foreground(ColorAccentTeal)
 )
+
 // Badge and error message styles
 var (
 	Badge = lipgloss.NewStyle().
@@ -312,27 +313,27 @@ var (
 		Foreground(ColorTextSecondary)
 
 	BadgeSelected = Badge.Copy().
-		BorderForeground(ColorAccentPurple).
-		Background(ColorAccentPurple).
-		Foreground(ColorTextPrimary).
-		Bold(true)
+			BorderForeground(ColorAccentPurple).
+			Background(ColorAccentPurple).
+			Foreground(ColorTextPrimary).
+			Bold(true)
 
 	BadgeFocused = Badge.Copy().
-		BorderForeground(ColorAccentTeal).
-		BorderStyle(lipgloss.ThickBorder()).
-		Background(ColorBackgroundCard)
+			BorderForeground(ColorAccentTeal).
+			BorderStyle(lipgloss.ThickBorder()).
+			Background(ColorBackgroundCard)
 
 	ErrorMsg = lipgloss.NewStyle().
-		Foreground(ColorError).
-		MarginTop(1)
+			Foreground(ColorError).
+			MarginTop(1)
 
 	ButtonPrimaryFocused = ButtonPrimary.Copy().
-		Bold(true).
-		BorderStyle(lipgloss.ThickBorder())
+				Bold(true).
+				BorderStyle(lipgloss.ThickBorder())
 
 	ButtonSecondaryFocused = ButtonSecondary.Copy().
-		Bold(true).
-		BorderStyle(lipgloss.ThickBorder())
+				Bold(true).
+				BorderStyle(lipgloss.ThickBorder())
 
 	Label = lipgloss.NewStyle().
 		Foreground(ColorTextSecondary).
@@ -340,8 +341,8 @@ var (
 		MarginBottom(1)
 
 	LabelFocused = Label.Copy().
-		Foreground(ColorAccentTeal).
-		Bold(true)
+			Foreground(ColorAccentTeal).
+			Bold(true)
 
 	Hint = lipgloss.NewStyle().
 		Foreground(ColorTextMuted).
@@ -352,7 +353,6 @@ var (
 		Foreground(ColorWarning).
 		Bold(true)
 )
-
 
 // Helper functions for common layout patterns
 

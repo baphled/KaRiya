@@ -22,16 +22,16 @@ type FactProcessingCompleteMsg struct {
 // FactsResultsModel represents the fact extraction results review and confirmation screen
 // This model displays facts extracted from imported events and allows users to confirm or reject them
 type FactsResultsModel struct {
-	service       *careerservice.Service
-	ctx           context.Context
-	facts         []*career.Fact  // Facts extracted from imported events
-	currentIdx    int             // Currently focused fact index
-	confirmed     []*career.Fact  // Facts user confirmed
-	rejected      []*career.Fact  // Facts user rejected
-	width         int
-	height        int
-	helpFooter    components.HelpFooterModel // Help footer for keyboard shortcuts
-	scrollOffset  int
+	service      *careerservice.Service
+	ctx          context.Context
+	facts        []*career.Fact // Facts extracted from imported events
+	currentIdx   int            // Currently focused fact index
+	confirmed    []*career.Fact // Facts user confirmed
+	rejected     []*career.Fact // Facts user rejected
+	width        int
+	height       int
+	helpFooter   components.HelpFooterModel // Help footer for keyboard shortcuts
+	scrollOffset int
 }
 
 // NewFactsResultsModel creates a new facts results model
@@ -250,4 +250,3 @@ func (m *FactsResultsModel) GetRejected() []*career.Fact {
 func (m *FactsResultsModel) IsDone() bool {
 	return len(m.facts) == 0
 }
-

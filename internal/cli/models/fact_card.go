@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/lipgloss"

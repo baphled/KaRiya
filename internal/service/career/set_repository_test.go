@@ -9,9 +9,9 @@ import (
 
 var _ = Describe("Repository Setters", func() {
 	var (
-		repo    *career.MemoryRepository
-		svc     *careerservice.Service
-		factRepo *career.MemoryFactRepository
+		repo      *career.MemoryRepository
+		svc       *careerservice.Service
+		factRepo  *career.MemoryFactRepository
 		burstRepo *career.MemoryBurstRepository
 	)
 

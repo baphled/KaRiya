@@ -12,10 +12,10 @@ import (
 
 // BurstSuggestion represents a suggested burst with confidence score and related events
 type BurstSuggestion struct {
-	EventIDs        []string  // IDs of related events
-	ConfidenceScore float64   // 0.0-1.0 confidence score
-	Name            string    // Suggested burst name (optional)
-	Description     string    // Suggested burst description (optional)
+	EventIDs        []string // IDs of related events
+	ConfidenceScore float64  // 0.0-1.0 confidence score
+	Name            string   // Suggested burst name (optional)
+	Description     string   // Suggested burst description (optional)
 }
 
 // DetectionOptions controls burst detection behavior
@@ -418,4 +418,3 @@ func (bd *BurstDetector) isMeaningfulWord(word string) bool {
 
 	return !commonWords[word]
 }
-
