@@ -1,17 +1,10 @@
 package components_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/cli/components"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestSpinner(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Spinner Component Suite")
-}
 
 var _ = Describe("Spinner Component", func() {
 	Context("when creating a spinner", func() {
