@@ -118,4 +118,3 @@ var _ = Describe("Color Scheme Consistency", func() {
 		})
 	})
 })
-
