@@ -231,10 +231,10 @@ if len(result.CreatedEvents) > 0 {
 ```
 
 **Success Criteria**:
-- [ ] No compilation errors
-- [ ] Burst suggestions generated after import
-- [ ] Suggestions stored in ImportResult
-- [ ] Tests pass: `go test ./internal/cli/importer -v`
+- [x] No compilation errors
+- [x] Burst suggestions generated after import
+- [x] Suggestions stored in ImportResult
+- [x] Tests pass: `go test ./internal/cli/importer -v`
 
 #### 2.1 Display Burst Detection Results to User
 - [x] 4.1 Modify `handleNonInteractiveImport` in `cmd/cli/main.go` to display burst results
@@ -267,12 +267,10 @@ if result.BurstSuggestions != nil && len(result.BurstSuggestions) > 0 {
 ```
 
 **Success Criteria**:
-- [ ] Burst results displayed to user
-- [ ] Confidence scores shown
-- [ ] Event counts correct
-- [ ] Tests pass: `go test ./cmd/cli -v`
-
----
+- [x] Burst results displayed to user
+- [x] Confidence scores shown
+- [x] Event counts correct
+- [x] Tests pass: `go test ./cmd/cli -v`
 
 ### Priority 3: Post-Import Fact Extraction
 
