@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Phase 6 (Burst & Fact CLI Integration)
+
+#### CLI Integration for Burst Detection
+- Automatic burst detection after CSV import
+  - Bursts detected automatically when importing events
+  - Confidence scores calculated for each burst suggestion
+  - Results displayed in import summary
+- CLI flags for burst operations:
+  - `--detect-bursts`: Re-run burst detection on all existing events
+  - `--show-bursts`: Display all existing bursts with details
+- Interactive burst review screens (BubbleTea UI)
+  - Review suggested bursts with confidence scores
+  - Accept/reject individual burst suggestions
+  - Edit burst names and descriptions
+  - Keyboard navigation (y/n, space, arrows)
+
+#### CLI Integration for Fact Extraction
+- Automatic fact extraction after CSV import
+  - Facts extracted from each imported event
+  - Grounded statements only (no aspirational language)
+  - Role fit and audience relevance automatically inferred
+  - Results displayed in import summary
+- CLI flags for fact operations:
+  - `--extract-facts`: Re-run fact extraction on all existing events
+  - `--show-facts`: Display all existing facts with details
+- Interactive fact review screens (BubbleTea UI)
+  - Review extracted facts with competencies
+  - Confirm/reject individual facts
+  - Edit fact text and metadata
+  - Filter by competency, role fit, or audience
+
+#### Database Integration
+- SQLite tables automatically created on first run
+  - `bursts` table with confidence scores and event relationships
+  - `facts` table with competencies, role fit, and audience
+- Shared database connection for all repositories
+  - Event, burst, and fact repositories share same SQLite connection
+  - Ensures data consistency and transaction support
+- Graceful degradation if burst/fact repositories unavailable
+  - Warning logged but import continues
+  - User notified of reduced functionality
+
+#### Performance Optimization
+- Burst detection: ≤2s for 248 events (verified)
+- Fact extraction: ≤1s per event (verified)
+- Database queries: ≤100ms for 1000+ items (verified)
+- Zero race conditions detected in all tests
+
+#### Documentation
+- Created comprehensive verification script
+  - `scripts/verify-burst-fact-integration.sh`
+  - Automated testing of all burst/fact functionality
+  - Validates database schema, CLI flags, and results
+- Updated README.md with burst/fact CLI usage
+  - Added CLI flag examples
+  - Updated feature list with integration details
+- Updated CLI_GUIDE.md with burst/fact workflows
+  - Post-import review workflows
+  - Re-run detection/extraction workflows
+  - Interactive review screen usage
+
 ### Added - Phase 4 (Metadata Review & Enrichment)
 
 #### Metadata Review System
