@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -430,8 +431,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	// Handle breadcrumb click messages
+	if breadcrumbMsg, ok := msg.(BreadcrumbClickedMsg); ok {
+		return m.handleBreadcrumbClick(breadcrumbMsg.Index)
+	}
+
 	// Handle global navigation shortcuts
 	switch msg := msg.(type) {
+	case tea.MouseMsg:
+		// Handle mouse clicks on breadcrumbs
+		if msg.Action == tea.MouseActionPress && msg.Button == tea.MouseButtonLeft {
+			// Check if click was on breadcrumb area (first line of screen)
+			clickedIndex := m.getBreadcrumbIndexFromClick(msg.X, msg.Y)
+			if clickedIndex >= 0 {
+				return m.handleBreadcrumbClick(clickedIndex)
+			}
+		}
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "h":
@@ -646,4 +662,59 @@ func (m *Model) updateBreadcrumbs() {
 	default:
 		m.breadcrumbs = []string{"Home"}
 	}
+}
+
+// getBreadcrumbIndexFromClick determines which breadcrumb was clicked based on mouse coordinates
+func (m *Model) getBreadcrumbIndexFromClick(x, y int) int {
+	// Breadcrumbs are rendered at the top of the screen
+	// We need to account for any offset and use the header's click detection
+
+	// Create a temporary header with current breadcrumbs
+	header := components.NewHeader("", m.width)
+	header.SetBreadcrumbs(m.breadcrumbs)
+
+	return header.GetClickedBreadcrumbIndex(x, y)
+}
+
+// handleBreadcrumbClick navigates based on which breadcrumb was clicked
+func (m *Model) handleBreadcrumbClick(index int) (tea.Model, tea.Cmd) {
+	if index < 0 || index >= len(m.breadcrumbs) {
+		return m, nil
+	}
+
+	// Map breadcrumb index to screen navigation
+	// Index 0 is always "Home", index 1 is the parent screen, etc.
+	if index == 0 {
+		// Navigate to Home
+		m.previousScreen = m.currentScreen
+		m.currentScreen = HomeScreen
+		m.updateBreadcrumbs()
+		return m, nil
+	}
+
+	// For other breadcrumbs, we need to navigate based on the breadcrumb trail
+	// This is more complex as we need to reverse-engineer the screen from the breadcrumb
+	breadcrumb := m.breadcrumbs[index]
+
+	switch breadcrumb {
+	case "Capture Event":
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CaptureScreen
+		m.formModel = models.NewFormModel(m.cliService)
+	case "Events":
+		ctx := context.Background()
+		m.listModel = models.NewListModel(m.service, ctx)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = ListScreen
+	case "Metadata Review":
+		m.metadataReviewModel.Refresh()
+		m.previousScreen = m.currentScreen
+		m.currentScreen = MetadataReviewScreen
+	case "Import Review":
+		m.previousScreen = m.currentScreen
+		m.currentScreen = ImportReviewScreen
+	}
+
+	m.updateBreadcrumbs()
+	return m, nil
 }
