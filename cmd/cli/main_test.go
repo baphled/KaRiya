@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
 var _ = Describe("CLI Initialization", func() {
 	Context("Version Flag", func() {
 		It("should print version when --version flag is provided", func() {
@@ -209,6 +210,65 @@ Mentored junior engineers on best practices,2025-12-22,TechCorp,Training,mentori
 			Expect(buf.String()).To(ContainSubstring("Examples:"))
 			Expect(buf.String()).To(ContainSubstring("kariya"))
 			Expect(buf.String()).To(ContainSubstring("--mode timeline"))
+		})
+	})
+
+	Context("Burst Detection Flag", func() {
+		It("should handle --detect-bursts flag with empty database", func() {
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--in-memory", "--detect-bursts"}, &buf, &errBuf)
+
+			Expect(exitCode).To(Equal(0))
+			// With no events, should show appropriate message
+			Expect(buf.String()).
+				To(Or(
+					ContainSubstring("No events found"),
+					ContainSubstring("Detecting bursts"),
+				))
+		})
+	})
+
+	Context("Fact Extraction Flag", func() {
+		It("should handle --extract-facts flag with empty database", func() {
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--in-memory", "--extract-facts"}, &buf, &errBuf)
+
+			Expect(exitCode).To(Equal(0))
+			// With no events, should show appropriate message
+			Expect(buf.String()).To(Or(
+				ContainSubstring("No events found"),
+				ContainSubstring("Extracting facts"),
+			))
+		})
+	})
+
+	Context("Show Bursts Flag", func() {
+		It("should handle --show-bursts flag gracefully when repo not configured", func() {
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--in-memory", "--show-bursts"}, &buf, &errBuf)
+
+			// May fail if burst repo not configured for in-memory mode
+			// Or succeed with "No bursts found" message
+			if exitCode == 0 {
+				Expect(buf.String()).To(ContainSubstring("No bursts found"))
+			} else {
+				Expect(errBuf.String()).To(ContainSubstring("Burst repository not configured"))
+			}
+		})
+	})
+
+	Context("Show Facts Flag", func() {
+		It("should handle --show-facts flag gracefully when repo not configured", func() {
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--in-memory", "--show-facts"}, &buf, &errBuf)
+
+			// May fail if fact repo not configured for in-memory mode
+			// Or succeed with "No facts found" message
+			if exitCode == 0 {
+				Expect(buf.String()).To(ContainSubstring("No facts found"))
+			} else {
+				Expect(errBuf.String()).To(ContainSubstring("Fact repository not configured"))
+			}
 		})
 	})
 })
