@@ -170,16 +170,16 @@
 ### Phase 3: Fact Extraction and Inference
 
 #### 7.0 Create Fact Extraction Engine
-- [ ] 7.1 Implement fact extraction from single CareerEvent
-- [ ] 7.2 Implement fact extraction from Burst (multiple related events)
-- [ ] 7.3 Create competency inference from event text and tags
-- [ ] 7.4 Create role fit inference (Principal/EM/Staff/Senior IC) from facts and context
-- [ ] 7.5 Create audience relevance inference (Hiring Manager, Recruiter, Peer)
-- [ ] 7.6 Create strength signal extraction (key achievements, impact indicators)
-- [ ] 7.7 Implement fact validation and filtering (no aspirational language, grounded metrics)
+- [x] 7.1 Implement fact extraction from single CareerEvent
+- [x] 7.2 Implement fact extraction from Burst (multiple related events)
+- [x] 7.3 Create competency inference from event text and tags
+- [x] 7.4 Create role fit inference (Principal/EM/Staff/Senior IC) from facts and context
+- [x] 7.5 Create audience relevance inference (Hiring Manager, Recruiter, Peer)
+- [x] 7.6 Create strength signal extraction (key achievements, impact indicators)
+- [x] 7.7 Implement fact validation and filtering (no aspirational language, grounded metrics)
 - [ ] 7.8 Create service method: `ExtractFacts(ctx, event/burst) -> []Fact`
 - [ ] 7.9 Create service method: `ValidateFact(ctx, fact) -> error` (validation rules)
-- [ ] 7.10 Write unit tests for all extraction and inference components
+- [x] 7.10 Write unit tests for all extraction and inference components
 - [ ] 7.11 Write integration tests for complete fact extraction workflow
 
 #### 8.0 Create Fact Display Components
