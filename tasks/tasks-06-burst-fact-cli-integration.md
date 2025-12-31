@@ -310,6 +310,7 @@ showFacts := flag.Bool("show-facts", false, "Display all existing facts")
 - [x] Handlers execute correct operations
 - [x] Results display correctly
 - [x] Tests pass: `go test ./cmd/cli -v`
+- [x] **FIXED 2025-12-31**: `--detect-bursts` now properly saves bursts to database using `SaveBurstSuggestions()`
 
 #### 4.1 Implement Burst Detection Handler ✅ COMPLETE
 - [x] 8.1 Create handler function `handleDetectBursts(ctx, svc, out, logger)`

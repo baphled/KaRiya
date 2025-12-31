@@ -681,7 +681,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.burstListModel = models.NewBurstListModel(m.service, ctx)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = BurstListScreen
-			return m, nil
+			// Initialize the burst list model to load data
+			return m, m.burstListModel.Init()
 		case "m":
 			m.metadataReviewModel.Refresh()
 			m.previousScreen = m.currentScreen
