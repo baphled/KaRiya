@@ -82,19 +82,19 @@ func (c *Classifier) ClassifyAudienceRelevance(text string, roleFit career.RoleF
 func (c *Classifier) ExtractStrengthSignal(text string) string {
 	// Look for impact indicators
 	impactKeywords := map[string]string{
-		"delivered": "delivery capability",
-		"shipped":   "execution excellence",
-		"led":       "leadership",
-		"managed":   "management",
+		"delivered":   "delivery capability",
+		"shipped":     "execution excellence",
+		"led":         "leadership",
+		"managed":     "management",
 		"architected": "technical architecture",
-		"designed":  "design thinking",
-		"optimized": "optimization",
-		"improved":  "improvement mindset",
-		"reduced":   "efficiency focus",
-		"increased": "growth orientation",
-		"scaled":    "scalability expertise",
-		"mentored":  "mentoring ability",
-		"built":     "building capability",
+		"designed":    "design thinking",
+		"optimized":   "optimization",
+		"improved":    "improvement mindset",
+		"reduced":     "efficiency focus",
+		"increased":   "growth orientation",
+		"scaled":      "scalability expertise",
+		"mentored":    "mentoring ability",
+		"built":       "building capability",
 	}
 
 	lowerText := strings.ToLower(text)
@@ -208,4 +208,3 @@ func scoreText(text string, keywords []string) int {
 	}
 	return score
 }
-

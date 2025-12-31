@@ -1,4 +1,4 @@
-Use `master-task-prompt` and the memory-loaded language rules to process the atomic tasks for: ./tasks/tasks-03-metadata-clarification.md
+Use `master-task-prompt` and the memory-loaded language rules to process the atomic tasks for: ./tasks/tasks-05-burst-fact-extraction.md
 
   - Stick strictly to `master-task-prompt` guidelines
     - This means make sure we use it as a check-list only
@@ -10,3 +10,4 @@ Use `master-task-prompt` and the memory-loaded language rules to process the ato
   - Follow existing patterns and avoid side effects
   - Return checklist only under `## Tasks`
   - Do not explain or regenerate later
+  - *Do* update checkboxes when tasks are done

@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // HelpModel represents the help screen
@@ -16,7 +16,7 @@ type HelpModel struct {
 	width          int
 	height         int
 	closed         bool
-	helpFooter       components.HelpFooterModel
+	helpFooter     components.HelpFooterModel
 }
 
 // HelpSection contains help content for a topic
@@ -181,7 +181,7 @@ CV Building:
 		width:          80,
 		height:         24,
 		closed:         false,
-		helpFooter:       components.NewHelpFooter("help", 80),
+		helpFooter:     components.NewHelpFooter("help", 80),
 	}
 }
 

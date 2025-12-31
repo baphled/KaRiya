@@ -165,4 +165,3 @@ var _ = Describe("Metadata Review to Editor E2E Workflow", func() {
 		})
 	})
 })
-

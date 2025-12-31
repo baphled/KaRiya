@@ -1,17 +1,10 @@
 package burst_fact
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestClassifier(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Burst Fact Classifier Suite")
-}
 
 var _ = Describe("Classifier", func() {
 	var classifier *Classifier
@@ -140,4 +133,3 @@ var _ = Describe("Classifier", func() {
 		})
 	})
 })
-

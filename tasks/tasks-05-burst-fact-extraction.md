@@ -131,7 +131,7 @@
 
 #### 4.0 Create Burst Detection Engine
 - [ ] 4.1 Implement burst detection algorithm using event text similarity and temporal proximity
-- [ ] 4.2 Create similarity scorer (text matching, keyword overlap, company/project matching)
+- [x] 4.2 Create similarity scorer (text matching, keyword overlap, company/project matching)
 - [ ] 4.3 Implement temporal grouping (events within 6 months considered related)
 - [ ] 4.4 Create burst suggestion generation (returns list of suggested bursts with confidence scores)
 - [ ] 4.5 Implement user confirmation workflow (suggest burst, user confirms or rejects)

@@ -28,7 +28,7 @@ type SuccessModel struct {
 	width          int
 	height         int
 	breadcrumbs    []string // Navigation breadcrumb trail
-	helpFooter       components.HelpFooterModel
+	helpFooter     components.HelpFooterModel
 }
 
 // NewSuccessModel creates a new success model with the captured event
@@ -38,7 +38,7 @@ func NewSuccessModel(event *career.CareerEvent) *SuccessModel {
 		selectedAction: CaptureAnotherOption,
 		width:          80,
 		height:         24,
-		helpFooter:       components.NewHelpFooter("success", 80),
+		helpFooter:     components.NewHelpFooter("success", 80),
 	}
 }
 

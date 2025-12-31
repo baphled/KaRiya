@@ -16,7 +16,7 @@ type ConfirmationDialog struct {
 	focused     bool // true = confirm, false = cancel
 	confirmed   bool
 	cancelled   bool
-	helpFooter    components.HelpFooterModel
+	helpFooter  components.HelpFooterModel
 }
 
 // NewConfirmationDialog creates a new confirmation dialog
@@ -29,7 +29,7 @@ func NewConfirmationDialog(title, message string) *ConfirmationDialog {
 		focused:     false, // Default to cancel for safety
 		confirmed:   false,
 		cancelled:   false,
-		helpFooter:    components.NewHelpFooter("confirmation_dialog", 80),
+		helpFooter:  components.NewHelpFooter("confirmation_dialog", 80),
 	}
 }
 

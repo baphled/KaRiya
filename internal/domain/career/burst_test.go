@@ -11,13 +11,13 @@ var _ = Describe("Burst", func() {
 	Context("when creating a burst", func() {
 		It("should have all required fields", func() {
 			burst := &Burst{
-				ID:                "burst-123",
-				Name:              "Platform Migration",
-				Description:       "Led team to migrate legacy platform to microservices",
-				EventIDs:          []string{"event-1", "event-2"},
-				CompetencyFocus:   "technical",
-				CreatedAt:         time.Now(),
-				UpdatedAt:         time.Now(),
+				ID:              "burst-123",
+				Name:            "Platform Migration",
+				Description:     "Led team to migrate legacy platform to microservices",
+				EventIDs:        []string{"event-1", "event-2"},
+				CompetencyFocus: "technical",
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
 			}
 
 			Expect(burst.ID).To(Equal("burst-123"))
@@ -271,4 +271,3 @@ var _ = Describe("Burst", func() {
 		})
 	})
 })
-

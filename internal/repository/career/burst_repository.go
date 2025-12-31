@@ -250,4 +250,3 @@ func (r *MemoryBurstRepository) Count(ctx context.Context, filters BurstListFilt
 	}
 	return len(bursts), nil
 }
-

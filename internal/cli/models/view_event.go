@@ -3,8 +3,8 @@ package models
 import (
 	"context"
 	"fmt"
-	"strings"
 	"github.com/baphled/kariya/internal/cli/components"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
