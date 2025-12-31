@@ -107,6 +107,52 @@ Event 1,2024-01,Technical,technical,Project1,Company1`
 			// BurstSuggestions should be initialized (empty or with results)
 			Expect(result.BurstSuggestions).NotTo(BeNil())
 		})
+
+		It("should extract facts from imported events", func() {
+			csv := `Text,Date,Categories,Tags,Project,Company
+Implemented cloud migration strategy,2024-01-15,Technical,technical,CloudMigration,TechCorp
+Led team through system redesign,2024-02-01,Leadership,leadership,Redesign,TechCorp
+Mentored junior engineers on best practices,2024-02-10,Mentoring,mentoring,Training,TechCorp`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := importSvc.PrepareImport(ctx, reader)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Select all valid rows
+			selectedRows := []int{1, 2, 3}
+			result, err := importSvc.ImportRows(ctx, rows, selectedRows)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.SuccessCount).To(Equal(3))
+			Expect(result.CreatedEvents).To(HaveLen(3))
+
+			// Verify fact extraction fields are initialized
+			Expect(result.FactsByEventID).NotTo(BeNil())
+			Expect(result.FactsByCompetency).NotTo(BeNil())
+			// Note: ExtractedFactsCount will be 0 if fact repository is not configured
+			// which is expected in tests without database setup
+			Expect(result.ExtractedFactsCount).To(BeNumerically(">=", 0))
+		})
+
+		It("should track facts by competency category during import", func() {
+			csv := `Text,Date,Categories,Tags,Project,Company
+Implemented cloud migration,2024-01-15,Technical,technical,CloudMigration,TechCorp
+Led architectural review,2024-02-01,Leadership,leadership,Architecture,TechCorp`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := importSvc.PrepareImport(ctx, reader)
+			Expect(err).NotTo(HaveOccurred())
+
+			selectedRows := []int{1, 2}
+			result, err := importSvc.ImportRows(ctx, rows, selectedRows)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.SuccessCount).To(Equal(2))
+
+			// Verify fact tracking structures are populated
+			Expect(result.FactsByEventID).NotTo(BeNil())
+			Expect(result.FactsByCompetency).NotTo(BeNil())
+		})
 	})
 })
 

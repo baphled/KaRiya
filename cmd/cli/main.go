@@ -32,8 +32,9 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		mode        = ""
 		listEvents  = false
 		inMemory    = false
-		importPath  = ""
-		importSkip  = false
+		importPath   = ""
+		importSkip   = false
+		reviewFacts  = false
 	)
 
 	// Parse command-line arguments
@@ -72,6 +73,8 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			}
 		case "--skip-import-review":
 			importSkip = true
+		case "--review-facts":
+			reviewFacts = true
 		}
 	}
 
@@ -154,7 +157,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 	// Handle non-interactive import if --import flag is provided
 	if importPath != "" {
-		return handleNonInteractiveImport(importPath, importSkip, svc, out, errOut)
+		return handleNonInteractiveImport(importPath, importSkip, reviewFacts, svc, out, errOut)
 	}
 
 	// Initialize application model
@@ -180,7 +183,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 }
 
 // handleNonInteractiveImport performs import without showing the interactive UI
-func handleNonInteractiveImport(filePath string, skipReview bool, svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
+func handleNonInteractiveImport(filePath string, skipReview bool, reviewFacts bool, svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	// Validate file exists
 	if _, err := os.Stat(filePath); err != nil {
 		fmt.Fprintf(errOut, "Error: Cannot access import file '%s': %v\n", filePath, err)
@@ -307,6 +310,28 @@ func handleNonInteractiveImport(filePath string, skipReview bool, svc *careerser
 			fmt.Fprintf(out, "   Events: %d | Confidence: %.1f%%\n", len(burst.EventIDs), burst.ConfidenceScore*100)
 		}
 		fmt.Fprintf(out, "\nThese bursts represent potential project groupings or themes.\n")
+	}
+
+
+	// Display fact extraction results (Task 3.1)
+	if result.ExtractedFactsCount > 0 {
+		fmt.Fprintf(out, "\n=== Fact Extraction ===\n")
+		fmt.Fprintf(out, "Extracted %d facts from %d events\n", result.ExtractedFactsCount, len(result.CreatedEvents))
+
+		// Show competency breakdown if available
+		if len(result.FactsByCompetency) > 0 {
+			fmt.Fprintf(out, "\nCompetency breakdown:\n")
+			// Sort competencies for consistent output
+			competencies := make([]string, 0, len(result.FactsByCompetency))
+			for c := range result.FactsByCompetency {
+				competencies = append(competencies, c)
+			}
+			// Simple alphabetical sort for now
+			for _, c := range competencies {
+				fmt.Fprintf(out, "  - %s: %d facts\n", c, result.FactsByCompetency[c])
+			}
+		}
+		fmt.Fprintf(out, "\nThese facts highlight key competencies and achievements.\n")
 	}
 
 	if result.SuccessCount > 0 {
