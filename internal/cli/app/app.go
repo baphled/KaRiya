@@ -480,6 +480,8 @@ func (m *Model) View() string {
 	case MetadataReviewScreen:
 		if m.metadataReviewModel != nil {
 			m.metadataReviewModel.SetBreadcrumbs(m.breadcrumbs)
+			// Ensure width/height are propagated
+			m.metadataReviewModel.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})
 			return m.metadataReviewModel.View()
 		}
 		return "Error: Metadata Review model not initialized\n"
@@ -501,6 +503,8 @@ func (m *Model) View() string {
 	case SuccessScreen:
 		if m.successModel != nil {
 			m.successModel.SetBreadcrumbs(m.breadcrumbs)
+			// Ensure width/height are propagated
+			m.successModel.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})
 			return m.successModel.View()
 		}
 		return "Success!\n"
