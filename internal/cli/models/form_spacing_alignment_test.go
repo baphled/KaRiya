@@ -94,8 +94,8 @@ var _ = Describe("Form Model - Field Spacing and Alignment", func() {
 			for _, line := range lines {
 				if strings.Contains(line, ":") &&
 					(strings.Contains(line, "Event") ||
-					strings.Contains(line, "Date") ||
-					strings.Contains(line, "Company")) {
+						strings.Contains(line, "Date") ||
+						strings.Contains(line, "Company")) {
 					labelPositions = append(labelPositions, line)
 				}
 			}
@@ -288,4 +288,3 @@ var _ = Describe("Form Model - Field Spacing and Alignment", func() {
 		})
 	})
 })
-

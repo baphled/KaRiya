@@ -280,4 +280,3 @@ var _ = Describe("Form Model - Focus Indicators Consistency", func() {
 		})
 	})
 })
-

@@ -20,42 +20,43 @@ type BulkOperationsMsg struct {
 
 // MetadataReviewModel represents the metadata review screen
 type MetadataReviewModel struct {
-	service       *careerservice.Service
-	calculator    *careerservice.DataQualityCalculator
-	ctx           context.Context
-	events        []*career.CareerEvent
-	qualityScores map[string]*careerservice.QualityScore
-	selectedIdx   int
-	width         int
-	height        int
-	err           error
-	expandedIdx   int    // Index of expanded event (-1 if none)
-	filterMode    string // "all", "incomplete"
-	sortBy        string // "date", "company", "quality"
-	importedEventIDs map[string]bool // IDs of recently imported events
-	isImportReview   bool            // True if reviewing only imported events
-	fieldOrigins map[string]map[string]bool // eventID -> field -> isFromCSV
-	parsingWarnings map[string][]string // eventID -> warnings
-	duplicateStatus map[string]string // eventID -> original event ID (empty if not duplicate)
-	helpFooter components.HelpFooterModel // Help footer
+	service          *careerservice.Service
+	calculator       *careerservice.DataQualityCalculator
+	ctx              context.Context
+	events           []*career.CareerEvent
+	qualityScores    map[string]*careerservice.QualityScore
+	selectedIdx      int
+	width            int
+	height           int
+	err              error
+	expandedIdx      int                        // Index of expanded event (-1 if none)
+	filterMode       string                     // "all", "incomplete"
+	sortBy           string                     // "date", "company", "quality"
+	importedEventIDs map[string]bool            // IDs of recently imported events
+	isImportReview   bool                       // True if reviewing only imported events
+	fieldOrigins     map[string]map[string]bool // eventID -> field -> isFromCSV
+	parsingWarnings  map[string][]string        // eventID -> warnings
+	duplicateStatus  map[string]string          // eventID -> original event ID (empty if not duplicate)
+	helpFooter       components.HelpFooterModel // Help footer
+	breadcrumbs      []string                   // Navigation breadcrumb trail
 }
 
 // NewMetadataReviewModel creates a new metadata review model
 func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *MetadataReviewModel {
 	calculator := careerservice.NewDataQualityCalculator()
 	model := &MetadataReviewModel{
-		service:       svc,
-		calculator:    calculator,
-		ctx:           ctx,
-		selectedIdx:   0,
-		expandedIdx:   -1,
-		filterMode:    "all",
-		sortBy:        "quality",
-		qualityScores: make(map[string]*careerservice.QualityScore),
-			fieldOrigins: make(map[string]map[string]bool),
+		service:         svc,
+		calculator:      calculator,
+		ctx:             ctx,
+		selectedIdx:     0,
+		expandedIdx:     -1,
+		filterMode:      "all",
+		sortBy:          "quality",
+		qualityScores:   make(map[string]*careerservice.QualityScore),
+		fieldOrigins:    make(map[string]map[string]bool),
 		parsingWarnings: make(map[string][]string),
 		duplicateStatus: make(map[string]string),
-		helpFooter:       components.NewHelpFooter("metadata_review", 80),
+		helpFooter:      components.NewHelpFooter("metadata_review", 80),
 	}
 
 	// Load events
@@ -68,13 +69,13 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 // NewMetadataReviewModelForImport creates a metadata review model for imported events
 func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Context, importedEventIDs []string) *MetadataReviewModel {
 	calculator := careerservice.NewDataQualityCalculator()
-	
+
 	// Convert slice to map for O(1) lookup
 	importedMap := make(map[string]bool)
 	for _, id := range importedEventIDs {
 		importedMap[id] = true
 	}
-	
+
 	model := &MetadataReviewModel{
 		service:          svc,
 		calculator:       calculator,
@@ -86,17 +87,16 @@ func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Con
 		qualityScores:    make(map[string]*careerservice.QualityScore),
 		importedEventIDs: importedMap,
 		isImportReview:   true,
-			fieldOrigins: make(map[string]map[string]bool),
-		parsingWarnings: make(map[string][]string),
-		duplicateStatus: make(map[string]string),
-}
+		fieldOrigins:     make(map[string]map[string]bool),
+		parsingWarnings:  make(map[string][]string),
+		duplicateStatus:  make(map[string]string),
+	}
 
 	// Load events (will be filtered to only imported)
 	model.loadEvents()
 
 	return model
 }
-
 
 func (m *MetadataReviewModel) loadEvents() {
 	filters := careerrepo.ListFilters{
@@ -254,9 +254,10 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *MetadataReviewModel) View() string {
 	var content []string
 
-	// Header
-	header := styles.HeaderMain.Render("Metadata Review")
-	content = append(content, header)
+	// Header with breadcrumbs
+	header := components.NewHeader("Metadata Review", m.width)
+	header.SetBreadcrumbs(m.breadcrumbs)
+	content = append(content, header.View())
 
 	// Status bar
 	statusText := fmt.Sprintf("Showing %d events | Filter: %s | Sort: %s | Press 'f' to filter, 's' to sort",
@@ -548,4 +549,9 @@ func (m *MetadataReviewModel) IsDuplicate(eventID string) bool {
 func (m *MetadataReviewModel) GetOriginalEventID(eventID string) string {
 	_, originalID := m.GetDuplicateStatus(eventID)
 	return originalID
+}
+
+// SetBreadcrumbs sets breadcrumb trail for display in header
+func (m *MetadataReviewModel) SetBreadcrumbs(crumbs []string) {
+	m.breadcrumbs = crumbs
 }

@@ -276,4 +276,3 @@ var _ = Describe("Form Model - Character Counter Display Consistency", func() {
 		})
 	})
 })
-

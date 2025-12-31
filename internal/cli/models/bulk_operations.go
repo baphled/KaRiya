@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -54,17 +54,17 @@ func NewBulkOperationsModel(
 	ctx context.Context,
 ) *BulkOperationsModel {
 	return &BulkOperationsModel{
-		events:      events,
-		service:     service,
-		cliService:  cliService,
-		ctx:         ctx,
-		selected:    make(map[int]bool),
-		focusIndex:  0,
-		width:       80,
-		height:      24,
+		events:       events,
+		service:      service,
+		cliService:   cliService,
+		ctx:          ctx,
+		selected:     make(map[int]bool),
+		focusIndex:   0,
+		width:        80,
+		height:       24,
 		fieldOrigins: make(map[string]map[string]bool),
-		helpFooter:  components.NewHelpFooter("bulk_operations", 80),
-}
+		helpFooter:   components.NewHelpFooter("bulk_operations", 80),
+	}
 }
 
 // Init initializes the model
@@ -101,7 +101,7 @@ func (m *BulkOperationsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-	
+
 	}
 	return m, nil
 }

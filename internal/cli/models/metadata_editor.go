@@ -49,7 +49,7 @@ type MetadataEditorModel struct {
 	height           int
 	validator        *validation.MetadataValidator
 	calculator       *careerservice.DataQualityCalculator
-	helpFooter components.HelpFooterModel // Help footer
+	helpFooter       components.HelpFooterModel // Help footer
 }
 
 // NewMetadataEditorModel creates a new metadata editor model
@@ -326,7 +326,7 @@ func (m *MetadataEditorModel) View() string {
 	// Add help footer
 	m.helpFooter.SetWidth(m.width)
 	helpFooterContent := m.helpFooter.View()
-	
+
 	sb.WriteString(helpFooterContent)
 	return sb.String()
 }

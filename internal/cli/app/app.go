@@ -467,16 +467,19 @@ func (m *Model) View() string {
 		return m.renderHome()
 	case CaptureScreen:
 		if m.formModel != nil {
+			m.formModel.SetBreadcrumbs(m.breadcrumbs)
 			return m.formModel.View()
 		}
 		return "Error: Form model not initialized\n"
 	case ListScreen:
 		if m.listModel != nil {
+			m.listModel.SetBreadcrumbs(m.breadcrumbs)
 			return m.listModel.View()
 		}
 		return "Error: List model not initialized\n"
 	case MetadataReviewScreen:
 		if m.metadataReviewModel != nil {
+			m.metadataReviewModel.SetBreadcrumbs(m.breadcrumbs)
 			return m.metadataReviewModel.View()
 		}
 		return "Error: Metadata Review model not initialized\n"
@@ -497,6 +500,7 @@ func (m *Model) View() string {
 		return "Error: Details model not initialized\n"
 	case SuccessScreen:
 		if m.successModel != nil {
+			m.successModel.SetBreadcrumbs(m.breadcrumbs)
 			return m.successModel.View()
 		}
 		return "Success!\n"

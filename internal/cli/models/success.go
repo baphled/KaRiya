@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,6 +27,7 @@ type SuccessModel struct {
 	selectedAction ActionOption
 	width          int
 	height         int
+	breadcrumbs    []string // Navigation breadcrumb trail
 }
 
 // NewSuccessModel creates a new success model with the captured event
@@ -112,9 +114,10 @@ func (m *SuccessModel) View() string {
 	// Create text style for help text
 	textMuted := lipgloss.NewStyle().Foreground(styles.ColorTextMuted)
 
-	// Success header
-	header := styles.HeaderMain.Render("✓ Success! Event Captured")
-	b.WriteString(header)
+	// Success header with breadcrumbs
+	header := components.NewHeader("✓ Success! Event Captured", m.width)
+	header.SetBreadcrumbs(m.breadcrumbs)
+	b.WriteString(header.View())
 	b.WriteString("\n\n")
 
 	// Event card
@@ -255,3 +258,8 @@ type BackMsg struct{}
 
 // QuitMsg signals the user wants to quit the application
 type QuitMsg struct{}
+
+// SetBreadcrumbs sets breadcrumb trail for display in header
+func (m *SuccessModel) SetBreadcrumbs(crumbs []string) {
+	m.breadcrumbs = crumbs
+}
