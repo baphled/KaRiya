@@ -68,4 +68,3 @@ type FactRejectedMsg struct {
 type SaveFactMsg struct {
 	Fact *career.Fact
 }
-

@@ -94,7 +94,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 				// Second generation should have fewer suggestions
 				suggestions2, err := workflow.GenerateSuggestions(ctx, events, nil)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(suggestions2)).To(BeNumerically("<",initialCount))
+				Expect(len(suggestions2)).To(BeNumerically("<", initialCount))
 			}
 		})
 
@@ -137,7 +137,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 
 			suggestions, err := workflow.GenerateSuggestions(ctx, events, nil)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(suggestions)).To(BeNumerically(">=",0))
+			Expect(len(suggestions)).To(BeNumerically(">=", 0))
 		})
 
 		It("should respect custom detection options", func() {
@@ -270,7 +270,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 			}
 
 			// Verify state exists
-			Expect(len(workflow.GetConfirmedBursts())).To(BeNumerically(">=",0))
+			Expect(len(workflow.GetConfirmedBursts())).To(BeNumerically(">=", 0))
 
 			// Reset
 			workflow.Reset()
@@ -304,7 +304,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 			suggestions, err := workflow.GenerateSuggestions(ctx, events, nil)
 			Expect(err).NotTo(HaveOccurred())
 			// Similar text might generate suggestions
-			Expect(len(suggestions)).To(BeNumerically(">=",0))
+			Expect(len(suggestions)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle events with same company and project", func() {
@@ -334,7 +334,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 			Expect(err).NotTo(HaveOccurred())
 			// Should detect related events
 			if len(suggestions) > 0 {
-				Expect(suggestions[0].ConfidenceScore).To(BeNumerically(">",0.5))
+				Expect(suggestions[0].ConfidenceScore).To(BeNumerically(">", 0.5))
 			}
 		})
 	})
@@ -363,7 +363,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 
 			matrix := detector.buildSimilarityMatrix(events)
 			score := matrix["1"]["2"]
-			Expect(score).To(BeNumerically(">",0.0))
+			Expect(score).To(BeNumerically(">", 0.0))
 		})
 
 		It("should score events with company match correctly", func() {
@@ -389,7 +389,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 
 			matrix := detector.buildSimilarityMatrix(events)
 			score := matrix["1"]["2"]
-			Expect(score).To(BeNumerically(">",0.0))
+			Expect(score).To(BeNumerically(">", 0.0))
 		})
 	})
 
@@ -424,7 +424,7 @@ var _ = Describe("Burst Detection Integration Tests", func() {
 			suggestions, err := workflow.GenerateSuggestions(ctx, events, nil)
 			Expect(err).NotTo(HaveOccurred())
 			// Should find related events
-			Expect(len(suggestions)).To(BeNumerically(">=",0))
+			Expect(len(suggestions)).To(BeNumerically(">=", 0))
 		})
 	})
 })

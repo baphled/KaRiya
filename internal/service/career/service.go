@@ -243,6 +243,7 @@ func (s *Service) GetEventByID(ctx context.Context, eventID string) (*domain.Car
 	return event, err
 
 }
+
 // SuggestBursts detects and suggests bursts for provided event IDs
 func (s *Service) SuggestBursts(ctx context.Context, eventIDs []string) ([]burst_fact.BurstSuggestion, error) {
 	opts := &burst_fact.DetectionOptions{
@@ -357,7 +358,7 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 		if err := s.ConfirmBurst(ctx, burst); err != nil {
 			s.logger.WithFields(map[string]string{
 				"suggestion_name": suggestion.Name,
-				"error":          err.Error(),
+				"error":           err.Error(),
 			}).Warn("Failed to save burst suggestion")
 			continue
 		}
@@ -367,8 +368,8 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 
 	if len(savedBursts) > 0 {
 		s.logger.WithFields(map[string]string{
-			"saved_count":      fmt.Sprintf("%d", len(savedBursts)),
-			"suggested_count":  fmt.Sprintf("%d", len(suggestions)),
+			"saved_count":     fmt.Sprintf("%d", len(savedBursts)),
+			"suggested_count": fmt.Sprintf("%d", len(suggestions)),
 		}).Info("Burst suggestions saved as persistent bursts")
 	}
 
@@ -401,9 +402,9 @@ func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.Caree
 
 	s.logger.
 		WithFields(map[string]string{
-			"event_id":    event.ID,
-			"fact_count":  fmt.Sprintf("%d", len(facts)),
-			"event_text":  event.Text,
+			"event_id":   event.ID,
+			"fact_count": fmt.Sprintf("%d", len(facts)),
+			"event_text": event.Text,
 		}).
 		Info("Facts extracted from event")
 
@@ -434,9 +435,9 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 		if err != nil {
 			s.logger.
 				WithFields(map[string]string{
-					"event_id":   eventID,
-					"burst_id":   burst.ID,
-					"error":      err.Error(),
+					"event_id": eventID,
+					"burst_id": burst.ID,
+					"error":    err.Error(),
 				}).
 				Debug("Event not found for burst fact extraction")
 			continue
@@ -447,8 +448,8 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 	if len(events) == 0 {
 		s.logger.
 			WithFields(map[string]string{
-				"burst_id":     burst.ID,
-				"event_count":  fmt.Sprintf("%d", len(burst.EventIDs)),
+				"burst_id":    burst.ID,
+				"event_count": fmt.Sprintf("%d", len(burst.EventIDs)),
 			}).
 			Warn("No events found for burst fact extraction")
 		return []domain.Fact{}, nil

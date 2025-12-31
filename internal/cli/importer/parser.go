@@ -12,24 +12,24 @@ import (
 
 // ParsedRow represents a single CSV row with its parsed data and validation status
 type ParsedRow struct {
-	RowNumber         int // 1-based row number in CSV (excluding header)
-	RawData           map[string]string
-	Event             *career.CareerEvent
-	ValidationErrors  []string
-	IsValid           bool
-	IsDuplicate       bool
-	DuplicateOf       string // ID of duplicate event if found
-	MappedCategories  []string // Original categories from CSV
-	MappedTags        []string // Original tags from CSV
+	RowNumber        int // 1-based row number in CSV (excluding header)
+	RawData          map[string]string
+	Event            *career.CareerEvent
+	ValidationErrors []string
+	IsValid          bool
+	IsDuplicate      bool
+	DuplicateOf      string   // ID of duplicate event if found
+	MappedCategories []string // Original categories from CSV
+	MappedTags       []string // Original tags from CSV
 }
 
 // CSVParser handles parsing and validation of CSV files
 type CSVParser struct {
 	existingEvents *[]*career.CareerEvent
 	dateFormats    []string
-	categoryMapper  *CategoryMapper
-	tagMapper       *TagMapper
-	mapData         bool // Whether to auto-map categories and tags
+	categoryMapper *CategoryMapper
+	tagMapper      *TagMapper
+	mapData        bool // Whether to auto-map categories and tags
 }
 
 // NewCSVParser creates a new CSV parser
@@ -167,6 +167,7 @@ func getColumnNames(columnMap map[string]int) []string {
 	}
 	return names
 }
+
 // parseRow parses a single row and creates a CareerEvent
 func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap map[string]int) *ParsedRow {
 	parsedRow := &ParsedRow{
@@ -395,4 +396,3 @@ func getAllowedCategoriesList() []string {
 	}
 	return categories
 }
-

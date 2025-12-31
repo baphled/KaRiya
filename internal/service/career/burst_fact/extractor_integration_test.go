@@ -28,12 +28,12 @@ var _ = Describe("Extractor Integration Tests", func() {
 	Describe("Complete Event-to-Fact Extraction Workflow", func() {
 		It("extracts enriched facts from detailed career event", func() {
 			event := &career.CareerEvent{
-				ID:   uuid.New().String(),
-				Text: "Architected and delivered enterprise-scale microservices platform leading cross-functional team through complete migration from monolith",
-				Date: time.Now().Add(-90 * 24 * time.Hour),
-				Company: "TechCorp Inc.",
-				Project: "Platform Migration Initiative",
-				Tags: []string{"technical", "leadership", "achievement"},
+				ID:        uuid.New().String(),
+				Text:      "Architected and delivered enterprise-scale microservices platform leading cross-functional team through complete migration from monolith",
+				Date:      time.Now().Add(-90 * 24 * time.Hour),
+				Company:   "TechCorp Inc.",
+				Project:   "Platform Migration Initiative",
+				Tags:      []string{"technical", "leadership", "achievement"},
 				CreatedAt: time.Now().Add(-90 * 24 * time.Hour),
 				UpdatedAt: time.Now().Add(-90 * 24 * time.Hour),
 			}
@@ -296,4 +296,3 @@ var _ = Describe("Extractor Integration Tests", func() {
 		})
 	})
 })
-

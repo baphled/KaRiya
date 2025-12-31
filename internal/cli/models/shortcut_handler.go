@@ -76,14 +76,14 @@ func (sh *ShortcutHandler) ClearShortcuts() {
 
 // CommonShortcuts provides a standard set of shortcuts used across the application
 type CommonShortcuts struct {
-	Quit       key.Binding
-	Back       key.Binding
-	Help       key.Binding
-	Enter      key.Binding
-	Up         key.Binding
-	Down       key.Binding
-	PageUp     key.Binding
-	PageDown   key.Binding
+	Quit     key.Binding
+	Back     key.Binding
+	Help     key.Binding
+	Enter    key.Binding
+	Up       key.Binding
+	Down     key.Binding
+	PageUp   key.Binding
+	PageDown key.Binding
 }
 
 // NewCommonShortcuts creates a standard set of keyboard shortcuts
@@ -123,4 +123,3 @@ func NewCommonShortcuts() CommonShortcuts {
 		),
 	}
 }
-

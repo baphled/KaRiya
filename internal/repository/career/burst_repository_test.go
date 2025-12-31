@@ -367,4 +367,3 @@ var _ = Describe("BurstRepository", func() {
 		})
 	})
 })
-

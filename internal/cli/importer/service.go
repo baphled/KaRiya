@@ -19,9 +19,9 @@ type ImportResult struct {
 	CreatedEvents       []*career.CareerEvent
 	FailedRows          []*ParsedRow
 	BurstSuggestions    []burst_fact.BurstSuggestion // Burst suggestions detected from imported events
-	ExtractedFactsCount int                           // Number of facts extracted from imported events
-	FactsByEventID      map[string][]*career.Fact     // Facts keyed by source event ID
-	FactsByCompetency   map[string]int                // Count of facts by competency category
+	ExtractedFactsCount int                          // Number of facts extracted from imported events
+	FactsByEventID      map[string][]*career.Fact    // Facts keyed by source event ID
+	FactsByCompetency   map[string]int               // Count of facts by competency category
 }
 
 // ImportService handles the import workflow

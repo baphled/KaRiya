@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	careerservice "github.com/baphled/kariya/internal/service/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -15,10 +15,10 @@ import (
 
 var _ = Describe("BurstSuggestionModel", func() {
 	var (
-		repo         *careerrepo.MemoryRepository
-		svc          *careerservice.Service
-		ctx          context.Context
-		suggestions  []burstfact.BurstSuggestion
+		repo           *careerrepo.MemoryRepository
+		svc            *careerservice.Service
+		ctx            context.Context
+		suggestions    []burstfact.BurstSuggestion
 		event1, event2 *career.CareerEvent
 	)
 
@@ -263,15 +263,15 @@ var _ = Describe("BurstSuggestionModel", func() {
 
 		It("maintains related events cache", func() {
 			model := NewBurstSuggestionModel(svc, suggestions, ctx)
-			
+
 			// Cache map should be initialized and empty
 			Expect(model.relatedEvents).NotTo(BeNil())
 			Expect(len(model.relatedEvents)).To(Equal(0))
-			
+
 			// Populate cache
 			events := []*career.CareerEvent{event1}
 			model.relatedEvents[0] = events
-			
+
 			// Cache entry should exist
 			Expect(model.relatedEvents[0]).NotTo(BeNil())
 			Expect(len(model.relatedEvents[0])).To(Equal(1))
@@ -382,4 +382,3 @@ var _ = Describe("BurstSuggestionModel", func() {
 		})
 	})
 })
-

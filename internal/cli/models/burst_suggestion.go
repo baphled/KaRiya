@@ -37,22 +37,22 @@ const (
 
 // BurstSuggestionModel represents the burst suggestion review and confirmation screen
 type BurstSuggestionModel struct {
-	service           *careerservice.Service
-	ctx               context.Context
-	suggestions       []burstfact.BurstSuggestion
-	currentIdx        int
-	confirmed         []burstfact.BurstSuggestion
-	rejected          []burstfact.BurstSuggestion
-	editing           bool
-	editField         BurstSuggestionEditField
-	editedNames       map[int]string      // Map of suggestion index to edited name
-	editedDescs       map[int]string      // Map of suggestion index to edited description
-	inputs            []textinput.Model   // For editing name and description
-	focusIndex        int
-	relatedEvents     map[int][]*career.CareerEvent // Cache of related events
-	width             int
-	height            int
-	helpFooter        components.HelpFooterModel // Help footer
+	service       *careerservice.Service
+	ctx           context.Context
+	suggestions   []burstfact.BurstSuggestion
+	currentIdx    int
+	confirmed     []burstfact.BurstSuggestion
+	rejected      []burstfact.BurstSuggestion
+	editing       bool
+	editField     BurstSuggestionEditField
+	editedNames   map[int]string    // Map of suggestion index to edited name
+	editedDescs   map[int]string    // Map of suggestion index to edited description
+	inputs        []textinput.Model // For editing name and description
+	focusIndex    int
+	relatedEvents map[int][]*career.CareerEvent // Cache of related events
+	width         int
+	height        int
+	helpFooter    components.HelpFooterModel // Help footer
 }
 
 // NewBurstSuggestionModel creates a new burst suggestion model
@@ -68,21 +68,21 @@ func NewBurstSuggestionModel(svc *careerservice.Service, suggestions []burstfact
 	descInput.Width = 60
 
 	return &BurstSuggestionModel{
-		service:        svc,
-		ctx:            ctx,
-		suggestions:    suggestions,
-		currentIdx:     0,
-		confirmed:      []burstfact.BurstSuggestion{},
-		rejected:       []burstfact.BurstSuggestion{},
-		editing:        false,
-		editField:      BurstSuggestionNameField,
-		editedNames:    make(map[int]string),
-		editedDescs:    make(map[int]string),
-		inputs:         []textinput.Model{nameInput, descInput},
-		focusIndex:     0,
-		relatedEvents:  make(map[int][]*career.CareerEvent),
-		width:          80,
-		height:         24,
+		service:       svc,
+		ctx:           ctx,
+		suggestions:   suggestions,
+		currentIdx:    0,
+		confirmed:     []burstfact.BurstSuggestion{},
+		rejected:      []burstfact.BurstSuggestion{},
+		editing:       false,
+		editField:     BurstSuggestionNameField,
+		editedNames:   make(map[int]string),
+		editedDescs:   make(map[int]string),
+		inputs:        []textinput.Model{nameInput, descInput},
+		focusIndex:    0,
+		relatedEvents: make(map[int][]*career.CareerEvent),
+		width:         80,
+		height:        24,
 	}
 }
 
@@ -523,4 +523,3 @@ func (m *BurstSuggestionModel) createBurstFromSuggestion(suggestion burstfact.Bu
 		EventIDs:    suggestion.EventIDs,
 	}
 }
-

@@ -242,7 +242,7 @@ func (w *WorkflowState) GetStepDescription(step Step) string {
 func (w *WorkflowState) ReviewLater(step Step) {
 	// Mark as skipped for now, but track that items are pending
 	w.skippedSteps[step] = true
-	
+
 	// Update pending counts based on step
 	switch step {
 	case StepBurstSuggestion:
@@ -250,7 +250,7 @@ func (w *WorkflowState) ReviewLater(step Step) {
 	case StepFactExtraction:
 		// Pending facts will be set externally
 	}
-	
+
 	// Move to next step
 	w.currentStep = w.getNextStep(step)
 }
@@ -265,7 +265,7 @@ func (w *WorkflowState) GetPendingSummary() string {
 	if !w.HasPendingItems() {
 		return "No pending items"
 	}
-	
+
 	summary := ""
 	if w.pendingBursts > 0 {
 		summary += fmt.Sprintf("%d burst suggestions", w.pendingBursts)
@@ -276,7 +276,7 @@ func (w *WorkflowState) GetPendingSummary() string {
 		}
 		summary += fmt.Sprintf("%d fact extractions", w.pendingFacts)
 	}
-	
+
 	return summary
 }
 
@@ -289,4 +289,3 @@ func (w *WorkflowState) Reset() {
 	w.pendingFacts = 0
 	w.eventIDs = []string{}
 }
-

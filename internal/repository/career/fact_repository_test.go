@@ -25,12 +25,12 @@ var _ = Describe("FactRepository", func() {
 	Describe("Create", func() {
 		It("should create a new fact", func() {
 			fact := &career.Fact{
-				Text:                "Led migration of platform to microservices architecture",
+				Text:                 "Led migration of platform to microservices architecture",
 				CompetencyCategories: []string{"technical", "leadership"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"hiring_manager", "peer"},
-				StrengthSignal:      "leadership",
-				SourceEventID:       "event-1",
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"hiring_manager", "peer"},
+				StrengthSignal:       "leadership",
+				SourceEventID:        "event-1",
 			}
 
 			err := repository.Create(ctx, fact)
@@ -42,13 +42,13 @@ var _ = Describe("FactRepository", func() {
 
 		It("should return error for duplicate fact ID", func() {
 			fact := &career.Fact{
-				ID:                  "fact-1",
-				Text:                "Led migration of platform to microservices architecture",
+				ID:                   "fact-1",
+				Text:                 "Led migration of platform to microservices architecture",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"hiring_manager"},
-				StrengthSignal:      "leadership",
-				SourceEventID:       "event-1",
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"hiring_manager"},
+				StrengthSignal:       "leadership",
+				SourceEventID:        "event-1",
 			}
 
 			err := repository.Create(ctx, fact)
@@ -56,13 +56,13 @@ var _ = Describe("FactRepository", func() {
 
 			// Try to create again with same ID
 			duplicate := &career.Fact{
-				ID:                  "fact-1",
-				Text:                "Different fact text",
+				ID:                   "fact-1",
+				Text:                 "Different fact text",
 				CompetencyCategories: []string{"leadership"},
-				RoleFit:             career.RoleFitEM,
-				AudienceRelevance:   []string{"recruiter"},
-				StrengthSignal:      "management",
-				SourceEventID:       "event-2",
+				RoleFit:              career.RoleFitEM,
+				AudienceRelevance:    []string{"recruiter"},
+				StrengthSignal:       "management",
+				SourceEventID:        "event-2",
 			}
 
 			err = repository.Create(ctx, duplicate)
@@ -71,21 +71,21 @@ var _ = Describe("FactRepository", func() {
 
 		It("should generate unique ID if not provided", func() {
 			fact1 := &career.Fact{
-				Text:                "Fact 1",
+				Text:                 "Fact 1",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       "event-1",
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        "event-1",
 			}
 
 			fact2 := &career.Fact{
-				Text:                "Fact 2",
+				Text:                 "Fact 2",
 				CompetencyCategories: []string{"leadership"},
-				RoleFit:             career.RoleFitEM,
-				AudienceRelevance:   []string{"hiring_manager"},
-				StrengthSignal:      "leadership",
-				SourceEventID:       "event-2",
+				RoleFit:              career.RoleFitEM,
+				AudienceRelevance:    []string{"hiring_manager"},
+				StrengthSignal:       "leadership",
+				SourceEventID:        "event-2",
 			}
 
 			err1 := repository.Create(ctx, fact1)
@@ -100,12 +100,12 @@ var _ = Describe("FactRepository", func() {
 
 		It("should create fact with burst source", func() {
 			fact := &career.Fact{
-				Text:                "Coordinated team efforts across multiple projects",
+				Text:                 "Coordinated team efforts across multiple projects",
 				CompetencyCategories: []string{"leadership"},
-				RoleFit:             career.RoleFitEM,
-				AudienceRelevance:   []string{"hiring_manager"},
-				StrengthSignal:      "management",
-				SourceBurstID:       "burst-1",
+				RoleFit:              career.RoleFitEM,
+				AudienceRelevance:    []string{"hiring_manager"},
+				StrengthSignal:       "management",
+				SourceBurstID:        "burst-1",
 			}
 
 			err := repository.Create(ctx, fact)
@@ -118,12 +118,12 @@ var _ = Describe("FactRepository", func() {
 	Describe("GetByID", func() {
 		It("should retrieve an existing fact", func() {
 			fact := &career.Fact{
-				Text:                "Led migration of platform to microservices architecture",
+				Text:                 "Led migration of platform to microservices architecture",
 				CompetencyCategories: []string{"technical", "leadership"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"hiring_manager", "peer"},
-				StrengthSignal:      "leadership",
-				SourceEventID:       "event-1",
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"hiring_manager", "peer"},
+				StrengthSignal:       "leadership",
+				SourceEventID:        "event-1",
 			}
 
 			err := repository.Create(ctx, fact)
@@ -149,12 +149,12 @@ var _ = Describe("FactRepository", func() {
 	Describe("Update", func() {
 		It("should update an existing fact", func() {
 			fact := &career.Fact{
-				Text:                "Led migration of platform to microservices architecture",
+				Text:                 "Led migration of platform to microservices architecture",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       "event-1",
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        "event-1",
 			}
 
 			err := repository.Create(ctx, fact)
@@ -184,13 +184,13 @@ var _ = Describe("FactRepository", func() {
 
 		It("should return error for non-existent fact", func() {
 			fact := &career.Fact{
-				ID:                  "non-existent-id",
-				Text:                "Some fact text",
+				ID:                   "non-existent-id",
+				Text:                 "Some fact text",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       "event-1",
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        "event-1",
 			}
 
 			err := repository.Update(ctx, fact)
@@ -201,12 +201,12 @@ var _ = Describe("FactRepository", func() {
 	Describe("Delete", func() {
 		It("should delete an existing fact", func() {
 			fact := &career.Fact{
-				Text:                "Led migration of platform to microservices architecture",
+				Text:                 "Led migration of platform to microservices architecture",
 				CompetencyCategories: []string{"technical"},
-				RoleFit:             career.RoleFitStaff,
-				AudienceRelevance:   []string{"peer"},
-				StrengthSignal:      "technical",
-				SourceEventID:       "event-1",
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    []string{"peer"},
+				StrengthSignal:       "technical",
+				SourceEventID:        "event-1",
 			}
 
 			err := repository.Create(ctx, fact)
@@ -230,28 +230,28 @@ var _ = Describe("FactRepository", func() {
 			// Create test facts
 			facts := []*career.Fact{
 				{
-					Text:                "Led migration to microservices",
+					Text:                 "Led migration to microservices",
 					CompetencyCategories: []string{"technical", "leadership"},
-					RoleFit:             career.RoleFitStaff,
-					AudienceRelevance:   []string{"hiring_manager", "peer"},
-					StrengthSignal:      "leadership",
-					SourceEventID:       "event-1",
+					RoleFit:              career.RoleFitStaff,
+					AudienceRelevance:    []string{"hiring_manager", "peer"},
+					StrengthSignal:       "leadership",
+					SourceEventID:        "event-1",
 				},
 				{
-					Text:                "Mentored junior engineers",
+					Text:                 "Mentored junior engineers",
 					CompetencyCategories: []string{"mentoring"},
-					RoleFit:             career.RoleFitSeniorIC,
-					AudienceRelevance:   []string{"peer"},
-					StrengthSignal:      "mentoring",
-					SourceEventID:       "event-2",
+					RoleFit:              career.RoleFitSeniorIC,
+					AudienceRelevance:    []string{"peer"},
+					StrengthSignal:       "mentoring",
+					SourceEventID:        "event-2",
 				},
 				{
-					Text:                "Designed product roadmap",
+					Text:                 "Designed product roadmap",
 					CompetencyCategories: []string{"product"},
-					RoleFit:             career.RoleFitEM,
-					AudienceRelevance:   []string{"hiring_manager"},
-					StrengthSignal:      "product vision",
-					SourceEventID:       "event-3",
+					RoleFit:              career.RoleFitEM,
+					AudienceRelevance:    []string{"hiring_manager"},
+					StrengthSignal:       "product vision",
+					SourceEventID:        "event-3",
 				},
 			}
 
@@ -351,28 +351,28 @@ var _ = Describe("FactRepository", func() {
 			// Create test facts
 			facts := []*career.Fact{
 				{
-					Text:                "Technical fact 1",
+					Text:                 "Technical fact 1",
 					CompetencyCategories: []string{"technical"},
-					RoleFit:             career.RoleFitStaff,
-					AudienceRelevance:   []string{"peer"},
-					StrengthSignal:      "technical",
-					SourceEventID:       "event-1",
+					RoleFit:              career.RoleFitStaff,
+					AudienceRelevance:    []string{"peer"},
+					StrengthSignal:       "technical",
+					SourceEventID:        "event-1",
 				},
 				{
-					Text:                "Technical fact 2",
+					Text:                 "Technical fact 2",
 					CompetencyCategories: []string{"technical"},
-					RoleFit:             career.RoleFitStaff,
-					AudienceRelevance:   []string{"peer"},
-					StrengthSignal:      "technical",
-					SourceEventID:       "event-2",
+					RoleFit:              career.RoleFitStaff,
+					AudienceRelevance:    []string{"peer"},
+					StrengthSignal:       "technical",
+					SourceEventID:        "event-2",
 				},
 				{
-					Text:                "Leadership fact",
+					Text:                 "Leadership fact",
 					CompetencyCategories: []string{"leadership"},
-					RoleFit:             career.RoleFitEM,
-					AudienceRelevance:   []string{"hiring_manager"},
-					StrengthSignal:      "leadership",
-					SourceEventID:       "event-3",
+					RoleFit:              career.RoleFitEM,
+					AudienceRelevance:    []string{"hiring_manager"},
+					StrengthSignal:       "leadership",
+					SourceEventID:        "event-3",
 				},
 			}
 
@@ -424,28 +424,28 @@ var _ = Describe("FactRepository", func() {
 			// Create test facts with different sources
 			facts := []*career.Fact{
 				{
-					Text:                "Fact from event 1",
+					Text:                 "Fact from event 1",
 					CompetencyCategories: []string{"technical"},
-					RoleFit:             career.RoleFitStaff,
-					AudienceRelevance:   []string{"peer"},
-					StrengthSignal:      "technical",
-					SourceEventID:       "event-1",
+					RoleFit:              career.RoleFitStaff,
+					AudienceRelevance:    []string{"peer"},
+					StrengthSignal:       "technical",
+					SourceEventID:        "event-1",
 				},
 				{
-					Text:                "Another fact from event 1",
+					Text:                 "Another fact from event 1",
 					CompetencyCategories: []string{"leadership"},
-					RoleFit:             career.RoleFitEM,
-					AudienceRelevance:   []string{"hiring_manager"},
-					StrengthSignal:      "leadership",
-					SourceEventID:       "event-1",
+					RoleFit:              career.RoleFitEM,
+					AudienceRelevance:    []string{"hiring_manager"},
+					StrengthSignal:       "leadership",
+					SourceEventID:        "event-1",
 				},
 				{
-					Text:                "Fact from event 2",
+					Text:                 "Fact from event 2",
 					CompetencyCategories: []string{"product"},
-					RoleFit:             career.RoleFitSeniorIC,
-					AudienceRelevance:   []string{"peer"},
-					StrengthSignal:      "product",
-					SourceEventID:       "event-2",
+					RoleFit:              career.RoleFitSeniorIC,
+					AudienceRelevance:    []string{"peer"},
+					StrengthSignal:       "product",
+					SourceEventID:        "event-2",
 				},
 			}
 
@@ -476,28 +476,28 @@ var _ = Describe("FactRepository", func() {
 			// Create test facts with different burst sources
 			facts := []*career.Fact{
 				{
-					Text:                "Fact from burst 1",
+					Text:                 "Fact from burst 1",
 					CompetencyCategories: []string{"technical"},
-					RoleFit:             career.RoleFitStaff,
-					AudienceRelevance:   []string{"peer"},
-					StrengthSignal:      "technical",
-					SourceBurstID:       "burst-1",
+					RoleFit:              career.RoleFitStaff,
+					AudienceRelevance:    []string{"peer"},
+					StrengthSignal:       "technical",
+					SourceBurstID:        "burst-1",
 				},
 				{
-					Text:                "Another fact from burst 1",
+					Text:                 "Another fact from burst 1",
 					CompetencyCategories: []string{"leadership"},
-					RoleFit:             career.RoleFitEM,
-					AudienceRelevance:   []string{"hiring_manager"},
-					StrengthSignal:      "leadership",
-					SourceBurstID:       "burst-1",
+					RoleFit:              career.RoleFitEM,
+					AudienceRelevance:    []string{"hiring_manager"},
+					StrengthSignal:       "leadership",
+					SourceBurstID:        "burst-1",
 				},
 				{
-					Text:                "Fact from burst 2",
+					Text:                 "Fact from burst 2",
 					CompetencyCategories: []string{"product"},
-					RoleFit:             career.RoleFitSeniorIC,
-					AudienceRelevance:   []string{"peer"},
-					StrengthSignal:      "product",
-					SourceBurstID:       "burst-2",
+					RoleFit:              career.RoleFitSeniorIC,
+					AudienceRelevance:    []string{"peer"},
+					StrengthSignal:       "product",
+					SourceBurstID:        "burst-2",
 				},
 			}
 
@@ -523,4 +523,3 @@ var _ = Describe("FactRepository", func() {
 		})
 	})
 })
-

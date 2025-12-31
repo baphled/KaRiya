@@ -35,13 +35,13 @@ func (es ErrorSeverity) String() string {
 
 // ErrorLog represents a logged error with metadata
 type ErrorLog struct {
-	Severity    ErrorSeverity
-	Message     string
-	Error       error
-	Timestamp   time.Time
-	Context     map[string]interface{}
-	Suggestion  string
-	ScreenID    string
+	Severity   ErrorSeverity
+	Message    string
+	Error      error
+	Timestamp  time.Time
+	Context    map[string]interface{}
+	Suggestion string
+	ScreenID   string
 }
 
 // ErrorHandler manages error logging and recovery suggestions
@@ -65,12 +65,12 @@ func NewErrorHandler() *ErrorHandler {
 // LogError logs an error with the specified severity
 func (eh *ErrorHandler) LogError(severity ErrorSeverity, message string, err error, screenID string) {
 	errorLog := ErrorLog{
-		Severity:   severity,
-		Message:    message,
-		Error:      err,
-		Timestamp:  time.Now(),
-		Context:    make(map[string]interface{}),
-		ScreenID:   screenID,
+		Severity:  severity,
+		Message:   message,
+		Error:     err,
+		Timestamp: time.Now(),
+		Context:   make(map[string]interface{}),
+		ScreenID:  screenID,
 	}
 
 	// Add suggestion if available

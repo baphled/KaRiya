@@ -7,10 +7,10 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 var _ = ginkgo.Describe("BurstListModel", func() {

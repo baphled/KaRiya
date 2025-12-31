@@ -17,13 +17,13 @@ import (
 
 var _ = Describe("Burst Integration", func() {
 	var (
-		app          *Model
-		repo         *careerrepo.MemoryRepository
-		svc          *careerservice.Service
-		ctx          context.Context
-		event1       *career.CareerEvent
-		event2       *career.CareerEvent
-		event3       *career.CareerEvent
+		app    *Model
+		repo   *careerrepo.MemoryRepository
+		svc    *careerservice.Service
+		ctx    context.Context
+		event1 *career.CareerEvent
+		event2 *career.CareerEvent
+		event3 *career.CareerEvent
 	)
 
 	BeforeEach(func() {
@@ -219,7 +219,7 @@ var _ = Describe("Burst Integration", func() {
 					Description:     "Test complete workflow",
 				},
 			}
-					msg2 := BurstSuggestionsReadyMsg{Suggestions: suggestions}
+			msg2 := BurstSuggestionsReadyMsg{Suggestions: suggestions}
 			app.Update(msg2)
 
 			// Verify we're on burst suggestion screen
@@ -280,4 +280,3 @@ var _ = Describe("Burst Integration", func() {
 		})
 	})
 })
-

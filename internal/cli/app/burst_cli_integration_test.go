@@ -16,11 +16,11 @@ import (
 
 var _ = Describe("Burst CLI Integration", func() {
 	var (
-		app     *Model
-		repo    *careerrepo.MemoryRepository
-		svc     *careerservice.Service
-		cliSvc  *service.CLIEventService
-		ctx     context.Context
+		app        *Model
+		repo       *careerrepo.MemoryRepository
+		svc        *careerservice.Service
+		cliSvc     *service.CLIEventService
+		ctx        context.Context
 		testEvents []*career.CareerEvent
 		testBursts []*career.Burst
 	)
@@ -35,29 +35,29 @@ var _ = Describe("Burst CLI Integration", func() {
 		// Create test events that can form bursts
 		testEvents = []*career.CareerEvent{
 			{
-				ID:       uuid.New().String(),
-				Text:     "Led backend team on microservices migration project",
-				Date:     time.Now().Add(-30 * 24 * time.Hour),
-				Company:  "TechCorp",
-				Tags:     []string{"leadership", "technical"},
+				ID:        uuid.New().String(),
+				Text:      "Led backend team on microservices migration project",
+				Date:      time.Now().Add(-30 * 24 * time.Hour),
+				Company:   "TechCorp",
+				Tags:      []string{"leadership", "technical"},
 				CreatedAt: time.Now().Add(-30 * 24 * time.Hour),
 				UpdatedAt: time.Now().Add(-30 * 24 * time.Hour),
 			},
 			{
-				ID:       uuid.New().String(),
-				Text:     "Architected service mesh for improved scalability",
-				Date:     time.Now().Add(-25 * 24 * time.Hour),
-				Company:  "TechCorp",
-				Tags:     []string{"technical", "project"},
+				ID:        uuid.New().String(),
+				Text:      "Architected service mesh for improved scalability",
+				Date:      time.Now().Add(-25 * 24 * time.Hour),
+				Company:   "TechCorp",
+				Tags:      []string{"technical", "project"},
 				CreatedAt: time.Now().Add(-25 * 24 * time.Hour),
 				UpdatedAt: time.Now().Add(-25 * 24 * time.Hour),
 			},
 			{
-				ID:       uuid.New().String(),
-				Text:     "Mentored junior developers on best practices",
-				Date:     time.Now().Add(-20 * 24 * time.Hour),
-				Company:  "TechCorp",
-				Tags:     []string{"mentoring", "leadership"},
+				ID:        uuid.New().String(),
+				Text:      "Mentored junior developers on best practices",
+				Date:      time.Now().Add(-20 * 24 * time.Hour),
+				Company:   "TechCorp",
+				Tags:      []string{"mentoring", "leadership"},
 				CreatedAt: time.Now().Add(-20 * 24 * time.Hour),
 				UpdatedAt: time.Now().Add(-20 * 24 * time.Hour),
 			},
@@ -262,4 +262,3 @@ var _ = Describe("Burst CLI Integration", func() {
 		})
 	})
 })
-

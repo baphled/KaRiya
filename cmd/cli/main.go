@@ -28,19 +28,19 @@ func main() {
 func run(args []string, out io.Writer, errOut io.Writer) int {
 	// Parse CLI flags
 	var (
-		showVersion    = false
-		showHelp       = false
-		dbPath         = ""
-		mode           = ""
-		listEvents     = false
-		inMemory       = false
-		importPath     = ""
-		importSkip     = false
-		reviewFacts    = false
-		detectBursts   = false
-		extractFacts   = false
-		showBursts     = false
-		showFacts      = false
+		showVersion  = false
+		showHelp     = false
+		dbPath       = ""
+		mode         = ""
+		listEvents   = false
+		inMemory     = false
+		importPath   = ""
+		importSkip   = false
+		reviewFacts  = false
+		detectBursts = false
+		extractFacts = false
+		showBursts   = false
+		showFacts    = false
 	)
 
 	// Parse command-line arguments

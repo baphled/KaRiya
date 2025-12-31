@@ -16,10 +16,10 @@ import (
 // FactListModel displays a list of facts with filtering, sorting, and selection
 type FactListModel struct {
 	// Data
-	facts       []*career.Fact
-	filtered    []*career.Fact // Cached filtered results
-	service     *careerservice.Service
-	ctx         context.Context
+	facts    []*career.Fact
+	filtered []*career.Fact // Cached filtered results
+	service  *careerservice.Service
+	ctx      context.Context
 
 	// UI State
 	selectedIdx  int

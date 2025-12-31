@@ -27,28 +27,28 @@ const (
 
 // FactEditorModel represents the fact editor form state
 type FactEditorModel struct {
-	fact                    *career.Fact
-	originalFact            *career.Fact // For reverting changes
-	service                 *careerservice.Service
-	ctx                     context.Context
-	textInput               textinput.Model
-	focusIndex              int
-	competencyIndex         int // Index for competency navigation within competencies
-	roleFitIndex            int // Index for role fit selection
-	audienceIndex           int // Index for audience navigation within audience
-	err                     error
-	submitted               bool
-	cancelled               bool
-	competencySelector      *components.CategorySelector // Reuse category selector for competencies
-	roleFitOptions          []career.RoleFit
-	audienceSelector        *components.AudienceRelevanceSelector
-	fieldErrors             map[int]string
-	width                   int
-	height                  int
-	characterCount          int
-	originalCompetencies    []string // Track original for change detection
-	originalRoleFit         career.RoleFit
-	originalAudience        []string
+	fact                 *career.Fact
+	originalFact         *career.Fact // For reverting changes
+	service              *careerservice.Service
+	ctx                  context.Context
+	textInput            textinput.Model
+	focusIndex           int
+	competencyIndex      int // Index for competency navigation within competencies
+	roleFitIndex         int // Index for role fit selection
+	audienceIndex        int // Index for audience navigation within audience
+	err                  error
+	submitted            bool
+	cancelled            bool
+	competencySelector   *components.CategorySelector // Reuse category selector for competencies
+	roleFitOptions       []career.RoleFit
+	audienceSelector     *components.AudienceRelevanceSelector
+	fieldErrors          map[int]string
+	width                int
+	height               int
+	characterCount       int
+	originalCompetencies []string // Track original for change detection
+	originalRoleFit      career.RoleFit
+	originalAudience     []string
 }
 
 // NewFactEditorModel creates a new fact editor model
@@ -521,7 +521,7 @@ func (m *FactEditorModel) renderRoleFitField() string {
 		b.WriteString(text)
 		b.WriteString("  ")
 
-		if (i + 1) % 2 == 0 {
+		if (i+1)%2 == 0 {
 			b.WriteString("\n")
 		}
 	}
@@ -649,4 +649,3 @@ func capitalize(s string) string {
 	}
 	return strings.Join(words, " ")
 }
-
