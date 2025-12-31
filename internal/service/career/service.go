@@ -617,3 +617,13 @@ func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 
 	return nil
 }
+
+// GetBurstRepository returns the burst repository
+func (s *Service) GetBurstRepository() repo.BurstRepository {
+	return s.burstRepo
+}
+
+// GetFactRepository returns the fact repository
+func (s *Service) GetFactRepository() repo.FactRepository {
+	return s.factRepo
+}
