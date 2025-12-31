@@ -35,6 +35,7 @@ const (
 	MetadataEditorScreen  Screen = "metadata_editor"
 	BulkOperationsScreen  Screen = "bulk_operations"
 	BurstSuggestionScreen Screen = "burst_suggestion"
+	BurstListScreen       Screen = "burst_list"
 	FactsResultsScreen   Screen = "facts_results"
 )
 
@@ -65,6 +66,7 @@ type Model struct {
 	metadataEditorModel    *models.MetadataEditorModel
 	bulkOperationsModel    *models.BulkOperationsModel
 	burstSuggestionModel   *models.BurstSuggestionModel
+	burstListModel         *models.BurstListModel    // Display existing bursts
 	factListModel          *models.FactListModel     // Display facts for events/bursts
 	factsResultsModel      *models.FactsResultsModel  // Review facts extracted after import
 	factEditorModel        *models.FactEditorModel   // Edit individual facts
@@ -115,6 +117,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case models.BackMsg:
 		// Special handling for ListScreen - always go back to HomeScreen
 		if m.currentScreen == ListScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			return m, nil
+		}
+		// Special handling for BurstListScreen - always go back to HomeScreen
+		if m.currentScreen == BurstListScreen {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = HomeScreen
 			return m, nil
@@ -568,6 +576,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+				case BurstListScreen:
+								// Check for global navigation keys first
+								if keyMsg, ok := msg.(tea.KeyMsg); ok {
+									switch keyMsg.String() {
+									case "h":
+										m.previousScreen = m.currentScreen
+										m.currentScreen = HomeScreen
+										return m, nil
+									case "backspace":
+										m.previousScreen = m.currentScreen
+										m.currentScreen = HomeScreen
+										return m, nil
+									}
+								}
+				
+					if m.burstListModel != nil {
+						updatedModel, cmd := m.burstListModel.Update(msg)
+						m.burstListModel = updatedModel.(*models.BurstListModel)
+						return m, cmd
+					}
 
 	case FactsResultsScreen:
 		if m.factsResultsModel != nil {
@@ -636,19 +664,29 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "h":
 			m.previousScreen = m.currentScreen
 			m.currentScreen = HomeScreen
+			return m, nil
 		case "c":
 			m.previousScreen = m.currentScreen
 			m.currentScreen = CaptureScreen
 			m.formModel = models.NewFormModel(m.cliService)
+			return m, nil
 		case "l":
 			ctx := context.Background()
 			m.listModel = models.NewListModel(m.service, ctx)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ListScreen
+			return m, nil
+		case "b":
+			ctx := context.Background()
+			m.burstListModel = models.NewBurstListModel(m.service, ctx)
+			m.previousScreen = m.currentScreen
+			m.currentScreen = BurstListScreen
+			return m, nil
 		case "m":
 			m.metadataReviewModel.Refresh()
 			m.previousScreen = m.currentScreen
 			m.currentScreen = MetadataReviewScreen
+			return m, nil
 		case "p":
 			// Handle pending items review
 			if m.workflowState != nil && m.workflowState.HasPendingItems() {
@@ -713,6 +751,11 @@ func (m *Model) View() string {
 			return m.burstSuggestionModel.View()
 		}
 		return "Error: Burst Suggestion model not initialized\n"
+	case BurstListScreen:
+		if m.burstListModel != nil {
+			return m.burstListModel.View()
+		}
+		return "Error: Burst List model not initialized\n"
 	case ViewScreen:
 		if m.detailsModel != nil {
 			return m.detailsModel.View()
@@ -765,6 +808,7 @@ func (m *Model) renderHome() string {
 	commands := []string{
 		styles.InfoText.Render("c") + " - Capture Career Event",
 		styles.InfoText.Render("l") + " - List Events",
+		styles.InfoText.Render("b") + " - View Bursts",
 		styles.InfoText.Render("h") + " - Home",
 		styles.InfoText.Render("q") + " - Quit",
 	}
@@ -871,6 +915,8 @@ func (m *Model) updateBreadcrumbs() {
 		m.breadcrumbs = []string{"Home", "Metadata Review", "Bulk Operations"}
 	case BurstSuggestionScreen:
 		m.breadcrumbs = []string{"Home", "Metadata Review", "Burst Suggestions"}
+	case BurstListScreen:
+		m.breadcrumbs = []string{"Home", "Bursts"}
 	case FactsResultsScreen:
 		m.breadcrumbs = []string{"Home", "Metadata Review", "Facts Review"}
 	case SuccessScreen:

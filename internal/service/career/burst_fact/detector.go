@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -243,6 +244,8 @@ func (bd *BurstDetector) clusterToSuggestion(
 	return BurstSuggestion{
 		EventIDs:        eventIDs,
 		ConfidenceScore: confidenceScore,
+		Name:            bd.generateBurstName(cluster),
+		Description:     bd.generateBurstDescription(cluster),
 	}
 }
 
@@ -266,5 +269,153 @@ func (bd *BurstDetector) ValidateSuggestion(suggestion BurstSuggestion) error {
 	}
 
 	return nil
+}
+
+// generateBurstName creates a meaningful name for a burst based on the events
+func (bd *BurstDetector) generateBurstName(cluster []career.CareerEvent) string {
+	if len(cluster) == 0 {
+		return "Unnamed Burst"
+	}
+
+	// Extract common themes from event texts
+	commonWords := bd.extractCommonWords(cluster)
+	if len(commonWords) > 0 {
+		// Use the most common meaningful word
+		return fmt.Sprintf("%s Initiative", commonWords[0])
+	}
+
+	// Fallback to project-based naming
+	projects := bd.extractProjects(cluster)
+	if len(projects) > 0 {
+		return fmt.Sprintf("%s Project", projects[0])
+	}
+
+	// Final fallback
+	return fmt.Sprintf("%d-Event Burst", len(cluster))
+}
+
+// generateBurstDescription creates a description for a burst based on the events
+func (bd *BurstDetector) generateBurstDescription(cluster []career.CareerEvent) string {
+	if len(cluster) == 0 {
+		return "A collection of related career events"
+	}
+
+	projects := bd.extractProjects(cluster)
+	companies := bd.extractCompanies(cluster)
+
+	var parts []string
+
+	if len(projects) > 0 {
+		if len(projects) == 1 {
+			parts = append(parts, fmt.Sprintf("Related to %s project", projects[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("Spanning %s and related projects", projects[0]))
+		}
+	}
+
+	if len(companies) > 0 {
+		if len(companies) == 1 {
+			parts = append(parts, fmt.Sprintf("at %s", companies[0]))
+		} else {
+			parts = append(parts, fmt.Sprintf("across %s and other organizations", companies[0]))
+		}
+	}
+
+	if len(parts) > 0 {
+		return strings.Join(parts, " ")
+	}
+
+	return fmt.Sprintf("A burst of %d related career events", len(cluster))
+}
+
+// extractCommonWords finds common meaningful words across event texts
+func (bd *BurstDetector) extractCommonWords(cluster []career.CareerEvent) []string {
+	wordCount := make(map[string]int)
+
+	for _, event := range cluster {
+		words := strings.Fields(strings.ToLower(event.Text))
+		for _, word := range words {
+			// Filter out common words and focus on meaningful terms
+			if bd.isMeaningfulWord(word) {
+				wordCount[word]++
+			}
+		}
+	}
+
+	// Find words that appear in multiple events
+	var commonWords []string
+	for word, count := range wordCount {
+		if count > 1 || (len(cluster) <= 2 && count >= 1) {
+			commonWords = append(commonWords, strings.Title(word))
+		}
+	}
+
+	// Sort by frequency (most common first)
+	sort.Slice(commonWords, func(i, j int) bool {
+		return wordCount[strings.ToLower(commonWords[i])] > wordCount[strings.ToLower(commonWords[j])]
+	})
+
+	return commonWords
+}
+
+// extractProjects extracts unique project names from the cluster
+func (bd *BurstDetector) extractProjects(cluster []career.CareerEvent) []string {
+	projectSet := make(map[string]bool)
+	var projects []string
+
+	for _, event := range cluster {
+		if event.Project != "" {
+			if !projectSet[event.Project] {
+				projectSet[event.Project] = true
+				projects = append(projects, event.Project)
+			}
+		}
+	}
+
+	return projects
+}
+
+// extractCompanies extracts unique company names from the cluster
+func (bd *BurstDetector) extractCompanies(cluster []career.CareerEvent) []string {
+	companySet := make(map[string]bool)
+	var companies []string
+
+	for _, event := range cluster {
+		if event.Company != "" {
+			if !companySet[event.Company] {
+				companySet[event.Company] = true
+				companies = append(companies, event.Company)
+			}
+		}
+	}
+
+	return companies
+}
+
+// isMeaningfulWord filters out common words to focus on meaningful terms
+func (bd *BurstDetector) isMeaningfulWord(word string) bool {
+	// Remove punctuation
+	word = strings.Trim(word, ".,!?;:")
+
+	// Skip very short words
+	if len(word) < 3 {
+		return false
+	}
+
+	// Skip common English words
+	commonWords := map[string]bool{
+		"the": true, "and": true, "for": true, "are": true, "but": true,
+		"not": true, "you": true, "all": true, "can": true, "her": true,
+		"was": true, "one": true, "our": true, "had": true, "have": true,
+		"has": true, "will": true, "been": true, "this": true, "that": true,
+		"with": true, "from": true, "they": true, "know": true, "want": true,
+		"good": true, "much": true, "some": true, "time": true,
+		"very": true, "when": true, "come": true, "here": true, "just": true,
+		"like": true, "long": true, "make": true, "many": true, "over": true,
+		"such": true, "take": true, "than": true, "them": true, "well": true,
+		"were": true,
+	}
+
+	return !commonWords[word]
 }
 

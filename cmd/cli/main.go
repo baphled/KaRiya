@@ -134,8 +134,16 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 	svc := careerservice.NewService(repo)
 
-	// Initialize fact and burst repositories if using SQLite
-	if !inMemory {
+	// Initialize fact and burst repositories
+	if inMemory {
+		// Use in-memory repositories for facts and bursts
+		factRepo := career.NewMemoryFactRepository()
+		svc.SetFactRepository(factRepo)
+
+		burstRepo := career.NewMemoryBurstRepository()
+		svc.SetBurstRepository(burstRepo)
+	} else {
+		// Use SQLite repositories for facts and bursts
 		sqliteRepo, ok := repo.(*career.SQLiteRepository)
 		if ok && sqliteRepo != nil {
 			db := sqliteRepo.GetDB()
@@ -339,11 +347,12 @@ func handleShowBursts(svc *careerservice.Service, out io.Writer, errOut io.Write
 	}
 
 	if len(bursts) == 0 {
-		fmt.Fprintf(out, "No bursts found in database.\n")
+		fmt.Fprintf(out, "No bursts found.\n")
 		return 0
 	}
 
-	fmt.Fprintf(out, "\n=== Existing Bursts ===\n")
+	fmt.Fprintf(out, "\n=== Bursts ===\n")
+
 	fmt.Fprintf(out, "Total bursts: %d\n\n", len(bursts))
 
 	for i, burst := range bursts {
