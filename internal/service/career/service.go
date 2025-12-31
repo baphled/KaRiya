@@ -11,6 +11,7 @@ import (
 	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	repo "github.com/baphled/kariya/internal/repository/career"
+	burst_fact "github.com/baphled/kariya/internal/service/career/burst_fact"
 )
 
 // EventCaptureMode defines the different ways events can be captured
@@ -228,4 +229,77 @@ func (s *Service) GetEventByID(ctx context.Context, eventID string) (*domain.Car
 			Warn("Failed to retrieve event")
 	}
 	return event, err
+
+}
+// SuggestBursts detects and suggests bursts for provided event IDs
+func (s *Service) SuggestBursts(ctx context.Context, eventIDs []string) ([]burst_fact.BurstSuggestion, error) {
+	opts := &burst_fact.DetectionOptions{
+		MinConfidence:       0.6,
+		TemporalWindow:      6 * 30 * 24 * time.Hour,
+		MinEventCount:       2,
+		MaxSuggestionsCount: 10,
+	}
+	return s.SuggestBurstsWithOptions(ctx, eventIDs, opts)
+}
+
+// SuggestBurstsWithOptions detects bursts with custom detection options
+func (s *Service) SuggestBurstsWithOptions(
+	ctx context.Context,
+	eventIDs []string,
+	opts *burst_fact.DetectionOptions,
+) ([]burst_fact.BurstSuggestion, error) {
+	if len(eventIDs) < 2 {
+		return []burst_fact.BurstSuggestion{}, nil
+	}
+
+	// Retrieve events from repository
+	var events []domain.CareerEvent
+	for _, id := range eventIDs {
+		event, err := s.repo.GetByID(ctx, id)
+		if err != nil {
+			s.logger.Debug("Event not found for burst detection")
+			continue
+		}
+		events = append(events, *event)
+	}
+
+	if len(events) < 2 {
+		return []burst_fact.BurstSuggestion{}, nil
+	}
+
+	// Detect bursts
+	detector := burst_fact.NewBurstDetector()
+	suggestions, err := detector.DetectBursts(ctx, events, opts)
+	if err != nil {
+		s.logger.Warn("Burst detection failed")
+		return nil, err
+	}
+
+	s.logger.Info("Burst suggestions generated")
+	return suggestions, nil
+}
+
+// ConfirmBurst validates a burst suggestion
+func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
+	if burst == nil {
+		return fmt.Errorf("burst cannot be nil")
+	}
+
+	// Validate burst
+	if err := burst.Validate(); err != nil {
+		s.logger.Warn("Burst validation failed")
+		return err
+	}
+
+	s.logger.Info("Burst confirmed")
+	return nil
+}
+
+// RejectBurstSuggestion records rejection of burst suggestion
+func (s *Service) RejectBurstSuggestion(ctx context.Context, eventIDs []string) error {
+	if len(eventIDs) == 0 {
+		return nil
+	}
+	s.logger.Debug("Burst suggestion rejected")
+	return nil
 }

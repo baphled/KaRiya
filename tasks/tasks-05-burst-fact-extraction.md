@@ -130,7 +130,7 @@
 ### Phase 2: Burst Detection and Management
 
 #### 4.0 Create Burst Detection Engine
-- [ ] 4.1 Implement burst detection algorithm using event text similarity and temporal proximity
+- [x] 4.1 Implement burst detection algorithm using event text similarity and temporal proximity
 - [x] 4.2 Create similarity scorer (text matching, keyword overlap, company/project matching)
 - [x] 4.3 Implement temporal grouping (events within 6 months considered related) - **COMPLETE** (126 lines, 24 tests, 100% passing)
 - [ ] 4.4 Create burst suggestion generation (returns list of suggested bursts with confidence scores)
