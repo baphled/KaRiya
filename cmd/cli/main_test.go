@@ -235,10 +235,7 @@ Mentored junior engineers on best practices,2025-12-22,TechCorp,Training,mentori
 
 			Expect(exitCode).To(Equal(0))
 			// With no events, should show appropriate message
-			Expect(buf.String()).To(Or(
-				ContainSubstring("No events found"),
-				ContainSubstring("Extracting facts"),
-			))
+			Expect(buf.String()).To(ContainSubstring("No events found"))
 		})
 	})
 
@@ -254,6 +251,16 @@ Mentored junior engineers on best practices,2025-12-22,TechCorp,Training,mentori
 			} else {
 				Expect(errBuf.String()).To(ContainSubstring("Burst repository not configured"))
 			}
+		})
+
+		It("should return bursts when bursts exist", func() {
+			// Test with no bursts - should show "No bursts found"
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--in-memory", "--show-bursts"}, &buf, &errBuf)
+
+			// With no bursts, should show appropriate message
+			Expect(exitCode).To(Equal(0))
+			Expect(buf.String()).To(ContainSubstring("No bursts found"))
 		})
 	})
 

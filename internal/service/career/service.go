@@ -291,7 +291,7 @@ func (s *Service) SuggestBurstsWithOptions(
 	return suggestions, nil
 }
 
-// ConfirmBurst validates a burst suggestion
+// ConfirmBurst validates and saves a burst suggestion
 func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 	if burst == nil {
 		return fmt.Errorf("burst cannot be nil")
@@ -303,7 +303,24 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 		return err
 	}
 
-	s.logger.Info("Burst confirmed")
+	// Save burst to repository if available
+	if s.burstRepo != nil {
+		if err := s.burstRepo.Create(ctx, burst); err != nil {
+			s.logger.WithFields(map[string]string{
+				"burst_id": burst.ID,
+				"error":    err.Error(),
+			}).Warn("Failed to save burst")
+			return fmt.Errorf("failed to save burst: %w", err)
+		}
+
+		s.logger.WithFields(map[string]string{
+			"burst_id": burst.ID,
+			"name":     burst.Name,
+		}).Info("Burst confirmed and saved")
+	} else {
+		s.logger.Info("Burst confirmed (no repository configured)")
+	}
+
 	return nil
 }
 
@@ -314,6 +331,48 @@ func (s *Service) RejectBurstSuggestion(ctx context.Context, eventIDs []string) 
 	}
 	s.logger.Debug("Burst suggestion rejected")
 	return nil
+}
+
+// SaveBurstSuggestions converts burst suggestions to actual bursts and saves them
+func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_fact.BurstSuggestion) ([]*domain.Burst, error) {
+	if s.burstRepo == nil {
+		s.logger.Debug("No burst repository configured - suggestions not saved")
+		return nil, nil
+	}
+
+	var savedBursts []*domain.Burst
+
+	for _, suggestion := range suggestions {
+		// Convert suggestion to burst domain object
+		burst := &domain.Burst{
+			ID:          uuid.New().String(),
+			Name:        suggestion.Name,
+			Description: suggestion.Description,
+			EventIDs:    suggestion.EventIDs,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+
+		// Save to repository
+		if err := s.ConfirmBurst(ctx, burst); err != nil {
+			s.logger.WithFields(map[string]string{
+				"suggestion_name": suggestion.Name,
+				"error":          err.Error(),
+			}).Warn("Failed to save burst suggestion")
+			continue
+		}
+
+		savedBursts = append(savedBursts, burst)
+	}
+
+	if len(savedBursts) > 0 {
+		s.logger.WithFields(map[string]string{
+			"saved_count":      fmt.Sprintf("%d", len(savedBursts)),
+			"suggested_count":  fmt.Sprintf("%d", len(suggestions)),
+		}).Info("Burst suggestions saved as persistent bursts")
+	}
+
+	return savedBursts, nil
 }
 
 // ExtractFactsFromEvent extracts facts from a single career event

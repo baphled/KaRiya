@@ -132,6 +132,14 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 			if len(suggestions) > 0 {
 				fmt.Printf("Detected %d burst suggestions from %d events\n",
 					len(suggestions), len(result.CreatedEvents))
+
+				// Automatically save burst suggestions as persistent bursts
+				savedBursts, saveErr := is.careerService.SaveBurstSuggestions(ctx, suggestions)
+				if saveErr != nil {
+					fmt.Printf("Warning: Failed to save burst suggestions: %v\n", saveErr)
+				} else if len(savedBursts) > 0 {
+					fmt.Printf("Saved %d bursts to database\n", len(savedBursts))
+				}
 			}
 		}
 	}

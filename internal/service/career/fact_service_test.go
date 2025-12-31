@@ -824,5 +824,20 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			Expect(err.Error()).To(ContainSubstring("fact repository not configured"))
 		})
 	})
+
+	Describe("GetFactRepository", func() {
+		It("should return nil when no fact repository is set", func() {
+			factRepo := service.GetFactRepository()
+			Expect(factRepo).To(BeNil())
+		})
+
+		It("should return the configured fact repository", func() {
+			memoryFactRepo := careerrepo.NewMemoryFactRepository()
+			service.SetFactRepository(memoryFactRepo)
+
+			factRepo := service.GetFactRepository()
+			Expect(factRepo).To(Equal(memoryFactRepo))
+		})
+	})
 })
 
