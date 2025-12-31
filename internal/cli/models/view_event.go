@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"github.com/baphled/kariya/internal/cli/components"
 
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -144,7 +145,8 @@ func (m *ViewEventModel) View() string {
 // renderEventDetail renders the event details
 func (m *ViewEventModel) renderEventDetail() string {
 	// Title
-	title := styles.HeaderMain.Render("Event Details")
+	header := components.NewHeader("Event Details", m.width)
+	title := header.View()
 
 	// Event card
 	var eventDetails []string
