@@ -33,22 +33,23 @@ var _ = Describe("Burst Integration", func() {
 		cliSvc := cliservice.NewCLIEventService(svc)
 
 		// Create test events that are similar and should form a burst
+		// Using ManualEntry mode to avoid TimelineJournaling's 30-day restriction
 		event1 = &career.CareerEvent{
 			Text:    "Led backend team on microservices migration project",
 			Date:    time.Now().Add(-30 * 24 * time.Hour),
 			Company: "TechCorp",
 			Tags:    []string{"leadership", "technical"},
 		}
-		err := svc.CaptureEvent(ctx, event1, careerservice.TimelineJournaling)
+		err := svc.CaptureEvent(ctx, event1, careerservice.ManualEntry)
 		Expect(err).NotTo(HaveOccurred())
 
 		event2 = &career.CareerEvent{
 			Text:    "Architected service mesh for improved scalability",
 			Date:    time.Now().Add(-25 * 24 * time.Hour),
 			Company: "TechCorp",
-			Tags:    []string{"technical", "architecture"},
+			Tags:    []string{"technical", "project"},
 		}
-		err = svc.CaptureEvent(ctx, event2, careerservice.TimelineJournaling)
+		err = svc.CaptureEvent(ctx, event2, careerservice.ManualEntry)
 		Expect(err).NotTo(HaveOccurred())
 
 		event3 = &career.CareerEvent{
@@ -57,7 +58,7 @@ var _ = Describe("Burst Integration", func() {
 			Company: "TechCorp",
 			Tags:    []string{"technical"},
 		}
-		err = svc.CaptureEvent(ctx, event3, careerservice.TimelineJournaling)
+		err = svc.CaptureEvent(ctx, event3, careerservice.ManualEntry)
 		Expect(err).NotTo(HaveOccurred())
 
 		app = NewModel(cliSvc, svc)
@@ -218,7 +219,7 @@ var _ = Describe("Burst Integration", func() {
 					Description:     "Test complete workflow",
 				},
 			}
-			msg2 := BurstSuggestionsReadyMsg{Suggestions: suggestions}
+					msg2 := BurstSuggestionsReadyMsg{Suggestions: suggestions}
 			app.Update(msg2)
 
 			// Verify we're on burst suggestion screen
