@@ -32,6 +32,9 @@ Transform raw career events into credible, audience- and role-specific CV views.
 - Older roles compress first
 
 ## Role-Specific Generation
+
+- Configurable roles with distinct bullet limits and priorities
+
 ### Roles
 - Principal: Strategic ownership, cross-team leadership
 - Staff: Technical leadership, high-complexity implementation
@@ -45,6 +48,7 @@ Transform raw career events into credible, audience- and role-specific CV views.
 
 ## Acceptance Criteria
 - CV bullets must be traceable to source events
+- Not stored in DB, generated on-the-fly
 - Respect bullet caps for each role
 - Maintain factual accuracy
 - Provide source event visibility
