@@ -794,3 +794,175 @@ var _ = Describe("ShortcutMapper", func() {
 		})
 	})
 })
+
+var _ = Describe("ContextShortcutHandler", func() {
+	var handler *ContextShortcutHandler
+
+	BeforeEach(func() {
+		handler = NewContextShortcutHandler()
+	})
+
+	Describe("Context Switching", func() {
+		It("should set current context", func() {
+			handler.SetCurrentContext("list")
+			Expect(handler.GetCurrentContext()).To(Equal("list"))
+		})
+
+		It("should default to empty context", func() {
+			Expect(handler.GetCurrentContext()).To(Equal(""))
+		})
+
+		It("should switch between contexts", func() {
+			handler.SetCurrentContext("list")
+			Expect(handler.GetCurrentContext()).To(Equal("list"))
+
+			handler.SetCurrentContext("form")
+			Expect(handler.GetCurrentContext()).To(Equal("form"))
+		})
+	})
+
+	Describe("Context Stack Management", func() {
+		It("should push context to stack", func() {
+			handler.PushContext("list")
+			Expect(handler.GetCurrentContext()).To(Equal("list"))
+			Expect(handler.GetContextStack()).To(HaveLen(1))
+		})
+
+		It("should pop context from stack", func() {
+			handler.PushContext("list")
+			handler.PushContext("form")
+
+			popped := handler.PopContext()
+			Expect(popped).To(Equal("form"))
+			Expect(handler.GetCurrentContext()).To(Equal("list"))
+		})
+
+		It("should return to previous context after pop", func() {
+			handler.PushContext("list")
+			handler.PushContext("form")
+			handler.PushContext("modal")
+
+			handler.PopContext()
+			Expect(handler.GetCurrentContext()).To(Equal("form"))
+
+			handler.PopContext()
+			Expect(handler.GetCurrentContext()).To(Equal("list"))
+		})
+
+		It("should handle pop on empty stack", func() {
+			popped := handler.PopContext()
+			Expect(popped).To(Equal(""))
+		})
+	})
+
+	Describe("Context-aware Shortcut Resolution", func() {
+		It("should resolve shortcut in current context", func() {
+			mapper := NewShortcutMapper()
+			binding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			mapper.RegisterContextShortcut("list", "edit", binding, func() tea.Cmd { return nil })
+
+			handler.SetMapper(mapper)
+			handler.SetCurrentContext("list")
+
+			shortcuts := handler.GetActiveShortcuts()
+			Expect(shortcuts).To(HaveKey("edit"))
+		})
+
+		It("should merge global and context shortcuts", func() {
+			mapper := NewShortcutMapper()
+			globalBinding := key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save"))
+			contextBinding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+
+			mapper.RegisterGlobalShortcut("save", globalBinding, func() tea.Cmd { return nil })
+			mapper.RegisterContextShortcut("list", "edit", contextBinding, func() tea.Cmd { return nil })
+
+			handler.SetMapper(mapper)
+			handler.SetCurrentContext("list")
+
+			shortcuts := handler.GetActiveShortcuts()
+			Expect(shortcuts).To(HaveLen(2))
+			Expect(shortcuts).To(HaveKey("save"))
+			Expect(shortcuts).To(HaveKey("edit"))
+		})
+
+		It("should prioritize context shortcuts over global", func() {
+			mapper := NewShortcutMapper()
+			globalBinding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "expand"))
+			contextBinding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+
+			mapper.RegisterGlobalShortcut("edit", globalBinding, func() tea.Cmd { return nil })
+			mapper.RegisterContextShortcut("list", "edit", contextBinding, func() tea.Cmd { return nil })
+
+			handler.SetMapper(mapper)
+			handler.SetCurrentContext("list")
+
+			shortcuts := handler.GetActiveShortcuts()
+			Expect(shortcuts).To(HaveLen(1))
+			Expect(shortcuts).To(HaveKey("edit"))
+		})
+	})
+
+	Describe("Global Shortcut Availability", func() {
+		It("should always include global shortcuts", func() {
+			mapper := NewShortcutMapper()
+			binding := key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit"))
+			mapper.RegisterGlobalShortcut("quit", binding, func() tea.Cmd { return nil })
+
+			handler.SetMapper(mapper)
+
+			shortcuts := handler.GetActiveShortcuts()
+			Expect(shortcuts).To(HaveKey("quit"))
+		})
+
+		It("should have global shortcuts in any context", func() {
+			mapper := NewShortcutMapper()
+			binding := key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit"))
+			mapper.RegisterGlobalShortcut("quit", binding, func() tea.Cmd { return nil })
+
+			handler.SetMapper(mapper)
+			handler.SetCurrentContext("list")
+
+			shortcuts := handler.GetActiveShortcuts()
+			Expect(shortcuts).To(HaveKey("quit"))
+
+			handler.SetCurrentContext("form")
+			shortcuts = handler.GetActiveShortcuts()
+			Expect(shortcuts).To(HaveKey("quit"))
+		})
+	})
+
+	Describe("Shortcut Lookup", func() {
+		It("should look up shortcut in current context", func() {
+			mapper := NewShortcutMapper()
+			binding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			mapper.RegisterContextShortcut("list", "edit", binding, func() tea.Cmd { return nil })
+
+			handler.SetMapper(mapper)
+			handler.SetCurrentContext("list")
+
+			shortcut, exists := handler.LookupShortcut("edit")
+			Expect(exists).To(BeTrue())
+			Expect(shortcut).NotTo(BeNil())
+		})
+
+		It("should fall back to global shortcut", func() {
+			mapper := NewShortcutMapper()
+			binding := key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("ctrl+s", "save"))
+			mapper.RegisterGlobalShortcut("save", binding, func() tea.Cmd { return nil })
+
+			handler.SetMapper(mapper)
+			handler.SetCurrentContext("list")
+
+			_, exists := handler.LookupShortcut("save")
+			Expect(exists).To(BeTrue())
+		})
+
+		It("should return not found for non-existent shortcut", func() {
+			mapper := NewShortcutMapper()
+			handler.SetMapper(mapper)
+
+			_, exists := handler.LookupShortcut("nonexistent")
+			Expect(exists).To(BeFalse())
+		})
+	})
+})
