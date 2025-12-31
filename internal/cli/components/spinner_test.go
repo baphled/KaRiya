@@ -28,4 +28,3 @@ var _ = Describe("Spinner Component", func() {
 		})
 	})
 })
-
