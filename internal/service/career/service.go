@@ -30,9 +30,10 @@ const (
 
 // Service provides business logic for career event management
 type Service struct {
-	repo     repo.Repository
-	factRepo repo.FactRepository
-	logger   *logger.Logger
+	repo      repo.Repository
+	factRepo  repo.FactRepository
+	burstRepo repo.BurstRepository
+	logger    *logger.Logger
 }
 
 // NewService creates a new career event service
@@ -46,6 +47,11 @@ func NewService(repository repo.Repository) *Service {
 // SetFactRepository sets the fact repository (optional, for fact extraction features)
 func (s *Service) SetFactRepository(factRepo repo.FactRepository) {
 	s.factRepo = factRepo
+}
+
+// SetBurstRepository sets the burst repository (optional, for burst detection features)
+func (s *Service) SetBurstRepository(burstRepo repo.BurstRepository) {
+	s.burstRepo = burstRepo
 }
 
 // CaptureEvent adds a new career event with specified capture mode

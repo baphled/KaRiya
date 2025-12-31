@@ -7,16 +7,18 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	burst_fact "github.com/baphled/kariya/internal/service/career/burst_fact"
 )
 
 // ImportResult represents the result of an import operation
 type ImportResult struct {
-	TotalRows     int
-	SuccessCount  int
-	SkippedCount  int
-	FailedCount   int
-	CreatedEvents []*career.CareerEvent
-	FailedRows    []*ParsedRow
+	TotalRows        int
+	SuccessCount     int
+	SkippedCount     int
+	FailedCount      int
+	CreatedEvents    []*career.CareerEvent
+	FailedRows       []*ParsedRow
+	BurstSuggestions []burst_fact.BurstSuggestion // Burst suggestions detected from imported events
 }
 
 // ImportService handles the import workflow
@@ -107,6 +109,26 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 
 		result.SuccessCount++
 		result.CreatedEvents = append(result.CreatedEvents, event)
+	}
+
+	// Detect bursts from new events (Task 2.0: Post-import burst detection)
+	if len(result.CreatedEvents) > 0 {
+		eventIDs := make([]string, len(result.CreatedEvents))
+		for i, event := range result.CreatedEvents {
+			eventIDs[i] = event.ID
+		}
+
+		suggestions, err := is.careerService.SuggestBursts(ctx, eventIDs)
+		if err != nil {
+			// Log warning but continue - burst detection is an optional enhancement
+			fmt.Printf("Warning: Failed to suggest bursts: %v\n", err)
+		} else {
+			result.BurstSuggestions = suggestions
+			if len(suggestions) > 0 {
+				fmt.Printf("Detected %d burst suggestions from %d events\n",
+					len(suggestions), len(result.CreatedEvents))
+			}
+		}
 	}
 
 	return result, nil
