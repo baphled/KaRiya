@@ -30,8 +30,9 @@ const (
 
 // Service provides business logic for career event management
 type Service struct {
-	repo   repo.Repository
-	logger *logger.Logger
+	repo     repo.Repository
+	factRepo repo.FactRepository
+	logger   *logger.Logger
 }
 
 // NewService creates a new career event service
@@ -40,6 +41,11 @@ func NewService(repository repo.Repository) *Service {
 		repo:   repository,
 		logger: logger.DefaultLogger(),
 	}
+}
+
+// SetFactRepository sets the fact repository (optional, for fact extraction features)
+func (s *Service) SetFactRepository(factRepo repo.FactRepository) {
+	s.factRepo = factRepo
 }
 
 // CaptureEvent adds a new career event with specified capture mode
@@ -433,6 +439,175 @@ func (s *Service) ValidateFact(ctx context.Context, fact *domain.Fact) error {
 			"role_fit":  string(fact.RoleFit),
 		}).
 		Debug("Fact validated successfully")
+
+	return nil
+}
+
+// GetFactsBySourceEventID retrieves all facts extracted from a specific event
+func (s *Service) GetFactsBySourceEventID(ctx context.Context, eventID string) ([]*domain.Fact, error) {
+	if s.factRepo == nil {
+		s.logger.Debug("Fact repository not configured")
+		return []*domain.Fact{}, nil
+	}
+
+	if eventID == "" {
+		s.logger.Warn("Cannot get facts for empty event ID")
+		return nil, fmt.Errorf("event ID cannot be empty")
+	}
+
+	facts, err := s.factRepo.GetBySourceEventID(ctx, eventID)
+	if err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"event_id": eventID,
+				"error":    err.Error(),
+			}).
+			Error("Failed to retrieve facts for event")
+		return nil, fmt.Errorf("failed to retrieve facts: %w", err)
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"event_id":   eventID,
+			"fact_count": fmt.Sprintf("%d", len(facts)),
+		}).
+		Debug("Facts retrieved for event")
+
+	return facts, nil
+}
+
+// GetFactsBySourceBurstID retrieves all facts extracted from a specific burst
+func (s *Service) GetFactsBySourceBurstID(ctx context.Context, burstID string) ([]*domain.Fact, error) {
+	if s.factRepo == nil {
+		s.logger.Debug("Fact repository not configured")
+		return []*domain.Fact{}, nil
+	}
+
+	if burstID == "" {
+		s.logger.Warn("Cannot get facts for empty burst ID")
+		return nil, fmt.Errorf("burst ID cannot be empty")
+	}
+
+	facts, err := s.factRepo.GetBySourceBurstID(ctx, burstID)
+	if err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"burst_id": burstID,
+				"error":    err.Error(),
+			}).
+			Error("Failed to retrieve facts for burst")
+		return nil, fmt.Errorf("failed to retrieve facts: %w", err)
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"burst_id":   burstID,
+			"fact_count": fmt.Sprintf("%d", len(facts)),
+		}).
+		Debug("Facts retrieved for burst")
+
+	return facts, nil
+}
+
+// SaveFact persists a fact to the repository
+func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
+	if s.factRepo == nil {
+		s.logger.Warn("Fact repository not configured")
+		return fmt.Errorf("fact repository not configured")
+	}
+
+	if fact == nil {
+		s.logger.Warn("Cannot save nil fact")
+		return fmt.Errorf("fact cannot be nil")
+	}
+
+	// Validate fact before saving
+	if err := s.ValidateFact(ctx, fact); err != nil {
+		return err
+	}
+
+	// Generate UUID if not provided
+	if fact.ID == "" {
+		fact.ID = uuid.New().String()
+	}
+
+	// Set timestamps
+	now := time.Now()
+	if fact.CreatedAt.IsZero() {
+		fact.CreatedAt = now
+	}
+	fact.UpdatedAt = now
+
+	// Check if fact already exists
+	existing, err := s.factRepo.GetByID(ctx, fact.ID)
+	if err == nil && existing != nil {
+		// Update existing fact
+		if err := s.factRepo.Update(ctx, fact); err != nil {
+			s.logger.
+				WithFields(map[string]string{
+					"fact_id": fact.ID,
+					"error":   err.Error(),
+				}).
+				Error("Failed to update fact")
+			return fmt.Errorf("failed to update fact: %w", err)
+		}
+
+		s.logger.
+			WithFields(map[string]string{
+				"fact_id": fact.ID,
+			}).
+			Info("Fact updated successfully")
+
+		return nil
+	}
+
+	// Create new fact
+	if err := s.factRepo.Create(ctx, fact); err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"fact_id": fact.ID,
+				"error":   err.Error(),
+			}).
+			Error("Failed to create fact")
+		return fmt.Errorf("failed to create fact: %w", err)
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"fact_id": fact.ID,
+		}).
+		Info("Fact created successfully")
+
+	return nil
+}
+
+// DeleteFact removes a fact from the repository
+func (s *Service) DeleteFact(ctx context.Context, factID string) error {
+	if s.factRepo == nil {
+		s.logger.Warn("Fact repository not configured")
+		return fmt.Errorf("fact repository not configured")
+	}
+
+	if factID == "" {
+		s.logger.Warn("Cannot delete fact with empty ID")
+		return fmt.Errorf("fact ID cannot be empty")
+	}
+
+	if err := s.factRepo.Delete(ctx, factID); err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"fact_id": factID,
+				"error":   err.Error(),
+			}).
+			Error("Failed to delete fact")
+		return fmt.Errorf("failed to delete fact: %w", err)
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"fact_id": factID,
+		}).
+		Info("Fact deleted successfully")
 
 	return nil
 }
