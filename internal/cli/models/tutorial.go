@@ -2,6 +2,8 @@ package models
 
 import (
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -13,6 +15,7 @@ type TutorialModel struct {
 	height      int
 	skipped     bool
 	completed   bool
+	helpFooter  components.HelpFooterModel
 }
 
 // Tutorial step content
@@ -36,6 +39,7 @@ func NewTutorialModel() *TutorialModel {
 		height:      24,
 		skipped:     false,
 		completed:   false,
+		helpFooter:  components.NewHelpFooter("tutorial", 80),
 	}
 }
 
@@ -82,24 +86,28 @@ func (m *TutorialModel) View() string {
 		return ""
 	}
 
+	var content string
 	switch m.currentStep {
 	case tutorialStepWelcome:
-		return m.renderWelcome()
+		content = m.renderWelcome()
 	case tutorialStepModes:
-		return m.renderModes()
+		content = m.renderModes()
 	case tutorialStepCapture:
-		return m.renderCapture()
+		content = m.renderCapture()
 	case tutorialStepTags:
-		return m.renderTags()
+		content = m.renderTags()
 	case tutorialStepFiltering:
-		return m.renderFiltering()
+		content = m.renderFiltering()
 	case tutorialStepExporting:
-		return m.renderExporting()
+		content = m.renderExporting()
 	case tutorialStepGettingHelp:
-		return m.renderGettingHelp()
+		content = m.renderGettingHelp()
 	default:
-		return "Tutorial complete!"
+		content = "Tutorial complete!"
 	}
+
+	m.helpFooter.SetWidth(m.width)
+	return lipgloss.JoinVertical(lipgloss.Left, content, m.helpFooter.View())
 }
 
 // IsCompleted returns whether the tutorial is completed or skipped
