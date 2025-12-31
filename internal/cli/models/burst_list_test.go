@@ -63,71 +63,71 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		model = NewBurstListModel(service, ctx)
 	})
 
-	ginkgo.It("5.0.12: should initialize with selectedIdx=0", func() {
+	ginkgo.It("should initialize with selectedIdx=0", func() {
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(0))
 	})
 
-	ginkgo.It("5.0.13: should move down on KeyDown", func() {
+	ginkgo.It("should move down on KeyDown", func() {
 		model.bursts = testBursts
 		initial := model.selectedIdx
 		model.Update(tea.KeyMsg{Type: tea.KeyDown})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(initial + 1))
 	})
 
-	ginkgo.It("5.0.13: should move up on KeyUp", func() {
+	ginkgo.It("should move up on KeyUp", func() {
 		model.bursts = testBursts
 		model.selectedIdx = 2
 		model.Update(tea.KeyMsg{Type: tea.KeyUp})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(1))
 	})
 
-	ginkgo.It("5.0.13: should wrap to end on KeyUp at start", func() {
+	ginkgo.It("should wrap to end on KeyUp at start", func() {
 		model.bursts = testBursts
 		model.selectedIdx = 0
 		model.Update(tea.KeyMsg{Type: tea.KeyUp})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(len(testBursts) - 1))
 	})
 
-	ginkgo.It("5.0.13: should wrap to start on KeyDown at end", func() {
+	ginkgo.It("should wrap to start on KeyDown at end", func() {
 		model.bursts = testBursts
 		model.selectedIdx = len(testBursts) - 1
 		model.Update(tea.KeyMsg{Type: tea.KeyDown})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(0))
 	})
 
-	ginkgo.It("5.0.14: should toggle expanded on Space", func() {
+	ginkgo.It("should toggle expanded on Space", func() {
 		model.bursts = testBursts
 		initial := model.expandedIndices[0]
 		model.Update(tea.KeyMsg{Type: tea.KeySpace})
 		gomega.Expect(model.expandedIndices[0]).To(gomega.Equal(!initial))
 	})
 
-	ginkgo.It("5.0.15: should render burst name", func() {
+	ginkgo.It("should render burst name", func() {
 		model.bursts = testBursts
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Platform Migration"))
 	})
 
-	ginkgo.It("5.0.15: should render event count", func() {
+	ginkgo.It("should render event count", func() {
 		model.bursts = testBursts
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("2"))
 	})
 
-	ginkgo.It("5.0.15: should render competency", func() {
+	ginkgo.It("should render competency", func() {
 		model.bursts = testBursts
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Technical"))
 	})
 
-	ginkgo.It("5.0.16: should filter by competency", func() {
+	ginkgo.It("should filter by competency", func() {
 		model.bursts = testBursts
 		model.filterBy = "Leadership"
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
 	})
 
-	ginkgo.It("5.0.17: should sort by event count", func() {
+	ginkgo.It("should sort by event count", func() {
 		model.bursts = testBursts
 		model.sortBy = "event_count"
 		displayed := model.getDisplayedBursts()
@@ -135,7 +135,7 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		gomega.Expect(len(first.EventIDs)).To(gomega.Equal(1))
 	})
 
-	ginkgo.It("5.0.18: should sort by name", func() {
+	ginkgo.It("should sort by name", func() {
 		model.bursts = testBursts
 		model.sortBy = "name"
 		displayed := model.getDisplayedBursts()
@@ -146,7 +146,7 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		}
 	})
 
-	ginkgo.It("5.0.19: should sort by date", func() {
+	ginkgo.It("should sort by date", func() {
 		model.bursts = testBursts
 		model.sortBy = "date"
 		displayed := model.getDisplayedBursts()
@@ -157,26 +157,26 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		}
 	})
 
-	ginkgo.It("5.0.20: should show events when expanded", func() {
+	ginkgo.It("should show events when expanded", func() {
 		model.bursts = testBursts
 		model.expandedIndices[0] = true
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Events:"))
 	})
 
-	ginkgo.It("5.0.21: should show empty message", func() {
+	ginkgo.It("should show empty message", func() {
 		model.bursts = []*career.Burst{}
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("No bursts found"))
 	})
 
-	ginkgo.It("5.0.22: should handle single burst", func() {
+	ginkgo.It("should handle single burst", func() {
 		model.bursts = []*career.Burst{testBursts[0]}
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Platform Migration"))
 	})
 
-	ginkgo.It("5.0.23: should handle large list", func() {
+	ginkgo.It("should handle large list", func() {
 		largeBursts := make([]*career.Burst, 100)
 		for i := 0; i < 100; i++ {
 			largeBursts[i] = &career.Burst{
@@ -193,20 +193,20 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		gomega.Expect(len(output) > 0).To(gomega.BeTrue())
 	})
 
-	ginkgo.It("5.0.24: should show no matching message", func() {
+	ginkgo.It("should show no matching message", func() {
 		model.filterBy = "NonExistent"
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("No matching bursts"))
 	})
 
-	ginkgo.It("5.0.25: should update size on resize", func() {
+	ginkgo.It("should update size on resize", func() {
 		msg := tea.WindowSizeMsg{Width: 200, Height: 40}
 		model.Update(msg)
 		gomega.Expect(model.width).To(gomega.Equal(200))
 		gomega.Expect(model.height).To(gomega.Equal(40))
 	})
 
-	ginkgo.It("5.0.26: should handle long name", func() {
+	ginkgo.It("should handle long name", func() {
 		model.bursts = []*career.Burst{
 			{
 				ID:              uuid.New().String(),
@@ -222,13 +222,13 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		gomega.Expect(len(output) > 0).To(gomega.BeTrue())
 	})
 
-	ginkgo.It("5.0.27: should handle 2 events", func() {
+	ginkgo.It("should handle 2 events", func() {
 		model.bursts = []*career.Burst{testBursts[0]}
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("2"))
 	})
 
-	ginkgo.It("5.0.27: should handle 50+ events", func() {
+	ginkgo.It("should handle 50+ events", func() {
 		burst := &career.Burst{
 			ID:              uuid.New().String(),
 			Name:            "Large Burst",
