@@ -1,12 +1,12 @@
 package models
 
 import (
-	"github.com/baphled/kariya/internal/domain/career"
 	"fmt"
+	"github.com/baphled/kariya/internal/domain/career"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -45,8 +45,8 @@ func NewImportReviewModel(parsedRows []*importer.ParsedRow) *ImportReviewModel {
 		width:           80,
 		height:          24,
 		summary:         calculateSummary(parsedRows),
-			helpFooter:    components.NewHelpFooter("import_review", 80),
-}
+		helpFooter:      components.NewHelpFooter("import_review", 80),
+	}
 
 	// Pre-select all valid, non-duplicate rows
 	for _, row := range parsedRows {
@@ -124,7 +124,6 @@ func (m *ImportReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	
 	}
 
 	return m, nil
@@ -222,6 +221,7 @@ func (m *ImportReviewModel) renderRows() string {
 
 	return strings.Join(rows, "\n")
 }
+
 // renderHelp renders the help text
 func (m *ImportReviewModel) renderHelp() string {
 	helpLines := []string{
@@ -295,7 +295,6 @@ func (m *ImportProgressModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Completed = true
 		return m, nil
 
-	
 	}
 
 	return m, nil

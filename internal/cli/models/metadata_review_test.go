@@ -332,125 +332,122 @@ var _ = Describe("MetadataReviewModel", func() {
 			Expect(defaultFields).To(ContainElement("project"))
 		})
 
+		Describe("Parsing warnings and issues display", func() {
+			It("should store and retrieve parsing warnings for an event", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+				warnings := []string{
+					"missing company field",
+					"date parsed from ambiguous format",
+				}
 
-	Describe("Parsing warnings and issues display", func() {
-		It("should store and retrieve parsing warnings for an event", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-			warnings := []string{
-				"missing company field",
-				"date parsed from ambiguous format",
-			}
+				// Act
+				model.SetParsingWarnings(eventID, warnings)
+				retrieved := model.GetParsingWarnings(eventID)
 
-			// Act
-			model.SetParsingWarnings(eventID, warnings)
-			retrieved := model.GetParsingWarnings(eventID)
+				// Assert
+				Expect(retrieved).To(HaveLen(2))
+				Expect(retrieved).To(ContainElement("missing company field"))
+				Expect(retrieved).To(ContainElement("date parsed from ambiguous format"))
+			})
 
-			// Assert
-			Expect(retrieved).To(HaveLen(2))
-			Expect(retrieved).To(ContainElement("missing company field"))
-			Expect(retrieved).To(ContainElement("date parsed from ambiguous format"))
+			It("should indicate if an event has parsing warnings", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+				warnings := []string{"missing company"}
+
+				// Act
+				model.SetParsingWarnings(eventID, warnings)
+				hasWarnings := model.HasParsingWarnings(eventID)
+
+				// Assert
+				Expect(hasWarnings).To(BeTrue())
+			})
+
+			It("should return empty list for events without warnings", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+
+				// Act
+				warnings := model.GetParsingWarnings(eventID)
+
+				// Assert
+				Expect(warnings).To(BeEmpty())
+			})
+
+			It("should check if event has parsing issues", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+
+				// Act & Assert
+				Expect(model.HasParsingWarnings(eventID)).To(BeFalse())
+
+				model.SetParsingWarnings(eventID, []string{"issue"})
+				Expect(model.HasParsingWarnings(eventID)).To(BeTrue())
+			})
 		})
 
-		It("should indicate if an event has parsing warnings", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-			warnings := []string{"missing company"}
+		Describe("Duplicate detection status display", func() {
+			It("should store and retrieve duplicate status for an event", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+				duplicateOf := "original-event-id"
 
-			// Act
-			model.SetParsingWarnings(eventID, warnings)
-			hasWarnings := model.HasParsingWarnings(eventID)
+				// Act
+				model.SetDuplicateStatus(eventID, true, duplicateOf)
+				isDuplicate, originalID := model.GetDuplicateStatus(eventID)
 
-			// Assert
-			Expect(hasWarnings).To(BeTrue())
+				// Assert
+				Expect(isDuplicate).To(BeTrue())
+				Expect(originalID).To(Equal(duplicateOf))
+			})
+
+			It("should indicate if an event is a duplicate", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+
+				// Act
+				model.SetDuplicateStatus(eventID, true, "original-id")
+				isDuplicate := model.IsDuplicate(eventID)
+
+				// Assert
+				Expect(isDuplicate).To(BeTrue())
+			})
+
+			It("should return original event ID for duplicates", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+				originalID := "original-event-id"
+
+				// Act
+				model.SetDuplicateStatus(eventID, true, originalID)
+				retrievedID := model.GetOriginalEventID(eventID)
+
+				// Assert
+				Expect(retrievedID).To(Equal(originalID))
+			})
+
+			It("should handle non-duplicate events gracefully", func() {
+				// Arrange
+				model := models.NewMetadataReviewModel(service, ctx)
+				eventID := "test-event-id"
+
+				// Act
+				isDuplicate := model.IsDuplicate(eventID)
+				originalID := model.GetOriginalEventID(eventID)
+
+				// Assert
+				Expect(isDuplicate).To(BeFalse())
+				Expect(originalID).To(BeEmpty())
+			})
 		})
 
-		It("should return empty list for events without warnings", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-
-			// Act
-			warnings := model.GetParsingWarnings(eventID)
-
-			// Assert
-			Expect(warnings).To(BeEmpty())
-		})
-
-		It("should check if event has parsing issues", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-
-			// Act & Assert
-			Expect(model.HasParsingWarnings(eventID)).To(BeFalse())
-
-			model.SetParsingWarnings(eventID, []string{"issue"})
-			Expect(model.HasParsingWarnings(eventID)).To(BeTrue())
-		})
 	})
-
-	
-
-	Describe("Duplicate detection status display", func() {
-		It("should store and retrieve duplicate status for an event", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-			duplicateOf := "original-event-id"
-
-			// Act
-			model.SetDuplicateStatus(eventID, true, duplicateOf)
-			isDuplicate, originalID := model.GetDuplicateStatus(eventID)
-
-			// Assert
-			Expect(isDuplicate).To(BeTrue())
-			Expect(originalID).To(Equal(duplicateOf))
-		})
-
-		It("should indicate if an event is a duplicate", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-
-			// Act
-			model.SetDuplicateStatus(eventID, true, "original-id")
-			isDuplicate := model.IsDuplicate(eventID)
-
-			// Assert
-			Expect(isDuplicate).To(BeTrue())
-		})
-
-		It("should return original event ID for duplicates", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-			originalID := "original-event-id"
-
-			// Act
-			model.SetDuplicateStatus(eventID, true, originalID)
-			retrievedID := model.GetOriginalEventID(eventID)
-
-			// Assert
-			Expect(retrievedID).To(Equal(originalID))
-		})
-
-		It("should handle non-duplicate events gracefully", func() {
-			// Arrange
-			model := models.NewMetadataReviewModel(service, ctx)
-			eventID := "test-event-id"
-
-			// Act
-			isDuplicate := model.IsDuplicate(eventID)
-			originalID := model.GetOriginalEventID(eventID)
-
-			// Assert
-			Expect(isDuplicate).To(BeFalse())
-			Expect(originalID).To(BeEmpty())
-		})
-	})
-
-		})
 })

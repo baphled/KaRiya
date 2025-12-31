@@ -68,9 +68,9 @@ var _ = Describe("Form Model - Complete Layout Integration", func() {
 			view := form.View()
 
 			// Should have styled elements
-			Expect(view).To(ContainSubstring("►")) // Focus indicator
+			Expect(view).To(ContainSubstring("►"))          // Focus indicator
 			Expect(view).To(ContainSubstring("Event Text")) // Styled label
-			Expect(view).To(ContainSubstring("Submit")) // Styled button
+			Expect(view).To(ContainSubstring("Submit"))     // Styled button
 		})
 	})
 
@@ -101,7 +101,7 @@ var _ = Describe("Form Model - Complete Layout Integration", func() {
 			view := form.View()
 
 			// Each field should have label and input
-			Expect(view).To(ContainSubstring("Event Text")) // Label
+			Expect(view).To(ContainSubstring("Event Text"))  // Label
 			Expect(view).To(ContainSubstring("Characters:")) // Counter/helper
 		})
 
@@ -210,8 +210,8 @@ var _ = Describe("Form Model - Complete Layout Integration", func() {
 			view := form.View()
 
 			// All styled components should be present
-			Expect(view).To(ContainSubstring("►")) // Focus indicator
-			Expect(view).To(ContainSubstring("Event Text")) // Label
+			Expect(view).To(ContainSubstring("►"))           // Focus indicator
+			Expect(view).To(ContainSubstring("Event Text"))  // Label
 			Expect(view).To(ContainSubstring("Characters:")) // Counter
 		})
 	})
@@ -283,7 +283,7 @@ var _ = Describe("Form Model - Complete Layout Integration", func() {
 			view := form.View()
 
 			// Should have visual markers for styling
-			Expect(view).To(ContainSubstring("►")) // Focus indicator
+			Expect(view).To(ContainSubstring("►"))          // Focus indicator
 			Expect(view).To(ContainSubstring("(required)")) // Required field marker
 			Expect(view).To(ContainSubstring("(optional)")) // Optional field markers
 		})
@@ -292,9 +292,9 @@ var _ = Describe("Form Model - Complete Layout Integration", func() {
 			view := form.View()
 
 			// Form should be easy to understand
-			Expect(view).To(ContainSubstring("Event Text")) // Clear what to enter
+			Expect(view).To(ContainSubstring("Event Text"))  // Clear what to enter
 			Expect(view).To(ContainSubstring("Characters:")) // Show constraints
-			Expect(view).To(ContainSubstring("Submit")) // Clear action
+			Expect(view).To(ContainSubstring("Submit"))      // Clear action
 		})
 
 		It("should handle all layout aspects in integrated manner", func() {
@@ -326,4 +326,3 @@ var _ = Describe("Form Model - Complete Layout Integration", func() {
 		})
 	})
 })
-

@@ -727,8 +727,8 @@ var _ = Describe("FormModel", func() {
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 
 						// Submit
-							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
+						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
 						Expect(cmd).NotTo(BeNil())
 						msg := cmd()
@@ -777,7 +777,6 @@ var _ = Describe("FormModel", func() {
 						Expect(testForm.Error().Error()).To(ContainSubstring("30 days"))
 					})
 				})
-
 
 				Context("CV Backfill mode", func() {
 					It("should accept events from any date in the past", func() {

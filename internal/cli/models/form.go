@@ -46,12 +46,13 @@ type FormModel struct {
 	maxChars         int
 	tagSelector      *components.TagSelector
 	categorySelector *components.CategorySelector
-	fieldErrors      map[FormField]string // Track field-level validation errors
-	editMode         bool                 // True if editing an existing event
-	editEventID      string               // ID of event being edited
-	helpFooter      components.HelpFooterModel // Help footer for keyboard shortcuts
-	header        components.HeaderModel // Header component
-	footer        components.FooterModel // Footer component
+	fieldErrors      map[FormField]string       // Track field-level validation errors
+	editMode         bool                       // True if editing an existing event
+	editEventID      string                     // ID of event being edited
+	helpFooter       components.HelpFooterModel // Help footer for keyboard shortcuts
+	header           components.HeaderModel     // Header component
+	footer           components.FooterModel     // Footer component
+	breadcrumbs      []string                   // Navigation breadcrumb trail
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -103,8 +104,8 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		categorySelector: components.NewCategorySelector(),
 		fieldErrors:      make(map[FormField]string),
 		helpFooter:       components.NewHelpFooter("form", 80),
-		header:       components.NewHeader("Capture Career Event", 80),
-		footer:       components.NewFooter(80),
+		header:           components.NewHeader("Capture Career Event", 80),
+		footer:           components.NewFooter(80),
 	}
 }
 
@@ -120,7 +121,7 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.header.SetWidth(msg.Width)
 		m.footer.SetWidth(msg.Width)
 		m.helpFooter.SetWidth(msg.Width)
-		
+
 		return m, nil
 	case SubmitMsg:
 		// Handle form submission result
@@ -946,4 +947,10 @@ func (m *FormModel) renderCategorySelector() string {
 	}
 
 	return b.String()
+}
+
+// SetBreadcrumbs sets breadcrumb trail for display in header
+func (m *FormModel) SetBreadcrumbs(crumbs []string) {
+	m.breadcrumbs = crumbs
+	m.header.SetBreadcrumbs(crumbs)
 }
