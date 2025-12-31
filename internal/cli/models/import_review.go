@@ -131,7 +131,8 @@ func (m *ImportReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the import review screen
 func (m *ImportReviewModel) View() string {
-	title := styles.HeaderMain.Render("Import Career Events Review")
+	header := components.NewHeader("Import Career Events Review", m.width)
+	title := header.View()
 
 	// Render summary
 	summaryText := fmt.Sprintf(
@@ -302,7 +303,8 @@ func (m *ImportProgressModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the progress screen
 func (m *ImportProgressModel) View() string {
-	title := styles.HeaderMain.Render("Importing Career Events")
+	header := components.NewHeader("Importing Career Events", m.width)
+	title := header.View()
 
 	if m.Completed {
 		return m.renderResult()
@@ -331,7 +333,8 @@ func (m *ImportProgressModel) View() string {
 
 // renderResult renders the import result
 func (m *ImportProgressModel) renderResult() string {
-	title := styles.HeaderMain.Render("Import Complete")
+	header := components.NewHeader("Import Complete", m.width)
+	title := header.View()
 
 	if m.err != nil {
 		errorBox := styles.ErrorBox.Render(fmt.Sprintf("Error: %v", m.err))
