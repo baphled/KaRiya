@@ -1,10 +1,10 @@
 package models
 
 import (
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // TutorialModel represents the first-run tutorial screen

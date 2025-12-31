@@ -340,4 +340,3 @@ var _ = Describe("Fact", func() {
 		})
 	})
 })
-

@@ -198,4 +198,3 @@ func (f *Fact) validateAspirationLanguage() error {
 
 	return nil
 }
-

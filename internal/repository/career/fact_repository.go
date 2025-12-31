@@ -318,4 +318,3 @@ func (r *MemoryFactRepository) GetBySourceBurstID(ctx context.Context, burstID s
 
 	return facts, nil
 }
-

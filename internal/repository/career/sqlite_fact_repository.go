@@ -451,4 +451,3 @@ func (r *SQLiteFactRepository) GetBySourceBurstID(ctx context.Context, burstID s
 
 	return facts, nil
 }
-

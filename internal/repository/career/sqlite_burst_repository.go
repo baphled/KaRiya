@@ -310,4 +310,3 @@ func (r *SQLiteBurstRepository) Count(ctx context.Context, filters BurstListFilt
 
 	return count, nil
 }
-
