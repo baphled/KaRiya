@@ -222,6 +222,10 @@ go build -o kariya-cli ./cmd/cli
 - **Data Quality Scoring**: Automatic scoring (0-100) to track metadata completeness
 - **Tags**: Organize events with up to 8 tags per event
 - **Categories**: Competency-based categorization with up to 2 categories per event
+- **Burst Detection**: Automatically group related events into thematic bursts with confidence scoring
+- **Fact Extraction**: Automatically extract grounded facts from events and bursts (no aspirational language)
+- **Role Fit Classification**: Infer career level (Principal, EM, Staff Engineer, Senior IC)
+- **Audience Relevance**: Determine who cares about each fact (Hiring Manager, Recruiter, Peer)
 - **Interactive Help**: 7-section help system with keyboard shortcuts
 - **First-Run Tutorial**: Interactive guide for new users
 - **CLI Flags**: Configuration via command-line arguments
@@ -232,14 +236,16 @@ go build -o kariya-cli ./cmd/cli
 - `i` - Import from CSV
 - `l` - List events
 - `m` - Open metadata review
+- `u` - View burst suggestions (from metadata review)
 - `h` - Help system
 - `q` - Quit
 - `tab`/`shift+tab` - Navigate form fields
 - `up`/`down` - Move through lists
-- `space` - Select/deselect (bulk operations)
+- `space` - Select/deselect (bulk operations, burst editing)
 - `a` - Select all / `d` - Deselect all
+- `y`/`n` - Confirm/reject burst suggestions
 
-For complete keyboard reference, see [CLI_GUIDE.md](docs/CLI_GUIDE.md) or press 'h' in the app.
+For complete keyboard reference, see [CLI_GUIDE.md](docs/CLI_GUIDE.md) or [BURST_FACT_EXTRACTION_GUIDE.md](docs/BURST_FACT_EXTRACTION_GUIDE.md) or press 'h' in the app.
 
 ## CLI Architecture
 
