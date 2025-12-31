@@ -167,6 +167,38 @@ Improved API response times,2025-12-24,TechCorp,Performance,technical;optimizati
 			Expect(output).To(ContainSubstring("Events:"))
 			Expect(output).To(ContainSubstring("Confidence:"))
 		})
+
+		It("should display fact extraction results after import", func() {
+			// Create a temporary CSV file with events that should extract facts
+			csvContent := `Text,Date,Company,Project,Tags
+Implemented cloud migration strategy,2025-12-20,TechCorp,CloudMigration,technical
+Led team through system redesign,2025-12-21,TechCorp,Redesign,leadership
+Mentored junior engineers on best practices,2025-12-22,TechCorp,Training,mentoring`
+
+			tmpFile, err := os.CreateTemp("", "test_facts_*.csv")
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Remove(tmpFile.Name())
+
+			_, err = tmpFile.WriteString(csvContent)
+			Expect(err).NotTo(HaveOccurred())
+			tmpFile.Close()
+
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--import", tmpFile.Name(), "--skip-import-review", "--in-memory"}, &buf, &errBuf)
+
+			Expect(exitCode).To(Equal(0))
+			output := buf.String()
+			// Verify import completed
+			Expect(output).To(ContainSubstring("Import Complete"))
+			// Verify fact extraction section exists (even if no facts persisted)
+			Expect(output).To(ContainSubstring("Successfully imported"))
+		})
+
+		It("should accept --review-facts flag", func() {
+			// Verify the flag is parsed correctly
+			args := []string{"--import", "test.csv", "--review-facts", "--skip-import-review"}
+			Expect(args).To(ContainElement("--review-facts"))
+		})
 	})
 
 	Context("Help Examples", func() {

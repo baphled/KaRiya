@@ -12,13 +12,16 @@ import (
 
 // ImportResult represents the result of an import operation
 type ImportResult struct {
-	TotalRows        int
-	SuccessCount     int
-	SkippedCount     int
-	FailedCount      int
-	CreatedEvents    []*career.CareerEvent
-	FailedRows       []*ParsedRow
-	BurstSuggestions []burst_fact.BurstSuggestion // Burst suggestions detected from imported events
+	TotalRows           int
+	SuccessCount        int
+	SkippedCount        int
+	FailedCount         int
+	CreatedEvents       []*career.CareerEvent
+	FailedRows          []*ParsedRow
+	BurstSuggestions    []burst_fact.BurstSuggestion // Burst suggestions detected from imported events
+	ExtractedFactsCount int                           // Number of facts extracted from imported events
+	FactsByEventID      map[string][]*career.Fact     // Facts keyed by source event ID
+	FactsByCompetency   map[string]int                // Count of facts by competency category
 }
 
 // ImportService handles the import workflow
@@ -64,9 +67,11 @@ func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) 
 // ImportRows imports the parsed rows into the database
 func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow, selectedRows []int) (*ImportResult, error) {
 	result := &ImportResult{
-		TotalRows:     len(selectedRows),
-		CreatedEvents: []*career.CareerEvent{},
-		FailedRows:    []*ParsedRow{},
+		TotalRows:         len(selectedRows),
+		CreatedEvents:     []*career.CareerEvent{},
+		FailedRows:        []*ParsedRow{},
+		FactsByEventID:    make(map[string][]*career.Fact),
+		FactsByCompetency: make(map[string]int),
 	}
 
 	// Create a set of selected row numbers for quick lookup
@@ -127,6 +132,53 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 			if len(suggestions) > 0 {
 				fmt.Printf("Detected %d burst suggestions from %d events\n",
 					len(suggestions), len(result.CreatedEvents))
+			}
+		}
+	}
+
+	// Extract facts from new events (Task 3.0: Post-import fact extraction)
+	if len(result.CreatedEvents) > 0 {
+		for _, event := range result.CreatedEvents {
+			// Extract facts from this event
+			facts, err := is.careerService.ExtractFactsFromEvent(ctx, event)
+			if err != nil {
+				// Log warning but continue - fact extraction is an optional enhancement
+				fmt.Printf("Warning: Failed to extract facts from event %s: %v\n", event.ID, err)
+				continue
+			}
+
+			// Persist each extracted fact
+			for _, fact := range facts {
+				// Set source event ID
+				fact.SourceEventID = event.ID
+
+				// Save fact to repository
+				if err := is.careerService.SaveFact(ctx, &fact); err != nil {
+					fmt.Printf("Warning: Failed to save fact: %v\n", err)
+					continue
+				}
+
+				// Track the fact
+				result.ExtractedFactsCount++
+				result.FactsByEventID[event.ID] = append(result.FactsByEventID[event.ID], &fact)
+
+				// Count by competency
+				for _, competency := range fact.CompetencyCategories {
+					result.FactsByCompetency[competency]++
+				}
+			}
+		}
+
+		// Log summary
+		if result.ExtractedFactsCount > 0 {
+			fmt.Printf("Extracted %d facts from %d events\n",
+				result.ExtractedFactsCount, len(result.CreatedEvents))
+			if len(result.FactsByCompetency) > 0 {
+				fmt.Printf("Competency breakdown: ")
+				for competency, count := range result.FactsByCompetency {
+					fmt.Printf("%s: %d, ", competency, count)
+				}
+				fmt.Printf("\n")
 			}
 		}
 	}
