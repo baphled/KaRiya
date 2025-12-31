@@ -1,8 +1,6 @@
 package app
 
 import (
-	"context"
-
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -16,11 +14,9 @@ var _ = Describe("Breadcrumb State Management", func() {
 		repo       *career.MemoryRepository
 		svc        *careerservice.Service
 		cliService *service.CLIEventService
-		ctx        context.Context
 	)
 
 	BeforeEach(func() {
-		ctx = context.Background()
 		repo = career.NewMemoryRepository()
 		svc = careerservice.NewService(repo)
 		cliService = service.NewCLIEventService(svc)

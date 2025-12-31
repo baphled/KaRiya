@@ -124,10 +124,10 @@ func GetCompactHelp() string {
 func GetGroupedHelp() string {
 	groups := map[string][]NavigationKey{
 		"Navigation": {KeyUp, KeyDown, KeyLeft, KeyRight},
-		"Actions": {KeySelect, KeyToggle, KeyEdit, KeyDelete},
-		"Modes": {KeyCapture, KeyList, KeyMetadata},
-		"Tools": {KeyFilter, KeySort, KeySearch, KeyBulk},
-		"Global": {KeyHelp, KeyHome, KeyQuit, KeyBack},
+		"Actions":    {KeySelect, KeyToggle, KeyEdit, KeyDelete},
+		"Modes":      {KeyCapture, KeyList, KeyMetadata},
+		"Tools":      {KeyFilter, KeySort, KeySearch, KeyBulk},
+		"Global":     {KeyHelp, KeyHome, KeyQuit, KeyBack},
 	}
 
 	var result strings.Builder
@@ -144,4 +144,3 @@ func GetGroupedHelp() string {
 
 	return strings.TrimPrefix(result.String(), "\n")
 }
-

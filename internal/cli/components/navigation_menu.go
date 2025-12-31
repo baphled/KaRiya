@@ -313,4 +313,3 @@ func (m *NavigationMenuModel) SetSelectedIndex(index int) {
 		m.selectedIndex = index
 	}
 }
-

@@ -234,4 +234,3 @@ func (li ListItemModel) renderStatus() string {
 	statusStyle := lipgloss.NewStyle().Foreground(li.statusColor)
 	return "  " + statusStyle.Render("["+li.statusText+"]")
 }
-
