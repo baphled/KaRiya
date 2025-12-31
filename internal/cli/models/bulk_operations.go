@@ -115,7 +115,8 @@ func (m *BulkOperationsModel) View() string {
 	var b strings.Builder
 
 	// Header
-	b.WriteString(styles.HeaderMain.Render("Bulk Operations"))
+	header := components.NewHeader("Bulk Operations", m.width)
+	b.WriteString(header.View())
 	b.WriteString("\n\n")
 
 	// Selection summary
