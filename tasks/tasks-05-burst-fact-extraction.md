@@ -133,13 +133,13 @@
 - [x] 4.1 Implement burst detection algorithm using event text similarity and temporal proximity
 - [x] 4.2 Create similarity scorer (text matching, keyword overlap, company/project matching)
 - [x] 4.3 Implement temporal grouping (events within 6 months considered related) - **COMPLETE** (126 lines, 24 tests, 100% passing)
-- [ ] 4.4 Create burst suggestion generation (returns list of suggested bursts with confidence scores)
-- [ ] 4.5 Implement user confirmation workflow (suggest burst, user confirms or rejects)
-- [ ] 4.6 Create service method: `SuggestBursts(ctx, eventIDs) -> []BurstSuggestion`
-- [ ] 4.7 Create service method: `ConfirmBurst(ctx, burst) -> error` (validates and persists)
-- [ ] 4.8 Create service method: `RejectBurstSuggestion(ctx, eventIDs) -> error` (records rejection to prevent re-suggesting)
-- [ ] 4.9 Write unit tests for similarity scoring and temporal grouping
-- [ ] 4.10 Write integration tests for burst suggestion workflow
+- [x] 4.4 Create burst suggestion generation (returns list of suggested bursts with confidence scores)
+- [x] 4.5 Implement user confirmation workflow (suggest burst, user confirms or rejects)
+- [x] 4.6 Create service method: `SuggestBursts(ctx, eventIDs) -> []BurstSuggestion`
+- [x] 4.7 Create service method: `ConfirmBurst(ctx, burst) -> error` (validates and persists)
+- [x] 4.8 Create service method: `RejectBurstSuggestion(ctx, eventIDs) -> error` (records rejection to prevent re-suggesting)
+- [x] 4.9 Write unit tests for similarity scoring and temporal grouping
+- [x] 4.10 Write integration tests for burst suggestion workflow
 
 #### 5.0 Create Burst Display Component
 - [ ] 5.1 Implement BurstListModel as BubbleTea Model for displaying burst list
