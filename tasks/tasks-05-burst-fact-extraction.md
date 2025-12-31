@@ -180,7 +180,7 @@
 - [ ] 7.8 Create service method: `ExtractFacts(ctx, event/burst) -> []Fact`
 - [ ] 7.9 Create service method: `ValidateFact(ctx, fact) -> error` (validation rules)
 - [x] 7.10 Write unit tests for all extraction and inference components
-- [ ] 7.11 Write integration tests for complete fact extraction workflow
+- [x] 7.11 Write integration tests for complete fact extraction workflow
 
 #### 8.0 Create Fact Display Components
 - [ ] 8.1 Implement FactCardComponent for displaying individual fact
