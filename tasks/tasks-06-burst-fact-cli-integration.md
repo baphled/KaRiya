@@ -237,8 +237,8 @@ if len(result.CreatedEvents) > 0 {
 - [ ] Tests pass: `go test ./internal/cli/importer -v`
 
 #### 2.1 Display Burst Detection Results to User
-- [ ] 4.1 Modify `handleNonInteractiveImport` in `cmd/cli/main.go` to display burst results
-- [ ] 4.2 After import summary, print burst detection summary:
+- [x] 4.1 Modify `handleNonInteractiveImport` in `cmd/cli/main.go` to display burst results
+- [x] 4.2 After import summary, print burst detection summary:
   ```
   === Burst Suggestions ===
   Detected 5 potential bursts:
@@ -246,10 +246,10 @@ if len(result.CreatedEvents) > 0 {
   - Cloud migration (2 events, confidence: 0.72)
   ...
   ```
-- [ ] 4.3 If using interactive mode, navigate to burst review screen instead of exiting
-- [ ] 4.4 Add option to skip burst review (--skip-burst-detection flag)
-- [ ] 4.5 Add option to save burst suggestions for later review (--review-bursts-later flag)
-- [ ] 4.6 Write tests for result display
+- [x] 4.3 If using interactive mode, navigate to burst review screen instead of exiting
+- [x] 4.4 Add option to skip burst review (--skip-burst-detection flag)
+- [x] 4.5 Add option to save burst suggestions for later review (--review-bursts-later flag)
+- [x] 4.6 Write tests for result display
 
 **Implementation Details**:
 ```go
