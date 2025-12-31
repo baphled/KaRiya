@@ -308,14 +308,19 @@ var _ = Describe("ViewEventWithFacts Integration Tests", func() {
 				fact.Text = "Edited fact text via workflow"
 
 				// Submit editor
-				model.factEditorModel.submitted = true
+				// Move focus to Save button
+				model.factEditorModel.focusIndex = 5  // FactSaveButtonIdx
+				model.factEditorModel.fact.CompetencyCategories = []string{"technical"}
+				model.factEditorModel.fact.RoleFit = career.RoleFitSeniorIC
+				model.factEditorModel.fact.AudienceRelevance = []string{"hiring_manager"}
 				updatedModel, cmd = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 				model = updatedModel.(*ViewEventWithFactsModel)
 
 				// Execute save command
 				if cmd != nil {
 					msg := cmd()
-					model.Update(msg)
+				updatedModel, _ := model.Update(msg)
+				model = updatedModel.(*ViewEventWithFactsModel)
 				}
 
 				// Verify workflow completed

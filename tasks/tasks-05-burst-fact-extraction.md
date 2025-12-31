@@ -282,8 +282,15 @@
 - [x] 12.6 Implement "review later" option for bursts and facts
   - **Status**: ReviewLater() method tracks pending items and allows deferred review
   - **Features**: GetPendingBursts(), GetPendingFacts(), HasPendingItems(), GetPendingSummary()
-- [ ] 12.7 Create home screen menu option to review pending bursts and facts
-  - **Status**: PENDING - Requires home screen update to show pending items
+- [x] 12.7 Create home screen menu option to review pending bursts and facts
+  - **Status**: COMPLETE - Home screen now shows pending items
+  - **Implementation**:
+    - workflowState initialized in NewModel()
+    - renderHome() displays pending items notification if HasPendingItems() is true
+    - Press 'p' keyboard shortcut to review pending items
+    - ViewPendingItemsMsg handler navigates to BurstSuggestionScreen or MetadataReviewScreen
+    - Pending summary shown as warning box: "⚠️  You have X burst suggestions, Y fact extractions to review. Press 'p' to review."
+  - **Location**: internal/cli/app/app.go (lines 80, 231-257, 569-583, 672-691)
 - [x] 12.8 Write integration tests for complete end-to-end workflow
   - **Status**: workflow_integration_test.go created with 12 comprehensive test cases
   - **Tests**: 28 workflow state tests + 12 integration tests (all passing)
