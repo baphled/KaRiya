@@ -9,6 +9,7 @@ import (
 
 // TutorialModel represents the first-run tutorial screen
 type TutorialModel struct {
+	*BaseStandardModel
 	currentStep int
 	maxSteps    int
 	width       int
@@ -33,13 +34,14 @@ const (
 // NewTutorialModel creates a new tutorial model
 func NewTutorialModel() *TutorialModel {
 	return &TutorialModel{
-		currentStep: tutorialStepWelcome,
-		maxSteps:    tutorialTotalSteps,
-		width:       80,
-		height:      24,
-		skipped:     false,
-		completed:   false,
-		helpFooter:  components.NewHelpFooter("tutorial", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		currentStep:       tutorialStepWelcome,
+		maxSteps:          tutorialTotalSteps,
+		width:             80,
+		height:            24,
+		skipped:           false,
+		completed:         false,
+		helpFooter:        components.NewHelpFooter("tutorial", 80),
 	}
 }
 

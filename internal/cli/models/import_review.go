@@ -26,6 +26,7 @@ type ImportResultMsg struct {
 
 // ImportReviewModel handles the import review screen
 type ImportReviewModel struct {
+	*BaseStandardModel
 	ParsedRows      []*importer.ParsedRow
 	selectedRows    map[int]bool // Track selected rows by row number
 	focusedRowIndex int          // Index in the display (0-based)
@@ -39,13 +40,14 @@ type ImportReviewModel struct {
 // NewImportReviewModel creates a new import review model
 func NewImportReviewModel(parsedRows []*importer.ParsedRow) *ImportReviewModel {
 	model := &ImportReviewModel{
-		ParsedRows:      parsedRows,
-		selectedRows:    make(map[int]bool),
-		focusedRowIndex: 0,
-		width:           80,
-		height:          24,
-		summary:         calculateSummary(parsedRows),
-		helpFooter:      components.NewHelpFooter("import_review", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		ParsedRows:        parsedRows,
+		selectedRows:      make(map[int]bool),
+		focusedRowIndex:   0,
+		width:             80,
+		height:            24,
+		summary:           calculateSummary(parsedRows),
+		helpFooter:        components.NewHelpFooter("import_review", 80),
 	}
 
 	// Pre-select all valid, non-duplicate rows

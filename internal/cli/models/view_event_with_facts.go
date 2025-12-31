@@ -15,6 +15,7 @@ import (
 
 // ViewEventWithFactsModel represents the event detail view with facts display
 type ViewEventWithFactsModel struct {
+	*BaseStandardModel
 	service          *careerservice.Service
 	ctx              context.Context
 	event            *career.CareerEvent
@@ -48,16 +49,17 @@ type FactsLoadedMsg struct {
 // NewViewEventWithFactsModel creates a new view event with facts model
 func NewViewEventWithFactsModel(svc *careerservice.Service, ctx context.Context, event *career.CareerEvent) *ViewEventWithFactsModel {
 	return &ViewEventWithFactsModel{
-		service:          svc,
-		ctx:              ctx,
-		event:            event,
-		selectedAction:   0,
-		actions:          []string{"Edit Event", "Delete Event", "View Facts", "Back to List"},
-		showDeleteDialog: false,
-		deleteDialog:     NewConfirmationDialog("Confirm Delete", "Are you sure you want to delete this event? This action cannot be undone."),
-		helpFooter:       components.NewHelpFooter("view_event", 80),
-		eventFacts:       []*career.Fact{},
-		burstFacts:       []*career.Fact{},
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           svc,
+		ctx:               ctx,
+		event:             event,
+		selectedAction:    0,
+		actions:           []string{"Edit Event", "Delete Event", "View Facts", "Back to List"},
+		showDeleteDialog:  false,
+		deleteDialog:      NewConfirmationDialog("Confirm Delete", "Are you sure you want to delete this event? This action cannot be undone."),
+		helpFooter:        components.NewHelpFooter("view_event", 80),
+		eventFacts:        []*career.Fact{},
+		burstFacts:        []*career.Fact{},
 	}
 }
 

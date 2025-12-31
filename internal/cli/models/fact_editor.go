@@ -27,6 +27,7 @@ const (
 
 // FactEditorModel represents the fact editor form state
 type FactEditorModel struct {
+	*BaseStandardModel
 	fact                 *career.Fact
 	originalFact         *career.Fact // For reverting changes
 	service              *careerservice.Service
@@ -89,6 +90,7 @@ func NewFactEditorModel(fact *career.Fact, service *careerservice.Service, ctx c
 	}
 
 	return &FactEditorModel{
+		BaseStandardModel:    NewBaseStandardModel(),
 		fact:                 fact,
 		originalFact:         &factCopy,
 		service:              service,

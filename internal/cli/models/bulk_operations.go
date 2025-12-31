@@ -24,6 +24,7 @@ type BulkOperationsSummary struct {
 
 // BulkOperationsModel manages bulk metadata editing for multiple events
 type BulkOperationsModel struct {
+	*BaseStandardModel
 	events              []*career.CareerEvent
 	service             *careerservice.Service
 	cliService          *service.CLIEventService
@@ -54,16 +55,17 @@ func NewBulkOperationsModel(
 	ctx context.Context,
 ) *BulkOperationsModel {
 	return &BulkOperationsModel{
-		events:       events,
-		service:      service,
-		cliService:   cliService,
-		ctx:          ctx,
-		selected:     make(map[int]bool),
-		focusIndex:   0,
-		width:        80,
-		height:       24,
-		fieldOrigins: make(map[string]map[string]bool),
-		helpFooter:   components.NewHelpFooter("bulk_operations", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		events:            events,
+		service:           service,
+		cliService:        cliService,
+		ctx:               ctx,
+		selected:          make(map[int]bool),
+		focusIndex:        0,
+		width:             80,
+		height:            24,
+		fieldOrigins:      make(map[string]map[string]bool),
+		helpFooter:        components.NewHelpFooter("bulk_operations", 80),
 	}
 }
 

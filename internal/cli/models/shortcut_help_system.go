@@ -161,6 +161,12 @@ func (shs *ShortcutHelpSystem) GenerateHelpText(id string) string {
 	if keyStr == "" {
 		keyStr = id
 	}
+
+	// Include both the help description and the full description
+	helpDesc := help.Desc
+	if helpDesc != "" {
+		return fmt.Sprintf("%s - %s (%s)", keyStr, helpDesc, info.Description)
+	}
 	return fmt.Sprintf("%s - %s", keyStr, info.Description)
 }
 
@@ -179,7 +185,14 @@ func (shs *ShortcutHelpSystem) GenerateContextHelp(context string) string {
 		if keyStr == "" {
 			keyStr = info.ID
 		}
-		lines = append(lines, fmt.Sprintf("  %s - %s", keyStr, info.Description))
+
+		// Include both the help description and the full description
+		helpDesc := help.Desc
+		if helpDesc != "" {
+			lines = append(lines, fmt.Sprintf("  %s - %s (%s)", keyStr, helpDesc, info.Description))
+		} else {
+			lines = append(lines, fmt.Sprintf("  %s - %s", keyStr, info.Description))
+		}
 	}
 
 	sort.Strings(lines)

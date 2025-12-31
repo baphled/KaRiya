@@ -13,6 +13,7 @@ import (
 
 // DetailsModel represents the event details screen
 type DetailsModel struct {
+	*BaseStandardModel
 	event      *career.CareerEvent
 	width      int
 	height     int
@@ -23,11 +24,12 @@ type DetailsModel struct {
 // NewDetailsModel creates a new details model
 func NewDetailsModel(event *career.CareerEvent) *DetailsModel {
 	return &DetailsModel{
-		event:      event,
-		width:      80,
-		height:     24,
-		header:     components.NewHeader("Event Details", 80),
-		helpFooter: components.NewHelpFooter("details", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		event:             event,
+		width:             80,
+		height:            24,
+		header:            components.NewHeader("Event Details", 80),
+		helpFooter:        components.NewHelpFooter("details", 80),
 	}
 }
 

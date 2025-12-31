@@ -181,4 +181,3 @@ func (csh *ContextShortcutHandler) ResetContextStack() {
 	csh.contextStack = make([]string, 0)
 	csh.currentContext = ""
 }
-

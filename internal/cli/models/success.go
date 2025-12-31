@@ -23,6 +23,7 @@ const (
 
 // SuccessModel represents the success screen state after event capture
 type SuccessModel struct {
+	*BaseStandardModel
 	event          *career.CareerEvent
 	selectedAction ActionOption
 	width          int
@@ -34,11 +35,12 @@ type SuccessModel struct {
 // NewSuccessModel creates a new success model with the captured event
 func NewSuccessModel(event *career.CareerEvent) *SuccessModel {
 	return &SuccessModel{
-		event:          event,
-		selectedAction: CaptureAnotherOption,
-		width:          80,
-		height:         24,
-		helpFooter:     components.NewHelpFooter("success", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		event:             event,
+		selectedAction:    CaptureAnotherOption,
+		width:             80,
+		height:            24,
+		helpFooter:        components.NewHelpFooter("success", 80),
 	}
 }
 

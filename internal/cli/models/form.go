@@ -32,6 +32,7 @@ const (
 
 // FormModel represents the event capture form state
 type FormModel struct {
+	*BaseStandardModel
 	cliService       *service.CLIEventService
 	inputs           []textinput.Model
 	focusIndex       int
@@ -90,22 +91,23 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 	}
 
 	return &FormModel{
-		cliService:       cliService,
-		inputs:           inputs,
-		focusIndex:       0,
-		modeIndex:        0,
-		tagIndex:         0,
-		categoryIndex:    0,
-		modes:            modes,
-		err:              nil,
-		submitted:        false,
-		maxChars:         2000,
-		tagSelector:      components.NewTagSelector(),
-		categorySelector: components.NewCategorySelector(),
-		fieldErrors:      make(map[FormField]string),
-		helpFooter:       components.NewHelpFooter("form", 80),
-		header:           components.NewHeader("Capture Career Event", 80),
-		footer:           components.NewFooter(80),
+		BaseStandardModel: NewBaseStandardModel(),
+		cliService:        cliService,
+		inputs:            inputs,
+		focusIndex:        0,
+		modeIndex:         0,
+		tagIndex:          0,
+		categoryIndex:     0,
+		modes:             modes,
+		err:               nil,
+		submitted:         false,
+		maxChars:          2000,
+		tagSelector:       components.NewTagSelector(),
+		categorySelector:  components.NewCategorySelector(),
+		fieldErrors:       make(map[FormField]string),
+		helpFooter:        components.NewHelpFooter("form", 80),
+		header:            components.NewHeader("Capture Career Event", 80),
+		footer:            components.NewFooter(80),
 	}
 }
 

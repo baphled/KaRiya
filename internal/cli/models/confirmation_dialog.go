@@ -9,6 +9,7 @@ import (
 
 // ConfirmationDialog represents a confirmation dialog
 type ConfirmationDialog struct {
+	*BaseStandardModel
 	title       string
 	message     string
 	confirmText string
@@ -22,14 +23,15 @@ type ConfirmationDialog struct {
 // NewConfirmationDialog creates a new confirmation dialog
 func NewConfirmationDialog(title, message string) *ConfirmationDialog {
 	return &ConfirmationDialog{
-		title:       title,
-		message:     message,
-		confirmText: "Yes, Delete",
-		cancelText:  "Cancel",
-		focused:     false, // Default to cancel for safety
-		confirmed:   false,
-		cancelled:   false,
-		helpFooter:  components.NewHelpFooter("confirmation_dialog", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		title:             title,
+		message:           message,
+		confirmText:       "Yes, Delete",
+		cancelText:        "Cancel",
+		focused:           false, // Default to cancel for safety
+		confirmed:         false,
+		cancelled:         false,
+		helpFooter:        components.NewHelpFooter("confirmation_dialog", 80),
 	}
 }
 

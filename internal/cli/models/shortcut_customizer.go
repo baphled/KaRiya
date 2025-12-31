@@ -9,10 +9,10 @@ import (
 
 // ShortcutProfile represents a collection of custom shortcuts
 type ShortcutProfile struct {
-	Name       string
-	Overrides  map[string]key.Binding
-	Disabled   map[string]bool
-	mu         sync.RWMutex
+	Name      string
+	Overrides map[string]key.Binding
+	Disabled  map[string]bool
+	mu        sync.RWMutex
 }
 
 // NewShortcutProfile creates a new shortcut profile
@@ -47,11 +47,11 @@ func (sp *ShortcutProfile) EnableShortcut(id string) {
 
 // ShortcutCustomizer manages shortcut customization and profiles
 type ShortcutCustomizer struct {
-	mu             sync.RWMutex
-	overrides      map[string]key.Binding
-	disabled       map[string]bool
-	profiles       map[string]*ShortcutProfile
-	activeProfile  string
+	mu               sync.RWMutex
+	overrides        map[string]key.Binding
+	disabled         map[string]bool
+	profiles         map[string]*ShortcutProfile
+	activeProfile    string
 	defaultShortcuts map[string]key.Binding
 }
 
@@ -259,4 +259,3 @@ func (sc *ShortcutCustomizer) RestoreDefaults() {
 	sc.overrides = make(map[string]key.Binding)
 	sc.disabled = make(map[string]bool)
 }
-

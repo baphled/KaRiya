@@ -22,6 +22,7 @@ type FactProcessingCompleteMsg struct {
 // FactsResultsModel represents the fact extraction results review and confirmation screen
 // This model displays facts extracted from imported events and allows users to confirm or reject them
 type FactsResultsModel struct {
+	*BaseStandardModel
 	service      *careerservice.Service
 	ctx          context.Context
 	facts        []*career.Fact // Facts extracted from imported events
@@ -37,15 +38,16 @@ type FactsResultsModel struct {
 // NewFactsResultsModel creates a new facts results model
 func NewFactsResultsModel(svc *careerservice.Service, facts []*career.Fact, ctx context.Context) *FactsResultsModel {
 	return &FactsResultsModel{
-		service:      svc,
-		ctx:          ctx,
-		facts:        facts,
-		currentIdx:   0,
-		confirmed:    []*career.Fact{},
-		rejected:     []*career.Fact{},
-		width:        80,
-		height:       24,
-		scrollOffset: 0,
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           svc,
+		ctx:               ctx,
+		facts:             facts,
+		currentIdx:        0,
+		confirmed:         []*career.Fact{},
+		rejected:          []*career.Fact{},
+		width:             80,
+		height:            24,
+		scrollOffset:      0,
 	}
 }
 

@@ -15,6 +15,7 @@ import (
 
 // FactListModel displays a list of facts with filtering, sorting, and selection
 type FactListModel struct {
+	*BaseStandardModel
 	// Data
 	facts    []*career.Fact
 	filtered []*career.Fact // Cached filtered results
@@ -49,15 +50,16 @@ type FactListModel struct {
 // NewFactListModel creates a new fact list model
 func NewFactListModel(service *careerservice.Service, ctx context.Context) *FactListModel {
 	return &FactListModel{
-		service:       service,
-		ctx:           ctx,
-		facts:         []*career.Fact{},
-		filtered:      []*career.Fact{},
-		selectedFacts: make(map[string]bool),
-		width:         80,
-		height:        20,
-		sortBy:        "date",
-		sortOrder:     "desc",
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           service,
+		ctx:               ctx,
+		facts:             []*career.Fact{},
+		filtered:          []*career.Fact{},
+		selectedFacts:     make(map[string]bool),
+		width:             80,
+		height:            20,
+		sortBy:            "date",
+		sortOrder:         "desc",
 	}
 }
 

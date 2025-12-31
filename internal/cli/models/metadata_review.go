@@ -25,6 +25,7 @@ type BurstSuggestionsTriggeredMsg struct {
 
 // MetadataReviewModel represents the metadata review screen
 type MetadataReviewModel struct {
+	*BaseStandardModel
 	service          *careerservice.Service
 	calculator       *careerservice.DataQualityCalculator
 	ctx              context.Context
@@ -50,18 +51,19 @@ type MetadataReviewModel struct {
 func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *MetadataReviewModel {
 	calculator := careerservice.NewDataQualityCalculator()
 	model := &MetadataReviewModel{
-		service:         svc,
-		calculator:      calculator,
-		ctx:             ctx,
-		selectedIdx:     0,
-		expandedIdx:     -1,
-		filterMode:      "all",
-		sortBy:          "quality",
-		qualityScores:   make(map[string]*careerservice.QualityScore),
-		fieldOrigins:    make(map[string]map[string]bool),
-		parsingWarnings: make(map[string][]string),
-		duplicateStatus: make(map[string]string),
-		helpFooter:      components.NewHelpFooter("metadata_review", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           svc,
+		calculator:        calculator,
+		ctx:               ctx,
+		selectedIdx:       0,
+		expandedIdx:       -1,
+		filterMode:        "all",
+		sortBy:            "quality",
+		qualityScores:     make(map[string]*careerservice.QualityScore),
+		fieldOrigins:      make(map[string]map[string]bool),
+		parsingWarnings:   make(map[string][]string),
+		duplicateStatus:   make(map[string]string),
+		helpFooter:        components.NewHelpFooter("metadata_review", 80),
 	}
 
 	// Load events

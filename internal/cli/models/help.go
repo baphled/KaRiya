@@ -11,6 +11,7 @@ import (
 
 // HelpModel represents the help screen
 type HelpModel struct {
+	*BaseStandardModel
 	currentSection int
 	sections       []HelpSection
 	width          int
@@ -176,12 +177,13 @@ CV Building:
 	}
 
 	return &HelpModel{
-		currentSection: 0,
-		sections:       sections,
-		width:          80,
-		height:         24,
-		closed:         false,
-		helpFooter:     components.NewHelpFooter("help", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		currentSection:    0,
+		sections:          sections,
+		width:             80,
+		height:            24,
+		closed:            false,
+		helpFooter:        components.NewHelpFooter("help", 80),
 	}
 }
 
