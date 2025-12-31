@@ -12,25 +12,30 @@ import (
 
 // ParsedRow represents a single CSV row with its parsed data and validation status
 type ParsedRow struct {
-	RowNumber        int // 1-based row number in CSV (excluding header)
-	RawData          map[string]string
-	Event            *career.CareerEvent
-	ValidationErrors []string
-	IsValid          bool
-	IsDuplicate      bool
-	DuplicateOf      string // ID of duplicate event if found
+	RowNumber         int // 1-based row number in CSV (excluding header)
+	RawData           map[string]string
+	Event             *career.CareerEvent
+	ValidationErrors  []string
+	IsValid           bool
+	IsDuplicate       bool
+	DuplicateOf       string // ID of duplicate event if found
+	MappedCategories  []string // Original categories from CSV
+	MappedTags        []string // Original tags from CSV
 }
 
 // CSVParser handles parsing and validation of CSV files
 type CSVParser struct {
-	existingEvents []*career.CareerEvent
+	existingEvents *[]*career.CareerEvent
 	dateFormats    []string
+	categoryMapper  *CategoryMapper
+	tagMapper       *TagMapper
+	mapData         bool // Whether to auto-map categories and tags
 }
 
 // NewCSVParser creates a new CSV parser
 func NewCSVParser(existingEvents []*career.CareerEvent) *CSVParser {
 	return &CSVParser{
-		existingEvents: existingEvents,
+		existingEvents: &existingEvents,
 		dateFormats: []string{
 			"2006-01",      // YYYY-MM
 			"2006-01-02",   // YYYY-MM-DD
@@ -39,12 +44,38 @@ func NewCSVParser(existingEvents []*career.CareerEvent) *CSVParser {
 			"January 2006", // Month YYYY
 			"Jan 2006",     // Mon YYYY
 		},
+		categoryMapper: NewCategoryMapper(),
+		tagMapper:      NewTagMapper(),
+		mapData:        false, // Disabled by default for compatibility
 	}
 }
 
-// Parse reads and parses a CSV file
+// NewCSVParserWithMapping creates a CSV parser with auto-mapping enabled
+func NewCSVParserWithMapping(existingEvents []*career.CareerEvent) *CSVParser {
+	parser := NewCSVParser(existingEvents)
+	parser.mapData = true
+	return parser
+}
+
+// SetMapping enables or disables automatic mapping of categories and tags
+func (p *CSVParser) SetMapping(enabled bool) {
+	p.mapData = enabled
+}
+
+// Parse reads and parses a CSV file (auto-detects delimiter)
 func (p *CSVParser) Parse(reader io.Reader) ([]*ParsedRow, error) {
-	csvReader := csv.NewReader(reader)
+	// Read entire content into buffer to detect delimiter
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	// Detect delimiter from the first line
+	delimiter := p.detectDelimiter(string(data))
+
+	// Create CSV reader with detected delimiter
+	csvReader := csv.NewReader(strings.NewReader(string(data)))
+	csvReader.Comma = delimiter
 
 	// Read header
 	header, err := csvReader.Read()
@@ -55,14 +86,16 @@ func (p *CSVParser) Parse(reader io.Reader) ([]*ParsedRow, error) {
 	// Map column names to indices
 	columnMap := make(map[string]int)
 	for i, col := range header {
-		columnMap[strings.TrimSpace(col)] = i
+		// Trim whitespace from column names
+		colName := strings.TrimSpace(col)
+		columnMap[colName] = i
 	}
 
 	// Validate required columns
 	requiredColumns := []string{"Text", "Date"}
 	for _, col := range requiredColumns {
 		if _, exists := columnMap[col]; !exists {
-			return nil, fmt.Errorf("missing required column: %s", col)
+			return nil, fmt.Errorf("missing required column: %s (found columns: %v)", col, getColumnNames(columnMap))
 		}
 	}
 
@@ -104,6 +137,36 @@ func (p *CSVParser) Parse(reader io.Reader) ([]*ParsedRow, error) {
 	return parsedRows, nil
 }
 
+// detectDelimiter detects if the CSV uses pipes or commas
+func (p *CSVParser) detectDelimiter(content string) rune {
+	// Get first line
+	lines := strings.Split(content, "\n")
+	if len(lines) == 0 {
+		return ','
+	}
+
+	firstLine := lines[0]
+
+	// Count pipes and commas
+	pipeCount := strings.Count(firstLine, "|")
+	commaCount := strings.Count(firstLine, ",")
+
+	// If more pipes than commas and at least 3 pipes, use pipe
+	if pipeCount > commaCount && pipeCount >= 3 {
+		return '|'
+	}
+
+	return ','
+}
+
+// getColumnNames returns a slice of column names for error messages
+func getColumnNames(columnMap map[string]int) []string {
+	var names []string
+	for name := range columnMap {
+		names = append(names, name)
+	}
+	return names
+}
 // parseRow parses a single row and creates a CareerEvent
 func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap map[string]int) *ParsedRow {
 	parsedRow := &ParsedRow{
@@ -112,6 +175,8 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 		ValidationErrors: []string{},
 		IsValid:          true,
 		IsDuplicate:      false,
+		MappedCategories: []string{},
+		MappedTags:       []string{},
 	}
 
 	event := &career.CareerEvent{
@@ -155,23 +220,32 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 
 	// Parse Tags (optional, semicolon-separated)
 	if tagsStr, ok := rawData["Tags"]; ok && strings.TrimSpace(tagsStr) != "" {
-		tags := strings.Split(tagsStr, ";")
-		for _, tag := range tags {
+		rawTags := strings.Split(tagsStr, ";")
+
+		// Store original tags
+		for _, tag := range rawTags {
 			tag = strings.TrimSpace(tag)
 			if tag != "" {
-				// Normalize tag to lowercase
-				tag = strings.ToLower(tag)
-				event.Tags = append(event.Tags, tag)
+				parsedRow.MappedTags = append(parsedRow.MappedTags, tag)
 			}
 		}
 
-		// Validate tags
-		if len(event.Tags) > 0 {
-			for _, tag := range event.Tags {
-				if !career.AllowedTags[tag] {
-					parsedRow.ValidationErrors = append(parsedRow.ValidationErrors,
-						fmt.Sprintf("Invalid tag: %s (allowed: %v)", tag, getAllowedTagsList()))
-					parsedRow.IsValid = false
+		// Map or validate tags
+		if p.mapData {
+			// Use mapper to convert tags to allowed tags
+			event.Tags = p.tagMapper.MapTags(rawTags)
+		} else {
+			// Original validation-only mode
+			for _, tag := range rawTags {
+				tag = strings.TrimSpace(strings.ToLower(tag))
+				if tag != "" {
+					if !career.AllowedTags[tag] {
+						parsedRow.ValidationErrors = append(parsedRow.ValidationErrors,
+							fmt.Sprintf("Invalid tag: %s (allowed: %v)", tag, getAllowedTagsList()))
+						parsedRow.IsValid = false
+					} else {
+						event.Tags = append(event.Tags, tag)
+					}
 				}
 			}
 		}
@@ -179,23 +253,32 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 
 	// Parse Categories (optional, semicolon-separated)
 	if categoriesStr, ok := rawData["Categories"]; ok && strings.TrimSpace(categoriesStr) != "" {
-		categories := strings.Split(categoriesStr, ";")
-		for _, cat := range categories {
+		rawCategories := strings.Split(categoriesStr, ";")
+
+		// Store original categories
+		for _, cat := range rawCategories {
 			cat = strings.TrimSpace(cat)
 			if cat != "" {
-				// Normalize category to lowercase
-				cat = strings.ToLower(cat)
-				event.Categories = append(event.Categories, cat)
+				parsedRow.MappedCategories = append(parsedRow.MappedCategories, cat)
 			}
 		}
 
-		// Validate categories
-		if len(event.Categories) > 0 {
-			for _, cat := range event.Categories {
-				if !career.AllowedCategories[cat] {
-					parsedRow.ValidationErrors = append(parsedRow.ValidationErrors,
-						fmt.Sprintf("Invalid category: %s (allowed: %v)", cat, getAllowedCategoriesList()))
-					parsedRow.IsValid = false
+		// Map or validate categories
+		if p.mapData {
+			// Use mapper to convert categories to allowed categories
+			event.Categories = p.categoryMapper.MapCategories(rawCategories)
+		} else {
+			// Original validation-only mode
+			for _, cat := range rawCategories {
+				cat = strings.TrimSpace(strings.ToLower(cat))
+				if cat != "" {
+					if !career.AllowedCategories[cat] {
+						parsedRow.ValidationErrors = append(parsedRow.ValidationErrors,
+							fmt.Sprintf("Invalid category: %s (allowed: %v)", cat, getAllowedCategoriesList()))
+						parsedRow.IsValid = false
+					} else {
+						event.Categories = append(event.Categories, cat)
+					}
 				}
 			}
 		}
@@ -232,9 +315,16 @@ func (p *CSVParser) parseDate(dateStr string) (time.Time, error) {
 
 // detectDuplicates checks for duplicate events in the parsed rows and existing events
 func (p *CSVParser) detectDuplicates(parsedRows []*ParsedRow) {
+	if p.existingEvents == nil {
+		return
+	}
+
 	// Build a map of existing events by (text, company, date)
 	existingMap := make(map[string]*career.CareerEvent)
-	for _, event := range p.existingEvents {
+	for _, event := range *p.existingEvents {
+		if event == nil {
+			continue
+		}
 		key := p.buildDuplicateKey(event.Text, event.Company, event.Date)
 		existingMap[key] = event
 	}
@@ -305,3 +395,4 @@ func getAllowedCategoriesList() []string {
 	}
 	return categories
 }
+

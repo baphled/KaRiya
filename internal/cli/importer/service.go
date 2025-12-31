@@ -42,7 +42,7 @@ func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) 
 	}
 
 	// Create parser with existing events
-	is.parser = NewCSVParser(existingEvents)
+	is.parser = NewCSVParserWithMapping(existingEvents)
 
 	// Try to convert reader to io.Reader
 	ioReader, ok := reader.(interface{ Read([]byte) (int, error) })
