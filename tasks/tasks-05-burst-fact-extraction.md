@@ -4,7 +4,7 @@
 
 **Purpose**: Automatically group and enrich career events by detecting bursts (related event groupings) and extracting facts (inferred competencies, role fit, audience relevance, and strength signals).
 
-**Status**: 🔄 **IN PROGRESS** (Phase 2: Burst Detection and Management - 75% complete)
+**Status**: ✅ **PHASE 2 COMPLETE** (Burst Detection and Management - 100%)
 
 ---
 
@@ -156,16 +156,16 @@
   - **Coverage**: 100% with 561+ test cases passing
   - **Features**: Scrolling, selection, filtering, sorting, keyboard navigation, visual indicators
 
-#### 6.0 Create Burst Suggestion and Confirmation Screen
-- [ ] 6.1 Implement BurstSuggestionModel as BubbleTea Model for reviewing burst suggestions
-- [ ] 6.2 Display suggested burst with related events and confidence score
-- [ ] 6.3 Allow user to confirm or reject suggestion
-- [ ] 6.4 Show related events with text preview
-- [ ] 6.5 Implement optional burst name/description editing before confirmation
-- [ ] 6.6 Implement keyboard navigation (↑/↓ for suggestions, 'y'/'n' for confirm/reject, 'e' to edit)
-- [ ] 6.7 Add visual feedback for confidence score (color-coded, percentage)
-- [ ] 6.8 Write comprehensive unit tests for suggestion workflow
-- [ ] 6.9 Test edge cases (low confidence, single event suggestions, multiple suggestions)
+#### 6.0 Create Burst Suggestion and Confirmation Screen - COMPLETE
+- [x] 6.1 Implement BurstSuggestionModel as BubbleTea Model for reviewing burst suggestions
+- [x] 6.2 Display suggested burst with related events and confidence score
+- [x] 6.3 Allow user to confirm or reject suggestion
+- [x] 6.4 Show related events with text preview
+- [x] 6.5 Implement optional burst name/description editing before confirmation
+- [x] 6.6 Implement keyboard navigation (↑/↓ for suggestions, 'y'/'n' for confirm/reject, 'e' to edit)
+- [x] 6.7 Add visual feedback for confidence score (color-coded, percentage)
+- [x] 6.8 Write comprehensive unit tests for suggestion workflow
+- [x] 6.9 Test edge cases (low confidence, single event suggestions, multiple suggestions)
 
 ### Phase 3: Fact Extraction and Inference
 
@@ -408,7 +408,7 @@ This feature enables:
   - [x] Detector implementation (Phase 2 Task 4.0)
   - [x] Integration tests (3.8)
 
-- **Phase 2**: 🔄 **75% IN PROGRESS**
+- **Phase 2**: ✅ **100% COMPLETE**
   - [x] Burst detection engine (4.1-4.10) - COMPLETE
   - [x] Burst display component (5.1-5.10) - COMPLETE
   - [ ] Burst suggestion screen (6.1-6.9) - PENDING
