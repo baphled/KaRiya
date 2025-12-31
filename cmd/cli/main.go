@@ -142,8 +142,8 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		model.SetInitialScreen(app.ListScreen)
 	}
 
-	// Initialize BubbleTea program
-	p := tea.NewProgram(model)
+	// Initialize BubbleTea program with mouse support
+	p := tea.NewProgram(model, tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(errOut, "Error running program: %v\n", err)
 		return 1

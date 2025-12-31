@@ -78,3 +78,8 @@ type CancelBulkOperationsMsg struct{}
 type MetadataReviewTriggeredMsg struct {
 	Events []*career.CareerEvent
 }
+
+// BreadcrumbClickedMsg is sent when a breadcrumb is clicked
+type BreadcrumbClickedMsg struct {
+	Index int // Index of the clicked breadcrumb
+}
