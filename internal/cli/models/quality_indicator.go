@@ -116,7 +116,6 @@ func (qi *QualityIndicator) colorForLevel(text string) string {
 	case career.QualityBasic:
 		color = styles.ColorWarning
 	case career.QualityIncomplete:
-		return "●"
 		color = styles.ColorError
 	default:
 		color = styles.ColorTextSecondary

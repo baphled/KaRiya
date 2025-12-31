@@ -39,7 +39,8 @@ type Model struct {
 	service                *careerservice.Service
 	currentScreen          Screen
 	previousScreen         Screen
-	screenBeforeActionMenu Screen // Track screen before action menu for proper back navigation
+	screenBeforeActionMenu Screen   // Track screen before action menu for proper back navigation
+	breadcrumbs            []string // Navigation breadcrumb trail
 	width                  int
 	height                 int
 	formModel              *models.FormModel
@@ -67,6 +68,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		currentScreen:          HomeScreen,
 		previousScreen:         HomeScreen,
 		screenBeforeActionMenu: HomeScreen,
+		breadcrumbs:            []string{"Home"},
 		width:                  80,
 		height:                 24,
 		formModel:              models.NewFormModel(cliService),
@@ -586,5 +588,54 @@ func (m *Model) StartImport(filePath string) tea.Cmd {
 		// Create import review model
 		m.importReviewModel = models.NewImportReviewModel(parsedRows)
 		return models.ImportReviewMsg{Action: "prepared"}
+	}
+}
+
+// GetBreadcrumbs returns current breadcrumb trail
+func (m *Model) GetBreadcrumbs() []string {
+	return m.breadcrumbs
+}
+
+// updateBreadcrumbs updates breadcrumb trail based on current screen and navigation history
+func (m *Model) updateBreadcrumbs() {
+	switch m.currentScreen {
+	case HomeScreen:
+		m.breadcrumbs = []string{"Home"}
+	case CaptureScreen:
+		m.breadcrumbs = []string{"Home", "Capture Event"}
+	case ListScreen:
+		m.breadcrumbs = []string{"Home", "Events"}
+	case ViewScreen:
+		// Build breadcrumb based on previous screen
+		if m.previousScreen == ListScreen {
+			m.breadcrumbs = []string{"Home", "Events", "Details"}
+		} else if m.previousScreen == ActionMenuScreen {
+			m.breadcrumbs = []string{"Home", "Events", "Details"}
+		} else {
+			m.breadcrumbs = []string{"Home", "Details"}
+		}
+	case MetadataReviewScreen:
+		m.breadcrumbs = []string{"Home", "Metadata Review"}
+	case MetadataEditorScreen:
+		m.breadcrumbs = []string{"Home", "Metadata Review", "Edit Event"}
+	case BulkOperationsScreen:
+		m.breadcrumbs = []string{"Home", "Metadata Review", "Bulk Operations"}
+	case SuccessScreen:
+		// Build breadcrumb based on previous screen
+		if m.previousScreen == CaptureScreen {
+			m.breadcrumbs = []string{"Home", "Capture Event", "Success"}
+		} else {
+			m.breadcrumbs = []string{"Home", "Success"}
+		}
+	case ActionMenuScreen:
+		m.breadcrumbs = []string{"Home", "Events", "Actions"}
+	case ConfirmationScreen:
+		m.breadcrumbs = []string{"Home", "Events", "Confirm Delete"}
+	case ImportReviewScreen:
+		m.breadcrumbs = []string{"Home", "Import Review"}
+	case ImportProgressScreen:
+		m.breadcrumbs = []string{"Home", "Import", "Progress"}
+	default:
+		m.breadcrumbs = []string{"Home"}
 	}
 }
