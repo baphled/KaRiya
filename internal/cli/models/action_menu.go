@@ -21,6 +21,7 @@ const (
 
 // ActionMenuModel represents the action selection menu for an event
 type ActionMenuModel struct {
+	*BaseStandardModel
 	event       *career.CareerEvent
 	options     []EventAction
 	selectedIdx int
@@ -33,13 +34,14 @@ type ActionMenuModel struct {
 // NewActionMenuModel creates a new action menu for a given event
 func NewActionMenuModel(event *career.CareerEvent) *ActionMenuModel {
 	return &ActionMenuModel{
-		event:       event,
-		options:     []EventAction{EventActionView, EventActionEdit, EventActionDelete},
-		selectedIdx: 0,
-		width:       40,
-		height:      10,
-		header:      components.NewHeader("Event Actions", 80),
-		helpFooter:  components.NewHelpFooter("action_menu", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		event:             event,
+		options:           []EventAction{EventActionView, EventActionEdit, EventActionDelete},
+		selectedIdx:       0,
+		width:             40,
+		height:            10,
+		header:            components.NewHeader("Event Actions", 80),
+		helpFooter:        components.NewHelpFooter("action_menu", 80),
 	}
 }
 

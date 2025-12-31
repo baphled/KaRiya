@@ -15,6 +15,7 @@ type HighlightPosition struct {
 
 // SearchModel manages event search with debouncing and highlighting
 type SearchModel struct {
+	*BaseStandardModel
 	query          string
 	lastUpdate     time.Time
 	debounceDelay  time.Duration
@@ -25,11 +26,12 @@ type SearchModel struct {
 // NewSearchModel creates a new search model with default debounce delay
 func NewSearchModel() *SearchModel {
 	return &SearchModel{
-		query:          "",
-		lastUpdate:     time.Now(),
-		debounceDelay:  300 * time.Millisecond,
-		err:            nil,
-		lastSearchTime: time.Now(),
+		BaseStandardModel: NewBaseStandardModel(),
+		query:             "",
+		lastUpdate:        time.Now(),
+		debounceDelay:     300 * time.Millisecond,
+		err:               nil,
+		lastSearchTime:    time.Now(),
 	}
 }
 
@@ -38,6 +40,7 @@ func (m *SearchModel) SetQuery(query string) {
 	m.query = query
 	m.lastUpdate = time.Now()
 	m.err = nil
+	m.BaseStandardModel.ClearError()
 }
 
 // GetQuery returns the current search query
@@ -110,6 +113,8 @@ func (m *SearchModel) GetHighlightPositions(text string) []HighlightPosition {
 // SetError sets an error state for the search
 func (m *SearchModel) SetError(err error) {
 	m.err = err
+	// Also set in the base standard model for unified error tracking
+	m.BaseStandardModel.SetError(err)
 }
 
 // GetError returns any error from search operations
@@ -120,6 +125,7 @@ func (m *SearchModel) GetError() error {
 // ClearError clears any error state
 func (m *SearchModel) ClearError() {
 	m.err = nil
+	m.BaseStandardModel.ClearError()
 }
 
 // Reset clears all search state
@@ -128,6 +134,7 @@ func (m *SearchModel) Reset() {
 	m.err = nil
 	m.lastUpdate = time.Now()
 	m.lastSearchTime = time.Now()
+	m.BaseStandardModel.Reset()
 }
 
 // GetLastUpdate returns the time of the last query update

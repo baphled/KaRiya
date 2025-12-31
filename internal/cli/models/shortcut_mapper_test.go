@@ -1,18 +1,11 @@
 package models
 
 import (
-	"testing"
-
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestShortcutMapper(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ShortcutMapper Suite")
-}
 
 var _ = Describe("ShortcutMapper", func() {
 	var mapper *ShortcutMapper

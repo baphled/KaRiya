@@ -30,6 +30,7 @@ const (
 
 // MetadataEditorModel represents the metadata editor form state
 type MetadataEditorModel struct {
+	*BaseStandardModel
 	event            *career.CareerEvent
 	originalEvent    *career.CareerEvent // For reverting changes
 	service          *careerservice.Service
@@ -87,23 +88,24 @@ func NewMetadataEditorModel(event *career.CareerEvent, service *careerservice.Se
 	categorySelector.SetSelected(event.Categories)
 
 	return &MetadataEditorModel{
-		event:            event,
-		originalEvent:    &eventCopy,
-		service:          service,
-		cliService:       cliSvc,
-		ctx:              ctx,
-		inputs:           inputs,
-		focusIndex:       0,
-		tagIndex:         0,
-		categoryIndex:    0,
-		err:              nil,
-		submitted:        false,
-		cancelled:        false,
-		tagSelector:      tagSelector,
-		categorySelector: categorySelector,
-		fieldErrors:      make(map[int]string),
-		validator:        validation.NewMetadataValidator(),
-		calculator:       careerservice.NewDataQualityCalculator(),
+		BaseStandardModel: NewBaseStandardModel(),
+		event:             event,
+		originalEvent:     &eventCopy,
+		service:           service,
+		cliService:        cliSvc,
+		ctx:               ctx,
+		inputs:            inputs,
+		focusIndex:        0,
+		tagIndex:          0,
+		categoryIndex:     0,
+		err:               nil,
+		submitted:         false,
+		cancelled:         false,
+		tagSelector:       tagSelector,
+		categorySelector:  categorySelector,
+		fieldErrors:       make(map[int]string),
+		validator:         validation.NewMetadataValidator(),
+		calculator:        careerservice.NewDataQualityCalculator(),
 	}
 }
 

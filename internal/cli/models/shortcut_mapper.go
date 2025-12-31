@@ -11,12 +11,12 @@ import (
 
 // ShortcutMapper manages global and context-specific keyboard shortcuts
 type ShortcutMapper struct {
-	mu                 sync.RWMutex
-	globalShortcuts    map[string]key.Binding
-	globalActions      map[string]ShortcutAction
-	contextShortcuts   map[string]map[string]key.Binding
-	contextActions     map[string]map[string]ShortcutAction
-	conflictResolvers  map[string]string // Maps key string to shortcut ID for conflict detection
+	mu                sync.RWMutex
+	globalShortcuts   map[string]key.Binding
+	globalActions     map[string]ShortcutAction
+	contextShortcuts  map[string]map[string]key.Binding
+	contextActions    map[string]map[string]ShortcutAction
+	conflictResolvers map[string]string // Maps key string to shortcut ID for conflict detection
 }
 
 // NewShortcutMapper creates a new global shortcut mapper instance
@@ -253,4 +253,3 @@ func getKeyString(binding key.Binding) string {
 	help := binding.Help()
 	return strings.ToLower(help.Key)
 }
-

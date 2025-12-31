@@ -16,6 +16,7 @@ import (
 
 // ListModel represents the event list screen
 type ListModel struct {
+	*BaseStandardModel
 	service     *careerservice.Service
 	ctx         context.Context
 	events      []*career.CareerEvent
@@ -38,17 +39,18 @@ type ListModel struct {
 // NewListModel creates a new list model
 func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 	model := &ListModel{
-		service:     svc,
-		ctx:         ctx,
-		pageSize:    10,
-		currentPage: 1,
-		selectedIdx: 0,
-		filterModel: NewFilterModel(),
-		searchModel: NewSearchModel(),
-		sortModel:   NewSortModel(),
-		helpFooter:  components.NewHelpFooter("list", 80),
-		header:      components.NewHeader("Career Events", 80),
-		footer:      components.NewFooter(80),
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           svc,
+		ctx:               ctx,
+		pageSize:          10,
+		currentPage:       1,
+		selectedIdx:       0,
+		filterModel:       NewFilterModel(),
+		searchModel:       NewSearchModel(),
+		sortModel:         NewSortModel(),
+		helpFooter:        components.NewHelpFooter("list", 80),
+		header:            components.NewHeader("Career Events", 80),
+		footer:            components.NewFooter(80),
 	}
 
 	// Load events

@@ -37,6 +37,7 @@ const (
 
 // BurstSuggestionModel represents the burst suggestion review and confirmation screen
 type BurstSuggestionModel struct {
+	*BaseStandardModel
 	service       *careerservice.Service
 	ctx           context.Context
 	suggestions   []burstfact.BurstSuggestion
@@ -68,21 +69,22 @@ func NewBurstSuggestionModel(svc *careerservice.Service, suggestions []burstfact
 	descInput.Width = 60
 
 	return &BurstSuggestionModel{
-		service:       svc,
-		ctx:           ctx,
-		suggestions:   suggestions,
-		currentIdx:    0,
-		confirmed:     []burstfact.BurstSuggestion{},
-		rejected:      []burstfact.BurstSuggestion{},
-		editing:       false,
-		editField:     BurstSuggestionNameField,
-		editedNames:   make(map[int]string),
-		editedDescs:   make(map[int]string),
-		inputs:        []textinput.Model{nameInput, descInput},
-		focusIndex:    0,
-		relatedEvents: make(map[int][]*career.CareerEvent),
-		width:         80,
-		height:        24,
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           svc,
+		ctx:               ctx,
+		suggestions:       suggestions,
+		currentIdx:        0,
+		confirmed:         []burstfact.BurstSuggestion{},
+		rejected:          []burstfact.BurstSuggestion{},
+		editing:           false,
+		editField:         BurstSuggestionNameField,
+		editedNames:       make(map[int]string),
+		editedDescs:       make(map[int]string),
+		inputs:            []textinput.Model{nameInput, descInput},
+		focusIndex:        0,
+		relatedEvents:     make(map[int][]*career.CareerEvent),
+		width:             80,
+		height:            24,
 	}
 }
 

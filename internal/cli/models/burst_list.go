@@ -22,6 +22,7 @@ type BurstsLoadedMsg struct {
 
 // BurstListModel represents the burst list display screen
 type BurstListModel struct {
+	*BaseStandardModel
 	service         *careerservice.Service
 	ctx             context.Context
 	bursts          []*career.Burst
@@ -36,15 +37,16 @@ type BurstListModel struct {
 // NewBurstListModel creates a new burst list model
 func NewBurstListModel(svc *careerservice.Service, ctx context.Context) *BurstListModel {
 	return &BurstListModel{
-		service:         svc,
-		ctx:             ctx,
-		bursts:          []*career.Burst{},
-		selectedIdx:     0,
-		expandedIndices: make(map[int]bool),
-		filterBy:        "",
-		sortBy:          "date",
-		width:           80,
-		height:          24,
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           svc,
+		ctx:               ctx,
+		bursts:            []*career.Burst{},
+		selectedIdx:       0,
+		expandedIndices:   make(map[int]bool),
+		filterBy:          "",
+		sortBy:            "date",
+		width:             80,
+		height:            24,
 	}
 }
 
