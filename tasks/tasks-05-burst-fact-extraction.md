@@ -177,8 +177,8 @@
 - [x] 7.5 Create audience relevance inference (Hiring Manager, Recruiter, Peer)
 - [x] 7.6 Create strength signal extraction (key achievements, impact indicators)
 - [x] 7.7 Implement fact validation and filtering (no aspirational language, grounded metrics)
-- [ ] 7.8 Create service method: `ExtractFacts(ctx, event/burst) -> []Fact`
-- [ ] 7.9 Create service method: `ValidateFact(ctx, fact) -> error` (validation rules)
+- [x] 7.8 Create service method: `ExtractFactsFromEvent(ctx, event) -> []Fact` and `ExtractFactsFromBurst(ctx, burst) -> []Fact`
+- [x] 7.9 Create service method: `ValidateFact(ctx, fact) -> error` (validation rules)
 - [x] 7.10 Write unit tests for all extraction and inference components
 - [x] 7.11 Write integration tests for complete fact extraction workflow
 
@@ -511,11 +511,12 @@ This feature enables:
 5. Allow editing burst name/description
 6. Write comprehensive tests
 
-### Fact Extraction Engine (Task 7.0)
-1. Implement fact extraction from single events
-2. Implement fact extraction from bursts
-3. Create service methods for extraction and validation
-4. Write unit and integration tests
+### Fact Display Components (Tasks 8.0-9.0)
+1. Implement FactCardComponent for displaying individual fact
+2. Implement FactListModel for displaying facts for an event/burst
+3. Implement FactEditorModel for editing facts
+4. Add keyboard navigation and filtering
+5. Write comprehensive tests
 
 ### Fact Display Components (Tasks 8.0-9.0)
 1. Implement FactListModel for displaying facts
@@ -527,9 +528,9 @@ This feature enables:
 
 **Document Version**: 3.0
 **Updated**: 2025-12-31
-**Status**: Phase 2 **75% Complete** - Burst Detection & Display Ready
-**Last Progress**: BurstListModel implemented and tested (5.1-5.10 complete)
-**Next Focus**: Burst suggestion screen (6.1-6.9)
+**Status**: Phase 3 **100% Complete** - Fact Extraction Engine Ready
+**Last Progress**: Task 7.0 Complete - ExtractFacts and ValidateFact service methods implemented (7.8-7.9 complete)
+**Next Focus**: Fact display components (8.1-8.10)
 **Template Source**: tasks-03-metadata-clarification.md
 **Process Guide**: docs/rules/master-task-prompt.md
 
