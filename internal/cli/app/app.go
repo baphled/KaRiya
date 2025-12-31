@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -19,19 +20,20 @@ import (
 type Screen string
 
 const (
-	HomeScreen           Screen = "home"
-	CaptureScreen        Screen = "capture"
-	ListScreen           Screen = "list"
-	ViewScreen           Screen = "view"
-	QuitScreen           Screen = "quit"
-	SuccessScreen        Screen = "success"
-	ActionMenuScreen     Screen = "action_menu"
-	ConfirmationScreen   Screen = "confirmation"
-	ImportReviewScreen   Screen = "import_review"
-	ImportProgressScreen Screen = "import_progress"
-	MetadataReviewScreen Screen = "metadata_review"
-	MetadataEditorScreen Screen = "metadata_editor"
-	BulkOperationsScreen Screen = "bulk_operations"
+	HomeScreen            Screen = "home"
+	CaptureScreen         Screen = "capture"
+	ListScreen            Screen = "list"
+	ViewScreen            Screen = "view"
+	QuitScreen            Screen = "quit"
+	SuccessScreen         Screen = "success"
+	ActionMenuScreen      Screen = "action_menu"
+	ConfirmationScreen    Screen = "confirmation"
+	ImportReviewScreen    Screen = "import_review"
+	ImportProgressScreen  Screen = "import_progress"
+	MetadataReviewScreen  Screen = "metadata_review"
+	MetadataEditorScreen  Screen = "metadata_editor"
+	BulkOperationsScreen  Screen = "bulk_operations"
+	BurstSuggestionScreen Screen = "burst_suggestion"
 )
 
 // Model represents the main application state
@@ -58,6 +60,7 @@ type Model struct {
 	metadataReviewModel    *models.MetadataReviewModel
 	metadataEditorModel    *models.MetadataEditorModel
 	bulkOperationsModel    *models.BulkOperationsModel
+	burstSuggestionModel   *models.BurstSuggestionModel
 }
 
 // NewModel creates a new application model
@@ -85,6 +88,8 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		importFilePath:         "",
 		metadataReviewModel:    models.NewMetadataReviewModel(careerService, ctx),
 		metadataEditorModel:    nil,
+		bulkOperationsModel:    nil,
+		burstSuggestionModel:   nil,
 	}
 }
 
@@ -159,6 +164,62 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.bulkOperationsModel = models.NewBulkOperationsModel(bulkMsg.Events, m.service, m.cliService, ctx)
 		m.previousScreen = m.currentScreen
 		m.currentScreen = BulkOperationsScreen
+		return m, nil
+	}
+
+	// Handle BurstSuggestionsTriggeredMsg - generate and show burst suggestions
+	if burstMsg, ok := msg.(models.BurstSuggestionsTriggeredMsg); ok {
+		ctx := context.Background()
+
+		// Generate burst suggestions from event IDs
+		suggestions, err := m.service.SuggestBursts(ctx, burstMsg.EventIDs)
+		if err != nil {
+			// Continue without suggestions if error occurs
+			return m, nil
+		}
+
+		// If no suggestions, return to previous screen
+		if len(suggestions) == 0 {
+			return m, nil
+		}
+
+		// Create burst suggestion model with generated suggestions
+		m.burstSuggestionModel = models.NewBurstSuggestionModel(m.service, suggestions, ctx)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = BurstSuggestionScreen
+		return m, nil
+	}
+
+	// Handle ConfirmBurstMsg - persist confirmed burst
+	if confirmMsg, ok := msg.(models.ConfirmBurstMsg); ok {
+		ctx := context.Background()
+		err := m.service.ConfirmBurst(ctx, confirmMsg.Burst)
+		if err != nil {
+			// Log error but continue processing
+			// Could show error to user in future
+		}
+		return m, nil
+	}
+
+	// Handle RejectBurstSuggestionMsg - record rejection
+	if rejectMsg, ok := msg.(models.RejectBurstSuggestionMsg); ok {
+		ctx := context.Background()
+		err := m.service.RejectBurstSuggestion(ctx, rejectMsg.Suggestion.EventIDs)
+		if err != nil {
+			// Log error but continue processing
+		}
+		return m, nil
+	}
+
+	// Handle BurstProcessingCompleteMsg - navigate back to metadata review or home
+	if _, ok := msg.(models.BurstProcessingCompleteMsg); ok {
+		// Return to metadata review screen if it exists, otherwise home
+		m.previousScreen = m.currentScreen
+		if m.metadataReviewModel != nil {
+			m.currentScreen = MetadataReviewScreen
+		} else {
+			m.currentScreen = HomeScreen
+		}
 		return m, nil
 	}
 
@@ -409,6 +470,40 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+	case BurstSuggestionScreen:
+		if m.burstSuggestionModel != nil {
+			updatedModel, cmd := m.burstSuggestionModel.Update(msg)
+			m.burstSuggestionModel = updatedModel.(*models.BurstSuggestionModel)
+
+			if m.burstSuggestionModel.IsDone() {
+				// Burst suggestions processing is done
+				ctx := context.Background()
+
+				// Persist confirmed bursts
+				for _, suggestion := range m.burstSuggestionModel.GetConfirmed() {
+					// Convert BurstSuggestion to Burst domain object
+					burst := &career.Burst{
+						Name:        suggestion.Name,
+						Description: suggestion.Description,
+						EventIDs:    suggestion.EventIDs,
+					}
+					if err := m.service.ConfirmBurst(ctx, burst); err != nil {
+						// Continue even if one fails
+					}
+				}
+
+				// Record rejected suggestions to prevent re-suggesting
+				for _, suggestion := range m.burstSuggestionModel.GetRejected() {
+					m.service.RejectBurstSuggestion(ctx, suggestion.EventIDs)
+				}
+
+				// Return to metadata review screen
+				m.currentScreen = MetadataReviewScreen
+				m.previousScreen = BurstSuggestionScreen
+			}
+			return m, cmd
+		}
+
 	case ActionMenuScreen:
 		if m.actionMenuModel != nil {
 			updatedActionMenuModel, cmd := m.actionMenuModel.Update(msg)
@@ -511,6 +606,11 @@ func (m *Model) View() string {
 			return m.bulkOperationsModel.View()
 		}
 		return "Error: Bulk Operations model not initialized\n"
+	case BurstSuggestionScreen:
+		if m.burstSuggestionModel != nil {
+			return m.burstSuggestionModel.View()
+		}
+		return "Error: Burst Suggestion model not initialized\n"
 	case ViewScreen:
 		if m.detailsModel != nil {
 			return m.detailsModel.View()
@@ -644,6 +744,8 @@ func (m *Model) updateBreadcrumbs() {
 		m.breadcrumbs = []string{"Home", "Metadata Review", "Edit Event"}
 	case BulkOperationsScreen:
 		m.breadcrumbs = []string{"Home", "Metadata Review", "Bulk Operations"}
+	case BurstSuggestionScreen:
+		m.breadcrumbs = []string{"Home", "Metadata Review", "Burst Suggestions"}
 	case SuccessScreen:
 		// Build breadcrumb based on previous screen
 		if m.previousScreen == CaptureScreen {

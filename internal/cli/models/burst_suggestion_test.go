@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -13,11 +12,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestBurstSuggestionModel(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "BurstSuggestionModel Suite")
-}
 
 var _ = Describe("BurstSuggestionModel", func() {
 	var (

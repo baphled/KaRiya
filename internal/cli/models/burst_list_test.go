@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -13,11 +12,6 @@ import (
 	"github.com/onsi/gomega"
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-func TestBurstListModel(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "Burst List Model Suite")
-}
 
 var _ = ginkgo.Describe("BurstListModel", func() {
 	var (

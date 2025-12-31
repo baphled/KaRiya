@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -12,11 +11,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestFactEditorModel(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "FactEditorModel Suite")
-}
 
 var _ = Describe("FactEditorModel", func() {
 	var (
