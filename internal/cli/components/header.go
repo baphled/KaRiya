@@ -80,6 +80,41 @@ func (h HeaderModel) GetSubtitle() string {
 	return h.subtitle
 }
 
+// GetClickedBreadcrumbIndex detects which breadcrumb was clicked based on mouse coordinates
+// Returns the index of the clicked breadcrumb, or -1 if no breadcrumb was clicked
+func (h HeaderModel) GetClickedBreadcrumbIndex(x, y int) int {
+	if len(h.breadcrumbs) == 0 {
+		return -1
+	}
+
+	// Breadcrumbs are on line 0 (first line of header)
+	if y != 0 {
+		return -1
+	}
+
+	// Calculate position ranges for each breadcrumb
+	// Format: "Home > List > Details"
+	separator := " > "
+	currentPos := 0
+
+	for i, crumb := range h.breadcrumbs {
+		crumbLen := len(crumb)
+
+		// Check if click is within this breadcrumb's range
+		if x >= currentPos && x < currentPos+crumbLen {
+			return i
+		}
+
+		// Move to next breadcrumb position
+		currentPos += crumbLen
+		if i < len(h.breadcrumbs)-1 {
+			currentPos += len(separator)
+		}
+	}
+
+	return -1
+}
+
 // View renders the header
 func (h HeaderModel) View() string {
 	if h.width <= 0 {
