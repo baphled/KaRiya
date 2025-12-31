@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -15,6 +16,7 @@ type ConfirmationDialog struct {
 	focused     bool // true = confirm, false = cancel
 	confirmed   bool
 	cancelled   bool
+	helpFooter    components.HelpFooterModel
 }
 
 // NewConfirmationDialog creates a new confirmation dialog
@@ -27,6 +29,7 @@ func NewConfirmationDialog(title, message string) *ConfirmationDialog {
 		focused:     false, // Default to cancel for safety
 		confirmed:   false,
 		cancelled:   false,
+		helpFooter:    components.NewHelpFooter("confirmation_dialog", 80),
 	}
 }
 
@@ -111,7 +114,8 @@ func (d *ConfirmationDialog) View() string {
 		Width(60).
 		Render(content)
 
-	return dialog
+	d.helpFooter.SetWidth(80)
+	return lipgloss.JoinVertical(lipgloss.Left, dialog, d.helpFooter.View())
 }
 
 // IsConfirmed returns true if the user confirmed
