@@ -28,6 +28,7 @@ type SuccessModel struct {
 	width          int
 	height         int
 	breadcrumbs    []string // Navigation breadcrumb trail
+	helpFooter       components.HelpFooterModel
 }
 
 // NewSuccessModel creates a new success model with the captured event
@@ -37,6 +38,7 @@ func NewSuccessModel(event *career.CareerEvent) *SuccessModel {
 		selectedAction: CaptureAnotherOption,
 		width:          80,
 		height:         24,
+		helpFooter:       components.NewHelpFooter("success", 80),
 	}
 }
 
@@ -112,7 +114,6 @@ func (m *SuccessModel) View() string {
 	var b strings.Builder
 
 	// Create text style for help text
-	textMuted := lipgloss.NewStyle().Foreground(styles.ColorTextMuted)
 
 	// Success header with breadcrumbs
 	header := components.NewHeader("✓ Success! Event Captured", m.width)
@@ -130,9 +131,9 @@ func (m *SuccessModel) View() string {
 	b.WriteString(actions)
 	b.WriteString("\n")
 
-	// Help text
-	help := textMuted.Render("← → to navigate • Enter to select • Esc to cancel")
-	b.WriteString(help)
+	// Help footer
+	m.helpFooter.SetWidth(m.width)
+	b.WriteString(m.helpFooter.View())
 	b.WriteString("\n")
 
 	return b.String()
@@ -144,8 +145,8 @@ func (m *SuccessModel) renderEventCard() string {
 
 	// Create text styles using available colors
 	textSecondary := lipgloss.NewStyle().Foreground(styles.ColorTextSecondary)
-	textPrimary := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
 	textMuted := lipgloss.NewStyle().Foreground(styles.ColorTextMuted)
+	textPrimary := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
 
 	// Event text
 	textLabel := textSecondary.Render("Event:")
