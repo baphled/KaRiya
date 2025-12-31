@@ -1,17 +1,11 @@
 package career
 
 import (
-	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestBurst(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Burst Suite")
-}
 
 var _ = Describe("Burst", func() {
 	Context("when creating a burst", func() {
