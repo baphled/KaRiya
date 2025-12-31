@@ -37,4 +37,3 @@ func (m *SpinnerModel) Update(msg tea.Msg) (*SpinnerModel, tea.Cmd) {
 func (m *SpinnerModel) View() string {
 	return m.spinner.View()
 }
-

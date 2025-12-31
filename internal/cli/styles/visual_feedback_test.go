@@ -1,17 +1,10 @@
 package styles_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/cli/styles"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestVisualFeedback(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Visual Feedback Styles Suite")
-}
 
 var _ = Describe("Visual Feedback Styles", func() {
 	Context("message box styles", func() {
@@ -93,4 +86,3 @@ var _ = Describe("Visual Feedback Styles", func() {
 		})
 	})
 })
-
