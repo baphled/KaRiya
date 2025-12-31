@@ -521,22 +521,22 @@ func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 		return fmt.Errorf("fact cannot be nil")
 	}
 
-	// Validate fact before saving
-	if err := s.ValidateFact(ctx, fact); err != nil {
-		return err
-	}
-
-	// Generate UUID if not provided
+	// Generate UUID if not provided (must be done before validation)
 	if fact.ID == "" {
 		fact.ID = uuid.New().String()
 	}
 
-	// Set timestamps
+	// Set timestamps (must be done before validation)
 	now := time.Now()
 	if fact.CreatedAt.IsZero() {
 		fact.CreatedAt = now
 	}
 	fact.UpdatedAt = now
+
+	// Validate fact before saving (after ID and timestamps are set)
+	if err := s.ValidateFact(ctx, fact); err != nil {
+		return err
+	}
 
 	// Check if fact already exists
 	existing, err := s.factRepo.GetByID(ctx, fact.ID)
