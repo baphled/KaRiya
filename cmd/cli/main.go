@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/importer"
@@ -26,15 +28,19 @@ func main() {
 func run(args []string, out io.Writer, errOut io.Writer) int {
 	// Parse CLI flags
 	var (
-		showVersion = false
-		showHelp    = false
-		dbPath      = ""
-		mode        = ""
-		listEvents  = false
-		inMemory    = false
-		importPath   = ""
-		importSkip   = false
-		reviewFacts  = false
+		showVersion    = false
+		showHelp       = false
+		dbPath         = ""
+		mode           = ""
+		listEvents     = false
+		inMemory       = false
+		importPath     = ""
+		importSkip     = false
+		reviewFacts    = false
+		detectBursts   = false
+		extractFacts   = false
+		showBursts     = false
+		showFacts      = false
 	)
 
 	// Parse command-line arguments
@@ -47,17 +53,16 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		case "--db", "--database":
 			if i+1 < len(args) {
 				dbPath = args[i+1]
-				i++ // Skip next argument as it's the value
+				i++
 			}
 		case "--mode":
 			if i+1 < len(args) {
 				mode = args[i+1]
-				// Validate mode
 				if mode != "timeline" && mode != "backfill" && mode != "manual" {
 					fmt.Fprintf(errOut, "Error: Invalid mode '%s'. Valid modes are: timeline, backfill, manual\n", mode)
 					return 1
 				}
-				i++ // Skip next argument as it's the value
+				i++
 			}
 		case "--list":
 			listEvents = true
@@ -66,7 +71,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		case "--import":
 			if i+1 < len(args) {
 				importPath = args[i+1]
-				i++ // Skip next argument as it's the value
+				i++
 			} else {
 				fmt.Fprintf(errOut, "Error: --import flag requires a file path\n")
 				return 1
@@ -75,6 +80,14 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			importSkip = true
 		case "--review-facts":
 			reviewFacts = true
+		case "--detect-bursts":
+			detectBursts = true
+		case "--extract-facts":
+			extractFacts = true
+		case "--show-bursts":
+			showBursts = true
+		case "--show-facts":
+			showFacts = true
 		}
 	}
 
@@ -90,17 +103,14 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		return 0
 	}
 
-	// Set up repository based on flags
+	// Set up repository
 	var repo career.Repository
 	var err error
 
 	if inMemory {
-		// Use in-memory repository if explicitly requested
 		repo = career.NewMemoryRepository()
 	} else {
-		// Determine database path
 		if dbPath == "" {
-			// Use default path: ~/.kariya/events.db
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				fmt.Fprintf(errOut, "Error getting home directory: %v\n", err)
@@ -109,14 +119,12 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			kariyaDir := filepath.Join(homeDir, ".kariya")
 			dbPath = filepath.Join(kariyaDir, "events.db")
 
-			// Create directory if it doesn't exist
 			if err := os.MkdirAll(kariyaDir, 0755); err != nil {
 				fmt.Fprintf(errOut, "Error creating kariya directory: %v\n", err)
 				return 1
 			}
 		}
 
-		// Use SQLite repository with specified or default path
 		repo, err = career.NewSQLiteRepository(dbPath)
 		if err != nil {
 			fmt.Fprintf(errOut, "Error initializing database at '%s': %v\n", dbPath, err)
@@ -126,26 +134,21 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 	svc := careerservice.NewService(repo)
 
-	// Initialize fact and burst repositories if using SQLite (not in-memory)
+	// Initialize fact and burst repositories if using SQLite
 	if !inMemory {
-		// Get the DB connection from the event repository
 		sqliteRepo, ok := repo.(*career.SQLiteRepository)
 		if ok && sqliteRepo != nil {
 			db := sqliteRepo.GetDB()
 
-			// Initialize fact repository
 			factRepo, err := career.NewSQLiteFactRepository(db)
 			if err != nil {
-				// Log warning but continue - facts are optional enhancement
 				fmt.Fprintf(errOut, "Warning: Failed to initialize fact repository: %v\n", err)
 			} else {
 				svc.SetFactRepository(factRepo)
 			}
 
-			// Initialize burst repository
 			burstRepo, err := career.NewSQLiteBurstRepository(db)
 			if err != nil {
-				// Log warning but continue - bursts are optional enhancement
 				fmt.Fprintf(errOut, "Warning: Failed to initialize burst repository: %v\n", err)
 			} else {
 				svc.SetBurstRepository(burstRepo)
@@ -155,7 +158,24 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 	cliSvc := cliservice.NewCLIEventService(svc)
 
-	// Handle non-interactive import if --import flag is provided
+	// Handle burst/fact operations
+	if detectBursts {
+		return handleDetectBursts(svc, out, errOut)
+	}
+
+	if extractFacts {
+		return handleExtractFacts(svc, out, errOut)
+	}
+
+	if showBursts {
+		return handleShowBursts(svc, out, errOut)
+	}
+
+	if showFacts {
+		return handleShowFacts(svc, out, errOut)
+	}
+
+	// Handle non-interactive import
 	if importPath != "" {
 		return handleNonInteractiveImport(importPath, importSkip, reviewFacts, svc, out, errOut)
 	}
@@ -163,17 +183,14 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	// Initialize application model
 	model := app.NewModel(cliSvc, svc)
 
-	// Set initial capture mode if specified
 	if mode != "" {
 		model.SetInitialCaptureMode(mode)
 	}
 
-	// Set initial screen if --list flag is provided
 	if listEvents {
 		model.SetInitialScreen(app.ListScreen)
 	}
 
-	// Initialize BubbleTea program with mouse support
 	p := tea.NewProgram(model, tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(errOut, "Error running program: %v\n", err)
@@ -182,9 +199,221 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	return 0
 }
 
+// handleDetectBursts re-runs burst detection on all events
+func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
+	ctx := context.Background()
+
+	events, err := svc.ListEvents(ctx, career.ListFilters{Limit: 10000})
+	if err != nil {
+		fmt.Fprintf(errOut, "Error retrieving events: %v\n", err)
+		return 1
+	}
+
+	if len(events) == 0 {
+		fmt.Fprintf(out, "No events found in database.\n")
+		return 0
+	}
+
+	eventIDs := make([]string, len(events))
+	for i, event := range events {
+		eventIDs[i] = event.ID
+	}
+
+	fmt.Fprintf(out, "Detecting bursts from %d events...\n", len(events))
+
+	suggestions, err := svc.SuggestBursts(ctx, eventIDs)
+	if err != nil {
+		fmt.Fprintf(errOut, "Error detecting bursts: %v\n", err)
+		return 1
+	}
+
+	if len(suggestions) == 0 {
+		fmt.Fprintf(out, "No bursts detected.\n")
+		return 0
+	}
+
+	fmt.Fprintf(out, "\n=== Burst Detection Results ===\n")
+	fmt.Fprintf(out, "Detected %d bursts from %d events:\n\n", len(suggestions), len(events))
+
+	for i, burst := range suggestions {
+		burstName := burst.Name
+		if burstName == "" {
+			burstName = fmt.Sprintf("Burst %d", i+1)
+		}
+		fmt.Fprintf(out, "%d. %s\n", i+1, burstName)
+		fmt.Fprintf(out, "   Events: %d\n", len(burst.EventIDs))
+		if burst.Description != "" {
+			fmt.Fprintf(out, "   Description: %s\n", burst.Description)
+		}
+		if burst.Description != "" {
+			fmt.Fprintf(out, "   Competency Focus: %s\n", burst.Description)
+		}
+		fmt.Fprintf(out, "\n")
+	}
+
+	fmt.Fprintf(out, "✓ Burst detection complete!\n")
+	return 0
+}
+
+// handleExtractFacts re-runs fact extraction on all events
+func handleExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
+	ctx := context.Background()
+
+	events, err := svc.ListEvents(ctx, career.ListFilters{Limit: 10000})
+	if err != nil {
+		fmt.Fprintf(errOut, "Error retrieving events: %v\n", err)
+		return 1
+	}
+
+	if len(events) == 0 {
+		fmt.Fprintf(out, "No events found in database.\n")
+		return 0
+	}
+
+	fmt.Fprintf(out, "Extracting facts from %d events...\n", len(events))
+
+	factCount := 0
+	competencyCount := make(map[string]int)
+
+	for _, event := range events {
+		facts, err := svc.ExtractFactsFromEvent(ctx, event)
+		if err != nil {
+			fmt.Fprintf(errOut, "Warning: Failed to extract facts from event %s: %v\n", event.ID, err)
+			continue
+		}
+
+		for _, fact := range facts {
+			if err := svc.SaveFact(ctx, &fact); err != nil {
+				fmt.Fprintf(errOut, "Warning: Failed to save fact: %v\n", err)
+			} else {
+				factCount++
+				if len(fact.CompetencyCategories) > 0 {
+					for _, comp := range fact.CompetencyCategories {
+						competencyCount[comp]++
+					}
+				}
+			}
+		}
+	}
+
+	if factCount == 0 {
+		fmt.Fprintf(out, "No facts extracted.\n")
+		return 0
+	}
+
+	fmt.Fprintf(out, "\n=== Fact Extraction Results ===\n")
+	fmt.Fprintf(out, "Extracted %d facts from %d events\n\n", factCount, len(events))
+
+	if len(competencyCount) > 0 {
+		fmt.Fprintf(out, "Competency breakdown:\n")
+		competencies := make([]string, 0, len(competencyCount))
+		for c := range competencyCount {
+			competencies = append(competencies, c)
+		}
+		sort.Strings(competencies)
+
+		for _, c := range competencies {
+			fmt.Fprintf(out, "  - %s: %d facts\n", c, competencyCount[c])
+		}
+		fmt.Fprintf(out, "\n")
+	}
+
+	fmt.Fprintf(out, "✓ Fact extraction complete!\n")
+	return 0
+}
+
+// handleShowBursts displays all existing bursts
+func handleShowBursts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
+	ctx := context.Background()
+
+	burstRepo := svc.GetBurstRepository()
+	if burstRepo == nil {
+		fmt.Fprintf(errOut, "Error: Burst repository not configured\n")
+		return 1
+	}
+
+	bursts, err := burstRepo.List(ctx, career.BurstListFilters{Limit: 10000})
+	if err != nil {
+		fmt.Fprintf(errOut, "Error retrieving bursts: %v\n", err)
+		return 1
+	}
+
+	if len(bursts) == 0 {
+		fmt.Fprintf(out, "No bursts found in database.\n")
+		return 0
+	}
+
+	fmt.Fprintf(out, "\n=== Existing Bursts ===\n")
+	fmt.Fprintf(out, "Total bursts: %d\n\n", len(bursts))
+
+	for i, burst := range bursts {
+		burstName := burst.Name
+		if burstName == "" {
+			burstName = fmt.Sprintf("Burst %d", i+1)
+		}
+		fmt.Fprintf(out, "%d. %s\n", i+1, burstName)
+		fmt.Fprintf(out, "   ID: %s\n", burst.ID)
+		fmt.Fprintf(out, "   Events: %d\n", len(burst.EventIDs))
+		if burst.Description != "" {
+			fmt.Fprintf(out, "   Description: %s\n", burst.Description)
+		}
+		if burst.Description != "" {
+			fmt.Fprintf(out, "   Competency Focus: %s\n", burst.Description)
+		}
+		fmt.Fprintf(out, "   Created: %s\n", burst.CreatedAt.Format("2006-01-02 15:04:05"))
+		fmt.Fprintf(out, "\n")
+	}
+
+	return 0
+}
+
+// handleShowFacts displays all existing facts
+func handleShowFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
+	ctx := context.Background()
+
+	factRepo := svc.GetFactRepository()
+	if factRepo == nil {
+		fmt.Fprintf(errOut, "Error: Fact repository not configured\n")
+		return 1
+	}
+
+	facts, err := factRepo.List(ctx, career.FactListFilters{Limit: 10000})
+	if err != nil {
+		fmt.Fprintf(errOut, "Error retrieving facts: %v\n", err)
+		return 1
+	}
+
+	if len(facts) == 0 {
+		fmt.Fprintf(out, "No facts found in database.\n")
+		return 0
+	}
+
+	fmt.Fprintf(out, "\n=== Existing Facts ===\n")
+	fmt.Fprintf(out, "Total facts: %d\n\n", len(facts))
+
+	for i, fact := range facts {
+		fmt.Fprintf(out, "%d. %s\n", i+1, fact.Text)
+		fmt.Fprintf(out, "   ID: %s\n", fact.ID)
+		fmt.Fprintf(out, "   Source Event: %s\n", fact.SourceEventID)
+		if len(fact.CompetencyCategories) > 0 {
+			fmt.Fprintf(out, "   Competencies: %s\n", strings.Join(fact.CompetencyCategories, ", "))
+		}
+		if fact.RoleFit != "" {
+			fmt.Fprintf(out, "   Role Fit: %s\n", fact.RoleFit)
+		}
+		if len(fact.AudienceRelevance) > 0 {
+			fmt.Fprintf(out, "   Target Audiences: %s\n", strings.Join(fact.AudienceRelevance, ", "))
+		}
+		fmt.Fprintf(out, "   Created: %s\n", fact.CreatedAt.Format("2006-01-02 15:04:05"))
+		fmt.Fprintf(out, "\n")
+	}
+
+	return 0
+}
+
+// handleNonInteractiveImport performs import without showing the interactive UI
 // handleNonInteractiveImport performs import without showing the interactive UI
 func handleNonInteractiveImport(filePath string, skipReview bool, reviewFacts bool, svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
-	// Validate file exists
 	if _, err := os.Stat(filePath); err != nil {
 		fmt.Fprintf(errOut, "Error: Cannot access import file '%s': %v\n", filePath, err)
 		return 1
@@ -192,10 +421,8 @@ func handleNonInteractiveImport(filePath string, skipReview bool, reviewFacts bo
 
 	ctx := context.Background()
 
-	// Create import service
 	importService := importer.NewImportService(svc)
 
-	// Open file
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error opening import file: %v\n", err)
@@ -203,7 +430,6 @@ func handleNonInteractiveImport(filePath string, skipReview bool, reviewFacts bo
 	}
 	defer file.Close()
 
-	// Parse CSV
 	fmt.Fprintf(out, "Parsing CSV file: %s\n", filePath)
 	parsedRows, err := importService.PrepareImport(ctx, file)
 	if err != nil {
@@ -218,87 +444,39 @@ func handleNonInteractiveImport(filePath string, skipReview bool, reviewFacts bo
 
 	fmt.Fprintf(out, "Found %d rows to import\n", len(parsedRows))
 
-	// Show preview if not skipping review
-	if !skipReview {
-		fmt.Fprintf(out, "\nPreview of rows to import:\n")
-		fmt.Fprintf(out, "%-50s | %-15s | %-20s\n", "Event Text", "Date", "Company")
-		fmt.Fprintf(out, "%s+%s+%s\n", "---------------------------------------------------", "----------------", "---------------------")
-		for i, row := range parsedRows {
-			if i >= 5 { // Show first 5 rows
-				fmt.Fprintf(out, "... and %d more rows\n", len(parsedRows)-5)
-				break
-			}
-
-			// Skip invalid or duplicate rows in preview
-			if !row.IsValid || row.IsDuplicate {
-				continue
-			}
-
-			dateStr := ""
-			if row.Event != nil && !row.Event.Date.IsZero() {
-				dateStr = row.Event.Date.Format("2006-01-02")
-			}
-			eventText := ""
-			company := ""
-			if row.Event != nil {
-				eventText = row.Event.Text
-				company = row.Event.Company
-			}
-			if len(eventText) > 50 {
-				eventText = eventText[:47] + "..."
-			}
-			fmt.Fprintf(out, "%-50s | %-15s | %-20s\n", eventText, dateStr, company)
-		}
-
-		// Ask for confirmation
-		fmt.Fprintf(out, "\nProceed with import? (y/n): ")
-		var response string
-		_, err := fmt.Scanln(&response)
-		if err != nil || (response != "y" && response != "Y") {
-			fmt.Fprintf(out, "Import cancelled.\n")
-			return 0
-		}
-	}
-
-	// Perform import
-	fmt.Fprintf(out, "Importing %d rows...\n", len(parsedRows))
+	// Select all rows
 	selectedRows := make([]int, len(parsedRows))
 	for i := range parsedRows {
 		selectedRows[i] = i
 	}
 
+	fmt.Fprintf(out, "Importing %d rows...\n", len(parsedRows))
 	result, err := importService.ImportRows(ctx, parsedRows, selectedRows)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error during import: %v\n", err)
 		return 1
 	}
 
-	// Print results
-	fmt.Fprintf(out, "\n=== Import Complete ===\n")
+	fmt.Fprintf(out, "\nImport Complete ===\n")
 	fmt.Fprintf(out, "Total rows processed: %d\n", result.TotalRows)
 	fmt.Fprintf(out, "Successfully imported: %d\n", result.SuccessCount)
 	fmt.Fprintf(out, "Skipped: %d\n", result.SkippedCount)
 	if result.FailedCount > 0 {
 		fmt.Fprintf(out, "Failed: %d\n", result.FailedCount)
 		if len(result.FailedRows) > 0 {
-			fmt.Fprintf(out, "\nFailed rows:\n")
-			for _, failedRow := range result.FailedRows {
-				fmt.Fprintf(out, "  - Row %d", failedRow.RowNumber)
-				if failedRow.Event != nil {
-					fmt.Fprintf(out, ": %s", failedRow.Event.Text)
+			fmt.Fprintf(out, "\nFailed rows (first 5):\n")
+			for i, failedRow := range result.FailedRows {
+				if i >= 5 {
+					break
 				}
-				fmt.Fprintf(out, "\n")
-				if len(failedRow.ValidationErrors) > 0 {
-					for _, errMsg := range failedRow.ValidationErrors {
-						fmt.Fprintf(out, "    Error: %s\n", errMsg)
-					}
+				if failedRow.Event != nil {
+					fmt.Fprintf(out, "  - %s\n", failedRow.Event.Text)
 				}
 			}
 		}
 	}
 
-	// Display burst detection results (Task 2.1)
-	if result.BurstSuggestions != nil && len(result.BurstSuggestions) > 0 {
+	if len(result.BurstSuggestions) > 0 {
 		fmt.Fprintf(out, "\n=== Burst Suggestions ===\n")
 		fmt.Fprintf(out, "Detected %d potential bursts from imported events:\n\n", len(result.BurstSuggestions))
 		for i, burst := range result.BurstSuggestions {
@@ -312,21 +490,17 @@ func handleNonInteractiveImport(filePath string, skipReview bool, reviewFacts bo
 		fmt.Fprintf(out, "\nThese bursts represent potential project groupings or themes.\n")
 	}
 
-
-	// Display fact extraction results (Task 3.1)
 	if result.ExtractedFactsCount > 0 {
 		fmt.Fprintf(out, "\n=== Fact Extraction ===\n")
 		fmt.Fprintf(out, "Extracted %d facts from %d events\n", result.ExtractedFactsCount, len(result.CreatedEvents))
 
-		// Show competency breakdown if available
 		if len(result.FactsByCompetency) > 0 {
 			fmt.Fprintf(out, "\nCompetency breakdown:\n")
-			// Sort competencies for consistent output
 			competencies := make([]string, 0, len(result.FactsByCompetency))
 			for c := range result.FactsByCompetency {
 				competencies = append(competencies, c)
 			}
-			// Simple alphabetical sort for now
+			sort.Strings(competencies)
 			for _, c := range competencies {
 				fmt.Fprintf(out, "  - %s: %d facts\n", c, result.FactsByCompetency[c])
 			}
@@ -360,6 +534,10 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "  --in-memory                Use in-memory storage (data not persisted)")
 	fmt.Fprintln(out, "  --import PATH              Import career events from CSV file")
 	fmt.Fprintln(out, "  --skip-import-review       Skip confirmation prompt during import")
+	fmt.Fprintln(out, "  --detect-bursts            Re-run burst detection on all events")
+	fmt.Fprintln(out, "  --extract-facts            Re-run fact extraction on all events")
+	fmt.Fprintln(out, "  --show-bursts              Display all existing bursts")
+	fmt.Fprintln(out, "  --show-facts               Display all existing facts")
 	fmt.Fprintln(out, "\nExamples:")
 	fmt.Fprintln(out, "  kariya                                    # Start with default database")
 	fmt.Fprintln(out, "  kariya --db ./events.db                  # Use custom database path")
@@ -369,6 +547,10 @@ func printHelpTo(out io.Writer) {
 	fmt.Fprintln(out, "  kariya --import events.csv               # Import events from CSV file")
 	fmt.Fprintln(out, "  kariya --import events.csv --skip-import-review")
 	fmt.Fprintln(out, "                                           # Import without confirmation")
+	fmt.Fprintln(out, "  kariya --detect-bursts                   # Re-detect all bursts")
+	fmt.Fprintln(out, "  kariya --extract-facts                   # Re-extract all facts")
+	fmt.Fprintln(out, "  kariya --show-bursts                     # List all bursts")
+	fmt.Fprintln(out, "  kariya --show-facts                      # List all facts")
 	fmt.Fprintln(out, "  kariya --version                         # Show version")
 	fmt.Fprintln(out, "\nCSV File Format:")
 	fmt.Fprintln(out, "  The CSV file should have the following columns (in any order):")
