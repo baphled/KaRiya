@@ -192,6 +192,69 @@ description,date,company,project,tags
 "Implemented critical fix",2024-06-10,TechCorp,Product,"technical,achievement"
 ```
 
+
+### 6. Burst Detection & Grouping
+
+Bursts are automatically detected groupings of 2+ related career events:
+
+1. Complete metadata clarification for your events
+2. From metadata review screen, press 'u' to view burst suggestions
+3. Review suggested bursts with confidence scores:
+   - **Green (>0.7)**: High confidence - events clearly related
+   - **Yellow (0.4-0.7)**: Medium confidence - review before confirming
+   - **Red (<0.4)**: Low confidence - usually not suggested
+4. For each burst:
+   - Review related events
+   - Confirm or reject suggestion
+   - Optionally edit burst name/description (press 'e')
+5. Confirmed bursts persist to database
+
+**How Burst Detection Works**:
+- Text similarity (word overlap and keywords)
+- Company/project matching
+- Tags matching
+- Temporal proximity (events within 6 months)
+
+**Example Burst**:
+```
+Platform Modernization Initiative (4 events)
+- "Designed microservices architecture"
+- "Led migration planning and execution"
+- "Implemented deployment automation"
+- "Mentored team on microservices patterns"
+Competency Focus: Technical
+Confidence: 85%
+```
+
+### 7. Fact Extraction & Enrichment
+
+Facts are automatically extracted inferences about your competencies and achievements:
+
+1. After confirming burst suggestions, facts are automatically extracted
+2. For each event/burst, review extracted facts:
+   - **Text**: What you accomplished (no aspirational language)
+   - **Competencies**: 6 categories (Technical, Leadership, Product, Consulting, Research, Mentoring)
+   - **Role Fit**: Career level (Principal, EM, Staff Engineer, Senior IC)
+   - **Audience**: Who cares (Hiring Manager, Recruiter, Peer)
+3. Confirm or edit each fact
+4. Facts are used for CV generation and portfolio creation
+
+**Fact Validation Rules**:
+- No aspirational language (will, should, could, might, may, want, wish, hope, plan, intend, attempt, try, would)
+- Grounded metrics (measured, not speculative)
+- 1-2000 characters
+- ≥1 competency category
+- ≥1 audience type
+
+**Example Fact**:
+```
+Text: "Architected microservices platform supporting 50M+ requests daily"
+Competencies: [Technical, Architecture]
+Role Fit: Principal
+Audience: [Hiring Manager, Peer]
+Strength Signal: "Architected system handling massive scale"
+```
+
 ## Keyboard Reference
 
 ### Home Screen
