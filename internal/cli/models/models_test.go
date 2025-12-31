@@ -1,0 +1,552 @@
+package models
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestModels(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "CLI Models Suite")
+}
+
+var _ = Describe("BaseStandardModel", func() {
+	var model *BaseStandardModel
+
+	BeforeEach(func() {
+		model = NewBaseStandardModel()
+	})
+
+	Describe("Context Management", func() {
+		It("should initialize with a background context", func() {
+			Expect(model.GetContext()).NotTo(BeNil())
+			Expect(model.GetContext()).To(Equal(context.Background()))
+		})
+
+		It("should set and retrieve context", func() {
+			ctx := context.WithValue(context.Background(), "test", "value")
+			model.SetContext(ctx)
+			Expect(model.GetContext()).To(Equal(ctx))
+			Expect(model.GetContext().Value("test")).To(Equal("value"))
+		})
+
+		It("should initialize context metadata with empty data map", func() {
+			metadata := model.GetContextMetadata()
+			Expect(metadata).NotTo(BeNil())
+			Expect(metadata.Data).NotTo(BeNil())
+			Expect(len(metadata.Data)).To(Equal(0))
+		})
+
+		It("should set and retrieve context metadata", func() {
+			metadata := &ContextMetadata{
+				ScreenID: "test-screen",
+				Data: map[string]interface{}{
+					"key": "value",
+				},
+			}
+			model.SetContextMetadata(metadata)
+			retrieved := model.GetContextMetadata()
+			Expect(retrieved.ScreenID).To(Equal("test-screen"))
+			Expect(retrieved.Data["key"]).To(Equal("value"))
+		})
+	})
+
+	Describe("Breadcrumb Management", func() {
+		It("should start with empty breadcrumbs", func() {
+			Expect(model.GetBreadcrumbs()).To(HaveLen(0))
+		})
+
+		It("should add breadcrumbs", func() {
+			item1 := BreadcrumbItem{Label: "Home", ID: "home"}
+			item2 := BreadcrumbItem{Label: "Events", ID: "events"}
+
+			model.AddBreadcrumb(item1)
+			model.AddBreadcrumb(item2)
+
+			breadcrumbs := model.GetBreadcrumbs()
+			Expect(breadcrumbs).To(HaveLen(2))
+			Expect(breadcrumbs[0].Label).To(Equal("Home"))
+			Expect(breadcrumbs[1].Label).To(Equal("Events"))
+		})
+
+		It("should pop breadcrumbs", func() {
+			item := BreadcrumbItem{Label: "Test", ID: "test"}
+			model.AddBreadcrumb(item)
+			popped := model.PopBreadcrumb()
+
+			Expect(popped.Label).To(Equal("Test"))
+			Expect(model.GetBreadcrumbs()).To(HaveLen(0))
+		})
+
+		It("should return empty breadcrumb when popping from empty list", func() {
+			popped := model.PopBreadcrumb()
+			Expect(popped.Label).To(Equal(""))
+			Expect(popped.ID).To(Equal(""))
+		})
+
+		It("should peek at the last breadcrumb without removing it", func() {
+			item := BreadcrumbItem{Label: "Test", ID: "test"}
+			model.AddBreadcrumb(item)
+
+			peeked := model.PeekBreadcrumb()
+			Expect(peeked).NotTo(BeNil())
+			Expect(peeked.Label).To(Equal("Test"))
+			Expect(model.GetBreadcrumbs()).To(HaveLen(1))
+		})
+
+		It("should return nil when peeking empty breadcrumbs", func() {
+			peeked := model.PeekBreadcrumb()
+			Expect(peeked).To(BeNil())
+		})
+
+		It("should generate correct breadcrumb path", func() {
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Home", ID: "home"})
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Events", ID: "events"})
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Details", ID: "details"})
+
+			path := model.GetBreadcrumbPath()
+			Expect(path).To(Equal("/Home/Events/Details/"))
+		})
+
+		It("should return root path for empty breadcrumbs", func() {
+			path := model.GetBreadcrumbPath()
+			Expect(path).To(Equal("/"))
+		})
+
+		It("should navigate to specific breadcrumb", func() {
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Home", ID: "home"})
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Events", ID: "events"})
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Details", ID: "details"})
+
+			err := model.NavigateToBreadcrumb(1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(model.GetBreadcrumbs()).To(HaveLen(2))
+			Expect(model.GetBreadcrumbs()[1].Label).To(Equal("Events"))
+		})
+
+		It("should return error for invalid breadcrumb index", func() {
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Home", ID: "home"})
+
+			err := model.NavigateToBreadcrumb(5)
+			Expect(err).To(Equal(ErrInvalidBreadcrumbIndex))
+		})
+
+		It("should clear all breadcrumbs", func() {
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Home", ID: "home"})
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Events", ID: "events"})
+
+			model.ClearBreadcrumbs()
+			Expect(model.GetBreadcrumbs()).To(HaveLen(0))
+		})
+
+		It("should automatically initialize metadata for breadcrumb items", func() {
+			item := BreadcrumbItem{Label: "Test", ID: "test"}
+			model.AddBreadcrumb(item)
+
+			breadcrumb := model.GetBreadcrumbs()[0]
+			Expect(breadcrumb.Metadata).NotTo(BeNil())
+		})
+	})
+
+	Describe("Navigation History", func() {
+		It("should start with empty navigation history", func() {
+			Expect(model.GetNavigationHistory()).To(HaveLen(0))
+		})
+
+		It("should push to navigation history", func() {
+			model.PushNavigationHistory("screen1", "state1")
+			model.PushNavigationHistory("screen2", "state2")
+
+			history := model.GetNavigationHistory()
+			Expect(history).To(HaveLen(2))
+			Expect(history[0]).To(Equal("screen1"))
+			Expect(history[1]).To(Equal("screen2"))
+		})
+
+		It("should pop from navigation history", func() {
+			model.PushNavigationHistory("screen1", "state1")
+			model.PushNavigationHistory("screen2", "state2")
+
+			label, state, err := model.PopNavigationHistory()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(label).To(Equal("screen2"))
+			Expect(state).To(Equal("state2"))
+			Expect(model.GetNavigationHistory()).To(HaveLen(1))
+		})
+
+		It("should return error when popping empty history", func() {
+			_, _, err := model.PopNavigationHistory()
+			Expect(err).To(Equal(ErrEmptyNavigationHistory))
+		})
+	})
+
+	Describe("Shortcut Management", func() {
+		It("should register and retrieve shortcuts", func() {
+			shortcuts := map[string]key.Binding{
+				"quit": key.NewBinding(
+					key.WithKeys("ctrl+c"),
+					key.WithHelp("ctrl+c", "quit"),
+				),
+			}
+
+			model.RegisterShortcuts(shortcuts)
+			retrieved := model.GetShortcuts()
+
+			Expect(retrieved).To(HaveLen(1))
+			Expect(retrieved["quit"]).NotTo(BeNil())
+		})
+
+		It("should handle shortcuts with default implementation", func() {
+			binding := key.NewBinding(key.WithKeys("ctrl+c"))
+			result, cmd := model.HandleShortcut(binding)
+
+			Expect(result).To(Equal(model))
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("Error Handling", func() {
+		It("should start with no error", func() {
+			Expect(model.GetLastError()).To(BeNil())
+		})
+
+		It("should set and retrieve errors", func() {
+			err := errors.New("test error")
+			model.SetError(err)
+
+			Expect(model.GetLastError()).To(Equal(err))
+		})
+
+		It("should clear errors", func() {
+			model.SetError(errors.New("test error"))
+			model.ClearError()
+
+			Expect(model.GetLastError()).To(BeNil())
+		})
+	})
+
+	Describe("State Management", func() {
+		It("should set and retrieve state", func() {
+			state := map[string]interface{}{"key": "value"}
+			model.SetState(state)
+
+			retrieved := model.GetState()
+			Expect(retrieved).To(Equal(state))
+		})
+
+		It("should handle nil state", func() {
+			model.SetState(nil)
+			Expect(model.GetState()).To(BeNil())
+		})
+	})
+
+	Describe("Validation and Reset", func() {
+		It("should validate with default no-op implementation", func() {
+			err := model.Validate()
+			Expect(err).To(BeNil())
+		})
+
+		It("should reset all state", func() {
+			model.AddBreadcrumb(BreadcrumbItem{Label: "Test", ID: "test"})
+			model.PushNavigationHistory("screen", "state")
+			model.SetError(errors.New("test"))
+			model.SetState("test-state")
+
+			model.Reset()
+
+			Expect(model.GetBreadcrumbs()).To(HaveLen(0))
+			Expect(model.GetNavigationHistory()).To(HaveLen(0))
+			Expect(model.GetLastError()).To(BeNil())
+			Expect(model.GetState()).To(BeNil())
+			Expect(model.GetContextMetadata().Data).NotTo(BeNil())
+		})
+	})
+})
+
+var _ = Describe("ShortcutHandler", func() {
+	var handler *ShortcutHandler
+
+	BeforeEach(func() {
+		handler = NewShortcutHandler()
+	})
+
+	Describe("Shortcut Registration", func() {
+		It("should register a shortcut with action", func() {
+			binding := key.NewBinding(key.WithKeys("ctrl+c"))
+			action := func() tea.Cmd { return nil }
+
+			handler.RegisterShortcut("quit", binding, action)
+
+			shortcut, exists := handler.GetShortcut("quit")
+			Expect(exists).To(BeTrue())
+			Expect(shortcut).NotTo(BeNil())
+		})
+
+		It("should unregister a shortcut", func() {
+			binding := key.NewBinding(key.WithKeys("ctrl+c"))
+			action := func() tea.Cmd { return nil }
+
+			handler.RegisterShortcut("quit", binding, action)
+			handler.UnregisterShortcut("quit")
+
+			_, exists := handler.GetShortcut("quit")
+			Expect(exists).To(BeFalse())
+		})
+
+		It("should retrieve non-existent shortcut as not found", func() {
+			_, exists := handler.GetShortcut("nonexistent")
+			Expect(exists).To(BeFalse())
+		})
+	})
+
+	Describe("Shortcut Retrieval", func() {
+		It("should get all shortcuts", func() {
+			quit := key.NewBinding(key.WithKeys("ctrl+c"))
+			back := key.NewBinding(key.WithKeys("esc"))
+
+			handler.RegisterShortcut("quit", quit, func() tea.Cmd { return nil })
+			handler.RegisterShortcut("back", back, func() tea.Cmd { return nil })
+
+			shortcuts := handler.GetAllShortcuts()
+			Expect(shortcuts).To(HaveLen(2))
+			Expect(shortcuts["quit"]).NotTo(BeNil())
+			Expect(shortcuts["back"]).NotTo(BeNil())
+		})
+	})
+
+	Describe("Message Handling", func() {
+		It("should not handle non-matching key message", func() {
+			binding := key.NewBinding(key.WithKeys("ctrl+c"))
+			handler.RegisterShortcut("quit", binding, func() tea.Cmd { return nil })
+
+			msg := tea.KeyMsg{Type: tea.KeyEscape}
+			_, handled := handler.HandleMsg(msg)
+
+			Expect(handled).To(BeFalse())
+		})
+
+		It("should ignore non-key messages", func() {
+			msg := tea.WindowSizeMsg{Width: 100, Height: 50}
+			_, handled := handler.HandleMsg(msg)
+
+			Expect(handled).To(BeFalse())
+		})
+
+		It("should register action and not error on handle", func() {
+			binding := key.NewBinding(key.WithKeys("ctrl+c"))
+			action := func() tea.Cmd { return nil }
+
+			handler.RegisterShortcut("quit", binding, action)
+			Expect(handler.GetAllShortcuts()).To(HaveLen(1))
+		})
+	})
+
+	Describe("Shortcut Clearing", func() {
+		It("should clear all shortcuts", func() {
+			handler.RegisterShortcut("quit", key.NewBinding(key.WithKeys("ctrl+c")), func() tea.Cmd { return nil })
+			handler.RegisterShortcut("back", key.NewBinding(key.WithKeys("esc")), func() tea.Cmd { return nil })
+
+			handler.ClearShortcuts()
+
+			Expect(handler.GetAllShortcuts()).To(HaveLen(0))
+		})
+	})
+})
+
+var _ = Describe("CommonShortcuts", func() {
+	It("should create common shortcuts with default bindings", func() {
+		common := NewCommonShortcuts()
+
+		Expect(common.Quit).NotTo(BeNil())
+		Expect(common.Back).NotTo(BeNil())
+		Expect(common.Help).NotTo(BeNil())
+		Expect(common.Enter).NotTo(BeNil())
+		Expect(common.Up).NotTo(BeNil())
+		Expect(common.Down).NotTo(BeNil())
+		Expect(common.PageUp).NotTo(BeNil())
+		Expect(common.PageDown).NotTo(BeNil())
+	})
+})
+
+var _ = Describe("ErrorHandler", func() {
+	var handler *ErrorHandler
+
+	BeforeEach(func() {
+		handler = NewErrorHandler()
+		Expect(handler).NotTo(BeNil())
+		Expect(handler.logger).NotTo(BeNil())
+	})
+
+	Describe("Error Logging", func() {
+		It("should log an error with severity", func() {
+			err := errors.New("test error")
+			handler.LogError(SeverityError, "test message", err, "screen1")
+
+			Expect(handler.GetErrorHistory()).To(HaveLen(1))
+			lastError := handler.GetLastError()
+			Expect(lastError).NotTo(BeNil())
+			Expect(lastError.Message).To(Equal("test message"))
+			Expect(lastError.Severity).To(Equal(SeverityError))
+		})
+
+		It("should maintain error timestamp", func() {
+			err := errors.New("test error")
+			handler.LogError(SeverityWarning, "warning message", err, "screen1")
+
+			lastError := handler.GetLastError()
+			Expect(lastError.Timestamp).NotTo(BeZero())
+		})
+
+		It("should log multiple errors in order", func() {
+			handler.LogError(SeverityInfo, "info", nil, "screen1")
+			handler.LogError(SeverityWarning, "warning", errors.New("warn"), "screen1")
+			handler.LogError(SeverityError, "error", errors.New("err"), "screen1")
+
+			history := handler.GetErrorHistory()
+			Expect(history).To(HaveLen(3))
+			Expect(history[0].Severity).To(Equal(SeverityInfo))
+			Expect(history[1].Severity).To(Equal(SeverityWarning))
+			Expect(history[2].Severity).To(Equal(SeverityError))
+		})
+	})
+
+	Describe("Error Retrieval", func() {
+		It("should get last error", func() {
+			handler.LogError(SeverityInfo, "first", nil, "screen1")
+			handler.LogError(SeverityError, "second", errors.New("err"), "screen1")
+
+			lastError := handler.GetLastError()
+			Expect(lastError.Message).To(Equal("second"))
+		})
+
+		It("should return nil for last error when no errors exist", func() {
+			lastError := handler.GetLastError()
+			Expect(lastError).To(BeNil())
+		})
+
+		It("should filter errors by screen ID", func() {
+			handler.LogError(SeverityError, "screen1 error", errors.New("err1"), "screen1")
+			handler.LogError(SeverityError, "screen2 error", errors.New("err2"), "screen2")
+			handler.LogError(SeverityError, "screen1 error2", errors.New("err3"), "screen1")
+
+			screen1Errors := handler.GetErrorsByScreenID("screen1")
+			Expect(screen1Errors).To(HaveLen(2))
+			Expect(screen1Errors[0].Message).To(Equal("screen1 error"))
+			Expect(screen1Errors[1].Message).To(Equal("screen1 error2"))
+		})
+
+		It("should filter errors by severity", func() {
+			handler.LogError(SeverityInfo, "info", nil, "screen1")
+			handler.LogError(SeverityWarning, "warning", nil, "screen1")
+			handler.LogError(SeverityError, "error", errors.New("err"), "screen1")
+			handler.LogError(SeverityWarning, "warning2", nil, "screen1")
+
+			warnings := handler.GetErrorsBySeverity(SeverityWarning)
+			Expect(warnings).To(HaveLen(2))
+		})
+	})
+
+	Describe("Error Clearing", func() {
+		It("should clear all errors", func() {
+			handler.LogError(SeverityError, "error1", errors.New("err1"), "screen1")
+			handler.LogError(SeverityError, "error2", errors.New("err2"), "screen1")
+
+			handler.ClearErrors()
+
+			Expect(handler.GetErrorHistory()).To(HaveLen(0))
+			Expect(handler.GetLastError()).To(BeNil())
+		})
+
+		It("should clear errors by screen ID", func() {
+			handler.LogError(SeverityError, "screen1 error", errors.New("err1"), "screen1")
+			handler.LogError(SeverityError, "screen2 error", errors.New("err2"), "screen2")
+			handler.LogError(SeverityError, "screen1 error2", errors.New("err3"), "screen1")
+
+			handler.ClearErrorsByScreenID("screen1")
+
+			remaining := handler.GetErrorHistory()
+			Expect(remaining).To(HaveLen(1))
+			Expect(remaining[0].ScreenID).To(Equal("screen2"))
+		})
+	})
+
+	Describe("Suggestion Management", func() {
+		It("should register and retrieve suggestions", func() {
+			err := errors.New("database connection failed")
+			suggestion := "Check your database connection settings"
+
+			handler.RegisterSuggestion(err.Error(), suggestion)
+			retrieved := handler.GetSuggestion(err)
+
+			Expect(retrieved).To(Equal(suggestion))
+		})
+
+		It("should return empty string for unknown error suggestion", func() {
+			err := errors.New("unknown error")
+			suggestion := handler.GetSuggestion(err)
+
+			Expect(suggestion).To(Equal(""))
+		})
+
+		It("should attach suggestion to logged error", func() {
+			err := errors.New("connection timeout")
+			suggestion := "Try increasing the timeout value"
+
+			handler.RegisterSuggestion(err.Error(), suggestion)
+			handler.LogError(SeverityError, "connection timeout", err, "screen1")
+
+			lastError := handler.GetLastError()
+			Expect(lastError.Suggestion).To(Equal(suggestion))
+		})
+	})
+
+	Describe("Error Limiting", func() {
+		It("should limit stored errors to maxErrors", func() {
+			// Log more than maxErrors (default 100)
+			for i := 0; i < 150; i++ {
+				handler.LogError(SeverityInfo, "test", nil, "screen1")
+			}
+
+			Expect(handler.GetErrorHistory()).To(HaveLen(100))
+		})
+	})
+})
+
+var _ = Describe("ErrorSeverity String Representation", func() {
+	It("should return correct string for each severity level", func() {
+		Expect(SeverityInfo.String()).To(Equal("INFO"))
+		Expect(SeverityWarning.String()).To(Equal("WARNING"))
+		Expect(SeverityError.String()).To(Equal("ERROR"))
+		Expect(SeverityCritical.String()).To(Equal("CRITICAL"))
+	})
+
+	It("should handle unknown severity level", func() {
+		unknownSeverity := ErrorSeverity(999)
+		Expect(unknownSeverity.String()).To(Equal("UNKNOWN"))
+	})
+})
+
+var _ = Describe("Error Message Formatting", func() {
+	It("should format error message with severity", func() {
+		message := FormatErrorMessage(SeverityError, "An error occurred", "Try again")
+
+		Expect(message).To(ContainSubstring("[ERROR]"))
+		Expect(message).To(ContainSubstring("An error occurred"))
+		Expect(message).To(ContainSubstring("Suggestion"))
+		Expect(message).To(ContainSubstring("Try again"))
+	})
+
+	It("should format error message without suggestion", func() {
+		message := FormatErrorMessage(SeverityWarning, "A warning", "")
+
+		Expect(message).To(ContainSubstring("[WARNING]"))
+		Expect(message).To(ContainSubstring("A warning"))
+		Expect(message).NotTo(ContainSubstring("Suggestion"))
+	})
+})
