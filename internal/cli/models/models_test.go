@@ -966,3 +966,191 @@ var _ = Describe("ContextShortcutHandler", func() {
 		})
 	})
 })
+
+var _ = Describe("ShortcutHelpSystem", func() {
+	var helpSystem *ShortcutHelpSystem
+
+	BeforeEach(func() {
+		helpSystem = NewShortcutHelpSystem()
+	})
+
+	Describe("Shortcut Registration for Help", func() {
+		It("should register shortcut with help information", func() {
+			binding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			helpSystem.RegisterShortcut("edit", binding, "Edit the selected event", []string{"list", "form"})
+
+			info, exists := helpSystem.GetShortcutInfo("edit")
+			Expect(exists).To(BeTrue())
+			Expect(info.Description).To(Equal("Edit the selected event"))
+		})
+
+		It("should include context information", func() {
+			binding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			helpSystem.RegisterShortcut("edit", binding, "Edit the selected event", []string{"list"})
+
+			info, _ := helpSystem.GetShortcutInfo("edit")
+			Expect(info.Contexts).To(ContainElement("list"))
+		})
+
+		It("should update shortcut information", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			helpSystem.RegisterShortcut("edit", binding1, "Old description", []string{"list"})
+
+			binding2 := key.NewBinding(key.WithKeys("E"), key.WithHelp("E", "edit"))
+			helpSystem.RegisterShortcut("edit", binding2, "New description", []string{"list", "form"})
+
+			info, _ := helpSystem.GetShortcutInfo("edit")
+			Expect(info.Description).To(Equal("New description"))
+			Expect(info.Contexts).To(HaveLen(2))
+		})
+	})
+
+	Describe("Shortcut Lookup", func() {
+		It("should retrieve all registered shortcuts", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit item", []string{"list"})
+			helpSystem.RegisterShortcut("delete", binding2, "Delete item", []string{"list"})
+
+			shortcuts := helpSystem.GetAllShortcuts()
+			Expect(shortcuts).To(HaveLen(2))
+		})
+
+		It("should get shortcuts for specific context", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete"))
+			binding3 := key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "submit"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit item", []string{"list"})
+			helpSystem.RegisterShortcut("delete", binding2, "Delete item", []string{"list"})
+			helpSystem.RegisterShortcut("submit", binding3, "Submit form", []string{"form"})
+
+			listShortcuts := helpSystem.GetShortcutsForContext("list")
+			Expect(listShortcuts).To(HaveLen(2))
+			Expect(listShortcuts).To(HaveKey("edit"))
+			Expect(listShortcuts).To(HaveKey("delete"))
+		})
+
+		It("should return empty map for unknown context", func() {
+			shortcuts := helpSystem.GetShortcutsForContext("unknown")
+			Expect(shortcuts).To(BeEmpty())
+		})
+	})
+
+	Describe("Category Management", func() {
+		It("should categorize shortcuts", func() {
+			binding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			helpSystem.RegisterShortcut("edit", binding, "Edit item", []string{"list"})
+			helpSystem.CategorizeShortcut("edit", "Editing")
+
+			category, exists := helpSystem.GetShortcutCategory("edit")
+			Expect(exists).To(BeTrue())
+			Expect(category).To(Equal("Editing"))
+		})
+
+		It("should get shortcuts by category", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete"))
+			binding3 := key.NewBinding(key.WithKeys("j"), key.WithHelp("j", "down"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit item", []string{"list"})
+			helpSystem.RegisterShortcut("delete", binding2, "Delete item", []string{"list"})
+			helpSystem.RegisterShortcut("down", binding3, "Navigate down", []string{"list"})
+
+			helpSystem.CategorizeShortcut("edit", "Editing")
+			helpSystem.CategorizeShortcut("delete", "Editing")
+			helpSystem.CategorizeShortcut("down", "Navigation")
+
+			editingShortcuts := helpSystem.GetShortcutsByCategory("Editing")
+			Expect(editingShortcuts).To(HaveLen(2))
+
+			navigationShortcuts := helpSystem.GetShortcutsByCategory("Navigation")
+			Expect(navigationShortcuts).To(HaveLen(1))
+		})
+	})
+
+	Describe("Help Text Generation", func() {
+		It("should generate help text for shortcut", func() {
+			binding := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			helpSystem.RegisterShortcut("edit", binding, "Edit the selected item", []string{"list"})
+
+			helpText := helpSystem.GenerateHelpText("edit")
+			Expect(helpText).To(ContainSubstring("e"))
+			Expect(helpText).To(ContainSubstring("edit"))
+			Expect(helpText).To(ContainSubstring("Edit the selected item"))
+		})
+
+		It("should generate help for context", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit item", []string{"list"})
+			helpSystem.RegisterShortcut("delete", binding2, "Delete item", []string{"list"})
+
+			helpText := helpSystem.GenerateContextHelp("list")
+			Expect(helpText).NotTo(BeEmpty())
+			Expect(helpText).To(ContainSubstring("edit"))
+			Expect(helpText).To(ContainSubstring("delete"))
+		})
+	})
+
+	Describe("Shortcut Search", func() {
+		It("should search shortcuts by description", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit the selected item", []string{"list"})
+			helpSystem.RegisterShortcut("delete", binding2, "Remove the selected item", []string{"list"})
+
+			results := helpSystem.SearchShortcuts("selected")
+			Expect(results).To(HaveLen(2))
+		})
+
+		It("should search shortcuts by key", func() {
+			binding1 := key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("ctrl+e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "expand"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit item", []string{"list"})
+			helpSystem.RegisterShortcut("expand", binding2, "Expand item", []string{"list"})
+
+			results := helpSystem.SearchShortcuts("ctrl+e")
+			Expect(results).To(HaveLen(1))
+			Expect(results[0].ID).To(Equal("edit"))
+		})
+
+		It("should return empty results for no matches", func() {
+			results := helpSystem.SearchShortcuts("nonexistent")
+			Expect(results).To(BeEmpty())
+		})
+	})
+
+	Describe("Discovery Features", func() {
+		It("should get all available contexts", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "submit"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit item", []string{"list", "form"})
+			helpSystem.RegisterShortcut("submit", binding2, "Submit form", []string{"form"})
+
+			contexts := helpSystem.GetAllContexts()
+			Expect(contexts).To(HaveLen(2))
+			Expect(contexts).To(ContainElement("list"))
+			Expect(contexts).To(ContainElement("form"))
+		})
+
+		It("should get all categories", func() {
+			binding1 := key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit"))
+			binding2 := key.NewBinding(key.WithKeys("j"), key.WithHelp("j", "down"))
+
+			helpSystem.RegisterShortcut("edit", binding1, "Edit item", []string{"list"})
+			helpSystem.RegisterShortcut("down", binding2, "Navigate down", []string{"list"})
+
+			helpSystem.CategorizeShortcut("edit", "Editing")
+			helpSystem.CategorizeShortcut("down", "Navigation")
+
+			categories := helpSystem.GetAllCategories()
+			Expect(categories).To(HaveLen(2))
+		})
+	})
+})
