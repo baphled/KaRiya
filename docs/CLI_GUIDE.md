@@ -40,6 +40,21 @@ go build -o kariya-cli ./cmd/cli
 
 # Show recent events on startup
 ./kariya-cli --list
+
+# Import CSV with automatic burst/fact detection
+./kariya-cli --import events.csv
+
+# Re-run burst detection on all events
+./kariya-cli --detect-bursts
+
+# Re-run fact extraction on all events
+./kariya-cli --extract-facts
+
+# View all existing bursts
+./kariya-cli --show-bursts
+
+# View all existing facts
+./kariya-cli --show-facts
 ```
 
 ## Features

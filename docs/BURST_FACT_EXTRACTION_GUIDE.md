@@ -468,6 +468,68 @@ Cares about: Technical depth, solutions, approaches, practices
 3. Edit metadata for all selected events simultaneously
 4. System extracts facts for each event
 5. Review extracted facts in batch mode
+
+### Example 4: CSV Import with Automatic Burst/Fact Detection
+
+**Scenario**: You're importing a batch of career events from a CSV file.
+
+**Steps**:
+1. Prepare CSV file with events (10+ events recommended for burst detection)
+2. Import using CLI flag:
+   ```bash
+   ./kariya-cli --import events.csv
+   ```
+3. System imports all events
+4. **Automatic burst detection runs**:
+   - Analyzes event relationships
+   - Groups similar events into bursts
+   - Calculates confidence scores
+   - Displays burst suggestions in import summary
+5. **Automatic fact extraction runs**:
+   - Extracts facts from each event
+   - Infers competencies, role fit, audience
+   - Persists facts to database
+   - Displays extraction summary
+6. Review import summary showing:
+   - Events imported: X
+   - Bursts detected: Y (with confidence scores)
+   - Facts extracted: Z
+7. Optionally review bursts and facts interactively:
+   ```bash
+   ./kariya-cli --show-bursts
+   ./kariya-cli --show-facts
+   ```
+
+### Example 5: Re-running Burst Detection
+
+**Scenario**: You've added new events and want to re-detect bursts.
+
+**Steps**:
+1. Run burst detection on all events:
+   ```bash
+   ./kariya-cli --detect-bursts
+   ```
+2. System analyzes all events in database
+3. Displays new burst suggestions
+4. Confirm or reject each suggestion
+5. Bursts persisted to database
+
+### Example 6: Re-running Fact Extraction
+
+**Scenario**: You've updated event metadata and want to re-extract facts.
+
+**Steps**:
+1. Run fact extraction on all events:
+   ```bash
+   ./kariya-cli --extract-facts
+   ```
+2. System extracts facts from all events
+3. Displays extraction summary by competency
+4. Facts persisted to database
+5. View facts with:
+   ```bash
+   ./kariya-cli --show-facts
+   ```
 6. Confirm/reject facts as group
 7. Export enriched events with facts for CV generation
 

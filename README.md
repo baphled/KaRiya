@@ -207,6 +207,21 @@ go build -o kariya-cli ./cmd/cli
 # Start in specific capture mode
 ./kariya-cli --mode timeline
 
+# Import CSV with automatic burst/fact detection
+./kariya-cli --import events.csv
+
+# Re-run burst detection on all events
+./kariya-cli --detect-bursts
+
+# Re-run fact extraction on all events
+./kariya-cli --extract-facts
+
+# View all existing bursts
+./kariya-cli --show-bursts
+
+# View all existing facts
+./kariya-cli --show-facts
+
 # View help
 ./kariya-cli --help
 ```
@@ -223,7 +238,15 @@ go build -o kariya-cli ./cmd/cli
 - **Tags**: Organize events with up to 8 tags per event
 - **Categories**: Competency-based categorization with up to 2 categories per event
 - **Burst Detection**: Automatically group related events into thematic bursts with confidence scoring
+  - Triggered automatically after CSV import
+  - Re-run on demand with `--detect-bursts` flag
+  - View existing bursts with `--show-bursts` flag
+  - Interactive review and confirmation in CLI
 - **Fact Extraction**: Automatically extract grounded facts from events and bursts (no aspirational language)
+  - Triggered automatically after CSV import
+  - Re-run on demand with `--extract-facts` flag
+  - View existing facts with `--show-facts` flag
+  - Grounded statements only (no aspirational/speculative language)
 - **Role Fit Classification**: Infer career level (Principal, EM, Staff Engineer, Senior IC)
 - **Audience Relevance**: Determine who cares about each fact (Hiring Manager, Recruiter, Peer)
 - **Interactive Help**: 7-section help system with keyboard shortcuts
