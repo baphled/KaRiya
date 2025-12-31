@@ -2,11 +2,11 @@ package main
 
 import (
 	"bytes"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
 var _ = Describe("CLI Initialization", func() {
 	Context("Version Flag", func() {
 		It("should print version when --version flag is provided", func() {
@@ -136,6 +136,36 @@ var _ = Describe("CLI Initialization", func() {
 
 			Expect(exitCode).To(Equal(1))
 			Expect(errBuf.String()).To(ContainSubstring("Cannot access import file"))
+		})
+
+		It("should display burst suggestions after import", func() {
+			// Create a temporary CSV file with events that should form bursts
+			csvContent := `Text,Date,Company,Project,Tags
+Implemented cloud migration phase 1,2025-12-20,TechCorp,CloudMigration,technical;project
+Optimized database queries for cloud,2025-12-21,TechCorp,CloudMigration,technical;optimization
+Completed cloud migration phase 2,2025-12-22,TechCorp,CloudMigration,technical;project
+Led performance optimization sprint,2025-12-23,TechCorp,Performance,leadership;technical
+Improved API response times,2025-12-24,TechCorp,Performance,technical;optimization`
+
+			tmpFile, err := os.CreateTemp("", "test_burst_*.csv")
+			Expect(err).NotTo(HaveOccurred())
+			defer os.Remove(tmpFile.Name())
+
+			_, err = tmpFile.WriteString(csvContent)
+			Expect(err).NotTo(HaveOccurred())
+			tmpFile.Close()
+
+			var buf, errBuf bytes.Buffer
+			exitCode := run([]string{"--import", tmpFile.Name(), "--skip-import-review", "--in-memory"}, &buf, &errBuf)
+
+			Expect(exitCode).To(Equal(0))
+			output := buf.String()
+			// Verify burst suggestions are displayed
+			Expect(output).To(ContainSubstring("=== Burst Suggestions ==="))
+			Expect(output).To(ContainSubstring("Detected"))
+			Expect(output).To(ContainSubstring("potential bursts"))
+			Expect(output).To(ContainSubstring("Events:"))
+			Expect(output).To(ContainSubstring("Confidence:"))
 		})
 	})
 

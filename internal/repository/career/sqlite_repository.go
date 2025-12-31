@@ -46,6 +46,11 @@ func NewSQLiteRepository(dbPath string) (*SQLiteRepository, error) {
 	return &SQLiteRepository{db: db}, nil
 }
 
+// GetDB returns the underlying database connection for sharing with other repositories
+func (r *SQLiteRepository) GetDB() *sql.DB {
+	return r.db
+}
+
 // Create adds a new career event to the SQLite database
 func (r *SQLiteRepository) Create(ctx context.Context, event *domain.CareerEvent) error {
 	// Validate the event

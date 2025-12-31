@@ -122,6 +122,34 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	}
 
 	svc := careerservice.NewService(repo)
+
+	// Initialize fact and burst repositories if using SQLite (not in-memory)
+	if !inMemory {
+		// Get the DB connection from the event repository
+		sqliteRepo, ok := repo.(*career.SQLiteRepository)
+		if ok && sqliteRepo != nil {
+			db := sqliteRepo.GetDB()
+
+			// Initialize fact repository
+			factRepo, err := career.NewSQLiteFactRepository(db)
+			if err != nil {
+				// Log warning but continue - facts are optional enhancement
+				fmt.Fprintf(errOut, "Warning: Failed to initialize fact repository: %v\n", err)
+			} else {
+				svc.SetFactRepository(factRepo)
+			}
+
+			// Initialize burst repository
+			burstRepo, err := career.NewSQLiteBurstRepository(db)
+			if err != nil {
+				// Log warning but continue - bursts are optional enhancement
+				fmt.Fprintf(errOut, "Warning: Failed to initialize burst repository: %v\n", err)
+			} else {
+				svc.SetBurstRepository(burstRepo)
+			}
+		}
+	}
+
 	cliSvc := cliservice.NewCLIEventService(svc)
 
 	// Handle non-interactive import if --import flag is provided
@@ -264,6 +292,21 @@ func handleNonInteractiveImport(filePath string, skipReview bool, svc *careerser
 				}
 			}
 		}
+	}
+
+	// Display burst detection results (Task 2.1)
+	if result.BurstSuggestions != nil && len(result.BurstSuggestions) > 0 {
+		fmt.Fprintf(out, "\n=== Burst Suggestions ===\n")
+		fmt.Fprintf(out, "Detected %d potential bursts from imported events:\n\n", len(result.BurstSuggestions))
+		for i, burst := range result.BurstSuggestions {
+			burstName := burst.Name
+			if burstName == "" {
+				burstName = fmt.Sprintf("Burst %d", i+1)
+			}
+			fmt.Fprintf(out, "%d. %s\n", i+1, burstName)
+			fmt.Fprintf(out, "   Events: %d | Confidence: %.1f%%\n", len(burst.EventIDs), burst.ConfidenceScore*100)
+		}
+		fmt.Fprintf(out, "\nThese bursts represent potential project groupings or themes.\n")
 	}
 
 	if result.SuccessCount > 0 {
