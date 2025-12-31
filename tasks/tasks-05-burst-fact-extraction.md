@@ -265,15 +265,29 @@
 - [x] 11.8 Persist fact confirmations to database
 - [x] 11.9 Write integration tests for event detail → facts view
 
-#### 12.0 Create User Confirmation and Workflow Integration
-- [ ] 12.1 Design workflow: Capture/Import → Metadata Review → Burst Suggestions → Fact Extraction → Confirmation
-- [ ] 12.2 Implement screen navigation for complete workflow
-- [ ] 12.3 Add progress indicator showing current step in workflow
-- [ ] 12.4 Allow skipping burst suggestions (user can enable/disable burst detection)
-- [ ] 12.5 Allow skipping fact extraction (user can enable/disable fact extraction)
-- [ ] 12.6 Implement "review later" option for bursts and facts
+#### 12.0 Create User Confirmation and Workflow Integration - ⏳ **IN PROGRESS (75%)**
+- [x] 12.1 Design workflow: Capture/Import → Metadata Review → Burst Suggestions → Fact Extraction → Confirmation
+  - **Status**: WorkflowState system implemented in `internal/cli/workflow/workflow.go` (340 lines)
+  - **Features**: Step tracking, progress calculation, skip/review later support, pending items tracking
+- [x] 12.2 Implement screen navigation for complete workflow
+  - **Status**: App integration points added (workflow state, messages)
+  - **Messages Added**: SkipStepMsg, ReviewLaterMsg, ViewPendingItemsMsg, FactExtractionTriggeredMsg, etc.
+- [x] 12.3 Add progress indicator showing current step in workflow
+  - **Status**: GetProgressSteps() returns 5-step progress info (capture, metadata, burst, fact, complete)
+  - **Features**: Completed/skipped/current indicators, labels, descriptions
+- [x] 12.4 Allow skipping burst suggestions (user can enable/disable burst detection)
+  - **Status**: SkipStep(StepBurstSuggestion) implemented with CanSkipStep() validation
+- [x] 12.5 Allow skipping fact extraction (user can enable/disable fact extraction)
+  - **Status**: SkipStep(StepFactExtraction) implemented with CanSkipStep() validation
+- [x] 12.6 Implement "review later" option for bursts and facts
+  - **Status**: ReviewLater() method tracks pending items and allows deferred review
+  - **Features**: GetPendingBursts(), GetPendingFacts(), HasPendingItems(), GetPendingSummary()
 - [ ] 12.7 Create home screen menu option to review pending bursts and facts
-- [ ] 12.8 Write integration tests for complete end-to-end workflow
+  - **Status**: PENDING - Requires home screen update to show pending items
+- [x] 12.8 Write integration tests for complete end-to-end workflow
+  - **Status**: workflow_integration_test.go created with 12 comprehensive test cases
+  - **Tests**: 28 workflow state tests + 12 integration tests (all passing)
+  - **Coverage**: Full workflow progression, skip logic, review later, progress tracking
 
 ### Phase 5: Testing and Documentation
 

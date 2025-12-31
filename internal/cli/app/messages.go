@@ -111,3 +111,46 @@ type BurstProcessingCompleteMsg struct {
 	ConfirmedBursts []career.Burst
 	RejectedGroups  [][]string
 }
+
+// SkipStepMsg is sent when user wants to skip a workflow step
+type SkipStepMsg struct {
+	Step string // "burst_suggestion" or "fact_extraction"
+}
+
+// ReviewLaterMsg is sent when user wants to review items later
+type ReviewLaterMsg struct {
+	Step string // "burst_suggestion" or "fact_extraction"
+}
+
+// ViewPendingItemsMsg is sent to view pending bursts/facts from home screen
+type ViewPendingItemsMsg struct {
+	ItemType string // "bursts" or "facts"
+}
+
+// FactExtractionTriggeredMsg is sent when fact extraction should be performed
+type FactExtractionTriggeredMsg struct {
+	EventIDs []string
+	BurstIDs []string
+}
+
+// FactsReadyMsg is sent when facts have been extracted
+type FactsReadyMsg struct {
+	Facts []*career.Fact
+	Err   error
+}
+
+// ConfirmFactMsg is sent when user confirms a fact
+type ConfirmFactMsg struct {
+	Fact *career.Fact
+}
+
+// RejectFactMsg is sent when user rejects a fact
+type RejectFactMsg struct {
+	FactID string
+}
+
+// FactProcessingCompleteMsg is sent when fact extraction workflow is done
+type FactProcessingCompleteMsg struct {
+	ConfirmedFacts []*career.Fact
+	RejectedFacts  []string
+}
