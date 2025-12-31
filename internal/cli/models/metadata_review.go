@@ -18,6 +18,11 @@ type BulkOperationsMsg struct {
 	Events []*career.CareerEvent
 }
 
+// BurstSuggestionsTriggeredMsg is sent when burst suggestions should be reviewed
+type BurstSuggestionsTriggeredMsg struct {
+	EventIDs []string
+}
+
 // MetadataReviewModel represents the metadata review screen
 type MetadataReviewModel struct {
 	service          *careerservice.Service
@@ -243,6 +248,17 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Trigger bulk operations on all events
 			return m, func() tea.Msg {
 				return BulkOperationsMsg{Events: m.events}
+			}
+		case "u":
+			// Trigger burst suggestions for all events
+			if len(m.events) >= 2 {
+				eventIDs := make([]string, len(m.events))
+				for i, event := range m.events {
+					eventIDs[i] = event.ID
+				}
+				return m, func() tea.Msg {
+					return BurstSuggestionsTriggeredMsg{EventIDs: eventIDs}
+				}
 			}
 		}
 	}

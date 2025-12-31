@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/burst_fact"
 )
 
 // FormSubmittedMsg is sent when a form is successfully submitted
@@ -82,4 +83,31 @@ type MetadataReviewTriggeredMsg struct {
 // BreadcrumbClickedMsg is sent when a breadcrumb is clicked
 type BreadcrumbClickedMsg struct {
 	Index int // Index of the clicked breadcrumb
+}
+
+// BurstSuggestionsTriggeredMsg is sent when burst suggestions should be reviewed
+type BurstSuggestionsTriggeredMsg struct {
+	EventIDs []string
+}
+
+// BurstSuggestionsReadyMsg is sent when burst suggestions have been generated
+type BurstSuggestionsReadyMsg struct {
+	Suggestions []burst_fact.BurstSuggestion
+	Err         error
+}
+
+// ConfirmBurstMsg is sent when user confirms a burst suggestion
+type ConfirmBurstMsg struct {
+	Burst *career.Burst
+}
+
+// RejectBurstSuggestionMsg is sent when user rejects a burst suggestion
+type RejectBurstSuggestionMsg struct {
+	EventIDs []string
+}
+
+// BurstProcessingCompleteMsg is sent when burst suggestion workflow is done
+type BurstProcessingCompleteMsg struct {
+	ConfirmedBursts []career.Burst
+	RejectedGroups  [][]string
 }

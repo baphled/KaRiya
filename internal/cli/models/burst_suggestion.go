@@ -16,6 +16,17 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// ConfirmBurstMsg is sent when user confirms a burst suggestion
+type ConfirmBurstMsg struct {
+	Burst *career.Burst
+}
+
+// BurstProcessingCompleteMsg is sent when burst suggestion workflow is done
+type BurstProcessingCompleteMsg struct {
+	ConfirmedCount int
+	RejectedCount  int
+}
+
 // BurstSuggestionEditField indicates which field is being edited
 type BurstSuggestionEditField int
 
@@ -220,19 +231,31 @@ func (m *BurstSuggestionModel) confirmCurrent() (tea.Model, tea.Cmd) {
 
 	m.confirmed = append(m.confirmed, current)
 
-	// Move to next suggestion
-	if m.currentIdx < len(m.suggestions)-1 {
-		m.currentIdx++
-	} else {
-		// All suggestions processed, return completed message
-		return m, func() tea.Msg {
-			// Return confirmation with all confirmed/rejected
-			// Parent will handle navigation
-			return nil
-		}
+	// Create a burst from the suggestion
+	burst := m.createBurstFromSuggestion(current)
+
+	// Send confirm message for this burst
+	confirmCmd := func() tea.Msg {
+		return ConfirmBurstMsg{Burst: burst}
 	}
 
-	return m, nil
+	// Move to next suggestion or complete
+	if m.currentIdx < len(m.suggestions)-1 {
+		m.currentIdx++
+		return m, confirmCmd
+	} else {
+		// All suggestions processed, send completion message
+		completeCmd := tea.Batch(
+			confirmCmd,
+			func() tea.Msg {
+				return BurstProcessingCompleteMsg{
+					ConfirmedCount: len(m.confirmed),
+					RejectedCount:  len(m.rejected),
+				}
+			},
+		)
+		return m, completeCmd
+	}
 }
 
 // rejectCurrent rejects the current suggestion and moves to next
@@ -244,17 +267,28 @@ func (m *BurstSuggestionModel) rejectCurrent() (tea.Model, tea.Cmd) {
 	current := m.suggestions[m.currentIdx]
 	m.rejected = append(m.rejected, current)
 
-	// Move to next suggestion
-	if m.currentIdx < len(m.suggestions)-1 {
-		m.currentIdx++
-	} else {
-		// All suggestions processed
-		return m, func() tea.Msg {
-			return nil
-		}
+	// Send reject message for this suggestion
+	rejectCmd := func() tea.Msg {
+		return RejectBurstSuggestionMsg{Suggestion: current}
 	}
 
-	return m, nil
+	// Move to next suggestion or complete
+	if m.currentIdx < len(m.suggestions)-1 {
+		m.currentIdx++
+		return m, rejectCmd
+	} else {
+		// All suggestions processed, send completion message
+		completeCmd := tea.Batch(
+			rejectCmd,
+			func() tea.Msg {
+				return BurstProcessingCompleteMsg{
+					ConfirmedCount: len(m.confirmed),
+					RejectedCount:  len(m.rejected),
+				}
+			},
+		)
+		return m, completeCmd
+	}
 }
 
 // updateEditInputFocus updates focus state for input fields
@@ -473,5 +507,20 @@ func (m *BurstSuggestionModel) GetRejected() []burstfact.BurstSuggestion {
 // IsDone returns true if all suggestions have been processed
 func (m *BurstSuggestionModel) IsDone() bool {
 	return len(m.confirmed)+len(m.rejected) == len(m.suggestions)
+}
+
+// createBurstFromSuggestion converts a BurstSuggestion into a Burst domain object
+func (m *BurstSuggestionModel) createBurstFromSuggestion(suggestion burstfact.BurstSuggestion) *career.Burst {
+	// Generate a name if none provided
+	name := suggestion.Name
+	if name == "" {
+		name = fmt.Sprintf("Burst of %d events", len(suggestion.EventIDs))
+	}
+
+	return &career.Burst{
+		Name:        name,
+		Description: suggestion.Description,
+		EventIDs:    suggestion.EventIDs,
+	}
 }
 
