@@ -289,15 +289,15 @@ if result.ExtractedFactsCount > 0 {
 
 ### Priority 4: CLI Commands for Re-running Extraction ✅ COMPLETE
 
-#### 4.0 Add CLI Flags for Burst/Fact Operations
-- [ ] 7.1 Open `cmd/cli/main.go` and locate flag definitions
-- [ ] 7.2 Add `--detect-bursts` flag to re-run burst detection on all events
-- [ ] 7.3 Add `--extract-facts` flag to re-run fact extraction on all events
-- [ ] 7.4 Add `--show-bursts` flag to display all existing bursts
-- [ ] 7.5 Add `--show-facts` flag to display all existing facts
-- [ ] 7.6 Implement handlers for each flag
-- [ ] 7.7 Test flag parsing with various combinations
-- [ ] 7.8 Write comprehensive tests for all flags
+#### 4.0 Add CLI Flags for Burst/Fact Operations ✅ COMPLETE
+- [x] 7.1 Open `cmd/cli/main.go` and locate flag definitions
+- [x] 7.2 Add `--detect-bursts` flag to re-run burst detection on all events
+- [x] 7.3 Add `--extract-facts` flag to re-run fact extraction on all events
+- [x] 7.4 Add `--show-bursts` flag to display all existing bursts
+- [x] 7.5 Add `--show-facts` flag to display all existing facts
+- [x] 7.6 Implement handlers for each flag
+- [x] 7.7 Test flag parsing with various combinations
+- [x] 7.8 Write comprehensive tests for all flags
 
 **Flag Definitions**:
 ```go
@@ -307,67 +307,67 @@ showBursts := flag.Bool("show-bursts", false, "Display all existing bursts")
 showFacts := flag.Bool("show-facts", false, "Display all existing facts")
 ```
 
-**Success Criteria**:
-- [ ] Flags parse without error
-- [ ] Handlers execute correct operations
-- [ ] Results display correctly
-- [ ] Tests pass: `go test ./cmd/cli -v`
+**Success Criteria**: ✅ ALL MET
+- [x] Flags parse without error
+- [x] Handlers execute correct operations
+- [x] Results display correctly
+- [x] Tests pass: `go test ./cmd/cli -v`
 
-#### 4.1 Implement Burst Detection Handler
-- [ ] 8.1 Create handler function `handleDetectBursts(ctx, svc, out, logger)`
-- [ ] 8.2 Retrieve all event IDs from repository
-- [ ] 8.3 Call `svc.SuggestBursts(ctx, eventIDs)` with all events
-- [ ] 8.4 Display suggestions to user with option to confirm/reject each
-- [ ] 8.5 Persist confirmed bursts to database
-- [ ] 8.6 Handle errors gracefully
-- [ ] 8.7 Write tests
+#### 4.1 Implement Burst Detection Handler ✅ COMPLETE
+- [x] 8.1 Create handler function `handleDetectBursts(ctx, svc, out, logger)`
+- [x] 8.2 Retrieve all event IDs from repository
+- [x] 8.3 Call `svc.SuggestBursts(ctx, eventIDs)` with all events
+- [x] 8.4 Display suggestions to user with option to confirm/reject each
+- [x] 8.5 Persist confirmed bursts to database
+- [x] 8.6 Handle errors gracefully
+- [x] 8.7 Write tests
 
-**Success Criteria**:
-- [ ] Handler executes without error
-- [ ] All bursts detected
-- [ ] Results displayed
-- [ ] Tests pass
+**Success Criteria**: ✅ ALL MET
+- [x] Handler executes without error
+- [x] All bursts detected
+- [x] Results displayed
+- [x] Tests pass
 
-#### 4.2 Implement Fact Extraction Handler
-- [ ] 9.1 Create handler function `handleExtractFacts(ctx, svc, out, logger)`
-- [ ] 9.2 Retrieve all events from repository
-- [ ] 9.3 Extract facts from each event
-- [ ] 9.4 Count facts by competency
-- [ ] 9.5 Display extraction summary
-- [ ] 9.6 Offer to save/confirm facts
-- [ ] 9.7 Write tests
+#### 4.2 Implement Fact Extraction Handler ✅ COMPLETE
+- [x] 9.1 Create handler function `handleExtractFacts(ctx, svc, out, logger)`
+- [x] 9.2 Retrieve all events from repository
+- [x] 9.3 Extract facts from each event
+- [x] 9.4 Count facts by competency
+- [x] 9.5 Display extraction summary
+- [x] 9.6 Offer to save/confirm facts
+- [x] 9.7 Write tests
 
-**Success Criteria**:
-- [ ] Handler executes without error
-- [ ] Facts extracted from all events
-- [ ] Summary displayed
-- [ ] Tests pass
+**Success Criteria**: ✅ ALL MET
+- [x] Handler executes without error
+- [x] Facts extracted from all events
+- [x] Summary displayed
+- [x] Tests pass
 
-#### 4.3 Implement Show Bursts Handler
-- [ ] 10.1 Create handler function `handleShowBursts(ctx, svc, out)`
-- [ ] 10.2 List all bursts from database
-- [ ] 10.3 Display burst details (name, events, competency focus)
-- [ ] 10.4 Sort by creation date or event count
-- [ ] 10.5 Add option for detailed view (with event text)
-- [ ] 10.6 Write tests
+#### 4.3 Implement Show Bursts Handler ✅ COMPLETE
+- [x] 10.1 Create handler function `handleShowBursts(ctx, svc, out)`
+- [x] 10.2 List all bursts from database
+- [x] 10.3 Display burst details (name, events, competency focus)
+- [x] 10.4 Sort by creation date or event count
+- [x] 10.5 Add option for detailed view (with event text)
+- [x] 10.6 Write tests
 
-**Success Criteria**:
-- [ ] All bursts displayed
-- [ ] Formatting clear
-- [ ] Tests pass
+**Success Criteria**: ✅ ALL MET
+- [x] All bursts displayed
+- [x] Formatting clear
+- [x] Tests pass
 
-#### 4.4 Implement Show Facts Handler
-- [ ] 11.1 Create handler function `handleShowFacts(ctx, svc, out)`
-- [ ] 11.2 List all facts from database
-- [ ] 11.3 Display fact details (text, competencies, role fit, audience)
-- [ ] 11.4 Sort by source event/burst or creation date
-- [ ] 11.5 Filter by competency, role fit, or audience (optional)
-- [ ] 11.6 Write tests
+#### 4.4 Implement Show Facts Handler ✅ COMPLETE
+- [x] 11.1 Create handler function `handleShowFacts(ctx, svc, out)`
+- [x] 11.2 List all facts from database
+- [x] 11.3 Display fact details (text, competencies, role fit, audience)
+- [x] 11.4 Sort by source event/burst or creation date
+- [x] 11.5 Filter by competency, role fit, or audience (optional)
+- [x] 11.6 Write tests
 
-**Success Criteria**:
-- [ ] All facts displayed
-- [ ] Details shown clearly
-- [ ] Tests pass
+**Success Criteria**: ✅ ALL MET
+- [x] All facts displayed
+- [x] Details shown clearly
+- [x] Tests pass
 
 ---
 
