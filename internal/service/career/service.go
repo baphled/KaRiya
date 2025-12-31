@@ -303,3 +303,136 @@ func (s *Service) RejectBurstSuggestion(ctx context.Context, eventIDs []string) 
 	s.logger.Debug("Burst suggestion rejected")
 	return nil
 }
+
+// ExtractFactsFromEvent extracts facts from a single career event
+func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.CareerEvent) ([]domain.Fact, error) {
+	if event == nil {
+		s.logger.Warn("Cannot extract facts from nil event")
+		return nil, fmt.Errorf("event cannot be nil")
+	}
+
+	if event.ID == "" {
+		s.logger.Warn("Cannot extract facts from event with empty ID")
+		return nil, fmt.Errorf("event ID cannot be empty")
+	}
+
+	// Create extractor and classifier
+	classifier := burst_fact.NewClassifier()
+	extractor := burst_fact.NewExtractor(classifier)
+
+	// Extract facts
+	facts := extractor.ExtractFromEvent(ctx, event)
+
+	if len(facts) == 0 {
+		s.logger.Debug("No facts extracted from event")
+		return []domain.Fact{}, nil
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"event_id":    event.ID,
+			"fact_count":  fmt.Sprintf("%d", len(facts)),
+			"event_text":  event.Text,
+		}).
+		Info("Facts extracted from event")
+
+	return facts, nil
+}
+
+// ExtractFactsFromBurst extracts facts from a burst (multiple related events)
+func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst) ([]domain.Fact, error) {
+	if burst == nil {
+		s.logger.Warn("Cannot extract facts from nil burst")
+		return nil, fmt.Errorf("burst cannot be nil")
+	}
+
+	if burst.ID == "" {
+		s.logger.Warn("Cannot extract facts from burst with empty ID")
+		return nil, fmt.Errorf("burst ID cannot be empty")
+	}
+
+	if len(burst.EventIDs) == 0 {
+		s.logger.Debug("Burst has no events")
+		return []domain.Fact{}, nil
+	}
+
+	// Retrieve all events in burst
+	var events []*domain.CareerEvent
+	for _, eventID := range burst.EventIDs {
+		event, err := s.repo.GetByID(ctx, eventID)
+		if err != nil {
+			s.logger.
+				WithFields(map[string]string{
+					"event_id":   eventID,
+					"burst_id":   burst.ID,
+					"error":      err.Error(),
+				}).
+				Debug("Event not found for burst fact extraction")
+			continue
+		}
+		events = append(events, event)
+	}
+
+	if len(events) == 0 {
+		s.logger.
+			WithFields(map[string]string{
+				"burst_id":     burst.ID,
+				"event_count":  fmt.Sprintf("%d", len(burst.EventIDs)),
+			}).
+			Warn("No events found for burst fact extraction")
+		return []domain.Fact{}, nil
+	}
+
+	// Create extractor and classifier
+	classifier := burst_fact.NewClassifier()
+	extractor := burst_fact.NewExtractor(classifier)
+
+	// Extract facts
+	facts := extractor.ExtractFromBurst(ctx, burst, events)
+
+	if len(facts) == 0 {
+		s.logger.Debug("No facts extracted from burst")
+		return []domain.Fact{}, nil
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"burst_id":    burst.ID,
+			"burst_name":  burst.Name,
+			"fact_count":  fmt.Sprintf("%d", len(facts)),
+			"event_count": fmt.Sprintf("%d", len(events)),
+		}).
+		Info("Facts extracted from burst")
+
+	return facts, nil
+}
+
+// ValidateFact checks if a fact meets all validation criteria
+func (s *Service) ValidateFact(ctx context.Context, fact *domain.Fact) error {
+	if fact == nil {
+		s.logger.Warn("Cannot validate nil fact")
+		return fmt.Errorf("fact cannot be nil")
+	}
+
+	// Perform domain validation
+	if err := fact.Validate(); err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"fact_id":          fact.ID,
+				"fact_text":        fact.Text,
+				"validation_error": err.Error(),
+			}).
+			Warn("Fact validation failed")
+		return err
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"fact_id":   fact.ID,
+			"fact_text": fact.Text,
+			"role_fit":  string(fact.RoleFit),
+		}).
+		Debug("Fact validated successfully")
+
+	return nil
+}
