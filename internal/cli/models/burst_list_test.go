@@ -64,35 +64,35 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 	ginkgo.It("should move down on KeyDown", func() {
 		model.bursts = testBursts
 		initial := model.selectedIdx
-		model.Update(tea.KeyMsg{Type: tea.KeyDown})
+		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(initial + 1))
 	})
 
 	ginkgo.It("should move up on KeyUp", func() {
 		model.bursts = testBursts
 		model.selectedIdx = 2
-		model.Update(tea.KeyMsg{Type: tea.KeyUp})
+		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(1))
 	})
 
 	ginkgo.It("should wrap to end on KeyUp at start", func() {
 		model.bursts = testBursts
 		model.selectedIdx = 0
-		model.Update(tea.KeyMsg{Type: tea.KeyUp})
+		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(len(testBursts) - 1))
 	})
 
 	ginkgo.It("should wrap to start on KeyDown at end", func() {
 		model.bursts = testBursts
 		model.selectedIdx = len(testBursts) - 1
-		model.Update(tea.KeyMsg{Type: tea.KeyDown})
+		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 		gomega.Expect(model.selectedIdx).To(gomega.Equal(0))
 	})
 
 	ginkgo.It("should toggle expanded on Space", func() {
 		model.bursts = testBursts
 		initial := model.expandedIndices[0]
-		model.Update(tea.KeyMsg{Type: tea.KeySpace})
+		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
 		gomega.Expect(model.expandedIndices[0]).To(gomega.Equal(!initial))
 	})
 

@@ -75,21 +75,22 @@ func (flm *FactListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
-			if flm.focusedIdx > 0 {
-				flm.focusedIdx--
-				if flm.focusedIdx < flm.scrollOffset {
-					flm.scrollOffset = flm.focusedIdx
-				}
-			}
+			flm.prevItem()
 
 		case "down", "j":
-			if flm.focusedIdx < len(flm.filtered)-1 {
-				flm.focusedIdx++
-				maxIdx := flm.height - 3 // Account for header and footer
-				if flm.focusedIdx >= flm.scrollOffset+maxIdx {
-					flm.scrollOffset = flm.focusedIdx - maxIdx + 1
-				}
-			}
+			flm.nextItem()
+
+		case "pgup", "ctrl+b":
+			flm.prevPage()
+
+		case "pgdn", "ctrl+f":
+			flm.nextPage()
+
+		case "home", "g":
+			flm.goToFirstItem()
+
+		case "end", "G":
+			flm.goToLastItem()
 
 		case "enter":
 			if len(flm.filtered) > 0 {
@@ -97,13 +98,13 @@ func (flm *FactListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				flm.submitted = true
 			}
 
-		case "space":
+		case " ", "space":
 			if len(flm.filtered) > 0 {
 				fact := flm.filtered[flm.focusedIdx]
 				flm.selectedFacts[fact.ID] = !flm.selectedFacts[fact.ID]
 			}
 
-		case "escape", "q":
+		case "esc", "q":
 			flm.cancelled = true
 
 		case "f":
@@ -492,4 +493,69 @@ func (flm *FactListModel) GetFacts() []*career.Fact {
 // GetSelectedIdx returns the currently selected index
 func (flm *FactListModel) GetSelectedIdx() int {
 	return flm.selectedIdx
+}
+
+// nextItem moves to the next item in the list
+func (flm *FactListModel) nextItem() {
+	if flm.focusedIdx < len(flm.filtered)-1 {
+		flm.focusedIdx++
+		maxIdx := flm.height - 3 // Account for header and footer
+		if flm.focusedIdx >= flm.scrollOffset+maxIdx {
+			flm.scrollOffset = flm.focusedIdx - maxIdx + 1
+		}
+	}
+}
+
+// prevItem moves to the previous item in the list
+func (flm *FactListModel) prevItem() {
+	if flm.focusedIdx > 0 {
+		flm.focusedIdx--
+		if flm.focusedIdx < flm.scrollOffset {
+			flm.scrollOffset = flm.focusedIdx
+		}
+	}
+}
+
+// nextPage moves to the next page
+func (flm *FactListModel) nextPage() {
+	pageSize := flm.height - 3 // Account for header and footer
+	lastIdx := len(flm.filtered) - 1
+	newIdx := flm.focusedIdx + pageSize
+	if newIdx > lastIdx {
+		newIdx = lastIdx
+	}
+	flm.focusedIdx = newIdx
+	flm.scrollOffset = flm.focusedIdx - pageSize + 1
+	if flm.scrollOffset < 0 {
+		flm.scrollOffset = 0
+	}
+}
+
+// prevPage moves to the previous page
+func (flm *FactListModel) prevPage() {
+	pageSize := flm.height - 3 // Account for header and footer
+	newIdx := flm.focusedIdx - pageSize
+	if newIdx < 0 {
+		newIdx = 0
+	}
+	flm.focusedIdx = newIdx
+	flm.scrollOffset = flm.focusedIdx
+}
+
+// goToFirstItem moves to the first item in the list
+func (flm *FactListModel) goToFirstItem() {
+	flm.focusedIdx = 0
+	flm.scrollOffset = 0
+}
+
+// goToLastItem moves to the last item in the list
+func (flm *FactListModel) goToLastItem() {
+	if len(flm.filtered) > 0 {
+		flm.focusedIdx = len(flm.filtered) - 1
+		pageSize := flm.height - 3 // Account for header and footer
+		flm.scrollOffset = flm.focusedIdx - pageSize + 1
+		if flm.scrollOffset < 0 {
+			flm.scrollOffset = 0
+		}
+	}
 }
