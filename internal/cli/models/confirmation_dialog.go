@@ -59,7 +59,7 @@ func (d *ConfirmationDialog) Update(msg tea.Msg) (*ConfirmationDialog, tea.Cmd) 
 				d.cancelled = true
 			}
 			return d, nil
-		case "esc", "q":
+		case "esc", "q", "ctrl+c":
 			d.cancelled = true
 			return d, nil
 		}
