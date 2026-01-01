@@ -175,6 +175,7 @@ func (m *BurstListModel) View() string {
 
 	return fullContent
 }
+
 // renderHeader renders the column headers
 func (m *BurstListModel) renderHeader() string {
 	nameCol := lipgloss.NewStyle().Width(30).Render("Name")

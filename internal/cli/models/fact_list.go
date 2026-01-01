@@ -184,6 +184,7 @@ func (flm *FactListModel) View() string {
 
 	return fullContent
 }
+
 // renderHeader renders the header with title and filters
 func (flm *FactListModel) renderHeader() string {
 	title := "📋 Facts"
