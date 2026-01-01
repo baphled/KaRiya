@@ -237,3 +237,61 @@ Task 2.0 from `tasks/tasks-07-model-consistency.md` completed successfully:
   - Refactor ListModel to use containers
   - Refactor DetailsModel to use containers
   - And 5 more model refactorings
+
+### List Model Navigation Standardization (Completed - 2026-01-01)
+
+Task: Standardize navigation functionality across all list models to ensure consistent user experience.
+
+#### Problem
+- `fact_list.go` and `burst_list.go` were missing critical navigation features present in `list.go`
+- Inconsistent key handling patterns (string-based vs. type-based)
+- Users couldn't use page navigation (pgup/pgdn) or jump to start/end in all lists
+
+#### Solution
+Standardized navigation across all three list models:
+
+1. **Navigation Keys Added**
+   - Page Up/Ctrl+B: Move to previous page
+   - Page Down/Ctrl+F: Move to next page
+   - Home/g: Jump to first item
+   - End/G: Jump to last item
+   - All models now support: up/k, down/j, space, esc, q, ctrl+c
+
+2. **Implementation Changes**
+   - **fact_list.go**: Added 6 helper methods and updated Update() with new key cases
+   - **burst_list.go**: Converted from tea.KeyType to string-based key matching, added 6 helper methods
+   - **burst_list_test.go**: Updated test KeyMsg format to match proper BubbleTea patterns
+
+3. **Helper Methods Added to Both Models**
+   - `nextItem()` - Move to next item with scroll management
+   - `prevItem()` - Move to previous item with scroll management
+   - `nextPage()` - Move forward by page size
+   - `prevPage()` - Move backward by page size
+   - `goToFirstItem()` - Jump to first item
+   - `goToLastItem()` - Jump to last item with proper scroll positioning
+
+4. **Code Quality**
+   - All 853 tests passing (0 failures)
+   - Consistent implementation patterns across all three models
+   - Proper handling of both space character ' ' and 'space' string
+   - Zero regressions in existing functionality
+
+#### Files Modified
+- ✅ `internal/cli/models/fact_list.go` (+96 lines, -45 lines)
+- ✅ `internal/cli/models/burst_list.go` (+112 lines, -45 lines)
+- ✅ `internal/cli/models/burst_list_test.go` (+10 lines, -2 lines)
+
+#### Test Results
+- Total tests: 853
+- Passed: 853 ✅
+- Failed: 0
+- Coverage: Maintained at 76%+
+
+#### Impact
+Users can now navigate all list types consistently:
+- Career events list
+- Facts list
+- Bursts list
+
+All lists support the same keyboard shortcuts for efficient navigation and selection.
+
