@@ -3,18 +3,15 @@ package app
 import (
 	"context"
 	"os"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/workflow"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // Screen represents the different screens in the application
@@ -22,6 +19,7 @@ type Screen string
 
 const (
 	HomeScreen            Screen = "home"
+	MainMenuScreen        Screen = "main_menu"
 	CaptureScreen         Screen = "capture"
 	ListScreen            Screen = "list"
 	ViewScreen            Screen = "view"
@@ -70,6 +68,7 @@ type Model struct {
 	factListModel          *models.FactListModel     // Display facts for events/bursts
 	factsResultsModel      *models.FactsResultsModel // Review facts extracted after import
 	factEditorModel        *models.FactEditorModel   // Edit individual facts
+	menuModel              *models.MenuModel          // Main menu screen
 }
 
 // NewModel creates a new application model
@@ -292,6 +291,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, nil
+	}
+
+	// Handle MenuItemSelectedMsg - process menu item selection
+	if menuMsg, ok := msg.(models.MenuItemSelectedMsg); ok {
+		return m.handleMenuItemSelection(menuMsg.Key)
 	}
 
 	// Handle models.EventActionMenuMsg
@@ -626,6 +630,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+	case MainMenuScreen:
+		if m.menuModel != nil {
+			updatedMenuModel, cmd := m.menuModel.Update(msg)
+			m.menuModel = updatedMenuModel.(*models.MenuModel)
+			return m, cmd
+		}
+
 	case ImportReviewScreen:
 		if m.importReviewModel != nil {
 			updatedImportModel, cmd := m.importReviewModel.Update(msg)
@@ -714,6 +725,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // View renders the current screen
 func (m *Model) View() string {
 	switch m.currentScreen {
+	case MainMenuScreen:
+		if m.menuModel != nil {
+			return m.menuModel.View()
+		}
+		return "Error: Menu model not initialized\n"
 	case HomeScreen:
 		return m.renderHome()
 	case CaptureScreen:
@@ -803,46 +819,18 @@ func (m *Model) View() string {
 
 // renderHome renders the home screen
 func (m *Model) renderHome() string {
-	title := styles.HeaderMain.Render("KaRiya - Career Journal CLI")
-	commandsHeader := styles.HeaderSection.Render("Commands:")
-	commands := []string{
-		styles.InfoText.Render("c") + " - Capture Career Event",
-		styles.InfoText.Render("l") + " - List Events",
-		styles.InfoText.Render("b") + " - View Bursts",
-		styles.InfoText.Render("h") + " - Home",
-		styles.InfoText.Render("q") + " - Quit",
+	// Initialize menu model if not already created
+	if m.menuModel == nil {
+		hasPending := m.workflowState != nil && m.workflowState.HasPendingItems()
+		pendingInfo := ""
+		if hasPending {
+			pendingInfo = "You have " + m.workflowState.GetPendingSummary() + " to review"
+		}
+		m.menuModel = models.NewMenuModel(hasPending, pendingInfo)
+		// Set dimensions
+		m.menuModel.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})
 	}
-
-	// Add pending items option if there are any
-	if m.workflowState != nil && m.workflowState.HasPendingItems() {
-		commands = append(commands, styles.InfoText.Render("p")+" - Review Pending Items")
-	}
-
-	commandsList := strings.Join(commands, "\n")
-
-	// Build content sections
-	contentSections := []string{
-		title,
-		"",
-		commandsHeader,
-		commandsList,
-	}
-
-	// Add pending items notification if applicable
-	if m.workflowState != nil && m.workflowState.HasPendingItems() {
-		pendingSummary := m.workflowState.GetPendingSummary()
-		pendingNotification := styles.WarningBox.Width(styles.MaxWidth(m.width) - 4).Render(
-			"⚠️  You have " + pendingSummary + " to review. Press 'p' to review.",
-		)
-		contentSections = append(contentSections, "", pendingNotification)
-	} else {
-		cta := styles.SuccessBox.Width(styles.MaxWidth(m.width) - 4).Render("Press 'c' to get started!")
-		contentSections = append(contentSections, "", cta)
-	}
-
-	content := lipgloss.JoinVertical(lipgloss.Left, contentSections...)
-	card := styles.ResponsiveCard(m.width).Render(content)
-	return styles.Center(card, m.width, m.height)
+	return m.menuModel.View()
 }
 
 // SetInitialScreen sets the initial screen to display on startup
@@ -894,6 +882,8 @@ func (m *Model) updateBreadcrumbs() {
 	switch m.currentScreen {
 	case HomeScreen:
 		m.breadcrumbs = []string{"Home"}
+	case MainMenuScreen:
+		m.breadcrumbs = []string{"Menu"}
 	case CaptureScreen:
 		m.breadcrumbs = []string{"Home", "Capture Event"}
 	case ListScreen:
@@ -993,3 +983,63 @@ func (m *Model) handleBreadcrumbClick(index int) (tea.Model, tea.Cmd) {
 	m.updateBreadcrumbs()
 	return m, nil
 }
+// handleMenuItemSelection processes menu item selection and navigates to the appropriate screen
+func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
+	switch key {
+	case "c":
+		// Capture Career Event
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CaptureScreen
+		m.formModel = models.NewFormModel(m.cliService)
+		return m, nil
+	case "l":
+		// List Events
+		ctx := context.Background()
+		m.listModel = models.NewListModel(m.service, ctx)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = ListScreen
+		return m, nil
+	case "b":
+		// View Bursts
+		ctx := context.Background()
+		m.burstListModel = models.NewBurstListModel(m.service, ctx)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = BurstListScreen
+		return m, m.burstListModel.Init()
+	case "m":
+		// Metadata Review
+		m.metadataReviewModel.Refresh()
+		m.previousScreen = m.currentScreen
+		m.currentScreen = MetadataReviewScreen
+		return m, nil
+	case "h":
+		// Home
+		m.previousScreen = m.currentScreen
+		m.currentScreen = HomeScreen
+		return m, nil
+	case "p":
+		// Review Pending Items
+		if m.workflowState != nil && m.workflowState.HasPendingItems() {
+			if m.workflowState.GetPendingBursts() > 0 {
+				return m, func() tea.Msg {
+					return ViewPendingItemsMsg{ItemType: "bursts"}
+				}
+			} else if m.workflowState.GetPendingFacts() > 0 {
+				return m, func() tea.Msg {
+					return ViewPendingItemsMsg{ItemType: "facts"}
+				}
+			}
+		}
+		return m, nil
+	case "?":
+		// Help - show help screen (using existing help model)
+		// For now, we'll just return to current screen
+		// In future, this could navigate to a dedicated help screen
+		return m, nil
+	case "q":
+		// Quit
+		return m, tea.Quit
+	}
+	return m, nil
+}
+
