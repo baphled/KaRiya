@@ -98,10 +98,14 @@ func (m *ViewEventWithFactsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Check if user wants to edit a fact
 		if m.factListModel.IsSubmitted() && len(m.factListModel.GetFacts()) > 0 {
-			selectedFact := m.factListModel.GetFacts()[m.factListModel.GetSelectedIdx()]
-			m.showFactEditor = true
-			m.factEditorModel = NewFactEditorModel(selectedFact, m.service, m.ctx)
-			return m, m.factEditorModel.Init()
+			selectedIdx := m.factListModel.GetSelectedIdx()
+			facts := m.factListModel.GetFacts()
+			if selectedIdx >= 0 && selectedIdx < len(facts) {
+				selectedFact := facts[selectedIdx]
+				m.showFactEditor = true
+				m.factEditorModel = NewFactEditorModel(selectedFact, m.service, m.ctx)
+				return m, m.factEditorModel.Init()
+			}
 		}
 
 		// Check if user wants to go back

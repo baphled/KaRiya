@@ -68,3 +68,13 @@ type FactRejectedMsg struct {
 type SaveFactMsg struct {
 	Fact *career.Fact
 }
+
+// FactActionMenuMsg is sent when a fact is selected to show its action menu
+type FactActionMenuMsg struct {
+	Fact *career.Fact
+}
+
+// BurstActionMenuMsg is sent when a burst is selected to show its action menu
+type BurstActionMenuMsg struct {
+	Burst *career.Burst
+}

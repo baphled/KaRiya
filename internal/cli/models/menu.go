@@ -73,6 +73,12 @@ func NewMenuModel(hasPending bool, pendingInfo string) *MenuModel {
 			Description: "Review and enrich event metadata, extract facts and bursts",
 			Category:    "Data Management",
 		},
+		{
+			Key:         navigation.KeyFacts,
+			Title:       "View All Facts",
+			Description: "Browse and manage all extracted facts from your career events",
+			Category:    "Data Management",
+		},
 		// Navigation
 		{
 			Key:         navigation.KeyHome,

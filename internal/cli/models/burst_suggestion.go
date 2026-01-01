@@ -128,7 +128,7 @@ func (m *BurstSuggestionModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 		}
 	case tea.KeyEsc:
 		// Exit suggestion review (parent will handle navigation)
-		return m, nil
+		return m, func() tea.Msg { return BackMsg{} }
 	}
 
 	// Handle character input for confirm/reject/edit
