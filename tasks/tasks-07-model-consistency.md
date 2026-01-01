@@ -138,22 +138,22 @@
   - [x] 2.5.3 Create automated check for color consistency
 
 ### 3.0 Adopt Containers in High-Impact Models (Phase 1)
-- [ ] 3.1 Refactor FormModel to use containers
-  - [ ] 3.1.1 Replace manual field layout with FormFieldContainer for each field
-  - [ ] 3.1.2 Wrap form content with ScreenContainer
-  - [ ] 3.1.3 Update error display to use FormFieldContainer error state
-  - [ ] 3.1.4 Verify all colors use exported constants
-  - [ ] 3.1.5 Run existing tests; verify zero regressions
-  - [ ] 3.1.6 Add integration test for form with containers
-  - [ ] 3.1.7 Measure LOC reduction and document
-- [ ] 3.2 Refactor ListModel to use containers
-  - [ ] 3.2.1 Wrap list with ScreenContainer
-  - [ ] 3.2.2 Replace manual item rendering with ListContainer
-  - [ ] 3.2.3 Update pagination info display in ListContainer
-  - [ ] 3.2.4 Handle empty state in ListContainer
-  - [ ] 3.2.5 Verify header and footer integration
-  - [ ] 3.2.6 Run existing tests; verify zero regressions
-  - [ ] 3.2.7 Add integration test for list with containers
+- [x] 3.1 Refactor FormModel to use containers
+  - [x] 3.1.1 Replace manual field layout with FormFieldContainer for each field
+  - [x] 3.1.2 Wrap form content with ScreenContainer
+  - [x] 3.1.3 Update error display to use FormFieldContainer error state
+  - [x] 3.1.4 Verify all colors use exported constants
+  - [x] 3.1.5 Run existing tests; verify zero regressions
+  - [x] 3.1.6 Add integration test for form with containers
+  - [x] 3.1.7 Measure LOC reduction and document
+- [x] 3.2 Refactor ListModel to use containers
+  - [x] 3.2.1 Wrap list with ScreenContainer
+  - [x] 3.2.2 Replace manual item rendering with ListContainer
+  - [x] 3.2.3 Update pagination info display in ListContainer
+  - [x] 3.2.4 Handle empty state in ListContainer
+  - [x] 3.2.5 Verify header and footer integration
+  - [x] 3.2.6 Run existing tests; verify zero regressions
+  - [x] 3.2.7 Add integration test for list with containers
 - [ ] 3.3 Refactor DetailsModel to use containers
   - [ ] 3.3.1 Wrap view with ScreenContainer
   - [ ] 3.3.2 Use CardContainer for grouping related details
