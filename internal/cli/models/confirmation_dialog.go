@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -19,6 +20,7 @@ type ConfirmationDialog struct {
 	cancelled   bool
 	helpFooter  components.HelpFooterModel
 	modal       *components.ModalContainer
+	keyHandler  navigation.KeyHandler
 }
 
 // NewConfirmationDialog creates a new confirmation dialog
@@ -33,6 +35,7 @@ func NewConfirmationDialog(title, message string) *ConfirmationDialog {
 		confirmed:         false,
 		cancelled:         false,
 		helpFooter:        components.NewHelpFooter("confirmation_dialog", 80),
+		keyHandler:        navigation.NewDialogKeyHandler(),
 	}
 	d.modal = components.NewModalContainer()
 	return d
@@ -47,21 +50,43 @@ func (d *ConfirmationDialog) Init() tea.Cmd {
 func (d *ConfirmationDialog) Update(msg tea.Msg) (*ConfirmationDialog, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "left", "h", "shift+tab":
+		// Use centralized key handler for dialog navigation
+		action := d.keyHandler.HandleKey(msg)
+		if !action.IsHandled {
+			return d, nil
+		}
+
+		return d.handleAction(action)
+	}
+
+	return d, nil
+}
+
+// handleAction processes the action from the key handler
+func (d *ConfirmationDialog) handleAction(action navigation.KeyAction) (*ConfirmationDialog, tea.Cmd) {
+	// Handle navigation keys for button switching
+	if action.NavigationKey != nil {
+		switch *action.NavigationKey {
+		case navigation.KeyLeft:
 			d.focused = false
-		case "right", "l", "tab":
+			return d, nil
+		case navigation.KeyRight:
 			d.focused = true
-		case "enter":
-			if d.focused {
-				d.confirmed = true
-			} else {
-				d.cancelled = true
-			}
 			return d, nil
-		case "esc", "q", "ctrl+c":
+		}
+	}
+
+	// Handle dialog-specific actions
+	switch action.ActionType {
+	case "dialog:yes":
+		d.confirmed = true
+	case "dialog:no", "dialog:cancel":
+		d.cancelled = true
+	case "dialog:ok":
+		if d.focused {
+			d.confirmed = true
+		} else {
 			d.cancelled = true
-			return d, nil
 		}
 	}
 

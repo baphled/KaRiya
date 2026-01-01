@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
@@ -33,6 +34,7 @@ type ListModel struct {
 	header      components.HeaderModel     // Header component
 	footer      components.FooterModel     // Footer component
 	breadcrumbs []string                   // Navigation breadcrumb trail
+	keyHandler  navigation.KeyHandler
 }
 
 // NewListModel creates a new list model
@@ -50,6 +52,7 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		helpFooter:        components.NewHelpFooter("list", 80),
 		header:            components.NewHeader("Career Events", 80),
 		footer:            components.NewFooter(80),
+		keyHandler:        navigation.NewListKeyHandler(),
 	}
 
 	// Load events
@@ -102,30 +105,59 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.helpFooter.SetWidth(msg.Width)
 		return m, nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Signal back navigation to parent
-			return m, func() tea.Msg { return BackMsg{} }
-		case "ctrl+c", "q":
-			// Signal quit to parent
-			return m, func() tea.Msg { return QuitMsg{} }
-		case "up", "k":
-			m.prevItem()
-		case "down", "j":
-			m.nextItem()
-		case "pgup", "ctrl+b":
-			m.prevPage()
-		case "pgdn", "ctrl+f":
-			m.nextPage()
-		case "home", "g":
-			m.goToFirstItem()
-		case "end", "G":
-			m.goToLastItem()
-		case "enter":
-			return m, m.viewSelectedEvent()
+		// Use centralized key handler for list navigation
+		action := m.keyHandler.HandleKey(msg)
+		if !action.IsHandled {
+			return m, nil
+		}
+
+		// Handle the action based on navigation key or action type
+		switch {
+		case action.NavigationKey != nil:
+			return m.handleNavigationKey(*action.NavigationKey)
+		case action.ActionType != "":
+			return m.handleActionType(action.ActionType)
 		}
 	}
 
+	return m, nil
+}
+
+// handleNavigationKey processes navigation key actions for list views
+func (m *ListModel) handleNavigationKey(key navigation.NavigationKey) (tea.Model, tea.Cmd) {
+	switch key {
+	case navigation.KeyUp:
+		m.prevItem()
+		return m, nil
+	case navigation.KeyDown:
+		m.nextItem()
+		return m, nil
+	case navigation.KeySelect:
+		return m, m.viewSelectedEvent()
+	case navigation.KeyBack:
+		return m, func() tea.Msg { return BackMsg{} }
+	case navigation.KeyQuit:
+		return m, func() tea.Msg { return QuitMsg{} }
+	}
+	return m, nil
+}
+
+// handleActionType processes custom action types for list views
+func (m *ListModel) handleActionType(actionType string) (tea.Model, tea.Cmd) {
+	switch actionType {
+	case "navigate:first":
+		m.goToFirstItem()
+		return m, nil
+	case "navigate:last":
+		m.goToLastItem()
+		return m, nil
+	case "navigate:page_up":
+		m.prevPage()
+		return m, nil
+	case "navigate:page_down":
+		m.nextPage()
+		return m, nil
+	}
 	return m, nil
 }
 
@@ -175,7 +207,6 @@ func (m *ListModel) View() string {
 	return fullContent
 }
 
-// nextItem moves to the next item in the current page
 // renderListItems renders all events as formatted strings for display
 func (m *ListModel) renderListItems() []string {
 	var items []string

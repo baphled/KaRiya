@@ -27,6 +27,7 @@ type MenuModel struct {
 	helpFooter   components.HelpFooterModel
 	hasPending   bool   // Whether there are pending items to review
 	pendingInfo  string // Information about pending items
+	keyHandler   navigation.KeyHandler
 }
 
 // NewMenuModel creates a new menu model with all available menu items
@@ -40,6 +41,7 @@ func NewMenuModel(hasPending bool, pendingInfo string) *MenuModel {
 		helpFooter:        components.NewHelpFooter("menu", 80),
 		hasPending:        hasPending,
 		pendingInfo:       pendingInfo,
+		keyHandler:        navigation.NewMenuKeyHandler(),
 	}
 
 	// Initialize menu items organized by category
@@ -122,27 +124,43 @@ func (m *MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "up", "k":
-			if m.selectedIdx > 0 {
-				m.selectedIdx--
-			}
+		// Use centralized key handler for menu navigation
+		action := m.keyHandler.HandleKey(msg)
+		if !action.IsHandled {
 			return m, nil
-		case "down", "j":
-			if m.selectedIdx < len(m.items)-1 {
-				m.selectedIdx++
-			}
-			return m, nil
-		case "enter":
-			// Return the selected menu item's key
-			selectedItem := m.items[m.selectedIdx]
-			return m, func() tea.Msg {
-				return MenuItemSelectedMsg{Key: string(selectedItem.Key)}
-			}
-		case "esc":
-			// Escape from menu - go back or quit
-			return m, func() tea.Msg { return BackMsg{} }
 		}
+
+		// Handle the action based on navigation key
+		switch {
+		case action.NavigationKey != nil:
+			return m.handleNavigationKey(*action.NavigationKey)
+		}
+	}
+	return m, nil
+}
+
+// handleNavigationKey processes navigation key actions for menu
+func (m *MenuModel) handleNavigationKey(key navigation.NavigationKey) (tea.Model, tea.Cmd) {
+	switch key {
+	case navigation.KeyUp:
+		if m.selectedIdx > 0 {
+			m.selectedIdx--
+		}
+		return m, nil
+	case navigation.KeyDown:
+		if m.selectedIdx < len(m.items)-1 {
+			m.selectedIdx++
+		}
+		return m, nil
+	case navigation.KeySelect:
+		// Return the selected menu item's key
+		selectedItem := m.items[m.selectedIdx]
+		return m, func() tea.Msg {
+			return MenuItemSelectedMsg{Key: string(selectedItem.Key)}
+		}
+	case navigation.KeyBack:
+		// Escape from menu - go back or quit
+		return m, func() tea.Msg { return BackMsg{} }
 	}
 	return m, nil
 }
