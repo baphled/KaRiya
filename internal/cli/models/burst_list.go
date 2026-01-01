@@ -139,7 +139,7 @@ func (m *BurstListModel) View() string {
 	}
 
 	// Create pagination info - standard format for all list models
-	paginationInfo := fmt.Sprintf("%d/%d bursts", len(displayedBursts), len(m.bursts))
+	paginationInfo := fmt.Sprintf("Showing %d of %d bursts", len(displayedBursts), len(m.bursts))
 
 	listContainer := components.NewListContainer().
 		SetItems(items).
