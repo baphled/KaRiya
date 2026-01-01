@@ -367,143 +367,121 @@ func (m *FactEditorModel) GetError() error {
 	return m.err
 }
 
-// View renders the editor UI
+// View renders the editor UI using FormFieldContainers
 func (m *FactEditorModel) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
 	}
 
-	var b strings.Builder
+	// Render form content using FormFieldContainers
+	formContent := m.renderFormContentWithContainers()
 
-	// Header
-	header := components.NewHeader("Fact Editor", m.width)
-	b.WriteString(header.View())
-	b.WriteString("\n\n")
+	// Use header and footer components
+	headerView := components.NewHeader("Fact Editor", m.width).View()
+	footerView := components.NewFooter(m.width).View()
 
-	// Fact text field
-	b.WriteString(m.renderTextField())
-	b.WriteString("\n\n")
+	// Combine all sections
+	fullContent := strings.Join([]string{
+		headerView,
+		"",
+		formContent,
+		"",
+		footerView,
+	}, "\n")
 
-	// Competencies field
-	b.WriteString(m.renderCompetenciesField())
-	b.WriteString("\n\n")
+	return fullContent
+}
 
-	// Role fit field
-	b.WriteString(m.renderRoleFitField())
-	b.WriteString("\n\n")
+// renderFormContentWithContainers renders all form fields using FormFieldContainers
+func (m *FactEditorModel) renderFormContentWithContainers() string {
+	var content []string
 
-	// Audience field
-	b.WriteString(m.renderAudienceField())
-	b.WriteString("\n\n")
+	// Add all fields
+	content = append(content,
+		m.renderTextFieldWithContainer(),
+		m.renderCompetenciesFieldWithContainer(),
+		m.renderRoleFitFieldWithContainer(),
+		m.renderAudienceFieldWithContainer(),
+		m.renderButtonsWithContainer(),
+	)
 
-	// Buttons
-	b.WriteString(m.renderButtons())
-	b.WriteString("\n\n")
-
-	// Error message
+	// Add model-level error if present
 	if m.err != nil {
-		errorBox := styles.ErrorBox.Render(m.err.Error())
-		b.WriteString(errorBox)
-		b.WriteString("\n")
+		content = append(content, styles.ErrorBox.Render(m.err.Error()))
 	}
 
-	// Field-specific errors
+	// Add field-specific errors
 	for fieldIdx, errMsg := range m.fieldErrors {
 		fieldName := m.getFieldName(fieldIdx)
 		errorMsg := fmt.Sprintf("%s: %s", fieldName, errMsg)
-		b.WriteString(styles.ErrorBox.Render(errorMsg))
-		b.WriteString("\n")
+		content = append(content, styles.ErrorBox.Render(errorMsg))
 	}
 
-	return b.String()
+	return strings.Join(content, "\n\n")
 }
 
-func (m *FactEditorModel) renderTextField() string {
-	var b strings.Builder
-
-	label := "Fact Text"
-	if m.focusIndex == FactTextFieldIdx {
-		label = styles.LabelFocused.Render(label)
-	} else {
-		label = styles.Label.Render(label)
+// renderTextFieldWithContainer renders the text field using FormFieldContainer
+func (m *FactEditorModel) renderTextFieldWithContainer() string {
+	focused := m.focusIndex == FactTextFieldIdx
+	fieldErr := ""
+	if err, ok := m.fieldErrors[FactTextFieldIdx]; ok {
+		fieldErr = err
 	}
 
-	b.WriteString(label)
-	b.WriteString("\n")
+	charInfo := fmt.Sprintf("Characters: %d/2000 %s",
+		m.characterCount, m.getCharCountIndicator())
 
-	// Text input
-	textStyle := styles.InputBase
-	if m.focusIndex == FactTextFieldIdx {
-		textStyle = styles.InputFocused
-	}
-	if _, ok := m.fieldErrors[FactTextFieldIdx]; ok {
-		textStyle = styles.InputError
-	}
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Fact Text (required):").
+		SetInput(m.textInput.View()).
+		SetHint(charInfo).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
 
-	inputView := m.textInput.View()
-	b.WriteString(textStyle.Render(inputView))
-	b.WriteString("\n")
-
-	// Character count
-	charCountStr := fmt.Sprintf("%d / 2000", m.characterCount)
-	if m.characterCount > 1800 {
-		charCountStr = styles.Warning.Render(charCountStr)
-	}
-	b.WriteString(styles.Hint.Render(charCountStr))
-
-	return b.String()
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
 
-func (m *FactEditorModel) renderCompetenciesField() string {
-	var b strings.Builder
-
-	label := "Competency Categories"
-	if m.focusIndex == FactCompetenciesFieldIdx {
-		label = styles.LabelFocused.Render(label)
-	} else {
-		label = styles.Label.Render(label)
-	}
-
-	b.WriteString(label)
-	b.WriteString("\n")
+// renderCompetenciesFieldWithContainer renders the competencies field using FormFieldContainer
+func (m *FactEditorModel) renderCompetenciesFieldWithContainer() string {
+	focused := m.focusIndex == FactCompetenciesFieldIdx
 
 	// Render competencies as badges
 	competencies := m.competencySelector.AvailableCategories()
+	var badges []string
 	for i, comp := range competencies {
 		isSelected := m.competencySelector.IsSelected(comp)
 		isFocused := m.focusIndex == FactCompetenciesFieldIdx && m.competencyIndex == i
 
 		badge := m.renderBadge(comp, isSelected, isFocused)
-		b.WriteString(badge)
-		b.WriteString("  ")
+		badges = append(badges, badge)
 	}
-	b.WriteString("\n")
+	badgesStr := strings.Join(badges, "  ")
 
-	if errMsg, ok := m.fieldErrors[FactCompetenciesFieldIdx]; ok {
-		b.WriteString(styles.ErrorMsg.Render("✗ " + errMsg))
-		b.WriteString("\n")
+	fieldErr := ""
+	if err, ok := m.fieldErrors[FactCompetenciesFieldIdx]; ok {
+		fieldErr = err
 	}
 
-	hint := styles.Hint.Render("Select with Space ↑↓ | " + fmt.Sprintf("%d selected", len(m.fact.CompetencyCategories)))
-	b.WriteString(hint)
+	hint := fmt.Sprintf("Select with Space ↑↓ | %d selected", len(m.fact.CompetencyCategories))
 
-	return b.String()
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Competency Categories (required):").
+		SetInput(badgesStr).
+		SetHint(hint).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
 
-func (m *FactEditorModel) renderRoleFitField() string {
-	var b strings.Builder
-
-	label := "Role Fit"
-	if m.focusIndex == FactRoleFitFieldIdx {
-		label = styles.LabelFocused.Render(label)
-	} else {
-		label = styles.Label.Render(label)
-	}
-
-	b.WriteString(label)
-	b.WriteString("\n")
+// renderRoleFitFieldWithContainer renders the role fit field using FormFieldContainer
+func (m *FactEditorModel) renderRoleFitFieldWithContainer() string {
+	focused := m.focusIndex == FactRoleFitFieldIdx
 
 	// Render role fit options
+	var options []string
 	for i, rf := range m.roleFitOptions {
 		isSelected := m.fact.RoleFit == rf
 		isFocused := m.focusIndex == FactRoleFitFieldIdx && m.roleFitIndex == i
@@ -520,67 +498,63 @@ func (m *FactEditorModel) renderRoleFitField() string {
 			text = styles.ButtonPrimary.Render(text)
 		}
 
-		b.WriteString(text)
-		b.WriteString("  ")
+		options = append(options, text)
+	}
+	optionsStr := strings.Join(options, "  ")
 
-		if (i+1)%2 == 0 {
-			b.WriteString("\n")
-		}
+	fieldErr := ""
+	if err, ok := m.fieldErrors[FactRoleFitFieldIdx]; ok {
+		fieldErr = err
 	}
 
-	if m.roleFitIndex%2 == 0 {
-		b.WriteString("\n")
-	}
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Role Fit (required):").
+		SetInput(optionsStr).
+		SetHint("Navigate with ↑↓ | Select with Space").
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
 
-	if errMsg, ok := m.fieldErrors[FactRoleFitFieldIdx]; ok {
-		b.WriteString(styles.ErrorMsg.Render("✗ " + errMsg))
-		b.WriteString("\n")
-	}
-
-	hint := styles.Hint.Render("Navigate with ↑↓ | Select with Space")
-	b.WriteString(hint)
-
-	return b.String()
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
 
-func (m *FactEditorModel) renderAudienceField() string {
-	var b strings.Builder
-
-	label := "Audience Relevance"
-	if m.focusIndex == FactAudienceFieldIdx {
-		label = styles.LabelFocused.Render(label)
-	} else {
-		label = styles.Label.Render(label)
-	}
-
-	b.WriteString(label)
-	b.WriteString("\n")
+// renderAudienceFieldWithContainer renders the audience field using FormFieldContainer
+func (m *FactEditorModel) renderAudienceFieldWithContainer() string {
+	focused := m.focusIndex == FactAudienceFieldIdx
 
 	// Render audience options
 	audiences := []string{"hiring_manager", "recruiter", "peer"}
+	var badges []string
 	for i, audience := range audiences {
 		isSelected := contains(m.fact.AudienceRelevance, audience)
 		isFocused := m.focusIndex == FactAudienceFieldIdx && m.audienceIndex == i
 
 		badge := m.renderBadge(capitalize(audience), isSelected, isFocused)
-		b.WriteString(badge)
-		b.WriteString("  ")
+		badges = append(badges, badge)
 	}
-	b.WriteString("\n")
+	badgesStr := strings.Join(badges, "  ")
 
-	if errMsg, ok := m.fieldErrors[FactAudienceFieldIdx]; ok {
-		b.WriteString(styles.ErrorMsg.Render("✗ " + errMsg))
-		b.WriteString("\n")
+	fieldErr := ""
+	if err, ok := m.fieldErrors[FactAudienceFieldIdx]; ok {
+		fieldErr = err
 	}
 
-	hint := styles.Hint.Render("Select with Space ↑↓ | " + fmt.Sprintf("%d selected", len(m.fact.AudienceRelevance)))
-	b.WriteString(hint)
+	hint := fmt.Sprintf("Select with Space ↑↓ | %d selected", len(m.fact.AudienceRelevance))
 
-	return b.String()
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Audience Relevance (required):").
+		SetInput(badgesStr).
+		SetHint(hint).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
 
-func (m *FactEditorModel) renderButtons() string {
-	var b strings.Builder
+// renderButtonsWithContainer renders the buttons using FormFieldContainer
+func (m *FactEditorModel) renderButtonsWithContainer() string {
+	focused := m.focusIndex >= FactSaveButtonIdx
 
 	saveBtn := "[ Save ]"
 	cancelBtn := "[ Cancel ]"
@@ -596,11 +570,42 @@ func (m *FactEditorModel) renderButtons() string {
 		cancelBtn = styles.ButtonSecondary.Render(cancelBtn)
 	}
 
-	b.WriteString(saveBtn)
-	b.WriteString("  ")
-	b.WriteString(cancelBtn)
+	buttonsStr := strings.Join([]string{saveBtn, cancelBtn}, "  ")
 
-	return b.String()
+	fieldContent := components.NewFormFieldContainer().
+		SetInput(buttonsStr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// addFocusIndicatorToField adds a focus indicator to the rendered field
+func (m *FactEditorModel) addFocusIndicatorToField(fieldContent string, focused bool) string {
+	if focused {
+		// Add focus indicator before the first line
+		lines := strings.Split(fieldContent, "\n")
+		if len(lines) > 0 {
+			lines[0] = "► " + lines[0]
+			return strings.Join(lines, "\n")
+		}
+		return "► " + fieldContent
+	}
+	// Add space to align with focused fields
+	lines := strings.Split(fieldContent, "\n")
+	if len(lines) > 0 {
+		lines[0] = "  " + lines[0]
+		return strings.Join(lines, "\n")
+	}
+	return "  " + fieldContent
+}
+
+// getCharCountIndicator returns a visual indicator for character count
+func (m *FactEditorModel) getCharCountIndicator() string {
+	if m.characterCount > 1800 {
+		return styles.Warning.Render("⚠")
+	}
+	return ""
 }
 
 func (m *FactEditorModel) renderBadge(text string, selected, focused bool) string {
