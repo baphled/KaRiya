@@ -161,13 +161,13 @@
   - [x] 3.3.4 Verify style consistency with other models
   - [x] 3.3.5 Run existing tests; verify zero regressions
   - [x] 3.3.6 Add integration test for details view with containers
-- [ ] 3.4 Refactor ConfirmationDialogModel to use ModalContainer
-  - [ ] 3.4.1 Replace manual dialog rendering with ModalContainer
-  - [ ] 3.4.2 Update button layout to use container's button support
-  - [ ] 3.4.3 Test destructive vs normal styling
-  - [ ] 3.4.4 Verify focus management works correctly
-  - [ ] 3.4.5 Run existing tests; verify zero regressions
-  - [ ] 3.4.6 Add test for button navigation and selection
+- [x] 3.4 Refactor ConfirmationDialogModel to use ModalContainer
+  - [x] 3.4.1 Replace manual dialog rendering with ModalContainer
+  - [x] 3.4.2 Update button layout to use container's button support
+  - [x] 3.4.3 Test destructive vs normal styling
+  - [x] 3.4.4 Verify focus management works correctly
+  - [x] 3.4.5 Run existing tests; verify zero regressions
+  - [x] 3.4.6 Add test for button navigation and selection
 - [ ] 3.5 Refactor FactEditorModel to use containers
   - [ ] 3.5.1 Replace manual form layout with FormFieldContainer
   - [ ] 3.5.2 Wrap form with ScreenContainer
