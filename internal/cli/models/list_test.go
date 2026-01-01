@@ -215,7 +215,7 @@ var _ = Describe("ListModel", func() {
 
 			model := NewListModel(svc, ctx)
 			view := model.View()
-			Expect(view).To(ContainSubstring("Page"))
+			Expect(view).To(ContainSubstring("Showing"))
 			Expect(view).To(ContainSubstring("of"))
 		})
 	})
