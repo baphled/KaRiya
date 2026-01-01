@@ -35,6 +35,13 @@ const (
 	BurstSuggestionScreen Screen = "burst_suggestion"
 	BurstListScreen       Screen = "burst_list"
 	FactsResultsScreen    Screen = "facts_results"
+	HelpScreen            Screen = "help"
+	FactListScreen        Screen = "fact_list"
+	FactActionMenuScreen  Screen = "fact_action_menu"
+	FactDetailsScreen     Screen = "fact_details"
+	FactEditorScreen      Screen = "fact_editor"
+	BurstDetailsScreen   Screen = "burst_details"
+	BurstEditorScreen    Screen = "burst_editor"
 )
 
 // Model represents the main application state
@@ -53,6 +60,7 @@ type Model struct {
 	listModel              *models.ListModel
 	detailsModel           *models.DetailsModel
 	actionMenuModel        *models.ActionMenuModel
+	factActionMenuModel    *models.FactActionMenuModel
 	confirmationDialog     *models.ConfirmationDialog
 	deleteEventID          string // Track the event being deleted
 	importService          *importer.ImportService
@@ -65,10 +73,14 @@ type Model struct {
 	bulkOperationsModel    *models.BulkOperationsModel
 	burstSuggestionModel   *models.BurstSuggestionModel
 	burstListModel         *models.BurstListModel    // Display existing bursts
+	burstDetailsModel      *models.BurstDetailsModel // View burst details
+	burstEditorModel       *models.BurstEditorModel  // Edit burst details
 	factListModel          *models.FactListModel     // Display facts for events/bursts
 	factsResultsModel      *models.FactsResultsModel // Review facts extracted after import
 	factEditorModel        *models.FactEditorModel   // Edit individual facts
-	menuModel              *models.MenuModel          // Main menu screen
+	factDetailsModel       *models.FactDetailsModel  // View individual fact details
+	menuModel              *models.MenuModel         // Main menu screen
+	helpModel              *models.HelpModel         // Help screen
 }
 
 // NewModel creates a new application model
@@ -89,6 +101,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		listModel:              models.NewListModel(careerService, ctx),
 		detailsModel:           nil,
 		actionMenuModel:        nil,
+		factActionMenuModel:    nil,
 		confirmationDialog:     nil,
 		deleteEventID:          "",
 		importService:          importer.NewImportService(careerService),
@@ -100,7 +113,12 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		metadataEditorModel:    nil,
 		bulkOperationsModel:    nil,
 		burstSuggestionModel:   nil,
+		burstDetailsModel:      nil,
+		burstEditorModel:       nil,
 		factsResultsModel:      nil,
+		helpModel:              nil,
+		factListModel:          models.NewFactListModel(careerService, ctx),
+		factDetailsModel:       nil,
 	}
 }
 
@@ -124,6 +142,32 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.currentScreen == BurstListScreen {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = HomeScreen
+			return m, nil
+		}
+		// Special handling for HelpScreen - go back to previous screen
+		if m.currentScreen == HelpScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			return m, nil
+		}
+		// Special handling for FactListScreen - go back to home
+		if m.currentScreen == FactListScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			return m, nil
+		}
+		// Special handling for FactDetailsScreen - go back to fact list
+		if m.currentScreen == FactDetailsScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = FactListScreen
+			m.factDetailsModel = nil
+			return m, nil
+		}
+		// Special handling for FactActionMenuScreen - go back to fact list
+		if m.currentScreen == FactActionMenuScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = FactListScreen
+			m.factActionMenuModel = nil
 			return m, nil
 		}
 		// Special handling for ConfirmationScreen - go back to action menu or previous screen
@@ -329,6 +373,66 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.confirmationDialog = models.NewConfirmationDialog(
 				"Delete Event",
 				"Are you sure you want to delete this event? This action cannot be undone.",
+			)
+			m.previousScreen = m.currentScreen
+			m.currentScreen = ConfirmationScreen
+		}
+		return m, nil
+	}
+
+	// Handle models.FactActionMenuMsg
+	if factActionMenuMsg, ok := msg.(models.FactActionMenuMsg); ok {
+		m.factActionMenuModel = models.NewFactActionMenuModel(factActionMenuMsg.Fact)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = FactActionMenuScreen
+		return m, nil
+	}
+
+	// Handle FactActionSelectedMsg
+	if factActionMsg, ok := msg.(models.FactActionSelectedMsg); ok {
+		switch factActionMsg.Action {
+		case models.FactActionView:
+			// Navigate to fact details view
+			m.factDetailsModel = models.NewFactDetailsModel(factActionMsg.Fact)
+			m.previousScreen = m.currentScreen
+			m.currentScreen = FactDetailsScreen
+		case models.FactActionEdit:
+			// Navigate to fact editor
+			m.factEditorModel = models.NewFactEditorModel(factActionMsg.Fact, m.service, context.Background())
+			m.previousScreen = m.currentScreen
+			m.currentScreen = FactEditorScreen
+		case models.FactActionDelete:
+			// Show confirmation dialog for fact deletion
+			m.deleteEventID = factActionMsg.Fact.ID // Reuse deleteEventID for fact ID
+			m.confirmationDialog = models.NewConfirmationDialog(
+				"Delete Fact",
+				"Are you sure you want to delete this fact? This action cannot be undone.",
+			)
+			m.previousScreen = m.currentScreen
+			m.currentScreen = ConfirmationScreen
+		}
+		return m, nil
+	}
+
+	// Handle BurstActionSelectedMsg
+	if burstActionMsg, ok := msg.(models.BurstActionSelectedMsg); ok {
+		switch burstActionMsg.Action {
+		case models.BurstActionView:
+			// Navigate to burst details view
+			m.burstDetailsModel = models.NewBurstDetailsModel(burstActionMsg.Burst)
+			m.previousScreen = m.currentScreen
+			m.currentScreen = BurstDetailsScreen
+		case models.BurstActionEdit:
+			// Navigate to burst editor
+			m.burstEditorModel = models.NewBurstEditorModel(burstActionMsg.Burst, m.service, context.Background())
+			m.previousScreen = m.currentScreen
+			m.currentScreen = BurstEditorScreen
+		case models.BurstActionDelete:
+			// Show confirmation dialog for burst deletion
+			m.deleteEventID = burstActionMsg.Burst.ID
+			m.confirmationDialog = models.NewConfirmationDialog(
+				"Delete Burst",
+				"Are you sure you want to delete this burst? This action cannot be undone.",
 			)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ConfirmationScreen
@@ -630,24 +734,65 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-	case MainMenuScreen:
-		if m.menuModel != nil {
-			updatedMenuModel, cmd := m.menuModel.Update(msg)
-			m.menuModel = updatedMenuModel.(*models.MenuModel)
+	case FactActionMenuScreen:
+		if m.factActionMenuModel != nil {
+			updatedFactActionMenuModel, cmd := m.factActionMenuModel.Update(msg)
+			m.factActionMenuModel = updatedFactActionMenuModel.(*models.FactActionMenuModel)
 			return m, cmd
 		}
 
-	case ImportReviewScreen:
-		if m.importReviewModel != nil {
-			updatedImportModel, cmd := m.importReviewModel.Update(msg)
-			m.importReviewModel = updatedImportModel.(*models.ImportReviewModel)
+	case FactDetailsScreen:
+		if m.factDetailsModel != nil {
+			updatedFactDetailsModel, cmd := m.factDetailsModel.Update(msg)
+			m.factDetailsModel = updatedFactDetailsModel.(*models.FactDetailsModel)
 			return m, cmd
 		}
 
-	case ImportProgressScreen:
-		if m.importProgressModel != nil {
-			updatedProgressModel, cmd := m.importProgressModel.Update(msg)
-			m.importProgressModel = updatedProgressModel.(*models.ImportProgressModel)
+		case FactEditorScreen:
+		if m.factEditorModel != nil {
+			updatedModel, cmd := m.factEditorModel.Update(msg)
+			m.factEditorModel = updatedModel.(*models.FactEditorModel)
+			if m.factEditorModel.IsSubmitted() {
+				// Editor submitted - refresh fact list and return
+				m.factListModel.Refresh()
+				m.currentScreen = FactListScreen
+				m.previousScreen = FactEditorScreen
+			} else if m.factEditorModel.IsCancelled() {
+				// Editor cancelled - return to fact list
+				m.currentScreen = FactListScreen
+				m.previousScreen = FactEditorScreen
+			}
+			return m, cmd
+		}
+
+	case BurstDetailsScreen:
+		if m.burstDetailsModel != nil {
+			updatedModel, cmd := m.burstDetailsModel.Update(msg)
+			m.burstDetailsModel = updatedModel.(*models.BurstDetailsModel)
+			return m, cmd
+		}
+
+	case BurstEditorScreen:
+		if m.burstEditorModel != nil {
+			updatedModel, cmd := m.burstEditorModel.Update(msg)
+			m.burstEditorModel = updatedModel.(*models.BurstEditorModel)
+			if m.burstEditorModel.IsSubmitted() {
+				// Editor submitted - refresh burst list and return
+				m.burstListModel.Refresh()
+				m.currentScreen = BurstListScreen
+				m.previousScreen = BurstEditorScreen
+			} else if m.burstEditorModel.IsCancelled() {
+				// Editor cancelled - return to burst list
+				m.currentScreen = BurstListScreen
+				m.previousScreen = BurstEditorScreen
+			}
+			return m, cmd
+		}
+
+	case FactListScreen:
+		if m.factListModel != nil {
+			updatedModel, cmd := m.factListModel.Update(msg)
+			m.factListModel = updatedModel.(*models.FactListModel)
 			return m, cmd
 		}
 	}
@@ -712,6 +857,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			}
+		case "t":
+			// View Facts
+			if m.factListModel == nil {
+				ctx := context.Background()
+				m.factListModel = models.NewFactListModel(m.service, ctx)
+			} else {
+				m.factListModel.Refresh()
+			}
+			m.previousScreen = m.currentScreen
+			m.currentScreen = FactListScreen
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -795,6 +951,21 @@ func (m *Model) View() string {
 			return m.actionMenuModel.View()
 		}
 		return "Error: Action menu not initialized\n"
+	case FactActionMenuScreen:
+		if m.factActionMenuModel != nil {
+			return m.factActionMenuModel.View()
+		}
+		return "Error: Fact action menu not initialized\n"
+	case FactDetailsScreen:
+		if m.factDetailsModel != nil {
+			return m.factDetailsModel.View()
+		}
+		return "Error: Fact details model not initialized\n"
+	case FactEditorScreen:
+		if m.factEditorModel != nil {
+			return m.factEditorModel.View()
+		}
+		return "Error: Fact editor model not initialized\n"
 	case ConfirmationScreen:
 		if m.confirmationDialog != nil {
 			return m.confirmationDialog.View()
@@ -810,6 +981,28 @@ func (m *Model) View() string {
 			return m.importProgressModel.View()
 		}
 		return "Error: Import progress model not initialized\n"
+	case HelpScreen:
+		if m.helpModel != nil {
+			return m.helpModel.View()
+		}
+		return "Error: Help model not initialized\n"
+	case BurstDetailsScreen:
+		if m.burstDetailsModel != nil {
+			return m.burstDetailsModel.View()
+		}
+		return "Error: Burst Details model not initialized\n"
+	case BurstEditorScreen:
+		if m.burstEditorModel != nil {
+			return m.burstEditorModel.View()
+		}
+		return "Error: Burst Editor model not initialized\n"
+
+	case FactListScreen:
+		if m.factListModel != nil {
+			m.factListModel.SetBreadcrumbs(m.breadcrumbs)
+			return m.factListModel.View()
+		}
+		return "Error: Fact List model not initialized\n"
 	case QuitScreen:
 		return "Goodbye!\n"
 	default:
@@ -924,6 +1117,10 @@ func (m *Model) updateBreadcrumbs() {
 		m.breadcrumbs = []string{"Home", "Import Review"}
 	case ImportProgressScreen:
 		m.breadcrumbs = []string{"Home", "Import", "Progress"}
+	case HelpScreen:
+		m.breadcrumbs = []string{"Home", "Help"}
+	case FactListScreen:
+		m.breadcrumbs = []string{"Home", "Facts"}
 	default:
 		m.breadcrumbs = []string{"Home"}
 	}
@@ -1032,9 +1229,23 @@ func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case "?":
-		// Help - show help screen (using existing help model)
-		// For now, we'll just return to current screen
-		// In future, this could navigate to a dedicated help screen
+		// Help - show help screen
+		if m.helpModel == nil {
+			m.helpModel = models.NewHelpModel()
+		}
+		m.previousScreen = m.currentScreen
+		m.currentScreen = HelpScreen
+		return m, nil
+	case "t":
+		// View Facts
+		if m.factListModel == nil {
+			ctx := context.Background()
+			m.factListModel = models.NewFactListModel(m.service, ctx)
+		} else {
+			m.factListModel.Refresh()
+		}
+		m.previousScreen = m.currentScreen
+		m.currentScreen = FactListScreen
 		return m, nil
 	case "q":
 		// Quit

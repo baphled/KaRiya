@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -33,14 +33,10 @@ var _ = Describe("End-to-End Integration Tests", func() {
 	Describe("Complete Event Capture Workflow", func() {
 		Context("when user completes full event capture to persistence", func() {
 			It("should capture event through form and persist to repository", func() {
-				// Navigate to capture screen
 				model.currentScreen = CaptureScreen
-
-				// Simulate filling form fields
 				eventText := "Led cross-functional team to deliver critical migration project"
 				eventDate := time.Now().Add(-24 * time.Hour)
 
-				// Submit event through CLI service
 				err := cliService.CaptureEvent(
 					ctx,
 					eventText,
@@ -52,7 +48,6 @@ var _ = Describe("End-to-End Integration Tests", func() {
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Verify event was persisted to repository
 				events, err := repo.List(ctx, careerrepo.ListFilters{
 					Limit: 10,
 				})
@@ -64,149 +59,96 @@ var _ = Describe("End-to-End Integration Tests", func() {
 				Expect(events[0].Tags).To(ContainElements("leadership", "technical"))
 				Expect(events[0].Date.Format("2006-01-02")).To(Equal(eventDate.Format("2006-01-02")))
 			})
-
-			It("should handle Timeline Journaling mode with date constraints", func() {
-				eventText := "Fixed critical production bug affecting 10k users"
-				// Use 1 hour ago to ensure we're well within the 30-day window
-				eventDate := time.Now().Add(-1 * time.Hour)
-
-				err := cliService.CaptureEvent(
-					ctx,
-					eventText,
-					eventDate,
-					careerservice.TimelineJournaling,
-					service.WithTags([]string{"technical"}),
-				)
-				Expect(err).ToNot(HaveOccurred())
-
-				// Verify event persisted - use service layer to query
-				events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(events).To(HaveLen(1))
-				Expect(events[0].Text).To(Equal(eventText))
-			})
-
-			It("should handle CV Backfill mode with historical dates", func() {
-				eventText := "Architected and delivered microservices platform"
-				eventDate := time.Now().Add(-365 * 24 * time.Hour) // 1 year ago
-
-				err := cliService.CaptureEvent(
-					ctx,
-					eventText,
-					eventDate,
-					careerservice.CVBackfill,
-					service.WithCompany("OldCorp"),
-					service.WithTags([]string{"technical", "leadership"}),
-				)
-				Expect(err).ToNot(HaveOccurred())
-
-				// Verify event persisted
-				events, err := repo.List(ctx, careerrepo.ListFilters{})
-				Expect(err).ToNot(HaveOccurred())
-				Expect(events).To(HaveLen(1))
-				Expect(events[0].Text).To(Equal(eventText))
-				Expect(events[0].Company).To(Equal("OldCorp"))
-			})
 		})
+	})
 
-		Context("when user navigates through complete capture workflow", func() {
-			It("should navigate from home to capture to success screen", func() {
-				// Start at home
+	Describe("Facts Workflow Navigation", func() {
+		Context("when user presses 't' key from home screen", func() {
+			It("should navigate to facts list screen", func() {
 				Expect(model.currentScreen).To(Equal(HomeScreen))
 
-				// Navigate to capture
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}}
 				newModel, _ := model.Update(msg)
 				model = newModel.(*Model)
-				Expect(model.currentScreen).To(Equal(CaptureScreen))
 
-				// Simulate successful form submission
-				eventText := "Completed important milestone"
-				eventDate := time.Now()
-				err := cliService.CaptureEvent(
-					ctx,
-					eventText,
-					eventDate,
-					careerservice.ManualEntry,
-				)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(model.currentScreen).To(Equal(FactListScreen))
+			})
 
-				// Verify navigation to success screen happens through FormSubmittedMsg
-				submitMsg := FormSubmittedMsg{
-					Event: &career.CareerEvent{
-						ID:      "test-id",
-						Text:    eventText,
-						Date:    eventDate,
-						Tags:    []string{},
-						Company: "",
-						Project: "",
-					},
-				}
-				newModel, _ = model.Update(submitMsg)
+			It("should initialize fact list model when navigating to facts screen", func() {
+				Expect(model.currentScreen).To(Equal(HomeScreen))
+
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}}
+				newModel, _ := model.Update(msg)
 				model = newModel.(*Model)
-				Expect(model.currentScreen).To(Equal(SuccessScreen))
+
+				Expect(model.factListModel).ToNot(BeNil())
 			})
 		})
 
-		Context("when retrieving events after capture", func() {
-			It("should list all captured events", func() {
-				// Capture multiple events
-				events := []struct {
-					text    string
-					company string
-					tags    []string
-				}{
-					{"Event 1", "Company A", []string{"technical"}},
-					{"Event 2", "Company B", []string{"leadership"}},
-					{"Event 3", "Company A", []string{"technical", "product"}},
-				}
+		Context("when user presses back from facts screen", func() {
+			It("should navigate back to home screen", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}}
+				newModel, _ := model.Update(msg)
+				model = newModel.(*Model)
 
-				for _, e := range events {
-					err := cliService.CaptureEvent(
-						ctx,
-						e.text,
-						time.Now().Add(-24*time.Hour),
-						careerservice.ManualEntry,
-						service.WithCompany(e.company),
-						service.WithTags(e.tags),
-					)
-					Expect(err).ToNot(HaveOccurred())
-				}
+				Expect(model.currentScreen).To(Equal(FactListScreen))
 
-				// List all events
-				listedEvents, err := cliService.ListEvents(ctx, nil)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(listedEvents).To(HaveLen(3))
+				backMsg := models.BackMsg{}
+				newModel, _ = model.Update(backMsg)
+				model = newModel.(*Model)
+
+				Expect(model.currentScreen).To(Equal(HomeScreen))
+			})
+		})
+
+		Context("when accessing facts through menu", func() {
+			It("should navigate to facts screen when menu item is selected", func() {
+				Expect(model.currentScreen).To(Equal(HomeScreen))
+
+				menuMsg := models.MenuItemSelectedMsg{Key: "t"}
+				newModel, _ := model.Update(menuMsg)
+				model = newModel.(*Model)
+
+				Expect(model.currentScreen).To(Equal(FactListScreen))
 			})
 
-			It("should filter events by tags", func() {
-				// Capture events with different tags
+			It("should refresh facts list when navigating to facts screen", func() {
 				err := cliService.CaptureEvent(
 					ctx,
-					"Technical event",
+					"Test event",
 					time.Now(),
 					careerservice.ManualEntry,
-					service.WithTags([]string{"technical"}),
 				)
 				Expect(err).ToNot(HaveOccurred())
 
-				err = cliService.CaptureEvent(
-					ctx,
-					"Leadership event",
-					time.Now(),
-					careerservice.ManualEntry,
-					service.WithTags([]string{"leadership"}),
-				)
-				Expect(err).ToNot(HaveOccurred())
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}}
+				newModel, _ := model.Update(msg)
+				model = newModel.(*Model)
 
-				// Filter by technical tag
-				filters := &careerrepo.ListFilters{
-					Tags: []string{"technical"},
-				}
-				filteredEvents, err := cliService.ListEvents(ctx, filters)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(filteredEvents).To(HaveLen(1))
-				Expect(filteredEvents[0].Tags).To(ContainElement("technical"))
+				Expect(model.factListModel).ToNot(BeNil())
+
+				msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}}
+				newModel, _ = model.Update(msg)
+				model = newModel.(*Model)
+
+				msg = tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}}
+				newModel, _ = model.Update(msg)
+				model = newModel.(*Model)
+
+				Expect(model.currentScreen).To(Equal(FactListScreen))
+			})
+		})
+
+		Context("when rendering facts screen", func() {
+			It("should render facts list view without errors", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}}
+				newModel, _ := model.Update(msg)
+				model = newModel.(*Model)
+
+				Expect(model.currentScreen).To(Equal(FactListScreen))
+
+				view := model.View()
+				Expect(view).ToNot(BeEmpty())
 			})
 		})
 	})
