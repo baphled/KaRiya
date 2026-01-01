@@ -89,45 +89,45 @@ func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		return m.handleKeyMsg(msg), nil
+		switch msg.String() {
+		case "up", "k":
+			m.prevItem()
+
+		case "down", "j":
+			m.nextItem()
+
+		case "pgup", "ctrl+b":
+			m.prevPage()
+
+		case "pgdn", "ctrl+f":
+			m.nextPage()
+
+		case "home", "g":
+			m.goToFirstItem()
+
+		case "end", "G":
+			m.goToLastItem()
+
+		case " ", "space":
+			m.expandedIndices[m.selectedIdx] = !m.expandedIndices[m.selectedIdx]
+
+		case "esc":
+			// Handle escape key for back navigation
+			return m, func() tea.Msg { return BackMsg{} }
+
+		case "q", "ctrl+c":
+			// Handle quit request
+			return m, func() tea.Msg { return QuitMsg{} }
+
+		case "enter":
+			// Handle selection/expansion
+			m.expandedIndices[m.selectedIdx] = !m.expandedIndices[m.selectedIdx]
+		}
 	}
 
 	return m, nil
 }
 
-// handleKeyMsg processes keyboard input
-func (m *BurstListModel) handleKeyMsg(msg tea.KeyMsg) tea.Model {
-	displayedBursts := m.getDisplayedBursts()
-
-	switch msg.Type {
-	case tea.KeyUp:
-		if len(displayedBursts) > 0 {
-			m.selectedIdx = (m.selectedIdx - 1 + len(displayedBursts)) % len(displayedBursts)
-		}
-	case tea.KeyDown:
-		if len(displayedBursts) > 0 {
-			m.selectedIdx = (m.selectedIdx + 1) % len(displayedBursts)
-		}
-	case tea.KeySpace:
-		m.expandedIndices[m.selectedIdx] = !m.expandedIndices[m.selectedIdx]
-	case tea.KeyEsc:
-		// Handle escape key for back navigation
-		// Model will be dismissed by parent app
-	}
-
-	// Handle character input
-	if msg.Type == tea.KeyRunes {
-		for _, r := range msg.Runes {
-			switch r {
-			case 'q':
-				// Handle quit request
-				// Model will be dismissed by parent app
-			}
-		}
-	}
-
-	return m
-}
 
 // View renders the burst list
 // View renders the burst list
@@ -318,4 +318,54 @@ func (m *BurstListModel) SetFilter(competency string) {
 // SetSort sets the sort order
 func (m *BurstListModel) SetSort(sortBy string) {
 	m.sortBy = sortBy
+}
+
+// nextItem moves to the next item in the list
+func (m *BurstListModel) nextItem() {
+	displayedBursts := m.getDisplayedBursts()
+	if len(displayedBursts) > 0 {
+		m.selectedIdx = (m.selectedIdx + 1) % len(displayedBursts)
+	}
+}
+
+// prevItem moves to the previous item in the list
+func (m *BurstListModel) prevItem() {
+	displayedBursts := m.getDisplayedBursts()
+	if len(displayedBursts) > 0 {
+		m.selectedIdx = (m.selectedIdx - 1 + len(displayedBursts)) % len(displayedBursts)
+	}
+}
+
+// nextPage moves to the next page
+func (m *BurstListModel) nextPage() {
+	displayedBursts := m.getDisplayedBursts()
+	pageSize := m.height - 5 // Account for header and footer
+	newIdx := m.selectedIdx + pageSize
+	if newIdx >= len(displayedBursts) {
+		newIdx = len(displayedBursts) - 1
+	}
+	m.selectedIdx = newIdx
+}
+
+// prevPage moves to the previous page
+func (m *BurstListModel) prevPage() {
+	pageSize := m.height - 5 // Account for header and footer
+	newIdx := m.selectedIdx - pageSize
+	if newIdx < 0 {
+		newIdx = 0
+	}
+	m.selectedIdx = newIdx
+}
+
+// goToFirstItem moves to the first item in the list
+func (m *BurstListModel) goToFirstItem() {
+	m.selectedIdx = 0
+}
+
+// goToLastItem moves to the last item in the list
+func (m *BurstListModel) goToLastItem() {
+	displayedBursts := m.getDisplayedBursts()
+	if len(displayedBursts) > 0 {
+		m.selectedIdx = len(displayedBursts) - 1
+	}
 }
