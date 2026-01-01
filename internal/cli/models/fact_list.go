@@ -17,35 +17,24 @@ import (
 // FactListModel displays a list of facts with filtering, sorting, and selection
 type FactListModel struct {
 	*BaseStandardModel
-	// Data
-	facts    []*career.Fact
-	filtered []*career.Fact // Cached filtered results
-	service  *careerservice.Service
-	ctx      context.Context
-
-	// UI State
-	selectedIdx  int
-	focusedIdx   int
-	scrollOffset int
-	width        int
-	height       int
-
-	// Filtering
+	facts            []*career.Fact
+	filtered         []*career.Fact
+	service          *careerservice.Service
+	ctx              context.Context
+	selectedIdx      int
+	focusedIdx       int
+	scrollOffset     int
+	width            int
+	height           int
 	competencyFilter string
 	roleFitFilter    career.RoleFit
 	audienceFilter   string
-
-	// Sorting
-	sortBy    string // "date", "relevance"
-	sortOrder string // "asc", "desc"
-
-	// Selection
-	selectedFacts map[string]bool // Track selected fact IDs for bulk operations
-
-	// Messages
-	submitted bool
-	cancelled bool
-	err       error
+	sortBy           string
+	sortOrder        string
+	selectedFacts    map[string]bool
+	submitted        bool
+	cancelled        bool
+	err              error
 }
 
 // NewFactListModel creates a new fact list model
@@ -76,64 +65,44 @@ func (flm *FactListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "up", "k":
 			flm.prevItem()
-
 		case "down", "j":
 			flm.nextItem()
-
 		case "pgup", "ctrl+b":
 			flm.prevPage()
-
 		case "pgdn", "ctrl+f":
 			flm.nextPage()
-
 		case "home", "g":
 			flm.goToFirstItem()
-
 		case "end", "G":
 			flm.goToLastItem()
-
 		case "enter":
 			if len(flm.filtered) > 0 {
 				flm.selectedIdx = flm.focusedIdx
 				flm.submitted = true
 			}
-
 		case " ", "space":
 			if len(flm.filtered) > 0 {
 				fact := flm.filtered[flm.focusedIdx]
 				flm.selectedFacts[fact.ID] = !flm.selectedFacts[fact.ID]
 			}
-
 		case "esc", "q":
 			flm.cancelled = true
-
-		case "f":
-			// Toggle filter mode (placeholder for filter UI)
-			break
-
-		case "s":
-			// Toggle sort mode (placeholder for sort UI)
-			break
 		}
-
 	case tea.WindowSizeMsg:
 		flm.width = msg.Width
 		flm.height = msg.Height
 	}
-
 	return flm, nil
 }
 
-// View renders the fact list
 // View renders the fact list
 func (flm *FactListModel) View() string {
 	if len(flm.filtered) == 0 {
 		return flm.renderEmpty()
 	}
 
-	// Create list items
 	var items []string
-	maxIdx := flm.height - 5 // Account for header and footer
+	maxIdx := flm.height - 5
 	endIdx := flm.scrollOffset + maxIdx
 	if endIdx > len(flm.filtered) {
 		endIdx = len(flm.filtered)
@@ -147,13 +116,11 @@ func (flm *FactListModel) View() string {
 		items = append(items, item)
 	}
 
-	// Build pagination info
 	paginationInfo := fmt.Sprintf("%d/%d facts", len(flm.filtered), len(flm.facts))
 	if len(flm.selectedFacts) > 0 {
 		paginationInfo += fmt.Sprintf(" | %d selected", len(flm.selectedFacts))
 	}
 
-	// Build title
 	title := "📋 Facts"
 	if flm.competencyFilter != "" {
 		title += fmt.Sprintf(" (Competency: %s)", flm.competencyFilter)
@@ -162,109 +129,53 @@ func (flm *FactListModel) View() string {
 		title += fmt.Sprintf(" (Role: %s)", flm.roleFitFilter)
 	}
 
-	// Use header and footer components
 	headerView := components.NewHeader(title, flm.width).View()
 	footerView := components.NewFooter(flm.width).View()
 
-	// Create list container
-	listContent := strings.Join(items, "\n")
-	if listContent == "" {
-		listContent = "No facts found"
-	}
+	listContainer := components.NewListContainer().
+		SetItems(items).
+		SetEmptyStateMessage("No facts found").
+		SetPaginationInfo(paginationInfo)
 
-	// Combine all sections
-	fullContent := strings.Join([]string{
+	screenContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		listContainer.Render(),
+	)
+
+	screenContainer := components.NewScreenContainer(screenContent).
+		WithPaddingMode(components.PaddingNormal)
+
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Left,
 		headerView,
 		"",
-		paginationInfo,
-		"",
-		listContent,
+		screenContainer.Render(),
 		"",
 		footerView,
-	}, "\n")
+	)
 
 	return fullContent
 }
 
-// renderHeader renders the header with title and filters
-func (flm *FactListModel) renderHeader() string {
-	title := "📋 Facts"
-	if flm.competencyFilter != "" {
-		title += fmt.Sprintf(" (Competency: %s)", flm.competencyFilter)
-	}
-	if flm.roleFitFilter != "" {
-		title += fmt.Sprintf(" (Role: %s)", flm.roleFitFilter)
-	}
-
-	headerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary).
-		Bold(true).
-		MarginBottom(1)
-
-	info := fmt.Sprintf("%d/%d facts", len(flm.filtered), len(flm.facts))
-	if len(flm.selectedFacts) > 0 {
-		info += fmt.Sprintf(" | %d selected", len(flm.selectedFacts))
-	}
-
-	infoStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
-		Italic(true)
-
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerStyle.Render(title),
-		infoStyle.Render(info),
-	)
-}
-
-// renderFacts renders the list of facts
-func (flm *FactListModel) renderFacts() string {
-	if len(flm.filtered) == 0 {
-		return ""
-	}
-
-	maxIdx := flm.height - 5 // Account for header and footer
-	endIdx := flm.scrollOffset + maxIdx
-	if endIdx > len(flm.filtered) {
-		endIdx = len(flm.filtered)
-	}
-
-	var items []string
-	for i := flm.scrollOffset; i < endIdx && i < len(flm.filtered); i++ {
-		fact := flm.filtered[i]
-		isFocused := (i == flm.focusedIdx)
-		isSelected := flm.selectedFacts[fact.ID]
-		item := flm.renderFactItem(fact, isFocused, isSelected)
-		items = append(items, item)
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, items...)
-}
-
 // renderFactItem renders a single fact item in the list
 func (flm *FactListModel) renderFactItem(fact *career.Fact, focused, selected bool) string {
-	// Checkbox
 	checkbox := "☐"
 	if selected {
 		checkbox = "☑"
 	}
 
-	// Focus indicator
 	focusIndicator := " "
 	if focused {
 		focusIndicator = "►"
 	}
 
-	// Fact preview (first 50 chars)
 	preview := fact.Text
 	if len(preview) > 50 {
 		preview = preview[:47] + "..."
 	}
 
-	// Role fit icon
 	roleIcon := getRoleFitIcon(fact.RoleFit)
 
-	// Format: [focus] [checkbox] [role-icon] [competency] text...
 	line := fmt.Sprintf("%s %s %s [%s] %s",
 		focusIndicator,
 		checkbox,
@@ -292,27 +203,6 @@ func (flm *FactListModel) renderFactItem(fact *career.Fact, focused, selected bo
 	return style.Render(line)
 }
 
-// renderFooter renders the footer with keyboard shortcuts
-func (flm *FactListModel) renderFooter() string {
-	shortcuts := []string{
-		"↑/j: Up",
-		"↓/k: Down",
-		"Enter: View",
-		"Space: Select",
-		"f: Filter",
-		"s: Sort",
-		"Esc: Back",
-	}
-
-	footerText := strings.Join(shortcuts, " │ ")
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
-		Italic(true).
-		MarginTop(1)
-
-	return footerStyle.Render(footerText)
-}
-
 // renderEmpty renders the empty state
 func (flm *FactListModel) renderEmpty() string {
 	message := "No facts found"
@@ -320,12 +210,31 @@ func (flm *FactListModel) renderEmpty() string {
 		message = "No facts match the current filters"
 	}
 
-	emptyStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
-		AlignHorizontal(lipgloss.Center).
-		Padding(2, 0)
+	listContainer := components.NewListContainer().
+		SetItems([]string{}).
+		SetEmptyStateMessage(message)
 
-	return emptyStyle.Render(message)
+	headerView := components.NewHeader("📋 Facts", flm.width).View()
+	footerView := components.NewFooter(flm.width).View()
+
+	screenContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		listContainer.Render(),
+	)
+
+	screenContainer := components.NewScreenContainer(screenContent).
+		WithPaddingMode(components.PaddingNormal)
+
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		headerView,
+		"",
+		screenContainer.Render(),
+		"",
+		footerView,
+	)
+
+	return fullContent
 }
 
 // SetFacts sets the facts to display
@@ -378,7 +287,6 @@ func (flm *FactListModel) filterFacts() []*career.Fact {
 	var filtered []*career.Fact
 
 	for _, fact := range flm.facts {
-		// Competency filter
 		if flm.competencyFilter != "" {
 			hasCompetency := false
 			for _, comp := range fact.CompetencyCategories {
@@ -392,12 +300,10 @@ func (flm *FactListModel) filterFacts() []*career.Fact {
 			}
 		}
 
-		// Role fit filter
 		if flm.roleFitFilter != "" && fact.RoleFit != flm.roleFitFilter {
 			continue
 		}
 
-		// Audience filter
 		if flm.audienceFilter != "" {
 			hasAudience := false
 			for _, aud := range fact.AudienceRelevance {
@@ -426,7 +332,6 @@ func (flm *FactListModel) sortFacts(facts []*career.Fact) {
 		case "date":
 			less = facts[i].CreatedAt.Before(facts[j].CreatedAt)
 		case "relevance":
-			// Sort by number of competencies and audience matches (higher = more relevant)
 			compScore := len(facts[i].CompetencyCategories) - len(facts[j].CompetencyCategories)
 			if compScore != 0 {
 				less = compScore < 0
@@ -438,7 +343,6 @@ func (flm *FactListModel) sortFacts(facts []*career.Fact) {
 			less = facts[i].CreatedAt.Before(facts[j].CreatedAt)
 		}
 
-		// Reverse for descending order
 		if flm.sortOrder == "asc" {
 			return less
 		}
@@ -499,7 +403,7 @@ func (flm *FactListModel) GetSelectedIdx() int {
 func (flm *FactListModel) nextItem() {
 	if flm.focusedIdx < len(flm.filtered)-1 {
 		flm.focusedIdx++
-		maxIdx := flm.height - 3 // Account for header and footer
+		maxIdx := flm.height - 3
 		if flm.focusedIdx >= flm.scrollOffset+maxIdx {
 			flm.scrollOffset = flm.focusedIdx - maxIdx + 1
 		}
@@ -518,7 +422,7 @@ func (flm *FactListModel) prevItem() {
 
 // nextPage moves to the next page
 func (flm *FactListModel) nextPage() {
-	pageSize := flm.height - 3 // Account for header and footer
+	pageSize := flm.height - 3
 	lastIdx := len(flm.filtered) - 1
 	newIdx := flm.focusedIdx + pageSize
 	if newIdx > lastIdx {
@@ -533,7 +437,7 @@ func (flm *FactListModel) nextPage() {
 
 // prevPage moves to the previous page
 func (flm *FactListModel) prevPage() {
-	pageSize := flm.height - 3 // Account for header and footer
+	pageSize := flm.height - 3
 	newIdx := flm.focusedIdx - pageSize
 	if newIdx < 0 {
 		newIdx = 0
@@ -552,7 +456,7 @@ func (flm *FactListModel) goToFirstItem() {
 func (flm *FactListModel) goToLastItem() {
 	if len(flm.filtered) > 0 {
 		flm.focusedIdx = len(flm.filtered) - 1
-		pageSize := flm.height - 3 // Account for header and footer
+		pageSize := flm.height - 3
 		flm.scrollOffset = flm.focusedIdx - pageSize + 1
 		if flm.scrollOffset < 0 {
 			flm.scrollOffset = 0
