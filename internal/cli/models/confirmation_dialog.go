@@ -18,11 +18,12 @@ type ConfirmationDialog struct {
 	confirmed   bool
 	cancelled   bool
 	helpFooter  components.HelpFooterModel
+	modal       *components.ModalContainer
 }
 
 // NewConfirmationDialog creates a new confirmation dialog
 func NewConfirmationDialog(title, message string) *ConfirmationDialog {
-	return &ConfirmationDialog{
+	d := &ConfirmationDialog{
 		BaseStandardModel: NewBaseStandardModel(),
 		title:             title,
 		message:           message,
@@ -33,6 +34,8 @@ func NewConfirmationDialog(title, message string) *ConfirmationDialog {
 		cancelled:         false,
 		helpFooter:        components.NewHelpFooter("confirmation_dialog", 80),
 	}
+	d.modal = components.NewModalContainer()
+	return d
 }
 
 // Init initializes the confirmation dialog
@@ -65,15 +68,29 @@ func (d *ConfirmationDialog) Update(msg tea.Msg) (*ConfirmationDialog, tea.Cmd) 
 	return d, nil
 }
 
-// View renders the confirmation dialog
+// View renders the confirmation dialog using ModalContainer
 func (d *ConfirmationDialog) View() string {
-	// Title - use destructive style
-	title := styles.ModalDestructiveTitle.Render(d.title)
+	// Prepare buttons with focus styling
+	buttons := d.renderButtons()
 
-	// Message - standard modal message style
-	message := styles.ModalMessage.Render(d.message)
+	// Configure modal container with destructive style
+	d.modal.
+		SetTitle(d.title).
+		SetMessage(d.message).
+		SetButtons(buttons).
+		SetInstructions("Tab/←→: Switch | Enter: Confirm | Esc: Cancel").
+		WithDestructiveStyle()
 
-	// Buttons with consistent styling
+	// Render modal container
+	dialog := d.modal.Render()
+
+	// Add help footer
+	d.helpFooter.SetWidth(80)
+	return lipgloss.JoinVertical(lipgloss.Left, dialog, d.helpFooter.View())
+}
+
+// renderButtons returns the button labels with focus styling applied
+func (d *ConfirmationDialog) renderButtons() []string {
 	cancelStyle := styles.ButtonSecondary
 	confirmStyle := styles.ButtonSecondary
 	if d.focused {
@@ -87,37 +104,7 @@ func (d *ConfirmationDialog) View() string {
 		Foreground(styles.ColorError).
 		Render(d.confirmText)
 
-	buttons := styles.ModalButtonContainer.Render(
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			cancelButton,
-			"  ",
-			confirmButton,
-		),
-	)
-
-	// Instructions - standard modal instructions
-	instructions := styles.ModalInstructions.Render(
-		"Tab/←→: Switch | Enter: Confirm | Esc: Cancel",
-	)
-
-	// Combine all elements with consistent vertical spacing
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		title,
-		"",
-		message,
-		buttons,
-		instructions,
-	)
-
-	// Wrap in destructive modal box
-	dialog := styles.ModalDestructive.
-		Width(60).
-		Render(content)
-
-	d.helpFooter.SetWidth(80)
-	return lipgloss.JoinVertical(lipgloss.Left, dialog, d.helpFooter.View())
+	return []string{cancelButton, confirmButton}
 }
 
 // IsConfirmed returns true if the user confirmed
