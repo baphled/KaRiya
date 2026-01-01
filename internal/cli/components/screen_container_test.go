@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestNewScreenContainer(t *testing.T) {
@@ -277,4 +277,3 @@ func TestScreenContainerStyleConsistency(t *testing.T) {
 		t.Error("expected both rendered outputs to be non-empty")
 	}
 }
-

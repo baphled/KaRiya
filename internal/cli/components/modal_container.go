@@ -3,8 +3,8 @@ package components
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // ModalContainer renders a modal dialog with title, message, buttons, and instructions.
@@ -16,7 +16,7 @@ type ModalContainer struct {
 	message         string
 	buttons         []string
 	instructions    string
-	isDestructive    bool
+	isDestructive   bool
 	hasTitle        bool
 	hasMessage      bool
 	hasButtons      bool
@@ -145,4 +145,3 @@ func (mc *ModalContainer) Render() string {
 
 	return modalStyle.Render(content)
 }
-

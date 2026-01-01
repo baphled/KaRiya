@@ -320,4 +320,3 @@ func TestListContainerDuplicateItems(t *testing.T) {
 		t.Errorf("expected at least 3 occurrences of 'Item', got %d", count)
 	}
 }
-

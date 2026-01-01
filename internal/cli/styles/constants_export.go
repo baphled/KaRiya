@@ -492,4 +492,3 @@ func GetSpacingConstants() SpacingConstants {
 //   - ColorBorder: Default border (#3d4454)
 //   - ColorBorderActive: Active/focused border (#5fb3b3)
 //   - ColorBorderError: Error border (#d76e6e)
-

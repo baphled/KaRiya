@@ -451,4 +451,3 @@ func TestAllContainersWithStyles(t *testing.T) {
 		})
 	}
 }
-

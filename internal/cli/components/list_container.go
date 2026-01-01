@@ -3,8 +3,8 @@ package components
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // ListContainer displays a list of items with optional pagination and empty state handling.
@@ -86,4 +86,3 @@ func (lc *ListContainer) Render() string {
 
 	return content
 }
-

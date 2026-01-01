@@ -401,4 +401,3 @@ func TestModalContainerDestructiveWithAllSections(t *testing.T) {
 		t.Error("expected rendered output to contain all sections")
 	}
 }
-
