@@ -276,6 +276,8 @@ func (m *MetadataEditorModel) parseDate(dateStr string) (time.Time, error) {
 }
 
 // View renders the metadata editor
+
+// View renders the metadata editor using FormFieldContainers
 func (m *MetadataEditorModel) View() string {
 	if m.width == 0 {
 		m.width = 80
@@ -284,97 +286,122 @@ func (m *MetadataEditorModel) View() string {
 		m.height = 24
 	}
 
-	var sb strings.Builder
+	// Render form content using FormFieldContainers
+	formContent := m.renderFormContentWithContainers()
 
-	// Header
-	header := components.NewHeader("Edit Event Metadata", m.width)
-	sb.WriteString(header.View() + "\n\n")
+	// Use header and footer components
+	headerView := components.NewHeader("Edit Event Metadata", m.width).View()
+	footerView := components.NewFooter(m.width).View()
 
-	// Date field
-	sb.WriteString(m.renderDateField())
-	sb.WriteString("\n")
-
-	// Company field
-	sb.WriteString(m.renderCompanyField())
-	sb.WriteString("\n")
-
-	// Project field
-	sb.WriteString(m.renderProjectField())
-	sb.WriteString("\n")
-
-	// Tags field
-	sb.WriteString(m.renderTagsField())
-	sb.WriteString("\n")
-
-	// Categories field
-	sb.WriteString(m.renderCategoriesField())
-	sb.WriteString("\n\n")
-
-	// Buttons
-	sb.WriteString(m.renderButtons())
-	sb.WriteString("\n")
-
-	// Error messages
-	if m.err != nil {
-		sb.WriteString(styles.ErrorBox.Render("Error: " + m.err.Error()))
-		sb.WriteString("\n")
-	}
-
-	// Field errors
-	for fieldIdx, errMsg := range m.fieldErrors {
-		sb.WriteString(styles.ErrorBox.Render(fmt.Sprintf("Field %d: %s", fieldIdx, errMsg)))
-		sb.WriteString("\n")
-	}
-
-	// Add help footer
+	// Help footer with keyboard shortcuts
 	m.helpFooter.SetWidth(m.width)
 	helpFooterContent := m.helpFooter.View()
 
-	sb.WriteString(helpFooterContent)
-	return sb.String()
+	// Combine all sections
+	fullContent := strings.Join([]string{
+		headerView,
+		"",
+		formContent,
+		"",
+		footerView,
+		"",
+		helpFooterContent,
+	}, "\n")
+
+	return fullContent
 }
 
-func (m *MetadataEditorModel) renderDateField() string {
-	label := "Date"
-	if m.focusIndex == MetadataDateFieldIdx {
-		label = styles.InputLabel.Render("► " + label)
-	} else {
-		label = styles.InputLabel.Render(label)
+// renderFormContentWithContainers renders all form fields using FormFieldContainers
+func (m *MetadataEditorModel) renderFormContentWithContainers() string {
+	var content []string
+
+	// Add all fields
+	content = append(content,
+		m.renderDateFieldWithContainer(),
+		m.renderCompanyFieldWithContainer(),
+		m.renderProjectFieldWithContainer(),
+		m.renderTagsFieldWithContainer(),
+		m.renderCategoriesFieldWithContainer(),
+		m.renderButtonsWithContainer(),
+	)
+
+	// Add model-level error if present
+	if m.err != nil {
+		content = append(content, styles.ErrorBox.Render("Error: "+m.err.Error()))
 	}
-	return fmt.Sprintf("%s\n%s", label, m.inputs[MetadataDateFieldIdx].View())
+
+	// Add field-specific errors
+	for fieldIdx, errMsg := range m.fieldErrors {
+		content = append(content, styles.ErrorBox.Render(fmt.Sprintf("Field %d: %s", fieldIdx, errMsg)))
+	}
+
+	return strings.Join(content, "\n\n")
 }
 
-func (m *MetadataEditorModel) renderCompanyField() string {
-	label := "Company"
-	if m.focusIndex == MetadataCompanyFieldIdx {
-		label = styles.InputLabel.Render("► " + label)
-	} else {
-		label = styles.InputLabel.Render(label)
+// renderDateFieldWithContainer renders the date field using FormFieldContainer
+func (m *MetadataEditorModel) renderDateFieldWithContainer() string {
+	focused := m.focusIndex == MetadataDateFieldIdx
+	fieldErr := ""
+	if err, ok := m.fieldErrors[MetadataDateFieldIdx]; ok {
+		fieldErr = err
 	}
-	return fmt.Sprintf("%s\n%s", label, m.inputs[MetadataCompanyFieldIdx].View())
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Date (required):").
+		SetInput(m.inputs[MetadataDateFieldIdx].View()).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
 
-func (m *MetadataEditorModel) renderProjectField() string {
-	label := "Project"
-	if m.focusIndex == MetadataProjectFieldIdx {
-		label = styles.InputLabel.Render("► " + label)
-	} else {
-		label = styles.InputLabel.Render(label)
+// renderCompanyFieldWithContainer renders the company field using FormFieldContainer
+func (m *MetadataEditorModel) renderCompanyFieldWithContainer() string {
+	focused := m.focusIndex == MetadataCompanyFieldIdx
+	fieldErr := ""
+	if err, ok := m.fieldErrors[MetadataCompanyFieldIdx]; ok {
+		fieldErr = err
 	}
-	return fmt.Sprintf("%s\n%s", label, m.inputs[MetadataProjectFieldIdx].View())
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Company:").
+		SetInput(m.inputs[MetadataCompanyFieldIdx].View()).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
 
-func (m *MetadataEditorModel) renderTagsField() string {
-	label := "Tags"
-	if m.focusIndex == MetadataTagsFieldIdx {
-		label = styles.InputLabel.Render("► " + label)
-	} else {
-		label = styles.InputLabel.Render(label)
+// renderProjectFieldWithContainer renders the project field using FormFieldContainer
+func (m *MetadataEditorModel) renderProjectFieldWithContainer() string {
+	focused := m.focusIndex == MetadataProjectFieldIdx
+	fieldErr := ""
+	if err, ok := m.fieldErrors[MetadataProjectFieldIdx]; ok {
+		fieldErr = err
 	}
 
-	var sb strings.Builder
-	sb.WriteString(label + "\n")
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Project:").
+		SetInput(m.inputs[MetadataProjectFieldIdx].View()).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
 
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderTagsFieldWithContainer renders the tags field using FormFieldContainer
+// renderTagsFieldWithContainer renders the tags field using FormFieldContainer
+func (m *MetadataEditorModel) renderTagsFieldWithContainer() string {
+	focused := m.focusIndex == MetadataTagsFieldIdx
+	fieldErr := ""
+	if err, ok := m.fieldErrors[MetadataTagsFieldIdx]; ok {
+		fieldErr = err
+	}
+
+	// Render tags as badges
 	availableTags := m.tagSelector.AvailableTags()
 	selectedTags := m.tagSelector.SelectedTags()
 	selectedMap := make(map[string]bool)
@@ -382,40 +409,46 @@ func (m *MetadataEditorModel) renderTagsField() string {
 		selectedMap[tag] = true
 	}
 
+	var badges []string
 	for i, tag := range availableTags {
-		var tagStr string
+		isFocused := m.focusIndex == MetadataTagsFieldIdx && i == m.tagIndex
+		indicator := "[ ]"
 		if selectedMap[tag] {
-			tagStr = "[✓] " + tag
-		} else {
-			tagStr = "[ ] " + tag
+			indicator = "[✓]"
 		}
 
-		if m.focusIndex == MetadataTagsFieldIdx && i == m.tagIndex {
-			tagStr = styles.InputLabel.Render("► " + tagStr)
-		} else if m.focusIndex == MetadataTagsFieldIdx {
-			tagStr = "  " + tagStr
+		badge := fmt.Sprintf("%s %s", indicator, tag)
+		if isFocused {
+			badge = styles.ButtonPrimaryFocused.Render(badge)
+		} else if selectedMap[tag] {
+			badge = styles.ButtonPrimary.Render(badge)
 		}
-
-		sb.WriteString(tagStr + "  ")
-		if (i+1)%3 == 0 {
-			sb.WriteString("\n")
-		}
+		badges = append(badges, badge)
 	}
+	badgesStr := strings.Join(badges, "  ")
 
-	return sb.String()
+	hint := fmt.Sprintf("Navigate with ↑↓ | Select with Space | %d selected", len(selectedTags))
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Tags:").
+		SetInput(badgesStr).
+		SetHint(hint).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
 
-func (m *MetadataEditorModel) renderCategoriesField() string {
-	label := "Categories"
-	if m.focusIndex == MetadataCategoriesFieldIdx {
-		label = styles.InputLabel.Render("► " + label)
-	} else {
-		label = styles.InputLabel.Render(label)
+// renderCategoriesFieldWithContainer renders the categories field using FormFieldContainer
+func (m *MetadataEditorModel) renderCategoriesFieldWithContainer() string {
+	focused := m.focusIndex == MetadataCategoriesFieldIdx
+	fieldErr := ""
+	if err, ok := m.fieldErrors[MetadataCategoriesFieldIdx]; ok {
+		fieldErr = err
 	}
 
-	var sb strings.Builder
-	sb.WriteString(label + "\n")
-
+	// Render categories as badges
 	availableCategories := m.categorySelector.AvailableCategories()
 	selectedCategories := m.categorySelector.SelectedCategories()
 	selectedMap := make(map[string]bool)
@@ -423,45 +456,81 @@ func (m *MetadataEditorModel) renderCategoriesField() string {
 		selectedMap[cat] = true
 	}
 
-	for i, category := range availableCategories {
-		var catStr string
-		if selectedMap[category] {
-			catStr = "[✓] " + category
-		} else {
-			catStr = "[ ] " + category
+	var badges []string
+	for i, cat := range availableCategories {
+		isFocused := m.focusIndex == MetadataCategoriesFieldIdx && i == m.categoryIndex
+		indicator := "[ ]"
+		if selectedMap[cat] {
+			indicator = "[✓]"
 		}
 
-		if m.focusIndex == MetadataCategoriesFieldIdx && i == m.categoryIndex {
-			catStr = styles.InputLabel.Render("► " + catStr)
-		} else if m.focusIndex == MetadataCategoriesFieldIdx {
-			catStr = "  " + catStr
+		badge := fmt.Sprintf("%s %s", indicator, cat)
+		if isFocused {
+			badge = styles.ButtonPrimaryFocused.Render(badge)
+		} else if selectedMap[cat] {
+			badge = styles.ButtonPrimary.Render(badge)
 		}
-
-		sb.WriteString(catStr + "  ")
-		if (i+1)%2 == 0 {
-			sb.WriteString("\n")
-		}
+		badges = append(badges, badge)
 	}
+	badgesStr := strings.Join(badges, "  ")
 
-	return sb.String()
+	hint := fmt.Sprintf("Navigate with ↑↓ | Select with Space | %d selected", len(selectedCategories))
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Categories:").
+		SetInput(badgesStr).
+		SetHint(hint).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
 }
+func (m *MetadataEditorModel) renderButtonsWithContainer() string {
+	focused := m.focusIndex >= MetadataSaveButtonIdx
 
-func (m *MetadataEditorModel) renderButtons() string {
-	saveBtn := "Save"
+	saveBtn := "[ Save ]"
+	cancelBtn := "[ Cancel ]"
+
 	if m.focusIndex == MetadataSaveButtonIdx {
-		saveBtn = styles.ButtonFocused.Render(saveBtn)
+		saveBtn = styles.ButtonPrimaryFocused.Render(saveBtn)
+		cancelBtn = styles.ButtonSecondary.Render(cancelBtn)
+	} else if m.focusIndex == MetadataCancelButtonIdx {
+		saveBtn = styles.ButtonPrimary.Render(saveBtn)
+		cancelBtn = styles.ButtonSecondaryFocused.Render(cancelBtn)
 	} else {
 		saveBtn = styles.ButtonPrimary.Render(saveBtn)
-	}
-
-	cancelBtn := "Cancel"
-	if m.focusIndex == MetadataCancelButtonIdx {
-		cancelBtn = styles.ButtonFocused.Render(cancelBtn)
-	} else {
 		cancelBtn = styles.ButtonSecondary.Render(cancelBtn)
 	}
 
-	return fmt.Sprintf("%s  %s", saveBtn, cancelBtn)
+	buttonsStr := strings.Join([]string{saveBtn, cancelBtn}, "  ")
+
+	fieldContent := components.NewFormFieldContainer().
+		SetInput(buttonsStr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// addFocusIndicatorToField adds a focus indicator to the rendered field
+func (m *MetadataEditorModel) addFocusIndicatorToField(fieldContent string, focused bool) string {
+	if focused {
+		// Add focus indicator before the first line
+		lines := strings.Split(fieldContent, "\n")
+		if len(lines) > 0 {
+			lines[0] = "► " + lines[0]
+			return strings.Join(lines, "\n")
+		}
+		return "► " + fieldContent
+	}
+	// Add space to align with focused fields
+	lines := strings.Split(fieldContent, "\n")
+	if len(lines) > 0 {
+		lines[0] = "  " + lines[0]
+		return strings.Join(lines, "\n")
+	}
+	return "  " + fieldContent
 }
 
 // Revert reverts changes to original event
