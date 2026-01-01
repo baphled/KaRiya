@@ -185,40 +185,50 @@ func (m *ListModel) getTitle() string {
 
 ### Pagination Display
 
-**Pattern**: `X/Y items[, N selected]`
+**Pattern**: `Showing X-Y of Z items` (STANDARDIZED as of 2026-01-01)
 
 **Examples**:
-- `10/50 events` - Events pagination
-- `3/5 bursts` - Bursts pagination
-- `8/12 facts | 2 selected` - Facts with selection count
+- `Showing 1-10 of 50 events` - Events pagination
+- `Showing 1-3 of 5 bursts` - Bursts pagination
+- `Showing 1-8 of 12 facts` - Facts pagination
 
 **Implementation**:
 ```go
 func (m *ListModel) getPaginationInfo() string {
-    displayed := len(m.filtered)
-    total := len(m.items)
-    info := fmt.Sprintf("%d/%d facts", displayed, total)
-
-    if len(m.selectedFacts) > 0 {
-        info += fmt.Sprintf(" | %d selected", len(m.selectedFacts))
+    maxIdx := m.height - 5
+    endIdx := m.scrollOffset + maxIdx
+    if endIdx > len(m.filtered) {
+        endIdx = len(m.filtered)
     }
+    startIdx := m.scrollOffset + 1
+
+    info := fmt.Sprintf("Showing %d-%d of %d items", startIdx, endIdx, len(m.items))
     return info
 }
 ```
 
+**Note**: This format is MANDATORY for all list models as of 2026-01-01. The previous format `X/Y items` is DEPRECATED.
+
 ### Empty State Display
 
-**Pattern**: Clear, actionable message
+**Pattern**: `No <items> found` (STANDARDIZED as of 2026-01-01)
 
 **Examples**:
-- `"No events found. Start capturing your career journey!"`
-- `"No matching bursts"` (when filtered) or `"No bursts found"`
-- `"No facts found"` or `"No facts match the current filters"`
+- `"No events found"` - Career events list
+- `"No bursts found"` - Bursts list
+- `"No facts found"` - Facts list
 
 **Guidelines**:
-- Be specific about the reason (filtering vs. truly empty)
-- Provide actionable guidance if possible
+- Use ONLY the standardized format `"No <items> found"`
+- Do NOT use conditional messages based on filter state
+- Do NOT use alternative wording like "No matching <items>"
 - Use proper capitalization and punctuation
+- Be consistent across all list types
+
+**Prohibited Patterns** (as of 2026-01-01):
+- ❌ `"No matching bursts"` - Conditional based on filter
+- ❌ `"No facts match the current filters"` - Filter-specific messaging
+- ❌ `"No events found. Start capturing your career journey!"` - Additional guidance text
 
 ### Color Usage
 

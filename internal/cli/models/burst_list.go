@@ -113,33 +113,20 @@ func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the burst list
 func (m *BurstListModel) View() string {
+	// Render items using list.go pattern
+	items := m.renderListItems()
+
+	// Simplified empty state message - matching list.go
+	emptyStateMessage := "No bursts found"
+
+	// Create pagination info - matching list.go format: "Showing X-Y of Z bursts"
 	displayedBursts := m.getDisplayedBursts()
-
-	var items []string
-	if len(displayedBursts) > 0 {
-		for i, burstIdx := range displayedBursts {
-			if i >= m.height-5 {
-				break
-			}
-
-			burst := m.bursts[burstIdx]
-			items = append(items, m.renderBurstRow(burst, i == m.selectedIdx))
-
-			if m.expandedIndices[burstIdx] {
-				items = append(items, m.renderExpandedEvents(burst))
-			}
-		}
+	startIdx := 1
+	endIdx := len(displayedBursts)
+	if endIdx > m.height-5 {
+		endIdx = m.height - 5
 	}
-
-	var emptyStateMessage string
-	if m.filterBy != "" {
-		emptyStateMessage = "No matching bursts"
-	} else {
-		emptyStateMessage = "No bursts found"
-	}
-
-	// Create pagination info - standard format for all list models
-	paginationInfo := fmt.Sprintf("Showing %d of %d bursts", len(displayedBursts), len(m.bursts))
+	paginationInfo := fmt.Sprintf("Showing %d-%d of %d bursts", startIdx, endIdx, len(m.bursts))
 
 	listContainer := components.NewListContainer().
 		SetItems(items).
@@ -153,8 +140,6 @@ func (m *BurstListModel) View() string {
 
 	screenContent := lipgloss.JoinVertical(
 		lipgloss.Left,
-		m.renderHeader(),
-		"",
 		listContent,
 	)
 
@@ -173,38 +158,60 @@ func (m *BurstListModel) View() string {
 	return fullContent
 }
 
-// renderHeader renders the column headers
-func (m *BurstListModel) renderHeader() string {
-	nameCol := lipgloss.NewStyle().Width(30).Render("Name")
-	countCol := lipgloss.NewStyle().Width(8).Render("Events")
-	compCol := lipgloss.NewStyle().Width(15).Render("Competency")
-	dateCol := lipgloss.NewStyle().Width(12).Render("Created")
+// renderListItems renders burst items following list.go's pattern
+func (m *BurstListModel) renderListItems() []string {
+	var items []string
 
-	header := nameCol + " " + countCol + " " + compCol + " " + dateCol
-	return styles.HeaderSection.Render(header)
-}
-
-// renderBurstRow renders a single burst row
-func (m *BurstListModel) renderBurstRow(burst *career.Burst, isSelected bool) string {
-	name := truncateString(burst.Name, 28)
-	count := fmt.Sprintf("%d", len(burst.EventIDs))
-	competency := truncateString(burst.CompetencyFocus, 13)
-	date := burst.CreatedAt.Format("2006-01-02")
-
-	nameCol := lipgloss.NewStyle().Width(30).Render(name)
-	countCol := lipgloss.NewStyle().Width(8).Render(count)
-	compCol := lipgloss.NewStyle().Width(15).Render(competency)
-	dateCol := lipgloss.NewStyle().Width(12).Render(date)
-
-	row := nameCol + " " + countCol + " " + compCol + " " + dateCol
-
-	if isSelected {
-		row = styles.ListItemSelected.Render(row)
-	} else {
-		row = styles.ListItem.Render(row)
+	displayedBursts := m.getDisplayedBursts()
+	maxDisplay := m.height - 5
+	if len(displayedBursts) < maxDisplay {
+		maxDisplay = len(displayedBursts)
 	}
 
-	return row + "\n"
+	for i := 0; i < maxDisplay; i++ {
+		burstIdx := displayedBursts[i]
+		burst := m.bursts[burstIdx]
+
+		// Marker for selected item (matching list.go pattern)
+		marker := "  "
+		if i == m.selectedIdx {
+			marker = "▶ "
+		}
+
+		// Truncate burst name to 100 chars (matching list.go pattern)
+		text := burst.Name
+		if len(text) > 100 {
+			text = text[:97] + "..."
+		}
+
+		// Determine styling based on selection (matching list.go pattern)
+		itemStyle := styles.ListItem
+		if i == m.selectedIdx {
+			itemStyle = styles.ListItemSelected
+		}
+
+		// Render burst name
+		burstText := itemStyle.Render(marker + text)
+
+		// Render count, competency, and date as detail line
+		count := fmt.Sprintf("%d events", len(burst.EventIDs))
+		competency := truncateString(burst.CompetencyFocus, 20)
+		date := burst.CreatedAt.Format("2006-01-02")
+		detailLine := fmt.Sprintf("   %s | %s | %s",
+			styles.ListItem.Foreground(styles.ColorTextSecondary).Render(count),
+			styles.ListItem.Foreground(styles.ColorTextMuted).Render(competency),
+			styles.ListItem.Foreground(styles.ColorTextSecondary).Render(date),
+		)
+
+		items = append(items, burstText, detailLine, "")
+
+		// Add expanded events if this burst is expanded
+		if m.expandedIndices[burstIdx] {
+			items = append(items, m.renderExpandedEvents(burst))
+		}
+	}
+
+	return items
 }
 
 // renderExpandedEvents renders the event IDs for an expanded burst

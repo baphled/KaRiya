@@ -190,7 +190,8 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 	ginkgo.It("should show no matching message", func() {
 		model.filterBy = "NonExistent"
 		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("No matching bursts"))
+		// Updated to match standardized list.go empty state format
+		gomega.Expect(output).To(gomega.ContainSubstring("No bursts found"))
 	})
 
 	ginkgo.It("should update size on resize", func() {

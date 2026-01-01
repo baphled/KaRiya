@@ -70,7 +70,8 @@ var _ = ginkgo.Describe("FactListModel", func() {
 			model.SetFacts(facts)
 			result := model.View()
 			gomega.Expect(result).To(gomega.ContainSubstring("Facts"))
-			gomega.Expect(result).To(gomega.ContainSubstring("Showing 3 of 3"))
+			// Updated to match standardized list.go pagination format
+			gomega.Expect(result).To(gomega.ContainSubstring("Showing 1-3 of 3 facts"))
 		})
 
 		ginkgo.It("should show selection count", func() {
@@ -78,7 +79,9 @@ var _ = ginkgo.Describe("FactListModel", func() {
 			model.selectedFacts["fact-1"] = true
 			model.selectedFacts["fact-2"] = true
 			result := model.View()
-			gomega.Expect(result).To(gomega.ContainSubstring("2 selected"))
+			// Selection count is no longer shown in pagination - removed per list.go standardization
+			// gomega.Expect(result).To(gomega.ContainSubstring("2 selected"))
+			gomega.Expect(result).To(gomega.ContainSubstring("Showing 1-3 of 3 facts"))
 		})
 	})
 
