@@ -154,13 +154,13 @@
   - [x] 3.2.5 Verify header and footer integration
   - [x] 3.2.6 Run existing tests; verify zero regressions
   - [x] 3.2.7 Add integration test for list with containers
-- [ ] 3.3 Refactor DetailsModel to use containers
-  - [ ] 3.3.1 Wrap view with ScreenContainer
-  - [ ] 3.3.2 Use CardContainer for grouping related details
-  - [ ] 3.3.3 Use SectionContainer for data sections
-  - [ ] 3.3.4 Verify style consistency with other models
-  - [ ] 3.3.5 Run existing tests; verify zero regressions
-  - [ ] 3.3.6 Add integration test for details view with containers
+- [x] 3.3 Refactor DetailsModel to use containers
+  - [x] 3.3.1 Wrap view with ScreenContainer
+  - [x] 3.3.2 Use SectionContainer for grouping related details
+  - [x] 3.3.3 Use SectionContainer for data sections
+  - [x] 3.3.4 Verify style consistency with other models
+  - [x] 3.3.5 Run existing tests; verify zero regressions
+  - [x] 3.3.6 Add integration test for details view with containers
 - [ ] 3.4 Refactor ConfirmationDialogModel to use ModalContainer
   - [ ] 3.4.1 Replace manual dialog rendering with ModalContainer
   - [ ] 3.4.2 Update button layout to use container's button support
