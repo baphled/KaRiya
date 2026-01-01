@@ -1,8 +1,8 @@
 package components
 
 import (
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // PaddingMode defines the padding strategy for a screen container
@@ -21,12 +21,12 @@ const (
 // It is a stateless rendering component that applies padding and width constraints
 // to ensure consistent screen layout across the application.
 type ScreenContainer struct {
-	content           string
-	paddingMode       PaddingMode
-	customVertical    int
-	customHorizontal  int
-	maxWidth          int
-	useCustomPadding  bool
+	content          string
+	paddingMode      PaddingMode
+	customVertical   int
+	customHorizontal int
+	maxWidth         int
+	useCustomPadding bool
 }
 
 // NewScreenContainer creates a new ScreenContainer with default padding (Normal mode).
@@ -95,4 +95,3 @@ func (sc *ScreenContainer) getPadding() (int, int) {
 		return 1, 2
 	}
 }
-

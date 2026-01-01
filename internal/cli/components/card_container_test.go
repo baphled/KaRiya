@@ -330,4 +330,3 @@ func TestCardContainerSectionOrdering(t *testing.T) {
 		t.Error("expected sections to appear in order: header, body, footer")
 	}
 }
-

@@ -3,22 +3,22 @@ package components
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // CardContainer renders a boxed content container with optional header, body, and footer sections.
 // It provides a consistent card-like appearance with borders, padding, and background styling.
 // CardContainer is a stateless rendering component.
 type CardContainer struct {
-	header            string
-	body              string
-	footer            string
-	backgroundColor   lipgloss.Color
-	borderColor       lipgloss.Color
-	hasHeader         bool
-	hasBody           bool
-	hasFooter         bool
+	header          string
+	body            string
+	footer          string
+	backgroundColor lipgloss.Color
+	borderColor     lipgloss.Color
+	hasHeader       bool
+	hasBody         bool
+	hasFooter       bool
 }
 
 // NewCardContainer creates a new CardContainer with default styling.
@@ -109,4 +109,3 @@ func (cc *CardContainer) Render() string {
 
 	return cardStyle.Render(content)
 }
-

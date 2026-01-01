@@ -3,8 +3,8 @@ package components
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // FormFieldContainer renders a form field with label, input, error, and hint sections.
@@ -12,15 +12,15 @@ import (
 // validation states and helpful hints.
 // FormFieldContainer is a stateless rendering component.
 type FormFieldContainer struct {
-	label    string
-	input    string
-	error    string
-	hint     string
+	label     string
+	input     string
+	error     string
+	hint      string
 	isFocused bool
-	hasLabel bool
-	hasInput bool
-	hasError bool
-	hasHint  bool
+	hasLabel  bool
+	hasInput  bool
+	hasError  bool
+	hasHint   bool
 }
 
 // NewFormFieldContainer creates a new FormFieldContainer.
@@ -118,4 +118,3 @@ func (ffc *FormFieldContainer) Render() string {
 
 	return strings.Join(parts, "\n")
 }
-

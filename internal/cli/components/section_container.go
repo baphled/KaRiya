@@ -3,18 +3,18 @@ package components
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // SectionContainer groups content with a title and consistent spacing.
 // It provides visual separation and organization of related content areas.
 // SectionContainer is a stateless rendering component.
 type SectionContainer struct {
-	title       string
-	content     string
-	hasTitle    bool
-	spacing     int
+	title    string
+	content  string
+	hasTitle bool
+	spacing  int
 }
 
 // NewSectionContainer creates a new SectionContainer with default spacing.
@@ -68,4 +68,3 @@ func (sc *SectionContainer) Render() string {
 
 	return strings.Join(parts, "")
 }
-

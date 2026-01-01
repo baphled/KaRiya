@@ -3,7 +3,6 @@ package components
 import (
 	"strings"
 	"testing"
-
 )
 
 func TestNewSectionContainer(t *testing.T) {
@@ -277,4 +276,3 @@ func TestSectionContainerSpecialCharacters(t *testing.T) {
 		t.Error("expected rendered output to contain special characters")
 	}
 }
-
