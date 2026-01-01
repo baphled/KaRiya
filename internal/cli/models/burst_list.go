@@ -29,8 +29,8 @@ type BurstListModel struct {
 	bursts          []*career.Burst
 	selectedIdx     int
 	expandedIndices map[int]bool
-	filterBy        string // Competency focus filter
-	sortBy          string // "date", "event_count", "name"
+	filterBy        string
+	sortBy          string
 	width           int
 	height          int
 }
@@ -59,13 +59,11 @@ func (m *BurstListModel) Init() tea.Cmd {
 // loadBursts loads bursts from the service
 func (m *BurstListModel) loadBursts() tea.Cmd {
 	return func() tea.Msg {
-		// Get burst repository from service
 		burstRepo := m.service.GetBurstRepository()
 		if burstRepo == nil {
 			return BurstsLoadedMsg{Bursts: []*career.Burst{}, Err: fmt.Errorf("burst repository not configured")}
 		}
 
-		// Load bursts from repository
 		bursts, err := burstRepo.List(m.ctx, careerrepo.BurstListFilters{Limit: 1000})
 		return BurstsLoadedMsg{Bursts: bursts, Err: err}
 	}
@@ -80,10 +78,7 @@ func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case BurstsLoadedMsg:
-		if msg.Err != nil {
-			// Handle error - for now just log it and continue with empty list
-			// In the future we could show an error message to the user
-		} else {
+		if msg.Err == nil {
 			m.bursts = msg.Bursts
 		}
 		return m, nil
@@ -92,35 +87,23 @@ func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "up", "k":
 			m.prevItem()
-
 		case "down", "j":
 			m.nextItem()
-
 		case "pgup", "ctrl+b":
 			m.prevPage()
-
 		case "pgdn", "ctrl+f":
 			m.nextPage()
-
 		case "home", "g":
 			m.goToFirstItem()
-
 		case "end", "G":
 			m.goToLastItem()
-
 		case " ", "space":
 			m.expandedIndices[m.selectedIdx] = !m.expandedIndices[m.selectedIdx]
-
 		case "esc":
-			// Handle escape key for back navigation
 			return m, func() tea.Msg { return BackMsg{} }
-
 		case "q", "ctrl+c":
-			// Handle quit request
 			return m, func() tea.Msg { return QuitMsg{} }
-
 		case "enter":
-			// Handle selection/expansion
 			m.expandedIndices[m.selectedIdx] = !m.expandedIndices[m.selectedIdx]
 		}
 	}
@@ -128,50 +111,64 @@ func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-
-// View renders the burst list
 // View renders the burst list
 func (m *BurstListModel) View() string {
 	displayedBursts := m.getDisplayedBursts()
 
-	if len(displayedBursts) == 0 {
-		if m.filterBy != "" {
-			return styles.ErrorBox.Render("No matching bursts")
-		}
-		return styles.InfoBox.Render("No bursts found")
-	}
-
-	// Create list items
 	var items []string
-	for i, burstIdx := range displayedBursts {
-		if i >= m.height-5 {
-			// Stop rendering if we exceed visible height
-			break
-		}
+	if len(displayedBursts) > 0 {
+		for i, burstIdx := range displayedBursts {
+			if i >= m.height-5 {
+				break
+			}
 
-		burst := m.bursts[burstIdx]
-		items = append(items, m.renderBurstRow(burst, i == m.selectedIdx))
+			burst := m.bursts[burstIdx]
+			items = append(items, m.renderBurstRow(burst, i == m.selectedIdx))
 
-		// Render expanded events if this burst is expanded
-		if m.expandedIndices[burstIdx] {
-			items = append(items, m.renderExpandedEvents(burst))
+			if m.expandedIndices[burstIdx] {
+				items = append(items, m.renderExpandedEvents(burst))
+			}
 		}
 	}
 
-	// Use header and footer components
+	var emptyStateMessage string
+	if m.filterBy != "" {
+		emptyStateMessage = "No matching bursts"
+	} else {
+		emptyStateMessage = "No bursts found"
+	}
+
+	// Create pagination info - standard format for all list models
+	paginationInfo := fmt.Sprintf("%d/%d bursts", len(displayedBursts), len(m.bursts))
+
+	listContainer := components.NewListContainer().
+		SetItems(items).
+		SetEmptyStateMessage(emptyStateMessage).
+		SetPaginationInfo(paginationInfo)
+
+	listContent := listContainer.Render()
+
 	headerView := components.NewHeader("💥 Bursts", m.width).View()
 	footerView := components.NewFooter(m.width).View()
 
-	// Combine all sections
-	fullContent := strings.Join([]string{
-		headerView,
-		"",
+	screenContent := lipgloss.JoinVertical(
+		lipgloss.Left,
 		m.renderHeader(),
 		"",
-		strings.Join(items, "\n"),
+		listContent,
+	)
+
+	screenContainer := components.NewScreenContainer(screenContent).
+		WithPaddingMode(components.PaddingNormal)
+
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		headerView,
+		"",
+		screenContainer.Render(),
 		"",
 		footerView,
-	}, "\n")
+	)
 
 	return fullContent
 }
@@ -201,7 +198,6 @@ func (m *BurstListModel) renderBurstRow(burst *career.Burst, isSelected bool) st
 
 	row := nameCol + " " + countCol + " " + compCol + " " + dateCol
 
-	// Apply selection highlighting
 	if isSelected {
 		row = styles.ListItemSelected.Render(row)
 	} else {
@@ -221,7 +217,6 @@ func (m *BurstListModel) renderExpandedEvents(burst *career.Burst) string {
 		if i > 0 {
 			sb.WriteString(", ")
 		}
-		// Truncate event ID for display
 		truncated := truncateString(eventID, 8)
 		sb.WriteString(styles.InfoText.Render(truncated))
 	}
@@ -230,31 +225,16 @@ func (m *BurstListModel) renderExpandedEvents(burst *career.Burst) string {
 	return sb.String()
 }
 
-// renderFooter renders the footer with navigation hints
-func (m *BurstListModel) renderFooter() string {
-	hints := []string{
-		"↑/↓: Navigate",
-		"Space: Expand",
-		"f: Filter",
-		"s: Sort",
-		"Esc: Back",
-	}
-	footerText := strings.Join(hints, " • ")
-	return styles.HeaderSection.Render(footerText)
-}
-
 // getDisplayedBursts returns the filtered and sorted bursts as indices
 func (m *BurstListModel) getDisplayedBursts() []int {
 	var displayed []int
 
-	// Filter bursts
 	for i, burst := range m.bursts {
 		if m.filterBy == "" || burst.CompetencyFocus == m.filterBy {
 			displayed = append(displayed, i)
 		}
 	}
 
-	// Sort displayed burst indices
 	m.sortBursts(displayed)
 
 	return displayed
@@ -339,7 +319,7 @@ func (m *BurstListModel) prevItem() {
 // nextPage moves to the next page
 func (m *BurstListModel) nextPage() {
 	displayedBursts := m.getDisplayedBursts()
-	pageSize := m.height - 5 // Account for header and footer
+	pageSize := m.height - 5
 	newIdx := m.selectedIdx + pageSize
 	if newIdx >= len(displayedBursts) {
 		newIdx = len(displayedBursts) - 1
@@ -349,7 +329,7 @@ func (m *BurstListModel) nextPage() {
 
 // prevPage moves to the previous page
 func (m *BurstListModel) prevPage() {
-	pageSize := m.height - 5 // Account for header and footer
+	pageSize := m.height - 5
 	newIdx := m.selectedIdx - pageSize
 	if newIdx < 0 {
 		newIdx = 0
