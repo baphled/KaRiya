@@ -11,6 +11,7 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // BulkOperationsMsg is sent to open bulk operations for selected events
@@ -44,6 +45,8 @@ type MetadataReviewModel struct {
 	parsingWarnings  map[string][]string        // eventID -> warnings
 	duplicateStatus  map[string]string          // eventID -> original event ID (empty if not duplicate)
 	helpFooter       components.HelpFooterModel // Help footer
+	header           components.HeaderModel     // Header component
+	footer           components.FooterModel     // Footer component
 	breadcrumbs      []string                   // Navigation breadcrumb trail
 }
 
@@ -64,6 +67,8 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 		parsingWarnings:   make(map[string][]string),
 		duplicateStatus:   make(map[string]string),
 		helpFooter:        components.NewHelpFooter("metadata_review", 80),
+		header:            components.NewHeader("Metadata Review", 80),
+		footer:            components.NewFooter(80),
 	}
 
 	// Load events
@@ -72,7 +77,6 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 	return model
 }
 
-// loadEvents loads events and calculates quality scores
 // NewMetadataReviewModelForImport creates a metadata review model for imported events
 func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Context, importedEventIDs []string) *MetadataReviewModel {
 	calculator := careerservice.NewDataQualityCalculator()
@@ -97,6 +101,9 @@ func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Con
 		fieldOrigins:     make(map[string]map[string]bool),
 		parsingWarnings:  make(map[string][]string),
 		duplicateStatus:  make(map[string]string),
+		helpFooter:       components.NewHelpFooter("metadata_review", 80),
+		header:           components.NewHeader("Metadata Review", 80),
+		footer:           components.NewFooter(80),
 	}
 
 	// Load events (will be filtered to only imported)
@@ -197,13 +204,17 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.helpFooter.SetWidth(msg.Width)
+		m.header.SetWidth(msg.Width)
+		m.footer.SetWidth(msg.Width)
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q", "esc":
-			return m, nil
-		case "ctrl+c":
-			return m, nil
+		case "esc":
+			// Signal back navigation to parent
+			return m, func() tea.Msg { return BackMsg{} }
+		case "ctrl+c", "q":
+			// Signal quit to parent
+			return m, func() tea.Msg { return QuitMsg{} }
 		case "up", "k":
 			m.prevItem()
 		case "down", "j":
@@ -272,117 +283,129 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *MetadataReviewModel) View() string {
 	var content []string
 
-	// Header with breadcrumbs
-	header := components.NewHeader("Metadata Review", m.width)
-	header.SetBreadcrumbs(m.breadcrumbs)
-	content = append(content, header.View())
-
-	// Status bar
-	statusText := fmt.Sprintf("Showing %d events | Filter: %s | Sort: %s | Press 'f' to filter, 's' to sort",
-		len(m.events), m.filterMode, m.sortBy)
-	content = append(content, styles.InputHint.Render(statusText))
-	content = append(content, "")
-
 	// Error handling
 	if m.err != nil {
-		content = append(content, styles.ErrorBox.Render(fmt.Sprintf("Error loading events: %v. Press 'r' to retry", m.err)))
-		return strings.Join(content, "\n")
+		errorMsg := fmt.Sprintf("Error loading events: %v\n\nPress 'r' to retry or 'esc' to cancel", m.err)
+		content = append(content, styles.ErrorBox.Render(errorMsg))
 	}
 
-	// Empty state
-	if len(m.events) == 0 {
-		content = append(content, styles.InfoText.Render("No events to review. Start capturing events to improve their metadata."))
-		return strings.Join(content, "\n")
+	// Render list using ListContainer
+	listContent := m.renderListWithContainer()
+	content = append(content, listContent)
+
+	// Help footer with keyboard shortcuts
+	m.helpFooter.SetWidth(styles.MaxWidth(80))
+	helpFooterContent := m.helpFooter.View()
+	content = append(content, helpFooterContent)
+
+	// Combine all content
+	fullListContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		content...,
+	)
+
+	// Wrap in a card
+	listCard := styles.CardBase.Render(fullListContent)
+
+	// Use header and footer components
+	m.header.SetBreadcrumbs(m.breadcrumbs)
+	headerView := m.header.View()
+	footerView := m.footer.View()
+
+	// Combine all sections
+	fullContent := lipgloss.JoinVertical(
+		lipgloss.Left,
+		headerView,
+		"",
+		listCard,
+		"",
+		footerView,
+	)
+
+	return fullContent
+}
+
+// renderListWithContainer renders the list using ListContainer component
+func (m *MetadataReviewModel) renderListWithContainer() string {
+	// Render items using list items rendering
+	items := m.renderListItems()
+
+	// Simplified empty state message
+	emptyStateMessage := "No events to review. Start capturing events to improve their metadata."
+
+	// Create pagination info
+	displayedEvents := m.events
+	startIdx := 1
+	endIdx := len(displayedEvents)
+	if endIdx > m.height-5 {
+		endIdx = m.height - 5
 	}
 
-	// Events list
+	// Include status info in pagination
+	filterInfo := fmt.Sprintf("Filter: %s | Sort: %s", m.filterMode, m.sortBy)
+	paginationInfo := fmt.Sprintf("Showing %d-%d of %d events | %s", startIdx, endIdx, len(m.events), filterInfo)
+
+	listContainer := components.NewListContainer().
+		SetItems(items).
+		SetEmptyStateMessage(emptyStateMessage).
+		SetPaginationInfo(paginationInfo)
+
+	return listContainer.Render()
+}
+
+// renderListItems renders all events as formatted strings for display
+func (m *MetadataReviewModel) renderListItems() []string {
+	var items []string
+
 	for i, event := range m.events {
-		var eventContent string
-
-		if i == m.selectedIdx {
-			eventContent = m.renderSelectedEvent(event, i)
-		} else {
-			eventContent = m.renderEventItem(event, i)
+		score := m.qualityScores[event.ID]
+		if score == nil {
+			continue
 		}
 
-		content = append(content, eventContent)
+		// Marker for selected item
+		marker := "  "
+		if i == m.selectedIdx {
+			marker = "▶ "
+		}
+
+		// Truncate text to 60 chars
+		text := event.Text
+		if len(text) > 60 {
+			text = text[:57] + "..."
+		}
+
+		// Format date
+		dateStr := event.Date.Format("2006-01-02")
+
+		// Quality level
+		quality := string(score.Level)
+
+		// Build item
+		item := fmt.Sprintf("%s%s | %s | %s | %s (%d%%)",
+			marker,
+			text,
+			dateStr,
+			event.Company,
+			quality,
+			score.Score,
+		)
+
+		// Determine styling based on selection
+		itemStyle := styles.ListItem
+		if i == m.selectedIdx {
+			itemStyle = styles.ListItemSelected
+		}
+
+		items = append(items, itemStyle.Render(item))
 
 		// Show expanded view if selected
 		if i == m.expandedIdx {
-			content = append(content, m.renderExpandedEvent(event))
+			items = append(items, m.renderExpandedEvent(event))
 		}
 	}
 
-	// Footer
-	// Help footer
-	m.helpFooter.SetWidth(styles.MaxWidth(80))
-	footer := m.helpFooter.View()
-	content = append(content, "")
-	content = append(content, footer)
-
-	return strings.Join(content, "\n")
-}
-
-// renderEventItem renders a compact event item
-func (m *MetadataReviewModel) renderEventItem(event *career.CareerEvent, idx int) string {
-	score := m.qualityScores[event.ID]
-	if score == nil {
-		return ""
-	}
-
-	// Truncate text to 60 chars
-	text := event.Text
-	if len(text) > 60 {
-		text = text[:57] + "..."
-	}
-
-	// Format date
-	dateStr := event.Date.Format("2006-01-02")
-
-	// Quality level
-	quality := string(score.Level)
-
-	// Build item
-	item := fmt.Sprintf("  %s | %s | %s | %s (%d%%)",
-		text,
-		dateStr,
-		event.Company,
-		quality,
-		score.Score,
-	)
-
-	return styles.ListItem.Render(item)
-}
-
-// renderSelectedEvent renders a selected event with highlight
-func (m *MetadataReviewModel) renderSelectedEvent(event *career.CareerEvent, idx int) string {
-	score := m.qualityScores[event.ID]
-	if score == nil {
-		return ""
-	}
-
-	// Truncate text to 60 chars
-	text := event.Text
-	if len(text) > 60 {
-		text = text[:57] + "..."
-	}
-
-	// Format date
-	dateStr := event.Date.Format("2006-01-02")
-
-	// Quality level
-	quality := string(score.Level)
-
-	// Build item with selection marker
-	item := fmt.Sprintf("▶ %s | %s | %s | %s (%d%%)",
-		text,
-		dateStr,
-		event.Company,
-		quality,
-		score.Score,
-	)
-
-	return styles.ListItemSelected.Render(item)
+	return items
 }
 
 // renderExpandedEvent renders the full event details
