@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
@@ -129,6 +130,7 @@ func (m *BurstListModel) handleKeyMsg(msg tea.KeyMsg) tea.Model {
 }
 
 // View renders the burst list
+// View renders the burst list
 func (m *BurstListModel) View() string {
 	displayedBursts := m.getDisplayedBursts()
 
@@ -139,13 +141,8 @@ func (m *BurstListModel) View() string {
 		return styles.InfoBox.Render("No bursts found")
 	}
 
-	var sb strings.Builder
-
-	// Render header
-	sb.WriteString(m.renderHeader())
-	sb.WriteString("\n")
-
-	// Render burst list
+	// Create list items
+	var items []string
 	for i, burstIdx := range displayedBursts {
 		if i >= m.height-5 {
 			// Stop rendering if we exceed visible height
@@ -153,21 +150,31 @@ func (m *BurstListModel) View() string {
 		}
 
 		burst := m.bursts[burstIdx]
-		sb.WriteString(m.renderBurstRow(burst, i == m.selectedIdx))
+		items = append(items, m.renderBurstRow(burst, i == m.selectedIdx))
 
 		// Render expanded events if this burst is expanded
 		if m.expandedIndices[burstIdx] {
-			sb.WriteString(m.renderExpandedEvents(burst))
+			items = append(items, m.renderExpandedEvents(burst))
 		}
 	}
 
-	// Render footer
-	sb.WriteString("\n")
-	sb.WriteString(m.renderFooter())
+	// Use header and footer components
+	headerView := components.NewHeader("💥 Bursts", m.width).View()
+	footerView := components.NewFooter(m.width).View()
 
-	return sb.String()
+	// Combine all sections
+	fullContent := strings.Join([]string{
+		headerView,
+		"",
+		m.renderHeader(),
+		"",
+		strings.Join(items, "\n"),
+		"",
+		footerView,
+	}, "\n")
+
+	return fullContent
 }
-
 // renderHeader renders the column headers
 func (m *BurstListModel) renderHeader() string {
 	nameCol := lipgloss.NewStyle().Width(30).Render("Name")

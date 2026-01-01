@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -123,25 +124,66 @@ func (flm *FactListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the fact list
+// View renders the fact list
 func (flm *FactListModel) View() string {
 	if len(flm.filtered) == 0 {
 		return flm.renderEmpty()
 	}
 
-	var parts []string
+	// Create list items
+	var items []string
+	maxIdx := flm.height - 5 // Account for header and footer
+	endIdx := flm.scrollOffset + maxIdx
+	if endIdx > len(flm.filtered) {
+		endIdx = len(flm.filtered)
+	}
 
-	// Header
-	parts = append(parts, flm.renderHeader())
+	for i := flm.scrollOffset; i < endIdx && i < len(flm.filtered); i++ {
+		fact := flm.filtered[i]
+		isFocused := (i == flm.focusedIdx)
+		isSelected := flm.selectedFacts[fact.ID]
+		item := flm.renderFactItem(fact, isFocused, isSelected)
+		items = append(items, item)
+	}
 
-	// Facts list
-	parts = append(parts, flm.renderFacts())
+	// Build pagination info
+	paginationInfo := fmt.Sprintf("%d/%d facts", len(flm.filtered), len(flm.facts))
+	if len(flm.selectedFacts) > 0 {
+		paginationInfo += fmt.Sprintf(" | %d selected", len(flm.selectedFacts))
+	}
 
-	// Footer with keyboard shortcuts
-	parts = append(parts, flm.renderFooter())
+	// Build title
+	title := "📋 Facts"
+	if flm.competencyFilter != "" {
+		title += fmt.Sprintf(" (Competency: %s)", flm.competencyFilter)
+	}
+	if flm.roleFitFilter != "" {
+		title += fmt.Sprintf(" (Role: %s)", flm.roleFitFilter)
+	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+	// Use header and footer components
+	headerView := components.NewHeader(title, flm.width).View()
+	footerView := components.NewFooter(flm.width).View()
+
+	// Create list container
+	listContent := strings.Join(items, "\n")
+	if listContent == "" {
+		listContent = "No facts found"
+	}
+
+	// Combine all sections
+	fullContent := strings.Join([]string{
+		headerView,
+		"",
+		paginationInfo,
+		"",
+		listContent,
+		"",
+		footerView,
+	}, "\n")
+
+	return fullContent
 }
-
 // renderHeader renders the header with title and filters
 func (flm *FactListModel) renderHeader() string {
 	title := "📋 Facts"
