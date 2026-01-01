@@ -197,6 +197,71 @@
   - [x] 3.8.5 Run existing tests; verify zero regressions
   - [x] 3.8.6 Add integration test for burst list
 
+### 3.9 Standardize List Model Rendering and Visual Consistency
+**Priority**: CRITICAL - Users report inconsistent look and feel between list views
+
+- [ ] 3.9.1 Audit current rendering inconsistencies across list models
+  - [ ] 3.9.1.1 Compare list.go View() output format with burst_list.go and fact_list.go
+  - [ ] 3.9.1.2 Document rendering differences (container-based vs strings.Join)
+  - [ ] 3.9.1.3 Verify pagination display is identical across all three models
+  - [ ] 3.9.1.4 Verify empty state messages are consistent
+  - [ ] 3.9.1.5 Verify selected item highlighting is identical across all three
+  - [ ] 3.9.1.6 Create audit report with visual screenshots/output examples
+
+- [ ] 3.9.2 Standardize rendering pipeline across all list models
+  - [ ] 3.9.2.1 Identify root cause: fact_list.go uses strings.Join, others don't
+  - [ ] 3.9.2.2 Refactor fact_list.go to use container-based rendering like list.go/burst_list.go
+  - [ ] 3.9.2.3 Ensure identical visual output for all three list types
+  - [ ] 3.9.2.4 Verify column alignment and spacing is pixel-perfect across models
+  - [ ] 3.9.2.5 Ensure pagination display format matches across all three models
+  - [ ] 3.9.2.6 Test with lists of varying sizes (empty, 1 item, full page, multiple pages)
+
+- [ ] 3.9.3 Standardize key handling patterns
+  - [ ] 3.9.3.1 Audit burst_list.go string-based key matching vs others' type-based approach
+  - [ ] 3.9.3.2 Decide on single consistent pattern (recommend type-based like list.go)
+  - [ ] 3.9.3.3 Update burst_list.go to match chosen pattern if needed
+  - [ ] 3.9.3.4 Verify all three models handle keys identically: j/k, g/G, PageUp/PageDown
+  - [ ] 3.9.3.5 Ensure escape/q/ctrl+c behavior is identical across all three
+
+- [ ] 3.9.4 Implement rendering validation tests
+  - [ ] 3.9.4.1 Create visual regression test comparing list.go, burst_list.go, fact_list.go output
+  - [ ] 3.9.4.2 Add test verifying identical pagination format across all three models
+  - [ ] 3.9.4.3 Add test verifying identical empty state display
+  - [ ] 3.9.4.4 Add test verifying identical item selection highlighting
+  - [ ] 3.9.4.5 Test all three models with same data to verify visually identical output
+  - [ ] 3.9.4.6 Add regression test preventing future rendering divergence
+
+- [ ] 3.9.5 Standardize style application across list models
+  - [ ] 3.9.5.1 Verify all three models use exported color constants from styles/constants_export.go
+  - [ ] 3.9.5.2 Ensure no inline hex colors remain in any list model
+  - [ ] 3.9.5.3 Verify consistent use of GetColor* and GetStyle* functions
+  - [ ] 3.9.5.4 Check for any magic numbers or hardcoded values in rendering
+
+- [ ] 3.9.6 Verify user-facing consistency
+  - [ ] 3.9.6.1 Run all three list views in actual application
+  - [ ] 3.9.6.2 Navigate through career events (list.go), facts (fact_list.go), bursts (burst_list.go)
+  - [ ] 3.9.6.3 Verify visual appearance is identical across all three views
+  - [ ] 3.9.6.4 Verify navigation behavior is identical (j/k, g/G, PageUp/Down, scrolling)
+  - [ ] 3.9.6.5 Verify pagination display is identical
+  - [ ] 3.9.6.6 Verify empty state messages and styling is consistent
+  - [ ] 3.9.6.7 Verify selected items highlight identically
+  - [ ] 3.9.6.8 Create visual sign-off documentation with screenshots
+
+- [ ] 3.9.7 Document list model rendering specification
+  - [ ] 3.9.7.1 Create specification document for standard list model rendering
+  - [ ] 3.9.7.2 Document expected layout, spacing, colors, and styling
+  - [ ] 3.9.7.3 Document navigation behavior expectations
+  - [ ] 3.9.7.4 Create examples showing correct vs incorrect list rendering
+  - [ ] 3.9.7.5 Create guidelines for future list model implementations
+
+- [ ] 3.9.8 Final verification and testing
+  - [ ] 3.9.8.1 Run full test suite: `go test ./...` - must have 0 failures
+  - [ ] 3.9.8.2 Run race condition detection: `go test -race ./...` - must have 0 races
+  - [ ] 3.9.8.3 Check test coverage - must maintain 76%+ (target 80%+)
+  - [ ] 3.9.8.4 Visual verification across all three list types complete
+  - [ ] 3.9.8.5 Performance verification - no regressions in rendering speed
+  - [ ] 3.9.8.6 Navigation performance - j/k/PageUp/PageDown response time acceptable
+
 ### 4.0 Standardize Interaction Patterns and Component Usage
 - [ ] 4.1 Audit keyboard shortcuts across all 8 refactored models
   - [ ] 4.1.1 Document current shortcuts for each model type
@@ -299,6 +364,13 @@
 - [x] All 6 container components created and tested
 - [x] All style constants properly exported and documented
 - [x] All 8 high-impact models refactored to use containers
+- [ ] **All list models have consistent rendering and visual appearance**
+  - [ ] list.go, burst_list.go, and fact_list.go render with identical look and feel
+  - [ ] All three list models use the same rendering pipeline (container-based)
+  - [ ] Pagination display is identical across all three list types
+  - [ ] Empty state handling is consistent across all three lists
+  - [ ] Selected item highlighting is identical across all three lists
+  - [ ] Navigation behavior (j/k, g/G, PageUp/Down) is identical across all three lists
 - [ ] All keyboard shortcuts standardized across models
 - [ ] All models render help footer with correct shortcuts
 - [ ] Error display standardized across all models
@@ -340,13 +412,18 @@
 
 ## Estimated Timeline
 
-- **Phase 1 (Containers)**: 1-2 weeks (tasks 1.1-1.8)
-- **Phase 2 (Style Export)**: 3-4 days (task 2.1-2.5)
-- **Phase 3 (Model Adoption)**: 2-3 weeks (task 3.1-3.8)
+- **Phase 1 (Containers)**: 1-2 weeks (tasks 1.1-1.8) ✅ COMPLETE
+- **Phase 2 (Style Export)**: 3-4 days (task 2.1-2.5) ✅ COMPLETE
+- **Phase 3 (Model Adoption)**: 2-3 weeks (tasks 3.1-3.8) ✅ COMPLETE
+- **Phase 3.5 (List Model Standardization - NEW CRITICAL TASK)**: 3-5 days (task 3.9)
+  - Audit rendering inconsistencies
+  - Refactor to unified rendering pipeline
+  - Verify visual consistency across all three list types
+  - Implement regression tests
 - **Phase 4 (Standardization)**: 1-2 weeks (task 4.1-4.8)
 - **Phase 5 (Documentation)**: 1 week (task 5.1-5.8)
 
-**Total Estimated Duration**: 6-8 weeks (vs 10-14 weeks in original PRD)
+**Total Estimated Duration**: 7-9 weeks (includes critical list model standardization)
 
 ## Success Metrics
 
@@ -367,10 +444,12 @@
 
 ## Document Information
 
-- **Version**: 1.0
+- **Version**: 1.1
 - **Created**: 2025-12-31
-- **Status**: Phase 1 & 2 Complete - Moving to Phase 3
-- **Priority**: High (Foundational for Phase 3 of UX Enhancement)
+- **Updated**: 2026-01-01
+- **Status**: Phases 1-3 Complete - Phase 3.5 CRITICAL TASK ADDED
+- **Priority**: CRITICAL (List Model Rendering Inconsistencies Reported)
+- **Current Focus**: Task 3.9 - Standardize List Model Rendering and Visual Consistency
 - **Base PRD**: `/docs/features/06-model-consistency.md`
 - **Implementation Strategy**: `/docs/features/06-model-consistency-implementation-assessment.md`
 - **Related Tasks**: `/tasks/tasks-05-ux-enhancement.md`

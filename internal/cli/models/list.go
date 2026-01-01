@@ -225,13 +225,18 @@ func (m *ListModel) renderListWithContainer() string {
 	items := m.renderListItems()
 
 	// Create pagination info
-	totalPages := m.getTotalPages()
-	paginationText := fmt.Sprintf("Page %d of %d (%d total events)", m.currentPage, totalPages, m.totalCount)
+	startIdx := (m.currentPage-1)*m.pageSize + 1
+	endIdx := startIdx + len(m.events) - 1
+	if len(m.events) == 0 {
+		startIdx = 0
+		endIdx = 0
+	}
+	paginationText := fmt.Sprintf("Showing %d-%d of %d events", startIdx, endIdx, m.totalCount)
 
 	// Render using ListContainer
 	listContainer := components.NewListContainer().
 		SetItems(items).
-		SetEmptyStateMessage("No events found. Start capturing your career journey!").
+		SetEmptyStateMessage("No events found").
 		SetPaginationInfo(paginationText)
 
 	return listContainer.Render()
