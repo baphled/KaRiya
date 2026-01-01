@@ -85,54 +85,67 @@ func (m *ActionMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renders the action menu
+// View renders the action menu using the ScreenContainer pattern
 func (m *ActionMenuModel) View() string {
-	// Header
-	headerContent := m.header.View()
+	headerContent := m.renderHeader()
+	contentArea := m.renderContent()
+	footerContent := m.renderFooter()
+
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		headerContent,
+		"",
+		contentArea,
+		"",
+		footerContent,
+	)
+}
+
+// renderHeader renders the header section
+func (m *ActionMenuModel) renderHeader() string {
+	m.header.SetWidth(m.width)
+	return m.header.View()
+}
+
+// renderContent renders the main content (event summary and action options)
+func (m *ActionMenuModel) renderContent() string {
+	var content []string
 
 	// Event summary
 	eventSummary := lipgloss.NewStyle().
 		Foreground(styles.ColorTextSecondary).
 		Render(m.truncateText(m.event.Text, 40))
+	content = append(content, eventSummary)
+	content = append(content, "")
 
-	// Render options
-	var optionsContent strings.Builder
+	// Render action options
 	actionLabels := []string{"View Event", "Edit Event", "Delete Event"}
 	for i, option := range m.options {
 		var optionStyle lipgloss.Style
+		var prefix string
 		if i == m.selectedIdx {
 			optionStyle = styles.ListItemSelected
-			optionsContent.WriteString("▶ ")
+			prefix = "▶ "
 		} else {
 			optionStyle = styles.ListItem
-			optionsContent.WriteString("  ")
+			prefix = "  "
 		}
 
-		optionsContent.WriteString(optionStyle.Render(actionLabels[option]))
-		optionsContent.WriteString("\n")
+		optionText := prefix + actionLabels[option]
+		content = append(content, optionStyle.Render(optionText))
 	}
 
-	// Help footer
-	m.helpFooter.SetWidth(styles.MaxWidth(m.width))
-	helpFooterContent := m.helpFooter.View()
+	// Wrap content in ScreenContainer for consistent padding
+	screenContainer := components.NewScreenContainer(strings.Join(content, "\n")).
+		WithPaddingMode(components.PaddingNormal)
 
-	// Combine all content
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerContent,
-		"",
-		eventSummary,
-		"",
-		optionsContent.String(),
-		helpFooterContent,
-	)
+	return screenContainer.Render()
+}
 
-	// Wrap in a card
-	card := styles.CardBase.
-		Width(styles.MaxWidth(m.width) - 4).
-		Render(content)
-
-	return card
+// renderFooter renders the footer section
+func (m *ActionMenuModel) renderFooter() string {
+	m.helpFooter.SetWidth(m.width)
+	return m.helpFooter.View()
 }
 
 // truncateText helps truncate long text for display
@@ -143,12 +156,12 @@ func (m *ActionMenuModel) truncateText(text string, maxLen int) string {
 	return text[:maxLen-3] + "..."
 }
 
-// EventActionSelectedMsg is sent when an action is selected
 // SelectedAction returns the currently selected action
 func (m *ActionMenuModel) SelectedAction() EventAction {
 	return m.options[m.selectedIdx]
 }
 
+// EventActionSelectedMsg is sent when an action is selected
 type EventActionSelectedMsg struct {
 	Event  *career.CareerEvent
 	Action EventAction

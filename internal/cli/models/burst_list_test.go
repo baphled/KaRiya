@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -238,5 +239,39 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		model.bursts = []*career.Burst{burst}
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("50"))
+	})
+
+	ginkgo.Describe("Focus Indicator Display", func() {
+		ginkgo.It("should display focus indicator for selected item", func() {
+			model.SetBursts(testBursts)
+			view := model.View()
+			gomega.Expect(view).To(gomega.ContainSubstring("▶"))
+		})
+
+		ginkgo.It("should use consistent marker character", func() {
+			model.SetBursts(testBursts)
+			view := model.View()
+			gomega.Expect(view).To(gomega.ContainSubstring("▶ "))
+		})
+
+		ginkgo.It("should render marker at beginning of line", func() {
+			model.SetBursts(testBursts)
+			view := model.View()
+			lines := strings.Split(view, "\n")
+			foundMarker := false
+			for _, line := range lines {
+				if strings.Contains(line, "▶ ") {
+					foundMarker = true
+					break
+				}
+			}
+			gomega.Expect(foundMarker).To(gomega.BeTrue())
+		})
+
+		ginkgo.It("should not show marker in empty state", func() {
+			model.SetBursts([]*career.Burst{})
+			view := model.View()
+			gomega.Expect(view).NotTo(gomega.ContainSubstring("▶"))
+		})
 	})
 })

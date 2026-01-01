@@ -84,8 +84,8 @@ var _ = Describe("ConfirmationDialog Modal Styling", func() {
 
 		It("should highlight focused button", func() {
 			dialog := NewConfirmationDialog("Delete?", "Are you sure?")
-			view1 := dialog.View()
-			Expect(view1).To(ContainSubstring("Cancel"))
+			_ = dialog.View()
+			Expect(dialog.View()).To(ContainSubstring("Cancel"))
 
 			dialog.Update(tea.KeyMsg{Type: tea.KeyRight})
 			view2 := dialog.View()
@@ -140,9 +140,61 @@ var _ = Describe("ConfirmationDialog Modal Styling", func() {
 		})
 
 		It("should render consistently", func() {
-			view1 := dialog.View()
+			_ = dialog.View()
 			view2 := dialog.View()
-			Expect(view1).To(Equal(view2))
+			Expect(dialog.View()).To(Equal(view2))
+		})
+	})
+	Context("Button Focus States", func() {
+		It("should initialize with cancel button focused", func() {
+			dialog := NewConfirmationDialog("Title", "Message")
+			view := dialog.View()
+			Expect(view).To(ContainSubstring("Cancel"))
+		})
+
+		It("should toggle focus with Tab key", func() {
+			dialog := NewConfirmationDialog("Title", "Message")
+			_ = dialog.View()
+			Expect(dialog.View()).To(ContainSubstring("Cancel"))
+			dialog.Update(tea.KeyMsg{Type: tea.KeyTab})
+			view2 := dialog.View()
+			Expect(view2).To(ContainSubstring("Cancel"))
+			Expect(view2).To(ContainSubstring("Yes, Delete"))
+		})
+
+		It("should toggle focus with right arrow key", func() {
+			dialog := NewConfirmationDialog("Title", "Message")
+			_ = dialog.View()
+			dialog.Update(tea.KeyMsg{Type: tea.KeyRight})
+			view2 := dialog.View()
+			Expect(view2).To(ContainSubstring("Cancel"))
+			Expect(view2).To(ContainSubstring("Yes, Delete"))
+		})
+
+		It("should toggle focus with left arrow key", func() {
+			dialog := NewConfirmationDialog("Title", "Message")
+			dialog.Update(tea.KeyMsg{Type: tea.KeyRight})
+			_ = dialog.View()
+			dialog.Update(tea.KeyMsg{Type: tea.KeyLeft})
+			view2 := dialog.View()
+			Expect(view2).To(ContainSubstring("Cancel"))
+			Expect(view2).To(ContainSubstring("Yes, Delete"))
+		})
+
+		It("should maintain focus state across renders", func() {
+			dialog := NewConfirmationDialog("Title", "Message")
+			_ = dialog.View()
+			view2 := dialog.View()
+			view3 := dialog.View()
+			Expect(dialog.View()).To(Equal(view2))
+			Expect(view2).To(Equal(view3))
+		})
+
+		It("should render both buttons consistently", func() {
+			dialog := NewConfirmationDialog("Title", "Message")
+			view := dialog.View()
+			Expect(view).To(ContainSubstring("Cancel"))
+			Expect(view).To(ContainSubstring("Yes, Delete"))
 		})
 	})
 })

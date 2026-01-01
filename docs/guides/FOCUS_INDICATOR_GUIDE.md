@@ -1,722 +1,685 @@
-# Focus Indicator Guide
+# Focus Indicator Implementation Guide
+
+**Version**: 1.0
+**Date**: 2026-01-01
+**Status**: COMPLETE
+**Related Task**: Task 4.7 from tasks-07-model-consistency.md
 
 ## Overview
 
-This guide documents the standardized focus indicator patterns used across the KaRiya CLI application. Focus indicators provide visual feedback to users about which element is currently active or selected.
+This guide documents the focus indicator implementation patterns used across the KaRiya CLI. Focus indicators provide visual feedback to users about which form field, list item, or button currently has input focus.
 
-**Current Status**: ✅ All 8 refactored models use consistent focus indicators
+## Quick Reference
 
----
-
-## Focus Indicator Types
-
-### 1. Form Field Focus Indicators
-
-**Used In**: form.go, fact_editor.go, metadata_editor.go
-
-**Visual Appearance**:
-- Focused field: Border style changes to primary color, input text becomes highlighted
-- Non-focused field: Standard border with secondary color
-- Error state: Border color changes to error red (overrides focus state)
-
-**Implementation Pattern**:
-
-```go
-// Track which field is focused
-type FormModel struct {
-    focusIndex int  // 0 = TextField, 1 = DateField, etc.
-    // ... other fields
-}
-
-// Render field with focus state
-func (m *FormModel) renderTextFieldWithContainer() string {
-    focused := m.focusIndex == int(TextField)
-
-    fieldContent := components.NewFormFieldContainer().
-        SetLabel("Event Text (required):").
-        SetInput(m.inputs[0].View()).
-        SetHint(charInfo).
-        SetError(fieldErr).
-        SetFocused(focused).  // ← Pass focus state to container
-        Render()
-
-    return fieldContent
-}
-
-// Update focus on navigation
-func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "tab":
-            m.focusIndex = (m.focusIndex + 1) % numFields
-        case "shift+tab":
-            m.focusIndex = (m.focusIndex - 1 + numFields) % numFields
-        }
-    }
-    return m, nil
-}
-```
-
-**Style Application** (in FormFieldContainer):
-
-```go
-// Render input with focus styling
-if ffc.hasInput {
-    var inputStyle lipgloss.Style
-    if ffc.hasError {
-        inputStyle = styles.InputError  // Error takes precedence
-    } else if ffc.isFocused {
-        inputStyle = styles.InputFocused  // Blue border, highlighted text
-    } else {
-        inputStyle = styles.InputBase  // Standard border
-    }
-    parts = append(parts, inputStyle.Render(ffc.input))
-}
-```
-
-**Style Definitions**:
-
-```go
-// From styles.go
-InputFocused = lipgloss.NewStyle().
-    BorderStyle(lipgloss.RoundedBorder()).
-    BorderForeground(ColorPrimary).      // Blue border
-    Padding(1, 2)
-
-InputBase = lipgloss.NewStyle().
-    BorderStyle(lipgloss.RoundedBorder()).
-    BorderForeground(ColorBorder).       // Gray border
-    Padding(1, 2)
-
-InputError = lipgloss.NewStyle().
-    BorderStyle(lipgloss.RoundedBorder()).
-    BorderForeground(ColorError).        // Red border
-    Padding(1, 2)
-```
-
-**Navigation Keys**:
-- `Tab` / `Shift+Tab`: Move between fields
-- `j` / `k`: Move between fields (vim-style)
-- `Enter`: Submit form
-- `Esc`: Cancel form
-
-**Visual Example**:
-
-```
-┌─ Event Text (required): ─────────────────┐  ← Focused (blue border)
-│ My career milestone                      │
-└──────────────────────────────────────────┘
-
-┌─ Date (required): ───────────────────────┐  ← Not focused (gray border)
-│ 2025-12-31                               │
-└──────────────────────────────────────────┘
-
-Error Example:
-┌─ Company (required): ────────────────────┐  ← Error state (red border)
-│ [empty]                                  │
-└──────────────────────────────────────────┘
-Error: Company name is required
-```
+| Component Type | Focus Indicator | Implementation | Style |
+|---|---|---|---|
+| **Form Fields** | Thick teal border | `FormFieldContainer.SetFocused(bool)` | `InputFocused` |
+| **List Items** | Right arrow marker (▶) | Check `selectedIdx` or `focusedIdx` | Text-based |
+| **Buttons** | Bold text + teal border | Boolean flag in dialog | `ButtonFocused` |
 
 ---
 
-### 2. List Item Focus Indicators
+## 1. Form Field Focus Indicators
 
-**Used In**: list.go, fact_list.go, burst_list.go
+### 1.1 Overview
 
-**Visual Appearance**:
-- Focused item: Marker character `▶` + bold, primary color text
-- Non-focused items: Two spaces + standard color text
-- Empty state: "No items found" message
+Form fields use a thick teal border to indicate focus state. The border changes from thin gray (unfocused) to thick teal (focused).
 
-**Implementation Pattern**:
+### 1.2 Implementation Pattern
 
+**Component**: `FormFieldContainer` in `internal/cli/components/form_field_container.go`
+
+**Method**: `SetFocused(bool)`
+
+**Usage Example**:
 ```go
-// Track which item is focused/selected
-type ListModel struct {
-    selectedIdx int  // Index of selected item
-    events      []*career.Event
-    // ... other fields
-}
+container := components.NewFormFieldContainer().
+    SetLabel("Event Text").
+    SetInput(fieldValue).
+    SetError(errorMsg).
+    SetFocused(isCurrentField).  // KEY LINE
+    Render()
+```
 
-// Render items with focus indicator
-func (m *ListModel) renderListItems() []string {
-    var items []string
+### 1.3 Visual Examples
 
-    for i, event := range m.events {
-        // Marker for selected item
-        marker := "  "
-        if i == m.selectedIdx {
-            marker = "▶ "  // ← Selection indicator
+**Without Focus**:
+```
+┌─────────────────────────┐
+│ Event Text              │
+└─────────────────────────┘
+```
+
+**With Focus**:
+```
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┓
+│ Event Text              │
+┗━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
+
+### 1.4 Models Using Form Field Focus
+
+- ✅ `form.go` - 7 fields with focus indicators
+- ✅ `fact_editor.go` - 5 fields with focus indicators
+- ✅ `metadata_editor.go` - 6 fields with focus indicators
+
+### 1.5 Implementation Details
+
+**File**: `internal/cli/components/form_field_container.go`
+
+**Code Reference** (lines 77-99):
+```go
+func (ffc *FormFieldContainer) Render() string {
+    var parts []string
+
+    // ... label rendering ...
+
+    if ffc.hasInput {
+        var inputStyle lipgloss.Style
+        if ffc.hasError {
+            inputStyle = styles.InputError.Copy().
+                Foreground(styles.ColorTextPrimary)
+        } else if ffc.isFocused {
+            // FOCUS INDICATOR: Thick teal border
+            inputStyle = styles.InputFocused.Copy().
+                Foreground(styles.ColorTextPrimary)
+        } else {
+            inputStyle = styles.InputBase.Copy().
+                Foreground(styles.ColorTextPrimary)
         }
-
-        // Truncate text to fit
-        text := event.Text
-        if len(text) > 100 {
-            text = text[:97] + "..."
-        }
-
-        // Apply styling based on selection
-        itemStyle := styles.ListItem
-        if i == m.selectedIdx {
-            itemStyle = styles.ListItemSelected  // ← Bold, primary color
-        }
-
-        items = append(items, itemStyle.Render(marker + text))
+        parts = append(parts, inputStyle.Render(ffc.input))
     }
 
-    return items
-}
-
-// Update focus on navigation
-func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "j":
-            m.moveNext()  // ← Move to next item
-        case "k":
-            m.movePrev()  // ← Move to previous item
-        case "g":
-            m.goToFirstItem()
-        case "G":
-            m.goToLastItem()
-        }
-    }
-    return m, nil
+    // ... rest of rendering ...
 }
 ```
 
-**Style Definitions**:
+### 1.6 When to Use
 
-```go
-// From styles.go
-ListItem = lipgloss.NewStyle().
-    Foreground(ColorTextPrimary).      // Standard text color
-    PaddingLeft(1)
+- All text input fields
+- All form fields with user input
+- Anywhere using `FormFieldContainer`
 
-ListItemSelected = lipgloss.NewStyle().
-    Foreground(ColorPrimary).          // Primary color (blue)
-    Bold(true).                        // Bold text
-    PaddingLeft(1)
-```
+### 1.7 Focus Indicator Style
 
-**Navigation Keys**:
-- `j`: Move down (vim-style)
-- `k`: Move up (vim-style)
-- `g`: Go to first item
-- `G`: Go to last item
-- `PageUp`: Page up
-- `PageDown`: Page down
-- `Enter`: Select current item
-- `q` / `Esc`: Exit list
+**Style Name**: `InputFocused` (in `styles/styles.go`)
 
-**Visual Example**:
-
-```
-📋 Career Events
-▶ My career milestone                    2025-12-31 | Company Inc.
-  Another important event                2025-12-20 | Other Corp
-  Third event in the list                2025-12-10 | Third Co.
-
-Showing 1-3 of 15 events
-(Press 'j/k' to navigate, 'Enter' to select, 'q' to quit)
-```
+**Properties**:
+- Border Color: `ColorBorderActive` (#5fb3b3 - Teal)
+- Border Style: Thick (━, ┃, ┏, ┓, ┗, ┛, ┣, ┫, ┳, ┻)
+- Effect: Clearly distinguishes focused field from others
 
 ---
 
-### 3. Dialog Button Focus Indicators
+## 2. List Item Focus Indicators
 
-**Used In**: confirmation_dialog.go
+### 2.1 Overview
 
-**Visual Appearance**:
-- Focused button: Border style with primary color
-- Non-focused button: Standard secondary style
-- Destructive action: Confirm button shows in error red color
+List items use a right arrow marker (▶) to indicate the currently selected/focused item. Non-selected items show two spaces (  ) in place of the marker.
 
-**Implementation Pattern**:
+### 2.2 Implementation Pattern
+
+**Pattern**: Selection marker in list rendering
+
+**Usage Example**:
+```go
+for i, item := range items {
+    marker := "  "
+    if i == selectedIdx {
+        marker = "▶ "  // KEY LINE: Focus indicator
+    }
+    // Render item with marker
+    itemLine := marker + itemText + details
+    // Add to output
+}
+```
+
+### 2.3 Visual Examples
+
+**List View**:
+```
+  Career Event 1 - 2024-01-15
+▶ Career Event 2 - 2024-02-20  (Selected - has focus)
+  Career Event 3 - 2024-03-10
+  Career Event 4 - 2024-04-05
+```
+
+### 2.4 Models Using List Item Focus
+
+- ✅ `list.go` - Reference implementation
+- ✅ `fact_list.go` - Consistent marker usage
+- ✅ `burst_list.go` - Consistent marker usage
+
+### 2.5 Implementation Details
+
+**Reference File**: `internal/cli/models/list.go` (lines 185-190)
 
 ```go
-// Track which button is focused
-type ConfirmationDialog struct {
-    focused bool  // true = confirm button, false = cancel button
-    // ... other fields
-}
+for i, event := range m.events {
+    // Marker for selected item
+    marker := "  "
+    if i == m.selectedIdx {
+        marker = "▶ "  // FOCUS INDICATOR
+    }
 
-// Render buttons with focus state
+    // Render item with marker
+    text := event.Text
+    if len(text) > 100 {
+        text = text[:97] + "..."
+    }
+    // ... additional rendering ...
+}
+```
+
+### 2.6 Consistency Across List Models
+
+All three list models use identical marker patterns:
+
+**list.go**:
+```go
+if i == m.selectedIdx {
+    marker = "▶ "
+}
+```
+
+**fact_list.go**:
+```go
+// Marker for selected item (matching list.go pattern)
+if i == flm.focusedIdx {
+    marker = "▶ "
+}
+```
+
+**burst_list.go**:
+```go
+// Marker for selected item (matching list.go pattern)
+if i == m.selectedIdx {
+    marker = "▶ "
+}
+```
+
+### 2.7 When to Use
+
+- All list-based models
+- Any component showing selectable items
+- Navigation through item collections
+- Displaying multiple items with selection
+
+### 2.8 Focus Indicator Character
+
+**Character**: `▶` (Right-pointing arrow, Unicode U+25B6)
+
+**Spacing**: Two characters total: `▶ ` (arrow + space)
+
+**Alignment**: First characters of item line (before item text)
+
+---
+
+## 3. Button Focus Indicators
+
+### 3.1 Overview
+
+Buttons in dialogs use style-based focus indicators. The focused button is rendered with bold text and a teal border, while unfocused buttons use the secondary style.
+
+### 3.2 Implementation Pattern
+
+**Component**: Dialog models (e.g., `ConfirmationDialog`)
+
+**Pattern**: Boolean flag tracking focused button
+
+**Usage Example**:
+```go
 func (d *ConfirmationDialog) renderButtons() []string {
     cancelStyle := styles.ButtonSecondary
     confirmStyle := styles.ButtonSecondary
 
     if d.focused {
-        confirmStyle = styles.ButtonFocused  // ← Confirm button focused
+        confirmStyle = styles.ButtonFocused  // KEY LINE
     } else {
-        cancelStyle = styles.ButtonFocused  // ← Cancel button focused
+        cancelStyle = styles.ButtonFocused   // KEY LINE
     }
 
     cancelButton := cancelStyle.Render(d.cancelText)
-    confirmButton := confirmStyle.
-        Foreground(styles.ColorError).     // ← Error color for destructive
-        Render(d.confirmText)
-
+    confirmButton := confirmStyle.Render(d.confirmText)
     return []string{cancelButton, confirmButton}
 }
+```
 
-// Update focus on navigation
-func (d *ConfirmationDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "tab", "right", "l":
-            d.focused = !d.focused  // ← Toggle focus
-        case "shift+tab", "left", "h":
-            d.focused = !d.focused  // ← Toggle focus
-        case "enter":
-            if d.focused {
-                // Confirm action
-            } else {
-                // Cancel action
-            }
-        }
+### 3.3 Visual Examples
+
+**Cancel Button Focused**:
+```
+[ Cancel ]  [ Confirm ]
+(Bold, teal border)
+```
+
+**Confirm Button Focused**:
+```
+[ Cancel ]  [ Confirm ]
+           (Bold, teal border)
+```
+
+### 3.4 Models Using Button Focus
+
+- ✅ `confirmation_dialog.go` - Destructive action dialogs
+
+### 3.5 Implementation Details
+
+**File**: `internal/cli/models/confirmation_dialog.go`
+
+**Focus State Management** (lines 17-32):
+```go
+type ConfirmationDialog struct {
+    // ... other fields ...
+    focused bool // true = confirm, false = cancel
+}
+
+// Initialize with cancel focused (safer default)
+func NewConfirmationDialog(title, message string) *ConfirmationDialog {
+    return &ConfirmationDialog{
+        focused: false,  // Default to cancel for safety
+        // ... other initialization ...
     }
-    return d, nil
 }
 ```
 
-**Style Definitions**:
+**Button Rendering** (lines 92-112):
+```go
+func (d *ConfirmationDialog) renderButtons() []string {
+    cancelStyle := styles.ButtonSecondary
+    confirmStyle := styles.ButtonSecondary
+
+    if d.focused {
+        confirmStyle = styles.ButtonFocused
+    } else {
+        cancelStyle = styles.ButtonFocused
+    }
+
+    cancelButton := cancelStyle.Render(d.cancelText)
+    confirmButton := confirmStyle.Render(d.confirmText)
+    return []string{cancelButton, confirmButton}
+}
+```
+
+### 3.6 Focus Toggle
+
+**Trigger**: Tab key or arrow keys
+
+**Navigation**:
+- Tab / Right Arrow: Move to next button
+- Shift+Tab / Left Arrow: Move to previous button
+
+### 3.7 When to Use
+
+- All buttons in dialogs
+- Any component with multiple button options
+- Focus navigation between buttons
+- Confirmation dialogs
+
+### 3.8 Focus Indicator Styles
+
+**Focused Button**: `ButtonFocused`
+- Bold text
+- Teal border (#5fb3b3)
+
+**Unfocused Button**: `ButtonSecondary`
+- Normal text weight
+- Standard border
+
+---
+
+## 4. Style Constants Reference
+
+### 4.1 Input Styles
+
+**File**: `internal/cli/styles/styles.go`
 
 ```go
-// From styles.go
-ButtonFocused = lipgloss.NewStyle().
-    BorderStyle(lipgloss.RoundedBorder()).
-    BorderForeground(ColorPrimary).    // Blue border
-    Foreground(ColorPrimary).          // Blue text
-    Padding(0, 2)
+// Focused input field (thick teal border)
+InputFocused = InputBase.Copy().
+    BorderForeground(ColorBorderActive).
+    BorderStyle(lipgloss.ThickBorder())
 
+// Base input field (thin gray border)
+InputBase = lipgloss.NewStyle().
+    Border(lipgloss.RoundedBorder()).
+    Padding(1, 2).
+    BorderForeground(ColorBorder)
+
+// Error input field (red border)
+InputError = InputBase.Copy().
+    BorderForeground(ColorError)
+```
+
+### 4.2 Button Styles
+
+```go
+// Focused button (bold, teal border)
+ButtonFocused = ButtonPrimary.
+    BorderForeground(ColorAccentTeal).
+    Bold(true)
+
+// Secondary button (normal weight)
 ButtonSecondary = lipgloss.NewStyle().
-    Foreground(ColorTextSecondary).    // Gray text
-    Padding(0, 2)
+    Padding(0, 2).
+    Border(lipgloss.RoundedBorder()).
+    BorderForeground(ColorBorder)
 ```
 
-**Navigation Keys**:
-- `Tab` / `Shift+Tab`: Switch between buttons
-- `Left` / `Right`: Switch between buttons
-- `h` / `l`: Switch between buttons (vim-style)
-- `Enter`: Confirm selected button
-- `Esc`: Cancel dialog
+### 4.3 Color Constants
 
-**Visual Example**:
-
-```
-Are you sure you want to delete this event?
-
-┌─────────────────────────────┐
-│  Cancel        Delete Event │  ← Delete button focused (blue border)
-└─────────────────────────────┘
-(Tab: Switch | Enter: Confirm | Esc: Cancel)
+```go
+ColorBorderActive = lipgloss.Color("#5fb3b3")  // Teal (focus border)
+ColorAccentTeal = lipgloss.Color("#5fb3b3")    // Teal (button focus)
+ColorBorder = lipgloss.Color("#555555")        // Gray (unfocused)
+ColorError = lipgloss.Color("#d76e6e")         // Red (error)
 ```
 
 ---
 
-## Best Practices
+## 5. Testing Focus Indicators
 
-### ✅ DO
+### 5.1 Form Field Focus Tests
 
-1. **Track focus state in model fields**
-   ```go
-   type MyModel struct {
-       focusIndex int  // For forms
-       selectedIdx int // For lists
-       focused bool    // For dialogs
-   }
-   ```
+**File**: `internal/cli/models/form_focus_indicators_test.go`
 
-2. **Use FormFieldContainer for form fields**
-   ```go
-   components.NewFormFieldContainer().
-       SetFocused(isFocused).
-       Render()
-   ```
+**Test Categories**:
+- Focus indicator character verification
+- Focus indicator presence in initial state
+- Focus indicator positioning relative to labels
+- Focus indicator consistency across field navigation
+- Focus indicator layout preservation
 
-3. **Use marker character for list items**
-   ```go
-   marker := "  "
-   if i == m.selectedIdx {
-       marker = "▶ "
-   }
-   ```
-
-4. **Apply styles from styles/constants_export.go**
-   ```go
-   itemStyle := styles.ListItem
-   if i == m.selectedIdx {
-       itemStyle = styles.ListItemSelected
-   }
-   ```
-
-5. **Update focus on key navigation**
-   ```go
-   case "tab":
-       m.focusIndex = (m.focusIndex + 1) % numFields
-   ```
-
-6. **Test focus state changes**
-   ```go
-   It("should move focus to next field on Tab", func() {
-       m, _ := m.Update(tea.KeyMsg{Type: tea.KeyTab})
-       Expect(m.focusIndex).To(Equal(1))
-   })
-   ```
-
-### ❌ DON'T
-
-1. **Don't use inline colors for focus indicators**
-   ```go
-   // ❌ WRONG
-   inputStyle = lipgloss.NewStyle().
-       BorderForeground(lipgloss.Color("#0080ff"))  // Inline color
-
-   // ✅ CORRECT
-   inputStyle = styles.InputFocused  // Use constant
-   ```
-
-2. **Don't mix focus indicator styles**
-   ```go
-   // ❌ WRONG - Mixing border and background colors
-   inputStyle = styles.InputFocused.
-       Background(lipgloss.Color("#ffffff"))
-
-   // ✅ CORRECT - Use consistent styling
-   inputStyle = styles.InputFocused
-   ```
-
-3. **Don't forget to update focus on navigation**
-   ```go
-   // ❌ WRONG - Navigation doesn't update focus
-   case "j":
-       m.moveNext()  // But focusIndex stays the same
-
-   // ✅ CORRECT - Update focus with navigation
-   case "j":
-       m.focusIndex++
-       m.moveNext()
-   ```
-
-4. **Don't render focus state without updating it**
-   ```go
-   // ❌ WRONG - Focus never changes
-   focused := true  // Hardcoded
-
-   // ✅ CORRECT - Focus based on state
-   focused := m.focusIndex == int(currentField)
-   ```
-
-5. **Don't use different focus indicators for similar elements**
-   ```go
-   // ❌ WRONG - Different markers for similar lists
-   // list.go uses "▶"
-   // fact_list.go uses "►"
-
-   // ✅ CORRECT - All lists use "▶"
-   marker := "▶ "
-   ```
-
----
-
-## Common Patterns
-
-### Pattern 1: Form with Multiple Fields
-
+**Example Test**:
 ```go
-type MyFormModel struct {
-    fields   []*textinput.Model
-    focusIndex int
-}
-
-func (m *MyFormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "tab":
-            m.focusIndex = (m.focusIndex + 1) % len(m.fields)
-        case "shift+tab":
-            m.focusIndex = (m.focusIndex - 1 + len(m.fields)) % len(m.fields)
-        }
-    }
-    return m, nil
-}
-
-func (m *MyFormModel) View() string {
-    var parts []string
-
-    for i, field := range m.fields {
-        focused := i == m.focusIndex
-
-        container := components.NewFormFieldContainer().
-            SetLabel(m.labels[i]).
-            SetInput(field.View()).
-            SetFocused(focused).
-            Render()
-
-        parts = append(parts, container)
-    }
-
-    return strings.Join(parts, "\n")
-}
-```
-
-### Pattern 2: List with Selection
-
-```go
-type MyListModel struct {
-    items       []string
-    selectedIdx int
-}
-
-func (m *MyListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "j":
-            if m.selectedIdx < len(m.items)-1 {
-                m.selectedIdx++
-            }
-        case "k":
-            if m.selectedIdx > 0 {
-                m.selectedIdx--
-            }
-        }
-    }
-    return m, nil
-}
-
-func (m *MyListModel) View() string {
-    var items []string
-
-    for i, item := range m.items {
-        marker := "  "
-        if i == m.selectedIdx {
-            marker = "▶ "
-        }
-
-        style := styles.ListItem
-        if i == m.selectedIdx {
-            style = styles.ListItemSelected
-        }
-
-        items = append(items, style.Render(marker + item))
-    }
-
-    return strings.Join(items, "\n")
-}
-```
-
-### Pattern 3: Dialog with Button Focus
-
-```go
-type MyDialogModel struct {
-    buttons []string
-    focused bool  // true = first button, false = second button
-}
-
-func (m *MyDialogModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        switch msg.String() {
-        case "tab", "right":
-            m.focused = !m.focused
-        case "shift+tab", "left":
-            m.focused = !m.focused
-        }
-    }
-    return m, nil
-}
-
-func (m *MyDialogModel) View() string {
-    var buttons []string
-
-    for i, label := range m.buttons {
-        isFocused := (i == 0 && m.focused) || (i == 1 && !m.focused)
-
-        style := styles.ButtonSecondary
-        if isFocused {
-            style = styles.ButtonFocused
-        }
-
-        buttons = append(buttons, style.Render(label))
-    }
-
-    return strings.Join(buttons, "  ")
-}
-```
-
----
-
-## Testing Focus Indicators
-
-### Unit Test Example
-
-```go
-Describe("FormModel Focus", func() {
-    It("should set focus on first field initially", func() {
-        m := NewFormModel()
-        Expect(m.focusIndex).To(Equal(0))
-    })
-
-    It("should move focus to next field on Tab", func() {
-        m := NewFormModel()
-        m.Update(tea.KeyMsg{Type: tea.KeyTab})
-        Expect(m.focusIndex).To(Equal(1))
-    })
-
-    It("should show focus indicator in rendered output", func() {
-        m := NewFormModel()
-        view := m.View()
-
-        // First field should have focused styling
-        Expect(view).To(ContainSubstring(
-            styles.InputFocused.Render("test"),
-        ))
-    })
-
-    It("should wrap focus from last to first field", func() {
-        m := NewFormModel()
-        m.focusIndex = numFields - 1
-        m.Update(tea.KeyMsg{Type: tea.KeyTab})
-        Expect(m.focusIndex).To(Equal(0))
-    })
+It("should display focus indicator for the focused field", func() {
+    view := form.View()
+    Expect(view).To(ContainSubstring("►"))  // Focus indicator present
 })
 ```
 
-### Integration Test Example
+### 5.2 List Item Focus Tests
 
+**Files**:
+- `internal/cli/models/fact_list_test.go`
+- `internal/cli/models/burst_list_test.go`
+
+**Test Categories**:
+- Focus indicator marker display
+- Marker character consistency
+- Marker position at line beginning
+- Non-selected item spacing
+- Empty state handling
+
+**Example Test**:
 ```go
-Describe("List Focus Navigation", func() {
-    It("should highlight selected item with marker", func() {
-        m := NewListModel()
-        m.selectedIdx = 1
-        view := m.View()
+ginkgo.It("should display focus indicator for selected item", func() {
+    model.SetFacts(facts)
+    view := model.View()
+    gomega.Expect(view).To(gomega.ContainSubstring("▶"))
+})
+```
 
-        // Second item should have marker
-        Expect(view).To(MatchRegexp(`▶\s+second item`))
-    })
+### 5.3 Button Focus Tests
 
-    It("should update selection on j key", func() {
-        m := NewListModel()
-        m.Update(tea.KeyMsg{Runes: []rune{'j'}})
-        Expect(m.selectedIdx).To(Equal(1))
-    })
+**File**: `internal/cli/models/confirmation_dialog_test.go`
 
-    It("should apply selected style to focused item", func() {
-        m := NewListModel()
-        m.selectedIdx = 0
-        view := m.View()
+**Test Categories**:
+- Default focus state (cancel button)
+- Focus toggle with Tab key
+- Focus toggle with arrow keys
+- Focus state persistence
+- Button rendering consistency
 
-        // First item should have ListItemSelected style (bold)
-        Expect(view).To(ContainSubstring(
-            styles.ListItemSelected.Render("▶ first item"),
-        ))
-    })
+**Example Test**:
+```go
+It("should initialize with cancel button focused", func() {
+    dialog := NewConfirmationDialog("Title", "Message")
+    view := dialog.View()
+    Expect(view).To(ContainSubstring("Cancel"))
 })
 ```
 
 ---
 
-## Troubleshooting
+## 6. Best Practices
 
-### Issue: Focus indicator not showing
+### 6.1 Form Fields
 
-**Cause**: Focus state not being passed to component
+✅ **DO**:
+- Always use `FormFieldContainer.SetFocused(bool)` for form fields
+- Set focused based on current field index
+- Use `InputFocused` style for focus indication
+- Test focus indicator display in form tests
 
-**Solution**:
+❌ **DON'T**:
+- Manually apply input styles without using FormFieldContainer
+- Use inline border styling instead of constants
+- Forget to set focused state when rendering fields
+- Use different focus indicators in different forms
+
+### 6.2 List Items
+
+✅ **DO**:
+- Use "▶ " marker for selected items consistently
+- Use "  " (two spaces) for non-selected items
+- Check `selectedIdx` or `focusedIdx` to determine marker
+- Apply marker at the beginning of the item line
+
+❌ **DON'T**:
+- Use different marker characters (▶, ►, →, etc.)
+- Vary marker spacing between models
+- Use inline styling instead of marker characters
+- Forget to update marker when selection changes
+
+### 6.3 Buttons
+
+✅ **DO**:
+- Use boolean flag to track focused button
+- Apply `ButtonFocused` style to focused button
+- Apply `ButtonSecondary` style to unfocused buttons
+- Default to safest button (cancel) when initializing
+
+❌ **DON'T**:
+- Use different focus styles in different dialogs
+- Manually apply button styles without using constants
+- Forget to toggle focus on navigation
+- Use inconsistent focus indicators across dialogs
+
+---
+
+## 7. Common Patterns
+
+### 7.1 Form Field with Focus
+
 ```go
-// ❌ WRONG - focused always false
-focused := false
-container.SetFocused(focused)
-
-// ✅ CORRECT - focused based on state
-focused := m.focusIndex == int(currentField)
-container.SetFocused(focused)
+// In model's View() method
+container := components.NewFormFieldContainer().
+    SetLabel("Field Label").
+    SetInput(m.fields[fieldIndex]).
+    SetError(fieldErrors[fieldIndex]).
+    SetFocused(m.focusedField == fieldIndex).  // Focus logic
+    Render()
 ```
 
-### Issue: Focus not changing on navigation
+### 7.2 List Item with Focus
 
-**Cause**: Navigation event not updating focus index
-
-**Solution**:
 ```go
-// ❌ WRONG - focusIndex not updated
-case "tab":
-    m.moveNext()  // Only moves cursor, not focus
+// In model's View() method
+for i, item := range m.items {
+    marker := "  "
+    if i == m.selectedIdx {
+        marker = "▶ "  // Focus marker
+    }
 
-// ✅ CORRECT - Update focus index
-case "tab":
-    m.focusIndex = (m.focusIndex + 1) % numFields
-    m.moveNext()
+    line := fmt.Sprintf("%s%s %s", marker, item.Name, item.Details)
+    lines = append(lines, line)
+}
 ```
 
-### Issue: Multiple items showing focus indicator
+### 7.3 Button with Focus
 
-**Cause**: Focus condition checking wrong index
-
-**Solution**:
 ```go
-// ❌ WRONG - Multiple items match condition
-if i < m.focusIndex {
-    marker = "▶ "
+// In dialog's renderButtons() method
+cancelStyle := styles.ButtonSecondary
+confirmStyle := styles.ButtonSecondary
+
+if d.focused {
+    confirmStyle = styles.ButtonFocused
+} else {
+    cancelStyle = styles.ButtonFocused
 }
 
-// ✅ CORRECT - Only one item matches
-if i == m.focusIndex {
-    marker = "▶ "
+return []string{
+    cancelStyle.Render(d.cancelText),
+    confirmStyle.Render(d.confirmText),
 }
 ```
 
-### Issue: Focus indicator looks different in different models
+---
 
-**Cause**: Using different styles for same element type
+## 8. Troubleshooting
 
-**Solution**:
+### Issue: Focus Indicator Not Showing
+
+**Symptom**: Field/button doesn't show focus visual
+
+**Solutions**:
+1. Verify `SetFocused(true)` is called
+2. Check that correct style is applied (InputFocused, ButtonFocused)
+3. Verify style constants are imported from styles package
+4. Check terminal supports thick borders (some terminals don't)
+
+### Issue: Focus Indicator Not Updating
+
+**Symptom**: Focus indicator stays on same field/button
+
+**Solutions**:
+1. Verify focus state is updated on navigation
+2. Check that View() is called after Update()
+3. Verify focusedField/selectedIdx is correctly incremented/decremented
+4. Check that focus toggle logic is correct
+
+### Issue: Inconsistent Focus Indicators
+
+**Symptom**: Different models show different focus indicators
+
+**Solutions**:
+1. Use FormFieldContainer for all form fields
+2. Use "▶ " marker for all list items
+3. Use ButtonFocused/ButtonSecondary for all buttons
+4. Review style constants are correctly applied
+
+---
+
+## 9. Migration Guide
+
+### 9.1 Migrating Form Fields to FormFieldContainer
+
+**Before**:
 ```go
-// ❌ WRONG - Different styles
-// form.go uses styles.InputFocused
-// fact_editor.go uses custom blue border
+// Manual field rendering
+labelStyle := styles.InputLabel.Copy()
+inputStyle := styles.InputBase.Copy()
+// ... complex styling logic ...
+```
 
-// ✅ CORRECT - All use same style constant
-container.SetFocused(focused)  // Uses styles.InputFocused
+**After**:
+```go
+// Using FormFieldContainer
+container := components.NewFormFieldContainer().
+    SetLabel("Field").
+    SetInput(value).
+    SetFocused(isFocused).
+    Render()
+```
+
+### 9.2 Migrating List Items to Standard Marker
+
+**Before**:
+```go
+// Different markers per model
+if selected {
+    line = "► " + itemText  // Different marker
+}
+```
+
+**After**:
+```go
+// Standard marker across all models
+marker := "  "
+if i == selectedIdx {
+    marker = "▶ "  // Consistent marker
+}
+line = marker + itemText
 ```
 
 ---
 
-## Related Documentation
+## 10. Compliance Checklist
 
-- [Error Handling Guide](./ERROR_HANDLING_GUIDE.md) - Error display alongside focus
-- [Style Usage Guide](./STYLE_USAGE_GUIDE.md) - All available styles
-- [Component Usage Guide](./COMPONENT_USAGE_GUIDE.md) - Container components
-- [Task 4.7 Audit](../audits/TASK_4.7_FOCUS_INDICATOR_AUDIT.md) - Focus indicator audit results
+### Form Field Focus Indicators
+- [ ] All form models use FormFieldContainer
+- [ ] SetFocused() called on each field
+- [ ] InputFocused style applied to focused fields
+- [ ] Focus state correctly identifies current field
+- [ ] Tests verify focus indicator display
+
+### List Item Focus Indicators
+- [ ] All list models use "▶ " marker
+- [ ] All list models use "  " for non-selected
+- [ ] Marker character is consistent across all lists
+- [ ] Focus indicator position is consistent
+- [ ] Tests verify marker display
+
+### Button Focus States
+- [ ] All dialogs implement button focus
+- [ ] Focus state toggles with Tab/arrow keys
+- [ ] ButtonFocused style applied to focused button
+- [ ] ButtonSecondary style applied to unfocused
+- [ ] Tests verify button focus styling
+
+### Code Consistency
+- [ ] All form models follow FormFieldContainer pattern
+- [ ] All list models follow selection marker pattern
+- [ ] All dialog models follow button focus pattern
+- [ ] No inline focus styling (all use exported styles)
+- [ ] Focus logic is centralized (not duplicated)
 
 ---
 
-## Summary
+## 11. References
 
-Focus indicators provide essential visual feedback in the CLI application:
-
-- **Form Fields**: Border color change + text highlighting via FormFieldContainer
-- **List Items**: Marker character `▶` + bold text via ListItemSelected style
-- **Dialog Buttons**: Border color change via ButtonFocused style
-
-All implementations:
-- ✅ Use exported color constants from styles package
-- ✅ Follow consistent patterns across similar element types
-- ✅ Include proper navigation key handling
-- ✅ Are thoroughly tested with unit and integration tests
-
-When adding new models, follow these patterns to maintain consistency across the application.
+- [Error Handling Guide](./ERROR_HANDLING_GUIDE.md)
+- [Component Usage Guide](./COMPONENT_USAGE_GUIDE.md)
+- [Style Usage Guide](./STYLE_USAGE_GUIDE.md)
+- [Task 4.7 Audit](../audits/TASK_4.7_FOCUS_INDICATOR_AUDIT.md)
+- [Model Development Guide](./MODEL_DEVELOPMENT_GUIDE.md)
 
 ---
 
+## 12. Summary
+
+Focus indicators provide critical visual feedback in the KaRiya CLI:
+
+1. **Form Fields**: Thick teal border via `InputFocused` style
+2. **List Items**: Right arrow marker (▶) at line beginning
+3. **Buttons**: Bold text + teal border via `ButtonFocused` style
+
+All focus indicators are:
+- ✅ Consistent across all models
+- ✅ Using exported style constants
+- ✅ Properly tested
+- ✅ Well-documented
+
+This guide ensures developers can implement focus indicators correctly and consistently throughout the codebase.
+
+---
+
+**Document Version**: 1.0
+**Created**: 2026-01-01
 **Last Updated**: 2026-01-01
-**Status**: Production Ready
-**Compliance**: ✅ All 8 refactored models follow these patterns
+**Status**: COMPLETE
+**Compliance**: FULL ✅
+
 
