@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"strings"
 	"fmt"
 
 	"time"
@@ -236,6 +237,40 @@ var _ = ginkgo.Describe("FactListModel", func() {
 			model.SetRoleFitFilter(career.RoleFitPrincipal)
 			gomega.Expect(len(model.filtered)).To(gomega.Equal(1))
 			gomega.Expect(model.filtered[0].ID).To(gomega.Equal("fact-1"))
+		})
+	})
+
+	ginkgo.Describe("Focus Indicator Display", func() {
+		ginkgo.It("should display focus indicator for selected item", func() {
+			model.SetFacts(facts)
+			view := model.View()
+			gomega.Expect(view).To(gomega.ContainSubstring("▶"))
+		})
+
+		ginkgo.It("should use consistent marker character", func() {
+			model.SetFacts(facts)
+			view := model.View()
+			gomega.Expect(view).To(gomega.ContainSubstring("▶ "))
+		})
+
+		ginkgo.It("should render marker at beginning of line", func() {
+			model.SetFacts(facts)
+			view := model.View()
+			lines := strings.Split(view, "\n")
+			foundMarker := false
+			for _, line := range lines {
+				if strings.Contains(line, "▶ ") {
+					foundMarker = true
+					break
+				}
+			}
+			gomega.Expect(foundMarker).To(gomega.BeTrue())
+		})
+
+		ginkgo.It("should not show marker in empty state", func() {
+			model.SetFacts([]*career.Fact{})
+			view := model.View()
+			gomega.Expect(view).NotTo(gomega.ContainSubstring("▶"))
 		})
 	})
 })

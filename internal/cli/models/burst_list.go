@@ -141,17 +141,6 @@ func (m *BurstListModel) View() string {
 
 	listContent := listContainer.Render()
 
-	headerView := components.NewHeader("💥 Bursts", m.width).View()
-	footerView := components.NewFooter(m.width).View()
-
-	screenContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		listContent,
-	)
-
-	screenContainer := components.NewScreenContainer(screenContent).
-		WithPaddingMode(components.PaddingNormal)
-
 	// Add error handling
 	var errorContent string
 	if m.err != nil {
@@ -162,6 +151,10 @@ func (m *BurstListModel) View() string {
 	// Render help footer
 	m.helpFooter.SetWidth(m.width)
 	helpFooterContent := m.helpFooter.View()
+
+	// Render header and footer components
+	headerView := components.NewHeader("💥 Bursts", m.width).View()
+	footerView := components.NewFooter(m.width).View()
 
 	var fullContent string
 	if errorContent != "" {
@@ -180,7 +173,7 @@ func (m *BurstListModel) View() string {
 			lipgloss.Left,
 			headerView,
 			"",
-			screenContainer.Render(),
+			listContent,
 			"",
 			footerView,
 			"",

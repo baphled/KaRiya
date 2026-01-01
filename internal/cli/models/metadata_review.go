@@ -285,7 +285,7 @@ func (m *MetadataReviewModel) View() string {
 
 	// Error handling
 	if m.err != nil {
-		content = append(content, styles.ErrorText.Render(fmt.Sprintf("Error loading events: %v", m.err)))
+		content = append(content, styles.ErrorBox.Render(fmt.Sprintf("Error loading events: %v. Press 'r' to retry", m.err)))
 		return strings.Join(content, "\n")
 	}
 

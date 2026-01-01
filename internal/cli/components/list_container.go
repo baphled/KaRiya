@@ -56,27 +56,29 @@ func (lc *ListContainer) SetPaginationInfo(info string) *ListContainer {
 // Render returns the styled list container as a string.
 // It displays items or an empty state message, with optional pagination information.
 func (lc *ListContainer) Render() string {
+	var content string
+
 	// Handle empty list
 	if len(lc.items) == 0 {
 		emptyStyle := lipgloss.NewStyle().
 			Foreground(styles.ColorTextMuted).
 			Italic(true)
-		return emptyStyle.Render(lc.emptyMessage)
+		content = emptyStyle.Render(lc.emptyMessage)
+	} else {
+		var parts []string
+
+		// Render items
+		itemStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorTextPrimary)
+
+		for _, item := range lc.items {
+			parts = append(parts, itemStyle.Render(item))
+		}
+
+		content = strings.Join(parts, "\n")
 	}
 
-	var parts []string
-
-	// Render items
-	itemStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary)
-
-	for _, item := range lc.items {
-		parts = append(parts, itemStyle.Render(item))
-	}
-
-	content := strings.Join(parts, "\n")
-
-	// Add pagination info if present
+	// Add pagination info if present (even for empty lists)
 	if lc.hasPagination && lc.paginationInfo != "" {
 		paginationStyle := lipgloss.NewStyle().
 			Foreground(styles.ColorTextSecondary).

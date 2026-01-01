@@ -210,7 +210,7 @@ func (m *ImportReviewModel) renderRows() string {
 		// Show validation errors if any
 		if len(parsedRow.ValidationErrors) > 0 && isFocused {
 			errorText := strings.Join(parsedRow.ValidationErrors, "; ")
-			errorLine := styles.ErrorBox.Render("Error: " + errorText)
+			errorLine := styles.ErrorBox.Render(fmt.Sprintf("Error: %s", errorText))
 			rows = append(rows, errorLine)
 		}
 
