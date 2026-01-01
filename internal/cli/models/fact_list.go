@@ -143,20 +143,41 @@ func (flm *FactListModel) View() string {
 	screenContainer := components.NewScreenContainer(screenContent).
 		WithPaddingMode(components.PaddingNormal)
 
+	// Add error handling
+	var errorContent string
+	if flm.err != nil {
+		errorMsg := fmt.Sprintf("Error loading facts: %v\n\nPress 'r' to retry or 'esc' to cancel", flm.err)
+		errorContent = styles.ErrorBox.Render(errorMsg)
+	}
+
 	// Render help footer
 	flm.helpFooter.SetWidth(flm.width)
 	helpFooterContent := flm.helpFooter.View()
 
-	fullContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerView,
-		"",
-		screenContainer.Render(),
-		"",
-		footerView,
-		"",
-		helpFooterContent,
-	)
+	var fullContent string
+	if errorContent != "" {
+		fullContent = lipgloss.JoinVertical(
+			lipgloss.Left,
+			headerView,
+			"",
+			errorContent,
+			"",
+			footerView,
+			"",
+			helpFooterContent,
+		)
+	} else {
+		fullContent = lipgloss.JoinVertical(
+			lipgloss.Left,
+			headerView,
+			"",
+			screenContainer.Render(),
+			"",
+			footerView,
+			"",
+			helpFooterContent,
+		)
+	}
 
 	return fullContent
 }

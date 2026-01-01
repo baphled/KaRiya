@@ -333,14 +333,10 @@ func (m *MetadataEditorModel) renderFormContentWithContainers() string {
 
 	// Add model-level error if present
 	if m.err != nil {
-		content = append(content, styles.ErrorBox.Render("Error: "+m.err.Error()))
+		content = append(content, styles.ErrorBox.Render(m.err.Error()))
 	}
 
 	// Add field-specific errors
-	for fieldIdx, errMsg := range m.fieldErrors {
-		content = append(content, styles.ErrorBox.Render(fmt.Sprintf("Field %d: %s", fieldIdx, errMsg)))
-	}
-
 	return strings.Join(content, "\n\n")
 }
 
