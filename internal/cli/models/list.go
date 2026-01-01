@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -132,7 +131,6 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the model
 func (m *ListModel) View() string {
-	// Form content
 	var content []string
 
 	// Error handling
@@ -140,75 +138,24 @@ func (m *ListModel) View() string {
 		content = append(content, styles.ErrorText.Render(fmt.Sprintf("Error loading events: %v", m.err)))
 	}
 
-	// Empty state
-	if len(m.events) == 0 {
-		content = append(content, styles.InfoText.Render("No events found. Start capturing your career journey!"))
-	} else {
-		// Events
-		for i, event := range m.events {
-			// Determine styling based on selection
-			itemStyle := styles.ListItem
-			if i == m.selectedIdx {
-				itemStyle = styles.ListItemSelected
-			}
+	// Render list using ListContainer
+	listContent := m.renderListWithContainer()
+	content = append(content, listContent)
 
-			// Truncate text to 100 chars
-			text := event.Text
-			if len(text) > 100 {
-				text = text[:97] + "..."
-			}
-
-			// Marker for selected item
-			marker := "  "
-			if i == m.selectedIdx {
-				marker = "▶ "
-			}
-
-			// Render event text
-			content = append(content,
-				itemStyle.Render(marker+text),
-			)
-
-			// Render date and company
-			dateStr := event.Date.Format("2006-01-02")
-			var detailLine string
-			if event.Company != "" || event.Project != "" {
-				detailLine = fmt.Sprintf("   %s | %s",
-					styles.ListItem.Foreground(styles.ColorTextSecondary).Render(dateStr),
-					styles.ListItem.Foreground(styles.ColorTextMuted).Render(event.Company),
-				)
-			} else {
-				detailLine = styles.ListItem.Foreground(styles.ColorTextSecondary).Render(fmt.Sprintf("   %s", dateStr))
-			}
-			content = append(content, detailLine, "")
-		}
-
-		// Pagination info
-		totalPages := m.getTotalPages()
-		paginationText := fmt.Sprintf("Page %d of %d (%d total events)", m.currentPage, totalPages, m.totalCount)
-		content = append(content,
-			styles.ListItem.Render(strings.Repeat("─", 40)),
-			styles.ListItem.Foreground(styles.ColorTextSecondary).Render(paginationText),
-		)
-
-		// Instructions
-		// Help footer with keyboard shortcuts
-		m.helpFooter.SetWidth(styles.MaxWidth(80))
-		helpFooterContent := m.helpFooter.View()
-		content = append(content,
-			helpFooterContent,
-		)
-	}
+	// Help footer with keyboard shortcuts
+	m.helpFooter.SetWidth(styles.MaxWidth(80))
+	helpFooterContent := m.helpFooter.View()
+	content = append(content, helpFooterContent)
 
 	// Combine all content
-	listContent := lipgloss.JoinVertical(
+	fullListContent := lipgloss.JoinVertical(
 		lipgloss.Left,
 		content...,
 	)
 
 	// Wrap in a card
 	listCard := styles.CardBase.
-		Render(listContent)
+		Render(fullListContent)
 
 	// Use header and footer components
 	headerView := m.header.View()
@@ -228,6 +175,68 @@ func (m *ListModel) View() string {
 }
 
 // nextItem moves to the next item in the current page
+// renderListItems renders all events as formatted strings for display
+func (m *ListModel) renderListItems() []string {
+	var items []string
+
+	for i, event := range m.events {
+		// Marker for selected item
+		marker := "  "
+		if i == m.selectedIdx {
+			marker = "▶ "
+		}
+
+		// Truncate text to 100 chars
+		text := event.Text
+		if len(text) > 100 {
+			text = text[:97] + "..."
+		}
+
+		// Determine styling based on selection
+		itemStyle := styles.ListItem
+		if i == m.selectedIdx {
+			itemStyle = styles.ListItemSelected
+		}
+
+		// Render event text
+		eventText := itemStyle.Render(marker + text)
+
+		// Render date and company
+		dateStr := event.Date.Format("2006-01-02")
+		var detailLine string
+		if event.Company != "" || event.Project != "" {
+			detailLine = fmt.Sprintf("   %s | %s",
+				styles.ListItem.Foreground(styles.ColorTextSecondary).Render(dateStr),
+				styles.ListItem.Foreground(styles.ColorTextMuted).Render(event.Company),
+			)
+		} else {
+			detailLine = styles.ListItem.Foreground(styles.ColorTextSecondary).Render(fmt.Sprintf("   %s", dateStr))
+		}
+
+		items = append(items, eventText, detailLine, "")
+	}
+
+	return items
+}
+
+// renderListWithContainer renders the list using ListContainer
+func (m *ListModel) renderListWithContainer() string {
+	// Render items
+	items := m.renderListItems()
+
+	// Create pagination info
+	totalPages := m.getTotalPages()
+	paginationText := fmt.Sprintf("Page %d of %d (%d total events)", m.currentPage, totalPages, m.totalCount)
+
+	// Render using ListContainer
+	listContainer := components.NewListContainer().
+		SetItems(items).
+		SetEmptyStateMessage("No events found. Start capturing your career journey!").
+		SetPaginationInfo(paginationText)
+
+	return listContainer.Render()
+}
+
 func (m *ListModel) nextItem() {
 	if m.selectedIdx < len(m.events)-1 {
 		m.selectedIdx++
