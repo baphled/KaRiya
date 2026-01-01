@@ -65,6 +65,36 @@ var _ = ginkgo.Describe("List Model Rendering Consistency", func() {
 			factView := factModel.View()
 			gomega.Expect(factView).NotTo(gomega.BeEmpty())
 		})
+
+		ginkgo.It("should use 'Showing X-Y of Z <items>' pagination format in all models", func() {
+			// Test list.go pagination format
+			listView := listModel.View()
+			gomega.Expect(listView).To(gomega.MatchRegexp(`Showing \d+-\d+ of \d+ events`))
+
+			// Test burst_list.go pagination format
+			burstView := burstModel.View()
+			gomega.Expect(burstView).To(gomega.MatchRegexp(`Showing \d+-\d+ of \d+ bursts`))
+
+			// Test fact_list.go pagination format
+			factView := factModel.View()
+			gomega.Expect(factView).To(gomega.MatchRegexp(`Showing \d+-\d+ of \d+ facts`))
+		})
+
+		ginkgo.It("should have consistent pagination format structure", func() {
+			// All pagination should start with 'Showing' and use 'X-Y of Z' format
+			listView := listModel.View()
+			burstView := burstModel.View()
+			factView := factModel.View()
+
+			// Extract pagination lines
+			listHasShowingFormat := strings.Contains(listView, "Showing")
+			burstHasShowingFormat := strings.Contains(burstView, "Showing")
+			factHasShowingFormat := strings.Contains(factView, "Showing")
+
+			gomega.Expect(listHasShowingFormat).To(gomega.BeTrue(), "list.go should use 'Showing' format")
+			gomega.Expect(burstHasShowingFormat).To(gomega.BeTrue(), "burst_list.go should use 'Showing' format")
+			gomega.Expect(factHasShowingFormat).To(gomega.BeTrue(), "fact_list.go should use 'Showing' format")
+		})
 	})
 
 	ginkgo.Describe("Empty State Handling", func() {
@@ -80,6 +110,52 @@ var _ = ginkgo.Describe("List Model Rendering Consistency", func() {
 			emptyFactModel.height = 24
 			factView := emptyFactModel.View()
 			gomega.Expect(factView).To(gomega.ContainSubstring("No facts found"))
+		})
+
+		ginkgo.It("should use 'No <items> found' format for empty states", func() {
+			// Create empty repository for consistent testing
+			emptyRepo := careerrepo.NewMemoryRepository()
+			emptyService := careerservice.NewService(emptyRepo)
+
+			emptyListModel := NewListModel(emptyService, ctx)
+			emptyListModel.width = 80
+			emptyListModel.height = 24
+			listView := emptyListModel.View()
+			gomega.Expect(listView).To(gomega.MatchRegexp(`No .+ found`))
+
+			emptyBurstModel := NewBurstListModel(emptyService, ctx)
+			emptyBurstModel.width = 80
+			emptyBurstModel.height = 24
+			burstView := emptyBurstModel.View()
+			gomega.Expect(burstView).To(gomega.ContainSubstring("No bursts found"))
+
+			emptyFactModel := NewFactListModel(emptyService, ctx)
+			emptyFactModel.width = 80
+			emptyFactModel.height = 24
+			factView := emptyFactModel.View()
+			gomega.Expect(factView).To(gomega.ContainSubstring("No facts found"))
+		})
+
+		ginkgo.It("should NOT have conditional empty state messages", func() {
+			// Create empty repository
+			emptyRepo := careerrepo.NewMemoryRepository()
+			emptyService := careerservice.NewService(emptyRepo)
+
+			// Test burst_list.go doesn't have "No matching bursts"
+			emptyBurstModel := NewBurstListModel(emptyService, ctx)
+			emptyBurstModel.width = 80
+			emptyBurstModel.height = 24
+			burstView := emptyBurstModel.View()
+			gomega.Expect(burstView).To(gomega.ContainSubstring("No bursts found"))
+			gomega.Expect(burstView).NotTo(gomega.ContainSubstring("No matching bursts"))
+
+			// Test fact_list.go doesn't have "No facts match the current filters"
+			emptyFactModel := NewFactListModel(emptyService, ctx)
+			emptyFactModel.width = 80
+			emptyFactModel.height = 24
+			factView := emptyFactModel.View()
+			gomega.Expect(factView).To(gomega.ContainSubstring("No facts found"))
+			gomega.Expect(factView).NotTo(gomega.ContainSubstring("No facts match the current filters"))
 		})
 	})
 

@@ -85,8 +85,12 @@ func (flm *FactListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				fact := flm.filtered[flm.focusedIdx]
 				flm.selectedFacts[fact.ID] = !flm.selectedFacts[fact.ID]
 			}
-		case "esc", "q":
-			flm.cancelled = true
+		case "esc":
+			// Signal back navigation to parent
+			return flm, func() tea.Msg { return BackMsg{} }
+		case "q", "ctrl+c":
+			// Signal quit to parent
+			return flm, func() tea.Msg { return QuitMsg{} }
 		}
 	case tea.WindowSizeMsg:
 		flm.width = msg.Width
@@ -101,25 +105,17 @@ func (flm *FactListModel) View() string {
 		return flm.renderEmpty()
 	}
 
-	var items []string
+	// Render items using list.go pattern
+	items := flm.renderListItems()
+
+	// Create pagination info - matching list.go format: "Showing X-Y of Z facts"
 	maxIdx := flm.height - 5
 	endIdx := flm.scrollOffset + maxIdx
 	if endIdx > len(flm.filtered) {
 		endIdx = len(flm.filtered)
 	}
-
-	for i := flm.scrollOffset; i < endIdx && i < len(flm.filtered); i++ {
-		fact := flm.filtered[i]
-		isFocused := (i == flm.focusedIdx)
-		isSelected := flm.selectedFacts[fact.ID]
-		item := flm.renderFactItem(fact, isFocused, isSelected)
-		items = append(items, item)
-	}
-
-	paginationInfo := fmt.Sprintf("Showing %d of %d facts", len(flm.filtered), len(flm.facts))
-	if len(flm.selectedFacts) > 0 {
-		paginationInfo += fmt.Sprintf(" | %d selected", len(flm.selectedFacts))
-	}
+	startIdx := flm.scrollOffset + 1
+	paginationInfo := fmt.Sprintf("Showing %d-%d of %d facts", startIdx, endIdx, len(flm.facts))
 
 	title := "📋 Facts"
 	if flm.competencyFilter != "" {
@@ -157,58 +153,58 @@ func (flm *FactListModel) View() string {
 	return fullContent
 }
 
-// renderFactItem renders a single fact item in the list
-func (flm *FactListModel) renderFactItem(fact *career.Fact, focused, selected bool) string {
-	checkbox := "☐"
-	if selected {
-		checkbox = "☑"
+// renderListItems renders fact items following list.go's pattern
+func (flm *FactListModel) renderListItems() []string {
+	var items []string
+
+	maxIdx := flm.height - 5
+	endIdx := flm.scrollOffset + maxIdx
+	if endIdx > len(flm.filtered) {
+		endIdx = len(flm.filtered)
 	}
 
-	focusIndicator := " "
-	if focused {
-		focusIndicator = "►"
+	for i := flm.scrollOffset; i < endIdx && i < len(flm.filtered); i++ {
+		fact := flm.filtered[i]
+
+		// Marker for selected item (matching list.go pattern)
+		marker := "  "
+		if i == flm.focusedIdx {
+			marker = "▶ "
+		}
+
+		// Truncate text to 100 chars (matching list.go pattern)
+		text := fact.Text
+		if len(text) > 100 {
+			text = text[:97] + "..."
+		}
+
+		// Determine styling based on selection (matching list.go pattern)
+		itemStyle := styles.ListItem
+		if i == flm.focusedIdx {
+			itemStyle = styles.ListItemSelected
+		}
+
+		// Render fact text
+		factText := itemStyle.Render(marker + text)
+
+		// Render competency categories and role fit as detail line
+		roleIcon := getRoleFitIcon(fact.RoleFit)
+		competencies := strings.Join(fact.CompetencyCategories, ", ")
+		detailLine := fmt.Sprintf("   %s | %s",
+			styles.ListItem.Foreground(styles.ColorTextSecondary).Render(competencies),
+			styles.ListItem.Foreground(styles.ColorTextMuted).Render(roleIcon),
+		)
+
+		items = append(items, factText, detailLine, "")
 	}
 
-	preview := fact.Text
-	if len(preview) > 50 {
-		preview = preview[:47] + "..."
-	}
-
-	roleIcon := getRoleFitIcon(fact.RoleFit)
-
-	line := fmt.Sprintf("%s %s %s [%s] %s",
-		focusIndicator,
-		checkbox,
-		roleIcon,
-		strings.Join(fact.CompetencyCategories, ","),
-		preview,
-	)
-
-	style := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		Width(flm.width).
-		Padding(0)
-
-	if focused {
-		style = style.
-			Foreground(styles.ColorTextPrimary).
-			Background(styles.ColorBackgroundCard).
-			Bold(true)
-	}
-
-	if selected {
-		style = style.Foreground(styles.ColorAccentTeal)
-	}
-
-	return style.Render(line)
+	return items
 }
 
-// renderEmpty renders the empty state
+// renderEmpty renders the empty state - matching list.go pattern
 func (flm *FactListModel) renderEmpty() string {
+	// Simplified empty state message - matching list.go
 	message := "No facts found"
-	if flm.competencyFilter != "" || flm.roleFitFilter != "" || flm.audienceFilter != "" {
-		message = "No facts match the current filters"
-	}
 
 	listContainer := components.NewListContainer().
 		SetItems([]string{}).
