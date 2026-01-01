@@ -116,7 +116,7 @@ func (flm *FactListModel) View() string {
 		items = append(items, item)
 	}
 
-	paginationInfo := fmt.Sprintf("%d/%d facts", len(flm.filtered), len(flm.facts))
+	paginationInfo := fmt.Sprintf("Showing %d of %d facts", len(flm.filtered), len(flm.facts))
 	if len(flm.selectedFacts) > 0 {
 		paginationInfo += fmt.Sprintf(" | %d selected", len(flm.selectedFacts))
 	}

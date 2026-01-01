@@ -70,7 +70,7 @@ var _ = ginkgo.Describe("FactListModel", func() {
 			model.SetFacts(facts)
 			result := model.View()
 			gomega.Expect(result).To(gomega.ContainSubstring("Facts"))
-			gomega.Expect(result).To(gomega.ContainSubstring("3/3"))
+			gomega.Expect(result).To(gomega.ContainSubstring("Showing 3 of 3"))
 		})
 
 		ginkgo.It("should show selection count", func() {
