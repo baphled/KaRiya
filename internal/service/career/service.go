@@ -300,7 +300,7 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 
 	// Validate burst
 	if err := burst.Validate(); err != nil {
-		s.logger.Warn("Burst validation failed")
+		s.logger.Warn("Burst validation failed: " + err.Error())
 		return err
 	}
 
