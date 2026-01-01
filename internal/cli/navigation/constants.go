@@ -27,6 +27,7 @@ const (
 	KeyHome     NavigationKey = "h" // Go to home screen
 	KeyQuit     NavigationKey = "q" // Quit application
 	KeyPending  NavigationKey = "p" // Review pending items
+	KeyFacts    NavigationKey = "t" // View all facts
 )
 
 // AllNavigationKeys returns a slice of all defined navigation keys
@@ -52,6 +53,7 @@ func AllNavigationKeys() []NavigationKey {
 		KeyList,
 		KeyMetadata,
 		KeyPending,
+		KeyFacts,
 	}
 }
 
@@ -77,4 +79,5 @@ var KeyDescription = map[NavigationKey]string{
 	KeyList:     "List all events",
 	KeyMetadata: "Open metadata review",
 	KeyPending:  "Review pending items",
+	KeyFacts:    "View all facts",
 }
