@@ -33,6 +33,7 @@ type BurstListModel struct {
 	sortBy          string
 	width           int
 	height          int
+	helpFooter      components.HelpFooterModel // Help footer for keyboard shortcuts
 }
 
 // NewBurstListModel creates a new burst list model
@@ -48,6 +49,7 @@ func NewBurstListModel(svc *careerservice.Service, ctx context.Context) *BurstLi
 		sortBy:            "date",
 		width:             80,
 		height:            24,
+		helpFooter:        components.NewHelpFooter("burst_list", 80),
 	}
 }
 
@@ -146,6 +148,10 @@ func (m *BurstListModel) View() string {
 	screenContainer := components.NewScreenContainer(screenContent).
 		WithPaddingMode(components.PaddingNormal)
 
+	// Render help footer
+	m.helpFooter.SetWidth(m.width)
+	helpFooterContent := m.helpFooter.View()
+
 	fullContent := lipgloss.JoinVertical(
 		lipgloss.Left,
 		headerView,
@@ -153,6 +159,8 @@ func (m *BurstListModel) View() string {
 		screenContainer.Render(),
 		"",
 		footerView,
+		"",
+		helpFooterContent,
 	)
 
 	return fullContent

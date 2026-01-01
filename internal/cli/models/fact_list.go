@@ -35,6 +35,7 @@ type FactListModel struct {
 	submitted        bool
 	cancelled        bool
 	err              error
+	helpFooter       components.HelpFooterModel // Help footer for keyboard shortcuts
 }
 
 // NewFactListModel creates a new fact list model
@@ -50,6 +51,7 @@ func NewFactListModel(service *careerservice.Service, ctx context.Context) *Fact
 		height:            20,
 		sortBy:            "date",
 		sortOrder:         "desc",
+		helpFooter:        components.NewHelpFooter("fact_list", 80),
 	}
 }
 
@@ -141,6 +143,10 @@ func (flm *FactListModel) View() string {
 	screenContainer := components.NewScreenContainer(screenContent).
 		WithPaddingMode(components.PaddingNormal)
 
+	// Render help footer
+	flm.helpFooter.SetWidth(flm.width)
+	helpFooterContent := flm.helpFooter.View()
+
 	fullContent := lipgloss.JoinVertical(
 		lipgloss.Left,
 		headerView,
@@ -148,6 +154,8 @@ func (flm *FactListModel) View() string {
 		screenContainer.Render(),
 		"",
 		footerView,
+		"",
+		helpFooterContent,
 	)
 
 	return fullContent

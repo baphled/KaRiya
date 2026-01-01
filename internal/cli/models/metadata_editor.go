@@ -106,6 +106,7 @@ func NewMetadataEditorModel(event *career.CareerEvent, service *careerservice.Se
 		fieldErrors:       make(map[int]string),
 		validator:         validation.NewMetadataValidator(),
 		calculator:        careerservice.NewDataQualityCalculator(),
+		helpFooter:        components.NewHelpFooter("metadata_editor", 80),
 	}
 }
 
@@ -128,6 +129,15 @@ func (m *MetadataEditorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *MetadataEditorModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
+	case "q", "ctrl+c":
+		// Allow quit from metadata editor
+		return m, func() tea.Msg { return QuitMsg{} }
+
+	case "esc":
+		// Cancel editor and return to parent
+		m.cancelled = true
+		return m, tea.Quit
+
 	case "tab":
 		m.focusIndex = (m.focusIndex + 1) % MetadataFieldCount
 		m.updateInputFocus()
@@ -194,10 +204,6 @@ func (m *MetadataEditorModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			return m, tea.Quit
 		}
 		return m, nil
-
-	case "esc":
-		m.cancelled = true
-		return m, tea.Quit
 
 	default:
 		// Handle text input for text fields

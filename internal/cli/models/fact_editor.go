@@ -50,6 +50,7 @@ type FactEditorModel struct {
 	originalCompetencies []string // Track original for change detection
 	originalRoleFit      career.RoleFit
 	originalAudience     []string
+	helpFooter           components.HelpFooterModel // Help footer for keyboard shortcuts
 }
 
 // NewFactEditorModel creates a new fact editor model
@@ -111,6 +112,7 @@ func NewFactEditorModel(fact *career.Fact, service *careerservice.Service, ctx c
 		originalCompetencies: append([]string{}, fact.CompetencyCategories...),
 		originalRoleFit:      fact.RoleFit,
 		originalAudience:     append([]string{}, fact.AudienceRelevance...),
+		helpFooter:           components.NewHelpFooter("fact_editor", 80),
 	}
 }
 
@@ -144,6 +146,15 @@ func (m *FactEditorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *FactEditorModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
+	case "q", "ctrl+c":
+		// Allow quit from fact editor
+		return m, func() tea.Msg { return QuitMsg{} }
+
+	case "esc":
+		// Cancel editor and return to parent
+		m.cancelled = true
+		return m, nil
+
 	case "tab":
 		m.clearFieldErrors()
 		m.focusIndex = (m.focusIndex + 1) % FactEditorFieldCount
@@ -232,10 +243,6 @@ func (m *FactEditorModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.cancelled = true
 			return m, nil
 		}
-		return m, nil
-
-	case "esc":
-		m.cancelled = true
 		return m, nil
 	}
 
@@ -380,6 +387,10 @@ func (m *FactEditorModel) View() string {
 	headerView := components.NewHeader("Fact Editor", m.width).View()
 	footerView := components.NewFooter(m.width).View()
 
+	// Render help footer
+	m.helpFooter.SetWidth(m.width)
+	helpFooterContent := m.helpFooter.View()
+
 	// Combine all sections
 	fullContent := strings.Join([]string{
 		headerView,
@@ -387,6 +398,8 @@ func (m *FactEditorModel) View() string {
 		formContent,
 		"",
 		footerView,
+		"",
+		helpFooterContent,
 	}, "\n")
 
 	return fullContent
