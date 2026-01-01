@@ -335,16 +335,16 @@
   - [x] 4.5.2 Verify context key matches model type (All models use matching context keys: "fact_editor", "metadata_editor", "fact_list", "burst_list")
   - [x] 4.5.3 Verify shortcuts displayed match registered shortcuts (Help footer component correctly displays contextual shortcuts)
   - [x] 4.5.4 Test help footer updates when state changes (Comprehensive tests in help_footer_test.go verify width, context, and key updates)
-- [ ] 4.6 Verify error display standardization
-  - [ ] 4.6.1 Audit error display across all 8 models
-  - [ ] 4.6.2 Ensure field errors use FormFieldContainer display
-  - [ ] 4.6.3 Ensure model-level errors use ErrorBox style
-  - [ ] 4.6.4 Create error handling guide
-- [ ] 4.7 Verify focus indicator consistency
-  - [ ] 4.7.1 Check all form fields show focus indicators
-  - [ ] 4.7.2 Check all list items show focus indicators
-  - [ ] 4.7.3 Check all button focus states
-  - [ ] 4.7.4 Document focus indicator patterns
+- [x] 4.6 Verify error display standardization
+  - [x] 4.6.1 Audit error display across all 8 models
+  - [x] 4.6.2 Ensure field errors use FormFieldContainer display
+  - [x] 4.6.3 Ensure model-level errors use ErrorBox style
+  - [x] 4.6.4 Create error handling guide
+- [x] 4.7 Verify focus indicator consistency
+  - [x] 4.7.1 Check all form fields show focus indicators
+  - [x] 4.7.2 Check all list items show focus indicators
+  - [x] 4.7.3 Check all button focus states
+  - [x] 4.7.4 Document focus indicator patterns
 - [ ] 4.8 Verify breadcrumb and history management
   - [ ] 4.8.1 Ensure all 8 models track breadcrumbs
   - [ ] 4.8.2 Ensure back navigation works correctly
