@@ -287,12 +287,13 @@
 - [x] 3.9.6 Verify user-facing consistency
   - [x] 3.9.6.1 Run all three list views in actual application (code analysis)
   - [x] 3.9.6.2 Navigate through career events (list.go), facts (fact_list.go), bursts (burst_list.go)
-  - [x] 3.9.6.3 Verify visual appearance is identical across all three views
+  - [ ] 3.9.6.3 Verify visual appearance is identical across all three views
   - [x] 3.9.6.4 Verify navigation behavior is identical (j/k, g/G, PageUp/Down, scrolling)
   - [x] 3.9.6.5 Verify pagination display is identical
   - [x] 3.9.6.6 Verify empty state messages and styling is consistent
   - [x] 3.9.6.7 Verify selected items highlight identically
   - [x] 3.9.6.8 Create visual sign-off documentation (task-3.9.6-user-facing-consistency-verification.md)
+  - [ ] 3.9.6.9 Verify viewing details from selected items works identically
 
 - [x] 3.9.7 Document list model rendering specification
   - [x] 3.9.7.1 Create specification document for standard list model rendering

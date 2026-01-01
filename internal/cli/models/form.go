@@ -1013,7 +1013,7 @@ func (m *FormModel) renderFormContentWithContainers() string {
 
 	// Add model-level error if present
 	if m.err != nil {
-		content = append(content, styles.ErrorText.Render(m.err.Error()))
+		content = append(content, styles.ErrorBox.Render(m.err.Error()))
 	}
 
 	return strings.Join(content, "\n\n")

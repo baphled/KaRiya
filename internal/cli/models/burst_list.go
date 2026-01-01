@@ -33,6 +33,7 @@ type BurstListModel struct {
 	sortBy          string
 	width           int
 	height          int
+	err             error                       // Error from loading bursts
 	helpFooter      components.HelpFooterModel // Help footer for keyboard shortcuts
 }
 
@@ -80,8 +81,11 @@ func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case BurstsLoadedMsg:
-		if msg.Err == nil {
+		if msg.Err != nil {
+			m.err = msg.Err
+		} else {
 			m.bursts = msg.Bursts
+			m.err = nil
 		}
 		return m, nil
 
@@ -148,20 +152,41 @@ func (m *BurstListModel) View() string {
 	screenContainer := components.NewScreenContainer(screenContent).
 		WithPaddingMode(components.PaddingNormal)
 
+	// Add error handling
+	var errorContent string
+	if m.err != nil {
+		errorMsg := fmt.Sprintf("Error loading bursts: %v\n\nPress 'r' to retry or 'esc' to cancel", m.err)
+		errorContent = styles.ErrorBox.Render(errorMsg)
+	}
+
 	// Render help footer
 	m.helpFooter.SetWidth(m.width)
 	helpFooterContent := m.helpFooter.View()
 
-	fullContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerView,
-		"",
-		screenContainer.Render(),
-		"",
-		footerView,
-		"",
-		helpFooterContent,
-	)
+	var fullContent string
+	if errorContent != "" {
+		fullContent = lipgloss.JoinVertical(
+			lipgloss.Left,
+			headerView,
+			"",
+			errorContent,
+			"",
+			footerView,
+			"",
+			helpFooterContent,
+		)
+	} else {
+		fullContent = lipgloss.JoinVertical(
+			lipgloss.Left,
+			headerView,
+			"",
+			screenContainer.Render(),
+			"",
+			footerView,
+			"",
+			helpFooterContent,
+		)
+	}
 
 	return fullContent
 }

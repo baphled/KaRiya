@@ -135,7 +135,8 @@ func (m *ListModel) View() string {
 
 	// Error handling
 	if m.err != nil {
-		content = append(content, styles.ErrorText.Render(fmt.Sprintf("Error loading events: %v", m.err)))
+		errorMsg := fmt.Sprintf("Error loading events: %v\n\nPress 'r' to retry or 'esc' to cancel", m.err)
+		content = append(content, styles.ErrorBox.Render(errorMsg))
 	}
 
 	// Render list using ListContainer
