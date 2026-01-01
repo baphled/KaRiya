@@ -389,173 +389,23 @@ func (m *FormModel) validateDateField() {
 
 // View renders the form
 func (m *FormModel) View() string {
-	// Form content
-	var content []string
-
-	// Text field
-	focused := m.focusIndex == int(TextField)
-	textLabel := styles.InputLabel.Render("Event Text (required):")
-	textInput := styles.InputBase.
-		Width(styles.MaxWidth(80) - 10).
-		Render(m.inputs[0].View())
-
-	charInfo := fmt.Sprintf("Characters: %d/%d %s",
-		m.charCount, m.maxChars, m.getCharCountIndicator())
-	charCount := styles.InfoText.Render(charInfo)
-
-	content = append(content,
-		fmt.Sprintf("%s %s",
-			m.getFocusIndicator(focused),
-			textLabel),
-		textInput,
-		charCount,
-	)
-
-	// Show text field error if present
-	if fieldErr, ok := m.fieldErrors[TextField]; ok {
-		content = append(content, styles.ErrorText.Render(fieldErr))
-	}
-
-	// Date field
-	focused = m.focusIndex == int(DateField)
-	dateLabel := styles.InputLabel.Render("Date (optional):")
-	dateInput := styles.InputBase.
-		Width(styles.MaxWidth(80) - 10).
-		Render(m.inputs[1].View())
-
-	content = append(content,
-		fmt.Sprintf("%s %s",
-			m.getFocusIndicator(focused),
-			dateLabel),
-		dateInput,
-	)
-
-	// Show date field error if present
-	if fieldErr, ok := m.fieldErrors[DateField]; ok {
-		content = append(content, styles.ErrorText.Render(fieldErr))
-	}
-
-	// Company field
-	focused = m.focusIndex == int(CompanyField)
-	companyLabel := styles.InputLabel.Render("Company (optional):")
-	companyInput := styles.InputBase.
-		Width(styles.MaxWidth(80) - 10).
-		Render(m.inputs[2].View())
-
-	content = append(content,
-		fmt.Sprintf("%s %s",
-			m.getFocusIndicator(focused),
-			companyLabel),
-		companyInput,
-	)
-
-	// Project field
-	focused = m.focusIndex == int(ProjectField)
-	projectLabel := styles.InputLabel.Render("Project (optional):")
-	projectInput := styles.InputBase.
-		Width(styles.MaxWidth(80) - 10).
-		Render(m.inputs[3].View())
-
-	content = append(content,
-		fmt.Sprintf("%s %s",
-			m.getFocusIndicator(focused),
-			projectLabel),
-		projectInput,
-	)
-
-	// Mode selector
-	// Tags display
-	focused = m.focusIndex == int(TagsField)
-	tagsLabel := styles.InputLabel.Render("Tags (Use Up/Down to navigate, Space to toggle):")
-	var tagsDisplay string
-	if focused {
-		tagsDisplay = m.renderTagSelector()
-	} else {
-		selectedTags := m.tagSelector.SelectedTags()
-		if len(selectedTags) > 0 {
-			for _, tag := range selectedTags {
-				tagsDisplay += styles.TagBase.Render(tag) + " "
-			}
-		} else {
-			tagsDisplay = styles.InfoText.Render("(none selected)")
-		}
-	}
-	content = append(content,
-		fmt.Sprintf("%s %s",
-			m.getFocusIndicator(focused),
-			tagsLabel),
-		tagsDisplay)
-
-	// Categories display
-	focused = m.focusIndex == int(CategoriesField)
-	categoriesLabel := styles.InputLabel.Render("Categories (Use Up/Down to navigate, Space to toggle):")
-	var categoriesDisplay string
-	if focused {
-		categoriesDisplay = m.renderCategorySelector()
-	} else {
-		selectedCategories := m.categorySelector.SelectedCategories()
-		if len(selectedCategories) > 0 {
-			for _, category := range selectedCategories {
-				categoriesDisplay += styles.TagBase.Render(category) + " "
-			}
-		} else {
-			categoriesDisplay = styles.InfoText.Render("(none selected)")
-		}
-	}
-	content = append(content,
-		fmt.Sprintf("%s %s",
-			m.getFocusIndicator(focused),
-			categoriesLabel),
-		categoriesDisplay)
-
-	focused = m.focusIndex == int(ModeField)
-	modeLabel := styles.InputLabel.Render("Capture Mode:")
-	modeContent := m.renderModeSelector()
-
-	content = append(content,
-		fmt.Sprintf("%s %s",
-			m.getFocusIndicator(focused),
-			modeLabel),
-		modeContent,
-	)
-
-	// Submit button
-	focused = m.focusIndex == int(SubmitButton)
-	var submitBtn string
-	if focused {
-		submitBtn = styles.ButtonPrimary.Render("[ > Submit < ]")
-	} else {
-		submitBtn = styles.ButtonPrimary.Render("[ Submit ]")
-	}
-
-	content = append(content, submitBtn)
-
-	// Error message
-	if m.err != nil {
-		content = append(content, styles.ErrorText.Render(m.err.Error()))
-	}
-
-	// Help text
-	// Help footer with keyboard shortcuts
-	m.helpFooter.SetWidth(styles.MaxWidth(80))
-	helpFooterContent := m.helpFooter.View()
-
-	// Combine all content
-	formContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		content...,
-	)
+	// Render form content using FormFieldContainers
+	formContent := m.renderFormContentWithContainers()
 
 	// Wrap in a card
 	formCard := styles.CardBase.
 		Width(styles.MaxWidth(80) - 4).
 		Render(formContent)
 
-	// Combine all sections
 	// Use header and footer components
 	headerView := m.header.View()
 	footerView := m.footer.View()
 
+	// Help footer with keyboard shortcuts
+	m.helpFooter.SetWidth(styles.MaxWidth(80))
+	helpFooterContent := m.helpFooter.View()
+
+	// Combine all sections
 	fullContent := lipgloss.JoinVertical(
 		lipgloss.Left,
 		headerView,
@@ -952,6 +802,223 @@ func (m *FormModel) renderCategorySelector() string {
 }
 
 // SetBreadcrumbs sets breadcrumb trail for display in header
+
+// renderTextFieldWithContainer renders the text field using FormFieldContainer
+// Helper to add focus indicator to rendered field
+func (m *FormModel) addFocusIndicatorToField(fieldContent string, focused bool) string {
+	if focused {
+		// Add focus indicator before the first line
+		lines := strings.Split(fieldContent, "\n")
+		if len(lines) > 0 {
+			lines[0] = "► " + lines[0]
+			return strings.Join(lines, "\n")
+		}
+		return "► " + fieldContent
+	}
+	// Add space to align with focused fields
+	lines := strings.Split(fieldContent, "\n")
+	if len(lines) > 0 {
+		lines[0] = "  " + lines[0]
+		return strings.Join(lines, "\n")
+	}
+	return "  " + fieldContent
+}
+
+func (m *FormModel) renderTextFieldWithContainer() string {
+	focused := m.focusIndex == int(TextField)
+	fieldErr := ""
+	if err, ok := m.fieldErrors[TextField]; ok {
+		fieldErr = err
+	}
+
+	charInfo := fmt.Sprintf("Characters: %d/%d %s",
+		m.charCount, m.maxChars, m.getCharCountIndicator())
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Event Text (required):").
+		SetInput(m.inputs[0].View()).
+		SetHint(charInfo).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderDateFieldWithContainer renders the date field using FormFieldContainer
+func (m *FormModel) renderDateFieldWithContainer() string {
+	focused := m.focusIndex == int(DateField)
+	fieldErr := ""
+	if err, ok := m.fieldErrors[DateField]; ok {
+		fieldErr = err
+	}
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Date (optional):").
+		SetInput(m.inputs[1].View()).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderCompanyFieldWithContainer renders the company field using FormFieldContainer
+func (m *FormModel) renderCompanyFieldWithContainer() string {
+	focused := m.focusIndex == int(CompanyField)
+	fieldErr := ""
+	if err, ok := m.fieldErrors[CompanyField]; ok {
+		fieldErr = err
+	}
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Company (optional):").
+		SetInput(m.inputs[2].View()).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderProjectFieldWithContainer renders the project field using FormFieldContainer
+func (m *FormModel) renderProjectFieldWithContainer() string {
+	focused := m.focusIndex == int(ProjectField)
+	fieldErr := ""
+	if err, ok := m.fieldErrors[ProjectField]; ok {
+		fieldErr = err
+	}
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Project (optional):").
+		SetInput(m.inputs[3].View()).
+		SetError(fieldErr).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderTagsFieldWithContainer renders the tags field using FormFieldContainer
+func (m *FormModel) renderTagsFieldWithContainer() string {
+	focused := m.focusIndex == int(TagsField)
+	var tagsDisplay string
+	if focused {
+		tagsDisplay = m.renderTagSelector()
+	} else {
+		selectedTags := m.tagSelector.SelectedTags()
+		if len(selectedTags) > 0 {
+			for _, tag := range selectedTags {
+				tagsDisplay += styles.TagBase.Render(tag) + " "
+			}
+		} else {
+			tagsDisplay = styles.InfoText.Render("(none selected)")
+		}
+	}
+
+	hint := "Use Up/Down to navigate, Space to toggle"
+	if !focused {
+		hint = ""
+	}
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Tags:").
+		SetInput(tagsDisplay).
+		SetHint(hint).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderCategoriesFieldWithContainer renders the categories field using FormFieldContainer
+func (m *FormModel) renderCategoriesFieldWithContainer() string {
+	focused := m.focusIndex == int(CategoriesField)
+	var categoriesDisplay string
+	if focused {
+		categoriesDisplay = m.renderCategorySelector()
+	} else {
+		selectedCategories := m.categorySelector.SelectedCategories()
+		if len(selectedCategories) > 0 {
+			for _, category := range selectedCategories {
+				categoriesDisplay += styles.TagBase.Render(category) + " "
+			}
+		} else {
+			categoriesDisplay = styles.InfoText.Render("(none selected)")
+		}
+	}
+
+	hint := "Use Up/Down to navigate, Space to toggle"
+	if !focused {
+		hint = ""
+	}
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Categories:").
+		SetInput(categoriesDisplay).
+		SetHint(hint).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderModeFieldWithContainer renders the mode field using FormFieldContainer
+func (m *FormModel) renderModeFieldWithContainer() string {
+	focused := m.focusIndex == int(ModeField)
+	modeContent := m.renderModeSelector()
+
+	hint := "Use Up/Down to navigate"
+	if !focused {
+		hint = ""
+	}
+
+	fieldContent := components.NewFormFieldContainer().
+		SetLabel("Capture Mode:").
+		SetInput(modeContent).
+		SetHint(hint).
+		SetFocused(focused).
+		Render()
+
+	return m.addFocusIndicatorToField(fieldContent, focused)
+}
+
+// renderSubmitButtonWithContainer renders the submit button
+func (m *FormModel) renderSubmitButtonWithContainer() string {
+	focused := m.focusIndex == int(SubmitButton)
+	var submitBtn string
+	if focused {
+		submitBtn = styles.ButtonPrimary.Render("[ > Submit < ]")
+	} else {
+		submitBtn = styles.ButtonPrimary.Render("[ Submit ]")
+	}
+	return submitBtn
+}
+
+// renderFormContentWithContainers renders all form fields using FormFieldContainers
+func (m *FormModel) renderFormContentWithContainers() string {
+	var content []string
+
+	// Add all fields
+	content = append(content,
+		m.renderTextFieldWithContainer(),
+		m.renderDateFieldWithContainer(),
+		m.renderCompanyFieldWithContainer(),
+		m.renderProjectFieldWithContainer(),
+		m.renderTagsFieldWithContainer(),
+		m.renderCategoriesFieldWithContainer(),
+		m.renderModeFieldWithContainer(),
+		m.renderSubmitButtonWithContainer(),
+	)
+
+	// Add model-level error if present
+	if m.err != nil {
+		content = append(content, styles.ErrorText.Render(m.err.Error()))
+	}
+
+	return strings.Join(content, "\n\n")
+}
+
 func (m *FormModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
 	m.header.SetBreadcrumbs(crumbs)
