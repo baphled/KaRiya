@@ -213,11 +213,14 @@ var _ = Describe("Burst CLI Integration", func() {
 		It("should include burst navigation in help text", func() {
 			view := app.renderHome()
 
-			// Verify commands section includes bursts
-			Expect(view).To(ContainSubstring("Commands:"))
-			Expect(view).To(ContainSubstring("b - View Bursts"))
-			Expect(view).To(ContainSubstring("c - Capture Career Event"))
-			Expect(view).To(ContainSubstring("l - List Events"))
+			// Verify menu includes all key commands
+			Expect(view).To(ContainSubstring("Core Actions"))
+			Expect(view).To(ContainSubstring("b"))
+			Expect(view).To(ContainSubstring("View Bursts"))
+			Expect(view).To(ContainSubstring("c"))
+			Expect(view).To(ContainSubstring("Capture Career Event"))
+			Expect(view).To(ContainSubstring("l"))
+			Expect(view).To(ContainSubstring("List Events"))
 		})
 	})
 

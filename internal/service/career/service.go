@@ -300,7 +300,7 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 
 	// Validate burst
 	if err := burst.Validate(); err != nil {
-		s.logger.Warn("Burst validation failed: " + err.Error())
+		s.logger.WithFields(map[string]string{"error": err.Error()}).Warn("Burst validation failed")
 		return err
 	}
 
@@ -321,6 +321,37 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 	} else {
 		s.logger.Info("Burst confirmed (no repository configured)")
 	}
+
+	return nil
+}
+
+// DeleteBurst removes a burst from the repository
+func (s *Service) DeleteBurst(ctx context.Context, burstID string) error {
+	if s.burstRepo == nil {
+		s.logger.Warn("Burst repository not configured")
+		return fmt.Errorf("burst repository not configured")
+	}
+
+	if burstID == "" {
+		s.logger.Warn("Cannot delete burst with empty ID")
+		return fmt.Errorf("burst ID cannot be empty")
+	}
+
+	if err := s.burstRepo.Delete(ctx, burstID); err != nil {
+		s.logger.
+			WithFields(map[string]string{
+				"burst_id": burstID,
+				"error":    err.Error(),
+			}).
+			Error("Failed to delete burst")
+		return fmt.Errorf("failed to delete burst: %w", err)
+	}
+
+	s.logger.
+		WithFields(map[string]string{
+			"burst_id": burstID,
+		}).
+		Info("Burst deleted successfully")
 
 	return nil
 }
