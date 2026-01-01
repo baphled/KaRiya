@@ -58,115 +58,117 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		model = NewBurstListModel(service, ctx)
 	})
 
-	ginkgo.It("should initialize with selectedIdx=0", func() {
-		gomega.Expect(model.selectedIdx).To(gomega.Equal(0))
+	ginkgo.It("should create new model", func() {
+		gomega.Expect(model).NotTo(gomega.BeNil())
+		gomega.Expect(model.GetSelectedIdx()).To(gomega.Equal(0))
 	})
 
-	ginkgo.It("should move down on KeyDown", func() {
-		model.bursts = testBursts
-		initial := model.selectedIdx
-		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-		gomega.Expect(model.selectedIdx).To(gomega.Equal(initial + 1))
+	ginkgo.It("should set bursts", func() {
+		model.SetBursts(testBursts)
+		gomega.Expect(model.GetBursts()).To(gomega.HaveLen(3))
 	})
 
-	ginkgo.It("should move up on KeyUp", func() {
-		model.bursts = testBursts
-		model.selectedIdx = 2
-		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-		gomega.Expect(model.selectedIdx).To(gomega.Equal(1))
+	ginkgo.It("should reset navigation", func() {
+		model.SetBursts(testBursts)
+		model.listContainer.SetSelectedIdx(2)
+		model.SetBursts(testBursts)
+		gomega.Expect(model.GetSelectedIdx()).To(gomega.Equal(0))
 	})
 
-	ginkgo.It("should wrap to end on KeyUp at start", func() {
-		model.bursts = testBursts
-		model.selectedIdx = 0
-		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-		gomega.Expect(model.selectedIdx).To(gomega.Equal(len(testBursts) - 1))
+	ginkgo.It("should show empty state", func() {
+		model.SetBursts([]*career.Burst{})
+		output := model.View()
+		gomega.Expect(output).To(gomega.ContainSubstring("No bursts found"))
 	})
 
-	ginkgo.It("should wrap to start on KeyDown at end", func() {
-		model.bursts = testBursts
-		model.selectedIdx = len(testBursts) - 1
-		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-		gomega.Expect(model.selectedIdx).To(gomega.Equal(0))
-	})
-
-	ginkgo.It("should toggle expanded on Space", func() {
-		model.bursts = testBursts
-		initial := model.expandedIndices[0]
-		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
-		gomega.Expect(model.expandedIndices[0]).To(gomega.Equal(!initial))
-	})
-
-	ginkgo.It("should render burst name", func() {
-		model.bursts = testBursts
+	ginkgo.It("should show bursts list", func() {
+		model.SetBursts(testBursts)
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Platform Migration"))
 	})
 
-	ginkgo.It("should render event count", func() {
-		model.bursts = testBursts
+	ginkgo.It("should show selection count in pagination", func() {
+		model.SetBursts(testBursts)
 		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("2"))
-	})
-
-	ginkgo.It("should render competency", func() {
-		model.bursts = testBursts
-		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("Technical"))
+		gomega.Expect(output).To(gomega.ContainSubstring("Showing"))
 	})
 
 	ginkgo.It("should filter by competency", func() {
-		model.bursts = testBursts
-		model.filterBy = "Leadership"
+		model.SetBursts(testBursts)
+		model.SetCompetencyFilter("Leadership")
+		output := model.View()
+		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
+		gomega.Expect(output).NotTo(gomega.ContainSubstring("Platform Migration"))
+	})
+
+	ginkgo.It("should be case-insensitive", func() {
+		model.SetBursts(testBursts)
+		model.SetCompetencyFilter("leadership")
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
 	})
 
+	ginkgo.It("should filter multiple matches", func() {
+		model.SetBursts(testBursts)
+		model.SetCompetencyFilter("Technical")
+		bursts := model.GetBursts()
+		gomega.Expect(len(bursts)).To(gomega.Equal(2))
+	})
+
 	ginkgo.It("should sort by event count", func() {
-		model.bursts = testBursts
-		model.sortBy = "event_count"
-		displayed := model.getDisplayedBursts()
-		first := testBursts[displayed[0]]
+		model.SetBursts(testBursts)
+		model.SetSort("event_count", "asc")
+		bursts := model.GetBursts()
+		first := bursts[0]
 		gomega.Expect(len(first.EventIDs)).To(gomega.Equal(1))
 	})
 
 	ginkgo.It("should sort by name", func() {
-		model.bursts = testBursts
-		model.sortBy = "name"
-		displayed := model.getDisplayedBursts()
-		for i := 0; i < len(displayed)-1; i++ {
-			current := testBursts[displayed[i]].Name
-			next := testBursts[displayed[i+1]].Name
+		model.SetBursts(testBursts)
+		model.SetSort("name", "asc")
+		bursts := model.GetBursts()
+		for i := 0; i < len(bursts)-1; i++ {
+			current := bursts[i].Name
+			next := bursts[i+1].Name
 			gomega.Expect(current <= next).To(gomega.BeTrue())
 		}
 	})
 
 	ginkgo.It("should sort by date", func() {
-		model.bursts = testBursts
-		model.sortBy = "date"
-		displayed := model.getDisplayedBursts()
-		for i := 0; i < len(displayed)-1; i++ {
-			current := testBursts[displayed[i]].CreatedAt
-			next := testBursts[displayed[i+1]].CreatedAt
+		model.SetBursts(testBursts)
+		model.SetSort("date", "asc")
+		bursts := model.GetBursts()
+		for i := 0; i < len(bursts)-1; i++ {
+			current := bursts[i].CreatedAt
+			next := bursts[i+1].CreatedAt
 			gomega.Expect(current.Before(next) || current.Equal(next)).To(gomega.BeTrue())
 		}
 	})
 
-	ginkgo.It("should show events when expanded", func() {
-		model.bursts = testBursts
-		model.expandedIndices[0] = true
-		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("Events:"))
+	ginkgo.It("should track selections", func() {
+		model.SetBursts(testBursts)
+		burst := model.GetSelectedBurst()
+		gomega.Expect(burst).NotTo(gomega.BeNil())
+		model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
+		gomega.Expect(model.selectedBursts[burst.ID]).To(gomega.BeTrue())
 	})
 
-	ginkgo.It("should show empty message", func() {
-		model.bursts = []*career.Burst{}
-		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("No bursts found"))
+	ginkgo.It("should get selected burst", func() {
+		model.SetBursts(testBursts)
+		burst := model.GetSelectedBurst()
+		gomega.Expect(burst).NotTo(gomega.BeNil())
+		// Architecture Design is the most recent (created 10 days ago)
+		gomega.Expect(burst.Name).To(gomega.Equal("Architecture Design"))
+	})
+
+	ginkgo.It("should return nil for empty", func() {
+		model.SetBursts([]*career.Burst{})
+		burst := model.GetSelectedBurst()
+		gomega.Expect(burst).To(gomega.BeNil())
 	})
 
 	ginkgo.It("should handle single burst", func() {
-		model.bursts = []*career.Burst{testBursts[0]}
+		model.SetBursts([]*career.Burst{testBursts[0]})
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Platform Migration"))
 	})
@@ -183,15 +185,15 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 				UpdatedAt:       time.Now(),
 			}
 		}
-		model.bursts = largeBursts
+		model.SetBursts(largeBursts)
 		output := model.View()
 		gomega.Expect(len(output) > 0).To(gomega.BeTrue())
 	})
 
-	ginkgo.It("should show no matching message", func() {
-		model.filterBy = "NonExistent"
+	ginkgo.It("should show no matching message when filtered", func() {
+		model.SetBursts(testBursts)
+		model.SetCompetencyFilter("NonExistent")
 		output := model.View()
-		// Updated to match standardized list.go empty state format
 		gomega.Expect(output).To(gomega.ContainSubstring("No bursts found"))
 	})
 
@@ -203,7 +205,7 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 	})
 
 	ginkgo.It("should handle long name", func() {
-		model.bursts = []*career.Burst{
+		model.SetBursts([]*career.Burst{
 			{
 				ID:              uuid.New().String(),
 				Name:            "This is a very long burst name that should be truncated gracefully",
@@ -212,14 +214,14 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 				CreatedAt:       time.Now(),
 				UpdatedAt:       time.Now(),
 			},
-		}
+		})
 		model.width = 80
 		output := model.View()
 		gomega.Expect(len(output) > 0).To(gomega.BeTrue())
 	})
 
 	ginkgo.It("should handle 2 events", func() {
-		model.bursts = []*career.Burst{testBursts[0]}
+		model.SetBursts([]*career.Burst{testBursts[0]})
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("2"))
 	})
@@ -236,7 +238,7 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		for i := 0; i < 50; i++ {
 			burst.EventIDs[i] = uuid.New().String()
 		}
-		model.bursts = []*career.Burst{burst}
+		model.SetBursts([]*career.Burst{burst})
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("50"))
 	})

@@ -11,374 +11,593 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// BurstsLoadedMsg is sent when bursts have been loaded from repository
-type BurstsLoadedMsg struct {
-	Bursts []*career.Burst
-	Err    error
-}
-
-// BurstListModel represents the burst list display screen
+// BurstListModel represents the burst list display screen using table-based rendering
 type BurstListModel struct {
 	*BaseStandardModel
-	service         *careerservice.Service
-	ctx             context.Context
-	bursts          []*career.Burst
-	selectedIdx     int
-	expandedIndices map[int]bool
-	filterBy        string
-	sortBy          string
-	width           int
-	height          int
-	err             error                       // Error from loading bursts
-	helpFooter      components.HelpFooterModel // Help footer for keyboard shortcuts
+	bursts            []*career.Burst
+	filtered          []*career.Burst
+	service           *careerservice.Service
+	ctx               context.Context
+	table             table.Model
+	currentPage       int
+	pageSize          int
+	totalCount        int
+	width             int
+	height            int
+	competencyFilter  string
+	sortBy            string
+	sortOrder         string
+	selectedBursts    map[string]bool
+	expandedIndices   map[int]bool
+	err               error
+	helpFooter        components.HelpFooterModel
+	deletionConfirm   *ConfirmationDialog
+	deletingBurstID   string
+	deleteSuccessMsg  string
+	deleteErrorMsg    string
+	showDeleteMessage bool
+	breadcrumbs       []string
+	header            components.HeaderModel
+	listContainer     *components.TableListContainer
 }
 
 // NewBurstListModel creates a new burst list model
 func NewBurstListModel(svc *careerservice.Service, ctx context.Context) *BurstListModel {
-	return &BurstListModel{
+	columns := []table.Column{
+		{Title: "Burst", Width: 40},
+		{Title: "Events", Width: 10},
+		{Title: "Focus", Width: 25},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
+	m := &BurstListModel{
 		BaseStandardModel: NewBaseStandardModel(),
 		service:           svc,
 		ctx:               ctx,
 		bursts:            []*career.Burst{},
-		selectedIdx:       0,
-		expandedIndices:   make(map[int]bool),
-		filterBy:          "",
-		sortBy:            "date",
+		filtered:          []*career.Burst{},
+		table:             t,
 		width:             80,
-		height:            24,
+		height:            20,
+		pageSize:          10,
+		currentPage:       1,
+		totalCount:        0,
+		sortBy:            "date",
+		sortOrder:         "desc",
+		selectedBursts:    make(map[string]bool),
+		expandedIndices:   make(map[int]bool),
+		deletionConfirm:   nil,
+		deletingBurstID:   "",
+		deleteSuccessMsg:  "",
+		deleteErrorMsg:    "",
+		showDeleteMessage: false,
 		helpFooter:        components.NewHelpFooter("burst_list", 80),
+		breadcrumbs:       []string{"Home", "Bursts"},
+		header:            components.NewHeader("💥 Bursts", 80),
+		listContainer:     components.NewTableListContainer(t, "Bursts", 80),
 	}
+	m.loadBurstsSync()
+	return m
+}
+
+// loadBurstsSync loads bursts synchronously from the service
+func (m *BurstListModel) loadBurstsSync() {
+	burstRepo := m.service.GetBurstRepository()
+	if burstRepo == nil {
+		m.bursts = []*career.Burst{}
+		m.err = nil
+		return
+	}
+
+	bursts, err := burstRepo.List(m.ctx, careerrepo.BurstListFilters{Limit: 1000})
+	if err != nil {
+		m.err = err
+	} else {
+		m.bursts = bursts
+		m.applyFiltersAndSort()
+		m.totalCount = len(m.filtered)
+		m.updateTableRows()
+		m.err = nil
+	}
+}
+
+// updateTableRows updates the table with rows from filtered bursts
+func (m *BurstListModel) updateTableRows() {
+	var rows []table.Row
+
+	for i, burst := range m.filtered {
+		burstText := burst.Name
+		if len(burstText) > 37 {
+			burstText = burstText[:34] + "..."
+		}
+
+		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
+
+		focus := burst.CompetencyFocus
+		if len(focus) > 22 {
+			focus = focus[:19] + "..."
+		}
+
+		// Add focus indicator for selected row based on container's selectedIdx
+		indicator := "  "
+		if i == m.listContainer.GetSelectedIdx() {
+			indicator = "▶ "
+		}
+
+		row := table.Row{
+			indicator + burstText,
+			eventCount,
+			focus,
+		}
+		rows = append(rows, row)
+	}
+
+	m.table.SetRows(rows)
+	// Ensure cursor is within valid bounds
+	if len(rows) > 0 {
+		if m.table.Cursor() >= len(rows) {
+			m.listContainer.SetSelectedIdx(len(rows) - 1)
+		}
+		if m.table.Cursor() < 0 {
+			m.listContainer.SetSelectedIdx(0)
+		}
+	}
+	// Re-sync the table's cursor with the container's selectedIdx after SetRows
+	// SetRows may reset the table's cursor, so we need to explicitly set it
+	m.table.SetCursor(m.listContainer.GetSelectedIdx())
 }
 
 // Init initializes the model
 func (m *BurstListModel) Init() tea.Cmd {
-	return m.loadBursts()
-}
-
-// loadBursts loads bursts from the service
-func (m *BurstListModel) loadBursts() tea.Cmd {
-	return func() tea.Msg {
-		burstRepo := m.service.GetBurstRepository()
-		if burstRepo == nil {
-			return BurstsLoadedMsg{Bursts: []*career.Burst{}, Err: fmt.Errorf("burst repository not configured")}
-		}
-
-		bursts, err := burstRepo.List(m.ctx, careerrepo.BurstListFilters{Limit: 1000})
-		return BurstsLoadedMsg{Bursts: bursts, Err: err}
-	}
+	return nil
 }
 
 // Update handles messages
 func (m *BurstListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		return m, nil
+	if m.deletionConfirm != nil {
+		updatedDialog, cmd := m.deletionConfirm.Update(msg)
+		m.deletionConfirm = updatedDialog
 
-	case BurstsLoadedMsg:
-		if msg.Err != nil {
-			m.err = msg.Err
-		} else {
-			m.bursts = msg.Bursts
-			m.err = nil
+		if m.deletionConfirm.IsConfirmed() {
+			return m.performBurstDeletion()
 		}
-		return m, nil
 
+		if m.deletionConfirm.IsCancelled() {
+			m.deletionConfirm = nil
+			m.deletingBurstID = ""
+			return m, nil
+		}
+
+		return m, cmd
+	}
+
+	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
-			m.prevItem()
+			m.listContainer.MoveUp(1)
+			m.updateTableRows()
+			return m, nil
 		case "down", "j":
-			m.nextItem()
+			m.listContainer.MoveDown(1)
+			m.updateTableRows()
+			return m, nil
 		case "pgup", "ctrl+b":
-			m.prevPage()
+			if m.listContainer.GetSelectedIdx() >= m.pageSize {
+				m.listContainer.MoveUp(m.pageSize)
+			} else {
+				m.listContainer.MoveToFirst()
+			}
+			m.updateTableRows()
+			return m, nil
 		case "pgdn", "ctrl+f":
-			m.nextPage()
+			rows := len(m.table.Rows())
+			if m.listContainer.GetSelectedIdx()+m.pageSize < rows {
+				m.listContainer.MoveDown(m.pageSize)
+			} else {
+				m.listContainer.MoveToLast()
+			}
+			m.updateTableRows()
+			return m, nil
 		case "home", "g":
-			m.goToFirstItem()
+			m.listContainer.MoveToFirst()
+			m.updateTableRows()
+			return m, nil
 		case "end", "G":
-			m.goToLastItem()
+			m.listContainer.MoveToLast()
+			m.updateTableRows()
+			return m, nil
+		case "enter":
+			if len(m.filtered) > 0 {
+				burst := m.GetSelectedBurst()
+				if burst != nil {
+					return m, func() tea.Msg { return BurstActionSelectedMsg{Burst: burst, Action: BurstActionView} }
+				}
+			}
+			return m, nil
 		case " ", "space":
-			m.expandedIndices[m.selectedIdx] = !m.expandedIndices[m.selectedIdx]
+			if len(m.filtered) > 0 {
+				burst := m.GetSelectedBurst()
+				if burst != nil {
+					m.selectedBursts[burst.ID] = !m.selectedBursts[burst.ID]
+				}
+			}
+			return m, nil
+		case "x", "d":
+			if len(m.filtered) > 0 {
+				burst := m.GetSelectedBurst()
+				if burst != nil {
+					m.showDeleteConfirmation(burst)
+				}
+			}
+			return m, nil
+		case "v":
+			if len(m.filtered) > 0 {
+				burst := m.GetSelectedBurst()
+				if burst != nil {
+					return m, func() tea.Msg { return BurstActionSelectedMsg{Burst: burst, Action: BurstActionView} }
+				}
+			}
+			return m, nil
+		case "e":
+			if len(m.filtered) > 0 {
+				burst := m.GetSelectedBurst()
+				if burst != nil {
+					return m, func() tea.Msg { return BurstActionSelectedMsg{Burst: burst, Action: BurstActionEdit} }
+				}
+			}
+			return m, nil
 		case "esc":
-			return m, func() tea.Msg { return BackMsg{} }
+			if m.showDeleteMessage {
+				m.showDeleteMessage = false
+				m.deleteSuccessMsg = ""
+				m.deleteErrorMsg = ""
+				return m, nil
+			} else {
+				return m, func() tea.Msg { return BackMsg{} }
+			}
 		case "q", "ctrl+c":
 			return m, func() tea.Msg { return QuitMsg{} }
-		case "enter":
-			m.expandedIndices[m.selectedIdx] = !m.expandedIndices[m.selectedIdx]
+		}
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.table.SetWidth(m.width)
+		m.table.SetHeight(m.height - 10)
+		m.listContainer.SetDimensions(m.width, m.height)
+		m.updateTableRows()
+		return m, nil
+	}
+
+	var cmd tea.Cmd
+	m.table, cmd = m.table.Update(msg)
+	return m, cmd
+}
+
+// showDeleteConfirmation shows the deletion confirmation dialog
+func (m *BurstListModel) showDeleteConfirmation(burst *career.Burst) {
+	message := fmt.Sprintf("Delete burst: \"%s\"?\n\nThis action cannot be undone.", truncateText(burst.Name, 60))
+	m.deletionConfirm = NewConfirmationDialog("Delete Burst", message)
+	m.deletingBurstID = burst.ID
+}
+
+// performBurstDeletion performs the actual burst deletion
+func (m *BurstListModel) performBurstDeletion() (tea.Model, tea.Cmd) {
+	if m.deletingBurstID == "" {
+		m.deletionConfirm = nil
+		return m, nil
+	}
+
+	err := m.service.DeleteBurst(m.ctx, m.deletingBurstID)
+	if err != nil {
+		m.deleteErrorMsg = fmt.Sprintf("Error deleting burst: %v", err)
+		m.showDeleteMessage = true
+		m.deletionConfirm = nil
+		m.deletingBurstID = ""
+		return m, nil
+	}
+
+	m.removeBurstFromLists(m.deletingBurstID)
+
+	m.deleteSuccessMsg = "Burst deleted successfully"
+	m.showDeleteMessage = true
+	m.deletionConfirm = nil
+	m.deletingBurstID = ""
+
+	m.totalCount = len(m.filtered)
+	m.updateTableRows()
+
+	if m.totalCount == 0 {
+		m.listContainer.MoveToFirst()
+	} else {
+		if m.listContainer.GetSelectedIdx() >= len(m.table.Rows()) && m.listContainer.GetSelectedIdx() > 0 {
+			m.listContainer.SetSelectedIdx(m.listContainer.GetSelectedIdx() - 1)
 		}
 	}
 
 	return m, nil
 }
 
+// removeBurstFromLists removes a burst from both the bursts and filtered lists
+func (m *BurstListModel) removeBurstFromLists(burstID string) {
+	for i, burst := range m.bursts {
+		if burst.ID == burstID {
+			m.bursts = append(m.bursts[:i], m.bursts[i+1:]...)
+			break
+		}
+	}
+
+	for i, burst := range m.filtered {
+		if burst.ID == burstID {
+			m.filtered = append(m.filtered[:i], m.filtered[i+1:]...)
+			break
+		}
+	}
+
+	delete(m.selectedBursts, burstID)
+}
+
 // View renders the burst list
 func (m *BurstListModel) View() string {
-	// Render items using list.go pattern
-	items := m.renderListItems()
-
-	// Simplified empty state message - matching list.go
-	emptyStateMessage := "No bursts found"
-
-	// Create pagination info - matching list.go format: "Showing X-Y of Z bursts"
-	displayedBursts := m.getDisplayedBursts()
-	startIdx := 1
-	endIdx := len(displayedBursts)
-	if endIdx > m.height-5 {
-		endIdx = m.height - 5
+	if m.deletionConfirm != nil {
+		return m.deletionConfirm.View()
 	}
-	paginationInfo := fmt.Sprintf("Showing %d-%d of %d bursts", startIdx, endIdx, len(m.bursts))
 
-	listContainer := components.NewListContainer().
-		SetItems(items).
-		SetEmptyStateMessage(emptyStateMessage).
-		SetPaginationInfo(paginationInfo)
+	if m.showDeleteMessage {
+		return m.renderDeleteMessage()
+	}
 
-	listContent := listContainer.Render()
-
-	// Add error handling
-	var errorContent string
 	if m.err != nil {
 		errorMsg := fmt.Sprintf("Error loading bursts: %v\n\nPress 'r' to retry or 'esc' to cancel", m.err)
-		errorContent = styles.ErrorBox.Render(errorMsg)
+		m.listContainer.SetErrorMessage(errorMsg).SetDimensions(m.width, m.height)
+		return m.listContainer.Render()
 	}
 
-	// Render help footer
-	m.helpFooter.SetWidth(m.width)
-	helpFooterContent := m.helpFooter.View()
+	// Update list container with current state
+	m.listContainer.SetTable(m.table).
+		SetDimensions(m.width, m.height).
+		SetEmptyStateMessage("No bursts found").
+		SetHelpFooterKey("burst_list")
 
-	// Render header and footer components
-	headerView := components.NewHeader("💥 Bursts", m.width).View()
+	// Set pagination info
+	startIdx := (m.currentPage-1)*m.pageSize + 1
+	endIdx := startIdx + len(m.getPageBursts()) - 1
+	if m.totalCount == 0 {
+		startIdx = 0
+		endIdx = 0
+	}
+	paginationText := fmt.Sprintf("Showing %d-%d of %d bursts", startIdx, endIdx, m.totalCount)
+	m.listContainer.SetPaginationInfo(paginationText)
+
+	return m.listContainer.Render()
+}
+
+// renderDeleteMessage renders the deletion success/error message
+func (m *BurstListModel) renderDeleteMessage() string {
+	var messageContent string
+	if m.deleteSuccessMsg != "" {
+		messageContent = styles.SuccessBox.Render(m.deleteSuccessMsg + "\n\nPress 'esc' to continue")
+	} else if m.deleteErrorMsg != "" {
+		messageContent = styles.ErrorBox.Render(m.deleteErrorMsg + "\n\nPress 'esc' to continue")
+	}
+
+	headerView := m.header.View()
 	footerView := components.NewFooter(m.width).View()
 
-	var fullContent string
-	if errorContent != "" {
-		fullContent = lipgloss.JoinVertical(
-			lipgloss.Left,
-			headerView,
-			"",
-			errorContent,
-			"",
-			footerView,
-			"",
-			helpFooterContent,
-		)
-	} else {
-		fullContent = lipgloss.JoinVertical(
-			lipgloss.Left,
-			headerView,
-			"",
-			listContent,
-			"",
-			footerView,
-			"",
-			helpFooterContent,
-		)
-	}
-
-	return fullContent
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		headerView,
+		"",
+		messageContent,
+		"",
+		footerView,
+	)
 }
 
-// renderListItems renders burst items following list.go's pattern
-func (m *BurstListModel) renderListItems() []string {
-	var items []string
-
-	displayedBursts := m.getDisplayedBursts()
-	maxDisplay := m.height - 5
-	if len(displayedBursts) < maxDisplay {
-		maxDisplay = len(displayedBursts)
+// getPageBursts returns the bursts for the current page
+func (m *BurstListModel) getPageBursts() []*career.Burst {
+	if m.totalCount == 0 {
+		return []*career.Burst{}
 	}
 
-	for i := 0; i < maxDisplay; i++ {
-		burstIdx := displayedBursts[i]
-		burst := m.bursts[burstIdx]
+	startIdx := (m.currentPage - 1) * m.pageSize
+	endIdx := startIdx + m.pageSize
 
-		// Marker for selected item (matching list.go pattern)
-		marker := "  "
-		if i == m.selectedIdx {
-			marker = "▶ "
-		}
-
-		// Truncate burst name to 100 chars (matching list.go pattern)
-		text := burst.Name
-		if len(text) > 100 {
-			text = text[:97] + "..."
-		}
-
-		// Determine styling based on selection (matching list.go pattern)
-		itemStyle := styles.ListItem
-		if i == m.selectedIdx {
-			itemStyle = styles.ListItemSelected
-		}
-
-		// Render burst name
-		burstText := itemStyle.Render(marker + text)
-
-		// Render count, competency, and date as detail line
-		count := fmt.Sprintf("%d events", len(burst.EventIDs))
-		competency := truncateString(burst.CompetencyFocus, 20)
-		date := burst.CreatedAt.Format("2006-01-02")
-		detailLine := fmt.Sprintf("   %s | %s | %s",
-			styles.ListItem.Foreground(styles.ColorTextSecondary).Render(count),
-			styles.ListItem.Foreground(styles.ColorTextMuted).Render(competency),
-			styles.ListItem.Foreground(styles.ColorTextSecondary).Render(date),
-		)
-
-		items = append(items, burstText, detailLine, "")
-
-		// Add expanded events if this burst is expanded
-		if m.expandedIndices[burstIdx] {
-			items = append(items, m.renderExpandedEvents(burst))
-		}
+	if startIdx >= len(m.filtered) {
+		return []*career.Burst{}
 	}
 
-	return items
-}
-
-// renderExpandedEvents renders the event IDs for an expanded burst
-func (m *BurstListModel) renderExpandedEvents(burst *career.Burst) string {
-	var sb strings.Builder
-	sb.WriteString("  ")
-	sb.WriteString(styles.InfoHint.Render("Events: "))
-
-	for i, eventID := range burst.EventIDs {
-		if i > 0 {
-			sb.WriteString(", ")
-		}
-		truncated := truncateString(eventID, 8)
-		sb.WriteString(styles.InfoText.Render(truncated))
+	if endIdx > len(m.filtered) {
+		endIdx = len(m.filtered)
 	}
 
-	sb.WriteString("\n")
-	return sb.String()
-}
-
-// getDisplayedBursts returns the filtered and sorted bursts as indices
-func (m *BurstListModel) getDisplayedBursts() []int {
-	var displayed []int
-
-	for i, burst := range m.bursts {
-		if m.filterBy == "" || burst.CompetencyFocus == m.filterBy {
-			displayed = append(displayed, i)
-		}
-	}
-
-	m.sortBursts(displayed)
-
-	return displayed
-}
-
-// sortBursts sorts the burst indices based on current sort order
-func (m *BurstListModel) sortBursts(indices []int) {
-	switch m.sortBy {
-	case "name":
-		sort.Slice(indices, func(i, j int) bool {
-			return m.bursts[indices[i]].Name < m.bursts[indices[j]].Name
-		})
-
-	case "event_count":
-		sort.Slice(indices, func(i, j int) bool {
-			return len(m.bursts[indices[i]].EventIDs) < len(m.bursts[indices[j]].EventIDs)
-		})
-
-	case "date":
-		fallthrough
-	default:
-		sort.Slice(indices, func(i, j int) bool {
-			return m.bursts[indices[i]].CreatedAt.Before(m.bursts[indices[j]].CreatedAt)
-		})
-	}
-}
-
-// truncateString truncates a string to a maximum width, adding "..." if truncated
-func truncateString(s string, maxWidth int) string {
-	if len(s) <= maxWidth {
-		return s
-	}
-	if maxWidth <= 3 {
-		return "..."
-	}
-	return s[:maxWidth-3] + "..."
+	return m.filtered[startIdx:endIdx]
 }
 
 // SetBursts sets the bursts to display
 func (m *BurstListModel) SetBursts(bursts []*career.Burst) {
 	m.bursts = bursts
-	m.selectedIdx = 0
+	m.applyFiltersAndSort()
+	m.totalCount = len(m.filtered)
+	m.currentPage = 1
+	m.listContainer.MoveToFirst()
 	m.expandedIndices = make(map[int]bool)
+	m.updateTableRows()
+}
+
+// SetCompetencyFilter sets the competency focus filter
+func (m *BurstListModel) SetCompetencyFilter(competency string) {
+	m.competencyFilter = competency
+	m.applyFiltersAndSort()
+	m.totalCount = len(m.filtered)
+	m.currentPage = 1
+	m.listContainer.MoveToFirst()
+	m.expandedIndices = make(map[int]bool)
+	m.updateTableRows()
+}
+
+// SetSort sets the sort order
+func (m *BurstListModel) SetSort(sortBy, sortOrder string) {
+	m.sortBy = sortBy
+	m.sortOrder = sortOrder
+	m.applyFiltersAndSort()
+	m.updateTableRows()
+}
+
+// applyFiltersAndSort applies filters and sorts the bursts
+func (m *BurstListModel) applyFiltersAndSort() {
+	m.filtered = m.filterBursts()
+	m.sortBursts(m.filtered)
+}
+
+// filterBursts filters bursts based on current filters
+func (m *BurstListModel) filterBursts() []*career.Burst {
+	var filtered []*career.Burst
+
+	for _, burst := range m.bursts {
+		if m.competencyFilter != "" {
+			if !strings.EqualFold(burst.CompetencyFocus, m.competencyFilter) {
+				continue
+			}
+		}
+
+		filtered = append(filtered, burst)
+	}
+
+	return filtered
+}
+
+// sortBursts sorts bursts based on current sort settings
+func (m *BurstListModel) sortBursts(bursts []*career.Burst) {
+	sort.SliceStable(bursts, func(i, j int) bool {
+		var less bool
+
+		switch m.sortBy {
+		case "name":
+			less = bursts[i].Name < bursts[j].Name
+		case "event_count":
+			less = len(bursts[i].EventIDs) < len(bursts[j].EventIDs)
+		case "date":
+			fallthrough
+		default:
+			less = bursts[i].CreatedAt.Before(bursts[j].CreatedAt)
+		}
+
+		if m.sortOrder == "asc" {
+			return less
+		}
+		return !less
+	})
 }
 
 // GetSelectedBurst returns the currently selected burst
 func (m *BurstListModel) GetSelectedBurst() *career.Burst {
-	displayedBursts := m.getDisplayedBursts()
-	if len(displayedBursts) == 0 || m.selectedIdx >= len(displayedBursts) {
-		return nil
+	cursor := m.listContainer.GetSelectedIdx()
+	if cursor >= 0 && cursor < len(m.filtered) {
+		return m.filtered[cursor]
 	}
-	return m.bursts[displayedBursts[m.selectedIdx]]
+	return nil
 }
 
-// SetFilter sets the competency focus filter
-func (m *BurstListModel) SetFilter(competency string) {
-	m.filterBy = competency
-	m.selectedIdx = 0
+// IsExpandedAt returns true if the burst at the given index is expanded
+func (m *BurstListModel) IsExpandedAt(idx int) bool {
+	return m.expandedIndices[idx]
 }
 
-// SetSort sets the sort order
-func (m *BurstListModel) SetSort(sortBy string) {
-	m.sortBy = sortBy
+// SetBreadcrumbs sets the breadcrumb trail for navigation
+func (m *BurstListModel) SetBreadcrumbs(crumbs []string) {
+	m.breadcrumbs = crumbs
+	m.header.SetBreadcrumbs(crumbs)
 }
 
-// nextItem moves to the next item in the list
-func (m *BurstListModel) nextItem() {
-	displayedBursts := m.getDisplayedBursts()
-	if len(displayedBursts) > 0 {
-		m.selectedIdx = (m.selectedIdx + 1) % len(displayedBursts)
+// Refresh reloads the bursts from the service
+func (m *BurstListModel) Refresh() {
+	m.loadBurstsSync()
+	m.currentPage = 1
+	m.expandedIndices = make(map[int]bool)
+	m.listContainer.MoveToFirst()
+}
+
+// GetError returns the last error
+func (m *BurstListModel) GetError() error {
+	return m.err
+}
+
+// GetBursts returns the currently filtered bursts
+func (m *BurstListModel) GetBursts() []*career.Burst {
+	return m.filtered
+}
+
+// GetSelectedIdx returns the currently selected index
+func (m *BurstListModel) GetSelectedIdx() int {
+	return m.listContainer.GetSelectedIdx()
+}
+
+// getTotalPages calculates the total number of pages
+func (m *BurstListModel) getTotalPages() int {
+	if m.totalCount == 0 {
+		return 1
 	}
+	pages := (m.totalCount + m.pageSize - 1) / m.pageSize
+	return pages
 }
 
-// prevItem moves to the previous item in the list
-func (m *BurstListModel) prevItem() {
-	displayedBursts := m.getDisplayedBursts()
-	if len(displayedBursts) > 0 {
-		m.selectedIdx = (m.selectedIdx - 1 + len(displayedBursts)) % len(displayedBursts)
-	}
-}
-
-// nextPage moves to the next page
+// nextPage moves to the next page of results
 func (m *BurstListModel) nextPage() {
-	displayedBursts := m.getDisplayedBursts()
-	pageSize := m.height - 5
-	newIdx := m.selectedIdx + pageSize
-	if newIdx >= len(displayedBursts) {
-		newIdx = len(displayedBursts) - 1
+	totalPages := m.getTotalPages()
+	if m.currentPage < totalPages {
+		m.currentPage++
+		m.listContainer.MoveToFirst()
+		m.updateTableRows()
 	}
-	m.selectedIdx = newIdx
 }
 
-// prevPage moves to the previous page
+// prevPage moves to the previous page of results
 func (m *BurstListModel) prevPage() {
-	pageSize := m.height - 5
-	newIdx := m.selectedIdx - pageSize
-	if newIdx < 0 {
-		newIdx = 0
+	if m.currentPage > 1 {
+		m.currentPage--
+		m.listContainer.MoveToFirst()
+		m.updateTableRows()
 	}
-	m.selectedIdx = newIdx
 }
 
-// goToFirstItem moves to the first item in the list
+// goToFirstItem moves to the first item
 func (m *BurstListModel) goToFirstItem() {
-	m.selectedIdx = 0
+	m.currentPage = 1
+	m.listContainer.MoveToFirst()
 }
 
-// goToLastItem moves to the last item in the list
+// goToLastItem moves to the last item
 func (m *BurstListModel) goToLastItem() {
-	displayedBursts := m.getDisplayedBursts()
-	if len(displayedBursts) > 0 {
-		m.selectedIdx = len(displayedBursts) - 1
+	totalPages := m.getTotalPages()
+	m.currentPage = totalPages
+	pageBursts := m.getPageBursts()
+	if len(pageBursts) > 0 {
+		m.listContainer.SetSelectedIdx(len(pageBursts) - 1)
 	}
 }
