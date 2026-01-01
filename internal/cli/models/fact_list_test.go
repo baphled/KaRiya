@@ -55,9 +55,9 @@ var _ = ginkgo.Describe("FactListModel", func() {
 		})
 
 		ginkgo.It("should reset navigation", func() {
-			model.focusedIdx = 2
+			model.listContainer.SetSelectedIdx(2)
 			model.SetFacts(facts)
-			gomega.Expect(model.focusedIdx).To(gomega.Equal(0))
+			gomega.Expect(model.listContainer.GetSelectedIdx()).To(gomega.Equal(0))
 		})
 	})
 
@@ -190,7 +190,7 @@ var _ = ginkgo.Describe("FactListModel", func() {
 		})
 
 		ginkgo.It("should get selected fact", func() {
-			model.focusedIdx = 1
+			model.listContainer.SetSelectedIdx(1)
 			selected := model.GetSelectedFact()
 			gomega.Expect(selected.ID).To(gomega.Equal(facts[1].ID))
 		})

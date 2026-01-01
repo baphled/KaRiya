@@ -54,6 +54,8 @@ type FormModel struct {
 	header           components.HeaderModel     // Header component
 	footer           components.FooterModel     // Footer component
 	breadcrumbs      []string                   // Navigation breadcrumb trail
+	width            int                        // Available terminal width
+	height           int                        // Available terminal height
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -122,6 +124,8 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.header.SetWidth(msg.Width)
 		m.footer.SetWidth(msg.Width)
+		m.width = msg.Width
+		m.height = msg.Height
 		m.helpFooter.SetWidth(msg.Width)
 
 		return m, nil
@@ -995,28 +999,178 @@ func (m *FormModel) renderSubmitButtonWithContainer() string {
 	return submitBtn
 }
 
-// renderFormContentWithContainers renders all form fields using FormFieldContainers
+// renderFormContentWithContainers renders all form fields using the smart FormContainer
 func (m *FormModel) renderFormContentWithContainers() string {
-	var content []string
+	// Create form container with responsive layout
+	formContainer := components.NewFormContainer().
+		SetWidth(m.width).
+		SetHeight(m.height).
+		SetLayout(components.Responsive).
+		SetPadding(0).
+		SetVerticalSpacing(2).
+		SetColumnGap(4).
+		SetMinFieldWidth(30)
 
-	// Add all fields
-	content = append(content,
-		m.renderTextFieldWithContainer(),
-		m.renderDateFieldWithContainer(),
-		m.renderCompanyFieldWithContainer(),
-		m.renderProjectFieldWithContainer(),
-		m.renderTagsFieldWithContainer(),
-		m.renderCategoriesFieldWithContainer(),
-		m.renderModeFieldWithContainer(),
-		m.renderSubmitButtonWithContainer(),
-	)
+	// Add text field
+	textFieldErr := ""
+	if err, ok := m.fieldErrors[TextField]; ok {
+		textFieldErr = err
+	}
+	charInfo := fmt.Sprintf("Characters: %d/%d %s",
+		m.charCount, m.maxChars, m.getCharCountIndicator())
+
+	formContainer.AddField(components.FormField{
+		Label:      "Event Text (required):",
+		Input:      m.inputs[0].View(),
+		Error:      textFieldErr,
+		Hint:       charInfo,
+		IsFocused:  m.focusIndex == int(TextField),
+		IsRequired: true,
+		FullWidth:  true,
+	})
+
+	// Add date field
+	dateFieldErr := ""
+	if err, ok := m.fieldErrors[DateField]; ok {
+		dateFieldErr = err
+	}
+
+	formContainer.AddField(components.FormField{
+		Label:      "Date (optional):",
+		Input:      m.inputs[1].View(),
+		Error:      dateFieldErr,
+		IsFocused:  m.focusIndex == int(DateField),
+		IsRequired: false,
+		FullWidth:  false,
+	})
+
+	// Add company field
+	companyFieldErr := ""
+	if err, ok := m.fieldErrors[CompanyField]; ok {
+		companyFieldErr = err
+	}
+
+	formContainer.AddField(components.FormField{
+		Label:      "Company (optional):",
+		Input:      m.inputs[2].View(),
+		Error:      companyFieldErr,
+		IsFocused:  m.focusIndex == int(CompanyField),
+		IsRequired: false,
+		FullWidth:  false,
+	})
+
+	// Add project field
+	projectFieldErr := ""
+	if err, ok := m.fieldErrors[ProjectField]; ok {
+		projectFieldErr = err
+	}
+
+	formContainer.AddField(components.FormField{
+		Label:      "Project (optional):",
+		Input:      m.inputs[3].View(),
+		Error:      projectFieldErr,
+		IsFocused:  m.focusIndex == int(ProjectField),
+		IsRequired: false,
+		FullWidth:  false,
+	})
+
+	// Add tags field
+	var tagsDisplay string
+	if m.focusIndex == int(TagsField) {
+		tagsDisplay = m.renderTagSelector()
+	} else {
+		selectedTags := m.tagSelector.SelectedTags()
+		if len(selectedTags) > 0 {
+			for _, tag := range selectedTags {
+				tagsDisplay += styles.TagBase.Render(tag) + " "
+			}
+		} else {
+			tagsDisplay = styles.InfoText.Render("(none selected)")
+		}
+	}
+
+	tagsHint := ""
+	if m.focusIndex == int(TagsField) {
+		tagsHint = "Use Up/Down to navigate, Space to toggle"
+	}
+
+	formContainer.AddField(components.FormField{
+		Label:      "Tags:",
+		Input:      tagsDisplay,
+		Hint:       tagsHint,
+		IsFocused:  m.focusIndex == int(TagsField),
+		IsRequired: false,
+		FullWidth:  true,
+	})
+
+	// Add categories field
+	var categoriesDisplay string
+	if m.focusIndex == int(CategoriesField) {
+		categoriesDisplay = m.renderCategorySelector()
+	} else {
+		selectedCategories := m.categorySelector.SelectedCategories()
+		if len(selectedCategories) > 0 {
+			for _, category := range selectedCategories {
+				categoriesDisplay += styles.TagBase.Render(category) + " "
+			}
+		} else {
+			categoriesDisplay = styles.InfoText.Render("(none selected)")
+		}
+	}
+
+	categoriesHint := ""
+	if m.focusIndex == int(CategoriesField) {
+		categoriesHint = "Use Up/Down to navigate, Space to toggle"
+	}
+
+	formContainer.AddField(components.FormField{
+		Label:      "Categories:",
+		Input:      categoriesDisplay,
+		Hint:       categoriesHint,
+		IsFocused:  m.focusIndex == int(CategoriesField),
+		IsRequired: false,
+		FullWidth:  true,
+	})
+
+	// Add mode field
+	modeContent := m.renderModeSelector()
+	modeHint := ""
+	if m.focusIndex == int(ModeField) {
+		modeHint = "Use Up/Down to navigate"
+	}
+
+	formContainer.AddField(components.FormField{
+		Label:      "Capture Mode:",
+		Input:      modeContent,
+		Hint:       modeHint,
+		IsFocused:  m.focusIndex == int(ModeField),
+		IsRequired: false,
+		FullWidth:  true,
+	})
+
+	// Add submit button
+	var submitBtn string
+	if m.focusIndex == int(SubmitButton) {
+		submitBtn = styles.ButtonPrimary.Render("[ > Submit < ]")
+	} else {
+		submitBtn = styles.ButtonPrimary.Render("[ Submit ]")
+	}
+
+	formContainer.AddField(components.FormField{
+		Input:     submitBtn,
+		IsFocused: m.focusIndex == int(SubmitButton),
+		FullWidth: true,
+	})
+
+	// Get rendered form
+	formContent := formContainer.Render()
 
 	// Add model-level error if present
 	if m.err != nil {
-		content = append(content, styles.ErrorBox.Render(m.err.Error()))
+		formContent += "\n\n" + styles.ErrorBox.Render(m.err.Error())
 	}
 
-	return strings.Join(content, "\n\n")
+	return formContent
 }
 
 func (m *FormModel) SetBreadcrumbs(crumbs []string) {

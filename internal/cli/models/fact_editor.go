@@ -376,10 +376,6 @@ func (m *FactEditorModel) GetError() error {
 
 // View renders the editor UI using FormFieldContainers
 func (m *FactEditorModel) View() string {
-	if m.width == 0 || m.height == 0 {
-		return "Loading..."
-	}
-
 	// Render form content using FormFieldContainers
 	formContent := m.renderFormContentWithContainers()
 
@@ -406,94 +402,64 @@ func (m *FactEditorModel) View() string {
 }
 
 // renderFormContentWithContainers renders all form fields using FormFieldContainers
+// renderFormContentWithContainers renders all form fields using the smart FormContainer
 func (m *FactEditorModel) renderFormContentWithContainers() string {
-	var content []string
+	// Create form container with responsive layout
+	formContainer := components.NewFormContainer().
+		SetWidth(m.width).
+		SetHeight(m.height).
+		SetLayout(components.Responsive).
+		SetPadding(2).
+		SetVerticalSpacing(2).
+		SetColumnGap(4).
+		SetMinFieldWidth(30)
 
-	// Add all fields
-	content = append(content,
-		m.renderTextFieldWithContainer(),
-		m.renderCompetenciesFieldWithContainer(),
-		m.renderRoleFitFieldWithContainer(),
-		m.renderAudienceFieldWithContainer(),
-		m.renderButtonsWithContainer(),
-	)
-
-	// Add model-level error if present
-	if m.err != nil {
-		content = append(content, styles.ErrorBox.Render(m.err.Error()))
-	}
-
-	// Add field-specific errors
-	for fieldIdx, errMsg := range m.fieldErrors {
-		fieldName := m.getFieldName(fieldIdx)
-		errorMsg := fmt.Sprintf("%s: %s", fieldName, errMsg)
-		content = append(content, styles.ErrorBox.Render(errorMsg))
-	}
-
-	return strings.Join(content, "\n\n")
-}
-
-// renderTextFieldWithContainer renders the text field using FormFieldContainer
-func (m *FactEditorModel) renderTextFieldWithContainer() string {
-	focused := m.focusIndex == FactTextFieldIdx
-	fieldErr := ""
+	// Add text field
+	textFieldErr := ""
 	if err, ok := m.fieldErrors[FactTextFieldIdx]; ok {
-		fieldErr = err
+		textFieldErr = err
 	}
-
 	charInfo := fmt.Sprintf("Characters: %d/2000 %s",
 		m.characterCount, m.getCharCountIndicator())
 
-	fieldContent := components.NewFormFieldContainer().
-		SetLabel("Fact Text (required):").
-		SetInput(m.textInput.View()).
-		SetHint(charInfo).
-		SetError(fieldErr).
-		SetFocused(focused).
-		Render()
+	formContainer.AddField(components.FormField{
+		Label:      "Fact Text (required):",
+		Input:      m.textInput.View(),
+		Error:      textFieldErr,
+		Hint:       charInfo,
+		IsFocused:  m.focusIndex == FactTextFieldIdx,
+		IsRequired: true,
+		FullWidth:  true,
+	})
 
-	return m.addFocusIndicatorToField(fieldContent, focused)
-}
-
-// renderCompetenciesFieldWithContainer renders the competencies field using FormFieldContainer
-func (m *FactEditorModel) renderCompetenciesFieldWithContainer() string {
-	focused := m.focusIndex == FactCompetenciesFieldIdx
-
-	// Render competencies as badges
+	// Add competencies field
 	competencies := m.competencySelector.AvailableCategories()
 	var badges []string
 	for i, comp := range competencies {
 		isSelected := m.competencySelector.IsSelected(comp)
 		isFocused := m.focusIndex == FactCompetenciesFieldIdx && m.competencyIndex == i
-
 		badge := m.renderBadge(comp, isSelected, isFocused)
 		badges = append(badges, badge)
 	}
 	badgesStr := strings.Join(badges, "  ")
 
-	fieldErr := ""
+	competenciesErr := ""
 	if err, ok := m.fieldErrors[FactCompetenciesFieldIdx]; ok {
-		fieldErr = err
+		competenciesErr = err
 	}
+	competenciesHint := fmt.Sprintf("Select with Space ↑↓ | %d selected", len(m.fact.CompetencyCategories))
 
-	hint := fmt.Sprintf("Select with Space ↑↓ | %d selected", len(m.fact.CompetencyCategories))
+	formContainer.AddField(components.FormField{
+		Label:      "Competency Categories (required):",
+		Input:      badgesStr,
+		Error:      competenciesErr,
+		Hint:       competenciesHint,
+		IsFocused:  m.focusIndex == FactCompetenciesFieldIdx,
+		IsRequired: true,
+		FullWidth:  false,
+	})
 
-	fieldContent := components.NewFormFieldContainer().
-		SetLabel("Competency Categories (required):").
-		SetInput(badgesStr).
-		SetHint(hint).
-		SetError(fieldErr).
-		SetFocused(focused).
-		Render()
-
-	return m.addFocusIndicatorToField(fieldContent, focused)
-}
-
-// renderRoleFitFieldWithContainer renders the role fit field using FormFieldContainer
-func (m *FactEditorModel) renderRoleFitFieldWithContainer() string {
-	focused := m.focusIndex == FactRoleFitFieldIdx
-
-	// Render role fit options
+	// Add role fit field
 	var options []string
 	for i, rf := range m.roleFitOptions {
 		isSelected := m.fact.RoleFit == rf
@@ -515,60 +481,49 @@ func (m *FactEditorModel) renderRoleFitFieldWithContainer() string {
 	}
 	optionsStr := strings.Join(options, "  ")
 
-	fieldErr := ""
+	roleFitErr := ""
 	if err, ok := m.fieldErrors[FactRoleFitFieldIdx]; ok {
-		fieldErr = err
+		roleFitErr = err
 	}
 
-	fieldContent := components.NewFormFieldContainer().
-		SetLabel("Role Fit (required):").
-		SetInput(optionsStr).
-		SetHint("Navigate with ↑↓ | Select with Space").
-		SetError(fieldErr).
-		SetFocused(focused).
-		Render()
+	formContainer.AddField(components.FormField{
+		Label:      "Role Fit (required):",
+		Input:      optionsStr,
+		Error:      roleFitErr,
+		Hint:       "Navigate with ↑↓ | Select with Space",
+		IsFocused:  m.focusIndex == FactRoleFitFieldIdx,
+		IsRequired: true,
+		FullWidth:  false,
+	})
 
-	return m.addFocusIndicatorToField(fieldContent, focused)
-}
-
-// renderAudienceFieldWithContainer renders the audience field using FormFieldContainer
-func (m *FactEditorModel) renderAudienceFieldWithContainer() string {
-	focused := m.focusIndex == FactAudienceFieldIdx
-
-	// Render audience options
+	// Add audience field
 	audiences := []string{"hiring_manager", "recruiter", "peer"}
-	var badges []string
+	var audienceBadges []string
 	for i, audience := range audiences {
 		isSelected := contains(m.fact.AudienceRelevance, audience)
 		isFocused := m.focusIndex == FactAudienceFieldIdx && m.audienceIndex == i
-
 		badge := m.renderBadge(capitalize(audience), isSelected, isFocused)
-		badges = append(badges, badge)
+		audienceBadges = append(audienceBadges, badge)
 	}
-	badgesStr := strings.Join(badges, "  ")
+	audienceBadgesStr := strings.Join(audienceBadges, "  ")
 
-	fieldErr := ""
+	audienceErr := ""
 	if err, ok := m.fieldErrors[FactAudienceFieldIdx]; ok {
-		fieldErr = err
+		audienceErr = err
 	}
+	audienceHint := fmt.Sprintf("Select with Space ↑↓ | %d selected", len(m.fact.AudienceRelevance))
 
-	hint := fmt.Sprintf("Select with Space ↑↓ | %d selected", len(m.fact.AudienceRelevance))
+	formContainer.AddField(components.FormField{
+		Label:      "Audience Relevance (required):",
+		Input:      audienceBadgesStr,
+		Error:      audienceErr,
+		Hint:       audienceHint,
+		IsFocused:  m.focusIndex == FactAudienceFieldIdx,
+		IsRequired: true,
+		FullWidth:  false,
+	})
 
-	fieldContent := components.NewFormFieldContainer().
-		SetLabel("Audience Relevance (required):").
-		SetInput(badgesStr).
-		SetHint(hint).
-		SetError(fieldErr).
-		SetFocused(focused).
-		Render()
-
-	return m.addFocusIndicatorToField(fieldContent, focused)
-}
-
-// renderButtonsWithContainer renders the buttons using FormFieldContainer
-func (m *FactEditorModel) renderButtonsWithContainer() string {
-	focused := m.focusIndex >= FactSaveButtonIdx
-
+	// Add buttons field
 	saveBtn := "[ Save ]"
 	cancelBtn := "[ Cancel ]"
 
@@ -585,14 +540,22 @@ func (m *FactEditorModel) renderButtonsWithContainer() string {
 
 	buttonsStr := strings.Join([]string{saveBtn, cancelBtn}, "  ")
 
-	fieldContent := components.NewFormFieldContainer().
-		SetInput(buttonsStr).
-		SetFocused(focused).
-		Render()
+	formContainer.AddField(components.FormField{
+		Input:     buttonsStr,
+		IsFocused: m.focusIndex >= FactSaveButtonIdx,
+		FullWidth: true,
+	})
 
-	return m.addFocusIndicatorToField(fieldContent, focused)
+	// Get rendered form
+	formContent := formContainer.Render()
+
+	// Add model-level error if present
+	if m.err != nil {
+		formContent += "\n\n" + styles.ErrorBox.Render(m.err.Error())
+	}
+
+	return formContent
 }
-
 // addFocusIndicatorToField adds a focus indicator to the rendered field
 func (m *FactEditorModel) addFocusIndicatorToField(fieldContent string, focused bool) string {
 	if focused {
