@@ -85,9 +85,9 @@ var _ = Describe("Navigation Constants", func() {
 	})
 
 	Describe("AllNavigationKeys", func() {
-		It("should return all 20 navigation keys", func() {
+		It("should return all 21 navigation keys", func() {
 			keys := AllNavigationKeys()
-			Expect(keys).To(HaveLen(20))
+			Expect(keys).To(HaveLen(21))
 		})
 
 		It("should include all primary navigation keys", func() {
