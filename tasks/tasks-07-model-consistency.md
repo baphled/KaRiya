@@ -168,34 +168,34 @@
   - [x] 3.4.4 Verify focus management works correctly
   - [x] 3.4.5 Run existing tests; verify zero regressions
   - [x] 3.4.6 Add test for button navigation and selection
-- [ ] 3.5 Refactor FactEditorModel to use containers
-  - [ ] 3.5.1 Replace manual form layout with FormFieldContainer
-  - [ ] 3.5.2 Wrap form with ScreenContainer
-  - [ ] 3.5.3 Update field validation display
-  - [ ] 3.5.4 Verify form submission flow
-  - [ ] 3.5.5 Run existing tests; verify zero regressions
-  - [ ] 3.5.6 Add integration test for fact editor
-- [ ] 3.6 Refactor MetadataEditorModel to use containers
-  - [ ] 3.6.1 Replace manual form layout with FormFieldContainer
-  - [ ] 3.6.2 Wrap form with ScreenContainer
-  - [ ] 3.6.3 Update metadata field rendering
-  - [ ] 3.6.4 Verify form submission flow
-  - [ ] 3.6.5 Run existing tests; verify zero regressions
-  - [ ] 3.6.6 Add integration test for metadata editor
-- [ ] 3.7 Refactor FactListModel to use containers
-  - [ ] 3.7.1 Wrap list with ScreenContainer
-  - [ ] 3.7.2 Replace manual item rendering with ListContainer
-  - [ ] 3.7.3 Update pagination display
-  - [ ] 3.7.4 Handle empty state appropriately
-  - [ ] 3.7.5 Run existing tests; verify zero regressions
-  - [ ] 3.7.6 Add integration test for fact list
-- [ ] 3.8 Refactor BurstListModel to use containers
-  - [ ] 3.8.1 Wrap list with ScreenContainer
-  - [ ] 3.8.2 Replace manual item rendering with ListContainer
-  - [ ] 3.8.3 Update burst-specific styling
-  - [ ] 3.8.4 Verify pagination display
-  - [ ] 3.8.5 Run existing tests; verify zero regressions
-  - [ ] 3.8.6 Add integration test for burst list
+- [x] 3.5 Refactor FactEditorModel to use containers
+  - [x] 3.5.1 Replace manual form layout with FormFieldContainer
+  - [x] 3.5.2 Wrap form with ScreenContainer
+  - [x] 3.5.3 Update field validation display
+  - [x] 3.5.4 Verify form submission flow
+  - [x] 3.5.5 Run existing tests; verify zero regressions
+  - [x] 3.5.6 Add integration test for fact editor
+- [x] 3.6 Refactor MetadataEditorModel to use containers
+  - [x] 3.6.1 Replace manual form layout with FormFieldContainer
+  - [x] 3.6.2 Wrap form with ScreenContainer
+  - [x] 3.6.3 Update metadata field rendering
+  - [x] 3.6.4 Verify form submission flow
+  - [x] 3.6.5 Run existing tests; verify zero regressions
+  - [x] 3.6.6 Add integration test for metadata editor
+- [x] 3.7 Refactor FactListModel to use containers
+  - [x] 3.7.1 Wrap list with ScreenContainer
+  - [x] 3.7.2 Replace manual item rendering with ListContainer
+  - [x] 3.7.3 Update pagination display
+  - [x] 3.7.4 Handle empty state appropriately
+  - [x] 3.7.5 Run existing tests; verify zero regressions
+  - [x] 3.7.6 Add integration test for fact list
+- [x] 3.8 Refactor BurstListModel to use containers
+  - [x] 3.8.1 Wrap list with ScreenContainer
+  - [x] 3.8.2 Replace manual item rendering with ListContainer
+  - [x] 3.8.3 Update burst-specific styling
+  - [x] 3.8.4 Verify pagination display
+  - [x] 3.8.5 Run existing tests; verify zero regressions
+  - [x] 3.8.6 Add integration test for burst list
 
 ### 4.0 Standardize Interaction Patterns and Component Usage
 - [ ] 4.1 Audit keyboard shortcuts across all 8 refactored models
