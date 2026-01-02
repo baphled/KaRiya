@@ -896,3 +896,18 @@ Started Phase 2 implementation: CaptureEvent Intent Template. This phase establi
 *Tests: 55+ passing, 0 failures*
 *Coverage: Foundation established, ready for state implementation*
 
+
+### Architecture Correction
+
+✅ **Test Framework Consolidation**
+- Initially created separate test file using standard Go testing (testify)
+- Corrected to use Ginkgo/Gomega like rest of codebase
+- Consolidated all 30 CaptureEvent tests into contract_test.go
+- Now single test suite with 41 specs total
+- Avoids multiple Ginkgo entry point issues
+- Consistent with project testing patterns
+
+**Files Modified:**
+- `internal/cli/intents/contract_test.go` - Added 30 CaptureEvent tests
+- Deleted: `internal/cli/intents/capture_event_intent_test.go`
+
