@@ -47,6 +47,7 @@ const (
 	CVConfigManagerScreen Screen = "cv_config_manager"
 	CVGeneratorScreen     Screen = "cv_generator"
 	CVPreviewScreen       Screen = "cv_preview"
+	CVListScreen         Screen = "cv_list"
 )
 
 // Model represents the main application state
@@ -89,6 +90,7 @@ type Model struct {
 	cvConfigManagerModel   *models.CVConfigManagerModel
 	cvGeneratorModel       *models.CVGeneratorModel
 	cvPreviewModel         *models.CVPreviewModel
+	cvListModel            *models.CVListModel
 	configManager          cv.ConfigManager
 	cvGenerationService    cv.CVGenerationService
 }
@@ -210,6 +212,28 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = FactListScreen
 			m.factDetailsModel = nil
+			return m, nil
+		}
+				// Special handling for CVPreviewScreen - go back to previous screen
+		if m.currentScreen == CVPreviewScreen {
+			temp := m.currentScreen
+			m.currentScreen = m.previousScreen
+			m.previousScreen = temp
+			// Don't clear the model - it may be reused
+			return m, nil
+		}
+		// Special handling for CVConfigManagerScreen - go back to home
+		if m.currentScreen == CVConfigManagerScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			// Don't clear the model - it may be reused
+			return m, nil
+		}
+		// Special handling for CVListScreen - go back to home
+		if m.currentScreen == CVListScreen {
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HomeScreen
+			// Don't clear the model - it may be reused
 			return m, nil
 		}
 		// Special handling for FactActionMenuScreen - go back to fact list
@@ -623,11 +647,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle NavigateToCVPreviewMsg - navigate to CV preview
 	if previewMsg, ok := msg.(models.NavigateToCVPreviewMsg); ok {
-		// Create CV preview model with the CV view from the message
+		// Create CV preview model with the CV view and sections from the message
+		sections := previewMsg.CVView.Sections
+		if sections == nil {
+			sections = []*career.CVSection{}
+		}
 		m.cvPreviewModel = models.NewCVPreviewModelWithSource(
 			models.NewBaseStandardModel(),
 			previewMsg.CVView,
-			[]*career.CVSection{}, // Sections will be populated from CVView
+			sections, // Extract sections from CVView
 			nil, // TraceabilityService will be initialized later if needed
 			previewMsg.SourceScreen,
 		)
@@ -644,7 +672,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Handle BackToCVConfigManagerMsg - navigate back to CV config manager
-	if _, ok := msg.(models.BackToCVConfigManagerMsg); ok {
+	if _, ok := msg.(models.BackMsg); ok {
 		if m.cvConfigManagerModel == nil {
 			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
 		} else {
@@ -1168,6 +1196,11 @@ func (m *Model) View() string {
 			return m.cvPreviewModel.View()
 		}
 		return "Error: CV Preview model not initialized\n"
+	case CVListScreen:
+		if m.cvListModel != nil {
+			return m.cvListModel.View()
+		}
+		return "Error: CV List model not initialized\n"
 	case QuitScreen:
 		return "Goodbye!\n"
 	default:
