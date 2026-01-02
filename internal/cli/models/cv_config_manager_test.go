@@ -79,7 +79,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 
 	Describe("ConfigsLoadedMsg", func() {
 		It("should update configs and set loading to false", func() {
-			msg := ConfigsLoadedMsg{configs: testConfigs}
+			msg := ConfigsLoadedMsg{Configs: testConfigs}
 			newModel, _ := model.Update(msg)
 
 			castedModel := newModel.(*CVConfigManagerModel)
@@ -96,7 +96,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 		})
 
 		It("should show empty message when no configs", func() {
-			msg := ConfigsLoadedMsg{configs: []*career.CVConfig{}}
+			msg := ConfigsLoadedMsg{Configs: []*career.CVConfig{}}
 			newModel, _ := model.Update(msg)
 
 			view := newModel.View()
@@ -105,7 +105,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 		})
 
 		It("should render config list with details", func() {
-			msg := ConfigsLoadedMsg{configs: testConfigs}
+			msg := ConfigsLoadedMsg{Configs: testConfigs}
 			newModel, _ := model.Update(msg)
 
 			view := newModel.View()
@@ -118,7 +118,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 
 	Describe("Error Handling", func() {
 		It("should display error when config loading fails", func() {
-			errMsg := ConfigLoadError{err: fmt.Errorf("failed to load configs")}
+			errMsg := ConfigLoadError{Err: fmt.Errorf("failed to load configs")}
 			newModel, _ := model.Update(errMsg)
 
 			castedModel := newModel.(*CVConfigManagerModel)

@@ -48,6 +48,9 @@ const (
 	CVGeneratorScreen     Screen = "cv_generator"
 	CVPreviewScreen       Screen = "cv_preview"
 	CVListScreen         Screen = "cv_list"
+	CVExportDialogScreen Screen = "cv_export_dialog"
+	CVExportSuccessScreen Screen = "cv_export_success"
+	CVExportProgressScreen Screen = "cv_export_progress"
 )
 
 // Model represents the main application state
@@ -91,8 +94,12 @@ type Model struct {
 	cvGeneratorModel       *models.CVGeneratorModel
 	cvPreviewModel         *models.CVPreviewModel
 	cvListModel            *models.CVListModel
+	cvExportDialogModel    *models.CVExportDialogModel
+	cvExportSuccessModel   *models.CVExportSuccessModel
+	cvExportProgressModel  *models.CVExportProgressModel
 	configManager          cv.ConfigManager
 	cvGenerationService    cv.CVGenerationService
+	cvExportService        *cv.ExportService
 }
 
 // NewModel creates a new application model
@@ -168,8 +175,13 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		cvConfigManagerModel:   nil,
 		cvGeneratorModel:       nil,
 		cvPreviewModel:         nil,
+		cvListModel:            nil,
+		cvExportDialogModel:    nil,
+		cvExportSuccessModel:   nil,
+		cvExportProgressModel:  nil,
 		configManager:          configMgr,
 		cvGenerationService:    cvGenService,
+		cvExportService:        cv.NewExportService(log),
 	}
 }
 
@@ -671,17 +683,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Handle BackToCVConfigManagerMsg - navigate back to CV config manager
-	if _, ok := msg.(models.BackMsg); ok {
-		if m.cvConfigManagerModel == nil {
-			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
-		} else {
-			m.cvConfigManagerModel.RefreshConfigs()
-		}
-		m.previousScreen = m.currentScreen
-		m.currentScreen = CVConfigManagerScreen
-		return m, nil
-	}
 
 	// Handle SuccessModel messages
 	switch msg := msg.(type) {
@@ -949,6 +950,27 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.cvPreviewModel = updatedModel.(*models.CVPreviewModel)
 			return m, cmd
 		}
+
+	case CVExportDialogScreen:
+		if m.cvExportDialogModel != nil {
+			updatedModel, cmd := m.cvExportDialogModel.Update(msg)
+			m.cvExportDialogModel = updatedModel.(*models.CVExportDialogModel)
+			return m, cmd
+		}
+
+	case CVExportSuccessScreen:
+		if m.cvExportSuccessModel != nil {
+			updatedModel, cmd := m.cvExportSuccessModel.Update(msg)
+			m.cvExportSuccessModel = updatedModel.(*models.CVExportSuccessModel)
+			return m, cmd
+		}
+
+	case CVExportProgressScreen:
+		if m.cvExportProgressModel != nil {
+			updatedModel, cmd := m.cvExportProgressModel.Update(msg)
+			m.cvExportProgressModel = updatedModel.(*models.CVExportProgressModel)
+			return m, cmd
+		}
 	}
 
 	// Handle breadcrumb click messages
@@ -1196,6 +1218,21 @@ func (m *Model) View() string {
 			return m.cvPreviewModel.View()
 		}
 		return "Error: CV Preview model not initialized\n"
+	case CVExportDialogScreen:
+		if m.cvExportDialogModel != nil {
+			return m.cvExportDialogModel.View()
+		}
+		return "Error: CV Export Dialog model not initialized\n"
+	case CVExportSuccessScreen:
+		if m.cvExportSuccessModel != nil {
+			return m.cvExportSuccessModel.View()
+		}
+		return "Error: CV Export Success model not initialized\n"
+	case CVExportProgressScreen:
+		if m.cvExportProgressModel != nil {
+			return m.cvExportProgressModel.View()
+		}
+		return "Error: CV Export Progress model not initialized\n"
 	case CVListScreen:
 		if m.cvListModel != nil {
 			return m.cvListModel.View()

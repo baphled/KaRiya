@@ -128,7 +128,7 @@ var _ = Describe("CVPreviewModel", func() {
 			Expect(result).To(BeAssignableToTypeOf(ShowExportOptionsMsg{}))
 
 			exportMsg := result.(ShowExportOptionsMsg)
-			Expect(exportMsg.cvView).To(Equal(testCVView))
+			Expect(exportMsg.CVView).To(Equal(testCVView))
 		})
 	})
 
