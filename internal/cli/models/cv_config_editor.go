@@ -180,7 +180,7 @@ func (m *CVConfigEditorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "esc":
 			return m, func() tea.Msg {
-				return BackToCVConfigManagerMsg{}
+				return BackMsg{}
 			}
 		}
 
@@ -338,6 +338,5 @@ type ConfigValidationErrorMsg struct {
 	errors map[string]string
 }
 
-// BackToCVConfigManagerMsg navigates back to the config manager.
-type BackToCVConfigManagerMsg struct{}
+// BackMsg navigates back to the config manager.
 
