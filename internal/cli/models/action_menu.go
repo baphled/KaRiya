@@ -16,6 +16,7 @@ type EventAction int
 const (
 	EventActionView EventAction = iota
 	EventActionEdit
+	EventActionGenerateCV
 	EventActionDelete
 )
 
@@ -36,7 +37,7 @@ func NewActionMenuModel(event *career.CareerEvent) *ActionMenuModel {
 	return &ActionMenuModel{
 		BaseStandardModel: NewBaseStandardModel(),
 		event:             event,
-		options:           []EventAction{EventActionView, EventActionEdit, EventActionDelete},
+		options:           []EventAction{EventActionView, EventActionEdit, EventActionGenerateCV, EventActionDelete},
 		selectedIdx:       0,
 		width:             40,
 		height:            10,
@@ -119,7 +120,7 @@ func (m *ActionMenuModel) renderContent() string {
 	content = append(content, "")
 
 	// Render action options
-	actionLabels := []string{"View Event", "Edit Event", "Delete Event"}
+	actionLabels := []string{"View Event", "Edit Event", "Generate CV", "Delete Event"}
 	for i, option := range m.options {
 		var optionStyle lipgloss.Style
 		var prefix string
