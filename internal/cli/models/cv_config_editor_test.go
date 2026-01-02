@@ -1,7 +1,6 @@
 package models
 
 import (
-	"testing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,10 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCVConfigEditor(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CVConfigEditor Suite")
-}
 
 var _ = Describe("CVConfigEditorModel", func() {
 	var (
@@ -221,7 +216,7 @@ var _ = Describe("CVConfigEditorModel", func() {
 
 			Expect(cmd).NotTo(BeNil())
 			result := cmd()
-			Expect(result).To(BeAssignableToTypeOf(BackToCVConfigManagerMsg{}))
+			Expect(result).To(BeAssignableToTypeOf(BackMsg{}))
 		})
 	})
 
