@@ -4,7 +4,7 @@
 
 **Purpose**: Refactor the entire KaRiya TUI to implement a strict, type-safe Intent-Driven Architecture with clear boundaries, predictable state machines, and reliable navigation.
 
-**Status**: 🔄 **IN PROGRESS** (Phase 1 ~85% Complete, Phase 2 ~15% Complete)
+**Status**: 🔄 **IN PROGRESS** (Phase 1 100% Complete, Phase 2 ~15% Complete)
 
 **Version**: 1.1 - Updated with Implementation Progress (2026-01-02)
 
@@ -70,7 +70,7 @@
   - [x] 1.1 Complete Intent Boundary Contract Types
   - [x] 1.2 Complete IntentResult[T] Implementation
   - [x] 1.3 Complete IntentRouter Implementation
-  - [ ] 1.4 Refactor Root Model (app.go) to Use IntentRouter
+  - [x] 1.4 Refactor Root Model (app.go) to Use IntentRouter
   - [ ] 1.5 Implement Test Utilities and Harnesses
   - [ ] 1.6 Phase 1 Acceptance Testing and Validation
 
@@ -244,18 +244,18 @@
 
 #### 1.4 Refactor Root Model (app.go) to Use IntentRouter
 
-- [ ] 1.4.1 Analyze current app.go structure
+- [x] 1.4.1 Analyze current app.go structure
   - Document current state management
   - Identify all inline intent-specific state
   - Identify global UI state (keep)
   - Plan refactoring approach
 
-- [ ] 1.4.2 Add IntentRouter field to root model
+- [x] 1.4.2 Add IntentRouter field to root model
   - Add `router *IntentRouter` field
   - Initialize in `Init()` method
   - Verify no circular dependencies
 
-- [ ] 1.4.3 Register all intents with router
+- [x] 1.4.3 Register all intents with router
   - Register CaptureEvent intent
   - Register BrowseTimeline intent (stub)
   - Register GenerateCV intent (stub)
@@ -263,31 +263,31 @@
   - Register ConfigureSystem intent (stub)
   - Document registration order
 
-- [ ] 1.4.4 Refactor Update() method to delegate to router
+- [x] 1.4.4 Refactor Update() method to delegate to router
   - Route intent-specific messages to router
   - Keep global shortcuts handling (Quit, Help, Back)
   - Verify all messages are handled
   - Test with existing workflows
 
-- [ ] 1.4.5 Refactor View() method to delegate to router
+- [x] 1.4.5 Refactor View() method to delegate to router
   - Call router's View() method
   - Keep global UI elements (header, footer)
   - Verify layout and styling
 
-- [ ] 1.4.6 Implement global shortcuts
+- [x] 1.4.6 Implement global shortcuts
   - Quit/Exit (Ctrl+C) - exit from any intent
   - Help (?) - show help from any intent
   - Main Menu (Ctrl+Home) - return to main menu
   - Back (Esc) - go back to previous intent
   - Document shortcuts
 
-- [ ] 1.4.7 Handle result callbacks from intents
+- [x] 1.4.7 Handle result callbacks from intents
   - Implement `OnIntentResult()` callback
   - Update app state based on results
   - Trigger next intent or return to menu
   - Document result handling
 
-- [ ] 1.4.8 Write comprehensive tests in `app_test.go`
+- [x] 1.4.8 Write comprehensive tests in `app_test.go`
   - Delegation tests
   - Intent registration tests
   - Global shortcut tests
