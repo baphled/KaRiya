@@ -17,36 +17,32 @@ import (
 )
 
 // ListModel represents the event list display screen using table-based rendering
+// This is the refactored version using ListDeletionState and ListNavigationKeyHandler patterns
 type ListModel struct {
 	*BaseStandardModel
-	events            []*career.CareerEvent
-	filtered          []*career.CareerEvent
-	service           *careerservice.Service
-	ctx               context.Context
-	table             table.Model
-	currentPage       int
-	pageSize          int
-	totalCount        int
-	width             int
-	height            int
-	competencyFilter  string
-	sortBy            string
-	sortOrder         string
-	selectedEvents    map[string]bool
-	expandedIndices   map[int]bool
-	err               error
-	helpFooter        components.HelpFooterModel
-	deletionConfirm   *ConfirmationDialog
-	deletingEventID   string
-	deleteSuccessMsg  string
-	deleteErrorMsg    string
-	showDeleteMessage bool
-	breadcrumbs       []string
-	header            components.HeaderModel
-	listContainer     *components.TableListContainer
+	events              []*career.CareerEvent
+	filtered            []*career.CareerEvent
+	service             *careerservice.Service
+	ctx                 context.Context
+	table               table.Model
+	pagination          *PaginationHelper
+	width               int
+	height              int
+	competencyFilter    string
+	sortBy              string
+	sortOrder           string
+	selectedEvents      map[string]bool
+	expandedIndices     map[int]bool
+	err                 error
+	helpFooter          components.HelpFooterModel
+	deletionState       *ListDeletionState
+	navigationKeyHandler *ListNavigationKeyHandler
+	breadcrumbs         []string
+	header              components.HeaderModel
+	listContainer       *components.TableListContainer
 }
 
-// NewListModel creates a new list model
+// NewListModel creates a new refactored list model
 func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 	columns := []table.Column{
 		{Title: "Event", Width: 50},
@@ -82,51 +78,72 @@ func NewListModel(svc *careerservice.Service, ctx context.Context) *ListModel {
 		events:            []*career.CareerEvent{},
 		filtered:          []*career.CareerEvent{},
 		table:             t,
+		pagination:        NewPaginationHelper(10),
 		width:             80,
 		height:            20,
-		pageSize:          10,
-		currentPage:       1,
-		totalCount:        0,
 		sortBy:            "date",
 		sortOrder:         "desc",
 		selectedEvents:    make(map[string]bool),
 		expandedIndices:   make(map[int]bool),
-		deletionConfirm:   nil,
-		deletingEventID:   "",
-		deleteSuccessMsg:  "",
-		deleteErrorMsg:    "",
-		showDeleteMessage: false,
+		deletionState:     NewListDeletionState(),
 		helpFooter:        components.NewHelpFooter("list", 80),
 		breadcrumbs:       []string{"Home", "Events"},
 		header:            components.NewHeader("📝 Career Events", 80),
-		listContainer:     components.NewTableListContainer(t, "Events", 80),
+		listContainer:     components.NewTableListContainer(t, "📝 Career Events", 80),
 	}
+	// Create navigation key handler with callbacks
+	m.navigationKeyHandler = NewListNavigationKeyHandler(m)
 	m.loadEventsSync()
 	return m
 }
 
 // loadEventsSync loads events synchronously from the service
 func (m *ListModel) loadEventsSync() {
-	events, err := m.service.ListEvents(m.ctx, careerrepo.ListFilters{Limit: m.pageSize})
+	// First pass: load with no pagination to apply filters and sort
+	events, err := m.service.ListEvents(m.ctx, careerrepo.ListFilters{Limit: 1000})
 	if err != nil {
 		m.err = err
-	} else {
-		m.events = events
-		m.applyFiltersAndSort()
-		m.totalCount = len(m.filtered)
-		m.updateTableRows()
-		m.err = nil
+		return
 	}
+	
+	m.events = events
+	m.applyFiltersAndSort()
+	m.pagination.SetTotalCount(len(m.filtered))
+	m.updateTableRows()
+	m.err = nil
 }
 
-// updateTableRows updates the table with rows from filtered events
+// updateTableRows updates the table with rows from filtered events (current page only)
 func (m *ListModel) updateTableRows() {
 	var rows []table.Row
+	pageEvents := m.getPageEvents()
 
-	for i, event := range m.filtered {
+	// Get the selected index within the current page
+	selectedIdx := m.listContainer.GetSelectedIdx()
+
+	// Ensure cursor is within valid bounds BEFORE creating rows
+	if len(pageEvents) > 0 {
+		if selectedIdx >= len(pageEvents) {
+			selectedIdx = len(pageEvents) - 1
+		}
+		if selectedIdx < 0 {
+			selectedIdx = 0
+		}
+	} else {
+		selectedIdx = 0
+	}
+
+	for i, event := range pageEvents {
 		eventText := event.Text
-		if len(eventText) > 47 {
-			eventText = eventText[:44] + "..."
+		if len(eventText) > 50 {
+			eventText = eventText[:47] + "..."
+		}
+
+		// Add focus indicator for the selected row, or spaces for alignment
+		if i == selectedIdx {
+			eventText = "▶ " + eventText
+		} else {
+			eventText = "  " + eventText
 		}
 
 		company := event.Company
@@ -136,14 +153,8 @@ func (m *ListModel) updateTableRows() {
 
 		dateStr := event.Date.Format("2006-01-02")
 
-		// Add indicator for selected row based on container's selectedIdx
-		indicator := "  "
-		if i == m.listContainer.GetSelectedIdx() {
-			indicator = "▶ "
-		}
-
 		row := table.Row{
-			indicator + eventText,
+			eventText,
 			company,
 			dateStr,
 		}
@@ -151,17 +162,9 @@ func (m *ListModel) updateTableRows() {
 	}
 
 	m.table.SetRows(rows)
-	// Ensure cursor is within valid bounds
-	if len(rows) > 0 {
-		if m.table.Cursor() >= len(rows) {
-			m.listContainer.SetSelectedIdx(len(rows) - 1)
-		}
-		if m.table.Cursor() < 0 {
-			m.listContainer.SetSelectedIdx(0)
-		}
-	}
-	// Re-sync the table's cursor with the container's selectedIdx after SetRows
-	m.table.SetCursor(m.listContainer.GetSelectedIdx())
+	// Sync the container and table cursor with the validated selectedIdx
+	m.listContainer.SetSelectedIdx(selectedIdx)
+	m.table.SetCursor(selectedIdx)
 }
 
 // Init initializes the model
@@ -171,108 +174,44 @@ func (m *ListModel) Init() tea.Cmd {
 
 // Update handles messages
 func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.deletionConfirm != nil {
-		updatedDialog, cmd := m.deletionConfirm.Update(msg)
-		m.deletionConfirm = updatedDialog
+	// Handle deletion confirmation if active
+	if m.deletionState.IsConfirming() {
+		cmd := m.deletionState.UpdateConfirmation(msg)
 
-		if m.deletionConfirm.IsConfirmed() {
+		if m.deletionState.IsConfirmed() {
 			return m.performEventDeletion()
 		}
 
-		if m.deletionConfirm.IsCancelled() {
-			m.deletionConfirm = nil
-			m.deletingEventID = ""
+		if m.deletionState.IsCancelled() {
+			m.deletionState.Clear()
 			return m, nil
 		}
 
 		return m, cmd
 	}
 
+	// Handle deletion message display
+	if m.deletionState.ShowMessage {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.String() == "esc" {
+				m.deletionState.Clear()
+				return m, nil
+			}
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Let navigation key handler process navigation and item action keys
+		if cmd := m.navigationKeyHandler.HandleNavigationKey(msg.String()); cmd != nil {
+			return m, cmd
+		}
+
+		// Handle screen navigation keys that aren't list-specific
 		switch msg.String() {
-		case "up", "k":
-			m.listContainer.MoveUp(1)
-			m.updateTableRows()
-			return m, nil
-		case "down", "j":
-			m.listContainer.MoveDown(1)
-			m.updateTableRows()
-			return m, nil
-		case "pgup", "ctrl+b":
-			if m.listContainer.GetSelectedIdx() >= m.pageSize {
-				m.listContainer.MoveUp(m.pageSize)
-			} else {
-				m.listContainer.MoveToFirst()
-			}
-			m.updateTableRows()
-			return m, nil
-		case "pgdn", "ctrl+f":
-			rows := len(m.table.Rows())
-			if m.listContainer.GetSelectedIdx()+m.pageSize < rows {
-				m.listContainer.MoveDown(m.pageSize)
-			} else {
-				m.listContainer.MoveToLast()
-			}
-			m.updateTableRows()
-			return m, nil
-		case "home", "g":
-			m.listContainer.MoveToFirst()
-			m.updateTableRows()
-			return m, nil
-		case "end", "G":
-			m.listContainer.MoveToLast()
-			m.updateTableRows()
-			return m, nil
-		case "enter":
-			if len(m.filtered) > 0 {
-				event := m.GetSelectedEvent()
-				if event != nil {
-					return m, func() tea.Msg { return EventActionSelectedMsg{Event: event, Action: EventActionView} }
-				}
-			}
-			return m, nil
-		case " ", "space":
-			if len(m.filtered) > 0 {
-				event := m.GetSelectedEvent()
-				if event != nil {
-					m.selectedEvents[event.ID] = !m.selectedEvents[event.ID]
-				}
-			}
-			return m, nil
-		case "x", "d":
-			if len(m.filtered) > 0 {
-				event := m.GetSelectedEvent()
-				if event != nil {
-					m.showDeleteConfirmation(event)
-				}
-			}
-			return m, nil
-		case "v":
-			if len(m.filtered) > 0 {
-				event := m.GetSelectedEvent()
-				if event != nil {
-					return m, func() tea.Msg { return EventActionSelectedMsg{Event: event, Action: EventActionView} }
-				}
-			}
-			return m, nil
-		case "e":
-			if len(m.filtered) > 0 {
-				event := m.GetSelectedEvent()
-				if event != nil {
-					return m, func() tea.Msg { return EventActionSelectedMsg{Event: event, Action: EventActionEdit} }
-				}
-			}
-			return m, nil
 		case "esc":
-			if m.showDeleteMessage {
-				m.showDeleteMessage = false
-				m.deleteSuccessMsg = ""
-				m.deleteErrorMsg = ""
-				return m, nil
-			} else {
-				return m, func() tea.Msg { return BackMsg{} }
-			}
+			return m, func() tea.Msg { return BackMsg{} }
 		case "q", "ctrl+c":
 			return m, func() tea.Msg { return QuitMsg{} }
 		}
@@ -291,40 +230,27 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// showDeleteConfirmation shows the deletion confirmation dialog
-func (m *ListModel) showDeleteConfirmation(event *career.CareerEvent) {
-	message := fmt.Sprintf("Delete event: \"%s\"?\n\nThis action cannot be undone.", truncateText(event.Text, 60))
-	m.deletionConfirm = NewConfirmationDialog("Delete Event", message)
-	m.deletingEventID = event.ID
-}
-
 // performEventDeletion performs the actual event deletion
 func (m *ListModel) performEventDeletion() (tea.Model, tea.Cmd) {
-	if m.deletingEventID == "" {
-		m.deletionConfirm = nil
+	if m.deletionState.DeletingItemID == "" {
+		m.deletionState.Clear()
 		return m, nil
 	}
 
-	err := m.service.DeleteEvent(m.ctx, m.deletingEventID)
+	err := m.service.DeleteEvent(m.ctx, m.deletionState.DeletingItemID)
 	if err != nil {
-		m.deleteErrorMsg = fmt.Sprintf("Error deleting event: %v", err)
-		m.showDeleteMessage = true
-		m.deletionConfirm = nil
-		m.deletingEventID = ""
+		m.deletionState.SetErrorMsg(fmt.Sprintf("Error deleting event: %v", err))
 		return m, nil
 	}
 
-	m.removeEventFromLists(m.deletingEventID)
+	m.removeEventFromLists(m.deletionState.DeletingItemID)
 
-	m.deleteSuccessMsg = "Event deleted successfully"
-	m.showDeleteMessage = true
-	m.deletionConfirm = nil
-	m.deletingEventID = ""
+	m.deletionState.SetSuccessMsg("Event deleted successfully")
 
-	m.totalCount = len(m.filtered)
+	m.pagination.SetTotalCount(len(m.filtered))
 	m.updateTableRows()
 
-	if m.totalCount == 0 {
+	if m.pagination.GetTotalCount() == 0 {
 		m.listContainer.MoveToFirst()
 	} else {
 		if m.listContainer.GetSelectedIdx() >= len(m.table.Rows()) && m.listContainer.GetSelectedIdx() > 0 {
@@ -356,12 +282,14 @@ func (m *ListModel) removeEventFromLists(eventID string) {
 
 // View renders the event list
 func (m *ListModel) View() string {
-	if m.deletionConfirm != nil {
-		return m.deletionConfirm.View()
+	// Render deletion confirmation dialog
+	if m.deletionState.IsConfirming() {
+		return m.deletionState.ConfirmationDialog.View()
 	}
 
-	if m.showDeleteMessage {
-		return m.renderDeleteMessage()
+	// Render deletion message (success or error)
+	if m.deletionState.ShowMessage {
+		return m.renderDeletionMessage()
 	}
 
 	if m.err != nil {
@@ -374,28 +302,23 @@ func (m *ListModel) View() string {
 	m.listContainer.SetTable(m.table).
 		SetDimensions(m.width, m.height).
 		SetEmptyStateMessage("No events found").
-		SetHelpFooterKey("list")
+		SetHelpFooterKey("list").
+		SetBreadcrumbs(m.breadcrumbs)
 
 	// Set pagination info
-	startIdx := (m.currentPage-1)*m.pageSize + 1
-	endIdx := startIdx + len(m.getPageEvents()) - 1
-	if m.totalCount == 0 {
-		startIdx = 0
-		endIdx = 0
-	}
-	paginationText := fmt.Sprintf("Showing %d-%d of %d events", startIdx, endIdx, m.totalCount)
+	paginationText := m.pagination.GetPaginationInfo("events")
 	m.listContainer.SetPaginationInfo(paginationText)
 
 	return m.listContainer.Render()
 }
 
-// renderDeleteMessage renders the deletion success/error message
-func (m *ListModel) renderDeleteMessage() string {
+// renderDeletionMessage renders the deletion success/error message
+func (m *ListModel) renderDeletionMessage() string {
 	var messageContent string
-	if m.deleteSuccessMsg != "" {
-		messageContent = styles.SuccessBox.Render(m.deleteSuccessMsg + "\n\nPress 'esc' to continue")
-	} else if m.deleteErrorMsg != "" {
-		messageContent = styles.ErrorBox.Render(m.deleteErrorMsg + "\n\nPress 'esc' to continue")
+	if m.deletionState.SuccessMsg != "" {
+		messageContent = styles.SuccessBox.Render(m.deletionState.SuccessMsg + "\n\nPress 'esc' to continue")
+	} else if m.deletionState.ErrorMsg != "" {
+		messageContent = styles.ErrorBox.Render(m.deletionState.ErrorMsg + "\n\nPress 'esc' to continue")
 	}
 
 	headerView := m.header.View()
@@ -413,12 +336,12 @@ func (m *ListModel) renderDeleteMessage() string {
 
 // getPageEvents returns the events for the current page
 func (m *ListModel) getPageEvents() []*career.CareerEvent {
-	if m.totalCount == 0 {
+	if m.pagination.GetTotalCount() == 0 {
 		return []*career.CareerEvent{}
 	}
 
-	startIdx := (m.currentPage - 1) * m.pageSize
-	endIdx := startIdx + m.pageSize
+	startIdx := m.pagination.GetPageStartIndex()
+	endIdx := m.pagination.GetPageEndIndex()
 
 	if startIdx >= len(m.filtered) {
 		return []*career.CareerEvent{}
@@ -435,8 +358,7 @@ func (m *ListModel) getPageEvents() []*career.CareerEvent {
 func (m *ListModel) SetEvents(events []*career.CareerEvent) {
 	m.events = events
 	m.applyFiltersAndSort()
-	m.totalCount = len(m.filtered)
-	m.currentPage = 1
+	m.pagination.SetTotalCount(len(m.filtered)).GoToFirstPage()
 	m.listContainer.MoveToFirst()
 	m.expandedIndices = make(map[int]bool)
 	m.updateTableRows()
@@ -446,8 +368,7 @@ func (m *ListModel) SetEvents(events []*career.CareerEvent) {
 func (m *ListModel) SetCompetencyFilter(competency string) {
 	m.competencyFilter = competency
 	m.applyFiltersAndSort()
-	m.totalCount = len(m.filtered)
-	m.currentPage = 1
+	m.pagination.SetTotalCount(len(m.filtered)).GoToFirstPage()
 	m.listContainer.MoveToFirst()
 	m.expandedIndices = make(map[int]bool)
 	m.updateTableRows()
@@ -532,7 +453,7 @@ func (m *ListModel) SetBreadcrumbs(crumbs []string) {
 // Refresh reloads the events from the service
 func (m *ListModel) Refresh() {
 	m.loadEventsSync()
-	m.currentPage = 1
+	m.pagination.GoToFirstPage()
 	m.expandedIndices = make(map[int]bool)
 	m.listContainer.MoveToFirst()
 }
@@ -552,46 +473,126 @@ func (m *ListModel) GetSelectedIdx() int {
 	return m.listContainer.GetSelectedIdx()
 }
 
-// getTotalPages calculates the total number of pages
-func (m *ListModel) getTotalPages() int {
-	if m.totalCount == 0 {
-		return 1
+// ListItemCallbacks implementation for ListModel
+// These methods implement the ListItemCallbacks interface required by ListNavigationKeyHandler
+
+// OnView sends a message to view the selected event
+func (m *ListModel) OnView(item interface{}) tea.Cmd {
+	if event, ok := item.(*career.CareerEvent); ok {
+		return func() tea.Msg { return EventActionSelectedMsg{Event: event, Action: EventActionView} }
 	}
-	pages := (m.totalCount + m.pageSize - 1) / m.pageSize
-	return pages
+	return nil
+}
+
+// OnEdit sends a message to edit the selected event
+func (m *ListModel) OnEdit(item interface{}) tea.Cmd {
+	if event, ok := item.(*career.CareerEvent); ok {
+		return func() tea.Msg { return EventActionSelectedMsg{Event: event, Action: EventActionEdit} }
+	}
+	return nil
+}
+
+// OnDelete initiates deletion of the selected event
+func (m *ListModel) OnDelete(item interface{}) {
+	if event, ok := item.(*career.CareerEvent); ok {
+		m.deletionState.ShowConfirmation("Event", event.Text)
+		m.deletionState.DeletingItemID = event.ID
+	}
+}
+
+// OnToggleSelection toggles the selection state of an item
+func (m *ListModel) OnToggleSelection(item interface{}) {
+	if event, ok := item.(*career.CareerEvent); ok {
+		m.selectedEvents[event.ID] = !m.selectedEvents[event.ID]
+	}
+}
+
+// HasSelectedItem returns the currently selected event
+func (m *ListModel) HasSelectedItem() interface{} {
+	return m.GetSelectedEvent()
+}
+
+// MoveUp moves the selection up by count items
+func (m *ListModel) MoveUp(count int) {
+	m.listContainer.MoveUp(count)
+}
+
+// MoveDown moves the selection down by count items
+func (m *ListModel) MoveDown(count int) {
+	m.listContainer.MoveDown(count)
+}
+
+// MoveToFirst moves selection to the first item
+func (m *ListModel) MoveToFirst() {
+	m.listContainer.MoveToFirst()
+}
+
+// MoveToLast moves selection to the last item
+func (m *ListModel) MoveToLast() {
+	m.listContainer.MoveToLast()
+}
+
+// UpdateDisplay refreshes the table display
+func (m *ListModel) UpdateDisplay() {
+	m.updateTableRows()
+}
+
+// GetRowCount returns the number of visible rows
+func (m *ListModel) GetRowCount() int {
+	return len(m.table.Rows())
+}
+
+// GetCurrentIndex returns the current selection index
+func (m *ListModel) GetCurrentIndex() int {
+	return m.listContainer.GetSelectedIdx()
+}
+
+// GetPageSize returns the page size for pagination
+func (m *ListModel) GetPageSize() int {
+	return m.pagination.GetPageSize()
 }
 
 // nextPage moves to the next page of results
 func (m *ListModel) nextPage() {
-	totalPages := m.getTotalPages()
-	if m.currentPage < totalPages {
-		m.currentPage++
-		m.listContainer.MoveToFirst()
-		m.updateTableRows()
-	}
+	m.pagination.NextPage()
+	m.listContainer.MoveToFirst()
+	m.updateTableRows()
 }
 
 // prevPage moves to the previous page of results
 func (m *ListModel) prevPage() {
-	if m.currentPage > 1 {
-		m.currentPage--
-		m.listContainer.MoveToFirst()
-		m.updateTableRows()
-	}
+	m.pagination.PrevPage()
+	m.listContainer.MoveToFirst()
+	m.updateTableRows()
 }
 
 // goToFirstItem moves to the first item
 func (m *ListModel) goToFirstItem() {
-	m.currentPage = 1
+	m.pagination.GoToFirstPage()
 	m.listContainer.MoveToFirst()
 }
 
 // goToLastItem moves to the last item
 func (m *ListModel) goToLastItem() {
-	totalPages := m.getTotalPages()
-	m.currentPage = totalPages
+	m.pagination.GoToLastPage()
 	pageEvents := m.getPageEvents()
 	if len(pageEvents) > 0 {
 		m.listContainer.SetSelectedIdx(len(pageEvents) - 1)
 	}
 }
+
+// Accessor methods for backward compatibility with tests
+
+// getTotalPages calculates the total number of pages
+func (m *ListModel) getTotalPages() int {
+	return m.pagination.GetTotalPages()
+}
+
+// pageSize getter for tests
+func (m *ListModel) getPageSize() int {
+	return m.pagination.GetPageSize()
+}
+
+// currentPage getter for tests (note: using reflection or adding public field would be cleaner)
+// These are added as convenience methods for tests
+// Tests should ideally be refactored to use public API only
