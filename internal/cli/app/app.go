@@ -392,6 +392,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 			m.previousScreen = m.currentScreen
 			m.currentScreen = ConfirmationScreen
+		case models.EventActionGenerateCV:
+			// Navigate to CV config manager with selected event context
+			m.cvConfigManagerModel = models.NewCVConfigManagerModelWithEvent(
+				models.NewBaseStandardModel(),
+				m.configManager,
+				actionMsg.Event,
+			)
+			m.previousScreen = m.currentScreen
+			m.currentScreen = CVConfigManagerScreen
 		}
 		return m, nil
 	}
@@ -563,6 +572,54 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.successModel = models.NewSuccessModel(submitMsg.Event)
 		m.previousScreen = m.currentScreen
 		m.currentScreen = SuccessScreen
+		return m, nil
+	}
+
+	// Handle GenerateCVFromConfigMsg - navigate to CV generator
+	if cvMsg, ok := msg.(models.GenerateCVFromConfigMsg); ok {
+		// Create a simple CV generator model for now
+		// The actual CV generation will be handled by the model itself
+		m.cvGeneratorModel = models.NewCVGeneratorModel(
+			models.NewBaseStandardModel(),
+			nil, // CVGenerationService will be initialized by the model
+			cvMsg.Config,
+		)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CVGeneratorScreen
+		return m, m.cvGeneratorModel.Init()
+	}
+
+	// Handle NavigateToCVPreviewMsg - navigate to CV preview
+	if previewMsg, ok := msg.(models.NavigateToCVPreviewMsg); ok {
+		// Create CV preview model with the CV view from the message
+		m.cvPreviewModel = models.NewCVPreviewModelWithSource(
+			models.NewBaseStandardModel(),
+			previewMsg.CVView,
+			[]*career.CVSection{}, // Sections will be populated from CVView
+			nil, // TraceabilityService will be initialized later if needed
+			previewMsg.SourceScreen,
+		)
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CVPreviewScreen
+		return m, nil
+	}
+
+	// Handle BackToEventTimelineMsg - navigate back to event timeline
+	if _, ok := msg.(models.BackToEventTimelineMsg); ok {
+		m.previousScreen = m.currentScreen
+		m.currentScreen = ListScreen
+		return m, nil
+	}
+
+	// Handle BackToCVConfigManagerMsg - navigate back to CV config manager
+	if _, ok := msg.(models.BackToCVConfigManagerMsg); ok {
+		if m.cvConfigManagerModel == nil {
+			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+		} else {
+			m.cvConfigManagerModel.RefreshConfigs()
+		}
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CVConfigManagerScreen
 		return m, nil
 	}
 
@@ -904,6 +961,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.previousScreen = m.currentScreen
 			m.currentScreen = FactListScreen
+			return m, nil
+		case "v":
+			// Manage CV Configurations
+			if m.cvConfigManagerModel == nil {
+				m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+			} else {
+				m.cvConfigManagerModel.RefreshConfigs()
+			}
+			m.previousScreen = m.currentScreen
+			m.currentScreen = CVConfigManagerScreen
 			return m, nil
 		}
 
