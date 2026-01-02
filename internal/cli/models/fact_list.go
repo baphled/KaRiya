@@ -24,9 +24,7 @@ type FactListModel struct {
 	service           *careerservice.Service
 	ctx               context.Context
 	table             table.Model
-	currentPage       int
-	pageSize          int
-	totalCount        int
+	pagination        *PaginationHelper
 	width             int
 	height            int
 	competencyFilter  string
@@ -39,11 +37,8 @@ type FactListModel struct {
 	cancelled         bool
 	err               error
 	helpFooter        components.HelpFooterModel
-	deletionConfirm   *ConfirmationDialog
-	deletingFactID    string
-	deleteSuccessMsg  string
-	deleteErrorMsg    string
-	showDeleteMessage bool
+	deletionState     *ListDeletionState
+	navigationKeyHandler *ListNavigationKeyHandler
 	breadcrumbs       []string
 	header            components.HeaderModel
 	listContainer     *components.TableListContainer
@@ -86,23 +81,19 @@ func NewFactListModel(service *careerservice.Service, ctx context.Context) *Fact
 		filtered:          []*career.Fact{},
 		table:             t,
 		selectedFacts:     make(map[string]bool),
+		pagination:        NewPaginationHelper(10),
 		width:             80,
 		height:            20,
-		pageSize:          10,
-		currentPage:       1,
-		totalCount:        0,
 		sortBy:            "date",
 		sortOrder:         "desc",
 		helpFooter:        components.NewHelpFooter("fact_list", 80),
-		deletionConfirm:   nil,
-		deletingFactID:    "",
-		deleteSuccessMsg:  "",
-		deleteErrorMsg:    "",
-		showDeleteMessage: false,
+		deletionState:     NewListDeletionState(),
 		breadcrumbs:       []string{"Home", "Facts"},
 		header:            components.NewHeader("Facts", 80),
 		listContainer:     components.NewTableListContainer(t, "Facts", 80),
 	}
+	// Create navigation key handler with callbacks
+	m.navigationKeyHandler = NewListNavigationKeyHandler(m)
 	m.loadFactsSync()
 	return m
 }
@@ -122,20 +113,43 @@ func (flm *FactListModel) loadFactsSync() {
 	} else {
 		flm.facts = facts
 		flm.applyFiltersAndSort()
-		flm.totalCount = len(flm.filtered)
+		flm.pagination.SetTotalCount(len(flm.filtered))
 		flm.updateTableRows()
 		flm.err = nil
 	}
 }
 
-// updateTableRows updates the table with rows from filtered facts
+// updateTableRows updates the table with rows from filtered facts (current page only)
 func (flm *FactListModel) updateTableRows() {
 	var rows []table.Row
+	pageFacts := flm.getPageFacts()
 
-	for i, fact := range flm.filtered {
+	// Get the selected index within the current page
+	selectedIdx := flm.listContainer.GetSelectedIdx()
+
+	// Ensure cursor is within valid bounds BEFORE creating rows
+	if len(pageFacts) > 0 {
+		if selectedIdx >= len(pageFacts) {
+			selectedIdx = len(pageFacts) - 1
+		}
+		if selectedIdx < 0 {
+			selectedIdx = 0
+		}
+	} else {
+		selectedIdx = 0
+	}
+
+	for i, fact := range pageFacts {
 		factText := fact.Text
-		if len(factText) > 57 {
-			factText = factText[:54] + "..."
+		if len(factText) > 60 {
+			factText = factText[:57] + "..."
+		}
+
+		// Add focus indicator for the selected row, or spaces for alignment
+		if i == selectedIdx {
+			factText = "▶ " + factText
+		} else {
+			factText = "  " + factText
 		}
 
 		roleIcon := getRoleFitIcon(fact.RoleFit)
@@ -145,14 +159,8 @@ func (flm *FactListModel) updateTableRows() {
 			competencies = competencies[:19] + "..."
 		}
 
-		// Add focus indicator for selected row based on container's selectedIdx
-		indicator := "  "
-		if i == flm.listContainer.GetSelectedIdx() {
-			indicator = "▶ "
-		}
-
 		row := table.Row{
-			indicator + factText,
+			factText,
 			competencies,
 			roleIcon,
 		}
@@ -160,18 +168,9 @@ func (flm *FactListModel) updateTableRows() {
 	}
 
 	flm.table.SetRows(rows)
-	// Ensure cursor is within valid bounds
-	if len(rows) > 0 {
-		if flm.table.Cursor() >= len(rows) {
-			flm.listContainer.SetSelectedIdx(len(rows) - 1)
-		}
-		if flm.table.Cursor() < 0 {
-			flm.listContainer.SetSelectedIdx(0)
-		}
-	}
-	// Re-sync the table's cursor with the container's selectedIdx after SetRows
-	// SetRows may reset the table's cursor, so we need to explicitly set it
-	flm.table.SetCursor(flm.listContainer.GetSelectedIdx())
+	// Sync the container and table cursor with the validated selectedIdx
+	flm.listContainer.SetSelectedIdx(selectedIdx)
+	flm.table.SetCursor(selectedIdx)
 }
 
 // Init initializes the model
@@ -181,96 +180,44 @@ func (flm *FactListModel) Init() tea.Cmd {
 
 // Update handles messages
 func (flm *FactListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if flm.deletionConfirm != nil {
-		updatedDialog, cmd := flm.deletionConfirm.Update(msg)
-		flm.deletionConfirm = updatedDialog
+	// Handle deletion confirmation if active
+	if flm.deletionState.IsConfirming() {
+		cmd := flm.deletionState.UpdateConfirmation(msg)
 
-		if flm.deletionConfirm.IsConfirmed() {
+		if flm.deletionState.IsConfirmed() {
 			return flm.performFactDeletion()
 		}
 
-		if flm.deletionConfirm.IsCancelled() {
-			flm.deletionConfirm = nil
-			flm.deletingFactID = ""
+		if flm.deletionState.IsCancelled() {
+			flm.deletionState.Clear()
 			return flm, nil
 		}
 
 		return flm, cmd
 	}
 
+	// Handle deletion message display
+	if flm.deletionState.ShowMessage {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.String() == "esc" {
+				flm.deletionState.Clear()
+				return flm, nil
+			}
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Let navigation key handler process navigation and item action keys
+		if cmd := flm.navigationKeyHandler.HandleNavigationKey(msg.String()); cmd != nil {
+			return flm, cmd
+		}
+
+		// Handle screen navigation keys that aren't list-specific
 		switch msg.String() {
-		case "up", "k":
-			flm.listContainer.MoveUp(1)
-			flm.updateTableRows()
-		case "down", "j":
-			flm.listContainer.MoveDown(1)
-			flm.updateTableRows()
-		case "pgup", "ctrl+b":
-			if flm.listContainer.GetSelectedIdx() >= flm.pageSize {
-				flm.listContainer.MoveUp(flm.pageSize)
-			} else {
-				flm.listContainer.MoveToFirst()
-			}
-			flm.updateTableRows()
-		case "pgdn", "ctrl+f":
-			rows := len(flm.table.Rows())
-			if flm.listContainer.GetSelectedIdx()+flm.pageSize < rows {
-				flm.listContainer.MoveDown(flm.pageSize)
-			} else {
-				flm.listContainer.MoveToLast()
-			}
-			flm.updateTableRows()
-		case "home", "g":
-			flm.listContainer.MoveToFirst()
-			flm.updateTableRows()
-		case "end", "G":
-			flm.listContainer.MoveToLast()
-			flm.updateTableRows()
-		case "enter":
-			if len(flm.filtered) > 0 {
-				fact := flm.GetSelectedFact()
-				if fact != nil {
-					return flm, func() tea.Msg { return FactActionMenuMsg{Fact: fact} }
-				}
-			}
-		case " ", "space":
-			if len(flm.filtered) > 0 {
-				fact := flm.GetSelectedFact()
-				if fact != nil {
-					flm.selectedFacts[fact.ID] = !flm.selectedFacts[fact.ID]
-				}
-			}
-		case "x", "d":
-			if len(flm.filtered) > 0 {
-				fact := flm.GetSelectedFact()
-				if fact != nil {
-					flm.showDeleteConfirmation(fact)
-				}
-			}
-		case "v":
-			if len(flm.filtered) > 0 {
-				fact := flm.GetSelectedFact()
-				if fact != nil {
-					return flm, func() tea.Msg { return FactActionSelectedMsg{Fact: fact, Action: FactActionView} }
-				}
-			}
-		case "e":
-			if len(flm.filtered) > 0 {
-				fact := flm.GetSelectedFact()
-				if fact != nil {
-					return flm, func() tea.Msg { return FactActionSelectedMsg{Fact: fact, Action: FactActionEdit} }
-				}
-			}
 		case "esc":
-			if flm.showDeleteMessage {
-				flm.showDeleteMessage = false
-				flm.deleteSuccessMsg = ""
-				flm.deleteErrorMsg = ""
-			} else {
-				return flm, func() tea.Msg { return BackMsg{} }
-			}
+			return flm, func() tea.Msg { return BackMsg{} }
 		case "q", "ctrl+c":
 			return flm, func() tea.Msg { return QuitMsg{} }
 		}
@@ -289,40 +236,27 @@ func (flm *FactListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return flm, cmd
 }
 
-// showDeleteConfirmation shows the deletion confirmation dialog
-func (flm *FactListModel) showDeleteConfirmation(fact *career.Fact) {
-	message := fmt.Sprintf("Delete fact: \"%s\"?\n\nThis action cannot be undone.", truncateText(fact.Text, 60))
-	flm.deletionConfirm = NewConfirmationDialog("Delete Fact", message)
-	flm.deletingFactID = fact.ID
-}
-
 // performFactDeletion performs the actual fact deletion
 func (flm *FactListModel) performFactDeletion() (tea.Model, tea.Cmd) {
-	if flm.deletingFactID == "" {
-		flm.deletionConfirm = nil
+	if flm.deletionState.DeletingItemID == "" {
+		flm.deletionState.Clear()
 		return flm, nil
 	}
 
-	err := flm.service.DeleteFact(flm.ctx, flm.deletingFactID)
+	err := flm.service.DeleteFact(flm.ctx, flm.deletionState.DeletingItemID)
 	if err != nil {
-		flm.deleteErrorMsg = fmt.Sprintf("Error deleting fact: %v", err)
-		flm.showDeleteMessage = true
-		flm.deletionConfirm = nil
-		flm.deletingFactID = ""
+		flm.deletionState.SetErrorMsg(fmt.Sprintf("Error deleting fact: %v", err))
 		return flm, nil
 	}
 
-	flm.removeFactFromLists(flm.deletingFactID)
+	flm.removeFactFromLists(flm.deletionState.DeletingItemID)
 
-	flm.deleteSuccessMsg = "Fact deleted successfully"
-	flm.showDeleteMessage = true
-	flm.deletionConfirm = nil
-	flm.deletingFactID = ""
+	flm.deletionState.SetSuccessMsg("Fact deleted successfully")
 
-	flm.totalCount = len(flm.filtered)
+	flm.pagination.SetTotalCount(len(flm.filtered))
 	flm.updateTableRows()
 
-	if flm.totalCount == 0 {
+	if flm.pagination.GetTotalCount() == 0 {
 		flm.listContainer.MoveToFirst()
 	} else {
 		if flm.listContainer.GetSelectedIdx() >= len(flm.table.Rows()) && flm.listContainer.GetSelectedIdx() > 0 {
@@ -354,12 +288,14 @@ func (flm *FactListModel) removeFactFromLists(factID string) {
 
 // View renders the fact list
 func (flm *FactListModel) View() string {
-	if flm.deletionConfirm != nil {
-		return flm.deletionConfirm.View()
+	// Render deletion confirmation dialog
+	if flm.deletionState.IsConfirming() {
+		return flm.deletionState.ConfirmationDialog.View()
 	}
 
-	if flm.showDeleteMessage {
-		return flm.renderDeleteMessage()
+	// Render deletion message (success or error)
+	if flm.deletionState.ShowMessage {
+		return flm.renderDeletionMessage()
 	}
 
 	if flm.err != nil {
@@ -372,28 +308,22 @@ func (flm *FactListModel) View() string {
 	flm.listContainer.SetTable(flm.table).
 		SetDimensions(flm.width, flm.height).
 		SetEmptyStateMessage("No facts found").
-		SetHelpFooterKey("fact_list")
+		SetHelpFooterKey("fact_list").SetBreadcrumbs(flm.breadcrumbs)
 
-	// Set pagination info - always show pagination like list.go does
-	startIdx := (flm.currentPage-1)*flm.pageSize + 1
-	endIdx := startIdx + len(flm.getPageFacts()) - 1
-	if flm.totalCount == 0 {
-		startIdx = 0
-		endIdx = 0
-	}
-	paginationText := fmt.Sprintf("Showing %d-%d of %d facts", startIdx, endIdx, flm.totalCount)
+	// Set pagination info
+	paginationText := flm.pagination.GetPaginationInfo("facts")
 	flm.listContainer.SetPaginationInfo(paginationText)
 
 	return flm.listContainer.Render()
 }
 
-// renderDeleteMessage renders the deletion success/error message
-func (flm *FactListModel) renderDeleteMessage() string {
+// renderDeletionMessage renders the deletion success/error message
+func (flm *FactListModel) renderDeletionMessage() string {
 	var messageContent string
-	if flm.deleteSuccessMsg != "" {
-		messageContent = styles.SuccessBox.Render(flm.deleteSuccessMsg + "\n\nPress 'esc' to continue")
-	} else if flm.deleteErrorMsg != "" {
-		messageContent = styles.ErrorBox.Render(flm.deleteErrorMsg + "\n\nPress 'esc' to continue")
+	if flm.deletionState.SuccessMsg != "" {
+		messageContent = styles.SuccessBox.Render(flm.deletionState.SuccessMsg + "\n\nPress 'esc' to continue")
+	} else if flm.deletionState.ErrorMsg != "" {
+		messageContent = styles.ErrorBox.Render(flm.deletionState.ErrorMsg + "\n\nPress 'esc' to continue")
 	}
 
 	headerView := flm.header.View()
@@ -411,12 +341,12 @@ func (flm *FactListModel) renderDeleteMessage() string {
 
 // getPageFacts returns the facts for the current page
 func (flm *FactListModel) getPageFacts() []*career.Fact {
-	if flm.totalCount == 0 {
+	if flm.pagination.GetTotalCount() == 0 {
 		return []*career.Fact{}
 	}
 
-	startIdx := (flm.currentPage - 1) * flm.pageSize
-	endIdx := startIdx + flm.pageSize
+	startIdx := flm.pagination.GetPageStartIndex()
+	endIdx := flm.pagination.GetPageEndIndex()
 
 	if startIdx >= len(flm.filtered) {
 		return []*career.Fact{}
@@ -433,8 +363,7 @@ func (flm *FactListModel) getPageFacts() []*career.Fact {
 func (flm *FactListModel) SetFacts(facts []*career.Fact) {
 	flm.facts = facts
 	flm.applyFiltersAndSort()
-	flm.totalCount = len(flm.filtered)
-	flm.currentPage = 1
+	flm.pagination.SetTotalCount(len(flm.filtered)).GoToFirstPage()
 	flm.listContainer.MoveToFirst()
 	flm.updateTableRows()
 }
@@ -443,8 +372,7 @@ func (flm *FactListModel) SetFacts(facts []*career.Fact) {
 func (flm *FactListModel) SetCompetencyFilter(competency string) {
 	flm.competencyFilter = competency
 	flm.applyFiltersAndSort()
-	flm.totalCount = len(flm.filtered)
-	flm.currentPage = 1
+	flm.pagination.SetTotalCount(len(flm.filtered)).GoToFirstPage()
 	flm.listContainer.MoveToFirst()
 	flm.updateTableRows()
 }
@@ -453,8 +381,7 @@ func (flm *FactListModel) SetCompetencyFilter(competency string) {
 func (flm *FactListModel) SetRoleFitFilter(roleFit career.RoleFit) {
 	flm.roleFitFilter = roleFit
 	flm.applyFiltersAndSort()
-	flm.totalCount = len(flm.filtered)
-	flm.currentPage = 1
+	flm.pagination.SetTotalCount(len(flm.filtered)).GoToFirstPage()
 	flm.listContainer.MoveToFirst()
 	flm.updateTableRows()
 }
@@ -463,8 +390,7 @@ func (flm *FactListModel) SetRoleFitFilter(roleFit career.RoleFit) {
 func (flm *FactListModel) SetAudienceFilter(audience string) {
 	flm.audienceFilter = audience
 	flm.applyFiltersAndSort()
-	flm.totalCount = len(flm.filtered)
-	flm.currentPage = 1
+	flm.pagination.SetTotalCount(len(flm.filtered)).GoToFirstPage()
 	flm.listContainer.MoveToFirst()
 	flm.updateTableRows()
 }
@@ -601,15 +527,6 @@ func (flm *FactListModel) GetSelectedIdx() int {
 	return flm.listContainer.GetSelectedIdx()
 }
 
-// getTotalPages calculates the total number of pages
-func (flm *FactListModel) getTotalPages() int {
-	if flm.totalCount == 0 {
-		return 1
-	}
-	pages := (flm.totalCount + flm.pageSize - 1) / flm.pageSize
-	return pages
-}
-
 // SetBreadcrumbs sets the breadcrumb trail for navigation
 func (flm *FactListModel) SetBreadcrumbs(crumbs []string) {
 	flm.breadcrumbs = crumbs
@@ -619,49 +536,114 @@ func (flm *FactListModel) SetBreadcrumbs(crumbs []string) {
 // Refresh reloads the facts from the service
 func (flm *FactListModel) Refresh() {
 	flm.loadFactsSync()
-	flm.currentPage = 1
+	flm.pagination.GoToFirstPage()
 	flm.listContainer.MoveToFirst()
+}
+
+// ListItemCallbacks implementation for FactListModel
+// These methods implement the ListItemCallbacks interface required by ListNavigationKeyHandler
+
+// OnView sends a message to view the selected fact
+func (flm *FactListModel) OnView(item interface{}) tea.Cmd {
+	if fact, ok := item.(*career.Fact); ok {
+		return func() tea.Msg { return FactActionSelectedMsg{Fact: fact, Action: FactActionView} }
+	}
+	return nil
+}
+
+// OnEdit sends a message to edit the selected fact
+func (flm *FactListModel) OnEdit(item interface{}) tea.Cmd {
+	if fact, ok := item.(*career.Fact); ok {
+		return func() tea.Msg { return FactActionSelectedMsg{Fact: fact, Action: FactActionEdit} }
+	}
+	return nil
+}
+
+// OnDelete initiates deletion of the selected fact
+func (flm *FactListModel) OnDelete(item interface{}) {
+	if fact, ok := item.(*career.Fact); ok {
+		flm.deletionState.ShowConfirmation("Fact", fact.Text)
+		flm.deletionState.DeletingItemID = fact.ID
+	}
+}
+
+// OnToggleSelection toggles the selection state of an item
+func (flm *FactListModel) OnToggleSelection(item interface{}) {
+	if fact, ok := item.(*career.Fact); ok {
+		flm.selectedFacts[fact.ID] = !flm.selectedFacts[fact.ID]
+	}
+}
+
+// HasSelectedItem returns the currently selected fact
+func (flm *FactListModel) HasSelectedItem() interface{} {
+	return flm.GetSelectedFact()
+}
+
+// MoveUp moves the selection up by count items
+func (flm *FactListModel) MoveUp(count int) {
+	flm.listContainer.MoveUp(count)
+}
+
+// MoveDown moves the selection down by count items
+func (flm *FactListModel) MoveDown(count int) {
+	flm.listContainer.MoveDown(count)
+}
+
+// MoveToFirst moves selection to the first item
+func (flm *FactListModel) MoveToFirst() {
+	flm.listContainer.MoveToFirst()
+}
+
+// MoveToLast moves selection to the last item
+func (flm *FactListModel) MoveToLast() {
+	flm.listContainer.MoveToLast()
+}
+
+// UpdateDisplay refreshes the table display
+func (flm *FactListModel) UpdateDisplay() {
+	flm.updateTableRows()
+}
+
+// GetRowCount returns the number of visible rows
+func (flm *FactListModel) GetRowCount() int {
+	return len(flm.table.Rows())
+}
+
+// GetCurrentIndex returns the current selection index
+func (flm *FactListModel) GetCurrentIndex() int {
+	return flm.listContainer.GetSelectedIdx()
+}
+
+// GetPageSize returns the page size for pagination
+func (flm *FactListModel) GetPageSize() int {
+	return flm.pagination.GetPageSize()
 }
 
 // nextPage moves to the next page of results
 func (flm *FactListModel) nextPage() {
-	totalPages := flm.getTotalPages()
-	if flm.currentPage < totalPages {
-		flm.currentPage++
-		flm.listContainer.MoveToFirst()
-		flm.updateTableRows()
-	}
+	flm.pagination.NextPage()
+	flm.listContainer.MoveToFirst()
+	flm.updateTableRows()
 }
 
 // prevPage moves to the previous page of results
 func (flm *FactListModel) prevPage() {
-	if flm.currentPage > 1 {
-		flm.currentPage--
-		flm.listContainer.MoveToFirst()
-		flm.updateTableRows()
-	}
+	flm.pagination.PrevPage()
+	flm.listContainer.MoveToFirst()
+	flm.updateTableRows()
 }
 
 // goToFirstItem moves to the first item
 func (flm *FactListModel) goToFirstItem() {
-	flm.currentPage = 1
+	flm.pagination.GoToFirstPage()
 	flm.listContainer.MoveToFirst()
 }
 
 // goToLastItem moves to the last item
 func (flm *FactListModel) goToLastItem() {
-	totalPages := flm.getTotalPages()
-	flm.currentPage = totalPages
+	flm.pagination.GoToLastPage()
 	pageFacts := flm.getPageFacts()
 	if len(pageFacts) > 0 {
 		flm.listContainer.SetSelectedIdx(len(pageFacts) - 1)
 	}
-}
-
-// truncateText truncates text to a maximum length
-func truncateText(text string, maxLen int) string {
-	if len(text) > maxLen {
-		return text[:maxLen-3] + "..."
-	}
-	return text
 }
