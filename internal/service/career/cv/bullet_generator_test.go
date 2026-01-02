@@ -1,6 +1,7 @@
 package cv
 
 import (
+	"io"
 	"context"
 	"time"
 
@@ -19,7 +20,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 	)
 
 	BeforeEach(func() {
-		log = logger.DefaultLogger()
+		log = logger.New(io.Discard, logger.InfoLevel)
 		generator = &DefaultBulletGenerator{
 			eventRepo: nil,
 			factRepo:  nil,
@@ -132,7 +133,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "staff", []string{"peer"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 		})
 
@@ -149,7 +150,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 				Expect(err).NotTo(HaveOccurred())
 				// Low-quality events may be filtered out
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 		})
 
@@ -166,15 +167,14 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 				facts := []*career.Fact{
 					{
-						ID:      "fact1",
-						Content: "Expert in system design and architecture",
-						Text:    "Expert in system design and architecture",
+						ID:   "fact1",
+						Text: "Expert in system design and architecture",
 					},
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, events, facts, "principal", []string{"hiring_manager"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 
 			It("should prefer facts over events for bullet generation", func() {
@@ -189,16 +189,15 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 				facts := []*career.Fact{
 					{
-						ID:      "fact1",
-						Content: "Designed scalable APIs serving 1M+ requests",
-						Text:    "Designed scalable APIs serving 1M+ requests",
+						ID:   "fact1",
+						Text: "Designed scalable APIs serving 1M+ requests",
 					},
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, events, facts, "principal", []string{"hiring_manager"})
 				Expect(err).NotTo(HaveOccurred())
 				// Facts should be included if they're of high quality
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 		})
 	})
@@ -236,7 +235,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 				Expect(err).NotTo(HaveOccurred())
 				// Single claims should be accepted (if they pass other criteria)
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 		})
 
@@ -276,7 +275,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 		})
 
@@ -311,7 +310,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 		})
 
@@ -346,7 +345,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 		})
 
@@ -388,7 +387,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			// Bullets should be ranked (higher rank first)
 			if len(bullets) > 1 {
 				for i := 0; i < len(bullets)-1; i++ {
-					Expect(bullets[i].Rank).To(BeNumericallyGreaterThanOrEqualTo(bullets[i+1].Rank))
+					Expect(bullets[i].Rank).To(BeNumerically(">=", bullets[i+1].Rank))
 				}
 			}
 		})
@@ -396,9 +395,8 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		It("should score based on inclusion reason", func() {
 			facts := []*career.Fact{
 				{
-					ID:      "fact1",
-					Content: "Expert in distributed systems",
-					Text:    "Expert in distributed systems",
+					ID:   "fact1",
+					Text: "Expert in distributed systems",
 				},
 			}
 
@@ -407,7 +405,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			// Facts should have higher scores than direct events
 			if len(bullets) > 0 {
-				Expect(bullets[0].Confidence).To(BeNumericallyGreaterThan(0))
+				Expect(bullets[0].Confidence).To(BeNumerically(">", 0))
 			}
 		})
 
@@ -435,7 +433,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			if len(bullets) >= 2 {
 				// Find the bullets corresponding to the events
 				// (Note: this is a simplified check)
-				Expect(bullets[0].Rank).To(BeNumericallyGreaterThanOrEqualTo(0))
+				Expect(bullets[0].Rank).To(BeNumerically(">=", 0))
 			}
 		})
 
@@ -454,7 +452,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			// Events with multiple signals should have higher scores
 			if len(bullets) > 0 {
-				Expect(bullets[0].Rank).To(BeNumericallyGreaterThan(0))
+				Expect(bullets[0].Rank).To(BeNumerically(">", 0))
 			}
 		})
 	})
@@ -473,7 +471,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyLessThanOrEqualTo(4))
+			Expect(len(bullets)).To(BeNumerically("<=", 4))
 		})
 
 		It("should cap staff role at 4-5 bullets", func() {
@@ -489,7 +487,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "staff", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyLessThanOrEqualTo(5))
+			Expect(len(bullets)).To(BeNumerically("<=", 5))
 		})
 
 		It("should cap EM role at 3-4 bullets", func() {
@@ -505,7 +503,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "em", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyLessThanOrEqualTo(4))
+			Expect(len(bullets)).To(BeNumerically("<=", 4))
 		})
 
 		It("should cap senior_ic role at 4-5 bullets", func() {
@@ -521,7 +519,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "senior_ic", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyLessThanOrEqualTo(5))
+			Expect(len(bullets)).To(BeNumerically("<=", 5))
 		})
 
 		It("should remove lower-ranked bullets first when compressing", func() {
@@ -541,7 +539,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			// Bullets should be ordered by rank (descending)
 			if len(bullets) > 1 {
 				for i := 0; i < len(bullets)-1; i++ {
-					Expect(bullets[i].Rank).To(BeNumericallyGreaterThanOrEqualTo(bullets[i+1].Rank))
+					Expect(bullets[i].Rank).To(BeNumerically(">=", bullets[i+1].Rank))
 				}
 			}
 		})
@@ -560,7 +558,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should filter for recruiter audience", func() {
@@ -575,7 +573,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"recruiter"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should filter for peer audience", func() {
@@ -590,7 +588,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"peer"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should support multiple audiences", func() {
@@ -605,7 +603,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager", "recruiter", "peer"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 	})
 
@@ -630,9 +628,8 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		It("should preserve fact source IDs", func() {
 			facts := []*career.Fact{
 				{
-					ID:      "fact1",
-					Content: "Expert in system design",
-					Text:    "Expert in system design",
+					ID:   "fact1",
+					Text: "Expert in system design",
 				},
 			}
 
@@ -674,8 +671,8 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			if len(bullets) > 0 {
-				Expect(bullets[0].Confidence).To(BeNumericallyGreaterThanOrEqualTo(0))
-				Expect(bullets[0].Confidence).To(BeNumericallyLessThanOrEqualTo(1))
+				Expect(bullets[0].Confidence).To(BeNumerically(">=", 0))
+				Expect(bullets[0].Confidence).To(BeNumerically("<=", 1))
 			}
 		})
 	})
@@ -697,7 +694,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle special characters in event text", func() {
@@ -711,7 +708,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle events with no categories", func() {
@@ -725,7 +722,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle events with no tags", func() {
@@ -740,7 +737,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumericallyGreaterThanOrEqualTo(0))
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle large number of events (1000+)", func() {
@@ -757,7 +754,7 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", []string{"hiring_manager"})
 			Expect(err).NotTo(HaveOccurred())
 			// Should still respect role-specific caps
-			Expect(len(bullets)).To(BeNumericallyLessThanOrEqualTo(4))
+			Expect(len(bullets)).To(BeNumerically("<=", 4))
 		})
 	})
 })
