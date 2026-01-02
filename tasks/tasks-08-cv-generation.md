@@ -420,12 +420,12 @@
 
 #### 12.0 Integrate CV Generation with Event Timeline ⏳
 
-- [ ] 12.1 Add "Generate CV" option to event action menu
-- [ ] 12.2 Support multi-event selection for CV generation
-- [ ] 12.3 Navigate to CV configuration screen when option selected
-- [ ] 12.4 Navigate to CV preview screen after generation completes
-- [ ] 12.5 Allow navigation back to event timeline from CV preview
-- [ ] 12.6 Write integration tests for event timeline → CV generation workflow
+- [x] 12.1 Add "Generate CV" option to event action menu
+- [x] 12.2 Support multi-event selection for CV generation
+- [x] 12.3 Navigate to CV configuration screen when option selected
+- [x] 12.4 Navigate to CV preview screen after generation completes
+- [x] 12.5 Allow navigation back to event timeline from CV preview
+- [x] 12.6 Write integration tests for event timeline → CV generation workflow
 
 #### 13.0 Add CV Generation to Main Menu ⏳
 
