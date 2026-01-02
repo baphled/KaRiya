@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"fmt"
-	"testing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,10 +13,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCVGenerator(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CVGenerator Suite")
-}
 
 var _ = Describe("CVGeneratorModel", func() {
 	var (
@@ -94,7 +89,7 @@ var _ = Describe("CVGeneratorModel", func() {
 
 			Expect(cmd).NotTo(BeNil())
 			result := cmd()
-			Expect(result).To(BeAssignableToTypeOf(BackToCVConfigManagerMsg{}))
+			Expect(result).To(BeAssignableToTypeOf(BackMsg{}))
 		})
 
 		It("should go back on 'q'", func() {
@@ -103,7 +98,7 @@ var _ = Describe("CVGeneratorModel", func() {
 
 			Expect(cmd).NotTo(BeNil())
 			result := cmd()
-			Expect(result).To(BeAssignableToTypeOf(BackToCVConfigManagerMsg{}))
+			Expect(result).To(BeAssignableToTypeOf(QuitMsg{}))
 		})
 
 		It("should ignore input when generating", func() {

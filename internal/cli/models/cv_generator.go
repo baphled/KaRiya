@@ -91,9 +91,13 @@ func (m *CVGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.generating {
 			// Only handle input when not generating
 			switch msg.String() {
-			case "esc", "q":
+			case "esc":
 				return m, func() tea.Msg {
-					return BackToCVConfigManagerMsg{}
+					return BackMsg{}
+				}
+			case "q":
+				return m, func() tea.Msg {
+					return QuitMsg{}
 				}
 			}
 		}
