@@ -16,9 +16,6 @@ import (
 )
 
 var (
-	// ErrConfigNotFound is returned when a configuration cannot be found.
-	ErrConfigNotFound = errors.New("configuration not found")
-
 	// ErrInvalidConfigPath is returned when the config path is invalid.
 	ErrInvalidConfigPath = errors.New("invalid configuration path")
 
