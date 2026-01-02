@@ -28,12 +28,12 @@ var _ = Describe("ListModel", func() {
 		It("should initialize with default page size", func() {
 			model := NewListModel(svc, ctx)
 			Expect(model).NotTo(BeNil())
-			Expect(model.pageSize).To(Equal(10))
+			Expect(model.pagination.GetPageSize()).To(Equal(10))
 		})
 
 		It("should initialize with page 1", func() {
 			model := NewListModel(svc, ctx)
-			Expect(model.currentPage).To(Equal(1))
+			Expect(model.pagination.GetCurrentPage()).To(Equal(1))
 		})
 
 		It("should load events from service", func() {
@@ -57,7 +57,7 @@ var _ = Describe("ListModel", func() {
 
 		It("should initialize with zero total count when no events", func() {
 			model := NewListModel(svc, ctx)
-			Expect(model.totalCount).To(Equal(0))
+			Expect(model.pagination.GetTotalCount()).To(Equal(0))
 		})
 	})
 
@@ -124,8 +124,9 @@ var _ = Describe("ListModel", func() {
 			}
 
 			model := NewListModel(svc, ctx)
-			Expect(model.pageSize).To(Equal(10))
-			Expect(len(model.events)).To(Equal(10))
+			Expect(model.pagination.GetPageSize()).To(Equal(10))
+			Expect(len(model.getPageEvents())).To(Equal(10))
+			Expect(len(model.filtered)).To(Equal(15))
 		})
 
 		It("should navigate to next page", func() {
@@ -139,9 +140,9 @@ var _ = Describe("ListModel", func() {
 			}
 
 			model := NewListModel(svc, ctx)
-			initialPage := model.currentPage
+			initialPage := model.pagination.GetCurrentPage()
 			model.nextPage()
-			Expect(model.currentPage).To(Equal(initialPage + 1))
+			Expect(model.pagination.GetCurrentPage()).To(Equal(initialPage + 1))
 		})
 
 		It("should navigate to previous page", func() {
@@ -157,7 +158,7 @@ var _ = Describe("ListModel", func() {
 			model := NewListModel(svc, ctx)
 			model.nextPage()
 			model.prevPage()
-			Expect(model.currentPage).To(Equal(1))
+			Expect(model.pagination.GetCurrentPage()).To(Equal(1))
 		})
 
 		It("should not go past first page", func() {
@@ -170,7 +171,7 @@ var _ = Describe("ListModel", func() {
 
 			model := NewListModel(svc, ctx)
 			model.prevPage()
-			Expect(model.currentPage).To(Equal(1))
+			Expect(model.pagination.GetCurrentPage()).To(Equal(1))
 		})
 
 		It("should not go past last page", func() {
@@ -186,7 +187,7 @@ var _ = Describe("ListModel", func() {
 			model := NewListModel(svc, ctx)
 			lastPage := model.getTotalPages()
 			model.nextPage()
-			Expect(model.currentPage).To(Equal(lastPage))
+			Expect(model.pagination.GetCurrentPage()).To(Equal(lastPage))
 		})
 
 		It("should calculate total pages correctly", func() {
