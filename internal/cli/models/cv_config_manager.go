@@ -34,7 +34,7 @@ type CVConfigManagerModel struct {
 	breadcrumbs   []string
 	sortBy        string
 	sortOrder     string
-	deletionState *ListDeletionState
+	DeletionState *ListDeletionState
 }
 
 // NewCVConfigManagerModel creates a new CV Config Manager model.
@@ -90,7 +90,7 @@ func NewCVConfigManagerModel(
 		breadcrumbs:       []string{"Home", "CV Management", "Configuration Templates"},
 		sortBy:            "updated",
 		sortOrder:         "desc",
-		deletionState:     NewListDeletionState(),
+		DeletionState:     NewListDeletionState(),
 	}
 	m.header.SetBreadcrumbs(m.breadcrumbs)
 	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
@@ -152,7 +152,7 @@ func NewCVConfigManagerModelWithEvent(
 		breadcrumbs:       []string{"Home", "Events", "CV Generation"},
 		sortBy:            "updated",
 		sortOrder:         "desc",
-		deletionState:     NewListDeletionState(),
+		DeletionState:     NewListDeletionState(),
 	}
 	m.header.SetBreadcrumbs(m.breadcrumbs)
 	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
@@ -185,12 +185,12 @@ func (m *CVConfigManagerModel) loadConfigs() tea.Cmd {
 		select {
 		case res := <-resultChan:
 			if res.err != nil {
-				return ConfigLoadError{err: res.err}
+				return ConfigLoadError{Err: res.err}
 			}
-			return ConfigsLoadedMsg{configs: res.configs}
+			return ConfigsLoadedMsg{Configs: res.configs}
 		case <-time.After(3 * time.Second):
 			// Timeout - return empty list instead of error to allow UI to continue
-			return ConfigsLoadedMsg{configs: []*career.CVConfig{}}
+			return ConfigsLoadedMsg{Configs: []*career.CVConfig{}}
 		}
 	}
 }
@@ -198,15 +198,15 @@ func (m *CVConfigManagerModel) loadConfigs() tea.Cmd {
 // Update handles messages and updates the model state.
 func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle deletion confirmation if active
-	if m.deletionState.IsConfirming() {
-		cmd := m.deletionState.UpdateConfirmation(msg)
+	if m.DeletionState.IsConfirming() {
+		cmd := m.DeletionState.UpdateConfirmation(msg)
 
-		if m.deletionState.IsConfirmed() {
+		if m.DeletionState.IsConfirmed() {
 			return m.performConfigDeletion()
 		}
 
-		if m.deletionState.IsCancelled() {
-			m.deletionState.Clear()
+		if m.DeletionState.IsCancelled() {
+			m.DeletionState.Clear()
 			return m, nil
 		}
 
@@ -225,7 +225,7 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case ConfigsLoadedMsg:
 		m.loading = false
-		m.configs = msg.configs
+		m.configs = msg.Configs
 		m.applyFiltersAndSort()
 		m.pagination.SetTotalCount(len(m.filtered))
 		m.updateTableRows()
@@ -233,8 +233,8 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case ConfigLoadError:
 		m.loading = false
-		m.SetError(msg.err)
-		m.listContainer.SetErrorMessage(fmt.Sprintf("Error loading configurations: %v", msg.err))
+		m.SetError(msg.Err)
+		m.listContainer.SetErrorMessage(fmt.Sprintf("Error loading configurations: %v", msg.Err))
 		return m, nil
 
 	case tea.KeyMsg:
@@ -252,7 +252,7 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Handle deletion confirmation
-		if m.deletionState.IsConfirming() {
+		if m.DeletionState.IsConfirming() {
 			return m, nil
 		}
 
@@ -296,7 +296,7 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "n":
 			// New config - navigate to editor
 			return m, func() tea.Msg {
-				return NavigateToScreenMsg{screenID: "cv_config_editor"}
+				return NavigateToScreenMsg{ScreenID: "cv_config_editor"}
 			}
 
 		case "e":
@@ -306,7 +306,7 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if selectedIdx < len(m.filtered) {
 					selectedConfig := m.filtered[selectedIdx]
 					return m, func() tea.Msg {
-						return EditCVConfigMsg{config: selectedConfig}
+						return EditCVConfigMsg{Config: selectedConfig}
 					}
 				}
 			}
@@ -318,8 +318,8 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				selectedIdx := m.listContainer.GetSelectedIdx()
 				if selectedIdx < len(m.filtered) {
 					selectedConfig := m.filtered[selectedIdx]
-					m.deletionState.ShowConfirmation("Configuration", selectedConfig.Name)
-					m.deletionState.DeletingItemID = selectedConfig.Name
+					m.DeletionState.ShowConfirmation("Configuration", selectedConfig.Name)
+					m.DeletionState.DeletingItemID = selectedConfig.Name
 					return m, nil
 				}
 			}
@@ -344,28 +344,28 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // performConfigDeletion performs the actual deletion of a CV configuration
 func (m *CVConfigManagerModel) performConfigDeletion() (tea.Model, tea.Cmd) {
 	return m, func() tea.Msg {
-		err := m.configManager.DeleteConfig(context.Background(), m.deletionState.DeletingItemID)
+		err := m.configManager.DeleteConfig(context.Background(), m.DeletionState.DeletingItemID)
 		if err != nil {
-			m.deletionState.SetErrorMsg(fmt.Sprintf("Failed to delete: %v", err))
-			return ConfigDeletionError{err: err}
+			m.DeletionState.SetErrorMsg(fmt.Sprintf("Failed to delete: %v", err))
+			return ConfigDeletionError{Err: err}
 		}
 		// Remove from filtered list
 		for i, config := range m.filtered {
-			if config.Name == m.deletionState.DeletingItemID {
+			if config.Name == m.DeletionState.DeletingItemID {
 				m.filtered = append(m.filtered[:i], m.filtered[i+1:]...)
 				break
 			}
 		}
 		// Remove from configs list
 		for i, config := range m.configs {
-			if config.Name == m.deletionState.DeletingItemID {
+			if config.Name == m.DeletionState.DeletingItemID {
 				m.configs = append(m.configs[:i], m.configs[i+1:]...)
 				break
 			}
 		}
 		m.pagination.SetTotalCount(len(m.filtered))
 		m.updateTableRows()
-		m.deletionState.SetSuccessMsg("Configuration deleted successfully")
+		m.DeletionState.SetSuccessMsg("Configuration deleted successfully")
 		return ConfigDeletedMsg{}
 	}
 }
@@ -519,9 +519,9 @@ func (m *CVConfigManagerModel) View() string {
 	headerView := m.header.View()
 
 	// Handle deletion confirmation
-	if m.deletionState.IsConfirming() {
+	if m.DeletionState.IsConfirming() {
 		contentView := m.listContainer.Render()
-		confirmView := m.deletionState.ConfirmationDialog.View()
+		confirmView := m.DeletionState.ConfirmationDialog.View()
 		return fmt.Sprintf("%s\n\n%s\n\n%s", headerView, contentView, confirmView)
 	}
 
@@ -553,13 +553,17 @@ func (m *CVConfigManagerModel) RefreshConfigs() tea.Cmd {
 // Messages for CV Config Manager
 
 // ConfigsLoadedMsg is sent when configurations have been successfully loaded.
+
+// Messages for CV Config Manager
+
+// ConfigsLoadedMsg is sent when configurations have been successfully loaded.
 type ConfigsLoadedMsg struct {
-	configs []*career.CVConfig
+	Configs []*career.CVConfig
 }
 
 // ConfigLoadError is sent when there's an error loading configurations.
 type ConfigLoadError struct {
-	err error
+	Err error
 }
 
 // GenerateCVFromConfigMsg triggers CV generation from a selected configuration.
@@ -569,7 +573,7 @@ type GenerateCVFromConfigMsg struct {
 
 // EditCVConfigMsg triggers editing of a CV configuration.
 type EditCVConfigMsg struct {
-	config *career.CVConfig
+	Config *career.CVConfig
 }
 
 // ConfigDeletedMsg is sent when a configuration has been deleted
@@ -577,14 +581,13 @@ type ConfigDeletedMsg struct{}
 
 // ConfigDeletionError is sent when there's an error deleting a configuration
 type ConfigDeletionError struct {
-	err error
+	Err error
 }
 
 // NavigateToScreenMsg navigates to a specific screen by ID.
 type NavigateToScreenMsg struct {
-	screenID string
+	ScreenID string
 }
 
 // ConfigLoadTimeoutMsg is sent when config loading times out
 type ConfigLoadTimeoutMsg struct{}
-

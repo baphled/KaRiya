@@ -165,7 +165,7 @@ func (m *CVPreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "x":
 			// Export CV - show export options
 			return m, func() tea.Msg {
-				return ShowExportOptionsMsg{cvView: m.cvView}
+				return ShowExportOptionsMsg{CVView: m.cvView}
 			}
 
 		case "esc":
@@ -342,20 +342,20 @@ func (m *CVPreviewModel) GetSelectedSection() *career.CVSection {
 
 // ShowExportOptionsMsg triggers export options dialog.
 type ShowExportOptionsMsg struct {
-	cvView *career.CVView
+	CVView *career.CVView
 }
 
-// BackToEventTimelineMsg navigates back to the event timeline.
-type BackToEventTimelineMsg struct{}
-
-// BackMsg navigates back to the CV config manager.
+// CVExportedMsg is sent when CV export completes successfully.
 type CVExportedMsg struct {
-	cvView *career.CVView
-	format string
+	CVView   *career.CVView
+	Format   string
+	FilePath string
 }
 
 // CVExportErrorMsg is sent when there's an error exporting a CV.
 type CVExportErrorMsg struct {
-	err error
+	Err error
 }
 
+// BackToEventTimelineMsg navigates back to the event timeline.
+type BackToEventTimelineMsg struct{}
