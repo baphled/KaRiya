@@ -3,13 +3,14 @@ package models
 import (
 	"context"
 	"fmt"
-	"strings"
+	"sort"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -27,38 +28,74 @@ type BurstSuggestionsTriggeredMsg struct {
 // MetadataReviewModel represents the metadata review screen
 type MetadataReviewModel struct {
 	*BaseStandardModel
-	service          *careerservice.Service
-	calculator       *careerservice.DataQualityCalculator
-	ctx              context.Context
-	events           []*career.CareerEvent
-	qualityScores    map[string]*careerservice.QualityScore
-	selectedIdx      int
-	width            int
-	height           int
-	err              error
-	expandedIdx      int                        // Index of expanded event (-1 if none)
-	filterMode       string                     // "all", "incomplete"
-	sortBy           string                     // "date", "company", "quality"
-	importedEventIDs map[string]bool            // IDs of recently imported events
-	isImportReview   bool                       // True if reviewing only imported events
-	fieldOrigins     map[string]map[string]bool // eventID -> field -> isFromCSV
-	parsingWarnings  map[string][]string        // eventID -> warnings
-	duplicateStatus  map[string]string          // eventID -> original event ID (empty if not duplicate)
-	helpFooter       components.HelpFooterModel // Help footer
-	header           components.HeaderModel     // Header component
-	footer           components.FooterModel     // Footer component
-	breadcrumbs      []string                   // Navigation breadcrumb trail
+	service              *careerservice.Service
+	calculator           *careerservice.DataQualityCalculator
+	ctx                  context.Context
+	events               []*career.CareerEvent
+	filtered             []*career.CareerEvent
+	qualityScores        map[string]*careerservice.QualityScore
+	table                table.Model
+	pagination           *PaginationHelper
+	width                int
+	height               int
+	err                  error
+	expandedIdx          int                        // Index of expanded event (-1 if none)
+	filterMode           string                     // "all", "incomplete"
+	sortBy               string                     // "date", "company", "quality"
+	importedEventIDs     map[string]bool            // IDs of recently imported events
+	isImportReview       bool                       // True if reviewing only imported events
+	fieldOrigins         map[string]map[string]bool // eventID -> field -> isFromCSV
+	parsingWarnings      map[string][]string        // eventID -> warnings
+	duplicateStatus      map[string]string          // eventID -> original event ID (empty if not duplicate)
+	helpFooter           components.HelpFooterModel // Help footer
+	header               components.HeaderModel     // Header component
+	breadcrumbs          []string                   // Navigation breadcrumb trail
+	deletionState        *ListDeletionState         // Deletion state management
+	navigationKeyHandler *ListNavigationKeyHandler  // Navigation key handler
+	listContainer        *components.TableListContainer // Table list container
+	selectedEvents       map[string]bool            // Selected events for bulk operations
 }
 
 // NewMetadataReviewModel creates a new metadata review model
 func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *MetadataReviewModel {
 	calculator := careerservice.NewDataQualityCalculator()
+
+	columns := []table.Column{
+		{Title: "Event", Width: 50},
+		{Title: "Quality", Width: 15},
+		{Title: "Company", Width: 20},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
 	model := &MetadataReviewModel{
 		BaseStandardModel: NewBaseStandardModel(),
 		service:           svc,
 		calculator:        calculator,
 		ctx:               ctx,
-		selectedIdx:       0,
+		events:            []*career.CareerEvent{},
+		filtered:          []*career.CareerEvent{},
+		table:             t,
+		pagination:        NewPaginationHelper(10),
 		expandedIdx:       -1,
 		filterMode:        "all",
 		sortBy:            "quality",
@@ -66,10 +103,18 @@ func NewMetadataReviewModel(svc *careerservice.Service, ctx context.Context) *Me
 		fieldOrigins:      make(map[string]map[string]bool),
 		parsingWarnings:   make(map[string][]string),
 		duplicateStatus:   make(map[string]string),
+		width:             80,
+		height:            20,
 		helpFooter:        components.NewHelpFooter("metadata_review", 80),
 		header:            components.NewHeader("Metadata Review", 80),
-		footer:            components.NewFooter(80),
+		breadcrumbs:       []string{"Home", "Metadata Review"},
+		deletionState:     NewListDeletionState(),
+		listContainer:     components.NewTableListContainer(t, "Metadata Review", 80),
+		selectedEvents:    make(map[string]bool),
 	}
+
+	// Create navigation key handler with callbacks
+	model.navigationKeyHandler = NewListNavigationKeyHandler(model)
 
 	// Load events
 	model.loadEvents()
@@ -87,36 +132,76 @@ func NewMetadataReviewModelForImport(svc *careerservice.Service, ctx context.Con
 		importedMap[id] = true
 	}
 
-	model := &MetadataReviewModel{
-		service:          svc,
-		calculator:       calculator,
-		ctx:              ctx,
-		selectedIdx:      0,
-		expandedIdx:      -1,
-		filterMode:       "all",
-		sortBy:           "quality",
-		qualityScores:    make(map[string]*careerservice.QualityScore),
-		importedEventIDs: importedMap,
-		isImportReview:   true,
-		fieldOrigins:     make(map[string]map[string]bool),
-		parsingWarnings:  make(map[string][]string),
-		duplicateStatus:  make(map[string]string),
-		helpFooter:       components.NewHelpFooter("metadata_review", 80),
-		header:           components.NewHeader("Metadata Review", 80),
-		footer:           components.NewFooter(80),
+	columns := []table.Column{
+		{Title: "Event", Width: 50},
+		{Title: "Quality", Width: 15},
+		{Title: "Company", Width: 20},
 	}
 
-	// Load events (will be filtered to only imported)
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
+	model := &MetadataReviewModel{
+		BaseStandardModel: NewBaseStandardModel(),
+		service:           svc,
+		calculator:        calculator,
+		ctx:               ctx,
+		events:            []*career.CareerEvent{},
+		filtered:          []*career.CareerEvent{},
+		table:             t,
+		pagination:        NewPaginationHelper(10),
+		expandedIdx:       -1,
+		filterMode:        "all",
+		sortBy:            "quality",
+		qualityScores:     make(map[string]*careerservice.QualityScore),
+		importedEventIDs:  importedMap,
+		isImportReview:    true,
+		fieldOrigins:      make(map[string]map[string]bool),
+		parsingWarnings:   make(map[string][]string),
+		duplicateStatus:   make(map[string]string),
+		width:             80,
+		height:            20,
+		helpFooter:        components.NewHelpFooter("metadata_review", 80),
+		header:            components.NewHeader("Metadata Review (Imported)", 80),
+		breadcrumbs:       []string{"Home", "Metadata Review"},
+		deletionState:     NewListDeletionState(),
+		listContainer:     components.NewTableListContainer(t, "Metadata Review (Imported)", 80),
+		selectedEvents:    make(map[string]bool),
+	}
+
+	// Create navigation key handler with callbacks
+	model.navigationKeyHandler = NewListNavigationKeyHandler(model)
+
+	// Load events
 	model.loadEvents()
 
 	return model
 }
 
+// loadEvents loads events from the service and applies filters and sorting
 func (m *MetadataReviewModel) loadEvents() {
 	filters := careerrepo.ListFilters{
 		SortBy:    "date",
 		SortOrder: "desc",
-		Limit:     100,
+		Limit:     1000,
 	}
 
 	events, err := m.service.ListEvents(m.ctx, filters)
@@ -133,37 +218,47 @@ func (m *MetadataReviewModel) loadEvents() {
 		m.qualityScores[event.ID] = &score
 	}
 
-	// Apply filtering
-	m.events = m.filterEvents(events)
+	m.events = events
+	m.applyFiltersAndSort()
+	m.pagination.SetTotalCount(len(m.filtered))
+	m.updateTableRows()
+	m.err = nil
+}
 
-	// Apply sorting
+// applyFiltersAndSort applies filters and sorting to events
+func (m *MetadataReviewModel) applyFiltersAndSort() {
+	m.filtered = m.filterEvents()
 	m.sortEvents()
 }
 
 // filterEvents filters events based on current filter mode
-func (m *MetadataReviewModel) filterEvents(events []*career.CareerEvent) []*career.CareerEvent {
+func (m *MetadataReviewModel) filterEvents() []*career.CareerEvent {
+	var filtered []*career.CareerEvent
+
 	// Filter by imported events if in import review mode
 	if m.isImportReview && len(m.importedEventIDs) > 0 {
-		filtered := make([]*career.CareerEvent, 0)
-		for _, event := range events {
+		for _, event := range m.events {
 			if m.importedEventIDs[event.ID] {
 				filtered = append(filtered, event)
 			}
 		}
-		events = filtered
+	} else {
+		filtered = m.events
 	}
 
+	// Apply quality filter if set
 	if m.filterMode == "incomplete" {
-		filtered := make([]*career.CareerEvent, 0)
-		for _, event := range events {
+		incompleteFiltered := make([]*career.CareerEvent, 0)
+		for _, event := range filtered {
 			score := m.qualityScores[event.ID]
 			if score != nil && (score.Level == careerservice.QualityIncomplete || score.Level == careerservice.QualityBasic) {
-				filtered = append(filtered, event)
+				incompleteFiltered = append(incompleteFiltered, event)
 			}
 		}
-		return filtered
+		return incompleteFiltered
 	}
-	return events
+
+	return filtered
 }
 
 // sortEvents sorts events based on current sort mode
@@ -171,25 +266,104 @@ func (m *MetadataReviewModel) sortEvents() {
 	switch m.sortBy {
 	case "quality":
 		// Sort by quality score (ascending - worst first)
-		for i := 0; i < len(m.events)-1; i++ {
-			for j := i + 1; j < len(m.events); j++ {
-				scoreI := m.qualityScores[m.events[i].ID]
-				scoreJ := m.qualityScores[m.events[j].ID]
-				if scoreI != nil && scoreJ != nil && scoreI.Score > scoreJ.Score {
-					m.events[i], m.events[j] = m.events[j], m.events[i]
-				}
+		sort.SliceStable(m.filtered, func(i, j int) bool {
+			scoreI := m.qualityScores[m.filtered[i].ID]
+			scoreJ := m.qualityScores[m.filtered[j].ID]
+			if scoreI != nil && scoreJ != nil {
+				return scoreI.Score < scoreJ.Score
 			}
-		}
+			return false
+		})
 	case "company":
 		// Sort by company name
-		for i := 0; i < len(m.events)-1; i++ {
-			for j := i + 1; j < len(m.events); j++ {
-				if m.events[i].Company > m.events[j].Company {
-					m.events[i], m.events[j] = m.events[j], m.events[i]
-				}
-			}
-		}
+		sort.SliceStable(m.filtered, func(i, j int) bool {
+			return m.filtered[i].Company < m.filtered[j].Company
+		})
+	case "date":
+		// Sort by date
+		sort.SliceStable(m.filtered, func(i, j int) bool {
+			return m.filtered[i].Date.Before(m.filtered[j].Date)
+		})
 	}
+}
+
+// updateTableRows updates the table with rows from filtered events (current page only)
+func (m *MetadataReviewModel) updateTableRows() {
+	var rows []table.Row
+	pageEvents := m.getPageEvents()
+
+	// Get the selected index within the current page
+	selectedIdx := m.listContainer.GetSelectedIdx()
+
+	// Ensure cursor is within valid bounds BEFORE creating rows
+	if len(pageEvents) > 0 {
+		if selectedIdx >= len(pageEvents) {
+			selectedIdx = len(pageEvents) - 1
+		}
+		if selectedIdx < 0 {
+			selectedIdx = 0
+		}
+	} else {
+		selectedIdx = 0
+	}
+
+	for i, event := range pageEvents {
+		eventText := event.Text
+		if len(eventText) > 50 {
+			eventText = eventText[:47] + "..."
+		}
+
+		// Add focus indicator for the selected row, or spaces for alignment
+		if i == selectedIdx {
+			eventText = "▶ " + eventText
+		} else {
+			eventText = "  " + eventText
+		}
+
+		// Get quality score and render it
+		score := m.qualityScores[event.ID]
+		qualityStr := "N/A"
+		if score != nil {
+			qualityStr = fmt.Sprintf("%s (%d%%)", score.Level, score.Score)
+		}
+
+		company := event.Company
+		if len(company) > 17 {
+			company = company[:14] + "..."
+		}
+
+		row := table.Row{
+			eventText,
+			qualityStr,
+			company,
+		}
+		rows = append(rows, row)
+	}
+
+	m.table.SetRows(rows)
+	// Sync the container and table cursor with the validated selectedIdx
+	m.listContainer.SetSelectedIdx(selectedIdx)
+	m.table.SetCursor(selectedIdx)
+}
+
+// getPageEvents returns the events for the current page
+func (m *MetadataReviewModel) getPageEvents() []*career.CareerEvent {
+	if m.pagination.GetTotalCount() == 0 {
+		return []*career.CareerEvent{}
+	}
+
+	startIdx := m.pagination.GetPageStartIndex()
+	endIdx := m.pagination.GetPageEndIndex()
+
+	if startIdx >= len(m.filtered) {
+		return []*career.CareerEvent{}
+	}
+
+	if endIdx > len(m.filtered) {
+		endIdx = len(m.filtered)
+	}
+
+	return m.filtered[startIdx:endIdx]
 }
 
 // Init initializes the model
@@ -199,37 +373,42 @@ func (m *MetadataReviewModel) Init() tea.Cmd {
 
 // Update handles messages
 func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		m.helpFooter.SetWidth(msg.Width)
-		m.header.SetWidth(msg.Width)
-		m.footer.SetWidth(msg.Width)
-		return m, nil
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Signal back navigation to parent
-			return m, func() tea.Msg { return BackMsg{} }
-		case "ctrl+c", "q":
-			// Signal quit to parent
-			return m, func() tea.Msg { return QuitMsg{} }
-		case "up", "k":
-			m.prevItem()
-		case "down", "j":
-			m.nextItem()
-		case "home", "g":
-			m.selectedIdx = 0
-		case "end", "G":
-			m.selectedIdx = len(m.events) - 1
-		case "space":
-			// Toggle expand/collapse
-			if m.expandedIdx == m.selectedIdx {
-				m.expandedIdx = -1
-			} else {
-				m.expandedIdx = m.selectedIdx
+	// Handle deletion confirmation if active
+	if m.deletionState.IsConfirming() {
+		cmd := m.deletionState.UpdateConfirmation(msg)
+
+		if m.deletionState.IsConfirmed() {
+			return m.performEventDeletion()
+		}
+
+		if m.deletionState.IsCancelled() {
+			m.deletionState.Clear()
+			return m, nil
+		}
+
+		return m, cmd
+	}
+
+	// Handle deletion message display
+	if m.deletionState.ShowMessage {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.String() == "esc" {
+				m.deletionState.Clear()
+				return m, nil
 			}
+		}
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		// Let navigation key handler process navigation and item action keys
+		if cmd := m.navigationKeyHandler.HandleNavigationKey(msg.String()); cmd != nil {
+			return m, cmd
+		}
+
+		// Handle screen navigation keys that aren't list-specific
+		switch msg.String() {
 		case "f":
 			// Toggle filter mode
 			if m.filterMode == "all" {
@@ -237,8 +416,10 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.filterMode = "all"
 			}
-			m.loadEvents()
-			m.selectedIdx = 0
+			m.applyFiltersAndSort()
+			m.pagination.SetTotalCount(len(m.filtered)).GoToFirstPage()
+			m.listContainer.MoveToFirst()
+			m.updateTableRows()
 		case "s":
 			// Cycle through sort modes
 			switch m.sortBy {
@@ -249,239 +430,283 @@ func (m *MetadataReviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "company":
 				m.sortBy = "quality"
 			}
-			m.sortEvents()
-		case "enter":
-			// Edit the selected event
-			if m.selectedIdx < len(m.events) {
-				return m, func() tea.Msg {
-					return EditEventMsg{Event: m.events[m.selectedIdx]}
-				}
-			}
+			m.applyFiltersAndSort()
+			m.updateTableRows()
 		case "b":
 			// Trigger bulk operations on all events
 			return m, func() tea.Msg {
-				return BulkOperationsMsg{Events: m.events}
+				return BulkOperationsMsg{Events: m.filtered}
 			}
 		case "u":
 			// Trigger burst suggestions for all events
-			if len(m.events) >= 2 {
-				eventIDs := make([]string, len(m.events))
-				for i, event := range m.events {
+			if len(m.filtered) >= 2 {
+				eventIDs := make([]string, len(m.filtered))
+				for i, event := range m.filtered {
 					eventIDs[i] = event.ID
 				}
 				return m, func() tea.Msg {
 					return BurstSuggestionsTriggeredMsg{EventIDs: eventIDs}
 				}
 			}
+		case "esc":
+			return m, func() tea.Msg { return BackMsg{} }
+		case "q", "ctrl+c":
+			return m, func() tea.Msg { return QuitMsg{} }
+		}
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.table.SetWidth(m.width)
+		m.table.SetHeight(m.height - 10)
+		m.listContainer.SetDimensions(m.width, m.height)
+		m.helpFooter.SetWidth(msg.Width)
+		m.header.SetWidth(msg.Width)
+		m.updateTableRows()
+		return m, nil
+	}
+
+	var cmd tea.Cmd
+	m.table, cmd = m.table.Update(msg)
+	return m, cmd
+}
+
+// performEventDeletion performs the actual event deletion
+func (m *MetadataReviewModel) performEventDeletion() (tea.Model, tea.Cmd) {
+	if m.deletionState.DeletingItemID == "" {
+		m.deletionState.Clear()
+		return m, nil
+	}
+
+	err := m.service.DeleteEvent(m.ctx, m.deletionState.DeletingItemID)
+	if err != nil {
+		m.deletionState.SetErrorMsg(fmt.Sprintf("Error deleting event: %v", err))
+		return m, nil
+	}
+
+	m.removeEventFromLists(m.deletionState.DeletingItemID)
+
+	m.deletionState.SetSuccessMsg("Event deleted successfully")
+
+	m.pagination.SetTotalCount(len(m.filtered))
+	m.updateTableRows()
+
+	if m.pagination.GetTotalCount() == 0 {
+		m.listContainer.MoveToFirst()
+	} else {
+		if m.listContainer.GetSelectedIdx() >= len(m.table.Rows()) && m.listContainer.GetSelectedIdx() > 0 {
+			m.listContainer.SetSelectedIdx(m.listContainer.GetSelectedIdx() - 1)
 		}
 	}
 
 	return m, nil
 }
 
-// View renders the model
-func (m *MetadataReviewModel) View() string {
-	var content []string
-
-	// Error handling
-	if m.err != nil {
-		errorMsg := fmt.Sprintf("Error loading events: %v\n\nPress 'r' to retry or 'esc' to cancel", m.err)
-		content = append(content, styles.ErrorBox.Render(errorMsg))
+// removeEventFromLists removes an event from both the events and filtered lists
+func (m *MetadataReviewModel) removeEventFromLists(eventID string) {
+	for i, event := range m.events {
+		if event.ID == eventID {
+			m.events = append(m.events[:i], m.events[i+1:]...)
+			break
+		}
 	}
 
-	// Render list using ListContainer
-	listContent := m.renderListWithContainer()
-	content = append(content, listContent)
+	for i, event := range m.filtered {
+		if event.ID == eventID {
+			m.filtered = append(m.filtered[:i], m.filtered[i+1:]...)
+			break
+		}
+	}
 
-	// Help footer with keyboard shortcuts
-	m.helpFooter.SetWidth(styles.MaxWidth(80))
-	helpFooterContent := m.helpFooter.View()
-	content = append(content, helpFooterContent)
+	delete(m.selectedEvents, eventID)
+	delete(m.qualityScores, eventID)
+}
 
-	// Combine all content
-	fullListContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		content...,
-	)
+// View renders the model
+func (m *MetadataReviewModel) View() string {
+	// Render deletion confirmation dialog
+	if m.deletionState.IsConfirming() {
+		return m.deletionState.ConfirmationDialog.View()
+	}
 
-	// Wrap in a card
-	listCard := styles.CardBase.Render(fullListContent)
+	// Render deletion message (success or error)
+	if m.deletionState.ShowMessage {
+		return m.renderDeletionMessage()
+	}
 
-	// Use header and footer components
-	m.header.SetBreadcrumbs(m.breadcrumbs)
+	if m.err != nil {
+		errorMsg := fmt.Sprintf("Error loading events: %v\n\nPress 'r' to retry or 'esc' to cancel", m.err)
+		m.listContainer.SetErrorMessage(errorMsg).SetDimensions(m.width, m.height)
+		return m.listContainer.Render()
+	}
+
+	// Update list container with current state
+	m.listContainer.SetTable(m.table).
+		SetDimensions(m.width, m.height).
+		SetEmptyStateMessage("No events found").
+		SetHelpFooterKey("metadata_review").
+		SetBreadcrumbs(m.breadcrumbs)
+
+	// Set pagination info
+	paginationText := m.pagination.GetPaginationInfo("events")
+	m.listContainer.SetPaginationInfo(paginationText)
+
+	return m.listContainer.Render()
+}
+
+// renderDeletionMessage renders the deletion success/error message
+func (m *MetadataReviewModel) renderDeletionMessage() string {
+	var messageContent string
+	if m.deletionState.SuccessMsg != "" {
+		messageContent = styles.SuccessBox.Render(m.deletionState.SuccessMsg + "\n\nPress 'esc' to continue")
+	} else if m.deletionState.ErrorMsg != "" {
+		messageContent = styles.ErrorBox.Render(m.deletionState.ErrorMsg + "\n\nPress 'esc' to continue")
+	}
+
 	headerView := m.header.View()
-	footerView := m.footer.View()
+	footerView := components.NewFooter(m.width).View()
 
-	// Combine all sections
-	fullContent := lipgloss.JoinVertical(
+	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		headerView,
 		"",
-		listCard,
+		messageContent,
 		"",
 		footerView,
 	)
-
-	return fullContent
 }
 
-// renderListWithContainer renders the list using ListContainer component
-func (m *MetadataReviewModel) renderListWithContainer() string {
-	// Render items using list items rendering
-	items := m.renderListItems()
+// ListItemCallbacks implementation for MetadataReviewModel
+// These methods implement the ListItemCallbacks interface required by ListNavigationKeyHandler
 
-	// Simplified empty state message
-	emptyStateMessage := "No events to review. Start capturing events to improve their metadata."
-
-	// Create pagination info
-	displayedEvents := m.events
-	startIdx := 1
-	endIdx := len(displayedEvents)
-	if endIdx > m.height-5 {
-		endIdx = m.height - 5
-	}
-
-	// Include status info in pagination
-	filterInfo := fmt.Sprintf("Filter: %s | Sort: %s", m.filterMode, m.sortBy)
-	paginationInfo := fmt.Sprintf("Showing %d-%d of %d events | %s", startIdx, endIdx, len(m.events), filterInfo)
-
-	listContainer := components.NewListContainer().
-		SetItems(items).
-		SetEmptyStateMessage(emptyStateMessage).
-		SetPaginationInfo(paginationInfo)
-
-	return listContainer.Render()
-}
-
-// renderListItems renders all events as formatted strings for display
-func (m *MetadataReviewModel) renderListItems() []string {
-	var items []string
-
-	for i, event := range m.events {
-		score := m.qualityScores[event.ID]
-		if score == nil {
-			continue
-		}
-
-		// Marker for selected item
-		marker := "  "
-		if i == m.selectedIdx {
-			marker = "▶ "
-		}
-
-		// Truncate text to 60 chars
-		text := event.Text
-		if len(text) > 60 {
-			text = text[:57] + "..."
-		}
-
-		// Format date
-		dateStr := event.Date.Format("2006-01-02")
-
-		// Quality level
-		quality := string(score.Level)
-
-		// Build item
-		item := fmt.Sprintf("%s%s | %s | %s | %s (%d%%)",
-			marker,
-			text,
-			dateStr,
-			event.Company,
-			quality,
-			score.Score,
-		)
-
-		// Determine styling based on selection
-		itemStyle := styles.ListItem
-		if i == m.selectedIdx {
-			itemStyle = styles.ListItemSelected
-		}
-
-		items = append(items, itemStyle.Render(item))
-
-		// Show expanded view if selected
-		if i == m.expandedIdx {
-			items = append(items, m.renderExpandedEvent(event))
-		}
-	}
-
-	return items
-}
-
-// renderExpandedEvent renders the full event details
-func (m *MetadataReviewModel) renderExpandedEvent(event *career.CareerEvent) string {
-	score := m.qualityScores[event.ID]
-	if score == nil {
-		return ""
-	}
-
-	var details []string
-	details = append(details, "")
-	details = append(details, "  Full Details:")
-	details = append(details, fmt.Sprintf("    Text: %s", event.Text))
-	details = append(details, fmt.Sprintf("    Date: %s", event.Date.Format("2006-01-02")))
-	details = append(details, fmt.Sprintf("    Company: %s", event.Company))
-	details = append(details, fmt.Sprintf("    Project: %s", event.Project))
-
-	if len(event.Tags) > 0 {
-		details = append(details, fmt.Sprintf("    Tags: %s", strings.Join(event.Tags, ", ")))
-	}
-
-	if len(event.Categories) > 0 {
-		details = append(details, fmt.Sprintf("    Categories: %s", strings.Join(event.Categories, ", ")))
-	}
-
-	// Quality score details
-	details = append(details, "")
-	details = append(details, "  Quality Score:")
-	details = append(details, fmt.Sprintf("    Text: %d/20", score.TextScore))
-	details = append(details, fmt.Sprintf("    Date: %d/20", score.DateScore))
-	details = append(details, fmt.Sprintf("    Company: %d/10", score.CompanyScore))
-	details = append(details, fmt.Sprintf("    Project: %d/10", score.ProjectScore))
-	details = append(details, fmt.Sprintf("    Tags: %d/15", score.TagsScore))
-	details = append(details, fmt.Sprintf("    Categories: %d/15", score.CategoriesScore))
-	details = append(details, fmt.Sprintf("    Match: %d/10", score.MatchScore))
-
-	return styles.CardContent.Render(strings.Join(details, "\n"))
-}
-
-// prevItem moves selection to previous item
-func (m *MetadataReviewModel) prevItem() {
-	if m.selectedIdx > 0 {
-		m.selectedIdx--
-		m.expandedIdx = -1 // Collapse on navigation
-	}
-}
-
-// nextItem moves selection to next item
-func (m *MetadataReviewModel) nextItem() {
-	if m.selectedIdx < len(m.events)-1 {
-		m.selectedIdx++
-		m.expandedIdx = -1 // Collapse on navigation
-	}
-}
-
-// GetSelectedEvent returns the currently selected event
-func (m *MetadataReviewModel) GetSelectedEvent() *career.CareerEvent {
-	if m.selectedIdx >= 0 && m.selectedIdx < len(m.events) {
-		return m.events[m.selectedIdx]
+// OnView sends a message to view the selected event
+func (m *MetadataReviewModel) OnView(item interface{}) tea.Cmd {
+	if event, ok := item.(*career.CareerEvent); ok {
+		return func() tea.Msg { return EventActionSelectedMsg{Event: event, Action: EventActionView} }
 	}
 	return nil
 }
 
-// GetEvents returns the current list of events
+// OnEdit sends a message to edit the selected event
+func (m *MetadataReviewModel) OnEdit(item interface{}) tea.Cmd {
+	if event, ok := item.(*career.CareerEvent); ok {
+		return func() tea.Msg { return EditEventMsg{Event: event} }
+	}
+	return nil
+}
+
+// OnDelete initiates deletion of the selected event
+func (m *MetadataReviewModel) OnDelete(item interface{}) {
+	if event, ok := item.(*career.CareerEvent); ok {
+		m.deletionState.ShowConfirmation("Event", event.Text)
+		m.deletionState.DeletingItemID = event.ID
+	}
+}
+
+// OnToggleSelection toggles the selection state of an item
+func (m *MetadataReviewModel) OnToggleSelection(item interface{}) {
+	if event, ok := item.(*career.CareerEvent); ok {
+		m.selectedEvents[event.ID] = !m.selectedEvents[event.ID]
+	}
+}
+
+// HasSelectedItem returns the currently selected event
+func (m *MetadataReviewModel) HasSelectedItem() interface{} {
+	return m.GetSelectedEvent()
+}
+
+// MoveUp moves the selection up by count items
+func (m *MetadataReviewModel) MoveUp(count int) {
+	m.listContainer.MoveUp(count)
+}
+
+// MoveDown moves the selection down by count items
+func (m *MetadataReviewModel) MoveDown(count int) {
+	m.listContainer.MoveDown(count)
+}
+
+// MoveToFirst moves selection to the first item
+func (m *MetadataReviewModel) MoveToFirst() {
+	m.listContainer.MoveToFirst()
+}
+
+// MoveToLast moves selection to the last item
+func (m *MetadataReviewModel) MoveToLast() {
+	m.listContainer.MoveToLast()
+}
+
+// UpdateDisplay refreshes the table display
+func (m *MetadataReviewModel) UpdateDisplay() {
+	m.updateTableRows()
+}
+
+// GetRowCount returns the number of visible rows
+func (m *MetadataReviewModel) GetRowCount() int {
+	return len(m.table.Rows())
+}
+
+// GetCurrentIndex returns the current selection index
+func (m *MetadataReviewModel) GetCurrentIndex() int {
+	return m.listContainer.GetSelectedIdx()
+}
+
+// GetPageSize returns the page size for pagination
+func (m *MetadataReviewModel) GetPageSize() int {
+	return m.pagination.GetPageSize()
+}
+
+// nextPage moves to the next page of results
+func (m *MetadataReviewModel) nextPage() {
+	m.pagination.NextPage()
+	m.listContainer.MoveToFirst()
+	m.updateTableRows()
+}
+
+// prevPage moves to the previous page of results
+func (m *MetadataReviewModel) prevPage() {
+	m.pagination.PrevPage()
+	m.listContainer.MoveToFirst()
+	m.updateTableRows()
+}
+
+// goToFirstItem moves to the first item
+func (m *MetadataReviewModel) goToFirstItem() {
+	m.pagination.GoToFirstPage()
+	m.listContainer.MoveToFirst()
+}
+
+// goToLastItem moves to the last item
+func (m *MetadataReviewModel) goToLastItem() {
+	m.pagination.GoToLastPage()
+	pageEvents := m.getPageEvents()
+	if len(pageEvents) > 0 {
+		m.listContainer.SetSelectedIdx(len(pageEvents) - 1)
+	}
+}
+
+// Accessor methods for data and state
+
+// GetSelectedEvent returns the currently selected event
+func (m *MetadataReviewModel) GetSelectedEvent() *career.CareerEvent {
+	cursor := m.listContainer.GetSelectedIdx()
+	if cursor >= 0 && cursor < len(m.filtered) {
+		return m.filtered[cursor]
+	}
+	return nil
+}
+
+// GetEvents returns the currently filtered events
 func (m *MetadataReviewModel) GetEvents() []*career.CareerEvent {
-	return m.events
+	return m.filtered
 }
 
 // Refresh reloads events from service
 func (m *MetadataReviewModel) Refresh() {
 	m.loadEvents()
-	if m.selectedIdx >= len(m.events) {
-		m.selectedIdx = len(m.events) - 1
+	if m.listContainer.GetSelectedIdx() >= len(m.filtered) {
+		m.listContainer.SetSelectedIdx(0)
 	}
-	if m.selectedIdx < 0 {
-		m.selectedIdx = 0
+	if m.listContainer.GetSelectedIdx() < 0 {
+		m.listContainer.SetSelectedIdx(0)
 	}
 }
 
@@ -595,4 +820,5 @@ func (m *MetadataReviewModel) GetOriginalEventID(eventID string) string {
 // SetBreadcrumbs sets breadcrumb trail for display in header
 func (m *MetadataReviewModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
+	m.header.SetBreadcrumbs(crumbs)
 }
