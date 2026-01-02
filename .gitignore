@@ -14,7 +14,7 @@ coverage.html
 /dist/
 kariya
 kariya-*
-cli
+^cli
 
 # IDE / Editor
 .vscode/
