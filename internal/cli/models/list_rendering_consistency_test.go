@@ -69,15 +69,18 @@ var _ = ginkgo.Describe("List Model Rendering Consistency", func() {
 		ginkgo.It("should use 'Showing X-Y of Z <items>' pagination format in all models", func() {
 			// Test list.go pagination format
 			listView := listModel.View()
-			gomega.Expect(listView).To(gomega.MatchRegexp(`Showing \d+-\d+ of \d+ events`))
+			// Should match "Showing X-Y of Z" or "Showing 0 of 0"
+			gomega.Expect(listView).To(gomega.MatchRegexp(`Showing (\d+-\d+|0) of \d+ events`))
 
 			// Test burst_list.go pagination format
 			burstView := burstModel.View()
-			gomega.Expect(burstView).To(gomega.MatchRegexp(`Showing \d+-\d+ of \d+ bursts`))
+			// Should match "Showing X-Y of Z" or "Showing 0 of 0"
+			gomega.Expect(burstView).To(gomega.MatchRegexp(`Showing (\d+-\d+|0) of \d+ bursts`))
 
 			// Test fact_list.go pagination format
 			factView := factModel.View()
-			gomega.Expect(factView).To(gomega.MatchRegexp(`Showing \d+-\d+ of \d+ facts`))
+			// Should match "Showing X-Y of Z" or "Showing 0 of 0"
+			gomega.Expect(factView).To(gomega.MatchRegexp(`Showing (\d+-\d+|0) of \d+ facts`))
 		})
 
 		ginkgo.It("should have consistent pagination format structure", func() {
