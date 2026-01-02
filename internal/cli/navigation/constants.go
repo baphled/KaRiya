@@ -28,6 +28,7 @@ const (
 	KeyQuit     NavigationKey = "q" // Quit application
 	KeyPending  NavigationKey = "p" // Review pending items
 	KeyFacts    NavigationKey = "t" // View all facts
+	KeyCV       NavigationKey = "v" // Manage CV and generate CVs
 )
 
 // AllNavigationKeys returns a slice of all defined navigation keys
@@ -54,6 +55,7 @@ func AllNavigationKeys() []NavigationKey {
 		KeyMetadata,
 		KeyPending,
 		KeyFacts,
+		KeyCV,
 	}
 }
 
@@ -80,4 +82,5 @@ var KeyDescription = map[NavigationKey]string{
 	KeyMetadata: "Open metadata review",
 	KeyPending:  "Review pending items",
 	KeyFacts:    "View all facts",
+	KeyCV:       "Manage CV configurations and generate CVs",
 }
