@@ -246,3 +246,18 @@ func (i *CaptureEventIntent) setFailed(code, message string, cause error) {
 	i.result = NewFailedResult[*CaptureEventResult](code, message, cause)
 	i.active = false
 }
+
+// Result returns the intent's result if it has completed, or nil if still active.
+// This implements the Intent interface.
+func (i *CaptureEventIntent) Result() *IntentResult[interface{}] {
+	if i.result == nil {
+		return nil
+	}
+	// Convert typed result to interface result
+	return &IntentResult[interface{}]{
+		Status:   i.result.Status,
+		Data:     i.result.Data,
+		Error:    i.result.Error,
+		Metadata: i.result.Metadata,
+	}
+}
