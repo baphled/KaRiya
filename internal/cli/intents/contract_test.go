@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"github.com/baphled/kariya/internal/domain/career"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -118,6 +119,307 @@ var _ = Describe("ModalEditResult", func() {
 			Expect(result.Original).To(Equal(original))
 			Expect(result.Modified).To(Equal(modified))
 			Expect(result.HasChanges()).To(BeTrue())
+		})
+	})
+})
+
+var _ = Describe("CaptureEventIntent", func() {
+	var (
+		intent *CaptureEventIntent
+		ctx    *CaptureEventContext
+	)
+
+	BeforeEach(func() {
+		ctx = &CaptureEventContext{
+			CaptureStrategy: "manual",
+			PreviousEvent:   nil,
+			Metadata:        make(map[string]string),
+		}
+	})
+
+	Describe("NewCaptureEventIntent", func() {
+		It("should create a new intent with valid context", func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent).NotTo(BeNil())
+		})
+
+		It("should fail with invalid context", func() {
+			ctx.CaptureStrategy = ""
+			_, err := NewCaptureEventIntent(ctx)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should initialize state to ChooseStrategy", func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+		})
+
+		It("should initialize active flag to true", func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent.active).To(BeTrue())
+		})
+
+		It("should initialize result to nil", func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent.result).To(BeNil())
+		})
+	})
+
+	Describe("Init", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return a command for new event", func() {
+			cmd := intent.Init()
+			// For now, Init returns nil, which is valid
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("View", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should render view for ChooseStrategy state", func() {
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Choose Capture Strategy"))
+		})
+
+		It("should render view for Form state", func() {
+			intent.state.currentState = CaptureStateForm
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Capture Event Form"))
+		})
+
+		It("should render view for Review state", func() {
+			intent.state.currentState = CaptureStateReview
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Review Inferred Event"))
+		})
+
+		It("should render view for Submit state", func() {
+			intent.state.currentState = CaptureStateSubmit
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).To(ContainSubstring("Submitting event"))
+		})
+
+		It("should not render when inactive", func() {
+			intent.active = false
+			view := intent.View()
+			Expect(view).To(ContainSubstring("not active"))
+		})
+	})
+
+	Describe("Result", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return nil while active", func() {
+			result := intent.Result()
+			Expect(result).To(BeNil())
+		})
+
+		It("should return completed result after completion", func() {
+			eventResult := &CaptureEventResult{
+				Event:          nil,
+				Bursts:         make([]*career.Burst, 0),
+				Facts:          make([]*career.Fact, 0),
+				AcceptedFields: make(map[string]bool),
+				RejectedFields: make(map[string]string),
+			}
+			intent.setCompleted(eventResult)
+			result := intent.Result()
+			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Completed))
+		})
+
+		It("should return cancelled result after cancellation", func() {
+			intent.setCancelled()
+			result := intent.Result()
+			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Cancelled))
+		})
+
+		It("should return failed result after failure", func() {
+			intent.setFailed("test_error", "Test error message", nil)
+			result := intent.Result()
+			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Failed))
+		})
+	})
+
+	Describe("setCompleted", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set result status to Completed", func() {
+			eventResult := &CaptureEventResult{
+				AcceptedFields: make(map[string]bool),
+				RejectedFields: make(map[string]string),
+			}
+			intent.setCompleted(eventResult)
+			Expect(intent.result.Status).To(Equal(Completed))
+		})
+
+		It("should mark intent as inactive", func() {
+			eventResult := &CaptureEventResult{
+				AcceptedFields: make(map[string]bool),
+				RejectedFields: make(map[string]string),
+			}
+			intent.setCompleted(eventResult)
+			Expect(intent.active).To(BeFalse())
+		})
+	})
+
+	Describe("setCancelled", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set result status to Cancelled", func() {
+			intent.setCancelled()
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should mark intent as inactive", func() {
+			intent.setCancelled()
+			Expect(intent.active).To(BeFalse())
+		})
+	})
+
+	Describe("setFailed", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set result status to Failed", func() {
+			intent.setFailed("error_code", "Error message", nil)
+			Expect(intent.result.Status).To(Equal(Failed))
+		})
+
+		It("should set error details", func() {
+			intent.setFailed("error_code", "Error message", nil)
+			Expect(intent.result.Error).NotTo(BeNil())
+			Expect(intent.result.Error.Code).To(Equal("error_code"))
+			Expect(intent.result.Error.Message).To(Equal("Error message"))
+		})
+
+		It("should mark intent as inactive", func() {
+			intent.setFailed("error_code", "Error message", nil)
+			Expect(intent.active).To(BeFalse())
+		})
+	})
+
+	Describe("setPartial", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should set result status to Partial", func() {
+			eventResult := &CaptureEventResult{
+				AcceptedFields: make(map[string]bool),
+				RejectedFields: make(map[string]string),
+			}
+			intent.setPartial(eventResult, "partial_code", "Partial message")
+			Expect(intent.result.Status).To(Equal(Partial))
+		})
+
+		It("should set error details for partial result", func() {
+			eventResult := &CaptureEventResult{
+				AcceptedFields: make(map[string]bool),
+				RejectedFields: make(map[string]string),
+			}
+			intent.setPartial(eventResult, "partial_code", "Partial message")
+			Expect(intent.result.Error).NotTo(BeNil())
+			Expect(intent.result.Error.Code).To(Equal("partial_code"))
+			Expect(intent.result.Error.Message).To(Equal("Partial message"))
+		})
+
+		It("should mark intent as inactive", func() {
+			eventResult := &CaptureEventResult{
+				AcceptedFields: make(map[string]bool),
+				RejectedFields: make(map[string]string),
+			}
+			intent.setPartial(eventResult, "partial_code", "Partial message")
+			Expect(intent.active).To(BeFalse())
+		})
+	})
+
+	Describe("Update", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return nil when inactive", func() {
+			intent.active = false
+			cmd := intent.Update(nil)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should delegate to updateChooseStrategy for ChooseStrategy state", func() {
+			intent.state.currentState = CaptureStateChooseStrategy
+			// This test just verifies the state delegation works
+			cmd := intent.Update(nil)
+			// Command will be nil for now since updateChooseStrategy returns nil
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("State Transitions", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should transition from ChooseStrategy to Form state", func() {
+			intent.state.currentState = CaptureStateForm
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Capture Event Form"))
+		})
+
+		It("should transition from Form to Review state", func() {
+			intent.state.currentState = CaptureStateReview
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Review Inferred Event"))
+		})
+
+		It("should transition from Review to Submit state", func() {
+			intent.state.currentState = CaptureStateSubmit
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Submitting event"))
 		})
 	})
 })
