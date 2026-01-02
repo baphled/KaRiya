@@ -175,7 +175,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 			Expect(resultMsg).To(BeAssignableToTypeOf(GenerateCVFromConfigMsg{}))
 
 			genMsg := resultMsg.(GenerateCVFromConfigMsg)
-			Expect(genMsg.config).To(Equal(testConfigs[0]))
+			Expect(genMsg.Config).To(Equal(testConfigs[0]))
 		})
 
 		It("should trigger NavigateToScreenMsg on 'n'", func() {
