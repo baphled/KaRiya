@@ -245,7 +245,6 @@ func (m *YAMLConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig
 		configs = append(configs, config)
 	}
 
-	m.logger.Info("Configs listed: count %d", len(configs))
 	return configs, nil
 }
 
@@ -317,3 +316,78 @@ func sanitizeFileName(name string) string {
 	return replacer.Replace(name)
 }
 
+
+// logInfo logs an info message if logger is available
+func (m *YAMLConfigManager) logInfo(format string, args ...interface{}) {
+	if m.logger != nil {
+		m.logger.Info(format, args...)
+	}
+}
+
+// logWarn logs a warning message if logger is available
+func (m *YAMLConfigManager) logWarn(format string, args ...interface{}) {
+	if m.logger != nil {
+		m.logger.Warn(format, args...)
+	}
+}
+
+// logError logs an error message if logger is available
+func (m *YAMLConfigManager) logError(format string, args ...interface{}) {
+	if m.logger != nil {
+		m.logger.Error(format, args...)
+	}
+}
+
+// GetConfigDirectory returns the configuration directory path
+func (m *YAMLConfigManager) GetConfigDirectory() string {
+	return m.configDir
+}
+
+// VerifyDirectory checks if the config directory exists and is writable
+func (m *YAMLConfigManager) VerifyDirectory() error {
+	// Check if directory exists
+	info, err := os.Stat(m.configDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if m.logger != nil {
+				m.logger.Warn("Config directory does not exist: %s, attempting to create", m.configDir)
+			}
+			// Try to create it
+			if err := os.MkdirAll(m.configDir, 0755); err != nil {
+				if m.logger != nil {
+					m.logger.Error("Failed to create config directory: %v", err)
+				}
+				return fmt.Errorf("failed to create config directory: %w", err)
+			}
+			return nil
+		}
+		if m.logger != nil {
+			m.logger.Error("Failed to stat config directory: %v", err)
+		}
+		return fmt.Errorf("failed to stat config directory: %w", err)
+	}
+
+	// Check if it's a directory
+	if !info.IsDir() {
+		if m.logger != nil {
+			m.logger.Error("Config path exists but is not a directory: %s", m.configDir)
+		}
+		return fmt.Errorf("config path exists but is not a directory: %s", m.configDir)
+	}
+
+	// Try to write a test file to verify permissions
+	testFile := filepath.Join(m.configDir, ".write-test")
+	if err := ioutil.WriteFile(testFile, []byte("test"), 0600); err != nil {
+		if m.logger != nil {
+			m.logger.Error("Config directory is not writable: %v", err)
+		}
+		return fmt.Errorf("config directory is not writable: %w", err)
+	}
+	// Clean up test file
+	os.Remove(testFile)
+
+	if m.logger != nil {
+		m.logger.Info("Config directory verified: %s", m.configDir)
+	}
+	return nil
+}

@@ -3,10 +3,12 @@ package models
 import (
 	"context"
 	"fmt"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 )
@@ -19,6 +21,7 @@ type CVConfigManagerModel struct {
 	selectedIdx   int
 	loading       bool
 	header        string
+	headerModel   components.HeaderModel
 	footer        string
 	selectedEvent *career.CareerEvent // Selected event for CV generation context
 }
@@ -28,16 +31,19 @@ func NewCVConfigManagerModel(
 	baseModel *BaseStandardModel,
 	configManager cv.ConfigManager,
 ) *CVConfigManagerModel {
-	return &CVConfigManagerModel{
+	m := &CVConfigManagerModel{
 		BaseStandardModel: baseModel,
 		configManager:     configManager,
 		configs:           make([]*career.CVConfig, 0),
 		selectedIdx:       0,
 		loading:           true,
 		header:            "CV Configuration Manager",
+		headerModel:       components.NewHeader("CV Configuration Manager", 80),
 		footer:            "",
 		selectedEvent:     nil,
 	}
+	m.headerModel.SetBreadcrumbs([]string{"Home", "CV Management", "Configurations"})
+	return m
 }
 
 // NewCVConfigManagerModelWithEvent creates a new CV Config Manager model with a selected event.
@@ -46,40 +52,65 @@ func NewCVConfigManagerModelWithEvent(
 	configManager cv.ConfigManager,
 	event *career.CareerEvent,
 ) *CVConfigManagerModel {
-	return &CVConfigManagerModel{
+	m := &CVConfigManagerModel{
 		BaseStandardModel: baseModel,
 		configManager:     configManager,
 		configs:           make([]*career.CVConfig, 0),
 		selectedIdx:       0,
 		loading:           true,
 		header:            "CV Configuration Manager",
+		headerModel:       components.NewHeader("CV Configuration Manager", 80),
 		footer:            "",
 		selectedEvent:     event,
 	}
+	m.headerModel.SetBreadcrumbs([]string{"Home", "Events", "CV Generation"})
+	return m
 }
 
 // Init initializes the model and loads configurations.
 func (m *CVConfigManagerModel) Init() tea.Cmd {
-	return tea.Batch(
-		m.BaseStandardModel.Init(),
-		m.loadConfigs(),
-	)
+	// Don't batch with nil - just return the load command
+	return m.loadConfigs()
 }
 
 // loadConfigs loads all CV configurations from the manager.
 func (m *CVConfigManagerModel) loadConfigs() tea.Cmd {
 	return func() tea.Msg {
-		configs, err := m.configManager.ListConfigs(context.Background())
-		if err != nil {
-			return ConfigLoadError{err: err}
+		// Create a channel to handle timeout
+		type result struct {
+			configs []*career.CVConfig
+			err     error
 		}
-		return ConfigsLoadedMsg{configs: configs}
+		
+		resultChan := make(chan result, 1)
+		
+		// Load configs in a goroutine
+		go func() {
+			configs, err := m.configManager.ListConfigs(context.Background())
+			resultChan <- result{configs, err}
+		}()
+		
+		// Wait for result with 3-second timeout
+		select {
+		case res := <-resultChan:
+			if res.err != nil {
+				return ConfigLoadError{err: res.err}
+			}
+			return ConfigsLoadedMsg{configs: res.configs}
+		case <-time.After(3 * time.Second):
+			// Timeout - return empty list instead of error to allow UI to continue
+			return ConfigsLoadedMsg{configs: []*career.CVConfig{}}
+		}
 	}
 }
 
 // Update handles messages and updates the model state.
 func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.headerModel.SetWidth(msg.Width)
+		return m, nil
+
 	case ConfigsLoadedMsg:
 		m.loading = false
 		m.configs = msg.configs
@@ -94,6 +125,15 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Allow quit/escape even while loading
+		switch msg.String() {
+		case "esc", "q":
+			return m, func() tea.Msg {
+				return BackToMainMenuMsg{}
+			}
+		}
+
+		// If still loading, don't process other keys
 		if m.loading {
 			return m, nil
 		}
@@ -146,6 +186,15 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "r":
+			// Retry loading configs
+			if m.GetLastError() != nil {
+				m.ClearError()
+				m.loading = true
+				return m, m.loadConfigs()
+			}
+			return m, nil
+
 		case "esc", "q":
 			return m, func() tea.Msg {
 				return BackToMainMenuMsg{}
@@ -159,22 +208,25 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the CV Configuration Manager screen.
 func (m *CVConfigManagerModel) View() string {
+	headerContent := m.headerModel.View()
+	
+	// Always show something useful, even if loading
 	if m.loading {
-		return fmt.Sprintf("%s\n\nLoading configurations...", m.header)
+		return fmt.Sprintf("%s\n\nLoading configurations...\n\nPress 'q' or 'esc' to cancel", headerContent)
 	}
 
 	if m.GetLastError() != nil {
 		errorStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("1")).
 			Bold(true)
-		return fmt.Sprintf("%s\n\n%s\n\nError: %v",
-			m.header,
+		return fmt.Sprintf("%s\n\n%s\n\nError: %v\n\nPress 'r' to retry or 'q' to go back",
+			headerContent,
 			m.renderConfigList(),
 			errorStyle.Render(m.GetLastError().Error()))
 	}
 
 	return fmt.Sprintf("%s\n\n%s\n\n%s",
-		m.header,
+		headerContent,
 		m.renderConfigList(),
 		m.renderFooter())
 }
@@ -182,7 +234,13 @@ func (m *CVConfigManagerModel) View() string {
 // renderConfigList renders the configuration list as a table.
 func (m *CVConfigManagerModel) renderConfigList() string {
 	if len(m.configs) == 0 {
-		return "No CV configurations found.\nPress 'n' to create a new configuration."
+		msg := "No CV configurations found.\n\nYou can:"
+		if m.GetLastError() != nil {
+			msg += "\n  • Press 'r' to retry loading"
+		}
+		msg += "\n  • Press 'n' to create a new configuration"
+		msg += "\n  • Press 'q' to go back"
+		return msg
 	}
 
 	var output string
@@ -299,3 +357,5 @@ type NavigateToScreenMsg struct {
 	screenID string
 }
 
+// ConfigLoadTimeoutMsg is sent when config loading times out
+type ConfigLoadTimeoutMsg struct{}

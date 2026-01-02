@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 )
@@ -19,6 +20,7 @@ type CVGeneratorModel struct {
 	generating   bool
 	generatedCV  *career.CVView
 	err          error
+	headerModel  components.HeaderModel
 }
 
 // NewCVGeneratorModel creates a new CV Generator model.
@@ -27,12 +29,15 @@ func NewCVGeneratorModel(
 	cvService cv.CVGenerationService,
 	config *career.CVConfig,
 ) *CVGeneratorModel {
-	return &CVGeneratorModel{
+	m := &CVGeneratorModel{
 		BaseStandardModel: baseModel,
 		cvService:         cvService,
 		config:            config,
 		generating:        true,
+		headerModel:       components.NewHeader("Generating CV", 80),
 	}
+	m.headerModel.SetBreadcrumbs([]string{"Home", "CV Management", "Configurations", "Generate"})
+	return m
 }
 
 // Init initializes the generator and starts CV generation.
@@ -58,6 +63,10 @@ func (m *CVGeneratorModel) generateCV() tea.Cmd {
 // Update handles messages and updates the model state.
 func (m *CVGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.headerModel.SetWidth(msg.Width)
+		return m, nil
+
 	case CVGeneratedMsg:
 		m.generating = false
 		m.generatedCV = msg.cvView
@@ -90,15 +99,17 @@ func (m *CVGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the CV Generator screen.
 func (m *CVGeneratorModel) View() string {
+	headerContent := m.headerModel.View()
+
 	if m.generating {
-		return m.renderGenerating()
+		return fmt.Sprintf("%s\n\n%s", headerContent, m.renderGenerating())
 	}
 
 	if m.GetLastError() != nil {
-		return m.renderError()
+		return fmt.Sprintf("%s\n\n%s", headerContent, m.renderError())
 	}
 
-	return "CV generated successfully!"
+	return fmt.Sprintf("%s\n\nCV generated successfully!", headerContent)
 }
 
 // renderGenerating renders the loading state.
@@ -166,4 +177,3 @@ type NavigateToCVPreviewMsg struct {
 	CVView       *career.CVView
 	SourceScreen string // Track where we came from
 }
-

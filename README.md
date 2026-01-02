@@ -249,9 +249,46 @@ go build -o kariya-cli ./cmd/cli
   - Grounded statements only (no aspirational/speculative language)
 - **Role Fit Classification**: Infer career level (Principal, EM, Staff Engineer, Senior IC)
 - **Audience Relevance**: Determine who cares about each fact (Hiring Manager, Recruiter, Peer)
+- **CV Generation**: Transform career events into role-specific, audience-tailored CVs
+  - Role-specific generation (Principal, Staff, EM, Senior IC)
+  - Audience-specific filtering (Hiring Manager, Recruiter, Peer)
+  - Intelligent bullet ranking with confidence scoring
+  - Full traceability of sources for each bullet
+  - YAML-based configuration for reusable CV templates
+  - Export to multiple formats (text, markdown, clipboard)
+  - Compression logic respects role-specific bullet caps
+  - No aspirational language, inferred metrics, or role inflation
 - **Interactive Help**: 7-section help system with keyboard shortcuts
 - **First-Run Tutorial**: Interactive guide for new users
 - **CLI Flags**: Configuration via command-line arguments
+
+### CV Generation
+
+KaRiya can transform your career events into professional CVs tailored to specific roles and audiences.
+
+**Quick Start**:
+```bash
+# Manage CV configurations
+./kariya-cli --manage-cv
+
+# Generate a CV from existing config
+./kariya-cli --generate-cv "My Staff Engineer CV"
+
+# List all CV configurations
+./kariya-cli --list-cv-configs
+```
+
+**Key Features**:
+- **Role-Specific CVs**: Generate different CVs for Principal, Staff, EM, or Senior IC roles
+- **Audience Targeting**: Tailor CVs for Hiring Managers, Recruiters, or Peers
+- **YAML Configurations**: Store reusable CV templates in `~/.kariya/cv_configs/`
+- **Intelligent Ranking**: Bullets ranked by ownership, contribution, strategy, execution, and outcomes
+- **Bullet Caps**: Automatic compression respects role-specific limits (Principal: 3-4, Staff: 4-5, etc.)
+- **Source Traceability**: Every bullet traces back to source events and facts
+- **Multiple Exports**: Export to text, markdown, or copy to clipboard
+- **Quality Filters**: Excludes aspirational language, inferred metrics, and role inflation
+
+For comprehensive CV generation documentation, see [CV_GENERATION_GUIDE.md](docs/guides/CV_GENERATION_GUIDE.md) and [CV_EXAMPLES.md](docs/guides/CV_EXAMPLES.md).
 
 ### Keyboard Shortcuts
 
@@ -260,6 +297,8 @@ go build -o kariya-cli ./cmd/cli
 - `l` - List events
 - `m` - Open metadata review
 - `u` - View burst suggestions (from metadata review)
+- `v` - Manage CV configurations
+- `g` - Generate CV
 - `h` - Help system
 - `q` - Quit
 - `tab`/`shift+tab` - Navigate form fields
