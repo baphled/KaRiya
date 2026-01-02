@@ -439,6 +439,17 @@ func (m *ListModel) GetSelectedEvent() *career.CareerEvent {
 	return nil
 }
 
+// GetSelectedEvents returns all selected events
+func (m *ListModel) GetSelectedEvents() []*career.CareerEvent {
+	var selected []*career.CareerEvent
+	for _, event := range m.filtered {
+		if m.selectedEvents[event.ID] {
+			selected = append(selected, event)
+		}
+	}
+	return selected
+}
+
 // IsExpandedAt returns true if the event at the given index is expanded
 func (m *ListModel) IsExpandedAt(idx int) bool {
 	return m.expandedIndices[idx]
