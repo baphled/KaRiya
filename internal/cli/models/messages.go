@@ -78,3 +78,18 @@ type FactActionMenuMsg struct {
 type BurstActionMenuMsg struct {
 	Burst *career.Burst
 }
+
+// BackMsg is sent when the user wants to go back to the previous screen
+type BackMsg struct{}
+
+
+// BackToCVConfigManagerMsg is sent when user wants to go back to CV config manager
+type BackToCVConfigManagerMsg struct{}
+
+// ConfirmDeleteCVConfigMsg is sent when user confirms deletion of a CV config
+type ConfirmDeleteCVConfigMsg struct {
+	Config *career.CVConfig
+}
+
+// BackToMainMenuMsg is sent when user wants to go back to main menu
+type BackToMainMenuMsg struct{}

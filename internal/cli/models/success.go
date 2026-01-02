@@ -257,7 +257,6 @@ type ReviewMetadataMsg struct {
 type ViewRecentMsg struct{}
 
 // BackMsg signals the user wants to go back to the previous screen
-type BackMsg struct{}
 
 // QuitMsg signals the user wants to quit the application
 type QuitMsg struct{}
