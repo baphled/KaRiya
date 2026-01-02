@@ -3,7 +3,6 @@ package cv
 import (
 	"context"
 	"io"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -14,10 +13,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestTraceabilityService(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "TraceabilityService Suite")
-}
 
 var _ = Describe("TraceabilityService", func() {
 	var (

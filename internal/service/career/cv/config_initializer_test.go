@@ -1,8 +1,8 @@
 package cv
 
 import (
+	"io"
 	"context"
-	"testing"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -10,10 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestConfigInitializer(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ConfigInitializer Suite")
-}
 
 var _ = Describe("ConfigInitializer", func() {
 	var (
@@ -25,7 +21,7 @@ var _ = Describe("ConfigInitializer", func() {
 
 	BeforeEach(func() {
 		manager = NewMemoryConfigManager()
-		log = logger.DefaultLogger()
+		log = logger.New(io.Discard, logger.InfoLevel)
 		ctx = context.Background()
 		initializer = NewConfigInitializer(manager, log)
 	})

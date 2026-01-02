@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"testing"
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
@@ -13,10 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestConfigManager(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ConfigManager Suite")
-}
 
 var _ = Describe("YAMLConfigManager", func() {
 	var (

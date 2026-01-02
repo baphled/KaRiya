@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -16,10 +15,6 @@ import (
 	"github.com/onsi/gomega"
 )
 
-func TestExportService(t *testing.T) {
-	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "ExportService Suite")
-}
 
 var _ = ginkgo.Describe("ExportService", func() {
 	var (

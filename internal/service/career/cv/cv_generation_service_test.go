@@ -1,6 +1,7 @@
 package cv
 
 import (
+	"io"
 	"context"
 	"time"
 
@@ -19,7 +20,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 	)
 
 	BeforeEach(func() {
-		log = logger.DefaultLogger()
+		log = logger.New(io.Discard, logger.InfoLevel)
 		ctx = context.Background()
 	})
 
@@ -562,7 +563,7 @@ func NewEmptyFactRepository() *EmptyFactRepository {
 	return &EmptyFactRepository{}
 }
 
-func (r *EmptyFactRepository) List(ctx context.Context, filters careerrepo.ListFilters) ([]*career.Fact, error) {
+func (r *EmptyFactRepository) List(ctx context.Context, filters careerrepo.FactListFilters) ([]*career.Fact, error) {
 	return []*career.Fact{}, nil
 }
 
@@ -582,8 +583,16 @@ func (r *EmptyFactRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *EmptyFactRepository) Count(ctx context.Context, filters careerrepo.ListFilters) (int, error) {
+func (r *EmptyFactRepository) Count(ctx context.Context, filters careerrepo.FactListFilters) (int, error) {
 	return 0, nil
+}
+
+func (r *EmptyFactRepository) GetBySourceEventID(ctx context.Context, eventID string) ([]*career.Fact, error) {
+	return []*career.Fact{}, nil
+}
+
+func (r *EmptyFactRepository) GetBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error) {
+	return []*career.Fact{}, nil
 }
 
 type CountingFactRepository struct {
@@ -594,12 +603,12 @@ func NewCountingFactRepository(count int) *CountingFactRepository {
 	return &CountingFactRepository{count: count}
 }
 
-func (r *CountingFactRepository) List(ctx context.Context, filters careerrepo.ListFilters) ([]*career.Fact, error) {
+func (r *CountingFactRepository) List(ctx context.Context, filters careerrepo.FactListFilters) ([]*career.Fact, error) {
 	facts := make([]*career.Fact, r.count)
 	for i := 0; i < r.count; i++ {
 		facts[i] = &career.Fact{
-			ID:      uuid.New().String(),
-			Content: "Sample fact",
+			ID:   uuid.New().String(),
+			Text: "Sample fact",
 		}
 	}
 	return facts, nil
@@ -621,8 +630,16 @@ func (r *CountingFactRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *CountingFactRepository) Count(ctx context.Context, filters careerrepo.ListFilters) (int, error) {
+func (r *CountingFactRepository) Count(ctx context.Context, filters careerrepo.FactListFilters) (int, error) {
 	return r.count, nil
+}
+
+func (r *CountingFactRepository) GetBySourceEventID(ctx context.Context, eventID string) ([]*career.Fact, error) {
+	return []*career.Fact{}, nil
+}
+
+func (r *CountingFactRepository) GetBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error) {
+	return []*career.Fact{}, nil
 }
 
 type EmptyBulletGenerator struct{}
