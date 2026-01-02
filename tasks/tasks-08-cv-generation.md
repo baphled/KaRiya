@@ -6,253 +6,542 @@
 
 **Status**: ⏳ **NOT STARTED** (0%)
 
+**Version**: 2.0 - Updated with YAML Configuration & Ephemeral Generation
+
+---
+
+## Key Architecture Decisions (UPDATED)
+
+- ✅ **CVs are ephemeral** (in-memory only, NOT stored in database)
+- ✅ **Configurations stored as YAML files** (NOT in database)
+- ✅ **Location**: `$HOME/.kariya/cv_configs/`
+- ✅ **Generation**: On-the-fly from events, always fresh
+- ✅ **Export**: Users can export to text/markdown
+- ✅ **Traceability**: Full source event/fact tracking maintained
+
 ---
 
 ## Tasks
 
 ### Phase 1: Foundation & Core Components
 
-#### 1.0 Create CV Domain Model and Persistence
-- [ ] 1.1 Define CVView struct with fields: ID, Name, TargetRole (Principal/Staff/EM/Senior IC), TargetAudience ([]string: hiring_manager, recruiter, peer), GeneratedAt, Metadata (map[string]interface{})
-- [ ] 1.2 Define CVSection struct with fields: ID, CVViewID, SectionType (string: experience, skills, summary), Title, Order, Content ([]CVBullet)
-- [ ] 1.3 Define CVBullet struct with fields: ID, Text, SourceEventIDs ([]string), SourceFactIDs ([]string), Rank (float64), InclusionReason (string), CreatedAt
-- [ ] 1.4 Implement CVView validation rules (target role required, at least one audience, valid role/audience values)
-- [ ] 1.5 Implement CVBullet validation rules (≥1 source event/fact, single-claim bullets, no aspirational language, no inferred metrics)
-- [ ] 1.6 Create repository interface methods for CVView (Create, GetByID, Update, Delete, List, Count)
-- [ ] 1.7 Create repository interface methods for CVSection (Create, GetByID, GetByCVViewID, Update, Delete)
-- [ ] 1.8 Create repository interface methods for CVBullet (Create, GetByID, GetBySectionID, Update, Delete)
-- [ ] 1.9 Implement MemoryRepository for CVView, CVSection, CVBullet operations (thread-safe with sync.RWMutex)
-- [ ] 1.10 Implement SQLiteRepository for CVView persistence with schema:
-  ```sql
-  CREATE TABLE IF NOT EXISTS cv_views (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      target_role TEXT NOT NULL,
-      target_audience TEXT NOT NULL,
-      generated_at DATETIME NOT NULL,
-      metadata TEXT
-  )
-  ```
-- [ ] 1.11 Implement SQLiteRepository for CVSection persistence with schema:
-  ```sql
-  CREATE TABLE IF NOT EXISTS cv_sections (
-      id TEXT PRIMARY KEY,
-      cv_view_id TEXT NOT NULL,
-      section_type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      section_order INTEGER NOT NULL,
-      FOREIGN KEY (cv_view_id) REFERENCES cv_views(id) ON DELETE CASCADE
-  )
-  ```
-- [ ] 1.12 Implement SQLiteRepository for CVBullet persistence with schema:
-  ```sql
-  CREATE TABLE IF NOT EXISTS cv_bullets (
-      id TEXT PRIMARY KEY,
-      section_id TEXT NOT NULL,
-      text TEXT NOT NULL,
-      source_event_ids TEXT NOT NULL,
-      source_fact_ids TEXT,
-      rank REAL NOT NULL,
-      inclusion_reason TEXT,
-      created_at DATETIME NOT NULL,
-      FOREIGN KEY (section_id) REFERENCES cv_sections(id) ON DELETE CASCADE
-  )
-  ```
-- [ ] 1.13 Write comprehensive unit tests for CVView, CVSection, CVBullet validation (edge cases, boundary conditions)
-- [ ] 1.14 Write repository tests for all CRUD operations and filtering
+#### 1.0 Create CV Domain Models
 
-#### 2.0 Create Bullet Generation Engine
-- [ ] 2.1 Implement BulletGenerator service in `internal/service/career/cv/bullet_generator.go`
-- [ ] 2.2 Create method: `GenerateBullets(ctx, events, facts, targetRole, targetAudience) -> []CVBullet`
-- [ ] 2.3 Implement inclusion criteria filter (bullet must trace to ≥1 event, single-claim only, prefer repeated signals)
-- [ ] 2.4 Implement exclusion criteria filter (no inferred metrics, no aspirational language, no role inflation)
-- [ ] 2.5 Implement ranking algorithm with priority: Ownership > Contribution > Strategy > Execution > Outcome > Activity
-- [ ] 2.6 Create role-specific bullet generation rules:
-  - Principal: Strategic ownership, cross-team leadership (3-4 bullets max)
-  - Staff: Technical leadership, high-complexity implementation (4-5 bullets max)
-  - EM: Team leadership, mentorship, delivery accountability (3-4 bullets max)
-  - Senior IC: Deep technical contribution, system design (4-5 bullets max)
-- [ ] 2.7 Create audience-specific filtering:
-  - Hiring Manager: Outcomes, ownership, business impact
-  - Recruiter: Skills, competencies, high-level achievements
-  - Peer: Technical depth, collaboration, problem-solving
-- [ ] 2.8 Implement compression logic (older roles compress first, respect bullet caps)
-- [ ] 2.9 Implement traceability tracking (store source event/fact IDs in CVBullet)
-- [ ] 2.10 Write comprehensive unit tests for bullet generation with various event/fact combinations
-- [ ] 2.11 Write tests for inclusion/exclusion criteria edge cases
-- [ ] 2.12 Write tests for ranking algorithm with different event types
+- [ ] 1.1 Define `CVView` struct in `internal/domain/career/cv.go`
+  - Fields: ID, Name, TargetRole, TargetAudience, EventFilters, GeneratedAt, SourceEventCount, SourceFactCount
+  - Implement Validate() method
+  - No CreatedAt/UpdatedAt (ephemeral only)
 
-#### 3.0 Create CV Section Builder
-- [ ] 3.1 Implement SectionBuilder service in `internal/service/career/cv/section_builder.go`
-- [ ] 3.2 Create method: `BuildSections(ctx, bullets, targetRole) -> []CVSection`
-- [ ] 3.3 Implement experience section generation (group bullets by company/project/timeframe)
-- [ ] 3.4 Implement skills section generation (extract competencies from bullets/facts)
-- [ ] 3.5 Implement summary section generation (optional, based on role fit and top achievements)
-- [ ] 3.6 Implement section ordering logic (experience first, then skills, then summary)
-- [ ] 3.7 Implement content organization within sections (chronological for experience, grouped for skills)
-- [ ] 3.8 Write comprehensive unit tests for section building
-- [ ] 3.9 Write tests for section ordering and content organization
+- [ ] 1.2 Define `CVSection` struct in `internal/domain/career/cv.go`
+  - Fields: ID, CVViewID, SectionType, Title, Order, Content
+  - Implement Validate() method
+
+- [ ] 1.3 Define `CVBullet` struct in `internal/domain/career/cv.go`
+  - Fields: ID, SectionID, Text, SourceEventIDs, SourceFactIDs, Rank, InclusionReason, Confidence
+  - Implement Validate() method
+
+- [ ] 1.4 Define `CVConfig` struct in `internal/domain/career/cv.go`
+  - Fields: Name, TargetRole, TargetAudience, EventFilters, CreatedAt, UpdatedAt
+  - Implement YAML serialization/deserialization
+  - Implement Validate() method
+
+- [ ] 1.5 Add validation helpers in `internal/domain/career/cv.go`
+  - IsAspirationLanguage(text string) bool
+  - IsSingleClaimBullet(text string) bool
+  - HasInferredMetrics(text string) bool
+  - IsRoleInflation(text string, roleFit RoleFit) bool
+
+- [ ] 1.6 Create error types in `internal/domain/career/cv.go`
+  - ErrInvalidCVRole
+  - ErrInvalidAudience
+  - ErrBulletMultipleClaims
+  - ErrBulletAspirationLanguage
+  - ErrBulletInferredMetrics
+  - ErrNoSourceEvents
+
+- [ ] 1.7 Write comprehensive unit tests in `internal/domain/career/cv_test.go`
+  - CVView validation tests
+  - CVSection validation tests
+  - CVBullet validation tests
+  - CVConfig YAML serialization tests
+  - Helper function tests
+  - Edge cases and boundary conditions
+  - Use Ginkgo/Gomega pattern
+
+#### 2.0 Create YAML Configuration System
+
+- [ ] 2.1 Define `CVConfigManager` interface in `internal/service/career/cv/config_manager.go`
+  - Methods: LoadConfig, SaveConfig, DeleteConfig, ListConfigs, GetConfigPath
+  - Support context.Context for all operations
+
+- [ ] 2.2 Implement `YAMLConfigManager` in `internal/service/career/cv/yaml_config_manager.go`
+  - Store configs in `$HOME/.kariya/cv_configs/` directory
+  - Use `gopkg.in/yaml.v3` for serialization
+  - Create directory if it doesn't exist
+  - Handle file I/O errors gracefully
+  - Support atomic writes (write to temp, then rename)
+  - Implement LoadConfig(ctx, name) (*CVConfig, error)
+  - Implement SaveConfig(ctx, config) error
+  - Implement DeleteConfig(ctx, name) error
+  - Implement ListConfigs(ctx) ([]*CVConfig, error)
+  - Implement GetConfigPath(name) string
+
+- [ ] 2.3 Write comprehensive tests in `internal/service/career/cv/config_manager_test.go`
+  - Load/save/delete config tests
+  - List configs tests
+  - YAML serialization/deserialization tests
+  - Directory creation tests
+  - Atomic write tests
+  - Error handling tests
+  - Use Ginkgo/Gomega pattern
+
+#### 3.0 Remove Database Persistence (CORRECTED)
+
+- [ ] 3.1 **DO NOT create** database tables for CVs
+  - ❌ cv_views table NOT needed
+  - ❌ cv_sections table NOT needed
+  - ❌ cv_bullets table NOT needed
+
+- [ ] 3.2 **DO NOT create** repository interfaces for CVs
+  - ❌ CVViewRepository NOT needed
+  - ❌ CVSectionRepository NOT needed
+  - ❌ CVBulletRepository NOT needed
+
+- [ ] 3.3 **DO NOT create** SQLite repository implementations
+  - ❌ SQLiteCVViewRepository NOT needed
+  - ❌ SQLiteCVSectionRepository NOT needed
+  - ❌ SQLiteCVBulletRepository NOT needed
+
+- [ ] 3.4 **DO NOT create** Memory repository implementations
+  - ❌ MemoryCVViewRepository NOT needed
+  - ❌ MemoryCVSectionRepository NOT needed
+  - ❌ MemoryCVBulletRepository NOT needed
 
 ### Phase 2: CV Generation Service
 
-#### 4.0 Create CV Generation Orchestrator
-- [ ] 4.1 Implement CVGenerationService in `internal/service/career/cv/cv_generation_service.go`
-- [ ] 4.2 Create method: `GenerateCV(ctx, cvViewConfig) -> CVView` (orchestrates bullet generation, section building, validation)
-- [ ] 4.3 Implement event retrieval from repository based on filters (date range, tags, companies)
-- [ ] 4.4 Implement fact retrieval from repository for selected events
-- [ ] 4.5 Call BulletGenerator to create bullets from events/facts
-- [ ] 4.6 Call SectionBuilder to organize bullets into sections
-- [ ] 4.7 Create CVView with metadata (generation timestamp, source count, filters applied)
-- [ ] 4.8 Validate generated CV against acceptance criteria (traceability, bullet caps, factual accuracy)
-- [ ] 4.9 Persist CVView, CVSections, CVBullets to repository
-- [ ] 4.10 Write comprehensive unit tests for CV generation orchestration
-- [ ] 4.11 Write integration tests for complete CV generation workflow
-- [ ] 4.12 Write performance tests (CV generation ≤2s for ≤500 events)
+#### 4.0 Create Bullet Generation Engine
 
-#### 5.0 Create CV View Management Service
-- [ ] 5.1 Implement CVViewService in `internal/service/career/cv/cv_view_service.go`
-- [ ] 5.2 Create method: `ListCVViews(ctx, filters) -> []CVView` (list all generated CV views)
-- [ ] 5.3 Create method: `GetCVView(ctx, cvViewID) -> CVView` (retrieve specific CV view with sections/bullets)
-- [ ] 5.4 Create method: `DeleteCVView(ctx, cvViewID) -> error` (delete CV view and related sections/bullets)
-- [ ] 5.5 Create method: `UpdateCVViewMetadata(ctx, cvViewID, metadata) -> error` (update view name, description)
-- [ ] 5.6 Create method: `RegenerateCVView(ctx, cvViewID) -> CVView` (regenerate CV with same config but latest events/facts)
-- [ ] 5.7 Create method: `GetSourceEvents(ctx, cvViewID) -> []CareerEvent` (retrieve all events used in CV)
-- [ ] 5.8 Create method: `GetSourceFacts(ctx, cvViewID) -> []Fact` (retrieve all facts used in CV)
-- [ ] 5.9 Write comprehensive unit tests for CV view management
-- [ ] 5.10 Write integration tests for view retrieval and updates
+- [ ] 4.1 Implement `BulletGenerator` service in `internal/service/career/cv/bullet_generator.go`
+  - Constructor: NewBulletGenerator(eventRepo, factRepo, logger)
+  - Method: GenerateBullets(ctx, events, facts, targetRole, targetAudience) -> []CVBullet
 
-#### 6.0 Create Traceability System
-- [ ] 6.1 Implement TraceabilityService in `internal/service/career/cv/traceability_service.go`
-- [ ] 6.2 Create method: `GetBulletSources(ctx, bulletID) -> ([]CareerEvent, []Fact)` (retrieve source events/facts for bullet)
-- [ ] 6.3 Create method: `GetEventUsage(ctx, eventID) -> []CVBullet` (find all bullets using this event)
-- [ ] 6.4 Create method: `GetFactUsage(ctx, factID) -> []CVBullet` (find all bullets using this fact)
-- [ ] 6.5 Create method: `ValidateTraceability(ctx, cvViewID) -> ValidationReport` (ensure all bullets trace to sources)
-- [ ] 6.6 Implement visualization data for source event → bullet mapping
-- [ ] 6.7 Implement audit trail for CV generation (track when generated, from which events/facts)
-- [ ] 6.8 Write comprehensive unit tests for traceability operations
-- [ ] 6.9 Write integration tests for source tracking and validation
+- [ ] 4.2 Implement inclusion criteria filter
+  - Bullet must trace to ≥1 event
+  - Single-claim bullets only
+  - Prefer repeated signals
+  - No aspirational language (use AspirationKeywords)
+  - No inferred metrics
+  - No role inflation
+
+- [ ] 4.3 Implement ranking algorithm
+  - Priority: Ownership > Contribution > Strategy > Execution > Outcome > Activity
+  - Scoring: 0.0-1.0 based on priority and signals
+  - Older events score lower (temporal decay)
+  - Repeated signals boost score
+
+- [ ] 4.4 Implement role-specific bullet caps
+  - Principal: 3-4 bullets max
+  - Staff: 4-5 bullets max
+  - EM: 3-4 bullets max
+  - Senior IC: 4-5 bullets max
+  - Compression: Remove lower-ranked bullets first
+
+- [ ] 4.5 Implement audience-specific filtering
+  - Hiring Manager: Outcomes, ownership, business impact
+  - Recruiter: Skills, competencies, high-level achievements
+  - Peer: Technical depth, collaboration, problem-solving
+  - Multi-audience: Include bullets relevant to ANY audience
+
+- [ ] 4.6 Implement traceability tracking
+  - Store source event IDs in CVBullet.SourceEventIDs
+  - Store source fact IDs in CVBullet.SourceFactIDs
+  - Store inclusion reason in CVBullet.InclusionReason
+  - Calculate confidence score
+
+- [ ] 4.7 Write comprehensive unit tests in `internal/service/career/cv/bullet_generator_test.go`
+  - Inclusion criteria tests
+  - Exclusion criteria tests
+  - Ranking algorithm tests
+  - Role-specific cap tests
+  - Audience filtering tests
+  - Edge cases (no events, no facts, mixed signals)
+  - Performance tests (1000+ events)
+  - Use Ginkgo/Gomega pattern
+
+#### 5.0 Create CV Section Builder
+
+- [ ] 5.1 Implement `SectionBuilder` service in `internal/service/career/cv/section_builder.go`
+  - Constructor: NewSectionBuilder(logger)
+  - Method: BuildSections(ctx, bullets, events, targetRole) -> []CVSection
+
+- [ ] 5.2 Implement experience section generation
+  - Group bullets by company/project/timeframe
+  - Sort chronologically (newest first)
+  - Create section with title "Experience"
+
+- [ ] 5.3 Implement skills section generation
+  - Extract competency categories from facts
+  - Group bullets by category
+  - Create section with title "Core Competencies"
+  - Optional: only if bullets with fact sources
+
+- [ ] 5.4 Implement summary section generation
+  - Optional, based on role fit
+  - Create 1-2 sentence summary from top bullets
+  - Create section with title "Professional Summary"
+
+- [ ] 5.5 Implement section ordering logic
+  - Order: Experience → Skills → Summary
+  - Sections without bullets are skipped
+
+- [ ] 5.6 Implement content organization within sections
+  - Experience: Chronological (newest first)
+  - Skills: Grouped by category, alphabetical
+  - Summary: High-priority bullets first
+
+- [ ] 5.7 Write comprehensive unit tests in `internal/service/career/cv/section_builder_test.go`
+  - Section generation tests
+  - Section ordering tests
+  - Content organization tests
+  - Edge cases
+  - Use Ginkgo/Gomega pattern
+
+#### 6.0 Create CV Generation Orchestrator
+
+- [ ] 6.1 Implement `CVGenerationService` in `internal/service/career/cv/cv_generation_service.go`
+  - Constructor: NewCVGenerationService(eventRepo, factRepo, bulletGen, sectionBuilder, configManager, logger)
+  - Method: GenerateCV(ctx, configName) -> *CVView, error
+  - Method: GenerateCVFromConfig(ctx, config) -> *CVView, error
+
+- [ ] 6.2 Implement event retrieval with filtering
+  - Support filters: date range, tags, companies, categories
+  - Apply filters to repository.List()
+
+- [ ] 6.3 Implement fact retrieval for selected events
+  - Get facts for each event
+  - Filter by role fit if applicable
+
+- [ ] 6.4 Orchestrate bullet generation and section building
+  - Call BulletGenerator.GenerateBullets()
+  - Call SectionBuilder.BuildSections()
+  - Validate results
+
+- [ ] 6.5 Create CVView with metadata
+  - Set TargetRole, TargetAudience
+  - Set GeneratedAt timestamp
+  - Set SourceEventCount, SourceFactCount
+  - Store EventFilters
+
+- [ ] 6.6 **No persistence** - CVView is ephemeral only
+  - Return in-memory CVView
+  - Do NOT save to database
+  - Do NOT save to files
+  - CV exists only for current session
+
+- [ ] 6.7 Write comprehensive unit tests in `internal/service/career/cv/cv_generation_service_test.go`
+  - Complete CV generation workflow
+  - Filtering and event retrieval
+  - Ephemeral nature verification
+  - Error handling
+  - Use Ginkgo/Gomega pattern
+
+#### 7.0 Create Traceability Service
+
+- [ ] 7.1 Implement `TraceabilityService` in `internal/service/career/cv/traceability_service.go`
+  - Constructor: NewTraceabilityService(eventRepo, factRepo, logger)
+
+- [ ] 7.2 Implement GetBulletSources(ctx, bulletID) -> ([]CareerEvent, []Fact, error)
+  - Retrieve source events for bullet
+  - Retrieve source facts for bullet
+  - Return both with full details
+
+- [ ] 7.3 Implement GetEventUsage(ctx, eventID) -> []CVBullet, error
+  - Find all bullets using specific event
+  - Return bullets with context
+
+- [ ] 7.4 Implement GetFactUsage(ctx, factID) -> []CVBullet, error
+  - Find all bullets using specific fact
+  - Return bullets with context
+
+- [ ] 7.5 Implement ValidateTraceability(ctx, cvViewID) -> ValidationReport, error
+  - Verify all bullets have valid source events/facts
+  - Verify all source IDs reference existing entities
+  - Return validation report with any issues
+
+- [ ] 7.6 Implement visualization data methods
+  - GetEventBulletMapping(ctx) - map events to bullets
+  - GetFactBulletMapping(ctx) - map facts to bullets
+  - Return data suitable for visualization
+
+- [ ] 7.7 Write comprehensive unit tests in `internal/service/career/cv/traceability_service_test.go`
+  - Source retrieval tests
+  - Usage tracking tests
+  - Validation tests
+  - Edge cases
+  - Use Ginkgo/Gomega pattern
 
 ### Phase 3: UI Components for CV Generation
 
-#### 7.0 Create CV Configuration Screen
-- [ ] 7.1 Implement CVConfigModel as BubbleTea Model in `internal/cli/models/cv_config.go`
-- [ ] 7.2 Display form fields: CV name, target role (dropdown: Principal/Staff/EM/Senior IC), target audience (multi-select: hiring_manager/recruiter/peer)
-- [ ] 7.3 Add optional filters: date range, companies, tags, competencies
-- [ ] 7.4 Implement field validation (required fields, valid selections)
-- [ ] 7.5 Implement keyboard navigation (Tab for fields, Space for multi-select, Enter to generate)
-- [ ] 7.6 Add preview of event count matching filters
-- [ ] 7.7 Display estimated bullet count based on role and events
-- [ ] 7.8 Implement "Generate CV" button with confirmation
-- [ ] 7.9 Write comprehensive unit tests for CV config interactions
-- [ ] 7.10 Test edge cases (no events matching filters, invalid role/audience combinations)
+#### 8.0 Create CV Configuration Management UI
 
-#### 8.0 Create CV Preview Screen
-- [ ] 8.1 Implement CVPreviewModel as BubbleTea Model in `internal/cli/models/cv_preview.go`
-- [ ] 8.2 Display generated CV with sections (experience, skills, summary)
-- [ ] 8.3 Render bullets with formatting (bullet points, proper indentation)
-- [ ] 8.4 Implement scrolling through long CV content (up/down arrows)
-- [ ] 8.5 Add visual indicators for bullet source (event count, fact count)
-- [ ] 8.6 Implement "View Sources" action for selected bullet (press 's' to see source events/facts)
-- [ ] 8.7 Implement "Export CV" action (press 'e' to export to file)
-- [ ] 8.8 Implement "Regenerate CV" action (press 'r' to regenerate with latest data)
-- [ ] 8.9 Implement "Edit Config" action (press 'c' to modify CV configuration)
-- [ ] 8.10 Write comprehensive unit tests for CV preview interactions
-- [ ] 8.11 Test edge cases (empty CV, single bullet, very long CV)
+- [ ] 8.1 Implement `CVConfigManagerModel` in `internal/cli/models/cv_config_manager.go`
+  - Embed BaseStandardModel
+  - Display list of YAML configs
+  - Fields: configManager, configs, selectedIdx, header, helpFooter, footer
 
-#### 9.0 Create CV List Screen
-- [ ] 9.1 Implement CVListModel as BubbleTea Model in `internal/cli/models/cv_list.go`
-- [ ] 9.2 Display list of generated CV views with name, role, audience, generation date
-- [ ] 9.3 Implement scrolling through CV list (up/down arrows)
-- [ ] 9.4 Implement selection and preview (Enter to view selected CV)
-- [ ] 9.5 Implement filtering by target role or audience
-- [ ] 9.6 Implement sorting by generation date, name, or role
-- [ ] 9.7 Implement "Delete CV" action (press 'd' with confirmation)
-- [ ] 9.8 Implement "Regenerate CV" action (press 'r' to regenerate selected CV)
-- [ ] 9.9 Add visual indicators for CV staleness (outdated if events/facts changed since generation)
-- [ ] 9.10 Write comprehensive unit tests for CV list interactions
-- [ ] 9.11 Test edge cases (empty list, single CV, large list with 100+ CVs)
+- [ ] 8.2 Implement config list display
+  - Show table with columns: Name, Role, Audiences, Last Updated
+  - Support pagination
+  - Highlight selected config
 
-#### 10.0 Create Bullet Source Viewer
-- [ ] 10.1 Implement BulletSourceModel as BubbleTea Model in `internal/cli/models/bullet_source.go`
-- [ ] 10.2 Display selected bullet text at top
-- [ ] 10.3 Show list of source events with preview (text, date, company)
-- [ ] 10.4 Show list of source facts with competency badges
-- [ ] 10.5 Implement scrolling through sources (up/down arrows)
-- [ ] 10.6 Implement "View Full Event" action (press 'e' to see complete event details)
-- [ ] 10.7 Implement "View Full Fact" action (press 'f' to see complete fact details)
-- [ ] 10.8 Add visual indicators for source contribution (primary vs. supporting evidence)
-- [ ] 10.9 Write comprehensive unit tests for source viewer interactions
-- [ ] 10.10 Test edge cases (single source, multiple sources, mixed event/fact sources)
+- [ ] 8.3 Implement navigation
+  - j/k or arrow keys: navigate list
+  - Enter: generate CV from selected config
+  - n: new config (go to editor)
+  - e: edit config
+  - d: delete config (with confirmation)
+  - Esc: back to main menu
+
+- [ ] 8.4 Write comprehensive unit tests in `internal/cli/models/cv_config_manager_test.go`
+  - List display tests
+  - Navigation tests
+  - Action tests
+  - Use Ginkgo/Gomega pattern
+
+#### 9.0 Create CV Configuration Editor
+
+- [ ] 9.1 Implement `CVConfigEditorModel` in `internal/cli/models/cv_config_editor.go`
+  - Embed BaseStandardModel
+  - Form fields: name, role, audience, date range, companies, tags, categories
+  - Fields: inputs, roleSelector, audienceSelector, focusIndex, formErrors
+
+- [ ] 9.2 Implement form fields
+  - CV Name (required, text input)
+  - Target Role (required, dropdown)
+  - Target Audience (required, multi-select)
+  - Date Range (optional, start/end date)
+  - Companies (optional, multi-select)
+  - Tags (optional, multi-select)
+  - Competencies (optional, multi-select)
+
+- [ ] 9.3 Implement field validation
+  - CV Name: not empty, valid filename characters
+  - Target Role: must select one
+  - Target Audience: at least one
+  - Date Range: end >= start if both provided
+
+- [ ] 9.4 Implement keyboard navigation
+  - Tab: move to next field
+  - Shift+Tab: move to previous field
+  - Arrow keys: navigate within multi-select
+  - Space: toggle multi-select items
+  - Enter: save config
+  - Esc: cancel without saving
+
+- [ ] 9.5 Implement save functionality
+  - Call configManager.SaveConfig()
+  - Show confirmation message
+  - Return to config list
+
+- [ ] 9.6 Write comprehensive unit tests in `internal/cli/models/cv_config_editor_test.go`
+  - Field validation tests
+  - Keyboard navigation tests
+  - Save/load tests
+  - Error handling tests
+  - Use Ginkgo/Gomega pattern
+
+#### 10.0 Create CV Generation & Preview Screen
+
+- [ ] 10.1 Implement `CVGeneratorModel` in `internal/cli/models/cv_generator.go`
+  - Embed BaseStandardModel
+  - Show config summary before generating
+  - Generate CV from selected config
+  - Show loading indicator during generation
+  - Handle errors gracefully
+  - Display generated CV on completion
+
+- [ ] 10.2 Implement `CVPreviewModel` in `internal/cli/models/cv_preview.go`
+  - Embed BaseStandardModel
+  - Display CV name, metadata (role, audience, date)
+  - Display sections in order
+  - Display bullets within sections
+  - Use consistent styling
+
+- [ ] 10.3 Implement section navigation
+  - Arrow keys: navigate between sections
+  - j/k: navigate bullets within section
+  - Enter: show bullet sources
+  - Esc: go back
+
+- [ ] 10.4 Implement source event display
+  - Show which events contributed to bullet
+  - Show fact contributions if applicable
+  - Display in expandable panel
+
+- [ ] 10.5 Implement traceability indicators
+  - Show source count next to each bullet
+  - Highlight high-confidence bullets
+  - Show inclusion reason on hover/expand
+
+- [ ] 10.6 Implement export options
+  - "Export as Text" (saves to file)
+  - "Export as Markdown" (saves to file)
+  - "Copy to Clipboard" (copies to clipboard)
+  - Show file save location
+
+- [ ] 10.7 Write comprehensive unit tests in `internal/cli/models/cv_generator_test.go` and `cv_preview_test.go`
+  - Generation tests
+  - Display tests
+  - Navigation tests
+  - Source tracing tests
+  - Export tests
+  - Use Ginkgo/Gomega pattern
+
+#### 11.0 Create Supporting Models
+
+- [ ] 11.1 Implement `RoleSelectorModel` in `internal/cli/models/role_selector.go`
+  - Dropdown for role selection
+  - Support keyboard navigation
+  - Return selected role
+
+- [ ] 11.2 Implement `AudienceConfiguratorModel` in `internal/cli/models/audience_configurator.go`
+  - Multi-select for audience
+  - Support keyboard navigation
+  - Return selected audiences
+
+- [ ] 11.3 Implement `SourceEventTracerModel` in `internal/cli/models/source_event_tracer.go`
+  - Display source events/facts for bullet
+  - Show detailed event information
+  - Support navigation and scrolling
+
+- [ ] 11.4 Write comprehensive unit tests for all supporting models
+  - Use Ginkgo/Gomega pattern
 
 ### Phase 4: Integration with Existing Features
 
-#### 11.0 Integrate CV Generation with Event Timeline
-- [ ] 11.1 Add "Generate CV" option to main menu (press 'g' from home screen)
-- [ ] 11.2 Navigate to CV configuration screen when option selected
-- [ ] 11.3 Pass event filters from current view to CV config (if on filtered event list)
-- [ ] 11.4 Navigate to CV preview screen after generation completes
-- [ ] 11.5 Allow navigation back to event timeline from CV preview
-- [ ] 11.6 Write integration tests for event timeline → CV generation workflow
+#### 12.0 Integrate CV Generation with Event Timeline
 
-#### 12.0 Integrate CV Generation with Fact Extraction
-- [ ] 12.1 Include extracted facts in bullet generation automatically
-- [ ] 12.2 Prioritize bullets with fact support over event-only bullets
-- [ ] 12.3 Display fact source indicator in CV preview
-- [ ] 12.4 Allow viewing facts from bullet source viewer
-- [ ] 12.5 Write integration tests for fact → CV bullet workflow
+- [ ] 12.1 Add "Generate CV" option to event action menu
+- [ ] 12.2 Support multi-event selection for CV generation
+- [ ] 12.3 Navigate to CV configuration screen when option selected
+- [ ] 12.4 Navigate to CV preview screen after generation completes
+- [ ] 12.5 Allow navigation back to event timeline from CV preview
+- [ ] 12.6 Write integration tests for event timeline → CV generation workflow
 
-#### 13.0 Integrate CV Generation with Burst Detection
-- [ ] 13.1 Group related bullets from same burst in CV sections
-- [ ] 13.2 Use burst metadata (competency focus) to enhance bullet ranking
-- [ ] 13.3 Display burst context in bullet source viewer
-- [ ] 13.4 Allow generating CV focused on specific burst (filter by burst ID)
-- [ ] 13.5 Write integration tests for burst → CV generation workflow
+#### 13.0 Add CV Generation to Main Menu
+
+- [ ] 13.1 Add "Manage CV Configs" option in main menu
+- [ ] 13.2 Add "Generate CV" option in main menu
+- [ ] 13.3 Add keyboard shortcut (e.g., 'c' for CV)
+- [ ] 13.4 Add breadcrumb navigation support
+- [ ] 13.5 Write integration tests for main menu → CV workflow
 
 #### 14.0 Create CV Export Functionality
-- [ ] 14.1 Implement CVExporter in `internal/service/career/cv/cv_exporter.go`
-- [ ] 14.2 Create method: `ExportToMarkdown(ctx, cvView) -> string` (export CV to Markdown format)
-- [ ] 14.3 Create method: `ExportToJSON(ctx, cvView) -> string` (export CV to JSON with traceability)
-- [ ] 14.4 Create method: `ExportToPlainText(ctx, cvView) -> string` (export CV to plain text for ATS)
-- [ ] 14.5 Implement file writing with user-specified path
-- [ ] 14.6 Add export format selection to CV preview screen
-- [ ] 14.7 Add confirmation message after successful export
-- [ ] 14.8 Write comprehensive unit tests for export formats
-- [ ] 14.9 Write integration tests for complete export workflow
+
+- [ ] 14.1 Implement `ExportService` in `internal/service/career/cv/export_service.go`
+
+- [ ] 14.2 Implement plain text export
+  - Export CV to plain text format
+  - Include section headers and bullets
+  - Include metadata (role, audience, date)
+  - Optional: include source event references
+
+- [ ] 14.3 Implement markdown export
+  - Export CV to markdown format
+  - Use markdown headers for sections
+  - Use markdown lists for bullets
+  - Include metadata as markdown comments
+
+- [ ] 14.4 Implement file save functionality
+  - Determine export directory (`$HOME/.kariya/cv_exports/` or similar)
+  - Generate filename with timestamp
+  - Handle file I/O errors
+  - Show success message with file path
+
+- [ ] 14.5 Implement clipboard copy functionality
+  - Copy generated CV to clipboard
+  - Show success message
+
+- [ ] 14.6 Write comprehensive unit tests in `internal/service/career/cv/export_service_test.go`
+  - Plain text export tests
+  - Markdown export tests
+  - Format validation tests
+  - File save tests
+  - Use Ginkgo/Gomega pattern
 
 ### Phase 5: Testing and Documentation
 
 #### 15.0 Comprehensive Testing Suite
-- [ ] 15.1 Write end-to-end tests for complete CV generation workflow (config → generate → preview → export)
-- [ ] 15.2 Test bullet generation with various event/fact combinations (high/medium/low quality)
-- [ ] 15.3 Test inclusion/exclusion criteria with edge cases (aspirational language, inferred metrics, role inflation)
+
+- [ ] 15.1 Write end-to-end tests for complete CV generation workflow
+  - Config creation → generation → preview → export
+
+- [ ] 15.2 Test bullet generation with various event/fact combinations
+  - High/medium/low quality events
+
+- [ ] 15.3 Test inclusion/exclusion criteria with edge cases
+  - Aspirational language, inferred metrics, role inflation
+
 - [ ] 15.4 Test ranking algorithm with different priority scenarios
-- [ ] 15.5 Test compression logic (bullet caps, older roles compress first)
-- [ ] 15.6 Test role-specific generation for all 4 roles (Principal, Staff, EM, Senior IC)
-- [ ] 15.7 Test audience-specific filtering for all 3 audiences (hiring_manager, recruiter, peer)
-- [ ] 15.8 Test traceability system (all bullets trace to sources, no orphaned bullets)
-- [ ] 15.9 Test CV view management (create, list, delete, regenerate)
+
+- [ ] 15.5 Test compression logic
+  - Bullet caps, older roles compress first
+
+- [ ] 15.6 Test role-specific generation for all 4 roles
+  - Principal, Staff, EM, Senior IC
+
+- [ ] 15.7 Test audience-specific filtering for all 3 audiences
+  - Hiring_manager, recruiter, peer
+
+- [ ] 15.8 Test traceability system
+  - All bullets trace to sources, no orphaned bullets
+
+- [ ] 15.9 Test CV view management
+  - Create, list, delete, regenerate
+
 - [ ] 15.10 Test integration with event timeline, fact extraction, burst detection
-- [ ] 15.11 Run race detector: `go test -race ./...` (verify 0 race conditions)
+
+- [ ] 15.11 Run race detector: `go test -race ./...`
+  - Verify 0 race conditions
+
 - [ ] 15.12 Verify code coverage meets 80%+ threshold across all new code
+
 - [ ] 15.13 Performance test: CV generation ≤2s for ≤500 events
+
 - [ ] 15.14 Performance test: bullet ranking ≤100ms for 1000 bullets
+
 - [ ] 15.15 Performance test: traceability lookup ≤50ms per bullet
 
 #### 16.0 Documentation and User Guidance
+
 - [ ] 16.1 Create CV_GENERATION_GUIDE.md with comprehensive feature overview
-- [ ] 16.2 Document bullet generation rules (inclusion/exclusion criteria, ranking priority)
-- [ ] 16.3 Document role-specific generation rules and bullet caps
-- [ ] 16.4 Document audience-specific filtering rules
-- [ ] 16.5 Provide examples of generated CVs for each role and audience
-- [ ] 16.6 Document compression logic and how older roles are compressed
-- [ ] 16.7 Document traceability system and how to view sources
-- [ ] 16.8 Document export formats and use cases
-- [ ] 16.9 Document keyboard shortcuts for CV screens
-- [ ] 16.10 Update README.md with CV generation features
-- [ ] 16.11 Update CLI_GUIDE.md with CV workflow shortcuts
-- [ ] 16.12 Update CHANGELOG.md with feature description and test results
-- [ ] 16.13 Create troubleshooting guide for common CV generation issues
-- [ ] 16.14 Document conservative defaults and generation principles
+
+- [ ] 16.2 Document YAML configuration format with examples
+
+- [ ] 16.3 Document bullet generation rules
+  - Inclusion/exclusion criteria, ranking priority
+
+- [ ] 16.4 Document role-specific generation rules and bullet caps
+
+- [ ] 16.5 Document audience-specific filtering rules
+
+- [ ] 16.6 Provide examples of generated CVs for each role and audience
+
+- [ ] 16.7 Document compression logic and how older roles are compressed
+
+- [ ] 16.8 Document traceability system and how to view sources
+
+- [ ] 16.9 Document export formats and use cases
+
+- [ ] 16.10 Document keyboard shortcuts for CV screens
+
+- [ ] 16.11 Update README.md with CV generation features
+
+- [ ] 16.12 Update CLI_GUIDE.md with CV workflow shortcuts
+
+- [ ] 16.13 Update CHANGELOG.md with feature description and test results
+
+- [ ] 16.14 Create troubleshooting guide for common CV generation issues
 
 ---
 
@@ -261,249 +550,75 @@
 ### Architecture Patterns
 
 1. **Separation of Concerns**
-   - Domain models (CVView, CVSection, CVBullet) in `internal/domain/career/`
+   - Domain models in `internal/domain/career/`
+   - Configuration management in `internal/service/career/cv/`
    - Bullet generation logic in `internal/service/career/cv/`
    - UI components in `internal/cli/models/`
-   - Repository implementations in `internal/repository/career/`
+   - **NO repository layer** for CVs (ephemeral only)
 
 2. **Reuse Existing Patterns**
    - Follow BubbleTea Model pattern from existing screens
-   - Use existing styling system from `internal/cli/styles/`
-   - Follow validation patterns from metadata clarification and burst-fact extraction
+   - Use existing styling system
+   - Follow validation patterns
    - Build on existing service layer architecture
 
 3. **Domain-Driven Design**
    - CVView, CVSection, CVBullet as first-class domain concepts
-   - Validation at domain level (no aspirational language, no inferred metrics)
+   - Validation at domain level
    - Service layer orchestrates generation
-   - Repository handles persistence
+   - **No persistence layer** (ephemeral only)
 
-4. **Read-Only Generation**
-   - CVs are generated on-demand, not stored permanently (optional persistence for caching)
-   - No modification of source events or facts during generation
+4. **Read-Only, Ephemeral Generation**
+   - CVs generated on-demand, NOT stored permanently
+   - No modification of source events or facts
    - Regeneration always reflects latest data
    - Traceability preserved for all bullets
 
-5. **Conservative Defaults**
-   - Prefer explicit user choices over inferred preferences
-   - Err on side of fewer bullets rather than more
-   - Strict validation (reject questionable content)
+5. **YAML Configuration**
+   - Stored in `$HOME/.kariya/cv_configs/`
+   - Human-readable format
+   - Can be version-controlled
+   - Can be edited directly
+
+6. **Conservative Defaults**
+   - Prefer explicit user choices
+   - Err on side of fewer bullets
+   - Strict validation
    - Clear source attribution
-
-### Key Files to Create
-
-**Domain Models**:
-- `internal/domain/career/cv_view.go` - CVView struct and validation
-- `internal/domain/career/cv_view_test.go` - CVView tests
-- `internal/domain/career/cv_section.go` - CVSection struct and validation
-- `internal/domain/career/cv_section_test.go` - CVSection tests
-- `internal/domain/career/cv_bullet.go` - CVBullet struct and validation
-- `internal/domain/career/cv_bullet_test.go` - CVBullet tests
-
-**Generation Engine**:
-- `internal/service/career/cv/bullet_generator.go` - Bullet generation logic
-- `internal/service/career/cv/bullet_generator_test.go` - Bullet generation tests
-- `internal/service/career/cv/section_builder.go` - Section building logic
-- `internal/service/career/cv/section_builder_test.go` - Section building tests
-- `internal/service/career/cv/cv_generation_service.go` - CV generation orchestrator
-- `internal/service/career/cv/cv_generation_service_test.go` - CV generation tests
-- `internal/service/career/cv/cv_view_service.go` - CV view management
-- `internal/service/career/cv/cv_view_service_test.go` - CV view management tests
-- `internal/service/career/cv/traceability_service.go` - Traceability tracking
-- `internal/service/career/cv/traceability_service_test.go` - Traceability tests
-- `internal/service/career/cv/cv_exporter.go` - Export functionality
-- `internal/service/career/cv/cv_exporter_test.go` - Export tests
-- `internal/service/career/cv/integration_test.go` - End-to-end integration tests
-
-**Repository**:
-- `internal/repository/career/cv_view_repository.go` - CVView repository interface
-- `internal/repository/career/memory_cv_view_repository.go` - In-memory implementation
-- `internal/repository/career/sqlite_cv_view_repository.go` - SQLite implementation
-- `internal/repository/career/cv_section_repository.go` - CVSection repository interface
-- `internal/repository/career/cv_bullet_repository.go` - CVBullet repository interface
-
-**UI Components**:
-- `internal/cli/models/cv_config.go` - CV configuration screen
-- `internal/cli/models/cv_config_test.go` - CV config tests
-- `internal/cli/models/cv_preview.go` - CV preview screen
-- `internal/cli/models/cv_preview_test.go` - CV preview tests
-- `internal/cli/models/cv_list.go` - CV list screen
-- `internal/cli/models/cv_list_test.go` - CV list tests
-- `internal/cli/models/bullet_source.go` - Bullet source viewer
-- `internal/cli/models/bullet_source_test.go` - Bullet source tests
-
-**Documentation**:
-- `docs/CV_GENERATION_GUIDE.md` - Comprehensive user guide
-- Updated `README.md`, `CLI_GUIDE.md`, `CHANGELOG.md`
 
 ### Success Criteria (All Must Be Met)
 
-- [ ] Users can generate role-specific CVs (Principal, Staff, EM, Senior IC)
-- [ ] Users can generate audience-specific CVs (hiring_manager, recruiter, peer)
+- [ ] Users can generate role-specific CVs
+- [ ] Users can generate audience-specific CVs
 - [ ] Bullet generation respects inclusion/exclusion criteria
-- [ ] Bullet ranking follows priority: Ownership > Contribution > Strategy > Execution > Outcome > Activity
-- [ ] Compression logic enforces bullet caps per role (Principal: 3-4, Staff: 4-5, EM: 3-4, Senior IC: 4-5)
-- [ ] All bullets trace to ≥1 source event or fact
-- [ ] No aspirational language in generated bullets
-- [ ] No inferred metrics in generated bullets
-- [ ] No role inflation in generated bullets
-- [ ] Traceability system allows viewing sources for any bullet
-- [ ] CV generation completes in ≤2s for ≤500 events
-- [ ] All CVs can be exported to Markdown, JSON, and plain text
+- [ ] Bullet ranking follows priority order
+- [ ] Compression logic enforces bullet caps
+- [ ] All bullets trace to ≥1 source
+- [ ] No aspirational language in bullets
+- [ ] No inferred metrics in bullets
+- [ ] No role inflation in bullets
+- [ ] Traceability system allows viewing sources
+- [ ] CV generation ≤2s for ≤500 events
+- [ ] All CVs can be exported to text and markdown
+- [ ] **CVs are NOT stored in database** (ephemeral only)
+- [ ] **Configurations are stored as YAML files**
 - [ ] Code coverage ≥ 80%
 - [ ] All tests passing (100% pass rate)
-- [ ] Race detector passes (0 conditions detected)
-
----
-
-## Phase Dependencies
-
-This feature builds on:
-- **Phase 1-2**: Event capture and metadata clarification ✅
-- **Phase 3-4**: Burst detection and fact extraction ✅
-
-This feature enables:
-- **Phase 7**: Portfolio/case study generation
-- **Phase 8**: Advanced analytics and career insights
+- [ ] Race detector passes (0 conditions)
 
 ---
 
 ## Estimated Effort
 
-- Phase 1: 10-12 hours (domain models, repositories, bullet generation engine)
-- Phase 2: 8-10 hours (CV generation service, view management, traceability)
-- Phase 3: 10-12 hours (UI components: config, preview, list, source viewer)
-- Phase 4: 6-8 hours (integration with existing features, export functionality)
-- Phase 5: 6-8 hours (testing, documentation)
+- Phase 1: 1 week (domain models, YAML configuration)
+- Phase 2: 1.5 weeks (services)
+- Phase 3: 1.5 weeks (UI components)
+- Phase 4: 1 week (integration, export)
+- Phase 5: 1 week (testing, documentation)
 
-**Total**: 40-50 hours
-**Completed**: 0 hours
-**Remaining**: 40-50 hours
+**Total**: 5-6 weeks
 
 ---
 
-## Completion Tracking
-
-- **Phase 1**: ⏳ **NOT STARTED (0%)**
-  - [ ] CVView, CVSection, CVBullet domain models (1.1-1.5)
-  - [ ] Repository interfaces and implementations (1.6-1.12)
-  - [ ] Domain model tests (1.13-1.14)
-  - [ ] Bullet generation engine (2.1-2.12)
-  - [ ] Section builder (3.1-3.9)
-
-- **Phase 2**: ⏳ **NOT STARTED (0%)**
-  - [ ] CV generation orchestrator (4.1-4.12)
-  - [ ] CV view management service (5.1-5.10)
-  - [ ] Traceability system (6.1-6.9)
-
-- **Phase 3**: ⏳ **NOT STARTED (0%)**
-  - [ ] CV configuration screen (7.1-7.10)
-  - [ ] CV preview screen (8.1-8.11)
-  - [ ] CV list screen (9.1-9.11)
-  - [ ] Bullet source viewer (10.1-10.10)
-
-- **Phase 4**: ⏳ **NOT STARTED (0%)**
-  - [ ] Event timeline integration (11.1-11.6)
-  - [ ] Fact extraction integration (12.1-12.5)
-  - [ ] Burst detection integration (13.1-13.5)
-  - [ ] CV export functionality (14.1-14.9)
-
-- **Phase 5**: ⏳ **NOT STARTED (0%)**
-  - [ ] Comprehensive testing (15.1-15.15)
-  - [ ] Documentation (16.1-16.14)
-
----
-
-## Key Design Decisions
-
-### 1. Read-Only Generation
-CVs are generated on-demand from source events and facts. No permanent storage of generated content (except optional caching for performance). This ensures CVs always reflect latest data.
-
-### 2. Strict Validation
-- No aspirational language (will, should, could, might, may, want, wish, hope, plan, intend, attempt, try, would)
-- No inferred metrics (must be grounded in source events)
-- No role inflation (must match actual role in source events)
-- Single-claim bullets only (one achievement per bullet)
-
-### 3. Ranking Algorithm
-Priority: Ownership > Contribution > Strategy > Execution > Outcome > Activity
-
-This ensures bullets showing ownership and strategic impact are ranked higher than purely execution-focused bullets.
-
-### 4. Compression Logic
-Older roles compress first when approaching bullet caps. This preserves recency bias while respecting hard limits.
-
-### 5. Traceability
-Every bullet stores source event/fact IDs. Users can view sources at any time to understand bullet origin and validate accuracy.
-
-### 6. Conservative Defaults
-- Minimum bullets rather than maximum (quality over quantity)
-- Explicit user choices over inferred preferences
-- Clear attribution to sources
-- Reversible and explainable generation
-
----
-
-## Performance Targets
-
-- CV generation: ≤2s for ≤500 events
-- Bullet ranking: ≤100ms for 1000 bullets
-- Traceability lookup: ≤50ms per bullet
-- Section building: ≤50ms per CV
-- Export to Markdown/JSON/plain text: ≤100ms per CV
-
----
-
-## Testing Strategy
-
-### Unit Tests
-- Domain model validation (CVView, CVSection, CVBullet)
-- Bullet generation (inclusion/exclusion criteria, ranking)
-- Section building (organization, ordering)
-- Traceability (source tracking, validation)
-- Export formats (Markdown, JSON, plain text)
-
-### Integration Tests
-- Complete CV generation workflow (config → generate → preview → export)
-- Integration with event timeline
-- Integration with fact extraction
-- Integration with burst detection
-- Traceability across system boundaries
-
-### Performance Tests
-- CV generation with 100, 500, 1000 events
-- Bullet ranking with 100, 500, 1000 bullets
-- Traceability lookup with 100, 500, 1000 bullets
-
-### Edge Case Tests
-- No events matching filters
-- Single event
-- Events with no facts
-- Events with multiple facts
-- All bullets fail validation
-- Maximum bullet cap reached
-- Empty sections
-- Very long bullet text
-
----
-
-## Next Steps
-
-1. **Phase 1.0**: Create domain models (CVView, CVSection, CVBullet) with validation
-2. **Phase 1.0**: Implement repositories (memory and SQLite)
-3. **Phase 1.0**: Create bullet generation engine
-4. **Phase 1.0**: Create section builder
-5. **Phase 2.0**: Implement CV generation orchestrator
-6. **Phase 2.0**: Implement traceability system
-7. **Phase 3.0**: Create UI components (config, preview, list, source viewer)
-8. **Phase 4.0**: Integrate with existing features
-9. **Phase 5.0**: Comprehensive testing and documentation
-
----
-
-**Document Version**: 1.0
-**Created**: 2025-12-31
-**Status**: NOT STARTED (0%)
-**Template Source**: tasks-05-burst-fact-extraction.md
-**Process Guide**: docs/rules/master-task-prompt.md
-
+**Document Version**: 2.0 (Updated with YAML Configuration & Ephemeral Generation)
+**Updated**: 2026-01-02 - Corrected to use YAML config and ephemeral generation (no database storage)
