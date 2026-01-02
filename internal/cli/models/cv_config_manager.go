@@ -43,11 +43,12 @@ func NewCVConfigManagerModel(
 	configManager cv.ConfigManager,
 ) *CVConfigManagerModel {
 	// Create table with CV config columns
+	// These are CONFIGURATION TEMPLATES - not generated CVs
 	columns := []table.Column{
-		{Title: "Name", Width: 25},
-		{Title: "Role", Width: 15},
-		{Title: "Audiences", Width: 20},
-		{Title: "Updated", Width: 12},
+		{Title: "Template Name", Width: 30},
+		{Title: "Target Role", Width: 20},
+		{Title: "Audiences", Width: 25},
+		{Title: "Created", Width: 12},
 	}
 
 	t := table.New(
@@ -78,15 +79,15 @@ func NewCVConfigManagerModel(
 		configs:           make([]*career.CVConfig, 0),
 		filtered:          make([]*career.CVConfig, 0),
 		table:             t,
-		listContainer:     components.NewTableListContainer(t, "CV Configurations", 80),
+		listContainer:     components.NewTableListContainer(t, "CV Configuration Templates", 80),
 		pagination:        NewPaginationHelper(10),
 		loading:           true,
-		header:            components.NewHeader("📋 CV Configurations", 80),
+		header:            components.NewHeader("📋 CV Configuration Templates", 80),
 		helpFooter:        components.NewHelpFooter("cv_config_manager", 80),
 		selectedEvent:     nil,
 		width:             80,
 		height:            20,
-		breadcrumbs:       []string{"Home", "CV Management", "Configurations"},
+		breadcrumbs:       []string{"Home", "CV Management", "Configuration Templates"},
 		sortBy:            "updated",
 		sortOrder:         "desc",
 		deletionState:     NewListDeletionState(),
@@ -97,17 +98,19 @@ func NewCVConfigManagerModel(
 }
 
 // NewCVConfigManagerModelWithEvent creates a new CV Config Manager model with a selected event.
+// This displays CV CONFIGURATION TEMPLATES - not generated CVs.
 func NewCVConfigManagerModelWithEvent(
 	baseModel *BaseStandardModel,
 	configManager cv.ConfigManager,
 	event *career.CareerEvent,
 ) *CVConfigManagerModel {
 	// Create table with CV config columns
+	// These are CONFIGURATION TEMPLATES - not generated CVs
 	columns := []table.Column{
-		{Title: "Name", Width: 25},
-		{Title: "Role", Width: 15},
-		{Title: "Audiences", Width: 20},
-		{Title: "Updated", Width: 12},
+		{Title: "Template Name", Width: 30},
+		{Title: "Target Role", Width: 20},
+		{Title: "Audiences", Width: 25},
+		{Title: "Created", Width: 12},
 	}
 
 	t := table.New(
@@ -138,10 +141,10 @@ func NewCVConfigManagerModelWithEvent(
 		configs:           make([]*career.CVConfig, 0),
 		filtered:          make([]*career.CVConfig, 0),
 		table:             t,
-		listContainer:     components.NewTableListContainer(t, "CV Configurations", 80),
+		listContainer:     components.NewTableListContainer(t, "CV Configuration Templates", 80),
 		pagination:        NewPaginationHelper(10),
 		loading:           true,
-		header:            components.NewHeader("📋 CV Configurations", 80),
+		header:            components.NewHeader("📋 CV Configuration Templates", 80),
 		helpFooter:        components.NewHelpFooter("cv_config_manager", 80),
 		selectedEvent:     event,
 		width:             80,
@@ -429,8 +432,8 @@ func (m *CVConfigManagerModel) updateTableRows() {
 		}
 
 		name := config.Name
-		if len(name) > 23 {
-			name = name[:20] + "..."
+		if len(name) > 28 {
+			name = name[:25] + "..."
 		}
 
 		// Add focus indicator for the selected row
@@ -444,7 +447,7 @@ func (m *CVConfigManagerModel) updateTableRows() {
 			name,
 			config.TargetRole,
 			audiences,
-			config.UpdatedAt.Format("2006-01-02"),
+			config.CreatedAt.Format("2006-01-02"),
 		}
 		rows = append(rows, row)
 	}
@@ -482,7 +485,7 @@ func (m *CVConfigManagerModel) View() string {
 	// Always show something useful, even if loading
 	if m.loading {
 		headerView := m.header.View()
-		loadingMsg := "Loading configurations...\n\nPress 'q' or 'esc' to cancel"
+		loadingMsg := "Loading configuration templates...\n\nPress 'q' or 'esc' to cancel"
 		return fmt.Sprintf("%s\n\n%s", headerView, loadingMsg)
 	}
 
@@ -495,7 +498,7 @@ func (m *CVConfigManagerModel) View() string {
 
 	// Handle empty state
 	if len(m.filtered) == 0 && m.GetLastError() == nil {
-		m.listContainer.SetEmptyStateMessage("No CV configurations found.\n\nPress 'n' to create a new configuration")
+		m.listContainer.SetEmptyStateMessage("No CV configuration templates found.\n\nPress 'n' to create a new template")
 	}
 
 	// Update list container with current state
@@ -510,7 +513,7 @@ func (m *CVConfigManagerModel) View() string {
 	if endIdx > len(m.filtered) {
 		endIdx = len(m.filtered)
 	}
-	paginationText := fmt.Sprintf("Showing %d-%d of %d configurations", startIdx+1, endIdx, len(m.filtered))
+	paginationText := fmt.Sprintf("Showing %d-%d of %d templates", startIdx+1, endIdx, len(m.filtered))
 	m.listContainer.SetPaginationInfo(paginationText)
 
 	headerView := m.header.View()
@@ -576,8 +579,6 @@ type ConfigDeletedMsg struct{}
 type ConfigDeletionError struct {
 	err error
 }
-
-// BackMsg navigates back to the main menu.
 
 // NavigateToScreenMsg navigates to a specific screen by ID.
 type NavigateToScreenMsg struct {
