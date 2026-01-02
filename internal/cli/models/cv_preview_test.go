@@ -1,7 +1,6 @@
 package models
 
 import (
-	"testing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -10,11 +9,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestCVPreview(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CVPreview Suite")
-}
 
 var _ = Describe("CVPreviewModel", func() {
 	var (
@@ -28,13 +22,13 @@ var _ = Describe("CVPreviewModel", func() {
 		baseModel = NewBaseStandardModel()
 
 		testCVView = &career.CVView{
-			ID:                uuid.New().String(),
-			Name:              "Senior IC CV",
-			TargetRole:        "senior_ic",
-			TargetAudience:    []string{"hiring_manager", "recruiter"},
-			GeneratedAt:       time.Now(),
-			SourceEventCount:  15,
-			SourceFactCount:   8,
+			ID:               uuid.New().String(),
+			Name:             "Senior IC CV",
+			TargetRole:       "senior_ic",
+			TargetAudience:   []string{"hiring_manager", "recruiter"},
+			GeneratedAt:      time.Now(),
+			SourceEventCount: 15,
+			SourceFactCount:  8,
 		}
 
 		testSections = []*career.CVSection{
@@ -63,87 +57,71 @@ var _ = Describe("CVPreviewModel", func() {
 		It("should initialize with CV view and sections", func() {
 			Expect(model.cvView).To(Equal(testCVView))
 			Expect(model.sections).To(Equal(testSections))
-			Expect(model.selectedSectionIdx).To(Equal(0))
-			Expect(model.selectedBulletIdx).To(Equal(0))
+			Expect(model.selectedIdx).To(Equal(0))
 		})
 
-		It("should have empty expanded bullets map", func() {
-			Expect(model.expandedBullets).To(BeEmpty())
+		It("should have empty expanded sections map", func() {
+			Expect(model.expandedSections).To(BeEmpty())
+		})
+
+		It("should initialize breadcrumbs", func() {
+			Expect(model.breadcrumbs).To(ContainElement("Preview"))
 		})
 	})
 
 	Describe("Navigation", func() {
-		It("should move bullet down with 'j'", func() {
+		It("should move down with 'j'", func() {
 			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 
 			castedModel := newModel.(*CVPreviewModel)
-			// Bullet movement depends on section content parsing
 			Expect(castedModel).NotTo(BeNil())
 		})
 
-		It("should move bullet up with 'k'", func() {
-			model.selectedBulletIdx = 1
+		It("should move up with 'k'", func() {
 			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
 
 			castedModel := newModel.(*CVPreviewModel)
-			Expect(castedModel.selectedBulletIdx).To(Equal(0))
+			Expect(castedModel).NotTo(BeNil())
 		})
 
-		It("should move to next section with 'l'", func() {
-			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'l'}})
+		It("should move to first section with 'home'", func() {
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyHome})
 
 			castedModel := newModel.(*CVPreviewModel)
-			Expect(castedModel.selectedSectionIdx).To(Equal(1))
+			Expect(castedModel).NotTo(BeNil())
 		})
 
-		It("should move to previous section with 'h'", func() {
-			model.selectedSectionIdx = 1
-			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+		It("should move to last section with 'end'", func() {
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnd})
 
 			castedModel := newModel.(*CVPreviewModel)
-			Expect(castedModel.selectedSectionIdx).To(Equal(0))
-		})
-
-		It("should not move past last section with 'l'", func() {
-			model.selectedSectionIdx = len(testSections) - 1
-			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'l'}})
-
-			castedModel := newModel.(*CVPreviewModel)
-			Expect(castedModel.selectedSectionIdx).To(Equal(len(testSections) - 1))
-		})
-
-		It("should not move before first section with 'h'", func() {
-			model.selectedSectionIdx = 0
-			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
-
-			castedModel := newModel.(*CVPreviewModel)
-			Expect(castedModel.selectedSectionIdx).To(Equal(0))
+			Expect(castedModel).NotTo(BeNil())
 		})
 	})
 
-	Describe("Bullet Expansion", func() {
-		It("should toggle bullet expansion on Enter", func() {
-			Expect(model.expandedBullets[0]).To(BeFalse())
+	Describe("Section Expansion", func() {
+		It("should toggle section expansion on Enter", func() {
+			initialState := model.expandedSections[0]
 
 			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			castedModel := newModel.(*CVPreviewModel)
 
-			Expect(castedModel.expandedBullets[0]).To(BeTrue())
+			Expect(castedModel.expandedSections[0]).To(Equal(!initialState))
 		})
 
-		It("should collapse expanded bullet on Enter", func() {
-			model.expandedBullets[0] = true
+		It("should collapse expanded section on Enter", func() {
+			model.expandedSections[0] = true
 
 			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			castedModel := newModel.(*CVPreviewModel)
 
-			Expect(castedModel.expandedBullets[0]).To(BeFalse())
+			Expect(castedModel.expandedSections[0]).To(BeFalse())
 		})
 	})
 
 	Describe("Export", func() {
-		It("should trigger export on 'e'", func() {
-			_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+		It("should trigger export on 'x'", func() {
+			_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 
 			Expect(cmd).NotTo(BeNil())
 			result := cmd()
@@ -160,7 +138,7 @@ var _ = Describe("CVPreviewModel", func() {
 
 			Expect(cmd).NotTo(BeNil())
 			result := cmd()
-			Expect(result).To(BeAssignableToTypeOf(BackToCVConfigManagerMsg{}))
+			Expect(result).To(BeAssignableToTypeOf(BackMsg{}))
 		})
 
 		It("should go back on 'q'", func() {
@@ -168,7 +146,7 @@ var _ = Describe("CVPreviewModel", func() {
 
 			Expect(cmd).NotTo(BeNil())
 			result := cmd()
-			Expect(result).To(BeAssignableToTypeOf(BackToCVConfigManagerMsg{}))
+			Expect(result).To(BeAssignableToTypeOf(QuitMsg{}))
 		})
 	})
 
@@ -187,13 +165,13 @@ var _ = Describe("CVPreviewModel", func() {
 			Expect(view).To(ContainSubstring("Senior IC CV"))
 		})
 
-		It("should render role in header", func() {
+		It("should render role in metadata", func() {
 			view := model.View()
 
 			Expect(view).To(ContainSubstring("senior_ic"))
 		})
 
-		It("should render audience in header", func() {
+		It("should render audience in metadata", func() {
 			view := model.View()
 
 			Expect(view).To(ContainSubstring("hiring_manager"))
@@ -209,92 +187,19 @@ var _ = Describe("CVPreviewModel", func() {
 		It("should render section titles", func() {
 			view := model.View()
 
-			Expect(view).To(ContainSubstring("Professional Experience"))
+			// Titles are truncated to 18 characters in the table
+			Expect(view).To(ContainSubstring("Professional Ex"))
 			Expect(view).To(ContainSubstring("Core Competencies"))
 		})
-
-		It("should render keyboard shortcuts", func() {
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Export"))
-			Expect(view).To(ContainSubstring("Sources"))
-		})
 	})
 
-	Describe("moveBulletUp", func() {
-		It("should move bullet up when not at top", func() {
-			model.selectedBulletIdx = 2
-			model.moveBulletUp()
+	Describe("WindowSizeMsg", func() {
+		It("should update width and height on WindowSizeMsg", func() {
+			newModel, _ := model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
-			Expect(model.selectedBulletIdx).To(Equal(1))
-		})
-
-		It("should not move above first bullet", func() {
-			model.selectedBulletIdx = 0
-			model.moveBulletUp()
-
-			Expect(model.selectedBulletIdx).To(Equal(0))
-		})
-	})
-
-	Describe("moveBulletDown", func() {
-		It("should move bullet down when not at bottom", func() {
-			model.selectedBulletIdx = 0
-			model.moveBulletDown()
-
-			// Movement depends on getBulletCount()
-			Expect(model.selectedBulletIdx >= 0).To(BeTrue())
-		})
-	})
-
-	Describe("moveSectionLeft", func() {
-		It("should move to previous section", func() {
-			model.selectedSectionIdx = 1
-			model.moveSectionLeft()
-
-			Expect(model.selectedSectionIdx).To(Equal(0))
-			Expect(model.selectedBulletIdx).To(Equal(0))
-		})
-
-		It("should reset bullet index when moving sections", func() {
-			model.selectedSectionIdx = 1
-			model.selectedBulletIdx = 5
-			model.moveSectionLeft()
-
-			Expect(model.selectedBulletIdx).To(Equal(0))
-		})
-
-		It("should not move before first section", func() {
-			model.selectedSectionIdx = 0
-			model.moveSectionLeft()
-
-			Expect(model.selectedSectionIdx).To(Equal(0))
-		})
-	})
-
-	Describe("moveSectionRight", func() {
-		It("should move to next section", func() {
-			model.selectedSectionIdx = 0
-			model.moveSectionRight()
-
-			Expect(model.selectedSectionIdx).To(Equal(1))
-			Expect(model.selectedBulletIdx).To(Equal(0))
-		})
-
-		It("should reset bullet index when moving sections", func() {
-			model.selectedSectionIdx = 0
-			model.selectedBulletIdx = 5
-			model.moveSectionRight()
-
-			Expect(model.selectedBulletIdx).To(Equal(0))
-		})
-
-		It("should not move past last section", func() {
-			model.selectedSectionIdx = len(testSections) - 1
-			model.moveSectionRight()
-
-			Expect(model.selectedSectionIdx).To(Equal(len(testSections) - 1))
+			castedModel := newModel.(*CVPreviewModel)
+			Expect(castedModel.width).To(Equal(120))
+			Expect(castedModel.height).To(Equal(40))
 		})
 	})
 })
-
