@@ -45,10 +45,12 @@ func NewTableListContainer(tableModel table.Model, headerTitle string, width int
 }
 
 // SetTable updates the table model being displayed and syncs cursor state
+// Important: This pushes the container's selectedIdx to the table, not the other way around
 func (tlc *TableListContainer) SetTable(tableModel table.Model) *TableListContainer {
 	tlc.table = tableModel
-	// Sync the container's selected index with the table cursor
-	tlc.syncIdx()
+	// Set the table's cursor to match the container's selected index
+	// This ensures indicators in row text match the table's visual selection
+	tlc.validateAndSyncIdx()
 	return tlc
 }
 
@@ -110,6 +112,12 @@ func (tlc *TableListContainer) SetHelpFooterKey(key string) *TableListContainer 
 	return tlc
 }
 
+// SetBreadcrumbs sets the breadcrumbs for the header
+func (tlc *TableListContainer) SetBreadcrumbs(crumbs []string) *TableListContainer {
+	tlc.header.SetBreadcrumbs(crumbs)
+	return tlc
+}
+
 // GetWidth returns the current width
 func (tlc *TableListContainer) GetWidth() int {
 	return tlc.width
@@ -120,7 +128,31 @@ func (tlc *TableListContainer) GetHeight() int {
 	return tlc.height
 }
 
+// validateAndSyncIdx ensures the selected index is valid and syncs to the table
+// This is called after SetTable to push the container's index to the table
+func (tlc *TableListContainer) validateAndSyncIdx() {
+	rowCount := len(tlc.table.Rows())
+
+	// If table is empty, set index to 0
+	if rowCount == 0 {
+		tlc.selectedIdx = 0
+		tlc.table.SetCursor(0)
+		return
+	}
+
+	// Ensure selectedIdx is within valid bounds
+	if tlc.selectedIdx < 0 {
+		tlc.selectedIdx = 0
+	} else if tlc.selectedIdx >= rowCount {
+		tlc.selectedIdx = rowCount - 1
+	}
+
+	// Sync the table cursor to match the container's index
+	tlc.table.SetCursor(tlc.selectedIdx)
+}
+
 // syncIdx ensures the selected index is valid and within bounds
+// Deprecated: Use validateAndSyncIdx instead which pushes to table
 func (tlc *TableListContainer) syncIdx() {
 	cursor := tlc.table.Cursor()
 	// If cursor is negative (table empty or not set), default to 0
