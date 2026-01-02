@@ -133,7 +133,7 @@ func GetGroupedHelp() string {
 	groups := map[string][]NavigationKey{
 		"Navigation": {KeyUp, KeyDown, KeyLeft, KeyRight},
 		"Actions":    {KeySelect, KeyToggle, KeyEdit, KeyDelete},
-		"Modes":      {KeyCapture, KeyList, KeyMetadata, KeyPending, KeyFacts},
+		"Modes":      {KeyCapture, KeyList, KeyMetadata, KeyPending, KeyFacts, KeyGenerate, KeyCV},
 		"Tools":      {KeyFilter, KeySort, KeySearch, KeyBulk},
 		"Global":     {KeyHelp, KeyHome, KeyQuit, KeyBack},
 	}
