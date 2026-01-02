@@ -27,31 +27,31 @@
 
 #### 1.0 Create CV Domain Models
 
-- [ ] 1.1 Define `CVView` struct in `internal/domain/career/cv.go`
+- [x] 1.1 Define `CVView` struct in `internal/domain/career/cv.go`
   - Fields: ID, Name, TargetRole, TargetAudience, EventFilters, GeneratedAt, SourceEventCount, SourceFactCount
   - Implement Validate() method
   - No CreatedAt/UpdatedAt (ephemeral only)
 
-- [ ] 1.2 Define `CVSection` struct in `internal/domain/career/cv.go`
+- [x] 1.2 Define `CVSection` struct in `internal/domain/career/cv.go`
   - Fields: ID, CVViewID, SectionType, Title, Order, Content
   - Implement Validate() method
 
-- [ ] 1.3 Define `CVBullet` struct in `internal/domain/career/cv.go`
+- [x] 1.3 Define `CVBullet` struct in `internal/domain/career/cv.go`
   - Fields: ID, SectionID, Text, SourceEventIDs, SourceFactIDs, Rank, InclusionReason, Confidence
   - Implement Validate() method
 
-- [ ] 1.4 Define `CVConfig` struct in `internal/domain/career/cv.go`
+- [x] 1.4 Define `CVConfig` struct in `internal/domain/career/cv.go`
   - Fields: Name, TargetRole, TargetAudience, EventFilters, CreatedAt, UpdatedAt
   - Implement YAML serialization/deserialization
   - Implement Validate() method
 
-- [ ] 1.5 Add validation helpers in `internal/domain/career/cv.go`
+- [x] 1.5 Add validation helpers in `internal/domain/career/cv.go`
   - IsAspirationLanguage(text string) bool
   - IsSingleClaimBullet(text string) bool
   - HasInferredMetrics(text string) bool
   - IsRoleInflation(text string, roleFit RoleFit) bool
 
-- [ ] 1.6 Create error types in `internal/domain/career/cv.go`
+- [x] 1.6 Create error types in `internal/domain/career/cv.go`
   - ErrInvalidCVRole
   - ErrInvalidAudience
   - ErrBulletMultipleClaims
@@ -59,7 +59,7 @@
   - ErrBulletInferredMetrics
   - ErrNoSourceEvents
 
-- [ ] 1.7 Write comprehensive unit tests in `internal/domain/career/cv_test.go`
+- [x] 1.7 Write comprehensive unit tests in `internal/domain/career/cv_test.go`
   - CVView validation tests
   - CVSection validation tests
   - CVBullet validation tests
@@ -97,22 +97,22 @@
 
 #### 3.0 Remove Database Persistence (CORRECTED)
 
-- [ ] 3.1 **DO NOT create** database tables for CVs
+- [x] 3.1 **DO NOT create** database tables for CVs
   - ❌ cv_views table NOT needed
   - ❌ cv_sections table NOT needed
   - ❌ cv_bullets table NOT needed
 
-- [ ] 3.2 **DO NOT create** repository interfaces for CVs
+- [x] 3.2 **DO NOT create** repository interfaces for CVs
   - ❌ CVViewRepository NOT needed
   - ❌ CVSectionRepository NOT needed
   - ❌ CVBulletRepository NOT needed
 
-- [ ] 3.3 **DO NOT create** SQLite repository implementations
+- [x] 3.3 **DO NOT create** SQLite repository implementations
   - ❌ SQLiteCVViewRepository NOT needed
   - ❌ SQLiteCVSectionRepository NOT needed
   - ❌ SQLiteCVBulletRepository NOT needed
 
-- [ ] 3.4 **DO NOT create** Memory repository implementations
+- [x] 3.4 **DO NOT create** Memory repository implementations
   - ❌ MemoryCVViewRepository NOT needed
   - ❌ MemoryCVSectionRepository NOT needed
   - ❌ MemoryCVBulletRepository NOT needed
