@@ -19,6 +19,7 @@ type CVPreviewModel struct {
 	selectedBulletIdx   int
 	expandedBullets     map[int]bool
 	traceabilityService *cv.TraceabilityService
+	sourceScreen        string // Track where we came from (e.g., "event_timeline", "cv_config_manager")
 }
 
 // NewCVPreviewModel creates a new CV Preview model.
@@ -36,6 +37,27 @@ func NewCVPreviewModel(
 		selectedBulletIdx:   0,
 		expandedBullets:     make(map[int]bool),
 		traceabilityService: traceabilityService,
+		sourceScreen:        "cv_config_manager", // Default to config manager
+	}
+}
+
+// NewCVPreviewModelWithSource creates a new CV Preview model with a specified source screen.
+func NewCVPreviewModelWithSource(
+	baseModel *BaseStandardModel,
+	cvView *career.CVView,
+	sections []*career.CVSection,
+	traceabilityService *cv.TraceabilityService,
+	sourceScreen string,
+) *CVPreviewModel {
+	return &CVPreviewModel{
+		BaseStandardModel:   baseModel,
+		cvView:              cvView,
+		sections:            sections,
+		selectedSectionIdx:  0,
+		selectedBulletIdx:   0,
+		expandedBullets:     make(map[int]bool),
+		traceabilityService: traceabilityService,
+		sourceScreen:        sourceScreen,
 	}
 }
 
@@ -75,13 +97,19 @@ func (m *CVPreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.exportCV()
 
 		case "esc", "q":
+			if m.sourceScreen == "event_timeline" {
+				return m, func() tea.Msg {
+					return BackToEventTimelineMsg{}
+				}
+			}
 			return m, func() tea.Msg {
 				return BackToCVConfigManagerMsg{}
 			}
 		}
 	}
 
-	return m.BaseStandardModel.Update(msg)
+	// Return model unchanged for unhandled messages
+	return m, nil
 }
 
 // moveBulletUp moves selection up in the bullet list.
@@ -213,4 +241,7 @@ func (m *CVPreviewModel) GetCVView() *career.CVView {
 type ShowExportOptionsMsg struct {
 	cvView *career.CVView
 }
+
+// BackToEventTimelineMsg navigates back to the event timeline.
+type BackToEventTimelineMsg struct{}
 

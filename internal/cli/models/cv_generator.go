@@ -62,7 +62,7 @@ func (m *CVGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.generating = false
 		m.generatedCV = msg.cvView
 		return m, func() tea.Msg {
-			return NavigateToCVPreviewMsg{cvView: m.generatedCV}
+			return NavigateToCVPreviewMsg{CVView: m.generatedCV, SourceScreen: "cv_config_manager"}
 		}
 
 	case CVGenerationErrorMsg:
@@ -84,7 +84,8 @@ func (m *CVGeneratorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	return m.BaseStandardModel.Update(msg)
+	// Return model unchanged for unhandled messages
+	return m, nil
 }
 
 // View renders the CV Generator screen.
@@ -162,6 +163,7 @@ type CVGenerationErrorMsg struct {
 
 // NavigateToCVPreviewMsg navigates to CV preview after generation.
 type NavigateToCVPreviewMsg struct {
-	cvView *career.CVView
+	CVView       *career.CVView
+	SourceScreen string // Track where we came from
 }
 
