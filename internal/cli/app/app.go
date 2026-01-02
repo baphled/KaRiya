@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/workflow"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	cv "github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -42,6 +43,9 @@ const (
 	FactEditorScreen      Screen = "fact_editor"
 	BurstDetailsScreen   Screen = "burst_details"
 	BurstEditorScreen    Screen = "burst_editor"
+	CVConfigManagerScreen Screen = "cv_config_manager"
+	CVGeneratorScreen     Screen = "cv_generator"
+	CVPreviewScreen       Screen = "cv_preview"
 )
 
 // Model represents the main application state
@@ -81,11 +85,19 @@ type Model struct {
 	factDetailsModel       *models.FactDetailsModel  // View individual fact details
 	menuModel              *models.MenuModel         // Main menu screen
 	helpModel              *models.HelpModel         // Help screen
+	cvConfigManagerModel   *models.CVConfigManagerModel
+	cvGeneratorModel       *models.CVGeneratorModel
+	cvPreviewModel         *models.CVPreviewModel
+	configManager          cv.ConfigManager
 }
 
 // NewModel creates a new application model
 func NewModel(cliService *service.CLIEventService, careerService *careerservice.Service) *Model {
 	ctx := context.Background()
+	
+	// Initialize config manager
+	configMgr, _ := cv.NewYAMLConfigManager(nil) // Logger is optional for config manager
+	
 	return &Model{
 		cliService:             cliService,
 		service:                careerService,
@@ -119,6 +131,10 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		helpModel:              nil,
 		factListModel:          models.NewFactListModel(careerService, ctx),
 		factDetailsModel:       nil,
+		cvConfigManagerModel:   nil,
+		cvGeneratorModel:       nil,
+		cvPreviewModel:         nil,
+		configManager:          configMgr,
 	}
 }
 
@@ -795,6 +811,27 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.factListModel = updatedModel.(*models.FactListModel)
 			return m, cmd
 		}
+
+	case CVConfigManagerScreen:
+		if m.cvConfigManagerModel != nil {
+			updatedModel, cmd := m.cvConfigManagerModel.Update(msg)
+			m.cvConfigManagerModel = updatedModel.(*models.CVConfigManagerModel)
+			return m, cmd
+		}
+
+	case CVGeneratorScreen:
+		if m.cvGeneratorModel != nil {
+			updatedModel, cmd := m.cvGeneratorModel.Update(msg)
+			m.cvGeneratorModel = updatedModel.(*models.CVGeneratorModel)
+			return m, cmd
+		}
+
+	case CVPreviewScreen:
+		if m.cvPreviewModel != nil {
+			updatedModel, cmd := m.cvPreviewModel.Update(msg)
+			m.cvPreviewModel = updatedModel.(*models.CVPreviewModel)
+			return m, cmd
+		}
 	}
 
 	// Handle breadcrumb click messages
@@ -1003,6 +1040,21 @@ func (m *Model) View() string {
 			return m.factListModel.View()
 		}
 		return "Error: Fact List model not initialized\n"
+	case CVConfigManagerScreen:
+		if m.cvConfigManagerModel != nil {
+			return m.cvConfigManagerModel.View()
+		}
+		return "Error: CV Config Manager model not initialized\n"
+	case CVGeneratorScreen:
+		if m.cvGeneratorModel != nil {
+			return m.cvGeneratorModel.View()
+		}
+		return "Error: CV Generator model not initialized\n"
+	case CVPreviewScreen:
+		if m.cvPreviewModel != nil {
+			return m.cvPreviewModel.View()
+		}
+		return "Error: CV Preview model not initialized\n"
 	case QuitScreen:
 		return "Goodbye!\n"
 	default:
@@ -1246,6 +1298,16 @@ func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
 		}
 		m.previousScreen = m.currentScreen
 		m.currentScreen = FactListScreen
+		return m, nil
+	case "v":
+		// Manage CV Configurations
+		if m.cvConfigManagerModel == nil {
+			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+		} else {
+			m.cvConfigManagerModel.RefreshConfigs()
+		}
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CVConfigManagerScreen
 		return m, nil
 	case "q":
 		// Quit

@@ -79,6 +79,13 @@ func NewMenuModel(hasPending bool, pendingInfo string) *MenuModel {
 			Description: "Browse and manage all extracted facts from your career events",
 			Category:    "Data Management",
 		},
+		// CV Management
+		{
+			Key:         navigation.KeyCV,
+			Title:       "Manage CV Configurations",
+			Description: "Create, edit, and manage CV configuration profiles",
+			Category:    "CV Management",
+		},
 		// Navigation
 		{
 			Key:         navigation.KeyHome,
