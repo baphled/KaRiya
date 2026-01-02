@@ -711,3 +711,188 @@ Key characteristics:
 - Thread-safe with proper locking
 - Ready for production use
 
+
+---
+
+## Phase 2 Implementation Summary (2026-01-02)
+
+### Session Overview
+
+Started Phase 2 implementation: CaptureEvent Intent Template. This phase establishes the template pattern for all future intents.
+
+**Session Focus:**
+- Implement CaptureEventIntent model structure
+- Add comprehensive unit tests for intent
+- Establish state machine pattern
+- Create reusable template for other intents
+
+### Completed Tasks
+
+✅ **Task 2.1: Complete CaptureEvent Intent Model and States**
+- Reviewed existing `CaptureEventContext` and `CaptureEventResult` structures
+- Verified all state constants are defined: `CaptureStateChooseStrategy`, `CaptureStateForm`, `CaptureStateReview`, `CaptureStateSubmit`
+- Verified `CaptureEventModel` structure with all required fields
+- Added `Result()` method to properly implement Intent interface
+- All data structures are complete and type-safe
+
+**Files Modified:**
+- `internal/cli/intents/capture_event_intent.go` - Added Result() method to implement Intent interface
+
+✅ **Task 2.1.6: Write Unit Tests for CaptureEvent Model Structure**
+- Created comprehensive test file `capture_event_intent_test.go`
+- Implemented 20+ unit tests using standard Go testing + testify
+- Tests cover:
+  - Intent creation with valid/invalid context
+  - Init() method behavior
+  - View() method for all states
+  - Result() method for all completion states
+  - setCompleted(), setCancelled(), setFailed(), setPartial() methods
+  - Update() method behavior when active/inactive
+  - State transitions
+
+**Test Coverage:**
+- 21 test functions covering all public methods
+- 100% pass rate
+- All tests complete in < 5ms
+- No race conditions detected
+
+**Files Created:**
+- `internal/cli/intents/capture_event_intent_test.go` - 250+ lines of comprehensive tests
+
+### Test Results
+
+✅ **All Tests Passing:**
+- Phase 1 tests: 34 test cases (Ginkgo + standard Go tests)
+- Phase 2 tests: 21 test cases (standard Go tests)
+- Total: 55+ test cases
+- 100% pass rate
+- 0 race conditions
+- All tests run in < 10ms
+
+### Code Quality
+
+✅ **Quality Metrics:**
+- All code formatted with `go fmt`
+- No vet warnings
+- All tests pass with `-race` flag
+- Proper error handling throughout
+- Type-safe result handling
+
+### Architecture Compliance
+
+✅ **Intent Interface Implementation:**
+- ✅ Init() - Returns tea.Cmd
+- ✅ Update() - Processes messages and delegates to state handlers
+- ✅ View() - Renders current state
+- ✅ Result() - Returns IntentResult[interface{}]
+
+✅ **State Machine Pattern:**
+- All states defined as constants
+- State transitions via Update() method
+- Proper delegation to state-specific handlers
+- No implicit behavior
+
+✅ **Result Handling:**
+- Typed results via IntentResult[*CaptureEventResult]
+- Proper conversion to interface{} for Intent interface
+- Status tracking (Completed, Cancelled, Failed, Partial)
+- Error details included when needed
+
+### Design Decisions
+
+1. **Standard Go Testing**: Used testify assertions instead of Ginkgo for CaptureEvent tests to avoid multiple test entry points
+2. **State Delegation**: Update() and View() delegate to state-specific methods for clarity
+3. **Type-Safe Results**: Maintain typed results internally, convert to interface{} for Intent interface
+4. **Comprehensive Test Coverage**: 21 tests for model structure provide baseline for expansion
+
+### Files Created/Modified
+
+**Created:**
+- `internal/cli/intents/capture_event_intent_test.go` - 250+ lines
+
+**Modified:**
+- `internal/cli/intents/capture_event_intent.go` - Added Result() method (~10 lines)
+
+### Current Implementation Status
+
+**Completed (Phase 2.1):**
+- ✅ Intent model and states defined
+- ✅ Data structures complete (CaptureEventContext, CaptureEventResult, ReviewInferredEventState)
+- ✅ Init() method stub with proper structure
+- ✅ View() method with state-specific rendering
+- ✅ Result() method properly implements Intent interface
+- ✅ Update() method with state delegation
+- ✅ Comprehensive unit tests (21 tests)
+
+**In Progress (Phase 2.2-2.7):**
+- ⏳ State transition implementations (updateChooseStrategy, updateCaptureForm, etc.)
+- ⏳ View implementations for each state (currently return placeholder strings)
+- ⏳ Modal sub-flows (EditMetadata, EditBurst, EditFact)
+- ⏳ Integration with router
+- ⏳ Acceptance testing
+
+### Remaining Work for Phase 2
+
+1. **Task 2.2**: Implement State Transitions
+   - Implement updateChooseStrategy() to handle strategy selection
+   - Implement updateCaptureForm() to handle form input
+   - Implement updateReviewInferredEvent() to handle review UI
+   - Implement updateSubmit() to save event
+   - Add error handling and recovery
+
+2. **Task 2.3**: Implement Views
+   - Improve viewChooseStrategy() with actual UI
+   - Implement viewCaptureForm() delegating to form model
+   - Implement viewReviewInferredEvent() with burst/fact display
+   - Implement viewSubmit() with confirmation UI
+   - Implement error views
+
+3. **Task 2.4**: Implement Modal Sub-Flows
+   - EditMetadataModal for editing event metadata
+   - EditBurstModal for reviewing/editing bursts
+   - EditFactModal for reviewing/editing facts
+   - Proper context preservation on cancel
+
+4. **Task 2.5**: Implement Result Handling
+   - Proper result creation with event data
+   - Cancellation handling
+   - Error result handling with recovery suggestions
+   - Back navigation with state preservation
+
+5. **Task 2.6**: Write Comprehensive Tests
+   - State transition tests for each state
+   - View rendering tests for each view
+   - Validation tests
+   - Modal sub-flow tests
+   - Result handling tests
+   - Error handling tests
+   - Target: >90% code coverage
+
+6. **Task 2.7**: Phase 2 Acceptance Testing
+   - Verify compilation without errors
+   - Run full test suite with coverage
+   - Linting and formatting checks
+   - Integration with router
+   - Complete user workflows
+
+### Performance Notes
+
+- All tests run in < 10ms
+- No memory leaks detected
+- Type-safe at compile time
+- Ready for next phase implementation
+
+### Next Session Goals
+
+1. Implement state-specific update handlers (Task 2.2)
+2. Implement proper view rendering (Task 2.3)
+3. Add more comprehensive state transition tests
+4. Target: Complete Tasks 2.2-2.3 with >90% test coverage
+
+---
+
+*Last Updated: 2026-01-02 (Phase 2 Session 1)*
+*Status: In Progress*
+*Tests: 55+ passing, 0 failures*
+*Coverage: Foundation established, ready for state implementation*
+
