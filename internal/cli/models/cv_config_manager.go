@@ -6,24 +6,35 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 )
 
 // CVConfigManagerModel manages the display and interaction with saved CV configurations.
+// It follows the same pattern as other list-based views with table, pagination, and deletion handling.
 type CVConfigManagerModel struct {
 	*BaseStandardModel
 	configManager cv.ConfigManager
 	configs       []*career.CVConfig
-	selectedIdx   int
+	filtered      []*career.CVConfig
+	table         table.Model
+	listContainer *components.TableListContainer
+	pagination    *PaginationHelper
 	loading       bool
-	header        string
-	headerModel   components.HeaderModel
-	footer        string
+	header        components.HeaderModel
+	helpFooter    components.HelpFooterModel
 	selectedEvent *career.CareerEvent // Selected event for CV generation context
+	width         int
+	height        int
+	breadcrumbs   []string
+	sortBy        string
+	sortOrder     string
+	deletionState *ListDeletionState
 }
 
 // NewCVConfigManagerModel creates a new CV Config Manager model.
@@ -31,18 +42,57 @@ func NewCVConfigManagerModel(
 	baseModel *BaseStandardModel,
 	configManager cv.ConfigManager,
 ) *CVConfigManagerModel {
+	// Create table with CV config columns
+	columns := []table.Column{
+		{Title: "Name", Width: 25},
+		{Title: "Role", Width: 15},
+		{Title: "Audiences", Width: 20},
+		{Title: "Updated", Width: 12},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	// Apply styling to table
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
 	m := &CVConfigManagerModel{
 		BaseStandardModel: baseModel,
 		configManager:     configManager,
 		configs:           make([]*career.CVConfig, 0),
-		selectedIdx:       0,
+		filtered:          make([]*career.CVConfig, 0),
+		table:             t,
+		listContainer:     components.NewTableListContainer(t, "CV Configurations", 80),
+		pagination:        NewPaginationHelper(10),
 		loading:           true,
-		header:            "CV Configuration Manager",
-		headerModel:       components.NewHeader("CV Configuration Manager", 80),
-		footer:            "",
+		header:            components.NewHeader("📋 CV Configurations", 80),
+		helpFooter:        components.NewHelpFooter("cv_config_manager", 80),
 		selectedEvent:     nil,
+		width:             80,
+		height:            20,
+		breadcrumbs:       []string{"Home", "CV Management", "Configurations"},
+		sortBy:            "updated",
+		sortOrder:         "desc",
+		deletionState:     NewListDeletionState(),
 	}
-	m.headerModel.SetBreadcrumbs([]string{"Home", "CV Management", "Configurations"})
+	m.header.SetBreadcrumbs(m.breadcrumbs)
+	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
 	return m
 }
 
@@ -52,24 +102,62 @@ func NewCVConfigManagerModelWithEvent(
 	configManager cv.ConfigManager,
 	event *career.CareerEvent,
 ) *CVConfigManagerModel {
+	// Create table with CV config columns
+	columns := []table.Column{
+		{Title: "Name", Width: 25},
+		{Title: "Role", Width: 15},
+		{Title: "Audiences", Width: 20},
+		{Title: "Updated", Width: 12},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	// Apply styling to table
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
 	m := &CVConfigManagerModel{
 		BaseStandardModel: baseModel,
 		configManager:     configManager,
 		configs:           make([]*career.CVConfig, 0),
-		selectedIdx:       0,
+		filtered:          make([]*career.CVConfig, 0),
+		table:             t,
+		listContainer:     components.NewTableListContainer(t, "CV Configurations", 80),
+		pagination:        NewPaginationHelper(10),
 		loading:           true,
-		header:            "CV Configuration Manager",
-		headerModel:       components.NewHeader("CV Configuration Manager", 80),
-		footer:            "",
+		header:            components.NewHeader("📋 CV Configurations", 80),
+		helpFooter:        components.NewHelpFooter("cv_config_manager", 80),
 		selectedEvent:     event,
+		width:             80,
+		height:            20,
+		breadcrumbs:       []string{"Home", "Events", "CV Generation"},
+		sortBy:            "updated",
+		sortOrder:         "desc",
+		deletionState:     NewListDeletionState(),
 	}
-	m.headerModel.SetBreadcrumbs([]string{"Home", "Events", "CV Generation"})
+	m.header.SetBreadcrumbs(m.breadcrumbs)
+	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
 	return m
 }
 
 // Init initializes the model and loads configurations.
 func (m *CVConfigManagerModel) Init() tea.Cmd {
-	// Don't batch with nil - just return the load command
 	return m.loadConfigs()
 }
 
@@ -81,15 +169,15 @@ func (m *CVConfigManagerModel) loadConfigs() tea.Cmd {
 			configs []*career.CVConfig
 			err     error
 		}
-		
+
 		resultChan := make(chan result, 1)
-		
+
 		// Load configs in a goroutine
 		go func() {
 			configs, err := m.configManager.ListConfigs(context.Background())
 			resultChan <- result{configs, err}
 		}()
-		
+
 		// Wait for result with 3-second timeout
 		select {
 		case res := <-resultChan:
@@ -106,22 +194,44 @@ func (m *CVConfigManagerModel) loadConfigs() tea.Cmd {
 
 // Update handles messages and updates the model state.
 func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle deletion confirmation if active
+	if m.deletionState.IsConfirming() {
+		cmd := m.deletionState.UpdateConfirmation(msg)
+
+		if m.deletionState.IsConfirmed() {
+			return m.performConfigDeletion()
+		}
+
+		if m.deletionState.IsCancelled() {
+			m.deletionState.Clear()
+			return m, nil
+		}
+
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.headerModel.SetWidth(msg.Width)
+		m.width = msg.Width
+		m.height = msg.Height
+		m.header.SetWidth(msg.Width)
+		m.helpFooter.SetWidth(msg.Width)
+		m.listContainer.SetDimensions(msg.Width, msg.Height)
+		m.updateTableRows()
 		return m, nil
 
 	case ConfigsLoadedMsg:
 		m.loading = false
 		m.configs = msg.configs
-		if len(m.configs) > 0 {
-			m.selectedIdx = 0
-		}
+		m.applyFiltersAndSort()
+		m.pagination.SetTotalCount(len(m.filtered))
+		m.updateTableRows()
 		return m, nil
 
 	case ConfigLoadError:
 		m.loading = false
 		m.SetError(msg.err)
+		m.listContainer.SetErrorMessage(fmt.Sprintf("Error loading configurations: %v", msg.err))
 		return m, nil
 
 	case tea.KeyMsg:
@@ -129,7 +239,7 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc", "q":
 			return m, func() tea.Msg {
-				return BackToMainMenuMsg{}
+				return BackMsg{}
 			}
 		}
 
@@ -138,24 +248,44 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Handle deletion confirmation
+		if m.deletionState.IsConfirming() {
+			return m, nil
+		}
+
 		switch msg.String() {
 		case "up", "k":
-			if m.selectedIdx > 0 {
-				m.selectedIdx--
+			if m.listContainer.GetSelectedIdx() > 0 {
+				m.listContainer.MoveUp(1)
 			}
+			m.updateTableRows()
 			return m, nil
 
 		case "down", "j":
-			if m.selectedIdx < len(m.configs)-1 {
-				m.selectedIdx++
+			if m.listContainer.GetSelectedIdx() < len(m.filtered)-1 {
+				m.listContainer.MoveDown(1)
 			}
+			m.updateTableRows()
+			return m, nil
+
+		case "home", "g":
+			m.listContainer.MoveToFirst()
+			m.updateTableRows()
+			return m, nil
+
+		case "end", "G":
+			m.listContainer.MoveToLast()
+			m.updateTableRows()
 			return m, nil
 
 		case "enter":
-			if len(m.configs) > 0 {
-				selectedConfig := m.configs[m.selectedIdx]
-				return m, func() tea.Msg {
-					return GenerateCVFromConfigMsg{Config: selectedConfig}
+			if len(m.filtered) > 0 {
+				selectedIdx := m.listContainer.GetSelectedIdx()
+				if selectedIdx < len(m.filtered) {
+					selectedConfig := m.filtered[selectedIdx]
+					return m, func() tea.Msg {
+						return GenerateCVFromConfigMsg{Config: selectedConfig}
+					}
 				}
 			}
 			return m, nil
@@ -168,20 +298,26 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "e":
 			// Edit config
-			if len(m.configs) > 0 {
-				selectedConfig := m.configs[m.selectedIdx]
-				return m, func() tea.Msg {
-					return EditCVConfigMsg{config: selectedConfig}
+			if len(m.filtered) > 0 {
+				selectedIdx := m.listContainer.GetSelectedIdx()
+				if selectedIdx < len(m.filtered) {
+					selectedConfig := m.filtered[selectedIdx]
+					return m, func() tea.Msg {
+						return EditCVConfigMsg{config: selectedConfig}
+					}
 				}
 			}
 			return m, nil
 
 		case "d":
 			// Delete config (with confirmation)
-			if len(m.configs) > 0 {
-				selectedConfig := m.configs[m.selectedIdx]
-				return m, func() tea.Msg {
-					return ConfirmDeleteCVConfigMsg{config: selectedConfig}
+			if len(m.filtered) > 0 {
+				selectedIdx := m.listContainer.GetSelectedIdx()
+				if selectedIdx < len(m.filtered) {
+					selectedConfig := m.filtered[selectedIdx]
+					m.deletionState.ShowConfirmation("Configuration", selectedConfig.Name)
+					m.deletionState.DeletingItemID = selectedConfig.Name
+					return m, nil
 				}
 			}
 			return m, nil
@@ -191,14 +327,10 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.GetLastError() != nil {
 				m.ClearError()
 				m.loading = true
+				m.listContainer.ClearError()
 				return m, m.loadConfigs()
 			}
 			return m, nil
-
-		case "esc", "q":
-			return m, func() tea.Msg {
-				return BackToMainMenuMsg{}
-			}
 		}
 	}
 
@@ -206,64 +338,88 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// View renders the CV Configuration Manager screen.
-func (m *CVConfigManagerModel) View() string {
-	headerContent := m.headerModel.View()
-	
-	// Always show something useful, even if loading
-	if m.loading {
-		return fmt.Sprintf("%s\n\nLoading configurations...\n\nPress 'q' or 'esc' to cancel", headerContent)
+// performConfigDeletion performs the actual deletion of a CV configuration
+func (m *CVConfigManagerModel) performConfigDeletion() (tea.Model, tea.Cmd) {
+	return m, func() tea.Msg {
+		err := m.configManager.DeleteConfig(context.Background(), m.deletionState.DeletingItemID)
+		if err != nil {
+			m.deletionState.SetErrorMsg(fmt.Sprintf("Failed to delete: %v", err))
+			return ConfigDeletionError{err: err}
+		}
+		// Remove from filtered list
+		for i, config := range m.filtered {
+			if config.Name == m.deletionState.DeletingItemID {
+				m.filtered = append(m.filtered[:i], m.filtered[i+1:]...)
+				break
+			}
+		}
+		// Remove from configs list
+		for i, config := range m.configs {
+			if config.Name == m.deletionState.DeletingItemID {
+				m.configs = append(m.configs[:i], m.configs[i+1:]...)
+				break
+			}
+		}
+		m.pagination.SetTotalCount(len(m.filtered))
+		m.updateTableRows()
+		m.deletionState.SetSuccessMsg("Configuration deleted successfully")
+		return ConfigDeletedMsg{}
 	}
-
-	if m.GetLastError() != nil {
-		errorStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("1")).
-			Bold(true)
-		return fmt.Sprintf("%s\n\n%s\n\nError: %v\n\nPress 'r' to retry or 'q' to go back",
-			headerContent,
-			m.renderConfigList(),
-			errorStyle.Render(m.GetLastError().Error()))
-	}
-
-	return fmt.Sprintf("%s\n\n%s\n\n%s",
-		headerContent,
-		m.renderConfigList(),
-		m.renderFooter())
 }
 
-// renderConfigList renders the configuration list as a table.
-func (m *CVConfigManagerModel) renderConfigList() string {
-	if len(m.configs) == 0 {
-		msg := "No CV configurations found.\n\nYou can:"
-		if m.GetLastError() != nil {
-			msg += "\n  • Press 'r' to retry loading"
+// applyFiltersAndSort applies filters and sorting to the configurations
+func (m *CVConfigManagerModel) applyFiltersAndSort() {
+	m.filtered = m.configs
+	m.sortConfigs()
+}
+
+// sortConfigs sorts the filtered configurations
+func (m *CVConfigManagerModel) sortConfigs() {
+	// Sort by the specified field
+	if m.sortBy == "updated" {
+		if m.sortOrder == "asc" {
+			// Sort ascending
+			for i := 0; i < len(m.filtered)-1; i++ {
+				for j := i + 1; j < len(m.filtered); j++ {
+					if m.filtered[i].UpdatedAt.After(m.filtered[j].UpdatedAt) {
+						m.filtered[i], m.filtered[j] = m.filtered[j], m.filtered[i]
+					}
+				}
+			}
+		} else {
+			// Sort descending
+			for i := 0; i < len(m.filtered)-1; i++ {
+				for j := i + 1; j < len(m.filtered); j++ {
+					if m.filtered[i].UpdatedAt.Before(m.filtered[j].UpdatedAt) {
+						m.filtered[i], m.filtered[j] = m.filtered[j], m.filtered[i]
+					}
+				}
+			}
 		}
-		msg += "\n  • Press 'n' to create a new configuration"
-		msg += "\n  • Press 'q' to go back"
-		return msg
+	}
+}
+
+// updateTableRows updates the table with rows from filtered configs
+func (m *CVConfigManagerModel) updateTableRows() {
+	var rows []table.Row
+	pageConfigs := m.getPageConfigs()
+
+	// Get the selected index within the current page
+	selectedIdx := m.listContainer.GetSelectedIdx()
+
+	// Ensure cursor is within valid bounds
+	if len(pageConfigs) > 0 {
+		if selectedIdx >= len(pageConfigs) {
+			selectedIdx = len(pageConfigs) - 1
+		}
+		if selectedIdx < 0 {
+			selectedIdx = 0
+		}
+	} else {
+		selectedIdx = 0
 	}
 
-	var output string
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("6"))
-
-	output += headerStyle.Render("Name") + " | " +
-		headerStyle.Render("Role") + " | " +
-		headerStyle.Render("Audiences") + " | " +
-		headerStyle.Render("Updated") + "\n"
-	output += lipgloss.NewStyle().
-		Foreground(lipgloss.Color("8")).
-		Render("─────────────────────────────────────────────────────────────────\n")
-
-	for i, config := range m.configs {
-		selectedStyle := lipgloss.NewStyle()
-		if i == m.selectedIdx {
-			selectedStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("4")).
-				Foreground(lipgloss.Color("15"))
-		}
-
+	for i, config := range pageConfigs {
 		audiences := ""
 		if len(config.TargetAudience) > 0 {
 			audiences = config.TargetAudience[0]
@@ -272,45 +428,115 @@ func (m *CVConfigManagerModel) renderConfigList() string {
 			}
 		}
 
-		line := fmt.Sprintf("  %-25s | %-15s | %-20s | %s\n",
-			config.Name,
+		name := config.Name
+		if len(name) > 23 {
+			name = name[:20] + "..."
+		}
+
+		// Add focus indicator for the selected row
+		if i == selectedIdx {
+			name = "▶ " + name
+		} else {
+			name = "  " + name
+		}
+
+		row := table.Row{
+			name,
 			config.TargetRole,
 			audiences,
-			config.UpdatedAt.Format("2006-01-02"))
-
-		output += selectedStyle.Render(line)
+			config.UpdatedAt.Format("2006-01-02"),
+		}
+		rows = append(rows, row)
 	}
 
-	return output
+	m.table.SetRows(rows)
+	m.listContainer.SetSelectedIdx(selectedIdx)
+	m.table.SetCursor(selectedIdx)
 }
 
-// renderFooter renders the footer with keyboard shortcuts.
-func (m *CVConfigManagerModel) renderFooter() string {
-	footerStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("8"))
-
-	shortcuts := []string{
-		"↑/k: Up",
-		"↓/j: Down",
-		"Enter: Generate",
-		"n: New",
-		"e: Edit",
-		"d: Delete",
-		"q: Back",
+// getPageConfigs returns the configurations for the current page
+func (m *CVConfigManagerModel) getPageConfigs() []*career.CVConfig {
+	if len(m.filtered) == 0 {
+		return []*career.CVConfig{}
 	}
 
-	footer := ""
-	for _, shortcut := range shortcuts {
-		footer += footerStyle.Render(shortcut) + "  "
+	startIdx := m.pagination.GetPageStartIndex()
+	endIdx := m.pagination.GetPageEndIndex()
+
+	if startIdx >= len(m.filtered) {
+		startIdx = 0
+	}
+	if endIdx > len(m.filtered) {
+		endIdx = len(m.filtered)
 	}
 
-	return footer
+	if startIdx >= endIdx {
+		return []*career.CVConfig{}
+	}
+
+	return m.filtered[startIdx:endIdx]
+}
+
+// View renders the CV Configuration Manager screen.
+func (m *CVConfigManagerModel) View() string {
+	// Always show something useful, even if loading
+	if m.loading {
+		headerView := m.header.View()
+		loadingMsg := "Loading configurations...\n\nPress 'q' or 'esc' to cancel"
+		return fmt.Sprintf("%s\n\n%s", headerView, loadingMsg)
+	}
+
+	// Handle error state
+	var errorContent string
+	if m.GetLastError() != nil {
+		m.listContainer.SetErrorMessage(fmt.Sprintf("Error loading configurations: %v", m.GetLastError()))
+		errorContent = styles.ErrorBox.Render(fmt.Sprintf("Error: %v. Press 'r' to retry", m.GetLastError()))
+	}
+
+	// Handle empty state
+	if len(m.filtered) == 0 && m.GetLastError() == nil {
+		m.listContainer.SetEmptyStateMessage("No CV configurations found.\n\nPress 'n' to create a new configuration")
+	}
+
+	// Update list container with current state
+	m.listContainer.SetTable(m.table).
+		SetDimensions(m.width, m.height).
+		SetHelpFooterKey("cv_config_manager").
+		SetBreadcrumbs(m.breadcrumbs)
+
+	// Set pagination info
+	startIdx := m.pagination.GetPageStartIndex()
+	endIdx := m.pagination.GetPageEndIndex()
+	if endIdx > len(m.filtered) {
+		endIdx = len(m.filtered)
+	}
+	paginationText := fmt.Sprintf("Showing %d-%d of %d configurations", startIdx+1, endIdx, len(m.filtered))
+	m.listContainer.SetPaginationInfo(paginationText)
+
+	headerView := m.header.View()
+
+	// Handle deletion confirmation
+	if m.deletionState.IsConfirming() {
+		contentView := m.listContainer.Render()
+		confirmView := m.deletionState.ConfirmationDialog.View()
+		return fmt.Sprintf("%s\n\n%s\n\n%s", headerView, contentView, confirmView)
+	}
+
+	if errorContent != "" {
+		return fmt.Sprintf("%s\n\n%s", headerView, errorContent)
+	}
+
+	contentView := m.listContainer.Render()
+	return fmt.Sprintf("%s\n\n%s", headerView, contentView)
 }
 
 // GetSelectedConfig returns the currently selected configuration.
 func (m *CVConfigManagerModel) GetSelectedConfig() *career.CVConfig {
-	if len(m.configs) > 0 && m.selectedIdx >= 0 && m.selectedIdx < len(m.configs) {
-		return m.configs[m.selectedIdx]
+	if len(m.filtered) > 0 {
+		selectedIdx := m.listContainer.GetSelectedIdx()
+		if selectedIdx < len(m.filtered) {
+			return m.filtered[selectedIdx]
+		}
 	}
 	return nil
 }
@@ -318,7 +544,6 @@ func (m *CVConfigManagerModel) GetSelectedConfig() *career.CVConfig {
 // RefreshConfigs reloads the configurations from the manager.
 func (m *CVConfigManagerModel) RefreshConfigs() tea.Cmd {
 	m.loading = true
-	m.selectedIdx = 0
 	return m.loadConfigs()
 }
 
@@ -344,13 +569,15 @@ type EditCVConfigMsg struct {
 	config *career.CVConfig
 }
 
-// ConfirmDeleteCVConfigMsg triggers confirmation dialog for deleting a configuration.
-type ConfirmDeleteCVConfigMsg struct {
-	config *career.CVConfig
+// ConfigDeletedMsg is sent when a configuration has been deleted
+type ConfigDeletedMsg struct{}
+
+// ConfigDeletionError is sent when there's an error deleting a configuration
+type ConfigDeletionError struct {
+	err error
 }
 
-// BackToMainMenuMsg navigates back to the main menu.
-type BackToMainMenuMsg struct{}
+// BackMsg navigates back to the main menu.
 
 // NavigateToScreenMsg navigates to a specific screen by ID.
 type NavigateToScreenMsg struct {
@@ -359,3 +586,4 @@ type NavigateToScreenMsg struct {
 
 // ConfigLoadTimeoutMsg is sent when config loading times out
 type ConfigLoadTimeoutMsg struct{}
+

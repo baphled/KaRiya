@@ -200,10 +200,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 			Expect(editMsg.config).To(Equal(testConfigs[0]))
 		})
 
-		It("should trigger ConfirmDeleteCVConfigMsg on 'd'", func() {
-			_, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
-
-			Expect(cmd).NotTo(BeNil())
+			Expect(model.deletionState.IsConfirming()).To(BeTrue())
 			resultMsg := cmd()
 			Expect(resultMsg).To(BeAssignableToTypeOf(ConfirmDeleteCVConfigMsg{}))
 
