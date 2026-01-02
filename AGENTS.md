@@ -947,3 +947,142 @@ This final fix completes the CV Configuration Manager feature. The system now:
 5. Passes all integration tests
 
 The CV generation feature is now fully operational and ready for use.
+
+## Latest Session: Fix CVGeneratorModel Nil Pointer Dereference
+
+### Problem
+When attempting to view a generated CV, the application crashed with:
+```
+runtime error: invalid memory address or nil pointer dereference
+```
+
+The panic occurred in `CVGeneratorModel.generateCV()` when trying to call methods on a nil `CVGenerationService`.
+
+### Root Cause Analysis
+The issue was in `internal/cli/app/app.go`:
+1. **CVGenerationService was passed as nil** - When creating CVGeneratorModel, the service was explicitly set to `nil` with a comment "CVGenerationService will be initialized by the model"
+2. **No initialization in CVGeneratorModel** - The model had no code to initialize the service
+3. **Missing nil checks** - The generateCV function didn't validate that the service was initialized before calling it
+
+### Solution Implemented
+
+#### 1. Added CVGenerationService Field to Model Struct (app.go)
+Added a new field to store the initialized service:
+```go
+type Model struct {
+    // ... existing fields ...
+    cvGenerationService    cv.CVGenerationService
+}
+```
+
+#### 2. Initialized CVGenerationService in NewModel (app.go)
+Created all required dependencies and initialized the service:
+```go
+// Initialize CV generation service
+bulletGenerator := cv.NewBulletGenerator(careerService.GetEventRepository(), careerService.GetFactRepository(), log)
+sectionBuilder := cv.NewSectionBuilder(log)
+cvGenService := cv.NewCVGenerationService(
+    careerService.GetEventRepository(),
+    careerService.GetFactRepository(),
+    configMgr,
+    bulletGenerator,
+    sectionBuilder,
+    log,
+)
+```
+
+#### 3. Passed Service to CVGeneratorModel (app.go)
+Changed from passing nil to passing the initialized service:
+```go
+// Before (line 601):
+m.cvGeneratorModel = models.NewCVGeneratorModel(
+    models.NewBaseStandardModel(),
+    nil, // ❌ CVGenerationService will be initialized by the model
+    cvMsg.Config,
+)
+
+// After (line 615):
+m.cvGeneratorModel = models.NewCVGeneratorModel(
+    models.NewBaseStandardModel(),
+    m.cvGenerationService, // ✅ Proper service instance
+    cvMsg.Config,
+)
+```
+
+#### 4. Added Defensive Nil Checks (cv_generator.go)
+Added validation in generateCV to catch any issues early:
+```go
+func (m *CVGeneratorModel) generateCV() tea.Cmd {
+    return func() tea.Msg {
+        // Validate required dependencies
+        if m.cvService == nil {
+            return CVGenerationErrorMsg{err: fmt.Errorf("CV generation service is not initialized")}
+        }
+        if m.config == nil {
+            return CVGenerationErrorMsg{err: fmt.Errorf("CV configuration is not available")}
+        }
+        
+        ctx := context.Background()
+        cvView, err := m.cvService.GenerateCVFromConfig(ctx, m.config)
+        // ... rest of function ...
+    }
+}
+```
+
+### Key Changes
+**Files Modified:**
+1. `internal/cli/app/app.go`
+   - Added cvGenerationService field (line 93)
+   - Initialize service with all dependencies (lines 121-131)
+   - Pass service to CVGeneratorModel (line 615)
+
+2. `internal/cli/models/cv_generator.go`
+   - Added nil checks in generateCV (lines 54-62)
+   - Better error messages for debugging
+
+### Test Results
+✅ **All 194 app tests passing**
+- No regressions in existing functionality
+- CVConfigManager tests passing
+- CVMenuIntegration tests passing
+- Build successful with no errors
+
+### Architecture Insights
+
+1. **Service Initialization Pattern** - Services should be initialized in the main application constructor (NewModel) with all dependencies, not deferred to child models
+2. **Dependency Injection** - Pass fully initialized services to models rather than nil with expectations of initialization
+3. **Defensive Programming** - Always validate dependencies at entry points with clear error messages
+4. **BubbleTea Model Lifecycle** - Models are created and initialized at different times; initialization should be complete before use
+
+### Impact
+- ✅ CV generation no longer crashes with nil pointer panic
+- ✅ Proper error messages if service is not initialized
+- ✅ Defensive checks prevent similar issues
+- ✅ All tests pass
+- ✅ Application stable and ready for CV generation workflow
+
+### Commit Message
+```
+fix(cv): resolve nil pointer dereference in CV generator
+
+Fixes the panic that occurred when attempting to view a generated CV. The issue was that 
+CVGenerationService was being passed as nil to CVGeneratorModel, causing a runtime panic 
+when the generateCV function tried to call methods on the nil service.
+
+Changes:
+- Add cvGenerationService field to Model struct in app.go
+- Initialize CVGenerationService with all required dependencies in NewModel
+- Pass the initialized service to CVGeneratorModel instead of nil
+- Add defensive nil checks in generateCV to provide better error messages
+
+All 194 app tests pass successfully.
+```
+
+### Summary
+This fix resolves the critical panic when attempting to view generated CVs. The solution follows proper dependency injection patterns by:
+1. Initializing all services in the main application constructor
+2. Passing fully initialized services to child models
+3. Adding defensive checks for better error handling
+4. Maintaining backward compatibility with existing code
+
+The CV generation feature is now fully operational without crashes.
