@@ -201,8 +201,8 @@ func (m *CVConfigEditorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Delegate to base model
-	return m.BaseStandardModel.Update(msg)
+	// Return model unchanged for unhandled messages
+	return m, nil
 }
 
 // saveConfig validates and saves the configuration.

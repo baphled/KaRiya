@@ -20,6 +20,7 @@ type CVConfigManagerModel struct {
 	loading       bool
 	header        string
 	footer        string
+	selectedEvent *career.CareerEvent // Selected event for CV generation context
 }
 
 // NewCVConfigManagerModel creates a new CV Config Manager model.
@@ -35,6 +36,25 @@ func NewCVConfigManagerModel(
 		loading:           true,
 		header:            "CV Configuration Manager",
 		footer:            "",
+		selectedEvent:     nil,
+	}
+}
+
+// NewCVConfigManagerModelWithEvent creates a new CV Config Manager model with a selected event.
+func NewCVConfigManagerModelWithEvent(
+	baseModel *BaseStandardModel,
+	configManager cv.ConfigManager,
+	event *career.CareerEvent,
+) *CVConfigManagerModel {
+	return &CVConfigManagerModel{
+		BaseStandardModel: baseModel,
+		configManager:     configManager,
+		configs:           make([]*career.CVConfig, 0),
+		selectedIdx:       0,
+		loading:           true,
+		header:            "CV Configuration Manager",
+		footer:            "",
+		selectedEvent:     event,
 	}
 }
 
@@ -95,7 +115,7 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(m.configs) > 0 {
 				selectedConfig := m.configs[m.selectedIdx]
 				return m, func() tea.Msg {
-					return GenerateCVFromConfigMsg{config: selectedConfig}
+					return GenerateCVFromConfigMsg{Config: selectedConfig}
 				}
 			}
 			return m, nil
@@ -133,8 +153,8 @@ func (m *CVConfigManagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Delegate to base model for other messages
-	return m.BaseStandardModel.Update(msg)
+	// Return model unchanged for unhandled messages
+	return m, nil
 }
 
 // View renders the CV Configuration Manager screen.
@@ -258,7 +278,7 @@ type ConfigLoadError struct {
 
 // GenerateCVFromConfigMsg triggers CV generation from a selected configuration.
 type GenerateCVFromConfigMsg struct {
-	config *career.CVConfig
+	Config *career.CVConfig
 }
 
 // EditCVConfigMsg triggers editing of a CV configuration.
