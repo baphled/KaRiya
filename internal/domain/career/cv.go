@@ -51,6 +51,7 @@ type CVView struct {
 	GeneratedAt     time.Time              `json:"generated_at"`
 	SourceEventCount int                   `json:"source_event_count"`
 	SourceFactCount  int                   `json:"source_fact_count"`
+	Sections        []*CVSection           `json:"sections,omitempty"` // CV sections (experience, skills, summary, etc.)
 }
 
 // Validate checks if the CVView meets all defined criteria

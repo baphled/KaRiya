@@ -128,7 +128,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		return nil, fmt.Errorf("failed to build sections: %w", err)
 	}
 
-	// Create CVView with metadata
+	// Create CVView with metadata and sections
 	cvView := &career.CVView{
 		ID:              uuid.New().String(),
 		Name:            config.Name,
@@ -138,15 +138,10 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		GeneratedAt:     time.Now(),
 		SourceEventCount: len(events),
 		SourceFactCount: len(facts),
+		Sections:        sections, // Include generated sections in the CV view
 	}
 
-	// Note: Sections are generated in-memory and not persisted
-	// They would be used to render the CV in the UI or export to file
 	svc.logger.Info("CV generated successfully: %s (role: %s, sections: %d)", config.Name, config.TargetRole, len(sections))
-
-	// Store sections in a way that can be retrieved for display
-	// In a real implementation, these would be part of the CVView or a separate response
-	_ = sections // Silence unused variable warning
 
 	return cvView, nil
 }

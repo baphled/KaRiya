@@ -46,8 +46,15 @@ func New(output io.Writer, level LogLevel) *Logger {
 	}
 }
 
-// DefaultLogger creates a standard logger writing to stdout
+// DefaultLogger creates a logger that writes to a file in the user's home directory
+// This is the recommended way to create a logger for production use
 func DefaultLogger() *Logger {
+	return FileLogger()
+}
+
+// ConsoleLogger creates a logger that writes to stdout
+// Use this only for debugging or when console output is explicitly needed
+func ConsoleLogger() *Logger {
 	return New(os.Stdout, InfoLevel)
 }
 
@@ -185,22 +192,22 @@ func FileLogger() *Logger {
 	// Create logs directory in home
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		// Fallback to stdout if we can't get home directory
-		return DefaultLogger()
+		// Fallback to console if we can't get home directory
+		return ConsoleLogger()
 	}
 
 	logDir := homeDir + "/.kariya/logs"
 	if err := os.MkdirAll(logDir, 0755); err != nil {
-		// Fallback to stdout if we can't create directory
-		return DefaultLogger()
+		// Fallback to console if we can't create directory
+		return ConsoleLogger()
 	}
 
 	// Create log file with timestamp
 	logFile := logDir + "/kariya.log"
 	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		// Fallback to stdout if we can't open file
-		return DefaultLogger()
+		// Fallback to console if we can't open file
+		return ConsoleLogger()
 	}
 
 	return New(file, InfoLevel)
