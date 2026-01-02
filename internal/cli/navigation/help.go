@@ -69,6 +69,14 @@ func GetContextualHelp(context string) string {
 			KeySearch,
 			KeyBack,
 		},
+		"cv_config_manager": {
+			KeyUp,
+			KeyDown,
+			KeySelect,
+			KeyEdit,
+			KeyDelete,
+			KeyBack,
+		},
 		"metadata_review": {
 			KeyUp,
 			KeyDown,
