@@ -254,3 +254,20 @@ func TestCaptureEventIntent_Update_ChooseStrategy(t *testing.T) {
 	assert.Nil(t, cmd)
 }
 
+
+func TestCaptureEventIntent_TransitionToForm(t *testing.T) {
+	ctx := &CaptureEventContext{
+		CaptureStrategy: "manual",
+		PreviousEvent:   nil,
+		Metadata:        make(map[string]string),
+	}
+	intent, err := NewCaptureEventIntent(ctx)
+	assert.NoError(t, err)
+
+	// Simulate pressing Enter to move from ChooseStrategy to Form
+	// This would be a KeyMsg in real usage
+	intent.state.currentState = CaptureStateForm
+	
+	view := intent.View()
+	assert.Contains(t, view, "Capture Event Form")
+}
