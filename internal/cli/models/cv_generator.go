@@ -51,6 +51,14 @@ func (m *CVGeneratorModel) Init() tea.Cmd {
 // generateCV triggers the CV generation process.
 func (m *CVGeneratorModel) generateCV() tea.Cmd {
 	return func() tea.Msg {
+		// Validate required dependencies
+		if m.cvService == nil {
+			return CVGenerationErrorMsg{err: fmt.Errorf("CV generation service is not initialized")}
+		}
+		if m.config == nil {
+			return CVGenerationErrorMsg{err: fmt.Errorf("CV configuration is not available")}
+		}
+
 		ctx := context.Background()
 		cvView, err := m.cvService.GenerateCVFromConfig(ctx, m.config)
 		if err != nil {

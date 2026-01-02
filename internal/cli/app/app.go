@@ -90,6 +90,7 @@ type Model struct {
 	cvGeneratorModel       *models.CVGeneratorModel
 	cvPreviewModel         *models.CVPreviewModel
 	configManager          cv.ConfigManager
+	cvGenerationService    cv.CVGenerationService
 }
 
 // NewModel creates a new application model
@@ -116,6 +117,18 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		log.Error("Failed to initialize CV configuration system: %v", err)
 		// Continue anyway - the system will work with in-memory configs
 	}
+	
+	// Initialize CV generation service
+	bulletGenerator := cv.NewBulletGenerator(careerService.GetEventRepository(), careerService.GetFactRepository(), log)
+	sectionBuilder := cv.NewSectionBuilder(log)
+	cvGenService := cv.NewCVGenerationService(
+		careerService.GetEventRepository(),
+		careerService.GetFactRepository(),
+		configMgr,
+		bulletGenerator,
+		sectionBuilder,
+		log,
+	)
 	
 	return &Model{
 		cliService:             cliService,
@@ -154,6 +167,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		cvGeneratorModel:       nil,
 		cvPreviewModel:         nil,
 		configManager:          configMgr,
+		cvGenerationService:    cvGenService,
 	}
 }
 
@@ -596,11 +610,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle GenerateCVFromConfigMsg - navigate to CV generator
 	if cvMsg, ok := msg.(models.GenerateCVFromConfigMsg); ok {
-		// Create a simple CV generator model for now
-		// The actual CV generation will be handled by the model itself
+		// Create CV generator model with the CV generation service
 		m.cvGeneratorModel = models.NewCVGeneratorModel(
 			models.NewBaseStandardModel(),
-			nil, // CVGenerationService will be initialized by the model
+			m.cvGenerationService,
 			cvMsg.Config,
 		)
 		m.previousScreen = m.currentScreen
@@ -1427,4 +1440,5 @@ func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
 
 	return m, nil
 }
+
 
