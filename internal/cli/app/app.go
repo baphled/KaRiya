@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/logger"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/cli/intents"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -100,6 +101,8 @@ type Model struct {
 	configManager          cv.ConfigManager
 	cvGenerationService    cv.CVGenerationService
 	cvExportService        *cv.ExportService
+	intentRouter           intents.IntentRouter     // Intent-driven navigation router
+	inIntentMode           bool                     // Track if we are in intent mode
 }
 
 // NewModel creates a new application model
@@ -139,6 +142,14 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		log,
 	)
 	
+	// Initialize IntentRouter
+	// Note: Intent registration will be done in Phase 3 when all intents are fully implemented
+	router := intents.NewDefaultIntentRouter()
+	
+	// Register result handlers for intents
+	// Note: Result handlers will be registered in Phase 3 when intents are implemented
+	// TODO: Register result handlers in Phase 3
+
 	return &Model{
 		cliService:             cliService,
 		service:                careerService,
@@ -182,6 +193,8 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		configManager:          configMgr,
 		cvGenerationService:    cvGenService,
 		cvExportService:        cv.NewExportService(log),
+		intentRouter:           router,
+		inIntentMode:           false,
 	}
 }
 
@@ -1512,3 +1525,45 @@ func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
 }
 
 
+
+
+// activateIntent activates an intent by name.
+// This switches the app to intent mode and delegates to the router.
+func (m *Model) activateIntent(intentName string, ctx map[string]interface{}) tea.Cmd {
+	// Store the current screen so we can return to it when the intent completes
+	ctx["previousScreen"] = m.currentScreen
+	
+	cmd, err := m.intentRouter.ActivateIntent(intentName, ctx)
+	if err != nil {
+		// TODO: Log error properly
+		return nil
+	}
+	
+	m.inIntentMode = true
+	return cmd
+}
+
+// deactivateIntent deactivates the current intent and returns to screen mode.
+// This is called when an intent completes.
+func (m *Model) deactivateIntent() {
+	m.inIntentMode = false
+	// Reset to home screen by default
+	m.currentScreen = HomeScreen
+	m.updateBreadcrumbs()
+}
+
+// handleIntentMessage processes a message while in intent mode.
+// If the intent completes, it deactivates intent mode and returns to screen mode.
+func (m *Model) handleIntentMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if !m.inIntentMode || m.intentRouter == nil {
+		return m, nil
+	}
+	
+	cmd, result := m.intentRouter.HandleMessage(msg)
+	if result != nil {
+		// Intent completed, return to screen mode
+		m.deactivateIntent()
+	}
+	
+	return m, cmd
+}
