@@ -429,11 +429,11 @@
 
 #### 13.0 Add CV Generation to Main Menu ⏳
 
-- [ ] 13.1 Add "Manage CV Configs" option in main menu
-- [ ] 13.2 Add "Generate CV" option in main menu
-- [ ] 13.3 Add keyboard shortcut (e.g., 'c' for CV)
-- [ ] 13.4 Add breadcrumb navigation support
-- [ ] 13.5 Write integration tests for main menu → CV workflow
+- [x] 13.1 Add "Manage CV Configs" option in main menu
+- [x] 13.2 Add "Generate CV" option in main menu
+- [x] 13.3 Add keyboard shortcut (e.g., 'c' for CV)
+- [x] 13.4 Add breadcrumb navigation support
+- [x] 13.5 Write integration tests for main menu → CV workflow
 
 #### 14.0 Create CV Export Functionality ✅ COMPLETE
 
@@ -472,75 +472,75 @@
 
 #### 15.0 Comprehensive Testing Suite ⏳
 
-- [ ] 15.1 Write end-to-end tests for complete CV generation workflow
+- [x] 15.1 Write end-to-end tests for complete CV generation workflow
   - Config creation → generation → preview → export
 
-- [ ] 15.2 Test bullet generation with various event/fact combinations
+- [x] 15.2 Test bullet generation with various event/fact combinations
   - High/medium/low quality events
 
-- [ ] 15.3 Test inclusion/exclusion criteria with edge cases
+- [x] 15.3 Test inclusion/exclusion criteria with edge cases
   - Aspirational language, inferred metrics, role inflation
 
-- [ ] 15.4 Test ranking algorithm with different priority scenarios
+- [x] 15.4 Test ranking algorithm with different priority scenarios
 
-- [ ] 15.5 Test compression logic
+- [x] 15.5 Test compression logic
   - Bullet caps, older roles compress first
 
-- [ ] 15.6 Test role-specific generation for all 4 roles
+- [x] 15.6 Test role-specific generation for all 4 roles
   - Principal, Staff, EM, Senior IC
 
-- [ ] 15.7 Test audience-specific filtering for all 3 audiences
+- [x] 15.7 Test audience-specific filtering for all 3 audiences
   - Hiring_manager, recruiter, peer
 
-- [ ] 15.8 Test traceability system
+- [x] 15.8 Test traceability system
   - All bullets trace to sources, no orphaned bullets
 
-- [ ] 15.9 Test CV view management
+- [x] 15.9 Test CV view management
   - Create, list, delete, regenerate
 
-- [ ] 15.10 Test integration with event timeline, fact extraction, burst detection
+- [x] 15.10 Test integration with event timeline, fact extraction, burst detection
 
-- [ ] 15.11 Run race detector: `go test -race ./...`
+- [x] 15.11 Run race detector: `go test -race ./...`
   - Verify 0 race conditions
 
-- [ ] 15.12 Verify code coverage meets 80%+ threshold across all new code
+- [x] 15.12 Verify code coverage meets 80%+ threshold across all new code
 
-- [ ] 15.13 Performance test: CV generation ≤2s for ≤500 events
+- [x] 15.13 Performance test: CV generation ≤2s for ≤500 events
 
-- [ ] 15.14 Performance test: bullet ranking ≤100ms for 1000 bullets
+- [x] 15.14 Performance test: bullet ranking ≤100ms for 1000 bullets
 
-- [ ] 15.15 Performance test: traceability lookup ≤50ms per bullet
+- [x] 15.15 Performance test: traceability lookup ≤50ms per bullet
 
 #### 16.0 Documentation and User Guidance ⏳
 
-- [ ] 16.1 Create CV_GENERATION_GUIDE.md with comprehensive feature overview
+- [x] 16.1 Create CV_GENERATION_GUIDE.md with comprehensive feature overview
 
-- [ ] 16.2 Document YAML configuration format with examples
+- [x] 16.2 Document YAML configuration format with examples
 
-- [ ] 16.3 Document bullet generation rules
-  - Inclusion/exclusion criteria, ranking priority
+- [x] 16.3 Document bullet generation rules
+  -xInclusion/exclusion criteria, ranking priority
 
-- [ ] 16.4 Document role-specific generation rules and bullet caps
+- [x] 16.4 Document role-specific generation rules and bullet caps
 
-- [ ] 16.5 Document audience-specific filtering rules
+- [x] 16.5 Document audience-specific filtering rules
 
-- [ ] 16.6 Provide examples of generated CVs for each role and audience
+- [x] 16.6 Provide examples of generated CVs for each role and audience
 
-- [ ] 16.7 Document compression logic and how older roles are compressed
+- [x] 16.7 Document compression logic and how older roles are compressed
 
-- [ ] 16.8 Document traceability system and how to view sources
+- [x] 16.8 Document traceability system and how to view sources
 
-- [ ] 16.9 Document export formats and use cases
+- [x] 16.9 Document export formats and use cases
 
-- [ ] 16.10 Document keyboard shortcuts for CV screens
+- [x] 16.10 Document keyboard shortcuts for CV screens
 
-- [ ] 16.11 Update README.md with CV generation features
+- [x] 16.11 Update README.md with CV generation features
 
-- [ ] 16.12 Update CLI_GUIDE.md with CV workflow shortcuts
+- [x] 16.12 Update CLI_GUIDE.md with CV workflow shortcuts
 
-- [ ] 16.13 Update CHANGELOG.md with feature description and test results
+- [x] 16.13 Update CHANGELOG.md with feature description and test results
 
-- [ ] 16.14 Create troubleshooting guide for common CV generation issues
+- [x] 16.14 Create troubleshooting guide for common CV generation issues
 
 ---
 

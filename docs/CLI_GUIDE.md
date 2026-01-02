@@ -457,6 +457,189 @@ Quality indicators show:
 - **Metadata Review**: Loads 100+ events in < 500ms
 - **Database**: SQLite supports 100,000+ events
 
+## CV Generation Workflow
+
+KaRiya can generate professional CVs from your career events, tailored to specific roles and audiences.
+
+### Quick Start
+
+1. **Create a CV Configuration**
+   ```bash
+   # From the main menu, select "Manage CV Configs"
+   # Press 'n' to create new configuration
+   # Fill in: CV Name, Target Role, Target Audience
+   # Optionally add filters (date range, companies, tags)
+   # Press Enter to save
+   ```
+
+2. **Generate a CV**
+   ```bash
+   # Select your configuration from the list
+   # Press Enter to generate
+   # KaRiya will create your CV in seconds
+   ```
+
+3. **Preview and Export**
+   ```bash
+   # View the generated CV with bullets and sections
+   # Press 'e' to export (text, markdown, or clipboard)
+   # Exports are saved to ~/.kariya/cv_exports/
+   ```
+
+### CV Configuration
+
+CV configurations are stored as YAML files in `~/.kariya/cv_configs/`
+
+**Example Configuration**:
+```yaml
+name: "Staff Engineer CV"
+targetRole: "Staff"
+targetAudience:
+  - "HiringManager"
+  - "Peer"
+eventFilters:
+  startDate: "2023-01-01"
+  endDate: "2024-12-31"
+  companies:
+    - "TechCorp"
+  tags:
+    - "technical"
+    - "leadership"
+```
+
+### Target Roles
+
+- **Principal**: 3-4 bullets max, emphasizes strategic impact
+- **Staff**: 4-5 bullets max, emphasizes technical depth
+- **EM**: 3-4 bullets max, emphasizes team growth and delivery
+- **SeniorIC**: 4-5 bullets max, emphasizes technical leadership
+
+### Target Audiences
+
+- **HiringManager**: Focus on business impact and outcomes
+- **Recruiter**: Focus on skills, competencies, and career growth
+- **Peer**: Focus on technical depth and collaboration
+
+### Keyboard Shortcuts for CV Workflow
+
+| Screen | Key | Action |
+|--------|-----|--------|
+| Config Manager | `j`/`k` | Navigate list |
+| Config Manager | `Enter` | Generate CV |
+| Config Manager | `n` | New config |
+| Config Manager | `e` | Edit config |
+| Config Manager | `d` | Delete config |
+| Config Editor | `Tab` | Next field |
+| Config Editor | `Shift+Tab` | Previous field |
+| Config Editor | `Enter` | Save config |
+| Config Editor | `Esc` | Cancel |
+| CV Preview | `j`/`k` | Navigate bullets |
+| CV Preview | `→`/`←` | Navigate sections |
+| CV Preview | `Enter` | View sources |
+| CV Preview | `e` | Export CV |
+
+### Workflow Examples
+
+**Example 1: Create Staff Engineer CV**
+```
+1. Select "Manage CV Configs" from main menu
+2. Press 'n' to create new config
+3. Name: "Staff Engineer CV"
+4. Role: "Staff"
+5. Audience: "HiringManager"
+6. Leave filters blank (include all events)
+7. Press Enter
+8. Select config and press Enter to generate
+9. Review CV in preview mode
+10. Press 'e' to export
+```
+
+**Example 2: Create Role-Specific CVs**
+```
+Create multiple configs:
+- "Principal CV" (target: Principal)
+- "Staff CV" (target: Staff)
+- "Manager CV" (target: EM)
+
+Generate each and compare how the same events
+produce different bullets for different roles
+```
+
+**Example 3: Audience-Specific CVs**
+```
+Create two configs with same role, different audiences:
+- "Staff for HiringManager"
+- "Staff for Recruiter"
+
+Generate both to see how the same events
+are presented differently for different audiences
+```
+
+### Bullet Generation Rules
+
+Bullets are automatically generated from your events following these rules:
+
+**Inclusion Criteria**:
+- Must trace to at least one event
+- Single claim only (not multiple unrelated achievements)
+- No aspirational language (no "will", "aims to", etc.)
+- No inferred metrics (only metrics from source events)
+- No role inflation (accurate ownership representation)
+
+**Ranking Priority**:
+1. Ownership (highest) - "Designed and built X"
+2. Contribution - "Contributed to X"
+3. Strategy - "Defined strategy for X"
+4. Execution - "Implemented X"
+5. Outcome - "Improved X by Y%"
+6. Activity (lowest) - "Worked on X"
+
+**Compression**:
+- When exceeding role bullet cap, lower-priority bullets are removed
+- Older work is deprioritized
+- At least one bullet per section is preserved
+
+### Traceability
+
+Every bullet in your CV traces back to source events:
+1. Navigate to a bullet in CV preview
+2. Press Enter to view sources
+3. See which events/facts contributed
+4. Check confidence score and inclusion reason
+
+### Export Formats
+
+**Text Export**:
+- Plain text format
+- Suitable for pasting into email/messaging
+- File: `~/.kariya/cv_exports/cv_name_YYYY-MM-DD_HH-MM-SS.txt`
+
+**Markdown Export**:
+- Markdown format with formatting
+- Suitable for GitHub, documentation
+- File: `~/.kariya/cv_exports/cv_name_YYYY-MM-DD_HH-MM-SS.md`
+
+**Clipboard**:
+- Copy directly to clipboard
+- No file saved
+- Quick sharing option
+
+### Tips & Best Practices
+
+1. **Event Quality Matters**: Better events produce better CV bullets
+2. **Use Tags Strategically**: Tag events to enable focused CVs
+3. **Create Multiple Configs**: Don't try one CV for all purposes
+4. **Review Generated Bullets**: Verify accuracy and traceability
+5. **Understand Compression**: Know why certain bullets were excluded
+6. **Use Filters**: Create specialized CVs for specific roles/companies
+
+### For More Information
+
+- **Comprehensive Guide**: [CV_GENERATION_GUIDE.md](../guides/CV_GENERATION_GUIDE.md)
+- **Examples**: [CV_EXAMPLES.md](../guides/CV_EXAMPLES.md)
+- **In-App Help**: Press 'h' while in CV screens
+
+
 ## Features & Capabilities
 
 ### Current Features ✅

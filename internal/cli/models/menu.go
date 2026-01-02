@@ -86,6 +86,12 @@ func NewMenuModel(hasPending bool, pendingInfo string) *MenuModel {
 			Description: "Create, edit, and manage CV configuration profiles",
 			Category:    "CV Management",
 		},
+		{
+			Key:         navigation.KeyGenerate,
+			Title:       "Generate CV",
+			Description: "Generate a CV from a saved configuration profile",
+			Category:    "CV Management",
+		},
 		// Navigation
 		{
 			Key:         navigation.KeyHome,

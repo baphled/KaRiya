@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/workflow"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
@@ -95,8 +96,26 @@ type Model struct {
 func NewModel(cliService *service.CLIEventService, careerService *careerservice.Service) *Model {
 	ctx := context.Background()
 	
-	// Initialize config manager
-	configMgr, _ := cv.NewYAMLConfigManager(nil) // Logger is optional for config manager
+	// Initialize logger
+	log := logger.DefaultLogger()
+	
+	// Initialize config manager with logger
+	var configMgr cv.ConfigManager
+	yamlMgr, err := cv.NewYAMLConfigManager(log)
+	if err != nil {
+		log.Error("Failed to initialize CV config manager: %v", err)
+		// Create a memory-based config manager as fallback
+		configMgr = cv.NewMemoryConfigManager()
+	} else {
+		configMgr = yamlMgr
+	}
+	
+	// Initialize configuration system
+	initializer := cv.NewConfigInitializer(configMgr, log)
+	if err := initializer.Initialize(ctx); err != nil {
+		log.Error("Failed to initialize CV configuration system: %v", err)
+		// Continue anyway - the system will work with in-memory configs
+	}
 	
 	return &Model{
 		cliService:             cliService,
@@ -962,17 +981,31 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = FactListScreen
 			return m, nil
-		case "v":
-			// Manage CV Configurations
-			if m.cvConfigManagerModel == nil {
-				m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
-			} else {
-				m.cvConfigManagerModel.RefreshConfigs()
-			}
-			m.previousScreen = m.currentScreen
-			m.currentScreen = CVConfigManagerScreen
-			return m, nil
+	case "g":
+		// Generate CV
+		var cmd tea.Cmd
+		if m.cvConfigManagerModel == nil {
+			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+			cmd = m.cvConfigManagerModel.Init()
+		} else {
+			cmd = m.cvConfigManagerModel.RefreshConfigs()
 		}
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CVConfigManagerScreen
+		return m, cmd
+	case "v":
+		// Manage CV Configurations
+		var cmd tea.Cmd
+		if m.cvConfigManagerModel == nil {
+			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+			cmd = m.cvConfigManagerModel.Init()
+		} else {
+			cmd = m.cvConfigManagerModel.RefreshConfigs()
+		}
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CVConfigManagerScreen
+		return m, cmd
+	}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -1366,20 +1399,32 @@ func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
 		m.previousScreen = m.currentScreen
 		m.currentScreen = FactListScreen
 		return m, nil
-	case "v":
-		// Manage CV Configurations
+	case "g":
+		// Generate CV
+		var cmd tea.Cmd
 		if m.cvConfigManagerModel == nil {
 			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+			cmd = m.cvConfigManagerModel.Init()
 		} else {
-			m.cvConfigManagerModel.RefreshConfigs()
+			cmd = m.cvConfigManagerModel.RefreshConfigs()
 		}
 		m.previousScreen = m.currentScreen
 		m.currentScreen = CVConfigManagerScreen
-		return m, nil
-	case "q":
-		// Quit
-		return m, tea.Quit
+		return m, cmd
+	case "v":
+		// Manage CV Configurations
+		var cmd tea.Cmd
+		if m.cvConfigManagerModel == nil {
+			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+			cmd = m.cvConfigManagerModel.Init()
+		} else {
+			cmd = m.cvConfigManagerModel.RefreshConfigs()
+		}
+		m.previousScreen = m.currentScreen
+		m.currentScreen = CVConfigManagerScreen
+		return m, cmd
 	}
+
 	return m, nil
 }
 
