@@ -153,7 +153,7 @@ func NewEmptyBulletGenerator() *EmptyBulletGenerator {
 	return &EmptyBulletGenerator{}
 }
 
-func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole, targetAudience []string) ([]*career.CVBullet, error) {
+func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudiences []string) ([]*career.CVBullet, error) {
 	return []*career.CVBullet{}, nil
 }
 

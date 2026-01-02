@@ -718,3 +718,8 @@ func (s *Service) GetBurstRepository() repo.BurstRepository {
 func (s *Service) GetFactRepository() repo.FactRepository {
 	return s.factRepo
 }
+
+// GetEventRepository returns the event repository
+func (s *Service) GetEventRepository() repo.Repository {
+	return s.repo
+}

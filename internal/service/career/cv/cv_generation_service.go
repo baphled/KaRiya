@@ -113,7 +113,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 	}
 
 	// Generate bullets using BulletGenerator
-	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, []string{config.TargetRole}, config.TargetAudience)
+	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, config.TargetRole, config.TargetAudience)
 	if err != nil {
 		svc.logger.Error("Failed to generate bullets: %v", err)
 		return nil, fmt.Errorf("failed to generate bullets: %w", err)

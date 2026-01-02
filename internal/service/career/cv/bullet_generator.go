@@ -15,7 +15,7 @@ import (
 type BulletGenerator interface {
 	// GenerateBullets generates a list of ranked CV bullets from events and facts
 	// Applies inclusion criteria, ranking algorithm, and role/audience-specific filtering
-	GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole, targetAudience []string) ([]*career.CVBullet, error)
+	GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudiences []string) ([]*career.CVBullet, error)
 }
 
 // DefaultBulletGenerator is the default implementation of BulletGenerator
