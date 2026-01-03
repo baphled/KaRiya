@@ -1,5 +1,4 @@
 package intents
-
 import (
 	"testing"
 
@@ -8,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
 
 func TestContract(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -424,6 +424,7 @@ var _ = Describe("CaptureEventIntent", func() {
 		})
 	})
 })
+
 // State Transition Tests for CaptureEvent Intent
 var _ = Describe("CaptureEvent Intent State Transitions", func() {
 	var (
@@ -579,6 +580,119 @@ var _ = Describe("CaptureEvent Intent State Transitions", func() {
 			intent.Update(SubmitCompleteMsg{})
 			Expect(intent.active).To(BeFalse())
 			Expect(intent.result.Status).To(Equal(Completed))
+		})
+	})
+})
+
+
+var _ = Describe("Modal Helper Functions", func() {
+	Describe("formatStringSlice", func() {
+		It("should format empty slice as empty string", func() {
+			result := formatStringSlice([]string{})
+			Expect(result).To(Equal(""))
+		})
+
+		It("should format single item", func() {
+			result := formatStringSlice([]string{"item"})
+			Expect(result).To(Equal("item"))
+		})
+
+		It("should format multiple items with comma separation", func() {
+			result := formatStringSlice([]string{"item1", "item2", "item3"})
+			Expect(result).To(Equal("item1, item2, item3"))
+		})
+	})
+
+	Describe("parseStringSlice", func() {
+		It("should parse empty string as empty slice", func() {
+			result := parseStringSlice("")
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should parse single item", func() {
+			result := parseStringSlice("item")
+			Expect(result).To(Equal([]string{"item"}))
+		})
+
+		It("should parse comma-separated items", func() {
+			result := parseStringSlice("item1, item2, item3")
+			Expect(result).To(Equal([]string{"item1", "item2", "item3"}))
+		})
+
+		It("should handle items without spaces", func() {
+			result := parseStringSlice("item1,item2,item3")
+			Expect(result).To(Equal([]string{"item1", "item2", "item3"}))
+		})
+
+		It("should trim spaces from items", func() {
+			result := parseStringSlice("  item1  ,  item2  ")
+			Expect(result).To(Equal([]string{"item1", "item2"}))
+		})
+	})
+
+	Describe("slicesEqual", func() {
+		It("should return true for equal slices", func() {
+			a := []string{"a", "b", "c"}
+			b := []string{"a", "b", "c"}
+			Expect(slicesEqual(a, b)).To(BeTrue())
+		})
+
+		It("should return false for different lengths", func() {
+			a := []string{"a", "b"}
+			b := []string{"a", "b", "c"}
+			Expect(slicesEqual(a, b)).To(BeFalse())
+		})
+
+		It("should return false for different content", func() {
+			a := []string{"a", "b", "c"}
+			b := []string{"a", "x", "c"}
+			Expect(slicesEqual(a, b)).To(BeFalse())
+		})
+
+		It("should return true for empty slices", func() {
+			a := []string{}
+			b := []string{}
+			Expect(slicesEqual(a, b)).To(BeTrue())
+		})
+	})
+
+	Describe("truncateString", func() {
+		It("should not truncate short strings", func() {
+			result := truncateString("hello", 10)
+			Expect(result).To(Equal("hello"))
+		})
+
+		It("should truncate long strings", func() {
+			result := truncateString("hello world", 8)
+			Expect(result).To(Equal("hello..."))
+		})
+
+		It("should handle exact length", func() {
+			result := truncateString("hello", 5)
+			Expect(result).To(Equal("hello"))
+		})
+	})
+
+	Describe("copyMetadataSnapshot", func() {
+		It("should create independent copy", func() {
+			original := &MetadataSnapshot{
+				Company:    "Corp",
+				Project:    "Proj",
+				Tags:       []string{"a", "b"},
+				Categories: []string{"x", "y"},
+			}
+
+			copy := copyMetadataSnapshot(original)
+			copy.Company = "NewCorp"
+			copy.Tags[0] = "z"
+
+			Expect(original.Company).To(Equal("Corp"))
+			Expect(original.Tags[0]).To(Equal("a"))
+		})
+
+		It("should handle nil input", func() {
+			copy := copyMetadataSnapshot(nil)
+			Expect(copy).To(BeNil())
 		})
 	})
 })

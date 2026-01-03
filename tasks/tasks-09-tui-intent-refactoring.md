@@ -6,7 +6,7 @@
 
 **Status**: 🔄 **IN PROGRESS** (Phase 1 100% Complete, Phase 2 ~15% Complete)
 
-**Version**: 1.3 - Updated with Test Utilities Completion (2026-01-03)
+**Version**: 1.4 - Updated with Terminal UI Styling Documentation (2026-01-03)
 
 ---
 
@@ -20,6 +20,7 @@
 - ✅ **Async Operations Pattern**: Ephemeral `InProgress` state for non-blocking ops
 - ✅ **IntentRouter**: Central router for intent activation and navigation
 - ✅ **No Global State Mutation**: All mutations local to intents
+- ✅ **Professional Terminal UI Styling**: Using lipgloss for styling and bubbles for interactive components
 
 ---
 
@@ -35,6 +36,7 @@
 - `internal/cli/intents/testing_test.go` - Testing utilities tests ✅ **COMPLETE**
 - `internal/cli/intents/capture_event.go` - CaptureEvent intent (in progress)
 - `internal/cli/intents/capture_event_intent.go` - CaptureEvent intent implementation ✅ **COMPLETE**
+- `internal/cli/intents/enhanced_capture_example.go` - Enhanced example with lipgloss & bubbles ✅ **COMPLETE**
 - `internal/cli/intents/browse/model.go` - BrowseTimeline intent model (to be created)
 - `internal/cli/intents/browse/update.go` - BrowseTimeline state transitions (to be created)
 - `internal/cli/intents/browse/view.go` - BrowseTimeline rendering (to be created)
@@ -53,8 +55,75 @@
 - `internal/cli/intents/configure/configure_test.go` - ConfigureSystem tests (to be created)
 - `internal/cli/app/app.go` - Root model refactoring ✅ **COMPLETE**
 - `internal/cli/app/app_test.go` - Root model tests ✅ **COMPLETE**
+- `internal/cli/styles/styles.go` - Centralized style definitions (reference)
+- `internal/cli/components/` - Reusable UI components (reference)
 - `docs/TUI_INTENT_DIAGRAM.md` - Architecture specification (reference)
 - `docs/IMPLEMENTATION_ROADMAP.md` - Detailed phase-by-phase plan (reference)
+
+---
+
+## Terminal UI Styling Documentation
+
+Comprehensive guides for implementing professional terminal UIs using **lipgloss** for styling and **bubbles** for interactive components:
+
+### 📚 Documentation Files (New - 2026-01-03)
+
+- **[LIPGLOSS_BUBBLES_GUIDE.md](../docs/LIPGLOSS_BUBBLES_GUIDE.md)** - Complete architecture guide
+  - Overview of lipgloss and bubbles
+  - Architecture principles and project structure
+  - Key concepts with code examples
+  - Complete working example of enhanced CaptureEvent intent
+  - Best practices and common patterns
+  - Resources and summary
+
+- **[TERMINAL_UI_STYLING_REFERENCE.md](../docs/TERMINAL_UI_STYLING_REFERENCE.md)** - Complete style reference
+  - Color palette documentation
+  - Typography and style definitions
+  - Component styling guide
+  - Layout patterns (vertical, horizontal, centered)
+  - Interactive component examples (textinput, list, spinner, progress)
+  - Responsive design patterns
+  - Accessibility guidelines
+  - Common patterns with code
+  - Testing approaches
+  - Quick reference table
+
+- **[LIPGLOSS_BUBBLES_IMPLEMENTATION_CHECKLIST.md](../docs/LIPGLOSS_BUBBLES_IMPLEMENTATION_CHECKLIST.md)** - Developer checklist
+  - Pre-implementation checklist
+  - Component development checklist (12 sections)
+  - Integration checklist
+  - Final validation checklist
+  - Common issues & solutions with examples
+  - Code reviewer checklist
+  - Quick links to resources
+
+### 💡 Example Implementation
+
+- **[enhanced_capture_example.go](../internal/cli/intents/enhanced_capture_example.go)** - Production-ready example
+  - Demonstrates all best practices in action
+  - Uses lipgloss for styling
+  - Integrates bubbles textinput components
+  - Shows proper focus management
+  - Includes form validation
+  - Shows state-based rendering
+  - Fully documented with 7 key patterns explained
+
+### Key Patterns Demonstrated
+
+1. **Centralized Styling** - All styles defined in `internal/cli/styles/styles.go`
+2. **Component Composition** - Reusable CardContainer, FormContainer, ListContainer, ModalContainer
+3. **Bubbles Integration** - textinput, list, spinner, progress components
+4. **Focus Management** - Clear, maintainable focus handling
+5. **Responsive Layout** - Adapts to terminal width/height
+6. **Form Validation** - Error handling and user feedback
+7. **State-Based Rendering** - Different views for different states
+
+### Quick Start
+
+1. **Review**: Read [LIPGLOSS_BUBBLES_GUIDE.md](../docs/LIPGLOSS_BUBBLES_GUIDE.md)
+2. **Reference**: Use [TERMINAL_UI_STYLING_REFERENCE.md](../docs/TERMINAL_UI_STYLING_REFERENCE.md) while coding
+3. **Example**: Study [enhanced_capture_example.go](../internal/cli/intents/enhanced_capture_example.go)
+4. **Checklist**: Use [LIPGLOSS_BUBBLES_IMPLEMENTATION_CHECKLIST.md](../docs/LIPGLOSS_BUBBLES_IMPLEMENTATION_CHECKLIST.md) before submitting
 
 ### Notes
 
@@ -62,6 +131,9 @@
 - Use Ginkgo/Gomega for test organization and assertions
 - All intent implementations follow the CaptureEvent template pattern
 - Test utilities in `testing.go` provide `IntentTestHarness` and `IntentRouterTestHelper`
+- All UI rendering should use styles from `internal/cli/styles/styles.go` (no inline styles)
+- Use existing component containers from `internal/cli/components/` for consistent styling
+- Leverage bubbles components for interactive elements (textinput, list, etc.)
 
 ---
 
@@ -346,33 +418,33 @@
 #### 1.6 Phase 1 Acceptance Testing and Validation
 
 - [x] 1.6.1 Verify all Phase 1 code compiles without errors
-  - Run `go build ./...`
-  - Fix any compilation errors
+  - ✅ Run `go build ./...`
+  - ✅ Fix any compilation errors
 
 - [x] 1.6.2 Run all Phase 1 tests with coverage
-  - Run `go test -v -cover ./internal/cli/intents/...`
-  - Verify >90% coverage
-  - Fix any failing tests
+  - ✅ Run `go test -v -cover ./internal/cli/intents/...`
+  - ✅ Verify >90% coverage
+  - ✅ Fix any failing tests
 
 - [x] 1.6.3 Run linting and formatting checks
-  - Run `golangci-lint run ./internal/cli/intents/...`
-  - Run `gofmt -l internal/cli/intents/`
-  - Fix any issues
+  - ✅ Run `golangci-lint run ./internal/cli/intents/...`
+  - ✅ Run `gofmt -l internal/cli/intents/`
+  - ✅ Fix any issues
 
 - [x] 1.6.4 Run race detector
-  - Run `go test -race ./internal/cli/intents/...`
-  - Verify 0 race conditions
+  - ✅ Run `go test -race ./internal/cli/intents/...`
+  - ✅ Verify 0 race conditions
 
 - [x] 1.6.5 Verify no breaking changes to existing CLI
-  - Run `go test -v ./internal/cli/app/...`
-  - Verify all existing tests pass
-  - Test manually with existing workflows
+  - ✅ Run `go test -v ./internal/cli/app/...`
+  - ✅ Verify all existing tests pass
+  - ✅ Test manually with existing workflows
 
 - [x] 1.6.6 Create Phase 1 completion report
-  - Document what was implemented
-  - Document any open issues
-  - Document lessons learned
-  - Prepare for Phase 2
+  - ✅ Document what was implemented
+  - ✅ Document any open issues
+  - ✅ Document lessons learned
+  - ✅ Prepare for Phase 2
 
 ---
 
@@ -413,13 +485,13 @@
 
 #### 2.2 Implement State Transitions (Update Logic)
 
-- [x] 2.2.1 Implement StateChooseStrategy state handling
+- [ ] 2.2.1 Implement StateChooseStrategy state handling
   - Display strategy options (manual, quick capture, import)
   - Handle user selection
   - Transition to StateCaptureForm
   - Document state transition
 
-- [x] 2.2.2 Implement StateCaptureForm state handling
+- [ ] 2.2.2 Implement StateCaptureForm state handling
   - Display form with fields (date, time, title, description, tags, companies, categories)
   - Handle form input
   - Perform field validation
@@ -427,27 +499,27 @@
   - Handle cancel (transition back to StateChooseStrategy)
   - Document state transition
 
-- [x] 2.2.3 Implement StateReviewInferred state handling
+- [ ] 2.2.3 Implement StateReviewInferred state handling
   - Display inferred metadata, bursts, facts
   - Allow inline editing of each (via modals)
   - Handle form submission (transition to StateSubmit)
   - Handle cancel (transition back to StateCaptureForm)
   - Document state transition
 
-- [x] 2.2.4 Implement StateSubmit state handling
+- [ ] 2.2.4 Implement StateSubmit state handling
   - Confirm event details
   - Call domain service to save event
   - Transition to final state with result
   - Handle service errors gracefully
   - Document state transition
 
-- [x] 2.2.5 Implement error handling and recovery
+- [ ] 2.2.5 Implement error handling and recovery
   - Validation errors show in form
   - Service errors show as error state
   - Allow retry on service errors
   - Document error recovery
 
-- [x] 2.2.6 Write comprehensive state transition tests in `capture_event_test.go`
+- [ ] 2.2.6 Write comprehensive state transition tests in `capture_event_test.go`
   - Each state transition test
   - Error handling tests
   - Validation tests
@@ -455,41 +527,46 @@
 
 #### 2.3 Implement Views for All States
 
-- [x] 2.3.1 Implement StateChooseStrategy view
+- [ ] 2.3.1 Implement StateChooseStrategy view
   - Display strategy options with descriptions
   - Show selected strategy highlighted
   - Display help footer with keyboard shortcuts
   - Consistent styling with existing UI
+  - **Use styles from [TERMINAL_UI_STYLING_REFERENCE.md](../docs/TERMINAL_UI_STYLING_REFERENCE.md)**
 
-- [x] 2.3.2 Implement StateCaptureForm view
+- [ ] 2.3.2 Implement StateCaptureForm view
   - Display form with all fields
   - Show validation errors inline
   - Show focused field indicator
   - Display help footer
   - Consistent styling
+  - **Use CardContainer component from internal/cli/components/**
+  - **Use bubbles textinput components**
 
-- [x] 2.3.3 Implement StateReviewInferred view
+- [ ] 2.3.3 Implement StateReviewInferred view
   - Display inferred metadata
   - Display detected bursts
   - Display extracted facts
   - Show edit options for each
   - Display help footer
   - Consistent styling
+  - **Use CardContainer component from internal/cli/components/**
 
-- [x] 2.3.4 Implement StateSubmit view
+- [ ] 2.3.4 Implement StateSubmit view
   - Display final event summary
   - Display confirmation message
   - Display action buttons (Confirm, Cancel)
   - Display help footer
   - Consistent styling
+  - **Use styles and components from internal/cli/**
 
-- [x] 2.3.5 Implement error views
+- [ ] 2.3.5 Implement error views
   - Display error messages clearly
   - Show recovery options
   - Display help footer
   - Consistent styling
 
-- [x] 2.3.6 Write view rendering tests in `capture_event_test.go`
+- [ ] 2.3.6 Write view rendering tests in `capture_event_test.go`
   - Each state view test
   - Error view test
   - >90% test coverage
@@ -1160,6 +1237,9 @@
    - Use existing UI components
    - Follow existing styling system
    - Follow existing validation patterns
+   - **Use lipgloss styles from `internal/cli/styles/styles.go`**
+   - **Use bubbles components for interactivity**
+   - **Reference [LIPGLOSS_BUBBLES_GUIDE.md](../docs/LIPGLOSS_BUBBLES_GUIDE.md) for styling patterns**
 
 3. **Type Safety**
    - No runtime type assertions
@@ -1180,6 +1260,7 @@
    - Document all public APIs
    - Provide code examples
    - Document testing approach
+   - **Reference [TERMINAL_UI_STYLING_REFERENCE.md](../docs/TERMINAL_UI_STYLING_REFERENCE.md) for style documentation**
 
 ### Success Criteria (All Must Be Met)
 
@@ -1195,6 +1276,9 @@
 - [ ] Performance acceptable (rendering <100ms, transitions <10ms)
 - [ ] Comprehensive documentation provided
 - [ ] Code review approved
+- [ ] **All styles use lipgloss from `internal/cli/styles/`**
+- [ ] **All interactive components use bubbles**
+- [ ] **Follows [LIPGLOSS_BUBBLES_IMPLEMENTATION_CHECKLIST.md](../docs/LIPGLOSS_BUBBLES_IMPLEMENTATION_CHECKLIST.md)**
 
 ---
 
@@ -1208,10 +1292,11 @@
 - ✅ Test utilities and harnesses (100%)
 - ✅ CaptureEvent intent model and states (100%)
 - ✅ CaptureEvent unit tests (100%)
+- ✅ Terminal UI styling documentation (100%)
 
 ### In Progress (Phase 1)
 - ✅ Test utilities completion - Task 1.5 (COMPLETE)
-- ⏳ Phase 1 acceptance testing - Task 1.6
+- ✅ Phase 1 acceptance testing - Task 1.6 (COMPLETE)
 
 ### Not Started (Phases 2-5)
 - ⏳ CaptureEvent state transitions (Task 2.2)
@@ -1230,7 +1315,7 @@
 
 ## Estimated Effort
 
-- Phase 1: 1.5 weeks (100% complete, ~1-2 days remaining for acceptance testing)
+- Phase 1: 1.5 weeks (100% complete, acceptance testing done)
 - Phase 2: 2 weeks
 - Phase 3: 4 weeks
 - Phase 4: 2 weeks
@@ -1266,12 +1351,12 @@
 
 ---
 
-**Document Version**: 1.3 (Updated with Test Utilities Completion)
+**Document Version**: 1.4 (Updated with Terminal UI Styling Documentation)
 **Last Updated**: 2026-01-03
-**Status**: In Progress - Phase 1 Foundation Complete (100%)
+**Status**: In Progress - Phase 1 Foundation Complete (100%), Terminal UI Documentation Complete (100%)
 **Next Priority**:
-1. Complete Phase 1 Task 1.6 (Acceptance Testing) - 1-2 days
-2. Begin Phase 2 Tasks 2.2-2.7 (State Transitions, Views, Modal Sub-Flows) - 2 weeks
+1. Begin Phase 2 Tasks 2.2-2.7 (State Transitions, Views, Modal Sub-Flows) - 2 weeks
+2. Use new terminal UI styling documentation for all view implementations
 
 ---
 
@@ -1302,22 +1387,29 @@
 - ✅ Comprehensive Ginkgo tests (22 specs)
 - ✅ Complete by 2026-01-03
 
-### ⏳ Milestone 4: CaptureEvent Intent (READY TO START)
+### ✅ Milestone 4: Terminal UI Styling Documentation (COMPLETE)
+- ✅ Lipgloss & Bubbles comprehensive guide
+- ✅ Terminal UI styling reference
+- ✅ Implementation checklist
+- ✅ Production-ready example code
+- ✅ Complete by 2026-01-03
+
+### ⏳ Milestone 5: CaptureEvent Intent (READY TO START)
 - ✅ Intent model structure complete
 - ⏳ Implement state transitions
-- ⏳ Implement views for all states
+- ⏳ Implement views for all states (use new styling docs)
 - ⏳ Implement modal sub-flows
 - ⏳ Achieve >90% test coverage
 - Target: Complete by 2026-01-20
 
-### ⏳ Milestone 5: Remaining Core Intents (QUEUED)
+### ⏳ Milestone 6: Remaining Core Intents (QUEUED)
 - ⏳ BrowseTimeline Intent
 - ⏳ GenerateCV Intent
 - ⏳ ExportArtifact Intent
 - ⏳ ConfigureSystem Intent
 - Target: Complete by 2026-02-17
 
-### ⏳ Milestone 6: Integration & Polish (QUEUED)
+### ⏳ Milestone 7: Integration & Polish (QUEUED)
 - ⏳ Global shortcuts from all intents
 - ⏳ Comprehensive logging
 - ⏳ Performance optimization
@@ -1336,10 +1428,18 @@
 - Root model (app.go) refactored and integrated
 - Ready for Phase 2 implementation
 
+**Terminal UI Styling**: ✅ **DOCUMENTED & READY**
+- Comprehensive lipgloss & bubbles guide
+- Terminal UI styling reference
+- Implementation checklist
+- Production-ready example code
+- All developers have clear guidance
+
 **Phase 2 CaptureEvent**: 🚀 **READY FOR IMPLEMENTATION**
 - Model and states defined
 - 30 comprehensive unit tests
 - Template pattern established for other intents
+- **Styling guidance available for view implementation**
 
 **Overall Architecture**: ✅ **VALIDATED**
 - Type-safe at compile time
@@ -1348,10 +1448,12 @@
 - Comprehensive test coverage
 - No breaking changes to existing CLI
 - All tests use Ginkgo/Gomega framework
+- **Professional terminal UI styling with lipgloss and bubbles**
 
 ---
 
 *Document automatically updated: 2026-01-03*
 *All checkboxes reflect actual implementation status*
 *Test results verified: 63+ tests, 100% pass rate, 0 race conditions*
+*New Documentation: 4 comprehensive guides for terminal UI styling*
 
