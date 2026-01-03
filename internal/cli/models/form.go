@@ -585,6 +585,13 @@ func (m *FormModel) submitForm() tea.Cmd {
 	}
 }
 
+// SubmitForm triggers form submission
+// This is called by the intent when user presses Ctrl+S or clicks the Submit button
+// It validates all form fields and returns a SubmitMsg with the collected data
+func (m *FormModel) SubmitForm() tea.Cmd {
+	return m.submitForm()
+}
+
 // parseDate parses a date string into a time.Time
 func (m *FormModel) parseDate(dateStr string) (time.Time, error) {
 	if dateStr == "" || strings.ToLower(dateStr) == "today" {
