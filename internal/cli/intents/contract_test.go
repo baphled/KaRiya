@@ -1,9 +1,10 @@
 package intents
 
 import (
-	"github.com/baphled/kariya/internal/domain/career"
 	"testing"
 
+	"github.com/baphled/kariya/internal/domain/career"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -420,6 +421,164 @@ var _ = Describe("CaptureEventIntent", func() {
 			intent.state.currentState = CaptureStateSubmit
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Submitting event"))
+		})
+	})
+})
+// State Transition Tests for CaptureEvent Intent
+var _ = Describe("CaptureEvent Intent State Transitions", func() {
+	var (
+		intent *CaptureEventIntent
+		ctx    *CaptureEventContext
+	)
+
+	BeforeEach(func() {
+		ctx = &CaptureEventContext{
+			CaptureStrategy: "manual",
+			PreviousEvent:   nil,
+			Metadata:        make(map[string]string),
+		}
+		var err error
+		intent, err = NewCaptureEventIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	Describe("StateChooseStrategy", func() {
+		BeforeEach(func() {
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+		})
+
+		It("should transition to StateForm when '1' key is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should cancel when Ctrl+C is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should transition to StateForm when StrategySelectedMsg is received", func() {
+			intent.Update(StrategySelectedMsg{Strategy: "quick"})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+	})
+
+	Describe("StateCaptureForm", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateForm
+		})
+
+		It("should transition to StateReview when Ctrl+S is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+			Expect(intent.state.reviewState.Event).NotTo(BeNil())
+		})
+
+		It("should cancel when Ctrl+C is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should go back to StateChooseStrategy when Esc is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+		})
+
+		It("should transition to StateReview when FormSubmittedMsg is received", func() {
+			event := &career.CareerEvent{Text: "Test Event"}
+			intent.Update(FormSubmittedMsg{Event: event})
+			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+			Expect(intent.state.reviewState.Event).To(Equal(event))
+		})
+	})
+
+	Describe("StateReviewInferred", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateReview
+			intent.state.reviewState.Event = &career.CareerEvent{Text: "Test Event"}
+		})
+
+		It("should transition to StateSubmit when Ctrl+S is pressed", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			Expect(intent.state.currentState).To(Equal(CaptureStateSubmit))
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should cancel when Ctrl+C is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should go back to StateCaptureForm when Esc is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should set EditingMode to metadata when 'e' key is pressed", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(intent.state.reviewState.EditingMode).To(Equal(EditingModeMetadata))
+		})
+
+		It("should transition to StateSubmit when ReviewConfirmedMsg is received", func() {
+			msg := ReviewConfirmedMsg{
+				AcceptedBursts: []*career.Burst{},
+				AcceptedFacts:  []*career.Fact{},
+				RejectedItems:  make(map[string]string),
+			}
+			cmd := intent.Update(msg)
+			Expect(intent.state.currentState).To(Equal(CaptureStateSubmit))
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("StateSubmit", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateSubmit
+			intent.state.reviewState.Event = &career.CareerEvent{Text: "Test Event"}
+			intent.state.reviewState.AcceptedBursts = []*career.Burst{}
+			intent.state.reviewState.AcceptedFacts = []*career.Fact{}
+		})
+
+		It("should complete with result when SubmitCompleteMsg is received", func() {
+			intent.Update(SubmitCompleteMsg{})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Completed))
+			Expect(intent.result.Data).NotTo(BeNil())
+		})
+
+		It("should fail when SubmitErrorMsg is received", func() {
+			intent.Update(SubmitErrorMsg{
+				Code:    "save_error",
+				Message: "Failed to save event",
+				Cause:   nil,
+			})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Failed))
+			Expect(intent.result.Error.Code).To(Equal("save_error"))
+		})
+	})
+
+	Describe("Complete Workflows", func() {
+		It("should complete full workflow", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+
+			intent.Update(FormSubmittedMsg{Event: &career.CareerEvent{Text: "Test"}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+
+			intent.Update(ReviewConfirmedMsg{
+				AcceptedBursts: []*career.Burst{},
+				AcceptedFacts:  []*career.Fact{},
+				RejectedItems:  make(map[string]string),
+			})
+			Expect(intent.state.currentState).To(Equal(CaptureStateSubmit))
+
+			intent.Update(SubmitCompleteMsg{})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Completed))
 		})
 	})
 })
