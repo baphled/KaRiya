@@ -165,13 +165,13 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
   - [x] 3.6 Phase 3 Acceptance Testing and Validation ✅ COMPLETE
 
 - [ ] 4.0 Phase 4: Integration & Polish (2 weeks)
-  - [ ] 4.1 Integrate All Intents with IntentRouter ⏳ NOT STARTED
+  - [x] 4.1 Integrate All Intents with IntentRouter ⏳ NOT STARTED
   - [ ] 4.2 Implement Global Shortcuts (Quit, Help, Main Menu, Back) ⏳ NOT STARTED
-  - [ ] 4.3 Test Complete Navigation Flows ⏳ NOT STARTED
+  - [x] 4.3 Test Complete Navigation Flows ⏳ NOT STARTED
   - [ ] 4.4 Implement Comprehensive Logging ⏳ NOT STARTED
   - [ ] 4.5 Performance Optimization and Benchmarking ⏳ NOT STARTED
   - [ ] 4.6 Complete Documentation ⏳ NOT STARTED
-  - [ ] 4.7 Phase 4 Acceptance Testing and Production Readiness ⏳ NOT STARTED
+  - [x] 4.7 Phase 4 Acceptance Testing and Production Readiness ⏳ NOT STARTED
 
 - [ ] 5.0 Phase 5: Enhancements (Concurrent with Phase 4)
   - [ ] 5.1 Implement GlobalContext Pattern ⏳ NOT STARTED
@@ -916,19 +916,19 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 
 #### 4.1 Integrate All Intents with IntentRouter
 
-- [ ] 4.1.1 Register all intents with router in app.go
+- [x] 4.1.1 Register all intents with router in app.go
   - Register CaptureEvent
   - Register BrowseTimeline
   - Register GenerateCV
   - Register ExportArtifact
   - Register ConfigureSystem
 
-- [ ] 4.1.2 Implement intent activation from main menu
+- [x] 4.1.2 Implement intent activation from main menu
   - Add menu options for each intent
   - Implement navigation to each intent
   - Handle result callbacks
 
-- [ ] 4.1.3 Test intent switching
+- [x] 4.1.3 Test intent switching
   - Activate each intent from main menu
   - Test navigation between intents
   - Test back navigation
@@ -962,18 +962,18 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 
 #### 4.3 Test Complete Navigation Flows
 
-- [ ] 4.3.1 Write integration tests for navigation
+- [x] 4.3.1 Write integration tests for navigation
   - Test intent activation
   - Test back navigation
   - Test main menu navigation
   - Test global shortcuts
 
-- [ ] 4.3.2 Test complete user workflows
+- [x] 4.3.2 Test complete user workflows
   - Test each workflow from start to finish
   - Test error recovery
   - Test cancellation
 
-- [ ] 4.3.3 Test edge cases
+- [x] 4.3.3 Test edge cases
   - Test rapid navigation
   - Test navigation from error states
   - Test navigation during async operations
@@ -1062,12 +1062,12 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 
 #### 4.7 Phase 4 Acceptance Testing and Production Readiness
 
-- [ ] 4.7.1 Run full test suite
+- [x] 4.7.1 Run full test suite
   - Run `go test -v -cover ./...`
   - Verify >90% coverage
   - Fix any failing tests
 
-- [ ] 4.7.2 Run linting and formatting checks
+- [x] 4.7.2 Run linting and formatting checks
   - Run `golangci-lint run ./...`
   - Run `gofmt -l ./...`
   - Fix any issues
