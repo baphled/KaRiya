@@ -65,7 +65,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	// Initialize intent router
 	router := intents.NewDefaultIntentRouter()
-	registerAllIntents(router, careerService, log, ctx)
+	registerAllIntents(router, cliService, careerService, log, ctx)
 
 	// Create menu items for all intents
 	menuItems := []MenuItem{
@@ -222,12 +222,14 @@ func (m *Model) viewMenu() string {
 }
 
 // registerAllIntents registers all 10 intents with the router
-func registerAllIntents(router *intents.DefaultIntentRouter, careerService *careerservice.Service, log *logger.Logger, ctx context.Context) {
+func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context) {
 	// CaptureEvent
 	_ = router.RegisterIntent("capture_event", func() intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
 			CaptureStrategy: "manual",
 			Metadata:        make(map[string]string),
+			CLIEventService: cliService,
+			CareerService:   careerService,
 		}
 		intent, err := intents.NewCaptureEventIntent(captureCtx)
 		if err != nil {

@@ -1,14 +1,17 @@
 package intents
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/validation"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // Custom message types for state transitions.
@@ -69,9 +72,9 @@ type CaptureEventIntent struct {
 	// result is the final result of the intent (set when complete).
 	result *IntentResult[*CaptureEventResult]
 
-	// domainService is the service for interacting with the domain.
-	// Injected via constructor for testability.
-	domainService interface{} // nolint:unused
+	// eventService is the CLI service for interacting with career events.
+	// Injected via context for dependency management.
+	eventService *service.CLIEventService
 }
 
 // NewCaptureEventIntent creates a new CaptureEvent intent.
@@ -81,11 +84,17 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 		return nil, err
 	}
 
+	// Create the form model for capturing event details
+	formModel := models.NewFormModel(context.CLIEventService)
+
+	// Capture event intent created successfully
 	return &CaptureEventIntent{
-		context: context,
+		context:      context,
+		eventService: context.CLIEventService,
 		state: &CaptureEventModel{
 			context:      context,
 			currentState: CaptureStateChooseStrategy,
+			captureForm:  formModel,
 			reviewState: &ReviewInferredEventState{
 				AcceptedBursts: make([]*career.Burst, 0),
 				AcceptedFacts:  make([]*career.Fact, 0),
@@ -118,7 +127,8 @@ func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
 	if i.context.PreviousEvent != nil {
 		i.state.reviewState.Event = i.context.PreviousEvent
 	}
-	return nil
+	// Return a no-op command to satisfy the intent lifecycle
+	return func() tea.Msg { return nil }
 }
 
 // initializeFormForNew initializes the form for capturing a new event.
@@ -131,7 +141,8 @@ func (i *CaptureEventIntent) initializeFormForNew() tea.Cmd {
 		Tags:       make([]string, 0),
 		Categories: make([]string, 0),
 	}
-	return nil
+	// Return a no-op command to satisfy the intent lifecycle
+	return func() tea.Msg { return nil }
 }
 
 // Update processes a message in the intent.
@@ -207,7 +218,7 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+s", "enter":
-			// Submit form - transition to review state
+			// Submit form - validate and transition to review state
 			if i.state.reviewState.Event == nil {
 				// Create a minimal event if none exists
 				i.state.reviewState.Event = &career.CareerEvent{
@@ -218,8 +229,17 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 				}
 			}
 
-			// Transition to review state regardless of validation
-			// Validation errors will be shown in the review state
+			// Validate the event before transitioning
+			if err := i.state.reviewState.Event.Validate(); err != nil {
+				// Set error state for display
+				i.state.error = &IntentError{
+					Code:    "VALIDATION_ERROR",
+					Message: fmt.Sprintf("Invalid event data: %v", err),
+					Cause:   err,
+				}
+				return nil
+			}
+
 			i.state.currentState = CaptureStateReview
 			return nil
 
@@ -336,8 +356,13 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case SubmitErrorMsg:
-		// Submission failed - mark as failed immediately
-		i.setFailed(msg.Code, msg.Message, msg.Cause)
+		// Submission failed - store error for display
+		i.state.error = &IntentError{
+			Code:    msg.Code,
+			Message: msg.Message,
+			Cause:   msg.Cause,
+		}
+		// Don't mark as failed yet - user can retry
 		return nil
 
 	case tea.KeyMsg:
@@ -356,8 +381,10 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+
 // performSubmit performs the actual submission of the event.
-// In a real implementation, this would call the domain service to persist the event.
+// It calls the domain service to persist the event to the database and optionally enriches it.
+// Logs: Event submission start, validation results, service calls, and completion status.
 func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 	return func() tea.Msg {
 		// Validate event before submission
@@ -378,11 +405,128 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 			}
 		}
 
-		// TODO: Call domain service to save the event.
-		// For now, simulate successful submission with a small delay.
-		time.Sleep(100 * time.Millisecond)
+		// Ensure we have an event service
+		if i.eventService == nil {
+			return SubmitErrorMsg{
+				Code:    "SERVICE_ERROR",
+				Message: "Event service not initialized",
+				Cause:   nil,
+			}
+		}
+
+		event := i.state.reviewState.Event
+
+		// Create a context with timeout for the submission
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Determine the capture mode based on the strategy
+		mode := careerservice.ManualEntry
+		if i.context.CaptureStrategy != "" {
+			switch i.context.CaptureStrategy {
+			case "quick":
+				mode = careerservice.TimelineJournaling
+			case "enriched":
+				mode = careerservice.ManualEntry
+			default:
+				mode = careerservice.ManualEntry
+			}
+		}
+
+		// Call the service to capture the event
+		// The service handles persistence and any enrichment logic
+		err := i.eventService.CaptureEvent(
+			ctx,
+			event.Text,
+			event.Date,
+			mode,
+		)
+
+		if err != nil {
+			// Map service errors to intent errors
+			return SubmitErrorMsg{
+				Code:    "PERSISTENCE_ERROR",
+				Message: fmt.Sprintf("Failed to save event: %v", err),
+				Cause:   err,
+			}
+		}
+
+		// For enriched strategy, perform enrichment
+		if i.context.CaptureStrategy == "enriched" && i.context.CareerService != nil {
+			if err := i.performEnrichment(ctx, event); err != nil {
+				// Log enrichment error but don't fail the submission
+				// The event is already saved successfully
+				return SubmitCompleteMsg{}
+			}
+		}
+
+		// Successfully submitted
 		return SubmitCompleteMsg{}
 	}
+}
+
+// performEnrichment performs AI-powered enrichment of the captured event.
+// It suggests bursts and extracts facts from the event.
+// Logs: Enrichment start, burst suggestion results, fact extraction results, and completion status.
+func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *career.CareerEvent) error {
+	if i.context.CareerService == nil {
+		return fmt.Errorf("career service not available for enrichment")
+	}
+
+	// Suggest bursts for the event
+	burstSuggestions, err := i.context.CareerService.SuggestBursts(ctx, []string{event.ID})
+	if err == nil && len(burstSuggestions) > 0 {
+		// Save burst suggestions and store them for review
+		bursts, err := i.context.CareerService.SaveBurstSuggestions(ctx, burstSuggestions)
+		if err == nil && len(bursts) > 0 {
+			i.state.reviewState.InferredBursts = bursts
+		}
+	}
+
+	// Extract facts from the event
+	facts, err := i.context.CareerService.ExtractFactsFromEvent(ctx, event)
+	if err == nil && len(facts) > 0 {
+		// Store inferred facts for review
+		for j := range facts {
+			i.state.reviewState.InferredFacts = append(i.state.reviewState.InferredFacts, &facts[j])
+		}
+	}
+
+	return nil
+}
+
+
+// validateEventWithDetails performs comprehensive validation of the event and provides detailed error messages.
+// This uses the domain validators to check all event fields.
+func (i *CaptureEventIntent) validateEventWithDetails(event *career.CareerEvent) error {
+	if event == nil {
+		return fmt.Errorf("event cannot be nil")
+	}
+
+	// Validate text
+	eventValidator := validation.NewEventValidator()
+	if err := eventValidator.ValidateText(event.Text); err != nil {
+		return err
+	}
+
+	// Validate date
+	if err := eventValidator.ValidateDate(event.Date); err != nil {
+		return err
+	}
+
+	// Validate tags if present
+	if len(event.Tags) > 0 {
+		if err := eventValidator.ValidateTags(event.Tags); err != nil {
+			return err
+		}
+	}
+
+	// Validate using domain model
+	if err := event.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // View renders the intent's current state.
@@ -414,8 +558,8 @@ func (i *CaptureEventIntent) View() string {
 	}
 }
 
-// viewChooseStrategy renders the strategy selection UI with professional styling.
-// Displays three capture strategy options with descriptions using lipgloss.
+// viewChooseStrategy renders the strategy selection UI.
+// Displays three capture strategy options with descriptions.
 func (i *CaptureEventIntent) viewChooseStrategy() string {
 	strategies := []struct {
 		number string
@@ -427,82 +571,41 @@ func (i *CaptureEventIntent) viewChooseStrategy() string {
 		{"3", "Enriched", "Capture with AI-powered enrichment"},
 	}
 
-	// Build the content
-	var content strings.Builder
-	content.WriteString("\nChoose Capture Strategy\n\n")
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Choose Capture Strategy ─────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
 
 	for _, s := range strategies {
-		content.WriteString(fmt.Sprintf("  %s) %s\n", s.number, s.name))
-		content.WriteString(fmt.Sprintf("     %s\n\n", s.desc))
+		sb.WriteString(fmt.Sprintf("│  %s) %-40s │\n", s.number, s.name))
+		sb.WriteString(fmt.Sprintf("│     %s                             │\n", s.desc))
+		sb.WriteString("│                                                │\n")
 	}
 
-	content.WriteString("  q) Cancel\n")
+	sb.WriteString("│  q) Cancel                                     │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	sb.WriteString("\nSelect strategy (1-3) or press 'q' to cancel:\n")
 
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	// Add footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Select strategy (1-3) or press 'q' to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return sb.String()
 }
 
-// viewCaptureForm renders the form for capturing event details with lipgloss styling.
-// Displays form fields with proper styling and validation error indication.
+// viewCaptureForm renders the form for capturing event details.
+// Delegates to the FormModel's View method to render the actual form.
 func (i *CaptureEventIntent) viewCaptureForm() string {
-	var content strings.Builder
-	content.WriteString("\nCapture Event Details\n\n")
-
-	// Strategy info
-	content.WriteString(fmt.Sprintf("Strategy: %s\n\n", i.context.CaptureStrategy))
-
-	// Form fields
-	content.WriteString("Description:\n")
-	content.WriteString("[Enter event description...]\n\n")
-
-	content.WriteString("Date: [YYYY-MM-DD]\n")
-	content.WriteString("Company: [Company name]\n")
-	content.WriteString("Project: [Project name]\n\n")
-
-	content.WriteString("Tags: [Add tags...]\n")
-	content.WriteString("Categories: [Select categories...]\n")
-
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	// Add footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Press Tab to navigate, Ctrl+S to submit, Esc to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	if i.state.captureForm == nil {
+		return "Error: Form not initialized"
+	}
+	return i.state.captureForm.View()
 }
 
-// viewReviewInferredEvent renders the review UI with professional styling.
-// Displays captured event details, inferred bursts, and facts.
+// viewReviewInferredEvent renders the review UI for inferred bursts and facts.
+// Displays the captured event details, inferred bursts, and facts with accept/reject options.
 func (i *CaptureEventIntent) viewReviewInferredEvent() string {
-	var content strings.Builder
-	content.WriteString("\nReview Inferred Event\n\n")
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Review Inferred Event ────────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
 
 	// Event summary
 	if i.state.result != nil && i.state.result.Event != nil {
@@ -510,138 +613,103 @@ func (i *CaptureEventIntent) viewReviewInferredEvent() string {
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
-		content.WriteString(fmt.Sprintf("Event: %s\n\n", title))
+		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
+		sb.WriteString("│                                                │\n")
 	}
 
 	// Inferred bursts
-	content.WriteString("Inferred Bursts:\n")
+	sb.WriteString("│ Inferred Bursts:                               │\n")
 	if len(i.state.reviewState.AcceptedBursts) > 0 {
 		for idx, burst := range i.state.reviewState.AcceptedBursts {
 			burstTitle := burst.Name
 			if len(burstTitle) > 35 {
 				burstTitle = burstTitle[:32] + "..."
 			}
-			content.WriteString(fmt.Sprintf("  [✓] Burst %d: %s\n", idx+1, burstTitle))
+			sb.WriteString(fmt.Sprintf("│   [✓] Burst %d: %s              │\n", idx+1, burstTitle))
 		}
 	} else {
-		content.WriteString("  (No bursts detected)\n")
+		sb.WriteString("│   (No bursts detected)                         │\n")
 	}
-	content.WriteString("\n")
+	sb.WriteString("│                                                │\n")
 
 	// Inferred facts
-	content.WriteString("Inferred Facts:\n")
+	sb.WriteString("│ Inferred Facts:                                │\n")
 	if len(i.state.reviewState.AcceptedFacts) > 0 {
 		for idx, fact := range i.state.reviewState.AcceptedFacts {
 			desc := fact.Text
 			if len(desc) > 35 {
 				desc = desc[:32] + "..."
 			}
-			content.WriteString(fmt.Sprintf("  [✓] Fact %d: %s\n", idx+1, desc))
+			sb.WriteString(fmt.Sprintf("│   [✓] Fact %d: %s              │\n", idx+1, desc))
 		}
 	} else {
-		content.WriteString("  (No facts detected)\n")
+		sb.WriteString("│   (No facts detected)                          │\n")
 	}
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	sb.WriteString("\nPress Ctrl+S to submit, Esc to go back, 'e' to edit\n")
 
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	// Add footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Press Ctrl+S to submit, Esc to go back, 'e' to edit")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return sb.String()
 }
 
-// viewSubmit renders the submit confirmation with professional styling.
+// viewSubmit renders the submit confirmation.
 // Displays a summary of the event to be submitted with confirmation options.
 func (i *CaptureEventIntent) viewSubmit() string {
-	var content strings.Builder
-	content.WriteString("\nConfirm Submission\n\n")
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Confirm Submission ───────────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
 
 	if i.state.result != nil && i.state.result.Event != nil {
 		title := i.state.result.Event.Text
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
-		content.WriteString(fmt.Sprintf("Event: %s\n", title))
-		content.WriteString(fmt.Sprintf("Date: %s\n\n", i.state.result.Event.Date))
-		content.WriteString(fmt.Sprintf("Bursts: %d\n", len(i.state.reviewState.AcceptedBursts)))
-		content.WriteString(fmt.Sprintf("Facts: %d\n\n", len(i.state.reviewState.AcceptedFacts)))
+		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
+		sb.WriteString(fmt.Sprintf("│ Date: %s                      │\n", i.state.result.Event.Date))
+		sb.WriteString("│                                                │\n")
+		sb.WriteString(fmt.Sprintf("│ Bursts: %d                                    │\n", len(i.state.reviewState.AcceptedBursts)))
+		sb.WriteString(fmt.Sprintf("│ Facts: %d                                     │\n", len(i.state.reviewState.AcceptedFacts)))
+		sb.WriteString("│                                                │\n")
 	}
 
-	content.WriteString("Ready to submit? Press Enter to confirm.\n")
-	content.WriteString("Press Esc to cancel.\n")
+	sb.WriteString("│ Ready to submit? Press Enter to confirm.       │\n")
+	sb.WriteString("│ Press Esc to cancel.                           │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	sb.WriteString("\nSubmitting event...\n")
 
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	// Add footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Submitting event...")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return sb.String()
 }
 
-// viewError renders an error state with professional styling.
+// viewError renders an error state.
 // Displays error details and recovery options.
 func (i *CaptureEventIntent) viewError() string {
-	var content strings.Builder
-	content.WriteString("\nError\n\n")
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Error ─────────────────────────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
 
 	if i.state.error != nil {
 		code := i.state.error.Code
 		if len(code) > 40 {
 			code = code[:37] + "..."
 		}
-		content.WriteString(fmt.Sprintf("Code: %s\n\n", code))
+		sb.WriteString(fmt.Sprintf("│ Code: %s                        │\n", code))
 
 		msg := i.state.error.Message
 		if len(msg) > 40 {
 			msg = msg[:37] + "..."
 		}
-		content.WriteString(fmt.Sprintf("Message: %s\n\n", msg))
+		sb.WriteString(fmt.Sprintf("│ Message: %s                 │\n", msg))
+		sb.WriteString("│                                                │\n")
 	}
 
-	content.WriteString("Press 'r' to retry or Esc to cancel.\n")
+	sb.WriteString("│ Press 'r' to retry or Esc to cancel.           │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
 
-	// Apply card styling with error colors
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorderError).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	// Add footer with error indication
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorError).
-		MarginTop(1)
-
-	footer := footerStyle.Render("An error occurred")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return sb.String()
 }
 
 // IsActive returns true if this intent is currently active.

@@ -23,7 +23,8 @@ func NewBulkOperationsIntent(data *BulkOperationsContext) *BulkOperationsModel {
 func (m *BulkOperationsModel) Init() tea.Cmd {
 	// context already set in data
 	m.data.CurrentState = BulkSelectOpState
-	return nil
+	// Return a no-op command to satisfy the intent lifecycle
+	return func() tea.Msg { return nil }
 }
 
 func (m *BulkOperationsModel) Update(msg tea.Msg) tea.Cmd {
