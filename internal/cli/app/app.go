@@ -6,51 +6,51 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/importer"
+	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/workflow"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
-	"github.com/baphled/kariya/internal/cli/intents"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Screen represents the different screens in the application
 type Screen string
 
 const (
-	HomeScreen            Screen = "home"
-	MainMenuScreen        Screen = "main_menu"
-	CaptureScreen         Screen = "capture"
-	ListScreen            Screen = "list"
-	ViewScreen            Screen = "view"
-	QuitScreen            Screen = "quit"
-	SuccessScreen         Screen = "success"
-	ActionMenuScreen      Screen = "action_menu"
-	ConfirmationScreen    Screen = "confirmation"
-	ImportReviewScreen    Screen = "import_review"
-	ImportProgressScreen  Screen = "import_progress"
-	MetadataReviewScreen  Screen = "metadata_review"
-	MetadataEditorScreen  Screen = "metadata_editor"
-	BulkOperationsScreen  Screen = "bulk_operations"
-	BurstSuggestionScreen Screen = "burst_suggestion"
-	BurstListScreen       Screen = "burst_list"
-	FactsResultsScreen    Screen = "facts_results"
-	HelpScreen            Screen = "help"
-	FactListScreen        Screen = "fact_list"
-	FactActionMenuScreen  Screen = "fact_action_menu"
-	FactDetailsScreen     Screen = "fact_details"
-	FactEditorScreen      Screen = "fact_editor"
-	BurstDetailsScreen   Screen = "burst_details"
-	BurstEditorScreen    Screen = "burst_editor"
-	CVConfigManagerScreen Screen = "cv_config_manager"
-	CVGeneratorScreen     Screen = "cv_generator"
-	CVPreviewScreen       Screen = "cv_preview"
-	CVListScreen         Screen = "cv_list"
-	CVExportDialogScreen Screen = "cv_export_dialog"
-	CVExportSuccessScreen Screen = "cv_export_success"
+	HomeScreen             Screen = "home"
+	MainMenuScreen         Screen = "main_menu"
+	CaptureScreen          Screen = "capture"
+	ListScreen             Screen = "list"
+	ViewScreen             Screen = "view"
+	QuitScreen             Screen = "quit"
+	SuccessScreen          Screen = "success"
+	ActionMenuScreen       Screen = "action_menu"
+	ConfirmationScreen     Screen = "confirmation"
+	ImportReviewScreen     Screen = "import_review"
+	ImportProgressScreen   Screen = "import_progress"
+	MetadataReviewScreen   Screen = "metadata_review"
+	MetadataEditorScreen   Screen = "metadata_editor"
+	BulkOperationsScreen   Screen = "bulk_operations"
+	BurstSuggestionScreen  Screen = "burst_suggestion"
+	BurstListScreen        Screen = "burst_list"
+	FactsResultsScreen     Screen = "facts_results"
+	HelpScreen             Screen = "help"
+	FactListScreen         Screen = "fact_list"
+	FactActionMenuScreen   Screen = "fact_action_menu"
+	FactDetailsScreen      Screen = "fact_details"
+	FactEditorScreen       Screen = "fact_editor"
+	BurstDetailsScreen     Screen = "burst_details"
+	BurstEditorScreen      Screen = "burst_editor"
+	CVConfigManagerScreen  Screen = "cv_config_manager"
+	CVGeneratorScreen      Screen = "cv_generator"
+	CVPreviewScreen        Screen = "cv_preview"
+	CVListScreen           Screen = "cv_list"
+	CVExportDialogScreen   Screen = "cv_export_dialog"
+	CVExportSuccessScreen  Screen = "cv_export_success"
 	CVExportProgressScreen Screen = "cv_export_progress"
 )
 
@@ -101,17 +101,17 @@ type Model struct {
 	configManager          cv.ConfigManager
 	cvGenerationService    cv.CVGenerationService
 	cvExportService        *cv.ExportService
-	intentRouter           intents.IntentRouter     // Intent-driven navigation router
-	inIntentMode           bool                     // Track if we are in intent mode
+	intentRouter           intents.IntentRouter // Intent-driven navigation router
+	inIntentMode           bool                 // Track if we are in intent mode
 }
 
 // NewModel creates a new application model
 func NewModel(cliService *service.CLIEventService, careerService *careerservice.Service) *Model {
 	ctx := context.Background()
-	
+
 	// Initialize logger
 	log := logger.DefaultLogger()
-	
+
 	// Initialize config manager with logger
 	var configMgr cv.ConfigManager
 	yamlMgr, err := cv.NewYAMLConfigManager(log)
@@ -122,14 +122,14 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	} else {
 		configMgr = yamlMgr
 	}
-	
+
 	// Initialize configuration system
 	initializer := cv.NewConfigInitializer(configMgr, log)
 	if err := initializer.Initialize(ctx); err != nil {
 		log.Error("Failed to initialize CV configuration system: %v", err)
 		// Continue anyway - the system will work with in-memory configs
 	}
-	
+
 	// Initialize CV generation service
 	bulletGenerator := cv.NewBulletGenerator(careerService.GetEventRepository(), careerService.GetFactRepository(), log)
 	sectionBuilder := cv.NewSectionBuilder(log)
@@ -141,35 +141,102 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		sectionBuilder,
 		log,
 	)
-	
+
 	// Initialize IntentRouter
 	router := intents.NewDefaultIntentRouter()
-	
+
 	// Register CaptureEvent intent factory
-	// This creates a new CaptureEvent intent each time it's activated
 	router.RegisterIntent("capture_event", func() intents.Intent {
 		ctx := &intents.CaptureEventContext{
-			CaptureStrategy: "manual", // Default strategy
-			PreviousEvent:   nil,      // Will be set by the intent activation handler if editing
+			CaptureStrategy: "manual",
+			PreviousEvent:   nil,
 			Metadata:        make(map[string]string),
 		}
 		intent, err := intents.NewCaptureEventIntent(ctx)
 		if err != nil {
-			// If intent creation fails, return a nil intent
-			// The router will handle this appropriately
+			log.Error("Failed to create CaptureEvent intent: %v", err)
 			return nil
 		}
 		return intent
 	})
-	
-	// Register result handlers for intents
-	// These handlers are called when an intent completes and returns a result
+
+	// Register BrowseTimeline intent factory
+	router.RegisterIntent("browse_timeline", func() intents.Intent {
+		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 1000})
+		if err != nil {
+			log.Error("Failed to load events for BrowseTimeline: %v", err)
+			events = make([]*career.CareerEvent, 0)
+		}
+
+		browserCtx := &intents.BrowseTimelineContext{
+			Events:          events,
+			InitialFilters:  nil,
+			SelectedEventID: "",
+		}
+
+		intent, err := intents.NewBrowseTimelineIntent(browserCtx)
+		if err != nil {
+			log.Error("Failed to create BrowseTimeline intent: %v", err)
+			return nil
+		}
+		return intent
+	})
+
+	// Register GenerateCV intent factory
+	router.RegisterIntent("generate_cv", func() intents.Intent {
+		// Load events and facts for CV generation
+		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 1000})
+		if err != nil {
+			log.Error("Failed to load events for GenerateCV: %v", err)
+			events = make([]*career.CareerEvent, 0)
+		}
+
+		facts, err := careerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 1000})
+		if err != nil {
+			log.Error("Failed to load facts for GenerateCV: %v", err)
+			facts = make([]*career.Fact, 0)
+		}
+
+		genCtx := &intents.GenerateCVContext{
+			AvailableProfiles: make([]*intents.CVProfile, 0),
+			Events:            events,
+			Facts:             facts,
+			DefaultProfile:    nil,
+		}
+
+		intent, err := intents.NewGenerateCVIntent(genCtx)
+		if err != nil {
+			log.Error("Failed to create GenerateCV intent: %v", err)
+			return nil
+		}
+		return intent
+	})
+
+	// Register ExportArtifact intent factory
+	router.RegisterIntent("export_artifact", func() intents.Intent {
+		intent, err := intents.NewExportArtifactIntent(ctx)
+		if err != nil {
+			log.Error("Failed to create ExportArtifact intent: %v", err)
+			return nil
+		}
+		return intent
+	})
+
+	// Register ConfigureSystem intent factory
+	router.RegisterIntent("configure_system", func() intents.Intent {
+		intent, err := intents.NewConfigureSystemIntent(ctx)
+		if err != nil {
+			log.Error("Failed to create ConfigureSystem intent: %v", err)
+			return nil
+		}
+		return intent
+	})
+
+	// Register result handlers for all intents
 	router.RegisterResultHandler("capture_event", func(result *intents.IntentResult[interface{}]) tea.Cmd {
-		// Handle the result from CaptureEvent intent
 		if result.Status == intents.Completed {
-			// Extract the CaptureEventResult from the result data
 			if captureResult, ok := result.Data.(*intents.CaptureEventResult); ok {
-				// Create a FormSubmittedMsg to integrate with existing app flow
+				log.Info("CaptureEvent intent completed with event: %s", captureResult.Event.ID)
 				return func() tea.Msg {
 					return FormSubmittedMsg{
 						Event: captureResult.Event,
@@ -177,13 +244,12 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 				}
 			}
 		} else if result.Status == intents.Cancelled {
-			// User cancelled the intent - return to home
+			log.Info("CaptureEvent intent cancelled by user")
 			return func() tea.Msg {
 				return models.BackMsg{}
 			}
 		} else if result.Status == intents.Failed {
-			// Intent failed - show error and return to home
-			// For now, just return to home
+			log.Error("CaptureEvent intent failed: %v", result.Error)
 			return func() tea.Msg {
 				return models.BackMsg{}
 			}
@@ -191,8 +257,60 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		return nil
 	})
 
+	router.RegisterResultHandler("browse_timeline", func(result *intents.IntentResult[interface{}]) tea.Cmd {
+		if result.Status == intents.Completed {
+			log.Info("BrowseTimeline intent completed")
+		} else if result.Status == intents.Cancelled {
+			log.Info("BrowseTimeline intent cancelled by user")
+		} else if result.Status == intents.Failed {
+			log.Error("BrowseTimeline intent failed: %v", result.Error)
+		}
+		return func() tea.Msg {
+			return models.BackMsg{}
+		}
+	})
+
+	router.RegisterResultHandler("generate_cv", func(result *intents.IntentResult[interface{}]) tea.Cmd {
+		if result.Status == intents.Completed {
+			log.Info("GenerateCV intent completed")
+		} else if result.Status == intents.Cancelled {
+			log.Info("GenerateCV intent cancelled by user")
+		} else if result.Status == intents.Failed {
+			log.Error("GenerateCV intent failed: %v", result.Error)
+		}
+		return func() tea.Msg {
+			return models.BackMsg{}
+		}
+	})
+
+	router.RegisterResultHandler("export_artifact", func(result *intents.IntentResult[interface{}]) tea.Cmd {
+		if result.Status == intents.Completed {
+			log.Info("ExportArtifact intent completed")
+		} else if result.Status == intents.Cancelled {
+			log.Info("ExportArtifact intent cancelled by user")
+		} else if result.Status == intents.Failed {
+			log.Error("ExportArtifact intent failed: %v", result.Error)
+		}
+		return func() tea.Msg {
+			return models.BackMsg{}
+		}
+	})
+
+	router.RegisterResultHandler("configure_system", func(result *intents.IntentResult[interface{}]) tea.Cmd {
+		if result.Status == intents.Completed {
+			log.Info("ConfigureSystem intent completed")
+		} else if result.Status == intents.Cancelled {
+			log.Info("ConfigureSystem intent cancelled by user")
+		} else if result.Status == intents.Failed {
+			log.Error("ConfigureSystem intent failed: %v", result.Error)
+		}
+		return func() tea.Msg {
+			return models.BackMsg{}
+		}
+	})
+
 	return &Model{
-		cliService:            cliService,
+		cliService:             cliService,
 		service:                careerService,
 		currentScreen:          HomeScreen,
 		previousScreen:         HomeScreen,
@@ -280,7 +398,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.factDetailsModel = nil
 			return m, nil
 		}
-				// Special handling for CVPreviewScreen - go back to previous screen
+		// Special handling for CVPreviewScreen - go back to previous screen
 		if m.currentScreen == CVPreviewScreen {
 			temp := m.currentScreen
 			m.currentScreen = m.previousScreen
@@ -722,7 +840,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			models.NewBaseStandardModel(),
 			previewMsg.CVView,
 			sections, // Extract sections from CVView
-			nil, // TraceabilityService will be initialized later if needed
+			nil,      // TraceabilityService will be initialized later if needed
 			previewMsg.SourceScreen,
 		)
 		m.previousScreen = m.currentScreen
@@ -736,7 +854,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.currentScreen = ListScreen
 		return m, nil
 	}
-
 
 	// Handle SuccessModel messages
 	switch msg := msg.(type) {
@@ -936,7 +1053,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
-		case FactEditorScreen:
+	case FactEditorScreen:
 		if m.factEditorModel != nil {
 			updatedModel, cmd := m.factEditorModel.Update(msg)
 			m.factEditorModel = updatedModel.(*models.FactEditorModel)
@@ -1098,31 +1215,31 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = FactListScreen
 			return m, nil
-	case "g":
-		// Generate CV
-		var cmd tea.Cmd
-		if m.cvConfigManagerModel == nil {
-			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
-			cmd = m.cvConfigManagerModel.Init()
-		} else {
-			cmd = m.cvConfigManagerModel.RefreshConfigs()
+		case "g":
+			// Generate CV
+			var cmd tea.Cmd
+			if m.cvConfigManagerModel == nil {
+				m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+				cmd = m.cvConfigManagerModel.Init()
+			} else {
+				cmd = m.cvConfigManagerModel.RefreshConfigs()
+			}
+			m.previousScreen = m.currentScreen
+			m.currentScreen = CVConfigManagerScreen
+			return m, cmd
+		case "v":
+			// Manage CV Configurations
+			var cmd tea.Cmd
+			if m.cvConfigManagerModel == nil {
+				m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
+				cmd = m.cvConfigManagerModel.Init()
+			} else {
+				cmd = m.cvConfigManagerModel.RefreshConfigs()
+			}
+			m.previousScreen = m.currentScreen
+			m.currentScreen = CVConfigManagerScreen
+			return m, cmd
 		}
-		m.previousScreen = m.currentScreen
-		m.currentScreen = CVConfigManagerScreen
-		return m, cmd
-	case "v":
-		// Manage CV Configurations
-		var cmd tea.Cmd
-		if m.cvConfigManagerModel == nil {
-			m.cvConfigManagerModel = models.NewCVConfigManagerModel(models.NewBaseStandardModel(), m.configManager)
-			cmd = m.cvConfigManagerModel.Init()
-		} else {
-			cmd = m.cvConfigManagerModel.RefreshConfigs()
-		}
-		m.previousScreen = m.currentScreen
-		m.currentScreen = CVConfigManagerScreen
-		return m, cmd
-	}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -1469,6 +1586,7 @@ func (m *Model) handleBreadcrumbClick(index int) (tea.Model, tea.Cmd) {
 	m.updateBreadcrumbs()
 	return m, nil
 }
+
 // handleMenuItemSelection processes menu item selection and navigates to the appropriate screen
 func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
 	switch key {
@@ -1565,21 +1683,18 @@ func (m *Model) handleMenuItemSelection(key string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-
-
-
 // activateIntent activates an intent by name.
 // This switches the app to intent mode and delegates to the router.
 func (m *Model) activateIntent(intentName string, ctx map[string]interface{}) tea.Cmd {
 	// Store the current screen so we can return to it when the intent completes
 	ctx["previousScreen"] = m.currentScreen
-	
+
 	cmd, err := m.intentRouter.ActivateIntent(intentName, ctx)
 	if err != nil {
 		// TODO: Log error properly
 		return nil
 	}
-	
+
 	m.inIntentMode = true
 	return cmd
 }
@@ -1599,12 +1714,12 @@ func (m *Model) handleIntentMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.inIntentMode || m.intentRouter == nil {
 		return m, nil
 	}
-	
+
 	cmd, result := m.intentRouter.HandleMessage(msg)
 	if result != nil {
 		// Intent completed, return to screen mode
 		m.deactivateIntent()
 	}
-	
+
 	return m, cmd
 }
