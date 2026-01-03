@@ -581,6 +581,10 @@ func (m *FormModel) submitForm() tea.Cmd {
 		}
 
 		// Handle edit mode vs create mode
+		// Check if service is initialized
+		if m.cliService == nil {
+			return SubmitMsg{Err: fmt.Errorf("event service not initialized")}
+		}
 		if m.editMode {
 			// Update existing event
 			if err := m.cliService.UpdateEvent(ctx, m.editEventID, text, eventDate, opts...); err != nil {
