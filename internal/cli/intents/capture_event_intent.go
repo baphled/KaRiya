@@ -211,40 +211,20 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+
 // updateCaptureForm handles messages while capturing event details.
 // It processes form input, validates data, and transitions to review state.
+// The form model handles all text input and field navigation.
 func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
+	// Delegate all messages to the form model to handle input and state
+	_, formCmd := i.state.captureForm.Update(msg)
+
+	// Check for special messages that indicate form completion or navigation
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+s", "enter":
-			// Submit form - validate and transition to review state
-			if i.state.reviewState.Event == nil {
-				// Create a minimal event if none exists
-				i.state.reviewState.Event = &career.CareerEvent{
-					CreatedAt:  time.Now(),
-					UpdatedAt:  time.Now(),
-					Tags:       make([]string, 0),
-					Categories: make([]string, 0),
-				}
-			}
-
-			// Validate the event before transitioning
-			if err := i.state.reviewState.Event.Validate(); err != nil {
-				// Set error state for display
-				i.state.error = &IntentError{
-					Code:    "VALIDATION_ERROR",
-					Message: fmt.Sprintf("Invalid event data: %v", err),
-					Cause:   err,
-				}
-				return nil
-			}
-
-			i.state.currentState = CaptureStateReview
-			return nil
-
 		case "q", "ctrl+c":
-			// Cancel form
+			// User cancelled
 			i.setCancelled()
 			return nil
 
@@ -254,8 +234,19 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-	case FormSubmittedMsg:
-		// Form was submitted with event data
+	case models.SubmitMsg:
+		// Form submission completed
+		if msg.Err != nil {
+			// Form submission failed - show error
+			i.state.error = &IntentError{
+				Code:    "FORM_SUBMISSION_ERROR",
+				Message: msg.Err.Error(),
+				Cause:   msg.Err,
+			}
+			return nil
+		}
+
+		// Form submission succeeded
 		if msg.Event == nil {
 			i.setFailed("INVALID_FORM", "Form submission with nil event", nil)
 			return nil
@@ -270,14 +261,10 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 		i.state.reviewState.Event = msg.Event
 		i.state.currentState = CaptureStateReview
 		return nil
-
-	case FormCancelledMsg:
-		// Form was cancelled
-		i.setCancelled()
-		return nil
 	}
 
-	return nil
+	// Return the command from the form update
+	return formCmd
 }
 
 // updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
