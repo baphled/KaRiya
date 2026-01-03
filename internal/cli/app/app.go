@@ -143,15 +143,56 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	)
 	
 	// Initialize IntentRouter
-	// Note: Intent registration will be done in Phase 3 when all intents are fully implemented
 	router := intents.NewDefaultIntentRouter()
 	
+	// Register CaptureEvent intent factory
+	// This creates a new CaptureEvent intent each time it's activated
+	router.RegisterIntent("capture_event", func() intents.Intent {
+		ctx := &intents.CaptureEventContext{
+			CaptureStrategy: "manual", // Default strategy
+			PreviousEvent:   nil,      // Will be set by the intent activation handler if editing
+			Metadata:        make(map[string]string),
+		}
+		intent, err := intents.NewCaptureEventIntent(ctx)
+		if err != nil {
+			// If intent creation fails, return a nil intent
+			// The router will handle this appropriately
+			return nil
+		}
+		return intent
+	})
+	
 	// Register result handlers for intents
-	// Note: Result handlers will be registered in Phase 3 when intents are implemented
-	// TODO: Register result handlers in Phase 3
+	// These handlers are called when an intent completes and returns a result
+	router.RegisterResultHandler("capture_event", func(result *intents.IntentResult[interface{}]) tea.Cmd {
+		// Handle the result from CaptureEvent intent
+		if result.Status == intents.Completed {
+			// Extract the CaptureEventResult from the result data
+			if captureResult, ok := result.Data.(*intents.CaptureEventResult); ok {
+				// Create a FormSubmittedMsg to integrate with existing app flow
+				return func() tea.Msg {
+					return FormSubmittedMsg{
+						Event: captureResult.Event,
+					}
+				}
+			}
+		} else if result.Status == intents.Cancelled {
+			// User cancelled the intent - return to home
+			return func() tea.Msg {
+				return models.BackMsg{}
+			}
+		} else if result.Status == intents.Failed {
+			// Intent failed - show error and return to home
+			// For now, just return to home
+			return func() tea.Msg {
+				return models.BackMsg{}
+			}
+		}
+		return nil
+	})
 
 	return &Model{
-		cliService:             cliService,
+		cliService:            cliService,
 		service:                careerService,
 		currentScreen:          HomeScreen,
 		previousScreen:         HomeScreen,
