@@ -2,6 +2,7 @@ package intents
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -363,33 +364,178 @@ func (i *CaptureEventIntent) View() string {
 }
 
 // viewChooseStrategy renders the strategy selection UI.
+// Displays three capture strategy options with descriptions.
 func (i *CaptureEventIntent) viewChooseStrategy() string {
-	// TODO: Implement strategy selection view.
-	return "Choose Capture Strategy\n\n1. Manual\n2. Quick\n3. Enriched"
+	strategies := []struct {
+		number string
+		name   string
+		desc   string
+	}{
+		{"1", "Manual", "Manually enter event details"},
+		{"2", "Quick", "Quick capture with minimal fields"},
+		{"3", "Enriched", "Capture with AI-powered enrichment"},
+	}
+
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Choose Capture Strategy ─────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
+
+	for _, s := range strategies {
+		sb.WriteString(fmt.Sprintf("│  %s) %-40s │\n", s.number, s.name))
+		sb.WriteString(fmt.Sprintf("│     %s                             │\n", s.desc))
+		sb.WriteString("│                                                │\n")
+	}
+
+	sb.WriteString("│  q) Cancel                                     │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	sb.WriteString("\nSelect strategy (1-3) or press 'q' to cancel:\n")
+
+	return sb.String()
 }
 
 // viewCaptureForm renders the form for capturing event details.
+// This is a placeholder that shows the form structure.
+// In a real implementation, this would delegate to the form model's View.
 func (i *CaptureEventIntent) viewCaptureForm() string {
-	// TODO: Implement form view.
-	// This should delegate to the form model's View.
-	return "Capture Event Form"
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Capture Event Details ────────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
+
+	// Strategy info
+	sb.WriteString(fmt.Sprintf("│ Strategy: %-33s │\n", i.context.CaptureStrategy))
+	sb.WriteString("│                                                │\n")
+
+	// Form fields placeholder
+	sb.WriteString("│ Description:                                   │\n")
+	sb.WriteString("│ [Enter event description...]                   │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("│ Date: [YYYY-MM-DD]                             │\n")
+	sb.WriteString("│ Company: [Company name]                        │\n")
+	sb.WriteString("│ Project: [Project name]                        │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("│ Tags: [Add tags...]                            │\n")
+	sb.WriteString("│ Categories: [Select categories...]             │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	sb.WriteString("\nPress Tab to navigate, Ctrl+S to submit, Esc to cancel\n")
+
+	return sb.String()
 }
 
 // viewReviewInferredEvent renders the review UI for inferred bursts and facts.
+// Displays the captured event details, inferred bursts, and facts with accept/reject options.
 func (i *CaptureEventIntent) viewReviewInferredEvent() string {
-	// TODO: Implement review view.
-	// This should display:
-	// - The captured event details
-	// - Inferred bursts with accept/reject options
-	// - Inferred facts with accept/reject options
-	// - Navigation options to edit each section
-	return "Review Inferred Event"
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Review Inferred Event ────────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
+
+	// Event summary
+	if i.state.result != nil && i.state.result.Event != nil {
+		title := i.state.result.Event.Text
+		if len(title) > 40 {
+			title = title[:37] + "..."
+		}
+		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
+		sb.WriteString("│                                                │\n")
+	}
+
+	// Inferred bursts
+	sb.WriteString("│ Inferred Bursts:                               │\n")
+	if len(i.state.reviewState.AcceptedBursts) > 0 {
+		for idx, burst := range i.state.reviewState.AcceptedBursts {
+			burstTitle := burst.Name
+			if len(burstTitle) > 35 {
+				burstTitle = burstTitle[:32] + "..."
+			}
+			sb.WriteString(fmt.Sprintf("│   [✓] Burst %d: %s              │\n", idx+1, burstTitle))
+		}
+	} else {
+		sb.WriteString("│   (No bursts detected)                         │\n")
+	}
+	sb.WriteString("│                                                │\n")
+
+	// Inferred facts
+	sb.WriteString("│ Inferred Facts:                                │\n")
+	if len(i.state.reviewState.AcceptedFacts) > 0 {
+		for idx, fact := range i.state.reviewState.AcceptedFacts {
+			desc := fact.Text
+			if len(desc) > 35 {
+				desc = desc[:32] + "..."
+			}
+			sb.WriteString(fmt.Sprintf("│   [✓] Fact %d: %s              │\n", idx+1, desc))
+		}
+	} else {
+		sb.WriteString("│   (No facts detected)                          │\n")
+	}
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	sb.WriteString("\nPress Ctrl+S to submit, Esc to go back, 'e' to edit\n")
+
+	return sb.String()
 }
 
 // viewSubmit renders the submit confirmation.
+// Displays a summary of the event to be submitted with confirmation options.
 func (i *CaptureEventIntent) viewSubmit() string {
-	// TODO: Implement submit view (e.g., a spinner or confirmation message).
-	return "Submitting event..."
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Confirm Submission ───────────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
+
+	if i.state.result != nil && i.state.result.Event != nil {
+		title := i.state.result.Event.Text
+		if len(title) > 40 {
+			title = title[:37] + "..."
+		}
+		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
+		sb.WriteString(fmt.Sprintf("│ Date: %s                      │\n", i.state.result.Event.Date))
+		sb.WriteString("│                                                │\n")
+		sb.WriteString(fmt.Sprintf("│ Bursts: %d                                    │\n", len(i.state.reviewState.AcceptedBursts)))
+		sb.WriteString(fmt.Sprintf("│ Facts: %d                                     │\n", len(i.state.reviewState.AcceptedFacts)))
+		sb.WriteString("│                                                │\n")
+	}
+
+	sb.WriteString("│ Ready to submit? Press Enter to confirm.       │\n")
+	sb.WriteString("│ Press Esc to cancel.                           │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	sb.WriteString("\nSubmitting event...\n")
+
+	return sb.String()
+}
+
+// viewError renders an error state.
+// Displays error details and recovery options.
+func (i *CaptureEventIntent) viewError() string {
+	var sb strings.Builder
+	sb.WriteString("\n")
+	sb.WriteString("┌─ Error ─────────────────────────────────────────┐\n")
+	sb.WriteString("│                                                │\n")
+
+	if i.state.error != nil {
+		code := i.state.error.Code
+		if len(code) > 40 {
+			code = code[:37] + "..."
+		}
+		sb.WriteString(fmt.Sprintf("│ Code: %s                        │\n", code))
+
+		msg := i.state.error.Message
+		if len(msg) > 40 {
+			msg = msg[:37] + "..."
+		}
+		sb.WriteString(fmt.Sprintf("│ Message: %s                 │\n", msg))
+		sb.WriteString("│                                                │\n")
+	}
+
+	sb.WriteString("│ Press 'r' to retry or Esc to cancel.           │\n")
+	sb.WriteString("│                                                │\n")
+	sb.WriteString("└────────────────────────────────────────────────┘\n")
+
+	return sb.String()
 }
 
 // IsActive returns true if this intent is currently active.
