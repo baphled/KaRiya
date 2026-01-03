@@ -559,7 +559,6 @@ func (m *FormModel) submitForm() tea.Cmd {
 		company := strings.TrimSpace(m.inputs[2].Value())
 		project := strings.TrimSpace(m.inputs[3].Value())
 
-		fmt.Printf("Submitting form: text=%q, date=%v, company=%q, project=%q, mode=%v\n", text, eventDate, company, project, m.modes[m.modeIndex])
 
 		// Get selected tags and categories
 		tags := m.tagSelector.SelectedTags()
