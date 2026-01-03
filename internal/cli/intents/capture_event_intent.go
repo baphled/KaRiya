@@ -7,6 +7,45 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Custom message types for state transitions.
+// These are used to communicate between states and modal sub-flows.
+
+// StrategySelectedMsg indicates the user selected a capture strategy.
+type StrategySelectedMsg struct {
+	Strategy string
+}
+
+// FormSubmittedMsg indicates the form was submitted with event data.
+type FormSubmittedMsg struct {
+	Event *career.CareerEvent
+}
+
+// FormCancelledMsg indicates the form was cancelled.
+type FormCancelledMsg struct{}
+
+// ReviewConfirmedMsg indicates the user confirmed the review and is ready to submit.
+type ReviewConfirmedMsg struct {
+	AcceptedBursts []*career.Burst
+	AcceptedFacts  []*career.Fact
+	RejectedItems  map[string]string
+}
+
+// ReviewCancelledMsg indicates the user cancelled the review.
+type ReviewCancelledMsg struct{}
+
+// ReviewBackMsg indicates the user wants to go back to the form.
+type ReviewBackMsg struct{}
+
+// SubmitCompleteMsg indicates submission succeeded.
+type SubmitCompleteMsg struct{}
+
+// SubmitErrorMsg indicates submission failed.
+type SubmitErrorMsg struct {
+	Code    string
+	Message string
+	Cause   error
+}
+
 // CaptureEventIntent implements the Intent interface for capturing career events.
 // It owns the complete lifecycle of event capture, including:
 // - Choosing capture strategy (manual, quick, enriched)
@@ -114,48 +153,189 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 }
 
 // updateChooseStrategy handles messages while choosing capture strategy.
+// The strategy is typically pre-selected by the router, but this allows the user to confirm or change it.
 func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
-	// TODO: Implement strategy selection UI.
-	// This should:
-	// - Display options: Manual, Quick, Enriched
-	// - Transition to CaptureStateForm when selected
-	// - Transition to CaptureStateCancelled if user quits
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "1":
+			// Manual strategy selected
+			i.state.currentState = CaptureStateForm
+			return nil
+
+		case "2":
+			// Quick strategy selected
+			i.state.currentState = CaptureStateForm
+			return nil
+
+		case "3":
+			// Enriched strategy selected
+			i.state.currentState = CaptureStateForm
+			return nil
+
+		case "q", "ctrl+c":
+			// User cancelled
+			i.setCancelled()
+			return nil
+
+		case "enter":
+			// Confirm current strategy and move to form
+			i.state.currentState = CaptureStateForm
+			return nil
+		}
+
+	case StrategySelectedMsg:
+		// Strategy was selected (possibly by router or other component)
+		i.state.currentState = CaptureStateForm
+		return nil
+	}
+
 	return nil
 }
 
 // updateCaptureForm handles messages while capturing event details.
 func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
-	// TODO: Implement form update logic.
-	// This should:
-	// - Delegate to the form model's Update
-	// - Transition to CaptureStateReview when submitted
-	// - Transition to CaptureStateCancelled if user quits
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+s", "enter":
+			// Submit form - transition to review state
+			// In a real implementation, validate form and get data
+			event := &career.CareerEvent{
+				// TODO: Populate from form data
+			}
+			i.state.reviewState.Event = event
+			i.state.currentState = CaptureStateReview
+			return nil
+
+		case "q", "ctrl+c":
+			// Cancel form
+			i.setCancelled()
+			return nil
+
+		case "esc":
+			// Go back to strategy selection
+			i.state.currentState = CaptureStateChooseStrategy
+			return nil
+		}
+
+	case FormSubmittedMsg:
+		// Form was submitted with event data
+		i.state.reviewState.Event = msg.Event
+		i.state.currentState = CaptureStateReview
+		return nil
+
+	case FormCancelledMsg:
+		// Form was cancelled
+		i.setCancelled()
+		return nil
+	}
+
 	return nil
 }
 
 // updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
 func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
-	// TODO: Implement review UI update logic.
-	// This should:
-	// - Display inferred bursts and facts
-	// - Allow inline editing via modal sub-flows:
-	//   - EditMetadata: Modify event details
-	//   - EditBursts: Review and refine bursts
-	//   - EditFacts: Review and refine facts
-	// - Transition to CaptureStateSubmit when confirmed
-	// - Transition back to CaptureStateForm if user wants to re-edit
-	// - Transition to CaptureStateCancelled if user quits
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+s", "enter":
+			// Confirm review and submit
+			i.state.currentState = CaptureStateSubmit
+			return i.performSubmit()
+
+		case "q", "ctrl+c":
+			// Cancel review
+			i.setCancelled()
+			return nil
+
+		case "esc":
+			// Go back to form
+			i.state.currentState = CaptureStateForm
+			return nil
+
+		case "e":
+			// Edit metadata (modal sub-flow)
+			i.state.reviewState.EditingMode = EditingModeMetadata
+			return nil
+
+		case "b":
+			// Edit bursts (modal sub-flow)
+			i.state.reviewState.EditingMode = EditingModeBursts
+			return nil
+
+		case "f":
+			// Edit facts (modal sub-flow)
+			i.state.reviewState.EditingMode = EditingModeFacts
+			return nil
+		}
+
+	case ReviewConfirmedMsg:
+		// Review was confirmed with accepted/rejected items
+		i.state.reviewState.AcceptedBursts = msg.AcceptedBursts
+		i.state.reviewState.AcceptedFacts = msg.AcceptedFacts
+		i.state.reviewState.RejectedItems = msg.RejectedItems
+		i.state.currentState = CaptureStateSubmit
+		return i.performSubmit()
+
+	case ReviewCancelledMsg:
+		// Review was cancelled
+		i.setCancelled()
+		return nil
+
+	case ReviewBackMsg:
+		// User wants to go back to form
+		i.state.currentState = CaptureStateForm
+		return nil
+	}
+
 	return nil
 }
 
 // updateSubmit handles messages while submitting the event.
 func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
-	// TODO: Implement submit logic.
-	// This should:
-	// - Call the domain service to save the event
-	// - Transition to a completed state and return the result
-	// - Handle errors and transition to a failed state if necessary
+	switch msg := msg.(type) {
+	case SubmitCompleteMsg:
+		// Submission succeeded
+		result := &CaptureEventResult{
+			Event:          i.state.reviewState.Event,
+			Bursts:         i.state.reviewState.AcceptedBursts,
+			Facts:          i.state.reviewState.AcceptedFacts,
+			AcceptedFields: make(map[string]bool),
+			RejectedFields: i.state.reviewState.RejectedItems,
+		}
+		i.setCompleted(result)
+		return nil
+
+	case SubmitErrorMsg:
+		// Submission failed
+		i.setFailed(msg.Code, msg.Message, msg.Cause)
+		return nil
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c":
+			// Cancel submission (if possible)
+			i.setCancelled()
+			return nil
+
+		case "r":
+			// Retry submission
+			return i.performSubmit()
+		}
+	}
+
 	return nil
+}
+
+// performSubmit performs the actual submission of the event.
+// In a real implementation, this would call the domain service.
+func (i *CaptureEventIntent) performSubmit() tea.Cmd {
+	return func() tea.Msg {
+		// TODO: Call domain service to save the event
+		// For now, simulate successful submission
+		return SubmitCompleteMsg{}
+	}
 }
 
 // View renders the intent's current state.
@@ -261,3 +441,4 @@ func (i *CaptureEventIntent) Result() *IntentResult[interface{}] {
 		Metadata: i.result.Metadata,
 	}
 }
+
