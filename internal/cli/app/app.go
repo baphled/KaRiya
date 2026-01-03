@@ -101,7 +101,7 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages
+// Update handles messages - FIXED: Using correct Bubble Tea v1.3.10 signature
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -133,7 +133,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-	case intentResultMsg:
+	case IntentCompletedMsg:
 		// Handle result from completed intent
 		m.state = StateMenu
 		m.selectedMenuIndex = 0
@@ -148,7 +148,11 @@ func (m *Model) View() string {
 	if m.state == StateMenu {
 		return m.viewMenu()
 	} else if m.state == StateIntent {
-		return m.intentRouter.View()
+		activeIntent := m.intentRouter.GetActiveIntent()
+		if activeIntent != nil {
+			return activeIntent.View()
+		}
+		return "No active intent"
 	}
 	return ""
 }
@@ -167,7 +171,13 @@ func (m *Model) handleMenuInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "enter", " ":
 		selectedItem := m.menuItems[m.selectedMenuIndex]
 		m.state = StateIntent
-		return m, m.activateIntent(selectedItem.Intent)
+		// Activate the selected intent
+		cmd, err := m.intentRouter.ActivateIntent(selectedItem.Intent, make(map[string]interface{}))
+		if err != nil {
+			m.logger.Error("Failed to activate intent %s: %v", selectedItem.Intent, err)
+			return m, nil
+		}
+		return m, cmd
 	}
 	return m, nil
 }
@@ -180,18 +190,14 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if result != nil {
 		m.state = StateMenu
 		m.selectedMenuIndex = 0
-		return m, cmd
+		// Return command that will trigger the intent completed message
+		return m, tea.Batch(
+			cmd,
+			func() tea.Msg { return IntentCompletedMsg{} },
+		)
 	}
 
 	return m, cmd
-}
-
-// activateIntent activates an intent by name
-func (m *Model) activateIntent(intentName string) tea.Cmd {
-	return func() tea.Msg {
-		_, _ = m.intentRouter.ActivateIntent(intentName, make(map[string]interface{}))
-		return nil
-	}
 }
 
 // viewMenu renders the main menu
@@ -402,8 +408,8 @@ func initCVGenerationService(careerService *careerservice.Service, configMgr cv.
 	)
 }
 
-// intentResultMsg is used to signal intent completion
-type intentResultMsg struct{}
+// IntentCompletedMsg is used to signal intent completion
+type IntentCompletedMsg struct{}
 
 // SetInitialScreen sets the initial screen to display
 func (m *Model) SetInitialScreen(screen Screen) {
