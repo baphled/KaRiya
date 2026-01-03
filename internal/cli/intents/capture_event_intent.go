@@ -261,6 +261,23 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 		i.state.reviewState.Event = msg.Event
 		i.state.currentState = CaptureStateReview
 		return nil
+
+	case FormSubmittedMsg:
+		// Handle test/legacy FormSubmittedMsg
+		if msg.Event == nil {
+			i.setFailed("INVALID_FORM", "Form submission with nil event", nil)
+			return nil
+		}
+
+		// Validate the event data
+		if err := msg.Event.Validate(); err != nil {
+			i.setFailed("VALIDATION_ERROR", fmt.Sprintf("Form validation failed: %v", err), err)
+			return nil
+		}
+
+		i.state.reviewState.Event = msg.Event
+		i.state.currentState = CaptureStateReview
+		return nil
 	}
 
 	// Return the command from the form update

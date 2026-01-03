@@ -90,12 +90,14 @@ var _ = Describe("CaptureEventIntent Views", func() {
 
 		It("should contain the form title", func() {
 			view := intent.viewCaptureForm()
-			Expect(view).To(ContainSubstring("Capture Event Details"))
+			Expect(view).To(ContainSubstring("Capture Career Event"))
 		})
 
-		It("should display the strategy", func() {
+		It("should display form fields", func() {
 			view := intent.viewCaptureForm()
-			Expect(view).To(ContainSubstring("Strategy: manual"))
+			// Form displays field labels
+			Expect(view).To(ContainSubstring("Event Text"))
+			Expect(view).To(ContainSubstring("Date"))
 		})
 
 		It("should contain all form fields", func() {

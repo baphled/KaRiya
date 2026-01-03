@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -564,51 +563,24 @@ func (m *FormModel) submitForm() tea.Cmd {
 		tags := m.tagSelector.SelectedTags()
 		categories := m.categorySelector.SelectedCategories()
 
-		// Prepare options
-		ctx := context.Background()
-		opts := []service.Option{}
-		if company != "" {
-			opts = append(opts, service.WithCompany(company))
-		}
-		if project != "" {
-			opts = append(opts, service.WithProject(project))
-		}
-		if len(tags) > 0 {
-			opts = append(opts, service.WithTags(tags))
-		}
-		if len(categories) > 0 {
-			opts = append(opts, service.WithCategories(categories))
-		}
+		// NOTE: Form does NOT save the event. The intent is responsible for saving
+		// the event after the review phase is complete.
+		// The form only validates and collects the data.
 
-		// Handle edit mode vs create mode
-		// Check if service is initialized
-		if m.cliService == nil {
-			return SubmitMsg{Err: fmt.Errorf("event service not initialized")}
-		}
-		if m.editMode {
-			// Update existing event
-			if err := m.cliService.UpdateEvent(ctx, m.editEventID, text, eventDate, opts...); err != nil {
-				return SubmitMsg{Err: fmt.Errorf("failed to update event: %w", err)}
-			}
-		} else {
-			// Create new event
-			mode := m.modes[m.modeIndex]
-			if err := m.cliService.CaptureEvent(ctx, text, eventDate, mode, opts...); err != nil {
-				return SubmitMsg{Err: fmt.Errorf("failed to capture event: %w", err)}
-			}
-		}
-
-		// Build event for display (this is just for UI purposes)
+		// Build event object with collected data
 		event := &career.CareerEvent{
-			ID:         m.editEventID, // Will be empty for new events
+			ID:         m.editEventID, // Empty for new events, set for edits
 			Text:       text,
 			Date:       eventDate,
 			Company:    company,
 			Project:    project,
 			Tags:       tags,
 			Categories: categories,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
 		}
 
+		// Return the collected data without saving to database
 		return SubmitMsg{Event: event, Err: nil}
 	}
 }
