@@ -1,35 +1,27 @@
-package intents_test
+package intents
 
 import (
 	"context"
-	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/baphled/kariya/internal/cli/intents"
 )
-
-func TestMetadataEditor(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "MetadataEditor Intent Suite")
-}
 
 var _ = Describe("MetadataEditor Intent", func() {
 	var (
-		model *intents.MetadataEditorModel
-		ctx context.Context
+		model *MetadataEditorModel
+		ctx   context.Context
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		data := intents.NewMetadataEditorContext(ctx)
-		model = intents.NewMetadataEditorIntent(data)
+		data := NewMetadataEditorContext(ctx)
+		model = NewMetadataEditorIntent(data)
 	})
 
 	Describe("Initialization", func() {
 		It("should initialize with review state", func() {
-			cmd := model.Init(ctx)
+			cmd := model.Init()
 			Expect(cmd).To(BeNil())
 			Expect(model.View()).NotTo(BeEmpty())
 		})
@@ -37,7 +29,7 @@ var _ = Describe("MetadataEditor Intent", func() {
 
 	Describe("Review State", func() {
 		It("should render review view", func() {
-			model.Init(ctx)
+			model.Init()
 			view := model.View()
 			Expect(view).To(ContainSubstring("Metadata Review"))
 		})
@@ -45,9 +37,9 @@ var _ = Describe("MetadataEditor Intent", func() {
 
 	Describe("Context Operations", func() {
 		It("should load metadata", func() {
-			data := intents.NewMetadataEditorContext(ctx)
+			data := NewMetadataEditorContext(ctx)
 			metadata := map[string]interface{}{
-				"name": "Test",
+				"name":  "Test",
 				"value": 42,
 			}
 			data.LoadMetadata(metadata)
@@ -55,33 +47,33 @@ var _ = Describe("MetadataEditor Intent", func() {
 		})
 
 		It("should track form errors", func() {
-			data := intents.NewMetadataEditorContext(ctx)
+			data := NewMetadataEditorContext(ctx)
 			data.SetFormError("name", "Name is required")
 			Expect(data.HasFormErrors()).To(BeTrue())
 		})
 
 		It("should clear form errors", func() {
-			data := intents.NewMetadataEditorContext(ctx)
+			data := NewMetadataEditorContext(ctx)
 			data.SetFormError("name", "Name is required")
 			data.ClearFormErrors()
 			Expect(data.HasFormErrors()).To(BeFalse())
 		})
 
 		It("should set field values", func() {
-			data := intents.NewMetadataEditorContext(ctx)
+			data := NewMetadataEditorContext(ctx)
 			data.SetFieldValue("name", "Updated")
 			Expect(data.ChangedFields["name"]).To(BeTrue())
 		})
 
 		It("should detect changes", func() {
-			data := intents.NewMetadataEditorContext(ctx)
+			data := NewMetadataEditorContext(ctx)
 			Expect(data.HasChanges()).To(BeFalse())
 			data.SetFieldValue("name", "Updated")
 			Expect(data.HasChanges()).To(BeTrue())
 		})
 
 		It("should get changes", func() {
-			data := intents.NewMetadataEditorContext(ctx)
+			data := NewMetadataEditorContext(ctx)
 			data.SetFieldValue("name", "Updated")
 			data.SetFieldValue("value", 100)
 			changes := data.GetChanges()
@@ -89,7 +81,7 @@ var _ = Describe("MetadataEditor Intent", func() {
 		})
 
 		It("should reset changes", func() {
-			data := intents.NewMetadataEditorContext(ctx)
+			data := NewMetadataEditorContext(ctx)
 			metadata := map[string]interface{}{
 				"name": "Test",
 			}
@@ -103,7 +95,7 @@ var _ = Describe("MetadataEditor Intent", func() {
 
 	Describe("View Methods", func() {
 		It("should render view without error", func() {
-			model.Init(ctx)
+			model.Init()
 			view := model.View()
 			Expect(view).NotTo(BeEmpty())
 		})

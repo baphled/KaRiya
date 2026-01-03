@@ -8,55 +8,55 @@ import (
 type ImportWizardState string
 
 const (
-	ImportFileSelectState   ImportWizardState = "file_select"
-	ImportPreviewState      ImportWizardState = "preview"
-	ImportProgressState     ImportWizardState = "progress"
-	ImportCompleteState     ImportWizardState = "complete"
+	ImportFileSelectState ImportWizardState = "file_select"
+	ImportPreviewState    ImportWizardState = "preview"
+	ImportProgressState   ImportWizardState = "progress"
+	ImportCompleteState   ImportWizardState = "complete"
 )
 
 type ImportWizardContext struct {
-	CurrentState ImportWizardState
-	FilePath string
-	FileSize int64
-	TotalRows int
-	ProcessedRows int
-	SuccessfulRows int
-	ErrorRows int
-	Errors []string
-	IsImporting bool
-	IsPaused bool
+	CurrentState    ImportWizardState
+	FilePath        string
+	FileSize        int64
+	TotalRows       int
+	ProcessedRows   int
+	SuccessfulRows  int
+	ErrorRows       int
+	Errors          []string
+	IsImporting     bool
+	IsPaused        bool
 	ImportStartTime time.Time
-	FormErrors map[string]string
-	Context context.Context
-	PreviousState ImportWizardState
+	FormErrors      map[string]string
+	Context         context.Context
+	PreviousState   ImportWizardState
 }
 
 type ImportWizardResult struct {
-	Action string
-	FilePath string
-	ProcessedRows int
+	Action         string
+	FilePath       string
+	ProcessedRows  int
 	SuccessfulRows int
-	ErrorRows int
-	Errors []string
-	Error error
-	Message string
+	ErrorRows      int
+	Errors         []string
+	Error          error
+	Message        string
 }
 
 func NewImportWizardContext(ctx context.Context) *ImportWizardContext {
 	return &ImportWizardContext{
-		CurrentState: ImportFileSelectState,
-		FilePath: "",
-		FileSize: 0,
-		TotalRows: 0,
-		ProcessedRows: 0,
+		CurrentState:   ImportFileSelectState,
+		FilePath:       "",
+		FileSize:       0,
+		TotalRows:      0,
+		ProcessedRows:  0,
 		SuccessfulRows: 0,
-		ErrorRows: 0,
-		Errors: make([]string, 0),
-		IsImporting: false,
-		IsPaused: false,
-		FormErrors: make(map[string]string),
-		Context: ctx,
-		PreviousState: ImportFileSelectState,
+		ErrorRows:      0,
+		Errors:         make([]string, 0),
+		IsImporting:    false,
+		IsPaused:       false,
+		FormErrors:     make(map[string]string),
+		Context:        ctx,
+		PreviousState:  ImportFileSelectState,
 	}
 }
 
@@ -119,4 +119,3 @@ func (c *ImportWizardContext) GetProgress() float64 {
 	}
 	return float64(c.ProcessedRows) / float64(c.TotalRows)
 }
-

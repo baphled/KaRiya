@@ -102,7 +102,6 @@ type BrowseTimelineModel struct {
 
 	// viewedEvents tracks events viewed during the session.
 	viewedEvents []*career.CareerEvent
-
 }
 
 // BrowseTimelineStates for navigation.

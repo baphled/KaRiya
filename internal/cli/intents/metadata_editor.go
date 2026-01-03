@@ -7,50 +7,50 @@ import (
 type MetadataEditorState string
 
 const (
-	MetadataReviewState MetadataEditorState = "review"
-	MetadataEditState   MetadataEditorState = "edit"
+	MetadataReviewState  MetadataEditorState = "review"
+	MetadataEditState    MetadataEditorState = "edit"
 	MetadataConfirmState MetadataEditorState = "confirm"
 )
 
 type MetadataEditorContext struct {
-	CurrentState MetadataEditorState
-	EntityType string
-	EntityID string
-	OriginalMetadata map[string]interface{}
-	EditedMetadata map[string]interface{}
-	ChangedFields map[string]bool
-	FieldValues map[string]interface{}
-	FormErrors map[string]string
+	CurrentState       MetadataEditorState
+	EntityType         string
+	EntityID           string
+	OriginalMetadata   map[string]interface{}
+	EditedMetadata     map[string]interface{}
+	ChangedFields      map[string]bool
+	FieldValues        map[string]interface{}
+	FormErrors         map[string]string
 	SelectedFieldIndex int
-	ScrollPosition int
-	Context context.Context
-	PreviousState MetadataEditorState
+	ScrollPosition     int
+	Context            context.Context
+	PreviousState      MetadataEditorState
 }
 
 type MetadataEditorResult struct {
-	Action string
-	EntityType string
-	EntityID string
-	Changes map[string]interface{}
+	Action         string
+	EntityType     string
+	EntityID       string
+	Changes        map[string]interface{}
 	OriginalValues map[string]interface{}
-	Error error
-	Message string
+	Error          error
+	Message        string
 }
 
 func NewMetadataEditorContext(ctx context.Context) *MetadataEditorContext {
 	return &MetadataEditorContext{
-		CurrentState: MetadataReviewState,
-		EntityType: "",
-		EntityID: "",
-		OriginalMetadata: make(map[string]interface{}),
-		EditedMetadata: make(map[string]interface{}),
-		ChangedFields: make(map[string]bool),
-		FieldValues: make(map[string]interface{}),
-		FormErrors: make(map[string]string),
+		CurrentState:       MetadataReviewState,
+		EntityType:         "",
+		EntityID:           "",
+		OriginalMetadata:   make(map[string]interface{}),
+		EditedMetadata:     make(map[string]interface{}),
+		ChangedFields:      make(map[string]bool),
+		FieldValues:        make(map[string]interface{}),
+		FormErrors:         make(map[string]string),
 		SelectedFieldIndex: 0,
-		ScrollPosition: 0,
-		Context: ctx,
-		PreviousState: MetadataReviewState,
+		ScrollPosition:     0,
+		Context:            ctx,
+		PreviousState:      MetadataReviewState,
 	}
 }
 
@@ -101,4 +101,3 @@ func (c *MetadataEditorContext) LoadMetadata(metadata map[string]interface{}) {
 		c.EditedMetadata[k] = v
 	}
 }
-

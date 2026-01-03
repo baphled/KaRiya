@@ -1,14 +1,13 @@
 package intents
 
 import (
-	"context"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type ImportWizardModel struct {
-	data *ImportWizardContext
+	data   *ImportWizardContext
 	result *IntentResult[*ImportWizardResult]
 }
 
@@ -21,8 +20,8 @@ func NewImportWizardIntent(data *ImportWizardContext) *ImportWizardModel {
 	}
 }
 
-func (m *ImportWizardModel) Init(ctx context.Context) tea.Cmd {
-	m.data.Context = ctx
+func (m *ImportWizardModel) Init() tea.Cmd {
+	// context already set in data
 	m.data.CurrentState = ImportFileSelectState
 	return nil
 }
@@ -117,7 +116,7 @@ func (m *ImportWizardModel) handleProgressState(msg tea.Msg) tea.Cmd {
 			m.result = &IntentResult[*ImportWizardResult]{
 				Status: Cancelled,
 				Data: &ImportWizardResult{
-					Action: "cancelled",
+					Action:        "cancelled",
 					ProcessedRows: m.data.ProcessedRows,
 				},
 			}
@@ -181,4 +180,3 @@ func (m *ImportWizardModel) viewComplete() string {
 	output += "\nPress any key to exit...\n"
 	return output
 }
-

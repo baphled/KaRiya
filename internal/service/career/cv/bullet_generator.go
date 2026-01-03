@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	career "github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 )
 
 // BulletGenerator generates ranked CV bullets from events and facts
@@ -76,12 +76,12 @@ func (bg *DefaultBulletGenerator) generateInitialBullets(events []*career.Career
 		}
 
 		bullet := &career.CVBullet{
-			ID:                fact.ID,
-			Text:              fact.Text,
-			SourceFactIDs:     []string{fact.ID},
-			SourceEventIDs:    []string{}, // Will be populated from burst associations
-			InclusionReason:   "fact_extraction",
-			Confidence:        0.8,
+			ID:              fact.ID,
+			Text:            fact.Text,
+			SourceFactIDs:   []string{fact.ID},
+			SourceEventIDs:  []string{}, // Will be populated from burst associations
+			InclusionReason: "fact_extraction",
+			Confidence:      0.8,
 		}
 		bullets = append(bullets, bullet)
 	}
@@ -288,4 +288,3 @@ func min(a, b int) int {
 	}
 	return b
 }
-

@@ -3,8 +3,8 @@ package models
 import (
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/baphled/kariya/internal/domain/career"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

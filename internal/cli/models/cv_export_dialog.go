@@ -206,7 +206,6 @@ Press 'j'/'k' to navigate, 'enter' to export, 'esc' to cancel
 
 // Messages for CV Export Dialog
 
-
 // StartCVExportMsg initiates the CV export process
 type StartCVExportMsg struct {
 	CVView       *career.CVView

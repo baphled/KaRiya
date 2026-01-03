@@ -15,7 +15,6 @@ import (
 	"github.com/onsi/gomega"
 )
 
-
 var _ = ginkgo.Describe("ExportService", func() {
 	var (
 		service *ExportService
@@ -32,11 +31,11 @@ var _ = ginkgo.Describe("ExportService", func() {
 	ginkgo.Describe("ExportToText", func() {
 		ginkgo.It("should export CV to plain text format", func() {
 			cv := &career.CVView{
-				ID:              "cv-1",
-				Name:            "Senior Software Engineer CV",
-				TargetRole:      "Staff Engineer",
-				TargetAudience:  []string{"hiring_manager", "recruiter"},
-				GeneratedAt:     time.Now(),
+				ID:               "cv-1",
+				Name:             "Senior Software Engineer CV",
+				TargetRole:       "Staff Engineer",
+				TargetAudience:   []string{"hiring_manager", "recruiter"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 10,
 				SourceFactCount:  5,
 			}
@@ -76,11 +75,11 @@ var _ = ginkgo.Describe("ExportService", func() {
 
 		ginkgo.It("should handle empty sections", func() {
 			cv := &career.CVView{
-				ID:              "cv-1",
-				Name:            "Test CV",
-				TargetRole:      "Engineer",
-				TargetAudience:  []string{"hiring_manager"},
-				GeneratedAt:     time.Now(),
+				ID:               "cv-1",
+				Name:             "Test CV",
+				TargetRole:       "Engineer",
+				TargetAudience:   []string{"hiring_manager"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 0,
 				SourceFactCount:  0,
 			}
@@ -111,11 +110,11 @@ var _ = ginkgo.Describe("ExportService", func() {
 	ginkgo.Describe("ExportToMarkdown", func() {
 		ginkgo.It("should export CV to markdown format", func() {
 			cv := &career.CVView{
-				ID:              "cv-1",
-				Name:            "Senior Software Engineer CV",
-				TargetRole:      "Staff Engineer",
-				TargetAudience:  []string{"hiring_manager"},
-				GeneratedAt:     time.Now(),
+				ID:               "cv-1",
+				Name:             "Senior Software Engineer CV",
+				TargetRole:       "Staff Engineer",
+				TargetAudience:   []string{"hiring_manager"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 10,
 				SourceFactCount:  5,
 			}
@@ -155,11 +154,11 @@ var _ = ginkgo.Describe("ExportService", func() {
 
 		ginkgo.It("should include metadata as comments", func() {
 			cv := &career.CVView{
-				ID:              "cv-1",
-				Name:            "Test CV",
-				TargetRole:      "Engineer",
-				TargetAudience:  []string{"recruiter"},
-				GeneratedAt:     time.Now(),
+				ID:               "cv-1",
+				Name:             "Test CV",
+				TargetRole:       "Engineer",
+				TargetAudience:   []string{"recruiter"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 5,
 				SourceFactCount:  2,
 			}
@@ -180,11 +179,11 @@ var _ = ginkgo.Describe("ExportService", func() {
 	ginkgo.Describe("ExportToYAML", func() {
 		ginkgo.It("should export CV to YAML format", func() {
 			cv := &career.CVView{
-				ID:              "cv-1",
-				Name:            "Senior Software Engineer CV",
-				TargetRole:      "Staff Engineer",
-				TargetAudience:  []string{"hiring_manager"},
-				GeneratedAt:     time.Now(),
+				ID:               "cv-1",
+				Name:             "Senior Software Engineer CV",
+				TargetRole:       "Staff Engineer",
+				TargetAudience:   []string{"hiring_manager"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 10,
 				SourceFactCount:  5,
 			}
@@ -365,25 +364,24 @@ var _ = ginkgo.Describe("ExportService", func() {
 			})
 		})
 
-	ginkgo.Describe("CopyToClipboard", func() {
-		ginkgo.It("should copy content to clipboard", func() {
-			testContent := "Test CV Content for Clipboard"
-			err := service.CopyToClipboard(ctx, testContent)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+		ginkgo.Describe("CopyToClipboard", func() {
+			ginkgo.It("should copy content to clipboard", func() {
+				testContent := "Test CV Content for Clipboard"
+				err := service.CopyToClipboard(ctx, testContent)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-			// Verify content was copied
-			clipboardContent, err := clipboard.ReadAll()
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			gomega.Expect(clipboardContent).To(gomega.Equal(testContent))
-		})
+				// Verify content was copied
+				clipboardContent, err := clipboard.ReadAll()
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(clipboardContent).To(gomega.Equal(testContent))
+			})
 
-		ginkgo.It("should return error for empty content", func() {
-			err := service.CopyToClipboard(ctx, "")
-			gomega.Expect(err).To(gomega.HaveOccurred())
-			gomega.Expect(err.Error()).To(gomega.ContainSubstring("content is empty"))
+			ginkgo.It("should return error for empty content", func() {
+				err := service.CopyToClipboard(ctx, "")
+				gomega.Expect(err).To(gomega.HaveOccurred())
+				gomega.Expect(err.Error()).To(gomega.ContainSubstring("content is empty"))
+			})
 		})
-	})
 
 	})
 })
-

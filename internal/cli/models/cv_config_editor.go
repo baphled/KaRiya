@@ -339,4 +339,3 @@ type ConfigValidationErrorMsg struct {
 }
 
 // BackMsg navigates back to the config manager.
-

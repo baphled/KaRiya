@@ -5,6 +5,9 @@ import (
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
 )
 
+// Screen represents a screen in the application
+type Screen string
+
 // FormSubmittedMsg is sent when a form is successfully submitted
 type FormSubmittedMsg struct {
 	Event *career.CareerEvent
@@ -154,3 +157,8 @@ type FactProcessingCompleteMsg struct {
 	ConfirmedFacts []*career.Fact
 	RejectedFacts  []string
 }
+
+// Screen constants for navigation
+const (
+	ListScreen Screen = "list"
+)

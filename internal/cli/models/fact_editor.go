@@ -556,6 +556,7 @@ func (m *FactEditorModel) renderFormContentWithContainers() string {
 
 	return formContent
 }
+
 // addFocusIndicatorToField adds a focus indicator to the rendered field
 func (m *FactEditorModel) addFocusIndicatorToField(fieldContent string, focused bool) string {
 	if focused {

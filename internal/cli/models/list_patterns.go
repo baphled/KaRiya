@@ -9,10 +9,10 @@ import (
 // ListDeletionState manages the deletion confirmation and execution workflow
 type ListDeletionState struct {
 	ConfirmationDialog *ConfirmationDialog
-	DeletingItemID    string
-	SuccessMsg        string
-	ErrorMsg          string
-	ShowMessage       bool
+	DeletingItemID     string
+	SuccessMsg         string
+	ErrorMsg           string
+	ShowMessage        bool
 }
 
 // NewListDeletionState creates a new deletion state tracker
@@ -323,4 +323,3 @@ func truncateText(text string, maxLen int) string {
 	}
 	return text
 }
-

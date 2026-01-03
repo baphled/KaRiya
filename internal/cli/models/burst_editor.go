@@ -218,7 +218,7 @@ func (m *BurstEditorModel) submitBurst() (tea.Model, tea.Cmd) {
 		m.err = fmt.Errorf("burst repository not available")
 		return m, nil
 	}
-	
+
 	err := burstRepo.Update(m.ctx, m.burst)
 	if err != nil {
 		m.err = fmt.Errorf("failed to save burst: %w", err)
@@ -372,4 +372,3 @@ func (m *BurstEditorModel) renderFormContent() string {
 
 	return formContent
 }
-

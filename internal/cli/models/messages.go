@@ -82,7 +82,6 @@ type BurstActionMenuMsg struct {
 // BackMsg is sent when the user wants to go back to the previous screen
 type BackMsg struct{}
 
-
 // BackToCVConfigManagerMsg is sent when user wants to go back to CV config manager
 type BackToCVConfigManagerMsg struct{}
 

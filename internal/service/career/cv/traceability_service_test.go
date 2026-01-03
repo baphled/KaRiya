@@ -13,7 +13,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-
 var _ = Describe("TraceabilityService", func() {
 	var (
 		service        *TraceabilityService

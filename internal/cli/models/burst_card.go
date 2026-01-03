@@ -148,4 +148,3 @@ func (bc *BurstCard) renderMetadata() string {
 func (bc *BurstCard) formatDate(t time.Time) string {
 	return t.Format("Jan 2, 2006")
 }
-

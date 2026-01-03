@@ -10,14 +10,14 @@ import (
 // FactSearchModel manages fact search with advanced filtering capabilities
 type FactSearchModel struct {
 	*BaseStandardModel
-	query              string
-	competencyFilter   string
-	roleFitFilter      career.RoleFit
-	audienceFilter     string
-	lastUpdate         time.Time
-	debounceDelay      time.Duration
-	err                error
-	lastSearchTime     time.Time
+	query            string
+	competencyFilter string
+	roleFitFilter    career.RoleFit
+	audienceFilter   string
+	lastUpdate       time.Time
+	debounceDelay    time.Duration
+	err              error
+	lastSearchTime   time.Time
 }
 
 // NewFactSearchModel creates a new fact search model with default debounce delay
@@ -203,4 +203,3 @@ func (m *FactSearchModel) MarkSearched() {
 func (m *FactSearchModel) GetLastSearchTime() time.Time {
 	return m.lastSearchTime
 }
-

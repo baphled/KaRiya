@@ -1,8 +1,8 @@
 package cv
 
 import (
-	"io"
 	"context"
+	"io"
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
@@ -758,4 +758,3 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 	})
 })
-

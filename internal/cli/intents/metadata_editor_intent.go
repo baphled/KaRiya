@@ -1,14 +1,13 @@
 package intents
 
 import (
-	"context"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type MetadataEditorModel struct {
-	data *MetadataEditorContext
+	data   *MetadataEditorContext
 	result *IntentResult[*MetadataEditorResult]
 }
 
@@ -21,8 +20,8 @@ func NewMetadataEditorIntent(data *MetadataEditorContext) *MetadataEditorModel {
 	}
 }
 
-func (m *MetadataEditorModel) Init(ctx context.Context) tea.Cmd {
-	m.data.Context = ctx
+func (m *MetadataEditorModel) Init() tea.Cmd {
+	// context already set in data
 	m.data.CurrentState = MetadataReviewState
 	return nil
 }
@@ -106,12 +105,12 @@ func (m *MetadataEditorModel) handleConfirmState(msg tea.Msg) tea.Cmd {
 			m.result = &IntentResult[*MetadataEditorResult]{
 				Status: Completed,
 				Data: &MetadataEditorResult{
-					Action: "saved",
-					EntityType: m.data.EntityType,
-					EntityID: m.data.EntityID,
-					Changes: m.data.GetChanges(),
+					Action:         "saved",
+					EntityType:     m.data.EntityType,
+					EntityID:       m.data.EntityID,
+					Changes:        m.data.GetChanges(),
 					OriginalValues: m.data.OriginalMetadata,
-					Message: "Metadata saved successfully",
+					Message:        "Metadata saved successfully",
 				},
 			}
 			return tea.Quit
@@ -156,4 +155,3 @@ func (m *MetadataEditorModel) viewConfirm() string {
 	output += "\nOptions: y (confirm), n (cancel), esc (back)\n"
 	return output
 }
-

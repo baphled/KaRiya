@@ -19,29 +19,29 @@ import (
 // FactListModel displays a list of facts with filtering, sorting, and selection using bubbles table
 type FactListModel struct {
 	*BaseStandardModel
-	facts             []*career.Fact
-	filtered          []*career.Fact
-	service           *careerservice.Service
-	ctx               context.Context
-	table             table.Model
-	pagination        *PaginationHelper
-	width             int
-	height            int
-	competencyFilter  string
-	roleFitFilter     career.RoleFit
-	audienceFilter    string
-	sortBy            string
-	sortOrder         string
-	selectedFacts     map[string]bool
-	submitted         bool
-	cancelled         bool
-	err               error
-	helpFooter        components.HelpFooterModel
-	deletionState     *ListDeletionState
+	facts                []*career.Fact
+	filtered             []*career.Fact
+	service              *careerservice.Service
+	ctx                  context.Context
+	table                table.Model
+	pagination           *PaginationHelper
+	width                int
+	height               int
+	competencyFilter     string
+	roleFitFilter        career.RoleFit
+	audienceFilter       string
+	sortBy               string
+	sortOrder            string
+	selectedFacts        map[string]bool
+	submitted            bool
+	cancelled            bool
+	err                  error
+	helpFooter           components.HelpFooterModel
+	deletionState        *ListDeletionState
 	navigationKeyHandler *ListNavigationKeyHandler
-	breadcrumbs       []string
-	header            components.HeaderModel
-	listContainer     *components.TableListContainer
+	breadcrumbs          []string
+	header               components.HeaderModel
+	listContainer        *components.TableListContainer
 }
 
 // NewFactListModel creates a new fact list model

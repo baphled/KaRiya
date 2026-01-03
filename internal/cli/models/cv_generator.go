@@ -15,12 +15,12 @@ import (
 // CVGeneratorModel manages the CV generation process.
 type CVGeneratorModel struct {
 	*BaseStandardModel
-	cvService    cv.CVGenerationService
-	config       *career.CVConfig
-	generating   bool
-	generatedCV  *career.CVView
-	err          error
-	headerModel  components.HeaderModel
+	cvService   cv.CVGenerationService
+	config      *career.CVConfig
+	generating  bool
+	generatedCV *career.CVView
+	err         error
+	headerModel components.HeaderModel
 }
 
 // NewCVGeneratorModel creates a new CV Generator model.

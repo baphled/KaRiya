@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 var _ = Describe("BrowseTimelineIntent", func() {

@@ -3,13 +3,12 @@ package models
 import (
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
 
 var _ = Describe("CVConfigEditorModel", func() {
 	var (
@@ -296,4 +295,3 @@ var _ = Describe("CVConfigEditorModel", func() {
 		})
 	})
 })
-

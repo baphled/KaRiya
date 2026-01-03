@@ -1,30 +1,20 @@
-package intents_test
+package intents
 
 import (
 	"context"
-	"errors"
-	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/intents"
 	careerdom "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 )
 
-var ErrNotFound = errors.New("not found")
-
-func TestFactManagement(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "FactManagement Intent Suite")
-}
-
 var _ = Describe("FactManagement Intent", func() {
 	var (
-		model *intents.FactManagementModel
-		ctx context.Context
+		model    *FactManagementModel
+		ctx      context.Context
 		mockRepo *MockFactRepository
 		testFact *careerdom.Fact
 	)
@@ -34,28 +24,28 @@ var _ = Describe("FactManagement Intent", func() {
 		mockRepo = NewMockFactRepository()
 
 		testFact = &careerdom.Fact{
-			ID:   "fact-1",
-			Text: "Test fact",
+			ID:                   "fact-1",
+			Text:                 "Test fact",
 			CompetencyCategories: []string{"technical"},
-			StrengthSignal: "high",
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			StrengthSignal:       "high",
+			CreatedAt:            time.Now(),
+			UpdatedAt:            time.Now(),
 		}
 		mockRepo.facts = []*careerdom.Fact{testFact}
 
-		data := intents.NewFactManagementContext(mockRepo, ctx)
-		model = intents.NewFactManagementIntent(data)
+		data := NewFactManagementContext(mockRepo, ctx)
+		model = NewFactManagementIntent(data)
 	})
 
 	Describe("Initialization", func() {
 		It("should initialize with list state", func() {
-			cmd := model.Init(ctx)
+			cmd := model.Init()
 			Expect(cmd).To(BeNil())
 			Expect(model.View()).NotTo(BeEmpty())
 		})
 
 		It("should load facts on init", func() {
-			cmd := model.Init(ctx)
+			cmd := model.Init()
 			Expect(cmd).To(BeNil())
 			view := model.View()
 			Expect(view).To(ContainSubstring("Test fact"))
@@ -64,7 +54,7 @@ var _ = Describe("FactManagement Intent", func() {
 
 	Describe("List State", func() {
 		BeforeEach(func() {
-			model.Init(ctx)
+			model.Init()
 		})
 
 		It("should render list view", func() {
@@ -75,7 +65,7 @@ var _ = Describe("FactManagement Intent", func() {
 
 		It("should show empty state when no facts", func() {
 			mockRepo.facts = []*careerdom.Fact{}
-			model.Init(ctx)
+			model.Init()
 			view := model.View()
 			Expect(view).To(ContainSubstring("No facts found"))
 		})
@@ -88,16 +78,14 @@ var _ = Describe("FactManagement Intent", func() {
 
 	Describe("Context Operations", func() {
 		It("should load facts", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			err := data.LoadFacts()
 			Expect(err).To(BeNil())
 			Expect(data.Facts).To(HaveLen(1))
 		})
 
-
-
 		It("should delete fact", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.LoadFacts()
 			initialCount := len(data.Facts)
 			err := data.DeleteFact(testFact.ID)
@@ -106,27 +94,27 @@ var _ = Describe("FactManagement Intent", func() {
 		})
 
 		It("should handle pagination", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.LoadFacts()
 			pageFacts := data.GetPageFacts()
 			Expect(pageFacts).NotTo(BeNil())
 		})
 
 		It("should track form errors", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.SetFormError("text", "Text is required")
 			Expect(data.HasFormErrors()).To(BeTrue())
 		})
 
 		It("should clear form errors", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.SetFormError("text", "Text is required")
 			data.ClearFormErrors()
 			Expect(data.HasFormErrors()).To(BeFalse())
 		})
 
 		It("should toggle row expansion", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.ToggleRowExpansion(0)
 			Expect(data.IsRowExpanded(0)).To(BeTrue())
 			data.ToggleRowExpansion(0)
@@ -134,35 +122,35 @@ var _ = Describe("FactManagement Intent", func() {
 		})
 
 		It("should start new fact", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.StartNewFact()
 			Expect(data.IsNewFact).To(BeTrue())
 			Expect(data.EditingFact).NotTo(BeNil())
 		})
 
 		It("should start edit fact", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.StartEditFact(testFact)
 			Expect(data.IsNewFact).To(BeFalse())
 			Expect(data.EditingFact.ID).To(Equal(testFact.ID))
 		})
 
 		It("should cancel edit", func() {
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			data.StartNewFact()
 			data.CancelEdit()
 			Expect(data.EditingFact).To(BeNil())
 		})
 
 		It("should handle nil repository", func() {
-			data := intents.NewFactManagementContext(nil, ctx)
+			data := NewFactManagementContext(nil, ctx)
 			err := data.LoadFacts()
 			Expect(err).NotTo(BeNil())
 		})
 
 		It("should handle empty fact list", func() {
 			mockRepo.facts = []*careerdom.Fact{}
-			data := intents.NewFactManagementContext(mockRepo, ctx)
+			data := NewFactManagementContext(mockRepo, ctx)
 			err := data.LoadFacts()
 			Expect(err).To(BeNil())
 			Expect(data.Facts).To(HaveLen(0))
@@ -171,7 +159,7 @@ var _ = Describe("FactManagement Intent", func() {
 
 	Describe("View Methods", func() {
 		It("should render view with facts", func() {
-			model.Init(ctx)
+			model.Init()
 			view := model.View()
 			Expect(view).NotTo(BeEmpty())
 		})

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	careerservice "github.com/baphled/kariya/internal/service/career"
-	"github.com/baphled/kariya/internal/repository/career"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/repository/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
 var (
@@ -28,12 +28,12 @@ var (
 type BurstManagementState string
 
 const (
-	BurstListState              BurstManagementState = "list"
-	BurstViewState              BurstManagementState = "view"
-	BurstEditorState            BurstManagementState = "editor"
-	BurstDeleteConfirmState     BurstManagementState = "delete_confirm"
-	BurstSuggestState           BurstManagementState = "suggest"
-	BurstCompletedState         BurstManagementState = "completed"
+	BurstListState          BurstManagementState = "list"
+	BurstViewState          BurstManagementState = "view"
+	BurstEditorState        BurstManagementState = "editor"
+	BurstDeleteConfirmState BurstManagementState = "delete_confirm"
+	BurstSuggestState       BurstManagementState = "suggest"
+	BurstCompletedState     BurstManagementState = "completed"
 )
 
 // BurstManagementContext holds the state and data for BurstManagement intent
@@ -42,28 +42,28 @@ type BurstManagementContext struct {
 	CurrentState BurstManagementState
 
 	// Burst data
-	Bursts []*domain.Burst
-	SelectedBurst *domain.Burst
+	Bursts             []*domain.Burst
+	SelectedBurst      *domain.Burst
 	SelectedBurstIndex int
 
 	// Filter/Search
 	FilterCompetency string
-	SearchText string
-	SortBy string        // "name", "createdAt", "updatedAt", "eventCount"
-	SortOrder string     // "asc", "desc"
+	SearchText       string
+	SortBy           string // "name", "createdAt", "updatedAt", "eventCount"
+	SortOrder        string // "asc", "desc"
 
 	// Pagination
 	CurrentPage int
-	PageSize int        // 20
+	PageSize    int // 20
 	TotalBursts int
 
 	// Editor state
 	EditingBurst *domain.Burst
-	FormErrors map[string]string
-	IsNewBurst bool
+	FormErrors   map[string]string
+	IsNewBurst   bool
 
 	// Suggestions
-	Suggestions []*BurstSuggestion
+	Suggestions             []*BurstSuggestion
 	SelectedSuggestionIndex int
 
 	// Delete confirmation
@@ -71,30 +71,30 @@ type BurstManagementContext struct {
 
 	// UI state
 	ScrollPosition int
-	ExpandedRows map[int]bool
+	ExpandedRows   map[int]bool
 
 	// Services
-	Service *careerservice.Service
+	Service         *careerservice.Service
 	BurstRepository career.BurstRepository
 
 	// Context
 	Context context.Context
 
 	// Metadata
-	PreviousState BurstManagementState
+	PreviousState       BurstManagementState
 	ScrollRestoreNeeded bool
 }
 
 // BurstSuggestion represents an AI-suggested burst grouping
 type BurstSuggestion struct {
-	Title string
-	Description string
-	Events []*domain.CareerEvent
-	ConfidenceScore float64  // 0.0 to 1.0
+	Title                string
+	Description          string
+	Events               []*domain.CareerEvent
+	ConfidenceScore      float64 // 0.0 to 1.0
 	RecommendedStartDate time.Time
-	RecommendedEndDate time.Time
-	Skills []string
-	CompetencyFocus string
+	RecommendedEndDate   time.Time
+	Skills               []string
+	CompetencyFocus      string
 }
 
 // BurstManagementResult is the result returned when BurstManagement intent completes
@@ -109,35 +109,35 @@ type BurstManagementResult struct {
 	Bursts []*domain.Burst
 
 	// Error information (if any)
-	Error error
+	Error   error
 	Message string
 
 	// Metadata for context restoration
-	ScrollPosition int
+	ScrollPosition  int
 	SelectedBurstID string
 }
 
 // NewBurstManagementContext creates a new context for BurstManagement intent
 func NewBurstManagementContext(service *careerservice.Service, burstRepo career.BurstRepository, ctx context.Context) *BurstManagementContext {
 	return &BurstManagementContext{
-		CurrentState: BurstListState,
-		Bursts: make([]*domain.Burst, 0),
-		SelectedBurstIndex: -1,
-		FilterCompetency: "",
-		SearchText: "",
-		SortBy: "name",
-		SortOrder: "asc",
-		CurrentPage: 0,
-		PageSize: 20,
-		FormErrors: make(map[string]string),
-		Suggestions: make([]*BurstSuggestion, 0),
+		CurrentState:            BurstListState,
+		Bursts:                  make([]*domain.Burst, 0),
+		SelectedBurstIndex:      -1,
+		FilterCompetency:        "",
+		SearchText:              "",
+		SortBy:                  "name",
+		SortOrder:               "asc",
+		CurrentPage:             0,
+		PageSize:                20,
+		FormErrors:              make(map[string]string),
+		Suggestions:             make([]*BurstSuggestion, 0),
 		SelectedSuggestionIndex: -1,
-		ExpandedRows: make(map[int]bool),
-		Service: service,
-		BurstRepository: burstRepo,
-		Context: ctx,
-		PreviousState: BurstListState,
-		ScrollRestoreNeeded: false,
+		ExpandedRows:            make(map[int]bool),
+		Service:                 service,
+		BurstRepository:         burstRepo,
+		Context:                 ctx,
+		PreviousState:           BurstListState,
+		ScrollRestoreNeeded:     false,
 	}
 }
 
@@ -284,13 +284,13 @@ func (c *BurstManagementContext) DeleteBurst(burstID string) error {
 // StartNewBurst initializes a new burst for editing
 func (c *BurstManagementContext) StartNewBurst() {
 	c.EditingBurst = &domain.Burst{
-		ID: "",
-		Name: "",
-		Description: "",
-		EventIDs: make([]string, 0),
+		ID:              "",
+		Name:            "",
+		Description:     "",
+		EventIDs:        make([]string, 0),
 		CompetencyFocus: "",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 	c.IsNewBurst = true
 	c.ClearFormErrors()
@@ -300,13 +300,13 @@ func (c *BurstManagementContext) StartNewBurst() {
 func (c *BurstManagementContext) StartEditBurst(burst *domain.Burst) {
 	// Create a copy to avoid modifying the original
 	c.EditingBurst = &domain.Burst{
-		ID: burst.ID,
-		Name: burst.Name,
-		Description: burst.Description,
-		EventIDs: append([]string{}, burst.EventIDs...),
+		ID:              burst.ID,
+		Name:            burst.Name,
+		Description:     burst.Description,
+		EventIDs:        append([]string{}, burst.EventIDs...),
 		CompetencyFocus: burst.CompetencyFocus,
-		CreatedAt: burst.CreatedAt,
-		UpdatedAt: burst.UpdatedAt,
+		CreatedAt:       burst.CreatedAt,
+		UpdatedAt:       burst.UpdatedAt,
 	}
 	c.IsNewBurst = false
 	c.ClearFormErrors()
