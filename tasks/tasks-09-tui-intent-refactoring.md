@@ -455,20 +455,20 @@
 
 #### 2.3 Implement Views for All States
 
-- [ ] 2.3.1 Implement StateChooseStrategy view
+- [x] 2.3.1 Implement StateChooseStrategy view
   - Display strategy options with descriptions
   - Show selected strategy highlighted
   - Display help footer with keyboard shortcuts
   - Consistent styling with existing UI
 
-- [ ] 2.3.2 Implement StateCaptureForm view
+- [x] 2.3.2 Implement StateCaptureForm view
   - Display form with all fields
   - Show validation errors inline
   - Show focused field indicator
   - Display help footer
   - Consistent styling
 
-- [ ] 2.3.3 Implement StateReviewInferred view
+- [x] 2.3.3 Implement StateReviewInferred view
   - Display inferred metadata
   - Display detected bursts
   - Display extracted facts
@@ -476,20 +476,20 @@
   - Display help footer
   - Consistent styling
 
-- [ ] 2.3.4 Implement StateSubmit view
+- [x] 2.3.4 Implement StateSubmit view
   - Display final event summary
   - Display confirmation message
   - Display action buttons (Confirm, Cancel)
   - Display help footer
   - Consistent styling
 
-- [ ] 2.3.5 Implement error views
+- [x] 2.3.5 Implement error views
   - Display error messages clearly
   - Show recovery options
   - Display help footer
   - Consistent styling
 
-- [ ] 2.3.6 Write view rendering tests in `capture_event_test.go`
+- [x] 2.3.6 Write view rendering tests in `capture_event_test.go`
   - Each state view test
   - Error view test
   - >90% test coverage

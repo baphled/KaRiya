@@ -205,7 +205,7 @@ var _ = Describe("CaptureEventIntent", func() {
 			intent.state.currentState = CaptureStateForm
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
-			Expect(view).To(ContainSubstring("Capture Event Form"))
+			Expect(view).To(ContainSubstring("Capture Event Details"))
 		})
 
 		It("should render view for Review state", func() {
@@ -408,7 +408,7 @@ var _ = Describe("CaptureEventIntent", func() {
 		It("should transition from ChooseStrategy to Form state", func() {
 			intent.state.currentState = CaptureStateForm
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Capture Event Form"))
+			Expect(view).To(ContainSubstring("Capture Event Details"))
 		})
 
 		It("should transition from Form to Review state", func() {
