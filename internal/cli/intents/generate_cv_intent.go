@@ -515,16 +515,3 @@ func (i *GenerateCVIntent) setCancelled() {
 	i.active = false
 }
 
-// setFailed marks the intent as failed with an error.
-func (i *GenerateCVIntent) setFailed(code, message string, cause error) {
-	i.result = &IntentResult[*GenerateCVResult]{
-		Status: Failed,
-		Error: &IntentError{
-			Code:    code,
-			Message: message,
-			Cause:   cause,
-		},
-	}
-	i.active = false
-}
-
