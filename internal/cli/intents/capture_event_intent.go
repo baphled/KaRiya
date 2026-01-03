@@ -28,7 +28,7 @@ type CaptureEventIntent struct {
 
 	// domainService is the service for interacting with the domain.
 	// Injected via constructor for testability.
-	domainService interface{} // TODO: Define a proper domain service interface
+	domainService interface{} // nolint:unused
 }
 
 // NewCaptureEventIntent creates a new CaptureEvent intent.

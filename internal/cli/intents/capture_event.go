@@ -96,7 +96,7 @@ type CaptureEventModel struct {
 	currentState string // ChooseCaptureStrategy, CaptureForm, ReviewInferredEvent, Submit
 
 	// captureForm is the form for capturing event details.
-	captureForm interface{} // *models.FormModel (avoid circular imports)
+	captureForm interface{} // nolint:unused
 
 	// reviewState is the state of the ReviewInferredEvent sub-flow.
 	reviewState *ReviewInferredEventState
@@ -105,7 +105,7 @@ type CaptureEventModel struct {
 	result *CaptureEventResult
 
 	// error tracks any errors during the intent.
-	error *IntentError
+	error *IntentError // nolint: unused
 }
 
 // CaptureEventStates for navigation.

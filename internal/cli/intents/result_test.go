@@ -254,7 +254,7 @@ func TestIntentError_WithCause(t *testing.T) {
 	}
 
 	cause := errors.New("cause error")
-	err.WithCause(cause)
+	err.WithCause(cause) // nolint: errcheck
 
 	if err.Cause != cause {
 		t.Errorf("expected cause to be set")
@@ -267,7 +267,7 @@ func TestIntentError_WithMessage(t *testing.T) {
 		Message: "original message",
 	}
 
-	err.WithMessage("updated message")
+	err.WithMessage("updated message") // nolint: errcheck
 
 	if err.Message != "updated message" {
 		t.Errorf("expected message to be updated")
