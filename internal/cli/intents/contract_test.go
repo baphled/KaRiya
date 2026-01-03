@@ -1,5 +1,6 @@
 package intents
 import (
+	"fmt"
 	"testing"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -693,6 +694,529 @@ var _ = Describe("Modal Helper Functions", func() {
 		It("should handle nil input", func() {
 			copy := copyMetadataSnapshot(nil)
 			Expect(copy).To(BeNil())
+		})
+	})
+})
+
+
+var _ = Describe("CaptureEvent State Transition Coverage", func() {
+	var (
+		intent *CaptureEventIntent
+		ctx    *CaptureEventContext
+	)
+
+	BeforeEach(func() {
+		ctx = &CaptureEventContext{
+			CaptureStrategy: "manual",
+			PreviousEvent:   nil,
+			Metadata:        make(map[string]string),
+		}
+		var err error
+		intent, err = NewCaptureEventIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	Describe("IsActive method", func() {
+		It("should return true when intent is active", func() {
+			Expect(intent.IsActive()).To(BeTrue())
+		})
+
+		It("should return false when intent is inactive", func() {
+			intent.active = false
+			Expect(intent.IsActive()).To(BeFalse())
+		})
+	})
+
+	Describe("GetResult method", func() {
+		It("should return nil when no result is set", func() {
+			Expect(intent.GetResult()).To(BeNil())
+		})
+
+		It("should return result when set", func() {
+			intent.setCompleted(&CaptureEventResult{Event: &career.CareerEvent{Text: "Test"}})
+			result := intent.GetResult()
+			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Completed))
+		})
+	})
+
+	Describe("updateChooseStrategy edge cases", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateChooseStrategy
+		})
+
+		It("should handle unknown strategy selection", func() {
+			intent.Update(StrategySelectedMsg{Strategy: "unknown_strategy"})
+			// Should still transition to form state
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should handle empty strategy selection", func() {
+			intent.Update(StrategySelectedMsg{Strategy: ""})
+			// Should still transition to form state
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should handle numeric key selections", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'2'}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should handle numeric key selections for option 3", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'3'}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should ignore invalid numeric keys", func() {
+			startState := intent.state.currentState
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'9'}})
+			Expect(intent.state.currentState).To(Equal(startState))
+		})
+
+		It("should handle non-numeric keys gracefully", func() {
+			startState := intent.state.currentState
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(intent.state.currentState).To(Equal(startState))
+		})
+	})
+
+	Describe("updateCaptureForm edge cases", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateForm
+		})
+
+		It("should handle FormSubmittedMsg with nil event", func() {
+			intent.Update(FormSubmittedMsg{Event: nil})
+			// Should fail with invalid form error
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Failed))
+			Expect(intent.result.Error.Code).To(Equal("INVALID_FORM"))
+		})
+
+		It("should handle form submission with minimal event", func() {
+			event := &career.CareerEvent{Text: "Minimal"}
+			intent.Update(FormSubmittedMsg{Event: event})
+			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+			Expect(intent.state.reviewState.Event).To(Equal(event))
+		})
+
+		It("should transition to review on Ctrl+S", func() {
+			event := &career.CareerEvent{Text: "Test"}
+			intent.state.reviewState.Event = event
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+		})
+	})
+
+	Describe("updateReviewInferredEvent edge cases", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateReview
+			intent.state.reviewState.Event = &career.CareerEvent{Text: "Test Event"}
+		})
+
+		It("should handle ReviewConfirmedMsg with empty bursts and facts", func() {
+			msg := ReviewConfirmedMsg{
+				AcceptedBursts: []*career.Burst{},
+				AcceptedFacts:  []*career.Fact{},
+				RejectedItems:  make(map[string]string),
+			}
+			intent.Update(msg)
+			Expect(intent.state.currentState).To(Equal(CaptureStateSubmit))
+		})
+
+		It("should handle ReviewConfirmedMsg with multiple bursts and facts", func() {
+			msg := ReviewConfirmedMsg{
+				AcceptedBursts: []*career.Burst{
+					{Name: "Burst 1"},
+					{Name: "Burst 2"},
+				},
+				AcceptedFacts: []*career.Fact{
+					{Text: "Fact 1"},
+					{Text: "Fact 2"},
+				},
+				RejectedItems: map[string]string{
+					"burst_1": "Not relevant",
+				},
+			}
+			intent.Update(msg)
+			Expect(intent.state.currentState).To(Equal(CaptureStateSubmit))
+			Expect(len(intent.state.reviewState.AcceptedBursts)).To(Equal(2))
+			Expect(len(intent.state.reviewState.AcceptedFacts)).To(Equal(2))
+		})
+
+		It("should handle ReviewBackMsg", func() {
+			intent.Update(ReviewBackMsg{})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should handle 'e' key for metadata editing", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(intent.state.reviewState.EditingMode).To(Equal(EditingModeMetadata))
+		})
+
+		It("should handle 'b' key for burst editing", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+			Expect(intent.state.reviewState.EditingMode).To(Equal(EditingModeBursts))
+		})
+
+		It("should handle 'f' key for fact editing", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			Expect(intent.state.reviewState.EditingMode).To(Equal(EditingModeFacts))
+		})
+	})
+
+	Describe("updateSubmit edge cases", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateSubmit
+			intent.state.reviewState.Event = &career.CareerEvent{Text: "Test Event"}
+			intent.state.reviewState.AcceptedBursts = []*career.Burst{}
+			intent.state.reviewState.AcceptedFacts = []*career.Fact{}
+		})
+
+		It("should handle SubmitCompleteMsg", func() {
+			intent.Update(SubmitCompleteMsg{})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Completed))
+		})
+
+		It("should handle SubmitErrorMsg with code and message", func() {
+			intent.Update(SubmitErrorMsg{
+				Code:    "NETWORK_ERROR",
+				Message: "Failed to connect to server",
+				Cause:   nil,
+			})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Failed))
+			Expect(intent.result.Error.Code).To(Equal("NETWORK_ERROR"))
+			Expect(intent.result.Error.Message).To(Equal("Failed to connect to server"))
+		})
+
+		It("should handle SubmitErrorMsg with cause", func() {
+			cause := fmt.Errorf("connection timeout")
+			intent.Update(SubmitErrorMsg{
+				Code:    "TIMEOUT",
+				Message: "Request timed out",
+				Cause:   cause,
+			})
+			Expect(intent.result.Error.Cause).To(Equal(cause))
+		})
+
+		It("should transition to submit on Ctrl+S from review", func() {
+			intent.state.currentState = CaptureStateReview
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			Expect(intent.state.currentState).To(Equal(CaptureStateSubmit))
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("performSubmit function", func() {
+		BeforeEach(func() {
+			intent.state.currentState = CaptureStateSubmit
+			intent.state.reviewState.Event = &career.CareerEvent{Text: "Test Event"}
+		})
+
+		It("should return SubmitCompleteMsg on successful submission", func() {
+			cmd := intent.performSubmit()
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			Expect(msg).To(BeAssignableToTypeOf(SubmitCompleteMsg{}))
+		})
+
+		It("should return SubmitErrorMsg when event is nil", func() {
+			intent.state.reviewState.Event = nil
+			cmd := intent.performSubmit()
+			msg := cmd()
+			Expect(msg).To(BeAssignableToTypeOf(SubmitErrorMsg{}))
+			errorMsg := msg.(SubmitErrorMsg)
+			Expect(errorMsg.Code).To(Equal("MISSING_EVENT"))
+		})
+
+		It("should return SubmitErrorMsg on validation failure", func() {
+			intent.state.reviewState.Event = &career.CareerEvent{Text: ""}
+			cmd := intent.performSubmit()
+			msg := cmd()
+			Expect(msg).To(BeAssignableToTypeOf(SubmitErrorMsg{}))
+			errorMsg := msg.(SubmitErrorMsg)
+			Expect(errorMsg.Code).To(Equal("VALIDATION_ERROR"))
+		})
+	})
+
+	Describe("Cancel handling across all states", func() {
+		It("should cancel from StateChooseStrategy", func() {
+			intent.state.currentState = CaptureStateChooseStrategy
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should cancel from StateCaptureForm", func() {
+			intent.state.currentState = CaptureStateForm
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should cancel from StateReviewInferred", func() {
+			intent.state.currentState = CaptureStateReview
+			intent.state.reviewState.Event = &career.CareerEvent{Text: "Test"}
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should cancel from StateSubmit", func() {
+			intent.state.currentState = CaptureStateSubmit
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			Expect(intent.active).To(BeFalse())
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+	})
+
+	Describe("Back navigation across all states", func() {
+		It("should go back from StateCaptureForm to StateChooseStrategy", func() {
+			intent.state.currentState = CaptureStateForm
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+		})
+
+		It("should go back from StateReviewInferred to StateCaptureForm", func() {
+			intent.state.currentState = CaptureStateReview
+			intent.state.reviewState.Event = &career.CareerEvent{Text: "Test"}
+			intent.Update(ReviewBackMsg{})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should stay in StateChooseStrategy when pressing Esc", func() {
+			intent.state.currentState = CaptureStateChooseStrategy
+			startState := intent.state.currentState
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(startState))
+		})
+	})
+
+	Describe("View rendering for all states", func() {
+		It("should render inactive message when intent has failed", func() {
+			intent.setFailed("TEST_ERROR", "Test error message", nil)
+			view := intent.View()
+			// When inactive, the view shows "not active" message
+			Expect(view).To(ContainSubstring("not active"))
+		})
+
+		It("should render appropriate view based on state", func() {
+			states := []string{
+				CaptureStateChooseStrategy,
+				CaptureStateForm,
+				CaptureStateReview,
+				CaptureStateSubmit,
+			}
+
+			for _, state := range states {
+				intent.state.currentState = state
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+			}
+		})
+	})
+
+	Describe("Result conversion", func() {
+		It("should convert typed result to interface result", func() {
+			intent.setCompleted(&CaptureEventResult{
+				Event: &career.CareerEvent{Text: "Test"},
+			})
+			result := intent.Result()
+			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Completed))
+			Expect(result.Data).NotTo(BeNil())
+		})
+
+		It("should preserve error information in result", func() {
+			intent.setFailed("ERROR_CODE", "Error message", fmt.Errorf("cause"))
+			result := intent.Result()
+			Expect(result.Error).NotTo(BeNil())
+			Expect(result.Error.Code).To(Equal("ERROR_CODE"))
+		})
+	})
+
+	Describe("Message handling robustness", func() {
+		It("should ignore unknown message types", func() {
+			startState := intent.state.currentState
+			intent.Update("unknown string message")
+			Expect(intent.state.currentState).To(Equal(startState))
+		})
+
+		It("should handle WindowSizeMsg gracefully", func() {
+			startState := intent.state.currentState
+			intent.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+			Expect(intent.state.currentState).To(Equal(startState))
+		})
+
+		It("should handle multiple key presses in sequence", func() {
+			intent.state.currentState = CaptureStateChooseStrategy
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+
+			intent.Update(FormSubmittedMsg{Event: &career.CareerEvent{Text: "Test"}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+
+			intent.Update(ReviewBackMsg{})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+	})
+})
+
+var _ = Describe("CaptureEvent Init and Form Initialization", func() {
+	Describe("Init with different capture strategies", func() {
+		It("should initialize for new event capture", func() {
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "new",
+				PreviousEvent:   nil,
+				Metadata:        make(map[string]string),
+			}
+			intent, err := NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+			cmd := intent.Init()
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should initialize for quick capture", func() {
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "quick",
+				PreviousEvent:   nil,
+				Metadata:        make(map[string]string),
+			}
+			intent, err := NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+		})
+
+		It("should initialize for event editing", func() {
+			previousEvent := &career.CareerEvent{Text: "Existing Event"}
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "edit",
+				PreviousEvent:   previousEvent,
+				Metadata:        make(map[string]string),
+			}
+			intent, err := NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+		})
+
+		It("should initialize for quick import", func() {
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "import",
+				PreviousEvent:   nil,
+				Metadata:        make(map[string]string),
+			}
+			intent, err := NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+		})
+	})
+
+	Describe("Error handling for invalid context", func() {
+		It("should reject empty strategy", func() {
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "",
+				PreviousEvent:   nil,
+				Metadata:        make(map[string]string),
+			}
+			_, err := NewCaptureEventIntent(ctx)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should handle nil metadata gracefully", func() {
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "manual",
+				PreviousEvent:   nil,
+				Metadata:        nil,
+			}
+			intent, err := NewCaptureEventIntent(ctx)
+			// Should succeed even with nil metadata
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent).NotTo(BeNil())
+		})
+	})
+})
+
+var _ = Describe("CaptureEvent Edit Mode Coverage", func() {
+	Describe("Form initialization for edit mode", func() {
+		It("should load previous event data when editing", func() {
+			previousEvent := &career.CareerEvent{
+				Text: "Previous Event",
+				Tags: []string{"tag1", "tag2"},
+			}
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "edit",
+				PreviousEvent:   previousEvent,
+				Metadata:        make(map[string]string),
+			}
+			intent, err := NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			// The form should be initialized with the previous event
+			Expect(intent).NotTo(BeNil())
+		})
+
+		It("should handle edit mode with complex event data", func() {
+			previousEvent := &career.CareerEvent{
+				Text:       "Complex Event",
+				Tags:       []string{"tag1", "tag2", "tag3"},
+				Categories: []string{"cat1", "cat2"},
+			}
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "edit",
+				PreviousEvent:   previousEvent,
+				Metadata: map[string]string{
+					"source": "import",
+				},
+			}
+			intent, err := NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent).NotTo(BeNil())
+		})
+	})
+
+	Describe("Message handling in different edit modes", func() {
+		var intent *CaptureEventIntent
+
+		BeforeEach(func() {
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "manual",
+				PreviousEvent:   nil,
+				Metadata:        make(map[string]string),
+			}
+			var err error
+			intent, err = NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should handle FocusNextMsg", func() {
+			intent.state.currentState = CaptureStateForm
+			intent.Update(tea.KeyMsg{Type: tea.KeyTab})
+			// Should handle tab gracefully
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+		})
+
+		It("should handle multiple transitions in sequence", func() {
+			// Strategy -> Form
+			intent.Update(StrategySelectedMsg{Strategy: "manual"})
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+
+			// Form -> Review
+			intent.Update(FormSubmittedMsg{Event: &career.CareerEvent{Text: "Event"}})
+			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+
+			// Review -> Submit
+			intent.Update(ReviewConfirmedMsg{
+				AcceptedBursts: []*career.Burst{},
+				AcceptedFacts:  []*career.Fact{},
+				RejectedItems:  make(map[string]string),
+			})
+			Expect(intent.state.currentState).To(Equal(CaptureStateSubmit))
+
+			// Submit -> Complete
+			intent.Update(SubmitCompleteMsg{})
+			Expect(intent.active).To(BeFalse())
 		})
 	})
 })
