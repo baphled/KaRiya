@@ -215,6 +215,7 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 // updateCaptureForm handles messages while capturing event details.
 // It processes form input, validates data, and transitions to review state.
 // The form model handles all text input and field navigation.
+// Users can press Ctrl+S to submit the form, or Tab+Enter to submit via the button.
 func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 	// Delegate all messages to the form model to handle input and state
 	_, formCmd := i.state.captureForm.Update(msg)
@@ -223,6 +224,11 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "ctrl+s":
+			// User pressed Ctrl+S to submit the form
+			// Trigger form submission
+			return i.state.captureForm.SubmitForm()
+
 		case "q", "ctrl+c":
 			// User cancelled
 			i.setCancelled()
@@ -282,6 +288,7 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 
 	// Return the command from the form update
 	return formCmd
+
 }
 
 // updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
