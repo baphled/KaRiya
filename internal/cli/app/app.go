@@ -222,20 +222,28 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // viewMenu renders the main menu
 func (m *Model) viewMenu() string {
 	var output string
-	output += lipgloss.NewStyle().Bold(true).Render("KaRiya - Career Event Manager\n\n")
-	output += "Select an option:\n\n"
-
-	for i, item := range m.menuItems {
-		prefix := "  "
-		if i == m.selectedMenuIndex {
-			prefix = "> "
-			output += lipgloss.NewStyle().Foreground(lipgloss.Color("12")).Render(prefix + item.Name + "\n")
-		} else {
-			output += prefix + item.Name + "\n"
+	
+		headerStyle := lipgloss.NewStyle().Bold(true).Underline(true).Foreground(lipgloss.Color("57"))
+		menuStyle := lipgloss.NewStyle().Padding(0, 2) // Adds padding for menu items
+		selectedStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("229")).Background(lipgloss.Color("57"))
+		unselectedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("246"))
+		footerStyle := lipgloss.NewStyle().Faint(true).Italic(true)
+	
+		// Header
+		output += headerStyle.Render("KaRiya - Career Event Manager\n\n")
+		output += "Select an option:\n\n"
+	
+		// Menu items
+		for i, item := range m.menuItems {
+			if i == m.selectedMenuIndex {
+				output += menuStyle.Render(selectedStyle.Render(item.Name)) + "\n"
+			} else {
+				output += menuStyle.Render(unselectedStyle.Render(item.Name)) + "\n"
+			}
 		}
-	}
-
-	output += "\n" + lipgloss.NewStyle().Faint(true).Render("↑/↓: Navigate | Enter: Select | Ctrl+C: Quit\n")
+	
+		// Footer
+		output += "\n" + footerStyle.Render("↑/↓: Navigate | Enter: Select | Ctrl+C: Quit\n")
 
 	return output
 }
