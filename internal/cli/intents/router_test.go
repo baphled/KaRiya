@@ -66,9 +66,9 @@ func TestDefaultIntentRouter_ActivateIntent(t *testing.T) {
 	router := NewDefaultIntentRouter()
 	factory := func() Intent { return NewMockIntent() }
 
-	router.RegisterIntent("test_intent", factory)
+	_ = router.RegisterIntent("test_intent", factory) // nolint: errcheck
 
-	cmd, err := router.ActivateIntent("test_intent", nil)
+	_, err := router.ActivateIntent("test_intent", nil)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -83,8 +83,6 @@ func TestDefaultIntentRouter_ActivateIntent(t *testing.T) {
 		t.Errorf("expected intent.Init() to be called")
 	}
 
-	if cmd == nil {
-	}
 }
 
 func TestDefaultIntentRouter_ActivateIntent_NotFound(t *testing.T) {
@@ -101,8 +99,8 @@ func TestDefaultIntentRouter_GetActiveIntent(t *testing.T) {
 	mockIntent := NewMockIntent()
 	factory := func() Intent { return mockIntent }
 
-	router.RegisterIntent("test_intent", factory)
-	router.ActivateIntent("test_intent", nil)
+	_ = router.RegisterIntent("test_intent", factory) // nolint: errcheck
+	_, _ = router.ActivateIntent("test_intent", nil)  // nolint: errcheck
 
 	active := router.GetActiveIntent()
 	if active == nil {
@@ -114,8 +112,8 @@ func TestDefaultIntentRouter_HandleMessage(t *testing.T) {
 	router := NewDefaultIntentRouter()
 	factory := func() Intent { return NewMockIntent() }
 
-	router.RegisterIntent("test_intent", factory)
-	router.ActivateIntent("test_intent", nil)
+	_ = router.RegisterIntent("test_intent", factory) // nolint: errcheck
+	_, _ = router.ActivateIntent("test_intent", nil)  // nolint: errcheck
 
 	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
 	_, result := router.HandleMessage(msg)
@@ -134,8 +132,8 @@ func TestDefaultIntentRouter_View(t *testing.T) {
 	router := NewDefaultIntentRouter()
 	factory := func() Intent { return NewMockIntent() }
 
-	router.RegisterIntent("test_intent", factory)
-	router.ActivateIntent("test_intent", nil)
+	_ = router.RegisterIntent("test_intent", factory) // nolint: errcheck
+	_, _ = router.ActivateIntent("test_intent", nil)  // nolint: errcheck
 
 	view := router.View()
 	if view != "Mock Intent View" {
@@ -153,22 +151,19 @@ func TestDefaultIntentRouter_Back(t *testing.T) {
 	factory1 := func() Intent { return NewMockIntent() }
 	factory2 := func() Intent { return NewMockIntent() }
 
-	router.RegisterIntent("intent1", factory1)
-	router.RegisterIntent("intent2", factory2)
+	_ = router.RegisterIntent("intent1", factory1) // nolint: errcheck
+	_ = router.RegisterIntent("intent2", factory2) // nolint: errcheck
 
-	router.ActivateIntent("intent1", nil)
-	router.ActivateIntent("intent2", nil)
+	_, _ = router.ActivateIntent("intent1", nil) // nolint: errcheck
+	_, _ = router.ActivateIntent("intent2", nil) // nolint: errcheck
 
 	if router.GetActiveIntent() == nil {
 		t.Errorf("expected intent2 to be active")
 	}
 
-	cmd, err := router.Back()
+	_, err := router.Back()
 	if err != nil {
 		t.Errorf("expected no error when going back, got %v", err)
-	}
-
-	if cmd == nil {
 	}
 
 	if router.GetHistoryDepth() != 1 {
@@ -190,11 +185,11 @@ func TestDefaultIntentRouter_GetHistory(t *testing.T) {
 	factory1 := func() Intent { return NewMockIntent() }
 	factory2 := func() Intent { return NewMockIntent() }
 
-	router.RegisterIntent("intent1", factory1)
-	router.RegisterIntent("intent2", factory2)
+	_ = router.RegisterIntent("intent1", factory1) // nolint: errcheck
+	_ = router.RegisterIntent("intent2", factory2) // nolint: errcheck
 
-	router.ActivateIntent("intent1", nil)
-	router.ActivateIntent("intent2", nil)
+	_, _ = router.ActivateIntent("intent1", nil) // nolint: errcheck
+	_, _ = router.ActivateIntent("intent2", nil) // nolint: errcheck
 
 	history := router.GetHistory()
 	if len(history) != 1 {
@@ -227,19 +222,19 @@ func TestDefaultIntentRouter_GetHistoryDepth(t *testing.T) {
 	factory1 := func() Intent { return NewMockIntent() }
 	factory2 := func() Intent { return NewMockIntent() }
 
-	router.RegisterIntent("intent1", factory1)
-	router.RegisterIntent("intent2", factory2)
+	_ = router.RegisterIntent("intent1", factory1) // nolint: errcheck
+	_ = router.RegisterIntent("intent2", factory2) // nolint: errcheck
 
 	if router.GetHistoryDepth() != 0 {
 		t.Errorf("expected depth 0 when no intent active")
 	}
 
-	router.ActivateIntent("intent1", nil)
+	_, _ = router.ActivateIntent("intent1", nil) // nolint: errcheck
 	if router.GetHistoryDepth() != 1 {
 		t.Errorf("expected depth 1 after first activation")
 	}
 
-	router.ActivateIntent("intent2", nil)
+	_, _ = router.ActivateIntent("intent2", nil) // nolint: errcheck
 	if router.GetHistoryDepth() != 2 {
 		t.Errorf("expected depth 2 after second activation")
 	}
@@ -250,8 +245,8 @@ func TestDefaultIntentRouter_HandleMessage_WithResult(t *testing.T) {
 	mockIntent := NewMockIntent()
 	factory := func() Intent { return mockIntent }
 
-	router.RegisterIntent("test_intent", factory)
-	router.ActivateIntent("test_intent", nil)
+	_ = router.RegisterIntent("test_intent", factory) // nolint: errcheck
+	_, _ = router.ActivateIntent("test_intent", nil)  // nolint: errcheck
 
 	// Set a result on the intent
 	expectedResult := NewCompletedResult[interface{}]("test data")
