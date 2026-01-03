@@ -708,36 +708,36 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 
 #### 3.1 Implement BrowseTimeline Intent
 
-- [ ] 3.1.1 Implement BrowseTimeline model and states
+- [x] 3.1.1 Implement BrowseTimeline model and states
   - Define states: StateTimelineView, StateEventDetail, StateEventWithFacts
   - Implement Init(), Update(), View(), Result() methods
   - Follow CaptureEvent pattern
 
-- [ ] 3.1.2 Implement timeline view and filtering
+- [x] 3.1.2 Implement timeline view and filtering
   - Display list of events with filtering and sorting
   - Support filter by date, tags, companies, categories
   - Support sort by date, relevance, title
   - Preserve filter/sort state in metadata
 
-- [ ] 3.1.3 Implement event detail view
+- [x] 3.1.3 Implement event detail view
   - Display selected event details
   - Display associated facts
   - Allow inline editing of event/facts
   - Return to timeline with context preserved
 
-- [ ] 3.1.4 Implement result handling
+- [x] 3.1.4 Implement result handling
   - Return selected event or null if cancelled
   - Include metadata (filters, sort, selection)
   - Document result semantics
 
-- [ ] 3.1.5 Write comprehensive tests (>90% coverage)
+- [x] 3.1.5 Write comprehensive tests (>90% coverage)
   - State transition tests
   - View rendering tests
   - Filtering/sorting tests
   - Context preservation tests
   - Result handling tests
 
-- [ ] 3.1.6 Verify BrowseTimeline follows CaptureEvent pattern
+- [x] 3.1.6 Verify BrowseTimeline follows CaptureEvent pattern
   - Same state machine structure
   - Same view organization
   - Same result handling
@@ -745,36 +745,36 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 
 #### 3.2 Implement GenerateCV Intent
 
-- [ ] 3.2.1 Implement GenerateCV model and states
+- [x] 3.2.1 Implement GenerateCV model and states
   - Define states: StateSelectProfile, StateValidateProfile, StateSelectAudience, StateValidateAudience, StateGeneratePreview, StateReviewCV, StateConfirmCV, StateArtifactReady
   - Implement Init(), Update(), View(), Result() methods
   - Follow CaptureEvent pattern
 
-- [ ] 3.2.2 Implement profile and audience selection
+- [x] 3.2.2 Implement profile and audience selection
   - Display profile options
   - Validate profile completeness
   - Display audience options
   - Validate audience compatibility
 
-- [ ] 3.2.3 Implement CV generation
+- [x] 3.2.3 Implement CV generation
   - Call CV generation service
   - Handle generation errors
   - Display preview
   - Allow inline editing
 
-- [ ] 3.2.4 Implement result handling
+- [x] 3.2.4 Implement result handling
   - Return generated CV
   - Include metadata (profile, audience)
   - Document result semantics
 
-- [ ] 3.2.5 Write comprehensive tests (>90% coverage)
+- [x] 3.2.5 Write comprehensive tests (>90% coverage)
   - State transition tests
   - View rendering tests
   - Validation tests
   - Generation tests
   - Result handling tests
 
-- [ ] 3.2.6 Verify GenerateCV follows CaptureEvent pattern
+- [x] 3.2.6 Verify GenerateCV follows CaptureEvent pattern
   - Same state machine structure
   - Same view organization
   - Same result handling

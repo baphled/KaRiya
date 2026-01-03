@@ -322,7 +322,7 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			emptyCtx := &BrowseTimelineContext{
 				Events: make([]*career.CareerEvent, 0),
 			}
-			emptyCtx.Validate()
+			_ = emptyCtx.Validate()
 
 			emptyIntent, err := NewBrowseTimelineIntent(emptyCtx)
 			Expect(err).NotTo(HaveOccurred())
