@@ -1,7 +1,10 @@
 package intents
 
 import (
+	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
 // CaptureEventContext is the minimal context passed to CaptureEvent intent.
@@ -15,6 +18,13 @@ type CaptureEventContext struct {
 
 	// Metadata is the initial metadata for the event (may be empty).
 	Metadata map[string]string
+
+	// CLIEventService is the service for CLI operations (for form submission).
+	CLIEventService *service.CLIEventService
+
+	// CareerService is the domain service for enrichment operations.
+	// Used for suggesting bursts and extracting facts in enriched mode.
+	CareerService *careerservice.Service
 }
 
 // Validate ensures the context is complete.
@@ -96,7 +106,7 @@ type CaptureEventModel struct {
 	currentState string // ChooseCaptureStrategy, CaptureForm, ReviewInferredEvent, Submit
 
 	// captureForm is the form for capturing event details.
-	captureForm interface{} // nolint:unused
+	captureForm *models.FormModel
 
 	// reviewState is the state of the ReviewInferredEvent sub-flow.
 	reviewState *ReviewInferredEventState
@@ -105,7 +115,7 @@ type CaptureEventModel struct {
 	result *CaptureEventResult
 
 	// error tracks any errors during the intent.
-	error *IntentError // nolint: unused
+	error *IntentError
 }
 
 // CaptureEventStates for navigation.

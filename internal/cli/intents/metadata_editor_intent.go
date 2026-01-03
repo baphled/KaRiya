@@ -23,7 +23,8 @@ func NewMetadataEditorIntent(data *MetadataEditorContext) *MetadataEditorModel {
 func (m *MetadataEditorModel) Init() tea.Cmd {
 	// context already set in data
 	m.data.CurrentState = MetadataReviewState
-	return nil
+	// Return a no-op command to satisfy the intent lifecycle
+	return func() tea.Msg { return nil }
 }
 
 func (m *MetadataEditorModel) Update(msg tea.Msg) tea.Cmd {
