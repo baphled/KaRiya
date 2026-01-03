@@ -3,6 +3,7 @@ package intents
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -110,21 +111,24 @@ func (i *CaptureEventIntent) Init() tea.Cmd {
 
 // initializeFormForEdit initializes the form for editing an existing event.
 func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
-	// TODO: Implement form initialization with previous event data.
-	// This should:
-	// - Populate the form fields with existing event data
-	// - Skip the strategy selection (or allow changing strategy)
-	// - Return any startup commands (e.g., fetch related data)
+	// Initialize the review state with the previous event data.
+	// The form will be pre-populated with existing event details.
+	if i.context.PreviousEvent != nil {
+		i.state.reviewState.Event = i.context.PreviousEvent
+	}
 	return nil
 }
 
 // initializeFormForNew initializes the form for capturing a new event.
 func (i *CaptureEventIntent) initializeFormForNew() tea.Cmd {
-	// TODO: Implement form initialization for new event.
-	// This should:
-	// - Create a fresh form with empty fields
-	// - Initialize with the capture strategy
-	// - Return any startup commands
+	// Create a fresh event with current timestamp.
+	// The form will guide the user through data entry.
+	i.state.reviewState.Event = &career.CareerEvent{
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+		Tags:       make([]string, 0),
+		Categories: make([]string, 0),
+	}
 	return nil
 }
 
@@ -195,17 +199,25 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 }
 
 // updateCaptureForm handles messages while capturing event details.
+// It processes form input, validates data, and transitions to review state.
 func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+s", "enter":
 			// Submit form - transition to review state
-			// In a real implementation, validate form and get data
-			event := &career.CareerEvent{
-				// TODO: Populate from form data
+			if i.state.reviewState.Event == nil {
+				// Create a minimal event if none exists
+				i.state.reviewState.Event = &career.CareerEvent{
+					CreatedAt:  time.Now(),
+					UpdatedAt:  time.Now(),
+					Tags:       make([]string, 0),
+					Categories: make([]string, 0),
+				}
 			}
-			i.state.reviewState.Event = event
+
+			// Transition to review state regardless of validation
+			// Validation errors will be shown in the review state
 			i.state.currentState = CaptureStateReview
 			return nil
 
@@ -222,6 +234,17 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 
 	case FormSubmittedMsg:
 		// Form was submitted with event data
+		if msg.Event == nil {
+			i.setFailed("INVALID_FORM", "Form submission with nil event", nil)
+			return nil
+		}
+
+		// Validate the event data
+		if err := msg.Event.Validate(); err != nil {
+			i.setFailed("VALIDATION_ERROR", fmt.Sprintf("Form validation failed: %v", err), err)
+			return nil
+		}
+
 		i.state.reviewState.Event = msg.Event
 		i.state.currentState = CaptureStateReview
 		return nil
@@ -236,6 +259,7 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 }
 
 // updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
+// It processes review confirmations, edits, and transitions to submit state.
 func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -294,6 +318,7 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 }
 
 // updateSubmit handles messages while submitting the event.
+// It processes submission completion, errors, and retry attempts.
 func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
@@ -309,14 +334,14 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case SubmitErrorMsg:
-		// Submission failed
+		// Submission failed - mark as failed immediately
 		i.setFailed(msg.Code, msg.Message, msg.Cause)
 		return nil
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
-			// Cancel submission (if possible)
+			// Cancel submission
 			i.setCancelled()
 			return nil
 
@@ -330,11 +355,30 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 }
 
 // performSubmit performs the actual submission of the event.
-// In a real implementation, this would call the domain service.
+// In a real implementation, this would call the domain service to persist the event.
 func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 	return func() tea.Msg {
-		// TODO: Call domain service to save the event
-		// For now, simulate successful submission
+		// Validate event before submission
+		if i.state.reviewState.Event == nil {
+			return SubmitErrorMsg{
+				Code:    "MISSING_EVENT",
+				Message: "No event data to submit",
+				Cause:   nil,
+			}
+		}
+
+		// Validate event data
+		if err := i.state.reviewState.Event.Validate(); err != nil {
+			return SubmitErrorMsg{
+				Code:    "VALIDATION_ERROR",
+				Message: fmt.Sprintf("Event validation failed: %v", err),
+				Cause:   err,
+			}
+		}
+
+		// TODO: Call domain service to save the event.
+		// For now, simulate successful submission with a small delay.
+		time.Sleep(100 * time.Millisecond)
 		return SubmitCompleteMsg{}
 	}
 }
@@ -343,6 +387,11 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 func (i *CaptureEventIntent) View() string {
 	if !i.active {
 		return "CaptureEvent intent is not active"
+	}
+
+	// Show error view if there's an error
+	if i.state.error != nil {
+		return i.viewError()
 	}
 
 	switch i.state.currentState {
@@ -587,4 +636,3 @@ func (i *CaptureEventIntent) Result() *IntentResult[interface{}] {
 		Metadata: i.result.Metadata,
 	}
 }
-

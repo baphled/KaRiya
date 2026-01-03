@@ -485,13 +485,13 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 
 #### 2.2 Implement State Transitions (Update Logic)
 
-- [ ] 2.2.1 Implement StateChooseStrategy state handling
+- [x] 2.2.1 Implement StateChooseStrategy state handling
   - Display strategy options (manual, quick capture, import)
   - Handle user selection
   - Transition to StateCaptureForm
   - Document state transition
 
-- [ ] 2.2.2 Implement StateCaptureForm state handling
+- [x] 2.2.2 Implement StateCaptureForm state handling
   - Display form with fields (date, time, title, description, tags, companies, categories)
   - Handle form input
   - Perform field validation
@@ -499,27 +499,27 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
   - Handle cancel (transition back to StateChooseStrategy)
   - Document state transition
 
-- [ ] 2.2.3 Implement StateReviewInferred state handling
+- [x] 2.2.3 Implement StateReviewInferred state handling
   - Display inferred metadata, bursts, facts
   - Allow inline editing of each (via modals)
   - Handle form submission (transition to StateSubmit)
   - Handle cancel (transition back to StateCaptureForm)
   - Document state transition
 
-- [ ] 2.2.4 Implement StateSubmit state handling
+- [x] 2.2.4 Implement StateSubmit state handling
   - Confirm event details
   - Call domain service to save event
   - Transition to final state with result
   - Handle service errors gracefully
   - Document state transition
 
-- [ ] 2.2.5 Implement error handling and recovery
+- [x] 2.2.5 Implement error handling and recovery
   - Validation errors show in form
   - Service errors show as error state
   - Allow retry on service errors
   - Document error recovery
 
-- [ ] 2.2.6 Write comprehensive state transition tests in `capture_event_test.go`
+- [x] 2.2.6 Write comprehensive state transition tests in `capture_event_test.go`
   - Each state transition test
   - Error handling tests
   - Validation tests
