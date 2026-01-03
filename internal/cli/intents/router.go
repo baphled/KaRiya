@@ -77,6 +77,9 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]int
 
 	// Create and activate the new intent.
 	intent := factory()
+	if intent == nil {
+		return nil, fmt.Errorf("failed to create intent %q: factory returned nil", name)
+	}
 	r.activeIntent = intent
 
 	// Call the intent's Init method to get any startup commands.

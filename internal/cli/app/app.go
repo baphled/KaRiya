@@ -293,49 +293,81 @@ func registerAllIntents(router *intents.DefaultIntentRouter, careerService *care
 		return intent
 	})
 
-	// BurstManagement
+	// BurstManagement - Use helper constructor
 	_ = router.RegisterIntent("burst_management", func() intents.Intent {
-		bursts, err := careerService.GetBurstRepository().List(ctx, careerrepo.BurstListFilters{Limit: 1000})
-		if err != nil {
-			log.Error("Failed to load bursts: %v", err)
-			bursts = make([]*career.Burst, 0)
+		burstRepo := careerService.GetBurstRepository()
+		burstCtx := intents.NewBurstManagementContext(careerService, burstRepo, ctx)
+		if burstCtx == nil {
+			log.Error("Failed to create BurstManagement context")
+			return nil
 		}
-		burstCtx := &intents.BurstManagementContext{
-			Bursts:  bursts,
-			Service: careerService,
+		intent := intents.NewBurstManagementIntent(burstCtx)
+		if intent == nil {
+			log.Error("Failed to create BurstManagement intent")
+			return nil
 		}
-		return intents.NewBurstManagementIntent(burstCtx)
+		return intent
 	})
 
-	// FactManagement
+	// FactManagement - Use helper constructor
 	_ = router.RegisterIntent("fact_management", func() intents.Intent {
-		facts, err := careerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 1000})
-		if err != nil {
-			log.Error("Failed to load facts: %v", err)
-			facts = make([]*career.Fact, 0)
+		factRepo := careerService.GetFactRepository()
+		factCtx := intents.NewFactManagementContext(factRepo, ctx)
+		if factCtx == nil {
+			log.Error("Failed to create FactManagement context")
+			return nil
 		}
-		factCtx := &intents.FactManagementContext{
-			Facts: facts,
+		intent := intents.NewFactManagementIntent(factCtx)
+		if intent == nil {
+			log.Error("Failed to create FactManagement intent")
+			return nil
 		}
-		return intents.NewFactManagementIntent(factCtx)
+		return intent
 	})
 
-	// ImportWizard
+	// ImportWizard - Use helper constructor
 	_ = router.RegisterIntent("import_wizard", func() intents.Intent {
-		importCtx := &intents.ImportWizardContext{}
-		return intents.NewImportWizardIntent(importCtx)
+		importCtx := intents.NewImportWizardContext(ctx)
+		if importCtx == nil {
+			log.Error("Failed to create ImportWizard context")
+			return nil
+		}
+		intent := intents.NewImportWizardIntent(importCtx)
+		if intent == nil {
+			log.Error("Failed to create ImportWizard intent")
+			return nil
+		}
+		return intent
 	})
 
-	// MetadataEditor
+	// MetadataEditor - Use helper constructor
 	_ = router.RegisterIntent("metadata_editor", func() intents.Intent {
-		metaCtx := &intents.MetadataEditorContext{}
-		return intents.NewMetadataEditorIntent(metaCtx)
+		metaCtx := intents.NewMetadataEditorContext(ctx)
+		if metaCtx == nil {
+			log.Error("Failed to create MetadataEditor context")
+			return nil
+		}
+		intent := intents.NewMetadataEditorIntent(metaCtx)
+		if intent == nil {
+			log.Error("Failed to create MetadataEditor intent")
+			return nil
+		}
+		return intent
 	})
 
-	// BulkOperations
+	// BulkOperations - Use helper constructor
 	_ = router.RegisterIntent("bulk_operations", func() intents.Intent {
-		bulkCtx := &intents.BulkOperationsContext{}
-		return intents.NewBulkOperationsIntent(bulkCtx)
+		bulkCtx := intents.NewBulkOperationsContext(ctx)
+		if bulkCtx == nil {
+			log.Error("Failed to create BulkOperations context")
+			return nil
+		}
+		intent := intents.NewBulkOperationsIntent(bulkCtx)
+		if intent == nil {
+			log.Error("Failed to create BulkOperations intent")
+			return nil
+		}
+		return intent
 	})
 }
 
