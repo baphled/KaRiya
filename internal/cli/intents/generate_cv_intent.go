@@ -152,11 +152,11 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 			// In a real implementation, this would call a service to generate the CV.
 			// For now, we'll create a minimal CV.
 			i.state.generatedCV = &career.CVView{
-				ID:              fmt.Sprintf("cv_%d", time.Now().Unix()),
-				Name:            i.state.selectedProfile.Name,
-				TargetRole:      i.state.selectedProfile.TargetRole,
-				TargetAudience:  i.state.selectedAudiences,
-				GeneratedAt:     time.Now(),
+				ID:               fmt.Sprintf("cv_%d", time.Now().Unix()),
+				Name:             i.state.selectedProfile.Name,
+				TargetRole:       i.state.selectedProfile.TargetRole,
+				TargetAudience:   i.state.selectedAudiences,
+				GeneratedAt:      time.Now(),
 				SourceEventCount: len(i.context.Events),
 				SourceFactCount:  len(i.context.Facts),
 			}
@@ -514,4 +514,3 @@ func (i *GenerateCVIntent) setCancelled() {
 	}
 	i.active = false
 }
-

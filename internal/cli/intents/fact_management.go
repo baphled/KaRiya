@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 )
 
 var (
@@ -16,66 +16,66 @@ var (
 type FactManagementState string
 
 const (
-	FactListState        FactManagementState = "list"
-	FactViewState        FactManagementState = "view"
-	FactEditorState      FactManagementState = "editor"
+	FactListState          FactManagementState = "list"
+	FactViewState          FactManagementState = "view"
+	FactEditorState        FactManagementState = "editor"
 	FactDeleteConfirmState FactManagementState = "delete_confirm"
-	FactResultsState     FactManagementState = "results"
-	FactCompletedState   FactManagementState = "completed"
+	FactResultsState       FactManagementState = "results"
+	FactCompletedState     FactManagementState = "completed"
 )
 
 type FactManagementContext struct {
-	CurrentState FactManagementState
-	Facts []*domain.Fact
-	SelectedFact *domain.Fact
+	CurrentState      FactManagementState
+	Facts             []*domain.Fact
+	SelectedFact      *domain.Fact
 	SelectedFactIndex int
-	SearchText string
-	MinQuality float64
-	MaxQuality float64
-	FilterSource string
-	SortBy string
-	SortOrder string
-	CurrentPage int
-	PageSize int
-	TotalFacts int
-	EditingFact *domain.Fact
-	FormErrors map[string]string
-	IsNewFact bool
-	FactToDelete *domain.Fact
-	ScrollPosition int
-	ExpandedRows map[int]bool
-	FactRepository careerrepo.FactRepository
-	Context context.Context
-	PreviousState FactManagementState
+	SearchText        string
+	MinQuality        float64
+	MaxQuality        float64
+	FilterSource      string
+	SortBy            string
+	SortOrder         string
+	CurrentPage       int
+	PageSize          int
+	TotalFacts        int
+	EditingFact       *domain.Fact
+	FormErrors        map[string]string
+	IsNewFact         bool
+	FactToDelete      *domain.Fact
+	ScrollPosition    int
+	ExpandedRows      map[int]bool
+	FactRepository    careerrepo.FactRepository
+	Context           context.Context
+	PreviousState     FactManagementState
 }
 
 type FactManagementResult struct {
-	Action string
-	Fact *domain.Fact
-	Facts []*domain.Fact
-	Error error
-	Message string
+	Action         string
+	Fact           *domain.Fact
+	Facts          []*domain.Fact
+	Error          error
+	Message        string
 	ScrollPosition int
 }
 
 func NewFactManagementContext(factRepo careerrepo.FactRepository, ctx context.Context) *FactManagementContext {
 	return &FactManagementContext{
-		CurrentState: FactListState,
-		Facts: make([]*domain.Fact, 0),
+		CurrentState:      FactListState,
+		Facts:             make([]*domain.Fact, 0),
 		SelectedFactIndex: -1,
-		SearchText: "",
-		MinQuality: 0.0,
-		MaxQuality: 1.0,
-		FilterSource: "",
-		SortBy: "date",
-		SortOrder: "desc",
-		CurrentPage: 0,
-		PageSize: 20,
-		FormErrors: make(map[string]string),
-		ExpandedRows: make(map[int]bool),
-		FactRepository: factRepo,
-		Context: ctx,
-		PreviousState: FactListState,
+		SearchText:        "",
+		MinQuality:        0.0,
+		MaxQuality:        1.0,
+		FilterSource:      "",
+		SortBy:            "date",
+		SortOrder:         "desc",
+		CurrentPage:       0,
+		PageSize:          20,
+		FormErrors:        make(map[string]string),
+		ExpandedRows:      make(map[int]bool),
+		FactRepository:    factRepo,
+		Context:           ctx,
+		PreviousState:     FactListState,
 	}
 }
 
@@ -189,12 +189,12 @@ func (c *FactManagementContext) DeleteFact(factID string) error {
 
 func (c *FactManagementContext) StartNewFact() {
 	c.EditingFact = &domain.Fact{
-		ID: "",
-		Text: "",
+		ID:                   "",
+		Text:                 "",
 		CompetencyCategories: make([]string, 0),
-		AudienceRelevance: make([]string, 0),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		AudienceRelevance:    make([]string, 0),
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
 	}
 	c.IsNewFact = true
 	c.ClearFormErrors()
@@ -202,16 +202,16 @@ func (c *FactManagementContext) StartNewFact() {
 
 func (c *FactManagementContext) StartEditFact(fact *domain.Fact) {
 	c.EditingFact = &domain.Fact{
-		ID: fact.ID,
-		Text: fact.Text,
+		ID:                   fact.ID,
+		Text:                 fact.Text,
 		CompetencyCategories: append([]string{}, fact.CompetencyCategories...),
-		RoleFit: fact.RoleFit,
-		AudienceRelevance: append([]string{}, fact.AudienceRelevance...),
-		StrengthSignal: fact.StrengthSignal,
-		SourceEventID: fact.SourceEventID,
-		SourceBurstID: fact.SourceBurstID,
-		CreatedAt: fact.CreatedAt,
-		UpdatedAt: fact.UpdatedAt,
+		RoleFit:              fact.RoleFit,
+		AudienceRelevance:    append([]string{}, fact.AudienceRelevance...),
+		StrengthSignal:       fact.StrengthSignal,
+		SourceEventID:        fact.SourceEventID,
+		SourceBurstID:        fact.SourceBurstID,
+		CreatedAt:            fact.CreatedAt,
+		UpdatedAt:            fact.UpdatedAt,
 	}
 	c.IsNewFact = false
 	c.ClearFormErrors()
@@ -245,4 +245,3 @@ func (c *FactManagementContext) ToggleRowExpansion(rowIndex int) {
 func (c *FactManagementContext) IsRowExpanded(rowIndex int) bool {
 	return c.ExpandedRows[rowIndex]
 }
-

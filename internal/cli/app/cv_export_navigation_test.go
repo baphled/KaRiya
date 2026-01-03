@@ -1,8 +1,8 @@
 package app
 
 import (
-	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/cli/models"
+	career "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -1,4 +1,5 @@
 package intents
+
 import (
 	"fmt"
 	"testing"
@@ -8,7 +9,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
 
 func TestContract(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -22,7 +22,7 @@ var _ = Describe("ModalEditResult", func() {
 			modified := "modified value"
 			changes := map[string]interface{}{"field": "new value"}
 
-			result := NewModalEditResult(original, modified, true, changes)
+			result := NewModalEditResult[string](original, modified, true, changes)
 
 			Expect(result.Original).To(Equal(original))
 			Expect(result.Modified).To(Equal(modified))
@@ -31,7 +31,7 @@ var _ = Describe("ModalEditResult", func() {
 		})
 
 		It("should handle nil changes map", func() {
-			result := NewModalEditResult("original", "modified", true, nil)
+			result := NewModalEditResult[string]("original", "modified", true, nil)
 
 			Expect(result.Changes).NotTo(BeNil())
 			Expect(result.Changes).To(BeEmpty())
@@ -40,13 +40,13 @@ var _ = Describe("ModalEditResult", func() {
 
 	Context("HasChanges", func() {
 		It("should return true when changes exist", func() {
-			result := NewModalEditResult("original", "modified", true, map[string]interface{}{"field": "value"})
+			result := NewModalEditResult[string]("original", "modified", true, map[string]interface{}{"field": "value"})
 
 			Expect(result.HasChanges()).To(BeTrue())
 		})
 
 		It("should return false when no changes", func() {
-			result := NewModalEditResult("original", "original", true, make(map[string]interface{}))
+			result := NewModalEditResult[string]("original", "original", true, make(map[string]interface{}))
 
 			Expect(result.HasChanges()).To(BeFalse())
 		})
@@ -54,13 +54,13 @@ var _ = Describe("ModalEditResult", func() {
 
 	Context("WasAccepted", func() {
 		It("should return true when accepted is true", func() {
-			result := NewModalEditResult("original", "modified", true, nil)
+			result := NewModalEditResult[string]("original", "modified", true, nil)
 
 			Expect(result.WasAccepted()).To(BeTrue())
 		})
 
 		It("should return false when accepted is false", func() {
-			result := NewModalEditResult("original", "original", false, nil)
+			result := NewModalEditResult[string]("original", "original", false, nil)
 
 			Expect(result.WasAccepted()).To(BeFalse())
 		})
@@ -69,13 +69,13 @@ var _ = Describe("ModalEditResult", func() {
 	Context("GetChange", func() {
 		It("should return the value for an existing change", func() {
 			changes := map[string]interface{}{"field": "new value"}
-			result := NewModalEditResult("original", "modified", true, changes)
+			result := NewModalEditResult[string]("original", "modified", true, changes)
 
 			Expect(result.GetChange("field")).To(Equal("new value"))
 		})
 
 		It("should return nil for a non-existent change", func() {
-			result := NewModalEditResult("original", "modified", true, map[string]interface{}{"field": "value"})
+			result := NewModalEditResult[string]("original", "modified", true, map[string]interface{}{"field": "value"})
 
 			Expect(result.GetChange("nonexistent")).To(BeNil())
 		})
@@ -96,7 +96,7 @@ var _ = Describe("ModalEditResult", func() {
 		It("should create a result with accepted=false and no changes", func() {
 			original := "original value"
 
-			result := NewCancelledModalEditResult(original)
+			result := NewCancelledModalEditResult[string](original)
 
 			Expect(result.Original).To(Equal(original))
 			Expect(result.Modified).To(Equal(original))
@@ -116,7 +116,7 @@ var _ = Describe("ModalEditResult", func() {
 			modified := TestData{Name: "Jane", Age: 30}
 			changes := map[string]interface{}{"Name": "Jane"}
 
-			result := NewModalEditResult(original, modified, true, changes)
+			result := NewModalEditResult[TestData](original, modified, true, changes)
 
 			Expect(result.Original).To(Equal(original))
 			Expect(result.Modified).To(Equal(modified))
@@ -585,7 +585,6 @@ var _ = Describe("CaptureEvent Intent State Transitions", func() {
 	})
 })
 
-
 var _ = Describe("Modal Helper Functions", func() {
 	Describe("formatStringSlice", func() {
 		It("should format empty slice as empty string", func() {
@@ -697,7 +696,6 @@ var _ = Describe("Modal Helper Functions", func() {
 		})
 	})
 })
-
 
 var _ = Describe("CaptureEvent State Transition Coverage", func() {
 	var (

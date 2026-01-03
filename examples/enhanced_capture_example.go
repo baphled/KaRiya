@@ -422,4 +422,3 @@ func (m *EnhancedCaptureEventModel) viewSuccess() string {
 // if _, err := p.Run(); err != nil {
 //     log.Fatal(err)
 // }
-

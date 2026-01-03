@@ -190,7 +190,6 @@ func (ci *ConfigInitializer) EnsureConfigExists(ctx context.Context) error {
 	return nil
 }
 
-
 // CheckAndCreateConfig checks if a config exists and creates it if it doesn't
 func (ci *ConfigInitializer) CheckAndCreateConfig(ctx context.Context, configName string) (*career.CVConfig, error) {
 	if ctx.Err() != nil {

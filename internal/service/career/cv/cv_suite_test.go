@@ -11,4 +11,3 @@ func TestCV(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "CV Suite")
 }
-

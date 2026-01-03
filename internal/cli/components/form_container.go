@@ -10,14 +10,14 @@ import (
 
 // FormField represents a single field in the form with its label and content
 type FormField struct {
-	Label       string
-	Input       string
-	Error       string
-	Hint        string
-	IsFocused   bool
-	IsRequired  bool
-	Width       int // Optional: specify preferred width, 0 means auto
-	FullWidth   bool // If true, field spans full width regardless of layout
+	Label      string
+	Input      string
+	Error      string
+	Hint       string
+	IsFocused  bool
+	IsRequired bool
+	Width      int  // Optional: specify preferred width, 0 means auto
+	FullWidth  bool // If true, field spans full width regardless of layout
 }
 
 // FormLayout defines how fields should be arranged
@@ -37,14 +37,14 @@ const (
 // supporting single-column, two-column, and responsive layouts.
 type FormContainer struct {
 	fields          []FormField
-	width           int           // Available width in characters
-	height          int           // Available height in characters
-	layout          FormLayout    // Layout strategy
-	padding         int           // Horizontal padding
-	verticalSpacing int           // Vertical spacing between fields
-	columnGap       int           // Gap between columns in multi-column layouts
-	minFieldWidth   int           // Minimum width for a field before wrapping
-	maxFieldWidth   int           // Maximum width for a field
+	width           int        // Available width in characters
+	height          int        // Available height in characters
+	layout          FormLayout // Layout strategy
+	padding         int        // Horizontal padding
+	verticalSpacing int        // Vertical spacing between fields
+	columnGap       int        // Gap between columns in multi-column layouts
+	minFieldWidth   int        // Minimum width for a field before wrapping
+	maxFieldWidth   int        // Maximum width for a field
 }
 
 // NewFormContainer creates a new FormContainer with sensible defaults

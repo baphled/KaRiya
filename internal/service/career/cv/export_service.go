@@ -145,8 +145,8 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 	sectionsList := output["sections"].([]map[string]interface{})
 	for _, section := range sections {
 		sectionData := map[string]interface{}{
-			"title": section.Title,
-			"type":  section.SectionType,
+			"title":   section.Title,
+			"type":    section.SectionType,
 			"bullets": []string{},
 		}
 
@@ -257,4 +257,3 @@ func (es *ExportService) CopyToClipboard(ctx context.Context, content string) er
 	es.logger.Info("CV content copied to clipboard")
 	return nil
 }
-

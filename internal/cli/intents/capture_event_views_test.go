@@ -9,7 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-
 var _ = Describe("CaptureEventIntent Views", func() {
 	var (
 		intent *CaptureEventIntent
@@ -506,4 +505,3 @@ var _ = Describe("CaptureEventIntent Views", func() {
 		})
 	})
 })
-

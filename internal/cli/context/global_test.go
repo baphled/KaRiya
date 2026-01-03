@@ -374,4 +374,3 @@ func TestOverwriting(t *testing.T) {
 		assert.Equal(t, "2.0.0", val)
 	})
 }
-

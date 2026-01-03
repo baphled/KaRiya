@@ -92,4 +92,3 @@ func (m *FactDetailsModel) View() string {
 
 	return fullContent
 }
-

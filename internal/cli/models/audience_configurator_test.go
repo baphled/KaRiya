@@ -1,14 +1,12 @@
 package models_test
 
 import (
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/models"
 )
-
 
 var _ = ginkgo.Describe("AudienceConfigurator Model", func() {
 	var model *models.AudienceConfiguratorModel

@@ -1,16 +1,15 @@
 package intents
 
 import (
-	"context"
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // BurstManagementModel implements the Intent interface for burst management
 type BurstManagementModel struct {
-	data *BurstManagementContext
+	data   *BurstManagementContext
 	result *IntentResult[*BurstManagementResult]
 }
 
@@ -25,8 +24,8 @@ func NewBurstManagementIntent(data *BurstManagementContext) *BurstManagementMode
 }
 
 // Init initializes the intent and loads bursts
-func (m *BurstManagementModel) Init(ctx context.Context) tea.Cmd {
-	m.data.Context = ctx
+func (m *BurstManagementModel) Init() tea.Cmd {
+	// context already set in data
 	m.data.CurrentState = BurstListState
 
 	// Load bursts from repository
@@ -278,11 +277,11 @@ func (m *BurstManagementModel) handleSuggestState(msg tea.Msg) tea.Cmd {
 			if m.data.SelectedSuggestionIndex >= 0 && m.data.SelectedSuggestionIndex < len(m.data.Suggestions) {
 				suggestion := m.data.Suggestions[m.data.SelectedSuggestionIndex]
 				burst := &domain.Burst{
-					Name:               suggestion.Title,
-					Description:        suggestion.Description,
-					CompetencyFocus:    suggestion.CompetencyFocus,
-					CreatedAt:          suggestion.RecommendedStartDate,
-					UpdatedAt:          suggestion.RecommendedEndDate,
+					Name:            suggestion.Title,
+					Description:     suggestion.Description,
+					CompetencyFocus: suggestion.CompetencyFocus,
+					CreatedAt:       suggestion.RecommendedStartDate,
+					UpdatedAt:       suggestion.RecommendedEndDate,
 				}
 				if err := m.data.CreateBurst(burst); err != nil {
 					m.result = &IntentResult[*BurstManagementResult]{
@@ -416,4 +415,3 @@ func (m *BurstManagementModel) viewSuggest() string {
 
 	return output
 }
-

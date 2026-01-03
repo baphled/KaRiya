@@ -1,15 +1,14 @@
 package cv
 
 import (
-	"io"
 	"context"
+	"io"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
 
 var _ = Describe("ConfigInitializer", func() {
 	var (

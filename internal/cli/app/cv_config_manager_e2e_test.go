@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/cli/models"
+	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
 
 var _ = Describe("CVConfigManager E2E - User Gets Stuck on Loading Screen", func() {
 	Describe("Bug: Loading configuration templates screen never completes", func() {

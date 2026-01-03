@@ -13,16 +13,16 @@ import (
 // CVExportSuccessModel displays successful CV export information
 type CVExportSuccessModel struct {
 	*BaseStandardModel
-	cvView       *career.CVView
-	format       string
-	filePath     string
-	header       components.HeaderModel
-	helpFooter   components.HelpFooterModel
-	width        int
-	height       int
-	breadcrumbs  []string
-	selectedIdx  int
-	options      []string
+	cvView      *career.CVView
+	format      string
+	filePath    string
+	header      components.HeaderModel
+	helpFooter  components.HelpFooterModel
+	width       int
+	height      int
+	breadcrumbs []string
+	selectedIdx int
+	options     []string
 }
 
 // NewCVExportSuccessModel creates a new CV Export Success model
@@ -139,7 +139,7 @@ What would you like to do next?
 		indicator := "  "
 		if i == m.selectedIdx {
 			indicator = "▶ "
-			optionsView += styles.InputHint.Render(indicator + option) + "\n"
+			optionsView += styles.InputHint.Render(indicator+option) + "\n"
 		} else {
 			optionsView += indicator + option + "\n"
 		}

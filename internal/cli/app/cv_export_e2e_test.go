@@ -1,8 +1,8 @@
 package app
 
 import (
-	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/cli/models"
+	career "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -273,7 +273,7 @@ var _ = Describe("CV Export Navigation Fix - App Routing", func() {
 			// First, we need to create the app model to test routing
 			// Since we can't easily create a full app model in a test,
 			// let's at least verify the handler exists in the app
-			
+
 			// This is a placeholder - the real test would need:
 			// 1. Create app model
 			// 2. Navigate to CVPreviewScreen
@@ -281,7 +281,7 @@ var _ = Describe("CV Export Navigation Fix - App Routing", func() {
 			// 4. Verify currentScreen changes to CVExportDialogScreen
 			// 5. Verify CVExportDialogModel is created
 			// 6. Verify View() returns export dialog content
-			
+
 			Skip("Requires full app model integration test setup")
 		})
 
@@ -292,7 +292,7 @@ var _ = Describe("CV Export Navigation Fix - App Routing", func() {
 			// 2. CVExportDialogModel is created
 			// 3. currentScreen is set to CVExportDialogScreen
 			// 4. View() renders the export dialog
-			
+
 			Skip("Requires full app model integration test setup")
 		})
 

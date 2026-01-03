@@ -411,4 +411,3 @@ func (h *MenuKeyHandler) HandleKey(keyMsg tea.KeyMsg) KeyAction {
 func ptrNavigationKey(k NavigationKey) *NavigationKey {
 	return &k
 }
-

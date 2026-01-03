@@ -1,14 +1,13 @@
 package intents
 
 import (
-	"context"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type FactManagementModel struct {
-	data *FactManagementContext
+	data   *FactManagementContext
 	result *IntentResult[*FactManagementResult]
 }
 
@@ -21,8 +20,8 @@ func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
 	}
 }
 
-func (m *FactManagementModel) Init(ctx context.Context) tea.Cmd {
-	m.data.Context = ctx
+func (m *FactManagementModel) Init() tea.Cmd {
+	// context already set in data
 	m.data.CurrentState = FactListState
 
 	if err := m.data.LoadFacts(); err != nil {
@@ -348,4 +347,3 @@ func truncate(s string, maxLen int) string {
 	}
 	return s[:maxLen] + "..."
 }
-

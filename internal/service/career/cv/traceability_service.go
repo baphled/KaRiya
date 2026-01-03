@@ -73,10 +73,10 @@ func (ts *TraceabilityService) GetBulletSources(
 type ValidationReport struct {
 	OrphanedBullets      []*career.CVBullet
 	MissingSourceBullets []*career.CVBullet
-	TotalBullets   int
-	ValidBullets   int
-	InvalidBullets int
-	Issues         []string
+	TotalBullets         int
+	ValidBullets         int
+	InvalidBullets       int
+	Issues               []string
 }
 
 // IsValid returns true if all bullets are valid.

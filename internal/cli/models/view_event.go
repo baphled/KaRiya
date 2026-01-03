@@ -323,4 +323,3 @@ func (m *ViewEventModel) deleteEvent() tea.Cmd {
 func (m *ViewEventModel) GetEvent() *career.CareerEvent {
 	return m.event
 }
-

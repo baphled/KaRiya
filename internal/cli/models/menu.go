@@ -11,23 +11,23 @@ import (
 // MenuItem represents a menu option with its metadata
 type MenuItem struct {
 	Key         navigation.NavigationKey // Keyboard shortcut using standardized navigation key
-	Title       string                    // Display name
-	Description string                    // Detailed description
-	Category    string                    // Menu category (e.g., "Core Actions", "Data Management")
+	Title       string                   // Display name
+	Description string                   // Detailed description
+	Category    string                   // Menu category (e.g., "Core Actions", "Data Management")
 }
 
 // MenuModel represents the main menu screen
 type MenuModel struct {
 	*BaseStandardModel
-	items        []MenuItem
-	selectedIdx  int
-	width        int
-	height       int
-	header       components.HeaderModel
-	helpFooter   components.HelpFooterModel
-	hasPending   bool   // Whether there are pending items to review
-	pendingInfo  string // Information about pending items
-	keyHandler   navigation.KeyHandler
+	items       []MenuItem
+	selectedIdx int
+	width       int
+	height      int
+	header      components.HeaderModel
+	helpFooter  components.HelpFooterModel
+	hasPending  bool   // Whether there are pending items to review
+	pendingInfo string // Information about pending items
+	keyHandler  navigation.KeyHandler
 }
 
 // NewMenuModel creates a new menu model with all available menu items
@@ -302,4 +302,3 @@ func (m *MenuModel) renderFooter() string {
 type MenuItemSelectedMsg struct {
 	Key string // Keyboard shortcut that was selected (as string for compatibility)
 }
-

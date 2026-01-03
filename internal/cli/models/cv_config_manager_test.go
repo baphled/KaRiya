@@ -11,7 +11,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-
 var _ = Describe("CVConfigManagerModel", func() {
 	var (
 		model         *CVConfigManagerModel
@@ -30,28 +29,28 @@ var _ = Describe("CVConfigManagerModel", func() {
 		// Create test configurations
 		testConfigs = []*career.CVConfig{
 			{
-				Name:            "Senior IC CV",
-				TargetRole:      "senior_ic",
-				TargetAudience:  []string{"hiring_manager", "recruiter"},
-				EventFilters:    map[string]interface{}{},
-				CreatedAt:       time.Now().Add(-30 * 24 * time.Hour),
-				UpdatedAt:       time.Now().Add(-30 * 24 * time.Hour),
+				Name:           "Senior IC CV",
+				TargetRole:     "senior_ic",
+				TargetAudience: []string{"hiring_manager", "recruiter"},
+				EventFilters:   map[string]interface{}{},
+				CreatedAt:      time.Now().Add(-30 * 24 * time.Hour),
+				UpdatedAt:      time.Now().Add(-30 * 24 * time.Hour),
 			},
 			{
-				Name:            "Staff Engineer CV",
-				TargetRole:      "staff",
-				TargetAudience:  []string{"hiring_manager"},
-				EventFilters:    map[string]interface{}{},
-				CreatedAt:       time.Now().Add(-20 * 24 * time.Hour),
-				UpdatedAt:       time.Now().Add(-20 * 24 * time.Hour),
+				Name:           "Staff Engineer CV",
+				TargetRole:     "staff",
+				TargetAudience: []string{"hiring_manager"},
+				EventFilters:   map[string]interface{}{},
+				CreatedAt:      time.Now().Add(-20 * 24 * time.Hour),
+				UpdatedAt:      time.Now().Add(-20 * 24 * time.Hour),
 			},
 			{
-				Name:            "Engineering Manager CV",
-				TargetRole:      "em",
-				TargetAudience:  []string{"recruiter", "peer"},
-				EventFilters:    map[string]interface{}{},
-				CreatedAt:       time.Now().Add(-10 * 24 * time.Hour),
-				UpdatedAt:       time.Now().Add(-10 * 24 * time.Hour),
+				Name:           "Engineering Manager CV",
+				TargetRole:     "em",
+				TargetAudience: []string{"recruiter", "peer"},
+				EventFilters:   map[string]interface{}{},
+				CreatedAt:      time.Now().Add(-10 * 24 * time.Hour),
+				UpdatedAt:      time.Now().Add(-10 * 24 * time.Hour),
 			},
 		}
 

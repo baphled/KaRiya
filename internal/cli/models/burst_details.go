@@ -92,4 +92,3 @@ func (m *BurstDetailsModel) View() string {
 
 	return fullContent
 }
-

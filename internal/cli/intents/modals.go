@@ -72,8 +72,8 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 		focused:  0,
 		accepted: false,
 		result:   nil,
-		width:    80,  // Default width
-		height:   24,  // Default height
+		width:    80, // Default width
+		height:   24, // Default height
 	}
 
 	// Initialize bubbles textinput components for each field

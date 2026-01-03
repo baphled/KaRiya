@@ -1,13 +1,13 @@
 package cv
 
 import (
-	"io"
 	"context"
+	"io"
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -661,4 +661,3 @@ func NewEmptySectionBuilder() *EmptySectionBuilder {
 func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, targetRole string) ([]*career.CVSection, error) {
 	return []*career.CVSection{}, nil
 }
-

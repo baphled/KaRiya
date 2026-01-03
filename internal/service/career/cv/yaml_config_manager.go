@@ -316,7 +316,6 @@ func sanitizeFileName(name string) string {
 	return replacer.Replace(name)
 }
 
-
 // logInfo logs an info message if logger is available
 func (m *YAMLConfigManager) logInfo(format string, args ...interface{}) {
 	if m.logger != nil {

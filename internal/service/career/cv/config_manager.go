@@ -138,4 +138,3 @@ func (m *MemoryConfigManager) ConfigExists(ctx context.Context, name string) (bo
 	_, exists := m.configs[name]
 	return exists, nil
 }
-

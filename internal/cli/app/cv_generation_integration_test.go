@@ -85,11 +85,11 @@ var _ = Describe("CV Generation Integration", func() {
 		It("should navigate from CV preview back to event timeline", func() {
 			// Create a CV view
 			testCVView := &career.CVView{
-				ID:              "cv-1",
-				Name:            "Test CV",
-				TargetRole:      "Senior Engineer",
-				TargetAudience:  []string{"hiring_manager"},
-				GeneratedAt:     time.Now(),
+				ID:               "cv-1",
+				Name:             "Test CV",
+				TargetRole:       "Senior Engineer",
+				TargetAudience:   []string{"hiring_manager"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 1,
 				SourceFactCount:  0,
 			}
@@ -118,11 +118,11 @@ var _ = Describe("CV Generation Integration", func() {
 		It("should navigate from CV preview back to config manager when appropriate", func() {
 			// Create a CV view
 			testCVView := &career.CVView{
-				ID:              "cv-2",
-				Name:            "Test CV 2",
-				TargetRole:      "Staff Engineer",
-				TargetAudience:  []string{"hiring_manager"},
-				GeneratedAt:     time.Now(),
+				ID:               "cv-2",
+				Name:             "Test CV 2",
+				TargetRole:       "Staff Engineer",
+				TargetAudience:   []string{"hiring_manager"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 1,
 				SourceFactCount:  0,
 			}
@@ -193,11 +193,11 @@ var _ = Describe("CV Generation Integration", func() {
 
 			// Step 3: Simulate CV generation completion
 			testCVView := &career.CVView{
-				ID:              "workflow-cv",
-				Name:            "Workflow Test CV",
-				TargetRole:      "Principal Engineer",
-				TargetAudience:  []string{"hiring_manager"},
-				GeneratedAt:     time.Now(),
+				ID:               "workflow-cv",
+				Name:             "Workflow Test CV",
+				TargetRole:       "Principal Engineer",
+				TargetAudience:   []string{"hiring_manager"},
+				GeneratedAt:      time.Now(),
 				SourceEventCount: 1,
 				SourceFactCount:  0,
 			}

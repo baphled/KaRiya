@@ -20,26 +20,26 @@ import (
 // This is the refactored version using ListDeletionState and ListNavigationKeyHandler patterns
 type ListModel struct {
 	*BaseStandardModel
-	events              []*career.CareerEvent
-	filtered            []*career.CareerEvent
-	service             *careerservice.Service
-	ctx                 context.Context
-	table               table.Model
-	pagination          *PaginationHelper
-	width               int
-	height              int
-	competencyFilter    string
-	sortBy              string
-	sortOrder           string
-	selectedEvents      map[string]bool
-	expandedIndices     map[int]bool
-	err                 error
-	helpFooter          components.HelpFooterModel
-	deletionState       *ListDeletionState
+	events               []*career.CareerEvent
+	filtered             []*career.CareerEvent
+	service              *careerservice.Service
+	ctx                  context.Context
+	table                table.Model
+	pagination           *PaginationHelper
+	width                int
+	height               int
+	competencyFilter     string
+	sortBy               string
+	sortOrder            string
+	selectedEvents       map[string]bool
+	expandedIndices      map[int]bool
+	err                  error
+	helpFooter           components.HelpFooterModel
+	deletionState        *ListDeletionState
 	navigationKeyHandler *ListNavigationKeyHandler
-	breadcrumbs         []string
-	header              components.HeaderModel
-	listContainer       *components.TableListContainer
+	breadcrumbs          []string
+	header               components.HeaderModel
+	listContainer        *components.TableListContainer
 }
 
 // NewListModel creates a new refactored list model
@@ -105,7 +105,7 @@ func (m *ListModel) loadEventsSync() {
 		m.err = err
 		return
 	}
-	
+
 	m.events = events
 	m.applyFiltersAndSort()
 	m.pagination.SetTotalCount(len(m.filtered))

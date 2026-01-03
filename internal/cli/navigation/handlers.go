@@ -140,4 +140,3 @@ func GetNavigationKeyFromString(key string) *NavigationKey {
 func MatchesNavigationKey(keyMsg tea.KeyMsg, navKey NavigationKey) bool {
 	return IsNavigationKey(keyMsg.String(), navKey)
 }
-

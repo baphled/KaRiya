@@ -10,10 +10,10 @@ import (
 
 // AllowedTargetRoles defines the set of valid target roles for a CV
 var AllowedTargetRoles = map[string]bool{
-	"principal":  true,
-	"staff":      true,
-	"em":         true,
-	"senior_ic":  true,
+	"principal": true,
+	"staff":     true,
+	"em":        true,
+	"senior_ic": true,
 }
 
 // AllowedTargetAudiences defines the set of valid target audiences for a CV
@@ -43,15 +43,15 @@ var InclusionReasons = map[string]bool{
 // CVView represents an in-memory, ephemeral CV generated from career events and facts
 // CVViews are NOT stored in the database - they are generated on-demand
 type CVView struct {
-	ID              string                 `json:"id"`
-	Name            string                 `json:"name"`
-	TargetRole      string                 `json:"target_role"`
-	TargetAudience  []string               `json:"target_audience"`
-	EventFilters    map[string]interface{} `json:"event_filters"`
-	GeneratedAt     time.Time              `json:"generated_at"`
-	SourceEventCount int                   `json:"source_event_count"`
-	SourceFactCount  int                   `json:"source_fact_count"`
-	Sections        []*CVSection           `json:"sections,omitempty"` // CV sections (experience, skills, summary, etc.)
+	ID               string                 `json:"id"`
+	Name             string                 `json:"name"`
+	TargetRole       string                 `json:"target_role"`
+	TargetAudience   []string               `json:"target_audience"`
+	EventFilters     map[string]interface{} `json:"event_filters"`
+	GeneratedAt      time.Time              `json:"generated_at"`
+	SourceEventCount int                    `json:"source_event_count"`
+	SourceFactCount  int                    `json:"source_fact_count"`
+	Sections         []*CVSection           `json:"sections,omitempty"` // CV sections (experience, skills, summary, etc.)
 }
 
 // Validate checks if the CVView meets all defined criteria
@@ -579,4 +579,3 @@ var (
 	// ErrNoSourceEvents is returned when a bullet has no source events
 	ErrNoSourceEvents = errors.New("bullet must have at least one source event")
 )
-

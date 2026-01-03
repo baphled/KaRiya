@@ -39,21 +39,21 @@ type MetadataReviewModel struct {
 	width                int
 	height               int
 	err                  error
-	expandedIdx          int                        // Index of expanded event (-1 if none)
-	filterMode           string                     // "all", "incomplete"
-	sortBy               string                     // "date", "company", "quality"
-	importedEventIDs     map[string]bool            // IDs of recently imported events
-	isImportReview       bool                       // True if reviewing only imported events
-	fieldOrigins         map[string]map[string]bool // eventID -> field -> isFromCSV
-	parsingWarnings      map[string][]string        // eventID -> warnings
-	duplicateStatus      map[string]string          // eventID -> original event ID (empty if not duplicate)
-	helpFooter           components.HelpFooterModel // Help footer
-	header               components.HeaderModel     // Header component
-	breadcrumbs          []string                   // Navigation breadcrumb trail
-	deletionState        *ListDeletionState         // Deletion state management
-	navigationKeyHandler *ListNavigationKeyHandler  // Navigation key handler
+	expandedIdx          int                            // Index of expanded event (-1 if none)
+	filterMode           string                         // "all", "incomplete"
+	sortBy               string                         // "date", "company", "quality"
+	importedEventIDs     map[string]bool                // IDs of recently imported events
+	isImportReview       bool                           // True if reviewing only imported events
+	fieldOrigins         map[string]map[string]bool     // eventID -> field -> isFromCSV
+	parsingWarnings      map[string][]string            // eventID -> warnings
+	duplicateStatus      map[string]string              // eventID -> original event ID (empty if not duplicate)
+	helpFooter           components.HelpFooterModel     // Help footer
+	header               components.HeaderModel         // Header component
+	breadcrumbs          []string                       // Navigation breadcrumb trail
+	deletionState        *ListDeletionState             // Deletion state management
+	navigationKeyHandler *ListNavigationKeyHandler      // Navigation key handler
 	listContainer        *components.TableListContainer // Table list container
-	selectedEvents       map[string]bool            // Selected events for bulk operations
+	selectedEvents       map[string]bool                // Selected events for bulk operations
 }
 
 // NewMetadataReviewModel creates a new metadata review model

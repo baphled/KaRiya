@@ -12,13 +12,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-
 var _ = Describe("YAMLConfigManager", func() {
 	var (
-		manager   *YAMLConfigManager
-		tempDir   string
-		log       *logger.Logger
-		ctx       context.Context
+		manager *YAMLConfigManager
+		tempDir string
+		log     *logger.Logger
+		ctx     context.Context
 	)
 
 	BeforeEach(func() {
@@ -45,8 +44,8 @@ var _ = Describe("YAMLConfigManager", func() {
 	Describe("SaveConfig", func() {
 		It("should save a valid configuration", func() {
 			config := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager"},
 				EventFilters: map[string]interface{}{
 					"tags": []string{"technical"},
@@ -68,8 +67,8 @@ var _ = Describe("YAMLConfigManager", func() {
 
 		It("should overwrite existing configuration", func() {
 			config1 := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager"},
 			}
 
@@ -122,8 +121,8 @@ var _ = Describe("YAMLConfigManager", func() {
 			manager.configDir = subDir
 
 			config := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager"},
 			}
 
@@ -137,8 +136,8 @@ var _ = Describe("YAMLConfigManager", func() {
 
 		It("should use atomic write", func() {
 			config := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager"},
 			}
 
@@ -161,8 +160,8 @@ var _ = Describe("YAMLConfigManager", func() {
 	Describe("LoadConfig", func() {
 		It("should load an existing configuration", func() {
 			config := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager", "recruiter"},
 				EventFilters: map[string]interface{}{
 					"tags": []string{"technical", "leadership"},
@@ -198,8 +197,8 @@ var _ = Describe("YAMLConfigManager", func() {
 
 		It("should handle context cancellation", func() {
 			config := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager"},
 			}
 
@@ -216,8 +215,8 @@ var _ = Describe("YAMLConfigManager", func() {
 	Describe("DeleteConfig", func() {
 		It("should delete an existing configuration", func() {
 			config := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager"},
 			}
 
@@ -412,14 +411,14 @@ var _ = Describe("YAMLConfigManager", func() {
 	Describe("YAML Serialization", func() {
 		It("should preserve all config fields", func() {
 			originalConfig := &career.CVConfig{
-				Name:         "test-config",
-				TargetRole:   "principal",
+				Name:           "test-config",
+				TargetRole:     "principal",
 				TargetAudience: []string{"hiring_manager", "recruiter"},
 				EventFilters: map[string]interface{}{
-					"tags":       []string{"technical", "leadership"},
-					"companies":  []string{"Google", "Meta"},
-					"minDate":    "2020-01-01",
-					"maxDate":    "2023-12-31",
+					"tags":      []string{"technical", "leadership"},
+					"companies": []string{"Google", "Meta"},
+					"minDate":   "2020-01-01",
+					"maxDate":   "2023-12-31",
 				},
 			}
 
@@ -441,15 +440,15 @@ var _ = Describe("YAMLConfigManager", func() {
 
 		It("should handle complex nested filters", func() {
 			config := &career.CVConfig{
-				Name:         "complex-config",
-				TargetRole:   "em",
+				Name:           "complex-config",
+				TargetRole:     "em",
 				TargetAudience: []string{"peer"},
 				EventFilters: map[string]interface{}{
-					"tags":         []string{"leadership", "mentoring"},
-					"categories":   []string{"leadership", "product"},
-					"companies":    []string{"Company A", "Company B"},
-					"roles":        []string{"staff", "principal"},
-					"dateRange":    map[string]string{"start": "2021-01-01", "end": "2024-12-31"},
+					"tags":       []string{"leadership", "mentoring"},
+					"categories": []string{"leadership", "product"},
+					"companies":  []string{"Company A", "Company B"},
+					"roles":      []string{"staff", "principal"},
+					"dateRange":  map[string]string{"start": "2021-01-01", "end": "2024-12-31"},
 				},
 			}
 
@@ -519,4 +518,3 @@ var _ = Describe("NewYAMLConfigManager", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
-

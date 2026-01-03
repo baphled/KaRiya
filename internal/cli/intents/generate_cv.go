@@ -118,4 +118,3 @@ type CVGeneratedMsg struct {
 	CV    *career.CVView
 	Error error
 }
-

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/google/uuid"
 )
 
@@ -93,14 +93,14 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 	if len(events) == 0 {
 		svc.logger.Info("No events found matching filters")
 		return &career.CVView{
-			ID:              uuid.New().String(),
-			Name:            config.Name,
-			TargetRole:      config.TargetRole,
-			TargetAudience:  config.TargetAudience,
-			EventFilters:    config.EventFilters,
-			GeneratedAt:     time.Now(),
+			ID:               uuid.New().String(),
+			Name:             config.Name,
+			TargetRole:       config.TargetRole,
+			TargetAudience:   config.TargetAudience,
+			EventFilters:     config.EventFilters,
+			GeneratedAt:      time.Now(),
 			SourceEventCount: 0,
-			SourceFactCount: 0,
+			SourceFactCount:  0,
 		}, nil
 	}
 
@@ -130,15 +130,15 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 
 	// Create CVView with metadata and sections
 	cvView := &career.CVView{
-		ID:              uuid.New().String(),
-		Name:            config.Name,
-		TargetRole:      config.TargetRole,
-		TargetAudience:  config.TargetAudience,
-		EventFilters:    config.EventFilters,
-		GeneratedAt:     time.Now(),
+		ID:               uuid.New().String(),
+		Name:             config.Name,
+		TargetRole:       config.TargetRole,
+		TargetAudience:   config.TargetAudience,
+		EventFilters:     config.EventFilters,
+		GeneratedAt:      time.Now(),
 		SourceEventCount: len(events),
-		SourceFactCount: len(facts),
-		Sections:        sections, // Include generated sections in the CV view
+		SourceFactCount:  len(facts),
+		Sections:         sections, // Include generated sections in the CV view
 	}
 
 	svc.logger.Info("CV generated successfully: %s (role: %s, sections: %d)", config.Name, config.TargetRole, len(sections))
@@ -259,4 +259,3 @@ func (svc *DefaultCVGenerationService) retrieveFacts(ctx context.Context) ([]*ca
 
 	return facts, nil
 }
-

@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
 
 var _ = Describe("CVGeneratorModel", func() {
 	var (
@@ -52,13 +51,13 @@ var _ = Describe("CVGeneratorModel", func() {
 	Describe("CVGeneratedMsg", func() {
 		It("should update model with generated CV", func() {
 			cvView := &career.CVView{
-				ID:                uuid.New().String(),
-				Name:              "Test CV",
-				TargetRole:        "senior_ic",
-				TargetAudience:    []string{"hiring_manager"},
-				GeneratedAt:       time.Now(),
-				SourceEventCount:  5,
-				SourceFactCount:   3,
+				ID:               uuid.New().String(),
+				Name:             "Test CV",
+				TargetRole:       "senior_ic",
+				TargetAudience:   []string{"hiring_manager"},
+				GeneratedAt:      time.Now(),
+				SourceEventCount: 5,
+				SourceFactCount:  3,
 			}
 
 			msg := CVGeneratedMsg{cvView: cvView}
@@ -138,24 +137,23 @@ func NewMockCVGenerationService() cv.CVGenerationService {
 
 func (m *MockCVGenerationService) GenerateCV(ctx context.Context, configName string) (*career.CVView, error) {
 	return &career.CVView{
-		ID:                uuid.New().String(),
-		Name:              configName,
-		GeneratedAt:       time.Now(),
+		ID:          uuid.New().String(),
+		Name:        configName,
+		GeneratedAt: time.Now(),
 	}, nil
 }
 
 func (m *MockCVGenerationService) GenerateCVFromConfig(ctx context.Context, config *career.CVConfig) (*career.CVView, error) {
 	return &career.CVView{
-		ID:                uuid.New().String(),
-		Name:              config.Name,
-		TargetRole:        config.TargetRole,
-		TargetAudience:    config.TargetAudience,
-		GeneratedAt:       time.Now(),
-		SourceEventCount:  10,
-		SourceFactCount:   5,
+		ID:               uuid.New().String(),
+		Name:             config.Name,
+		TargetRole:       config.TargetRole,
+		TargetAudience:   config.TargetAudience,
+		GeneratedAt:      time.Now(),
+		SourceEventCount: 10,
+		SourceFactCount:  5,
 	}, nil
 }
 
 // ErrNoSourceEvents is a test error
 var ErrNoSourceEvents = fmt.Errorf("no source events found")
-
