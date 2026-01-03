@@ -93,3 +93,9 @@ type ConfirmDeleteCVConfigMsg struct {
 
 // BackToMainMenuMsg is sent when user wants to go back to main menu
 type BackToMainMenuMsg struct{}
+
+// HelpMsg is sent when user requests help (? key)
+type HelpMsg struct{}
+
+// MainMenuMsg is sent when user wants to go to main menu (Ctrl+Home)
+type MainMenuMsg struct{}

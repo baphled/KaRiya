@@ -57,6 +57,7 @@ const (
 // Model represents the main application state
 type Model struct {
 	cliService             *service.CLIEventService
+ logger                 *logger.Logger         // Logger for application events
 	service                *careerservice.Service
 	currentScreen          Screen
 	previousScreen         Screen
@@ -311,6 +312,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	return &Model{
 		cliService:             cliService,
+  logger:                log,
 		service:                careerService,
 		currentScreen:          HomeScreen,
 		previousScreen:         HomeScreen,
@@ -457,6 +459,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case models.QuitMsg:
 		return m, tea.Quit
+	case models.HelpMsg:
+		m.previousScreen = m.currentScreen
+		m.currentScreen = HelpScreen
+		return m, nil
+	case models.MainMenuMsg:
+		m.previousScreen = m.currentScreen
+		m.currentScreen = MainMenuScreen
+		return m, nil
 	}
 
 	// Handle models.ViewEventMsg
@@ -1239,6 +1249,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.previousScreen = m.currentScreen
 			m.currentScreen = CVConfigManagerScreen
 			return m, cmd
+		case "?":
+			// Show Help
+			m.previousScreen = m.currentScreen
+			m.currentScreen = HelpScreen
+			return m, nil
+		case "ctrl+Home":
+			// Go to Main Menu
+			m.previousScreen = m.currentScreen
+			m.currentScreen = MainMenuScreen
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -1722,4 +1742,25 @@ func (m *Model) handleIntentMessage(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
+}
+
+// logScreenTransition logs a screen transition
+func (m *Model) logScreenTransition(oldScreen, newScreen Screen) {
+	if m.logger != nil {
+		m.logger.Info("Screen transition: %s -> %s", oldScreen, newScreen)
+	}
+}
+
+// logEvent logs an event operation
+func (m *Model) logEvent(operation string, eventID string) {
+	if m.logger != nil {
+		m.logger.Info("Event operation: %s (ID: %s)", operation, eventID)
+	}
+}
+
+// logError logs an error with context
+func (m *Model) logError(operation string, err error) {
+	if m.logger != nil && err != nil {
+		m.logger.Error("Error during %s: %v", operation, err)
+	}
 }
