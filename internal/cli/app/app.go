@@ -138,6 +138,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = StateMenu
 		m.selectedMenuIndex = 0
 		return m, nil
+
+	default:
+		// Route all other messages to the active intent (e.g., SubmitMsg from form commands)
+		if m.state == StateIntent {
+			cmd, result := m.intentRouter.HandleMessage(msg)
+
+			// Check if intent has completed
+			if result != nil {
+				m.state = StateMenu
+				m.selectedMenuIndex = 0
+				// Return command that will trigger the intent completed message
+				return m, tea.Batch(
+					cmd,
+					func() tea.Msg { return IntentCompletedMsg{} },
+				)
+			}
+
+			return m, cmd
+		}
 	}
 
 	return m, nil
