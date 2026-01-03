@@ -10,8 +10,8 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
-	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // AppState represents the current state of the application
@@ -40,7 +40,7 @@ type Model struct {
 
 	// Menu state
 	selectedMenuIndex int
-	menuItems        []MenuItem
+	menuItems         []MenuItem
 
 	// Context for intent creation
 	ctx context.Context
@@ -82,17 +82,17 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	}
 
 	return &Model{
-		cliService:      cliService,
-		careerService:   careerService,
-		logger:          log,
-		intentRouter:    router,
-		configManager:   configMgr,
-		cvGenService:    cvGenService,
-		cvExportService: cvExportService,
-		state:           StateMenu,
+		cliService:        cliService,
+		careerService:     careerService,
+		logger:            log,
+		intentRouter:      router,
+		configManager:     configMgr,
+		cvGenService:      cvGenService,
+		cvExportService:   cvExportService,
+		state:             StateMenu,
 		selectedMenuIndex: 0,
-		menuItems:       menuItems,
-		ctx:             ctx,
+		menuItems:         menuItems,
+		ctx:               ctx,
 	}
 }
 
