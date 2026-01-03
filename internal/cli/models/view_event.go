@@ -13,11 +13,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// EditEventMsg is sent to edit a specific event
-type EditEventMsg struct {
-	Event *career.CareerEvent
-}
-
 // EventDeletedMsg is sent when an event is successfully deleted
 type EventDeletedMsg struct {
 	EventID string
@@ -328,3 +323,4 @@ func (m *ViewEventModel) deleteEvent() tea.Cmd {
 func (m *ViewEventModel) GetEvent() *career.CareerEvent {
 	return m.event
 }
+

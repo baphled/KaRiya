@@ -99,3 +99,8 @@ type HelpMsg struct{}
 
 // MainMenuMsg is sent when user wants to go to main menu (Ctrl+Home)
 type MainMenuMsg struct{}
+
+// EditEventMsg is sent to edit a specific event
+type EditEventMsg struct {
+	Event *career.CareerEvent
+}
