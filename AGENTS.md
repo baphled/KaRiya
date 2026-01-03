@@ -1673,3 +1673,183 @@ The Phase 1 foundation is solid, well-tested, and ready for production use. The 
 *Tests: 89+ passing, 100% pass rate, 0 race conditions*
 *Next: Phase 2 CaptureEvent Intent Implementation*
 
+
+---
+
+## TUI Application UI Work Patterns (2026-01-03)
+
+### Core Concepts
+
+1. **Intent-Driven Architecture**
+   - All UI flows modeled as Intents (self-contained state machines)
+   - Each intent owns: local state, state transitions, result communication, navigation
+   - Type-safe intent communication via `IntentResult[T]`
+
+2. **Bubble Tea Integration**
+   - `tea.Model` interface for each intent
+   - `tea.Msg` for message passing
+   - `tea.Cmd` for asynchronous operations
+   - Custom message types for intent-specific events
+
+3. **State Machine Pattern**
+   - Initial State → Processing States → Terminal State (Completed/Cancelled/Failed)
+   - Each state has: view method, update handler, validation logic
+   - Explicit transitions prevent invalid states
+
+### Working with UI States
+
+**Defining States:**
+- Use descriptive constants (CaptureStateChooseStrategy, not State1)
+- Group related states together
+- Document transitions in comments
+- Keep states simple and focused
+
+**State Transitions:**
+- Only legal transitions possible (type system enforces)
+- Explicit state changes visible in code
+- Idempotent: same input → same output always
+- No implicit behavior
+
+### Working with Messages
+
+**Custom Message Types:**
+- One message per semantic action
+- Include all data needed for state transition
+- Use descriptive names (StrategySelectedMsg, not DataMsg)
+- Avoid generic messages
+
+**Message Handling:**
+- Check `active` flag first
+- Delegate to state-specific handlers
+- Return `nil` for unhandled messages
+- Each handler owns its state transitions
+
+### Working with Views
+
+**Rendering Patterns:**
+- State-specific view methods (viewChooseStrategy, viewCaptureForm, etc.)
+- Defensive rendering: check for nil data
+- Consistent formatting with box drawing characters
+- Show current state and available commands
+- Display errors prominently
+
+**Component Pattern:**
+- Complex UIs delegate to component models
+- Each component owns its rendering
+- Components return data via messages
+- Components are reusable across intents
+
+### Modal Sub-Flows
+
+**Modal Edit Pattern:**
+```go
+type ModalEditResult[T any] struct {
+    Original T
+    Modified T
+    Accepted bool
+    Changes  map[string]interface{}
+}
+```
+- Preserves original data
+- Tracks changes separately
+- User can cancel without mutations
+- Typed diffs for validation
+
+**Modal State Management:**
+- Store modal state in intent (EditingMode)
+- Handle modal results in update handlers
+- Restore intent state after modal closes
+- No global state pollution
+
+### Async Operations
+
+**Long-Running Operations:**
+- Validate before async operation
+- Return specific error messages
+- Use proper error codes
+- Support retry logic
+- Show progress feedback
+
+**Handling Async Results:**
+- Process results in update handlers
+- Support retry on error
+- Graceful degradation
+- Proper error state management
+
+### Error Handling Patterns
+
+**Error State Management:**
+- Store errors in intent for display
+- Include error code, message, and cause
+- Clear errors on state transitions
+
+**Error Display:**
+- Show errors prominently in view
+- Display recovery options (retry, cancel)
+- Provide helpful error messages
+- Support error recovery
+
+### Navigation Patterns
+
+**Back Navigation:**
+- Preserve view state in metadata
+- Restore context on back navigation
+- Maintain user selections and scroll position
+- Store state via `WithMetadata()`
+
+**Forward Navigation:**
+- Clear previous state when moving forward
+- Reset error states
+- Initialize new state properly
+
+### Testing Patterns
+
+**Unit Testing:**
+- Test each state independently
+- Test state transitions
+- Test message handling
+- Test error scenarios
+
+**Integration Testing:**
+- Test complete workflows
+- Test user action sequences
+- Verify final results
+- Test error recovery
+
+### Good Patterns (✅)
+
+1. State-specific handlers for each state
+2. Type-safe messages for each action
+3. Explicit transitions visible in code
+4. Proper error handling and recovery
+5. Component reuse across intents
+6. Metadata preservation in results
+
+### Antipatterns to Avoid (❌)
+
+1. Global state mutations (all state is local)
+2. Implicit behavior (no hidden state changes)
+3. Type assertions (no runtime conversions)
+4. Cross-intent navigation (intents are isolated)
+5. Unhandled messages (process all messages)
+6. Silent failures (report all errors)
+
+### Summary
+
+Working with TUI UIs requires:
+1. Think in states: model UI as explicit state machine
+2. Use messages: communicate via typed messages
+3. Render per state: each state has its own view
+4. Handle errors: show errors and support recovery
+5. Test thoroughly: unit test states, integration test workflows
+6. Preserve context: store metadata for back navigation
+7. Keep it simple: one state, one responsibility
+
+This architecture ensures:
+- ✅ Type safety at compile time
+- ✅ Predictable UI behavior
+- ✅ Easy testing and debugging
+- ✅ Clear code organization
+- ✅ Reusable components
+- ✅ Robust error handling
+
