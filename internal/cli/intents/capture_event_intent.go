@@ -5,8 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Custom message types for state transitions.
@@ -412,8 +414,8 @@ func (i *CaptureEventIntent) View() string {
 	}
 }
 
-// viewChooseStrategy renders the strategy selection UI.
-// Displays three capture strategy options with descriptions.
+// viewChooseStrategy renders the strategy selection UI with professional styling.
+// Displays three capture strategy options with descriptions using lipgloss.
 func (i *CaptureEventIntent) viewChooseStrategy() string {
 	strategies := []struct {
 		number string
@@ -425,62 +427,82 @@ func (i *CaptureEventIntent) viewChooseStrategy() string {
 		{"3", "Enriched", "Capture with AI-powered enrichment"},
 	}
 
-	var sb strings.Builder
-	sb.WriteString("\n")
-	sb.WriteString("┌─ Choose Capture Strategy ─────────────────────┐\n")
-	sb.WriteString("│                                                │\n")
+	// Build the content
+	var content strings.Builder
+	content.WriteString("\nChoose Capture Strategy\n\n")
 
 	for _, s := range strategies {
-		sb.WriteString(fmt.Sprintf("│  %s) %-40s │\n", s.number, s.name))
-		sb.WriteString(fmt.Sprintf("│     %s                             │\n", s.desc))
-		sb.WriteString("│                                                │\n")
+		content.WriteString(fmt.Sprintf("  %s) %s\n", s.number, s.name))
+		content.WriteString(fmt.Sprintf("     %s\n\n", s.desc))
 	}
 
-	sb.WriteString("│  q) Cancel                                     │\n")
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nSelect strategy (1-3) or press 'q' to cancel:\n")
+	content.WriteString("  q) Cancel\n")
 
-	return sb.String()
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Add footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Select strategy (1-3) or press 'q' to cancel")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
-// viewCaptureForm renders the form for capturing event details.
-// This is a placeholder that shows the form structure.
-// In a real implementation, this would delegate to the form model's View.
+// viewCaptureForm renders the form for capturing event details with lipgloss styling.
+// Displays form fields with proper styling and validation error indication.
 func (i *CaptureEventIntent) viewCaptureForm() string {
-	var sb strings.Builder
-	sb.WriteString("\n")
-	sb.WriteString("┌─ Capture Event Details ────────────────────────┐\n")
-	sb.WriteString("│                                                │\n")
+	var content strings.Builder
+	content.WriteString("\nCapture Event Details\n\n")
 
 	// Strategy info
-	sb.WriteString(fmt.Sprintf("│ Strategy: %-33s │\n", i.context.CaptureStrategy))
-	sb.WriteString("│                                                │\n")
+	content.WriteString(fmt.Sprintf("Strategy: %s\n\n", i.context.CaptureStrategy))
 
-	// Form fields placeholder
-	sb.WriteString("│ Description:                                   │\n")
-	sb.WriteString("│ [Enter event description...]                   │\n")
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("│ Date: [YYYY-MM-DD]                             │\n")
-	sb.WriteString("│ Company: [Company name]                        │\n")
-	sb.WriteString("│ Project: [Project name]                        │\n")
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("│ Tags: [Add tags...]                            │\n")
-	sb.WriteString("│ Categories: [Select categories...]             │\n")
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nPress Tab to navigate, Ctrl+S to submit, Esc to cancel\n")
+	// Form fields
+	content.WriteString("Description:\n")
+	content.WriteString("[Enter event description...]\n\n")
 
-	return sb.String()
+	content.WriteString("Date: [YYYY-MM-DD]\n")
+	content.WriteString("Company: [Company name]\n")
+	content.WriteString("Project: [Project name]\n\n")
+
+	content.WriteString("Tags: [Add tags...]\n")
+	content.WriteString("Categories: [Select categories...]\n")
+
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Add footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Press Tab to navigate, Ctrl+S to submit, Esc to cancel")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
-// viewReviewInferredEvent renders the review UI for inferred bursts and facts.
-// Displays the captured event details, inferred bursts, and facts with accept/reject options.
+// viewReviewInferredEvent renders the review UI with professional styling.
+// Displays captured event details, inferred bursts, and facts.
 func (i *CaptureEventIntent) viewReviewInferredEvent() string {
-	var sb strings.Builder
-	sb.WriteString("\n")
-	sb.WriteString("┌─ Review Inferred Event ────────────────────────┐\n")
-	sb.WriteString("│                                                │\n")
+	var content strings.Builder
+	content.WriteString("\nReview Inferred Event\n\n")
 
 	// Event summary
 	if i.state.result != nil && i.state.result.Event != nil {
@@ -488,103 +510,138 @@ func (i *CaptureEventIntent) viewReviewInferredEvent() string {
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
-		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
-		sb.WriteString("│                                                │\n")
+		content.WriteString(fmt.Sprintf("Event: %s\n\n", title))
 	}
 
 	// Inferred bursts
-	sb.WriteString("│ Inferred Bursts:                               │\n")
+	content.WriteString("Inferred Bursts:\n")
 	if len(i.state.reviewState.AcceptedBursts) > 0 {
 		for idx, burst := range i.state.reviewState.AcceptedBursts {
 			burstTitle := burst.Name
 			if len(burstTitle) > 35 {
 				burstTitle = burstTitle[:32] + "..."
 			}
-			sb.WriteString(fmt.Sprintf("│   [✓] Burst %d: %s              │\n", idx+1, burstTitle))
+			content.WriteString(fmt.Sprintf("  [✓] Burst %d: %s\n", idx+1, burstTitle))
 		}
 	} else {
-		sb.WriteString("│   (No bursts detected)                         │\n")
+		content.WriteString("  (No bursts detected)\n")
 	}
-	sb.WriteString("│                                                │\n")
+	content.WriteString("\n")
 
 	// Inferred facts
-	sb.WriteString("│ Inferred Facts:                                │\n")
+	content.WriteString("Inferred Facts:\n")
 	if len(i.state.reviewState.AcceptedFacts) > 0 {
 		for idx, fact := range i.state.reviewState.AcceptedFacts {
 			desc := fact.Text
 			if len(desc) > 35 {
 				desc = desc[:32] + "..."
 			}
-			sb.WriteString(fmt.Sprintf("│   [✓] Fact %d: %s              │\n", idx+1, desc))
+			content.WriteString(fmt.Sprintf("  [✓] Fact %d: %s\n", idx+1, desc))
 		}
 	} else {
-		sb.WriteString("│   (No facts detected)                          │\n")
+		content.WriteString("  (No facts detected)\n")
 	}
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nPress Ctrl+S to submit, Esc to go back, 'e' to edit\n")
 
-	return sb.String()
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Add footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Press Ctrl+S to submit, Esc to go back, 'e' to edit")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
-// viewSubmit renders the submit confirmation.
+// viewSubmit renders the submit confirmation with professional styling.
 // Displays a summary of the event to be submitted with confirmation options.
 func (i *CaptureEventIntent) viewSubmit() string {
-	var sb strings.Builder
-	sb.WriteString("\n")
-	sb.WriteString("┌─ Confirm Submission ───────────────────────────┐\n")
-	sb.WriteString("│                                                │\n")
+	var content strings.Builder
+	content.WriteString("\nConfirm Submission\n\n")
 
 	if i.state.result != nil && i.state.result.Event != nil {
 		title := i.state.result.Event.Text
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
-		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
-		sb.WriteString(fmt.Sprintf("│ Date: %s                      │\n", i.state.result.Event.Date))
-		sb.WriteString("│                                                │\n")
-		sb.WriteString(fmt.Sprintf("│ Bursts: %d                                    │\n", len(i.state.reviewState.AcceptedBursts)))
-		sb.WriteString(fmt.Sprintf("│ Facts: %d                                     │\n", len(i.state.reviewState.AcceptedFacts)))
-		sb.WriteString("│                                                │\n")
+		content.WriteString(fmt.Sprintf("Event: %s\n", title))
+		content.WriteString(fmt.Sprintf("Date: %s\n\n", i.state.result.Event.Date))
+		content.WriteString(fmt.Sprintf("Bursts: %d\n", len(i.state.reviewState.AcceptedBursts)))
+		content.WriteString(fmt.Sprintf("Facts: %d\n\n", len(i.state.reviewState.AcceptedFacts)))
 	}
 
-	sb.WriteString("│ Ready to submit? Press Enter to confirm.       │\n")
-	sb.WriteString("│ Press Esc to cancel.                           │\n")
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nSubmitting event...\n")
+	content.WriteString("Ready to submit? Press Enter to confirm.\n")
+	content.WriteString("Press Esc to cancel.\n")
 
-	return sb.String()
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Add footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Submitting event...")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
-// viewError renders an error state.
+// viewError renders an error state with professional styling.
 // Displays error details and recovery options.
 func (i *CaptureEventIntent) viewError() string {
-	var sb strings.Builder
-	sb.WriteString("\n")
-	sb.WriteString("┌─ Error ─────────────────────────────────────────┐\n")
-	sb.WriteString("│                                                │\n")
+	var content strings.Builder
+	content.WriteString("\nError\n\n")
 
 	if i.state.error != nil {
 		code := i.state.error.Code
 		if len(code) > 40 {
 			code = code[:37] + "..."
 		}
-		sb.WriteString(fmt.Sprintf("│ Code: %s                        │\n", code))
+		content.WriteString(fmt.Sprintf("Code: %s\n\n", code))
 
 		msg := i.state.error.Message
 		if len(msg) > 40 {
 			msg = msg[:37] + "..."
 		}
-		sb.WriteString(fmt.Sprintf("│ Message: %s                 │\n", msg))
-		sb.WriteString("│                                                │\n")
+		content.WriteString(fmt.Sprintf("Message: %s\n\n", msg))
 	}
 
-	sb.WriteString("│ Press 'r' to retry or Esc to cancel.           │\n")
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("└────────────────────────────────────────────────┘\n")
+	content.WriteString("Press 'r' to retry or Esc to cancel.\n")
 
-	return sb.String()
+	// Apply card styling with error colors
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorderError).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Add footer with error indication
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorError).
+		MarginTop(1)
+
+	footer := footerStyle.Render("An error occurred")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
 // IsActive returns true if this intent is currently active.
