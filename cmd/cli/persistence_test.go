@@ -131,7 +131,7 @@ var _ = Describe("Data Persistence", func() {
 
 var _ = Describe("Form Submission Persistence", func() {
 	Context("when user submits form", func() {
-		It("should persist event through form submission", func() {
+		It("should return event data from form submission", func() {
 			// Create temporary repository
 			repo := careerrepo.NewMemoryRepository()
 			svc := careerservice.NewService(repo)
@@ -160,45 +160,44 @@ var _ = Describe("Form Submission Persistence", func() {
 			Expect(form.GetInputValue(0)).To(Equal("Led critical infrastructure upgrade"))
 
 			// Navigate to date field
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "today")
 
 			// Navigate to company field
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "TechCorp")
 
 			// Navigate to project field
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "Infrastructure")
 
 			// Navigate through Tags, Categories, Mode fields to reach Submit button
 			// Current position: ProjectField (3)
 			// Need to reach: SubmitButton (7)
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // TagsField (4)
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // CategoriesField (5)
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // ModeField (6)
-			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // TagsField (4)
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // CategoriesField (5)
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // ModeField (6)
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
 
 			// Submit form
-			form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
+			_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).NotTo(BeNil())
 
-			// Execute the command and process result
+			// Execute the command and get the result
 			msg := cmd()
-			form, _ = updateForm(form, msg)
-
-			// Verify form submission succeeded
-			Expect(form.Submitted()).To(BeTrue(), "Form should be marked as submitted")
-			Expect(form.Error()).To(BeNil(), "Form submission should not have errors")
-
-			// NOW THE CRITICAL TEST: Verify event was actually persisted to repository
-			ctx := context.Background()
-			events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
-			Expect(err).ToNot(HaveOccurred())
-			Expect(events).To(HaveLen(1), "Event should be persisted after form submission")
-			Expect(events[0].Text).To(Equal("Led critical infrastructure upgrade"))
-			Expect(events[0].Company).To(Equal("TechCorp"))
-			Expect(events[0].Project).To(Equal("Infrastructure"))
+			
+			// Verify the form returns a SubmitMsg with the event data
+			Expect(msg).NotTo(BeNil())
+			submitMsg, ok := msg.(models.SubmitMsg)
+			Expect(ok).To(BeTrue(), "Command should return a SubmitMsg")
+			Expect(submitMsg.Err).To(BeNil(), "SubmitMsg should not have errors")
+			Expect(submitMsg.Event).NotTo(BeNil(), "SubmitMsg should contain event data")
+			Expect(submitMsg.Event.Text).To(Equal("Led critical infrastructure upgrade"))
+			Expect(submitMsg.Event.Company).To(Equal("TechCorp"))
+			Expect(submitMsg.Event.Project).To(Equal("Infrastructure"))
+			
+			// NOTE: The form no longer persists events. The intent is responsible for persistence.
+			// This test verifies that the form correctly collects and returns the data.
 		})
 	})
 })
