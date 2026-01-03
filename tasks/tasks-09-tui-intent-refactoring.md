@@ -4,7 +4,7 @@
 
 **Purpose**: Refactor the entire KaRiya TUI to implement a strict, type-safe Intent-Driven Architecture with clear boundaries, predictable state machines, and reliable navigation.
 
-**Status**: 🔄 **IN PROGRESS** (Phase 1 100% Complete, Phase 2 ~15% Complete)
+**Status**: 🔄 **IN PROGRESS** (Phase 1 100% Complete, Phase 2 ~25% Complete)
 
 **Version**: 1.4 - Updated with Terminal UI Styling Documentation (2026-01-03)
 
@@ -527,14 +527,14 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 
 #### 2.3 Implement Views for All States
 
-- [ ] 2.3.1 Implement StateChooseStrategy view
+- [x] 2.3.1 Implement StateChooseStrategy view
   - Display strategy options with descriptions
   - Show selected strategy highlighted
   - Display help footer with keyboard shortcuts
   - Consistent styling with existing UI
   - **Use styles from [TERMINAL_UI_STYLING_REFERENCE.md](../docs/TERMINAL_UI_STYLING_REFERENCE.md)**
 
-- [ ] 2.3.2 Implement StateCaptureForm view
+- [x] 2.3.2 Implement StateCaptureForm view
   - Display form with all fields
   - Show validation errors inline
   - Show focused field indicator
@@ -543,7 +543,7 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
   - **Use CardContainer component from internal/cli/components/**
   - **Use bubbles textinput components**
 
-- [ ] 2.3.3 Implement StateReviewInferred view
+- [x] 2.3.3 Implement StateReviewInferred view
   - Display inferred metadata
   - Display detected bursts
   - Display extracted facts
@@ -552,7 +552,7 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
   - Consistent styling
   - **Use CardContainer component from internal/cli/components/**
 
-- [ ] 2.3.4 Implement StateSubmit view
+- [x] 2.3.4 Implement StateSubmit view
   - Display final event summary
   - Display confirmation message
   - Display action buttons (Confirm, Cancel)
@@ -560,13 +560,13 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
   - Consistent styling
   - **Use styles and components from internal/cli/**
 
-- [ ] 2.3.5 Implement error views
+- [x] 2.3.5 Implement error views
   - Display error messages clearly
   - Show recovery options
   - Display help footer
   - Consistent styling
 
-- [ ] 2.3.6 Write view rendering tests in `capture_event_test.go`
+- [x] 2.3.6 Write view rendering tests in `capture_event_test.go`
   - Each state view test
   - Error view test
   - >90% test coverage
@@ -1299,7 +1299,7 @@ Comprehensive guides for implementing professional terminal UIs using **lipgloss
 - ✅ Phase 1 acceptance testing - Task 1.6 (COMPLETE)
 
 ### Not Started (Phases 2-5)
-- ⏳ CaptureEvent state transitions (Task 2.2)
+- ✅ CaptureEvent state transitions (Task 2.2) - COMPLETE
 - ⏳ CaptureEvent views (Task 2.3)
 - ⏳ CaptureEvent modal sub-flows (Task 2.4)
 - ⏳ BrowseTimeline intent (Phase 3)
