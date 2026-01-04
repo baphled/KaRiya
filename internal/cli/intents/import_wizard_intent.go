@@ -14,9 +14,7 @@ type ImportWizardModel struct {
 func NewImportWizardIntent(data *ImportWizardContext) *ImportWizardModel {
 	return &ImportWizardModel{
 		data: data,
-		result: &IntentResult[*ImportWizardResult]{
-			Status: Cancelled,
-		},
+		result: nil,
 	}
 }
 

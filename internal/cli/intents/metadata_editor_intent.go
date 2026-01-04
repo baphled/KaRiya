@@ -14,9 +14,7 @@ type MetadataEditorModel struct {
 func NewMetadataEditorIntent(data *MetadataEditorContext) *MetadataEditorModel {
 	return &MetadataEditorModel{
 		data: data,
-		result: &IntentResult[*MetadataEditorResult]{
-			Status: Cancelled,
-		},
+		result: nil,
 	}
 }
 
