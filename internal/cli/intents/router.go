@@ -16,8 +16,14 @@ type DefaultIntentRouter struct {
 	// activeIntent is the currently active intent.
 	activeIntent Intent
 
+	// activeIntentName is the name of the currently active intent.
+	activeIntentName string
+
 	// intentHistory tracks the history of activated intents for back navigation.
 	intentHistory []Intent
+
+	// intentHistoryNames tracks the names corresponding to intentHistory.
+	intentHistoryNames []string
 
 	// mu protects concurrent access to state.
 	mu sync.RWMutex

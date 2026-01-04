@@ -3,20 +3,56 @@ package intents
 import (
 	"fmt"
 
+	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/styles"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // BurstManagementModel implements the Intent interface for burst management
 type BurstManagementModel struct {
-	data   *BurstManagementContext
-	result *IntentResult[*BurstManagementResult]
+	data          *BurstManagementContext
+	table         *table.Model
+	listContainer *components.TableListContainer
+	result        *IntentResult[*BurstManagementResult]
 }
 
 // NewBurstManagementIntent creates a new BurstManagement intent
 func NewBurstManagementIntent(data *BurstManagementContext) *BurstManagementModel {
+	// Create table model for bursts
+	columns := []table.Column{
+		{Title: "Name", Width: 30},
+		{Title: "Competency", Width: 25},
+		{Title: "Events", Width: 10},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
 	return &BurstManagementModel{
-		data: data,
+		data:          data,
+		table:         &t,
+		listContainer: components.NewTableListContainer(t, "Manage Bursts", 100),
 		result: &IntentResult[*BurstManagementResult]{
 			Status: Cancelled,
 		},
@@ -41,7 +77,23 @@ func (m *BurstManagementModel) Init() tea.Cmd {
 		return tea.Quit
 	}
 
+	m.updateTableRows()
 	return nil
+}
+
+// updateTableRows updates the table rows based on bursts
+func (m *BurstManagementModel) updateTableRows() {
+	rows := make([]table.Row, 0, len(m.data.Bursts))
+	for _, burst := range m.data.Bursts {
+		competency := burst.CompetencyFocus
+		if competency == "" {
+			competency = "-"
+		}
+		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
+		rows = append(rows, table.Row{burst.Name, competency, eventCount})
+	}
+	m.table.SetRows(rows)
+	m.listContainer.SetTable(*m.table)
 }
 
 // Update processes messages and updates the intent state
@@ -107,13 +159,23 @@ func (m *BurstManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 			return tea.Quit
 
 		case "j", "down":
-			if m.data.SelectedBurstIndex < len(m.data.GetPageBursts())-1 {
-				m.data.SelectBurst(m.data.SelectedBurstIndex + 1)
+			cursor := m.table.Cursor()
+			if cursor < len(m.data.Bursts)-1 {
+				m.table.SetCursor(cursor + 1)
+				m.data.SelectedBurstIndex = cursor + 1
+				if m.data.SelectedBurstIndex < len(m.data.Bursts) {
+					m.data.SelectedBurst = m.data.Bursts[m.data.SelectedBurstIndex]
+				}
 			}
 
 		case "k", "up":
-			if m.data.SelectedBurstIndex > 0 {
-				m.data.SelectBurst(m.data.SelectedBurstIndex - 1)
+			cursor := m.table.Cursor()
+			if cursor > 0 {
+				m.table.SetCursor(cursor - 1)
+				m.data.SelectedBurstIndex = cursor - 1
+				if m.data.SelectedBurstIndex >= 0 && m.data.SelectedBurstIndex < len(m.data.Bursts) {
+					m.data.SelectedBurst = m.data.Bursts[m.data.SelectedBurstIndex]
+				}
 			}
 
 		case "enter", " ":
@@ -135,16 +197,20 @@ func (m *BurstManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 						Cause:   err,
 					},
 				}
+			} else {
+				m.updateTableRows()
 			}
 
 		case "tab", "right":
 			if m.data.CurrentPage < (m.data.TotalBursts / m.data.PageSize) {
 				m.data.CurrentPage++
+				m.updateTableRows()
 			}
 
 		case "shift+tab", "left":
 			if m.data.CurrentPage > 0 {
 				m.data.CurrentPage--
+				m.updateTableRows()
 			}
 		}
 	}
@@ -201,6 +267,7 @@ func (m *BurstManagementModel) handleEditorState(msg tea.Msg) tea.Cmd {
 				}
 				m.data.CurrentState = BurstListState
 				m.data.CancelEdit()
+				m.updateTableRows()
 			}
 
 		case "esc":
@@ -243,6 +310,7 @@ func (m *BurstManagementModel) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
 							Message: "Burst deleted successfully",
 						},
 					}
+					m.updateTableRows()
 				}
 				m.data.BurstToDelete = nil
 				m.data.CurrentState = BurstListState
@@ -302,6 +370,7 @@ func (m *BurstManagementModel) handleSuggestState(msg tea.Msg) tea.Cmd {
 							Message: "Burst created from suggestion",
 						},
 					}
+					m.updateTableRows()
 				}
 				m.data.CurrentState = BurstListState
 			}
@@ -317,28 +386,21 @@ func (m *BurstManagementModel) handleSuggestState(msg tea.Msg) tea.Cmd {
 
 func (m *BurstManagementModel) viewList() string {
 	if len(m.data.Bursts) == 0 {
-		return "No bursts found. Press 'n' to create a new burst, 'r' to refresh, or 'q' to quit."
+		m.listContainer.SetEmptyStateMessage("No bursts found. Press 'n' to create a new burst, 'r' to refresh, or 'q' to quit.")
+		return m.listContainer.Render()
 	}
 
-	output := "Bursts (j/k: navigate, enter: view, n: new, r: refresh, q: quit)\n"
-	output += "=================================================================\n"
+	// Build pagination info
+	paginationInfo := fmt.Sprintf("Total: %d bursts", m.data.TotalBursts)
+	m.listContainer.SetPaginationInfo(paginationInfo)
 
-	pageBursts := m.data.GetPageBursts()
-	for i, burst := range pageBursts {
-		prefix := "  "
-		if i == m.data.SelectedBurstIndex {
-			prefix = "> "
-		}
-		output += fmt.Sprintf("%s[%d] %s (Events: %d)\n", prefix, i+1, burst.Name, len(burst.EventIDs))
-		if m.data.IsRowExpanded(i) {
-			output += fmt.Sprintf("    Description: %s\n", burst.Description)
-			output += fmt.Sprintf("    Competency: %s\n", burst.CompetencyFocus)
-		}
-	}
+	// Set breadcrumbs if needed
+	m.listContainer.SetBreadcrumbs([]string{"Home", "Bursts"})
 
-	output += fmt.Sprintf("\nPage %d of %d | Total: %d bursts\n", m.data.CurrentPage+1, (m.data.TotalBursts/m.data.PageSize)+1, m.data.TotalBursts)
+	// Set help footer
+	m.listContainer.SetHelpFooterKey("burst_management")
 
-	return output
+	return m.listContainer.Render()
 }
 
 func (m *BurstManagementModel) viewBurst() string {

@@ -558,7 +558,6 @@ func (m *FormModel) submitForm() tea.Cmd {
 		company := strings.TrimSpace(m.inputs[2].Value())
 		project := strings.TrimSpace(m.inputs[3].Value())
 
-
 		// Get selected tags and categories
 		tags := m.tagSelector.SelectedTags()
 		categories := m.categorySelector.SelectedCategories()

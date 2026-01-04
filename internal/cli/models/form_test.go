@@ -550,7 +550,7 @@ var _ = Describe("FormModel", func() {
 			_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).NotTo(BeNil())
 			msg := cmd()
-			
+
 			// Verify the form returns a SubmitMsg with event data
 			Expect(msg).NotTo(BeNil())
 			submitMsg, ok := msg.(models.SubmitMsg)
@@ -558,7 +558,7 @@ var _ = Describe("FormModel", func() {
 			Expect(submitMsg.Err).To(BeNil())
 			Expect(submitMsg.Event).NotTo(BeNil())
 			Expect(submitMsg.Event.Text).To(Equal("Integration test event"))
-			
+
 			// NOTE: Form no longer persists. Intent is responsible for saving.
 		})
 
@@ -581,7 +581,7 @@ var _ = Describe("FormModel", func() {
 			_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).NotTo(BeNil())
 			msg := cmd()
-			
+
 			// Verify the form returns a SubmitMsg with event data
 			Expect(msg).NotTo(BeNil())
 			submitMsg, ok := msg.(models.SubmitMsg)
@@ -589,7 +589,7 @@ var _ = Describe("FormModel", func() {
 			Expect(submitMsg.Err).To(BeNil())
 			Expect(submitMsg.Event).NotTo(BeNil())
 			Expect(submitMsg.Event.Text).To(Equal("Mode test event"))
-			
+
 			// NOTE: Form no longer persists. Intent is responsible for saving.
 		})
 
@@ -624,7 +624,7 @@ var _ = Describe("FormModel", func() {
 				_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
 				Expect(cmd).NotTo(BeNil())
 				msg := cmd()
-				
+
 				// Verify the form returns a SubmitMsg with tags
 				Expect(msg).NotTo(BeNil())
 				submitMsg, ok := msg.(models.SubmitMsg)
@@ -633,7 +633,7 @@ var _ = Describe("FormModel", func() {
 				Expect(submitMsg.Event).NotTo(BeNil())
 				Expect(submitMsg.Event.Tags).To(HaveLen(2))
 				Expect(submitMsg.Event.Tags).To(ContainElements("technical", "leadership"))
-				
+
 				// NOTE: Form no longer persists. Intent is responsible for saving.
 			})
 		})
@@ -735,10 +735,10 @@ var _ = Describe("FormModel", func() {
 						Expect(testForm.Submitted()).To(BeTrue())
 
 						// Verify event was captured
-// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-// 						Expect(err).To(BeNil())
-// 						Expect(len(events) > 0).To(BeTrue())
-// NOTE: Form no longer persists. Intent is responsible for saving.
+						// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+						// 						Expect(err).To(BeNil())
+						// 						Expect(len(events) > 0).To(BeTrue())
+						// NOTE: Form no longer persists. Intent is responsible for saving.
 					})
 
 					It("should reject event older than 30 days", func() {
@@ -819,10 +819,10 @@ var _ = Describe("FormModel", func() {
 						Expect(testForm.Submitted()).To(BeTrue())
 
 						// Verify event was captured
-// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-// 						Expect(err).To(BeNil())
-// 						Expect(len(events) > 0).To(BeTrue())
-// NOTE: Form no longer persists. Intent is responsible for saving.
+						// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+						// 						Expect(err).To(BeNil())
+						// 						Expect(len(events) > 0).To(BeTrue())
+						// NOTE: Form no longer persists. Intent is responsible for saving.
 					})
 				})
 
@@ -855,10 +855,10 @@ var _ = Describe("FormModel", func() {
 						Expect(testForm.Submitted()).To(BeTrue())
 
 						// Verify event was captured
-// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-// 						Expect(err).To(BeNil())
-// 						Expect(len(events) > 0).To(BeTrue())
-// NOTE: Form no longer persists. Intent is responsible for saving.
+						// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
+						// 						Expect(err).To(BeNil())
+						// 						Expect(len(events) > 0).To(BeTrue())
+						// NOTE: Form no longer persists. Intent is responsible for saving.
 					})
 				})
 

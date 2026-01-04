@@ -6,8 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -37,6 +39,12 @@ type BrowseTimelineIntent struct {
 	// state represents the current state of the intent.
 	state *BrowseTimelineModel
 
+	// table is the table model for displaying events
+	table *table.Model
+
+	// listContainer provides table-based list UI
+	listContainer *components.TableListContainer
+
 	// active indicates whether this intent is currently active.
 	active bool
 
@@ -51,7 +59,35 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 		return nil, err
 	}
 
-	return &BrowseTimelineIntent{
+	// Create table model for events
+	columns := []table.Column{
+		{Title: "Date", Width: 12},
+		{Title: "Event", Width: 50},
+		{Title: "Company", Width: 20},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
+	intent := &BrowseTimelineIntent{
 		context: context,
 		state: &BrowseTimelineModel{
 			context:        context,
@@ -62,8 +98,12 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 			selectedFacts:  make([]*career.Fact, 0),
 			viewedEvents:   make([]*career.CareerEvent, 0),
 		},
-		active: true,
-	}, nil
+		table:         &t,
+		listContainer: components.NewTableListContainer(t, "Browse Timeline", 100),
+		active:        true,
+	}
+
+	return intent, nil
 }
 
 // Init is called when the intent is activated.
@@ -73,7 +113,34 @@ func (i *BrowseTimelineIntent) Init() tea.Cmd {
 	if len(i.state.filteredEvents) > 0 {
 		i.state.selectedEvent = i.state.filteredEvents[0]
 	}
+	i.updateTableRows()
 	return nil
+}
+
+// updateTableRows updates the table rows based on filtered events
+func (i *BrowseTimelineIntent) updateTableRows() {
+	rows := make([]table.Row, 0, len(i.state.filteredEvents))
+	for _, event := range i.state.filteredEvents {
+		dateStr := event.Date.Format("2006-01-02")
+		// Truncate text to first 50 chars
+		text := event.Text
+		if len(text) > 50 {
+			text = text[:50] + "..."
+		}
+		company := event.Company
+		if company == "" {
+			company = "-"
+		}
+		rows = append(rows, table.Row{dateStr, text, company})
+	}
+	i.table.SetRows(rows)
+	if i.state.selectedIndex < len(rows) {
+		i.table.SetCursor(i.state.selectedIndex)
+	} else if len(rows) > 0 {
+		i.state.selectedIndex = 0
+		i.table.SetCursor(0)
+	}
+	i.listContainer.SetTable(*i.table)
 }
 
 // Update processes a message in the intent.
@@ -100,17 +167,22 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 		switch msg.String() {
 		case "enter":
 			// Select current event and move to detail view.
-			if len(i.state.filteredEvents) > 0 && i.state.selectedIndex < len(i.state.filteredEvents) {
-				i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-				i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
-				i.state.currentState = BrowseStateEventDetail
+			if len(i.state.filteredEvents) > 0 {
+				i.state.selectedIndex = i.table.Cursor()
+				if i.state.selectedIndex < len(i.state.filteredEvents) {
+					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
+					i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
+					i.state.currentState = BrowseStateEventDetail
+				}
 			}
 			return nil
 
 		case "up", "k":
 			// Move selection up.
-			if i.state.selectedIndex > 0 {
-				i.state.selectedIndex--
+			cursor := i.table.Cursor()
+			if cursor > 0 {
+				i.table.SetCursor(cursor - 1)
+				i.state.selectedIndex = cursor - 1
 				if len(i.state.filteredEvents) > 0 {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
@@ -119,8 +191,10 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 
 		case "down", "j":
 			// Move selection down.
-			if i.state.selectedIndex < len(i.state.filteredEvents)-1 {
-				i.state.selectedIndex++
+			cursor := i.table.Cursor()
+			if cursor < len(i.state.filteredEvents)-1 {
+				i.table.SetCursor(cursor + 1)
+				i.state.selectedIndex = cursor + 1
 				if len(i.state.filteredEvents) > 0 {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
@@ -151,6 +225,7 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 		i.state.filters = msg.Filters
 		i.applyFilters()
 		i.state.selectedIndex = 0
+		i.updateTableRows()
 		if len(i.state.filteredEvents) > 0 {
 			i.state.selectedEvent = i.state.filteredEvents[0]
 		}
@@ -259,58 +334,24 @@ func (i *BrowseTimelineIntent) View() string {
 	return ""
 }
 
-// viewTimeline renders the timeline view with all events.
+// viewTimeline renders the timeline view with all events as a table.
 func (i *BrowseTimelineIntent) viewTimeline() string {
-	var content strings.Builder
-	content.WriteString("\nBrowse Timeline\n\n")
-
 	if len(i.state.filteredEvents) == 0 {
-		content.WriteString("No events found.\n")
-	} else {
-		// Show current filter info.
-		if i.state.filters.SearchText != "" {
-			content.WriteString(fmt.Sprintf("Search: %s\n", i.state.filters.SearchText))
-		}
-		if len(i.state.filters.Tags) > 0 {
-			content.WriteString(fmt.Sprintf("Tags: %s\n", strings.Join(i.state.filters.Tags, ", ")))
-		}
-		content.WriteString("\n")
-
-		// Show event list.
-		for idx, event := range i.state.filteredEvents {
-			prefix := "  "
-			if idx == i.state.selectedIndex {
-				prefix = "> "
-			}
-
-			dateStr := event.Date.Format("2006-01-02")
-			// Truncate text to first 50 chars
-			text := event.Text
-			if len(text) > 50 {
-				text = text[:50] + "..."
-			}
-			content.WriteString(fmt.Sprintf("%s[%s] %s\n", prefix, dateStr, text))
-		}
+		i.listContainer.SetEmptyStateMessage("No events found.")
+		return i.listContainer.Render()
 	}
 
-	// Apply card styling.
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	// Build pagination info
+	paginationInfo := fmt.Sprintf("Events: %d", len(i.state.filteredEvents))
+	i.listContainer.SetPaginationInfo(paginationInfo)
 
-	card := cardStyle.Render(content.String())
+	// Set breadcrumbs if needed
+	i.listContainer.SetBreadcrumbs([]string{"Home", "Timeline"})
 
-	// Add footer with instructions.
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
+	// Set help footer
+	i.listContainer.SetHelpFooterKey("browse_timeline")
 
-	footer := footerStyle.Render("↑/↓ or k/j to navigate, Enter to select, q to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return i.listContainer.Render()
 }
 
 // viewEventDetail renders the event detail view.

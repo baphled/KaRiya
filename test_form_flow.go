@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== FORM SUBMISSION FLOW TEST ===\n")
+	fmt.Println("=== FORM SUBMISSION FLOW TEST ===")
 
 	// Create necessary services
 	repo, err := career.NewSQLiteRepository(":memory:")
@@ -83,7 +83,7 @@ func main() {
 	}
 
 	// Now let's try with actual form data
-	fmt.Println("\n\n=== ATTEMPT 2: WITH FORM DATA ===\n")
+	fmt.Println("=== ATTEMPT 2: WITH FORM DATA ===")
 
 	intent2, _ := intents.NewCaptureEventIntent(ctx)
 	intent2.Init()
@@ -156,4 +156,3 @@ func main() {
 		fmt.Println("❌ ERROR: Ctrl+S did not return a command!")
 	}
 }
-
