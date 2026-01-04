@@ -140,6 +140,9 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 
 // Init is called when the intent is activated.
 func (i *BurstManagementIntent) Init() tea.Cmd {
+	// Load bursts from repository
+	_ = i.context.LoadBursts()
+	
 	// Initialize filtered bursts with the provided bursts.
 	i.state.filteredBursts = i.context.Bursts
 	if len(i.state.filteredBursts) > 0 {
@@ -149,15 +152,33 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 	return nil
 }
 
-// updateTableRows updates the table rows based on filtered bursts
+// updateTableRows updates the table rows based on filtered bursts, paginated
 func (i *BurstManagementIntent) updateTableRows() {
-	rows := make([]table.Row, 0, len(i.state.filteredBursts))
-	for idx, burst := range i.state.filteredBursts {
+	pageSize := 15
+	total := len(i.state.filteredBursts)
+
+	// Determine which page current selection is on
+	page := 0
+	if pageSize > 0 && i.state.selectedIndex >= 0 {
+		page = i.state.selectedIndex / pageSize
+	}
+
+	start := page * pageSize
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	pageBursts := i.state.filteredBursts[start:end]
+
+	rows := make([]table.Row, 0, len(pageBursts))
+	for idx, burst := range pageBursts {
+		realIdx := start + idx
 		nameStr := burst.Name
 
-		// Add visual indicator for selected row
-		if idx == i.state.selectedIndex {
-			nameStr = "> " + nameStr
+		// Visual indicator for the actual selected burst across all bursts
+		if realIdx == i.state.selectedIndex {
+			nameStr = "▶ " + nameStr
 		} else {
 			nameStr = "  " + nameStr
 		}
@@ -170,13 +191,16 @@ func (i *BurstManagementIntent) updateTableRows() {
 		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
 		rows = append(rows, table.Row{nameStr, competency, eventCount})
 	}
+
 	i.table.SetRows(rows)
-	if i.state.selectedIndex < len(rows) {
-		i.table.SetCursor(i.state.selectedIndex)
+
+	// Set table cursor relative to page
+	if i.state.selectedIndex >= start && i.state.selectedIndex < end {
+		i.table.SetCursor(i.state.selectedIndex - start)
 	} else if len(rows) > 0 {
-		i.state.selectedIndex = 0
 		i.table.SetCursor(0)
 	}
+
 	i.listContainer.SetTable(*i.table)
 }
 
@@ -201,12 +225,21 @@ func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		pageSize := 15
+		total := len(i.state.filteredBursts)
 		switch msg.String() {
 		case "enter":
 			// Select current burst and move to detail view.
 			if len(i.state.filteredBursts) > 0 {
-				i.state.selectedIndex = i.table.Cursor()
-				if i.state.selectedIndex < len(i.state.filteredBursts) {
+				// Set selectedIndex relative to absolute index across all bursts
+				cursor := i.table.Cursor()
+				page := 0
+				if pageSize > 0 && i.state.selectedIndex >= 0 {
+					page = i.state.selectedIndex / pageSize
+				}
+				absoluteIndex := page*pageSize + cursor
+				if absoluteIndex < len(i.state.filteredBursts) {
+					i.state.selectedIndex = absoluteIndex
 					i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
 					i.state.viewedBursts = append(i.state.viewedBursts, i.state.selectedBurst)
 					i.state.currentState = BurstStateDetail
@@ -215,44 +248,78 @@ func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 			return nil
 
 		case "up", "k":
-			// Move selection up.
-			cursor := i.table.Cursor()
-			if cursor > 0 {
-				i.table.SetCursor(cursor - 1)
-				i.state.selectedIndex = cursor - 1
-				if len(i.state.filteredBursts) > 0 {
-					i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
-				}
+			if i.state.selectedIndex > 0 {
+				i.state.selectedIndex--
 			}
 			i.updateTableRows()
+			if len(i.state.filteredBursts) > 0 {
+				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
+			}
 			return nil
 
 		case "down", "j":
-			// Move selection down.
-			cursor := i.table.Cursor()
-			if cursor < len(i.state.filteredBursts)-1 {
-				i.table.SetCursor(cursor + 1)
-				i.state.selectedIndex = cursor + 1
-				if len(i.state.filteredBursts) > 0 {
-					i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
-				}
+			if i.state.selectedIndex < total-1 {
+				i.state.selectedIndex++
 			}
 			i.updateTableRows()
+			if len(i.state.filteredBursts) > 0 {
+				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
+			}
+			return nil
+
+		case "pgup", "b":
+			newIndex := i.state.selectedIndex - pageSize
+			if newIndex < 0 {
+				newIndex = 0
+			}
+			i.state.selectedIndex = newIndex
+			i.updateTableRows()
+			if len(i.state.filteredBursts) > 0 && i.state.selectedIndex < len(i.state.filteredBursts) {
+				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
+			}
+			return nil
+
+		case "pgdn", "f":
+			newIndex := i.state.selectedIndex + pageSize
+			if newIndex >= total {
+				newIndex = total - 1
+			}
+			if newIndex < 0 {
+				newIndex = 0
+			}
+			i.state.selectedIndex = newIndex
+			i.updateTableRows()
+			if len(i.state.filteredBursts) > 0 && i.state.selectedIndex < len(i.state.filteredBursts) {
+				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
+			}
+			return nil
+
+		case "home", "g":
+			if len(i.state.filteredBursts) > 0 {
+				i.state.selectedIndex = 0
+				i.updateTableRows()
+				i.state.selectedBurst = i.state.filteredBursts[0]
+			}
+			return nil
+
+		case "end", "G":
+			if len(i.state.filteredBursts) > 0 {
+				lastIndex := len(i.state.filteredBursts) - 1
+				i.state.selectedIndex = lastIndex
+				i.updateTableRows()
+				i.state.selectedBurst = i.state.filteredBursts[lastIndex]
+			}
 			return nil
 
 		case "q", "ctrl+c":
-			// Cancel without selection.
 			i.setCancelled()
 			return nil
-
 		case "esc":
-			// Go back (no-op at list view).
 			i.setCancelled()
 			return nil
 		}
 
 	case BurstSelectedMsg:
-		// Burst was selected (possibly by router or other component).
 		i.state.selectedBurst = msg.Burst
 		i.state.selectedIndex = msg.Index
 		i.state.viewedBursts = append(i.state.viewedBursts, msg.Burst)
@@ -351,14 +418,22 @@ func (i *BurstManagementIntent) View() string {
 }
 
 // viewList renders the burst list view with all bursts as a table.
+// viewList renders the burst list view with all bursts as a table.
 func (i *BurstManagementIntent) viewList() string {
 	if len(i.state.filteredBursts) == 0 {
 		i.listContainer.SetEmptyStateMessage("No bursts found.")
 		return i.listContainer.Render()
 	}
 
-	// Build pagination info
-	paginationInfo := fmt.Sprintf("Bursts: %d", len(i.state.filteredBursts))
+	// Ensure table rows are synchronized with current state
+	i.updateTableRows()
+
+	// Build pagination info with page number indicator
+	pageSize := 15
+	totalItems := len(i.state.filteredBursts)
+	currentPage := (i.state.selectedIndex / pageSize) + 1
+	totalPages := (totalItems + pageSize - 1) / pageSize
+	paginationInfo := fmt.Sprintf("Bursts: %d | Page %d of %d", totalItems, currentPage, totalPages)
 	i.listContainer.SetPaginationInfo(paginationInfo)
 
 	// Set breadcrumbs if needed
@@ -369,8 +444,6 @@ func (i *BurstManagementIntent) viewList() string {
 
 	return i.listContainer.Render()
 }
-
-// viewDetail renders the burst detail view.
 func (i *BurstManagementIntent) viewDetail() string {
 	if i.state.selectedBurst == nil {
 		return "No burst selected."

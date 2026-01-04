@@ -4,12 +4,15 @@ import (
 	"context"
 	"time"
 	"errors"
+	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	careerdom "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 var _ = Describe("FactManagement Intent", func() {
@@ -173,6 +176,82 @@ var _ = Describe("FactManagement Intent", func() {
 		})
 	})
 })
+
+var _ = Describe("Pagination", func() {
+	var (
+		ctx context.Context
+		manyFactsIntent *FactManagementModel
+		manyFactsRepo   *MockFactRepository
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		// Create 35 facts to span multiple pages (pageSize = 15)
+		manyFactsRepo = NewMockFactRepository()
+		for i := 0; i < 35; i++ {
+			fact := &careerdom.Fact{
+				ID:                   fmt.Sprintf("fact-%02d", i),
+				Text:                 fmt.Sprintf("Fact %02d", i+1),
+				CompetencyCategories: []string{fmt.Sprintf("competency-%d", i%5)},
+				StrengthSignal:       fmt.Sprintf("signal-%d", i%3),
+				CreatedAt:            time.Now(),
+				UpdatedAt:            time.Now(),
+			}
+			manyFactsRepo.facts = append(manyFactsRepo.facts, fact)
+		}
+
+		data := NewFactManagementContext(manyFactsRepo, ctx)
+		manyFactsIntent = NewFactManagementIntent(data)
+		manyFactsIntent.Init()
+	})
+
+		It("should display correct facts on first page", func() {
+			// Verify we're on page 1
+			view := manyFactsIntent.View()
+			Expect(view).To(ContainSubstring("Page 1 of 3"))
+
+			// Verify table shows first 15 facts
+			rows := manyFactsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(15))
+		})
+
+		It("should update table rows when navigating to next page", func() {
+			// Navigate to page 2 using f key (pgdn)
+			manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Verify we're on page 2
+			view := manyFactsIntent.View()
+			Expect(view).To(ContainSubstring("Page 2 of 3"))
+
+			// Verify the selected index is now in the second page range
+			Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(15))
+
+			// FAILING TEST: Verify table shows the correct facts for page 2
+			// Currently the table shows ALL facts (all 35 rows) instead of just the current page (15 rows)
+			rows := manyFactsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(15), "Table should show only 15 facts for page 2, but shows %d facts", len(rows))
+		})
+
+		It("should update table rows when navigating to last page", func() {
+			// Navigate to page 3 using f key twice
+			manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Verify we're on page 3
+			view := manyFactsIntent.View()
+			Expect(view).To(ContainSubstring("Page 3 of 3"))
+
+			// Verify the selected index is now in the third page range
+			Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(30))
+
+			// FAILING TEST: Verify table shows the correct facts for page 3
+			// Currently the table shows ALL facts (all 35 rows) instead of just the current page (5 rows)
+			rows := manyFactsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(5), "Table should show only 5 facts for page 3, but shows %d facts", len(rows))
+		})
+	})
+
+// Pagination Describe ends here -- removed extra closing brace
 
 type MockFactRepository struct {
 	facts []*careerdom.Fact

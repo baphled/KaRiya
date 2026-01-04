@@ -170,13 +170,14 @@ var _ = Describe("ExportArtifact Intent", func() {
 	})
 
 	Describe("View Rendering - Preview State", func() {
-		BeforeEach(func() {
-			var err error
-			intent, err = NewExportArtifactIntent(ctx)
-			Expect(err).NotTo(HaveOccurred())
-			intent.Init()
-			intent.SetState(ExportStatePreview)
-		})
+	BeforeEach(func() {
+		var err error
+		intent, err = NewExportArtifactIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+		intent.SetState(ExportStatePreview)
+		intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+	})
 
 		It("should render Preview view", func() {
 			view := intent.View()

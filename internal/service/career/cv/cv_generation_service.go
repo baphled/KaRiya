@@ -225,20 +225,39 @@ func (svc *DefaultCVGenerationService) eventMatchesFilters(event *career.CareerE
 	}
 
 	// Check categories filter
-	if categories, ok := filters["categories"].([]string); ok {
+	// If event has categories, match against them; otherwise fall back to tags
+	if categories, ok := filters["categories"].([]string); ok && len(categories) > 0 {
 		found := false
-		for _, category := range categories {
-			for _, eventCategory := range event.Categories {
-				if category == eventCategory {
-					found = true
+
+		// If event has categories, match against them
+		if len(event.Categories) > 0 {
+			for _, category := range categories {
+				for _, eventCategory := range event.Categories {
+					if category == eventCategory {
+						found = true
+						break
+					}
+				}
+				if found {
 					break
 				}
 			}
-			if found {
-				break
+		} else {
+			// Fall back to tags if no categories are set
+			for _, category := range categories {
+				for _, eventTag := range event.Tags {
+					if category == eventTag {
+						found = true
+						break
+					}
+				}
+				if found {
+					break
+				}
 			}
 		}
-		if !found && len(categories) > 0 {
+
+		if !found {
 			return false
 		}
 	}

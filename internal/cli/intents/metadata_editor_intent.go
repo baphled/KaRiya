@@ -51,7 +51,9 @@ func (m *MetadataEditorModel) View() string {
 
 func (m *MetadataEditorModel) Result() *IntentResult[interface{}] {
 	if m.result == nil {
-		return nil
+		return &IntentResult[interface{}]{
+			Status: Cancelled,
+		}
 	}
 	return &IntentResult[interface{}]{
 		Status: m.result.Status,
@@ -76,6 +78,12 @@ func (m *MetadataEditorModel) handleReviewState(msg tea.Msg) tea.Cmd {
 			m.data.CurrentState = MetadataEditState
 
 		case "esc":
+			m.result = &IntentResult[*MetadataEditorResult]{
+				Status: Cancelled,
+				Data: &MetadataEditorResult{
+					Action: "cancelled",
+				},
+			}
 			return tea.Quit
 		}
 	}

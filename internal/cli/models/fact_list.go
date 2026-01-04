@@ -647,3 +647,25 @@ func (flm *FactListModel) goToLastItem() {
 		flm.listContainer.SetSelectedIdx(len(pageFacts) - 1)
 	}
 }
+
+// NextPage implements ListItemCallbacks interface - moves to the next page
+func (flm *FactListModel) NextPage() {
+	flm.nextPage()
+}
+
+// PrevPage implements ListItemCallbacks interface - moves to the previous page
+func (flm *FactListModel) PrevPage() {
+	flm.prevPage()
+}
+
+// GoToFirstPage implements ListItemCallbacks interface - goes to the first page
+func (flm *FactListModel) GoToFirstPage() {
+	flm.goToFirstItem()
+	flm.updateTableRows()
+}
+
+// GoToLastPage implements ListItemCallbacks interface - goes to the last page
+func (flm *FactListModel) GoToLastPage() {
+	flm.goToLastItem()
+	flm.updateTableRows()
+}

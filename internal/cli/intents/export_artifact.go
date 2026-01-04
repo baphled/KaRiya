@@ -533,6 +533,9 @@ func (m *ExportArtifactModel) viewConfigure() string {
 }
 
 func (m *ExportArtifactModel) viewPreview() string {
+	if m.config == nil {
+		return "Preview not available. Please configure the export first.\n\n[Enter] Continue | [Esc] Back"
+	}
 	s := "Preview Export (" + string(m.config.ArtifactType) + " as " + string(m.config.Format) + "):\n\n"
 	s += "════════════════════════════════════════════════════════\n\n"
 

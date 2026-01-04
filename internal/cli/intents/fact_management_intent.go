@@ -141,7 +141,8 @@ func (m *FactManagementModel) Update(msg tea.Msg) tea.Cmd {
 	case FactResultsState:
 		return m.handleResultsState(msg)
 	case FactCompletedState:
-		return tea.Quit
+		// Do not send tea.Quit, just return nil and let router manage exit.
+		return nil
 	}
 	return nil
 }
@@ -166,9 +167,7 @@ func (m *FactManagementModel) View() string {
 
 func (m *FactManagementModel) Result() *IntentResult[interface{}] {
 	if m.result == nil {
-		return &IntentResult[interface{}]{
-			Status: Cancelled,
-		}
+		return nil
 	}
 	return &IntentResult[interface{}]{
 		Status: m.result.Status,
