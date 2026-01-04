@@ -278,7 +278,7 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromEvents(events []*car
 			Text:            event.Text,
 			EnhancedText:    event.Text,
 			SourceEventIDs:  []string{event.ID},
-			Confidence:      0.70,
+			Confidence:      0.80,
 			InclusionReason: "event_direct",
 			ImpactLevel:     "low",
 		}
@@ -405,9 +405,16 @@ func (ebg *DefaultEnhancedBulletGenerator) enhanceActionVerb(text string, role s
 	}
 
 	result := text
+	lowerResult := strings.ToLower(result)
+
 	for weak, strong := range weakVerbs {
-		if strings.Contains(strings.ToLower(result), weak) {
-			result = strings.ReplaceAll(result, weak, strong)
+		if strings.Contains(lowerResult, weak) {
+			// Find the actual position in the original text (case-insensitive)
+			idx := strings.Index(lowerResult, weak)
+			if idx != -1 {
+				// Replace the original text at the found position
+				result = result[:idx] + strong + result[idx+len(weak):]
+			}
 			break
 		}
 	}

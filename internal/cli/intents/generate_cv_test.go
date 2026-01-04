@@ -320,7 +320,7 @@ var _ = Describe("GenerateCVIntent", func() {
 
 		It("should show selected profile with marker", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring(">"))
+			Expect(view).To(ContainSubstring("▶"))
 		})
 
 		It("should render audience selection view", func() {
