@@ -119,13 +119,31 @@ func (i *BrowseTimelineIntent) Init() tea.Cmd {
 
 // updateTableRows updates the table rows based on filtered events
 func (i *BrowseTimelineIntent) updateTableRows() {
-	rows := make([]table.Row, 0, len(i.state.filteredEvents))
-	for idx, event := range i.state.filteredEvents {
+	pageSize := 15
+	total := len(i.state.filteredEvents)
+
+	// Determine which page current selection is on
+	page := 0
+	if pageSize > 0 && i.state.selectedIndex >= 0 {
+		page = i.state.selectedIndex / pageSize
+	}
+
+	start := page * pageSize
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	pageEvents := i.state.filteredEvents[start:end]
+
+	rows := make([]table.Row, 0, len(pageEvents))
+	for idx, event := range pageEvents {
+		realIdx := start + idx
 		dateStr := event.Date.Format("2006-01-02")
 
 		// Add visual indicator for selected row
-		if idx == i.state.selectedIndex {
-			dateStr = "> " + dateStr
+		if realIdx == i.state.selectedIndex {
+			dateStr = "▶ " + dateStr
 		} else {
 			dateStr = "  " + dateStr
 		}
@@ -140,13 +158,16 @@ func (i *BrowseTimelineIntent) updateTableRows() {
 		}
 		rows = append(rows, table.Row{dateStr, text, company})
 	}
+
 	i.table.SetRows(rows)
-	if i.state.selectedIndex < len(rows) {
-		i.table.SetCursor(i.state.selectedIndex)
+
+	// Set table cursor relative to page
+	if i.state.selectedIndex >= start && i.state.selectedIndex < end {
+		i.table.SetCursor(i.state.selectedIndex - start)
 	} else if len(rows) > 0 {
-		i.state.selectedIndex = 0
 		i.table.SetCursor(0)
 	}
+
 	i.listContainer.SetTable(*i.table)
 }
 
@@ -186,10 +207,8 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 
 		case "up", "k":
 			// Move selection up.
-			cursor := i.table.Cursor()
-			if cursor > 0 {
-				i.table.SetCursor(cursor - 1)
-				i.state.selectedIndex = cursor - 1
+			if i.state.selectedIndex > 0 {
+				i.state.selectedIndex--
 				if len(i.state.filteredEvents) > 0 {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
@@ -199,15 +218,63 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 
 		case "down", "j":
 			// Move selection down.
-			cursor := i.table.Cursor()
-			if cursor < len(i.state.filteredEvents)-1 {
-				i.table.SetCursor(cursor + 1)
-				i.state.selectedIndex = cursor + 1
+			if i.state.selectedIndex < len(i.state.filteredEvents)-1 {
+				i.state.selectedIndex++
 				if len(i.state.filteredEvents) > 0 {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
 			}
 			i.updateTableRows()
+			return nil
+
+		case "pgup", "b":
+			// Page up (move up by page height).
+			pageSize := 15
+			newIndex := i.state.selectedIndex - pageSize
+			if newIndex < 0 {
+				newIndex = 0
+			}
+			i.state.selectedIndex = newIndex
+			if len(i.state.filteredEvents) > 0 && i.state.selectedIndex < len(i.state.filteredEvents) {
+				i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
+			}
+			i.updateTableRows()
+			return nil
+
+		case "pgdn", "f":
+			// Page down (move down by page height).
+			pageSize := 15
+			newIndex := i.state.selectedIndex + pageSize
+			if newIndex >= len(i.state.filteredEvents) {
+				newIndex = len(i.state.filteredEvents) - 1
+			}
+			if newIndex < 0 {
+				newIndex = 0
+			}
+			i.state.selectedIndex = newIndex
+			if len(i.state.filteredEvents) > 0 && i.state.selectedIndex < len(i.state.filteredEvents) {
+				i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
+			}
+			i.updateTableRows()
+			return nil
+
+		case "home", "g":
+			// Go to first event.
+			if len(i.state.filteredEvents) > 0 {
+				i.state.selectedIndex = 0
+				i.state.selectedEvent = i.state.filteredEvents[0]
+				i.updateTableRows()
+			}
+			return nil
+
+		case "end", "G":
+			// Go to last event.
+			if len(i.state.filteredEvents) > 0 {
+				lastIndex := len(i.state.filteredEvents) - 1
+				i.state.selectedIndex = lastIndex
+				i.state.selectedEvent = i.state.filteredEvents[lastIndex]
+				i.updateTableRows()
+			}
 			return nil
 
 		case "q", "ctrl+c":
@@ -350,8 +417,15 @@ func (i *BrowseTimelineIntent) viewTimeline() string {
 		return i.listContainer.Render()
 	}
 
-	// Build pagination info
-	paginationInfo := fmt.Sprintf("Events: %d", len(i.state.filteredEvents))
+	// Ensure table rows are synchronized with current state
+	i.updateTableRows()
+
+	// Build pagination info with page number indicator
+	pageSize := 15
+	totalItems := len(i.state.filteredEvents)
+	currentPage := (i.state.selectedIndex / pageSize) + 1
+	totalPages := (totalItems + pageSize - 1) / pageSize
+	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
 	i.listContainer.SetPaginationInfo(paginationInfo)
 
 	// Set breadcrumbs if needed
