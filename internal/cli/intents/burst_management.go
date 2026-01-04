@@ -345,3 +345,11 @@ func (c *BurstManagementContext) ToggleRowExpansion(rowIndex int) {
 func (c *BurstManagementContext) IsRowExpanded(rowIndex int) bool {
 	return c.ExpandedRows[rowIndex]
 }
+
+// Validate ensures the context is complete.
+func (c *BurstManagementContext) Validate() error {
+	if c.Bursts == nil {
+		c.Bursts = make([]*domain.Burst, 0)
+	}
+	return nil
+}

@@ -120,8 +120,15 @@ func (i *BrowseTimelineIntent) Init() tea.Cmd {
 // updateTableRows updates the table rows based on filtered events
 func (i *BrowseTimelineIntent) updateTableRows() {
 	rows := make([]table.Row, 0, len(i.state.filteredEvents))
-	for _, event := range i.state.filteredEvents {
+	for idx, event := range i.state.filteredEvents {
 		dateStr := event.Date.Format("2006-01-02")
+
+		// Add visual indicator for selected row
+		if idx == i.state.selectedIndex {
+			dateStr = "> " + dateStr
+		} else {
+			dateStr = "  " + dateStr
+		}
 		// Truncate text to first 50 chars
 		text := event.Text
 		if len(text) > 50 {
@@ -187,7 +194,7 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
 			}
-			i.listContainer.SetTable(*i.table)
+			i.updateTableRows()
 			return nil
 
 		case "down", "j":
@@ -200,7 +207,7 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
 			}
-			i.listContainer.SetTable(*i.table)
+			i.updateTableRows()
 			return nil
 
 		case "q", "ctrl+c":

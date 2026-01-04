@@ -352,9 +352,9 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			log.Error("Failed to create BurstManagement context")
 			return nil
 		}
-		intent := intents.NewBurstManagementIntent(burstCtx)
-		if intent == nil {
-			log.Error("Failed to create BurstManagement intent")
+		intent, err := intents.NewBurstManagementIntent(burstCtx)
+		if err != nil || intent == nil {
+			log.Error("Failed to create BurstManagement intent: %v", err)
 			return nil
 		}
 		return intent
@@ -474,4 +474,14 @@ func (m *Model) SetInitialScreen(screen Screen) {
 func (m *Model) SetInitialCaptureMode(mode string) {
 	// This would be used to configure the CaptureEvent intent when activated
 	// For now, it's a placeholder
+}
+
+// GetState returns the current application state
+func (m *Model) GetState() AppState {
+	return m.state
+}
+
+// GetActiveIntent returns the currently active intent
+func (m *Model) GetActiveIntent() intents.Intent {
+	return m.intentRouter.GetActiveIntent()
 }

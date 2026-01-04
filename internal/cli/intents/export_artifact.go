@@ -280,11 +280,11 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "up":
+		case "up", "k":
 			if m.selectedIndex > 0 {
 				m.selectedIndex--
 			}
-		case "down":
+		case "down", "j":
 			if m.selectedIndex < len(m.context.ArtifactTypes)-1 {
 				m.selectedIndex++
 			}

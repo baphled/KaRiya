@@ -2,6 +2,9 @@ package intents
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -11,16 +14,80 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// BurstManagementModel implements the Intent interface for burst management
-type BurstManagementModel struct {
-	data          *BurstManagementContext
-	table         *table.Model
-	listContainer *components.TableListContainer
-	result        *IntentResult[*BurstManagementResult]
+// Custom message types for BurstManagement state transitions.
+
+// BurstSelectedMsg indicates the user selected a burst.
+type BurstSelectedMsg struct {
+	Burst *domain.Burst
+	Index int
 }
 
-// NewBurstManagementIntent creates a new BurstManagement intent
-func NewBurstManagementIntent(data *BurstManagementContext) *BurstManagementModel {
+// BurstManagementIntent implements the Intent interface for managing bursts.
+// It owns the complete lifecycle of burst management, including:
+// - Displaying a list of bursts
+// - Selecting and viewing burst details
+// - Returning the selected burst or cancelling
+type BurstManagementIntent struct {
+	// context is the input context passed to the intent.
+	context *BurstManagementContext
+
+	// state represents the current state of the intent.
+	state *BurstManagementIntentModel
+
+	// table is the table model for displaying bursts
+	table *table.Model
+
+	// listContainer provides table-based list UI
+	listContainer *components.TableListContainer
+
+	// active indicates whether this intent is currently active.
+	active bool
+
+	// result is the final result of the intent (set when complete).
+	result *IntentResult[*BurstManagementResult]
+}
+
+// BurstManagementIntentModel represents the local state of the BurstManagement intent.
+// This is the ONLY mutable state owned by the intent.
+type BurstManagementIntentModel struct {
+	// context is the input context passed to the intent.
+	context *BurstManagementContext
+
+	// currentState tracks which view is active.
+	currentState string // BurstStateList, BurstStateDetail
+
+	// filteredBursts are the bursts after applying current filters.
+	filteredBursts []*domain.Burst
+
+	// selectedIndex is the index of the currently selected burst.
+	selectedIndex int
+
+	// selectedBurst is the burst currently being viewed.
+	selectedBurst *domain.Burst
+
+	// viewedBursts tracks bursts viewed during the session.
+	viewedBursts []*domain.Burst
+
+	// Filter and sort state
+	searchText       string
+	filterCompetency string
+	sortBy           string
+	sortOrder        string
+}
+
+// State constants for BurstManagement intent.
+const (
+	BurstStateList   = "list"
+	BurstStateDetail = "detail"
+)
+
+// NewBurstManagementIntent creates a new BurstManagement intent.
+func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagementIntent, error) {
+	// Validate the context.
+	if err := context.Validate(); err != nil {
+		return nil, err
+	}
+
 	// Create table model for bursts
 	columns := []table.Column{
 		{Title: "Name", Width: 30},
@@ -49,432 +116,351 @@ func NewBurstManagementIntent(data *BurstManagementContext) *BurstManagementMode
 		Bold(true)
 	t.SetStyles(s)
 
-	return &BurstManagementModel{
-		data:          data,
+	intent := &BurstManagementIntent{
+		context: context,
+		state: &BurstManagementIntentModel{
+			context:          context,
+			currentState:     BurstStateList,
+			filteredBursts:   make([]*domain.Burst, 0),
+			selectedIndex:    0,
+			selectedBurst:    nil,
+			viewedBursts:     make([]*domain.Burst, 0),
+			searchText:       "",
+			filterCompetency: "",
+			sortBy:           "name",
+			sortOrder:        "asc",
+		},
 		table:         &t,
 		listContainer: components.NewTableListContainer(t, "Manage Bursts", 100),
-		result: nil,
+		active:        true,
 	}
+
+	return intent, nil
 }
 
-// Init initializes the intent and loads bursts
-func (m *BurstManagementModel) Init() tea.Cmd {
-	// context already set in data
-	m.data.CurrentState = BurstListState
-
-	// Load bursts from repository
-	if err := m.data.LoadBursts(); err != nil {
-		m.result = &IntentResult[*BurstManagementResult]{
-			Status: Failed,
-			Error: &IntentError{
-				Code:    "LOAD_BURSTS_FAILED",
-				Message: "Failed to load bursts",
-				Cause:   err,
-			},
-		}
-		return tea.Quit
+// Init is called when the intent is activated.
+func (i *BurstManagementIntent) Init() tea.Cmd {
+	// Initialize filtered bursts with the provided bursts.
+	i.state.filteredBursts = i.context.Bursts
+	if len(i.state.filteredBursts) > 0 {
+		i.state.selectedBurst = i.state.filteredBursts[0]
 	}
-
-	m.updateTableRows()
+	i.updateTableRows()
 	return nil
 }
 
-// updateTableRows updates the table rows based on bursts
-func (m *BurstManagementModel) updateTableRows() {
-	rows := make([]table.Row, 0, len(m.data.Bursts))
-	for _, burst := range m.data.Bursts {
+// updateTableRows updates the table rows based on filtered bursts
+func (i *BurstManagementIntent) updateTableRows() {
+	rows := make([]table.Row, 0, len(i.state.filteredBursts))
+	for idx, burst := range i.state.filteredBursts {
+		nameStr := burst.Name
+
+		// Add visual indicator for selected row
+		if idx == i.state.selectedIndex {
+			nameStr = "> " + nameStr
+		} else {
+			nameStr = "  " + nameStr
+		}
+
 		competency := burst.CompetencyFocus
 		if competency == "" {
 			competency = "-"
 		}
+
 		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
-		rows = append(rows, table.Row{burst.Name, competency, eventCount})
+		rows = append(rows, table.Row{nameStr, competency, eventCount})
 	}
-	m.table.SetRows(rows)
-	m.listContainer.SetTable(*m.table)
+	i.table.SetRows(rows)
+	if i.state.selectedIndex < len(rows) {
+		i.table.SetCursor(i.state.selectedIndex)
+	} else if len(rows) > 0 {
+		i.state.selectedIndex = 0
+		i.table.SetCursor(0)
+	}
+	i.listContainer.SetTable(*i.table)
 }
 
-// Update processes messages and updates the intent state
-func (m *BurstManagementModel) Update(msg tea.Msg) tea.Cmd {
-	switch m.data.CurrentState {
-	case BurstListState:
-		return m.handleListState(msg)
-	case BurstViewState:
-		return m.handleViewState(msg)
-	case BurstEditorState:
-		return m.handleEditorState(msg)
-	case BurstDeleteConfirmState:
-		return m.handleDeleteConfirmState(msg)
-	case BurstSuggestState:
-		return m.handleSuggestState(msg)
-	case BurstCompletedState:
-		return tea.Quit
-	}
-	return nil
-}
-
-// View renders the current state
-func (m *BurstManagementModel) View() string {
-	switch m.data.CurrentState {
-	case BurstListState:
-		return m.viewList()
-	case BurstViewState:
-		return m.viewBurst()
-	case BurstEditorState:
-		return m.viewEditor()
-	case BurstDeleteConfirmState:
-		return m.viewDeleteConfirm()
-	case BurstSuggestState:
-		return m.viewSuggest()
-	case BurstCompletedState:
-		return "Burst management completed"
-	}
-	return "Unknown state"
-}
-
-// Result returns the intent result
-func (m *BurstManagementModel) Result() *IntentResult[interface{}] {
-	if m.result == nil {
+// Update processes a message in the intent.
+func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
+	if !i.active {
 		return nil
 	}
-	return &IntentResult[interface{}]{
-		Status: m.result.Status,
-		Error:  m.result.Error,
+
+	switch i.state.currentState {
+	case BurstStateList:
+		return i.updateListView(msg)
+
+	case BurstStateDetail:
+		return i.updateDetailView(msg)
 	}
+
+	return nil
 }
 
-// handleListState handles messages in list state
-func (m *BurstManagementModel) handleListState(msg tea.Msg) tea.Cmd {
+// updateListView handles messages while viewing the burst list.
+func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q", "ctrl+c":
-			m.data.CurrentState = BurstCompletedState
-			m.result = &IntentResult[*BurstManagementResult]{
-				Status: Cancelled,
-				Data: &BurstManagementResult{
-					Action: "none",
-					Bursts: m.data.Bursts,
-				},
-			}
-			return tea.Quit
-
-		case "j", "down":
-			cursor := m.table.Cursor()
-			if cursor < len(m.data.Bursts)-1 {
-				m.table.SetCursor(cursor + 1)
-				m.data.SelectedBurstIndex = cursor + 1
-				if m.data.SelectedBurstIndex < len(m.data.Bursts) {
-					m.data.SelectedBurst = m.data.Bursts[m.data.SelectedBurstIndex]
+		case "enter":
+			// Select current burst and move to detail view.
+			if len(i.state.filteredBursts) > 0 {
+				i.state.selectedIndex = i.table.Cursor()
+				if i.state.selectedIndex < len(i.state.filteredBursts) {
+					i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
+					i.state.viewedBursts = append(i.state.viewedBursts, i.state.selectedBurst)
+					i.state.currentState = BurstStateDetail
 				}
 			}
+			return nil
 
-		case "k", "up":
-			cursor := m.table.Cursor()
+		case "up", "k":
+			// Move selection up.
+			cursor := i.table.Cursor()
 			if cursor > 0 {
-				m.table.SetCursor(cursor - 1)
-				m.data.SelectedBurstIndex = cursor - 1
-				if m.data.SelectedBurstIndex >= 0 && m.data.SelectedBurstIndex < len(m.data.Bursts) {
-					m.data.SelectedBurst = m.data.Bursts[m.data.SelectedBurstIndex]
+				i.table.SetCursor(cursor - 1)
+				i.state.selectedIndex = cursor - 1
+				if len(i.state.filteredBursts) > 0 {
+					i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
 				}
 			}
+			i.updateTableRows()
+			return nil
 
-		case "enter", " ":
-			if m.data.SelectedBurst != nil {
-				m.data.CurrentState = BurstViewState
-			}
-
-		case "n":
-			m.data.StartNewBurst()
-			m.data.CurrentState = BurstEditorState
-
-		case "r":
-			if err := m.data.LoadBursts(); err != nil {
-				m.result = &IntentResult[*BurstManagementResult]{
-					Status: Failed,
-					Error: &IntentError{
-						Code:    "RELOAD_FAILED",
-						Message: "Failed to reload bursts",
-						Cause:   err,
-					},
+		case "down", "j":
+			// Move selection down.
+			cursor := i.table.Cursor()
+			if cursor < len(i.state.filteredBursts)-1 {
+				i.table.SetCursor(cursor + 1)
+				i.state.selectedIndex = cursor + 1
+				if len(i.state.filteredBursts) > 0 {
+					i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
 				}
-			} else {
-				m.updateTableRows()
 			}
+			i.updateTableRows()
+			return nil
 
-		case "tab", "right":
-			if m.data.CurrentPage < (m.data.TotalBursts / m.data.PageSize) {
-				m.data.CurrentPage++
-				m.updateTableRows()
-			}
-
-		case "shift+tab", "left":
-			if m.data.CurrentPage > 0 {
-				m.data.CurrentPage--
-				m.updateTableRows()
-			}
-		}
-	}
-	return nil
-}
-
-// handleViewState handles messages in view state
-func (m *BurstManagementModel) handleViewState(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c", "esc":
-			m.data.CurrentState = BurstListState
-			m.data.SelectedBurst = nil
-
-		case "e":
-			if m.data.SelectedBurst != nil {
-				m.data.StartEditBurst(m.data.SelectedBurst)
-				m.data.CurrentState = BurstEditorState
-			}
-
-		case "d":
-			if m.data.SelectedBurst != nil {
-				m.data.BurstToDelete = m.data.SelectedBurst
-				m.data.CurrentState = BurstDeleteConfirmState
-			}
-		}
-	}
-	return nil
-}
-
-// handleEditorState handles messages in editor state
-func (m *BurstManagementModel) handleEditorState(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+s":
-			// Save the burst
-			if err := m.data.SaveEdit(); err != nil {
-				m.data.SetFormError("general", fmt.Sprintf("Save failed: %v", err))
-			} else {
-				action := "updated"
-				if m.data.IsNewBurst {
-					action = "created"
-				}
-				m.result = &IntentResult[*BurstManagementResult]{
-					Status: Completed,
-					Data: &BurstManagementResult{
-						Action:  action,
-						Burst:   m.data.EditingBurst,
-						Bursts:  m.data.Bursts,
-						Message: fmt.Sprintf("Burst %s successfully", action),
-					},
-				}
-				m.data.CurrentState = BurstListState
-				m.data.CancelEdit()
-				m.updateTableRows()
-			}
+		case "q", "ctrl+c":
+			// Cancel without selection.
+			i.setCancelled()
+			return nil
 
 		case "esc":
-			// Cancel editing
-			m.data.CancelEdit()
-			if m.data.IsNewBurst {
-				m.data.CurrentState = BurstListState
-			} else {
-				m.data.CurrentState = BurstViewState
-			}
+			// Go back (no-op at list view).
+			i.setCancelled()
+			return nil
 		}
+
+	case BurstSelectedMsg:
+		// Burst was selected (possibly by router or other component).
+		i.state.selectedBurst = msg.Burst
+		i.state.selectedIndex = msg.Index
+		i.state.viewedBursts = append(i.state.viewedBursts, msg.Burst)
+		i.state.currentState = BurstStateDetail
+		return nil
 	}
+
 	return nil
 }
 
-// handleDeleteConfirmState handles messages in delete confirm state
-func (m *BurstManagementModel) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
+// updateDetailView handles messages while viewing burst details.
+func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "y":
-			// Confirm deletion
-			if m.data.BurstToDelete != nil {
-				if err := m.data.DeleteBurst(m.data.BurstToDelete.ID); err != nil {
-					m.result = &IntentResult[*BurstManagementResult]{
-						Status: Failed,
-						Error: &IntentError{
-							Code:    "DELETE_FAILED",
-							Message: "Failed to delete burst",
-							Cause:   err,
-						},
-					}
-				} else {
-					m.result = &IntentResult[*BurstManagementResult]{
-						Status: Completed,
-						Data: &BurstManagementResult{
-							Action:  "deleted",
-							Burst:   m.data.BurstToDelete,
-							Bursts:  m.data.Bursts,
-							Message: "Burst deleted successfully",
-						},
-					}
-					m.updateTableRows()
-				}
-				m.data.BurstToDelete = nil
-				m.data.CurrentState = BurstListState
-			}
+		case "enter":
+			// Confirm selection and return burst.
+			i.setCompleted()
+			return nil
 
-		case "n", "esc":
-			// Cancel deletion
-			m.data.BurstToDelete = nil
-			m.data.CurrentState = BurstViewState
+		case "esc":
+			// Go back to list.
+			i.state.currentState = BurstStateList
+			return nil
+
+		case "q", "ctrl+c":
+			// Cancel.
+			i.setCancelled()
+			return nil
 		}
 	}
+
 	return nil
 }
 
-// handleSuggestState handles messages in suggest state
-func (m *BurstManagementModel) handleSuggestState(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "j", "down":
-			if m.data.SelectedSuggestionIndex < len(m.data.Suggestions)-1 {
-				m.data.SelectedSuggestionIndex++
-			}
+// applyFilters filters the bursts based on current filter state.
+func (i *BurstManagementIntent) applyFilters() {
+	filtered := make([]*domain.Burst, 0)
 
-		case "k", "up":
-			if m.data.SelectedSuggestionIndex > 0 {
-				m.data.SelectedSuggestionIndex--
+	for _, burst := range i.context.Bursts {
+		// Apply search text filter.
+		if i.state.searchText != "" {
+			if !strings.Contains(strings.ToLower(burst.Name), strings.ToLower(i.state.searchText)) &&
+				!strings.Contains(strings.ToLower(burst.Description), strings.ToLower(i.state.searchText)) {
+				continue
 			}
-
-		case "enter", " ":
-			// Accept suggestion
-			if m.data.SelectedSuggestionIndex >= 0 && m.data.SelectedSuggestionIndex < len(m.data.Suggestions) {
-				suggestion := m.data.Suggestions[m.data.SelectedSuggestionIndex]
-				burst := &domain.Burst{
-					Name:            suggestion.Title,
-					Description:     suggestion.Description,
-					CompetencyFocus: suggestion.CompetencyFocus,
-					CreatedAt:       suggestion.RecommendedStartDate,
-					UpdatedAt:       suggestion.RecommendedEndDate,
-				}
-				if err := m.data.CreateBurst(burst); err != nil {
-					m.result = &IntentResult[*BurstManagementResult]{
-						Status: Failed,
-						Error: &IntentError{
-							Code:    "CREATE_BURST_FAILED",
-							Message: "Failed to create burst from suggestion",
-							Cause:   err,
-						},
-					}
-				} else {
-					m.result = &IntentResult[*BurstManagementResult]{
-						Status: Completed,
-						Data: &BurstManagementResult{
-							Action:  "created",
-							Burst:   burst,
-							Bursts:  m.data.Bursts,
-							Message: "Burst created from suggestion",
-						},
-					}
-					m.updateTableRows()
-				}
-				m.data.CurrentState = BurstListState
-			}
-
-		case "esc", "q":
-			m.data.CurrentState = BurstListState
 		}
+
+		// Apply competency filter.
+		if i.state.filterCompetency != "" {
+			if burst.CompetencyFocus != i.state.filterCompetency {
+				continue
+			}
+		}
+
+		filtered = append(filtered, burst)
 	}
-	return nil
+
+	// Apply sorting.
+	sort.Slice(filtered, func(a, b int) bool {
+		switch i.state.sortBy {
+		case "name":
+			if i.state.sortOrder == "asc" {
+				return filtered[a].Name < filtered[b].Name
+			}
+			return filtered[a].Name > filtered[b].Name
+
+		case "competency":
+			if i.state.sortOrder == "asc" {
+				return filtered[a].CompetencyFocus < filtered[b].CompetencyFocus
+			}
+			return filtered[a].CompetencyFocus > filtered[b].CompetencyFocus
+
+		default: // date
+			if i.state.sortOrder == "asc" {
+				return filtered[a].CreatedAt.Before(filtered[b].CreatedAt)
+			}
+			return filtered[a].CreatedAt.After(filtered[b].CreatedAt)
+		}
+	})
+
+	i.state.filteredBursts = filtered
 }
 
-// View rendering methods
+// View renders the intent's current state.
+func (i *BurstManagementIntent) View() string {
+	switch i.state.currentState {
+	case BurstStateList:
+		return i.viewList()
 
-func (m *BurstManagementModel) viewList() string {
-	if len(m.data.Bursts) == 0 {
-		m.listContainer.SetEmptyStateMessage("No bursts found. Press 'n' to create a new burst, 'r' to refresh, or 'q' to quit.")
-		return m.listContainer.Render()
+	case BurstStateDetail:
+		return i.viewDetail()
+	}
+
+	return ""
+}
+
+// viewList renders the burst list view with all bursts as a table.
+func (i *BurstManagementIntent) viewList() string {
+	if len(i.state.filteredBursts) == 0 {
+		i.listContainer.SetEmptyStateMessage("No bursts found.")
+		return i.listContainer.Render()
 	}
 
 	// Build pagination info
-	paginationInfo := fmt.Sprintf("Total: %d bursts", m.data.TotalBursts)
-	m.listContainer.SetPaginationInfo(paginationInfo)
+	paginationInfo := fmt.Sprintf("Bursts: %d", len(i.state.filteredBursts))
+	i.listContainer.SetPaginationInfo(paginationInfo)
 
 	// Set breadcrumbs if needed
-	m.listContainer.SetBreadcrumbs([]string{"Home", "Bursts"})
+	i.listContainer.SetBreadcrumbs([]string{"Home", "Bursts"})
 
 	// Set help footer
-	m.listContainer.SetHelpFooterKey("burst_management")
+	i.listContainer.SetHelpFooterKey("burst_management")
 
-	return m.listContainer.Render()
+	return i.listContainer.Render()
 }
 
-func (m *BurstManagementModel) viewBurst() string {
-	if m.data.SelectedBurst == nil {
-		return "No burst selected"
+// viewDetail renders the burst detail view.
+func (i *BurstManagementIntent) viewDetail() string {
+	if i.state.selectedBurst == nil {
+		return "No burst selected."
 	}
 
-	burst := m.data.SelectedBurst
-	output := fmt.Sprintf("Burst: %s\n", burst.Name)
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Description: %s\n", burst.Description)
-	output += fmt.Sprintf("Competency Focus: %s\n", burst.CompetencyFocus)
-	output += fmt.Sprintf("Events: %d\n", len(burst.EventIDs))
-	output += fmt.Sprintf("Created: %s\n", burst.CreatedAt.Format("2006-01-02"))
-	output += fmt.Sprintf("Updated: %s\n", burst.UpdatedAt.Format("2006-01-02"))
-	output += "\nOptions: e (edit), d (delete), esc (back), q (quit)\n"
+	var content strings.Builder
+	content.WriteString("\nBurst Details\n\n")
 
-	return output
+	// Burst header.
+	content.WriteString(fmt.Sprintf("Name: %s\n", i.state.selectedBurst.Name))
+
+	if i.state.selectedBurst.Description != "" {
+		content.WriteString(fmt.Sprintf("Description: %s\n", i.state.selectedBurst.Description))
+	}
+	if i.state.selectedBurst.CompetencyFocus != "" {
+		content.WriteString(fmt.Sprintf("Competency Focus: %s\n", i.state.selectedBurst.CompetencyFocus))
+	}
+
+	content.WriteString(fmt.Sprintf("Events: %d\n", len(i.state.selectedBurst.EventIDs)))
+	content.WriteString(fmt.Sprintf("Created: %s\n", i.state.selectedBurst.CreatedAt.Format("2006-01-02")))
+	content.WriteString(fmt.Sprintf("Updated: %s\n", i.state.selectedBurst.UpdatedAt.Format("2006-01-02")))
+
+	// Apply card styling.
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Add footer with instructions.
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Enter to confirm, Esc to go back, q to cancel")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
-func (m *BurstManagementModel) viewEditor() string {
-	output := "Edit Burst\n"
-	output += "=================================================================\n"
-
-	if m.data.EditingBurst != nil {
-		output += fmt.Sprintf("Name: %s\n", m.data.EditingBurst.Name)
-		output += fmt.Sprintf("Description: %s\n", m.data.EditingBurst.Description)
-		output += fmt.Sprintf("Competency Focus: %s\n", m.data.EditingBurst.CompetencyFocus)
-
-		if m.data.HasFormErrors() {
-			output += "\nErrors:\n"
-			for field, err := range m.data.FormErrors {
-				output += fmt.Sprintf("  %s: %s\n", field, err)
-			}
-		}
+// Result returns the final result of the intent.
+func (i *BurstManagementIntent) Result() *IntentResult[interface{}] {
+	if i.result == nil {
+		return nil
 	}
 
-	output += "\nOptions: Ctrl+S (save), Esc (cancel)\n"
-
-	return output
+	return &IntentResult[interface{}]{
+		Status:   i.result.Status,
+		Data:     i.result.Data,
+		Error:    i.result.Error,
+		Metadata: i.result.Metadata,
+	}
 }
 
-func (m *BurstManagementModel) viewDeleteConfirm() string {
-	if m.data.BurstToDelete == nil {
-		return "No burst to delete"
+// Helper methods for result management.
+
+func (i *BurstManagementIntent) setCompleted() {
+	i.result = &IntentResult[*BurstManagementResult]{
+		Status: Completed,
+		Data: &BurstManagementResult{
+			Action: "selected",
+			Burst:  i.state.selectedBurst,
+			Bursts: i.state.filteredBursts,
+		},
+		Metadata: map[string]interface{}{
+			"selected_index": i.state.selectedIndex,
+			"viewed_count":   len(i.state.viewedBursts),
+			"timestamp":      time.Now(),
+		},
 	}
-
-	output := fmt.Sprintf("Delete Burst: %s?\n", m.data.BurstToDelete.Name)
-	output += "=================================================================\n"
-	output += "This action cannot be undone.\n"
-	output += "\nOptions: y (confirm), n (cancel), esc (back)\n"
-
-	return output
+	i.active = false
 }
 
-func (m *BurstManagementModel) viewSuggest() string {
-	output := "Burst Suggestions\n"
-	output += "=================================================================\n"
-
-	if len(m.data.Suggestions) == 0 {
-		output += "No suggestions available\n"
-	} else {
-		for i, suggestion := range m.data.Suggestions {
-			prefix := "  "
-			if i == m.data.SelectedSuggestionIndex {
-				prefix = "> "
-			}
-			output += fmt.Sprintf("%s[%d] %s (Confidence: %.1f%%)\n", prefix, i+1, suggestion.Title, suggestion.ConfidenceScore*100)
-			output += fmt.Sprintf("    Events: %d, Skills: %v\n", len(suggestion.Events), suggestion.Skills)
-		}
+func (i *BurstManagementIntent) setCancelled() {
+	i.result = &IntentResult[*BurstManagementResult]{
+		Status: Cancelled,
 	}
+	i.active = false
+}
 
-	output += "\nOptions: j/k (navigate), enter (accept), esc (cancel), q (quit)\n"
-
-	return output
+func (i *BurstManagementIntent) setFailed(code, message string, cause error) {
+	i.result = &IntentResult[*BurstManagementResult]{
+		Status: Failed,
+		Error: &IntentError{
+			Code:    code,
+			Message: message,
+			Cause:   cause,
+		},
+	}
+	i.active = false
 }
