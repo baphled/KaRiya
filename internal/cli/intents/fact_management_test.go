@@ -3,6 +3,7 @@ package intents
 import (
 	"context"
 	"time"
+	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -197,7 +198,7 @@ func (m *MockFactRepository) GetByID(ctx context.Context, id string) (*careerdom
 			return f, nil
 		}
 	}
-	return nil, ErrNotFound
+	return nil, errors.New("not found")
 }
 
 func (m *MockFactRepository) Update(ctx context.Context, fact *careerdom.Fact) error {
@@ -207,7 +208,7 @@ func (m *MockFactRepository) Update(ctx context.Context, fact *careerdom.Fact) e
 			return nil
 		}
 	}
-	return ErrNotFound
+	return errors.New("not found")
 }
 
 func (m *MockFactRepository) Delete(ctx context.Context, id string) error {
@@ -217,7 +218,7 @@ func (m *MockFactRepository) Delete(ctx context.Context, id string) error {
 			return nil
 		}
 	}
-	return ErrNotFound
+	return errors.New("not found")
 }
 
 func (m *MockFactRepository) List(ctx context.Context, filters careerrepo.FactListFilters) ([]*careerdom.Fact, error) {
