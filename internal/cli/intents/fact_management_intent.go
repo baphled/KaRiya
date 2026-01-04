@@ -192,25 +192,21 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 			return nil
 
 		case "j", "down":
+			// Move down by 1 within the current list bounds
 			if m.data.SelectedFactIndex < len(m.data.Facts)-1 {
 				m.data.SelectedFactIndex++
-				m.table.SetCursor(m.data.SelectedFactIndex)
-				if m.data.SelectedFactIndex < len(m.data.Facts) {
-					m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
-				}
+				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
+				m.updateTableRows()
 			}
-			m.updateTableRows()
 			return nil
 
 		case "k", "up":
+			// Move up by 1 within the current list bounds
 			if m.data.SelectedFactIndex > 0 {
 				m.data.SelectedFactIndex--
-				m.table.SetCursor(m.data.SelectedFactIndex)
-				if m.data.SelectedFactIndex >= 0 && m.data.SelectedFactIndex < len(m.data.Facts) {
-					m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
-				}
+				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
+				m.updateTableRows()
 			}
-			m.updateTableRows()
 			return nil
 
 		case "pgup", "b":
