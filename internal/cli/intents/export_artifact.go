@@ -251,9 +251,7 @@ func (m *ExportArtifactModel) View() string {
 // Result returns the intent result
 func (m *ExportArtifactModel) Result() *IntentResult[interface{}] {
 	if m.result == nil {
-		return &IntentResult[interface{}]{
-			Status: Cancelled,
-		}
+		return nil
 	}
 
 	if m.result.Error != nil && m.result.Error.Code == "export_cancelled" {

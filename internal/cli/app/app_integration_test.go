@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/cli/app"
@@ -236,3 +237,84 @@ func TestApp(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "App Integration Test Suite")
 }
+
+var _ = Describe("Intent Navigation - All Intents", func() {
+	var (
+		model      *app.Model
+		repo       *careerrepo.MemoryRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		repo = careerrepo.NewMemoryRepository()
+		burstRepo := careerrepo.NewMemoryBurstRepository()
+		factRepo := careerrepo.NewMemoryFactRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		cliService = service.NewCLIEventService(svc)
+		
+		// Add dummy data
+		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
+		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
+		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		
+		model = app.NewModel(cliService, svc)
+	})
+
+	// Test each intent in the menu (0-9)
+	testIntentNavigation := func(menuIndex int, intentName string) {
+		It("should navigate within "+intentName+" intent", func() {
+			// Navigate to the menu item
+			for i := 0; i < menuIndex; i++ {
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+
+			// Verify we're at the right menu item
+			menuItems := model.GetMenuItems()
+			Expect(menuIndex).To(BeNumerically("<", len(menuItems)))
+			
+			// Select the intent
+			modelInterface, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = modelInterface.(*app.Model)
+			
+			// Execute any command from activation
+			if cmd != nil {
+				msg := cmd()
+				if msg != nil {
+					modelInterface, _ := model.Update(msg)
+					model = modelInterface.(*app.Model)
+				}
+			}
+
+			// Get the view - should NOT be the menu
+			viewBeforeNav := model.View()
+			Expect(viewBeforeNav).NotTo(ContainSubstring("KaRiya - Career Event Manager"), 
+				"Intent "+intentName+" should show intent view, not menu")
+
+			// Try to navigate within the intent
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+
+			// Get view after navigation - should STILL not be the menu
+			viewAfterNav := model.View()
+			Expect(viewAfterNav).NotTo(ContainSubstring("KaRiya - Career Event Manager"), 
+				"After navigation in "+intentName+", should still be in intent view, not back at menu")
+		})
+	}
+
+	Describe("Intent Selection and Navigation", func() {
+		testIntentNavigation(0, "CaptureEvent")
+		testIntentNavigation(1, "BrowseTimeline")
+		testIntentNavigation(2, "GenerateCV")
+		testIntentNavigation(3, "ExportArtifact")
+		testIntentNavigation(4, "ConfigureSystem")
+		testIntentNavigation(5, "BurstManagement")
+		testIntentNavigation(6, "FactManagement")
+		testIntentNavigation(7, "ImportWizard")
+		testIntentNavigation(8, "MetadataEditor")
+		testIntentNavigation(9, "BulkOperations")
+	})
+})

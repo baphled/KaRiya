@@ -406,9 +406,7 @@ func (i *BrowseTimelineIntent) viewEventDetail() string {
 // Result returns the final result of the intent.
 func (i *BrowseTimelineIntent) Result() *IntentResult[interface{}] {
 	if i.result == nil {
-		return &IntentResult[interface{}]{
-			Status: Cancelled,
-		}
+		return nil
 	}
 
 	return &IntentResult[interface{}]{

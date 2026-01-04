@@ -130,6 +130,9 @@ func (m *FactManagementModel) View() string {
 }
 
 func (m *FactManagementModel) Result() *IntentResult[interface{}] {
+	if m.result == nil {
+		return nil
+	}
 	return &IntentResult[interface{}]{
 		Status: m.result.Status,
 		Error:  m.result.Error,

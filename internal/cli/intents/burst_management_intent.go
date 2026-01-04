@@ -134,6 +134,9 @@ func (m *BurstManagementModel) View() string {
 
 // Result returns the intent result
 func (m *BurstManagementModel) Result() *IntentResult[interface{}] {
+	if m.result == nil {
+		return nil
+	}
 	return &IntentResult[interface{}]{
 		Status: m.result.Status,
 		Error:  m.result.Error,
