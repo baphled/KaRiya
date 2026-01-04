@@ -318,3 +318,220 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		testIntentNavigation(9, "BulkOperations")
 	})
 })
+
+var _ = Describe("Intent Navigation - Detailed", func() {
+	var (
+		model      *app.Model
+		repo       *careerrepo.MemoryRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		repo = careerrepo.NewMemoryRepository()
+		burstRepo := careerrepo.NewMemoryBurstRepository()
+		factRepo := careerrepo.NewMemoryFactRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		cliService = service.NewCLIEventService(svc)
+		
+		// Add dummy data
+		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
+		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
+		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		
+		model = app.NewModel(cliService, svc)
+	})
+
+	selectIntent := func(menuIndex int) {
+		// Navigate to menu item
+		for i := 0; i < menuIndex; i++ {
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+		}
+		
+		// Select intent
+		modelInterface, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+		
+		// Execute command if present
+		if cmd != nil {
+			msg := cmd()
+			if msg != nil {
+				modelInterface, _ := model.Update(msg)
+				model = modelInterface.(*app.Model)
+			}
+		}
+	}
+
+	Describe("CaptureEvent Intent", func() {
+		It("should display capture event form", func() {
+			selectIntent(0)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys within form", func() {
+			selectIntent(0)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("BrowseTimeline Intent", func() {
+		It("should display timeline view", func() {
+			selectIntent(1)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate timeline with arrow keys", func() {
+			selectIntent(1)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("GenerateCV Intent", func() {
+		It("should display CV generation view", func() {
+			selectIntent(2)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(2)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("ExportArtifact Intent", func() {
+		It("should display export view", func() {
+			selectIntent(3)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(3)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("ConfigureSystem Intent", func() {
+		It("should display configuration view", func() {
+			selectIntent(4)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(4)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("BurstManagement Intent", func() {
+		It("should display burst management view", func() {
+			selectIntent(5)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(5)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("FactManagement Intent", func() {
+		It("should display fact management view", func() {
+			selectIntent(6)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(6)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("ImportWizard Intent", func() {
+		It("should display import wizard view", func() {
+			selectIntent(7)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(7)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("MetadataEditor Intent", func() {
+		It("should display metadata editor view", func() {
+			selectIntent(8)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(8)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("BulkOperations Intent", func() {
+		It("should display bulk operations view", func() {
+			selectIntent(9)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should navigate with arrow keys", func() {
+			selectIntent(9)
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+})
