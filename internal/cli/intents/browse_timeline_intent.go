@@ -187,6 +187,7 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
 			}
+			i.listContainer.SetTable(*i.table)
 			return nil
 
 		case "down", "j":
@@ -199,6 +200,7 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 				}
 			}
+			i.listContainer.SetTable(*i.table)
 			return nil
 
 		case "q", "ctrl+c":
