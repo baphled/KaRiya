@@ -1,8 +1,7 @@
-package cv_test
+package cv
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -10,23 +9,19 @@ import (
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
-	service "github.com/baphled/kariya/internal/service/career/cv"
+	
 )
 
-func TestDataProcessingService(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "DataProcessingService Suite")
-}
 
 var _ = Describe("DataProcessingService", func() {
 	var (
 		svc context.Context
-		dps service.DataProcessingService
+		dps DataProcessingService
 	)
 
 	BeforeEach(func() {
 		svc = context.Background()
-		dps = service.NewDataProcessingService(logger.DefaultLogger())
+		dps = NewDataProcessingService(logger.DefaultLogger())
 	})
 
 	Describe("GroupEventsByCompany", func() {
@@ -450,7 +445,7 @@ var _ = Describe("DataProcessingService", func() {
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
 
-			var project *service.ProjectGroup
+			var project *ProjectGroup
 			for _, p := range result {
 				if p.Name == "ProjectX" {
 					project = p
