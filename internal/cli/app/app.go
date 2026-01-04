@@ -264,6 +264,40 @@ func (m *Model) GetMenuItems() []MenuItem {
 	return m.menuItems
 }
 
+// createDefaultCVProfiles creates a set of default CV profiles for the GenerateCV intent
+func createDefaultCVProfiles() []*intents.CVProfile {
+	return []*intents.CVProfile{
+		{
+			ID:             "profile-staff-engineer",
+			Name:           "Staff Engineer",
+			TargetRole:     "staff",
+			TargetAudience: []string{"hiring_manager", "peer"},
+			Description:    "CV tailored for staff engineering roles",
+		},
+		{
+			ID:             "profile-principal-engineer",
+			Name:           "Principal Engineer",
+			TargetRole:     "principal",
+			TargetAudience: []string{"hiring_manager", "recruiter"},
+			Description:    "CV tailored for principal/architect roles",
+		},
+		{
+			ID:             "profile-engineering-manager",
+			Name:           "Engineering Manager",
+			TargetRole:     "em",
+			TargetAudience: []string{"hiring_manager", "recruiter"},
+			Description:    "CV tailored for engineering management roles",
+		},
+		{
+			ID:             "profile-senior-engineer",
+			Name:           "Senior Engineer",
+			TargetRole:     "senior_ic",
+			TargetAudience: []string{"hiring_manager", "peer", "recruiter"},
+			Description:    "CV tailored for senior individual contributor roles",
+		},
+	}
+}
+
 // registerAllIntents registers all 10 intents with the router
 func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context) {
 	// CaptureEvent
@@ -313,8 +347,10 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			facts = []*career.Fact{{ID: "fact-stub", Text: "Test fact for navigation integration", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "ev-stub"}}
 		}
 		cvCtx := &intents.GenerateCVContext{
-			Events: events,
-			Facts:  facts,
+			Events:            events,
+			Facts:             facts,
+			AvailableProfiles: createDefaultCVProfiles(),
+			DefaultProfile:    createDefaultCVProfiles()[0],
 		}
 		intent, err := intents.NewGenerateCVIntent(cvCtx)
 		if err != nil {
