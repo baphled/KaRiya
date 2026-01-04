@@ -76,9 +76,35 @@ func (m *FactManagementModel) Init() tea.Cmd {
 
 // updateTableRows updates the table rows based on facts
 func (m *FactManagementModel) updateTableRows() {
-	rows := make([]table.Row, 0, len(m.data.Facts))
-	for _, fact := range m.data.Facts {
+	pageSize := 15
+	total := len(m.data.Facts)
+
+	// Determine which page current selection is on
+	page := 0
+	if pageSize > 0 && m.data.SelectedFactIndex >= 0 {
+		page = m.data.SelectedFactIndex / pageSize
+	}
+
+	start := page * pageSize
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	pageFacts := m.data.Facts[start:end]
+
+	rows := make([]table.Row, 0, len(pageFacts))
+	for idx, fact := range pageFacts {
+		realIdx := start + idx
 		text := truncate(fact.Text, 50)
+
+		// Add visual indicator for selected row
+		if realIdx == m.data.SelectedFactIndex {
+			text = "▶ " + text
+		} else {
+			text = "  " + text
+		}
+
 		strength := fact.StrengthSignal
 		if strength == "" {
 			strength = "-"
@@ -89,7 +115,16 @@ func (m *FactManagementModel) updateTableRows() {
 		}
 		rows = append(rows, table.Row{text, strength, categories})
 	}
+
 	m.table.SetRows(rows)
+
+	// Set table cursor relative to page
+	if m.data.SelectedFactIndex >= start && m.data.SelectedFactIndex < end {
+		m.table.SetCursor(m.data.SelectedFactIndex - start)
+	} else if len(rows) > 0 {
+		m.table.SetCursor(0)
+	}
+
 	m.listContainer.SetTable(*m.table)
 }
 
@@ -131,7 +166,9 @@ func (m *FactManagementModel) View() string {
 
 func (m *FactManagementModel) Result() *IntentResult[interface{}] {
 	if m.result == nil {
-		return nil
+		return &IntentResult[interface{}]{
+			Status: Cancelled,
+		}
 	}
 	return &IntentResult[interface{}]{
 		Status: m.result.Status,
@@ -152,36 +189,95 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 					Facts:  m.data.Facts,
 				},
 			}
-			return tea.Quit
+			return nil
 
 		case "j", "down":
-			cursor := m.table.Cursor()
-			if cursor < len(m.data.Facts)-1 {
-				m.table.SetCursor(cursor + 1)
-				m.data.SelectedFactIndex = cursor + 1
+			if m.data.SelectedFactIndex < len(m.data.Facts)-1 {
+				m.data.SelectedFactIndex++
+				m.table.SetCursor(m.data.SelectedFactIndex)
 				if m.data.SelectedFactIndex < len(m.data.Facts) {
 					m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
 				}
 			}
+			m.updateTableRows()
+			return nil
 
 		case "k", "up":
-			cursor := m.table.Cursor()
-			if cursor > 0 {
-				m.table.SetCursor(cursor - 1)
-				m.data.SelectedFactIndex = cursor - 1
+			if m.data.SelectedFactIndex > 0 {
+				m.data.SelectedFactIndex--
+				m.table.SetCursor(m.data.SelectedFactIndex)
 				if m.data.SelectedFactIndex >= 0 && m.data.SelectedFactIndex < len(m.data.Facts) {
 					m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
 				}
 			}
+			m.updateTableRows()
+			return nil
+
+		case "pgup", "b":
+			// Page up (move up by page height).
+			pageSize := 15
+			newIndex := m.data.SelectedFactIndex - pageSize
+			if newIndex < 0 {
+				newIndex = 0
+			}
+			m.data.SelectedFactIndex = newIndex
+			m.table.SetCursor(newIndex)
+			if m.data.SelectedFactIndex >= 0 && m.data.SelectedFactIndex < len(m.data.Facts) {
+				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
+			}
+			m.updateTableRows()
+			return nil
+
+		case "pgdn", "f":
+			// Page down (move down by page height).
+			pageSize := 15
+			newIndex := m.data.SelectedFactIndex + pageSize
+			if newIndex >= len(m.data.Facts) {
+				newIndex = len(m.data.Facts) - 1
+			}
+			if newIndex < 0 {
+				newIndex = 0
+			}
+			m.data.SelectedFactIndex = newIndex
+			m.table.SetCursor(newIndex)
+			if m.data.SelectedFactIndex >= 0 && m.data.SelectedFactIndex < len(m.data.Facts) {
+				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
+			}
+			m.updateTableRows()
+			return nil
+
+		case "home", "g":
+			// Go to first fact.
+			m.table.SetCursor(0)
+			m.data.SelectedFactIndex = 0
+			if len(m.data.Facts) > 0 {
+				m.data.SelectedFact = m.data.Facts[0]
+			}
+			m.updateTableRows()
+			return nil
+
+		case "end", "G":
+			// Go to last fact.
+			if len(m.data.Facts) > 0 {
+				lastIndex := len(m.data.Facts) - 1
+				m.table.SetCursor(lastIndex)
+				m.data.SelectedFactIndex = lastIndex
+				m.data.SelectedFact = m.data.Facts[lastIndex]
+			}
+			m.updateTableRows()
+			return nil
 
 		case "enter", " ":
 			if m.data.SelectedFact != nil {
 				m.data.CurrentState = FactViewState
 			}
+			return nil
 
 		case "n":
 			m.data.StartNewFact()
 			m.data.CurrentState = FactEditorState
+
+			return nil
 
 		case "r":
 			if err := m.data.LoadFacts(); err != nil {
@@ -197,17 +293,23 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 				m.updateTableRows()
 			}
 
+			return nil
+
 		case "tab", "right":
 			if m.data.CurrentPage < (m.data.TotalFacts / m.data.PageSize) {
 				m.data.CurrentPage++
 				m.updateTableRows()
 			}
 
+			return nil
+
 		case "shift+tab", "left":
 			if m.data.CurrentPage > 0 {
 				m.data.CurrentPage--
 				m.updateTableRows()
 			}
+
+			return nil
 		}
 	}
 	return nil
@@ -333,8 +435,15 @@ func (m *FactManagementModel) viewList() string {
 		return m.listContainer.Render()
 	}
 
-	// Build pagination info
-	paginationInfo := fmt.Sprintf("Total: %d facts", m.data.TotalFacts)
+	// Ensure table rows are synchronized with current state
+	m.updateTableRows()
+
+	// Build pagination info with page number indicator
+	pageSize := 15
+	totalItems := len(m.data.Facts)
+	currentPage := (m.data.SelectedFactIndex / pageSize) + 1
+	totalPages := (totalItems + pageSize - 1) / pageSize
+	paginationInfo := fmt.Sprintf("Total: %d facts | Page %d of %d", totalItems, currentPage, totalPages)
 	m.listContainer.SetPaginationInfo(paginationInfo)
 
 	// Set breadcrumbs if needed
