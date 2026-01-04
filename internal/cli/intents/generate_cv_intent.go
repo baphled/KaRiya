@@ -112,6 +112,9 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 				i.state.selectedAudiences = i.state.selectedProfile.TargetAudience
 			}
 			return nil
+		case "esc":
+			i.setCancelled()
+			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
@@ -124,7 +127,6 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 	}
 	return nil
 }
-
 // updateSelectAudience handles messages while selecting audience(s).
 func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -271,6 +273,11 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 		switch msg.String() {
 		case "y", "enter":
 			i.setCompleted()
+			return nil
+		case "e", "x":
+			// Transition to export format selection
+			i.state.currentState = GenerateCVStateExportSelectFormat
+			i.state.selectedIndex = 0
 			return nil
 		case "n", "esc":
 			i.state.currentState = GenerateCVStateReview
@@ -505,7 +512,7 @@ func (i *GenerateCVIntent) viewConfirm() string {
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1)
 
-	footer := footerStyle.Render("y/Enter to confirm, n/Esc to go back, q to cancel")
+	footer := footerStyle.Render("y/Enter to confirm, e/x to export, n/Esc to go back, q to cancel")
 
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
