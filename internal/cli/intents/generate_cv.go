@@ -3,6 +3,7 @@ package intents
 import (
 	"errors"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -98,6 +99,9 @@ type GenerateCVModel struct {
 
 	// selectedIndex is the current selection index.
 	selectedIndex int
+
+	// profileTable is the table container for displaying profiles.
+	profileTable *components.TableListContainer
 }
 
 // Custom message types for GenerateCV state transitions.
