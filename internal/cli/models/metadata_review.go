@@ -822,3 +822,25 @@ func (m *MetadataReviewModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
 	m.header.SetBreadcrumbs(crumbs)
 }
+
+// NextPage implements ListItemCallbacks interface - moves to the next page
+func (m *MetadataReviewModel) NextPage() {
+	m.nextPage()
+}
+
+// PrevPage implements ListItemCallbacks interface - moves to the previous page
+func (m *MetadataReviewModel) PrevPage() {
+	m.prevPage()
+}
+
+// GoToFirstPage implements ListItemCallbacks interface - goes to the first page
+func (m *MetadataReviewModel) GoToFirstPage() {
+	m.goToFirstItem()
+	m.updateTableRows()
+}
+
+// GoToLastPage implements ListItemCallbacks interface - goes to the last page
+func (m *MetadataReviewModel) GoToLastPage() {
+	m.goToLastItem()
+	m.updateTableRows()
+}

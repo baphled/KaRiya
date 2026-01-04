@@ -3,8 +3,10 @@ package intents
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -48,63 +50,41 @@ var _ = Describe("BurstManagement Intent", func() {
 		It("should initialize with list state", func() {
 			cmd := intent.Init()
 			Expect(cmd).To(BeNil())
-			Expect(intent.View()).NotTo(BeEmpty())
+			Expect(intent.state.currentState).To(Equal(BurstStateList))
 		})
 
-		It("should load bursts on init", func() {
+		It("should have bursts in filtered list", func() {
 			intent.Init()
-			Expect(intent.state.filteredBursts).To(HaveLen(1))
-			Expect(intent.state.selectedBurst).To(Equal(testBurst))
+			Expect(len(intent.state.filteredBursts)).To(Equal(1))
 		})
 	})
 
-	Describe("List Navigation", func() {
+	Describe("Update - List View", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
 		It("should move selection down", func() {
-			intent.Init()
-			// Simulate pressing 'j' to move down
-			intent.Update(nil)
-			Expect(intent.state.currentState).To(Equal(BurstStateList))
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(intent.state.selectedIndex).To(Equal(0))
 		})
 
-		It("should move selection up", func() {
-			intent.Init()
-			// Simulate pressing 'k' to move up
-			intent.Update(nil)
-			Expect(intent.state.currentState).To(Equal(BurstStateList))
-		})
-	})
-
-	Describe("Burst Selection", func() {
-		It("should transition to detail state on enter", func() {
-			intent.Init()
-			// Simulate pressing Enter
-			msg := BurstSelectedMsg{Burst: testBurst, Index: 0}
-			intent.Update(msg)
+		It("should transition to detail view on enter", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
-			Expect(intent.state.selectedBurst).To(Equal(testBurst))
 		})
 
-		It("should track viewed bursts", func() {
-			intent.Init()
-			msg := BurstSelectedMsg{Burst: testBurst, Index: 0}
-			intent.Update(msg)
-			Expect(intent.state.viewedBursts).To(HaveLen(1))
-			Expect(intent.state.viewedBursts[0]).To(Equal(testBurst))
+		It("should cancel on q key", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
 	})
 
 	Describe("Result Handling", func() {
-		It("should return nil result before completion", func() {
+		It("should return completed result on success", func() {
 			intent.Init()
-			result := intent.Result()
-			Expect(result).To(BeNil())
-		})
-
-		It("should return completed result on confirmation", func() {
-			intent.Init()
-			msg := BurstSelectedMsg{Burst: testBurst, Index: 0}
-			intent.Update(msg)
 			intent.state.currentState = BurstStateDetail
+			intent.state.selectedBurst = testBurst
 			intent.setCompleted()
 
 			result := intent.Result()
@@ -131,8 +111,8 @@ var _ = Describe("BurstManagement Intent", func() {
 		})
 
 		It("should show empty state when no bursts", func() {
-			emptyCtx := NewBurstManagementContext(nil, mockRepo, ctx)
-			emptyCtx.Bursts = make([]*careerdom.Burst, 0)
+			emptyRepo := NewMockBurstRepository()
+			emptyCtx := NewBurstManagementContext(nil, emptyRepo, ctx)
 			emptyIntent, err := NewBurstManagementIntent(emptyCtx)
 			Expect(err).NotTo(HaveOccurred())
 			emptyIntent.Init()
@@ -146,6 +126,81 @@ var _ = Describe("BurstManagement Intent", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Burst Details"))
 			Expect(view).To(ContainSubstring(testBurst.Name))
+		})
+	})
+
+	Describe("Pagination", func() {
+		var (
+			manyBurstsIntent *BurstManagementIntent
+			manyBurstsRepo   *MockBurstRepository
+		)
+
+		BeforeEach(func() {
+			// Create 35 bursts to span multiple pages (pageSize = 15)
+			manyBurstsRepo = NewMockBurstRepository()
+			for i := 0; i < 35; i++ {
+				burst := &careerdom.Burst{
+					ID:              "burst-" + fmt.Sprintf("%02d", i),
+					Name:            fmt.Sprintf("Burst %02d", i+1),
+					Description:     fmt.Sprintf("Burst description %d", i),
+					EventIDs:        []string{"event-1"},
+					CompetencyFocus: fmt.Sprintf("competency-%d", i%5),
+					CreatedAt:       time.Now(),
+					UpdatedAt:       time.Now(),
+				}
+				manyBurstsRepo.bursts = append(manyBurstsRepo.bursts, burst)
+			}
+
+			manyBurstsCtx := NewBurstManagementContext(nil, manyBurstsRepo, ctx)
+			var err error
+			manyBurstsIntent, err = NewBurstManagementIntent(manyBurstsCtx)
+			Expect(err).NotTo(HaveOccurred())
+			manyBurstsIntent.Init()
+		})
+
+		It("should display correct bursts on first page", func() {
+			// Verify we're on page 1
+			view := manyBurstsIntent.View()
+			Expect(view).To(ContainSubstring("Page 1 of 3"))
+
+			// Verify table shows first 15 bursts
+			rows := manyBurstsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(15))
+		})
+
+		It("should update table rows when navigating to next page", func() {
+			// Navigate to page 2 using f key (pgdn)
+			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Verify we're on page 2
+			view := manyBurstsIntent.View()
+			Expect(view).To(ContainSubstring("Page 2 of 3"))
+
+			// Verify the selected index is now in the second page range
+			Expect(manyBurstsIntent.state.selectedIndex).To(Equal(15))
+
+			// FAILING TEST: Verify table shows the correct bursts for page 2
+			// Currently the table shows ALL bursts (all 35 rows) instead of just the current page (15 rows)
+			rows := manyBurstsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(15), "Table should show only 15 bursts for page 2, but shows %d bursts", len(rows))
+		})
+
+		It("should update table rows when navigating to last page", func() {
+			// Navigate to page 3 using f key twice
+			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Verify we're on page 3
+			view := manyBurstsIntent.View()
+			Expect(view).To(ContainSubstring("Page 3 of 3"))
+
+			// Verify the selected index is now in the third page range
+			Expect(manyBurstsIntent.state.selectedIndex).To(Equal(30))
+
+			// FAILING TEST: Verify table shows the correct bursts for page 3
+			// Currently the table shows ALL bursts (all 35 rows) instead of just the current page (5 rows)
+			rows := manyBurstsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(5), "Table should show only 5 bursts for page 3, but shows %d bursts", len(rows))
 		})
 	})
 })

@@ -581,3 +581,25 @@ func (m *BurstListModel) goToLastItem() {
 		m.listContainer.SetSelectedIdx(len(pageBursts) - 1)
 	}
 }
+
+// NextPage implements ListItemCallbacks interface - moves to the next page
+func (m *BurstListModel) NextPage() {
+	m.nextPage()
+}
+
+// PrevPage implements ListItemCallbacks interface - moves to the previous page
+func (m *BurstListModel) PrevPage() {
+	m.prevPage()
+}
+
+// GoToFirstPage implements ListItemCallbacks interface - goes to the first page
+func (m *BurstListModel) GoToFirstPage() {
+	m.goToFirstItem()
+	m.updateTableRows()
+}
+
+// GoToLastPage implements ListItemCallbacks interface - goes to the last page
+func (m *BurstListModel) GoToLastPage() {
+	m.goToLastItem()
+	m.updateTableRows()
+}

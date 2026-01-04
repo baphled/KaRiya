@@ -1,0 +1,1143 @@
+?   	github.com/baphled/kariya	[no test files]
+=== RUN   TestApp
+Running Suite: CLI Suite - /home/baphled/Projects/KaRiya/cmd/cli
+================================================================
+Random Seed: [1m1767507036[0m
+
+Will run [1m29[0m of [1m29[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0mDetected 1 burst suggestions from 4 events
+Saved 1 bursts to database
+Extracted 4 facts from 4 events
+Competency breakdown: technical: 4, consulting: 1, leadership: 1, 
+[38;5;10m•[0mExtracted 2 facts from 2 events
+Competency breakdown: technical: 2, leadership: 2, 
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 29 of 29 Specs in 0.538 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m29 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestApp (0.54s)
+PASS
+ok  	github.com/baphled/kariya/cmd/cli	0.544s
+?   	github.com/baphled/kariya/examples	[no test files]
+=== RUN   TestApp
+Running Suite: App Integration Test Suite - /home/baphled/Projects/KaRiya/internal/cli/app
+==========================================================================================
+Random Seed: [1m1767507036[0m
+
+Will run [1m66[0m of [1m66[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 66 of 66 Specs in 0.038 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m66 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestApp (0.04s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/app	0.045s
+=== RUN   TestNewCardContainer
+--- PASS: TestNewCardContainer (0.00s)
+=== RUN   TestCardContainerSetHeader
+--- PASS: TestCardContainerSetHeader (0.00s)
+=== RUN   TestCardContainerSetBody
+--- PASS: TestCardContainerSetBody (0.00s)
+=== RUN   TestCardContainerSetFooter
+--- PASS: TestCardContainerSetFooter (0.00s)
+=== RUN   TestCardContainerWithBackgroundColor
+--- PASS: TestCardContainerWithBackgroundColor (0.00s)
+=== RUN   TestCardContainerWithBorderColor
+--- PASS: TestCardContainerWithBorderColor (0.00s)
+=== RUN   TestCardContainerRenderEmpty
+--- PASS: TestCardContainerRenderEmpty (0.00s)
+=== RUN   TestCardContainerRenderWithHeader
+--- PASS: TestCardContainerRenderWithHeader (0.00s)
+=== RUN   TestCardContainerRenderWithBody
+--- PASS: TestCardContainerRenderWithBody (0.00s)
+=== RUN   TestCardContainerRenderWithFooter
+--- PASS: TestCardContainerRenderWithFooter (0.00s)
+=== RUN   TestCardContainerRenderAllSections
+--- PASS: TestCardContainerRenderAllSections (0.00s)
+=== RUN   TestCardContainerBuilderChaining
+--- PASS: TestCardContainerBuilderChaining (0.00s)
+=== RUN   TestCardContainerRenderWithCustomColors
+--- PASS: TestCardContainerRenderWithCustomColors (0.00s)
+=== RUN   TestCardContainerMultilineContent
+--- PASS: TestCardContainerMultilineContent (0.00s)
+=== RUN   TestCardContainerRenderDestructiveStyle
+--- PASS: TestCardContainerRenderDestructiveStyle (0.00s)
+=== RUN   TestCardContainerRenderHeaderOnly
+--- PASS: TestCardContainerRenderHeaderOnly (0.00s)
+=== RUN   TestCardContainerRenderBodyOnly
+--- PASS: TestCardContainerRenderBodyOnly (0.00s)
+=== RUN   TestCardContainerRenderFooterOnly
+--- PASS: TestCardContainerRenderFooterOnly (0.00s)
+=== RUN   TestCardContainerRenderHeaderAndBody
+--- PASS: TestCardContainerRenderHeaderAndBody (0.00s)
+=== RUN   TestCardContainerEmptyContent
+--- PASS: TestCardContainerEmptyContent (0.00s)
+=== RUN   TestCardContainerBorderAndBackgroundStyling
+--- PASS: TestCardContainerBorderAndBackgroundStyling (0.00s)
+=== RUN   TestCardContainerSectionOrdering
+--- PASS: TestCardContainerSectionOrdering (0.00s)
+=== RUN   TestNewFormFieldContainer
+--- PASS: TestNewFormFieldContainer (0.00s)
+=== RUN   TestFormFieldContainerSetLabel
+--- PASS: TestFormFieldContainerSetLabel (0.00s)
+=== RUN   TestFormFieldContainerSetInput
+--- PASS: TestFormFieldContainerSetInput (0.00s)
+=== RUN   TestFormFieldContainerSetError
+--- PASS: TestFormFieldContainerSetError (0.00s)
+=== RUN   TestFormFieldContainerSetHint
+--- PASS: TestFormFieldContainerSetHint (0.00s)
+=== RUN   TestFormFieldContainerSetFocused
+=== RUN   TestFormFieldContainerSetFocused/Focused
+=== RUN   TestFormFieldContainerSetFocused/Not_focused
+--- PASS: TestFormFieldContainerSetFocused (0.00s)
+    --- PASS: TestFormFieldContainerSetFocused/Focused (0.00s)
+    --- PASS: TestFormFieldContainerSetFocused/Not_focused (0.00s)
+=== RUN   TestFormFieldContainerRenderWithLabel
+--- PASS: TestFormFieldContainerRenderWithLabel (0.00s)
+=== RUN   TestFormFieldContainerRenderWithInput
+--- PASS: TestFormFieldContainerRenderWithInput (0.00s)
+=== RUN   TestFormFieldContainerRenderWithError
+--- PASS: TestFormFieldContainerRenderWithError (0.00s)
+=== RUN   TestFormFieldContainerRenderWithHint
+--- PASS: TestFormFieldContainerRenderWithHint (0.00s)
+=== RUN   TestFormFieldContainerRenderAllSections
+--- PASS: TestFormFieldContainerRenderAllSections (0.00s)
+=== RUN   TestFormFieldContainerBuilderChaining
+--- PASS: TestFormFieldContainerBuilderChaining (0.00s)
+=== RUN   TestFormFieldContainerRenderWithoutError
+--- PASS: TestFormFieldContainerRenderWithoutError (0.00s)
+=== RUN   TestFormFieldContainerRenderFocusedState
+--- PASS: TestFormFieldContainerRenderFocusedState (0.00s)
+=== RUN   TestFormFieldContainerRenderErrorState
+--- PASS: TestFormFieldContainerRenderErrorState (0.00s)
+=== RUN   TestFormFieldContainerSectionOrdering
+--- PASS: TestFormFieldContainerSectionOrdering (0.00s)
+=== RUN   TestFormFieldContainerEmptyLabel
+--- PASS: TestFormFieldContainerEmptyLabel (0.00s)
+=== RUN   TestFormFieldContainerEmptyInput
+--- PASS: TestFormFieldContainerEmptyInput (0.00s)
+=== RUN   TestFormFieldContainerMultilineInput
+--- PASS: TestFormFieldContainerMultilineInput (0.00s)
+=== RUN   TestFormFieldContainerComplexError
+--- PASS: TestFormFieldContainerComplexError (0.00s)
+=== RUN   TestFormFieldContainerWithoutLabel
+--- PASS: TestFormFieldContainerWithoutLabel (0.00s)
+=== RUN   TestFormFieldContainerToggleFocused
+--- PASS: TestFormFieldContainerToggleFocused (0.00s)
+=== RUN   TestFormFieldContainerRenderConsistency
+--- PASS: TestFormFieldContainerRenderConsistency (0.00s)
+=== RUN   TestNewListContainer
+--- PASS: TestNewListContainer (0.00s)
+=== RUN   TestListContainerSetItems
+--- PASS: TestListContainerSetItems (0.00s)
+=== RUN   TestListContainerSetEmptyStateMessage
+--- PASS: TestListContainerSetEmptyStateMessage (0.00s)
+=== RUN   TestListContainerSetPaginationInfo
+--- PASS: TestListContainerSetPaginationInfo (0.00s)
+=== RUN   TestListContainerRenderEmpty
+--- PASS: TestListContainerRenderEmpty (0.00s)
+=== RUN   TestListContainerRenderEmptyWithCustomMessage
+--- PASS: TestListContainerRenderEmptyWithCustomMessage (0.00s)
+=== RUN   TestListContainerRenderWithItems
+--- PASS: TestListContainerRenderWithItems (0.00s)
+=== RUN   TestListContainerRenderWithItemsAndPagination
+--- PASS: TestListContainerRenderWithItemsAndPagination (0.00s)
+=== RUN   TestListContainerBuilderChaining
+--- PASS: TestListContainerBuilderChaining (0.00s)
+=== RUN   TestListContainerRenderSingleItem
+--- PASS: TestListContainerRenderSingleItem (0.00s)
+=== RUN   TestListContainerRenderManyItems
+--- PASS: TestListContainerRenderManyItems (0.00s)
+=== RUN   TestListContainerRenderItemOrdering
+--- PASS: TestListContainerRenderItemOrdering (0.00s)
+=== RUN   TestListContainerEmptyItemsList
+--- PASS: TestListContainerEmptyItemsList (0.00s)
+=== RUN   TestListContainerWithPaginationButNoItems
+--- PASS: TestListContainerWithPaginationButNoItems (0.00s)
+=== RUN   TestListContainerMultilineItems
+--- PASS: TestListContainerMultilineItems (0.00s)
+=== RUN   TestListContainerSpecialCharacters
+--- PASS: TestListContainerSpecialCharacters (0.00s)
+=== RUN   TestListContainerPaginationWithoutInfo
+--- PASS: TestListContainerPaginationWithoutInfo (0.00s)
+=== RUN   TestListContainerEmptyPaginationInfo
+--- PASS: TestListContainerEmptyPaginationInfo (0.00s)
+=== RUN   TestListContainerRenderConsistency
+--- PASS: TestListContainerRenderConsistency (0.00s)
+=== RUN   TestListContainerLongItemText
+--- PASS: TestListContainerLongItemText (0.00s)
+=== RUN   TestListContainerPaginationInfo
+--- PASS: TestListContainerPaginationInfo (0.00s)
+=== RUN   TestListContainerDuplicateItems
+--- PASS: TestListContainerDuplicateItems (0.00s)
+=== RUN   TestNewModalContainer
+--- PASS: TestNewModalContainer (0.00s)
+=== RUN   TestModalContainerSetTitle
+--- PASS: TestModalContainerSetTitle (0.00s)
+=== RUN   TestModalContainerSetMessage
+--- PASS: TestModalContainerSetMessage (0.00s)
+=== RUN   TestModalContainerSetButtons
+--- PASS: TestModalContainerSetButtons (0.00s)
+=== RUN   TestModalContainerSetInstructions
+--- PASS: TestModalContainerSetInstructions (0.00s)
+=== RUN   TestModalContainerWithDestructiveStyle
+--- PASS: TestModalContainerWithDestructiveStyle (0.00s)
+=== RUN   TestModalContainerRenderWithTitle
+--- PASS: TestModalContainerRenderWithTitle (0.00s)
+=== RUN   TestModalContainerRenderWithMessage
+--- PASS: TestModalContainerRenderWithMessage (0.00s)
+=== RUN   TestModalContainerRenderWithButtons
+--- PASS: TestModalContainerRenderWithButtons (0.00s)
+=== RUN   TestModalContainerRenderWithInstructions
+--- PASS: TestModalContainerRenderWithInstructions (0.00s)
+=== RUN   TestModalContainerRenderAllSections
+--- PASS: TestModalContainerRenderAllSections (0.00s)
+=== RUN   TestModalContainerBuilderChaining
+--- PASS: TestModalContainerBuilderChaining (0.00s)
+=== RUN   TestModalContainerRenderDestructiveStyle
+--- PASS: TestModalContainerRenderDestructiveStyle (0.00s)
+=== RUN   TestModalContainerRenderNormalStyle
+--- PASS: TestModalContainerRenderNormalStyle (0.00s)
+=== RUN   TestModalContainerMultipleButtons
+--- PASS: TestModalContainerMultipleButtons (0.00s)
+=== RUN   TestModalContainerSingleButton
+--- PASS: TestModalContainerSingleButton (0.00s)
+=== RUN   TestModalContainerEmptyButtons
+--- PASS: TestModalContainerEmptyButtons (0.00s)
+=== RUN   TestModalContainerMultilineMessage
+--- PASS: TestModalContainerMultilineMessage (0.00s)
+=== RUN   TestModalContainerRenderEmpty
+--- PASS: TestModalContainerRenderEmpty (0.00s)
+=== RUN   TestModalContainerSectionOrdering
+--- PASS: TestModalContainerSectionOrdering (0.00s)
+=== RUN   TestModalContainerWithoutTitle
+--- PASS: TestModalContainerWithoutTitle (0.00s)
+=== RUN   TestModalContainerWithoutMessage
+--- PASS: TestModalContainerWithoutMessage (0.00s)
+=== RUN   TestModalContainerSpecialCharacters
+--- PASS: TestModalContainerSpecialCharacters (0.00s)
+=== RUN   TestModalContainerRenderConsistency
+--- PASS: TestModalContainerRenderConsistency (0.00s)
+=== RUN   TestModalContainerLongContent
+--- PASS: TestModalContainerLongContent (0.00s)
+=== RUN   TestModalContainerDestructiveWithAllSections
+--- PASS: TestModalContainerDestructiveWithAllSections (0.00s)
+=== RUN   TestProgressBar
+=== RUN   TestProgressBar/creates_progress_bar_with_initial_values
+=== RUN   TestProgressBar/set_current_progress
+=== RUN   TestProgressBar/increment_progress
+=== RUN   TestProgressBar/increment_by_amount
+=== RUN   TestProgressBar/clamps_current_to_bounds
+=== RUN   TestProgressBar/calculates_percentage_correctly
+=== RUN   TestProgressBar/handles_zero_total
+=== RUN   TestProgressBar/detects_completion
+=== RUN   TestProgressBar/renders_progress_bar
+=== RUN   TestProgressBar/renders_without_label
+=== RUN   TestProgressBar/renders_without_percentage
+=== RUN   TestProgressBar/sets_custom_width
+=== RUN   TestProgressBar/minimum_width_is_enforced
+--- PASS: TestProgressBar (0.00s)
+    --- PASS: TestProgressBar/creates_progress_bar_with_initial_values (0.00s)
+    --- PASS: TestProgressBar/set_current_progress (0.00s)
+    --- PASS: TestProgressBar/increment_progress (0.00s)
+    --- PASS: TestProgressBar/increment_by_amount (0.00s)
+    --- PASS: TestProgressBar/clamps_current_to_bounds (0.00s)
+    --- PASS: TestProgressBar/calculates_percentage_correctly (0.00s)
+    --- PASS: TestProgressBar/handles_zero_total (0.00s)
+    --- PASS: TestProgressBar/detects_completion (0.00s)
+    --- PASS: TestProgressBar/renders_progress_bar (0.00s)
+    --- PASS: TestProgressBar/renders_without_label (0.00s)
+    --- PASS: TestProgressBar/renders_without_percentage (0.00s)
+    --- PASS: TestProgressBar/sets_custom_width (0.00s)
+    --- PASS: TestProgressBar/minimum_width_is_enforced (0.00s)
+=== RUN   TestProgressIndicator
+=== RUN   TestProgressIndicator/creates_indicator_with_label
+=== RUN   TestProgressIndicator/advances_to_next_frame
+=== RUN   TestProgressIndicator/wraps_around_frames
+=== RUN   TestProgressIndicator/sets_label
+=== RUN   TestProgressIndicator/renders_indicator
+=== RUN   TestProgressIndicator/renders_without_label
+=== RUN   TestProgressIndicator/renders_different_frames
+--- PASS: TestProgressIndicator (0.00s)
+    --- PASS: TestProgressIndicator/creates_indicator_with_label (0.00s)
+    --- PASS: TestProgressIndicator/advances_to_next_frame (0.00s)
+    --- PASS: TestProgressIndicator/wraps_around_frames (0.00s)
+    --- PASS: TestProgressIndicator/sets_label (0.00s)
+    --- PASS: TestProgressIndicator/renders_indicator (0.00s)
+    --- PASS: TestProgressIndicator/renders_without_label (0.00s)
+    --- PASS: TestProgressIndicator/renders_different_frames (0.00s)
+=== RUN   TestSimpleProgressBar
+=== RUN   TestSimpleProgressBar/renders_simple_progress_bar
+=== RUN   TestSimpleProgressBar/handles_zero_total
+=== RUN   TestSimpleProgressBar/enforces_minimum_width
+=== RUN   TestSimpleProgressBar/renders_different_progress_levels
+--- PASS: TestSimpleProgressBar (0.00s)
+    --- PASS: TestSimpleProgressBar/renders_simple_progress_bar (0.00s)
+    --- PASS: TestSimpleProgressBar/handles_zero_total (0.00s)
+    --- PASS: TestSimpleProgressBar/enforces_minimum_width (0.00s)
+    --- PASS: TestSimpleProgressBar/renders_different_progress_levels (0.00s)
+=== RUN   TestSimpleProgressIndicator
+=== RUN   TestSimpleProgressIndicator/renders_indicator_at_different_indices
+=== RUN   TestSimpleProgressIndicator/wraps_around_indicator_frames
+=== RUN   TestSimpleProgressIndicator/handles_large_indices
+--- PASS: TestSimpleProgressIndicator (0.00s)
+    --- PASS: TestSimpleProgressIndicator/renders_indicator_at_different_indices (0.00s)
+    --- PASS: TestSimpleProgressIndicator/wraps_around_indicator_frames (0.00s)
+    --- PASS: TestSimpleProgressIndicator/handles_large_indices (0.00s)
+=== RUN   TestNewScreenContainer
+--- PASS: TestNewScreenContainer (0.00s)
+=== RUN   TestScreenContainerWithPaddingMode
+=== RUN   TestScreenContainerWithPaddingMode/Normal_mode
+=== RUN   TestScreenContainerWithPaddingMode/Compact_mode
+=== RUN   TestScreenContainerWithPaddingMode/Spacious_mode
+--- PASS: TestScreenContainerWithPaddingMode (0.00s)
+    --- PASS: TestScreenContainerWithPaddingMode/Normal_mode (0.00s)
+    --- PASS: TestScreenContainerWithPaddingMode/Compact_mode (0.00s)
+    --- PASS: TestScreenContainerWithPaddingMode/Spacious_mode (0.00s)
+=== RUN   TestScreenContainerWithCustomPadding
+--- PASS: TestScreenContainerWithCustomPadding (0.00s)
+=== RUN   TestScreenContainerWithMaxWidth
+--- PASS: TestScreenContainerWithMaxWidth (0.00s)
+=== RUN   TestScreenContainerGetPadding
+=== RUN   TestScreenContainerGetPadding/Normal_padding
+=== RUN   TestScreenContainerGetPadding/Compact_padding
+=== RUN   TestScreenContainerGetPadding/Spacious_padding
+=== RUN   TestScreenContainerGetPadding/Custom_padding
+=== RUN   TestScreenContainerGetPadding/Custom_overrides_normal
+=== RUN   TestScreenContainerGetPadding/Custom_overrides_spacious
+--- PASS: TestScreenContainerGetPadding (0.00s)
+    --- PASS: TestScreenContainerGetPadding/Normal_padding (0.00s)
+    --- PASS: TestScreenContainerGetPadding/Compact_padding (0.00s)
+    --- PASS: TestScreenContainerGetPadding/Spacious_padding (0.00s)
+    --- PASS: TestScreenContainerGetPadding/Custom_padding (0.00s)
+    --- PASS: TestScreenContainerGetPadding/Custom_overrides_normal (0.00s)
+    --- PASS: TestScreenContainerGetPadding/Custom_overrides_spacious (0.00s)
+=== RUN   TestScreenContainerRender
+--- PASS: TestScreenContainerRender (0.00s)
+=== RUN   TestScreenContainerRenderWithDifferentModes
+=== RUN   TestScreenContainerRenderWithDifferentModes/Normal_mode_rendering
+=== RUN   TestScreenContainerRenderWithDifferentModes/Compact_mode_rendering
+=== RUN   TestScreenContainerRenderWithDifferentModes/Spacious_mode_rendering
+--- PASS: TestScreenContainerRenderWithDifferentModes (0.00s)
+    --- PASS: TestScreenContainerRenderWithDifferentModes/Normal_mode_rendering (0.00s)
+    --- PASS: TestScreenContainerRenderWithDifferentModes/Compact_mode_rendering (0.00s)
+    --- PASS: TestScreenContainerRenderWithDifferentModes/Spacious_mode_rendering (0.00s)
+=== RUN   TestScreenContainerRenderWithCustomPadding
+--- PASS: TestScreenContainerRenderWithCustomPadding (0.00s)
+=== RUN   TestScreenContainerBuilderChaining
+--- PASS: TestScreenContainerBuilderChaining (0.00s)
+=== RUN   TestScreenContainerCustomPaddingOverridesMode
+--- PASS: TestScreenContainerCustomPaddingOverridesMode (0.00s)
+=== RUN   TestScreenContainerRenderUsesColorTextPrimary
+--- PASS: TestScreenContainerRenderUsesColorTextPrimary (0.00s)
+=== RUN   TestScreenContainerMaxWidthConstraint
+--- PASS: TestScreenContainerMaxWidthConstraint (0.00s)
+=== RUN   TestScreenContainerEmptyContent
+--- PASS: TestScreenContainerEmptyContent (0.00s)
+=== RUN   TestScreenContainerMultilineContent
+--- PASS: TestScreenContainerMultilineContent (0.00s)
+=== RUN   TestScreenContainerStyleConsistency
+--- PASS: TestScreenContainerStyleConsistency (0.00s)
+=== RUN   TestNewSectionContainer
+--- PASS: TestNewSectionContainer (0.00s)
+=== RUN   TestSectionContainerSetTitle
+--- PASS: TestSectionContainerSetTitle (0.00s)
+=== RUN   TestSectionContainerWithSpacing
+=== RUN   TestSectionContainerWithSpacing/Zero_spacing
+=== RUN   TestSectionContainerWithSpacing/One_spacing
+=== RUN   TestSectionContainerWithSpacing/Multiple_spacing
+=== RUN   TestSectionContainerWithSpacing/Large_spacing
+=== RUN   TestSectionContainerWithSpacing/Negative_spacing
+--- PASS: TestSectionContainerWithSpacing (0.00s)
+    --- PASS: TestSectionContainerWithSpacing/Zero_spacing (0.00s)
+    --- PASS: TestSectionContainerWithSpacing/One_spacing (0.00s)
+    --- PASS: TestSectionContainerWithSpacing/Multiple_spacing (0.00s)
+    --- PASS: TestSectionContainerWithSpacing/Large_spacing (0.00s)
+    --- PASS: TestSectionContainerWithSpacing/Negative_spacing (0.00s)
+=== RUN   TestSectionContainerRenderWithoutTitle
+--- PASS: TestSectionContainerRenderWithoutTitle (0.00s)
+=== RUN   TestSectionContainerRenderWithTitle
+--- PASS: TestSectionContainerRenderWithTitle (0.00s)
+=== RUN   TestSectionContainerRenderWithTitleAndSpacing
+--- PASS: TestSectionContainerRenderWithTitleAndSpacing (0.00s)
+=== RUN   TestSectionContainerRenderWithZeroSpacing
+--- PASS: TestSectionContainerRenderWithZeroSpacing (0.00s)
+=== RUN   TestSectionContainerBuilderChaining
+--- PASS: TestSectionContainerBuilderChaining (0.00s)
+=== RUN   TestSectionContainerMultilineContent
+--- PASS: TestSectionContainerMultilineContent (0.00s)
+=== RUN   TestSectionContainerEmptyTitle
+--- PASS: TestSectionContainerEmptyTitle (0.00s)
+=== RUN   TestSectionContainerEmptyContent
+--- PASS: TestSectionContainerEmptyContent (0.00s)
+=== RUN   TestSectionContainerTitlePositioning
+--- PASS: TestSectionContainerTitlePositioning (0.00s)
+=== RUN   TestSectionContainerSpacingVariations
+=== RUN   TestSectionContainerSpacingVariations/No_spacing
+=== RUN   TestSectionContainerSpacingVariations/Single_spacing
+=== RUN   TestSectionContainerSpacingVariations/Double_spacing
+=== RUN   TestSectionContainerSpacingVariations/Triple_spacing
+--- PASS: TestSectionContainerSpacingVariations (0.00s)
+    --- PASS: TestSectionContainerSpacingVariations/No_spacing (0.00s)
+    --- PASS: TestSectionContainerSpacingVariations/Single_spacing (0.00s)
+    --- PASS: TestSectionContainerSpacingVariations/Double_spacing (0.00s)
+    --- PASS: TestSectionContainerSpacingVariations/Triple_spacing (0.00s)
+=== RUN   TestSectionContainerUsesHeaderSectionStyle
+--- PASS: TestSectionContainerUsesHeaderSectionStyle (0.00s)
+=== RUN   TestSectionContainerColorConsistency
+--- PASS: TestSectionContainerColorConsistency (0.00s)
+=== RUN   TestSectionContainerLongContent
+--- PASS: TestSectionContainerLongContent (0.00s)
+=== RUN   TestSectionContainerSpecialCharacters
+--- PASS: TestSectionContainerSpecialCharacters (0.00s)
+=== RUN   TestComponentsSuite
+Running Suite: Components Suite - /home/baphled/Projects/KaRiya/internal/cli/components
+=======================================================================================
+Random Seed: [1m1767493263[0m
+
+Will run [1m245[0m of [1m245[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 245 of 245 Specs in 0.009 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m245 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestComponentsSuite (0.01s)
+=== RUN   TestFormContainerBasicRendering
+--- PASS: TestFormContainerBasicRendering (0.00s)
+=== RUN   TestFormContainerResponsiveLayout
+=== RUN   TestFormContainerResponsiveLayout/very_narrow_terminal_uses_single_column
+=== RUN   TestFormContainerResponsiveLayout/wide_terminal_uses_two_column
+--- PASS: TestFormContainerResponsiveLayout (0.00s)
+    --- PASS: TestFormContainerResponsiveLayout/very_narrow_terminal_uses_single_column (0.00s)
+    --- PASS: TestFormContainerResponsiveLayout/wide_terminal_uses_two_column (0.00s)
+=== RUN   TestFormContainerSingleColumnLayout
+--- PASS: TestFormContainerSingleColumnLayout (0.00s)
+=== RUN   TestFormContainerTwoColumnLayout
+--- PASS: TestFormContainerTwoColumnLayout (0.00s)
+=== RUN   TestFormContainerFullWidthFields
+--- PASS: TestFormContainerFullWidthFields (0.00s)
+=== RUN   TestFormContainerIsWideLayout
+=== RUN   TestFormContainerIsWideLayout/narrow_width_is_not_wide
+=== RUN   TestFormContainerIsWideLayout/wide_width_is_wide
+--- PASS: TestFormContainerIsWideLayout (0.00s)
+    --- PASS: TestFormContainerIsWideLayout/narrow_width_is_not_wide (0.00s)
+    --- PASS: TestFormContainerIsWideLayout/wide_width_is_wide (0.00s)
+=== RUN   TestFormContainerEmptyFields
+--- PASS: TestFormContainerEmptyFields (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/components	(cached)
+=== RUN   TestNewGlobalContext
+=== RUN   TestNewGlobalContext/creates_context_with_nil_preferences_and_config
+=== RUN   TestNewGlobalContext/creates_context_with_initial_preferences_and_config
+--- PASS: TestNewGlobalContext (0.00s)
+    --- PASS: TestNewGlobalContext/creates_context_with_nil_preferences_and_config (0.00s)
+    --- PASS: TestNewGlobalContext/creates_context_with_initial_preferences_and_config (0.00s)
+=== RUN   TestPreferences
+=== RUN   TestPreferences/set_and_get_preference
+=== RUN   TestPreferences/get_non-existent_preference_returns_false
+=== RUN   TestPreferences/get_all_preferences_returns_copy
+=== RUN   TestPreferences/preference_keys_returns_all_keys
+--- PASS: TestPreferences (0.00s)
+    --- PASS: TestPreferences/set_and_get_preference (0.00s)
+    --- PASS: TestPreferences/get_non-existent_preference_returns_false (0.00s)
+    --- PASS: TestPreferences/get_all_preferences_returns_copy (0.00s)
+    --- PASS: TestPreferences/preference_keys_returns_all_keys (0.00s)
+=== RUN   TestTransientState
+=== RUN   TestTransientState/set_and_get_transient_state
+=== RUN   TestTransientState/get_non-existent_transient_state_returns_false
+=== RUN   TestTransientState/clear_transient_state
+=== RUN   TestTransientState/get_all_transient_state_returns_copy
+=== RUN   TestTransientState/clear_all_transient_state
+=== RUN   TestTransientState/transient_state_keys_returns_all_keys
+--- PASS: TestTransientState (0.00s)
+    --- PASS: TestTransientState/set_and_get_transient_state (0.00s)
+    --- PASS: TestTransientState/get_non-existent_transient_state_returns_false (0.00s)
+    --- PASS: TestTransientState/clear_transient_state (0.00s)
+    --- PASS: TestTransientState/get_all_transient_state_returns_copy (0.00s)
+    --- PASS: TestTransientState/clear_all_transient_state (0.00s)
+    --- PASS: TestTransientState/transient_state_keys_returns_all_keys (0.00s)
+=== RUN   TestConfig
+=== RUN   TestConfig/set_and_get_config
+=== RUN   TestConfig/get_non-existent_config_returns_false
+=== RUN   TestConfig/get_all_config_returns_copy
+=== RUN   TestConfig/config_keys_returns_all_keys
+--- PASS: TestConfig (0.00s)
+    --- PASS: TestConfig/set_and_get_config (0.00s)
+    --- PASS: TestConfig/get_non-existent_config_returns_false (0.00s)
+    --- PASS: TestConfig/get_all_config_returns_copy (0.00s)
+    --- PASS: TestConfig/config_keys_returns_all_keys (0.00s)
+=== RUN   TestThreadSafety
+=== RUN   TestThreadSafety/concurrent_preference_access_is_safe
+=== RUN   TestThreadSafety/concurrent_transient_state_access_is_safe
+=== RUN   TestThreadSafety/concurrent_config_access_is_safe
+--- PASS: TestThreadSafety (0.00s)
+    --- PASS: TestThreadSafety/concurrent_preference_access_is_safe (0.00s)
+    --- PASS: TestThreadSafety/concurrent_transient_state_access_is_safe (0.00s)
+    --- PASS: TestThreadSafety/concurrent_config_access_is_safe (0.00s)
+=== RUN   TestDataTypes
+=== RUN   TestDataTypes/stores_and_retrieves_strings
+=== RUN   TestDataTypes/stores_and_retrieves_integers
+=== RUN   TestDataTypes/stores_and_retrieves_booleans
+=== RUN   TestDataTypes/stores_and_retrieves_slices
+=== RUN   TestDataTypes/stores_and_retrieves_maps
+=== RUN   TestDataTypes/stores_and_retrieves_nil_values
+--- PASS: TestDataTypes (0.00s)
+    --- PASS: TestDataTypes/stores_and_retrieves_strings (0.00s)
+    --- PASS: TestDataTypes/stores_and_retrieves_integers (0.00s)
+    --- PASS: TestDataTypes/stores_and_retrieves_booleans (0.00s)
+    --- PASS: TestDataTypes/stores_and_retrieves_slices (0.00s)
+    --- PASS: TestDataTypes/stores_and_retrieves_maps (0.00s)
+    --- PASS: TestDataTypes/stores_and_retrieves_nil_values (0.00s)
+=== RUN   TestOverwriting
+=== RUN   TestOverwriting/overwrite_preference
+=== RUN   TestOverwriting/overwrite_transient_state
+=== RUN   TestOverwriting/overwrite_config
+--- PASS: TestOverwriting (0.00s)
+    --- PASS: TestOverwriting/overwrite_preference (0.00s)
+    --- PASS: TestOverwriting/overwrite_transient_state (0.00s)
+    --- PASS: TestOverwriting/overwrite_config (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/context	(cached)
+=== RUN   TestImporter
+Running Suite: Importer Suite - /home/baphled/Projects/KaRiya/internal/cli/importer
+===================================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m32[0m of [1m32[0m specs
+[38;5;10m•[0mWarning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+[38;5;10m•[0mDetected 1 burst suggestions from 5 events
+Warning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+[38;5;10m•[0mWarning: Failed to save fact: fact repository not configured
+[38;5;10m•[0mWarning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+[38;5;10m•[0mWarning: Failed to save fact: fact repository not configured
+Warning: Failed to save fact: fact repository not configured
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 32 of 32 Specs in 0.005 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m32 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestImporter (0.01s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/importer	(cached)
+=== RUN   TestIntentResult_NewCompletedResult
+=== RUN   TestIntentResult_NewCompletedResult/creates_completed_result_with_data
+=== RUN   TestIntentResult_NewCompletedResult/creates_completed_result_with_empty_string
+--- PASS: TestIntentResult_NewCompletedResult (0.00s)
+    --- PASS: TestIntentResult_NewCompletedResult/creates_completed_result_with_data (0.00s)
+    --- PASS: TestIntentResult_NewCompletedResult/creates_completed_result_with_empty_string (0.00s)
+=== RUN   TestIntentResult_NewCancelledResult
+--- PASS: TestIntentResult_NewCancelledResult (0.00s)
+=== RUN   TestIntentResult_NewFailedResult
+--- PASS: TestIntentResult_NewFailedResult (0.00s)
+=== RUN   TestIntentResult_NewPartialResult
+--- PASS: TestIntentResult_NewPartialResult (0.00s)
+=== RUN   TestIntentResult_WithMetadata
+--- PASS: TestIntentResult_WithMetadata (0.00s)
+=== RUN   TestIntentResult_GetAllMetadata
+--- PASS: TestIntentResult_GetAllMetadata (0.00s)
+=== RUN   TestIntentResult_IsTerminal
+=== RUN   TestIntentResult_IsTerminal/completed_is_terminal
+=== RUN   TestIntentResult_IsTerminal/cancelled_is_terminal
+=== RUN   TestIntentResult_IsTerminal/failed_is_terminal
+=== RUN   TestIntentResult_IsTerminal/partial_is_terminal
+--- PASS: TestIntentResult_IsTerminal (0.00s)
+    --- PASS: TestIntentResult_IsTerminal/completed_is_terminal (0.00s)
+    --- PASS: TestIntentResult_IsTerminal/cancelled_is_terminal (0.00s)
+    --- PASS: TestIntentResult_IsTerminal/failed_is_terminal (0.00s)
+    --- PASS: TestIntentResult_IsTerminal/partial_is_terminal (0.00s)
+=== RUN   TestIntentResult_MethodChaining
+--- PASS: TestIntentResult_MethodChaining (0.00s)
+=== RUN   TestIntentResult_IsValid
+=== RUN   TestIntentResult_IsValid/completed_result_is_valid
+=== RUN   TestIntentResult_IsValid/cancelled_result_is_valid
+=== RUN   TestIntentResult_IsValid/failed_result_without_error_is_invalid
+=== RUN   TestIntentResult_IsValid/failed_result_with_error_is_valid
+=== RUN   TestIntentResult_IsValid/partial_result_without_error_is_invalid
+=== RUN   TestIntentResult_IsValid/partial_result_with_error_is_valid
+--- PASS: TestIntentResult_IsValid (0.00s)
+    --- PASS: TestIntentResult_IsValid/completed_result_is_valid (0.00s)
+    --- PASS: TestIntentResult_IsValid/cancelled_result_is_valid (0.00s)
+    --- PASS: TestIntentResult_IsValid/failed_result_without_error_is_invalid (0.00s)
+    --- PASS: TestIntentResult_IsValid/failed_result_with_error_is_valid (0.00s)
+    --- PASS: TestIntentResult_IsValid/partial_result_without_error_is_invalid (0.00s)
+    --- PASS: TestIntentResult_IsValid/partial_result_with_error_is_valid (0.00s)
+=== RUN   TestIntentError_WithCause
+--- PASS: TestIntentError_WithCause (0.00s)
+=== RUN   TestIntentError_WithMessage
+--- PASS: TestIntentError_WithMessage (0.00s)
+=== RUN   TestIntentError_Error
+=== RUN   TestIntentError_Error/error_with_cause
+=== RUN   TestIntentError_Error/error_without_cause
+--- PASS: TestIntentError_Error (0.00s)
+    --- PASS: TestIntentError_Error/error_with_cause (0.00s)
+    --- PASS: TestIntentError_Error/error_without_cause (0.00s)
+=== RUN   TestDefaultIntentRouter_RegisterIntent
+--- PASS: TestDefaultIntentRouter_RegisterIntent (0.00s)
+=== RUN   TestDefaultIntentRouter_ActivateIntent
+--- PASS: TestDefaultIntentRouter_ActivateIntent (0.00s)
+=== RUN   TestDefaultIntentRouter_ActivateIntent_NotFound
+--- PASS: TestDefaultIntentRouter_ActivateIntent_NotFound (0.00s)
+=== RUN   TestDefaultIntentRouter_GetActiveIntent
+--- PASS: TestDefaultIntentRouter_GetActiveIntent (0.00s)
+=== RUN   TestDefaultIntentRouter_HandleMessage
+--- PASS: TestDefaultIntentRouter_HandleMessage (0.00s)
+=== RUN   TestDefaultIntentRouter_View
+--- PASS: TestDefaultIntentRouter_View (0.00s)
+=== RUN   TestDefaultIntentRouter_Back
+--- PASS: TestDefaultIntentRouter_Back (0.00s)
+=== RUN   TestDefaultIntentRouter_Back_NoHistory
+--- PASS: TestDefaultIntentRouter_Back_NoHistory (0.00s)
+=== RUN   TestDefaultIntentRouter_GetHistory
+--- PASS: TestDefaultIntentRouter_GetHistory (0.00s)
+=== RUN   TestDefaultIntentRouter_HandleMessage_NoActiveIntent
+--- PASS: TestDefaultIntentRouter_HandleMessage_NoActiveIntent (0.00s)
+=== RUN   TestDefaultIntentRouter_View_NoActiveIntent
+--- PASS: TestDefaultIntentRouter_View_NoActiveIntent (0.00s)
+=== RUN   TestDefaultIntentRouter_GetHistoryDepth
+--- PASS: TestDefaultIntentRouter_GetHistoryDepth (0.00s)
+=== RUN   TestDefaultIntentRouter_HandleMessage_WithResult
+--- PASS: TestDefaultIntentRouter_HandleMessage_WithResult (0.00s)
+=== RUN   TestTestIntentFactory
+=== RUN   TestTestIntentFactory/NewTestIntentFactory_creates_valid_factory
+=== RUN   TestTestIntentFactory/Register_and_Create_work_together
+=== RUN   TestTestIntentFactory/Create_returns_nil_for_unregistered_intent
+=== RUN   TestTestIntentFactory/supports_multiple_registered_intents
+--- PASS: TestTestIntentFactory (0.00s)
+    --- PASS: TestTestIntentFactory/NewTestIntentFactory_creates_valid_factory (0.00s)
+    --- PASS: TestTestIntentFactory/Register_and_Create_work_together (0.00s)
+    --- PASS: TestTestIntentFactory/Create_returns_nil_for_unregistered_intent (0.00s)
+    --- PASS: TestTestIntentFactory/supports_multiple_registered_intents (0.00s)
+=== RUN   TestIntentWithState
+=== RUN   TestIntentWithState/NewIntentWithState_creates_valid_wrapper
+=== RUN   TestIntentWithState/Delegation_to_wrapped_intent_works
+=== RUN   TestIntentWithState/SetState_changes_the_state
+--- PASS: TestIntentWithState (0.00s)
+    --- PASS: TestIntentWithState/NewIntentWithState_creates_valid_wrapper (0.00s)
+    --- PASS: TestIntentWithState/Delegation_to_wrapped_intent_works (0.00s)
+    --- PASS: TestIntentWithState/SetState_changes_the_state (0.00s)
+=== RUN   TestIntentTestHarness
+=== RUN   TestIntentTestHarness/NewIntentTestHarness_creates_valid_harness
+=== RUN   TestIntentTestHarness/Init_calls_the_intent's_Init_method
+=== RUN   TestIntentTestHarness/SendMessage_calls_the_intent's_Update_method
+=== RUN   TestIntentTestHarness/GetView_returns_the_intent's_view
+=== RUN   TestIntentTestHarness/GetResult_returns_the_intent's_result
+=== RUN   TestIntentTestHarness/AssertResultCompleted_passes_for_completed_result
+=== RUN   TestIntentTestHarness/AssertResultCancelled_passes_for_cancelled_result
+=== RUN   TestIntentTestHarness/AssertViewContains_checks_for_content
+--- PASS: TestIntentTestHarness (0.00s)
+    --- PASS: TestIntentTestHarness/NewIntentTestHarness_creates_valid_harness (0.00s)
+    --- PASS: TestIntentTestHarness/Init_calls_the_intent's_Init_method (0.00s)
+    --- PASS: TestIntentTestHarness/SendMessage_calls_the_intent's_Update_method (0.00s)
+    --- PASS: TestIntentTestHarness/GetView_returns_the_intent's_view (0.00s)
+    --- PASS: TestIntentTestHarness/GetResult_returns_the_intent's_result (0.00s)
+    --- PASS: TestIntentTestHarness/AssertResultCompleted_passes_for_completed_result (0.00s)
+    --- PASS: TestIntentTestHarness/AssertResultCancelled_passes_for_cancelled_result (0.00s)
+    --- PASS: TestIntentTestHarness/AssertViewContains_checks_for_content (0.00s)
+=== RUN   TestIntentRouterTestHelper
+=== RUN   TestIntentRouterTestHelper/NewIntentRouterTestHelper_creates_valid_helper
+=== RUN   TestIntentRouterTestHelper/ActivateIntent_activates_intent
+=== RUN   TestIntentRouterTestHelper/GetHistory_returns_history
+=== RUN   TestIntentRouterTestHelper/GoBack_navigates_back
+=== RUN   TestIntentRouterTestHelper/AssertIntentActive_verifies_active_intent
+=== RUN   TestIntentRouterTestHelper/AssertHistoryLength_verifies_history_length
+--- PASS: TestIntentRouterTestHelper (0.00s)
+    --- PASS: TestIntentRouterTestHelper/NewIntentRouterTestHelper_creates_valid_helper (0.00s)
+    --- PASS: TestIntentRouterTestHelper/ActivateIntent_activates_intent (0.00s)
+    --- PASS: TestIntentRouterTestHelper/GetHistory_returns_history (0.00s)
+    --- PASS: TestIntentRouterTestHelper/GoBack_navigates_back (0.00s)
+    --- PASS: TestIntentRouterTestHelper/AssertIntentActive_verifies_active_intent (0.00s)
+    --- PASS: TestIntentRouterTestHelper/AssertHistoryLength_verifies_history_length (0.00s)
+=== RUN   TestAssertionHelpers
+=== RUN   TestAssertionHelpers/contains_finds_substring
+=== RUN   TestAssertionHelpers/contains_returns_false_for_missing_substring
+--- PASS: TestAssertionHelpers (0.00s)
+    --- PASS: TestAssertionHelpers/contains_finds_substring (0.00s)
+    --- PASS: TestAssertionHelpers/contains_returns_false_for_missing_substring (0.00s)
+=== RUN   TestGenerateCVIntegration
+Running Suite: GenerateCV Intent Integration Suite - /home/baphled/Projects/KaRiya/internal/cli/intents
+=======================================================================================================
+Random Seed: [1m1767507037[0m
+
+Will run [1m347[0m of [1m347[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.000 seconds][0m
+[0mFactManagement Intent [38;5;243mResult Handling [38;5;9m[1m[It] should return result[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/fact_management_test.go:170[0m
+
+  [38;5;9m[FAILED] Expected
+      <*intents.IntentResult[interface {}] | 0x0>: nil
+  not to be nil[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/home/baphled/Projects/KaRiya/internal/cli/intents/fact_management_test.go:172[0m [38;5;243m@ 01/04/26 06:10:37.266[0m
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;13m• [PANICKED] [0.000 seconds][0m
+[0mExportArtifact Intent [38;5;243mView Rendering - Preview State [38;5;13m[1m[It] should render Preview view[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact_test.go:181[0m
+
+  [38;5;13m[PANICKED] Test Panicked[0m
+  [38;5;13mIn [1m[It][0m[38;5;13m at: [1m/usr/lib/go/src/runtime/panic.go:262[0m [38;5;243m@ 01/04/26 06:10:37.266[0m
+
+  [38;5;13mruntime error: invalid memory address or nil pointer dereference[0m
+
+  [38;5;13mFull Stack Trace[0m
+    github.com/baphled/kariya/internal/cli/intents.(*ExportArtifactModel).viewPreview(0xc0001c8bd0)
+    	/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact.go:536 +0x23
+    github.com/baphled/kariya/internal/cli/intents.(*ExportArtifactModel).View(0xc0001c8bd0)
+    	/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact.go:242 +0x4d1
+    github.com/baphled/kariya/internal/cli/intents.(*ExportArtifactIntent).View(...)
+    	/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact_intent.go:41
+    github.com/baphled/kariya/internal/cli/intents.init.func4.8.2()
+    	/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact_test.go:182 +0x25
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;13m• [PANICKED] [0.000 seconds][0m
+[0mExportArtifact Intent [38;5;243mResult Handling [38;5;13m[1m[It] should return Cancelled when no result set[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact_test.go:524[0m
+
+  [38;5;13m[PANICKED] Test Panicked[0m
+  [38;5;13mIn [1m[It][0m[38;5;13m at: [1m/usr/lib/go/src/runtime/panic.go:262[0m [38;5;243m@ 01/04/26 06:10:37.267[0m
+
+  [38;5;13mruntime error: invalid memory address or nil pointer dereference[0m
+
+  [38;5;13mFull Stack Trace[0m
+    github.com/baphled/kariya/internal/cli/intents.init.func4.22.2()
+    	/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact_test.go:526 +0x152
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.000 seconds][0m
+[0mBurstManagement Intent [38;5;243mInitialization [38;5;9m[1m[It] should load bursts on init[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/burst_management_test.go:54[0m
+
+  [38;5;9m[FAILED] Expected
+      <[]*career.Burst | len:0, cap:0>: []
+  to have length 1[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/home/baphled/Projects/KaRiya/internal/cli/intents/burst_management_test.go:56[0m [38;5;243m@ 01/04/26 06:10:37.269[0m
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.000 seconds][0m
+[0mBurstManagement Intent [38;5;243mView Rendering [38;5;9m[1m[It] should render detail view for selected burst[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/burst_management_test.go:143[0m
+
+  [38;5;9m[FAILED] Expected
+      <string>: No burst selected.
+  to contain substring
+      <string>: Burst Details[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/home/baphled/Projects/KaRiya/internal/cli/intents/burst_management_test.go:147[0m [38;5;243m@ 01/04/26 06:10:37.27[0m
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;13m• [PANICKED] [0.000 seconds][0m
+[0mConfigureSystem Intent [38;5;243mResult Handling [38;5;13m[1m[It] should return Cancelled when no result set[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/configure_system_test.go:414[0m
+
+  [38;5;13m[PANICKED] Test Panicked[0m
+  [38;5;13mIn [1m[It][0m[38;5;13m at: [1m/usr/lib/go/src/runtime/panic.go:262[0m [38;5;243m@ 01/04/26 06:10:37.275[0m
+
+  [38;5;13mruntime error: invalid memory address or nil pointer dereference[0m
+
+  [38;5;13mFull Stack Trace[0m
+    github.com/baphled/kariya/internal/cli/intents.init.func3.18.2()
+    	/home/baphled/Projects/KaRiya/internal/cli/intents/configure_system_test.go:416 +0x152
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;13m• [PANICKED] [0.000 seconds][0m
+[0mMetadataEditor Intent [38;5;243mNavigation (Key-Driven State Transitions) [38;5;13m[1m[It] should quit/cancel on 'esc' from review[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/metadata_editor_test.go:133[0m
+
+  [38;5;13m[PANICKED] Test Panicked[0m
+  [38;5;13mIn [1m[It][0m[38;5;13m at: [1m/usr/lib/go/src/runtime/panic.go:262[0m [38;5;243m@ 01/04/26 06:10:37.286[0m
+
+  [38;5;13mruntime error: invalid memory address or nil pointer dereference[0m
+
+  [38;5;13mFull Stack Trace[0m
+    github.com/baphled/kariya/internal/cli/intents.init.func7.6.4()
+    	/home/baphled/Projects/KaRiya/internal/cli/intents/metadata_editor_test.go:136 +0x3d
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.000 seconds][0m
+[0mMetadataEditor Intent [38;5;243mResult Handling [38;5;9m[1m[It] should return result[0m
+[38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/metadata_editor_test.go:181[0m
+
+  [38;5;9m[FAILED] Expected
+      <*intents.IntentResult[interface {}] | 0x0>: nil
+  not to be nil[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/home/baphled/Projects/KaRiya/internal/cli/intents/metadata_editor_test.go:183[0m [38;5;243m@ 01/04/26 06:10:37.286[0m
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;9m[1mSummarizing 8 Failures:[0m
+  [38;5;9m[FAIL][0m [0mFactManagement Intent [38;5;243mResult Handling [38;5;9m[1m[It] should return result[0m
+  [38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/fact_management_test.go:172[0m
+  [38;5;13m[PANICKED!][0m [0mExportArtifact Intent [38;5;243mView Rendering - Preview State [38;5;13m[1m[It] should render Preview view[0m
+  [38;5;243m/usr/lib/go/src/runtime/panic.go:262[0m
+  [38;5;13m[PANICKED!][0m [0mExportArtifact Intent [38;5;243mResult Handling [38;5;13m[1m[It] should return Cancelled when no result set[0m
+  [38;5;243m/usr/lib/go/src/runtime/panic.go:262[0m
+  [38;5;9m[FAIL][0m [0mBurstManagement Intent [38;5;243mInitialization [38;5;9m[1m[It] should load bursts on init[0m
+  [38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/burst_management_test.go:56[0m
+  [38;5;9m[FAIL][0m [0mBurstManagement Intent [38;5;243mView Rendering [38;5;9m[1m[It] should render detail view for selected burst[0m
+  [38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/burst_management_test.go:147[0m
+  [38;5;13m[PANICKED!][0m [0mConfigureSystem Intent [38;5;243mResult Handling [38;5;13m[1m[It] should return Cancelled when no result set[0m
+  [38;5;243m/usr/lib/go/src/runtime/panic.go:262[0m
+  [38;5;13m[PANICKED!][0m [0mMetadataEditor Intent [38;5;243mNavigation (Key-Driven State Transitions) [38;5;13m[1m[It] should quit/cancel on 'esc' from review[0m
+  [38;5;243m/usr/lib/go/src/runtime/panic.go:262[0m
+  [38;5;9m[FAIL][0m [0mMetadataEditor Intent [38;5;243mResult Handling [38;5;9m[1m[It] should return result[0m
+  [38;5;243m/home/baphled/Projects/KaRiya/internal/cli/intents/metadata_editor_test.go:183[0m
+
+[38;5;9m[1mRan 347 of 347 Specs in 0.030 seconds[0m
+[38;5;9m[1mFAIL![0m -- [38;5;10m[1m339 Passed[0m | [38;5;9m[1m8 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- FAIL: TestGenerateCVIntegration (0.04s)
+FAIL
+FAIL	github.com/baphled/kariya/internal/cli/intents	0.042s
+=== RUN   TestModels
+Running Suite: CLI Models Suite - /home/baphled/Projects/KaRiya/internal/cli/models
+===================================================================================
+Random Seed: [1m1767506961[0m
+
+Will run [1m994[0m of [1m994[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 ERROR: test message - test error
+[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 WARNING: warning message - test error
+[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 INFO: info
+[KaRiya] 2026/01/04 06:09:22 WARNING: warning - warn
+[KaRiya] 2026/01/04 06:09:22 ERROR: error - err
+[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 INFO: first
+[KaRiya] 2026/01/04 06:09:22 ERROR: second - err
+[38;5;10m•[0m[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 ERROR: screen1 error - err1
+[KaRiya] 2026/01/04 06:09:22 ERROR: screen2 error - err2
+[KaRiya] 2026/01/04 06:09:22 ERROR: screen1 error2 - err3
+[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 INFO: info
+[KaRiya] 2026/01/04 06:09:22 WARNING: warning
+[KaRiya] 2026/01/04 06:09:22 ERROR: error - err
+[KaRiya] 2026/01/04 06:09:22 WARNING: warning2
+[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 ERROR: error1 - err1
+[KaRiya] 2026/01/04 06:09:22 ERROR: error2 - err2
+[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 ERROR: screen1 error - err1
+[KaRiya] 2026/01/04 06:09:22 ERROR: screen2 error - err2
+[KaRiya] 2026/01/04 06:09:22 ERROR: screen1 error2 - err3
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 ERROR: connection timeout - connection timeout
+[38;5;10m•[0m[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[KaRiya] 2026/01/04 06:09:22 INFO: test
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 994 of 994 Specs in 0.472 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m994 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestModels (0.48s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/models	(cached)
+=== RUN   TestNavigation
+Running Suite: Navigation Registry Suite - /home/baphled/Projects/KaRiya/internal/cli/navigation
+================================================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m152[0m of [1m152[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 152 of 152 Specs in 0.014 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m152 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestNavigation (0.02s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/navigation	(cached)
+=== RUN   TestCLIEventService
+Running Suite: CLI Event Service Suite - /home/baphled/Projects/KaRiya/internal/cli/service
+===========================================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m17[0m of [1m17[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 17 of 17 Specs in 0.003 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m17 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestCLIEventService (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/service	(cached)
+=== RUN   TestStyles
+Running Suite: Styles Suite - /home/baphled/Projects/KaRiya/internal/cli/styles
+===============================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m99[0m of [1m99[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 99 of 99 Specs in 0.022 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m99 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestStyles (0.03s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/styles	(cached)
+=== RUN   TestValidation
+Running Suite: Validation Suite - /home/baphled/Projects/KaRiya/internal/cli/validation
+=======================================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m49[0m of [1m49[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 49 of 49 Specs in 0.004 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m49 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestValidation (0.01s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/validation	(cached)
+=== RUN   TestWorkflowSuite
+Running Suite: Workflow Package Suite - /home/baphled/Projects/KaRiya/internal/cli/workflow
+===========================================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m28[0m of [1m28[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 28 of 28 Specs in 0.002 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m28 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestWorkflowSuite (0.01s)
+PASS
+ok  	github.com/baphled/kariya/internal/cli/workflow	(cached)
+=== RUN   TestCareerDomain
+Running Suite: Career Domain Suite - /home/baphled/Projects/KaRiya/internal/domain/career
+=========================================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m138[0m of [1m138[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 138 of 138 Specs in 0.014 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m138 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestCareerDomain (0.02s)
+PASS
+ok  	github.com/baphled/kariya/internal/domain/career	(cached)
+=== RUN   TestLogger
+Running Suite: Logger Suite - /home/baphled/Projects/KaRiya/internal/logger
+===========================================================================
+Random Seed: [1m1767444525[0m
+
+Will run [1m13[0m of [1m13[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 13 of 13 Specs in 0.001 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m13 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestLogger (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/logger	(cached)
+=== RUN   TestCareerRepositorySuite
+Running Suite: Career Repository Suite - /home/baphled/Projects/KaRiya/internal/repository/career
+=================================================================================================
+Random Seed: [1m1767503073[0m
+
+Will run [1m84[0m of [1m84[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 84 of 84 Specs in 0.037 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m84 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestCareerRepositorySuite (0.04s)
+PASS
+ok  	github.com/baphled/kariya/internal/repository/career	(cached)
+?   	github.com/baphled/kariya/internal/repository/career/mocks	[no test files]
+=== RUN   TestCareerService
+Running Suite: Career Service Suite - /home/baphled/Projects/KaRiya/internal/service/career
+===========================================================================================
+Random Seed: [1m1767503076[0m
+
+Will run [1m164[0m of [1m164[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 164 of 164 Specs in 0.038 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m164 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestCareerService (0.04s)
+PASS
+ok  	github.com/baphled/kariya/internal/service/career	(cached)
+=== RUN   TestBurstFactSuite
+Running Suite: Burst Fact Suite - /home/baphled/Projects/KaRiya/internal/service/career/burst_fact
+==================================================================================================
+Random Seed: [1m1767444526[0m
+
+Will run [1m132[0m of [1m132[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 132 of 132 Specs in 0.005 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m132 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestBurstFactSuite (0.01s)
+PASS
+ok  	github.com/baphled/kariya/internal/service/career/burst_fact	(cached)
+=== RUN   TestClassificationSuite
+Running Suite: Classification Suite - /home/baphled/Projects/KaRiya/internal/service/career/classification
+==========================================================================================================
+Random Seed: [1m1767444526[0m
+
+Will run [1m8[0m of [1m8[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 8 of 8 Specs in 0.002 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m8 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestClassificationSuite (0.00s)
+PASS
+ok  	github.com/baphled/kariya/internal/service/career/classification	(cached)
+=== RUN   TestCV
+Running Suite: CV Suite - /home/baphled/Projects/KaRiya/internal/service/career/cv
+==================================================================================
+Random Seed: [1m1767503076[0m
+
+Will run [1m210[0m of [1m210[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 210 of 210 Specs in 0.151 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m210 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestCV (0.15s)
+PASS
+ok  	github.com/baphled/kariya/internal/service/career/cv	(cached)
+FAIL

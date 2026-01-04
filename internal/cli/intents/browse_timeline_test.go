@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -340,6 +341,92 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			intent.state.selectedEvent = nil
 			view := intent.View()
 			Expect(view).To(ContainSubstring("No event selected"))
+		})
+	})
+
+	Describe("Pagination", func() {
+		var (
+			manyEventsIntent *BrowseTimelineIntent
+			manyEventsCtx    *BrowseTimelineContext
+		)
+
+		BeforeEach(func() {
+			// Create 35 events to span multiple pages (pageSize = 15)
+			events := make([]*career.CareerEvent, 35)
+			for i := 0; i < 35; i++ {
+				dateDay := (i % 28) + 1 // Ensure valid day
+				events[i] = &career.CareerEvent{
+					ID:        fmt.Sprintf("event%02d", i),
+					Text:      fmt.Sprintf("Event %02d", i+1),
+					Date:      time.Date(2025, 1, dateDay, 0, 0, 0, 0, time.UTC),
+					Company:   fmt.Sprintf("Company %02d", i+1),
+					CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					UpdatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					Tags:      []string{"test"},
+					Categories: []string{"testing"},
+				}
+			}
+
+			manyEventsCtx = &BrowseTimelineContext{
+				Events: events,
+				InitialFilters: &TimelineFilters{
+					Tags:       make([]string, 0),
+					Companies:  make([]string, 0),
+					Categories: make([]string, 0),
+					SortBy:     "date",
+					SortOrder:  "desc",
+				},
+			}
+
+			var err error
+			manyEventsIntent, err = NewBrowseTimelineIntent(manyEventsCtx)
+			Expect(err).NotTo(HaveOccurred())
+			manyEventsIntent.Init()
+		})
+
+		It("should display correct events on first page", func() {
+			// Verify we're on page 1
+			view := manyEventsIntent.View()
+			Expect(view).To(ContainSubstring("Page 1 of 3"))
+
+			// Verify table shows first 15 events
+			rows := manyEventsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(15))
+		})
+
+		It("should update table rows when navigating to next page", func() {
+			// Navigate to page 2 using pgdn key
+			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Verify we're on page 2
+			view := manyEventsIntent.View()
+			Expect(view).To(ContainSubstring("Page 2 of 3"))
+
+			// Verify the selected index is now in the second page range
+			Expect(manyEventsIntent.state.selectedIndex).To(Equal(15))
+
+			// FAILING TEST: Verify table shows the correct events for page 2
+			// Currently the table shows ALL events (all 35 rows) instead of just the current page (15 rows)
+			rows := manyEventsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(15), "Table should show only 15 events for page 2, but shows %d events", len(rows))
+		})
+
+		It("should update table rows when navigating to last page", func() {
+			// Navigate to page 3 using pgdn twice
+			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Verify we're on page 3
+			view := manyEventsIntent.View()
+			Expect(view).To(ContainSubstring("Page 3 of 3"))
+
+			// Verify the selected index is now in the third page range
+			Expect(manyEventsIntent.state.selectedIndex).To(Equal(30))
+
+			// FAILING TEST: Verify table shows the correct events for page 3
+			// Currently the table shows ALL events (all 35 rows) instead of just the current page (5 rows)
+			rows := manyEventsIntent.table.Rows()
+			Expect(len(rows)).To(Equal(5), "Table should show only 5 events for page 3, but shows %d events", len(rows))
 		})
 	})
 })

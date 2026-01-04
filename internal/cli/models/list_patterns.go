@@ -241,6 +241,18 @@ type ListItemCallbacks interface {
 	// MoveToLast moves selection to last item
 	MoveToLast()
 
+	// NextPage moves to the next page
+	NextPage()
+
+	// PrevPage moves to the previous page
+	PrevPage()
+
+	// GoToFirstPage moves to the first page
+	GoToFirstPage()
+
+	// GoToLastPage moves to the last page
+	GoToLastPage()
+
 	// UpdateDisplay refreshes the table display
 	UpdateDisplay()
 
@@ -261,37 +273,46 @@ func NewListNavigationKeyHandler(callbacks ListItemCallbacks) *ListNavigationKey
 	}
 }
 
+// noOpCmd returns a no-op command that does nothing
+// This is used to consume key events so the table doesn't process them
+func noOpCmd() tea.Msg {
+	return nil
+}
+
 // HandleNavigationKey processes navigation keys and returns a command if needed
+// Returns a command for all handled keys to prevent the table from processing them
 func (lnkh *ListNavigationKeyHandler) HandleNavigationKey(keyStr string) tea.Cmd {
 	switch keyStr {
 	case "up", "k":
 		lnkh.itemCallbacks.MoveUp(1)
 		lnkh.itemCallbacks.UpdateDisplay()
+		// Return a command to prevent table from processing this key
+		return func() tea.Msg { return nil }
 	case "down", "j":
 		lnkh.itemCallbacks.MoveDown(1)
 		lnkh.itemCallbacks.UpdateDisplay()
+		// Return a command to prevent table from processing this key
+		return func() tea.Msg { return nil }
 	case "pgup", "ctrl+b":
-		pageSize := lnkh.itemCallbacks.GetPageSize()
-		if lnkh.itemCallbacks.GetCurrentIndex() >= pageSize {
-			lnkh.itemCallbacks.MoveUp(pageSize)
-		} else {
-			lnkh.itemCallbacks.MoveToFirst()
-		}
+		lnkh.itemCallbacks.PrevPage()
 		lnkh.itemCallbacks.UpdateDisplay()
+		// Return a command to prevent table from processing this key
+		return func() tea.Msg { return nil }
 	case "pgdn", "ctrl+f":
-		pageSize := lnkh.itemCallbacks.GetPageSize()
-		if lnkh.itemCallbacks.GetCurrentIndex()+pageSize < lnkh.itemCallbacks.GetRowCount() {
-			lnkh.itemCallbacks.MoveDown(pageSize)
-		} else {
-			lnkh.itemCallbacks.MoveToLast()
-		}
+		lnkh.itemCallbacks.NextPage()
 		lnkh.itemCallbacks.UpdateDisplay()
+		// Return a command to prevent table from processing this key
+		return func() tea.Msg { return nil }
 	case "home", "g":
-		lnkh.itemCallbacks.MoveToFirst()
+		lnkh.itemCallbacks.GoToFirstPage()
 		lnkh.itemCallbacks.UpdateDisplay()
+		// Return a command to prevent table from processing this key
+		return func() tea.Msg { return nil }
 	case "end", "G":
-		lnkh.itemCallbacks.MoveToLast()
+		lnkh.itemCallbacks.GoToLastPage()
 		lnkh.itemCallbacks.UpdateDisplay()
+		// Return a command to prevent table from processing this key
+		return func() tea.Msg { return nil }
 	case "enter", "v":
 		item := lnkh.itemCallbacks.HasSelectedItem()
 		if item != nil {
@@ -301,6 +322,8 @@ func (lnkh *ListNavigationKeyHandler) HandleNavigationKey(keyStr string) tea.Cmd
 		item := lnkh.itemCallbacks.HasSelectedItem()
 		if item != nil {
 			lnkh.itemCallbacks.OnToggleSelection(item)
+			// Return a command to prevent table from processing this key
+			return func() tea.Msg { return nil }
 		}
 	case "x", "d":
 		item := lnkh.itemCallbacks.HasSelectedItem()

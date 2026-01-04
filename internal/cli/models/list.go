@@ -607,3 +607,25 @@ func (m *ListModel) getPageSize() int {
 // currentPage getter for tests (note: using reflection or adding public field would be cleaner)
 // These are added as convenience methods for tests
 // Tests should ideally be refactored to use public API only
+
+// NextPage implements ListItemCallbacks interface - moves to the next page
+func (m *ListModel) NextPage() {
+	m.nextPage()
+}
+
+// PrevPage implements ListItemCallbacks interface - moves to the previous page
+func (m *ListModel) PrevPage() {
+	m.prevPage()
+}
+
+// GoToFirstPage implements ListItemCallbacks interface - goes to the first page
+func (m *ListModel) GoToFirstPage() {
+	m.goToFirstItem()
+	m.updateTableRows()
+}
+
+// GoToLastPage implements ListItemCallbacks interface - goes to the last page
+func (m *ListModel) GoToLastPage() {
+	m.goToLastItem()
+	m.updateTableRows()
+}
