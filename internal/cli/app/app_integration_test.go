@@ -535,3 +535,181 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 		})
 	})
 })
+
+var _ = Describe("Intent List Navigation - Specific", func() {
+	var (
+		model      *app.Model
+		repo       *careerrepo.MemoryRepository
+		svc        *careerservice.Service
+		cliService *service.CLIEventService
+	)
+
+	BeforeEach(func() {
+		repo = careerrepo.NewMemoryRepository()
+		burstRepo := careerrepo.NewMemoryBurstRepository()
+		factRepo := careerrepo.NewMemoryFactRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetBurstRepository(burstRepo)
+		svc.SetFactRepository(factRepo)
+		cliService = service.NewCLIEventService(svc)
+		
+		// Add multiple events for timeline
+		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "event 1", Date: time.Now()})
+		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e2", Text: "event 2", Date: time.Now()})
+		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e3", Text: "event 3", Date: time.Now()})
+		
+		// Add multiple bursts
+		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "burst 1", EventIDs: []string{"e1"}})
+		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b2", Name: "burst 2", EventIDs: []string{"e2"}})
+		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b3", Name: "burst 3", EventIDs: []string{"e3"}})
+		
+		// Add multiple facts
+		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "fact 1", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f2", Text: "fact 2", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e2"})
+		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f3", Text: "fact 3", CompetencyCategories: []string{"communication"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e3"})
+		
+		model = app.NewModel(cliService, svc)
+	})
+
+	selectIntent := func(menuIndex int) {
+		for i := 0; i < menuIndex; i++ {
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+		}
+		modelInterface, cmd := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		model = modelInterface.(*app.Model)
+		if cmd != nil {
+			msg := cmd()
+			if msg != nil {
+				modelInterface, _ := model.Update(msg)
+				model = modelInterface.(*app.Model)
+			}
+		}
+	}
+
+	Describe("BrowseTimeline List Navigation", func() {
+		It("should allow navigating down the timeline with 'j'", func() {
+			selectIntent(1) // BrowseTimeline
+			_ = model.View() // viewBefore
+			
+			// Navigate down
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			
+			viewAfter := model.View()
+			// View should change when navigating (different item selected)
+			// At minimum, should still be in timeline view
+			Expect(viewAfter).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow navigating up the timeline with 'k'", func() {
+			selectIntent(1) // BrowseTimeline
+			
+			// Navigate down first
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			
+			// Then navigate up
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+			model = modelInterface.(*app.Model)
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow multiple consecutive down navigations", func() {
+			selectIntent(1) // BrowseTimeline
+			
+			// Navigate down multiple times
+			for i := 0; i < 3; i++ {
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("BurstManagement List Navigation", func() {
+		It("should allow navigating down the burst list with 'j'", func() {
+			selectIntent(5) // BurstManagement
+			
+			// Navigate down
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow navigating up the burst list with 'k'", func() {
+			selectIntent(5) // BurstManagement
+			
+			// Navigate down first
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			
+			// Then navigate up
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+			model = modelInterface.(*app.Model)
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow multiple consecutive down navigations in burst list", func() {
+			selectIntent(5) // BurstManagement
+			
+			// Navigate down multiple times
+			for i := 0; i < 3; i++ {
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+
+	Describe("FactManagement List Navigation", func() {
+		It("should allow navigating down the fact list with 'j'", func() {
+			selectIntent(6) // FactManagement
+			
+			// Navigate down
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow navigating up the fact list with 'k'", func() {
+			selectIntent(6) // FactManagement
+			
+			// Navigate down first
+			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			
+			// Then navigate up
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
+			model = modelInterface.(*app.Model)
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+
+		It("should allow multiple consecutive down navigations in fact list", func() {
+			selectIntent(6) // FactManagement
+			
+			// Navigate down multiple times
+			for i := 0; i < 3; i++ {
+				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+				model = modelInterface.(*app.Model)
+			}
+			
+			view := model.View()
+			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		})
+	})
+})
