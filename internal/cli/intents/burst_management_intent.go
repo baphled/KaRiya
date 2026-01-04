@@ -53,9 +53,7 @@ func NewBurstManagementIntent(data *BurstManagementContext) *BurstManagementMode
 		data:          data,
 		table:         &t,
 		listContainer: components.NewTableListContainer(t, "Manage Bursts", 100),
-		result: &IntentResult[*BurstManagementResult]{
-			Status: Cancelled,
-		},
+		result: nil,
 	}
 }
 

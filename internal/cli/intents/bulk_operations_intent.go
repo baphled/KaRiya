@@ -13,10 +13,8 @@ type BulkOperationsModel struct {
 
 func NewBulkOperationsIntent(data *BulkOperationsContext) *BulkOperationsModel {
 	return &BulkOperationsModel{
-		data: data,
-		result: &IntentResult[*BulkOperationsResult]{
-			Status: Cancelled,
-		},
+		data:   data,
+		result: nil,
 	}
 }
 
