@@ -157,13 +157,27 @@ var _ = Describe("GenerateCVIntent", func() {
 			intent.state.currentState = GenerateCVStateSelectAudience
 		})
 
-		It("should transition to preview on enter", func() {
+		It("should transition to generating on enter", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStatePreview))
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateGenerating))
 		})
 
-		It("should generate CV on transition to preview", func() {
+		It("should generate CV when async generation completes", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			// Simulate async generation completion
+			intent.Update(CVGenerationCompleteMsg{
+				CV: &career.CVView{
+					ID:               "test-cv",
+					Name:             intent.state.selectedProfile.Name,
+					TargetRole:       intent.state.selectedProfile.TargetRole,
+					TargetAudience:   intent.state.selectedAudiences,
+					GeneratedAt:      time.Now(),
+					SourceEventCount: 0,
+					SourceFactCount:  0,
+				},
+				Error: nil,
+			})
+			Expect(intent.state.currentState).To(Equal(GenerateCVStatePreview))
 			Expect(intent.state.generatedCV).NotTo(BeNil())
 			Expect(intent.state.generatedCV.Name).To(Equal(intent.state.selectedProfile.Name))
 		})
@@ -366,9 +380,9 @@ var _ = Describe("GenerateCVIntent", func() {
 	})
 
 	Describe("Result", func() {
-		It("should return cancelled result when no result set", func() {
+		It("should return nil when no result set", func() {
 			result := intent.Result()
-			Expect(result.Status).To(Equal(Cancelled))
+			Expect(result).To(BeNil())
 		})
 
 		It("should return completed result after completion", func() {

@@ -67,7 +67,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	// Initialize intent router
 	router := intents.NewDefaultIntentRouter()
-	registerAllIntents(router, cliService, careerService, log, ctx)
+	registerAllIntents(router, cliService, careerService, log, ctx, cvGenService, cvExportService)
 
 	// Create menu items for all intents
 	menuItems := []MenuItem{
@@ -299,7 +299,7 @@ func createDefaultCVProfiles() []*intents.CVProfile {
 }
 
 // registerAllIntents registers all 10 intents with the router
-func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context) {
+func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context, cvGenService cv.CVGenerationService, cvExportService *cv.ExportService) {
 	// CaptureEvent
 	_ = router.RegisterIntent("capture_event", func() intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
@@ -336,21 +336,24 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 
 	// GenerateCV
 	_ = router.RegisterIntent("generate_cv", func() intents.Intent {
-		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 1})
+		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 100})
 		if err != nil || len(events) == 0 {
-			// Provide minimal stub event if repo empty (test env)
 			events = []*career.CareerEvent{{ID: "ev-stub", Text: "Test event for navigation integration", Date: time.Now()}}
 		}
-		facts, err := careerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 1})
+		facts, err := careerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 100})
 		if err != nil || len(facts) == 0 {
-			// Provide minimal stub fact if repo empty (test env)
 			facts = []*career.Fact{{ID: "fact-stub", Text: "Test fact for navigation integration", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "ev-stub"}}
 		}
 		cvCtx := &intents.GenerateCVContext{
-			Events:            events,
-			Facts:             facts,
-			AvailableProfiles: createDefaultCVProfiles(),
-			DefaultProfile:    createDefaultCVProfiles()[0],
+			Events:                  events,
+			Facts:                   facts,
+			AvailableProfiles:       createDefaultCVProfiles(),
+			DefaultProfile:          createDefaultCVProfiles()[0],
+			CVGenerationService:     cvGenService,
+			DataProcessingService:   cv.NewDataProcessingService(log),
+			EnhancedBulletGenerator: cv.NewEnhancedBulletGenerator(log),
+			ExportService:           cvExportService,
+			AppContext:              ctx,
 		}
 		intent, err := intents.NewGenerateCVIntent(cvCtx)
 		if err != nil {

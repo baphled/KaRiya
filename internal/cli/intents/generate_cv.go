@@ -1,10 +1,13 @@
 package intents
 
 import (
+	"time"
+	"context"
 	"errors"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/cv"
 )
 
 // GenerateCVState represents the state of the GenerateCV intent.
@@ -17,6 +20,9 @@ const (
 	// GenerateCVStateSelectAudience - User selects target audience(s).
 	GenerateCVStateSelectAudience GenerateCVState = "select_audience"
 
+	// GenerateCVStateGenerating - CV is being generated.
+	GenerateCVStateGenerating GenerateCVState = "generating"
+
 	// GenerateCVStatePreview - User previews the generated CV.
 	GenerateCVStatePreview GenerateCVState = "preview"
 
@@ -25,6 +31,18 @@ const (
 
 	// GenerateCVStateConfirm - User confirms the CV generation.
 	GenerateCVStateConfirm GenerateCVState = "confirm"
+
+	// GenerateCVStateExportSelectFormat - User selects export format.
+	GenerateCVStateExportSelectFormat GenerateCVState = "export_select_format"
+
+	// GenerateCVStateExportSelectLocation - User selects export location.
+	GenerateCVStateExportSelectLocation GenerateCVState = "export_select_location"
+
+	// GenerateCVStateExporting - CV is being exported.
+	GenerateCVStateExporting GenerateCVState = "exporting"
+
+	// GenerateCVStateExportComplete - Export is complete.
+	GenerateCVStateExportComplete GenerateCVState = "export_complete"
 )
 
 // GenerateCVContext is the input context passed to the GenerateCV intent.
@@ -40,6 +58,21 @@ type GenerateCVContext struct {
 
 	// DefaultProfile is the profile to select by default.
 	DefaultProfile *CVProfile
+
+	// CVGenerationService generates CVs from configurations
+	CVGenerationService cv.CVGenerationService
+
+	// DataProcessingService processes career data for CV generation
+	DataProcessingService cv.DataProcessingService
+
+	// EnhancedBulletGenerator generates enhanced CV bullets
+	EnhancedBulletGenerator cv.EnhancedBulletGenerator
+
+	// ExportService exports CVs to various formats
+	ExportService *cv.ExportService
+
+	// AppContext is the background context for operations
+	AppContext context.Context
 }
 
 // Validate checks if the context is valid.
@@ -55,6 +88,9 @@ func (ctx *GenerateCVContext) Validate() error {
 	if len(ctx.Events) == 0 {
 		return errors.New("GenerateCVContext must have at least one event")
 	}
+
+	// Services are optional - only required when actually generating a CV
+	// Tests may create contexts without services
 
 	return nil
 }
@@ -78,6 +114,15 @@ type GenerateCVResult struct {
 
 	// AcceptedFields tracks which fields were accepted.
 	AcceptedFields map[string]bool
+
+	// ExportPath is the path where the CV was exported (if exported).
+	ExportPath string
+
+	// CVExportFormat is the format the CV was exported as.
+	CVExportFormat string
+
+	// ExportedAt is when the CV was exported.
+	ExportedAt *time.Time
 }
 
 // GenerateCVModel represents the internal state of the GenerateCV intent.
@@ -102,6 +147,19 @@ type GenerateCVModel struct {
 
 	// profileTable is the table container for displaying profiles.
 	profileTable *components.TableListContainer
+
+	// generationError tracks any errors during CV generation.
+	generationError error
+
+	// isGenerating indicates if CV generation is in progress.
+	isGenerating bool
+
+	// Export-related fields
+	selectedExportFormat CVExportFormat
+	selectedExportOption CVExportOption
+	exportedPath         string
+	exportError          error
+	isExporting          bool
 }
 
 // Custom message types for GenerateCV state transitions.
@@ -120,5 +178,57 @@ type AudienceSelectedMsg struct {
 // CVGeneratedMsg indicates the CV has been generated.
 type CVGeneratedMsg struct {
 	CV    *career.CVView
+	Error error
+}
+
+// CVGenerationStartedMsg indicates CV generation has started.
+type CVGenerationStartedMsg struct{}
+
+// CVGenerationCompleteMsg indicates CV generation is complete.
+type CVGenerationCompleteMsg struct {
+	CV    *career.CVView
+	Error error
+}
+
+
+// Export-related types
+
+// CVExportFormat defines the export format type
+type CVExportFormat string
+
+const (
+	// CVExportFormatText exports CV as plain text
+	CVExportFormatText CVExportFormat = "text"
+	// CVExportFormatMarkdown exports CV as markdown
+	CVExportFormatMarkdown CVExportFormat = "markdown"
+	// CVExportFormatYAML exports CV as YAML
+	CVExportFormatYAML CVExportFormat = "yaml"
+)
+
+// CVExportOption defines where to save the CV
+type CVExportOption string
+
+const (
+	// CVExportOptionSaveToFile saves CV to file
+	CVExportOptionSaveToFile CVExportOption = "save_to_file"
+	// CVExportOptionClipboard copies CV to clipboard
+	CVExportOptionClipboard CVExportOption = "clipboard"
+	// CVExportOptionCancel cancels export
+	CVExportOptionCancel CVExportOption = "cancel"
+)
+
+// CVExportFormatSelectedMsg indicates the user selected an export format
+type CVExportFormatSelectedMsg struct {
+	Format CVExportFormat
+}
+
+// CVExportOptionSelectedMsg indicates the user selected an export option
+type CVExportOptionSelectedMsg struct {
+	Option CVExportOption
+}
+
+// CVExportCompleteMsg indicates export is complete
+type CVExportCompleteMsg struct {
+	Path  string
 	Error error
 }
