@@ -185,7 +185,7 @@ var _ = Describe("Form Submission Persistence", func() {
 
 			// Execute the command and get the result
 			msg := cmd()
-			
+
 			// Verify the form returns a SubmitMsg with the event data
 			Expect(msg).NotTo(BeNil())
 			submitMsg, ok := msg.(models.SubmitMsg)
@@ -195,7 +195,7 @@ var _ = Describe("Form Submission Persistence", func() {
 			Expect(submitMsg.Event.Text).To(Equal("Led critical infrastructure upgrade"))
 			Expect(submitMsg.Event.Company).To(Equal("TechCorp"))
 			Expect(submitMsg.Event.Project).To(Equal("Infrastructure"))
-			
+
 			// NOTE: The form no longer persists events. The intent is responsible for persistence.
 			// This test verifies that the form correctly collects and returns the data.
 		})

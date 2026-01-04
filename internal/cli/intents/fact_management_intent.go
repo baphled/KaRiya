@@ -3,17 +3,53 @@ package intents
 import (
 	"fmt"
 
+	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type FactManagementModel struct {
-	data   *FactManagementContext
-	result *IntentResult[*FactManagementResult]
+	data          *FactManagementContext
+	table         *table.Model
+	listContainer *components.TableListContainer
+	result        *IntentResult[*FactManagementResult]
 }
 
 func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
+	// Create table model for facts
+	columns := []table.Column{
+		{Title: "Fact", Width: 50},
+		{Title: "Strength", Width: 15},
+		{Title: "Categories", Width: 30},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(styles.ColorAccentTeal)
+	s.Selected = s.Selected.
+		Foreground(styles.ColorAccentTeal).
+		Background(styles.ColorBackground).
+		Bold(true)
+	t.SetStyles(s)
+
 	return &FactManagementModel{
-		data: data,
+		data:          data,
+		table:         &t,
+		listContainer: components.NewTableListContainer(t, "Manage Facts", 100),
 		result: &IntentResult[*FactManagementResult]{
 			Status: Cancelled,
 		},
@@ -36,7 +72,27 @@ func (m *FactManagementModel) Init() tea.Cmd {
 		return tea.Quit
 	}
 
+	m.updateTableRows()
 	return nil
+}
+
+// updateTableRows updates the table rows based on facts
+func (m *FactManagementModel) updateTableRows() {
+	rows := make([]table.Row, 0, len(m.data.Facts))
+	for _, fact := range m.data.Facts {
+		text := truncate(fact.Text, 50)
+		strength := fact.StrengthSignal
+		if strength == "" {
+			strength = "-"
+		}
+		categories := fmt.Sprintf("%v", fact.CompetencyCategories)
+		if len(categories) > 30 {
+			categories = categories[:27] + "..."
+		}
+		rows = append(rows, table.Row{text, strength, categories})
+	}
+	m.table.SetRows(rows)
+	m.listContainer.SetTable(*m.table)
 }
 
 func (m *FactManagementModel) Update(msg tea.Msg) tea.Cmd {
@@ -98,13 +154,23 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 			return tea.Quit
 
 		case "j", "down":
-			if m.data.SelectedFactIndex < len(m.data.GetPageFacts())-1 {
-				m.data.SelectFact(m.data.SelectedFactIndex + 1)
+			cursor := m.table.Cursor()
+			if cursor < len(m.data.Facts)-1 {
+				m.table.SetCursor(cursor + 1)
+				m.data.SelectedFactIndex = cursor + 1
+				if m.data.SelectedFactIndex < len(m.data.Facts) {
+					m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
+				}
 			}
 
 		case "k", "up":
-			if m.data.SelectedFactIndex > 0 {
-				m.data.SelectFact(m.data.SelectedFactIndex - 1)
+			cursor := m.table.Cursor()
+			if cursor > 0 {
+				m.table.SetCursor(cursor - 1)
+				m.data.SelectedFactIndex = cursor - 1
+				if m.data.SelectedFactIndex >= 0 && m.data.SelectedFactIndex < len(m.data.Facts) {
+					m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
+				}
 			}
 
 		case "enter", " ":
@@ -126,16 +192,20 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 						Cause:   err,
 					},
 				}
+			} else {
+				m.updateTableRows()
 			}
 
 		case "tab", "right":
 			if m.data.CurrentPage < (m.data.TotalFacts / m.data.PageSize) {
 				m.data.CurrentPage++
+				m.updateTableRows()
 			}
 
 		case "shift+tab", "left":
 			if m.data.CurrentPage > 0 {
 				m.data.CurrentPage--
+				m.updateTableRows()
 			}
 		}
 	}
@@ -189,6 +259,7 @@ func (m *FactManagementModel) handleEditorState(msg tea.Msg) tea.Cmd {
 				}
 				m.data.CurrentState = FactListState
 				m.data.CancelEdit()
+				m.updateTableRows()
 			}
 
 		case "esc":
@@ -228,6 +299,7 @@ func (m *FactManagementModel) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
 							Message: "Fact deleted successfully",
 						},
 					}
+					m.updateTableRows()
 				}
 				m.data.FactToDelete = nil
 				m.data.CurrentState = FactListState
@@ -256,28 +328,21 @@ func (m *FactManagementModel) handleResultsState(msg tea.Msg) tea.Cmd {
 
 func (m *FactManagementModel) viewList() string {
 	if len(m.data.Facts) == 0 {
-		return "No facts found. Press 'n' to create a new fact, 'r' to refresh, or 'q' to quit."
+		m.listContainer.SetEmptyStateMessage("No facts found. Press 'n' to create a new fact, 'r' to refresh, or 'q' to quit.")
+		return m.listContainer.Render()
 	}
 
-	output := "Facts (j/k: navigate, enter: view, n: new, r: refresh, q: quit)\n"
-	output += "=================================================================\n"
+	// Build pagination info
+	paginationInfo := fmt.Sprintf("Total: %d facts", m.data.TotalFacts)
+	m.listContainer.SetPaginationInfo(paginationInfo)
 
-	pageFacts := m.data.GetPageFacts()
-	for i, fact := range pageFacts {
-		prefix := "  "
-		if i == m.data.SelectedFactIndex {
-			prefix = "> "
-		}
-		output += fmt.Sprintf("%s[%d] %s\n", prefix, i+1, truncate(fact.Text, 50))
-		if m.data.IsRowExpanded(i) {
-			output += fmt.Sprintf("    Categories: %v\n", fact.CompetencyCategories)
-			output += fmt.Sprintf("    Strength: %s\n", fact.StrengthSignal)
-		}
-	}
+	// Set breadcrumbs if needed
+	m.listContainer.SetBreadcrumbs([]string{"Home", "Facts"})
 
-	output += fmt.Sprintf("\nPage %d of %d | Total: %d facts\n", m.data.CurrentPage+1, (m.data.TotalFacts/m.data.PageSize)+1, m.data.TotalFacts)
+	// Set help footer
+	m.listContainer.SetHelpFooterKey("fact_management")
 
-	return output
+	return m.listContainer.Render()
 }
 
 func (m *FactManagementModel) viewFact() string {

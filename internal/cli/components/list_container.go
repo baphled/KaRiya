@@ -1,90 +1,94 @@
 package components
 
 import (
-	"strings"
-
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ListContainer displays a list of items with optional pagination and empty state handling.
-// It provides consistent list layout with support for pagination information and
-// custom empty state messages.
-// ListContainer is a stateless rendering component.
+// ListContainer displays a table-based list and ensures compatibility with Bubble Tea components.
 type ListContainer struct {
-	items           []string
-	emptyMessage    string
-	paginationInfo  string
-	hasPagination   bool
+	table         table.Model
+	emptyMessage  string
+	items         []string
+	hasPagination bool
 	hasEmptyMessage bool
+	paginationInfo string
 }
 
-// NewListContainer creates a new ListContainer.
+// NewListContainer initializes a ListContainer instance with default configurations.
 func NewListContainer() *ListContainer {
+	columns := []table.Column{
+		{Title: "Column 1", Width: 20},
+		{Title: "Column 2", Width: 30},
+	}
+	rows := []table.Row{
+		{"Data 1", "Data 2"},
+		{"Data 3", "Data 4"},
+	}
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows(rows),
+		table.WithFocused(true),
+		table.WithHeight(10),
+	)
 	return &ListContainer{
-		items:           []string{},
-		emptyMessage:    "No items to display",
-		paginationInfo:  "",
-		hasPagination:   false,
-		hasEmptyMessage: false,
+		table:        t,
+		emptyMessage: "No items to display",
 	}
 }
 
-// SetItems sets the list items to display.
-// This method uses the builder pattern to allow method chaining.
+// SetItems sets the list of string items (and also updates the table, if needed).
 func (lc *ListContainer) SetItems(items []string) *ListContainer {
 	lc.items = items
+	// Reset table rows as a fallback
+	rows := make([]table.Row, len(items))
+	for i, item := range items {
+		rows[i] = table.Row{item}
+	}
+	lc.table.SetRows(rows)
 	return lc
 }
 
 // SetEmptyStateMessage sets the message to display when the list is empty.
-// This method uses the builder pattern to allow method chaining.
 func (lc *ListContainer) SetEmptyStateMessage(message string) *ListContainer {
 	lc.emptyMessage = message
-	lc.hasEmptyMessage = true
+	lc.hasEmptyMessage = message != ""
 	return lc
 }
 
-// SetPaginationInfo sets the pagination information to display.
-// This method uses the builder pattern to allow method chaining.
+// SetPaginationInfo sets pagination info to be displayed if desired.
 func (lc *ListContainer) SetPaginationInfo(info string) *ListContainer {
 	lc.paginationInfo = info
-	lc.hasPagination = true
+	lc.hasPagination = info != ""
 	return lc
 }
 
-// Render returns the styled list container as a string.
-// It displays items or an empty state message, with optional pagination information.
+// Render combines list, empty state, and pagination into the rendered output expected by tests.
 func (lc *ListContainer) Render() string {
-	var content string
-
-	// Handle empty list
+	style := lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(1, 2)
 	if len(lc.items) == 0 {
-		emptyStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
-			Italic(true)
-		content = emptyStyle.Render(lc.emptyMessage)
-	} else {
-		var parts []string
-
-		// Render items
-		itemStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextPrimary)
-
-		for _, item := range lc.items {
-			parts = append(parts, itemStyle.Render(item))
+		msg := lc.emptyMessage
+		if msg == "" {
+			msg = "No items to display"
 		}
-
-		content = strings.Join(parts, "\n")
+		return style.Render(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render(msg))
 	}
-
-	// Add pagination info if present (even for empty lists)
+	// Combine all items, separated by newlines
+	out := ""
+	for _, item := range lc.items {
+		out += item + "\n"
+	}
 	if lc.hasPagination && lc.paginationInfo != "" {
-		paginationStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			MarginTop(1)
-		content += "\n" + paginationStyle.Render(lc.paginationInfo)
+		out += lc.paginationInfo + "\n"
 	}
+	return style.Render(out)
+}
 
-	return content
+// View renders the ListContainer using table.Model (backward compatibility).
+func (lc *ListContainer) View() string {
+	style := lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Padding(1, 2)
+	if len(lc.table.Rows()) == 0 && lc.emptyMessage != "" {
+		return style.Render(lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Italic(true).Render(lc.emptyMessage))
+	}
+	return style.Render(lc.table.View())
 }
