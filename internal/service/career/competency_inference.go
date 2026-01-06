@@ -7,7 +7,43 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
+// StrengthWeight maps fact strength signals to numeric weights
+var StrengthWeight = map[string]float64{
+	"strong":   3.0,
+	"moderate": 2.0,
+	"weak":     1.0,
+	"":         1.0, // Default weight for facts without strength signal
+}
+
+// InferCompetencyFromFacts analyzes facts and returns the competency with highest total weight.
+// Weights are based on fact strength signals (strong=3.0, moderate=2.0, weak=1.0).
+// If multiple competencies are tied, returns the alphabetically first one.
+// Returns empty string if no valid competencies are found.
+//
+// Algorithm:
+// 1. For each fact, extract competency categories
+// 2. Apply weight based on strength signal
+// 3. Sum weights per competency
+// 4. Return competency with highest total weight
+// 5. Break ties alphabetically
+func InferCompetencyFromFacts(facts []*career.Fact) string {
+	if facts == nil || len(facts) == 0 {
+		return ""
+	}
+
+	// Calculate weighted sums per competency
+	weights := calculateCompetencyWeights(facts)
+
+	if len(weights) == 0 {
+		return ""
+	}
+
+	// Find competency with highest weight, breaking ties alphabetically
+	return findHighestWeightedCompetency(weights)
+}
+
 // InferCompetencyFromCategories analyzes event categories and returns the most common valid category.
+// DEPRECATED: Use InferCompetencyFromFacts for better accuracy based on fact weights.
 // If multiple categories are tied for most common, returns the alphabetically first one.
 // Returns empty string if no valid categories are found.
 //
@@ -55,6 +91,60 @@ func countValidCategories(eventCategories [][]string) map[string]int {
 	}
 
 	return counts
+}
+
+// calculateCompetencyWeights calculates total weight for each competency across all facts.
+// Weights are based on fact strength signals.
+func calculateCompetencyWeights(facts []*career.Fact) map[string]float64 {
+	weights := make(map[string]float64)
+
+	for _, fact := range facts {
+		// Get weight for this fact based on strength signal
+		weight := StrengthWeight[strings.ToLower(fact.StrengthSignal)]
+
+		// Add weight to each competency category in this fact
+		for _, category := range fact.CompetencyCategories {
+			// Normalize: trim whitespace and lowercase
+			normalized := strings.ToLower(strings.TrimSpace(category))
+
+			// Skip empty or invalid categories
+			if normalized == "" || !career.AllowedCategories[normalized] {
+				continue
+			}
+
+			weights[normalized] += weight
+		}
+	}
+
+	return weights
+}
+
+// findHighestWeightedCompetency returns the competency with the highest total weight.
+// If multiple competencies are tied, returns the alphabetically first one.
+func findHighestWeightedCompetency(weights map[string]float64) string {
+	if len(weights) == 0 {
+		return ""
+	}
+
+	// Find maximum weight
+	maxWeight := 0.0
+	for _, weight := range weights {
+		if weight > maxWeight {
+			maxWeight = weight
+		}
+	}
+
+	// Collect all competencies with max weight
+	candidates := make([]string, 0)
+	for competency, weight := range weights {
+		if weight == maxWeight {
+			candidates = append(candidates, competency)
+		}
+	}
+
+	// Sort alphabetically and return first
+	sort.Strings(candidates)
+	return candidates[0]
 }
 
 // findMostCommonCategory returns the category with the highest count.

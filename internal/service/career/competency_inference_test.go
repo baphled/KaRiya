@@ -3,9 +3,192 @@ package career
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	career "github.com/baphled/kariya/internal/domain/career"
 )
 
-var _ = Describe("InferCompetencyFromCategories", func() {
+var _ = Describe("InferCompetencyFromFacts", func() {
+	Describe("Weighted competency inference", func() {
+		It("should return competency with highest weighted score", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "strong", // weight: 3.0
+				},
+				{
+					Text:                 "Fact 2",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "moderate", // weight: 2.0
+				},
+				{
+					Text:                 "Fact 3",
+					CompetencyCategories: []string{"leadership"},
+					StrengthSignal:       "strong", // weight: 3.0
+				},
+			}
+			// technical: 3.0 + 2.0 = 5.0, leadership: 3.0
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("technical"))
+		})
+
+		It("should handle tie-breaking alphabetically", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "strong", // weight: 3.0
+				},
+				{
+					Text:                 "Fact 2",
+					CompetencyCategories: []string{"leadership"},
+					StrengthSignal:       "strong", // weight: 3.0
+				},
+			}
+			// technical: 3.0, leadership: 3.0 (tie, alphabetically: leadership wins)
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("leadership"))
+		})
+
+		It("should handle multiple competencies per fact", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{"technical", "leadership"},
+					StrengthSignal:       "strong", // weight: 3.0 each
+				},
+				{
+					Text:                 "Fact 2",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "weak", // weight: 1.0
+				},
+			}
+			// technical: 3.0 + 1.0 = 4.0, leadership: 3.0
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("technical"))
+		})
+
+		It("should use default weight for facts without strength signal", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "", // weight: 1.0 (default)
+				},
+				{
+					Text:                 "Fact 2",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "", // weight: 1.0 (default)
+				},
+			}
+			// technical: 1.0 + 1.0 = 2.0
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("technical"))
+		})
+
+		It("should handle all strength levels correctly", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Strong fact",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "strong", // weight: 3.0
+				},
+				{
+					Text:                 "Moderate fact",
+					CompetencyCategories: []string{"leadership"},
+					StrengthSignal:       "moderate", // weight: 2.0
+				},
+				{
+					Text:                 "Weak fact",
+					CompetencyCategories: []string{"product"},
+					StrengthSignal:       "weak", // weight: 1.0
+				},
+			}
+			// technical: 3.0, leadership: 2.0, product: 1.0
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("technical"))
+		})
+
+		It("should return empty string when no facts", func() {
+			facts := []*career.Fact{}
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal(""))
+		})
+
+		It("should return empty string when nil facts", func() {
+			result := InferCompetencyFromFacts(nil)
+			Expect(result).To(Equal(""))
+		})
+
+		It("should return empty string when facts have no competencies", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{},
+					StrengthSignal:       "strong",
+				},
+			}
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal(""))
+		})
+
+		It("should ignore invalid competencies", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{"technical", "invalid-category"},
+					StrengthSignal:       "strong",
+				},
+				{
+					Text:                 "Fact 2",
+					CompetencyCategories: []string{"leadership"},
+					StrengthSignal:       "moderate",
+				},
+			}
+			// Only valid: technical: 3.0, leadership: 2.0
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("technical"))
+		})
+
+		It("should handle case sensitivity correctly", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{"Technical"},
+					StrengthSignal:       "strong",
+				},
+				{
+					Text:                 "Fact 2",
+					CompetencyCategories: []string{"TECHNICAL"},
+					StrengthSignal:       "moderate",
+				},
+			}
+			// All normalized to "technical": 3.0 + 2.0 = 5.0
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("technical"))
+		})
+
+		It("should handle whitespace in competencies", func() {
+			facts := []*career.Fact{
+				{
+					Text:                 "Fact 1",
+					CompetencyCategories: []string{" technical "},
+					StrengthSignal:       "strong",
+				},
+				{
+					Text:                 "Fact 2",
+					CompetencyCategories: []string{"technical"},
+					StrengthSignal:       "moderate",
+				},
+			}
+			// After trimming: technical: 3.0 + 2.0 = 5.0
+			result := InferCompetencyFromFacts(facts)
+			Expect(result).To(Equal("technical"))
+		})
+	})
+})
+
+var _ = Describe("InferCompetencyFromCategories (deprecated)", func() {
 	Describe("Single category scenarios", func() {
 		It("should return the only category when all events have the same single category", func() {
 			eventCategories := [][]string{
