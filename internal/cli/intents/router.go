@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
 )
 
@@ -30,6 +31,9 @@ type DefaultIntentRouter struct {
 
 	// terminalInfo holds the current terminal dimensions
 	terminalInfo *terminal.Info
+
+	// logo is the shared logo instance passed to all intents
+	logo *components.ASCIILogo
 }
 
 // NewDefaultIntentRouter creates a new intent router.
@@ -87,8 +91,17 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]int
 		return nil, fmt.Errorf("failed to create intent %q: factory returned nil", name)
 	}
 	r.activeIntent = intent
+	r.activeIntentName = name
+
+	// Propagate logo to the new intent if it has BaseIntent
+	if r.logo != nil {
+		if setter, ok := intent.(interface{ SetLogo(*components.ASCIILogo) }); ok {
+			setter.SetLogo(r.logo)
+		}
+	}
 
 	// Propagate terminal info to the new intent if it's terminal-aware
+	// This must happen BEFORE Init() is called so the intent has terminal info during initialization
 	if termAware, ok := intent.(TerminalAwareIntent); ok && r.terminalInfo.IsValid {
 		termAware.UpdateTerminalInfo(r.terminalInfo)
 	}
@@ -217,4 +230,27 @@ func (r *DefaultIntentRouter) GetTerminalInfo() *terminal.Info {
 	defer r.mu.RUnlock()
 
 	return r.terminalInfo
+}
+
+// SetLogo sets the shared logo instance for all intents
+func (r *DefaultIntentRouter) SetLogo(logo *components.ASCIILogo) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.logo = logo
+
+	// Propagate to active intent if it has BaseIntent
+	if r.activeIntent != nil {
+		if setter, ok := r.activeIntent.(interface{ SetLogo(*components.ASCIILogo) }); ok {
+			setter.SetLogo(logo)
+		}
+	}
+}
+
+// GetLogo returns the shared logo instance
+func (r *DefaultIntentRouter) GetLogo() *components.ASCIILogo {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.logo
 }
