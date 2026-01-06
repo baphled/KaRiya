@@ -1186,6 +1186,208 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(len(rows)).To(Equal(5), "Table should show only 5 bursts for page 3, but shows %d bursts", len(rows))
 		})
 	})
+
+	Describe("Helper Functions for Enhanced Table", func() {
+		Describe("formatConfirmedStatus", func() {
+			It("should return green ✓ Yes for confirmed bursts", func() {
+				result := intent.formatConfirmedStatus(true)
+				Expect(result).To(ContainSubstring("✓"))
+				Expect(result).To(ContainSubstring("Yes"))
+			})
+
+			It("should return gray ✗ No for unconfirmed bursts", func() {
+				result := intent.formatConfirmedStatus(false)
+				Expect(result).To(ContainSubstring("✗"))
+				Expect(result).To(ContainSubstring("No"))
+			})
+		})
+
+		Describe("formatCompetency", func() {
+			It("should return colored text for technical competency", func() {
+				result := intent.formatCompetency("technical")
+				Expect(result).To(ContainSubstring("technical"))
+			})
+
+			It("should return colored text for leadership competency", func() {
+				result := intent.formatCompetency("leadership")
+				Expect(result).To(ContainSubstring("leadership"))
+			})
+
+			It("should return colored text for product competency", func() {
+				result := intent.formatCompetency("product")
+				Expect(result).To(ContainSubstring("product"))
+			})
+
+			It("should return colored text for consulting competency", func() {
+				result := intent.formatCompetency("consulting")
+				Expect(result).To(ContainSubstring("consulting"))
+			})
+
+			It("should return colored text for research competency", func() {
+				result := intent.formatCompetency("research")
+				Expect(result).To(ContainSubstring("research"))
+			})
+
+			It("should return colored text for mentoring competency", func() {
+				result := intent.formatCompetency("mentoring")
+				Expect(result).To(ContainSubstring("mentoring"))
+			})
+
+			It("should return - for empty competency", func() {
+				result := intent.formatCompetency("")
+				Expect(result).To(ContainSubstring("-"))
+			})
+
+			It("should return default color for unknown competency", func() {
+				result := intent.formatCompetency("unknown-category")
+				Expect(result).To(ContainSubstring("unknown-category"))
+			})
+		})
+
+		Describe("formatDescription", func() {
+			It("should truncate long descriptions to 25 chars", func() {
+				longDesc := "This is a very long description that should definitely be truncated at 22 characters"
+				result := intent.formatDescription(longDesc)
+				// Should contain "..." for truncation
+				Expect(result).To(ContainSubstring("..."))
+			})
+
+			It("should render short descriptions fully", func() {
+				shortDesc := "Short desc"
+				result := intent.formatDescription(shortDesc)
+				Expect(result).To(ContainSubstring("Short desc"))
+				Expect(result).NotTo(ContainSubstring("..."))
+			})
+
+			It("should return - for empty descriptions", func() {
+				result := intent.formatDescription("")
+				Expect(result).To(ContainSubstring("-"))
+			})
+
+			It("should remove newlines from descriptions", func() {
+				descWithNewlines := "Line 1\nLine 2\nLine 3"
+				result := intent.formatDescription(descWithNewlines)
+				Expect(result).NotTo(ContainSubstring("\n"))
+				Expect(result).To(ContainSubstring("Line 1 Line 2"))
+			})
+
+			It("should handle whitespace-only descriptions", func() {
+				result := intent.formatDescription("   \n\t  ")
+				Expect(result).To(ContainSubstring("-"))
+			})
+		})
+
+		Describe("formatCreatedDate", func() {
+			It("should format date as YYYY-MM-DD", func() {
+				testDate := time.Date(2024, 12, 15, 10, 30, 0, 0, time.UTC)
+				result := intent.formatCreatedDate(testDate)
+				Expect(result).To(ContainSubstring("2024-12-15"))
+			})
+
+			It("should format different dates correctly", func() {
+				testDate := time.Date(2023, 1, 5, 0, 0, 0, 0, time.UTC)
+				result := intent.formatCreatedDate(testDate)
+				Expect(result).To(ContainSubstring("2023-01-05"))
+			})
+		})
+	})
+
+	Describe("Enhanced Table Row Generation", func() {
+		var (
+			testBurst1 *careerdom.Burst
+			testBurst2 *careerdom.Burst
+		)
+
+		BeforeEach(func() {
+			testBurst1 = &careerdom.Burst{
+				ID:              "burst-1",
+				Name:            "Backend API Migration",
+				Description:     "Migrated legacy REST API to GraphQL with performance improvements",
+				EventIDs:        []string{"event-1", "event-2", "event-3"},
+				CompetencyFocus: "technical",
+				Confirmed:       true,
+				CreatedAt:       time.Date(2024, 12, 15, 0, 0, 0, 0, time.UTC),
+				UpdatedAt:       time.Now(),
+			}
+
+			testBurst2 = &careerdom.Burst{
+				ID:              "burst-2",
+				Name:            "Team Leadership",
+				Description:     "", // Empty description
+				EventIDs:        []string{"event-4", "event-5"},
+				CompetencyFocus: "", // Empty competency
+				Confirmed:       false,
+				CreatedAt:       time.Date(2024, 11, 10, 0, 0, 0, 0, time.UTC),
+				UpdatedAt:       time.Now(),
+			}
+
+			mockRepo.bursts = []*careerdom.Burst{testBurst1, testBurst2}
+			intent.Init()
+		})
+
+		It("should generate 6 columns for each row", func() {
+			rows := intent.table.Rows()
+			Expect(len(rows)).To(BeNumerically(">", 0))
+			for _, row := range rows {
+				Expect(len(row)).To(Equal(6), "Each row should have 6 columns")
+			}
+		})
+
+		It("should include confirmed status in column 3", func() {
+			rows := intent.table.Rows()
+			Expect(len(rows)).To(BeNumerically(">", 0))
+			// First row (confirmed=true) should contain "Yes"
+			Expect(rows[0][2]).To(ContainSubstring("Yes"))
+		})
+
+		It("should include competency in column 4", func() {
+			rows := intent.table.Rows()
+			Expect(len(rows)).To(BeNumerically(">", 0))
+			// First row should have technical competency
+			Expect(rows[0][3]).To(ContainSubstring("technical"))
+		})
+
+		It("should include created date in column 6", func() {
+			rows := intent.table.Rows()
+			Expect(len(rows)).To(BeNumerically(">", 0))
+			// First row should have 2024-12-15
+			Expect(rows[0][5]).To(ContainSubstring("2024-12-15"))
+		})
+
+		It("should handle empty description gracefully", func() {
+			rows := intent.table.Rows()
+			Expect(len(rows)).To(BeNumerically(">=", 2))
+			// Second row (empty description) should show "-"
+			Expect(rows[1][1]).To(ContainSubstring("-"))
+		})
+
+		It("should handle empty competency gracefully", func() {
+			rows := intent.table.Rows()
+			Expect(len(rows)).To(BeNumerically(">=", 2))
+			// Second row (empty competency) should show "-"
+			Expect(rows[1][3]).To(ContainSubstring("-"))
+		})
+
+		It("should truncate long names to fit column width", func() {
+			longNameBurst := &careerdom.Burst{
+				ID:              "burst-3",
+				Name:            "This is an extremely long burst name that should definitely be truncated",
+				Description:     "Description",
+				EventIDs:        []string{"event-6"},
+				CompetencyFocus: "technical",
+				Confirmed:       true,
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+			}
+			mockRepo.bursts = []*careerdom.Burst{longNameBurst}
+			intent.Init()
+
+			rows := intent.table.Rows()
+			Expect(len(rows)).To(Equal(1))
+			// Name should be truncated with "..."
+			Expect(rows[0][0]).To(ContainSubstring("..."))
+		})
+	})
 })
 
 // MockBurstRepository is a mock implementation of BurstRepository for testing
