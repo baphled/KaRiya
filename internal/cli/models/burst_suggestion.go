@@ -519,9 +519,13 @@ func (m *BurstSuggestionModel) createBurstFromSuggestion(suggestion burstfact.Bu
 		name = fmt.Sprintf("Burst of %d events", len(suggestion.EventIDs))
 	}
 
+	// Infer competency focus from events
+	competencyFocus := m.service.InferCompetencyForBurst(m.ctx, suggestion.EventIDs)
+
 	return &career.Burst{
-		Name:        name,
-		Description: suggestion.Description,
-		EventIDs:    suggestion.EventIDs,
+		Name:            name,
+		Description:     suggestion.Description,
+		EventIDs:        suggestion.EventIDs,
+		CompetencyFocus: competencyFocus,
 	}
 }

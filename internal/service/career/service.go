@@ -375,14 +375,18 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 	var savedBursts []*domain.Burst
 
 	for _, suggestion := range suggestions {
+		// Infer competency focus from events
+		competencyFocus := s.InferCompetencyForBurst(ctx, suggestion.EventIDs)
+
 		// Convert suggestion to burst domain object
 		burst := &domain.Burst{
-			ID:          uuid.New().String(),
-			Name:        suggestion.Name,
-			Description: suggestion.Description,
-			EventIDs:    suggestion.EventIDs,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:              uuid.New().String(),
+			Name:            suggestion.Name,
+			Description:     suggestion.Description,
+			EventIDs:        suggestion.EventIDs,
+			CompetencyFocus: competencyFocus,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
 		}
 
 		// Save to repository
