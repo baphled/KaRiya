@@ -55,7 +55,7 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 	}
 
 	// 3. Projects THIRD (project-based, with dates)
-	projectsSection := sb.buildProjectsSection(bullets, events, order)
+	projectsSection := sb.buildProjectsSection(bullets, events, order, targetRole)
 	if projectsSection != nil {
 		sections = append(sections, projectsSection)
 		order++
@@ -121,7 +121,7 @@ func (sb *DefaultSectionBuilder) buildExperienceSection(bullets []*career.CVBull
 }
 
 // buildProjectsSection creates the projects section
-func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet, events []*career.CareerEvent, order int) *career.CVSection {
+func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet, events []*career.CareerEvent, order int, targetRole string) *career.CVSection {
 	if len(bullets) == 0 {
 		return nil
 	}
@@ -138,14 +138,21 @@ func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet
 		return groups[i].endDate.After(groups[j].endDate)
 	})
 
-	// Convert to SectionContentGroup array
+	// Get role-specific bullet cap per project (same as companies)
+	maxBulletsPerProject := sb.getBulletsPerCompanyForRole(targetRole)
+
+	// Convert to SectionContentGroup array and apply per-project bullet cap
 	content := make([]*career.SectionContentGroup, 0, len(groups))
 	for _, group := range groups {
+		bullets := group.bullets
+		// Apply per-project bullet cap (bullets are already ranked, so just take the first N)
+		if len(bullets) > maxBulletsPerProject {
+			bullets = bullets[:maxBulletsPerProject]
+		}
 		content = append(content, &career.SectionContentGroup{
-			Header:    group.header,
-			StartDate: formatMonthYear(group.startDate),
-			EndDate:   formatMonthYear(group.endDate),
-			Bullets:   group.bullets,
+			Header:  group.header,
+			Bullets: bullets,
+			// Note: Projects don't have dates (StartDate/EndDate intentionally omitted)
 		})
 	}
 
