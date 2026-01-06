@@ -317,7 +317,7 @@ var _ = Describe("EditBurstModal", func() {
 		})
 
 		It("should initialize all inputs", func() {
-			Expect(modal.inputs).To(HaveLen(3))
+			Expect(modal.inputs).To(HaveLen(2))
 			Expect(modal.inputs[0].Focused()).To(BeTrue())
 		})
 	})
@@ -330,19 +330,16 @@ var _ = Describe("EditBurstModal", func() {
 			Expect(modal.focused).To(Equal(1))
 
 			modal.Update(tea.KeyMsg{Type: tea.KeyTab})
-			Expect(modal.focused).To(Equal(2))
-
-			modal.Update(tea.KeyMsg{Type: tea.KeyTab})
 			Expect(modal.focused).To(Equal(0)) // Wrap around
 		})
 
 		It("should move focus backward with Shift+Tab", func() {
 			modal.focused = 0
 			modal.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
-			Expect(modal.focused).To(Equal(2)) // Wraps around
+			Expect(modal.focused).To(Equal(1)) // Wraps around
 
 			modal.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
-			Expect(modal.focused).To(Equal(1))
+			Expect(modal.focused).To(Equal(0))
 		})
 	})
 

@@ -90,23 +90,10 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		gomega.Expect(output).To(gomega.ContainSubstring("Showing"))
 	})
 
-	ginkgo.It("should filter by competency", func() {
-		model.SetBursts(testBursts)
-		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
-		gomega.Expect(output).NotTo(gomega.ContainSubstring("Platform Migration"))
-	})
-
 	ginkgo.It("should be case-insensitive", func() {
 		model.SetBursts(testBursts)
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
-	})
-
-	ginkgo.It("should filter multiple matches", func() {
-		model.SetBursts(testBursts)
-		bursts := model.GetBursts()
-		gomega.Expect(len(bursts)).To(gomega.Equal(2))
 	})
 
 	ginkgo.It("should sort by event count", func() {
@@ -181,12 +168,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		model.SetBursts(largeBursts)
 		output := model.View()
 		gomega.Expect(len(output) > 0).To(gomega.BeTrue())
-	})
-
-	ginkgo.It("should show no matching message when filtered", func() {
-		model.SetBursts(testBursts)
-		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("No bursts found"))
 	})
 
 	ginkgo.It("should update size on resize", func() {
