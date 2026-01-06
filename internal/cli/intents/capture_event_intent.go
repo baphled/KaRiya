@@ -197,6 +197,16 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			i.setCancelled()
 			return nil
 
+		case "esc":
+			// User cancelled (this is the root state)
+			i.setCancelled()
+			return nil
+
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
+
 		case "enter":
 			// Confirm current strategy and move to form
 			i.state.currentState = CaptureStateForm
@@ -237,6 +247,11 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 		case "esc":
 			// Go back to strategy selection
 			i.state.currentState = CaptureStateChooseStrategy
+			return nil
+
+		case "m":
+			// Return to main menu
+			i.setCancelled()
 			return nil
 		}
 
@@ -312,6 +327,11 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			i.state.currentState = CaptureStateForm
 			return nil
 
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
+
 		case "e":
 			// Edit metadata (modal sub-flow)
 			i.state.reviewState.EditingMode = EditingModeMetadata
@@ -380,6 +400,16 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			// Cancel submission
+			i.setCancelled()
+			return nil
+
+		case "esc":
+			// Go back to review state (keep error visible per user preference)
+			i.state.currentState = CaptureStateReview
+			return nil
+
+		case "m":
+			// Return to main menu
 			i.setCancelled()
 			return nil
 
@@ -599,7 +629,7 @@ func (i *CaptureEventIntent) viewChooseStrategy() string {
 	sb.WriteString("│  q) Cancel                                     │\n")
 	sb.WriteString("│                                                │\n")
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nSelect strategy (1-3) or press 'q' to cancel:\n")
+	sb.WriteString("\nSelect strategy (1-3) | Esc: Cancel | m: Main menu | q: Quit\n")
 
 	return sb.String()
 }
@@ -612,7 +642,7 @@ func (i *CaptureEventIntent) viewCaptureForm() string {
 	}
 	// Add section heading and instructions as expected by the tests
 	title := "=== Capture Event Details ===\n\n"
-	instructions := "Tab: Next | Shift+Tab: Previous | Ctrl+S/Enter: Submit | Esc: Cancel\n\n"
+	instructions := "Tab: Next | Shift+Tab: Previous | Ctrl+S/Enter: Submit | Esc: Back | m: Main menu\n\n"
 	return title + instructions + i.state.captureForm.View()
 }
 
@@ -664,7 +694,7 @@ func (i *CaptureEventIntent) viewReviewInferredEvent() string {
 	}
 	sb.WriteString("│                                                │\n")
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nPress Ctrl+S to submit, Esc to go back, 'e' to edit\n")
+	sb.WriteString("\nCtrl+S: Submit | Esc: Back | e: Edit | m: Main menu\n")
 
 	return sb.String()
 }
@@ -691,10 +721,9 @@ func (i *CaptureEventIntent) viewSubmit() string {
 	}
 
 	sb.WriteString("│ Ready to submit? Press Enter to confirm.       │\n")
-	sb.WriteString("│ Press Esc to cancel.                           │\n")
 	sb.WriteString("│                                                │\n")
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nSubmitting event...\n")
+	sb.WriteString("\nEnter: Confirm | Esc: Back | m: Main menu | r: Retry\n")
 
 	return sb.String()
 }
