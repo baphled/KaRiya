@@ -155,8 +155,45 @@ type TerminalAwareIntent interface {
 	GetMinimumSize() (width, height int)
 }
 
-// BaseIntent provides common functionality that all intents can embed
-// It handles terminal size tracking and provides default implementations
+// BaseIntent provides common functionality that all intents can embed.
+// It handles terminal size tracking, logo management, and state management
+// for loading, error, success, and progress states.
+//
+// All state management is independent - intents can have multiple states active
+// simultaneously. When creating views with CreateView() or CreateViewWithBreadcrumbs(),
+// modals are automatically applied based on priority:
+//  1. Error (highest priority, with bell)
+//  2. Loading (ongoing operation)
+//  3. Progress (specific progress tracking)
+//  4. Success (lowest priority, auto-dismiss after 3 seconds)
+//
+// Example usage:
+//
+//	type MyIntent struct {
+//	    *BaseIntent
+//	    // ... intent-specific fields
+//	}
+//
+//	func (i *MyIntent) View() string {
+//	    // Simple, clean view creation with automatic state modals
+//	    view := i.CreateViewWithBreadcrumbs("Main Menu", "My Intent", i.stateName)
+//	    view.WithContent(i.renderContent())
+//	    view.WithHelp(CombineFooters(NavigationFooter(), "q Quit"))
+//	    return view.Render()
+//	}
+//
+//	func (i *MyIntent) handleSubmit() tea.Cmd {
+//	    i.SetLoading("Saving...")
+//	    return func() tea.Msg {
+//	        if err := i.service.Save(); err != nil {
+//	            i.SetError(err)
+//	            return ErrorMsg{err}
+//	        }
+//	        i.ClearLoading()
+//	        i.SetSuccess("Saved successfully!")
+//	        return SuccessMsg{}
+//	    }
+//	}
 type BaseIntent struct {
 	// Terminal management
 	terminalInfo   *terminal.Info
