@@ -67,7 +67,7 @@ var _ = Describe("Header", func() {
 		It("includes separator between breadcrumbs", func() {
 			header.SetBreadcrumbs([]string{"Home", "List"})
 			view := header.View()
-			Expect(view).To(ContainSubstring(">"))
+			Expect(view).To(ContainSubstring("▸"))
 		})
 	})
 

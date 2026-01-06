@@ -148,35 +148,46 @@ func (h HeaderModel) View() string {
 	return content
 }
 
-// renderBreadcrumbs renders the breadcrumb navigation
+// renderBreadcrumbs renders the breadcrumb navigation with enhanced styling
 func (h HeaderModel) renderBreadcrumbs() string {
-	// Join breadcrumbs with separator
-	separator := styles.InfoHint.Render(" > ")
-	styledCrumbs := make([]string, len(h.breadcrumbs))
-
-	for i, crumb := range h.breadcrumbs {
-		if i == len(h.breadcrumbs)-1 {
-			// Last breadcrumb - highlight it
-			styledCrumbs[i] = lipgloss.NewStyle().
-				Foreground(styles.ColorAccentTeal).
-				Bold(true).
-				Render(crumb)
-		} else {
-			// Previous breadcrumbs - muted
-			styledCrumbs[i] = lipgloss.NewStyle().
-				Foreground(styles.ColorTextMuted).
-				Render(crumb)
+	// Convert breadcrumbs to new format with icons
+	crumbs := make([]Breadcrumb, len(h.breadcrumbs))
+	for i, label := range h.breadcrumbs {
+		// Try to infer intent from label
+		intent := strings.ToLower(strings.ReplaceAll(label, " ", "_"))
+		icon := GetIconForIntent(intent)
+		crumbs[i] = Breadcrumb{
+			Label:  label,
+			Icon:   icon,
+			Intent: intent,
 		}
 	}
 
-	breadcrumbStr := strings.Join(styledCrumbs, separator)
+	// Create breadcrumb bar
+	bar := NewBreadcrumbBar(h.width, false)
+	bar.SetCrumbs(crumbs)
+	breadcrumbStr := bar.View()
 
 	// Add bottom margin
 	return breadcrumbStr + "\n"
 }
 
-// renderTitle renders the main title
+// renderTitle renders the main title with KaRiya branding
 func (h HeaderModel) renderTitle() string {
+	// If we have breadcrumbs, show KaRiya branding
+	if len(h.breadcrumbs) > 0 {
+		appNameStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorAccentTeal).
+			Bold(true)
+
+		separator := lipgloss.NewStyle().
+			Foreground(styles.ColorTextMuted).
+			Render("  •  ")
+
+		return appNameStyle.Render("KaRiya") + separator + styles.HeaderMain.Render(h.title)
+	}
+
+	// Otherwise just show the title
 	titleStyle := styles.HeaderMain
 
 	// Truncate title if it's too long
