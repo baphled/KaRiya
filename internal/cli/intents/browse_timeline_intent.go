@@ -379,17 +379,58 @@ func (i *BrowseTimelineIntent) applyFilters() {
 	i.state.filteredEvents = filtered
 }
 
-// View renders the intent's current state.
-func (i *BrowseTimelineIntent) View() string {
+// getStateName returns a human-readable name for the current state.
+func (i *BrowseTimelineIntent) getStateName() string {
+	switch i.state.currentState {
+	case BrowseStateTimeline:
+		return "Timeline"
+	case BrowseStateEventDetail:
+		return "Event Detail"
+	default:
+		return string(i.state.currentState)
+	}
+}
+
+// getStateContent returns the content for the current state.
+func (i *BrowseTimelineIntent) getStateContent() string {
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		return i.viewTimeline()
-
 	case BrowseStateEventDetail:
 		return i.viewEventDetail()
+	default:
+		return ""
 	}
+}
 
-	return ""
+// getContextHelp returns context-aware help text for the current state.
+func (i *BrowseTimelineIntent) getContextHelp() string {
+	base := "q Quit  m Main Menu"
+
+	switch i.state.currentState {
+	case BrowseStateTimeline:
+		return CombineFooters(ListFooter(), "f Filter  Enter View Details", base)
+	case BrowseStateEventDetail:
+		return CombineFooters(DetailViewFooter(), base)
+	default:
+		return base
+	}
+}
+
+// View renders the intent's current state using StandardView.
+func (i *BrowseTimelineIntent) View() string {
+	// Create standard view with breadcrumbs
+	view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
+
+	// Get content for current state
+	content := i.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := i.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
 }
 
 // viewTimeline renders the timeline view with all events as a table.
