@@ -409,13 +409,13 @@ func (m *EditBurstModal) Update(msg tea.Msg) tea.Cmd {
 		switch msg.Type {
 		case tea.KeyTab:
 			m.inputs[m.focused].Blur()
-			m.focused = (m.focused + 1) % 3
+			m.focused = (m.focused + 1) % 2
 			m.inputs[m.focused].Focus()
 			return nil
 
 		case tea.KeyShiftTab:
 			m.inputs[m.focused].Blur()
-			m.focused = (m.focused - 1 + 3) % 3
+			m.focused = (m.focused - 1 + 2) % 2
 			m.inputs[m.focused].Focus()
 			return nil
 
@@ -455,7 +455,7 @@ func (m *EditBurstModal) View() string {
 		modalWidth = 80
 	}
 
-	fieldLabels := []string{"Name", "Description", "Competency Focus"}
+	fieldLabels := []string{"Name", "Description"}
 
 	var fields []string
 	for i, label := range fieldLabels {
