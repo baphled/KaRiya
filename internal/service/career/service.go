@@ -375,18 +375,14 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 	var savedBursts []*domain.Burst
 
 	for _, suggestion := range suggestions {
-		// Infer competency focus from events
-		competencyFocus := s.InferCompetencyForBurst(ctx, suggestion.EventIDs)
-
 		// Convert suggestion to burst domain object
 		burst := &domain.Burst{
-			ID:              uuid.New().String(),
-			Name:            suggestion.Name,
-			Description:     suggestion.Description,
-			EventIDs:        suggestion.EventIDs,
-			CompetencyFocus: competencyFocus,
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			ID:          uuid.New().String(),
+			Name:        suggestion.Name,
+			Description: suggestion.Description,
+			EventIDs:    suggestion.EventIDs,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		}
 
 		// Save to repository
@@ -409,41 +405,6 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 	}
 
 	return savedBursts, nil
-}
-
-// InferCompetencyForBurst retrieves facts for events and infers competency focus using weighted scoring.
-// Returns empty string if no valid competencies found or if facts cannot be retrieved.
-//
-// This method:
-// 1. Retrieves all facts for each event in the burst
-// 2. Applies weights based on fact strength signals (strong=3.0, moderate=2.0, weak=1.0)
-// 3. Sums weights per competency category
-// 4. Returns competency with highest total weight
-// 5. Handles missing facts gracefully (logs warning, continues with available facts)
-func (s *Service) InferCompetencyForBurst(ctx context.Context, eventIDs []string) string {
-	if eventIDs == nil || len(eventIDs) == 0 {
-		return ""
-	}
-
-	// Collect all facts from all events
-	var allFacts []*domain.Fact
-
-	for _, eventID := range eventIDs {
-		facts, err := s.GetFactsBySourceEventID(ctx, eventID)
-		if err != nil {
-			// Log warning but continue with other events
-			s.logger.WithFields(map[string]string{
-				"event_id": eventID,
-				"error":    err.Error(),
-			}).Warn("Failed to retrieve facts for competency inference, skipping")
-			continue
-		}
-
-		allFacts = append(allFacts, facts...)
-	}
-
-	// Infer competency from facts using weighted scoring
-	return InferCompetencyFromFacts(allFacts)
 }
 
 // ExtractFactsFromEvent extracts facts from a single career event

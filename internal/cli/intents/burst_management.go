@@ -94,7 +94,6 @@ type BurstSuggestion struct {
 	RecommendedStartDate time.Time
 	RecommendedEndDate   time.Time
 	Skills               []string
-	CompetencyFocus      string
 }
 
 // BurstManagementResult is the result returned when BurstManagement intent completes
@@ -284,13 +283,12 @@ func (c *BurstManagementContext) DeleteBurst(burstID string) error {
 // StartNewBurst initializes a new burst for editing
 func (c *BurstManagementContext) StartNewBurst() {
 	c.EditingBurst = &domain.Burst{
-		ID:              "",
-		Name:            "",
-		Description:     "",
-		EventIDs:        make([]string, 0),
-		CompetencyFocus: "",
-		CreatedAt:       time.Now(),
-		UpdatedAt:       time.Now(),
+		ID:          "",
+		Name:        "",
+		Description: "",
+		EventIDs:    make([]string, 0),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 	c.IsNewBurst = true
 	c.ClearFormErrors()
@@ -300,13 +298,12 @@ func (c *BurstManagementContext) StartNewBurst() {
 func (c *BurstManagementContext) StartEditBurst(burst *domain.Burst) {
 	// Create a copy to avoid modifying the original
 	c.EditingBurst = &domain.Burst{
-		ID:              burst.ID,
-		Name:            burst.Name,
-		Description:     burst.Description,
-		EventIDs:        append([]string{}, burst.EventIDs...),
-		CompetencyFocus: burst.CompetencyFocus,
-		CreatedAt:       burst.CreatedAt,
-		UpdatedAt:       burst.UpdatedAt,
+		ID:          burst.ID,
+		Name:        burst.Name,
+		Description: burst.Description,
+		EventIDs:    append([]string{}, burst.EventIDs...),
+		CreatedAt:   burst.CreatedAt,
+		UpdatedAt:   burst.UpdatedAt,
 	}
 	c.IsNewBurst = false
 	c.ClearFormErrors()

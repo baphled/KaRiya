@@ -18,7 +18,6 @@ import (
 const (
 	BurstNameFieldIdx = iota
 	BurstDescriptionFieldIdx
-	BurstCompetencyFocusFieldIdx
 	BurstSaveButtonIdx
 	BurstCancelButtonIdx
 	BurstEditorFieldCount // Total number of focus positions
@@ -27,21 +26,20 @@ const (
 // BurstEditorModel represents the burst editor form state
 type BurstEditorModel struct {
 	*BaseStandardModel
-	burst                *career.Burst
-	originalBurst        *career.Burst // For reverting changes
-	service              *careerservice.Service
-	ctx                  context.Context
-	nameInput            textinput.Model
-	descriptionInput     textinput.Model
-	competencyFocusInput textinput.Model
-	focusIndex           int
-	err                  error
-	submitted            bool
-	cancelled            bool
-	fieldErrors          map[int]string
-	width                int
-	height               int
-	helpFooter           components.HelpFooterModel // Help footer for keyboard shortcuts
+	burst            *career.Burst
+	originalBurst    *career.Burst // For reverting changes
+	service          *careerservice.Service
+	ctx              context.Context
+	nameInput        textinput.Model
+	descriptionInput textinput.Model
+	focusIndex       int
+	err              error
+	submitted        bool
+	cancelled        bool
+	fieldErrors      map[int]string
+	width            int
+	height           int
+	helpFooter       components.HelpFooterModel // Help footer for keyboard shortcuts
 }
 
 // NewBurstEditorModel creates a new burst editor model
@@ -62,27 +60,20 @@ func NewBurstEditorModel(burst *career.Burst, service *careerservice.Service, ct
 	descriptionInput.SetValue(burst.Description)
 	descriptionInput.Width = 70
 
-	// Create competency focus input
-	competencyFocusInput := textinput.New()
-	competencyFocusInput.Placeholder = "Primary competency focus"
-	competencyFocusInput.SetValue(burst.CompetencyFocus)
-	competencyFocusInput.Width = 70
-
 	return &BurstEditorModel{
-		BaseStandardModel:    NewBaseStandardModel(),
-		burst:                burst,
-		originalBurst:        &burstCopy,
-		service:              service,
-		ctx:                  ctx,
-		nameInput:            nameInput,
-		descriptionInput:     descriptionInput,
-		competencyFocusInput: competencyFocusInput,
-		focusIndex:           0,
-		err:                  nil,
-		submitted:            false,
-		cancelled:            false,
-		fieldErrors:          make(map[int]string),
-		helpFooter:           components.NewHelpFooter("burst_editor", 80),
+		BaseStandardModel: NewBaseStandardModel(),
+		burst:             burst,
+		originalBurst:     &burstCopy,
+		service:           service,
+		ctx:               ctx,
+		nameInput:         nameInput,
+		descriptionInput:  descriptionInput,
+		focusIndex:        0,
+		err:               nil,
+		submitted:         false,
+		cancelled:         false,
+		fieldErrors:       make(map[int]string),
+		helpFooter:        components.NewHelpFooter("burst_editor", 80),
 	}
 }
 
@@ -113,11 +104,6 @@ func (m *BurstEditorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.descriptionInput, cmd = m.descriptionInput.Update(msg)
 		m.burst.Description = m.descriptionInput.Value()
-		return m, cmd
-	case BurstCompetencyFocusFieldIdx:
-		var cmd tea.Cmd
-		m.competencyFocusInput, cmd = m.competencyFocusInput.Update(msg)
-		m.burst.CompetencyFocus = m.competencyFocusInput.Value()
 		return m, cmd
 	}
 
@@ -163,15 +149,12 @@ func (m *BurstEditorModel) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m *BurstEditorModel) updateInputFocus() {
 	m.nameInput.Blur()
 	m.descriptionInput.Blur()
-	m.competencyFocusInput.Blur()
 
 	switch m.focusIndex {
 	case BurstNameFieldIdx:
 		m.nameInput.Focus()
 	case BurstDescriptionFieldIdx:
 		m.descriptionInput.Focus()
-	case BurstCompetencyFocusFieldIdx:
-		m.competencyFocusInput.Focus()
 	}
 }
 
@@ -199,13 +182,6 @@ func (m *BurstEditorModel) submitBurst() (tea.Model, tea.Cmd) {
 	if len(m.burst.Description) > 1000 {
 		m.fieldErrors[BurstDescriptionFieldIdx] = "Description cannot exceed 1000 characters"
 		m.err = fmt.Errorf("validation error: description exceeds 1000 characters")
-		return m, nil
-	}
-
-	// Validate competency focus (optional)
-	if len(m.burst.CompetencyFocus) > 100 {
-		m.fieldErrors[BurstCompetencyFocusFieldIdx] = "Competency focus cannot exceed 100 characters"
-		m.err = fmt.Errorf("validation error: competency focus exceeds 100 characters")
 		return m, nil
 	}
 
@@ -248,10 +224,8 @@ func (m *BurstEditorModel) IsCancelled() bool {
 func (m *BurstEditorModel) Revert() {
 	m.burst.Name = m.originalBurst.Name
 	m.burst.Description = m.originalBurst.Description
-	m.burst.CompetencyFocus = m.originalBurst.CompetencyFocus
 	m.nameInput.SetValue(m.originalBurst.Name)
 	m.descriptionInput.SetValue(m.originalBurst.Description)
-	m.competencyFocusInput.SetValue(m.originalBurst.CompetencyFocus)
 }
 
 // GetError returns the current error
@@ -322,20 +296,6 @@ func (m *BurstEditorModel) renderFormContent() string {
 		Input:     m.descriptionInput.View(),
 		Error:     descriptionFieldErr,
 		IsFocused: m.focusIndex == BurstDescriptionFieldIdx,
-		FullWidth: true,
-	})
-
-	// Add competency focus field
-	competencyFieldErr := ""
-	if err, ok := m.fieldErrors[BurstCompetencyFocusFieldIdx]; ok {
-		competencyFieldErr = err
-	}
-
-	formContainer.AddField(components.FormField{
-		Label:     "Competency Focus (optional):",
-		Input:     m.competencyFocusInput.View(),
-		Error:     competencyFieldErr,
-		IsFocused: m.focusIndex == BurstCompetencyFocusFieldIdx,
 		FullWidth: true,
 	})
 

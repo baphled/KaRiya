@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -27,7 +26,6 @@ type BurstListModel struct {
 	pagination           *PaginationHelper
 	width                int
 	height               int
-	competencyFilter     string
 	sortBy               string
 	sortOrder            string
 	selectedBursts       map[string]bool
@@ -46,7 +44,6 @@ func NewBurstListModel(svc *careerservice.Service, ctx context.Context) *BurstLi
 	columns := []table.Column{
 		{Title: "Burst", Width: 40},
 		{Title: "Events", Width: 10},
-		{Title: "Focus", Width: 25},
 	}
 
 	t := table.New(
@@ -152,15 +149,9 @@ func (m *BurstListModel) updateTableRows() {
 
 		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
 
-		focus := burst.CompetencyFocus
-		if len(focus) > 22 {
-			focus = focus[:19] + "..."
-		}
-
 		row := table.Row{
 			burstText,
 			eventCount,
-			focus,
 		}
 		rows = append(rows, row)
 	}
@@ -367,16 +358,6 @@ func (m *BurstListModel) SetBursts(bursts []*career.Burst) {
 	m.updateTableRows()
 }
 
-// SetCompetencyFilter sets the competency focus filter
-func (m *BurstListModel) SetCompetencyFilter(competency string) {
-	m.competencyFilter = competency
-	m.applyFiltersAndSort()
-	m.pagination.SetTotalCount(len(m.filtered)).GoToFirstPage()
-	m.listContainer.MoveToFirst()
-	m.expandedIndices = make(map[int]bool)
-	m.updateTableRows()
-}
-
 // SetSort sets the sort order
 func (m *BurstListModel) SetSort(sortBy, sortOrder string) {
 	m.sortBy = sortBy
@@ -396,12 +377,6 @@ func (m *BurstListModel) filterBursts() []*career.Burst {
 	var filtered []*career.Burst
 
 	for _, burst := range m.bursts {
-		if m.competencyFilter != "" {
-			if !strings.EqualFold(burst.CompetencyFocus, m.competencyFilter) {
-				continue
-			}
-		}
-
 		filtered = append(filtered, burst)
 	}
 

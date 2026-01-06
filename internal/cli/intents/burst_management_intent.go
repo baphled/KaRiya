@@ -131,10 +131,9 @@ type BurstManagementIntentModel struct {
 	showReextractPrompt bool
 
 	// Filter and sort state
-	searchText       string
-	filterCompetency string
-	sortBy           string
-	sortOrder        string
+	searchText string
+	sortBy     string
+	sortOrder  string
 }
 
 // State constants for BurstManagement intent.
@@ -157,12 +156,11 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 	}
 
 	// Create table model for bursts with enhanced columns
-	// Total column width: 30 + 35 + 10 + 15 + 8 + 12 = 110 chars
+	// Total column width: 30 + 35 + 10 + 8 + 12 = 95 chars
 	columns := []table.Column{
 		{Title: "Name", Width: 30},
 		{Title: "Description", Width: 35},
 		{Title: "Confirmed", Width: 10},
-		{Title: "Competency", Width: 15},
 		{Title: "Events", Width: 8},
 		{Title: "Created", Width: 12},
 	}
@@ -172,7 +170,7 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		table.WithRows([]table.Row{}),
 		table.WithFocused(true),
 		table.WithHeight(15),
-		table.WithWidth(120), // Increased to accommodate all columns with spacing
+		table.WithWidth(105), // Adjusted for 5 columns
 	)
 
 	s := table.DefaultStyles()
@@ -191,19 +189,18 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 	intent := &BurstManagementIntent{
 		context: context,
 		state: &BurstManagementIntentModel{
-			context:          context,
-			currentState:     BurstStateList,
-			filteredBursts:   make([]*domain.Burst, 0),
-			selectedIndex:    0,
-			selectedBurst:    nil,
-			viewedBursts:     make([]*domain.Burst, 0),
-			searchText:       "",
-			filterCompetency: "",
-			sortBy:           "name",
-			sortOrder:        "asc",
+			context:        context,
+			currentState:   BurstStateList,
+			filteredBursts: make([]*domain.Burst, 0),
+			selectedIndex:  0,
+			selectedBurst:  nil,
+			viewedBursts:   make([]*domain.Burst, 0),
+			searchText:     "",
+			sortBy:         "name",
+			sortOrder:      "asc",
 		},
 		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Manage Bursts", 120),
+		listContainer: components.NewTableListContainer(t, "Manage Bursts", 105),
 		active:        true,
 	}
 	intent.navHandler = navigation.NewListNavigationHandler(intent)
@@ -218,16 +215,6 @@ func (i *BurstManagementIntent) formatConfirmedStatus(confirmed bool) string {
 		return "✓ Yes"
 	}
 	return "✗ No"
-}
-
-// formatCompetency returns a plain text competency string.
-// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
-// Color coding will be handled by table styles instead.
-func (i *BurstManagementIntent) formatCompetency(competency string) string {
-	if competency == "" {
-		return "-"
-	}
-	return competency
 }
 
 // formatDescription returns a truncated description preview (max 35 chars).
@@ -307,20 +294,16 @@ func (i *BurstManagementIntent) updateTableRows() {
 		// Column 3: Confirmed Status (icon + colored text)
 		confirmedStr := i.formatConfirmedStatus(burst.Confirmed)
 
-		// Column 4: Competency (color-coded)
-		competencyStr := i.formatCompetency(burst.CompetencyFocus)
-
-		// Column 5: Event Count
+		// Column 4: Event Count
 		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
 
-		// Column 6: Created Date (YYYY-MM-DD)
+		// Column 5: Created Date (YYYY-MM-DD)
 		createdStr := i.formatCreatedDate(burst.CreatedAt)
 
 		rows = append(rows, table.Row{
 			nameStr,
 			descStr,
 			confirmedStr,
-			competencyStr,
 			eventCount,
 			createdStr,
 		})
@@ -730,13 +713,6 @@ func (i *BurstManagementIntent) applyFilters() {
 			}
 		}
 
-		// Apply competency filter.
-		if i.state.filterCompetency != "" {
-			if burst.CompetencyFocus != i.state.filterCompetency {
-				continue
-			}
-		}
-
 		filtered = append(filtered, burst)
 	}
 
@@ -748,12 +724,6 @@ func (i *BurstManagementIntent) applyFilters() {
 				return filtered[a].Name < filtered[b].Name
 			}
 			return filtered[a].Name > filtered[b].Name
-
-		case "competency":
-			if i.state.sortOrder == "asc" {
-				return filtered[a].CompetencyFocus < filtered[b].CompetencyFocus
-			}
-			return filtered[a].CompetencyFocus > filtered[b].CompetencyFocus
 
 		default: // date
 			if i.state.sortOrder == "asc" {
@@ -850,9 +820,6 @@ func (i *BurstManagementIntent) viewDetail() string {
 
 	if i.state.selectedBurst.Description != "" {
 		content.WriteString(fmt.Sprintf("Description: %s\n", i.state.selectedBurst.Description))
-	}
-	if i.state.selectedBurst.CompetencyFocus != "" {
-		content.WriteString(fmt.Sprintf("Competency Focus: %s\n", i.state.selectedBurst.CompetencyFocus))
 	}
 
 	content.WriteString(fmt.Sprintf("Events: %d\n", len(i.state.selectedBurst.EventIDs)))
@@ -1011,10 +978,6 @@ func (i *BurstManagementIntent) viewEdit() string {
 
 	if i.state.selectedBurst.Description != "" {
 		content.WriteString(fmt.Sprintf("Description: %s\n", i.state.selectedBurst.Description))
-	}
-
-	if i.state.selectedBurst.CompetencyFocus != "" {
-		content.WriteString(fmt.Sprintf("Competency Focus: %s\n", i.state.selectedBurst.CompetencyFocus))
 	}
 
 	// Note: For now, this is a simple view showing current values

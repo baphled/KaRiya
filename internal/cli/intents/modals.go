@@ -326,7 +326,7 @@ func (m *EditMetadataModal) computeChanges() map[string]interface{} {
 // EditBurstModal
 // ============================================================================
 
-// EditBurstModal handles inline editing of burst details (Name, Description, CompetencyFocus).
+// EditBurstModal handles inline editing of burst details (Name, Description).
 // Follows the same pattern as EditMetadataModal with professional styling and accessibility.
 type EditBurstModal struct {
 	// original is the unmodified burst (never mutated)
@@ -339,7 +339,7 @@ type EditBurstModal struct {
 	result *ModalEditResult[*career.Burst]
 
 	// inputs are the bubbles textinput components for each field
-	inputs [3]textinput.Model
+	inputs [2]textinput.Model
 
 	// focused tracks which field is currently focused
 	focused int
@@ -377,15 +377,13 @@ func (m *EditBurstModal) initializeInputs() {
 	fieldValues := []string{
 		m.modified.Name,
 		m.modified.Description,
-		m.modified.CompetencyFocus,
 	}
 	fieldHints := []string{
 		"Enter burst name",
 		"Enter description",
-		"Enter competency focus",
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 2; i++ {
 		input := textinput.New()
 		input.SetValue(fieldValues[i])
 		input.Placeholder = fieldHints[i]
@@ -541,13 +539,12 @@ func (m *EditBurstModal) IsComplete() bool {
 
 func (m *EditBurstModal) syncModified() {
 	m.modified = &career.Burst{
-		ID:              m.original.ID,
-		Name:            m.inputs[0].Value(),
-		Description:     m.inputs[1].Value(),
-		CompetencyFocus: m.inputs[2].Value(),
-		EventIDs:        m.original.EventIDs,
-		CreatedAt:       m.original.CreatedAt,
-		UpdatedAt:       m.original.UpdatedAt,
+		ID:          m.original.ID,
+		Name:        m.inputs[0].Value(),
+		Description: m.inputs[1].Value(),
+		EventIDs:    m.original.EventIDs,
+		CreatedAt:   m.original.CreatedAt,
+		UpdatedAt:   m.original.UpdatedAt,
 	}
 }
 
@@ -577,9 +574,6 @@ func (m *EditBurstModal) computeChanges() map[string]interface{} {
 	}
 	if m.original.Description != m.modified.Description {
 		changes["description"] = m.modified.Description
-	}
-	if m.original.CompetencyFocus != m.modified.CompetencyFocus {
-		changes["competency_focus"] = m.modified.CompetencyFocus
 	}
 
 	return changes

@@ -11,20 +11,18 @@ var _ = Describe("Burst", func() {
 	Context("when creating a burst", func() {
 		It("should have all required fields", func() {
 			burst := &Burst{
-				ID:              "burst-123",
-				Name:            "Platform Migration",
-				Description:     "Led team to migrate legacy platform to microservices",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
+				ID:          "burst-123",
+				Name:        "Platform Migration",
+				Description: "Led team to migrate legacy platform to microservices",
+				EventIDs:    []string{"event-1", "event-2"},
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
 			}
 
 			Expect(burst.ID).To(Equal("burst-123"))
 			Expect(burst.Name).To(Equal("Platform Migration"))
 			Expect(burst.Description).To(Equal("Led team to migrate legacy platform to microservices"))
 			Expect(burst.EventIDs).To(HaveLen(2))
-			Expect(burst.CompetencyFocus).To(Equal("technical"))
 			Expect(burst.CreatedAt).NotTo(BeZero())
 			Expect(burst.UpdatedAt).NotTo(BeZero())
 		})
@@ -135,43 +133,6 @@ var _ = Describe("Burst", func() {
 			err := burst.Validate()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("event ID cannot be empty"))
-		})
-
-		It("should accept burst with valid competency focus", func() {
-			burst := &Burst{
-				ID:              "burst-123",
-				Name:            "Project Name",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
-			}
-
-			err := burst.Validate()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should reject burst with invalid competency focus", func() {
-			burst := &Burst{
-				ID:              "burst-123",
-				Name:            "Project Name",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "invalid-competency",
-			}
-
-			err := burst.Validate()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("invalid competency focus"))
-		})
-
-		It("should accept burst with empty competency focus (optional)", func() {
-			burst := &Burst{
-				ID:              "burst-123",
-				Name:            "Project Name",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "",
-			}
-
-			err := burst.Validate()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should reject burst with name exceeding 200 characters", func() {

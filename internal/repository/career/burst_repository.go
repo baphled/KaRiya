@@ -42,9 +42,6 @@ type BurstRepository interface {
 
 // BurstListFilters provides flexible filtering options for bursts
 type BurstListFilters struct {
-	// CompetencyFocus to filter bursts by
-	CompetencyFocus string
-
 	// Date range filters
 	StartDate *time.Time
 	EndDate   *time.Time
@@ -168,16 +165,6 @@ func (r *MemoryBurstRepository) List(ctx context.Context, filters BurstListFilte
 	}
 
 	// Apply filters
-	if filters.CompetencyFocus != "" {
-		var filtered []*career.Burst
-		for _, burst := range bursts {
-			if burst.CompetencyFocus == filters.CompetencyFocus {
-				filtered = append(filtered, burst)
-			}
-		}
-		bursts = filtered
-	}
-
 	if filters.StartDate != nil || filters.EndDate != nil {
 		var filtered []*career.Burst
 		for _, burst := range bursts {
