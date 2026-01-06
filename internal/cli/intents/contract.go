@@ -327,3 +327,17 @@ func (b *BaseIntent) IsProgressEnabled() bool {
 func (b *BaseIntent) GetProgress() (title, message string, value float64) {
 	return b.progressTitle, b.progressMessage, b.progressValue
 }
+
+// View Creation Convenience Methods
+
+// CreateView creates a standardized view with logo and automatic state modals.
+// This is a convenience wrapper around CreateStandardView.
+func (b *BaseIntent) CreateView() *components.StandardView {
+	return CreateStandardView(b)
+}
+
+// CreateViewWithBreadcrumbs creates a standardized view with breadcrumb navigation.
+// This is a convenience wrapper around CreateStandardViewWithBreadcrumbs.
+func (b *BaseIntent) CreateViewWithBreadcrumbs(crumbs ...string) *components.StandardView {
+	return CreateStandardViewWithBreadcrumbs(b, crumbs...)
+}
