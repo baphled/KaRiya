@@ -716,6 +716,42 @@ var _ = Describe("BurstManagement Intent", func() {
 			})
 		})
 
+		Context("BurstConfirmedMsg handling", func() {
+			It("should handle BurstConfirmedMsg successfully", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.extractionComplete = false
+
+				msg := BurstConfirmedMsg{
+					Burst: &careerdom.Burst{
+						ID:          "burst-1",
+						Name:        "Test Burst",
+						Confirmed:   true,
+						ConfirmedAt: &[]time.Time{time.Now()}[0],
+					},
+					Error: nil,
+				}
+
+				cmd := intent.Update(msg)
+				Expect(cmd).To(BeNil())
+				Expect(intent.state.confirmError).To(BeNil())
+			})
+
+			It("should handle BurstConfirmedMsg with error", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.confirmError = nil
+
+				expectedErr := errors.New("confirmation failed")
+				msg := BurstConfirmedMsg{
+					Burst: nil,
+					Error: expectedErr,
+				}
+
+				cmd := intent.Update(msg)
+				Expect(cmd).To(BeNil())
+				Expect(intent.state.confirmError).To(Equal(expectedErr))
+			})
+		})
+
 		Context("when facts already exist", func() {
 			var existingFacts []*careerdom.Fact
 
@@ -857,7 +893,7 @@ var _ = Describe("BurstManagement Intent", func() {
 				Expect(len(intent.state.filteredBursts)).To(Equal(originalCount + 1))
 			})
 
-			It("should transition to detail view after confirmation", func() {
+			It("should transition to confirm view and set extractionComplete", func() {
 				intent.state.currentState = BurstStateExtractingFacts
 
 				// Execute confirm
@@ -865,7 +901,7 @@ var _ = Describe("BurstManagement Intent", func() {
 				result := cmd().(BurstConfirmedMsg)
 
 				Expect(result.Error).To(BeNil())
-				Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+				Expect(intent.state.currentState).To(Equal(BurstStateConfirm))
 				Expect(intent.state.extractionComplete).To(BeTrue())
 			})
 		})
