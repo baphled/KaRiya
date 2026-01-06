@@ -25,7 +25,7 @@ var _ = Describe("CVConfigEditorModel", func() {
 		testConfig = &career.CVConfig{
 			Name:           "Test CV",
 			TargetRole:     "senior_ic",
-			TargetAudience: []string{"hiring_manager", "recruiter"},
+			TargetAudience: "hiring_manager",
 			EventFilters:   map[string]interface{}{},
 			CreatedAt:      time.Now().Add(-30 * 24 * time.Hour),
 			UpdatedAt:      time.Now().Add(-30 * 24 * time.Hour),

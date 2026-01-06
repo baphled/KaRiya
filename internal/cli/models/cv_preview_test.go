@@ -25,7 +25,7 @@ var _ = Describe("CVPreviewModel", func() {
 			ID:               uuid.New().String(),
 			Name:             "Senior IC CV",
 			TargetRole:       "senior_ic",
-			TargetAudience:   []string{"hiring_manager", "recruiter"},
+			TargetAudience:   "hiring_manager",
 			GeneratedAt:      time.Now(),
 			SourceEventCount: 15,
 			SourceFactCount:  8,
@@ -38,7 +38,21 @@ var _ = Describe("CVPreviewModel", func() {
 				SectionType: "experience",
 				Title:       "Professional Experience",
 				Order:       0,
-				Content:     "• Led team of 5 engineers\n• Designed and implemented new architecture",
+				Content: []*career.SectionContentGroup{
+					{
+						Header: "Acme Corp",
+						Bullets: []*career.CVBullet{
+							{
+								ID:   uuid.New().String(),
+								Text: "Led team of 5 engineers",
+							},
+							{
+								ID:   uuid.New().String(),
+								Text: "Designed and implemented new architecture",
+							},
+						},
+					},
+				},
 			},
 			{
 				ID:          uuid.New().String(),
@@ -46,7 +60,24 @@ var _ = Describe("CVPreviewModel", func() {
 				SectionType: "skills",
 				Title:       "Core Competencies",
 				Order:       1,
-				Content:     "• Go, Python, Rust\n• System Design\n• Leadership",
+				Content: []*career.SectionContentGroup{
+					{
+						Bullets: []*career.CVBullet{
+							{
+								ID:   uuid.New().String(),
+								Text: "Go, Python, Rust",
+							},
+							{
+								ID:   uuid.New().String(),
+								Text: "System Design",
+							},
+							{
+								ID:   uuid.New().String(),
+								Text: "Leadership",
+							},
+						},
+					},
+				},
 			},
 		}
 
