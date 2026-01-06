@@ -34,6 +34,9 @@ type FilterChangedMsg struct {
 // - Selecting and viewing event details
 // - Returning the selected event or cancelling
 type BrowseTimelineIntent struct {
+	// Embed BaseIntent for terminal awareness, logo, and state management
+	*BaseIntent
+
 	// context is the input context passed to the intent.
 	context *BrowseTimelineContext
 
@@ -54,6 +57,9 @@ type BrowseTimelineIntent struct {
 
 	// result is the final result of the intent (set when complete).
 	result *IntentResult[*BrowseTimelineResult]
+
+	// loadingRotator rotates through browse-specific loading messages
+	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -91,8 +97,20 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 		Bold(true)
 	t.SetStyles(s)
 
+	// Create BaseIntent for terminal awareness and state management
+	base := NewBaseIntent()
+
+	// Create loading message rotator with browse-specific messages
+	loadingRotator := components.NewLoadingMessageRotator([]string{
+		"📅 Loading timeline...",
+		"🔍 Filtering events...",
+		"📊 Organizing career history...",
+		"✨ Preparing event details...",
+	}, 2*time.Second)
+
 	intent := &BrowseTimelineIntent{
-		context: context,
+		BaseIntent: base,
+		context:    context,
 		state: &BrowseTimelineModel{
 			context:        context,
 			currentState:   BrowseStateTimeline,
@@ -102,9 +120,10 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 			selectedFacts:  make([]*career.Fact, 0),
 			viewedEvents:   make([]*career.CareerEvent, 0),
 		},
-		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Browse Timeline", 100),
-		active:        true,
+		table:          &t,
+		listContainer:  components.NewTableListContainer(t, "Browse Timeline", 100),
+		loadingRotator: loadingRotator,
+		active:         true,
 	}
 
 	// Initialize navigation handler
