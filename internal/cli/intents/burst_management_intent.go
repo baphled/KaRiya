@@ -211,57 +211,27 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 	return intent, nil
 }
 
-// formatConfirmedStatus returns a styled confirmed status string with icon and text.
+// formatConfirmedStatus returns a plain text confirmed status string.
+// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
 func (i *BurstManagementIntent) formatConfirmedStatus(confirmed bool) string {
 	if confirmed {
-		// Green checkmark + "Yes"
-		checkmark := lipgloss.NewStyle().
-			Foreground(styles.ColorSuccess).
-			Render("✓")
-		text := lipgloss.NewStyle().
-			Foreground(styles.ColorSuccess).
-			Render("Yes")
-		return checkmark + " " + text
+		return "✓ Yes"
 	}
-	// Gray X + "No"
-	xmark := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
-		Render("✗")
-	text := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
-		Render("No")
-	return xmark + " " + text
+	return "✗ No"
 }
 
-// formatCompetency returns a color-coded competency string based on category.
+// formatCompetency returns a plain text competency string.
+// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
+// Color coding will be handled by table styles instead.
 func (i *BurstManagementIntent) formatCompetency(competency string) string {
 	if competency == "" {
-		return lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
-			Render("-")
+		return "-"
 	}
-
-	// Color mapping for competency categories
-	colorMap := map[string]lipgloss.Color{
-		"technical":  styles.ColorInfo,          // Blue
-		"leadership": styles.ColorAccentPurple,  // Purple
-		"product":    styles.ColorAccentGreen,   // Green
-		"consulting": styles.ColorWarning,       // Orange
-		"research":   styles.ColorAccentTeal,    // Teal
-		"mentoring":  lipgloss.Color("#d99bd1"), // Pink
-	}
-
-	color, ok := colorMap[competency]
-	if !ok {
-		color = styles.ColorTextSecondary // Default gray for unknown
-	}
-
-	return lipgloss.NewStyle().
-		Foreground(color).
-		Render(competency)
+	return competency
 }
 
 // formatDescription returns a truncated description preview (max 35 chars).
+// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
 func (i *BurstManagementIntent) formatDescription(description string) string {
 	desc := strings.TrimSpace(description)
 	// Remove newlines and carriage returns
@@ -269,29 +239,21 @@ func (i *BurstManagementIntent) formatDescription(description string) string {
 	desc = strings.ReplaceAll(desc, "\r", " ")
 
 	if desc == "" {
-		return lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
-			Render("-")
+		return "-"
 	}
 
 	maxLen := 32 // 35 - 3 for "..."
 	if len(desc) > maxLen {
-		return lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Render(desc[:maxLen] + "...")
+		return desc[:maxLen] + "..."
 	}
 
-	return lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		Render(desc)
+	return desc
 }
 
 // formatCreatedDate returns a formatted date string (YYYY-MM-DD).
+// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
 func (i *BurstManagementIntent) formatCreatedDate(createdAt time.Time) string {
-	dateStr := createdAt.Format("2006-01-02")
-	return lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		Render(dateStr)
+	return createdAt.Format("2006-01-02")
 }
 
 // Init is called when the intent is activated.
