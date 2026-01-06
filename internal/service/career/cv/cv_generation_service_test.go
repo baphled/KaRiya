@@ -29,7 +29,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -72,7 +72,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -151,7 +151,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -175,7 +175,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -201,7 +201,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -225,7 +225,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -247,11 +247,11 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			Expect(cv1.ID).NotTo(Equal(cv2.ID))
 		})
 
-		It("should support multiple target audiences", func() {
+		It("should support single target audience", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager", "recruiter", "peer"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -266,14 +266,14 @@ var _ = Describe("DefaultCVGenerationService", func() {
 
 			cv, err := service.GenerateCVFromConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cv.TargetAudience).To(HaveLen(3))
+			Expect(cv.TargetAudience).To(Equal("hiring_manager"))
 		})
 
 		It("should track source event and fact counts", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -301,7 +301,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   filters,
 			}
 
@@ -326,7 +326,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				config := &career.CVConfig{
 					Name:           "test-cv",
 					TargetRole:     role,
-					TargetAudience: []string{"hiring_manager"},
+					TargetAudience: "hiring_manager",
 					EventFilters:   make(map[string]interface{}),
 				}
 
@@ -349,7 +349,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -377,7 +377,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -399,7 +399,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -421,7 +421,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			config := &career.CVConfig{
 				Name:           "test-cv",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   nil,
 			}
 
@@ -648,7 +648,7 @@ func NewEmptyBulletGenerator() *EmptyBulletGenerator {
 	return &EmptyBulletGenerator{}
 }
 
-func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudiences []string) ([]*career.CVBullet, error) {
+func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) ([]*career.CVBullet, error) {
 	return []*career.CVBullet{}, nil
 }
 
@@ -658,6 +658,6 @@ func NewEmptySectionBuilder() *EmptySectionBuilder {
 	return &EmptySectionBuilder{}
 }
 
-func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, targetRole string) ([]*career.CVSection, error) {
+func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string) ([]*career.CVSection, error) {
 	return []*career.CVSection{}, nil
 }

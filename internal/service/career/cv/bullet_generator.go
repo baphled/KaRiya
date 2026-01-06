@@ -5,6 +5,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -15,7 +16,7 @@ import (
 type BulletGenerator interface {
 	// GenerateBullets generates a list of ranked CV bullets from events and facts
 	// Applies inclusion criteria, ranking algorithm, and role/audience-specific filtering
-	GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudiences []string) ([]*career.CVBullet, error)
+	GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) ([]*career.CVBullet, error)
 }
 
 // DefaultBulletGenerator is the default implementation of BulletGenerator
@@ -35,7 +36,7 @@ func NewBulletGenerator(eventRepo careerrepo.Repository, factRepo careerrepo.Fac
 }
 
 // GenerateBullets generates ranked CV bullets from events and facts
-func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudiences []string) ([]*career.CVBullet, error) {
+func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) ([]*career.CVBullet, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -46,13 +47,13 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []
 	}
 
 	// Generate initial bullets from events and facts
-	bullets := bg.generateInitialBullets(events, facts, targetRole, targetAudiences)
+	bullets := bg.generateInitialBullets(events, facts, targetRole, targetAudience)
 
 	// Apply inclusion criteria filtering
 	filteredBullets := bg.filterByInclusionCriteria(bullets, targetRole)
 
 	// Rank the bullets
-	rankedBullets := bg.rankBullets(filteredBullets)
+	rankedBullets := bg.rankBullets(filteredBullets, events)
 
 	// Apply role-specific compression
 	compressedBullets := bg.compressByRole(rankedBullets, targetRole)
@@ -62,7 +63,7 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []
 }
 
 // generateInitialBullets creates initial bullets from events and facts
-func (bg *DefaultBulletGenerator) generateInitialBullets(events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudiences []string) []*career.CVBullet {
+func (bg *DefaultBulletGenerator) generateInitialBullets(events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) []*career.CVBullet {
 	var bullets []*career.CVBullet
 
 	// Generate bullets from facts (higher quality source)
@@ -71,15 +72,21 @@ func (bg *DefaultBulletGenerator) generateInitialBullets(events []*career.Career
 			continue
 		}
 
-		if !bg.isFactRelevantToAudience(fact, targetAudiences) {
+		if !bg.isFactRelevantToAudience(fact, targetAudience) {
 			continue
+		}
+
+		// Populate SourceEventIDs from fact's source event
+		sourceEventIDs := []string{}
+		if fact.SourceEventID != "" {
+			sourceEventIDs = []string{fact.SourceEventID}
 		}
 
 		bullet := &career.CVBullet{
 			ID:              fact.ID,
 			Text:            fact.Text,
 			SourceFactIDs:   []string{fact.ID},
-			SourceEventIDs:  []string{}, // Will be populated from burst associations
+			SourceEventIDs:  sourceEventIDs,
 			InclusionReason: "fact_extraction",
 			Confidence:      0.8,
 		}
@@ -92,7 +99,7 @@ func (bg *DefaultBulletGenerator) generateInitialBullets(events []*career.Career
 			continue
 		}
 
-		if !bg.isEventRelevantToAudience(event, targetAudiences) {
+		if !bg.isEventRelevantToAudience(event, targetAudience) {
 			continue
 		}
 
@@ -151,21 +158,50 @@ func (bg *DefaultBulletGenerator) filterByInclusionCriteria(bullets []*career.CV
 }
 
 // rankBullets ranks bullets using priority-based scoring
-func (bg *DefaultBulletGenerator) rankBullets(bullets []*career.CVBullet) []*career.CVBullet {
+// Sorts by rank (score) first, then by source event date descending (newest first) as tiebreaker
+func (bg *DefaultBulletGenerator) rankBullets(bullets []*career.CVBullet, events []*career.CareerEvent) []*career.CVBullet {
+	// Build event map for date lookup
+	eventMap := make(map[string]*career.CareerEvent)
+	for _, event := range events {
+		eventMap[event.ID] = event
+	}
+
 	// Calculate scores
 	for _, bullet := range bullets {
 		bullet.Rank = bg.calculateBulletScore(bullet)
 	}
 
-	// Sort by rank descending
+	// Sort by rank descending, with date descending as tiebreaker
 	sort.Slice(bullets, func(i, j int) bool {
-		return bullets[i].Rank > bullets[j].Rank
+		// First, compare by rank
+		if bullets[i].Rank != bullets[j].Rank {
+			return bullets[i].Rank > bullets[j].Rank
+		}
+
+		// Tiebreaker: sort by source event date (newest first)
+		// Get dates for both bullets
+		var dateI, dateJ time.Time
+		if len(bullets[i].SourceEventIDs) > 0 {
+			if event, exists := eventMap[bullets[i].SourceEventIDs[0]]; exists {
+				dateI = event.Date
+			}
+		}
+		if len(bullets[j].SourceEventIDs) > 0 {
+			if event, exists := eventMap[bullets[j].SourceEventIDs[0]]; exists {
+				dateJ = event.Date
+			}
+		}
+
+		// Newer dates (later in time) come first
+		return dateI.After(dateJ)
 	})
 
 	return bullets
 }
 
 // calculateBulletScore calculates a bullet's priority score
+// Note: This is called BEFORE section building, so we don't have access to events here
+// The scoring must be based solely on bullet properties
 func (bg *DefaultBulletGenerator) calculateBulletScore(bullet *career.CVBullet) float64 {
 	baseScore := 0.5
 
@@ -186,6 +222,13 @@ func (bg *DefaultBulletGenerator) calculateBulletScore(bullet *career.CVBullet) 
 		baseScore += float64(sourceCount-1) * 0.1 // Bonus for multiple sources
 	}
 
+	// IMPORTANT: Bullets with source events are more valuable because they can be
+	// grouped by company/project in the experience section
+	// Bullets without source events can only go in standalone sections
+	if len(bullet.SourceEventIDs) > 0 {
+		baseScore += 0.15 // Significant bonus for having source events
+	}
+
 	return math.Min(baseScore, 1.0) // Cap at 1.0
 }
 
@@ -204,18 +247,20 @@ func (bg *DefaultBulletGenerator) compressByRole(bullets []*career.CVBullet, tar
 }
 
 // getBulletCapForRole returns the maximum number of bullets for a role
+// These are total bullets across ALL companies/sections, not per company
+// Set generously to ensure good facts aren't filtered out before section building
 func (bg *DefaultBulletGenerator) getBulletCapForRole(targetRole string) int {
 	switch strings.ToLower(targetRole) {
 	case "principal":
-		return 4
+		return 50 // Allow all high-quality principal facts through
 	case "staff":
-		return 5
+		return 40
 	case "em":
-		return 4
+		return 40
 	case "senior_ic":
-		return 5
+		return 40
 	default:
-		return 5 // Default cap
+		return 30 // Default cap
 	}
 }
 
@@ -239,8 +284,8 @@ func (bg *DefaultBulletGenerator) isEventRelevantToRole(event *career.CareerEven
 }
 
 // isEventRelevantToAudience checks if an event is relevant to an audience
-func (bg *DefaultBulletGenerator) isEventRelevantToAudience(event *career.CareerEvent, audiences []string) bool {
-	if len(audiences) == 0 {
+func (bg *DefaultBulletGenerator) isEventRelevantToAudience(event *career.CareerEvent, audience string) bool {
+	if audience == "" {
 		return true // All audiences relevant if not specified
 	}
 
@@ -251,13 +296,14 @@ func (bg *DefaultBulletGenerator) isEventRelevantToAudience(event *career.Career
 
 // isFactRelevantToRole checks if a fact is relevant to a role
 func (bg *DefaultBulletGenerator) isFactRelevantToRole(fact *career.Fact, targetRole string) bool {
-	// Facts are generally relevant to all roles
-	return true
+	// Match facts to target role based on role_fit field
+	// This ensures a principal CV only includes principal-level facts
+	return string(fact.RoleFit) == targetRole
 }
 
 // isFactRelevantToAudience checks if a fact is relevant to an audience
-func (bg *DefaultBulletGenerator) isFactRelevantToAudience(fact *career.Fact, audiences []string) bool {
-	if len(audiences) == 0 {
+func (bg *DefaultBulletGenerator) isFactRelevantToAudience(fact *career.Fact, audience string) bool {
+	if audience == "" {
 		return true
 	}
 

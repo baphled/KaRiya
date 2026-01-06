@@ -81,7 +81,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	svc.logger.Info("Starting CV generation for role %s with %d audiences", config.TargetRole, len(config.TargetAudience))
+	svc.logger.Info("Starting CV generation for role %s with audience %s", config.TargetRole, config.TargetAudience)
 
 	// Retrieve events with filters
 	events, err := svc.retrieveEventsWithFilters(ctx, config.EventFilters)
@@ -122,7 +122,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 	svc.logger.Info("Generated %d bullets from %d events and %d facts", len(bullets), len(events), len(facts))
 
 	// Build sections using SectionBuilder
-	sections, err := svc.sectionBuilder.BuildSections(ctx, bullets, events, config.TargetRole)
+	sections, err := svc.sectionBuilder.BuildSections(ctx, bullets, events, facts, config.TargetRole)
 	if err != nil {
 		svc.logger.Error("Failed to build sections: %v", err)
 		return nil, fmt.Errorf("failed to build sections: %w", err)
@@ -148,9 +148,11 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 
 // retrieveEventsWithFilters retrieves events based on filter criteria
 func (svc *DefaultCVGenerationService) retrieveEventsWithFilters(ctx context.Context, filters map[string]interface{}) ([]*career.CareerEvent, error) {
-	// For now, return all events - filtering can be enhanced later
-	// In a production system, this would apply date range, tag, company, and category filters
-	events, err := svc.eventRepo.List(ctx, careerrepo.ListFilters{})
+	// Return all events for CV generation
+	// Use a high limit to ensure we get all events (repository defaults to 100)
+	events, err := svc.eventRepo.List(ctx, careerrepo.ListFilters{
+		Limit: 10000, // High enough to get all events
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list events: %w", err)
 	}
