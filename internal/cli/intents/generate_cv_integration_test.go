@@ -66,26 +66,26 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 		// Create test events
 		testEvents = []*career.CareerEvent{
 			{
-				ID:        "event_1",
-				Text:      "Led team standup meetings and improved communication across the team",
-				Date:      time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC),
-				Company:   "Acme Corp",
-				Project:   "Project Alpha",
-				Tags:      []string{"leadership", "communication"},
+				ID:         "event_1",
+				Text:       "Led team standup meetings and improved communication across the team",
+				Date:       time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC),
+				Company:    "Acme Corp",
+				Project:    "Project Alpha",
+				Tags:       []string{"leadership", "communication"},
 				Categories: []string{"team_management"},
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
 			},
 			{
-				ID:        "event_2",
-				Text:      "Implemented new code review process that reduced review time",
-				Date:      time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC),
-				Company:   "Acme Corp",
-				Project:   "Project Alpha",
-				Tags:      []string{"engineering", "process"},
+				ID:         "event_2",
+				Text:       "Implemented new code review process that reduced review time",
+				Date:       time.Date(2025, 12, 10, 0, 0, 0, 0, time.UTC),
+				Company:    "Acme Corp",
+				Project:    "Project Alpha",
+				Tags:       []string{"engineering", "process"},
 				Categories: []string{"technical_excellence"},
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
 			},
 		}
 
@@ -167,7 +167,6 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 		})
-
 
 		It("should NOT return to menu when navigating profiles", func() {
 			// This is the FAILING TEST that reproduces the bug
@@ -320,7 +319,7 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 			// Before completing, result should be nil
 			result := intent.Result()
 			Expect(result).To(BeNil())
-			
+
 			// Transition through states
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -350,4 +349,3 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 		})
 	})
 })
-

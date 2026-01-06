@@ -50,7 +50,7 @@ func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
 		data:          data,
 		table:         &t,
 		listContainer: components.NewTableListContainer(t, "Manage Facts", 100),
-		result: nil,
+		result:        nil,
 	}
 }
 

@@ -142,7 +142,7 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 func (i *BurstManagementIntent) Init() tea.Cmd {
 	// Load bursts from repository
 	_ = i.context.LoadBursts()
-	
+
 	// Initialize filtered bursts with the provided bursts.
 	i.state.filteredBursts = i.context.Bursts
 	if len(i.state.filteredBursts) > 0 {

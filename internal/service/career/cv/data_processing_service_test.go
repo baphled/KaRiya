@@ -9,9 +9,7 @@ import (
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
-	
 )
-
 
 var _ = Describe("DataProcessingService", func() {
 	var (
@@ -469,4 +467,3 @@ var _ = Describe("DataProcessingService", func() {
 		})
 	})
 })
-

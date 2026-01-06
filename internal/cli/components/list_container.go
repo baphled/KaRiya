@@ -7,12 +7,12 @@ import (
 
 // ListContainer displays a table-based list and ensures compatibility with Bubble Tea components.
 type ListContainer struct {
-	table         table.Model
-	emptyMessage  string
-	items         []string
-	hasPagination bool
+	table           table.Model
+	emptyMessage    string
+	items           []string
+	hasPagination   bool
 	hasEmptyMessage bool
-	paginationInfo string
+	paginationInfo  string
 }
 
 // NewListContainer initializes a ListContainer instance with default configurations.

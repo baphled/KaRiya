@@ -18,10 +18,10 @@ import (
 
 var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 	var (
-		log       *logger.Logger
-		ctx       context.Context
-		homeDir   string
-		dbPath    string
+		log     *logger.Logger
+		ctx     context.Context
+		homeDir string
+		dbPath  string
 	)
 
 	BeforeEach(func() {
@@ -389,4 +389,3 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 		})
 	})
 })
-

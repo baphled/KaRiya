@@ -1,9 +1,9 @@
 package intents
 
 import (
-	"time"
 	"context"
 	"errors"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -189,7 +189,6 @@ type CVGenerationCompleteMsg struct {
 	CV    *career.CVView
 	Error error
 }
-
 
 // Export-related types
 

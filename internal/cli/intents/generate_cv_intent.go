@@ -127,6 +127,7 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 	}
 	return nil
 }
+
 // updateSelectAudience handles messages while selecting audience(s).
 func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -673,17 +674,17 @@ func (i *GenerateCVIntent) updateExportComplete(msg tea.Msg) tea.Cmd {
 					SelectedProfile: i.state.selectedProfile,
 					AcceptedFields:  make(map[string]bool),
 					ExportPath:      i.state.exportedPath,
-					CVExportFormat:    string(i.state.selectedExportFormat),
+					CVExportFormat:  string(i.state.selectedExportFormat),
 					ExportedAt:      &now,
 				},
 				Metadata: map[string]interface{}{
-					"profile":          i.state.selectedProfile.ID,
-					"audiences":        strings.Join(i.state.selectedAudiences, ","),
-					"export_format":    string(i.state.selectedExportFormat),
-					"export_location":  i.state.exportedPath,
-					"timestamp":        time.Now(),
-					"event_count":      len(i.context.Events),
-					"fact_count":       len(i.context.Facts),
+					"profile":         i.state.selectedProfile.ID,
+					"audiences":       strings.Join(i.state.selectedAudiences, ","),
+					"export_format":   string(i.state.selectedExportFormat),
+					"export_location": i.state.exportedPath,
+					"timestamp":       time.Now(),
+					"event_count":     len(i.context.Events),
+					"fact_count":      len(i.context.Facts),
 				},
 			}
 			i.active = false
