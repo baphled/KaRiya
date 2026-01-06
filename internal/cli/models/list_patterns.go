@@ -293,12 +293,12 @@ func (lnkh *ListNavigationKeyHandler) HandleNavigationKey(keyStr string) tea.Cmd
 		lnkh.itemCallbacks.UpdateDisplay()
 		// Return a command to prevent table from processing this key
 		return func() tea.Msg { return nil }
-	case "pgup", "ctrl+b":
+	case "pgup", "ctrl+u":
 		lnkh.itemCallbacks.PrevPage()
 		lnkh.itemCallbacks.UpdateDisplay()
 		// Return a command to prevent table from processing this key
 		return func() tea.Msg { return nil }
-	case "pgdn", "ctrl+f":
+	case "pgdn", "ctrl+d":
 		lnkh.itemCallbacks.NextPage()
 		lnkh.itemCallbacks.UpdateDisplay()
 		// Return a command to prevent table from processing this key

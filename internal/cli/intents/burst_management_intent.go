@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/table"
@@ -39,6 +40,9 @@ type BurstManagementIntent struct {
 
 	// listContainer provides table-based list UI
 	listContainer *components.TableListContainer
+
+	// navHandler centralizes navigation logic
+	navHandler *navigation.ListNavigationHandler
 
 	// active indicates whether this intent is currently active.
 	active bool
@@ -134,6 +138,7 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		listContainer: components.NewTableListContainer(t, "Manage Bursts", 100),
 		active:        true,
 	}
+	intent.navHandler = navigation.NewListNavigationHandler(intent)
 
 	return intent, nil
 }
@@ -176,12 +181,8 @@ func (i *BurstManagementIntent) updateTableRows() {
 		realIdx := start + idx
 		nameStr := burst.Name
 
-		// Visual indicator for the actual selected burst across all bursts
-		if realIdx == i.state.selectedIndex {
-			nameStr = "▶ " + nameStr
-		} else {
-			nameStr = "  " + nameStr
-		}
+		// Use navigation handler to format row text with indicator
+		nameStr = i.navHandler.FormatRowText(realIdx, nameStr)
 
 		competency := burst.CompetencyFocus
 		if competency == "" {
@@ -194,13 +195,16 @@ func (i *BurstManagementIntent) updateTableRows() {
 
 	i.table.SetRows(rows)
 
-	// Set table cursor relative to page
-	if i.state.selectedIndex >= start && i.state.selectedIndex < end {
-		i.table.SetCursor(i.state.selectedIndex - start)
-	} else if len(rows) > 0 {
-		i.table.SetCursor(0)
-	}
+	// Calculate relative cursor for current page
+	relativeCursor := i.state.selectedIndex - start
 
+	// Set table cursor (for visual highlighting)
+	i.table.SetCursor(relativeCursor)
+
+	// Sync container's index to match (critical for rendering)
+	i.listContainer.SetSelectedIdx(relativeCursor)
+
+	// Update container with modified table
 	i.listContainer.SetTable(*i.table)
 }
 
@@ -225,89 +229,17 @@ func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		pageSize := 15
-		total := len(i.state.filteredBursts)
+		// Try navigation handler first
+		if i.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			// Select current burst and move to detail view.
-			if len(i.state.filteredBursts) > 0 {
-				// Set selectedIndex relative to absolute index across all bursts
-				cursor := i.table.Cursor()
-				page := 0
-				if pageSize > 0 && i.state.selectedIndex >= 0 {
-					page = i.state.selectedIndex / pageSize
-				}
-				absoluteIndex := page*pageSize + cursor
-				if absoluteIndex < len(i.state.filteredBursts) {
-					i.state.selectedIndex = absoluteIndex
-					i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
-					i.state.viewedBursts = append(i.state.viewedBursts, i.state.selectedBurst)
-					i.state.currentState = BurstStateDetail
-				}
-			}
-			return nil
-
-		case "up", "k":
-			if i.state.selectedIndex > 0 {
-				i.state.selectedIndex--
-			}
-			i.updateTableRows()
-			if len(i.state.filteredBursts) > 0 {
-				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
-			}
-			return nil
-
-		case "down", "j":
-			if i.state.selectedIndex < total-1 {
-				i.state.selectedIndex++
-			}
-			i.updateTableRows()
-			if len(i.state.filteredBursts) > 0 {
-				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
-			}
-			return nil
-
-		case "pgup", "b":
-			newIndex := i.state.selectedIndex - pageSize
-			if newIndex < 0 {
-				newIndex = 0
-			}
-			i.state.selectedIndex = newIndex
-			i.updateTableRows()
-			if len(i.state.filteredBursts) > 0 && i.state.selectedIndex < len(i.state.filteredBursts) {
-				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
-			}
-			return nil
-
-		case "pgdn", "f":
-			newIndex := i.state.selectedIndex + pageSize
-			if newIndex >= total {
-				newIndex = total - 1
-			}
-			if newIndex < 0 {
-				newIndex = 0
-			}
-			i.state.selectedIndex = newIndex
-			i.updateTableRows()
-			if len(i.state.filteredBursts) > 0 && i.state.selectedIndex < len(i.state.filteredBursts) {
-				i.state.selectedBurst = i.state.filteredBursts[i.state.selectedIndex]
-			}
-			return nil
-
-		case "home", "g":
-			if len(i.state.filteredBursts) > 0 {
-				i.state.selectedIndex = 0
-				i.updateTableRows()
-				i.state.selectedBurst = i.state.filteredBursts[0]
-			}
-			return nil
-
-		case "end", "G":
-			if len(i.state.filteredBursts) > 0 {
-				lastIndex := len(i.state.filteredBursts) - 1
-				i.state.selectedIndex = lastIndex
-				i.updateTableRows()
-				i.state.selectedBurst = i.state.filteredBursts[lastIndex]
+			if len(i.state.filteredBursts) > 0 && i.state.selectedBurst != nil {
+				i.state.viewedBursts = append(i.state.viewedBursts, i.state.selectedBurst)
+				i.state.currentState = BurstStateDetail
 			}
 			return nil
 
@@ -498,6 +430,27 @@ func (i *BurstManagementIntent) Result() *IntentResult[interface{}] {
 		Error:    i.result.Error,
 		Metadata: i.result.Metadata,
 	}
+}
+
+// ListNavigator interface implementation
+func (i *BurstManagementIntent) GetTotalItems() int {
+	return len(i.state.filteredBursts)
+}
+
+func (i *BurstManagementIntent) GetSelectedIndex() int {
+	return i.state.selectedIndex
+}
+
+func (i *BurstManagementIntent) SetSelectedIndex(idx int) {
+	i.state.selectedIndex = idx
+	if idx >= 0 && idx < len(i.state.filteredBursts) {
+		i.state.selectedBurst = i.state.filteredBursts[idx]
+	}
+	i.updateTableRows()
+}
+
+func (i *BurstManagementIntent) GetPageSize() int {
+	return 15
 }
 
 // Helper methods for result management.

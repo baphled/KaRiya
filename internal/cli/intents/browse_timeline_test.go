@@ -465,8 +465,8 @@ var _ = Describe("BrowseTimelineIntent", func() {
 		})
 
 		It("should update table rows when navigating to next page", func() {
-			// Navigate to page 2 using pgdn key
-			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			// Navigate to page 2 using ctrl+d key
+			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
 
 			// Verify we're on page 2
 			view := manyEventsIntent.View()
@@ -482,9 +482,9 @@ var _ = Describe("BrowseTimelineIntent", func() {
 		})
 
 		It("should update table rows when navigating to last page", func() {
-			// Navigate to page 3 using pgdn twice
-			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
-			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			// Navigate to page 3 using ctrl+d twice
+			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
+			manyEventsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
 
 			// Verify we're on page 3
 			view := manyEventsIntent.View()

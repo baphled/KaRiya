@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/table"
@@ -44,6 +45,9 @@ type BrowseTimelineIntent struct {
 
 	// listContainer provides table-based list UI
 	listContainer *components.TableListContainer
+
+	// navHandler handles list navigation
+	navHandler *navigation.ListNavigationHandler
 
 	// active indicates whether this intent is currently active.
 	active bool
@@ -103,6 +107,9 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 		active:        true,
 	}
 
+	// Initialize navigation handler
+	intent.navHandler = navigation.NewListNavigationHandler(intent)
+
 	return intent, nil
 }
 
@@ -140,14 +147,10 @@ func (i *BrowseTimelineIntent) updateTableRows() {
 	rows := make([]table.Row, 0, len(pageEvents))
 	for idx, event := range pageEvents {
 		realIdx := start + idx
-		dateStr := event.Date.Format("2006-01-02")
 
-		// Add visual indicator for selected row
-		if realIdx == i.state.selectedIndex {
-			dateStr = "▶ " + dateStr
-		} else {
-			dateStr = "  " + dateStr
-		}
+		// Use centralized indicator formatting
+		dateStr := i.navHandler.FormatRowText(realIdx, event.Date.Format("2006-01-02"))
+
 		// Truncate text to first 50 chars
 		text := event.Text
 		if len(text) > 50 {
@@ -162,13 +165,22 @@ func (i *BrowseTimelineIntent) updateTableRows() {
 
 	i.table.SetRows(rows)
 
-	// Set table cursor relative to page
+	// Calculate relative cursor position for this page
+	relativeCursor := 0
 	if i.state.selectedIndex >= start && i.state.selectedIndex < end {
-		i.table.SetCursor(i.state.selectedIndex - start)
-	} else if len(rows) > 0 {
-		i.table.SetCursor(0)
+		relativeCursor = i.state.selectedIndex - start
 	}
 
+	// Set table cursor to relative position within the page
+	// This makes the table highlight the correct row with its Selected style
+	i.table.SetCursor(relativeCursor)
+
+	// Sync the container's selectedIdx to match our relative cursor
+	// This ensures SetTable() will push the correct cursor position to the table
+	i.listContainer.SetSelectedIdx(relativeCursor)
+
+	// Update the container with the modified table
+	// This will call validateAndSyncIdx() which will use our relative cursor position
 	i.listContainer.SetTable(*i.table)
 }
 
@@ -193,88 +205,21 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Try navigation handler first
+		if i.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
+		// Handle non-navigation keys
 		switch msg.String() {
 		case "enter":
 			// Select current event and move to detail view.
 			if len(i.state.filteredEvents) > 0 {
-				i.state.selectedIndex = i.table.Cursor()
 				if i.state.selectedIndex < len(i.state.filteredEvents) {
 					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
 					i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
 					i.state.currentState = BrowseStateEventDetail
 				}
-			}
-			return nil
-
-		case "up", "k":
-			// Move selection up.
-			if i.state.selectedIndex > 0 {
-				i.state.selectedIndex--
-				if len(i.state.filteredEvents) > 0 {
-					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-				}
-			}
-			i.updateTableRows()
-			return nil
-
-		case "down", "j":
-			// Move selection down.
-			if i.state.selectedIndex < len(i.state.filteredEvents)-1 {
-				i.state.selectedIndex++
-				if len(i.state.filteredEvents) > 0 {
-					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-				}
-			}
-			i.updateTableRows()
-			return nil
-
-		case "pgup", "b":
-			// Page up (move up by page height).
-			pageSize := 15
-			newIndex := i.state.selectedIndex - pageSize
-			if newIndex < 0 {
-				newIndex = 0
-			}
-			i.state.selectedIndex = newIndex
-			if len(i.state.filteredEvents) > 0 && i.state.selectedIndex < len(i.state.filteredEvents) {
-				i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-			}
-			i.updateTableRows()
-			return nil
-
-		case "pgdn", "f":
-			// Page down (move down by page height).
-			pageSize := 15
-			newIndex := i.state.selectedIndex + pageSize
-			if newIndex >= len(i.state.filteredEvents) {
-				newIndex = len(i.state.filteredEvents) - 1
-			}
-			if newIndex < 0 {
-				newIndex = 0
-			}
-			i.state.selectedIndex = newIndex
-			if len(i.state.filteredEvents) > 0 && i.state.selectedIndex < len(i.state.filteredEvents) {
-				i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-			}
-			i.updateTableRows()
-			return nil
-
-		case "home", "g":
-			// Go to first event.
-			if len(i.state.filteredEvents) > 0 {
-				i.state.selectedIndex = 0
-				i.state.selectedEvent = i.state.filteredEvents[0]
-				i.updateTableRows()
-			}
-			return nil
-
-		case "end", "G":
-			// Go to last event.
-			if len(i.state.filteredEvents) > 0 {
-				lastIndex := len(i.state.filteredEvents) - 1
-				i.state.selectedIndex = lastIndex
-				i.state.selectedEvent = i.state.filteredEvents[lastIndex]
-				i.updateTableRows()
 			}
 			return nil
 
@@ -545,4 +490,46 @@ func (i *BrowseTimelineIntent) setFailed(code, message string, cause error) {
 		},
 	}
 	i.active = false
+}
+
+// ListNavigator interface implementation
+
+// GetTotalItems returns the total number of filtered events.
+func (i *BrowseTimelineIntent) GetTotalItems() int {
+	return len(i.state.filteredEvents)
+}
+
+// GetSelectedIndex returns the current selection index.
+func (i *BrowseTimelineIntent) GetSelectedIndex() int {
+	return i.state.selectedIndex
+}
+
+// SetSelectedIndex sets the selection index and updates the display.
+// This is the single source of truth for selection state.
+func (i *BrowseTimelineIntent) SetSelectedIndex(idx int) {
+	// Validate and set index
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(i.state.filteredEvents) {
+		idx = len(i.state.filteredEvents) - 1
+	}
+	if idx < 0 {
+		idx = 0 // Handle empty list
+	}
+
+	i.state.selectedIndex = idx
+
+	// Update selected event
+	if idx >= 0 && idx < len(i.state.filteredEvents) {
+		i.state.selectedEvent = i.state.filteredEvents[idx]
+	}
+
+	// Update table display
+	i.updateTableRows()
+}
+
+// GetPageSize returns the page size for pagination.
+func (i *BrowseTimelineIntent) GetPageSize() int {
+	return 15
 }

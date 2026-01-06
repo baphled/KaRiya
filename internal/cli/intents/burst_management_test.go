@@ -169,8 +169,8 @@ var _ = Describe("BurstManagement Intent", func() {
 		})
 
 		It("should update table rows when navigating to next page", func() {
-			// Navigate to page 2 using f key (pgdn)
-			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			// Navigate to page 2 using ctrl+d key (pgdn)
+			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
 
 			// Verify we're on page 2
 			view := manyBurstsIntent.View()
@@ -186,9 +186,9 @@ var _ = Describe("BurstManagement Intent", func() {
 		})
 
 		It("should update table rows when navigating to last page", func() {
-			// Navigate to page 3 using f key twice
-			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
-			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			// Navigate to page 3 using ctrl+d key twice
+			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
+			manyBurstsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
 
 			// Verify we're on page 3
 			view := manyBurstsIntent.View()
