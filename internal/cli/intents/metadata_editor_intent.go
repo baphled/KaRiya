@@ -13,7 +13,7 @@ type MetadataEditorModel struct {
 
 func NewMetadataEditorIntent(data *MetadataEditorContext) *MetadataEditorModel {
 	return &MetadataEditorModel{
-		data: data,
+		data:   data,
 		result: nil,
 	}
 }
@@ -50,10 +50,10 @@ func (m *MetadataEditorModel) View() string {
 }
 
 func (m *MetadataEditorModel) Result() *IntentResult[interface{}] {
+	// Return nil when intent hasn't completed yet
+	// Only return non-nil result when the intent has explicitly completed
 	if m.result == nil {
-		return &IntentResult[interface{}]{
-			Status: Cancelled,
-		}
+		return nil
 	}
 	return &IntentResult[interface{}]{
 		Status: m.result.Status,

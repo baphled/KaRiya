@@ -90,8 +90,14 @@ func (c *FactManagementContext) LoadFacts() error {
 	c.Facts = facts
 	c.TotalFacts = len(facts)
 	c.CurrentPage = 0
-	c.SelectedFactIndex = -1
-	c.SelectedFact = nil
+	// Initialize to 0 instead of -1 to fix pagination off-by-one error
+	if len(facts) > 0 {
+		c.SelectedFactIndex = 0
+		c.SelectedFact = facts[0]
+	} else {
+		c.SelectedFactIndex = -1
+		c.SelectedFact = nil
+	}
 	return nil
 }
 
