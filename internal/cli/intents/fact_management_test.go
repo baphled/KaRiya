@@ -2,9 +2,9 @@ package intents
 
 import (
 	"context"
-	"time"
 	"errors"
 	"fmt"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -170,16 +170,25 @@ var _ = Describe("FactManagement Intent", func() {
 	})
 
 	Describe("Result Handling", func() {
-		It("should return result", func() {
+		It("should return nil when intent has not completed", func() {
+			// Before the intent is completed, Result() should return nil
+			result := model.Result()
+			Expect(result).To(BeNil())
+		})
+
+		It("should return result when intent is cancelled", func() {
+			// Simulate cancelling the intent by pressing 'q'
+			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
 			result := model.Result()
 			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Cancelled))
 		})
 	})
 })
 
 var _ = Describe("Pagination", func() {
 	var (
-		ctx context.Context
+		ctx             context.Context
 		manyFactsIntent *FactManagementModel
 		manyFactsRepo   *MockFactRepository
 	)
@@ -205,51 +214,51 @@ var _ = Describe("Pagination", func() {
 		manyFactsIntent.Init()
 	})
 
-		It("should display correct facts on first page", func() {
-			// Verify we're on page 1
-			view := manyFactsIntent.View()
-			Expect(view).To(ContainSubstring("Page 1 of 3"))
+	It("should display correct facts on first page", func() {
+		// Verify we're on page 1
+		view := manyFactsIntent.View()
+		Expect(view).To(ContainSubstring("Page 1 of 3"))
 
-			// Verify table shows first 15 facts
-			rows := manyFactsIntent.table.Rows()
-			Expect(len(rows)).To(Equal(15))
-		})
-
-		It("should update table rows when navigating to next page", func() {
-			// Navigate to page 2 using f key (pgdn)
-			manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
-
-			// Verify we're on page 2
-			view := manyFactsIntent.View()
-			Expect(view).To(ContainSubstring("Page 2 of 3"))
-
-			// Verify the selected index is now in the second page range
-			Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(15))
-
-			// FAILING TEST: Verify table shows the correct facts for page 2
-			// Currently the table shows ALL facts (all 35 rows) instead of just the current page (15 rows)
-			rows := manyFactsIntent.table.Rows()
-			Expect(len(rows)).To(Equal(15), "Table should show only 15 facts for page 2, but shows %d facts", len(rows))
-		})
-
-		It("should update table rows when navigating to last page", func() {
-			// Navigate to page 3 using f key twice
-			manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
-			manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
-
-			// Verify we're on page 3
-			view := manyFactsIntent.View()
-			Expect(view).To(ContainSubstring("Page 3 of 3"))
-
-			// Verify the selected index is now in the third page range
-			Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(30))
-
-			// FAILING TEST: Verify table shows the correct facts for page 3
-			// Currently the table shows ALL facts (all 35 rows) instead of just the current page (5 rows)
-			rows := manyFactsIntent.table.Rows()
-			Expect(len(rows)).To(Equal(5), "Table should show only 5 facts for page 3, but shows %d facts", len(rows))
-		})
+		// Verify table shows first 15 facts
+		rows := manyFactsIntent.table.Rows()
+		Expect(len(rows)).To(Equal(15))
 	})
+
+	It("should update table rows when navigating to next page", func() {
+		// Navigate to page 2 using f key (pgdn)
+		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+		// Verify we're on page 2
+		view := manyFactsIntent.View()
+		Expect(view).To(ContainSubstring("Page 2 of 3"))
+
+		// Verify the selected index is now in the second page range
+		Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(15))
+
+		// FAILING TEST: Verify table shows the correct facts for page 2
+		// Currently the table shows ALL facts (all 35 rows) instead of just the current page (15 rows)
+		rows := manyFactsIntent.table.Rows()
+		Expect(len(rows)).To(Equal(15), "Table should show only 15 facts for page 2, but shows %d facts", len(rows))
+	})
+
+	It("should update table rows when navigating to last page", func() {
+		// Navigate to page 3 using f key twice
+		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+		// Verify we're on page 3
+		view := manyFactsIntent.View()
+		Expect(view).To(ContainSubstring("Page 3 of 3"))
+
+		// Verify the selected index is now in the third page range
+		Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(30))
+
+		// FAILING TEST: Verify table shows the correct facts for page 3
+		// Currently the table shows ALL facts (all 35 rows) instead of just the current page (5 rows)
+		rows := manyFactsIntent.table.Rows()
+		Expect(len(rows)).To(Equal(5), "Table should show only 5 facts for page 3, but shows %d facts", len(rows))
+	})
+})
 
 // Pagination Describe ends here -- removed extra closing brace
 

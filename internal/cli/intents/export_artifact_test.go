@@ -170,14 +170,14 @@ var _ = Describe("ExportArtifact Intent", func() {
 	})
 
 	Describe("View Rendering - Preview State", func() {
-	BeforeEach(func() {
-		var err error
-		intent, err = NewExportArtifactIntent(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		intent.Init()
-		intent.SetState(ExportStatePreview)
-		intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
-	})
+		BeforeEach(func() {
+			var err error
+			intent, err = NewExportArtifactIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+			intent.SetState(ExportStatePreview)
+			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+		})
 
 		It("should render Preview view", func() {
 			view := intent.View()
@@ -522,8 +522,17 @@ var _ = Describe("ExportArtifact Intent", func() {
 			intent.Init()
 		})
 
-		It("should return Cancelled when no result set", func() {
+		It("should return nil when no result set", func() {
+			// Before the intent is completed, Result() should return nil
 			result := intent.Result()
+			Expect(result).To(BeNil())
+		})
+
+		It("should return Cancelled when intent is cancelled", func() {
+			// Simulate cancelling the intent by pressing Escape
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			result := intent.Result()
+			Expect(result).NotTo(BeNil())
 			Expect(result.Status).To(Equal(Cancelled))
 		})
 

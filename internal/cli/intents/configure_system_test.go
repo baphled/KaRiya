@@ -411,8 +411,17 @@ var _ = Describe("ConfigureSystem Intent", func() {
 			intent.Init()
 		})
 
-		It("should return Cancelled when no result set", func() {
+		It("should return nil when no result set", func() {
+			// Before the intent is completed, Result() should return nil
 			result := intent.Result()
+			Expect(result).To(BeNil())
+		})
+
+		It("should return Cancelled when intent is cancelled", func() {
+			// Simulate cancelling the intent by pressing Escape
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			result := intent.Result()
+			Expect(result).NotTo(BeNil())
 			Expect(result.Status).To(Equal(Cancelled))
 		})
 

@@ -43,6 +43,8 @@ func (c *ConfigureSystemIntent) View() string {
 
 // Result returns the intent result
 func (c *ConfigureSystemIntent) Result() *IntentResult[interface{}] {
+	// Return nil when intent hasn't completed yet
+	// Only return non-nil result when the intent has explicitly completed
 	return c.model.Result()
 }
 

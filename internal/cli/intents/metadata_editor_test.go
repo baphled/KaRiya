@@ -178,9 +178,18 @@ var _ = Describe("MetadataEditor Intent", func() {
 	})
 
 	Describe("Result Handling", func() {
-		It("should return result", func() {
+		It("should return nil when intent has not completed", func() {
+			// Before the intent is completed, Result() should return nil
+			result := model.Result()
+			Expect(result).To(BeNil())
+		})
+
+		It("should return result when intent is cancelled", func() {
+			// Simulate cancelling the intent by pressing 'q'
+			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
 			result := model.Result()
 			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Cancelled))
 		})
 	})
 })
