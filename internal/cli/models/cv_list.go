@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -171,15 +170,15 @@ func (m *CVListModel) updateTableRows() {
 			name = "  " + name
 		}
 
-		audiences := strings.Join(cv.TargetAudience, ", ")
-		if len(audiences) > 18 {
-			audiences = audiences[:15] + "..."
+		audience := cv.TargetAudience
+		if len(audience) > 18 {
+			audience = audience[:15] + "..."
 		}
 
 		row := table.Row{
 			name,
 			cv.TargetRole,
-			audiences,
+			audience,
 			fmt.Sprintf("%d", cv.SourceEventCount),
 			cv.GeneratedAt.Format("2006-01-02 15:04"),
 		}
