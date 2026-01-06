@@ -46,7 +46,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"tags": []string{"technical"},
 				},
@@ -69,7 +69,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config1 := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 
 			err := manager.SaveConfig(ctx, config1)
@@ -87,7 +87,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 			// Update with new data
 			loaded.TargetRole = "principal"
-			loaded.TargetAudience = []string{"recruiter"}
+			loaded.TargetAudience = "recruiter"
 
 			err = manager.SaveConfig(ctx, loaded)
 			Expect(err).NotTo(HaveOccurred())
@@ -96,7 +96,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			reloaded, err := manager.LoadConfig(ctx, "test-config")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(reloaded.TargetRole).To(Equal("principal"))
-			Expect(reloaded.TargetAudience).To(Equal([]string{"recruiter"}))
+			Expect(reloaded.TargetAudience).To(Equal("recruiter"))
 			// CreatedAt should be approximately the same (within 1 second)
 			Expect(reloaded.CreatedAt.Sub(createdAtBefore).Abs()).To(BeNumerically("<", time.Second))
 		})
@@ -123,7 +123,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 
 			err := manager.SaveConfig(ctx, config)
@@ -138,7 +138,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 
 			// Count temp files before
@@ -162,7 +162,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager", "recruiter"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"tags": []string{"technical", "leadership"},
 				},
@@ -175,8 +175,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(loaded.Name).To(Equal("test-config"))
 			Expect(loaded.TargetRole).To(Equal("principal"))
-			Expect(loaded.TargetAudience).To(ContainElement("hiring_manager"))
-			Expect(loaded.TargetAudience).To(ContainElement("recruiter"))
+			Expect(loaded.TargetAudience).To(Equal("hiring_manager"))
 			Expect(loaded.EventFilters).NotTo(BeNil())
 		})
 
@@ -199,7 +198,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 
 			manager.SaveConfig(context.Background(), config)
@@ -217,7 +216,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 
 			manager.SaveConfig(ctx, config)
@@ -259,17 +258,17 @@ var _ = Describe("YAMLConfigManager", func() {
 				{
 					Name:           "config1",
 					TargetRole:     "principal",
-					TargetAudience: []string{"hiring_manager"},
+					TargetAudience: "hiring_manager",
 				},
 				{
 					Name:           "config2",
 					TargetRole:     "principal",
-					TargetAudience: []string{"recruiter"},
+					TargetAudience: "recruiter",
 				},
 				{
 					Name:           "config3",
 					TargetRole:     "em",
-					TargetAudience: []string{"peer"},
+					TargetAudience: "peer",
 				},
 			}
 
@@ -303,7 +302,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "config1",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -325,7 +324,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config1 := &career.CVConfig{
 				Name:           "config1",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 			manager.SaveConfig(ctx, config1)
 
@@ -378,7 +377,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 
 			manager.SaveConfig(ctx, config)
@@ -413,7 +412,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			originalConfig := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager", "recruiter"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"tags":      []string{"technical", "leadership"},
 					"companies": []string{"Google", "Meta"},
@@ -442,7 +441,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "complex-config",
 				TargetRole:     "em",
-				TargetAudience: []string{"peer"},
+				TargetAudience: "peer",
 				EventFilters: map[string]interface{}{
 					"tags":       []string{"leadership", "mentoring"},
 					"categories": []string{"leadership", "product"},
@@ -479,7 +478,7 @@ var _ = Describe("YAMLConfigManager", func() {
 			config := &career.CVConfig{
 				Name:           "../../../etc/passwd",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 
 			err := manager.SaveConfig(ctx, config)

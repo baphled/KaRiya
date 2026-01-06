@@ -26,7 +26,7 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 	})
 
 	It("should return empty list for no input", func() {
-		bullets, err := generator.GenerateBullets(ctx, nil, nil, nil, "principal", []string{"hiring_manager"})
+		bullets, err := generator.GenerateBullets(ctx, nil, nil, nil, "principal", "hiring_manager")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bullets).To(BeEmpty())
 	})
@@ -40,7 +40,7 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 			},
 		}
 
-		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", []string{"hiring_manager"})
+		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", "hiring_manager")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(bullets)).To(BeNumerically(">", 0))
 	})
@@ -61,7 +61,7 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 			{ID: "b2", RoleScore: 0.5, AudienceScore: 0.5, MetricScore: 0.5, ImpactScore: 0.5, Confidence: 0.5},
 		}
 
-		ranked := generator.RankByRelevance(bullets, "principal", []string{"hiring_manager"})
+		ranked := generator.RankByRelevance(bullets, "principal", "hiring_manager")
 		Expect(ranked[0].ID).To(Equal("b1"))
 		Expect(ranked[1].ID).To(Equal("b2"))
 	})

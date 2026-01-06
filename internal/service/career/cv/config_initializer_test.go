@@ -51,7 +51,7 @@ var _ = Describe("ConfigInitializer", func() {
 			config := &career.CVConfig{
 				Name:           "existing-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -134,7 +134,7 @@ var _ = Describe("ConfigInitializer", func() {
 			config := &career.CVConfig{
 				Name:           "existing-config",
 				TargetRole:     "staff",
-				TargetAudience: []string{"recruiter"},
+				TargetAudience: "recruiter",
 			}
 			err := manager.SaveConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
@@ -165,7 +165,7 @@ var _ = Describe("ConfigInitializer", func() {
 			existingConfig := &career.CVConfig{
 				Name:           "test-config",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			}
 			err := manager.SaveConfig(ctx, existingConfig)
 			Expect(err).NotTo(HaveOccurred())
@@ -205,7 +205,7 @@ var _ = Describe("ConfigInitializer", func() {
 
 			// Check defaults
 			Expect(config.TargetRole).To(Equal("staff"))
-			Expect(config.TargetAudience).To(ContainElement("hiring_manager"))
+			Expect(config.TargetAudience).To(Equal("hiring_manager"))
 			Expect(config.EventFilters).NotTo(BeNil())
 		})
 
@@ -246,10 +246,10 @@ var _ = Describe("ConfigInitializer", func() {
 
 			Expect(principalConfig).NotTo(BeNil())
 			Expect(principalConfig.TargetRole).To(Equal("principal"))
-			Expect(principalConfig.TargetAudience).To(ContainElement("hiring_manager"))
+			Expect(principalConfig.TargetAudience).To(Equal("hiring_manager"))
 		})
 
-		It("should create Staff Engineer config with correct audiences", func() {
+		It("should create Staff Engineer config with correct audience", func() {
 			err := initializer.Initialize(ctx)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -266,9 +266,7 @@ var _ = Describe("ConfigInitializer", func() {
 
 			Expect(staffConfig).NotTo(BeNil())
 			Expect(staffConfig.TargetRole).To(Equal("staff"))
-			Expect(len(staffConfig.TargetAudience)).To(Equal(2))
-			Expect(staffConfig.TargetAudience).To(ContainElement("hiring_manager"))
-			Expect(staffConfig.TargetAudience).To(ContainElement("peer"))
+			Expect(staffConfig.TargetAudience).To(Equal("hiring_manager"))
 		})
 
 		It("should create Engineering Manager config with leadership focus", func() {
@@ -288,7 +286,7 @@ var _ = Describe("ConfigInitializer", func() {
 
 			Expect(emConfig).NotTo(BeNil())
 			Expect(emConfig.TargetRole).To(Equal("em"))
-			Expect(emConfig.TargetAudience).To(ContainElement("hiring_manager"))
+			Expect(emConfig.TargetAudience).To(Equal("hiring_manager"))
 		})
 
 		It("should create Senior IC config with recruiter audience", func() {
@@ -308,7 +306,7 @@ var _ = Describe("ConfigInitializer", func() {
 
 			Expect(seniorConfig).NotTo(BeNil())
 			Expect(seniorConfig.TargetRole).To(Equal("senior_ic"))
-			Expect(seniorConfig.TargetAudience).To(ContainElement("recruiter"))
+			Expect(seniorConfig.TargetAudience).To(Equal("recruiter"))
 		})
 	})
 })

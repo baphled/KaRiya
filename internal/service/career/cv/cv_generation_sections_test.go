@@ -55,7 +55,7 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		config := &career.CVConfig{
 			Name:           "test-cv",
 			TargetRole:     "staff",
-			TargetAudience: []string{"hiring_manager"},
+			TargetAudience: "hiring_manager",
 			EventFilters:   make(map[string]interface{}),
 		}
 
@@ -90,7 +90,12 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		for _, section := range cv.Sections {
 			Expect(section.ID).NotTo(BeEmpty())
 			Expect(section.Title).NotTo(BeEmpty())
-			Expect(section.Content).NotTo(BeEmpty(), "Section content should not be empty")
+			// Summary sections use Summary field, others use Content array
+			if section.SectionType == "summary" {
+				Expect(section.Summary).NotTo(BeEmpty(), "Summary section should have Summary text")
+			} else {
+				Expect(len(section.Content)).To(BeNumerically(">", 0), "Section should have content groups")
+			}
 		}
 	})
 })

@@ -74,7 +74,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			config := &career.CVConfig{
 				Name:           "test-senior-ic",
 				TargetRole:     "senior_ic",
-				TargetAudience: []string{"recruiter", "hiring_manager"},
+				TargetAudience: "recruiter",
 				EventFilters: map[string]interface{}{
 					"categories": []string{"technical", "achievement"},
 				},
@@ -88,7 +88,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			// Verify CV structure
 			Expect(cv.Name).To(Equal("test-senior-ic"))
 			Expect(cv.TargetRole).To(Equal("senior_ic"))
-			Expect(cv.TargetAudience).To(Equal([]string{"recruiter", "hiring_manager"}))
+			Expect(cv.TargetAudience).To(Equal("recruiter"))
 
 			// Verify CV has content
 			Expect(cv.ID).NotTo(BeEmpty())
@@ -103,7 +103,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			GinkgoWriter.Printf("  Source Fact Count: %d\n", cv.SourceFactCount)
 		})
 
-		It("should handle CV generation with multiple target audiences", func() {
+		It("should handle CV generation with single target audience", func() {
 			// Check if the database exists
 			if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 				Skip("Database not found at " + dbPath)
@@ -136,11 +136,11 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 				log,
 			)
 
-			// Create a test CV configuration with multiple audiences
+			// Create a test CV configuration with single audience
 			config := &career.CVConfig{
 				Name:           "test-principal",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager", "peer", "recruiter"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"categories": []string{"technical", "achievement", "leadership"},
 				},
@@ -151,14 +151,11 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cv).NotTo(BeNil())
 
-			// Verify multiple audiences are preserved
-			Expect(cv.TargetAudience).To(HaveLen(3))
-			Expect(cv.TargetAudience).To(ContainElement("hiring_manager"))
-			Expect(cv.TargetAudience).To(ContainElement("peer"))
-			Expect(cv.TargetAudience).To(ContainElement("recruiter"))
+			// Verify single audience is preserved
+			Expect(cv.TargetAudience).To(Equal("hiring_manager"))
 
-			GinkgoWriter.Printf("CV with Multiple Audiences Generated:\n")
-			GinkgoWriter.Printf("  Audiences: %v\n", cv.TargetAudience)
+			GinkgoWriter.Printf("CV with Single Audience Generated:\n")
+			GinkgoWriter.Printf("  Audience: %v\n", cv.TargetAudience)
 			GinkgoWriter.Printf("  Source Event Count: %d\n", cv.SourceEventCount)
 			GinkgoWriter.Printf("  Source Fact Count: %d\n", cv.SourceFactCount)
 		})
@@ -206,7 +203,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			config := &career.CVConfig{
 				Name:           "test-no-filters",
 				TargetRole:     "senior_ic",
-				TargetAudience: []string{"recruiter"},
+				TargetAudience: "recruiter",
 				EventFilters:   make(map[string]interface{}),
 			}
 
@@ -258,7 +255,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			config := &career.CVConfig{
 				Name:           "test-metadata",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager", "peer"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"categories": []string{"leadership"},
 				},
@@ -323,7 +320,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			config := &career.CVConfig{
 				Name:           "test-technical-only",
 				TargetRole:     "senior_ic",
-				TargetAudience: []string{"recruiter"},
+				TargetAudience: "recruiter",
 				EventFilters: map[string]interface{}{
 					"categories": []string{"technical"},
 				},
@@ -377,7 +374,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			invalidConfig := &career.CVConfig{
 				Name:           "test-invalid",
 				TargetRole:     "", // Invalid: empty target role
-				TargetAudience: []string{"recruiter"},
+				TargetAudience: "recruiter",
 				EventFilters:   make(map[string]interface{}),
 			}
 
