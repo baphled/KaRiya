@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -16,11 +18,18 @@ import (
 
 // GenerateCVIntent implements the Intent interface for generating CVs.
 type GenerateCVIntent struct {
-	context *GenerateCVContext
-	state   *GenerateCVModel
-	active  bool
-	result  *IntentResult[*GenerateCVResult]
-	logger  *logger.Logger
+	// Embed BaseIntent for terminal awareness, logo, and state management
+	*BaseIntent
+
+	context   *GenerateCVContext
+	state     *GenerateCVModel
+	active    bool
+	result    *IntentResult[*GenerateCVResult]
+	logger    *logger.Logger
+	cvPreview *models.CVPreviewModel
+
+	// loadingRotator rotates through CV-specific loading messages
+	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewGenerateCVIntent creates a new GenerateCV intent.
@@ -34,16 +43,30 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 		selectedProfile = context.AvailableProfiles[0]
 	}
 
+	// Create BaseIntent for terminal awareness and state management
+	base := NewBaseIntent()
+
+	// Create loading message rotator with CV-specific messages
+	loadingRotator := components.NewLoadingMessageRotator([]string{
+		"🔍 Analyzing career events...",
+		"📊 Calculating impact metrics...",
+		"✨ Generating professional bullets...",
+		"📝 Formatting final document...",
+		"✅ CV ready!",
+	}, 2*time.Second)
+
 	return &GenerateCVIntent{
-		context: context,
+		BaseIntent: base,
+		context:    context,
 		state: &GenerateCVModel{
 			context:         context,
 			currentState:    GenerateCVStateSelectProfile,
 			selectedProfile: selectedProfile,
 			selectedIndex:   0,
 		},
-		active: true,
-		logger: nil,
+		loadingRotator: loadingRotator,
+		active:         true,
+		logger:         nil,
 	}, nil
 }
 
