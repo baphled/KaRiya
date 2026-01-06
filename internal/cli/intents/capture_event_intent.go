@@ -471,6 +471,29 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 			}
 		}
 
+		// Save any accepted facts from review that might have been manually edited/added
+		// Note: Facts from enrichment are already saved in performEnrichment()
+		// This is a safety check for any facts that might have been added during review
+		if i.context.CareerService != nil && len(i.state.reviewState.AcceptedFacts) > 0 {
+			for _, fact := range i.state.reviewState.AcceptedFacts {
+				// Only save facts that don't have an ID yet (haven't been saved)
+				// Facts from enrichment already have IDs
+				if fact.ID == "" {
+					// Ensure fact is linked to the saved event
+					if fact.SourceEventID == "" {
+						fact.SourceEventID = event.ID
+					}
+
+					// Save the fact
+					if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
+						// Log error but don't fail the entire submission
+						// Event is already saved successfully
+						continue
+					}
+				}
+			}
+		}
+
 		// Successfully submitted
 		return SubmitCompleteMsg{}
 	}
@@ -497,9 +520,22 @@ func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *caree
 	// Extract facts from the event
 	facts, err := i.context.CareerService.ExtractFactsFromEvent(ctx, event)
 	if err == nil && len(facts) > 0 {
-		// Store inferred facts for review
+		// Persist each extracted fact to the database
 		for j := range facts {
-			i.state.reviewState.InferredFacts = append(i.state.reviewState.InferredFacts, &facts[j])
+			fact := &facts[j]
+
+			// Set source event ID (linking fact to this event)
+			fact.SourceEventID = event.ID
+
+			// Save fact to repository
+			if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
+				// Log warning but continue with other facts
+				// Fact extraction is an enhancement, not critical to event capture
+				continue
+			}
+
+			// Store saved fact for review
+			i.state.reviewState.InferredFacts = append(i.state.reviewState.InferredFacts, fact)
 		}
 	}
 
