@@ -157,10 +157,11 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 	}
 
 	// Create table model for bursts with enhanced columns
+	// Total column width: 30 + 35 + 10 + 15 + 8 + 12 = 110 chars
 	columns := []table.Column{
-		{Title: "Name", Width: 22},
-		{Title: "Description", Width: 25},
-		{Title: "Confirmed", Width: 8},
+		{Title: "Name", Width: 30},
+		{Title: "Description", Width: 35},
+		{Title: "Confirmed", Width: 10},
 		{Title: "Competency", Width: 15},
 		{Title: "Events", Width: 8},
 		{Title: "Created", Width: 12},
@@ -171,7 +172,7 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		table.WithRows([]table.Row{}),
 		table.WithFocused(true),
 		table.WithHeight(15),
-		table.WithWidth(100),
+		table.WithWidth(120), // Increased to accommodate all columns with spacing
 	)
 
 	s := table.DefaultStyles()
@@ -202,7 +203,7 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 			sortOrder:        "asc",
 		},
 		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Manage Bursts", 100),
+		listContainer: components.NewTableListContainer(t, "Manage Bursts", 120),
 		active:        true,
 	}
 	intent.navHandler = navigation.NewListNavigationHandler(intent)
@@ -260,7 +261,7 @@ func (i *BurstManagementIntent) formatCompetency(competency string) string {
 		Render(competency)
 }
 
-// formatDescription returns a truncated description preview (max 25 chars).
+// formatDescription returns a truncated description preview (max 35 chars).
 func (i *BurstManagementIntent) formatDescription(description string) string {
 	desc := strings.TrimSpace(description)
 	// Remove newlines and carriage returns
@@ -273,7 +274,7 @@ func (i *BurstManagementIntent) formatDescription(description string) string {
 			Render("-")
 	}
 
-	maxLen := 22 // 25 - 3 for "..."
+	maxLen := 32 // 35 - 3 for "..."
 	if len(desc) > maxLen {
 		return lipgloss.NewStyle().
 			Foreground(styles.ColorTextSecondary).
@@ -330,15 +331,15 @@ func (i *BurstManagementIntent) updateTableRows() {
 	for idx, burst := range pageBursts {
 		realIdx := start + idx
 
-		// Column 1: Name (truncate to 19 chars for focus indicator, total width 22)
+		// Column 1: Name (truncate to 27 chars for focus indicator, total width 30)
 		nameStr := burst.Name
-		if len(nameStr) > 19 {
-			nameStr = nameStr[:19] + "..."
+		if len(nameStr) > 27 {
+			nameStr = nameStr[:27] + "..."
 		}
 		// Add focus indicator via navigation handler
 		nameStr = i.navHandler.FormatRowText(realIdx, nameStr)
 
-		// Column 2: Description (truncated preview, max 25 chars)
+		// Column 2: Description (truncated preview, max 35 chars)
 		descStr := i.formatDescription(burst.Description)
 
 		// Column 3: Confirmed Status (icon + colored text)
