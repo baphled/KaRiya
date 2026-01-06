@@ -290,12 +290,12 @@ var _ = Describe("EditBurstModal", func() {
 
 	BeforeEach(func() {
 		burst = &career.Burst{
-			ID:              "test-burst-id",
-			Name:            "Test Burst",
-			Description:     "Test Description",
-			EventIDs:        []string{},
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			ID:          "test-burst-id",
+			Name:        "Test Burst",
+			Description: "Test Description",
+			EventIDs:    []string{},
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		}
 		modal = NewEditBurstModal(burst)
 	})

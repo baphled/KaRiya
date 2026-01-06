@@ -30,25 +30,25 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 
 		testBursts = []*career.Burst{
 			{
-				ID:              uuid.New().String(),
-				Name:            "Platform Migration",
-				EventIDs:        []string{uuid.New().String(), uuid.New().String()},
-				CreatedAt:       time.Now().Add(-30 * 24 * time.Hour),
-				UpdatedAt:       time.Now().Add(-30 * 24 * time.Hour),
+				ID:        uuid.New().String(),
+				Name:      "Platform Migration",
+				EventIDs:  []string{uuid.New().String(), uuid.New().String()},
+				CreatedAt: time.Now().Add(-30 * 24 * time.Hour),
+				UpdatedAt: time.Now().Add(-30 * 24 * time.Hour),
 			},
 			{
-				ID:              uuid.New().String(),
-				Name:            "Team Leadership",
-				EventIDs:        []string{uuid.New().String(), uuid.New().String(), uuid.New().String()},
-				CreatedAt:       time.Now().Add(-20 * 24 * time.Hour),
-				UpdatedAt:       time.Now().Add(-20 * 24 * time.Hour),
+				ID:        uuid.New().String(),
+				Name:      "Team Leadership",
+				EventIDs:  []string{uuid.New().String(), uuid.New().String(), uuid.New().String()},
+				CreatedAt: time.Now().Add(-20 * 24 * time.Hour),
+				UpdatedAt: time.Now().Add(-20 * 24 * time.Hour),
 			},
 			{
-				ID:              uuid.New().String(),
-				Name:            "Architecture Design",
-				EventIDs:        []string{uuid.New().String()},
-				CreatedAt:       time.Now().Add(-10 * 24 * time.Hour),
-				UpdatedAt:       time.Now().Add(-10 * 24 * time.Hour),
+				ID:        uuid.New().String(),
+				Name:      "Architecture Design",
+				EventIDs:  []string{uuid.New().String()},
+				CreatedAt: time.Now().Add(-10 * 24 * time.Hour),
+				UpdatedAt: time.Now().Add(-10 * 24 * time.Hour),
 			},
 		}
 
@@ -171,11 +171,11 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		largeBursts := make([]*career.Burst, 100)
 		for i := 0; i < 100; i++ {
 			largeBursts[i] = &career.Burst{
-				ID:              uuid.New().String(),
-				Name:            "Burst",
-				EventIDs:        []string{uuid.New().String()},
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
+				ID:        uuid.New().String(),
+				Name:      "Burst",
+				EventIDs:  []string{uuid.New().String()},
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
 			}
 		}
 		model.SetBursts(largeBursts)
@@ -199,11 +199,11 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 	ginkgo.It("should handle long name", func() {
 		model.SetBursts([]*career.Burst{
 			{
-				ID:              uuid.New().String(),
-				Name:            "This is a very long burst name that should be truncated gracefully",
-				EventIDs:        []string{uuid.New().String()},
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
+				ID:        uuid.New().String(),
+				Name:      "This is a very long burst name that should be truncated gracefully",
+				EventIDs:  []string{uuid.New().String()},
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
 			},
 		})
 		model.width = 80
@@ -219,11 +219,11 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 
 	ginkgo.It("should handle 50+ events", func() {
 		burst := &career.Burst{
-			ID:              uuid.New().String(),
-			Name:            "Large Burst",
-			EventIDs:        make([]string, 50),
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			ID:        uuid.New().String(),
+			Name:      "Large Burst",
+			EventIDs:  make([]string, 50),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 		for i := 0; i < 50; i++ {
 			burst.EventIDs[i] = uuid.New().String()

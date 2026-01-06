@@ -28,12 +28,12 @@ var _ = Describe("BurstManagement Intent", func() {
 
 		// Create test burst
 		testBurst = &careerdom.Burst{
-			ID:              "burst-1",
-			Name:            "Test Burst",
-			Description:     "A test burst",
-			EventIDs:        []string{"event-1", "event-2"},
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
+			ID:          "burst-1",
+			Name:        "Test Burst",
+			Description: "A test burst",
+			EventIDs:    []string{"event-1", "event-2"},
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
 		}
 		mockRepo.bursts = []*careerdom.Burst{testBurst}
 
@@ -474,11 +474,11 @@ var _ = Describe("BurstManagement Intent", func() {
 
 			// Add a new burst to the repository
 			newBurst := &careerdom.Burst{
-				ID:              "burst-2",
-				Name:            "New Burst",
-				Description:     "New burst description",
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
+				ID:          "burst-2",
+				Name:        "New Burst",
+				Description: "New burst description",
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
 			}
 			mockRepo.bursts = append(mockRepo.bursts, newBurst)
 
@@ -1120,12 +1120,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			manyBurstsRepo = NewMockBurstRepository()
 			for i := 0; i < 35; i++ {
 				burst := &careerdom.Burst{
-					ID:              "burst-" + fmt.Sprintf("%02d", i),
-					Name:            fmt.Sprintf("Burst %02d", i+1),
-					Description:     fmt.Sprintf("Burst description %d", i),
-					EventIDs:        []string{"event-1"},
-					CreatedAt:       time.Now(),
-					UpdatedAt:       time.Now(),
+					ID:          "burst-" + fmt.Sprintf("%02d", i),
+					Name:        fmt.Sprintf("Burst %02d", i+1),
+					Description: fmt.Sprintf("Burst description %d", i),
+					EventIDs:    []string{"event-1"},
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
 				}
 				manyBurstsRepo.bursts = append(manyBurstsRepo.bursts, burst)
 			}
@@ -1308,13 +1308,13 @@ var _ = Describe("BurstManagement Intent", func() {
 
 		It("should truncate long names to fit column width", func() {
 			longNameBurst := &careerdom.Burst{
-				ID:              "burst-3",
-				Name:            "This is an extremely long burst name that should definitely be truncated",
-				Description:     "Description",
-				EventIDs:        []string{"event-6"},
-				Confirmed:       true,
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
+				ID:          "burst-3",
+				Name:        "This is an extremely long burst name that should definitely be truncated",
+				Description: "Description",
+				EventIDs:    []string{"event-6"},
+				Confirmed:   true,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
 			}
 			mockRepo.bursts = []*careerdom.Burst{longNameBurst}
 			intent.Init()
