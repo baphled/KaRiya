@@ -35,6 +35,19 @@ type BurstFactsLoadedMsg struct {
 	Error error
 }
 
+// BurstEditCompleteMsg is sent when burst editing is complete
+type BurstEditCompleteMsg struct {
+	Burst     *domain.Burst
+	Cancelled bool
+	Error     error
+}
+
+// BurstDeletedMsg is sent when a burst is deleted
+type BurstDeletedMsg struct {
+	BurstID string
+	Error   error
+}
+
 // BurstManagementIntent implements the Intent interface for managing bursts.
 // It owns the complete lifecycle of burst management, including:
 // - Displaying a list of bursts
@@ -92,6 +105,11 @@ type BurstManagementIntentModel struct {
 	loadingEvents bool
 	loadingFacts  bool
 
+	// Edit and delete state
+	burstEditor tea.Model
+	deleteError error
+	editError   error
+
 	// Filter and sort state
 	searchText       string
 	filterCompetency string
@@ -101,10 +119,12 @@ type BurstManagementIntentModel struct {
 
 // State constants for BurstManagement intent.
 const (
-	BurstStateList         = "list"
-	BurstStateDetail       = "detail"
-	BurstStateDetailEvents = "detail_events"
-	BurstStateDetailFacts  = "detail_facts"
+	BurstStateList          = "list"
+	BurstStateDetail        = "detail"
+	BurstStateDetailEvents  = "detail_events"
+	BurstStateDetailFacts   = "detail_facts"
+	BurstStateEdit          = "edit"
+	BurstStateDeleteConfirm = "delete_confirm"
 )
 
 // NewBurstManagementIntent creates a new BurstManagement intent.
@@ -248,6 +268,12 @@ func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case BurstStateDetailFacts:
 		return i.updateDetailFactsView(msg)
+
+	case BurstStateEdit:
+		return i.updateEditView(msg)
+
+	case BurstStateDeleteConfirm:
+		return i.updateDeleteConfirmView(msg)
 	}
 
 	return nil
@@ -306,6 +332,16 @@ func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 			i.state.currentState = BurstStateDetailFacts
 			i.state.loadingFacts = true
 			return i.loadFactsForBurst()
+
+		case "x":
+			// Edit burst
+			i.state.currentState = BurstStateEdit
+			return i.initBurstEditor()
+
+		case "d":
+			// Delete burst
+			i.state.currentState = BurstStateDeleteConfirm
+			return nil
 
 		case "enter":
 			// Confirm selection and return burst.
@@ -368,6 +404,92 @@ func (i *BurstManagementIntent) updateDetailFactsView(msg tea.Msg) tea.Cmd {
 		case "esc":
 			// Back to detail
 			i.state.currentState = BurstStateDetail
+			return nil
+
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
+	}
+
+	return nil
+}
+
+// initBurstEditor initializes the burst editor with the current burst
+func (i *BurstManagementIntent) initBurstEditor() tea.Cmd {
+	if i.state.selectedBurst == nil {
+		return nil
+	}
+
+	// Import the models package to access BurstEditorModel
+	// Note: We'll create a simple inline editor instead of importing models
+	// to avoid circular dependencies
+	return nil
+}
+
+// updateEditView handles the edit state
+func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			// Cancel edit and go back to detail
+			i.state.currentState = BurstStateDetail
+			i.state.editError = nil
+			return nil
+
+		case "ctrl+s":
+			// Save changes
+			if i.state.selectedBurst != nil {
+				err := i.context.UpdateBurst(i.state.selectedBurst)
+				if err != nil {
+					i.state.editError = err
+					return nil
+				}
+
+				// Reload bursts
+				i.context.LoadBursts()
+				i.state.filteredBursts = i.context.Bursts
+
+				// Go back to detail view
+				i.state.currentState = BurstStateDetail
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
+
+// updateDeleteConfirmView handles the delete confirmation state
+func (i *BurstManagementIntent) updateDeleteConfirmView(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "y":
+			// Confirm delete
+			if i.state.selectedBurst != nil {
+				err := i.context.DeleteBurst(i.state.selectedBurst.ID)
+				if err != nil {
+					i.state.deleteError = err
+					return nil
+				}
+
+				// Reload bursts
+				i.context.LoadBursts()
+				i.state.filteredBursts = i.context.Bursts
+				i.state.selectedBurst = nil
+				i.state.selectedIndex = 0
+
+				// Go back to list
+				i.state.currentState = BurstStateList
+				return nil
+			}
+
+		case "n", "esc":
+			// Cancel delete
+			i.state.currentState = BurstStateDetail
+			i.state.deleteError = nil
 			return nil
 
 		case "q", "ctrl+c":
@@ -442,6 +564,12 @@ func (i *BurstManagementIntent) View() string {
 
 	case BurstStateDetailFacts:
 		return i.viewDetailFacts()
+
+	case BurstStateEdit:
+		return i.viewEdit()
+
+	case BurstStateDeleteConfirm:
+		return i.viewDeleteConfirm()
 	}
 
 	return ""
@@ -511,7 +639,7 @@ func (i *BurstManagementIntent) viewDetail() string {
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1)
 
-	footer := footerStyle.Render("e=events, f=facts, Enter=confirm, Esc=back, q=cancel")
+	footer := footerStyle.Render("e=events, f=facts, x=edit, d=delete, Enter=confirm, Esc=back, q=cancel")
 
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
@@ -609,6 +737,137 @@ func (i *BurstManagementIntent) viewDetailFacts() string {
 	content.WriteString(footer)
 
 	return content.String()
+}
+
+// viewEdit renders the edit view for a burst
+func (i *BurstManagementIntent) viewEdit() string {
+	if i.state.selectedBurst == nil {
+		return "No burst selected."
+	}
+
+	var content strings.Builder
+
+	// Header
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorTextPrimary).
+		MarginBottom(1)
+
+	content.WriteString(headerStyle.Render("Edit Burst"))
+	content.WriteString("\n\n")
+
+	// Show error if any
+	if i.state.editError != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorError).
+			MarginBottom(1)
+		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.editError)))
+		content.WriteString("\n\n")
+	}
+
+	// Display current burst details
+	content.WriteString(fmt.Sprintf("Name: %s\n", i.state.selectedBurst.Name))
+
+	if i.state.selectedBurst.Description != "" {
+		content.WriteString(fmt.Sprintf("Description: %s\n", i.state.selectedBurst.Description))
+	}
+
+	if i.state.selectedBurst.CompetencyFocus != "" {
+		content.WriteString(fmt.Sprintf("Competency Focus: %s\n", i.state.selectedBurst.CompetencyFocus))
+	}
+
+	// Note: For now, this is a simple view showing current values
+	// A full implementation would use text inputs for editing
+	noteStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		Italic(true).
+		MarginTop(1)
+
+	content.WriteString("\n")
+	content.WriteString(noteStyle.Render("Note: Full edit functionality coming soon."))
+	content.WriteString("\n")
+
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Ctrl+S=save (placeholder), Esc=cancel")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+}
+
+// viewDeleteConfirm renders the delete confirmation view
+func (i *BurstManagementIntent) viewDeleteConfirm() string {
+	if i.state.selectedBurst == nil {
+		return "No burst selected."
+	}
+
+	var content strings.Builder
+
+	// Warning header
+	warningStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorError).
+		MarginBottom(1)
+
+	content.WriteString(warningStyle.Render("⚠️  DELETE BURST - Are you sure?"))
+	content.WriteString("\n\n")
+
+	// Show error if any
+	if i.state.deleteError != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorError).
+			MarginBottom(1)
+		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.deleteError)))
+		content.WriteString("\n\n")
+	}
+
+	// Burst details
+	infoStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextPrimary)
+
+	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst Name: %s", i.state.selectedBurst.Name)))
+	content.WriteString("\n\n")
+
+	// Warning messages
+	warningTextStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorWarning).
+		Bold(true)
+
+	content.WriteString(warningTextStyle.Render("This will remove the burst grouping but NOT delete the events."))
+	content.WriteString("\n")
+	content.WriteString(warningTextStyle.Render("This action cannot be undone."))
+	content.WriteString("\n")
+
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorError).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("y=confirm delete, n/Esc=cancel")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
 // Result returns the final result of the intent.
