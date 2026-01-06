@@ -38,6 +38,8 @@ func (r *SQLiteBurstRepository) initSchema() error {
 		description TEXT,
 		event_ids TEXT NOT NULL,
 		competency_focus TEXT,
+		confirmed INTEGER NOT NULL DEFAULT 0,
+		confirmed_at DATETIME,
 		created_at DATETIME NOT NULL,
 		updated_at DATETIME NOT NULL
 	);
@@ -80,9 +82,9 @@ func (r *SQLiteBurstRepository) Create(ctx context.Context, burst *career.Burst)
 	// Insert the burst
 	_, err = r.db.ExecContext(ctx, `
 		INSERT INTO bursts
-		(id, name, description, event_ids, competency_focus, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, burst.ID, burst.Name, burst.Description, eventIDsString, burst.CompetencyFocus, burst.CreatedAt, burst.UpdatedAt)
+		(id, name, description, event_ids, competency_focus, confirmed, confirmed_at, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, burst.ID, burst.Name, burst.Description, eventIDsString, burst.CompetencyFocus, burst.Confirmed, burst.ConfirmedAt, burst.CreatedAt, burst.UpdatedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to create burst with ID %s: %w", burst.ID, err)
@@ -97,7 +99,7 @@ func (r *SQLiteBurstRepository) GetByID(ctx context.Context, id string) (*career
 	var eventIDsString string
 
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, name, description, event_ids, competency_focus, created_at, updated_at
+		SELECT id, name, description, event_ids, competency_focus, confirmed, confirmed_at, created_at, updated_at
 		FROM bursts
 		WHERE id = ?
 	`, id)
@@ -108,6 +110,8 @@ func (r *SQLiteBurstRepository) GetByID(ctx context.Context, id string) (*career
 		&burst.Description,
 		&eventIDsString,
 		&burst.CompetencyFocus,
+		&burst.Confirmed,
+		&burst.ConfirmedAt,
 		&burst.CreatedAt,
 		&burst.UpdatedAt,
 	)
@@ -153,9 +157,9 @@ func (r *SQLiteBurstRepository) Update(ctx context.Context, burst *career.Burst)
 	// Update the burst
 	_, err = r.db.ExecContext(ctx, `
 		UPDATE bursts
-		SET name = ?, description = ?, event_ids = ?, competency_focus = ?, updated_at = ?
+		SET name = ?, description = ?, event_ids = ?, competency_focus = ?, confirmed = ?, confirmed_at = ?, updated_at = ?
 		WHERE id = ?
-	`, burst.Name, burst.Description, eventIDsString, burst.CompetencyFocus, burst.UpdatedAt, burst.ID)
+	`, burst.Name, burst.Description, eventIDsString, burst.CompetencyFocus, burst.Confirmed, burst.ConfirmedAt, burst.UpdatedAt, burst.ID)
 
 	if err != nil {
 		return fmt.Errorf("failed to update burst with ID %s: %w", burst.ID, err)
@@ -187,7 +191,7 @@ func (r *SQLiteBurstRepository) Delete(ctx context.Context, id string) error {
 
 // List retrieves bursts with optional filtering
 func (r *SQLiteBurstRepository) List(ctx context.Context, filters BurstListFilters) ([]*career.Burst, error) {
-	query := "SELECT id, name, description, event_ids, competency_focus, created_at, updated_at FROM bursts WHERE 1=1"
+	query := "SELECT id, name, description, event_ids, competency_focus, confirmed, confirmed_at, created_at, updated_at FROM bursts WHERE 1=1"
 	var args []interface{}
 
 	// Apply competency focus filter
@@ -259,6 +263,8 @@ func (r *SQLiteBurstRepository) List(ctx context.Context, filters BurstListFilte
 			&burst.Description,
 			&eventIDsString,
 			&burst.CompetencyFocus,
+			&burst.Confirmed,
+			&burst.ConfirmedAt,
 			&burst.CreatedAt,
 			&burst.UpdatedAt,
 		)
