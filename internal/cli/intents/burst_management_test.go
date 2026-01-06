@@ -885,6 +885,195 @@ var _ = Describe("BurstManagement Intent", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
+
+		It("should return to detail view on any key after extraction completes", func() {
+			intent.state.currentState = BurstStateConfirm
+			intent.state.extractionComplete = true
+			intent.state.extractedFactsCount = 3
+
+			// Press any key (e.g., space)
+			intent.Update(tea.KeyMsg{Type: tea.KeySpace})
+
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+			Expect(intent.state.extractionComplete).To(BeFalse())
+			Expect(intent.state.extractedFactsCount).To(Equal(0))
+		})
+	})
+
+	Describe("UX Polish & Integration", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
+		Context("confirmation status display", func() {
+			It("should show confirmation status in detail view for confirmed bursts", func() {
+				now := time.Now()
+				testBurst.Confirmed = true
+				testBurst.ConfirmedAt = &now
+
+				intent.state.currentState = BurstStateDetail
+				intent.state.selectedBurst = testBurst
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("✓ Confirmed"))
+				Expect(view).To(ContainSubstring("Confirmed:"))
+			})
+
+			It("should not show confirmation status for unconfirmed bursts", func() {
+				testBurst.Confirmed = false
+				testBurst.ConfirmedAt = nil
+
+				intent.state.currentState = BurstStateDetail
+				intent.state.selectedBurst = testBurst
+
+				view := intent.View()
+				Expect(view).NotTo(ContainSubstring("✓ Confirmed"))
+			})
+		})
+
+		Context("keyboard shortcuts consistency", func() {
+			It("should have consistent help text across all views", func() {
+				// List view
+				intent.state.currentState = BurstStateList
+				listView := intent.View()
+				Expect(listView).NotTo(BeEmpty())
+
+				// Detail view
+				intent.state.currentState = BurstStateDetail
+				intent.state.selectedBurst = testBurst
+				detailView := intent.View()
+				Expect(detailView).To(ContainSubstring("Esc=back"))
+				Expect(detailView).To(ContainSubstring("q=cancel"))
+			})
+
+			It("should support escape key from all states", func() {
+				states := []string{
+					BurstStateDetail,
+					BurstStateDetailEvents,
+					BurstStateDetailFacts,
+					BurstStateEdit,
+					BurstStateDeleteConfirm,
+					BurstStateConfirm,
+				}
+
+				for _, state := range states {
+					intent.state.currentState = state
+					intent.state.selectedBurst = testBurst
+					intent.result = nil // Reset result
+
+					intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+					// Should either go back or cancel
+					backStates := []string{BurstStateList, BurstStateDetail}
+					shouldGoBack := false
+					for _, backState := range backStates {
+						if intent.state.currentState == backState {
+							shouldGoBack = true
+							break
+						}
+					}
+
+					if !shouldGoBack && intent.result == nil {
+						// If not going back and no result, something's wrong
+						Expect(intent.state.currentState).To(Or(
+							Equal(BurstStateList),
+							Equal(BurstStateDetail),
+						), fmt.Sprintf("Expected escape from %s to handle correctly", state))
+					}
+				}
+			})
+		})
+
+		Context("full workflow integration", func() {
+			It("should complete full confirmation workflow", func() {
+				// Start in detail view
+				intent.state.currentState = BurstStateDetail
+				intent.state.selectedBurst = testBurst
+
+				// Press 'c' to confirm
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+				Expect(intent.state.currentState).To(Equal(BurstStateConfirm))
+				Expect(cmd).NotTo(BeNil())
+
+				// Simulate no facts exist
+				msg := BurstFactsLoadedMsg{Facts: []*careerdom.Fact{}}
+				intent.Update(msg)
+				Expect(intent.state.currentState).To(Equal(BurstStateExtractingFacts))
+
+				// Simulate extraction complete
+				extractMsg := FactExtractionCompleteMsg{
+					Facts: []*careerdom.Fact{
+						{ID: "fact-1", Text: "Test fact"},
+					},
+				}
+				confirmCmd := intent.Update(extractMsg)
+				Expect(confirmCmd).NotTo(BeNil())
+
+				// Execute confirm command
+				result := confirmCmd().(BurstConfirmedMsg)
+				Expect(result.Error).To(BeNil())
+				Expect(result.Burst.Confirmed).To(BeTrue())
+			})
+
+			It("should handle burst edit and reload", func() {
+				// Start in detail view
+				intent.state.currentState = BurstStateDetail
+				intent.state.selectedBurst = testBurst
+				originalName := testBurst.Name
+
+				// Press 'x' to edit
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				Expect(intent.state.currentState).To(Equal(BurstStateEdit))
+
+				// Change burst name
+				testBurst.Name = "Updated Burst Name"
+
+				// Press Ctrl+S to save
+				intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+				Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+
+				// Verify burst was updated
+				saved, err := mockRepo.Read(ctx, testBurst.ID)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(saved.Name).To(Equal("Updated Burst Name"))
+
+				// Reset for other tests
+				testBurst.Name = originalName
+			})
+
+			It("should handle burst deletion and list refresh", func() {
+				// Add another burst
+				anotherBurst := &careerdom.Burst{
+					ID:          "burst-2",
+					Name:        "Another Burst",
+					Description: "Test",
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
+				}
+				mockRepo.bursts = append(mockRepo.bursts, anotherBurst)
+				intent.context.LoadBursts()
+				intent.state.filteredBursts = intent.context.Bursts
+
+				// Start in detail view with first burst
+				intent.state.currentState = BurstStateDetail
+				intent.state.selectedBurst = testBurst
+
+				// Press 'd' to delete
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+				Expect(intent.state.currentState).To(Equal(BurstStateDeleteConfirm))
+
+				// Press 'y' to confirm
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+				Expect(intent.state.currentState).To(Equal(BurstStateList))
+
+				// Verify burst was deleted
+				_, err := mockRepo.Read(ctx, testBurst.ID)
+				Expect(err).To(HaveOccurred())
+
+				// Verify list was refreshed
+				Expect(len(intent.state.filteredBursts)).To(Equal(1))
+			})
+		})
 	})
 
 	Describe("Pagination", func() {
