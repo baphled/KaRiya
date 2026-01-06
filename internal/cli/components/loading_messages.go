@@ -74,7 +74,7 @@ func (r *LoadingMessageRotator) GetCurrent() string {
 	return r.messages[r.currentIndex]
 }
 
-// Rotate advances to the next message if the interval has elapsed
+// Rotate advances to the next message if the interval has elapsed, then returns current
 func (r *LoadingMessageRotator) Rotate() string {
 	now := time.Now()
 	if now.Sub(r.lastRotation) >= r.rotateInterval {
@@ -84,6 +84,7 @@ func (r *LoadingMessageRotator) Rotate() string {
 		}
 		r.lastRotation = now
 	}
+
 	return r.GetCurrent()
 }
 
