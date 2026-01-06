@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/charmbracelet/bubbles/viewport"
 )
 
 // GenerateCVState represents the state of the GenerateCV intent.
@@ -98,8 +99,8 @@ func (ctx *GenerateCVContext) Validate() error {
 type CVProfile struct {
 	ID             string
 	Name           string
-	TargetRole     string   // principal, staff, em, senior_ic
-	TargetAudience []string // hiring_manager, recruiter, peer
+	TargetRole     string // principal, staff, em, senior_ic
+	TargetAudience string // hiring_manager, recruiter, peer
 	Description    string
 }
 
@@ -135,8 +136,11 @@ type GenerateCVModel struct {
 	// selectedProfile is the currently selected profile.
 	selectedProfile *CVProfile
 
-	// selectedAudiences are the selected target audiences.
-	selectedAudiences []string
+	// selectedAudience is the selected target audience.
+	selectedAudience string
+
+	// audienceIndex is the index for audience selection UI
+	audienceIndex int
 
 	// generatedCV is the generated CV.
 	generatedCV *career.CVView
@@ -149,6 +153,9 @@ type GenerateCVModel struct {
 
 	// isGenerating indicates if CV generation is in progress.
 	isGenerating bool
+
+	// previewViewport is the viewport for scrolling CV preview
+	previewViewport viewport.Model
 
 	// Export-related fields
 	selectedExportFormat CVExportFormat
@@ -168,7 +175,7 @@ type ProfileSelectedMsg struct {
 
 // AudienceSelectedMsg indicates the user selected an audience.
 type AudienceSelectedMsg struct {
-	Audiences []string
+	Audience string
 }
 
 // CVGeneratedMsg indicates the CV has been generated.
