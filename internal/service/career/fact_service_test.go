@@ -638,12 +638,11 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			burst = &career.Burst{
-				ID:              uuid.New().String(),
-				Name:            "Platform Migration",
-				EventIDs:        []string{event1.ID, event2.ID},
-				CompetencyFocus: "technical",
-				CreatedAt:       time.Now().Add(-60 * 24 * time.Hour),
-				UpdatedAt:       time.Now(),
+				ID:        uuid.New().String(),
+				Name:      "Platform Migration",
+				EventIDs:  []string{event1.ID, event2.ID},
+				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
+				UpdatedAt: time.Now(),
 			}
 
 			// Extract and save facts

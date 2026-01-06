@@ -32,7 +32,6 @@ var _ = Describe("BurstManagement Intent", func() {
 			Name:            "Test Burst",
 			Description:     "A test burst",
 			EventIDs:        []string{"event-1", "event-2"},
-			CompetencyFocus: "leadership",
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 		}
@@ -397,7 +396,6 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(view).To(ContainSubstring("Edit Burst"))
 			Expect(view).To(ContainSubstring(testBurst.Name))
 			Expect(view).To(ContainSubstring(testBurst.Description))
-			Expect(view).To(ContainSubstring(testBurst.CompetencyFocus))
 			Expect(view).To(ContainSubstring("Ctrl+S=save"))
 			Expect(view).To(ContainSubstring("Esc=cancel"))
 		})
@@ -479,7 +477,6 @@ var _ = Describe("BurstManagement Intent", func() {
 				ID:              "burst-2",
 				Name:            "New Burst",
 				Description:     "New burst description",
-				CompetencyFocus: "testing",
 				CreatedAt:       time.Now(),
 				UpdatedAt:       time.Now(),
 			}
@@ -1127,7 +1124,6 @@ var _ = Describe("BurstManagement Intent", func() {
 					Name:            fmt.Sprintf("Burst %02d", i+1),
 					Description:     fmt.Sprintf("Burst description %d", i),
 					EventIDs:        []string{"event-1"},
-					CompetencyFocus: fmt.Sprintf("competency-%d", i%5),
 					CreatedAt:       time.Now(),
 					UpdatedAt:       time.Now(),
 				}
@@ -1202,48 +1198,6 @@ var _ = Describe("BurstManagement Intent", func() {
 			})
 		})
 
-		Describe("formatCompetency", func() {
-			It("should return colored text for technical competency", func() {
-				result := intent.formatCompetency("technical")
-				Expect(result).To(ContainSubstring("technical"))
-			})
-
-			It("should return colored text for leadership competency", func() {
-				result := intent.formatCompetency("leadership")
-				Expect(result).To(ContainSubstring("leadership"))
-			})
-
-			It("should return colored text for product competency", func() {
-				result := intent.formatCompetency("product")
-				Expect(result).To(ContainSubstring("product"))
-			})
-
-			It("should return colored text for consulting competency", func() {
-				result := intent.formatCompetency("consulting")
-				Expect(result).To(ContainSubstring("consulting"))
-			})
-
-			It("should return colored text for research competency", func() {
-				result := intent.formatCompetency("research")
-				Expect(result).To(ContainSubstring("research"))
-			})
-
-			It("should return colored text for mentoring competency", func() {
-				result := intent.formatCompetency("mentoring")
-				Expect(result).To(ContainSubstring("mentoring"))
-			})
-
-			It("should return - for empty competency", func() {
-				result := intent.formatCompetency("")
-				Expect(result).To(ContainSubstring("-"))
-			})
-
-			It("should return default color for unknown competency", func() {
-				result := intent.formatCompetency("unknown-category")
-				Expect(result).To(ContainSubstring("unknown-category"))
-			})
-		})
-
 		Describe("formatDescription", func() {
 			It("should truncate long descriptions to 25 chars", func() {
 				longDesc := "This is a very long description that should definitely be truncated at 22 characters"
@@ -1300,36 +1254,34 @@ var _ = Describe("BurstManagement Intent", func() {
 
 		BeforeEach(func() {
 			testBurst1 = &careerdom.Burst{
-				ID:              "burst-1",
-				Name:            "Backend API Migration",
-				Description:     "Migrated legacy REST API to GraphQL with performance improvements",
-				EventIDs:        []string{"event-1", "event-2", "event-3"},
-				CompetencyFocus: "technical",
-				Confirmed:       true,
-				CreatedAt:       time.Date(2024, 12, 15, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:       time.Now(),
+				ID:          "burst-1",
+				Name:        "Backend API Migration",
+				Description: "Migrated legacy REST API to GraphQL with performance improvements",
+				EventIDs:    []string{"event-1", "event-2", "event-3"},
+				Confirmed:   true,
+				CreatedAt:   time.Date(2024, 12, 15, 0, 0, 0, 0, time.UTC),
+				UpdatedAt:   time.Now(),
 			}
 
 			testBurst2 = &careerdom.Burst{
-				ID:              "burst-2",
-				Name:            "Team Leadership",
-				Description:     "", // Empty description
-				EventIDs:        []string{"event-4", "event-5"},
-				CompetencyFocus: "", // Empty competency
-				Confirmed:       false,
-				CreatedAt:       time.Date(2024, 11, 10, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:       time.Now(),
+				ID:          "burst-2",
+				Name:        "Team Leadership",
+				Description: "", // Empty description
+				EventIDs:    []string{"event-4", "event-5"},
+				Confirmed:   false,
+				CreatedAt:   time.Date(2024, 11, 10, 0, 0, 0, 0, time.UTC),
+				UpdatedAt:   time.Now(),
 			}
 
 			mockRepo.bursts = []*careerdom.Burst{testBurst1, testBurst2}
 			intent.Init()
 		})
 
-		It("should generate 6 columns for each row", func() {
+		It("should generate 5 columns for each row", func() {
 			rows := intent.table.Rows()
 			Expect(len(rows)).To(BeNumerically(">", 0))
 			for _, row := range rows {
-				Expect(len(row)).To(Equal(6), "Each row should have 6 columns")
+				Expect(len(row)).To(Equal(5), "Each row should have 5 columns")
 			}
 		})
 
@@ -1340,18 +1292,11 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(rows[0][2]).To(ContainSubstring("Yes"))
 		})
 
-		It("should include competency in column 4", func() {
-			rows := intent.table.Rows()
-			Expect(len(rows)).To(BeNumerically(">", 0))
-			// First row should have technical competency
-			Expect(rows[0][3]).To(ContainSubstring("technical"))
-		})
-
-		It("should include created date in column 6", func() {
+		It("should include created date in column 5", func() {
 			rows := intent.table.Rows()
 			Expect(len(rows)).To(BeNumerically(">", 0))
 			// First row should have 2024-12-15
-			Expect(rows[0][5]).To(ContainSubstring("2024-12-15"))
+			Expect(rows[0][4]).To(ContainSubstring("2024-12-15"))
 		})
 
 		It("should handle empty description gracefully", func() {
@@ -1361,20 +1306,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(rows[1][1]).To(ContainSubstring("-"))
 		})
 
-		It("should handle empty competency gracefully", func() {
-			rows := intent.table.Rows()
-			Expect(len(rows)).To(BeNumerically(">=", 2))
-			// Second row (empty competency) should show "-"
-			Expect(rows[1][3]).To(ContainSubstring("-"))
-		})
-
 		It("should truncate long names to fit column width", func() {
 			longNameBurst := &careerdom.Burst{
 				ID:              "burst-3",
 				Name:            "This is an extremely long burst name that should definitely be truncated",
 				Description:     "Description",
 				EventIDs:        []string{"event-6"},
-				CompetencyFocus: "technical",
 				Confirmed:       true,
 				CreatedAt:       time.Now(),
 				UpdatedAt:       time.Now(),

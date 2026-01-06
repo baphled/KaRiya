@@ -293,7 +293,6 @@ var _ = Describe("EditBurstModal", func() {
 			ID:              "test-burst-id",
 			Name:            "Test Burst",
 			Description:     "Test Description",
-			CompetencyFocus: "Test Focus",
 			EventIDs:        []string{},
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
@@ -307,7 +306,6 @@ var _ = Describe("EditBurstModal", func() {
 			Expect(modal.original).NotTo(BeNil())
 			Expect(modal.original.Name).To(Equal("Test Burst"))
 			Expect(modal.original.Description).To(Equal("Test Description"))
-			Expect(modal.original.CompetencyFocus).To(Equal("Test Focus"))
 		})
 
 		It("should initialize with focused on first field", func() {

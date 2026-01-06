@@ -8,15 +8,14 @@ import (
 
 // Burst represents a grouping of related CareerEvents
 type Burst struct {
-	ID              string     `json:"id"`
-	Name            string     `json:"name"`
-	Description     string     `json:"description,omitempty"`
-	EventIDs        []string   `json:"event_ids"`
-	CompetencyFocus string     `json:"competency_focus,omitempty"`
-	Confirmed       bool       `json:"confirmed"`
-	ConfirmedAt     *time.Time `json:"confirmed_at,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description,omitempty"`
+	EventIDs    []string   `json:"event_ids"`
+	Confirmed   bool       `json:"confirmed"`
+	ConfirmedAt *time.Time `json:"confirmed_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // Validate checks if the Burst meets all defined criteria
@@ -38,11 +37,6 @@ func (b *Burst) Validate() error {
 
 	// Validate description (optional)
 	if err := b.validateDescription(); err != nil {
-		return err
-	}
-
-	// Validate competency focus (optional)
-	if err := b.validateCompetencyFocus(); err != nil {
 		return err
 	}
 
@@ -97,17 +91,6 @@ func (b *Burst) validateDescription() error {
 	}
 	if len(b.Description) > 1000 {
 		return errors.New("description cannot exceed 1000 characters")
-	}
-	return nil
-}
-
-// validateCompetencyFocus ensures competency focus is valid if provided
-func (b *Burst) validateCompetencyFocus() error {
-	if b.CompetencyFocus == "" {
-		return nil // CompetencyFocus is optional
-	}
-	if !AllowedCategories[b.CompetencyFocus] {
-		return errors.New("invalid competency focus: must be one of the allowed categories")
 	}
 	return nil
 }

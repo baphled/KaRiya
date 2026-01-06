@@ -33,7 +33,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 				ID:              uuid.New().String(),
 				Name:            "Platform Migration",
 				EventIDs:        []string{uuid.New().String(), uuid.New().String()},
-				CompetencyFocus: "Technical",
 				CreatedAt:       time.Now().Add(-30 * 24 * time.Hour),
 				UpdatedAt:       time.Now().Add(-30 * 24 * time.Hour),
 			},
@@ -41,7 +40,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 				ID:              uuid.New().String(),
 				Name:            "Team Leadership",
 				EventIDs:        []string{uuid.New().String(), uuid.New().String(), uuid.New().String()},
-				CompetencyFocus: "Leadership",
 				CreatedAt:       time.Now().Add(-20 * 24 * time.Hour),
 				UpdatedAt:       time.Now().Add(-20 * 24 * time.Hour),
 			},
@@ -49,7 +47,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 				ID:              uuid.New().String(),
 				Name:            "Architecture Design",
 				EventIDs:        []string{uuid.New().String()},
-				CompetencyFocus: "Technical",
 				CreatedAt:       time.Now().Add(-10 * 24 * time.Hour),
 				UpdatedAt:       time.Now().Add(-10 * 24 * time.Hour),
 			},
@@ -95,7 +92,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 
 	ginkgo.It("should filter by competency", func() {
 		model.SetBursts(testBursts)
-		model.SetCompetencyFilter("Leadership")
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
 		gomega.Expect(output).NotTo(gomega.ContainSubstring("Platform Migration"))
@@ -103,14 +99,12 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 
 	ginkgo.It("should be case-insensitive", func() {
 		model.SetBursts(testBursts)
-		model.SetCompetencyFilter("leadership")
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
 	})
 
 	ginkgo.It("should filter multiple matches", func() {
 		model.SetBursts(testBursts)
-		model.SetCompetencyFilter("Technical")
 		bursts := model.GetBursts()
 		gomega.Expect(len(bursts)).To(gomega.Equal(2))
 	})
@@ -180,7 +174,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 				ID:              uuid.New().String(),
 				Name:            "Burst",
 				EventIDs:        []string{uuid.New().String()},
-				CompetencyFocus: "Technical",
 				CreatedAt:       time.Now(),
 				UpdatedAt:       time.Now(),
 			}
@@ -192,7 +185,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 
 	ginkgo.It("should show no matching message when filtered", func() {
 		model.SetBursts(testBursts)
-		model.SetCompetencyFilter("NonExistent")
 		output := model.View()
 		gomega.Expect(output).To(gomega.ContainSubstring("No bursts found"))
 	})
@@ -210,7 +202,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 				ID:              uuid.New().String(),
 				Name:            "This is a very long burst name that should be truncated gracefully",
 				EventIDs:        []string{uuid.New().String()},
-				CompetencyFocus: "Technical",
 				CreatedAt:       time.Now(),
 				UpdatedAt:       time.Now(),
 			},
@@ -231,7 +222,6 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 			ID:              uuid.New().String(),
 			Name:            "Large Burst",
 			EventIDs:        make([]string, 50),
-			CompetencyFocus: "Technical",
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 		}

@@ -25,10 +25,9 @@ var _ = Describe("BurstRepository", func() {
 	Describe("Create", func() {
 		It("should create a new burst", func() {
 			burst := &career.Burst{
-				Name:            "Platform Migration",
-				Description:     "Migrated entire platform to microservices",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
+				Name:        "Platform Migration",
+				Description: "Migrated entire platform to microservices",
+				EventIDs:    []string{"event-1", "event-2"},
 			}
 
 			err := repository.Create(ctx, burst)
@@ -40,11 +39,10 @@ var _ = Describe("BurstRepository", func() {
 
 		It("should return error for duplicate burst ID", func() {
 			burst := &career.Burst{
-				ID:              "burst-1",
-				Name:            "Platform Migration",
-				Description:     "Migrated entire platform to microservices",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
+				ID:          "burst-1",
+				Name:        "Platform Migration",
+				Description: "Migrated entire platform to microservices",
+				EventIDs:    []string{"event-1", "event-2"},
 			}
 
 			err := repository.Create(ctx, burst)
@@ -52,11 +50,10 @@ var _ = Describe("BurstRepository", func() {
 
 			// Try to create again with same ID
 			duplicate := &career.Burst{
-				ID:              "burst-1",
-				Name:            "Different Name",
-				Description:     "Different description",
-				EventIDs:        []string{"event-3", "event-4"},
-				CompetencyFocus: "leadership",
+				ID:          "burst-1",
+				Name:        "Different Name",
+				Description: "Different description",
+				EventIDs:    []string{"event-3", "event-4"},
 			}
 
 			err = repository.Create(ctx, duplicate)
@@ -65,15 +62,13 @@ var _ = Describe("BurstRepository", func() {
 
 		It("should generate unique ID if not provided", func() {
 			burst1 := &career.Burst{
-				Name:            "Burst 1",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
+				Name:     "Burst 1",
+				EventIDs: []string{"event-1", "event-2"},
 			}
 
 			burst2 := &career.Burst{
-				Name:            "Burst 2",
-				EventIDs:        []string{"event-3", "event-4"},
-				CompetencyFocus: "leadership",
+				Name:     "Burst 2",
+				EventIDs: []string{"event-3", "event-4"},
 			}
 
 			err1 := repository.Create(ctx, burst1)
@@ -90,10 +85,9 @@ var _ = Describe("BurstRepository", func() {
 	Describe("GetByID", func() {
 		It("should retrieve an existing burst", func() {
 			burst := &career.Burst{
-				Name:            "Platform Migration",
-				Description:     "Migrated entire platform to microservices",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
+				Name:        "Platform Migration",
+				Description: "Migrated entire platform to microservices",
+				EventIDs:    []string{"event-1", "event-2"},
 			}
 
 			err := repository.Create(ctx, burst)
@@ -105,7 +99,7 @@ var _ = Describe("BurstRepository", func() {
 			Expect(retrieved.Name).To(Equal(burst.Name))
 			Expect(retrieved.Description).To(Equal(burst.Description))
 			Expect(retrieved.EventIDs).To(Equal(burst.EventIDs))
-			Expect(retrieved.CompetencyFocus).To(Equal(burst.CompetencyFocus))
+
 		})
 
 		It("should return error for non-existent burst", func() {
@@ -117,10 +111,9 @@ var _ = Describe("BurstRepository", func() {
 	Describe("Update", func() {
 		It("should update an existing burst", func() {
 			burst := &career.Burst{
-				Name:            "Platform Migration",
-				Description:     "Initial description",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
+				Name:        "Platform Migration",
+				Description: "Initial description",
+				EventIDs:    []string{"event-1", "event-2"},
 			}
 
 			err := repository.Create(ctx, burst)
@@ -132,7 +125,6 @@ var _ = Describe("BurstRepository", func() {
 			burst.Name = "Updated Platform Migration"
 			burst.Description = "Updated description"
 			burst.EventIDs = []string{"event-1", "event-2", "event-3"}
-			burst.CompetencyFocus = "leadership"
 
 			err = repository.Update(ctx, burst)
 			Expect(err).ToNot(HaveOccurred())
@@ -143,15 +135,13 @@ var _ = Describe("BurstRepository", func() {
 			Expect(retrieved.Name).To(Equal("Updated Platform Migration"))
 			Expect(retrieved.Description).To(Equal("Updated description"))
 			Expect(retrieved.EventIDs).To(HaveLen(3))
-			Expect(retrieved.CompetencyFocus).To(Equal("leadership"))
 		})
 
 		It("should return error for non-existent burst", func() {
 			burst := &career.Burst{
-				ID:              "non-existent-id",
-				Name:            "Platform Migration",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
+				ID:       "non-existent-id",
+				Name:     "Platform Migration",
+				EventIDs: []string{"event-1", "event-2"},
 			}
 
 			err := repository.Update(ctx, burst)
@@ -162,10 +152,9 @@ var _ = Describe("BurstRepository", func() {
 	Describe("Delete", func() {
 		It("should delete an existing burst", func() {
 			burst := &career.Burst{
-				Name:            "Platform Migration",
-				Description:     "Migrated entire platform to microservices",
-				EventIDs:        []string{"event-1", "event-2"},
-				CompetencyFocus: "technical",
+				Name:        "Platform Migration",
+				Description: "Migrated entire platform to microservices",
+				EventIDs:    []string{"event-1", "event-2"},
 			}
 
 			err := repository.Create(ctx, burst)
@@ -189,22 +178,19 @@ var _ = Describe("BurstRepository", func() {
 			// Create test bursts
 			bursts := []*career.Burst{
 				{
-					Name:            "Platform Migration",
-					Description:     "Migrated to microservices",
-					EventIDs:        []string{"event-1", "event-2"},
-					CompetencyFocus: "technical",
+					Name:        "Platform Migration",
+					Description: "Migrated to microservices",
+					EventIDs:    []string{"event-1", "event-2"},
 				},
 				{
-					Name:            "Team Leadership",
-					Description:     "Led cross-functional team",
-					EventIDs:        []string{"event-3", "event-4", "event-5"},
-					CompetencyFocus: "leadership",
+					Name:        "Team Leadership",
+					Description: "Led cross-functional team",
+					EventIDs:    []string{"event-3", "event-4", "event-5"},
 				},
 				{
-					Name:            "Product Launch",
-					Description:     "Launched new product feature",
-					EventIDs:        []string{"event-6", "event-7"},
-					CompetencyFocus: "product",
+					Name:        "Product Launch",
+					Description: "Launched new product feature",
+					EventIDs:    []string{"event-6", "event-7"},
 				},
 			}
 
@@ -218,17 +204,6 @@ var _ = Describe("BurstRepository", func() {
 			bursts, err := repository.List(ctx, repo.BurstListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
-		})
-
-		It("should filter bursts by competency focus", func() {
-			filters := repo.BurstListFilters{
-				CompetencyFocus: "technical",
-			}
-
-			bursts, err := repository.List(ctx, filters)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(bursts).To(HaveLen(1))
-			Expect(bursts[0].CompetencyFocus).To(Equal("technical"))
 		})
 
 		It("should sort bursts by name ascending", func() {
@@ -318,19 +293,16 @@ var _ = Describe("BurstRepository", func() {
 			// Create test bursts
 			bursts := []*career.Burst{
 				{
-					Name:            "Platform Migration",
-					EventIDs:        []string{"event-1", "event-2"},
-					CompetencyFocus: "technical",
+					Name:     "Platform Migration",
+					EventIDs: []string{"event-1", "event-2"},
 				},
 				{
-					Name:            "Team Leadership",
-					EventIDs:        []string{"event-3", "event-4"},
-					CompetencyFocus: "leadership",
+					Name:     "Team Leadership",
+					EventIDs: []string{"event-3", "event-4"},
 				},
 				{
-					Name:            "API Design",
-					EventIDs:        []string{"event-5", "event-6"},
-					CompetencyFocus: "technical",
+					Name:     "API Design",
+					EventIDs: []string{"event-5", "event-6"},
 				},
 			}
 
@@ -346,24 +318,5 @@ var _ = Describe("BurstRepository", func() {
 			Expect(count).To(Equal(3))
 		})
 
-		It("should count bursts matching competency focus filter", func() {
-			filters := repo.BurstListFilters{
-				CompetencyFocus: "technical",
-			}
-
-			count, err := repository.Count(ctx, filters)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(count).To(Equal(2))
-		})
-
-		It("should return zero for no matches", func() {
-			filters := repo.BurstListFilters{
-				CompetencyFocus: "non-existent",
-			}
-
-			count, err := repository.Count(ctx, filters)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(count).To(Equal(0))
-		})
 	})
 })

@@ -48,11 +48,6 @@ func (bc *BurstCard) Render() string {
 		parts = append(parts, bc.renderDescription())
 	}
 
-	// Competency focus
-	if bc.burst.CompetencyFocus != "" {
-		parts = append(parts, bc.renderCompetencyFocus())
-	}
-
 	// Event IDs count
 	parts = append(parts, bc.renderEventCount())
 
@@ -89,17 +84,6 @@ func (bc *BurstCard) renderDescription() string {
 	// Wrap text to fit width
 	wrapped := wrapText(bc.burst.Description, bc.width-2)
 	return textStyle.Render(wrapped)
-}
-
-// renderCompetencyFocus renders the competency focus
-func (bc *BurstCard) renderCompetencyFocus() string {
-	label := fmt.Sprintf("🎯 Focus: %s", bc.burst.CompetencyFocus)
-
-	style := lipgloss.NewStyle().
-		Foreground(styles.ColorAccentTeal).
-		MarginTop(1)
-
-	return style.Render(label)
 }
 
 // renderEventCount renders the count of associated events
