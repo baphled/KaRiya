@@ -1,16 +1,9 @@
 package career
 
 import (
-	"testing"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestCompetencyInference(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Competency Inference Suite")
-}
 
 var _ = Describe("InferCompetencyFromCategories", func() {
 	Describe("Single category scenarios", func() {

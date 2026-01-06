@@ -12,15 +12,17 @@ type ListFilters = repo.ListFilters
 
 // TestMockRepository is a test helper for mocking repository behavior
 type TestMockRepository struct {
-	createErr    error
-	updateErr    error
-	deleteErr    error
-	getByIDErr   error
-	listErr      error
-	countErr     error
-	getByIDEvent *career.CareerEvent
-	listEvents   []*career.CareerEvent
-	countResult  int
+	createErr     error
+	updateErr     error
+	deleteErr     error
+	getByIDErr    error
+	listErr       error
+	countErr      error
+	getByIDEvent  *career.CareerEvent
+	getByIDEvents map[string]*career.CareerEvent // Per-ID event mapping
+	getByIDErrors map[string]error               // Per-ID error mapping
+	listEvents    []*career.CareerEvent
+	countResult   int
 
 	createCalled  bool
 	updateCalled  bool
@@ -32,7 +34,10 @@ type TestMockRepository struct {
 
 // NewTestMockRepository creates a new behavior-based mock repository
 func NewTestMockRepository() *TestMockRepository {
-	return &TestMockRepository{}
+	return &TestMockRepository{
+		getByIDEvents: make(map[string]*career.CareerEvent),
+		getByIDErrors: make(map[string]error),
+	}
 }
 
 // SetCreateBehavior sets the error for Create calls
@@ -54,6 +59,16 @@ func (m *TestMockRepository) SetDeleteBehavior(err error) {
 func (m *TestMockRepository) SetGetByIDBehavior(event *career.CareerEvent, err error) {
 	m.getByIDEvent = event
 	m.getByIDErr = err
+}
+
+// SetEventByID sets a specific event to be returned for a given ID
+func (m *TestMockRepository) SetEventByID(eventID string, event *career.CareerEvent, err error) {
+	if event != nil {
+		m.getByIDEvents[eventID] = event
+	}
+	if err != nil {
+		m.getByIDErrors[eventID] = err
+	}
 }
 
 // SetListBehavior sets the events and error for List calls
@@ -89,6 +104,16 @@ func (m *TestMockRepository) Delete(ctx context.Context, eventID string) error {
 // GetByID implements Repository interface
 func (m *TestMockRepository) GetByID(ctx context.Context, eventID string) (*career.CareerEvent, error) {
 	m.getByIDCalled = true
+
+	// Check for per-ID mocking first
+	if event, exists := m.getByIDEvents[eventID]; exists {
+		if err, hasErr := m.getByIDErrors[eventID]; hasErr {
+			return nil, err
+		}
+		return event, nil
+	}
+
+	// Fall back to default behavior
 	return m.getByIDEvent, m.getByIDErr
 }
 
