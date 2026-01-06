@@ -143,14 +143,14 @@ func (svc *DefaultDataProcessingService) GroupEventsByCompany(ctx context.Contex
 
 		// Create company group
 		group := &CompanyGroup{
-			ID:       uuid.New().String(),
-			Company:  company,
-			Position: position,
+			ID:        uuid.New().String(),
+			Company:   company,
+			Position:  position,
 			StartDate: startDate,
-			EndDate:  endDate,
-			Projects: projects,
-			Skills:   []*Skill{},
-			EventIDs: extractEventIDs(companyEvents),
+			EndDate:   endDate,
+			Projects:  projects,
+			Skills:    []*Skill{},
+			EventIDs:  extractEventIDs(companyEvents),
 		}
 
 		groups[company] = group
@@ -171,11 +171,11 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(ctx context.Context
 
 	// Extract from event text
 	baseAchievement := &Achievement{
-		ID:         uuid.New().String(),
+		ID:          uuid.New().String(),
 		Description: svc.enhanceBulletText(event.Text),
-		EventID:    event.ID,
-		Confidence: 0.8,
-		ActionVerb: svc.extractActionVerb(event.Text),
+		EventID:     event.ID,
+		Confidence:  0.8,
+		ActionVerb:  svc.extractActionVerb(event.Text),
 	}
 
 	// Extract metrics from event text
@@ -368,12 +368,12 @@ func (svc *DefaultDataProcessingService) ExtractProjectsFromEvents(ctx context.C
 		startDate, endDate := svc.calculateDateRange(projectEvents)
 
 		project := &ProjectGroup{
-			ID:       uuid.New().String(),
-			Name:     projectName,
+			ID:        uuid.New().String(),
+			Name:      projectName,
 			StartDate: startDate,
-			EndDate:  endDate,
-			Skills:   []*Skill{},
-			EventIDs: extractEventIDs(projectEvents),
+			EndDate:   endDate,
+			Skills:    []*Skill{},
+			EventIDs:  extractEventIDs(projectEvents),
 		}
 
 		projects = append(projects, project)
@@ -464,12 +464,12 @@ func (svc *DefaultDataProcessingService) extractProjects(events []*career.Career
 	for projectName, projectEvents := range projectMap {
 		startDate, endDate := svc.calculateDateRange(projectEvents)
 		projects = append(projects, &ProjectGroup{
-			ID:       uuid.New().String(),
-			Name:     projectName,
+			ID:        uuid.New().String(),
+			Name:      projectName,
 			StartDate: startDate,
-			EndDate:  endDate,
-			Skills:   []*Skill{},
-			EventIDs: extractEventIDs(projectEvents),
+			EndDate:   endDate,
+			Skills:    []*Skill{},
+			EventIDs:  extractEventIDs(projectEvents),
 		})
 	}
 
@@ -644,4 +644,3 @@ func removeDuplicates(items []string) []string {
 	}
 	return result
 }
-

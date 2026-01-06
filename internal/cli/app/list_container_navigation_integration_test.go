@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/service"
+	career "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -349,4 +349,3 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 		})
 	})
 })
-

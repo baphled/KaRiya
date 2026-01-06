@@ -43,12 +43,12 @@ type EnhancedBullet struct {
 	SourceFactIDs   []string
 	Metrics         []*Metric
 	Confidence      float64
-	RoleScore       float64      // 0.0-1.0
-	AudienceScore   float64      // 0.0-1.0
-	MetricScore     float64      // 0.0-1.0
-	ImpactScore     float64      // 0.0-1.0
-	FinalScore      float64      // Weighted combination
-	ImpactLevel     string       // "low", "medium", "high"
+	RoleScore       float64 // 0.0-1.0
+	AudienceScore   float64 // 0.0-1.0
+	MetricScore     float64 // 0.0-1.0
+	ImpactScore     float64 // 0.0-1.0
+	FinalScore      float64 // Weighted combination
+	ImpactLevel     string  // "low", "medium", "high"
 	KeywordMatches  []string
 	InclusionReason string
 	Rank            float64
@@ -77,10 +77,10 @@ type RoleFilter struct {
 
 // AudienceFilter defines audience-specific filtering criteria
 type AudienceFilter struct {
-	Name            string
-	FocusAreas      []string
+	Name             string
+	FocusAreas       []string
 	PreferredMetrics []string
-	MinImpactLevel  string
+	MinImpactLevel   string
 }
 
 // GenerateBullets generates enhanced bullets from events and facts
@@ -507,4 +507,3 @@ func (ebg *DefaultEnhancedBulletGenerator) getBulletCapForRole(role string) int 
 	filter := ebg.getRoleFilter(role)
 	return filter.BulletCap
 }
-

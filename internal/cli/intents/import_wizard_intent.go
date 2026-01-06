@@ -13,7 +13,7 @@ type ImportWizardModel struct {
 
 func NewImportWizardIntent(data *ImportWizardContext) *ImportWizardModel {
 	return &ImportWizardModel{
-		data: data,
+		data:   data,
 		result: nil,
 	}
 }
