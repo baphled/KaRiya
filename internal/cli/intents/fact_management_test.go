@@ -225,8 +225,8 @@ var _ = Describe("Pagination", func() {
 	})
 
 	It("should update table rows when navigating to next page", func() {
-		// Navigate to page 2 using f key (pgdn)
-		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+		// Navigate to page 2 using ctrl+d key (pgdn)
+		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
 
 		// Verify we're on page 2
 		view := manyFactsIntent.View()
@@ -242,9 +242,9 @@ var _ = Describe("Pagination", func() {
 	})
 
 	It("should update table rows when navigating to last page", func() {
-		// Navigate to page 3 using f key twice
-		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
-		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+		// Navigate to page 3 using ctrl+d key twice
+		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
+		manyFactsIntent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
 
 		// Verify we're on page 3
 		view := manyFactsIntent.View()

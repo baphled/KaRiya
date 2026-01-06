@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +15,7 @@ type FactManagementModel struct {
 	data          *FactManagementContext
 	table         *table.Model
 	listContainer *components.TableListContainer
+	navHandler    *navigation.ListNavigationHandler
 	result        *IntentResult[*FactManagementResult]
 }
 
@@ -46,12 +48,14 @@ func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
 		Bold(true)
 	t.SetStyles(s)
 
-	return &FactManagementModel{
+	model := &FactManagementModel{
 		data:          data,
 		table:         &t,
 		listContainer: components.NewTableListContainer(t, "Manage Facts", 100),
 		result:        nil,
 	}
+	model.navHandler = navigation.NewListNavigationHandler(model)
+	return model
 }
 
 func (m *FactManagementModel) Init() tea.Cmd {
@@ -98,12 +102,8 @@ func (m *FactManagementModel) updateTableRows() {
 		realIdx := start + idx
 		text := truncate(fact.Text, 50)
 
-		// Add visual indicator for selected row
-		if realIdx == m.data.SelectedFactIndex {
-			text = "▶ " + text
-		} else {
-			text = "  " + text
-		}
+		// Use navigation handler to format row text with indicator
+		text = m.navHandler.FormatRowText(realIdx, text)
 
 		strength := fact.StrengthSignal
 		if strength == "" {
@@ -118,13 +118,16 @@ func (m *FactManagementModel) updateTableRows() {
 
 	m.table.SetRows(rows)
 
-	// Set table cursor relative to page
-	if m.data.SelectedFactIndex >= start && m.data.SelectedFactIndex < end {
-		m.table.SetCursor(m.data.SelectedFactIndex - start)
-	} else if len(rows) > 0 {
-		m.table.SetCursor(0)
-	}
+	// Calculate relative cursor for current page
+	relativeCursor := m.data.SelectedFactIndex - start
 
+	// Set table cursor (for visual highlighting)
+	m.table.SetCursor(relativeCursor)
+
+	// Sync container's index to match (critical for rendering)
+	m.listContainer.SetSelectedIdx(relativeCursor)
+
+	// Update container with modified table
 	m.listContainer.SetTable(*m.table)
 }
 
@@ -175,9 +178,35 @@ func (m *FactManagementModel) Result() *IntentResult[interface{}] {
 	}
 }
 
+// ListNavigator interface implementation
+func (m *FactManagementModel) GetTotalItems() int {
+	return len(m.data.Facts)
+}
+
+func (m *FactManagementModel) GetSelectedIndex() int {
+	return m.data.SelectedFactIndex
+}
+
+func (m *FactManagementModel) SetSelectedIndex(idx int) {
+	m.data.SelectedFactIndex = idx
+	if idx >= 0 && idx < len(m.data.Facts) {
+		m.data.SelectedFact = m.data.Facts[idx]
+	}
+	m.updateTableRows()
+}
+
+func (m *FactManagementModel) GetPageSize() int {
+	return 15
+}
+
 func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Try navigation handler first
+		if m.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
 		switch msg.String() {
 		case "q", "ctrl+c":
 			m.data.CurrentState = FactCompletedState
@@ -188,78 +217,6 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 					Facts:  m.data.Facts,
 				},
 			}
-			return nil
-
-		case "j", "down":
-			// Move down by 1 within the current list bounds
-			if m.data.SelectedFactIndex < len(m.data.Facts)-1 {
-				m.data.SelectedFactIndex++
-				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
-				m.updateTableRows()
-			}
-			return nil
-
-		case "k", "up":
-			// Move up by 1 within the current list bounds
-			if m.data.SelectedFactIndex > 0 {
-				m.data.SelectedFactIndex--
-				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
-				m.updateTableRows()
-			}
-			return nil
-
-		case "pgup", "b":
-			// Page up (move up by page height).
-			pageSize := 15
-			newIndex := m.data.SelectedFactIndex - pageSize
-			if newIndex < 0 {
-				newIndex = 0
-			}
-			m.data.SelectedFactIndex = newIndex
-			m.table.SetCursor(newIndex)
-			if m.data.SelectedFactIndex >= 0 && m.data.SelectedFactIndex < len(m.data.Facts) {
-				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
-			}
-			m.updateTableRows()
-			return nil
-
-		case "pgdn", "f":
-			// Page down (move down by page height).
-			pageSize := 15
-			newIndex := m.data.SelectedFactIndex + pageSize
-			if newIndex >= len(m.data.Facts) {
-				newIndex = len(m.data.Facts) - 1
-			}
-			if newIndex < 0 {
-				newIndex = 0
-			}
-			m.data.SelectedFactIndex = newIndex
-			m.table.SetCursor(newIndex)
-			if m.data.SelectedFactIndex >= 0 && m.data.SelectedFactIndex < len(m.data.Facts) {
-				m.data.SelectedFact = m.data.Facts[m.data.SelectedFactIndex]
-			}
-			m.updateTableRows()
-			return nil
-
-		case "home", "g":
-			// Go to first fact.
-			m.table.SetCursor(0)
-			m.data.SelectedFactIndex = 0
-			if len(m.data.Facts) > 0 {
-				m.data.SelectedFact = m.data.Facts[0]
-			}
-			m.updateTableRows()
-			return nil
-
-		case "end", "G":
-			// Go to last fact.
-			if len(m.data.Facts) > 0 {
-				lastIndex := len(m.data.Facts) - 1
-				m.table.SetCursor(lastIndex)
-				m.data.SelectedFactIndex = lastIndex
-				m.data.SelectedFact = m.data.Facts[lastIndex]
-			}
-			m.updateTableRows()
 			return nil
 
 		case "enter", " ":
