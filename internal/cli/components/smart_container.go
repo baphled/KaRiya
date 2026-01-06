@@ -46,6 +46,7 @@ type SmartContainer struct {
 	useMargins     bool
 	minContentSize Size
 	maxContentSize Size
+	dimContent     bool
 }
 
 // Size represents width and height dimensions
@@ -98,6 +99,12 @@ func (s *SmartContainer) SetMinContentSize(width, height int) *SmartContainer {
 // SetMaxContentSize sets maximum content dimensions
 func (s *SmartContainer) SetMaxContentSize(width, height int) *SmartContainer {
 	s.maxContentSize = Size{Width: width, Height: height}
+	return s
+}
+
+// SetDimContent enables or disables content dimming (for modal backgrounds)
+func (s *SmartContainer) SetDimContent(dim bool) *SmartContainer {
+	s.dimContent = dim
 	return s
 }
 
@@ -159,6 +166,11 @@ func (s *SmartContainer) renderNormalMode(width, height int, margins terminal.Ma
 	style := lipgloss.NewStyle().
 		Padding(margins.Top, margins.Right, margins.Bottom, margins.Left).
 		Foreground(styles.ColorTextPrimary)
+
+	// Apply dimming if enabled
+	if s.dimContent {
+		style = style.Foreground(lipgloss.Color("240")) // Gray color for dimming
+	}
 
 	return style.Render(content)
 }
