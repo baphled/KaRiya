@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -59,6 +60,9 @@ type SubmitErrorMsg struct {
 // - Reviewing and refining inferred bursts and facts
 // - Submitting the final event
 type CaptureEventIntent struct {
+	// Embed BaseIntent for terminal awareness, logo, and state management
+	*BaseIntent
+
 	// context is the input context passed to the intent.
 	context *CaptureEventContext
 
@@ -74,6 +78,9 @@ type CaptureEventIntent struct {
 	// eventService is the CLI service for interacting with career events.
 	// Injected via context for dependency management.
 	eventService *service.CLIEventService
+
+	// loadingRotator rotates through capture-specific loading messages
+	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewCaptureEventIntent creates a new CaptureEvent intent.
@@ -86,8 +93,20 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 	// Create the form model for capturing event details
 	formModel := models.NewFormModel(context.CLIEventService)
 
+	// Create BaseIntent for terminal awareness and state management
+	base := NewBaseIntent()
+
+	// Create loading message rotator with capture-specific messages
+	loadingRotator := components.NewLoadingMessageRotator([]string{
+		"📝 Capturing event details...",
+		"🔍 Analyzing event information...",
+		"💡 Extracting key insights...",
+		"✨ Preparing your event...",
+	}, 2*time.Second)
+
 	// Capture event intent created successfully
 	return &CaptureEventIntent{
+		BaseIntent:   base,
 		context:      context,
 		eventService: context.CLIEventService,
 		state: &CaptureEventModel{
@@ -104,7 +123,8 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 				RejectedFields: make(map[string]string),
 			},
 		},
-		active: true,
+		loadingRotator: loadingRotator,
+		active:         true,
 	}, nil
 }
 
