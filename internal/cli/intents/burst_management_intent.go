@@ -23,6 +23,18 @@ type BurstSelectedMsg struct {
 	Index int
 }
 
+// BurstEventsLoadedMsg is sent when events for a burst are loaded
+type BurstEventsLoadedMsg struct {
+	Events []*domain.CareerEvent
+	Error  error
+}
+
+// BurstFactsLoadedMsg is sent when facts for a burst are loaded
+type BurstFactsLoadedMsg struct {
+	Facts []*domain.Fact
+	Error error
+}
+
 // BurstManagementIntent implements the Intent interface for managing bursts.
 // It owns the complete lifecycle of burst management, including:
 // - Displaying a list of bursts
@@ -72,6 +84,14 @@ type BurstManagementIntentModel struct {
 	// viewedBursts tracks bursts viewed during the session.
 	viewedBursts []*domain.Burst
 
+	// Events and facts for current burst
+	burstEvents []*domain.CareerEvent
+	burstFacts  []*domain.Fact
+
+	// Loading states
+	loadingEvents bool
+	loadingFacts  bool
+
 	// Filter and sort state
 	searchText       string
 	filterCompetency string
@@ -81,8 +101,10 @@ type BurstManagementIntentModel struct {
 
 // State constants for BurstManagement intent.
 const (
-	BurstStateList   = "list"
-	BurstStateDetail = "detail"
+	BurstStateList         = "list"
+	BurstStateDetail       = "detail"
+	BurstStateDetailEvents = "detail_events"
+	BurstStateDetailFacts  = "detail_facts"
 )
 
 // NewBurstManagementIntent creates a new BurstManagement intent.
@@ -220,6 +242,12 @@ func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case BurstStateDetail:
 		return i.updateDetailView(msg)
+
+	case BurstStateDetailEvents:
+		return i.updateDetailEventsView(msg)
+
+	case BurstStateDetailFacts:
+		return i.updateDetailFactsView(msg)
 	}
 
 	return nil
@@ -267,6 +295,18 @@ func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "e":
+			// View events
+			i.state.currentState = BurstStateDetailEvents
+			i.state.loadingEvents = true
+			return i.loadEventsForBurst()
+
+		case "f":
+			// View facts
+			i.state.currentState = BurstStateDetailFacts
+			i.state.loadingFacts = true
+			return i.loadFactsForBurst()
+
 		case "enter":
 			// Confirm selection and return burst.
 			i.setCompleted()
@@ -279,6 +319,58 @@ func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 
 		case "q", "ctrl+c":
 			// Cancel.
+			i.setCancelled()
+			return nil
+		}
+	}
+
+	return nil
+}
+
+// updateDetailEventsView handles messages while viewing events in a burst
+func (i *BurstManagementIntent) updateDetailEventsView(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case BurstEventsLoadedMsg:
+		i.state.loadingEvents = false
+		if msg.Error == nil {
+			i.state.burstEvents = msg.Events
+		}
+		return nil
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			// Back to detail
+			i.state.currentState = BurstStateDetail
+			return nil
+
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
+	}
+
+	return nil
+}
+
+// updateDetailFactsView handles messages while viewing facts from a burst
+func (i *BurstManagementIntent) updateDetailFactsView(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case BurstFactsLoadedMsg:
+		i.state.loadingFacts = false
+		if msg.Error == nil {
+			i.state.burstFacts = msg.Facts
+		}
+		return nil
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			// Back to detail
+			i.state.currentState = BurstStateDetail
+			return nil
+
+		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
 		}
@@ -344,6 +436,12 @@ func (i *BurstManagementIntent) View() string {
 
 	case BurstStateDetail:
 		return i.viewDetail()
+
+	case BurstStateDetailEvents:
+		return i.viewDetailEvents()
+
+	case BurstStateDetailFacts:
+		return i.viewDetailFacts()
 	}
 
 	return ""
@@ -413,9 +511,104 @@ func (i *BurstManagementIntent) viewDetail() string {
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1)
 
-	footer := footerStyle.Render("Enter to confirm, Esc to go back, q to cancel")
+	footer := footerStyle.Render("e=events, f=facts, Enter=confirm, Esc=back, q=cancel")
 
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+}
+
+// viewDetailEvents renders the events view for a burst
+func (i *BurstManagementIntent) viewDetailEvents() string {
+	if i.state.loadingEvents {
+		infoStyle := lipgloss.NewStyle().Foreground(styles.ColorInfo)
+		return infoStyle.Render("Loading events...")
+	}
+
+	if len(i.state.burstEvents) == 0 {
+		errorStyle := lipgloss.NewStyle().Foreground(styles.ColorError)
+		return errorStyle.Render("No events found for this burst.")
+	}
+
+	var content strings.Builder
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorTextPrimary).
+		MarginBottom(1)
+
+	content.WriteString(headerStyle.Render(
+		fmt.Sprintf("Events in Burst: %s", i.state.selectedBurst.Name),
+	))
+	content.WriteString("\n\n")
+
+	for idx, event := range i.state.burstEvents {
+		content.WriteString(fmt.Sprintf("%d. %s\n", idx+1, event.Text))
+		content.WriteString(fmt.Sprintf("   Date: %s\n", event.Date.Format("2006-01-02")))
+		if len(event.Tags) > 0 {
+			content.WriteString(fmt.Sprintf("   Tags: %s\n", strings.Join(event.Tags, ", ")))
+		}
+		content.WriteString("\n")
+	}
+
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Esc=back, q=quit")
+	content.WriteString(footer)
+
+	return content.String()
+}
+
+// viewDetailFacts renders the facts view for a burst
+func (i *BurstManagementIntent) viewDetailFacts() string {
+	if i.state.loadingFacts {
+		infoStyle := lipgloss.NewStyle().Foreground(styles.ColorInfo)
+		return infoStyle.Render("Loading facts...")
+	}
+
+	if len(i.state.burstFacts) == 0 {
+		warningStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorWarning).
+			MarginBottom(1)
+
+		return warningStyle.Render("No facts extracted yet. Confirm the burst in detail view to extract facts.")
+	}
+
+	var content strings.Builder
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorTextPrimary).
+		MarginBottom(1)
+
+	content.WriteString(headerStyle.Render(
+		fmt.Sprintf("Facts from Burst: %s", i.state.selectedBurst.Name),
+	))
+	content.WriteString("\n\n")
+
+	for idx, fact := range i.state.burstFacts {
+		// Display fact text
+		content.WriteString(fmt.Sprintf("%d. %s\n", idx+1, fact.Text))
+
+		// Display competency categories
+		if len(fact.CompetencyCategories) > 0 {
+			content.WriteString(fmt.Sprintf("   Categories: %s\n", strings.Join(fact.CompetencyCategories, ", ")))
+		}
+
+		// Display strength signal
+		if fact.StrengthSignal != "" {
+			content.WriteString(fmt.Sprintf("   Strength: %s\n", fact.StrengthSignal))
+		}
+
+		content.WriteString("\n")
+	}
+
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Esc=back, q=quit")
+	content.WriteString(footer)
+
+	return content.String()
 }
 
 // Result returns the final result of the intent.
@@ -489,4 +682,45 @@ func (i *BurstManagementIntent) setFailed(code, message string, cause error) {
 		},
 	}
 	i.active = false
+}
+
+// loadEventsForBurst loads events for the selected burst
+func (i *BurstManagementIntent) loadEventsForBurst() tea.Cmd {
+	return func() tea.Msg {
+		if i.state.selectedBurst == nil {
+			return BurstEventsLoadedMsg{Error: fmt.Errorf("no burst selected")}
+		}
+
+		// Use service to get events by IDs
+		events := make([]*domain.CareerEvent, 0, len(i.state.selectedBurst.EventIDs))
+		for _, eventID := range i.state.selectedBurst.EventIDs {
+			event, err := i.context.Service.GetEventByID(i.context.Context, eventID)
+			if err != nil {
+				// Skip missing events, but continue loading others
+				continue
+			}
+			events = append(events, event)
+		}
+
+		return BurstEventsLoadedMsg{Events: events}
+	}
+}
+
+// loadFactsForBurst loads facts for the selected burst
+func (i *BurstManagementIntent) loadFactsForBurst() tea.Cmd {
+	return func() tea.Msg {
+		if i.state.selectedBurst == nil {
+			return BurstFactsLoadedMsg{Error: fmt.Errorf("no burst selected")}
+		}
+
+		facts, err := i.context.Service.GetFactsBySourceBurstID(
+			i.context.Context,
+			i.state.selectedBurst.ID,
+		)
+		if err != nil {
+			return BurstFactsLoadedMsg{Error: err}
+		}
+
+		return BurstFactsLoadedMsg{Facts: facts}
+	}
 }

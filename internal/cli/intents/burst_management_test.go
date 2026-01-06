@@ -129,6 +129,252 @@ var _ = Describe("BurstManagement Intent", func() {
 		})
 	})
 
+	Describe("Enhanced Detail View - Events", func() {
+		var (
+			testEvent1 *careerdom.CareerEvent
+			testEvent2 *careerdom.CareerEvent
+		)
+
+		BeforeEach(func() {
+			// Create test events
+			testEvent1 = &careerdom.CareerEvent{
+				ID:   "event-1",
+				Text: "First event in burst",
+				Date: time.Now().AddDate(0, -1, 0),
+				Tags: []string{"tag1", "tag2"},
+			}
+			testEvent2 = &careerdom.CareerEvent{
+				ID:   "event-2",
+				Text: "Second event in burst",
+				Date: time.Now(),
+				Tags: []string{"tag3"},
+			}
+
+			intent.Init()
+			intent.state.currentState = BurstStateDetail
+			intent.state.selectedBurst = testBurst
+		})
+
+		It("should transition to events view on 'e' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetailEvents))
+			Expect(intent.state.loadingEvents).To(BeTrue())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should handle events loaded message", func() {
+			intent.state.currentState = BurstStateDetailEvents
+			intent.state.loadingEvents = true
+
+			msg := BurstEventsLoadedMsg{
+				Events: []*careerdom.CareerEvent{testEvent1, testEvent2},
+			}
+
+			intent.Update(msg)
+			Expect(intent.state.loadingEvents).To(BeFalse())
+			Expect(len(intent.state.burstEvents)).To(Equal(2))
+			Expect(intent.state.burstEvents[0].ID).To(Equal("event-1"))
+		})
+
+		It("should render loading state while loading events", func() {
+			intent.state.currentState = BurstStateDetailEvents
+			intent.state.loadingEvents = true
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Loading events"))
+		})
+
+		It("should render events view with event details", func() {
+			intent.state.currentState = BurstStateDetailEvents
+			intent.state.burstEvents = []*careerdom.CareerEvent{testEvent1, testEvent2}
+			intent.state.loadingEvents = false
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Events in Burst"))
+			Expect(view).To(ContainSubstring(testBurst.Name))
+			Expect(view).To(ContainSubstring(testEvent1.Text))
+			Expect(view).To(ContainSubstring(testEvent2.Text))
+			Expect(view).To(ContainSubstring("tag1"))
+		})
+
+		It("should show empty state when no events found", func() {
+			intent.state.currentState = BurstStateDetailEvents
+			intent.state.burstEvents = []*careerdom.CareerEvent{}
+			intent.state.loadingEvents = false
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("No events found"))
+		})
+
+		It("should return to detail view on escape key", func() {
+			intent.state.currentState = BurstStateDetailEvents
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+		})
+
+		It("should cancel on q key from events view", func() {
+			intent.state.currentState = BurstStateDetailEvents
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should handle no burst selected error when loading events", func() {
+			intent.state.selectedBurst = nil
+
+			cmd := intent.loadEventsForBurst()
+			msg := cmd().(BurstEventsLoadedMsg)
+
+			Expect(msg.Error).To(HaveOccurred())
+			Expect(msg.Error.Error()).To(ContainSubstring("no burst selected"))
+		})
+
+		It("should handle error in events loaded message", func() {
+			intent.state.currentState = BurstStateDetailEvents
+			intent.state.loadingEvents = true
+
+			msg := BurstEventsLoadedMsg{
+				Error: errors.New("failed to load events"),
+			}
+
+			intent.Update(msg)
+			Expect(intent.state.loadingEvents).To(BeFalse())
+			Expect(len(intent.state.burstEvents)).To(Equal(0))
+		})
+	})
+
+	Describe("Enhanced Detail View - Facts", func() {
+		var (
+			testFact1 *careerdom.Fact
+			testFact2 *careerdom.Fact
+		)
+
+		BeforeEach(func() {
+			// Create test facts
+			testFact1 = &careerdom.Fact{
+				ID:                   "fact-1",
+				Text:                 "Led team of 5 engineers",
+				CompetencyCategories: []string{"leadership", "technical"},
+				StrengthSignal:       "strong",
+				SourceBurstID:        "burst-1",
+			}
+			testFact2 = &careerdom.Fact{
+				ID:                   "fact-2",
+				Text:                 "Improved system performance by 50%",
+				CompetencyCategories: []string{"technical"},
+				StrengthSignal:       "moderate",
+				SourceBurstID:        "burst-1",
+			}
+
+			intent.Init()
+			intent.state.currentState = BurstStateDetail
+			intent.state.selectedBurst = testBurst
+		})
+
+		It("should transition to facts view on 'f' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetailFacts))
+			Expect(intent.state.loadingFacts).To(BeTrue())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should handle facts loaded message", func() {
+			intent.state.currentState = BurstStateDetailFacts
+			intent.state.loadingFacts = true
+
+			msg := BurstFactsLoadedMsg{
+				Facts: []*careerdom.Fact{testFact1, testFact2},
+			}
+
+			intent.Update(msg)
+			Expect(intent.state.loadingFacts).To(BeFalse())
+			Expect(len(intent.state.burstFacts)).To(Equal(2))
+			Expect(intent.state.burstFacts[0].ID).To(Equal("fact-1"))
+		})
+
+		It("should render loading state while loading facts", func() {
+			intent.state.currentState = BurstStateDetailFacts
+			intent.state.loadingFacts = true
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Loading facts"))
+		})
+
+		It("should render facts view with fact details", func() {
+			intent.state.currentState = BurstStateDetailFacts
+			intent.state.burstFacts = []*careerdom.Fact{testFact1, testFact2}
+			intent.state.loadingFacts = false
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Facts from Burst"))
+			Expect(view).To(ContainSubstring(testBurst.Name))
+			Expect(view).To(ContainSubstring(testFact1.Text))
+			Expect(view).To(ContainSubstring(testFact2.Text))
+			Expect(view).To(ContainSubstring("leadership"))
+			Expect(view).To(ContainSubstring("strong"))
+		})
+
+		It("should show helpful message when no facts exist", func() {
+			intent.state.currentState = BurstStateDetailFacts
+			intent.state.burstFacts = []*careerdom.Fact{}
+			intent.state.loadingFacts = false
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("No facts extracted yet"))
+			Expect(view).To(ContainSubstring("Confirm the burst"))
+		})
+
+		It("should return to detail view on escape key", func() {
+			intent.state.currentState = BurstStateDetailFacts
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+		})
+
+		It("should cancel on q key from facts view", func() {
+			intent.state.currentState = BurstStateDetailFacts
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should handle no burst selected error when loading facts", func() {
+			intent.state.selectedBurst = nil
+
+			cmd := intent.loadFactsForBurst()
+			msg := cmd().(BurstFactsLoadedMsg)
+
+			Expect(msg.Error).To(HaveOccurred())
+			Expect(msg.Error.Error()).To(ContainSubstring("no burst selected"))
+		})
+
+		It("should handle error in facts loaded message", func() {
+			intent.state.currentState = BurstStateDetailFacts
+			intent.state.loadingFacts = true
+
+			msg := BurstFactsLoadedMsg{
+				Error: errors.New("failed to load facts"),
+			}
+
+			intent.Update(msg)
+			Expect(intent.state.loadingFacts).To(BeFalse())
+			Expect(len(intent.state.burstFacts)).To(Equal(0))
+		})
+	})
+
+	Describe("Detail View Enhanced Footer", func() {
+		It("should show enhanced keyboard shortcuts in detail view", func() {
+			intent.Init()
+			intent.state.currentState = BurstStateDetail
+			intent.state.selectedBurst = testBurst
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("e=events"))
+			Expect(view).To(ContainSubstring("f=facts"))
+		})
+	})
+
 	Describe("Pagination", func() {
 		var (
 			manyBurstsIntent *BurstManagementIntent

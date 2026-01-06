@@ -8,13 +8,15 @@ import (
 
 // Burst represents a grouping of related CareerEvents
 type Burst struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	Description     string    `json:"description,omitempty"`
-	EventIDs        []string  `json:"event_ids"`
-	CompetencyFocus string    `json:"competency_focus,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID              string     `json:"id"`
+	Name            string     `json:"name"`
+	Description     string     `json:"description,omitempty"`
+	EventIDs        []string   `json:"event_ids"`
+	CompetencyFocus string     `json:"competency_focus,omitempty"`
+	Confirmed       bool       `json:"confirmed"`
+	ConfirmedAt     *time.Time `json:"confirmed_at,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 // Validate checks if the Burst meets all defined criteria

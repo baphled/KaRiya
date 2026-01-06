@@ -4,6 +4,8 @@ coverage/
 coverage.html
 *.test
 
+.opencode
+
 # Build artifacts
 *.exe
 *.dll

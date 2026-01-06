@@ -270,4 +270,58 @@ var _ = Describe("Burst", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
+
+	Context("when working with confirmed status", func() {
+		It("should default to not confirmed", func() {
+			burst := &Burst{
+				ID:       "burst-123",
+				Name:     "Project Name",
+				EventIDs: []string{"event-1", "event-2"},
+			}
+
+			Expect(burst.Confirmed).To(BeFalse())
+			Expect(burst.ConfirmedAt).To(BeNil())
+		})
+
+		It("should allow setting confirmed status", func() {
+			now := time.Now()
+			burst := &Burst{
+				ID:          "burst-123",
+				Name:        "Project Name",
+				EventIDs:    []string{"event-1", "event-2"},
+				Confirmed:   true,
+				ConfirmedAt: &now,
+			}
+
+			Expect(burst.Confirmed).To(BeTrue())
+			Expect(burst.ConfirmedAt).NotTo(BeNil())
+			Expect(*burst.ConfirmedAt).To(BeTemporally("~", now, time.Second))
+		})
+
+		It("should validate successfully when confirmed", func() {
+			now := time.Now()
+			burst := &Burst{
+				ID:          "burst-123",
+				Name:        "Project Name",
+				EventIDs:    []string{"event-1", "event-2"},
+				Confirmed:   true,
+				ConfirmedAt: &now,
+			}
+
+			err := burst.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should validate successfully when confirmed without timestamp", func() {
+			burst := &Burst{
+				ID:        "burst-123",
+				Name:      "Project Name",
+				EventIDs:  []string{"event-1", "event-2"},
+				Confirmed: true,
+			}
+
+			err := burst.Validate()
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
