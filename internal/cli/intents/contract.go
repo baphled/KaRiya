@@ -1,8 +1,11 @@
 package intents
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
 )
 
@@ -155,8 +158,26 @@ type TerminalAwareIntent interface {
 // BaseIntent provides common functionality that all intents can embed
 // It handles terminal size tracking and provides default implementations
 type BaseIntent struct {
+	// Terminal management
 	terminalInfo   *terminal.Info
 	terminalConfig terminal.Config
+
+	// Logo management (shared instance)
+	logo        *components.ASCIILogo
+	logoSpacing int
+
+	// State management
+	isLoading      bool
+	loadingMessage string
+	errorState     error
+	successMessage string
+	successTime    time.Time
+
+	// Progress tracking
+	progressEnabled bool
+	progressValue   float64
+	progressTitle   string
+	progressMessage string
 }
 
 // NewBaseIntent creates a new BaseIntent with default terminal configuration
@@ -164,6 +185,7 @@ func NewBaseIntent() *BaseIntent {
 	return &BaseIntent{
 		terminalInfo:   terminal.NewInfo(),
 		terminalConfig: terminal.DefaultConfig,
+		logoSpacing:    2, // Default spacing
 	}
 }
 
@@ -180,4 +202,128 @@ func (b *BaseIntent) GetTerminalInfo() *terminal.Info {
 // GetMinimumSize returns the default minimum terminal size
 func (b *BaseIntent) GetMinimumSize() (width, height int) {
 	return b.terminalConfig.MinWidth, b.terminalConfig.MinHeight
+}
+
+// Logo Management Methods
+
+// SetLogo sets the shared logo instance
+func (b *BaseIntent) SetLogo(logo *components.ASCIILogo) {
+	b.logo = logo
+}
+
+// GetLogo returns the logo instance
+func (b *BaseIntent) GetLogo() *components.ASCIILogo {
+	return b.logo
+}
+
+// SetLogoSpacing sets the spacing before the logo
+func (b *BaseIntent) SetLogoSpacing(spacing int) {
+	b.logoSpacing = spacing
+}
+
+// GetLogoSpacing returns the spacing before the logo
+func (b *BaseIntent) GetLogoSpacing() int {
+	return b.logoSpacing
+}
+
+// Loading State Methods
+
+// SetLoading sets the loading state with a message
+func (b *BaseIntent) SetLoading(message string) {
+	b.isLoading = true
+	b.loadingMessage = message
+}
+
+// ClearLoading clears the loading state
+func (b *BaseIntent) ClearLoading() {
+	b.isLoading = false
+	b.loadingMessage = ""
+}
+
+// IsLoading returns whether the intent is in loading state
+func (b *BaseIntent) IsLoading() bool {
+	return b.isLoading
+}
+
+// GetLoadingMessage returns the current loading message
+func (b *BaseIntent) GetLoadingMessage() string {
+	return b.loadingMessage
+}
+
+// Error State Methods
+
+// SetError sets the error state
+func (b *BaseIntent) SetError(err error) {
+	b.errorState = err
+}
+
+// ClearError clears the error state
+func (b *BaseIntent) ClearError() {
+	b.errorState = nil
+}
+
+// GetError returns the current error state
+func (b *BaseIntent) GetError() error {
+	return b.errorState
+}
+
+// HasError returns whether the intent has an error
+func (b *BaseIntent) HasError() bool {
+	return b.errorState != nil
+}
+
+// Success State Methods
+
+// SetSuccess sets a success message with timestamp
+func (b *BaseIntent) SetSuccess(message string) {
+	b.successMessage = message
+	b.successTime = time.Now()
+}
+
+// ClearSuccess clears the success state
+func (b *BaseIntent) ClearSuccess() {
+	b.successMessage = ""
+	b.successTime = time.Time{}
+}
+
+// GetSuccessMessage returns the current success message
+func (b *BaseIntent) GetSuccessMessage() string {
+	return b.successMessage
+}
+
+// ShouldShowSuccess returns true if success message should be displayed
+// Success messages are shown for 3 seconds after being set
+func (b *BaseIntent) ShouldShowSuccess() bool {
+	if b.successMessage == "" {
+		return false
+	}
+	return time.Since(b.successTime) < 3*time.Second
+}
+
+// Progress State Methods
+
+// SetProgress sets the progress state with title, message, and value (0.0 to 1.0)
+func (b *BaseIntent) SetProgress(title, message string, value float64) {
+	b.progressEnabled = true
+	b.progressTitle = title
+	b.progressMessage = message
+	b.progressValue = value
+}
+
+// ClearProgress clears the progress state
+func (b *BaseIntent) ClearProgress() {
+	b.progressEnabled = false
+	b.progressTitle = ""
+	b.progressMessage = ""
+	b.progressValue = 0.0
+}
+
+// IsProgressEnabled returns whether progress tracking is enabled
+func (b *BaseIntent) IsProgressEnabled() bool {
+	return b.progressEnabled
+}
+
+// GetProgress returns the current progress state
+func (b *BaseIntent) GetProgress() (title, message string, value float64) {
+	return b.progressTitle, b.progressMessage, b.progressValue
 }
