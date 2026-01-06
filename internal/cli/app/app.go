@@ -2,17 +2,18 @@ package app
 
 import (
 	"context"
-	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/charmbracelet/bubbles/table"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -44,6 +45,9 @@ type Model struct {
 	selectedMenuIndex int
 	menuItems         []MenuItem
 	logo              *components.ASCIILogo
+
+	// Terminal info for responsive rendering
+	terminalInfo *terminal.Info
 
 	// Context for intent creation
 	ctx context.Context
@@ -86,6 +90,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	// Create ASCII logo with animation
 	logo := components.NewASCIILogo(true, 80)
+	logo.SetExternalCentering(true) // Let container handle centering
 
 	return &Model{
 		cliService:        cliService,
@@ -99,6 +104,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		selectedMenuIndex: 0,
 		menuItems:         menuItems,
 		logo:              logo,
+		terminalInfo:      terminal.NewInfo(),
 		ctx:               ctx,
 		width:             80,
 		height:            24,
@@ -152,16 +158,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
+		// Update dimensions
 		m.width = msg.Width
 		m.height = msg.Height
+
+		// Update terminal info
+		m.terminalInfo.Update(msg)
 
 		// Update logo width for centering
 		m.logo.SetWidth(msg.Width)
 
-		// Propagate terminal size to router for intents
-		// The router will handle updating the active intent if it's terminal-aware
-		// Note: Router's HandleMessage already handles WindowSizeMsg, so this is handled
-		// when messages are routed in the default case below
+		// Clear screen to prevent artifacts on resize
+		return m, tea.ClearScreen
 
 	case IntentCompletedMsg:
 		// Handle result from completed intent
@@ -256,16 +264,84 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// viewMenu renders the main menu using TableListContainer with centered layout and ASCII logo
+// viewMenu renders the main menu using SmartContainer for proper centering
 func (m *Model) viewMenu() string {
+	// Ensure terminalInfo has current dimensions
+	if !m.terminalInfo.IsValid && m.width > 0 && m.height > 0 {
+		m.terminalInfo.Width = m.width
+		m.terminalInfo.Height = m.height
+		m.terminalInfo.IsValid = true
+	}
+
+	// Use SmartContainer with terminal info for intelligent centering
+	container := components.NewSmartContainer(m.terminalInfo)
+	container.SetCenteringMode(components.CenterBoth)
+
+	// Build menu components WITHOUT individual centering
 	var parts []string
 
-	// Add logo at the top
-	logoView := m.logo.View()
+	// 1. Logo (static view, no animation during menu)
+	logoView := m.logo.ViewStatic()
 	parts = append(parts, logoView)
-	parts = append(parts, "") // Empty line for spacing
 
-	// Create table for menu items
+	// 2. Spacing between logo and menu
+	parts = append(parts, "")
+	parts = append(parts, "")
+
+	// 3. Menu table with responsive columns
+	tableView := m.renderResponsiveTable()
+	parts = append(parts, tableView)
+
+	// 4. Spacing between menu and help
+	parts = append(parts, "")
+	parts = append(parts, "")
+
+	// 5. Help text
+	helpText := "↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit"
+	parts = append(parts, helpText)
+
+	// Let SmartContainer handle ALL centering
+	content := ""
+	for i, part := range parts {
+		if i > 0 {
+			content += "\n"
+		}
+		content += part
+	}
+	return container.SetContent(content).Render()
+}
+
+// renderResponsiveTable creates the menu table with responsive column widths
+func (m *Model) renderResponsiveTable() string {
+	// Calculate responsive column widths based on terminal size
+	category := m.terminalInfo.GetCategory()
+
+	var actionWidth, descWidth int
+
+	switch category {
+	case terminal.SizeTiny:
+		// Very small terminals: minimal widths
+		actionWidth = 18
+		descWidth = 28
+	case terminal.SizeCompact:
+		// Compact terminals: balanced widths
+		actionWidth = 20
+		descWidth = 35
+	case terminal.SizeNormal:
+		// Normal terminals: comfortable widths
+		actionWidth = 22
+		descWidth = 40
+	case terminal.SizeLarge:
+		// Large terminals: generous widths
+		actionWidth = 25
+		descWidth = 50
+	default: // SizeXLarge
+		// Extra large terminals: maximum widths
+		actionWidth = 28
+		descWidth = 60
+	}
+
+	// Create table rows
 	rows := make([]table.Row, len(m.menuItems))
 	for i, item := range m.menuItems {
 		// Add selection indicator
@@ -276,48 +352,23 @@ func (m *Model) viewMenu() string {
 		rows[i] = table.Row{indicator + item.Name, item.Help}
 	}
 
+	// Create table with responsive columns
 	tableModel := table.New(
 		table.WithColumns([]table.Column{
-			{Title: "Action", Width: 22},
-			{Title: "Description", Width: 40},
+			{Title: "Action", Width: actionWidth},
+			{Title: "Description", Width: descWidth},
 		}),
 		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(len(m.menuItems)),
 	)
 
+	// Set cursor position
 	if m.selectedMenuIndex >= 0 && m.selectedMenuIndex < len(rows) {
 		tableModel.SetCursor(m.selectedMenuIndex)
 	}
 
-	// Render table
-	tableView := tableModel.View()
-
-	// Center the table
-	tableCentered := components.CenterBlock(tableView, m.width, 0, false)
-	parts = append(parts, tableCentered)
-	parts = append(parts, "") // Empty line for spacing
-
-	// Add help text at bottom
-	helpText := "↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit"
-	helpCentered := components.CenterText(helpText, m.width)
-	parts = append(parts, helpCentered)
-
-	// Combine all parts using strings.Join
-	content := ""
-	for i, part := range parts {
-		if i > 0 {
-			content += "\n"
-		}
-		content += part
-	}
-
-	// Center the entire menu
-	centered := components.NewCenteredContainer(m.width, m.height)
-	centered.SetContent(content)
-	centered.SetVerticalCenter(true)
-
-	return centered.Render()
+	return tableModel.View()
 }
 
 // GetMenuItems returns the menu items from the model
