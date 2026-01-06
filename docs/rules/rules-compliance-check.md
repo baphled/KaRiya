@@ -58,8 +58,8 @@ Run through this checklist periodically during work:
 - [ ] Marking tasks complete after verification
 - [ ] Not skipping ahead or batch-processing tasks
 
-**Task Instructions** (`docs/rules/task-instructions.md`)
-- [ ] Strictly following task checklist order
+**Task Processing Guidelines**
+- [ ] Strictly following task checklist order (see process-task-list.md)
 - [ ] Referencing codebase before making changes
 - [ ] Following existing patterns in codebase
 - [ ] Avoiding side effects and scope creep

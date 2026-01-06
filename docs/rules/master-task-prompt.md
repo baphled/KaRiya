@@ -576,11 +576,7 @@ This workflow implements ALL project rules:
   - Authority order (tools > checklist > guidelines)
   - Deterministic execution
 
-- **Task Instructions** (`docs/rules/task-instructions.md`)
-  - Strict checklist following
-  - Reference codebase first
-  - Follow existing patterns
-  - One expectation per test
+
 
 ### Token Efficiency
 - **Token Efficiency** (`docs/rules/token-efficiency.md`)
