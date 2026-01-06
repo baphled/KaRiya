@@ -86,6 +86,74 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			Expect(intent.state.selectedEvent).NotTo(BeNil())
 			Expect(intent.state.selectedEvent.ID).To(Equal("event1"))
 		})
+
+		It("should sort events chronologically (latest first) on Init", func() {
+			// Create events in non-chronological order
+			events := []*career.CareerEvent{
+				{
+					ID:        "old",
+					Text:      "Old event",
+					Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					Tags:      []string{"test"},
+				},
+				{
+					ID:        "new",
+					Text:      "New event",
+					Date:      time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+					CreatedAt: time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
+					Tags:      []string{"test"},
+				},
+				{
+					ID:        "middle",
+					Text:      "Middle event",
+					Date:      time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC),
+					CreatedAt: time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC),
+					Tags:      []string{"test"},
+				},
+			}
+
+			ctx := &BrowseTimelineContext{Events: events}
+			newIntent, err := NewBrowseTimelineIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			newIntent.Init()
+
+			// Verify latest event is first (desc order)
+			Expect(newIntent.state.filteredEvents[0].ID).To(Equal("new"))
+			Expect(newIntent.state.filteredEvents[1].ID).To(Equal("middle"))
+			Expect(newIntent.state.filteredEvents[2].ID).To(Equal("old"))
+		})
+
+		It("should use CreatedAt as secondary sort for same-date events", func() {
+			sameDate := time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)
+			events := []*career.CareerEvent{
+				{
+					ID:        "first-created",
+					Text:      "First created",
+					Date:      sameDate,
+					CreatedAt: time.Date(2025, 1, 15, 9, 0, 0, 0, time.UTC),
+					Tags:      []string{"test"},
+				},
+				{
+					ID:        "last-created",
+					Text:      "Last created",
+					Date:      sameDate,
+					CreatedAt: time.Date(2025, 1, 15, 17, 0, 0, 0, time.UTC),
+					Tags:      []string{"test"},
+				},
+			}
+
+			ctx := &BrowseTimelineContext{Events: events}
+			newIntent, err := NewBrowseTimelineIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			newIntent.Init()
+
+			// Latest created should be first when dates are equal
+			Expect(newIntent.state.filteredEvents[0].ID).To(Equal("last-created"))
+			Expect(newIntent.state.filteredEvents[1].ID).To(Equal("first-created"))
+		})
 	})
 
 	Describe("Update - Timeline View", func() {
@@ -356,13 +424,13 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			for i := 0; i < 35; i++ {
 				dateDay := (i % 28) + 1 // Ensure valid day
 				events[i] = &career.CareerEvent{
-					ID:        fmt.Sprintf("event%02d", i),
-					Text:      fmt.Sprintf("Event %02d", i+1),
-					Date:      time.Date(2025, 1, dateDay, 0, 0, 0, 0, time.UTC),
-					Company:   fmt.Sprintf("Company %02d", i+1),
-					CreatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					UpdatedAt: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-					Tags:      []string{"test"},
+					ID:         fmt.Sprintf("event%02d", i),
+					Text:       fmt.Sprintf("Event %02d", i+1),
+					Date:       time.Date(2025, 1, dateDay, 0, 0, 0, 0, time.UTC),
+					Company:    fmt.Sprintf("Company %02d", i+1),
+					CreatedAt:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					UpdatedAt:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					Tags:       []string{"test"},
 					Categories: []string{"testing"},
 				}
 			}
