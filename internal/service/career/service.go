@@ -407,6 +407,42 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 	return savedBursts, nil
 }
 
+// InferCompetencyForBurst retrieves events by IDs and infers the most common competency focus.
+// Returns empty string if no valid categories found or if events cannot be retrieved.
+//
+// This method:
+// 1. Retrieves all events by their IDs
+// 2. Collects categories from all events
+// 3. Uses InferCompetencyFromCategories to determine most common category
+// 4. Handles missing events gracefully (logs warning, continues with available events)
+func (s *Service) InferCompetencyForBurst(ctx context.Context, eventIDs []string) string {
+	if eventIDs == nil || len(eventIDs) == 0 {
+		return ""
+	}
+
+	// Collect categories from all events
+	var allCategories [][]string
+
+	for _, eventID := range eventIDs {
+		event, err := s.GetEventByID(ctx, eventID)
+		if err != nil {
+			// Log warning but continue with other events
+			s.logger.WithFields(map[string]string{
+				"event_id": eventID,
+				"error":    err.Error(),
+			}).Warn("Failed to retrieve event for competency inference, skipping")
+			continue
+		}
+
+		if event != nil && len(event.Categories) > 0 {
+			allCategories = append(allCategories, event.Categories)
+		}
+	}
+
+	// Infer competency from collected categories
+	return InferCompetencyFromCategories(allCategories)
+}
+
 // ExtractFactsFromEvent extracts facts from a single career event
 func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.CareerEvent) ([]domain.Fact, error) {
 	if event == nil {

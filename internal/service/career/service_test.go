@@ -740,4 +740,133 @@ var _ = Describe("Career Service", func() {
 			})
 		})
 	})
+
+	Describe("InferCompetencyForBurst", func() {
+		var (
+			event1 *career.CareerEvent
+			event2 *career.CareerEvent
+			event3 *career.CareerEvent
+		)
+
+		BeforeEach(func() {
+			event1 = &career.CareerEvent{
+				ID:         "event-1",
+				Text:       "Built REST API",
+				Date:       time.Now(),
+				Categories: []string{"technical", "leadership"},
+			}
+			event2 = &career.CareerEvent{
+				ID:         "event-2",
+				Text:       "Mentored junior developers",
+				Date:       time.Now(),
+				Categories: []string{"technical"},
+			}
+			event3 = &career.CareerEvent{
+				ID:         "event-3",
+				Text:       "Led architecture review",
+				Date:       time.Now(),
+				Categories: []string{"leadership"},
+			}
+		})
+
+		Context("with valid event IDs", func() {
+			It("should infer most common category", func() {
+				mockRepo.SetEventByID("event-1", event1, nil)
+				mockRepo.SetEventByID("event-2", event2, nil)
+				mockRepo.SetEventByID("event-3", event3, nil)
+
+				eventIDs := []string{"event-1", "event-2", "event-3"}
+				// technical: 2, leadership: 2 (tie, alphabetically: leadership wins)
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal("leadership"))
+			})
+
+			It("should return most common when clear winner", func() {
+				event2.Categories = []string{"technical", "product"}
+				event3.Categories = []string{"technical"}
+
+				mockRepo.SetEventByID("event-1", event1, nil)
+				mockRepo.SetEventByID("event-2", event2, nil)
+				mockRepo.SetEventByID("event-3", event3, nil)
+
+				eventIDs := []string{"event-1", "event-2", "event-3"}
+				// technical: 4, leadership: 1, product: 1
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal("technical"))
+			})
+
+			It("should handle single event", func() {
+				mockRepo.SetEventByID("event-1", event1, nil)
+
+				eventIDs := []string{"event-1"}
+				// technical: 1, leadership: 1 (tie, alphabetically: leadership wins)
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal("leadership"))
+			})
+		})
+
+		Context("with missing events", func() {
+			It("should skip missing events and infer from available ones", func() {
+				mockRepo.SetEventByID("event-1", event1, nil)
+				mockRepo.SetEventByID("event-2", nil, errors.New("event not found"))
+				mockRepo.SetEventByID("event-3", event3, nil)
+
+				eventIDs := []string{"event-1", "event-2", "event-3"}
+				// technical: 1, leadership: 2
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal("leadership"))
+			})
+
+			It("should return empty string when all events missing", func() {
+				mockRepo.SetEventByID("event-1", nil, errors.New("not found"))
+				mockRepo.SetEventByID("event-2", nil, errors.New("not found"))
+
+				eventIDs := []string{"event-1", "event-2"}
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal(""))
+			})
+		})
+
+		Context("with events without categories", func() {
+			It("should return empty string when no events have categories", func() {
+				event1.Categories = []string{}
+				event2.Categories = []string{}
+
+				mockRepo.SetEventByID("event-1", event1, nil)
+				mockRepo.SetEventByID("event-2", event2, nil)
+
+				eventIDs := []string{"event-1", "event-2"}
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal(""))
+			})
+
+			It("should infer from events that have categories", func() {
+				event1.Categories = []string{}
+				event2.Categories = []string{"technical"}
+				event3.Categories = []string{"technical", "leadership"}
+
+				mockRepo.SetEventByID("event-1", event1, nil)
+				mockRepo.SetEventByID("event-2", event2, nil)
+				mockRepo.SetEventByID("event-3", event3, nil)
+
+				eventIDs := []string{"event-1", "event-2", "event-3"}
+				// technical: 2, leadership: 1
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal("technical"))
+			})
+		})
+
+		Context("with edge cases", func() {
+			It("should handle empty eventIDs slice", func() {
+				eventIDs := []string{}
+				result := service.InferCompetencyForBurst(ctx, eventIDs)
+				Expect(result).To(Equal(""))
+			})
+
+			It("should handle nil eventIDs", func() {
+				result := service.InferCompetencyForBurst(ctx, nil)
+				Expect(result).To(Equal(""))
+			})
+		})
+	})
 })
