@@ -1084,7 +1084,7 @@ func (i *BurstManagementIntent) viewConfirm() string {
 
 		content.WriteString(warningStyle.Render(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount)))
 		content.WriteString("\n\n")
-		content.WriteString(infoStyle.Render("Do you want to re-extract facts? This will replace existing facts."))
+		content.WriteString(infoStyle.Render("Do you want to extract more facts? New facts will be added to existing ones."))
 		content.WriteString("\n")
 	} else if i.state.extractionComplete {
 		// Extraction completed successfully
@@ -1092,7 +1092,7 @@ func (i *BurstManagementIntent) viewConfirm() string {
 			Foreground(styles.ColorSuccess).
 			Bold(true)
 
-		content.WriteString(successStyle.Render(fmt.Sprintf("✓ Successfully extracted %d facts!", i.state.extractedFactsCount)))
+		content.WriteString(successStyle.Render(fmt.Sprintf("✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount)))
 		content.WriteString("\n\n")
 		content.WriteString(infoStyle.Render("Burst has been confirmed."))
 		content.WriteString("\n")
@@ -1157,7 +1157,9 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 		Foreground(styles.ColorInfo).
 		Bold(true)
 
-	content.WriteString(progressStyle.Render("⏳ Extracting facts from events..."))
+	content.WriteString(progressStyle.Render("⏳ Extracting and saving facts..."))
+	content.WriteString("\n\n")
+	content.WriteString(infoStyle.Render("Analyzing events and persisting facts to database."))
 	content.WriteString("\n\n")
 	content.WriteString(infoStyle.Render("This may take a few moments."))
 	content.WriteString("\n")
@@ -1301,7 +1303,7 @@ func (i *BurstManagementIntent) checkForExistingFacts() tea.Cmd {
 	return i.loadFactsForBurst()
 }
 
-// extractFacts extracts facts from the burst events
+// extractFacts extracts facts from the burst events and persists them to the database
 func (i *BurstManagementIntent) extractFacts() tea.Cmd {
 	return func() tea.Msg {
 		if i.state.selectedBurst == nil {
@@ -1317,13 +1319,35 @@ func (i *BurstManagementIntent) extractFacts() tea.Cmd {
 			return FactExtractionCompleteMsg{Error: err}
 		}
 
-		// Convert []domain.Fact to []*domain.Fact
-		factPointers := make([]*domain.Fact, len(facts))
+		// Persist each extracted fact to the database
+		savedFacts := make([]*domain.Fact, 0, len(facts))
+		var saveErrors []error
+
 		for idx := range facts {
-			factPointers[idx] = &facts[idx]
+			fact := &facts[idx]
+
+			// Set source burst ID (linking fact to this burst)
+			fact.SourceBurstID = i.state.selectedBurst.ID
+
+			// Save fact to repository
+			if err := i.context.Service.SaveFact(i.context.Context, fact); err != nil {
+				// Collect errors but continue saving other facts
+				saveErrors = append(saveErrors, fmt.Errorf("failed to save fact %d: %w", idx, err))
+				continue
+			}
+
+			savedFacts = append(savedFacts, fact)
 		}
 
-		return FactExtractionCompleteMsg{Facts: factPointers}
+		// If all facts failed to save, return error
+		if len(savedFacts) == 0 && len(facts) > 0 {
+			return FactExtractionCompleteMsg{
+				Error: fmt.Errorf("failed to save any facts: %v", saveErrors),
+			}
+		}
+
+		// Return saved facts (partial success is OK)
+		return FactExtractionCompleteMsg{Facts: savedFacts}
 	}
 }
 

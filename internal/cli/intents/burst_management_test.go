@@ -673,7 +673,7 @@ var _ = Describe("BurstManagement Intent", func() {
 				view := intent.View()
 				Expect(view).To(ContainSubstring("Extracting Facts"))
 				Expect(view).To(ContainSubstring(testBurst.Name))
-				Expect(view).To(ContainSubstring("⏳ Extracting facts from events"))
+				Expect(view).To(ContainSubstring("⏳ Extracting and saving facts"))
 				Expect(view).To(ContainSubstring("This may take a few moments"))
 			})
 
@@ -782,7 +782,7 @@ var _ = Describe("BurstManagement Intent", func() {
 				view := intent.View()
 				Expect(view).To(ContainSubstring("Confirm Burst"))
 				Expect(view).To(ContainSubstring("already has 3 facts extracted"))
-				Expect(view).To(ContainSubstring("Do you want to re-extract facts"))
+				Expect(view).To(ContainSubstring("Do you want to extract more facts"))
 				Expect(view).To(ContainSubstring("y=re-extract facts"))
 				Expect(view).To(ContainSubstring("n=skip re-extraction"))
 			})
@@ -868,7 +868,7 @@ var _ = Describe("BurstManagement Intent", func() {
 				intent.state.extractedFactsCount = 5
 
 				view := intent.View()
-				Expect(view).To(ContainSubstring("✓ Successfully extracted 5 facts"))
+				Expect(view).To(ContainSubstring("✓ Successfully extracted and saved 5 facts"))
 				Expect(view).To(ContainSubstring("Burst has been confirmed"))
 			})
 
