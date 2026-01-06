@@ -575,6 +575,20 @@ func (i *BurstManagementIntent) updateConfirmView(msg tea.Msg) tea.Cmd {
 				i.setCancelled()
 				return nil
 			}
+		} else if i.state.extractionComplete {
+			// Extraction complete, any key returns to detail
+			switch msg.String() {
+			case "q", "ctrl+c":
+				i.setCancelled()
+				return nil
+			default:
+				// Any other key returns to detail
+				i.state.currentState = BurstStateDetail
+				i.state.confirmError = nil
+				i.state.extractionComplete = false
+				i.state.extractedFactsCount = 0
+				return nil
+			}
 		} else {
 			switch msg.String() {
 			case "esc":
@@ -735,7 +749,20 @@ func (i *BurstManagementIntent) viewDetail() string {
 	}
 
 	var content strings.Builder
-	content.WriteString("\nBurst Details\n\n")
+
+	// Title with confirmation status indicator
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorTextPrimary)
+
+	title := "Burst Details"
+	if i.state.selectedBurst.Confirmed {
+		confirmedStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorSuccess).
+			Bold(true)
+		title = "Burst Details " + confirmedStyle.Render("✓ Confirmed")
+	}
+	content.WriteString("\n" + titleStyle.Render(title) + "\n\n")
 
 	// Burst header.
 	content.WriteString(fmt.Sprintf("Name: %s\n", i.state.selectedBurst.Name))
@@ -748,6 +775,12 @@ func (i *BurstManagementIntent) viewDetail() string {
 	}
 
 	content.WriteString(fmt.Sprintf("Events: %d\n", len(i.state.selectedBurst.EventIDs)))
+
+	// Show confirmation details if confirmed
+	if i.state.selectedBurst.Confirmed && i.state.selectedBurst.ConfirmedAt != nil {
+		content.WriteString(fmt.Sprintf("Confirmed: %s\n", i.state.selectedBurst.ConfirmedAt.Format("2006-01-02 15:04")))
+	}
+
 	content.WriteString(fmt.Sprintf("Created: %s\n", i.state.selectedBurst.CreatedAt.Format("2006-01-02")))
 	content.WriteString(fmt.Sprintf("Updated: %s\n", i.state.selectedBurst.UpdatedAt.Format("2006-01-02")))
 
