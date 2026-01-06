@@ -48,6 +48,18 @@ type BurstDeletedMsg struct {
 	Error   error
 }
 
+// BurstConfirmedMsg is sent when a burst is confirmed
+type BurstConfirmedMsg struct {
+	Burst *domain.Burst
+	Error error
+}
+
+// FactExtractionCompleteMsg is sent when fact extraction is complete
+type FactExtractionCompleteMsg struct {
+	Facts []*domain.Fact
+	Error error
+}
+
 // BurstManagementIntent implements the Intent interface for managing bursts.
 // It owns the complete lifecycle of burst management, including:
 // - Displaying a list of bursts
@@ -110,6 +122,14 @@ type BurstManagementIntentModel struct {
 	deleteError error
 	editError   error
 
+	// Confirmation state
+	confirmError        error
+	extractingFacts     bool
+	extractionComplete  bool
+	extractedFactsCount int
+	existingFactsCount  int
+	showReextractPrompt bool
+
 	// Filter and sort state
 	searchText       string
 	filterCompetency string
@@ -119,12 +139,14 @@ type BurstManagementIntentModel struct {
 
 // State constants for BurstManagement intent.
 const (
-	BurstStateList          = "list"
-	BurstStateDetail        = "detail"
-	BurstStateDetailEvents  = "detail_events"
-	BurstStateDetailFacts   = "detail_facts"
-	BurstStateEdit          = "edit"
-	BurstStateDeleteConfirm = "delete_confirm"
+	BurstStateList            = "list"
+	BurstStateDetail          = "detail"
+	BurstStateDetailEvents    = "detail_events"
+	BurstStateDetailFacts     = "detail_facts"
+	BurstStateEdit            = "edit"
+	BurstStateDeleteConfirm   = "delete_confirm"
+	BurstStateConfirm         = "confirm"
+	BurstStateExtractingFacts = "extracting_facts"
 )
 
 // NewBurstManagementIntent creates a new BurstManagement intent.
@@ -274,6 +296,12 @@ func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case BurstStateDeleteConfirm:
 		return i.updateDeleteConfirmView(msg)
+
+	case BurstStateConfirm:
+		return i.updateConfirmView(msg)
+
+	case BurstStateExtractingFacts:
+		return i.updateExtractingFactsView(msg)
 	}
 
 	return nil
@@ -342,6 +370,11 @@ func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 			// Delete burst
 			i.state.currentState = BurstStateDeleteConfirm
 			return nil
+
+		case "c":
+			// Confirm burst (extract facts if needed)
+			i.state.currentState = BurstStateConfirm
+			return i.checkForExistingFacts()
 
 		case "enter":
 			// Confirm selection and return burst.
@@ -501,6 +534,94 @@ func (i *BurstManagementIntent) updateDeleteConfirmView(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+// updateConfirmView handles the confirmation state
+func (i *BurstManagementIntent) updateConfirmView(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case BurstFactsLoadedMsg:
+		// Facts loaded, check count
+		if msg.Error != nil {
+			i.state.confirmError = msg.Error
+			return nil
+		}
+
+		i.state.existingFactsCount = len(msg.Facts)
+
+		if i.state.existingFactsCount > 0 {
+			// Facts already exist, show re-extract prompt
+			i.state.showReextractPrompt = true
+			return nil
+		}
+
+		// No facts exist, start extraction
+		i.state.currentState = BurstStateExtractingFacts
+		i.state.extractingFacts = true
+		return i.extractFacts()
+
+	case tea.KeyMsg:
+		if i.state.showReextractPrompt {
+			switch msg.String() {
+			case "y":
+				// Re-extract facts
+				i.state.showReextractPrompt = false
+				i.state.currentState = BurstStateExtractingFacts
+				i.state.extractingFacts = true
+				return i.extractFacts()
+
+			case "n", "esc":
+				// Don't re-extract, just mark as confirmed
+				return i.confirmBurstOnly()
+
+			case "q", "ctrl+c":
+				i.setCancelled()
+				return nil
+			}
+		} else {
+			switch msg.String() {
+			case "esc":
+				// Go back to detail
+				i.state.currentState = BurstStateDetail
+				i.state.confirmError = nil
+				return nil
+
+			case "q", "ctrl+c":
+				i.setCancelled()
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
+
+// updateExtractingFactsView handles the fact extraction state
+func (i *BurstManagementIntent) updateExtractingFactsView(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case FactExtractionCompleteMsg:
+		i.state.extractingFacts = false
+
+		if msg.Error != nil {
+			i.state.confirmError = msg.Error
+			i.state.currentState = BurstStateConfirm
+			return nil
+		}
+
+		i.state.extractedFactsCount = len(msg.Facts)
+		i.state.extractionComplete = true
+
+		// Now confirm the burst
+		return i.confirmBurstOnly()
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
+	}
+
+	return nil
+}
+
 // applyFilters filters the bursts based on current filter state.
 func (i *BurstManagementIntent) applyFilters() {
 	filtered := make([]*domain.Burst, 0)
@@ -570,6 +691,12 @@ func (i *BurstManagementIntent) View() string {
 
 	case BurstStateDeleteConfirm:
 		return i.viewDeleteConfirm()
+
+	case BurstStateConfirm:
+		return i.viewConfirm()
+
+	case BurstStateExtractingFacts:
+		return i.viewExtractingFacts()
 	}
 
 	return ""
@@ -639,7 +766,7 @@ func (i *BurstManagementIntent) viewDetail() string {
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1)
 
-	footer := footerStyle.Render("e=events, f=facts, x=edit, d=delete, Enter=confirm, Esc=back, q=cancel")
+	footer := footerStyle.Render("e=events, f=facts, c=confirm burst, x=edit, d=delete, Enter=select, Esc=back, q=cancel")
 
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
@@ -870,6 +997,146 @@ func (i *BurstManagementIntent) viewDeleteConfirm() string {
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
+// viewConfirm renders the confirmation view
+func (i *BurstManagementIntent) viewConfirm() string {
+	if i.state.selectedBurst == nil {
+		return "No burst selected."
+	}
+
+	var content strings.Builder
+
+	// Header
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorSuccess).
+		MarginBottom(1)
+
+	content.WriteString(headerStyle.Render("Confirm Burst"))
+	content.WriteString("\n\n")
+
+	// Show error if any
+	if i.state.confirmError != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorError).
+			MarginBottom(1)
+		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.confirmError)))
+		content.WriteString("\n\n")
+	}
+
+	// Burst details
+	infoStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextPrimary)
+
+	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
+	content.WriteString("\n\n")
+
+	// Show different messages based on state
+	if i.state.showReextractPrompt {
+		// Facts already exist
+		warningStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorWarning).
+			Bold(true)
+
+		content.WriteString(warningStyle.Render(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount)))
+		content.WriteString("\n\n")
+		content.WriteString(infoStyle.Render("Do you want to re-extract facts? This will replace existing facts."))
+		content.WriteString("\n")
+	} else if i.state.extractionComplete {
+		// Extraction completed successfully
+		successStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorSuccess).
+			Bold(true)
+
+		content.WriteString(successStyle.Render(fmt.Sprintf("✓ Successfully extracted %d facts!", i.state.extractedFactsCount)))
+		content.WriteString("\n\n")
+		content.WriteString(infoStyle.Render("Burst has been confirmed."))
+		content.WriteString("\n")
+	} else {
+		// About to start extraction
+		content.WriteString(infoStyle.Render("No facts found for this burst. Starting fact extraction..."))
+		content.WriteString("\n")
+	}
+
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	var footer string
+	if i.state.showReextractPrompt {
+		footer = footerStyle.Render("y=re-extract facts, n=skip re-extraction, Esc=cancel")
+	} else if i.state.extractionComplete {
+		footer = footerStyle.Render("Press any key to continue...")
+	} else {
+		footer = footerStyle.Render("Esc=cancel")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+}
+
+// viewExtractingFacts renders the fact extraction progress view
+func (i *BurstManagementIntent) viewExtractingFacts() string {
+	if i.state.selectedBurst == nil {
+		return "No burst selected."
+	}
+
+	var content strings.Builder
+
+	// Header
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorInfo).
+		MarginBottom(1)
+
+	content.WriteString(headerStyle.Render("Extracting Facts"))
+	content.WriteString("\n\n")
+
+	// Progress indicator
+	infoStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextPrimary)
+
+	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
+	content.WriteString("\n\n")
+
+	progressStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorInfo).
+		Bold(true)
+
+	content.WriteString(progressStyle.Render("⏳ Extracting facts from events..."))
+	content.WriteString("\n\n")
+	content.WriteString(infoStyle.Render("This may take a few moments."))
+	content.WriteString("\n")
+
+	// Apply card styling
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	// Footer with instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		MarginTop(1)
+
+	footer := footerStyle.Render("Please wait... (q to cancel)")
+
+	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+}
+
 // Result returns the final result of the intent.
 func (i *BurstManagementIntent) Result() *IntentResult[interface{}] {
 	if i.result == nil {
@@ -981,5 +1248,66 @@ func (i *BurstManagementIntent) loadFactsForBurst() tea.Cmd {
 		}
 
 		return BurstFactsLoadedMsg{Facts: facts}
+	}
+}
+
+// checkForExistingFacts checks if facts already exist for the current burst
+func (i *BurstManagementIntent) checkForExistingFacts() tea.Cmd {
+	return i.loadFactsForBurst()
+}
+
+// extractFacts extracts facts from the burst events
+func (i *BurstManagementIntent) extractFacts() tea.Cmd {
+	return func() tea.Msg {
+		if i.state.selectedBurst == nil {
+			return FactExtractionCompleteMsg{Error: fmt.Errorf("no burst selected")}
+		}
+
+		// Extract facts from burst using the service
+		facts, err := i.context.Service.ExtractFactsFromBurst(
+			i.context.Context,
+			i.state.selectedBurst,
+		)
+		if err != nil {
+			return FactExtractionCompleteMsg{Error: err}
+		}
+
+		// Convert []domain.Fact to []*domain.Fact
+		factPointers := make([]*domain.Fact, len(facts))
+		for idx := range facts {
+			factPointers[idx] = &facts[idx]
+		}
+
+		return FactExtractionCompleteMsg{Facts: factPointers}
+	}
+}
+
+// confirmBurstOnly marks the burst as confirmed without extracting facts
+func (i *BurstManagementIntent) confirmBurstOnly() tea.Cmd {
+	return func() tea.Msg {
+		if i.state.selectedBurst == nil {
+			return BurstConfirmedMsg{Error: fmt.Errorf("no burst selected")}
+		}
+
+		// Mark burst as confirmed
+		now := time.Now()
+		i.state.selectedBurst.Confirmed = true
+		i.state.selectedBurst.ConfirmedAt = &now
+
+		// Update in repository
+		err := i.context.UpdateBurst(i.state.selectedBurst)
+		if err != nil {
+			return BurstConfirmedMsg{Error: err}
+		}
+
+		// Reload bursts
+		i.context.LoadBursts()
+		i.state.filteredBursts = i.context.Bursts
+
+		// Transition to detail view to show success
+		i.state.currentState = BurstStateDetail
+		i.state.extractionComplete = true
+
+		return BurstConfirmedMsg{Burst: i.state.selectedBurst}
 	}
 }

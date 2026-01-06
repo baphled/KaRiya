@@ -637,6 +637,256 @@ var _ = Describe("BurstManagement Intent", func() {
 		})
 	})
 
+	Describe("Confirmation & Fact Extraction", func() {
+		BeforeEach(func() {
+			intent.Init()
+			intent.state.currentState = BurstStateDetail
+			intent.state.selectedBurst = testBurst
+		})
+
+		It("should transition to confirm state on 'c' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			Expect(intent.state.currentState).To(Equal(BurstStateConfirm))
+			Expect(cmd).NotTo(BeNil()) // checkForExistingFacts returns a command
+		})
+
+		It("should show 'c=confirm burst' in detail view footer", func() {
+			view := intent.View()
+			Expect(view).To(ContainSubstring("c=confirm burst"))
+		})
+
+		Context("when no facts exist", func() {
+			It("should transition to extracting facts state", func() {
+				intent.state.currentState = BurstStateConfirm
+
+				// Simulate no facts loaded
+				msg := BurstFactsLoadedMsg{Facts: []*careerdom.Fact{}}
+				intent.Update(msg)
+
+				Expect(intent.state.currentState).To(Equal(BurstStateExtractingFacts))
+				Expect(intent.state.extractingFacts).To(BeTrue())
+			})
+
+			It("should render extracting facts view", func() {
+				intent.state.currentState = BurstStateExtractingFacts
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Extracting Facts"))
+				Expect(view).To(ContainSubstring(testBurst.Name))
+				Expect(view).To(ContainSubstring("⏳ Extracting facts from events"))
+				Expect(view).To(ContainSubstring("This may take a few moments"))
+			})
+
+			It("should handle extraction complete message", func() {
+				intent.state.currentState = BurstStateExtractingFacts
+				intent.state.extractingFacts = true
+
+				// Simulate successful extraction
+				extractedFacts := []*careerdom.Fact{
+					{ID: "fact-1", Text: "Test fact 1"},
+					{ID: "fact-2", Text: "Test fact 2"},
+				}
+				msg := FactExtractionCompleteMsg{Facts: extractedFacts}
+
+				cmd := intent.Update(msg)
+
+				Expect(intent.state.extractingFacts).To(BeFalse())
+				Expect(intent.state.extractedFactsCount).To(Equal(2))
+				Expect(cmd).NotTo(BeNil()) // confirmBurstOnly command
+			})
+
+			It("should mark burst as confirmed after extraction", func() {
+				intent.state.currentState = BurstStateExtractingFacts
+
+				// Simulate extraction complete
+				msg := FactExtractionCompleteMsg{
+					Facts: []*careerdom.Fact{
+						{ID: "fact-1", Text: "Test fact"},
+					},
+				}
+
+				cmd := intent.Update(msg)
+				Expect(cmd).NotTo(BeNil())
+
+				// Execute the confirm command
+				result := cmd().(BurstConfirmedMsg)
+				Expect(result.Error).To(BeNil())
+				Expect(result.Burst.Confirmed).To(BeTrue())
+				Expect(result.Burst.ConfirmedAt).NotTo(BeNil())
+			})
+		})
+
+		Context("when facts already exist", func() {
+			var existingFacts []*careerdom.Fact
+
+			BeforeEach(func() {
+				existingFacts = []*careerdom.Fact{
+					{ID: "fact-1", Text: "Existing fact 1"},
+					{ID: "fact-2", Text: "Existing fact 2"},
+					{ID: "fact-3", Text: "Existing fact 3"},
+				}
+			})
+
+			It("should show re-extract prompt", func() {
+				intent.state.currentState = BurstStateConfirm
+
+				// Simulate facts already loaded
+				msg := BurstFactsLoadedMsg{Facts: existingFacts}
+				intent.Update(msg)
+
+				Expect(intent.state.showReextractPrompt).To(BeTrue())
+				Expect(intent.state.existingFactsCount).To(Equal(3))
+			})
+
+			It("should render re-extract prompt view", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.showReextractPrompt = true
+				intent.state.existingFactsCount = 3
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Confirm Burst"))
+				Expect(view).To(ContainSubstring("already has 3 facts extracted"))
+				Expect(view).To(ContainSubstring("Do you want to re-extract facts"))
+				Expect(view).To(ContainSubstring("y=re-extract facts"))
+				Expect(view).To(ContainSubstring("n=skip re-extraction"))
+			})
+
+			It("should re-extract facts on 'y' key", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.showReextractPrompt = true
+
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+				Expect(intent.state.showReextractPrompt).To(BeFalse())
+				Expect(intent.state.currentState).To(Equal(BurstStateExtractingFacts))
+				Expect(intent.state.extractingFacts).To(BeTrue())
+				Expect(cmd).NotTo(BeNil())
+			})
+
+			It("should skip re-extraction on 'n' key", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.showReextractPrompt = true
+
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+				Expect(cmd).NotTo(BeNil()) // confirmBurstOnly command
+
+				// Execute the confirm command
+				result := cmd().(BurstConfirmedMsg)
+				Expect(result.Error).To(BeNil())
+				Expect(result.Burst.Confirmed).To(BeTrue())
+			})
+
+			It("should skip re-extraction on 'Esc' key", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.showReextractPrompt = true
+
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				Expect(cmd).NotTo(BeNil()) // confirmBurstOnly command
+			})
+		})
+
+		Context("error handling", func() {
+			It("should handle fact loading error", func() {
+				intent.state.currentState = BurstStateConfirm
+
+				msg := BurstFactsLoadedMsg{Error: errors.New("failed to load facts")}
+				intent.Update(msg)
+
+				Expect(intent.state.confirmError).NotTo(BeNil())
+			})
+
+			It("should handle extraction error", func() {
+				intent.state.currentState = BurstStateExtractingFacts
+
+				msg := FactExtractionCompleteMsg{Error: errors.New("extraction failed")}
+				intent.Update(msg)
+
+				Expect(intent.state.extractingFacts).To(BeFalse())
+				Expect(intent.state.confirmError).NotTo(BeNil())
+				Expect(intent.state.currentState).To(Equal(BurstStateConfirm))
+			})
+
+			It("should display confirmation error in view", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.confirmError = errors.New("confirmation failed")
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Error: confirmation failed"))
+			})
+
+			It("should handle nil selectedBurst gracefully", func() {
+				intent.state.selectedBurst = nil
+				intent.state.currentState = BurstStateConfirm
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("No burst selected"))
+			})
+		})
+
+		Context("completion and success", func() {
+			It("should show success message after extraction", func() {
+				intent.state.currentState = BurstStateConfirm
+				intent.state.extractionComplete = true
+				intent.state.extractedFactsCount = 5
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("✓ Successfully extracted 5 facts"))
+				Expect(view).To(ContainSubstring("Burst has been confirmed"))
+			})
+
+			It("should reload bursts list after confirmation", func() {
+				originalCount := len(intent.state.filteredBursts)
+
+				// Add a new burst
+				newBurst := &careerdom.Burst{
+					ID:          "burst-2",
+					Name:        "New Burst",
+					Description: "New description",
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
+				}
+				mockRepo.bursts = append(mockRepo.bursts, newBurst)
+
+				// Execute confirm
+				cmd := intent.confirmBurstOnly()
+				cmd()
+
+				// Verify bursts were reloaded
+				Expect(len(intent.state.filteredBursts)).To(Equal(originalCount + 1))
+			})
+
+			It("should transition to detail view after confirmation", func() {
+				intent.state.currentState = BurstStateExtractingFacts
+
+				// Execute confirm
+				cmd := intent.confirmBurstOnly()
+				result := cmd().(BurstConfirmedMsg)
+
+				Expect(result.Error).To(BeNil())
+				Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+				Expect(intent.state.extractionComplete).To(BeTrue())
+			})
+		})
+
+		It("should cancel from confirm state on 'Esc' when not prompting", func() {
+			intent.state.currentState = BurstStateConfirm
+			intent.state.showReextractPrompt = false
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+			Expect(intent.state.confirmError).To(BeNil())
+		})
+
+		It("should cancel from extracting state on 'q' key", func() {
+			intent.state.currentState = BurstStateExtractingFacts
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+	})
+
 	Describe("Pagination", func() {
 		var (
 			manyBurstsIntent *BurstManagementIntent
