@@ -107,8 +107,11 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 // Init initializes the model
 func (m *Model) Init() tea.Cmd {
-	// Initialize logo animation
-	return m.logo.Init()
+	// Request initial terminal size and initialize logo animation
+	return tea.Batch(
+		tea.WindowSize(),
+		m.logo.Init(),
+	)
 }
 
 // Update handles messages - FIXED: Using correct Bubble Tea v1.3.10 signature
@@ -151,8 +154,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+
 		// Update logo width for centering
 		m.logo.SetWidth(msg.Width)
+
+		// Propagate terminal size to router for intents
+		// The router will handle updating the active intent if it's terminal-aware
+		// Note: Router's HandleMessage already handles WindowSizeMsg, so this is handled
+		// when messages are routed in the default case below
 
 	case IntentCompletedMsg:
 		// Handle result from completed intent

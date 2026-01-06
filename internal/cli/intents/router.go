@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/baphled/kariya/internal/cli/terminal"
 )
 
 // DefaultIntentRouter implements the IntentRouter interface.
@@ -25,6 +27,9 @@ type DefaultIntentRouter struct {
 	// resultHandlers maps intent names to result handlers.
 	// These are called when an intent completes.
 	resultHandlers map[string]func(result *IntentResult[interface{}]) tea.Cmd
+
+	// terminalInfo holds the current terminal dimensions
+	terminalInfo *terminal.Info
 }
 
 // NewDefaultIntentRouter creates a new intent router.
@@ -33,6 +38,7 @@ func NewDefaultIntentRouter() *DefaultIntentRouter {
 		intents:        make(map[string]func() Intent),
 		intentHistory:  make([]Intent, 0),
 		resultHandlers: make(map[string]func(result *IntentResult[interface{}]) tea.Cmd),
+		terminalInfo:   terminal.NewInfo(),
 	}
 }
 
@@ -82,6 +88,11 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]int
 	}
 	r.activeIntent = intent
 
+	// Propagate terminal info to the new intent if it's terminal-aware
+	if termAware, ok := intent.(TerminalAwareIntent); ok && r.terminalInfo.IsValid {
+		termAware.UpdateTerminalInfo(r.terminalInfo)
+	}
+
 	// Call the intent's Init method to get any startup commands.
 	return intent.Init(), nil
 }
@@ -97,6 +108,19 @@ func (r *DefaultIntentRouter) GetActiveIntent() Intent {
 // HandleMessage processes a message in the active intent.
 // Returns a command and any intent result if the intent completed.
 func (r *DefaultIntentRouter) HandleMessage(msg tea.Msg) (tea.Cmd, interface{}) {
+	// Handle WindowSizeMsg to update terminal info
+	if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
+		r.mu.Lock()
+		r.terminalInfo.Update(wsMsg)
+		// Propagate to active intent if terminal-aware
+		if r.activeIntent != nil {
+			if termAware, ok := r.activeIntent.(TerminalAwareIntent); ok {
+				termAware.UpdateTerminalInfo(r.terminalInfo)
+			}
+		}
+		r.mu.Unlock()
+	}
+
 	r.mu.RLock()
 	intent := r.activeIntent
 	r.mu.RUnlock()
@@ -169,4 +193,28 @@ func (r *DefaultIntentRouter) GetHistoryDepth() int {
 		return 0
 	}
 	return len(r.intentHistory) + 1
+}
+
+// UpdateTerminalInfo updates the router's terminal information
+// This should be called by the root app when it receives WindowSizeMsg
+func (r *DefaultIntentRouter) UpdateTerminalInfo(info *terminal.Info) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.terminalInfo = info
+
+	// Propagate to active intent if terminal-aware
+	if r.activeIntent != nil {
+		if termAware, ok := r.activeIntent.(TerminalAwareIntent); ok {
+			termAware.UpdateTerminalInfo(info)
+		}
+	}
+}
+
+// GetTerminalInfo returns the current terminal information
+func (r *DefaultIntentRouter) GetTerminalInfo() *terminal.Info {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.terminalInfo
 }

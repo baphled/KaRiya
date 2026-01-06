@@ -1,6 +1,10 @@
 package intents
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/baphled/kariya/internal/cli/terminal"
+)
 
 // Intent defines the contract for all intent implementations.
 // Each intent MUST:
@@ -132,4 +136,48 @@ func NewCancelledModalEditResult[T any](original T) *ModalEditResult[T] {
 		Accepted: false,
 		Changes:  make(map[string]interface{}),
 	}
+}
+
+// TerminalAwareIntent extends the Intent interface with terminal size awareness.
+// Intents that implement this interface will receive terminal dimension updates
+// and can adapt their rendering accordingly.
+type TerminalAwareIntent interface {
+	Intent
+
+	// UpdateTerminalInfo updates the intent with current terminal dimensions
+	UpdateTerminalInfo(info *terminal.Info)
+
+	// GetMinimumSize returns the minimum terminal size required for this intent
+	// Returns width and height in columns and rows
+	GetMinimumSize() (width, height int)
+}
+
+// BaseIntent provides common functionality that all intents can embed
+// It handles terminal size tracking and provides default implementations
+type BaseIntent struct {
+	terminalInfo   *terminal.Info
+	terminalConfig terminal.Config
+}
+
+// NewBaseIntent creates a new BaseIntent with default terminal configuration
+func NewBaseIntent() *BaseIntent {
+	return &BaseIntent{
+		terminalInfo:   terminal.NewInfo(),
+		terminalConfig: terminal.DefaultConfig,
+	}
+}
+
+// UpdateTerminalInfo updates the terminal information
+func (b *BaseIntent) UpdateTerminalInfo(info *terminal.Info) {
+	b.terminalInfo = info
+}
+
+// GetTerminalInfo returns the current terminal information
+func (b *BaseIntent) GetTerminalInfo() *terminal.Info {
+	return b.terminalInfo
+}
+
+// GetMinimumSize returns the default minimum terminal size
+func (b *BaseIntent) GetMinimumSize() (width, height int) {
+	return b.terminalConfig.MinWidth, b.terminalConfig.MinHeight
 }
