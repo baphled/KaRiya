@@ -557,6 +557,18 @@ func (i *BurstManagementIntent) updateConfirmView(msg tea.Msg) tea.Cmd {
 		i.state.extractingFacts = true
 		return i.extractFacts()
 
+	case BurstConfirmedMsg:
+		// Handle confirmation completion (burst confirmed without extraction)
+		if msg.Error != nil {
+			i.state.confirmError = msg.Error
+			return nil
+		}
+
+		// Success! extractionComplete should already be set by confirmBurstOnly()
+		// State should already be BurstStateConfirm
+		// Message properly handled, success view will be shown
+		return nil
+
 	case tea.KeyMsg:
 		if i.state.showReextractPrompt {
 			switch msg.String() {
@@ -1337,8 +1349,8 @@ func (i *BurstManagementIntent) confirmBurstOnly() tea.Cmd {
 		i.context.LoadBursts()
 		i.state.filteredBursts = i.context.Bursts
 
-		// Transition to detail view to show success
-		i.state.currentState = BurstStateDetail
+		// Stay in confirm state to show success message
+		i.state.currentState = BurstStateConfirm
 		i.state.extractionComplete = true
 
 		return BurstConfirmedMsg{Burst: i.state.selectedBurst}
