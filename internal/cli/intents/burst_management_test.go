@@ -372,6 +372,268 @@ var _ = Describe("BurstManagement Intent", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("e=events"))
 			Expect(view).To(ContainSubstring("f=facts"))
+			Expect(view).To(ContainSubstring("x=edit"))
+			Expect(view).To(ContainSubstring("d=delete"))
+		})
+	})
+
+	Describe("Edit Operations", func() {
+		BeforeEach(func() {
+			intent.Init()
+			intent.state.currentState = BurstStateDetail
+			intent.state.selectedBurst = testBurst
+		})
+
+		It("should transition to edit state on 'x' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(intent.state.currentState).To(Equal(BurstStateEdit))
+			Expect(cmd).To(BeNil()) // initBurstEditor returns nil for now
+		})
+
+		It("should render edit view with burst details", func() {
+			intent.state.currentState = BurstStateEdit
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Edit Burst"))
+			Expect(view).To(ContainSubstring(testBurst.Name))
+			Expect(view).To(ContainSubstring(testBurst.Description))
+			Expect(view).To(ContainSubstring(testBurst.CompetencyFocus))
+			Expect(view).To(ContainSubstring("Ctrl+S=save"))
+			Expect(view).To(ContainSubstring("Esc=cancel"))
+		})
+
+		It("should show placeholder message in edit view", func() {
+			intent.state.currentState = BurstStateEdit
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Full edit functionality coming soon"))
+		})
+
+		It("should cancel edit on 'Esc' key and return to detail", func() {
+			intent.state.currentState = BurstStateEdit
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+			Expect(intent.state.editError).To(BeNil())
+		})
+
+		It("should save burst on 'Ctrl+S' key", func() {
+			intent.state.currentState = BurstStateEdit
+			intent.state.selectedBurst.Name = "Updated Burst Name"
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+
+			// Verify burst was updated in repository
+			saved, err := mockRepo.Read(ctx, testBurst.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(saved.Name).To(Equal("Updated Burst Name"))
+		})
+
+		It("should handle save error gracefully", func() {
+			// Create a burst that doesn't exist in repository
+			nonExistentBurst := &careerdom.Burst{
+				ID:   "non-existent",
+				Name: "Non-existent Burst",
+			}
+			intent.state.selectedBurst = nonExistentBurst
+			intent.state.currentState = BurstStateEdit
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+
+			// Should stay in edit state with error
+			Expect(intent.state.currentState).To(Equal(BurstStateEdit))
+			Expect(intent.state.editError).NotTo(BeNil())
+		})
+
+		It("should display edit error in view", func() {
+			intent.state.currentState = BurstStateEdit
+			intent.state.editError = errors.New("failed to save burst")
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Error: failed to save burst"))
+		})
+
+		It("should clear edit error when cancelling", func() {
+			intent.state.currentState = BurstStateEdit
+			intent.state.editError = errors.New("some error")
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.editError).To(BeNil())
+		})
+
+		It("should handle nil selectedBurst gracefully", func() {
+			intent.state.selectedBurst = nil
+			intent.state.currentState = BurstStateEdit
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("No burst selected"))
+		})
+
+		It("should reload bursts list after successful save", func() {
+			intent.state.currentState = BurstStateEdit
+			originalCount := len(intent.state.filteredBursts)
+
+			// Add a new burst to the repository
+			newBurst := &careerdom.Burst{
+				ID:              "burst-2",
+				Name:            "New Burst",
+				Description:     "New burst description",
+				CompetencyFocus: "testing",
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+			}
+			mockRepo.bursts = append(mockRepo.bursts, newBurst)
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+
+			// Verify bursts were reloaded
+			Expect(len(intent.state.filteredBursts)).To(Equal(originalCount + 1))
+		})
+	})
+
+	Describe("Delete Operations", func() {
+		BeforeEach(func() {
+			intent.Init()
+			intent.state.currentState = BurstStateDetail
+			intent.state.selectedBurst = testBurst
+		})
+
+		It("should transition to delete confirm state on 'd' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+			Expect(intent.state.currentState).To(Equal(BurstStateDeleteConfirm))
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should render delete confirmation view with burst details", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("DELETE BURST"))
+			Expect(view).To(ContainSubstring("Are you sure"))
+			Expect(view).To(ContainSubstring(testBurst.Name))
+			Expect(view).To(ContainSubstring("This will remove the burst grouping but NOT delete the events"))
+			Expect(view).To(ContainSubstring("This action cannot be undone"))
+			Expect(view).To(ContainSubstring("y=confirm delete"))
+			Expect(view).To(ContainSubstring("n/Esc=cancel"))
+		})
+
+		It("should cancel delete on 'n' key", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+			Expect(intent.state.deleteError).To(BeNil())
+		})
+
+		It("should cancel delete on 'Esc' key", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
+			Expect(intent.state.deleteError).To(BeNil())
+		})
+
+		It("should delete burst on 'y' key and return to list", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+			originalCount := len(mockRepo.bursts)
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			// Should transition to list view
+			Expect(intent.state.currentState).To(Equal(BurstStateList))
+
+			// Verify burst was deleted from repository
+			Expect(len(mockRepo.bursts)).To(Equal(originalCount - 1))
+			_, err := mockRepo.Read(ctx, testBurst.ID)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reset selectedBurst and selectedIndex after delete", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+			intent.state.selectedIndex = 5
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			Expect(intent.state.selectedBurst).To(BeNil())
+			Expect(intent.state.selectedIndex).To(Equal(0))
+		})
+
+		It("should reload bursts list after delete", func() {
+			// Add another burst so we can verify the count after delete
+			anotherBurst := &careerdom.Burst{
+				ID:          "burst-2",
+				Name:        "Another Burst",
+				Description: "Another test burst",
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			}
+			mockRepo.bursts = append(mockRepo.bursts, anotherBurst)
+			intent.context.LoadBursts()
+			intent.state.filteredBursts = intent.context.Bursts
+
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			// Should have one burst left
+			Expect(len(intent.state.filteredBursts)).To(Equal(1))
+			Expect(intent.state.filteredBursts[0].ID).To(Equal("burst-2"))
+		})
+
+		It("should handle delete error gracefully", func() {
+			// Try to delete a burst that doesn't exist
+			nonExistentBurst := &careerdom.Burst{
+				ID:   "non-existent",
+				Name: "Non-existent Burst",
+			}
+			intent.state.selectedBurst = nonExistentBurst
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			// Should stay in delete confirm state with error
+			Expect(intent.state.currentState).To(Equal(BurstStateDeleteConfirm))
+			Expect(intent.state.deleteError).NotTo(BeNil())
+		})
+
+		It("should display delete error in view", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+			intent.state.deleteError = errors.New("failed to delete burst")
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Error: failed to delete burst"))
+		})
+
+		It("should clear delete error when cancelling", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+			intent.state.deleteError = errors.New("some error")
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.deleteError).To(BeNil())
+		})
+
+		It("should handle nil selectedBurst gracefully", func() {
+			intent.state.selectedBurst = nil
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("No burst selected"))
+		})
+
+		It("should cancel on 'q' key from delete confirm", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			Expect(intent.result.Status).To(Equal(Cancelled))
+		})
+
+		It("should show warning styling in delete confirm view", func() {
+			intent.state.currentState = BurstStateDeleteConfirm
+
+			view := intent.View()
+			// The view should contain warning emoji
+			Expect(view).To(ContainSubstring("⚠️"))
 		})
 	})
 
