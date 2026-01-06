@@ -4,8 +4,9 @@ This directory contains all development standards, guidelines, and workflows for
 
 ## 📚 Documentation Overview
 
-### Total Documents: 16 files (~7,500+ lines)
-### Categories: Rules, Guidelines, Quick References, Processes, Templates
+### Total Documents: 14 files (~7,400+ lines)
+### Archived Documents: 3 files (see docs/archive/rules/)
+### Categories: Rules, Guidelines, Quick References, Processes, Best Practices
 
 ## 🎯 Quick Access
 
@@ -140,34 +141,6 @@ This directory contains all development standards, guidelines, and workflows for
   - Focus on deltas
   - Thresholds and anti-patterns
 
-### 5. Generation Templates (2 files)
-
-#### [generate-prd.md](generate-prd.md) (61 lines)
-- **Type**: Process / Template
-- **Purpose**: Rules for generating PRDs from user prompts
-- **Key Topics**:
-  - Clarifying questions
-  - Output structure
-  - PRD format
-
-#### [generate-tasks.md](generate-tasks.md) (86 lines)
-- **Type**: Process / Template
-- **Purpose**: Generating task lists from PRDs
-- **Key Topics**:
-  - Parent tasks and sub-tasks
-  - Two-phase generation
-  - File references
-
-### 6. Instructions (1 file)
-
-#### [task-instructions.md](task-instructions.md) (13 lines)
-- **Type**: Brief Instructions
-- **Purpose**: Strict rules for using process-task-list
-- **Key Topics**:
-  - Checklist-only approach
-  - Reference codebase
-  - Follow patterns
-
 ## 🚀 Getting Started
 
 ### For New Developers
@@ -211,8 +184,6 @@ This directory contains all development standards, guidelines, and workflows for
 | Attribute AI work | [AI_COMMIT_ATTRIBUTION.md](AI_COMMIT_ATTRIBUTION.md) |
 | Write Go code | [go-guidelines.md](go-guidelines.md) |
 | Check compliance | [COMPLIANCE_QUICK_REF.md](COMPLIANCE_QUICK_REF.md) |
-| Generate a PRD | [generate-prd.md](generate-prd.md) |
-| Create tasks | [generate-tasks.md](generate-tasks.md) |
 | Save tokens | [token-efficiency.md](token-efficiency.md) |
 | Review commits | [review-commit-prompt.md](review-commit-prompt.md) |
 
@@ -231,9 +202,14 @@ This directory contains all development standards, guidelines, and workflows for
 | Quick References | 4 | ~742 | Fast lookup |
 | Process & Workflows | 4 | ~2,227 | Step-by-step guides |
 | Best Practices | 2 | ~529 | Recommended practices |
-| Generation Templates | 2 | ~147 | PRD/task generation |
-| Instructions | 1 | ~13 | Brief directives |
-| **Total** | **16** | **~7,500+** | **Complete coverage** |
+| **Total** | **14** | **~7,400+** | **Complete coverage** |
+
+## 📦 Archived Documentation
+
+Some files have been archived as workflows evolved. See [`../archive/rules/README.md`](../archive/rules/README.md) for:
+- `generate-prd.md` - Replaced by direct task file creation
+- `generate-tasks.md` - Replaced by single comprehensive task files
+- `task-instructions.md` - Redundant with master-task-prompt.md
 
 ## 🔗 Integration & Cross-References
 
@@ -350,9 +326,9 @@ After reading the rules, ensure you understand:
 
 ---
 
-**Last Updated**: 2025-12-23
+**Last Updated**: 2026-01-06
 **Directory**: `docs/rules/`
-**Total Files**: 16
-**Total Lines**: ~7,500+
+**Total Files**: 14
+**Total Lines**: ~7,400+
 **Status**: Production-ready and comprehensive
 
