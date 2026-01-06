@@ -302,16 +302,23 @@ func (r *SQLiteRepository) List(ctx context.Context, filters ListFilters) ([]*do
 		args = append(args, filters.EndDate)
 	}
 
-	// Sorting
+	// Sorting with secondary sort
 	switch filters.SortBy {
 	case "date":
 		query += " ORDER BY date"
+		if filters.SortOrder == "desc" {
+			query += " DESC"
+		}
+		// Secondary sort by created_at
+		query += ", created_at"
+		if filters.SortOrder == "desc" {
+			query += " DESC"
+		}
 	default:
 		query += " ORDER BY created_at"
-	}
-
-	if filters.SortOrder == "desc" {
-		query += " DESC"
+		if filters.SortOrder == "desc" {
+			query += " DESC"
+		}
 	}
 
 	// Pagination
@@ -428,4 +435,3 @@ func parseCategories(s string) []string {
 	}
 	return strings.Split(s, ",")
 }
-
