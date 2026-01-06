@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -107,14 +108,11 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 			if i.state.selectedIndex >= 0 && i.state.selectedIndex < len(i.context.AvailableProfiles) {
 				i.state.selectedProfile = i.context.AvailableProfiles[i.state.selectedIndex]
 				i.state.currentState = GenerateCVStateSelectAudience
-				i.state.selectedAudiences = i.state.selectedProfile.TargetAudience
+				i.state.selectedAudience = i.state.selectedProfile.TargetAudience
+				i.state.audienceIndex = 0
 			}
 			return nil
 		case "esc":
-			i.setCancelled()
-			return nil
-		case "m":
-			// Return to main menu
 			i.setCancelled()
 			return nil
 		case "q", "ctrl+c":
@@ -132,13 +130,25 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 
 // updateSelectAudience handles messages while selecting audience(s).
 func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
+	// Available audiences (must match viewSelectAudience)
+	audiences := []string{"hiring_manager", "recruiter", "peer"}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "enter":
-			if len(i.state.selectedAudiences) == 0 {
-				i.state.selectedAudiences = i.state.selectedProfile.TargetAudience
+		case "up", "k":
+			if i.state.audienceIndex > 0 {
+				i.state.audienceIndex--
 			}
+			return nil
+		case "down", "j":
+			if i.state.audienceIndex < len(audiences)-1 {
+				i.state.audienceIndex++
+			}
+			return nil
+		case "enter":
+			// Set selected audience based on current index
+			i.state.selectedAudience = audiences[i.state.audienceIndex]
 			i.state.currentState = GenerateCVStateGenerating
 			i.state.isGenerating = true
 			return i.generateCVAsync()
@@ -148,13 +158,9 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateSelectProfile
 			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
 		}
 	case AudienceSelectedMsg:
-		i.state.selectedAudiences = msg.Audiences
+		i.state.selectedAudience = msg.Audience
 		i.state.currentState = GenerateCVStateGenerating
 		i.state.isGenerating = true
 		return i.generateCVAsync()
@@ -172,7 +178,7 @@ func (i *GenerateCVIntent) generateCVAsync() tea.Cmd {
 				ID:               fmt.Sprintf("cv_%d", time.Now().Unix()),
 				Name:             i.state.selectedProfile.Name,
 				TargetRole:       i.state.selectedProfile.TargetRole,
-				TargetAudience:   i.state.selectedAudiences,
+				TargetAudience:   i.state.selectedAudience,
 				GeneratedAt:      time.Now(),
 				SourceEventCount: len(i.context.Events),
 				SourceFactCount:  len(i.context.Facts),
@@ -184,7 +190,7 @@ func (i *GenerateCVIntent) generateCVAsync() tea.Cmd {
 		config := &career.CVConfig{
 			Name:           i.state.selectedProfile.Name,
 			TargetRole:     i.state.selectedProfile.TargetRole,
-			TargetAudience: i.state.selectedAudiences,
+			TargetAudience: i.state.selectedAudience,
 		}
 
 		cvView, err := i.context.CVGenerationService.GenerateCVFromConfig(ctx, config)
@@ -213,20 +219,18 @@ func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		i.state.generatedCV = msg.CV
+
+		// Initialize viewport for preview (80 cols x 20 rows)
+		i.state.previewViewport = viewport.New(80, 20)
+		i.state.previewViewport.Style = lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(styles.ColorBorder).
+			Padding(1, 2)
+
 		i.state.currentState = GenerateCVStatePreview
-		// i.cvPreview = models.NewCVPreviewModel(msg.CV) // TODO: implement CV preview
 		return nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Let generation complete in background, navigate back
-			i.state.currentState = GenerateCVStateSelectAudience
-			return nil
-		case "m":
-			// Cancel and return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
+		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			i.setCancelled()
 			return nil
 		}
@@ -236,16 +240,15 @@ func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 
 // updatePreview handles messages while previewing the CV.
 func (i *GenerateCVIntent) updatePreview(msg tea.Msg) tea.Cmd {
-	// if i.cvPreview != nil {
-	// 	_, cmd := i.cvPreview.Update(msg)
-	// 	if cmd != nil {
-	// 		return cmd
-	// 	}
-	// }
+	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "up", "k", "down", "j", "pgup", "pgdown":
+			// Handle viewport scrolling
+			i.state.previewViewport, cmd = i.state.previewViewport.Update(msg)
+			return cmd
 		case "enter", "e":
 			i.state.currentState = GenerateCVStateReview
 			return nil
@@ -257,10 +260,6 @@ func (i *GenerateCVIntent) updatePreview(msg tea.Msg) tea.Cmd {
 			return nil
 		case "esc":
 			i.state.currentState = GenerateCVStateSelectAudience
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -280,10 +279,6 @@ func (i *GenerateCVIntent) updateReview(msg tea.Msg) tea.Cmd {
 			return nil
 		case "esc":
 			i.state.currentState = GenerateCVStatePreview
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -305,10 +300,6 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 			return nil
 		case "n", "esc":
 			i.state.currentState = GenerateCVStateReview
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
 			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
@@ -383,17 +374,37 @@ func (i *GenerateCVIntent) viewSelectProfile() string {
 // viewSelectAudience renders the audience selection view.
 func (i *GenerateCVIntent) viewSelectAudience() string {
 	var content strings.Builder
-	content.WriteString("\n👥 Select Target Audience(s)\n\n")
+	content.WriteString("\n👥 Select Target Audience\n\n")
 
 	if i.state.selectedProfile != nil {
 		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
 		content.WriteString(fmt.Sprintf("Role: %s\n\n", i.state.selectedProfile.TargetRole))
 
-		if len(i.state.selectedProfile.TargetAudience) > 0 {
-			content.WriteString("Default audiences:\n")
-			for _, aud := range i.state.selectedProfile.TargetAudience {
-				content.WriteString(fmt.Sprintf("  • %s\n", aud))
+		// Define available audiences with descriptions
+		audiences := []struct {
+			value       string
+			label       string
+			description string
+		}{
+			{"hiring_manager", "Hiring Manager", "Focus on outcomes, ownership, and business impact"},
+			{"recruiter", "Recruiter", "Emphasize skills, competencies, and achievements"},
+			{"peer", "Technical Peer", "Highlight technical depth, collaboration, and problem-solving"},
+		}
+
+		content.WriteString("Select target audience:\n\n")
+		for idx, aud := range audiences {
+			prefix := "  "
+			if idx == i.state.audienceIndex {
+				prefix = "▶ "
 			}
+
+			audienceStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+			if idx == i.state.audienceIndex {
+				audienceStyle = audienceStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+			}
+
+			line := fmt.Sprintf("%s%s - %s", prefix, aud.label, aud.description)
+			content.WriteString(audienceStyle.Render(line) + "\n")
 		}
 	}
 
@@ -410,7 +421,7 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1)
 
-	footer := footerStyle.Render("Enter to generate CV, Esc to go back, m: Main menu, q to cancel")
+	footer := footerStyle.Render("↑/k up, ↓/j down, Enter to select, Esc to go back, m: Main menu, q to cancel")
 
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
@@ -423,7 +434,7 @@ func (i *GenerateCVIntent) viewGenerating() string {
 	if i.state.selectedProfile != nil {
 		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
 		content.WriteString(fmt.Sprintf("Role: %s\n", i.state.selectedProfile.TargetRole))
-		content.WriteString(fmt.Sprintf("Audiences: %s\n\n", strings.Join(i.state.selectedAudiences, ", ")))
+		content.WriteString(fmt.Sprintf("Audience: %s\n\n", i.state.selectedAudience))
 	}
 
 	content.WriteString("Processing career events and facts...\n")
@@ -448,40 +459,82 @@ func (i *GenerateCVIntent) viewGenerating() string {
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }
 
-// viewPreview renders the CV preview view.
+// viewPreview renders the CV preview view with scrollable content.
 func (i *GenerateCVIntent) viewPreview() string {
-	// if i.cvPreview != nil {
-	// 	return i.cvPreview.View()
-	// }
-
-	var content strings.Builder
-	content.WriteString("\n📄 CV Preview\n\n")
-
-	if i.state.generatedCV != nil {
-		content.WriteString(fmt.Sprintf("Name: %s\n", i.state.generatedCV.Name))
-		content.WriteString(fmt.Sprintf("Target Role: %s\n", i.state.generatedCV.TargetRole))
-		content.WriteString(fmt.Sprintf("Target Audiences: %s\n", strings.Join(i.state.generatedCV.TargetAudience, ", ")))
-		content.WriteString(fmt.Sprintf("Source Events: %d\n", i.state.generatedCV.SourceEventCount))
-		content.WriteString(fmt.Sprintf("Source Facts: %d\n", i.state.generatedCV.SourceFactCount))
-		content.WriteString(fmt.Sprintf("Generated: %s\n", i.state.generatedCV.GeneratedAt.Format(time.RFC822)))
+	if i.state.generatedCV == nil {
+		return "No CV generated yet"
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	var content strings.Builder
 
-	card := cardStyle.Render(content.String())
+	// Header with metadata
+	content.WriteString(fmt.Sprintf("📄 CV Preview: %s\n", i.state.generatedCV.Name))
+	content.WriteString(fmt.Sprintf("Target Role: %s | Audience: %s\n",
+		i.state.generatedCV.TargetRole,
+		i.state.generatedCV.TargetAudience))
+	content.WriteString(fmt.Sprintf("Events: %d | Facts: %d | Generated: %s\n\n",
+		i.state.generatedCV.SourceEventCount,
+		i.state.generatedCV.SourceFactCount,
+		i.state.generatedCV.GeneratedAt.Format(time.RFC822)))
+
+	content.WriteString(strings.Repeat("─", 80) + "\n\n")
+
+	// Render all sections with their content
+	for idx, section := range i.state.generatedCV.Sections {
+		if idx > 0 {
+			content.WriteString("\n")
+		}
+
+		// Section title
+		titleStyle := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(styles.ColorAccentTeal).
+			MarginTop(1)
+		content.WriteString(titleStyle.Render(strings.ToUpper(section.Title)) + "\n")
+		content.WriteString(strings.Repeat("─", len(section.Title)) + "\n")
+
+		// Handle summary section (prose)
+		if section.SectionType == "summary" && section.Summary != "" {
+			content.WriteString(section.Summary + "\n")
+			continue
+		}
+
+		// Handle content groups (experience, projects, skills)
+		for _, group := range section.Content {
+			// Group header with dates
+			if group.Header != "" {
+				if group.StartDate != "" && group.EndDate != "" {
+					if group.StartDate == group.EndDate {
+						content.WriteString(fmt.Sprintf("  %s - %s\n", group.Header, group.StartDate))
+					} else {
+						content.WriteString(fmt.Sprintf("  %s - %s - %s\n", group.Header, group.StartDate, group.EndDate))
+					}
+				} else {
+					content.WriteString(fmt.Sprintf("  %s\n", group.Header))
+				}
+			}
+
+			// Bullets
+			for _, bullet := range group.Bullets {
+				content.WriteString(fmt.Sprintf("    • %s\n", bullet.Text))
+			}
+			content.WriteString("\n")
+		}
+	}
+
+	// Set viewport content
+	i.state.previewViewport.SetContent(content.String())
+
+	// Render viewport
+	viewportContent := i.state.previewViewport.View()
 
 	footerStyle := lipgloss.NewStyle().
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1)
 
-	footer := footerStyle.Render("e to edit, c to confirm, Esc to go back, m: Main menu, q to cancel")
+	footer := footerStyle.Render("↑/↓ scroll | e to edit | c to confirm | Esc to go back | m: Main menu | q to cancel")
 
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return lipgloss.JoinVertical(lipgloss.Left, viewportContent, footer)
 }
 
 // viewReview renders the CV review/edit view.
@@ -492,7 +545,7 @@ func (i *GenerateCVIntent) viewReview() string {
 	if i.state.generatedCV != nil {
 		content.WriteString(fmt.Sprintf("Name: %s\n", i.state.generatedCV.Name))
 		content.WriteString(fmt.Sprintf("Target Role: %s\n", i.state.generatedCV.TargetRole))
-		content.WriteString(fmt.Sprintf("Target Audiences: %s\n\n", strings.Join(i.state.generatedCV.TargetAudience, ", ")))
+		content.WriteString(fmt.Sprintf("Target Audience: %s\n\n", i.state.generatedCV.TargetAudience))
 		content.WriteString("CV content can be edited here.\n")
 		content.WriteString("(Full editing interface would be implemented here)\n")
 	}
@@ -523,7 +576,7 @@ func (i *GenerateCVIntent) viewConfirm() string {
 	if i.state.generatedCV != nil {
 		content.WriteString(fmt.Sprintf("Name: %s\n", i.state.generatedCV.Name))
 		content.WriteString(fmt.Sprintf("Target Role: %s\n", i.state.generatedCV.TargetRole))
-		content.WriteString(fmt.Sprintf("Target Audiences: %s\n\n", strings.Join(i.state.generatedCV.TargetAudience, ", ")))
+		content.WriteString(fmt.Sprintf("Target Audience: %s\n\n", i.state.generatedCV.TargetAudience))
 		content.WriteString("Are you sure you want to complete CV generation?\n")
 	}
 
@@ -570,7 +623,7 @@ func (i *GenerateCVIntent) setCompleted() {
 		},
 		Metadata: map[string]interface{}{
 			"profile":     i.state.selectedProfile.ID,
-			"audiences":   strings.Join(i.state.selectedAudiences, ","),
+			"audience":    i.state.selectedAudience,
 			"timestamp":   time.Now(),
 			"event_count": len(i.context.Events),
 			"fact_count":  len(i.context.Facts),
@@ -615,10 +668,6 @@ func (i *GenerateCVIntent) updateExportSelectFormat(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateConfirm
 			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
@@ -659,10 +708,6 @@ func (i *GenerateCVIntent) updateExportSelectLocation(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateExportSelectFormat
 			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
@@ -685,16 +730,7 @@ func (i *GenerateCVIntent) updateExporting(msg tea.Msg) tea.Cmd {
 		i.state.currentState = GenerateCVStateExportComplete
 		return nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Let export complete in background, navigate back
-			i.state.currentState = GenerateCVStateExportSelectLocation
-			return nil
-		case "m":
-			// Cancel and return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
+		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			i.state.isExporting = false
 			i.setCancelled()
 			return nil
@@ -723,7 +759,7 @@ func (i *GenerateCVIntent) updateExportComplete(msg tea.Msg) tea.Cmd {
 				},
 				Metadata: map[string]interface{}{
 					"profile":         i.state.selectedProfile.ID,
-					"audiences":       strings.Join(i.state.selectedAudiences, ","),
+					"audience":        i.state.selectedAudience,
 					"export_format":   string(i.state.selectedExportFormat),
 					"export_location": i.state.exportedPath,
 					"timestamp":       time.Now(),
@@ -736,10 +772,6 @@ func (i *GenerateCVIntent) updateExportComplete(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateExportSelectLocation
 			i.state.exportError = nil
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
 			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
@@ -762,6 +794,11 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 			ctx = context.Background()
 		}
 
+		// Extract sections from generated CV
+		sections := i.state.generatedCV.Sections
+		// Build empty bullets map (kept for backward compatibility with export interface)
+		bulletsMap := make(map[string][]*career.CVBullet)
+
 		// Get export content based on format
 		var content string
 		var err error
@@ -769,13 +806,13 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 
 		switch i.state.selectedExportFormat {
 		case CVExportFormatText:
-			content, err = i.context.ExportService.ExportToText(ctx, i.state.generatedCV, nil, nil)
+			content, err = i.context.ExportService.ExportToText(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatText
 		case CVExportFormatMarkdown:
-			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.state.generatedCV, nil, nil)
+			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatMarkdown
 		case CVExportFormatYAML:
-			content, err = i.context.ExportService.ExportToYAML(ctx, i.state.generatedCV, nil, nil)
+			content, err = i.context.ExportService.ExportToYAML(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatYAML
 		default:
 			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("unknown export format")}
