@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	"time"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/charmbracelet/bubbles/table"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -318,7 +318,11 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 
 	// BrowseTimeline
 	_ = router.RegisterIntent("browse_timeline", func() intents.Intent {
-		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 1000})
+		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{
+			Limit:     1000,
+			SortBy:    "date",
+			SortOrder: "desc",
+		})
 		if err != nil {
 			log.Error("Failed to load events: %v", err)
 			events = make([]*career.CareerEvent, 0)

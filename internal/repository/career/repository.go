@@ -177,15 +177,25 @@ func (r *MemoryRepository) List(ctx context.Context, filters ListFilters) ([]*ca
 		filtered = append(filtered, event)
 	}
 
-	// Apply sorting
+	// Apply sorting with secondary sort
 	sort.Slice(filtered, func(i, j int) bool {
 		switch filters.SortBy {
 		case "date":
+			if filtered[i].Date.Equal(filtered[j].Date) {
+				// Secondary sort by CreatedAt
+				if filters.SortOrder == "desc" {
+					return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
+				}
+				return filtered[i].CreatedAt.Before(filtered[j].CreatedAt)
+			}
 			if filters.SortOrder == "desc" {
 				return filtered[i].Date.After(filtered[j].Date)
 			}
 			return filtered[i].Date.Before(filtered[j].Date)
 		default:
+			if filters.SortOrder == "desc" {
+				return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
+			}
 			return filtered[i].CreatedAt.Before(filtered[j].CreatedAt)
 		}
 	})
