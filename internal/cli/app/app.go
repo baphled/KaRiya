@@ -92,6 +92,9 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	logo := components.NewASCIILogo(true, 80)
 	logo.SetExternalCentering(true) // Let container handle centering
 
+	// Share logo with intent router so all intents can use it
+	router.SetLogo(logo)
+
 	return &Model{
 		cliService:        cliService,
 		careerService:     careerService,
@@ -164,6 +167,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Update terminal info
 		m.terminalInfo.Update(msg)
+
+		// Propagate terminal info to intent router
+		m.intentRouter.UpdateTerminalInfo(m.terminalInfo)
 
 		// Update logo width for centering
 		m.logo.SetWidth(msg.Width)
