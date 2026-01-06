@@ -156,11 +156,14 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		return nil, err
 	}
 
-	// Create table model for bursts
+	// Create table model for bursts with enhanced columns
 	columns := []table.Column{
-		{Title: "Name", Width: 30},
-		{Title: "Competency", Width: 25},
-		{Title: "Events", Width: 10},
+		{Title: "Name", Width: 22},
+		{Title: "Description", Width: 25},
+		{Title: "Confirmed", Width: 8},
+		{Title: "Competency", Width: 15},
+		{Title: "Events", Width: 8},
+		{Title: "Created", Width: 12},
 	}
 
 	t := table.New(
@@ -207,6 +210,89 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 	return intent, nil
 }
 
+// formatConfirmedStatus returns a styled confirmed status string with icon and text.
+func (i *BurstManagementIntent) formatConfirmedStatus(confirmed bool) string {
+	if confirmed {
+		// Green checkmark + "Yes"
+		checkmark := lipgloss.NewStyle().
+			Foreground(styles.ColorSuccess).
+			Render("✓")
+		text := lipgloss.NewStyle().
+			Foreground(styles.ColorSuccess).
+			Render("Yes")
+		return checkmark + " " + text
+	}
+	// Gray X + "No"
+	xmark := lipgloss.NewStyle().
+		Foreground(styles.ColorTextMuted).
+		Render("✗")
+	text := lipgloss.NewStyle().
+		Foreground(styles.ColorTextMuted).
+		Render("No")
+	return xmark + " " + text
+}
+
+// formatCompetency returns a color-coded competency string based on category.
+func (i *BurstManagementIntent) formatCompetency(competency string) string {
+	if competency == "" {
+		return lipgloss.NewStyle().
+			Foreground(styles.ColorTextMuted).
+			Render("-")
+	}
+
+	// Color mapping for competency categories
+	colorMap := map[string]lipgloss.Color{
+		"technical":  styles.ColorInfo,          // Blue
+		"leadership": styles.ColorAccentPurple,  // Purple
+		"product":    styles.ColorAccentGreen,   // Green
+		"consulting": styles.ColorWarning,       // Orange
+		"research":   styles.ColorAccentTeal,    // Teal
+		"mentoring":  lipgloss.Color("#d99bd1"), // Pink
+	}
+
+	color, ok := colorMap[competency]
+	if !ok {
+		color = styles.ColorTextSecondary // Default gray for unknown
+	}
+
+	return lipgloss.NewStyle().
+		Foreground(color).
+		Render(competency)
+}
+
+// formatDescription returns a truncated description preview (max 25 chars).
+func (i *BurstManagementIntent) formatDescription(description string) string {
+	desc := strings.TrimSpace(description)
+	// Remove newlines and carriage returns
+	desc = strings.ReplaceAll(desc, "\n", " ")
+	desc = strings.ReplaceAll(desc, "\r", " ")
+
+	if desc == "" {
+		return lipgloss.NewStyle().
+			Foreground(styles.ColorTextMuted).
+			Render("-")
+	}
+
+	maxLen := 22 // 25 - 3 for "..."
+	if len(desc) > maxLen {
+		return lipgloss.NewStyle().
+			Foreground(styles.ColorTextSecondary).
+			Render(desc[:maxLen] + "...")
+	}
+
+	return lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		Render(desc)
+}
+
+// formatCreatedDate returns a formatted date string (YYYY-MM-DD).
+func (i *BurstManagementIntent) formatCreatedDate(createdAt time.Time) string {
+	dateStr := createdAt.Format("2006-01-02")
+	return lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary).
+		Render(dateStr)
+}
+
 // Init is called when the intent is activated.
 func (i *BurstManagementIntent) Init() tea.Cmd {
 	// Load bursts from repository
@@ -243,18 +329,38 @@ func (i *BurstManagementIntent) updateTableRows() {
 	rows := make([]table.Row, 0, len(pageBursts))
 	for idx, burst := range pageBursts {
 		realIdx := start + idx
-		nameStr := burst.Name
 
-		// Use navigation handler to format row text with indicator
+		// Column 1: Name (truncate to 19 chars for focus indicator, total width 22)
+		nameStr := burst.Name
+		if len(nameStr) > 19 {
+			nameStr = nameStr[:19] + "..."
+		}
+		// Add focus indicator via navigation handler
 		nameStr = i.navHandler.FormatRowText(realIdx, nameStr)
 
-		competency := burst.CompetencyFocus
-		if competency == "" {
-			competency = "-"
-		}
+		// Column 2: Description (truncated preview, max 25 chars)
+		descStr := i.formatDescription(burst.Description)
 
+		// Column 3: Confirmed Status (icon + colored text)
+		confirmedStr := i.formatConfirmedStatus(burst.Confirmed)
+
+		// Column 4: Competency (color-coded)
+		competencyStr := i.formatCompetency(burst.CompetencyFocus)
+
+		// Column 5: Event Count
 		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
-		rows = append(rows, table.Row{nameStr, competency, eventCount})
+
+		// Column 6: Created Date (YYYY-MM-DD)
+		createdStr := i.formatCreatedDate(burst.CreatedAt)
+
+		rows = append(rows, table.Row{
+			nameStr,
+			descStr,
+			confirmedStr,
+			competencyStr,
+			eventCount,
+			createdStr,
+		})
 	}
 
 	i.table.SetRows(rows)
