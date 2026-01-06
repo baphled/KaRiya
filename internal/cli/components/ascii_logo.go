@@ -12,14 +12,15 @@ import (
 
 // ASCIILogo represents the KaRiya logo with optional animation
 type ASCIILogo struct {
-	animated     bool
-	fadeProgress float64 // 0.0 to 1.0
-	width        int
-	centered     bool
-	tagline      string
-	showTagline  bool
-	version      string
-	showVersion  bool
+	animated          bool
+	fadeProgress      float64 // 0.0 to 1.0
+	width             int
+	centered          bool
+	externalCentering bool // Skip internal centering when true
+	tagline           string
+	showTagline       bool
+	version           string
+	showVersion       bool
 }
 
 const (
@@ -84,6 +85,11 @@ func (l *ASCIILogo) ShowVersion(show bool) {
 	l.showVersion = show
 }
 
+// SetExternalCentering configures whether centering is handled externally
+func (l *ASCIILogo) SetExternalCentering(external bool) {
+	l.externalCentering = external
+}
+
 // Init initializes the logo component
 func (l *ASCIILogo) Init() tea.Cmd {
 	if l.animated {
@@ -139,9 +145,12 @@ func (l *ASCIILogo) render() string {
 
 	for i, line := range logoLines {
 		styledLine := l.applyFadeStyle(line)
-		if l.centered && l.width > 0 {
+
+		// Only center internally if not handled externally
+		if l.centered && l.width > 0 && !l.externalCentering {
 			styledLine = styles.CenterHorizontal(styledLine, l.width)
 		}
+
 		styledLines[i] = styledLine
 	}
 
@@ -155,7 +164,7 @@ func (l *ASCIILogo) render() string {
 			Faint(l.fadeProgress < 1.0)
 
 		taglineText := taglineStyle.Render(l.tagline)
-		if l.centered && l.width > 0 {
+		if l.centered && l.width > 0 && !l.externalCentering {
 			taglineText = styles.CenterHorizontal(taglineText, l.width)
 		}
 		parts = append(parts, "", taglineText)
@@ -169,7 +178,7 @@ func (l *ASCIILogo) render() string {
 			Faint(l.fadeProgress < 1.0)
 
 		versionText := versionStyle.Render(l.version)
-		if l.centered && l.width > 0 {
+		if l.centered && l.width > 0 && !l.externalCentering {
 			versionText = styles.CenterHorizontal(versionText, l.width)
 		}
 		parts = append(parts, versionText)
