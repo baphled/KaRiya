@@ -43,6 +43,7 @@ type Model struct {
 	// Menu state
 	selectedMenuIndex int
 	menuItems         []MenuItem
+	logo              *components.ASCIILogo
 
 	// Context for intent creation
 	ctx context.Context
@@ -83,6 +84,9 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		{Name: "Bulk Operations", Intent: "bulk_operations", Help: "Perform bulk actions"},
 	}
 
+	// Create ASCII logo with animation
+	logo := components.NewASCIILogo(true, 80)
+
 	return &Model{
 		cliService:        cliService,
 		careerService:     careerService,
@@ -94,6 +98,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		state:             StateMenu,
 		selectedMenuIndex: 0,
 		menuItems:         menuItems,
+		logo:              logo,
 		ctx:               ctx,
 		width:             80,
 		height:            24,
@@ -102,11 +107,21 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 // Init initializes the model
 func (m *Model) Init() tea.Cmd {
-	return nil
+	// Initialize logo animation
+	return m.logo.Init()
 }
 
 // Update handles messages - FIXED: Using correct Bubble Tea v1.3.10 signature
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Update logo animation if in menu state
+	if m.state == StateMenu {
+		if _, ok := msg.(components.TickMsg); ok {
+			updatedLogo, cmd := m.logo.Update(msg)
+			m.logo = updatedLogo.(*components.ASCIILogo)
+			return m, cmd
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -136,6 +151,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Update logo width for centering
+		m.logo.SetWidth(msg.Width)
 
 	case IntentCompletedMsg:
 		// Handle result from completed intent
@@ -230,17 +247,30 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// viewMenu renders the main menu using TableListContainer
+// viewMenu renders the main menu using TableListContainer with centered layout and ASCII logo
 func (m *Model) viewMenu() string {
+	var parts []string
+
+	// Add logo at the top
+	logoView := m.logo.View()
+	parts = append(parts, logoView)
+	parts = append(parts, "") // Empty line for spacing
+
+	// Create table for menu items
 	rows := make([]table.Row, len(m.menuItems))
 	for i, item := range m.menuItems {
-		rows[i] = table.Row{item.Name, item.Help}
+		// Add selection indicator
+		indicator := "  "
+		if i == m.selectedMenuIndex {
+			indicator = "▶ "
+		}
+		rows[i] = table.Row{indicator + item.Name, item.Help}
 	}
 
 	tableModel := table.New(
 		table.WithColumns([]table.Column{
-			{Title: "Name", Width: 20},
-			{Title: "Description", Width: 50},
+			{Title: "Action", Width: 22},
+			{Title: "Description", Width: 40},
 		}),
 		table.WithRows(rows),
 		table.WithFocused(true),
@@ -251,12 +281,34 @@ func (m *Model) viewMenu() string {
 		tableModel.SetCursor(m.selectedMenuIndex)
 	}
 
-	container := components.NewTableListContainer(tableModel, "KaRiya - Career Event Manager", m.width)
-	container.SetDimensions(m.width, m.height)
-	container.SetHelpFooterKey("menu_navigate")
-	container.SetEmptyStateMessage("No menu items available")
+	// Render table
+	tableView := tableModel.View()
 
-	return container.Render()
+	// Center the table
+	tableCentered := components.CenterBlock(tableView, m.width, 0, false)
+	parts = append(parts, tableCentered)
+	parts = append(parts, "") // Empty line for spacing
+
+	// Add help text at bottom
+	helpText := "↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit"
+	helpCentered := components.CenterText(helpText, m.width)
+	parts = append(parts, helpCentered)
+
+	// Combine all parts using strings.Join
+	content := ""
+	for i, part := range parts {
+		if i > 0 {
+			content += "\n"
+		}
+		content += part
+	}
+
+	// Center the entire menu
+	centered := components.NewCenteredContainer(m.width, m.height)
+	centered.SetContent(content)
+	centered.SetVerticalCenter(true)
+
+	return centered.Render()
 }
 
 // GetMenuItems returns the menu items from the model

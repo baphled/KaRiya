@@ -259,7 +259,7 @@ var _ = Describe("BrowseTimelineIntent", func() {
 
 		It("should show selected event with marker", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring(">"))
+			Expect(view).To(ContainSubstring("▶"))
 		})
 
 		It("should render event detail view", func() {
