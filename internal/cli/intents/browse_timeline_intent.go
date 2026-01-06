@@ -108,8 +108,9 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 
 // Init is called when the intent is activated.
 func (i *BrowseTimelineIntent) Init() tea.Cmd {
-	// Initialize filtered events with the provided events.
-	i.state.filteredEvents = i.context.Events
+	// Apply initial filters and sorting to the provided events.
+	i.applyFilters()
+
 	if len(i.state.filteredEvents) > 0 {
 		i.state.selectedEvent = i.state.filteredEvents[0]
 	}
@@ -387,6 +388,13 @@ func (i *BrowseTimelineIntent) applyFilters() {
 			return filtered[a].CreatedAt.After(filtered[b].CreatedAt)
 
 		default: // date
+			if filtered[a].Date.Equal(filtered[b].Date) {
+				// Secondary sort by CreatedAt for same-date events
+				if i.state.filters.SortOrder == "asc" {
+					return filtered[a].CreatedAt.Before(filtered[b].CreatedAt)
+				}
+				return filtered[a].CreatedAt.After(filtered[b].CreatedAt)
+			}
 			if i.state.filters.SortOrder == "asc" {
 				return filtered[a].Date.Before(filtered[b].Date)
 			}

@@ -84,7 +84,8 @@ var _ = Describe("BrowseTimelineIntent", func() {
 		It("should select first event", func() {
 			intent.Init()
 			Expect(intent.state.selectedEvent).NotTo(BeNil())
-			Expect(intent.state.selectedEvent.ID).To(Equal("event1"))
+			// After sorting by date desc, event2 (2025-01-02) is first
+			Expect(intent.state.selectedEvent.ID).To(Equal("event2"))
 		})
 
 		It("should sort events chronologically (latest first) on Init", func() {
@@ -266,7 +267,8 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			intent.state.selectedEvent = intent.state.filteredEvents[0]
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Event Details"))
-			Expect(view).To(ContainSubstring("Company A"))
+			// After sorting by date desc, event2 (Company B) is first
+			Expect(view).To(ContainSubstring("Company B"))
 		})
 	})
 
