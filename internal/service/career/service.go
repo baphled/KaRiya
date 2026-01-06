@@ -411,40 +411,39 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 	return savedBursts, nil
 }
 
-// InferCompetencyForBurst retrieves events by IDs and infers the most common competency focus.
-// Returns empty string if no valid categories found or if events cannot be retrieved.
+// InferCompetencyForBurst retrieves facts for events and infers competency focus using weighted scoring.
+// Returns empty string if no valid competencies found or if facts cannot be retrieved.
 //
 // This method:
-// 1. Retrieves all events by their IDs
-// 2. Collects categories from all events
-// 3. Uses InferCompetencyFromCategories to determine most common category
-// 4. Handles missing events gracefully (logs warning, continues with available events)
+// 1. Retrieves all facts for each event in the burst
+// 2. Applies weights based on fact strength signals (strong=3.0, moderate=2.0, weak=1.0)
+// 3. Sums weights per competency category
+// 4. Returns competency with highest total weight
+// 5. Handles missing facts gracefully (logs warning, continues with available facts)
 func (s *Service) InferCompetencyForBurst(ctx context.Context, eventIDs []string) string {
 	if eventIDs == nil || len(eventIDs) == 0 {
 		return ""
 	}
 
-	// Collect categories from all events
-	var allCategories [][]string
+	// Collect all facts from all events
+	var allFacts []*domain.Fact
 
 	for _, eventID := range eventIDs {
-		event, err := s.GetEventByID(ctx, eventID)
+		facts, err := s.GetFactsBySourceEventID(ctx, eventID)
 		if err != nil {
 			// Log warning but continue with other events
 			s.logger.WithFields(map[string]string{
 				"event_id": eventID,
 				"error":    err.Error(),
-			}).Warn("Failed to retrieve event for competency inference, skipping")
+			}).Warn("Failed to retrieve facts for competency inference, skipping")
 			continue
 		}
 
-		if event != nil && len(event.Categories) > 0 {
-			allCategories = append(allCategories, event.Categories)
-		}
+		allFacts = append(allFacts, facts...)
 	}
 
-	// Infer competency from collected categories
-	return InferCompetencyFromCategories(allCategories)
+	// Infer competency from facts using weighted scoring
+	return InferCompetencyFromFacts(allFacts)
 }
 
 // ExtractFactsFromEvent extracts facts from a single career event
