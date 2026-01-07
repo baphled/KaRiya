@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -22,12 +21,11 @@ type GenerateCVIntent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management
 	*BaseIntent
 
-	context   *GenerateCVContext
-	state     *GenerateCVModel
-	active    bool
-	result    *IntentResult[*GenerateCVResult]
-	logger    *logger.Logger
-	cvPreview *models.CVPreviewModel
+	context *GenerateCVContext
+	state   *GenerateCVModel
+	active  bool
+	result  *IntentResult[*GenerateCVResult]
+	logger  *logger.Logger
 
 	// loadingRotator rotates through CV-specific loading messages
 	loadingRotator *components.LoadingMessageRotator
