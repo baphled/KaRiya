@@ -106,3 +106,14 @@ type EditEventMsg struct {
 
 // QuitMsg is sent when user wants to quit the application
 type QuitMsg struct{}
+
+// ConfirmBurstMsg is sent when user confirms a burst
+type ConfirmBurstMsg struct {
+	Burst *career.Burst
+}
+
+// BurstProcessingCompleteMsg is sent when burst suggestion workflow is done
+type BurstProcessingCompleteMsg struct {
+	ConfirmedCount int
+	RejectedCount  int
+}
