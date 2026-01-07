@@ -44,7 +44,8 @@ var _ = Describe("App Menu Integration Tests", func() {
 		It("should align the cursor with the selected menu item", func() {
 			// Simulate model view
 			output := model.View()
-			Expect(output).To(ContainSubstring("KaRiya - Career Event Manager"))
+			// Check for the tagline since we now use ASCII art logo
+			Expect(output).To(ContainSubstring("Career Event Management System"))
 		})
 
 		It("should update cursor position through bubble navigation keys", func() {
@@ -58,7 +59,9 @@ var _ = Describe("App Menu Integration Tests", func() {
 			// Generate view
 			output := model.View()
 			menuItems := model.GetMenuItems()
-			Expect(output).NotTo(ContainSubstring(menuItems[2].Name)) // Should show intent view, not menu
+			// After StandardView migration, breadcrumbs show "Main Menu > Generate CV > ..."
+			// so the menu item name WILL appear in breadcrumbs - this is expected behavior
+			Expect(output).To(ContainSubstring(menuItems[2].Name)) // Intent name appears in breadcrumbs
 		})
 	})
 
@@ -185,7 +188,7 @@ var _ = Describe("Navigation Integration", func() {
 	It("should start in menu state with menu visible", func() {
 		Expect(model).NotTo(BeNil())
 		output := model.View()
-		Expect(output).To(ContainSubstring("KaRiya - Career Event Manager"))
+		Expect(output).To(ContainSubstring("Career Event Management System"))
 	})
 
 	It("should navigate down the menu and select an intent, activating intent view", func() {
@@ -196,18 +199,20 @@ var _ = Describe("Navigation Integration", func() {
 		Expect(model).NotTo(BeNil())
 		Expect(cmd).NotTo(BeNil())
 		output := model.View()
-		Expect(output).NotTo(ContainSubstring("KaRiya - Career Event Manager")) // View switches
+		// After StandardView migration (Tasks 12-15), ALL screens show the logo/subtitle
+		Expect(output).To(ContainSubstring("Career Event Management System")) // Logo on all screens
 	})
 
 	It("should navigate menu, activate, then go back to menu via escape", func() {
 		modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		model = modelInterface.(*app.Model)
 		output := model.View()
-		Expect(output).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
+		// After StandardView migration, logo appears on intent screens too
+		Expect(output).To(ContainSubstring("Career Event Management System"))
 		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEscape})
 		model = modelInterface.(*app.Model)
 		output = model.View()
-		Expect(output).To(ContainSubstring("KaRiya - Career Event Manager"))
+		Expect(output).To(ContainSubstring("Career Event Management System"))
 	})
 
 	It("should go back to menu after IntentCompletedMsg", func() {
@@ -216,7 +221,7 @@ var _ = Describe("Navigation Integration", func() {
 		modelInterface, _ = model.Update(app.IntentCompletedMsg{})
 		model = modelInterface.(*app.Model)
 		output := model.View()
-		Expect(output).To(ContainSubstring("KaRiya - Career Event Manager"))
+		Expect(output).To(ContainSubstring("Career Event Management System"))
 	})
 
 	It("should handle quick back/forward navigation, activating and quitting intents", func() {
@@ -229,7 +234,7 @@ var _ = Describe("Navigation Integration", func() {
 		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEscape})
 		model = modelInterface.(*app.Model)
 		output := model.View()
-		Expect(output).To(ContainSubstring("KaRiya - Career Event Manager"))
+		Expect(output).To(ContainSubstring("Career Event Management System"))
 	})
 })
 

@@ -12,11 +12,13 @@ import (
 )
 
 type FactManagementModel struct {
+	*BaseIntent
 	data          *FactManagementContext
 	table         *table.Model
 	listContainer *components.TableListContainer
 	navHandler    *navigation.ListNavigationHandler
 	result        *IntentResult[*FactManagementResult]
+	active        bool
 }
 
 func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
@@ -49,16 +51,21 @@ func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
 	t.SetStyles(s)
 
 	model := &FactManagementModel{
+		BaseIntent:    NewBaseIntent(),
 		data:          data,
 		table:         &t,
 		listContainer: components.NewTableListContainer(t, "Manage Facts", 100),
 		result:        nil,
+		active:        false,
 	}
 	model.navHandler = navigation.NewListNavigationHandler(model)
 	return model
 }
 
 func (m *FactManagementModel) Init() tea.Cmd {
+	// Mark intent as active
+	m.active = true
+
 	// context already set in data
 	m.data.CurrentState = FactListState
 
@@ -151,21 +158,108 @@ func (m *FactManagementModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (m *FactManagementModel) View() string {
+	if !m.active {
+		return "FactManagement intent is not active"
+	}
+
+	// Create standard view with dynamic breadcrumbs
+	view := CreateStandardViewWithBreadcrumbs(m.BaseIntent, m.getBreadcrumbs()...)
+
+	// Handle form errors
+	if m.data.HasFormErrors() {
+		var errorMessages []string
+		for field, err := range m.data.FormErrors {
+			errorMessages = append(errorMessages, fmt.Sprintf("%s: %s", field, err))
+		}
+		m.SetError(fmt.Errorf("Validation errors:\n%s", fmt.Sprintf("%v", errorMessages)))
+	}
+
+	// Get content for current state
+	content := m.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := m.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
+}
+
+// Helper methods for StandardView
+
+func (m *FactManagementModel) getBreadcrumbs() []string {
+	breadcrumbs := []string{"Main Menu", "Manage Facts"}
+
+	switch m.data.CurrentState {
+	case FactViewState, FactEditorState, FactDeleteConfirmState:
+		if m.data.SelectedFact != nil {
+			factName := fmt.Sprintf("Fact #%s", m.data.SelectedFact.ID[:8])
+			breadcrumbs = append(breadcrumbs, factName)
+		}
+	case FactResultsState:
+		breadcrumbs = append(breadcrumbs, "Results")
+	}
+
+	return breadcrumbs
+}
+
+func (m *FactManagementModel) getStateContent() string {
 	switch m.data.CurrentState {
 	case FactListState:
+		// Table is self-contained, just render it
 		return m.viewList()
 	case FactViewState:
-		return m.viewFact()
+		return m.getViewFactContent()
 	case FactEditorState:
-		return m.viewEditor()
+		return m.getEditorContent()
 	case FactDeleteConfirmState:
-		return m.viewDeleteConfirm()
+		return m.getDeleteConfirmContent()
 	case FactResultsState:
-		return m.viewResults()
+		return m.getResultsContent()
 	case FactCompletedState:
-		return "Fact management completed"
+		return "✅ Fact management completed"
 	}
 	return "Unknown state"
+}
+
+func (m *FactManagementModel) getContextHelp() string {
+	base := "q Quit  m Main Menu"
+
+	switch m.data.CurrentState {
+	case FactListState:
+		return CombineFooters(
+			ListFooter(),
+			"e Edit  d Delete  n New  r Refresh",
+			base,
+		)
+	case FactViewState:
+		return CombineFooters(
+			DetailViewFooter(),
+			"e Edit  d Delete",
+			"Esc Back",
+			base,
+		)
+	case FactEditorState:
+		return CombineFooters(
+			FormFooter(),
+			"Ctrl+S Save",
+			"Esc Cancel",
+			base,
+		)
+	case FactDeleteConfirmState:
+		return CombineFooters(
+			"y/Enter Confirm",
+			"n/Esc Cancel",
+			base,
+		)
+	case FactResultsState:
+		return CombineFooters(
+			"Esc Back",
+			base,
+		)
+	default:
+		return base
+	}
 }
 
 func (m *FactManagementModel) Result() *IntentResult[interface{}] {
@@ -408,64 +502,84 @@ func (m *FactManagementModel) viewList() string {
 }
 
 func (m *FactManagementModel) viewFact() string {
+	return m.getViewFactContent()
+}
+
+func (m *FactManagementModel) getViewFactContent() string {
 	if m.data.SelectedFact == nil {
 		return "No fact selected"
 	}
 
 	fact := m.data.SelectedFact
-	output := fmt.Sprintf("Fact: %s\n", truncate(fact.Text, 70))
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Categories: %v\n", fact.CompetencyCategories)
-	output += fmt.Sprintf("Strength Signal: %s\n", fact.StrengthSignal)
-	output += fmt.Sprintf("Role Fit: %v\n", fact.RoleFit)
-	output += fmt.Sprintf("Created: %s\n", fact.CreatedAt.Format("2006-01-02"))
-	output += "\nOptions: e (edit), d (delete), esc (back), q (quit)\n"
+	var content string
+	content += fmt.Sprintf("📝 Fact Details\n\n")
+	content += fmt.Sprintf("Text: %s\n\n", fact.Text)
+	content += fmt.Sprintf("Categories: %v\n", fact.CompetencyCategories)
+	content += fmt.Sprintf("Strength Signal: %s\n", fact.StrengthSignal)
+	content += fmt.Sprintf("Role Fit: %v\n", fact.RoleFit)
+	content += fmt.Sprintf("Audience Relevance: %v\n", fact.AudienceRelevance)
+	content += fmt.Sprintf("\nCreated: %s\n", fact.CreatedAt.Format("2006-01-02 15:04"))
 
-	return output
+	return content
 }
 
 func (m *FactManagementModel) viewEditor() string {
-	output := "Edit Fact\n"
-	output += "=================================================================\n"
+	return m.getEditorContent()
+}
+
+func (m *FactManagementModel) getEditorContent() string {
+	var content string
+	content += "✏️  Edit Fact\n\n"
 
 	if m.data.EditingFact != nil {
-		output += fmt.Sprintf("Text: %s\n", truncate(m.data.EditingFact.Text, 70))
-		output += fmt.Sprintf("Categories: %v\n", m.data.EditingFact.CompetencyCategories)
-		output += fmt.Sprintf("Strength: %s\n", m.data.EditingFact.StrengthSignal)
+		content += fmt.Sprintf("Text: %s\n\n", m.data.EditingFact.Text)
+		content += fmt.Sprintf("Categories: %v\n", m.data.EditingFact.CompetencyCategories)
+		content += fmt.Sprintf("Strength Signal: %s\n", m.data.EditingFact.StrengthSignal)
+		content += fmt.Sprintf("Role Fit: %v\n\n", m.data.EditingFact.RoleFit)
 
-		if m.data.HasFormErrors() {
-			output += "\nErrors:\n"
-			for field, err := range m.data.FormErrors {
-				output += fmt.Sprintf("  %s: %s\n", field, err)
-			}
+		// Errors are shown in modal via getContextHelp
+		if !m.data.HasFormErrors() {
+			content += "Make your changes and press Ctrl+S to save.\n"
 		}
+	} else {
+		content += "No fact loaded for editing.\n"
 	}
 
-	output += "\nOptions: Ctrl+S (save), Esc (cancel)\n"
-
-	return output
+	return content
 }
 
 func (m *FactManagementModel) viewDeleteConfirm() string {
+	return m.getDeleteConfirmContent()
+}
+
+func (m *FactManagementModel) getDeleteConfirmContent() string {
 	if m.data.FactToDelete == nil {
 		return "No fact to delete"
 	}
 
-	output := fmt.Sprintf("Delete Fact: %s?\n", truncate(m.data.FactToDelete.Text, 50))
-	output += "=================================================================\n"
-	output += "This action cannot be undone.\n"
-	output += "\nOptions: y (confirm), n (cancel), esc (back)\n"
+	var content string
+	content += "⚠️  Confirm Deletion\n\n"
+	content += fmt.Sprintf("Delete this fact?\n\n")
+	content += fmt.Sprintf("Text: %s\n\n", truncate(m.data.FactToDelete.Text, 100))
+	content += "⚠️  Warning: This action cannot be undone.\n"
 
-	return output
+	return content
 }
 
 func (m *FactManagementModel) viewResults() string {
-	output := "Fact Results\n"
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Total facts: %d\n", m.data.TotalFacts)
-	output += "\nOptions: esc (back), q (quit)\n"
+	return m.getResultsContent()
+}
 
-	return output
+func (m *FactManagementModel) getResultsContent() string {
+	var content string
+	content += "📊 Fact Statistics\n\n"
+	content += fmt.Sprintf("Total facts in database: %d\n", m.data.TotalFacts)
+
+	if len(m.data.Facts) > 0 {
+		content += fmt.Sprintf("Currently viewing: %d facts\n", len(m.data.Facts))
+	}
+
+	return content
 }
 
 func truncate(s string, maxLen int) string {

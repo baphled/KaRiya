@@ -2,25 +2,34 @@ package intents
 
 import (
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type BulkOperationsModel struct {
+	*BaseIntent
 	data   *BulkOperationsContext
 	result *IntentResult[*BulkOperationsResult]
+	active bool
 }
 
 func NewBulkOperationsIntent(data *BulkOperationsContext) *BulkOperationsModel {
 	return &BulkOperationsModel{
-		data:   data,
-		result: nil,
+		BaseIntent: NewBaseIntent(),
+		data:       data,
+		result:     nil,
+		active:     false,
 	}
 }
 
 func (m *BulkOperationsModel) Init() tea.Cmd {
+	// Mark intent as active
+	m.active = true
+
 	// context already set in data
 	m.data.CurrentState = BulkSelectOpState
+
 	// Return a no-op command to satisfy the intent lifecycle
 	return func() tea.Msg { return nil }
 }
@@ -40,17 +49,45 @@ func (m *BulkOperationsModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (m *BulkOperationsModel) View() string {
-	switch m.data.CurrentState {
-	case BulkSelectOpState:
-		return m.viewSelectOp()
-	case BulkConfigureState:
-		return m.viewConfigure()
-	case BulkExecuteState:
-		return m.viewExecute()
-	case BulkCompleteState:
-		return m.viewComplete()
+	if !m.active {
+		return "BulkOperations intent is not active"
 	}
-	return "Unknown state"
+
+	// Create standard view with breadcrumbs
+	breadcrumbs := []string{"Main Menu", "Bulk Operations"}
+	if m.data.SelectedOp != "" {
+		breadcrumbs = append(breadcrumbs, m.getOperationDisplayName())
+	}
+	view := CreateStandardViewWithBreadcrumbs(m.BaseIntent, breadcrumbs...)
+
+	// Handle progress modal for execution state
+	if m.data.CurrentState == BulkExecuteState && m.data.IsExecuting {
+		progress := m.data.GetProgress()
+		message := fmt.Sprintf("Processing: %d/%d items", m.data.ProcessedCount, m.data.AffectedItemCount)
+		message += fmt.Sprintf("\nSuccess: %d | Failed: %d | Skipped: %d",
+			m.data.SuccessCount, m.data.FailureCount, m.data.SkippedCount)
+
+		if m.data.IsPaused {
+			message += "\n\n⏸ PAUSED - Press 'p' to resume or 'c' to complete"
+		}
+
+		m.SetProgress(fmt.Sprintf("Bulk %s", m.getOperationDisplayName()), message, progress)
+	}
+
+	// Handle errors
+	if len(m.data.Errors) > 0 && m.data.CurrentState != BulkCompleteState {
+		m.SetError(fmt.Errorf("Operation error: %s", m.data.Errors[0]))
+	}
+
+	// Get content for current state
+	content := m.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := m.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
 }
 
 func (m *BulkOperationsModel) Result() *IntentResult[interface{}] {
@@ -63,6 +100,205 @@ func (m *BulkOperationsModel) Result() *IntentResult[interface{}] {
 		Data:   m.result.Data,
 	}
 }
+
+// Helper methods
+
+func (m *BulkOperationsModel) getOperationDisplayName() string {
+	switch m.data.SelectedOp {
+	case "delete":
+		return "Delete"
+	case "tag":
+		return "Tag"
+	case "archive":
+		return "Archive"
+	case "export":
+		return "Export"
+	default:
+		return strings.Title(m.data.SelectedOp)
+	}
+}
+
+func (m *BulkOperationsModel) getStateName() string {
+	switch m.data.CurrentState {
+	case BulkSelectOpState:
+		return "Select Operation"
+	case BulkConfigureState:
+		return "Configure"
+	case BulkExecuteState:
+		return "Executing"
+	case BulkCompleteState:
+		return "Complete"
+	default:
+		return ""
+	}
+}
+
+func (m *BulkOperationsModel) getStateContent() string {
+	switch m.data.CurrentState {
+	case BulkSelectOpState:
+		return m.getSelectOpContent()
+	case BulkConfigureState:
+		return m.getConfigureContent()
+	case BulkExecuteState:
+		return m.getExecuteContent()
+	case BulkCompleteState:
+		return m.getCompleteContent()
+	default:
+		return "Unknown state"
+	}
+}
+
+func (m *BulkOperationsModel) getContextHelp() string {
+	base := "q Quit"
+
+	switch m.data.CurrentState {
+	case BulkSelectOpState:
+		return CombineFooters(NavigationFooter(), "Enter Select operation", "Esc Back", base)
+	case BulkConfigureState:
+		return CombineFooters("Enter Execute", "Esc Back", base)
+	case BulkExecuteState:
+		if m.data.IsPaused {
+			return CombineFooters("p Resume", "c Complete now", base)
+		}
+		return CombineFooters("p Pause", "c Complete now", base)
+	case BulkCompleteState:
+		return CombineFooters("Enter Done", base)
+	default:
+		return base
+	}
+}
+
+// Content methods
+
+func (m *BulkOperationsModel) getSelectOpContent() string {
+	var content strings.Builder
+
+	content.WriteString("🔧 Select Bulk Operation\n\n")
+
+	if len(m.data.AvailableOps) > 0 {
+		content.WriteString("Available operations:\n\n")
+
+		for i, op := range m.data.AvailableOps {
+			selected := ""
+			if m.data.SelectedOp == op {
+				selected = " ▶ "
+			} else {
+				selected = "   "
+			}
+
+			// Add operation descriptions
+			desc := m.getOperationDescription(op)
+			content.WriteString(fmt.Sprintf("%s%d. %s - %s\n", selected, i+1, strings.Title(op), desc))
+		}
+	} else {
+		content.WriteString("No operations available.\n")
+	}
+
+	content.WriteString("\nUse arrow keys to navigate and Enter to select.\n")
+
+	return content.String()
+}
+
+func (m *BulkOperationsModel) getOperationDescription(op string) string {
+	switch op {
+	case "delete":
+		return "Permanently remove selected items"
+	case "tag":
+		return "Add or modify tags on selected items"
+	case "archive":
+		return "Move items to archive"
+	case "export":
+		return "Export selected items to file"
+	default:
+		return "Perform operation on selected items"
+	}
+}
+
+func (m *BulkOperationsModel) getConfigureContent() string {
+	var content strings.Builder
+
+	content.WriteString("⚙️  Configure Operation\n\n")
+
+	content.WriteString(fmt.Sprintf("Operation: %s\n", m.getOperationDisplayName()))
+	content.WriteString(fmt.Sprintf("Scope: %s\n", m.data.ScopeType))
+	content.WriteString(fmt.Sprintf("Items to process: %d\n\n", m.data.AffectedItemCount))
+
+	// Add operation-specific configuration info
+	switch m.data.SelectedOp {
+	case "delete":
+		content.WriteString("⚠️  Warning: This operation cannot be undone!\n")
+		content.WriteString("All selected items will be permanently removed.\n")
+	case "tag":
+		content.WriteString("Tags will be added to all selected items.\n")
+		content.WriteString("Existing tags will be preserved.\n")
+	case "archive":
+		content.WriteString("Items will be moved to the archive.\n")
+		content.WriteString("You can restore them later if needed.\n")
+	case "export":
+		content.WriteString("Items will be exported in CSV format.\n")
+		content.WriteString("You'll be prompted for the output location.\n")
+	}
+
+	content.WriteString("\nPress Enter to execute or Esc to go back.\n")
+
+	return content.String()
+}
+
+func (m *BulkOperationsModel) getExecuteContent() string {
+	// Most execution info is in the progress modal
+	var content strings.Builder
+
+	content.WriteString("⚙️  Bulk Operation in Progress\n\n")
+
+	if m.data.IsPaused {
+		content.WriteString("Operation is currently paused.\n")
+		content.WriteString("Press 'p' to resume or 'c' to complete with current progress.\n")
+	} else {
+		content.WriteString("Processing items...\n")
+		content.WriteString("Progress details are shown above.\n")
+	}
+
+	return content.String()
+}
+
+func (m *BulkOperationsModel) getCompleteContent() string {
+	var content strings.Builder
+
+	// Determine icon based on results
+	if m.data.FailureCount > 0 {
+		content.WriteString("⚠️  Operation Complete with Errors\n\n")
+	} else {
+		content.WriteString("✅ Operation Complete\n\n")
+	}
+
+	content.WriteString(fmt.Sprintf("Operation: %s\n", m.getOperationDisplayName()))
+	content.WriteString(fmt.Sprintf("Total processed: %d items\n\n", m.data.ProcessedCount))
+
+	// Results breakdown
+	content.WriteString("Results:\n")
+	content.WriteString(fmt.Sprintf("  ✓ Successful: %d\n", m.data.SuccessCount))
+	content.WriteString(fmt.Sprintf("  ✗ Failed: %d\n", m.data.FailureCount))
+	content.WriteString(fmt.Sprintf("  ⊘ Skipped: %d\n", m.data.SkippedCount))
+
+	// Show errors if any
+	if len(m.data.Errors) > 0 {
+		content.WriteString("\n📝 Error Summary:\n")
+		maxErrors := 5
+		if len(m.data.Errors) < maxErrors {
+			maxErrors = len(m.data.Errors)
+		}
+		for i := 0; i < maxErrors; i++ {
+			content.WriteString(fmt.Sprintf("  • %s\n", m.data.Errors[i]))
+		}
+		if len(m.data.Errors) > 5 {
+			content.WriteString(fmt.Sprintf("  ... and %d more errors\n", len(m.data.Errors)-5))
+		}
+	}
+
+	return content.String()
+}
+
+// State handlers
 
 func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -78,9 +314,54 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 			}
 			return tea.Quit
 
+		case "esc":
+			m.result = &IntentResult[*BulkOperationsResult]{
+				Status: Cancelled,
+				Data: &BulkOperationsResult{
+					Operation: "cancelled",
+				},
+			}
+			m.active = false
+			return nil
+
 		case "enter":
 			if m.data.SelectedOp != "" {
 				m.data.CurrentState = BulkConfigureState
+			}
+
+		case "1", "2", "3", "4", "5", "6", "7", "8", "9":
+			// Allow number selection
+			idx := int(msg.String()[0] - '1')
+			if idx >= 0 && idx < len(m.data.AvailableOps) {
+				m.data.SelectOperation(m.data.AvailableOps[idx])
+			}
+
+		case "up", "k":
+			// Navigate up in list
+			if m.data.SelectedOp == "" && len(m.data.AvailableOps) > 0 {
+				m.data.SelectOperation(m.data.AvailableOps[0])
+			} else {
+				// Find current index and move up
+				for i, op := range m.data.AvailableOps {
+					if op == m.data.SelectedOp && i > 0 {
+						m.data.SelectOperation(m.data.AvailableOps[i-1])
+						break
+					}
+				}
+			}
+
+		case "down", "j":
+			// Navigate down in list
+			if m.data.SelectedOp == "" && len(m.data.AvailableOps) > 0 {
+				m.data.SelectOperation(m.data.AvailableOps[0])
+			} else {
+				// Find current index and move down
+				for i, op := range m.data.AvailableOps {
+					if op == m.data.SelectedOp && i < len(m.data.AvailableOps)-1 {
+						m.data.SelectOperation(m.data.AvailableOps[i+1])
+						break
+					}
+				}
 			}
 		}
 	}
@@ -97,6 +378,15 @@ func (m *BulkOperationsModel) handleConfigureState(msg tea.Msg) tea.Cmd {
 
 		case "esc":
 			m.data.CurrentState = BulkSelectOpState
+
+		case "q", "ctrl+c":
+			m.result = &IntentResult[*BulkOperationsResult]{
+				Status: Cancelled,
+				Data: &BulkOperationsResult{
+					Operation: "cancelled",
+				},
+			}
+			return tea.Quit
 		}
 	}
 	return nil
@@ -130,59 +420,22 @@ func (m *BulkOperationsModel) handleExecuteState(msg tea.Msg) tea.Cmd {
 				},
 			}
 			return tea.Quit
+
+		case "q", "ctrl+c":
+			m.data.CompleteExecution()
+			m.result = &IntentResult[*BulkOperationsResult]{
+				Status: Cancelled,
+				Data: &BulkOperationsResult{
+					Operation:      m.data.SelectedOp,
+					ProcessedCount: m.data.ProcessedCount,
+					SuccessCount:   m.data.SuccessCount,
+					FailureCount:   m.data.FailureCount,
+					SkippedCount:   m.data.SkippedCount,
+					Message:        "Operation cancelled",
+				},
+			}
+			return tea.Quit
 		}
 	}
 	return nil
-}
-
-func (m *BulkOperationsModel) viewSelectOp() string {
-	output := "Select Operation\n"
-	output += "=================================================================\n"
-	output += "Available operations:\n"
-	for i, op := range m.data.AvailableOps {
-		prefix := "  "
-		if m.data.SelectedOp == op {
-			prefix = "> "
-		}
-		output += fmt.Sprintf("%s[%d] %s\n", prefix, i+1, op)
-	}
-	output += "\nOptions: enter (proceed), q (quit)\n"
-	return output
-}
-
-func (m *BulkOperationsModel) viewConfigure() string {
-	output := "Configure Operation\n"
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Operation: %s\n", m.data.SelectedOp)
-	output += fmt.Sprintf("Scope: %s\n", m.data.ScopeType)
-	output += fmt.Sprintf("Affected items: %d\n", m.data.AffectedItemCount)
-	output += "\nOptions: enter (execute), esc (back), q (quit)\n"
-	return output
-}
-
-func (m *BulkOperationsModel) viewExecute() string {
-	output := "Executing Operation\n"
-	output += "=================================================================\n"
-	progress := m.data.GetProgress()
-	progressBar := fmt.Sprintf("[%-50s] %.0f%%", "=", progress*100)
-	output += progressBar + "\n"
-	output += fmt.Sprintf("Processed: %d/%d\n", m.data.ProcessedCount, m.data.AffectedItemCount)
-	output += fmt.Sprintf("Success: %d | Failed: %d | Skipped: %d\n", m.data.SuccessCount, m.data.FailureCount, m.data.SkippedCount)
-
-	if m.data.IsPaused {
-		output += "\n[PAUSED] Options: p (resume), c (complete)\n"
-	} else if m.data.IsExecuting {
-		output += "\nOptions: p (pause), c (complete)\n"
-	}
-	return output
-}
-
-func (m *BulkOperationsModel) viewComplete() string {
-	output := "Operation Complete\n"
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Operation: %s\n", m.data.SelectedOp)
-	output += fmt.Sprintf("Processed: %d items\n", m.data.ProcessedCount)
-	output += fmt.Sprintf("Success: %d | Failed: %d | Skipped: %d\n", m.data.SuccessCount, m.data.FailureCount, m.data.SkippedCount)
-	output += "\nPress any key to exit...\n"
-	return output
 }

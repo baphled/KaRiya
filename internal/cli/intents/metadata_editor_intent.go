@@ -2,25 +2,34 @@ package intents
 
 import (
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type MetadataEditorModel struct {
+	*BaseIntent
 	data   *MetadataEditorContext
 	result *IntentResult[*MetadataEditorResult]
+	active bool
 }
 
 func NewMetadataEditorIntent(data *MetadataEditorContext) *MetadataEditorModel {
 	return &MetadataEditorModel{
-		data:   data,
-		result: nil,
+		BaseIntent: NewBaseIntent(),
+		data:       data,
+		result:     nil,
+		active:     false,
 	}
 }
 
 func (m *MetadataEditorModel) Init() tea.Cmd {
+	// Mark intent as active
+	m.active = true
+
 	// context already set in data
 	m.data.CurrentState = MetadataReviewState
+
 	// Return a no-op command to satisfy the intent lifecycle
 	return func() tea.Msg { return nil }
 }
@@ -38,15 +47,31 @@ func (m *MetadataEditorModel) Update(msg tea.Msg) tea.Cmd {
 }
 
 func (m *MetadataEditorModel) View() string {
-	switch m.data.CurrentState {
-	case MetadataReviewState:
-		return m.viewReview()
-	case MetadataEditState:
-		return m.viewEdit()
-	case MetadataConfirmState:
-		return m.viewConfirm()
+	if !m.active {
+		return "MetadataEditor intent is not active"
 	}
-	return "Unknown state"
+
+	// Create standard view with breadcrumbs
+	view := m.CreateViewWithBreadcrumbs("Main Menu", "Edit Metadata", m.getStateName())
+
+	// Handle validation errors
+	if m.data.HasFormErrors() {
+		var errorMessages []string
+		for field, err := range m.data.FormErrors {
+			errorMessages = append(errorMessages, fmt.Sprintf("%s: %s", field, err))
+		}
+		m.SetError(fmt.Errorf("Validation errors:\n%s", strings.Join(errorMessages, "\n")))
+	}
+
+	// Get content for current state
+	content := m.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := m.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
 }
 
 func (m *MetadataEditorModel) Result() *IntentResult[interface{}] {
@@ -60,6 +85,144 @@ func (m *MetadataEditorModel) Result() *IntentResult[interface{}] {
 		Error:  m.result.Error,
 	}
 }
+
+// getStateName returns the display name for the current state
+func (m *MetadataEditorModel) getStateName() string {
+	switch m.data.CurrentState {
+	case MetadataReviewState:
+		return "Review"
+	case MetadataEditState:
+		return "Edit"
+	case MetadataConfirmState:
+		return "Confirm"
+	default:
+		return ""
+	}
+}
+
+// getStateContent returns the content for the current state
+func (m *MetadataEditorModel) getStateContent() string {
+	switch m.data.CurrentState {
+	case MetadataReviewState:
+		return m.getReviewContent()
+	case MetadataEditState:
+		return m.getEditContent()
+	case MetadataConfirmState:
+		return m.getConfirmContent()
+	default:
+		return "Unknown state"
+	}
+}
+
+// getContextHelp returns context-aware help text
+func (m *MetadataEditorModel) getContextHelp() string {
+	base := "q Quit"
+
+	switch m.data.CurrentState {
+	case MetadataReviewState:
+		return CombineFooters("e Edit metadata", "Esc Back", base)
+	case MetadataEditState:
+		if m.data.HasChanges() {
+			return CombineFooters(FormFooter(), "Ctrl+S Save changes", "Esc Cancel", base)
+		}
+		return CombineFooters(FormFooter(), "Esc Back", base)
+	case MetadataConfirmState:
+		return CombineFooters("y/Enter Confirm", "n/Esc Back", base)
+	default:
+		return base
+	}
+}
+
+// Content methods
+
+func (m *MetadataEditorModel) getReviewContent() string {
+	var content strings.Builder
+
+	content.WriteString("📋 Metadata Review\n\n")
+
+	if m.data.EntityType != "" && m.data.EntityID != "" {
+		content.WriteString(fmt.Sprintf("Entity: %s\n", m.data.EntityType))
+		content.WriteString(fmt.Sprintf("ID: %s\n\n", m.data.EntityID))
+	}
+
+	if len(m.data.OriginalMetadata) > 0 {
+		content.WriteString(fmt.Sprintf("📝 Metadata Fields: %d\n\n", len(m.data.OriginalMetadata)))
+
+		// Show current metadata
+		for field, value := range m.data.OriginalMetadata {
+			content.WriteString(fmt.Sprintf("  • %s: %v\n", field, value))
+		}
+	} else {
+		content.WriteString("No metadata available.\n")
+	}
+
+	content.WriteString("\nPress 'e' to edit metadata or Esc to go back.\n")
+
+	return content.String()
+}
+
+func (m *MetadataEditorModel) getEditContent() string {
+	var content strings.Builder
+
+	content.WriteString("✏️  Edit Metadata\n\n")
+
+	if m.data.EntityType != "" && m.data.EntityID != "" {
+		content.WriteString(fmt.Sprintf("Entity: %s (%s)\n\n", m.data.EntityType, m.data.EntityID))
+	}
+
+	// Show changed fields
+	if m.data.HasChanges() {
+		content.WriteString(fmt.Sprintf("📝 Changed fields: %d\n\n", len(m.data.ChangedFields)))
+
+		changes := m.data.GetChanges()
+		for field, newValue := range changes {
+			originalValue := m.data.OriginalMetadata[field]
+			content.WriteString(fmt.Sprintf("  • %s:\n", field))
+			content.WriteString(fmt.Sprintf("    Before: %v\n", originalValue))
+			content.WriteString(fmt.Sprintf("    After:  %v\n", newValue))
+		}
+
+		content.WriteString("\nPress Ctrl+S to save or Esc to cancel changes.\n")
+	} else {
+		content.WriteString("No changes made yet.\n\n")
+
+		// Show all editable fields
+		if len(m.data.EditedMetadata) > 0 {
+			content.WriteString("Available fields:\n")
+			for field, value := range m.data.EditedMetadata {
+				content.WriteString(fmt.Sprintf("  • %s: %v\n", field, value))
+			}
+		}
+
+		content.WriteString("\nMake changes and press Ctrl+S to save, or Esc to cancel.\n")
+	}
+
+	return content.String()
+}
+
+func (m *MetadataEditorModel) getConfirmContent() string {
+	var content strings.Builder
+
+	content.WriteString("💾 Confirm Changes\n\n")
+
+	if len(m.data.ChangedFields) > 0 {
+		content.WriteString(fmt.Sprintf("You are about to save %d changed field(s):\n\n", len(m.data.ChangedFields)))
+
+		changes := m.data.GetChanges()
+		for field, newValue := range changes {
+			originalValue := m.data.OriginalMetadata[field]
+			content.WriteString(fmt.Sprintf("  • %s: %v → %v\n", field, originalValue, newValue))
+		}
+
+		content.WriteString("\nDo you want to save these changes?\n")
+	} else {
+		content.WriteString("No changes to save.\n")
+	}
+
+	return content.String()
+}
+
+// State handlers
 
 func (m *MetadataEditorModel) handleReviewState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -84,7 +247,8 @@ func (m *MetadataEditorModel) handleReviewState(msg tea.Msg) tea.Cmd {
 					Action: "cancelled",
 				},
 			}
-			return tea.Quit
+			m.active = false
+			return nil
 		}
 	}
 	return nil
@@ -102,6 +266,15 @@ func (m *MetadataEditorModel) handleEditState(msg tea.Msg) tea.Cmd {
 		case "esc":
 			m.data.ResetChanges()
 			m.data.CurrentState = MetadataReviewState
+
+		case "q", "ctrl+c":
+			m.result = &IntentResult[*MetadataEditorResult]{
+				Status: Cancelled,
+				Data: &MetadataEditorResult{
+					Action: "cancelled",
+				},
+			}
+			return tea.Quit
 		}
 	}
 	return nil
@@ -111,7 +284,7 @@ func (m *MetadataEditorModel) handleConfirmState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "y":
+		case "y", "enter":
 			m.result = &IntentResult[*MetadataEditorResult]{
 				Status: Completed,
 				Data: &MetadataEditorResult{
@@ -127,41 +300,16 @@ func (m *MetadataEditorModel) handleConfirmState(msg tea.Msg) tea.Cmd {
 
 		case "n", "esc":
 			m.data.CurrentState = MetadataEditState
+
+		case "q", "ctrl+c":
+			m.result = &IntentResult[*MetadataEditorResult]{
+				Status: Cancelled,
+				Data: &MetadataEditorResult{
+					Action: "cancelled",
+				},
+			}
+			return tea.Quit
 		}
 	}
 	return nil
-}
-
-func (m *MetadataEditorModel) viewReview() string {
-	output := "Metadata Review\n"
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Entity: %s (%s)\n", m.data.EntityType, m.data.EntityID)
-	output += fmt.Sprintf("Fields: %d\n", len(m.data.OriginalMetadata))
-	output += "\nOptions: e (edit), esc (back), q (quit)\n"
-	return output
-}
-
-func (m *MetadataEditorModel) viewEdit() string {
-	output := "Edit Metadata\n"
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Entity: %s (%s)\n", m.data.EntityType, m.data.EntityID)
-	output += fmt.Sprintf("Changed fields: %d\n", len(m.data.ChangedFields))
-
-	if m.data.HasFormErrors() {
-		output += "\nErrors:\n"
-		for field, err := range m.data.FormErrors {
-			output += fmt.Sprintf("  %s: %s\n", field, err)
-		}
-	}
-
-	output += "\nOptions: Ctrl+S (save), Esc (cancel)\n"
-	return output
-}
-
-func (m *MetadataEditorModel) viewConfirm() string {
-	output := "Confirm Changes\n"
-	output += "=================================================================\n"
-	output += fmt.Sprintf("Save %d changed field(s)?\n", len(m.data.ChangedFields))
-	output += "\nOptions: y (confirm), n (cancel), esc (back)\n"
-	return output
 }

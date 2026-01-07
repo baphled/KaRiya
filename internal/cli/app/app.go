@@ -2,17 +2,18 @@ package app
 
 import (
 	"context"
-	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/charmbracelet/bubbles/table"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -43,6 +44,10 @@ type Model struct {
 	// Menu state
 	selectedMenuIndex int
 	menuItems         []MenuItem
+	logo              *components.ASCIILogo
+
+	// Terminal info for responsive rendering
+	terminalInfo *terminal.Info
 
 	// Context for intent creation
 	ctx context.Context
@@ -83,6 +88,13 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		{Name: "Bulk Operations", Intent: "bulk_operations", Help: "Perform bulk actions"},
 	}
 
+	// Create ASCII logo with animation
+	logo := components.NewASCIILogo(true, 80)
+	logo.SetExternalCentering(true) // Let container handle centering
+
+	// Share logo with intent router so all intents can use it
+	router.SetLogo(logo)
+
 	return &Model{
 		cliService:        cliService,
 		careerService:     careerService,
@@ -94,6 +106,8 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		state:             StateMenu,
 		selectedMenuIndex: 0,
 		menuItems:         menuItems,
+		logo:              logo,
+		terminalInfo:      terminal.NewInfo(),
 		ctx:               ctx,
 		width:             80,
 		height:            24,
@@ -102,11 +116,24 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 // Init initializes the model
 func (m *Model) Init() tea.Cmd {
-	return nil
+	// Request initial terminal size and initialize logo animation
+	return tea.Batch(
+		tea.WindowSize(),
+		m.logo.Init(),
+	)
 }
 
 // Update handles messages - FIXED: Using correct Bubble Tea v1.3.10 signature
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Update logo animation if in menu state
+	if m.state == StateMenu {
+		if _, ok := msg.(components.TickMsg); ok {
+			updatedLogo, cmd := m.logo.Update(msg)
+			m.logo = updatedLogo.(*components.ASCIILogo)
+			return m, cmd
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -134,8 +161,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
+		// Update dimensions
 		m.width = msg.Width
 		m.height = msg.Height
+
+		// Update terminal info
+		m.terminalInfo.Update(msg)
+
+		// Propagate terminal info to intent router
+		m.intentRouter.UpdateTerminalInfo(m.terminalInfo)
+
+		// Update logo width for centering
+		m.logo.SetWidth(msg.Width)
+
+		// Clear screen to prevent artifacts on resize
+		return m, tea.ClearScreen
 
 	case IntentCompletedMsg:
 		// Handle result from completed intent
@@ -230,33 +270,111 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// viewMenu renders the main menu using TableListContainer
+// viewMenu renders the main menu using SmartContainer for proper centering
 func (m *Model) viewMenu() string {
-	rows := make([]table.Row, len(m.menuItems))
-	for i, item := range m.menuItems {
-		rows[i] = table.Row{item.Name, item.Help}
+	// Ensure terminalInfo has current dimensions
+	if !m.terminalInfo.IsValid && m.width > 0 && m.height > 0 {
+		m.terminalInfo.Width = m.width
+		m.terminalInfo.Height = m.height
+		m.terminalInfo.IsValid = true
 	}
 
+	// Use SmartContainer with terminal info for intelligent centering
+	container := components.NewSmartContainer(m.terminalInfo)
+	container.SetCenteringMode(components.CenterBoth)
+
+	// Build menu components WITHOUT individual centering
+	var parts []string
+
+	// 1. Logo (static view, no animation during menu)
+	logoView := m.logo.ViewStatic()
+	parts = append(parts, logoView)
+
+	// 2. Spacing between logo and menu
+	parts = append(parts, "")
+	parts = append(parts, "")
+
+	// 3. Menu table with responsive columns
+	tableView := m.renderResponsiveTable()
+	parts = append(parts, tableView)
+
+	// 4. Spacing between menu and help
+	parts = append(parts, "")
+	parts = append(parts, "")
+
+	// 5. Help text
+	helpText := "↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit"
+	parts = append(parts, helpText)
+
+	// Let SmartContainer handle ALL centering
+	content := ""
+	for i, part := range parts {
+		if i > 0 {
+			content += "\n"
+		}
+		content += part
+	}
+	return container.SetContent(content).Render()
+}
+
+// renderResponsiveTable creates the menu table with responsive column widths
+func (m *Model) renderResponsiveTable() string {
+	// Calculate responsive column widths based on terminal size
+	category := m.terminalInfo.GetCategory()
+
+	var actionWidth, descWidth int
+
+	switch category {
+	case terminal.SizeTiny:
+		// Very small terminals: minimal widths
+		actionWidth = 18
+		descWidth = 28
+	case terminal.SizeCompact:
+		// Compact terminals: balanced widths
+		actionWidth = 20
+		descWidth = 35
+	case terminal.SizeNormal:
+		// Normal terminals: comfortable widths
+		actionWidth = 22
+		descWidth = 40
+	case terminal.SizeLarge:
+		// Large terminals: generous widths
+		actionWidth = 25
+		descWidth = 50
+	default: // SizeXLarge
+		// Extra large terminals: maximum widths
+		actionWidth = 28
+		descWidth = 60
+	}
+
+	// Create table rows
+	rows := make([]table.Row, len(m.menuItems))
+	for i, item := range m.menuItems {
+		// Add selection indicator
+		indicator := "  "
+		if i == m.selectedMenuIndex {
+			indicator = "▶ "
+		}
+		rows[i] = table.Row{indicator + item.Name, item.Help}
+	}
+
+	// Create table with responsive columns
 	tableModel := table.New(
 		table.WithColumns([]table.Column{
-			{Title: "Name", Width: 20},
-			{Title: "Description", Width: 50},
+			{Title: "Action", Width: actionWidth},
+			{Title: "Description", Width: descWidth},
 		}),
 		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(len(m.menuItems)),
 	)
 
+	// Set cursor position
 	if m.selectedMenuIndex >= 0 && m.selectedMenuIndex < len(rows) {
 		tableModel.SetCursor(m.selectedMenuIndex)
 	}
 
-	container := components.NewTableListContainer(tableModel, "KaRiya - Career Event Manager", m.width)
-	container.SetDimensions(m.width, m.height)
-	container.SetHelpFooterKey("menu_navigate")
-	container.SetEmptyStateMessage("No menu items available")
-
-	return container.Render()
+	return tableModel.View()
 }
 
 // GetMenuItems returns the menu items from the model
