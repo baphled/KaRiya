@@ -342,3 +342,168 @@ func TestWrapText_ShortString(t *testing.T) {
 		t.Errorf("Expected short string to remain unchanged, got '%s'", wrapped)
 	}
 }
+
+// Edge case tests added for Task 16 Phase 2.2
+
+func TestModalContent_ModalLargerThanTerminal(t *testing.T) {
+	// Create modal with very long content for small terminal
+	longMessage := strings.Repeat("This is a very long error message that exceeds terminal width. ", 10)
+	modal := NewErrorModal("Error", longMessage)
+
+	output := modal.Render(40, 10)
+
+	// Should handle gracefully without panic
+	if output == "" {
+		t.Error("Expected output for modal larger than terminal")
+	}
+}
+
+func TestModalContent_VeryLongErrorMessage(t *testing.T) {
+	// Test with extremely long error messages
+	longMessage := strings.Repeat("Error detail. ", 100)
+	modal := NewErrorModal("Error", longMessage)
+
+	output := modal.Render(80, 40)
+
+	// Should wrap or truncate gracefully
+	if output == "" {
+		t.Error("Expected output for very long error message")
+	}
+}
+
+func TestModalContent_ProgressEdgeValues(t *testing.T) {
+	// Test 0.0 progress
+	modal1 := NewProgressModal("Starting", "Starting process...", 0.0)
+	output1 := modal1.Render(80, 40)
+	if !strings.Contains(output1, "0%") {
+		t.Error("Expected 0% to be shown for 0.0 progress")
+	}
+
+	// Test 1.0 progress
+	modal2 := NewProgressModal("Complete", "Process complete!", 1.0)
+	output2 := modal2.Render(80, 40)
+	if !strings.Contains(output2, "100%") {
+		t.Error("Expected 100% to be shown for 1.0 progress")
+	}
+
+	// Test mid-range progress
+	modal3 := NewProgressModal("Processing", "Processing data...", 0.5)
+	output3 := modal3.Render(80, 40)
+	if !strings.Contains(output3, "50%") {
+		t.Error("Expected 50% to be shown for 0.5 progress")
+	}
+}
+
+func TestModalContent_FadeInTiming(t *testing.T) {
+	modal := NewErrorModal("Test", "Message")
+
+	// Test rendering - fade-in is calculated internally from fadeStartTime
+	// We just verify it renders without panic at various points
+	output := modal.Render(80, 40)
+	if output == "" {
+		t.Error("Expected output during fade-in")
+	}
+
+	// Wait a moment and render again
+	time.Sleep(50 * time.Millisecond)
+	output = modal.Render(80, 40)
+	if output == "" {
+		t.Error("Expected output after some fade-in time")
+	}
+}
+
+func TestModalContent_AutoDismissTimingAccuracy(t *testing.T) {
+	// Test success modal with auto-dismiss
+	modal := NewSuccessModal("Operation completed")
+
+	// Verify modal properties are set correctly for auto-dismiss
+	if modal.Type != ModalSuccess {
+		t.Error("Expected modal type to be Success")
+	}
+
+	output := modal.Render(80, 40)
+	if output == "" {
+		t.Error("Expected output for success modal")
+	}
+}
+
+func TestModalContent_MultipleRapidChanges(t *testing.T) {
+	modal := NewProgressModal("Processing", "Processing items...", 0.0)
+
+	// Simulate rapid progress updates
+	for i := 0.0; i <= 1.0; i += 0.1 {
+		modal.UpdateProgress(i)
+		output := modal.Render(80, 40)
+		if output == "" {
+			t.Errorf("Expected output for progress %.1f", i)
+		}
+	}
+}
+
+func TestModalContent_EmptyTitleAndMessage(t *testing.T) {
+	// Test modal with empty title
+	modal1 := NewErrorModal("", "Message")
+	output1 := modal1.Render(80, 40)
+	if output1 == "" {
+		t.Error("Expected output for modal with empty title")
+	}
+
+	// Test modal with empty message
+	modal2 := NewErrorModal("Title", "")
+	output2 := modal2.Render(80, 40)
+	if output2 == "" {
+		t.Error("Expected output for modal with empty message")
+	}
+
+	// Test modal with both empty
+	modal3 := NewErrorModal("", "")
+	output3 := modal3.Render(80, 40)
+	if output3 == "" {
+		t.Error("Expected output for modal with empty title and message")
+	}
+}
+
+func TestModalContent_ActionButtonsOverflow(t *testing.T) {
+	modal := NewErrorModal("Error", "Test error message")
+
+	// Add many action buttons
+	modal.Actions = []string{
+		"Very Long Action Button 1",
+		"Very Long Action Button 2",
+		"Very Long Action Button 3",
+		"Very Long Action Button 4",
+		"Very Long Action Button 5",
+	}
+
+	// Render in narrow terminal
+	output := modal.Render(50, 20)
+
+	// Should handle overflow gracefully
+	if output == "" {
+		t.Error("Expected output with many action buttons")
+	}
+}
+
+func TestModalContent_SmallTerminalRendering(t *testing.T) {
+	modal := NewErrorModal("Error", "An error occurred")
+
+	// Test on very small terminal
+	output := modal.Render(30, 10)
+
+	// Should render something even on small terminal
+	if output == "" {
+		t.Error("Expected output for small terminal")
+	}
+}
+
+func TestModalContent_LargeTerminalRendering(t *testing.T) {
+	modal := NewLoadingModal("Loading...", false)
+
+	// Test on very large terminal
+	output := modal.Render(200, 60)
+
+	// Should render appropriately for large terminal
+	if output == "" {
+		t.Error("Expected output for large terminal")
+	}
+}

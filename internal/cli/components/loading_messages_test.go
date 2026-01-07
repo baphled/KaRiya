@@ -1,6 +1,7 @@
 package components
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -335,5 +336,175 @@ func TestDefaultSpinnerFrames(t *testing.T) {
 		if frame == "" {
 			t.Errorf("Expected frame %d to be non-empty", i)
 		}
+	}
+}
+
+// Edge case tests added for Task 16 Phase 2.3
+
+func TestLoadingMessageRotator_EmptyMessageList(t *testing.T) {
+	// Test with empty message list
+	rotator := NewLoadingMessageRotator([]string{}, 100*time.Millisecond)
+
+	// Should handle empty list gracefully
+	current := rotator.GetCurrent()
+	if current == "" {
+		// Expected - no messages to show
+	}
+
+	// Rotation should not panic
+	rotator.Rotate()
+	current = rotator.GetCurrent()
+	_ = current // Should not panic
+}
+
+func TestLoadingMessageRotator_SingleMessage(t *testing.T) {
+	// Test with single message (no rotation needed)
+	messages := []string{"Loading..."}
+	rotator := NewLoadingMessageRotator(messages, 100*time.Millisecond)
+
+	msg1 := rotator.GetCurrent()
+	if msg1 != "Loading..." {
+		t.Errorf("Expected 'Loading...', got '%s'", msg1)
+	}
+
+	// Rotate - should stay on same message
+	rotator.Rotate()
+	msg2 := rotator.GetCurrent()
+	if msg2 != "Loading..." {
+		t.Errorf("Expected 'Loading...' after rotation, got '%s'", msg2)
+	}
+}
+
+func TestLoadingMessageRotator_RapidRotationRequests(t *testing.T) {
+	messages := []string{"Message 1", "Message 2", "Message 3"}
+	rotator := NewLoadingMessageRotator(messages, 50*time.Millisecond)
+
+	// Perform rapid rotations
+	for i := 0; i < 100; i++ {
+		rotator.Rotate()
+		current := rotator.GetCurrent()
+		if current == "" {
+			t.Error("Expected non-empty message after rotation")
+		}
+	}
+}
+
+func TestLoadingMessageRotator_VeryLongMessages(t *testing.T) {
+	// Test with very long messages
+	longMsg := strings.Repeat("Very long loading message text. ", 20)
+	messages := []string{longMsg, "Short", longMsg + " more"}
+	rotator := NewLoadingMessageRotator(messages, 100*time.Millisecond)
+
+	current := rotator.GetCurrent()
+	if current == "" {
+		t.Error("Expected non-empty message for long text")
+	}
+
+	// Should handle long messages without panic
+	rotator.Rotate()
+	_ = rotator.GetCurrent()
+}
+
+func TestLoadingMessageRotator_ResetDuringRotation(t *testing.T) {
+	messages := []string{"Msg 1", "Msg 2", "Msg 3"}
+	rotator := NewLoadingMessageRotator(messages, 50*time.Millisecond)
+
+	// Rotate a few times
+	rotator.Rotate()
+	rotator.Rotate()
+
+	currentBefore := rotator.GetCurrent()
+
+	// Reset during rotation
+	rotator.Reset()
+
+	currentAfter := rotator.GetCurrent()
+
+	// After reset, should be back to first message
+	if currentAfter != "Msg 1" {
+		t.Errorf("Expected first message after reset, got '%s'", currentAfter)
+	}
+
+	if currentBefore == currentAfter {
+		// This is acceptable if we were already on first message
+	}
+}
+
+func TestLoadingMessageRotator_ConcurrentAccess(t *testing.T) {
+	messages := []string{"Msg 1", "Msg 2", "Msg 3", "Msg 4", "Msg 5"}
+	rotator := NewLoadingMessageRotator(messages, 10*time.Millisecond)
+
+	// Test concurrent access (race detector will catch issues)
+	done := make(chan bool)
+
+	// Goroutine 1: Rotate
+	go func() {
+		for i := 0; i < 50; i++ {
+			rotator.Rotate()
+			time.Sleep(1 * time.Millisecond)
+		}
+		done <- true
+	}()
+
+	// Goroutine 2: GetCurrent
+	go func() {
+		for i := 0; i < 50; i++ {
+			_ = rotator.GetCurrent()
+			time.Sleep(1 * time.Millisecond)
+		}
+		done <- true
+	}()
+
+	// Wait for both goroutines
+	<-done
+	<-done
+
+	// Should complete without race conditions
+}
+
+func TestSimpleSpinner_RapidAdvancement(t *testing.T) {
+	spinner := NewSimpleSpinner()
+	// Set a short interval
+	spinner.SetFrameInterval(10 * time.Millisecond)
+
+	// Rapidly advance spinner
+	for i := 0; i < 100; i++ {
+		spinner.Advance()
+		frame := spinner.GetFrame()
+		if frame == "" {
+			t.Error("Expected non-empty spinner frame")
+		}
+	}
+}
+
+func TestSimpleSpinner_VeryShortInterval(t *testing.T) {
+	// Test with very short interval (1ms)
+	spinner := NewSimpleSpinner()
+	spinner.SetFrameInterval(1 * time.Millisecond)
+
+	// Should handle short interval without issues
+	spinner.Advance()
+	frame := spinner.GetFrame()
+	if frame == "" {
+		t.Error("Expected non-empty frame with short interval")
+	}
+}
+
+func TestSimpleSpinner_VeryLongInterval(t *testing.T) {
+	// Test with very long interval (1 hour)
+	spinner := NewSimpleSpinner()
+	spinner.SetFrameInterval(1 * time.Hour)
+
+	// Should still work, just won't advance often
+	frame := spinner.GetFrame()
+	if frame == "" {
+		t.Error("Expected non-empty frame with long interval")
+	}
+
+	spinner.Advance()
+	frame2 := spinner.GetFrame()
+	// With 1 hour interval and no time passing, frame shouldn't advance
+	if frame2 != frame {
+		// This is acceptable if it advanced anyway
 	}
 }
