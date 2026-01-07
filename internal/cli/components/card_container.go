@@ -77,21 +77,21 @@ func (cc *CardContainer) Render() string {
 
 	// Render header if present
 	if cc.hasHeader {
-		headerStyle := styles.CardHeader.Copy().
+		headerStyle := styles.CardHeader.
 			Foreground(styles.ColorTextPrimary)
 		sections = append(sections, headerStyle.Render(cc.header))
 	}
 
 	// Render body if present
 	if cc.hasBody {
-		bodyStyle := styles.CardContent.Copy().
+		bodyStyle := styles.CardContent.
 			Foreground(styles.ColorTextPrimary)
 		sections = append(sections, bodyStyle.Render(cc.body))
 	}
 
 	// Render footer if present
 	if cc.hasFooter {
-		footerStyle := styles.CardFooter.Copy().
+		footerStyle := styles.CardFooter.
 			Foreground(styles.ColorTextSecondary)
 		sections = append(sections, footerStyle.Render(cc.footer))
 	}

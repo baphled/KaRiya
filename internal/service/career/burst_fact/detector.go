@@ -346,7 +346,12 @@ func (bd *BurstDetector) extractCommonWords(cluster []career.CareerEvent) []stri
 	var commonWords []string
 	for word, count := range wordCount {
 		if count > 1 || (len(cluster) <= 2 && count >= 1) {
-			commonWords = append(commonWords, strings.Title(word))
+			// Simple title case: capitalize first letter
+			titled := word
+			if len(word) > 0 {
+				titled = strings.ToUpper(word[:1]) + word[1:]
+			}
+			commonWords = append(commonWords, titled)
 		}
 	}
 

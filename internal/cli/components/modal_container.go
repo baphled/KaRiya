@@ -83,7 +83,7 @@ func (mc *ModalContainer) Render() string {
 	var titleStyle, messageStyle, buttonStyle, instructionStyle lipgloss.Style
 
 	if mc.isDestructive {
-		titleStyle = styles.ModalDestructiveTitle.Copy().
+		titleStyle = styles.ModalDestructiveTitle.
 			Foreground(styles.ColorError)
 		messageStyle = lipgloss.NewStyle().
 			Foreground(styles.ColorTextPrimary).
@@ -92,16 +92,16 @@ func (mc *ModalContainer) Render() string {
 			Foreground(styles.ColorError).
 			Bold(true)
 	} else {
-		titleStyle = styles.ModalTitle.Copy().
+		titleStyle = styles.ModalTitle.
 			Foreground(styles.ColorTextPrimary)
-		messageStyle = styles.ModalMessage.Copy().
+		messageStyle = styles.ModalMessage.
 			Foreground(styles.ColorTextPrimary)
 		buttonStyle = lipgloss.NewStyle().
 			Foreground(styles.ColorAccentTeal).
 			Bold(true)
 	}
 
-	instructionStyle = styles.ModalInstructions.Copy().
+	instructionStyle = styles.ModalInstructions.
 		Foreground(styles.ColorTextMuted)
 
 	// Render title if present
@@ -120,7 +120,7 @@ func (mc *ModalContainer) Render() string {
 		for _, btn := range mc.buttons {
 			buttonTexts = append(buttonTexts, buttonStyle.Render(btn))
 		}
-		buttonContainer := styles.ModalButtonContainer.Copy().
+		buttonContainer := styles.ModalButtonContainer.
 			Render(strings.Join(buttonTexts, " "))
 		parts = append(parts, buttonContainer)
 	}
@@ -136,10 +136,10 @@ func (mc *ModalContainer) Render() string {
 	// Apply modal styling with border and background
 	var modalStyle lipgloss.Style
 	if mc.isDestructive {
-		modalStyle = styles.ModalDestructive.Copy().
+		modalStyle = styles.ModalDestructive.
 			Foreground(styles.ColorTextPrimary)
 	} else {
-		modalStyle = styles.ModalBase.Copy().
+		modalStyle = styles.ModalBase.
 			Foreground(styles.ColorTextPrimary)
 	}
 

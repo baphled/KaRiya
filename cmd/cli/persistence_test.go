@@ -255,7 +255,7 @@ var _ = Describe("Form Submission Debug", func() {
 
 			// Execute the command and process result
 			msg := cmd()
-			form, _ = updateForm(form, msg)
+			_, _ = updateForm(form, msg)
 
 			// Check all events in repository (regardless of mode)
 			ctx := context.Background()

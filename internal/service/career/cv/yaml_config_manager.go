@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -69,7 +68,7 @@ func (m *YAMLConfigManager) LoadConfig(ctx context.Context, name string) (*caree
 	}
 
 	// Read file
-	data, err := ioutil.ReadFile(configPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			m.logger.Info("Config not found: %s at path %s", name, configPath)
@@ -141,7 +140,7 @@ func (m *YAMLConfigManager) SaveConfig(ctx context.Context, config *career.CVCon
 	}
 
 	// Write to temporary file
-	tmpFile, err := ioutil.TempFile(m.configDir, ".tmp-*.yaml")
+	tmpFile, err := os.CreateTemp(m.configDir, ".tmp-*.yaml")
 	if err != nil {
 		m.logger.Error("Failed to create temp file: %v", err)
 		return fmt.Errorf("failed to create temp file: %w", err)
@@ -212,7 +211,7 @@ func (m *YAMLConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig
 	}
 
 	// Read directory
-	entries, err := ioutil.ReadDir(m.configDir)
+	entries, err := os.ReadDir(m.configDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			m.logger.Info("Config directory not found")
@@ -376,7 +375,7 @@ func (m *YAMLConfigManager) VerifyDirectory() error {
 
 	// Try to write a test file to verify permissions
 	testFile := filepath.Join(m.configDir, ".write-test")
-	if err := ioutil.WriteFile(testFile, []byte("test"), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
 		if m.logger != nil {
 			m.logger.Error("Config directory is not writable: %v", err)
 		}

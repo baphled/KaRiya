@@ -282,7 +282,7 @@ func (fc *FormContainer) renderField(field FormField, maxWidth int) string {
 
 	// Render label
 	if field.Label != "" {
-		labelStyle := styles.InputLabel.Copy().
+		labelStyle := styles.InputLabel.
 			Foreground(styles.ColorTextSecondary)
 		labelText := field.Label
 		// Add focus indicator for focused fields
@@ -299,13 +299,13 @@ func (fc *FormContainer) renderField(field FormField, maxWidth int) string {
 	if field.Input != "" {
 		var inputStyle lipgloss.Style
 		if field.Error != "" {
-			inputStyle = styles.InputError.Copy().
+			inputStyle = styles.InputError.
 				Foreground(styles.ColorTextPrimary)
 		} else if field.IsFocused {
-			inputStyle = styles.InputFocused.Copy().
+			inputStyle = styles.InputFocused.
 				Foreground(styles.ColorTextPrimary)
 		} else {
-			inputStyle = styles.InputBase.Copy().
+			inputStyle = styles.InputBase.
 				Foreground(styles.ColorTextPrimary)
 		}
 
@@ -320,7 +320,7 @@ func (fc *FormContainer) renderField(field FormField, maxWidth int) string {
 
 	// Render error
 	if field.Error != "" {
-		errorStyle := styles.ErrorText.Copy().
+		errorStyle := styles.ErrorText.
 			Foreground(styles.ColorError).
 			MarginTop(1)
 		errorText := field.Error
@@ -332,7 +332,7 @@ func (fc *FormContainer) renderField(field FormField, maxWidth int) string {
 
 	// Render hint
 	if field.Hint != "" {
-		hintStyle := styles.InputHint.Copy().
+		hintStyle := styles.InputHint.
 			Foreground(styles.ColorTextMuted)
 		hintText := field.Hint
 		if maxWidth > 0 && len(hintText) > maxWidth {
