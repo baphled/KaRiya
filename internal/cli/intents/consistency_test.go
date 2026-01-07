@@ -327,3 +327,18 @@ func TestFactManagementUsesStandardView(t *testing.T) {
 
 	testStandardViewConsistency(t, "FactManagement", view)
 }
+
+// TestBurstManagementUsesStandardView verifies BurstManagement uses StandardView patterns
+func TestBurstManagementUsesStandardView(t *testing.T) {
+	ctx := NewBurstManagementContext(nil, nil, context.Background())
+
+	intent, err := NewBurstManagementIntent(ctx)
+	if err != nil || intent == nil {
+		t.Fatalf("Failed to create BurstManagement intent: %v", err)
+	}
+
+	intent.Init()
+	view := intent.View()
+
+	testStandardViewConsistency(t, "BurstManagement", view)
+}
