@@ -9,7 +9,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -34,10 +33,8 @@ type FormModel struct {
 	cliService         *service.CLIEventService
 	inputs             []textinput.Model
 	focusIndex         int
-	modeIndex          int                              // Index for capture mode selection (DEPRECATED - to be removed)
-	tagIndex           int                              // Index for tag navigation when TagsField is focused
-	categoryIndex      int                              // Index for category navigation when CategoriesField is focused
-	modes              []careerservice.EventCaptureMode // DEPRECATED - to be removed
+	tagIndex           int // Index for tag navigation when TagsField is focused
+	categoryIndex      int // Index for category navigation when CategoriesField is focused
 	err                error
 	submitted          bool
 	event              *career.CareerEvent
