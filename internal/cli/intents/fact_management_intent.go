@@ -171,7 +171,7 @@ func (m *FactManagementModel) View() string {
 		for field, err := range m.data.FormErrors {
 			errorMessages = append(errorMessages, fmt.Sprintf("%s: %s", field, err))
 		}
-		m.SetError(fmt.Errorf("Validation errors:\n%s", fmt.Sprintf("%v", errorMessages)))
+		m.SetError(fmt.Errorf("validation errors:\n%s", fmt.Sprintf("%v", errorMessages)))
 	}
 
 	// Get content for current state

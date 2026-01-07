@@ -60,7 +60,7 @@ func (m *MetadataEditorModel) View() string {
 		for field, err := range m.data.FormErrors {
 			errorMessages = append(errorMessages, fmt.Sprintf("%s: %s", field, err))
 		}
-		m.SetError(fmt.Errorf("Validation errors:\n%s", strings.Join(errorMessages, "\n")))
+		m.SetError(fmt.Errorf("validation errors:\n%s", strings.Join(errorMessages, "\n")))
 	}
 
 	// Get content for current state

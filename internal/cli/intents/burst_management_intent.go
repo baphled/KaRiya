@@ -763,9 +763,9 @@ func (i *BurstManagementIntent) View() string {
 
 	// Handle errors
 	if i.state.deleteError != nil {
-		i.SetError(fmt.Errorf("Failed to delete burst: %w", i.state.deleteError))
+		i.SetError(fmt.Errorf("failed to delete burst: %w", i.state.deleteError))
 	} else if i.state.confirmError != nil {
-		i.SetError(fmt.Errorf("Failed to confirm burst: %w", i.state.confirmError))
+		i.SetError(fmt.Errorf("failed to confirm burst: %w", i.state.confirmError))
 	}
 
 	// Get content for current state

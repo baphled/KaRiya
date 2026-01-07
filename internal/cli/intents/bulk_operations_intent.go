@@ -76,7 +76,7 @@ func (m *BulkOperationsModel) View() string {
 
 	// Handle errors
 	if len(m.data.Errors) > 0 && m.data.CurrentState != BulkCompleteState {
-		m.SetError(fmt.Errorf("Operation error: %s", m.data.Errors[0]))
+		m.SetError(fmt.Errorf("operation error: %s", m.data.Errors[0]))
 	}
 
 	// Get content for current state
@@ -114,11 +114,16 @@ func (m *BulkOperationsModel) getOperationDisplayName() string {
 	case "export":
 		return "Export"
 	default:
-		return strings.Title(m.data.SelectedOp)
+		// Capitalize first letter only
+		if len(m.data.SelectedOp) == 0 {
+			return ""
+		}
+		return strings.ToUpper(m.data.SelectedOp[:1]) + m.data.SelectedOp[1:]
 	}
 }
 
-func (m *BulkOperationsModel) getStateName() string {
+// Unused helper - kept for future use
+func (m *BulkOperationsModel) _getStateName() string {
 	switch m.data.CurrentState {
 	case BulkSelectOpState:
 		return "Select Operation"
@@ -188,7 +193,12 @@ func (m *BulkOperationsModel) getSelectOpContent() string {
 
 			// Add operation descriptions
 			desc := m.getOperationDescription(op)
-			content.WriteString(fmt.Sprintf("%s%d. %s - %s\n", selected, i+1, strings.Title(op), desc))
+			// Capitalize first letter
+			opTitle := op
+			if len(op) > 0 {
+				opTitle = strings.ToUpper(op[:1]) + op[1:]
+			}
+			content.WriteString(fmt.Sprintf("%s%d. %s - %s\n", selected, i+1, opTitle, desc))
 		}
 	} else {
 		content.WriteString("No operations available.\n")
