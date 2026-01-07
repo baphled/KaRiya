@@ -255,3 +255,60 @@ func TestAllIntentsInitializeSuccessfully(t *testing.T) {
 		})
 	}
 }
+
+// TestImportWizardUsesStandardView verifies ImportWizard uses StandardView patterns
+func TestImportWizardUsesStandardView(t *testing.T) {
+	ctx := NewImportWizardContext(context.Background())
+	ctx.FilePath = "/test/sample.csv"
+	ctx.FileSize = 1024
+	ctx.TotalRows = 100
+
+	intent := NewImportWizardIntent(ctx)
+	if intent == nil {
+		t.Fatal("Failed to create ImportWizard intent")
+	}
+
+	intent.Init()
+	view := intent.View()
+
+	testStandardViewConsistency(t, "ImportWizard", view)
+}
+
+// TestMetadataEditorUsesStandardView verifies MetadataEditor uses StandardView patterns
+func TestMetadataEditorUsesStandardView(t *testing.T) {
+	ctx := NewMetadataEditorContext(context.Background())
+	ctx.EntityType = "CareerEvent"
+	ctx.EntityID = "test-123"
+	ctx.LoadMetadata(map[string]interface{}{
+		"title":       "Test Event",
+		"description": "Test Description",
+		"tags":        []string{"test", "example"},
+	})
+
+	intent := NewMetadataEditorIntent(ctx)
+	if intent == nil {
+		t.Fatal("Failed to create MetadataEditor intent")
+	}
+
+	intent.Init()
+	view := intent.View()
+
+	testStandardViewConsistency(t, "MetadataEditor", view)
+}
+
+// TestBulkOperationsUsesStandardView verifies BulkOperations uses StandardView patterns
+func TestBulkOperationsUsesStandardView(t *testing.T) {
+	ctx := NewBulkOperationsContext(context.Background())
+	ctx.SelectedOp = "delete"
+	ctx.AffectedItemCount = 50
+
+	intent := NewBulkOperationsIntent(ctx)
+	if intent == nil {
+		t.Fatal("Failed to create BulkOperations intent")
+	}
+
+	intent.Init()
+	view := intent.View()
+
+	testStandardViewConsistency(t, "BulkOperations", view)
+}
