@@ -65,7 +65,7 @@ func (b *Burst) validateName() error {
 
 // validateEventIDs ensures at least 2 event IDs with no duplicates
 func (b *Burst) validateEventIDs() error {
-	if b.EventIDs == nil || len(b.EventIDs) < 2 {
+	if len(b.EventIDs) < 2 {
 		return errors.New("burst must contain at least 2 events required for a burst")
 	}
 
