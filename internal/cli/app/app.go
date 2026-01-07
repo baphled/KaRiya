@@ -15,6 +15,7 @@ import (
 	cv "github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // AppState represents the current state of the application
@@ -90,7 +91,6 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	// Create ASCII logo with animation
 	logo := components.NewASCIILogo(true, 80)
-	logo.SetExternalCentering(true) // Let container handle centering
 
 	// Share logo with intent router so all intents can use it
 	router.SetLogo(logo)
@@ -270,7 +270,7 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// viewMenu renders the main menu using SmartContainer for proper centering
+// viewMenu renders the main menu using lipgloss.JoinVertical for consistent centering
 func (m *Model) viewMenu() string {
 	// Ensure terminalInfo has current dimensions
 	if !m.terminalInfo.IsValid && m.width > 0 && m.height > 0 {
@@ -278,10 +278,6 @@ func (m *Model) viewMenu() string {
 		m.terminalInfo.Height = m.height
 		m.terminalInfo.IsValid = true
 	}
-
-	// Use SmartContainer with terminal info for intelligent centering
-	container := components.NewSmartContainer(m.terminalInfo)
-	container.SetCenteringMode(components.CenterBoth)
 
 	// Build menu components WITHOUT individual centering
 	var parts []string
@@ -306,15 +302,11 @@ func (m *Model) viewMenu() string {
 	helpText := "↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit"
 	parts = append(parts, helpText)
 
-	// Let SmartContainer handle ALL centering
-	content := ""
-	for i, part := range parts {
-		if i > 0 {
-			content += "\n"
-		}
-		content += part
-	}
-	return container.SetContent(content).Render()
+	// Join all parts with center alignment - aligns to widest line
+	combined := lipgloss.JoinVertical(lipgloss.Center, parts...)
+
+	// Center within terminal (both horizontal and vertical)
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, combined)
 }
 
 // renderResponsiveTable creates the menu table with responsive column widths
