@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ci-local ci-install-tools gosec
 
 # Run all tests in verbose mode
 test:
@@ -47,6 +47,12 @@ staticcheck:
 	@command -v staticcheck >/dev/null 2>&1 || { echo "Installing staticcheck..."; go install honnef.co/go/tools/cmd/staticcheck@latest; }
 	@staticcheck ./...
 
+# Run gosec security scanner
+gosec:
+	@echo "Running gosec security scanner..."
+	@command -v gosec >/dev/null 2>&1 || { echo "Installing gosec..."; go install github.com/securego/gosec/v2/cmd/gosec@latest; }
+	@gosec -no-fail -fmt text ./...
+
 # Pre-commit checks (quick)
 pre-commit:
 	@echo "Running pre-commit checks..."
@@ -65,6 +71,19 @@ review-commit:
 # Check full project compliance (all rules)
 check-compliance: staticcheck
 	@bash scripts/check-compliance.sh
+
+# Install all CI tools locally
+ci-install-tools:
+	@echo "Installing all CI tools..."
+	@command -v ginkgo >/dev/null 2>&1 || { echo "Installing ginkgo..."; go install github.com/onsi/ginkgo/v2/ginkgo@latest; }
+	@command -v staticcheck >/dev/null 2>&1 || { echo "Installing staticcheck..."; go install honnef.co/go/tools/cmd/staticcheck@latest; }
+	@command -v gosec >/dev/null 2>&1 || { echo "Installing gosec..."; go install github.com/securego/gosec/v2/cmd/gosec@latest; }
+	@[ -d node_modules ] || { echo "Installing npm dependencies..."; npm ci; }
+	@echo "✅ All CI tools installed"
+
+# Run ALL CI checks locally (mirrors GitHub Actions)
+ci-local:
+	@bash scripts/ci-local.sh
 
 # Install git hooks for AI attribution
 install-git-hooks:
@@ -133,9 +152,12 @@ help:
 	@echo "  make check-compliance  - Full rules compliance check"
 	@echo "  make review-commit     - Review staged commit"
 	@echo "  make pre-commit        - Quick pre-commit checks"
+	@echo "  make ci-local          - Run ALL CI checks locally (mirrors GitHub Actions)"
+	@echo "  make ci-install-tools  - Install all required CI tools"
 	@echo "  make fmt               - Format code"
 	@echo "  make vet               - Run static analysis"
 	@echo "  make staticcheck       - Run staticcheck (advanced analysis)"
+	@echo "  make gosec             - Run security scanner"
 	@echo ""
 	@echo "🤖 AI Attribution:"
 	@echo "  make install-git-hooks    - Install AI attribution hooks"

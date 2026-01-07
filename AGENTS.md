@@ -82,6 +82,9 @@ staticcheck ./...
 
 # Compliance check
 make check-compliance
+
+# Run ALL CI checks locally (mirrors GitHub Actions)
+make ci-local
 ```
 
 ---
@@ -816,34 +819,70 @@ go test -v ./internal/cli/intents/...
 
 ### Pre-Deployment Checklist
 
+**RECOMMENDED**: Run all CI checks locally before pushing:
+
 ```bash
-# 1. Run full test suite
-go test -race -cover ./...
+# Run ALL CI checks locally (mirrors GitHub Actions exactly)
+make ci-local
+```
 
-# 2. Check code quality
-golangci-lint run ./...
+This single command runs:
+- ✅ Commitlint validation
+- ✅ AI attribution check
+- ✅ Code formatting (go fmt)
+- ✅ Static analysis (go vet, staticcheck)
+- ✅ Tests with race detector and coverage
+- ✅ Multi-platform builds (Linux, macOS, Windows)
+- ✅ Security scanning (gosec)
 
-# 3. Generate coverage report
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
+**Individual checks** (if needed):
 
-# 4. Build for target platforms
-go build -o kariya-linux ./cmd/kariya
-GOOS=darwin go build -o kariya-macos ./cmd/kariya
-GOOS=windows go build -o kariya.exe ./cmd/kariya
+```bash
+# 1. Install all CI tools
+make ci-install-tools
 
-# 5. Run integration tests
-go test -v ./internal/cli/app/...
+# 2. Run full test suite
+make test
+
+# 3. Check code quality
+make fmt
+make vet
+make staticcheck
+
+# 4. Security scan
+make gosec
+
+# 5. Generate coverage report
+make coverage
+
+# 6. Build for target platforms
+make build  # Current platform
+# OR multi-platform:
+GOOS=linux GOARCH=amd64 go build -o kariya-linux-amd64 ./cmd/cli
+GOOS=darwin GOARCH=amd64 go build -o kariya-darwin-amd64 ./cmd/cli
+GOOS=darwin GOARCH=arm64 go build -o kariya-darwin-arm64 ./cmd/cli
+GOOS=windows GOARCH=amd64 go build -o kariya-windows-amd64.exe ./cmd/cli
 ```
 
 ### CI/CD Pipeline
 
-GitHub Actions workflow at `.github/workflows/ci.yml`:
-- **commitlint**: Validates commit messages
+**Main CI Workflow** (`.github/workflows/ci.yml`):
+- **commitlint** (PR only): Validates commit messages
 - **lint**: Code quality (gofmt, vet, staticcheck)
 - **test**: Multi-platform testing (Linux, macOS, Windows)
 - **build**: Multi-platform builds with artifact upload
 - **security**: Gosec security scanning
+
+**PR Validation Workflow** (`.github/workflows/pr-validation.yml`):
+- **validate-pr-title**: PR title follows conventional commits
+- **check-ai-attribution**: Commits have AI attribution (if applicable)
+- **conventional-commits**: All commits follow conventions
+- **breaking-changes**: Detects breaking changes
+- **size-label**: Auto-labels PR by size
+
+**See Also**:
+- [CI Checks Summary](docs/CI_CHECKS_SUMMARY.md) - Complete CI/local command mapping
+- [CI Local Guide](docs/CI_LOCAL_GUIDE.md) - Detailed guide for running CI locally
 
 ---
 
