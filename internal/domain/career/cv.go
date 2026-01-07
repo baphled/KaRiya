@@ -26,6 +26,7 @@ var AllowedTargetAudiences = map[string]bool{
 // AllowedSectionTypes defines the set of valid section types
 var AllowedSectionTypes = map[string]bool{
 	"experience": true,
+	"projects":   true,
 	"skills":     true,
 	"summary":    true,
 }
@@ -46,7 +47,7 @@ type CVView struct {
 	ID               string                 `json:"id"`
 	Name             string                 `json:"name"`
 	TargetRole       string                 `json:"target_role"`
-	TargetAudience   []string               `json:"target_audience"`
+	TargetAudience   string                 `json:"target_audience"`
 	EventFilters     map[string]interface{} `json:"event_filters"`
 	GeneratedAt      time.Time              `json:"generated_at"`
 	SourceEventCount int                    `json:"source_event_count"`
@@ -71,8 +72,8 @@ func (cv *CVView) Validate() error {
 		return err
 	}
 
-	// Validate target audiences
-	if err := cv.validateTargetAudiences(); err != nil {
+	// Validate target audience
+	if err := cv.validateTargetAudience(); err != nil {
 		return err
 	}
 
@@ -116,17 +117,14 @@ func (cv *CVView) validateTargetRole() error {
 	return nil
 }
 
-// validateTargetAudiences ensures at least one valid audience is specified
-func (cv *CVView) validateTargetAudiences() error {
-	if len(cv.TargetAudience) == 0 {
+// validateTargetAudience ensures a valid audience is specified
+func (cv *CVView) validateTargetAudience() error {
+	trimmedAudience := strings.TrimSpace(strings.ToLower(cv.TargetAudience))
+	if trimmedAudience == "" {
 		return ErrInvalidAudience
 	}
-
-	for _, audience := range cv.TargetAudience {
-		trimmedAudience := strings.TrimSpace(strings.ToLower(audience))
-		if !AllowedTargetAudiences[trimmedAudience] {
-			return fmt.Errorf("invalid target audience: %s", audience)
-		}
+	if !AllowedTargetAudiences[trimmedAudience] {
+		return fmt.Errorf("invalid target audience: %s", cv.TargetAudience)
 	}
 	return nil
 }
@@ -142,14 +140,23 @@ func (cv *CVView) validateSourceCounts() error {
 	return nil
 }
 
+// SectionContentGroup represents a grouped section (company/project with date and bullets)
+type SectionContentGroup struct {
+	Header    string      `json:"header"`               // Company or Project name
+	StartDate string      `json:"start_date,omitempty"` // Format: "Jan 2006" (month+year only)
+	EndDate   string      `json:"end_date,omitempty"`   // Format: "Jan 2006" (month+year only)
+	Bullets   []*CVBullet `json:"bullets"`
+}
+
 // CVSection represents a section within a CV (e.g., Experience, Skills, Summary)
 type CVSection struct {
-	ID          string `json:"id"`
-	CVViewID    string `json:"cv_view_id"`
-	SectionType string `json:"section_type"` // "experience", "skills", "summary"
-	Title       string `json:"title"`
-	Order       int    `json:"order"`
-	Content     string `json:"content,omitempty"`
+	ID          string                 `json:"id"`
+	CVViewID    string                 `json:"cv_view_id"`
+	SectionType string                 `json:"section_type"` // "experience", "projects", "skills", "summary"
+	Title       string                 `json:"title"`
+	Order       int                    `json:"order"`
+	Content     []*SectionContentGroup `json:"content,omitempty"` // For experience, projects, skills
+	Summary     string                 `json:"summary,omitempty"` // For summary section only (prose)
 }
 
 // Validate checks if the CVSection meets all defined criteria
@@ -354,7 +361,7 @@ func (cb *CVBullet) validateInclusionReason() error {
 type CVConfig struct {
 	Name           string                 `yaml:"name" json:"name"`
 	TargetRole     string                 `yaml:"target_role" json:"target_role"`
-	TargetAudience []string               `yaml:"target_audience" json:"target_audience"`
+	TargetAudience string                 `yaml:"target_audience" json:"target_audience"`
 	EventFilters   map[string]interface{} `yaml:"event_filters,omitempty" json:"event_filters,omitempty"`
 	CreatedAt      time.Time              `yaml:"created_at" json:"created_at"`
 	UpdatedAt      time.Time              `yaml:"updated_at" json:"updated_at"`
@@ -372,8 +379,8 @@ func (cc *CVConfig) Validate() error {
 		return err
 	}
 
-	// Validate target audiences
-	if err := cc.validateTargetAudiences(); err != nil {
+	// Validate target audience
+	if err := cc.validateTargetAudience(); err != nil {
 		return err
 	}
 
@@ -413,17 +420,14 @@ func (cc *CVConfig) validateTargetRole() error {
 	return nil
 }
 
-// validateTargetAudiences ensures at least one valid audience is specified
-func (cc *CVConfig) validateTargetAudiences() error {
-	if len(cc.TargetAudience) == 0 {
+// validateTargetAudience ensures a valid audience is specified
+func (cc *CVConfig) validateTargetAudience() error {
+	trimmedAudience := strings.TrimSpace(strings.ToLower(cc.TargetAudience))
+	if trimmedAudience == "" {
 		return ErrInvalidAudience
 	}
-
-	for _, audience := range cc.TargetAudience {
-		trimmedAudience := strings.TrimSpace(strings.ToLower(audience))
-		if !AllowedTargetAudiences[trimmedAudience] {
-			return fmt.Errorf("invalid target audience: %s", audience)
-		}
+	if !AllowedTargetAudiences[trimmedAudience] {
+		return fmt.Errorf("invalid target audience: %s", cc.TargetAudience)
 	}
 	return nil
 }
@@ -491,25 +495,31 @@ func IsSingleClaimBullet(text string) bool {
 	}
 
 	// Allow up to one conjunction (single "and" is often acceptable)
-	return count == 0
+	return count <= 1
 }
 
 // HasInferredMetrics checks if text contains inferred or assumed metrics
-// Inferred metrics are numbers without clear context or attribution
+// Inferred metrics are vague quantifiers without specific numbers or context
+// Note: "improved", "increased", "decreased" are valid action verbs when used with specific metrics
 func HasInferredMetrics(text string) bool {
 	lowerText := strings.ToLower(text)
 
-	// Check for common inferred metric patterns
+	// Only flag truly vague/inferred quantifiers
+	// These patterns indicate non-specific claims without measurable data
 	inferredPatterns := []string{
 		"thousands of",
 		"millions of",
 		"billions of",
-		"100%",
-		"faster",
-		"better",
-		"improved",
-		"increased",
-		"decreased",
+		"significantly",
+		"substantially",
+		"dramatically",
+		"much faster",
+		"much better",
+		"greatly improved",
+		"x%",      // Placeholder percentage
+		"n users", // Placeholder count
+		"many users",
+		"numerous",
 	}
 
 	for _, pattern := range inferredPatterns {
@@ -565,7 +575,7 @@ var (
 	ErrInvalidCVRole = errors.New("invalid target role for CV")
 
 	// ErrInvalidAudience is returned when no valid target audience is specified
-	ErrInvalidAudience = errors.New("at least one valid target audience must be specified")
+	ErrInvalidAudience = errors.New("a valid target audience must be specified")
 
 	// ErrBulletMultipleClaims is returned when a bullet contains multiple claims
 	ErrBulletMultipleClaims = errors.New("bullet contains multiple claims - only single-claim bullets allowed")

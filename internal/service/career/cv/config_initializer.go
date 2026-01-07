@@ -81,7 +81,7 @@ func (ci *ConfigInitializer) createDefaultConfigs(ctx context.Context) error {
 		{
 			Name:           "Principal Engineer",
 			TargetRole:     "principal",
-			TargetAudience: []string{"hiring_manager"},
+			TargetAudience: "hiring_manager",
 			EventFilters: map[string]interface{}{
 				"categories": []string{"technical", "leadership", "product"},
 			},
@@ -89,7 +89,7 @@ func (ci *ConfigInitializer) createDefaultConfigs(ctx context.Context) error {
 		{
 			Name:           "Staff Engineer",
 			TargetRole:     "staff",
-			TargetAudience: []string{"hiring_manager", "peer"},
+			TargetAudience: "hiring_manager",
 			EventFilters: map[string]interface{}{
 				"categories": []string{"technical", "product"},
 			},
@@ -97,7 +97,7 @@ func (ci *ConfigInitializer) createDefaultConfigs(ctx context.Context) error {
 		{
 			Name:           "Engineering Manager",
 			TargetRole:     "em",
-			TargetAudience: []string{"hiring_manager"},
+			TargetAudience: "hiring_manager",
 			EventFilters: map[string]interface{}{
 				"categories": []string{"leadership", "mentoring"},
 			},
@@ -105,7 +105,7 @@ func (ci *ConfigInitializer) createDefaultConfigs(ctx context.Context) error {
 		{
 			Name:           "Senior IC",
 			TargetRole:     "senior_ic",
-			TargetAudience: []string{"recruiter"},
+			TargetAudience: "recruiter",
 			EventFilters: map[string]interface{}{
 				"categories": []string{"technical", "achievement"},
 			},
@@ -227,7 +227,7 @@ func (ci *ConfigInitializer) CheckAndCreateConfig(ctx context.Context, configNam
 	config = &career.CVConfig{
 		Name:           configName,
 		TargetRole:     "staff",
-		TargetAudience: []string{"hiring_manager"},
+		TargetAudience: "hiring_manager",
 		EventFilters: map[string]interface{}{
 			"categories": []string{"technical"},
 		},

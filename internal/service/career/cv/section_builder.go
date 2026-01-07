@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strings"
+	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -13,7 +14,7 @@ import (
 // SectionBuilder organizes CV bullets into logical sections
 type SectionBuilder interface {
 	// BuildSections organizes bullets into CV sections
-	BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, targetRole string) ([]*career.CVSection, error)
+	BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string) ([]*career.CVSection, error)
 }
 
 // DefaultSectionBuilder is the default implementation of SectionBuilder
@@ -29,7 +30,7 @@ func NewSectionBuilder(log *logger.Logger) *DefaultSectionBuilder {
 }
 
 // BuildSections organizes bullets into CV sections
-func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, targetRole string) ([]*career.CVSection, error) {
+func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string) ([]*career.CVSection, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -37,53 +38,77 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 	var sections []*career.CVSection
 	order := 0
 
-	// Build experience section (always first if we have bullets)
-	if len(bullets) > 0 {
-		experienceSection := sb.buildExperienceSection(bullets, events, order)
-		if experienceSection != nil {
-			sections = append(sections, experienceSection)
-			order++
-		}
-	}
-
-	// Build skills section (from fact-based bullets)
-	skillsSection := sb.buildSkillsSection(bullets, order)
-	if skillsSection != nil {
-		sections = append(sections, skillsSection)
-		order++
-	}
-
-	// Build summary section (optional, based on role fit)
+	// 1. Summary FIRST (prose)
 	if sb.shouldIncludeSummary(targetRole) && len(bullets) > 0 {
 		summarySection := sb.buildSummarySection(bullets, order)
 		if summarySection != nil {
 			sections = append(sections, summarySection)
+			order++
 		}
 	}
 
-	sb.logger.Info("Built %d CV sections from %d bullets", len(sections), len(bullets))
+	// 2. Experience SECOND (company-based, with dates)
+	experienceSection := sb.buildExperienceSection(bullets, events, order, targetRole)
+	if experienceSection != nil {
+		sections = append(sections, experienceSection)
+		order++
+	}
+
+	// 3. Projects THIRD (project-based, with dates)
+	projectsSection := sb.buildProjectsSection(bullets, events, order, targetRole)
+	if projectsSection != nil {
+		sections = append(sections, projectsSection)
+		order++
+	}
+
+	// 4. Core Competencies LAST (skill categories from facts)
+	skillsSection := sb.buildSkillsSection(facts, order)
+	if skillsSection != nil {
+		sections = append(sections, skillsSection)
+	}
+
+	sb.logger.Info("Built %d CV sections from %d bullets, %d events, %d facts", len(sections), len(bullets), len(events), len(facts))
 	return sections, nil
 }
 
 // buildExperienceSection creates the experience section
-func (sb *DefaultSectionBuilder) buildExperienceSection(bullets []*career.CVBullet, events []*career.CareerEvent, order int) *career.CVSection {
+func (sb *DefaultSectionBuilder) buildExperienceSection(bullets []*career.CVBullet, events []*career.CareerEvent, order int, targetRole string) *career.CVSection {
 	if len(bullets) == 0 {
+		sb.logger.Info("buildExperienceSection: no bullets provided")
 		return nil
 	}
 
-	// Group bullets by company/project from source events
-	groupedBullets := sb.groupBulletsByCompany(bullets, events)
+	// Group bullets by company (only events WITH company)
+	groups := sb.groupBulletsByCompany(bullets, events)
 
-	// Build content
-	var content strings.Builder
-	for _, group := range groupedBullets {
-		if group.company != "" {
-			content.WriteString("**" + group.company + "**\n")
+	sb.logger.Info("buildExperienceSection: found %d company groups from %d bullets", len(groups), len(bullets))
+
+	if len(groups) == 0 {
+		return nil
+	}
+
+	// Sort groups by most recent endDate first
+	sort.Slice(groups, func(i, j int) bool {
+		return groups[i].endDate.After(groups[j].endDate)
+	})
+
+	// Get role-specific bullet cap per company
+	maxBulletsPerCompany := sb.getBulletsPerCompanyForRole(targetRole)
+
+	// Convert to SectionContentGroup array and apply per-company bullet cap
+	content := make([]*career.SectionContentGroup, 0, len(groups))
+	for _, group := range groups {
+		bullets := group.bullets
+		// Apply per-company bullet cap (bullets are already ranked, so just take the first N)
+		if len(bullets) > maxBulletsPerCompany {
+			bullets = bullets[:maxBulletsPerCompany]
 		}
-		for _, bullet := range group.bullets {
-			content.WriteString("• " + bullet.Text + "\n")
-		}
-		content.WriteString("\n")
+		content = append(content, &career.SectionContentGroup{
+			Header:    group.header,
+			StartDate: formatMonthYear(group.startDate),
+			EndDate:   formatMonthYear(group.endDate),
+			Bullets:   bullets,
+		})
 	}
 
 	return &career.CVSection{
@@ -91,28 +116,97 @@ func (sb *DefaultSectionBuilder) buildExperienceSection(bullets []*career.CVBull
 		SectionType: "experience",
 		Title:       "Experience",
 		Order:       order,
-		Content:     strings.TrimSpace(content.String()),
+		Content:     content,
+	}
+}
+
+// buildProjectsSection creates the projects section
+func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet, events []*career.CareerEvent, order int, targetRole string) *career.CVSection {
+	if len(bullets) == 0 {
+		return nil
+	}
+
+	// Group bullets by project (only events WITHOUT company but WITH project)
+	groups := sb.groupBulletsByProject(bullets, events)
+
+	if len(groups) == 0 {
+		return nil
+	}
+
+	// Sort groups by most recent endDate first
+	sort.Slice(groups, func(i, j int) bool {
+		return groups[i].endDate.After(groups[j].endDate)
+	})
+
+	// Get role-specific bullet cap per project (same as companies)
+	maxBulletsPerProject := sb.getBulletsPerCompanyForRole(targetRole)
+
+	// Convert to SectionContentGroup array and apply per-project bullet cap
+	content := make([]*career.SectionContentGroup, 0, len(groups))
+	for _, group := range groups {
+		bullets := group.bullets
+		// Apply per-project bullet cap (bullets are already ranked, so just take the first N)
+		if len(bullets) > maxBulletsPerProject {
+			bullets = bullets[:maxBulletsPerProject]
+		}
+		content = append(content, &career.SectionContentGroup{
+			Header:  group.header,
+			Bullets: bullets,
+			// Note: Projects don't have dates (StartDate/EndDate intentionally omitted)
+		})
+	}
+
+	return &career.CVSection{
+		ID:          uuid.New().String(),
+		SectionType: "projects",
+		Title:       "Projects",
+		Order:       order,
+		Content:     content,
 	}
 }
 
 // buildSkillsSection creates the skills/competencies section
-func (sb *DefaultSectionBuilder) buildSkillsSection(bullets []*career.CVBullet, order int) *career.CVSection {
-	// Filter for fact-based bullets (higher quality for skills section)
-	factBullets := make([]*career.CVBullet, 0)
-	for _, bullet := range bullets {
-		if len(bullet.SourceFactIDs) > 0 {
-			factBullets = append(factBullets, bullet)
+func (sb *DefaultSectionBuilder) buildSkillsSection(facts []*career.Fact, order int) *career.CVSection {
+	if len(facts) == 0 {
+		return nil
+	}
+
+	// Extract unique competency categories
+	categories := make(map[string]bool)
+	for _, fact := range facts {
+		for _, category := range fact.CompetencyCategories {
+			if category != "" {
+				categories[category] = true
+			}
 		}
 	}
 
-	if len(factBullets) == 0 {
-		return nil // Skip skills section if no facts
+	if len(categories) == 0 {
+		return nil
 	}
 
-	// Build content as bullet list
-	var content strings.Builder
-	for _, bullet := range factBullets {
-		content.WriteString("• " + bullet.Text + "\n")
+	// Sort categories alphabetically
+	sortedCategories := make([]string, 0, len(categories))
+	for cat := range categories {
+		sortedCategories = append(sortedCategories, cat)
+	}
+	sort.Strings(sortedCategories)
+
+	// Create bullets for each category
+	bullets := make([]*career.CVBullet, 0, len(sortedCategories))
+	for _, cat := range sortedCategories {
+		bullets = append(bullets, &career.CVBullet{
+			ID:   uuid.New().String(),
+			Text: cat,
+		})
+	}
+
+	// Single content group with no header/dates
+	content := []*career.SectionContentGroup{
+		{
+			Header:  "",
+			Bullets: bullets,
+		},
 	}
 
 	return &career.CVSection{
@@ -120,7 +214,7 @@ func (sb *DefaultSectionBuilder) buildSkillsSection(bullets []*career.CVBullet, 
 		SectionType: "skills",
 		Title:       "Core Competencies",
 		Order:       order,
-		Content:     strings.TrimSpace(content.String()),
+		Content:     content,
 	}
 }
 
@@ -130,7 +224,7 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 		return nil
 	}
 
-	// Use top 2 bullets to create summary
+	// Use top 2 bullets to create summary prose
 	summaryBullets := bullets
 	if len(summaryBullets) > 2 {
 		summaryBullets = summaryBullets[:2]
@@ -153,53 +247,154 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 		SectionType: "summary",
 		Title:       "Professional Summary",
 		Order:       order,
-		Content:     content.String(),
+		Summary:     content.String(),
+		Content:     nil, // No content groups for summary
 	}
 }
 
 // groupBulletsByCompany groups bullets by company from source events
 func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBullet, events []*career.CareerEvent) []*bulletGroup {
-	// Create map of event ID to company
-	eventCompanies := make(map[string]string)
+	// Create map of event ID to event
+	eventMap := make(map[string]*career.CareerEvent)
 	for _, event := range events {
-		if event.Company != "" {
-			eventCompanies[event.ID] = event.Company
-		}
+		eventMap[event.ID] = event
 	}
 
-	// Group bullets
+	// Group bullets by company
 	groups := make(map[string]*bulletGroup)
+	skippedCount := 0
 	for _, bullet := range bullets {
-		company := ""
-		if len(bullet.SourceEventIDs) > 0 {
-			company = eventCompanies[bullet.SourceEventIDs[0]]
+		// Count companies from ALL source events to determine primary company
+		companyCounts := make(map[string]int)
+		var eventDates []time.Time
+
+		for _, eventID := range bullet.SourceEventIDs {
+			if event, exists := eventMap[eventID]; exists {
+				// Only count events WITH company (not empty)
+				if event.Company != "" {
+					companyCounts[event.Company]++
+					eventDates = append(eventDates, event.Date)
+				}
+			}
 		}
 
-		if _, exists := groups[company]; !exists {
-			groups[company] = &bulletGroup{
-				company: company,
+		// Determine primary company (most frequent)
+		primaryCompany := ""
+		maxCount := 0
+		for company, count := range companyCounts {
+			if count > maxCount {
+				maxCount = count
+				primaryCompany = company
+			}
+		}
+
+		// Skip bullets with no company
+		if primaryCompany == "" {
+			skippedCount++
+			continue
+		}
+
+		// Initialize group if needed
+		if _, exists := groups[primaryCompany]; !exists {
+			groups[primaryCompany] = &bulletGroup{
+				header:  primaryCompany,
 				bullets: make([]*career.CVBullet, 0),
 			}
 		}
-		groups[company].bullets = append(groups[company].bullets, bullet)
+
+		// Add bullet to group and update date range
+		group := groups[primaryCompany]
+		group.bullets = append(group.bullets, bullet)
+
+		// Update date range
+		for _, date := range eventDates {
+			if group.startDate.IsZero() || date.Before(group.startDate) {
+				group.startDate = date
+			}
+			if group.endDate.IsZero() || date.After(group.endDate) {
+				group.endDate = date
+			}
+		}
 	}
 
-	// Convert to slice and sort
+	// Convert to slice
 	var groupSlice []*bulletGroup
 	for _, group := range groups {
 		groupSlice = append(groupSlice, group)
 	}
 
-	// Sort by company name, with empty company first
-	sort.Slice(groupSlice, func(i, j int) bool {
-		if groupSlice[i].company == "" {
-			return true
+	sb.logger.Info("groupBulletsByCompany: created %d groups, skipped %d bullets without company", len(groupSlice), skippedCount)
+	return groupSlice
+}
+
+// groupBulletsByProject groups bullets by project from source events (where Company is empty)
+func (sb *DefaultSectionBuilder) groupBulletsByProject(bullets []*career.CVBullet, events []*career.CareerEvent) []*bulletGroup {
+	// Create map of event ID to event
+	eventMap := make(map[string]*career.CareerEvent)
+	for _, event := range events {
+		eventMap[event.ID] = event
+	}
+
+	// Group bullets by project
+	groups := make(map[string]*bulletGroup)
+	for _, bullet := range bullets {
+		// Count projects from source events (where Company is empty but Project is not)
+		projectCounts := make(map[string]int)
+		var eventDates []time.Time
+
+		for _, eventID := range bullet.SourceEventIDs {
+			if event, exists := eventMap[eventID]; exists {
+				// Only count events WITHOUT company but WITH project
+				if event.Company == "" && event.Project != "" {
+					projectCounts[event.Project]++
+					eventDates = append(eventDates, event.Date)
+				}
+			}
 		}
-		if groupSlice[j].company == "" {
-			return false
+
+		// Determine primary project (most frequent)
+		primaryProject := ""
+		maxCount := 0
+		for project, count := range projectCounts {
+			if count > maxCount {
+				maxCount = count
+				primaryProject = project
+			}
 		}
-		return groupSlice[i].company < groupSlice[j].company
-	})
+
+		// Skip bullets with no project
+		if primaryProject == "" {
+			continue
+		}
+
+		// Initialize group if needed
+		if _, exists := groups[primaryProject]; !exists {
+			groups[primaryProject] = &bulletGroup{
+				header:  primaryProject,
+				bullets: make([]*career.CVBullet, 0),
+			}
+		}
+
+		// Add bullet to group and update date range
+		group := groups[primaryProject]
+		group.bullets = append(group.bullets, bullet)
+
+		// Update date range
+		for _, date := range eventDates {
+			if group.startDate.IsZero() || date.Before(group.startDate) {
+				group.startDate = date
+			}
+			if group.endDate.IsZero() || date.After(group.endDate) {
+				group.endDate = date
+			}
+		}
+	}
+
+	// Convert to slice
+	var groupSlice []*bulletGroup
+	for _, group := range groups {
+		groupSlice = append(groupSlice, group)
+	}
 
 	return groupSlice
 }
@@ -255,54 +450,122 @@ func (sb *DefaultSectionBuilder) shouldIncludeSummary(targetRole string) bool {
 
 // bulletGroup represents a group of bullets under a company/project
 type bulletGroup struct {
-	company string
-	bullets []*career.CVBullet
+	header    string    // Company or Project name
+	startDate time.Time // Earliest event date in group
+	endDate   time.Time // Latest event date in group
+	bullets   []*career.CVBullet
+}
+
+// formatMonthYear formats a time.Time as "Jan 2006"
+func formatMonthYear(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.Format("Jan 2006")
 }
 
 // isCommonWord checks if a word is a common word to skip
 func isCommonWord(word string) bool {
 	commonWords := map[string]bool{
-		"and":    true,
-		"the":    true,
-		"with":   true,
-		"from":   true,
-		"to":     true,
-		"for":    true,
-		"of":     true,
-		"in":     true,
-		"on":     true,
-		"at":     true,
-		"by":     true,
-		"or":     true,
-		"was":    true,
-		"were":   true,
-		"been":   true,
-		"being":  true,
-		"have":   true,
-		"has":    true,
-		"had":    true,
-		"do":     true,
-		"does":   true,
-		"did":    true,
-		"will":   true,
-		"would":  true,
-		"could":  true,
-		"should": true,
-		"may":    true,
-		"might":  true,
-		"must":   true,
-		"can":    true,
-		"about":  true,
-		"as":     true,
-		"be":     true,
-		"but":    true,
-		"you":    true,
-		"me":     true,
-		"him":    true,
-		"her":    true,
-		"it":     true,
-		"us":     true,
-		"them":   true,
+		"and":     true,
+		"the":     true,
+		"for":     true,
+		"with":    true,
+		"from":    true,
+		"that":    true,
+		"this":    true,
+		"have":    true,
+		"been":    true,
+		"were":    true,
+		"will":    true,
+		"your":    true,
+		"their":   true,
+		"would":   true,
+		"about":   true,
+		"which":   true,
+		"when":    true,
+		"make":    true,
+		"like":    true,
+		"time":    true,
+		"just":    true,
+		"know":    true,
+		"take":    true,
+		"people":  true,
+		"into":    true,
+		"year":    true,
+		"could":   true,
+		"them":    true,
+		"some":    true,
+		"than":    true,
+		"then":    true,
+		"now":     true,
+		"look":    true,
+		"only":    true,
+		"come":    true,
+		"its":     true,
+		"over":    true,
+		"think":   true,
+		"also":    true,
+		"back":    true,
+		"after":   true,
+		"use":     true,
+		"two":     true,
+		"how":     true,
+		"our":     true,
+		"work":    true,
+		"first":   true,
+		"well":    true,
+		"way":     true,
+		"even":    true,
+		"new":     true,
+		"want":    true,
+		"because": true,
+		"any":     true,
+		"these":   true,
+		"give":    true,
+		"day":     true,
+		"most":    true,
+		"does":    true,
+		"very":    true,
+		"through": true,
+		"being":   true,
+		"each":    true,
+		"much":    true,
+		"made":    true,
+		"many":    true,
+		"must":    true,
+		"before":  true,
+		"such":    true,
+		"where":   true,
+		"those":   true,
+		"both":    true,
+		"during":  true,
+		"same":    true,
+		"until":   true,
+		"while":   true,
+		"too":     true,
+		"try":     true,
 	}
 	return commonWords[word]
+}
+
+// getBulletsPerCompanyForRole returns the maximum bullets per company for a role
+// Based on documented role-specific caps:
+// - Principal: 3-4 bullets max
+// - Staff: 4-5 bullets max
+// - EM: 3-4 bullets max
+// - Senior IC: 4-5 bullets max
+func (sb *DefaultSectionBuilder) getBulletsPerCompanyForRole(targetRole string) int {
+	switch strings.ToLower(targetRole) {
+	case "principal":
+		return 4 // 3-4 per docs, using upper bound
+	case "staff":
+		return 5 // 4-5 per docs, using upper bound
+	case "em":
+		return 4 // 3-4 per docs, using upper bound
+	case "senior_ic":
+		return 5 // 4-5 per docs, using upper bound
+	default:
+		return 4 // Conservative default
+	}
 }

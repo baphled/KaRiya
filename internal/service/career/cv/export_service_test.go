@@ -34,18 +34,10 @@ var _ = ginkgo.Describe("ExportService", func() {
 				ID:               "cv-1",
 				Name:             "Senior Software Engineer CV",
 				TargetRole:       "Staff Engineer",
-				TargetAudience:   []string{"hiring_manager", "recruiter"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 10,
 				SourceFactCount:  5,
-			}
-
-			section := &career.CVSection{
-				ID:          "section-1",
-				CVViewID:    "cv-1",
-				SectionType: "experience",
-				Title:       "Experience",
-				Order:       1,
 			}
 
 			bullet := &career.CVBullet{
@@ -57,6 +49,20 @@ var _ = ginkgo.Describe("ExportService", func() {
 				Rank:            0.9,
 				InclusionReason: "ownership",
 				Confidence:      0.95,
+			}
+
+			section := &career.CVSection{
+				ID:          "section-1",
+				CVViewID:    "cv-1",
+				SectionType: "experience",
+				Title:       "Experience",
+				Order:       1,
+				Content: []*career.SectionContentGroup{
+					{
+						Header:  "Acme Corp",
+						Bullets: []*career.CVBullet{bullet},
+					},
+				},
 			}
 
 			sections := []*career.CVSection{section}
@@ -78,7 +84,7 @@ var _ = ginkgo.Describe("ExportService", func() {
 				ID:               "cv-1",
 				Name:             "Test CV",
 				TargetRole:       "Engineer",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 0,
 				SourceFactCount:  0,
@@ -90,6 +96,7 @@ var _ = ginkgo.Describe("ExportService", func() {
 				SectionType: "experience",
 				Title:       "Experience",
 				Order:       1,
+				Content:     []*career.SectionContentGroup{},
 			}
 
 			sections := []*career.CVSection{section}
@@ -113,18 +120,10 @@ var _ = ginkgo.Describe("ExportService", func() {
 				ID:               "cv-1",
 				Name:             "Senior Software Engineer CV",
 				TargetRole:       "Staff Engineer",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 10,
 				SourceFactCount:  5,
-			}
-
-			section := &career.CVSection{
-				ID:          "section-1",
-				CVViewID:    "cv-1",
-				SectionType: "experience",
-				Title:       "Experience",
-				Order:       1,
 			}
 
 			bullet := &career.CVBullet{
@@ -136,6 +135,20 @@ var _ = ginkgo.Describe("ExportService", func() {
 				Rank:            0.9,
 				InclusionReason: "ownership",
 				Confidence:      0.95,
+			}
+
+			section := &career.CVSection{
+				ID:          "section-1",
+				CVViewID:    "cv-1",
+				SectionType: "experience",
+				Title:       "Experience",
+				Order:       1,
+				Content: []*career.SectionContentGroup{
+					{
+						Header:  "Acme Corp",
+						Bullets: []*career.CVBullet{bullet},
+					},
+				},
 			}
 
 			sections := []*career.CVSection{section}
@@ -157,7 +170,7 @@ var _ = ginkgo.Describe("ExportService", func() {
 				ID:               "cv-1",
 				Name:             "Test CV",
 				TargetRole:       "Engineer",
-				TargetAudience:   []string{"recruiter"},
+				TargetAudience:   "recruiter",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 5,
 				SourceFactCount:  2,
@@ -182,18 +195,10 @@ var _ = ginkgo.Describe("ExportService", func() {
 				ID:               "cv-1",
 				Name:             "Senior Software Engineer CV",
 				TargetRole:       "Staff Engineer",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 10,
 				SourceFactCount:  5,
-			}
-
-			section := &career.CVSection{
-				ID:          "section-1",
-				CVViewID:    "cv-1",
-				SectionType: "experience",
-				Title:       "Experience",
-				Order:       1,
 			}
 
 			bullet := &career.CVBullet{
@@ -207,6 +212,20 @@ var _ = ginkgo.Describe("ExportService", func() {
 				Confidence:      0.95,
 			}
 
+			section := &career.CVSection{
+				ID:          "section-1",
+				CVViewID:    "cv-1",
+				SectionType: "experience",
+				Title:       "Experience",
+				Order:       1,
+				Content: []*career.SectionContentGroup{
+					{
+						Header:  "Acme Corp",
+						Bullets: []*career.CVBullet{bullet},
+					},
+				},
+			}
+
 			sections := []*career.CVSection{section}
 			bullets := map[string][]*career.CVBullet{
 				"section-1": {bullet},
@@ -217,7 +236,10 @@ var _ = ginkgo.Describe("ExportService", func() {
 			gomega.Expect(yaml).NotTo(gomega.BeEmpty())
 			gomega.Expect(yaml).To(gomega.ContainSubstring("name: Senior Software Engineer CV"))
 			gomega.Expect(yaml).To(gomega.ContainSubstring("target_role: Staff Engineer"))
-			gomega.Expect(yaml).To(gomega.ContainSubstring("- Led team of 5 engineers"))
+			// Check for the bullet text (YAML format uses "text:" field)
+			gomega.Expect(yaml).To(gomega.ContainSubstring("text: Led team of 5 engineers to deliver critical feature"))
+			// Check for content group structure
+			gomega.Expect(yaml).To(gomega.ContainSubstring("header: Acme Corp"))
 		})
 
 		ginkgo.It("should return error for nil CV", func() {

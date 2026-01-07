@@ -61,7 +61,7 @@ func (es *ExportService) ExportToText(ctx context.Context, cv *career.CVView, se
 
 	// Write metadata
 	buf.WriteString(fmt.Sprintf("Target Role: %s\n", cv.TargetRole))
-	buf.WriteString(fmt.Sprintf("Target Audiences: %s\n", strings.Join(cv.TargetAudience, ", ")))
+	buf.WriteString(fmt.Sprintf("Target Audience: %s\n", cv.TargetAudience))
 	buf.WriteString(fmt.Sprintf("Generated: %s\n", cv.GeneratedAt.Format("2006-01-02 15:04:05")))
 	buf.WriteString(fmt.Sprintf("Source Events: %d\n", cv.SourceEventCount))
 	buf.WriteString(fmt.Sprintf("Source Facts: %d\n\n", cv.SourceFactCount))
@@ -69,19 +69,40 @@ func (es *ExportService) ExportToText(ctx context.Context, cv *career.CVView, se
 	// Write sections
 	for _, section := range sections {
 		buf.WriteString(strings.ToUpper(section.Title) + "\n")
-		buf.WriteString(strings.Repeat("-", len(section.Title)) + "\n")
+		buf.WriteString(strings.Repeat("-", len(section.Title)) + "\n\n")
 
-		// Get bullets for this section
-		sectionBullets := bullets[section.ID]
-		if len(sectionBullets) == 0 {
+		// Handle summary section (prose)
+		if section.SectionType == "summary" && section.Summary != "" {
+			buf.WriteString(section.Summary + "\n\n")
+			continue
+		}
+
+		// Handle content groups (experience, projects, skills)
+		if len(section.Content) == 0 {
 			buf.WriteString("(No content)\n\n")
 			continue
 		}
 
-		for _, bullet := range sectionBullets {
-			buf.WriteString(fmt.Sprintf("• %s\n", bullet.Text))
+		for _, group := range section.Content {
+			// Write header with date range (if present)
+			if group.Header != "" {
+				if group.StartDate != "" && group.EndDate != "" {
+					if group.StartDate == group.EndDate {
+						buf.WriteString(fmt.Sprintf("%s - %s\n\n", group.Header, group.StartDate))
+					} else {
+						buf.WriteString(fmt.Sprintf("%s - %s - %s\n\n", group.Header, group.StartDate, group.EndDate))
+					}
+				} else {
+					buf.WriteString(fmt.Sprintf("%s\n\n", group.Header))
+				}
+			}
+
+			// Write bullets
+			for _, bullet := range group.Bullets {
+				buf.WriteString(fmt.Sprintf("• %s\n", bullet.Text))
+			}
+			buf.WriteString("\n")
 		}
-		buf.WriteString("\n")
 	}
 
 	return buf.String(), nil
@@ -100,7 +121,7 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 
 	// Write metadata as comment
 	buf.WriteString(fmt.Sprintf("<!-- Target Role: %s -->\n", cv.TargetRole))
-	buf.WriteString(fmt.Sprintf("<!-- Target Audiences: %s -->\n", strings.Join(cv.TargetAudience, ", ")))
+	buf.WriteString(fmt.Sprintf("<!-- Target Audience: %s -->\n", cv.TargetAudience))
 	buf.WriteString(fmt.Sprintf("<!-- Generated: %s -->\n", cv.GeneratedAt.Format("2006-01-02 15:04:05")))
 	buf.WriteString(fmt.Sprintf("<!-- Source Events: %d, Facts: %d -->\n\n", cv.SourceEventCount, cv.SourceFactCount))
 
@@ -108,17 +129,38 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 	for _, section := range sections {
 		buf.WriteString(fmt.Sprintf("## %s\n\n", section.Title))
 
-		// Get bullets for this section
-		sectionBullets := bullets[section.ID]
-		if len(sectionBullets) == 0 {
+		// Handle summary section (prose)
+		if section.SectionType == "summary" && section.Summary != "" {
+			buf.WriteString(section.Summary + "\n\n")
+			continue
+		}
+
+		// Handle content groups (experience, projects, skills)
+		if len(section.Content) == 0 {
 			buf.WriteString("*(No content)*\n\n")
 			continue
 		}
 
-		for _, bullet := range sectionBullets {
-			buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+		for _, group := range section.Content {
+			// Write header with date range (if present)
+			if group.Header != "" {
+				if group.StartDate != "" && group.EndDate != "" {
+					if group.StartDate == group.EndDate {
+						buf.WriteString(fmt.Sprintf("### %s - _%s_\n\n", group.Header, group.StartDate))
+					} else {
+						buf.WriteString(fmt.Sprintf("### %s - _%s - %s_\n\n", group.Header, group.StartDate, group.EndDate))
+					}
+				} else {
+					buf.WriteString(fmt.Sprintf("### %s\n\n", group.Header))
+				}
+			}
+
+			// Write bullets
+			for _, bullet := range group.Bullets {
+				buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+			}
+			buf.WriteString("\n")
 		}
-		buf.WriteString("\n")
 	}
 
 	return buf.String(), nil
@@ -134,33 +176,15 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 	output := map[string]interface{}{
 		"name":               cv.Name,
 		"target_role":        cv.TargetRole,
-		"target_audiences":   cv.TargetAudience,
+		"target_audience":    cv.TargetAudience,
 		"generated_at":       cv.GeneratedAt,
 		"source_event_count": cv.SourceEventCount,
 		"source_fact_count":  cv.SourceFactCount,
 		"sections":           []map[string]interface{}{},
 	}
 
-	// Add sections
-	sectionsList := output["sections"].([]map[string]interface{})
-	for _, section := range sections {
-		sectionData := map[string]interface{}{
-			"title":   section.Title,
-			"type":    section.SectionType,
-			"bullets": []string{},
-		}
-
-		// Get bullets for this section
-		sectionBullets := bullets[section.ID]
-		bulletsList := make([]string, 0, len(sectionBullets))
-		for _, bullet := range sectionBullets {
-			bulletsList = append(bulletsList, bullet.Text)
-		}
-		sectionData["bullets"] = bulletsList
-
-		sectionsList = append(sectionsList, sectionData)
-	}
-	output["sections"] = sectionsList
+	// Add sections (sections already have the correct structure with Content groups)
+	output["sections"] = sections
 
 	// Marshal to YAML
 	data, err := yaml.Marshal(output)

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -46,14 +47,14 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:             "profile1",
 				Name:           "Senior IC",
 				TargetRole:     "senior_ic",
-				TargetAudience: []string{"hiring_manager", "recruiter"},
+				TargetAudience: "hiring_manager",
 				Description:    "Profile for senior individual contributor roles",
 			},
 			{
 				ID:             "profile2",
 				Name:           "Staff Engineer",
 				TargetRole:     "staff",
-				TargetAudience: []string{"peer"},
+				TargetAudience: "peer",
 				Description:    "Profile for staff engineer roles",
 			},
 		}
@@ -135,9 +136,9 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
 		})
 
-		It("should set selected audiences from profile", func() {
+		It("should set selected audience from profile", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state.selectedAudiences).To(Equal([]string{"hiring_manager", "recruiter"}))
+			Expect(intent.state.selectedAudience).To(Equal("hiring_manager"))
 		})
 
 		It("should cancel on q key", func() {
@@ -170,7 +171,7 @@ var _ = Describe("GenerateCVIntent", func() {
 					ID:               "test-cv",
 					Name:             intent.state.selectedProfile.Name,
 					TargetRole:       intent.state.selectedProfile.TargetRole,
-					TargetAudience:   intent.state.selectedAudiences,
+					TargetAudience:   intent.state.selectedAudience,
 					GeneratedAt:      time.Now(),
 					SourceEventCount: 0,
 					SourceFactCount:  0,
@@ -201,7 +202,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -237,7 +238,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -268,7 +269,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -336,11 +337,14 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
+				Sections:         []*career.CVSection{},
 			}
+			// Initialize viewport for preview
+			intent.state.previewViewport = viewport.New(80, 20)
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).To(ContainSubstring("CV Preview"))
@@ -352,7 +356,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -368,7 +372,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -392,7 +396,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -411,7 +415,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -431,7 +435,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,
@@ -451,7 +455,7 @@ var _ = Describe("GenerateCVIntent", func() {
 				ID:               "cv_123",
 				Name:             "Senior IC",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 2,
 				SourceFactCount:  0,

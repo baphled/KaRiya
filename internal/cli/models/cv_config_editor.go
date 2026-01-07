@@ -50,7 +50,7 @@ func NewCVConfigEditorModel(
 	if config == nil {
 		model.config = &career.CVConfig{
 			EventFilters:   make(map[string]interface{}),
-			TargetAudience: make([]string, 0),
+			TargetAudience: "",
 		}
 		model.isNew = true
 	} else {
@@ -79,7 +79,7 @@ func (m *CVConfigEditorModel) initializeFormFields() {
 		{
 			Name:     "target_audience",
 			Label:    "Target Audience (hiring_manager, recruiter, peer)",
-			Value:    audienceListToString(m.config.TargetAudience),
+			Value:    m.config.TargetAudience,
 			Required: true,
 		},
 	}
@@ -226,7 +226,7 @@ func (m *CVConfigEditorModel) saveConfig() tea.Cmd {
 			m.config.TargetRole = m.formFields[1].Value
 		}
 		if len(m.formFields) > 2 {
-			m.config.TargetAudience = audienceStringToList(m.formFields[2].Value)
+			m.config.TargetAudience = m.formFields[2].Value
 		}
 
 		// Validate the entire config
