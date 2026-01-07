@@ -110,8 +110,7 @@ func NewCVPreviewModelWithSource(
 	// Set pagination total count to enable proper section pagination
 	m.pagination.SetTotalCount(len(sections))
 
-	m.header.SetBreadcrumbs(m.breadcrumbs)
-	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
+	// Note: breadcrumbs now handled by StandardView
 	m.updateTableRows()
 	return m
 }
@@ -279,9 +278,7 @@ func (m *CVPreviewModel) getPageSections() []*career.CVSection {
 func (m *CVPreviewModel) View() string {
 	// Update list container with current state
 	m.listContainer.SetTable(m.table).
-		SetDimensions(m.width, m.height).
-		SetHelpFooterKey("cv_preview").
-		SetBreadcrumbs(m.breadcrumbs)
+		SetDimensions(m.width, m.height)
 
 	// Set pagination info
 	startIdx := m.pagination.GetPageStartIndex()

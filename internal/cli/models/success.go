@@ -115,14 +115,6 @@ func (m *SuccessModel) executeAction() tea.Cmd {
 func (m *SuccessModel) View() string {
 	var b strings.Builder
 
-	// Create text style for help text
-
-	// Success header with breadcrumbs
-	header := components.NewHeader("✓ Success! Event Captured", m.width)
-	header.SetBreadcrumbs(m.breadcrumbs)
-	b.WriteString(header.View())
-	b.WriteString("\n\n")
-
 	// Event card
 	card := m.renderEventCard()
 	b.WriteString(card)
@@ -131,13 +123,8 @@ func (m *SuccessModel) View() string {
 	// Action buttons
 	actions := m.renderActions()
 	b.WriteString(actions)
-	b.WriteString("\n")
 
-	// Help footer
-	m.helpFooter.SetWidth(m.width)
-	b.WriteString(m.helpFooter.View())
-	b.WriteString("\n")
-
+	// Content only (header/footer now handled by StandardView)
 	return b.String()
 }
 

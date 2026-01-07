@@ -901,12 +901,6 @@ func (i *BurstManagementIntent) viewList() string {
 	paginationInfo := fmt.Sprintf("Bursts: %d | Page %d of %d", totalItems, currentPage, totalPages)
 	i.listContainer.SetPaginationInfo(paginationInfo)
 
-	// Set breadcrumbs if needed
-	i.listContainer.SetBreadcrumbs([]string{"Home", "Bursts"})
-
-	// Set help footer
-	i.listContainer.SetHelpFooterKey("burst_management")
-
 	return i.listContainer.Render()
 }
 func (i *BurstManagementIntent) viewDetail() string {
@@ -957,14 +951,8 @@ func (i *BurstManagementIntent) viewDetail() string {
 
 	card := cardStyle.Render(content.String())
 
-	// Add footer with instructions.
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("e=events, f=facts, c=confirm burst, x=edit, d=delete, Enter=select, Esc=back, q=cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	// Footer now handled by StandardView
+	return card
 }
 
 // viewDetailEvents renders the events view for a burst
@@ -999,13 +987,7 @@ func (i *BurstManagementIntent) viewDetailEvents() string {
 		content.WriteString("\n")
 	}
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Esc=back, q=quit")
-	content.WriteString(footer)
-
+	// Footer now handled by StandardView
 	return content.String()
 }
 
@@ -1052,13 +1034,7 @@ func (i *BurstManagementIntent) viewDetailFacts() string {
 		content.WriteString("\n")
 	}
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Esc=back, q=quit")
-	content.WriteString(footer)
-
+	// Footer now handled by StandardView
 	return content.String()
 }
 
@@ -1116,14 +1092,8 @@ func (i *BurstManagementIntent) viewEdit() string {
 
 	card := cardStyle.Render(content.String())
 
-	// Footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Ctrl+S=save (placeholder), Esc=cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	// Footer now handled by StandardView
+	return card
 }
 
 // viewDeleteConfirm renders the delete confirmation view
@@ -1179,14 +1149,8 @@ func (i *BurstManagementIntent) viewDeleteConfirm() string {
 
 	card := cardStyle.Render(content.String())
 
-	// Footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("y=confirm delete, n/Esc=cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	// Footer now handled by StandardView
+	return card
 }
 
 // viewConfirm renders the confirmation view
@@ -1259,21 +1223,8 @@ func (i *BurstManagementIntent) viewConfirm() string {
 
 	card := cardStyle.Render(content.String())
 
-	// Footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	var footer string
-	if i.state.showReextractPrompt {
-		footer = footerStyle.Render("y=re-extract facts, n=skip re-extraction, Esc=cancel")
-	} else if i.state.extractionComplete {
-		footer = footerStyle.Render("Press any key to continue...")
-	} else {
-		footer = footerStyle.Render("Esc=cancel")
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	// Footer now handled by StandardView
+	return card
 }
 
 // viewExtractingFacts renders the fact extraction progress view
@@ -1321,14 +1272,8 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 
 	card := cardStyle.Render(content.String())
 
-	// Footer with instructions
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Please wait... (q to cancel)")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	// Footer now handled by StandardView
+	return card
 }
 
 // Result returns the final result of the intent.

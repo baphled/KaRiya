@@ -35,7 +35,7 @@ func NewCVGeneratorModel(
 		generating:        true,
 		headerModel:       components.NewHeader("Generating CV", 80),
 	}
-	m.headerModel.SetBreadcrumbs([]string{"Home", "CV Management", "Configurations", "Generate"})
+	// Note: breadcrumbs now handled by StandardView
 	return m
 }
 

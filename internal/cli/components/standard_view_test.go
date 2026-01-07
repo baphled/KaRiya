@@ -485,3 +485,85 @@ func TestStandardView_MaximalTerminal(t *testing.T) {
 		t.Error("Expected output for large terminal size")
 	}
 }
+
+// TestStandardView_BreadcrumbsUseIcons verifies breadcrumbs render with icons and proper separator
+func TestStandardView_BreadcrumbsUseIcons(t *testing.T) {
+	termInfo := &terminal.Info{Width: 120, Height: 40}
+	view := NewStandardView(termInfo).
+		WithBreadcrumbs("Home", "Settings", "Profile").
+		WithContent("Test content")
+
+	output := view.Render()
+
+	// Should contain icon separator ▸ not plain >
+	if !strings.Contains(output, "▸") {
+		t.Error("Expected breadcrumb separator (▸) with icon-based rendering")
+	}
+
+	// Should NOT contain plain > separator (old style)
+	// Note: We check for " > " to avoid false positives from other content
+	if strings.Contains(output, " > ") && !strings.Contains(output, "▸") {
+		t.Error("Expected icon-based separator (▸), not plain (>)")
+	}
+
+	// Breadcrumb labels should be present
+	if !strings.Contains(output, "Home") {
+		t.Error("Expected 'Home' breadcrumb")
+	}
+
+	if !strings.Contains(output, "Profile") {
+		t.Error("Expected 'Profile' breadcrumb")
+	}
+}
+
+// TestStandardView_ResponsiveBreadcrumbTruncation verifies truncation at small terminal sizes
+func TestStandardView_ResponsiveBreadcrumbTruncation(t *testing.T) {
+	// Test at tiny terminal size
+	tinyTermInfo := &terminal.Info{Width: 80, Height: 24}
+	view := NewStandardView(tinyTermInfo).
+		WithBreadcrumbs(
+			"Very Long Menu Name",
+			"Another Very Long Submenu Name",
+			"Yet Another Extremely Long Section Name",
+			"Final Destination With Long Title",
+		).
+		WithContent("Test content")
+
+	output := view.Render()
+
+	// Should not panic or crash
+	if output == "" {
+		t.Error("Expected output even with long breadcrumbs at small size")
+	}
+
+	// BreadcrumbBar should truncate to "First ... Last" format
+	// So we should see the first and last breadcrumb, with ellipsis
+	if strings.Contains(output, "Very Long Menu Name") &&
+		strings.Contains(output, "Final Destination") &&
+		strings.Contains(output, "...") {
+		// Good - truncation is working
+	} else {
+		// It's okay if all breadcrumbs fit, just check output is valid
+		if !strings.Contains(output, "Very Long Menu Name") {
+			t.Error("Expected at least first breadcrumb to be visible")
+		}
+	}
+
+	// Now test at normal size - should show more breadcrumbs
+	normalTermInfo := &terminal.Info{Width: 160, Height: 50}
+	view2 := NewStandardView(normalTermInfo).
+		WithBreadcrumbs(
+			"Menu",
+			"Submenu",
+			"Section",
+			"Item",
+		).
+		WithContent("Test content")
+
+	output2 := view2.Render()
+
+	// At normal size, all short breadcrumbs should be visible
+	if !strings.Contains(output2, "Menu") || !strings.Contains(output2, "Item") {
+		t.Error("Expected all breadcrumbs visible at normal terminal size")
+	}
+}

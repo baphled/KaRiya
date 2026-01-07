@@ -492,12 +492,6 @@ func (m *FactManagementModel) viewList() string {
 	paginationInfo := fmt.Sprintf("Total: %d facts | Page %d of %d", totalItems, currentPage, totalPages)
 	m.listContainer.SetPaginationInfo(paginationInfo)
 
-	// Set breadcrumbs if needed
-	m.listContainer.SetBreadcrumbs([]string{"Home", "Facts"})
-
-	// Set help footer
-	m.listContainer.SetHelpFooterKey("fact_management")
-
 	return m.listContainer.Render()
 }
 

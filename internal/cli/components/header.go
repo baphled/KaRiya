@@ -8,41 +8,29 @@ import (
 	"github.com/baphled/kariya/internal/cli/styles"
 )
 
-// HeaderModel renders a consistent screen header with title, subtitle, and breadcrumbs
+// HeaderModel renders a consistent screen header with title and subtitle
 type HeaderModel struct {
-	title       string
-	subtitle    string
-	breadcrumbs []string // Navigation path: ["Home", "List", "Event Details"]
-	width       int
-	height      int
-	showBorder  bool
+	title      string
+	subtitle   string
+	width      int
+	height     int
+	showBorder bool
 }
 
 // NewHeader creates a new header with a title
 func NewHeader(title string, width int) HeaderModel {
 	return HeaderModel{
-		title:       title,
-		subtitle:    "",
-		breadcrumbs: []string{},
-		width:       width,
-		height:      1,
-		showBorder:  false,
+		title:      title,
+		subtitle:   "",
+		width:      width,
+		height:     1,
+		showBorder: false,
 	}
 }
 
 // SetSubtitle sets the subtitle
 func (h *HeaderModel) SetSubtitle(subtitle string) {
 	h.subtitle = subtitle
-}
-
-// SetBreadcrumbs sets the navigation breadcrumbs
-func (h *HeaderModel) SetBreadcrumbs(crumbs []string) {
-	h.breadcrumbs = crumbs
-}
-
-// AddBreadcrumb adds a breadcrumb to the end
-func (h *HeaderModel) AddBreadcrumb(crumb string) {
-	h.breadcrumbs = append(h.breadcrumbs, crumb)
 }
 
 // SetWidth sets the header width
@@ -60,16 +48,6 @@ func (h *HeaderModel) SetShowBorder(show bool) {
 	h.showBorder = show
 }
 
-// ClearBreadcrumbs clears all breadcrumbs
-func (h *HeaderModel) ClearBreadcrumbs() {
-	h.breadcrumbs = []string{}
-}
-
-// GetBreadcrumbs returns current breadcrumbs
-func (h HeaderModel) GetBreadcrumbs() []string {
-	return h.breadcrumbs
-}
-
 // GetTitle returns the title
 func (h HeaderModel) GetTitle() string {
 	return h.title
@@ -80,41 +58,6 @@ func (h HeaderModel) GetSubtitle() string {
 	return h.subtitle
 }
 
-// GetClickedBreadcrumbIndex detects which breadcrumb was clicked based on mouse coordinates
-// Returns the index of the clicked breadcrumb, or -1 if no breadcrumb was clicked
-func (h HeaderModel) GetClickedBreadcrumbIndex(x, y int) int {
-	if len(h.breadcrumbs) == 0 {
-		return -1
-	}
-
-	// Breadcrumbs are on line 0 (first line of header)
-	if y != 0 {
-		return -1
-	}
-
-	// Calculate position ranges for each breadcrumb
-	// Format: "Home > List > Details"
-	separator := " > "
-	currentPos := 0
-
-	for i, crumb := range h.breadcrumbs {
-		crumbLen := len(crumb)
-
-		// Check if click is within this breadcrumb's range
-		if x >= currentPos && x < currentPos+crumbLen {
-			return i
-		}
-
-		// Move to next breadcrumb position
-		currentPos += crumbLen
-		if i < len(h.breadcrumbs)-1 {
-			currentPos += len(separator)
-		}
-	}
-
-	return -1
-}
-
 // View renders the header
 func (h HeaderModel) View() string {
 	if h.width <= 0 {
@@ -122,12 +65,6 @@ func (h HeaderModel) View() string {
 	}
 
 	var parts []string
-
-	// Render breadcrumbs if present
-	if len(h.breadcrumbs) > 0 {
-		breadcrumbStr := h.renderBreadcrumbs()
-		parts = append(parts, breadcrumbStr)
-	}
 
 	// Render title
 	titleStr := h.renderTitle()
@@ -148,46 +85,8 @@ func (h HeaderModel) View() string {
 	return content
 }
 
-// renderBreadcrumbs renders the breadcrumb navigation with enhanced styling
-func (h HeaderModel) renderBreadcrumbs() string {
-	// Convert breadcrumbs to new format with icons
-	crumbs := make([]Breadcrumb, len(h.breadcrumbs))
-	for i, label := range h.breadcrumbs {
-		// Try to infer intent from label
-		intent := strings.ToLower(strings.ReplaceAll(label, " ", "_"))
-		icon := GetIconForIntent(intent)
-		crumbs[i] = Breadcrumb{
-			Label:  label,
-			Icon:   icon,
-			Intent: intent,
-		}
-	}
-
-	// Create breadcrumb bar
-	bar := NewBreadcrumbBar(h.width, false)
-	bar.SetCrumbs(crumbs)
-	breadcrumbStr := bar.View()
-
-	// Add bottom margin
-	return breadcrumbStr + "\n"
-}
-
-// renderTitle renders the main title with KaRiya branding
+// renderTitle renders the main title
 func (h HeaderModel) renderTitle() string {
-	// If we have breadcrumbs, show KaRiya branding
-	if len(h.breadcrumbs) > 0 {
-		appNameStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorAccentTeal).
-			Bold(true)
-
-		separator := lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
-			Render("  •  ")
-
-		return appNameStyle.Render("KaRiya") + separator + styles.HeaderMain.Render(h.title)
-	}
-
-	// Otherwise just show the title
 	titleStyle := styles.HeaderMain
 
 	// Truncate title if it's too long

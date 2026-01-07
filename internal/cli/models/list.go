@@ -301,9 +301,7 @@ func (m *ListModel) View() string {
 	// Update list container with current state
 	m.listContainer.SetTable(m.table).
 		SetDimensions(m.width, m.height).
-		SetEmptyStateMessage("No events found").
-		SetHelpFooterKey("list").
-		SetBreadcrumbs(m.breadcrumbs)
+		SetEmptyStateMessage("No events found")
 
 	// Set pagination info
 	paginationText := m.pagination.GetPaginationInfo("events")
@@ -458,7 +456,7 @@ func (m *ListModel) IsExpandedAt(idx int) bool {
 // SetBreadcrumbs sets the breadcrumb trail for navigation
 func (m *ListModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
-	m.header.SetBreadcrumbs(crumbs)
+	// Note: header.SetBreadcrumbs removed - breadcrumbs now handled by StandardView
 }
 
 // Refresh reloads the events from the service
