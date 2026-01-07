@@ -61,6 +61,14 @@ var _ = Describe("App Menu Integration Tests", func() {
 			// After selecting Generate CV intent, we should see the CV profile selection screen
 			// which shows "Select CV Profile" title
 			Expect(output).To(ContainSubstring("Select CV Profile"))
+			// After StandardView migration with breadcrumbs, breadcrumbs should be visible
+			// Breadcrumbs may be truncated ("Main Menu ▸ ... ▸ Select Profile") if terminal is narrow
+			// or full ("Main Menu ▸ Generate CV ▸ Select Profile") if wide enough
+			// Check for either the full breadcrumb or the truncated version with ellipsis
+			Expect(output).To(Or(
+				ContainSubstring("Generate CV"),
+				ContainSubstring("..."), // Truncated breadcrumb
+			))
 		})
 	})
 

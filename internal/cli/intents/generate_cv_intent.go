@@ -423,8 +423,9 @@ func (i *GenerateCVIntent) View() string {
 		return "GenerateCV intent is not active"
 	}
 
-	// Create standard view without breadcrumbs
-	view := CreateStandardView(i.BaseIntent)
+	// Create standard view with breadcrumbs
+	breadcrumbs := i.getBreadcrumbs()
+	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, breadcrumbs...)
 
 	// Get content for current state
 	content := i.getStateContent()
@@ -435,6 +436,36 @@ func (i *GenerateCVIntent) View() string {
 	view.WithHelp(help).WithFooterSeparator(true)
 
 	return view.Render()
+}
+
+// getBreadcrumbs returns breadcrumbs for the current state.
+func (i *GenerateCVIntent) getBreadcrumbs() []string {
+	crumbs := []string{"Main Menu", "Generate CV"}
+
+	switch i.state.currentState {
+	case GenerateCVStateSelectProfile:
+		crumbs = append(crumbs, "Select Profile")
+	case GenerateCVStateSelectAudience:
+		crumbs = append(crumbs, "Select Audience")
+	case GenerateCVStateGenerating:
+		crumbs = append(crumbs, "Generating")
+	case GenerateCVStatePreview:
+		crumbs = append(crumbs, "Preview")
+	case GenerateCVStateReview:
+		crumbs = append(crumbs, "Review")
+	case GenerateCVStateConfirm:
+		crumbs = append(crumbs, "Confirm")
+	case GenerateCVStateExportSelectFormat:
+		crumbs = append(crumbs, "Export", "Select Format")
+	case GenerateCVStateExportSelectLocation:
+		crumbs = append(crumbs, "Export", "Select Location")
+	case GenerateCVStateExporting:
+		crumbs = append(crumbs, "Export", "Exporting")
+	case GenerateCVStateExportComplete:
+		crumbs = append(crumbs, "Export", "Complete")
+	}
+
+	return crumbs
 }
 
 // viewSelectProfile renders the profile selection view.
