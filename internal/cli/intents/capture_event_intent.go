@@ -9,9 +9,11 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Custom message types for state transitions.
@@ -147,6 +149,14 @@ func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
 	// The form will be pre-populated with existing event details.
 	if i.context.PreviousEvent != nil {
 		i.state.reviewState.Event = i.context.PreviousEvent
+
+		// Edit mode always uses Manual strategy with all fields shown
+		i.state.strategy = StrategyManual
+		i.state.captureForm.SetStrategy(string(StrategyManual))
+		i.state.showOptionalFields = true
+
+		// Skip strategy selection and go straight to form
+		i.state.currentState = CaptureStateForm
 	}
 	// Return a no-op command to satisfy the intent lifecycle
 	return func() tea.Msg { return nil }
@@ -192,23 +202,38 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 }
 
 // updateChooseStrategy handles messages while choosing capture strategy.
-// The strategy is typically pre-selected by the router, but this allows the user to confirm or change it.
+// Supports arrow key/vim navigation to select between Quick and Manual strategies.
 func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "1":
-			// Manual strategy selected
-			i.state.currentState = CaptureStateForm
-			return func() tea.Msg { return nil }
-
-		case "2":
-			// Quick strategy selected
-			i.state.currentState = CaptureStateForm
+		case "up", "k":
+			// Navigate up in strategy list
+			if i.state.selectedStrategyIndex > 0 {
+				i.state.selectedStrategyIndex--
+			}
 			return nil
 
-		case "3":
-			// Enriched strategy selected
+		case "down", "j":
+			// Navigate down in strategy list (0=Quick, 1=Manual)
+			if i.state.selectedStrategyIndex < 1 {
+				i.state.selectedStrategyIndex++
+			}
+			return nil
+
+		case "enter":
+			// Confirm selected strategy and transition to form
+			strategies := []CaptureStrategy{StrategyQuick, StrategyManual}
+			i.state.strategy = strategies[i.state.selectedStrategyIndex]
+
+			// Configure form based on selected strategy
+			i.state.captureForm.SetStrategy(string(i.state.strategy))
+
+			// For quick mode, pre-fill date with today
+			if i.state.strategy == StrategyQuick {
+				// Date will be set to today automatically in the submit handler
+			}
+
 			i.state.currentState = CaptureStateForm
 			return nil
 
@@ -225,11 +250,6 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 		case "m":
 			// Return to main menu
 			i.setCancelled()
-			return nil
-
-		case "enter":
-			// Confirm current strategy and move to form
-			i.state.currentState = CaptureStateForm
 			return nil
 		}
 
@@ -480,18 +500,13 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Determine the capture mode based on the strategy
-		mode := careerservice.ManualEntry
-		if i.context.CaptureStrategy != "" {
-			switch i.context.CaptureStrategy {
-			case "quick":
-				mode = careerservice.TimelineJournaling
-			case "enriched":
-				mode = careerservice.ManualEntry
-			default:
-				mode = careerservice.ManualEntry
-			}
+		// For quick mode, default date to today if not set
+		if i.state.strategy == StrategyQuick && event.Date.IsZero() {
+			event.Date = time.Now()
 		}
+
+		// Always use ManualEntry mode (mode selector has been removed from UI)
+		mode := careerservice.ManualEntry
 
 		// Call the service to capture the event
 		// The service handles persistence and any enrichment logic
@@ -636,8 +651,12 @@ func (i *CaptureEventIntent) getContextHelp() string {
 
 	switch i.state.currentState {
 	case CaptureStateChooseStrategy:
-		return CombineFooters("1-3 Select  Esc Cancel", base)
+		return CombineFooters(NavigationFooter(), base)
 	case CaptureStateForm:
+		// Show different help based on strategy
+		if i.state.strategy == StrategyManual {
+			return CombineFooters(FormFooter(), "t Toggle optional fields", base)
+		}
 		return CombineFooters(FormFooter(), base)
 	case CaptureStateReview:
 		return CombineFooters(NavigationFooter(), "a Accept  r Reject", base)
@@ -657,6 +676,13 @@ func (i *CaptureEventIntent) View() string {
 	// Create standard view with breadcrumbs
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Capture Event", i.getStateName())
 
+	// Reduce logo spacing on small terminals to maximize form visibility
+	if info := i.GetTerminalInfo(); info != nil && info.Height < 30 {
+		if logo := i.GetLogo(); logo != nil {
+			view.WithLogo(logo, 0) // No spacing above logo for small terminals
+		}
+	}
+
 	// Sync state from CaptureEventModel to BaseIntent for modal display
 	if i.state.error != nil {
 		i.SetError(i.state.error)
@@ -674,34 +700,45 @@ func (i *CaptureEventIntent) View() string {
 }
 
 // viewChooseStrategy renders the strategy selection UI.
-// Displays three capture strategy options with descriptions.
+// Displays two capture strategy options with descriptions using modern card-based UI.
 func (i *CaptureEventIntent) viewChooseStrategy() string {
+	var content strings.Builder
+	content.WriteString("\n📝 Select Capture Strategy\n\n")
+
 	strategies := []struct {
-		number string
-		name   string
-		desc   string
+		value       CaptureStrategy
+		label       string
+		description string
 	}{
-		{"1", "Manual", "Manually enter event details"},
-		{"2", "Quick", "Quick capture with minimal fields"},
-		{"3", "Enriched", "Capture with AI-powered enrichment"},
+		{StrategyQuick, "Quick", "Capture with minimal fields (event text only)"},
+		{StrategyManual, "Manual", "Full form with optional fields (date, company, project, tags)"},
 	}
 
-	var sb strings.Builder
-	sb.WriteString("\n")
-	sb.WriteString("┌─ Choose Capture Strategy ─────────────────────┐\n")
-	sb.WriteString("│                                                │\n")
+	for idx, s := range strategies {
+		prefix := "  "
+		if idx == i.state.selectedStrategyIndex {
+			prefix = "▶ "
+		}
 
-	for _, s := range strategies {
-		sb.WriteString(fmt.Sprintf("│  %s) %-40s │\n", s.number, s.name))
-		sb.WriteString(fmt.Sprintf("│     %s                             │\n", s.desc))
-		sb.WriteString("│                                                │\n")
+		// Apply highlighting to selected item
+		optStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		if idx == i.state.selectedStrategyIndex {
+			optStyle = optStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+		}
+
+		line := fmt.Sprintf("%s%s - %s", prefix, s.label, s.description)
+		content.WriteString(optStyle.Render(line) + "\n")
 	}
 
-	sb.WriteString("│  q) Cancel                                     │\n")
-	sb.WriteString("│                                                │\n")
-	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	// Footer now handled by StandardView
-	return sb.String()
+	// Card styling (matching GenerateCV pattern)
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 // viewCaptureForm renders the form for capturing event details.
@@ -710,9 +747,8 @@ func (i *CaptureEventIntent) viewCaptureForm() string {
 	if i.state.captureForm == nil {
 		return "Error: Form not initialized"
 	}
-	// Add section heading (footer now handled by StandardView)
-	title := "=== Capture Event Details ===\n\n"
-	return title + i.state.captureForm.View()
+	// Return just the form view - StandardView handles title and navigation
+	return i.state.captureForm.View()
 }
 
 // viewReviewInferredEvent renders the review UI for inferred bursts and facts.
