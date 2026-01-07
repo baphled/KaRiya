@@ -40,7 +40,8 @@
         "tests",
         "intents",
         "models",
-        "components"
+        "components",
+        "ci"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],

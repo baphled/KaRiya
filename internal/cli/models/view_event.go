@@ -39,7 +39,6 @@ type ViewEventModel struct {
 	actions          []string
 	showDeleteDialog bool
 	deleteDialog     *ConfirmationDialog
-	err              error
 	width            int
 	height           int
 	helpFooter       components.HelpFooterModel

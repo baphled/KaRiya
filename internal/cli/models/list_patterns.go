@@ -273,12 +273,6 @@ func NewListNavigationKeyHandler(callbacks ListItemCallbacks) *ListNavigationKey
 	}
 }
 
-// noOpCmd returns a no-op command that does nothing
-// This is used to consume key events so the table doesn't process them
-func noOpCmd() tea.Msg {
-	return nil
-}
-
 // HandleNavigationKey processes navigation keys and returns a command if needed
 // Returns a command for all handled keys to prevent the table from processing them
 func (lnkh *ListNavigationKeyHandler) HandleNavigationKey(keyStr string) tea.Cmd {

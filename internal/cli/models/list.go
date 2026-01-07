@@ -599,11 +599,6 @@ func (m *ListModel) getTotalPages() int {
 	return m.pagination.GetTotalPages()
 }
 
-// pageSize getter for tests
-func (m *ListModel) getPageSize() int {
-	return m.pagination.GetPageSize()
-}
-
 // currentPage getter for tests (note: using reflection or adding public field would be cleaner)
 // These are added as convenience methods for tests
 // Tests should ideally be refactored to use public API only
