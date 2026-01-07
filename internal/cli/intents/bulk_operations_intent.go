@@ -122,22 +122,6 @@ func (m *BulkOperationsModel) getOperationDisplayName() string {
 	}
 }
 
-// Unused helper - kept for future use
-func (m *BulkOperationsModel) _getStateName() string {
-	switch m.data.CurrentState {
-	case BulkSelectOpState:
-		return "Select Operation"
-	case BulkConfigureState:
-		return "Configure"
-	case BulkExecuteState:
-		return "Executing"
-	case BulkCompleteState:
-		return "Complete"
-	default:
-		return ""
-	}
-}
-
 func (m *BulkOperationsModel) getStateContent() string {
 	switch m.data.CurrentState {
 	case BulkSelectOpState:
