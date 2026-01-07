@@ -35,6 +35,9 @@ var _ = Describe("Header", func() {
 		})
 	})
 
+	// Note: Breadcrumb functionality has been moved to StandardView
+	// See standard_view_test.go for breadcrumb tests
+
 	Describe("Configuration", func() {
 		It("sets width", func() {
 			header.SetWidth(100)
@@ -70,6 +73,12 @@ var _ = Describe("Header", func() {
 			Expect(view).To(Equal(""))
 		})
 
+		It("renders title and subtitle", func() {
+			header.SetSubtitle("Details view")
+			view := header.View()
+			Expect(view).To(ContainSubstring("Main Title"))
+			Expect(view).To(ContainSubstring("Details view"))
+		})
 	})
 
 	Describe("Edge Cases", func() {
@@ -86,4 +95,6 @@ var _ = Describe("Header", func() {
 		})
 	})
 
+	// Note: Breadcrumb click detection has been moved to StandardView
+	// See standard_view_test.go for breadcrumb click detection tests
 })
