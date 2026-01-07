@@ -312,3 +312,18 @@ func TestBulkOperationsUsesStandardView(t *testing.T) {
 
 	testStandardViewConsistency(t, "BulkOperations", view)
 }
+
+// TestFactManagementUsesStandardView verifies FactManagement uses StandardView patterns
+func TestFactManagementUsesStandardView(t *testing.T) {
+	ctx := NewFactManagementContext(nil, context.Background())
+
+	intent := NewFactManagementIntent(ctx)
+	if intent == nil {
+		t.Fatal("Failed to create FactManagement intent")
+	}
+
+	intent.Init()
+	view := intent.View()
+
+	testStandardViewConsistency(t, "FactManagement", view)
+}
