@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 )
@@ -144,9 +143,6 @@ type GenerateCVModel struct {
 
 	// selectedIndex is the current selection index.
 	selectedIndex int
-
-	// profileTable is the table container for displaying profiles.
-	profileTable *components.TableListContainer
 
 	// generationError tracks any errors during CV generation.
 	generationError error

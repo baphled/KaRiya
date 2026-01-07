@@ -2,7 +2,6 @@ package intents
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -118,7 +117,6 @@ type BurstManagementIntentModel struct {
 	loadingFacts  bool
 
 	// Edit and delete state
-	burstEditor tea.Model
 	deleteError error
 	editError   error
 
@@ -700,42 +698,6 @@ func (i *BurstManagementIntent) updateExtractingFactsView(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// applyFilters filters the bursts based on current filter state.
-func (i *BurstManagementIntent) applyFilters() {
-	filtered := make([]*domain.Burst, 0)
-
-	for _, burst := range i.context.Bursts {
-		// Apply search text filter.
-		if i.state.searchText != "" {
-			if !strings.Contains(strings.ToLower(burst.Name), strings.ToLower(i.state.searchText)) &&
-				!strings.Contains(strings.ToLower(burst.Description), strings.ToLower(i.state.searchText)) {
-				continue
-			}
-		}
-
-		filtered = append(filtered, burst)
-	}
-
-	// Apply sorting.
-	sort.Slice(filtered, func(a, b int) bool {
-		switch i.state.sortBy {
-		case "name":
-			if i.state.sortOrder == "asc" {
-				return filtered[a].Name < filtered[b].Name
-			}
-			return filtered[a].Name > filtered[b].Name
-
-		default: // date
-			if i.state.sortOrder == "asc" {
-				return filtered[a].CreatedAt.Before(filtered[b].CreatedAt)
-			}
-			return filtered[a].CreatedAt.After(filtered[b].CreatedAt)
-		}
-	})
-
-	i.state.filteredBursts = filtered
-}
-
 // View renders the intent's current state.
 func (i *BurstManagementIntent) View() string {
 	switch i.state.currentState {
@@ -1273,18 +1235,6 @@ func (i *BurstManagementIntent) setCompleted() {
 func (i *BurstManagementIntent) setCancelled() {
 	i.result = &IntentResult[*BurstManagementResult]{
 		Status: Cancelled,
-	}
-	i.active = false
-}
-
-func (i *BurstManagementIntent) setFailed(code, message string, cause error) {
-	i.result = &IntentResult[*BurstManagementResult]{
-		Status: Failed,
-		Error: &IntentError{
-			Code:    code,
-			Message: message,
-			Cause:   cause,
-		},
 	}
 	i.active = false
 }

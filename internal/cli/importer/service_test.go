@@ -3,7 +3,6 @@ package importer_test
 import (
 	"bytes"
 	"context"
-	"time"
 
 	"github.com/baphled/kariya/internal/cli/importer"
 	careerepo "github.com/baphled/kariya/internal/repository/career"
@@ -155,8 +154,3 @@ Led architectural review,2024-02-01,Leadership,leadership,Architecture,TechCorp`
 		})
 	})
 })
-
-func parseDate(dateStr string) time.Time {
-	t, _ := time.Parse("2006-01", dateStr)
-	return t
-}
