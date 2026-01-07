@@ -115,6 +115,10 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.setCancelled()
 			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
@@ -157,6 +161,10 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 			return nil
 		case "esc":
 			i.state.currentState = GenerateCVStateSelectProfile
+			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
 			return nil
 		}
 	case AudienceSelectedMsg:
@@ -230,7 +238,16 @@ func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 		i.state.currentState = GenerateCVStatePreview
 		return nil
 	case tea.KeyMsg:
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
+		switch msg.String() {
+		case "esc":
+			// Let generation complete in background, navigate back
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		case "m":
+			// Cancel and return to main menu
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
 		}
@@ -261,6 +278,10 @@ func (i *GenerateCVIntent) updatePreview(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateSelectAudience
 			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
 		}
 	}
 	return nil
@@ -279,6 +300,10 @@ func (i *GenerateCVIntent) updateReview(msg tea.Msg) tea.Cmd {
 			return nil
 		case "esc":
 			i.state.currentState = GenerateCVStatePreview
+			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
 			return nil
 		}
 	}
@@ -300,6 +325,10 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 			return nil
 		case "n", "esc":
 			i.state.currentState = GenerateCVStateReview
+			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
 			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
@@ -668,6 +697,10 @@ func (i *GenerateCVIntent) updateExportSelectFormat(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateConfirm
 			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
@@ -708,6 +741,10 @@ func (i *GenerateCVIntent) updateExportSelectLocation(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateExportSelectFormat
 			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
 			return nil
@@ -730,7 +767,16 @@ func (i *GenerateCVIntent) updateExporting(msg tea.Msg) tea.Cmd {
 		i.state.currentState = GenerateCVStateExportComplete
 		return nil
 	case tea.KeyMsg:
-		if msg.String() == "q" || msg.String() == "ctrl+c" {
+		switch msg.String() {
+		case "esc":
+			// Let export complete in background, navigate back
+			i.state.currentState = GenerateCVStateExportSelectLocation
+			return nil
+		case "m":
+			// Cancel and return to main menu
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
 			i.state.isExporting = false
 			i.setCancelled()
 			return nil
@@ -772,6 +818,10 @@ func (i *GenerateCVIntent) updateExportComplete(msg tea.Msg) tea.Cmd {
 		case "esc":
 			i.state.currentState = GenerateCVStateExportSelectLocation
 			i.state.exportError = nil
+			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
 			return nil
 		case "q", "ctrl+c":
 			i.setCancelled()
