@@ -451,8 +451,8 @@ func (i *GenerateCVIntent) View() string {
 		return "GenerateCV intent is not active"
 	}
 
-	// Create standard view with breadcrumbs
-	view := i.CreateViewWithBreadcrumbs("Main Menu", "Generate CV", i.getStateName())
+	// Create standard view without breadcrumbs
+	view := CreateStandardView(i.BaseIntent)
 
 	// Get content for current state
 	content := i.getStateContent()
