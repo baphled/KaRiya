@@ -59,7 +59,9 @@ var _ = Describe("App Menu Integration Tests", func() {
 			// Generate view
 			output := model.View()
 			menuItems := model.GetMenuItems()
-			Expect(output).NotTo(ContainSubstring(menuItems[2].Name)) // Should show intent view, not menu
+			// After StandardView migration, breadcrumbs show "Main Menu > Generate CV > ..."
+			// so the menu item name WILL appear in breadcrumbs - this is expected behavior
+			Expect(output).To(ContainSubstring(menuItems[2].Name)) // Intent name appears in breadcrumbs
 		})
 	})
 
@@ -197,14 +199,16 @@ var _ = Describe("Navigation Integration", func() {
 		Expect(model).NotTo(BeNil())
 		Expect(cmd).NotTo(BeNil())
 		output := model.View()
-		Expect(output).NotTo(ContainSubstring("Career Event Management System")) // View switches
+		// After StandardView migration (Tasks 12-15), ALL screens show the logo/subtitle
+		Expect(output).To(ContainSubstring("Career Event Management System")) // Logo on all screens
 	})
 
 	It("should navigate menu, activate, then go back to menu via escape", func() {
 		modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		model = modelInterface.(*app.Model)
 		output := model.View()
-		Expect(output).NotTo(ContainSubstring("Career Event Management System"))
+		// After StandardView migration, logo appears on intent screens too
+		Expect(output).To(ContainSubstring("Career Event Management System"))
 		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEscape})
 		model = modelInterface.(*app.Model)
 		output = model.View()
