@@ -69,8 +69,7 @@ func NewCVListModel() *CVListModel {
 		height:            20,
 		breadcrumbs:       []string{"Home", "CV Management", "Generated CVs"},
 	}
-	m.header.SetBreadcrumbs(m.breadcrumbs)
-	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
+	// Note: breadcrumbs now handled by StandardView
 	return m
 }
 
@@ -216,9 +215,7 @@ func (m *CVListModel) getPageCVs() []*career.CVView {
 // View renders the CV List screen.
 func (m *CVListModel) View() string {
 	m.listContainer.SetTable(m.table).
-		SetDimensions(m.width, m.height).
-		SetHelpFooterKey("cv_list").
-		SetBreadcrumbs(m.breadcrumbs)
+		SetDimensions(m.width, m.height)
 
 	startIdx := m.pagination.GetPageStartIndex()
 	endIdx := m.pagination.GetPageEndIndex()

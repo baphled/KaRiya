@@ -12,9 +12,7 @@ import (
 // It also manages cursor/selection state and provides navigation methods.
 type TableListContainer struct {
 	table          table.Model
-	header         HeaderModel
 	footer         FooterModel
-	helpFooter     HelpFooterModel
 	paginationInfo string
 	showPagination bool
 	emptyMessage   string
@@ -30,9 +28,7 @@ type TableListContainer struct {
 func NewTableListContainer(tableModel table.Model, headerTitle string, width int) *TableListContainer {
 	return &TableListContainer{
 		table:          tableModel,
-		header:         NewHeader(headerTitle, width),
 		footer:         NewFooter(width),
-		helpFooter:     NewHelpFooter("list", width),
 		width:          width,
 		height:         24,
 		emptyMessage:   "No items to display",
@@ -58,9 +54,7 @@ func (tlc *TableListContainer) SetTable(tableModel table.Model) *TableListContai
 func (tlc *TableListContainer) SetDimensions(width, height int) *TableListContainer {
 	tlc.width = width
 	tlc.height = height
-	tlc.header.SetWidth(width)
 	tlc.footer.SetWidth(width)
-	tlc.helpFooter.SetWidth(width)
 	tlc.table.SetWidth(width)
 	tlc.table.SetHeight(height - 10)
 	return tlc
@@ -103,18 +97,6 @@ func (tlc *TableListContainer) SetErrorMessage(message string) *TableListContain
 func (tlc *TableListContainer) ClearError() *TableListContainer {
 	tlc.errorMessage = ""
 	tlc.showError = false
-	return tlc
-}
-
-// SetHelpFooterKey sets the key for the help footer
-func (tlc *TableListContainer) SetHelpFooterKey(key string) *TableListContainer {
-	tlc.helpFooter = NewHelpFooter(key, tlc.width)
-	return tlc
-}
-
-// SetBreadcrumbs sets the breadcrumbs for the header
-func (tlc *TableListContainer) SetBreadcrumbs(crumbs []string) *TableListContainer {
-	tlc.header.SetBreadcrumbs(crumbs)
 	return tlc
 }
 
@@ -247,20 +229,16 @@ func (tlc *TableListContainer) SyncCursorFromTable() *TableListContainer {
 
 // Render returns the complete table list view with all components
 func (tlc *TableListContainer) Render() string {
-	headerView := tlc.header.View()
 	footerView := tlc.footer.View()
 
 	// Handle error state
 	if tlc.showError && tlc.errorMessage != "" {
 		errorContent := styles.ErrorBox.Render(tlc.errorMessage)
-		return lipgloss.JoinVertical(
-			lipgloss.Left,
-			headerView,
-			"",
-			errorContent,
-			"",
-			footerView,
-		)
+		parts := []string{errorContent}
+		if footerView != "" {
+			parts = append(parts, "", footerView)
+		}
+		return lipgloss.JoinVertical(lipgloss.Left, parts...)
 	}
 
 	// Handle empty state
@@ -270,14 +248,7 @@ func (tlc *TableListContainer) Render() string {
 			Italic(true)
 		emptyContent := emptyStyle.Render(tlc.emptyMessage)
 
-		tlc.helpFooter.SetWidth(tlc.width)
-		helpFooterContent := tlc.helpFooter.View()
-
-		parts := []string{
-			headerView,
-			"",
-			emptyContent,
-		}
+		parts := []string{emptyContent}
 
 		// Add pagination even for empty state
 		if tlc.showPagination && tlc.paginationInfo != "" {
@@ -288,21 +259,17 @@ func (tlc *TableListContainer) Render() string {
 			parts = append(parts, "", paginationView)
 		}
 
-		parts = append(parts, "", footerView, "", helpFooterContent)
+		if footerView != "" {
+			parts = append(parts, "", footerView)
+		}
 
 		return lipgloss.JoinVertical(lipgloss.Left, parts...)
 	}
 
 	// Render table
 	tableView := tlc.table.View()
-	tlc.helpFooter.SetWidth(tlc.width)
-	helpFooterContent := tlc.helpFooter.View()
 
-	parts := []string{
-		headerView,
-		"",
-		tableView,
-	}
+	parts := []string{tableView}
 
 	// Add pagination if enabled
 	if tlc.showPagination && tlc.paginationInfo != "" {
@@ -313,7 +280,9 @@ func (tlc *TableListContainer) Render() string {
 		parts = append(parts, "", paginationView)
 	}
 
-	parts = append(parts, "", footerView, "", helpFooterContent)
+	if footerView != "" {
+		parts = append(parts, "", footerView)
+	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }

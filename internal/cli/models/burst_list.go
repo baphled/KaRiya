@@ -296,8 +296,7 @@ func (m *BurstListModel) View() string {
 	// Update list container with current state
 	m.listContainer.SetTable(m.table).
 		SetDimensions(m.width, m.height).
-		SetEmptyStateMessage("No bursts found").
-		SetHelpFooterKey("burst_list").SetBreadcrumbs(m.breadcrumbs)
+		SetEmptyStateMessage("No bursts found")
 
 	// Set pagination info
 	paginationText := m.pagination.GetPaginationInfo("bursts")
@@ -418,7 +417,7 @@ func (m *BurstListModel) IsExpandedAt(idx int) bool {
 // SetBreadcrumbs sets the breadcrumb trail for navigation
 func (m *BurstListModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
-	m.header.SetBreadcrumbs(crumbs)
+	// Note: header.SetBreadcrumbs removed - breadcrumbs now handled by StandardView
 }
 
 // Refresh reloads the bursts from the service

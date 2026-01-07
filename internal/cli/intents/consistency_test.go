@@ -49,10 +49,9 @@ func TestGenerateCVUsesStandardView(t *testing.T) {
 	ctx := &GenerateCVContext{
 		AvailableProfiles: []*CVProfile{
 			{
-				ID:             "default",
-				Name:           "Default Profile",
-				TargetRole:     "staff",
-				TargetAudience: []string{"hiring_manager"},
+				ID:         "default",
+				Name:       "Default Profile",
+				TargetRole: "staff",
 			},
 		},
 		Events: []*career.CareerEvent{
@@ -182,10 +181,9 @@ func TestAllIntentsInitializeSuccessfully(t *testing.T) {
 				return NewGenerateCVIntent(&GenerateCVContext{
 					AvailableProfiles: []*CVProfile{
 						{
-							ID:             "default",
-							Name:           "Default Profile",
-							TargetRole:     "staff",
-							TargetAudience: []string{"hiring_manager"},
+							ID:         "default",
+							Name:       "Default Profile",
+							TargetRole: "staff",
 						},
 					},
 					Events: []*career.CareerEvent{

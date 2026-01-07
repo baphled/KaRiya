@@ -74,7 +74,7 @@ func NewCVExportDialogModel(
 		width:             80,
 		height:            20,
 	}
-	m.header.SetBreadcrumbs([]string{"Home", "CV Management", "Preview", "Export"})
+	// Note: breadcrumbs now handled by StandardView
 	return m
 }
 

@@ -307,8 +307,7 @@ func (flm *FactListModel) View() string {
 	// Update list container with current state
 	flm.listContainer.SetTable(flm.table).
 		SetDimensions(flm.width, flm.height).
-		SetEmptyStateMessage("No facts found").
-		SetHelpFooterKey("fact_list").SetBreadcrumbs(flm.breadcrumbs)
+		SetEmptyStateMessage("No facts found")
 
 	// Set pagination info
 	paginationText := flm.pagination.GetPaginationInfo("facts")
@@ -530,7 +529,7 @@ func (flm *FactListModel) GetSelectedIdx() int {
 // SetBreadcrumbs sets the breadcrumb trail for navigation
 func (flm *FactListModel) SetBreadcrumbs(crumbs []string) {
 	flm.breadcrumbs = crumbs
-	flm.header.SetBreadcrumbs(crumbs)
+	// Note: header.SetBreadcrumbs removed - breadcrumbs now handled by StandardView
 }
 
 // Refresh reloads the facts from the service

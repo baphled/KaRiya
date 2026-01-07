@@ -92,8 +92,7 @@ func NewCVConfigManagerModel(
 		sortOrder:         "desc",
 		DeletionState:     NewListDeletionState(),
 	}
-	m.header.SetBreadcrumbs(m.breadcrumbs)
-	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
+	// Note: breadcrumbs now handled by StandardView
 	return m
 }
 
@@ -154,8 +153,7 @@ func NewCVConfigManagerModelWithEvent(
 		sortOrder:         "desc",
 		DeletionState:     NewListDeletionState(),
 	}
-	m.header.SetBreadcrumbs(m.breadcrumbs)
-	m.listContainer.SetBreadcrumbs(m.breadcrumbs)
+	// Note: breadcrumbs now handled by StandardView
 	return m
 }
 
@@ -500,9 +498,7 @@ func (m *CVConfigManagerModel) View() string {
 
 	// Update list container with current state
 	m.listContainer.SetTable(m.table).
-		SetDimensions(m.width, m.height).
-		SetHelpFooterKey("cv_config_manager").
-		SetBreadcrumbs(m.breadcrumbs)
+		SetDimensions(m.width, m.height)
 
 	// Set pagination info
 	startIdx := m.pagination.GetPageStartIndex()
