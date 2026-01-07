@@ -451,12 +451,6 @@ func (i *BrowseTimelineIntent) viewTimeline() string {
 	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
 	i.listContainer.SetPaginationInfo(paginationInfo)
 
-	// Set breadcrumbs if needed
-	i.listContainer.SetBreadcrumbs([]string{"Home", "Timeline"})
-
-	// Set help footer
-	i.listContainer.SetHelpFooterKey("browse_timeline")
-
 	return i.listContainer.Render()
 }
 
@@ -499,14 +493,8 @@ func (i *BrowseTimelineIntent) viewEventDetail() string {
 
 	card := cardStyle.Render(content.String())
 
-	// Add footer with instructions.
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Enter to confirm | Esc: Back | m: Main menu | q: Quit")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	// Footer now handled by StandardView
+	return card
 }
 
 // Result returns the final result of the intent.

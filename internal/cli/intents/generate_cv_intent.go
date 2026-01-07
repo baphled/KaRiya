@@ -491,15 +491,7 @@ func (i *GenerateCVIntent) viewSelectProfile() string {
 		Background(styles.ColorBackgroundCard).
 		Foreground(styles.ColorTextPrimary)
 
-	card := cardStyle.Render(content.String())
-
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("↑/k up, ↓/j down, Enter to select, m: Main menu, q to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return cardStyle.Render(content.String())
 }
 
 // viewSelectAudience renders the audience selection view.
@@ -548,13 +540,7 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("↑/k up, ↓/j down, Enter to select, Esc to go back, m: Main menu, q to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }
 
 // viewGenerating renders the CV generation progress view.
@@ -581,13 +567,7 @@ func (i *GenerateCVIntent) viewGenerating() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Esc: Go back | m: Main menu | q: Cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }
 
 // viewPreview renders the CV preview view with scrollable content.
@@ -659,13 +639,7 @@ func (i *GenerateCVIntent) viewPreview() string {
 	// Render viewport
 	viewportContent := i.state.previewViewport.View()
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("↑/↓ scroll | e to edit | c to confirm | Esc to go back | m: Main menu | q to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, viewportContent, footer)
+	return viewportContent
 }
 
 // viewReview renders the CV review/edit view.
@@ -690,13 +664,7 @@ func (i *GenerateCVIntent) viewReview() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Enter to continue, Esc to go back, m: Main menu, q to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }
 
 // viewConfirm renders the CV confirmation view.
@@ -720,13 +688,7 @@ func (i *GenerateCVIntent) viewConfirm() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("y/Enter to confirm, e/x to export, n/Esc to go back, m: Main menu, q to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }
 
 // Result returns the final result of the intent.
@@ -1030,13 +992,7 @@ func (i *GenerateCVIntent) viewExportSelectFormat() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("↑/k up, ↓/j down, Enter to select, Esc to go back, m: Main menu")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }
 
 // viewExportSelectLocation renders the save location selection view
@@ -1083,13 +1039,7 @@ func (i *GenerateCVIntent) viewExportSelectLocation() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("↑/k up, ↓/j down, Enter to select, Esc to go back, m: Main menu")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }
 
 // viewExporting renders the export progress view
@@ -1132,13 +1082,7 @@ func (i *GenerateCVIntent) viewExporting() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Esc: Go back | m: Main menu | q: Cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }
 
 // viewExportComplete renders the export completion view
@@ -1179,11 +1123,5 @@ func (i *GenerateCVIntent) viewExportComplete() string {
 
 	card := cardStyle.Render(content.String())
 
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		MarginTop(1)
-
-	footer := footerStyle.Render("Enter to finish, Esc to go back, m: Main menu, q to cancel")
-
-	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
+	return card
 }

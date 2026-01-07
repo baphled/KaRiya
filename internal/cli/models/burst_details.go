@@ -4,7 +4,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // BurstDetailsModel represents the burst details view screen
@@ -69,10 +68,6 @@ func (m *BurstDetailsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the burst details
 func (m *BurstDetailsModel) View() string {
-	headerView := m.header.View()
-	m.helpFooter.SetWidth(m.width)
-	footerView := m.helpFooter.View()
-
 	// Render burst card
 	var burstContent string
 	if m.burstCard != nil {
@@ -80,15 +75,6 @@ func (m *BurstDetailsModel) View() string {
 		burstContent = m.burstCard.Render()
 	}
 
-	// Combine all sections
-	fullContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerView,
-		"",
-		burstContent,
-		"",
-		footerView,
-	)
-
-	return fullContent
+	// Content only (header/footer now handled by StandardView)
+	return burstContent
 }

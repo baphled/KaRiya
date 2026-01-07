@@ -144,12 +144,20 @@ func (sv *StandardView) Render() string {
 	// Add header (breadcrumbs or title/subtitle)
 	if sv.ShowHeader {
 		if len(sv.Breadcrumbs) > 0 {
-			breadcrumbText := strings.Join(sv.Breadcrumbs, " > ")
-			breadcrumbStyle := lipgloss.NewStyle().
-				Foreground(styles.ColorTextSecondary).
-				Italic(true)
-			styledBreadcrumbs := breadcrumbStyle.Render(breadcrumbText)
-			centeredBreadcrumbs := styles.CenterHorizontal(styledBreadcrumbs, sv.TerminalInfo.Width)
+			// Convert string breadcrumbs to Breadcrumb structs with icons
+			crumbs := make([]Breadcrumb, len(sv.Breadcrumbs))
+			for i, label := range sv.Breadcrumbs {
+				intent := strings.ToLower(strings.ReplaceAll(label, " ", "_"))
+				crumbs[i] = Breadcrumb{
+					Label:  label,
+					Icon:   GetIconForIntent(intent),
+					Intent: intent,
+				}
+			}
+			bar := NewBreadcrumbBar(sv.TerminalInfo.Width, false)
+			bar.SetCrumbs(crumbs)
+			breadcrumbOutput := bar.View()
+			centeredBreadcrumbs := styles.CenterHorizontal(breadcrumbOutput, sv.TerminalInfo.Width)
 			parts = append(parts, centeredBreadcrumbs)
 			parts = append(parts, "") // Blank line after breadcrumbs
 		}

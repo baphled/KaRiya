@@ -248,7 +248,7 @@ var _ = Describe("BrowseTimelineIntent", func() {
 		It("should render timeline view", func() {
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
-			Expect(view).To(ContainSubstring("Browse Timeline"))
+			// Note: "Browse Timeline" title is now in StandardView breadcrumbs, not View() output
 		})
 
 		It("should show events in timeline", func() {

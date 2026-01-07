@@ -4,7 +4,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // FactDetailsModel represents the fact details view screen
@@ -69,10 +68,6 @@ func (m *FactDetailsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the fact details
 func (m *FactDetailsModel) View() string {
-	headerView := m.header.View()
-	m.helpFooter.SetWidth(m.width)
-	footerView := m.helpFooter.View()
-
 	// Render fact card
 	var factContent string
 	if m.factCard != nil {
@@ -80,15 +75,6 @@ func (m *FactDetailsModel) View() string {
 		factContent = m.factCard.Render()
 	}
 
-	// Combine all sections
-	fullContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerView,
-		"",
-		factContent,
-		"",
-		footerView,
-	)
-
-	return fullContent
+	// Content only (header/footer now handled by StandardView)
+	return factContent
 }
