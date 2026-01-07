@@ -91,7 +91,6 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]int
 		return nil, fmt.Errorf("failed to create intent %q: factory returned nil", name)
 	}
 	r.activeIntent = intent
-	r.activeIntentName = name
 
 	// Propagate logo to the new intent if it has BaseIntent
 	if r.logo != nil {
