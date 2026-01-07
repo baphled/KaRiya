@@ -211,43 +211,19 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// If not in a navigation field, fall through to text input
 
-		case "T", "t":
-			// Two behaviors for 't' key:
-			// 1. When not typing in a text field and tags are visible: jump to tags field
-			// 2. When typing disabled (KeyType != KeyRunes) and in manual mode: toggle optional fields
-			if msg.Type != tea.KeyRunes {
-				// Priority 1: Toggle optional fields in manual mode (works anywhere)
-				if m.strategy == "manual" && msg.String() == "t" {
-					m.ToggleOptionalFields()
-					// If hiding fields, ensure focus is on a visible field
-					if !m.showOptionalFields && !m.isFieldVisible(FormField(m.focusIndex)) {
-						m.focusIndex = int(TextField)
-						cmds := m.updateFocus()
-						return m, tea.Batch(cmds...)
-					}
-					return m, nil
-				}
-
-				// Priority 2: Jump to tags field (if visible and not in text field)
-				if m.isFieldVisible(TagsField) {
-					if m.focusIndex != int(TextField) && m.focusIndex != int(CompanyField) && m.focusIndex != int(ProjectField) {
-						m.focusIndex = int(TagsField)
-						m.tagIndex = 0
-						return m, nil
-					}
+		case "ctrl+o":
+			// Toggle optional fields visibility (Ctrl+O works in any mode, any field)
+			// Note: This replaces the old 't' key toggle to avoid conflicts with text input
+			if m.strategy == "manual" {
+				m.ToggleOptionalFields()
+				// If hiding fields, ensure focus is on a visible field
+				if !m.showOptionalFields && !m.isFieldVisible(FormField(m.focusIndex)) {
+					m.focusIndex = int(TextField)
+					cmds := m.updateFocus()
+					return m, tea.Batch(cmds...)
 				}
 			}
-
-		case "G", "g":
-			// Jump to categories field for selection (only if KeyType is not KeyRunes)
-			if msg.Type != tea.KeyRunes {
-				// Only if not typing in text field
-				if m.focusIndex != int(TextField) && m.focusIndex != int(CompanyField) && m.focusIndex != int(ProjectField) {
-					m.focusIndex = int(CategoriesField)
-					m.categoryIndex = 0
-					return m, nil
-				}
-			}
+			return m, nil
 
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
@@ -931,9 +907,9 @@ func (m *FormModel) renderFormContentWithContainers() string {
 	if m.strategy == "manual" {
 		var toggleHint string
 		if m.showOptionalFields {
-			toggleHint = styles.InfoHint.Render("Press 't' to hide optional fields")
+			toggleHint = styles.InfoHint.Render("Ctrl+O to hide optional fields")
 		} else {
-			toggleHint = styles.InfoHint.Render("Press 't' to show optional fields")
+			toggleHint = styles.InfoHint.Render("Ctrl+O to show optional fields")
 		}
 		formContent += "\n\n" + toggleHint
 	}

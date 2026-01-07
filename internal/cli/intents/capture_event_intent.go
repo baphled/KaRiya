@@ -655,7 +655,7 @@ func (i *CaptureEventIntent) getContextHelp() string {
 	case CaptureStateForm:
 		// Show different help based on strategy
 		if i.state.strategy == StrategyManual {
-			return CombineFooters(FormFooter(), "t Toggle optional fields", base)
+			return CombineFooters(FormFooter(), "Ctrl+O Toggle fields", base)
 		}
 		return CombineFooters(FormFooter(), base)
 	case CaptureStateReview:
