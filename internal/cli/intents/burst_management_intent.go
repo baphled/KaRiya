@@ -120,7 +120,6 @@ type BurstManagementIntentModel struct {
 	loadingFacts  bool
 
 	// Edit and delete state
-	burstEditor tea.Model
 	deleteError error
 	editError   error
 
