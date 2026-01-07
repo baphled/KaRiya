@@ -171,7 +171,7 @@ func (m *FactManagementModel) View() string {
 		for field, err := range m.data.FormErrors {
 			errorMessages = append(errorMessages, fmt.Sprintf("%s: %s", field, err))
 		}
-		m.SetError(fmt.Errorf("Validation errors:\n%s", fmt.Sprintf("%v", errorMessages)))
+		m.SetError(fmt.Errorf("validation errors:\n%s", fmt.Sprintf("%v", errorMessages)))
 	}
 
 	// Get content for current state
@@ -495,9 +495,7 @@ func (m *FactManagementModel) viewList() string {
 	return m.listContainer.Render()
 }
 
-func (m *FactManagementModel) viewFact() string {
-	return m.getViewFactContent()
-}
+// viewFact removed - unused wrapper method
 
 func (m *FactManagementModel) getViewFactContent() string {
 	if m.data.SelectedFact == nil {
@@ -506,7 +504,7 @@ func (m *FactManagementModel) getViewFactContent() string {
 
 	fact := m.data.SelectedFact
 	var content string
-	content += fmt.Sprintf("📝 Fact Details\n\n")
+	content += "📝 Fact Details\n\n"
 	content += fmt.Sprintf("Text: %s\n\n", fact.Text)
 	content += fmt.Sprintf("Categories: %v\n", fact.CompetencyCategories)
 	content += fmt.Sprintf("Strength Signal: %s\n", fact.StrengthSignal)
@@ -517,9 +515,7 @@ func (m *FactManagementModel) getViewFactContent() string {
 	return content
 }
 
-func (m *FactManagementModel) viewEditor() string {
-	return m.getEditorContent()
-}
+// viewEditor removed - unused wrapper method
 
 func (m *FactManagementModel) getEditorContent() string {
 	var content string
@@ -542,9 +538,7 @@ func (m *FactManagementModel) getEditorContent() string {
 	return content
 }
 
-func (m *FactManagementModel) viewDeleteConfirm() string {
-	return m.getDeleteConfirmContent()
-}
+// viewDeleteConfirm removed - unused wrapper method
 
 func (m *FactManagementModel) getDeleteConfirmContent() string {
 	if m.data.FactToDelete == nil {
@@ -553,16 +547,14 @@ func (m *FactManagementModel) getDeleteConfirmContent() string {
 
 	var content string
 	content += "⚠️  Confirm Deletion\n\n"
-	content += fmt.Sprintf("Delete this fact?\n\n")
+	content += "Delete this fact?\n\n"
 	content += fmt.Sprintf("Text: %s\n\n", truncate(m.data.FactToDelete.Text, 100))
 	content += "⚠️  Warning: This action cannot be undone.\n"
 
 	return content
 }
 
-func (m *FactManagementModel) viewResults() string {
-	return m.getResultsContent()
-}
+// viewResults removed - unused wrapper method
 
 func (m *FactManagementModel) getResultsContent() string {
 	var content string

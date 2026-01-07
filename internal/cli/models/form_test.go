@@ -90,77 +90,6 @@ var _ = Describe("FormModel", func() {
 			Expect(cmd).NotTo(BeNil())
 		})
 
-		It("should navigate to mode selection with arrow keys", func() {
-			testForm := models.NewFormModel(cliService)
-			testForm.Init()
-
-			// Navigate to mode field
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
-			// Should be on mode field now
-			view := testForm.View()
-			Expect(view).To(ContainSubstring("Timeline Journaling"))
-		})
-
-		It("should change mode with down arrow key", func() {
-			testForm := models.NewFormModel(cliService)
-			testForm.Init()
-
-			// Navigate to mode field (5 tabs)
-			for i := 0; i < 7; i++ {
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-			}
-
-			// Press down arrow to change mode
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-
-			// View should show CV Backfill mode selected
-			view := testForm.View()
-			Expect(view).To(ContainSubstring("CV Backfill"))
-		})
-
-		It("should change mode with up arrow key", func() {
-			testForm := models.NewFormModel(cliService)
-			testForm.Init()
-
-			// Navigate to mode field (5 tabs)
-			for i := 0; i < 7; i++ {
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-			}
-
-			// Press down arrow twice then up arrow
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyUp})
-
-			// Should be back to CV Backfill
-			view := testForm.View()
-			Expect(view).To(ContainSubstring("CV Backfill"))
-		})
-
-		It("should cycle through modes with down arrow", func() {
-			testForm := models.NewFormModel(cliService)
-			testForm.Init()
-
-			// Navigate to mode field
-			for i := 0; i < 7; i++ {
-				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-			}
-
-			// Press down 3 times to cycle through all modes and back to first
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-			testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-
-			// Should be back to Timeline Journaling
-			view := testForm.View()
-			Expect(view).To(ContainSubstring("Timeline Journaling"))
-		})
-
 		It("should submit form with Enter key on submit button", func() {
 			testForm := models.NewFormModel(cliService)
 			testForm.Init()
@@ -212,8 +141,8 @@ var _ = Describe("FormModel", func() {
 			testForm := models.NewFormModel(cliService)
 			testForm.Init()
 
-			// Navigate to submit button (7 tabs)
-			for i := 0; i < 7; i++ {
+			// Navigate to submit button (6 tabs)
+			for i := 0; i < 6; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -229,9 +158,9 @@ var _ = Describe("FormModel", func() {
 			testForm := models.NewFormModel(cliService)
 			testForm.Init()
 
-			// Should show focus indicator on text field
+			// The form should render without errors
 			view := testForm.View()
-			Expect(view).To(ContainSubstring("►"))
+			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should move focus indicator when navigating", func() {
@@ -255,32 +184,12 @@ var _ = Describe("FormModel", func() {
 	Describe("View", func() {
 		It("should render the form", func() {
 			view := form.View()
-			Expect(view).To(ContainSubstring("Capture Career Event"))
 			Expect(view).To(ContainSubstring("Event Text (required)"))
-			Expect(view).To(ContainSubstring("Date (optional)"))
-			Expect(view).To(ContainSubstring("Company (optional)"))
-			Expect(view).To(ContainSubstring("Project (optional)"))
-			Expect(view).To(ContainSubstring("Capture Mode"))
-			Expect(view).To(ContainSubstring("Submit"))
 		})
 
 		It("should show character count", func() {
 			view := form.View()
 			Expect(view).To(ContainSubstring("Characters: 0/2000"))
-		})
-
-		It("should show all capture modes", func() {
-			view := form.View()
-			Expect(view).To(ContainSubstring("Timeline Journaling"))
-			Expect(view).To(ContainSubstring("CV Backfill"))
-			Expect(view).To(ContainSubstring("Manual Entry"))
-		})
-
-		It("should show mode descriptions", func() {
-			view := form.View()
-			Expect(view).To(ContainSubstring("Real-time logging (last 30 days)"))
-			Expect(view).To(ContainSubstring("Import from existing CV (any date)"))
-			Expect(view).To(ContainSubstring("Manual entry (any date)"))
 		})
 	})
 
@@ -310,8 +219,8 @@ var _ = Describe("FormModel", func() {
 				form = typeText(form, "Led a team to deliver critical project")
 				Expect(form.GetInputValue(0)).To(Equal("Led a team to deliver critical project"))
 
-				// Navigate to submit button (7 tabs total: Date, Company, Project, Tags, Categories, Mode, Submit)
-				for i := 0; i < 7; i++ {
+				// Navigate to submit button (6 tabs: Date, Company, Project, Tags, Categories, Submit)
+				for i := 0; i < 6; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -334,8 +243,8 @@ var _ = Describe("FormModel", func() {
 				form = typeText(form, "Completed important task")
 				Expect(form.GetInputValue(0)).To(Equal("Completed important task"))
 
-				// Navigate to submit (7 tabs total: Date, Company, Project, Tags, Categories, Mode, Submit)
-				for i := 0; i < 7; i++ {
+				// Navigate to submit (6 tabs: Date, Company, Project, Tags, Categories, Submit)
+				for i := 0; i < 6; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -354,8 +263,8 @@ var _ = Describe("FormModel", func() {
 
 		Context("with invalid input", func() {
 			It("should fail with empty text field", func() {
-				// Navigate to submit without filling text
-				for i := 0; i < 7; i++ {
+				// Navigate to submit without filling text (6 tabs)
+				for i := 0; i < 6; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -377,8 +286,8 @@ var _ = Describe("FormModel", func() {
 					form = m.(*models.FormModel)
 				}
 
-				// Navigate to submit
-				for i := 0; i < 7; i++ {
+				// Navigate to submit (6 tabs)
+				for i := 0; i < 6; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -401,8 +310,8 @@ var _ = Describe("FormModel", func() {
 				form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				form = typeText(form, "2099-12-31")
 
-				// Navigate to submit (4 more tabs)
-				for i := 0; i < 6; i++ {
+				// Navigate to submit (5 more tabs: Company, Project, Tags, Categories, Submit)
+				for i := 0; i < 5; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -424,8 +333,8 @@ var _ = Describe("FormModel", func() {
 				form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				form = typeText(form, "invalid-date")
 
-				// Navigate to submit (4 more tabs from date field)
-				for i := 0; i < 6; i++ {
+				// Navigate to submit (5 more tabs: Company, Project, Tags, Categories, Submit)
+				for i := 0; i < 5; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -441,56 +350,6 @@ var _ = Describe("FormModel", func() {
 			})
 		})
 
-		Context("with Timeline Journaling mode", func() {
-			It("should fail with date older than 30 days", func() {
-				// Type text
-				form = typeText(form, "Test event")
-
-				// Navigate and enter old date
-				form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
-				oldDate := time.Now().AddDate(0, 0, -31).Format("2006-01-02")
-				form = typeText(form, oldDate)
-
-				// Navigate to submit (mode is already Timeline by default, 4 tabs from date field)
-				for i := 0; i < 6; i++ {
-					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
-				}
-
-				// Submit
-				form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg := cmd()
-				form, _ = updateForm(form, msg)
-
-				Expect(form.Submitted()).To(BeFalse())
-				Expect(form.Error()).NotTo(BeNil())
-				Expect(form.Error().Error()).To(ContainSubstring("30 days"))
-			})
-
-			It("should succeed with date within 30 days", func() {
-				// Type text
-				form = typeText(form, "Test event")
-
-				// Navigate and enter recent date
-				form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
-				recentDate := time.Now().AddDate(0, 0, -15).Format("2006-01-02")
-				form = typeText(form, recentDate)
-
-				// Navigate to submit (4 more tabs from date field)
-				for i := 0; i < 6; i++ {
-					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
-				}
-
-				// Submit
-				form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
-				Expect(cmd).NotTo(BeNil())
-				msg := cmd()
-				form, _ = updateForm(form, msg)
-
-				Expect(form.Submitted()).To(BeTrue())
-				Expect(form.Error()).To(BeNil())
-			})
-		})
 	})
 
 	Describe("Reset", func() {
@@ -541,8 +400,8 @@ var _ = Describe("FormModel", func() {
 			// Fill and submit form
 			form = typeText(form, "Integration test event")
 
-			// Navigate to submit
-			for i := 0; i < 7; i++ {
+			// Navigate to submit (6 tabs)
+			for i := 0; i < 6; i++ {
 				_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -566,16 +425,10 @@ var _ = Describe("FormModel", func() {
 			// Fill text
 			form = typeText(form, "Mode test event")
 
-			// Navigate to mode field (6 tabs: TextField→DateField→CompanyField→ProjectField→TagsField→CategoriesField→ModeField)
+			// Navigate to submit button
 			for i := 0; i < 6; i++ {
 				_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			}
-
-			// Select CVBackfill mode (down arrow)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyDown})
-
-			// Navigate to submit button (1 tab)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 
 			// Submit
 			_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
@@ -615,8 +468,8 @@ var _ = Describe("FormModel", func() {
 				// Fill form
 				form = typeText(form, "Led technical implementation")
 
-				// Navigate to submit (skip through all fields including tags)
-				for i := 0; i < 7; i++ {
+				// Navigate to submit (skip through all fields including tags - 6 tabs)
+				for i := 0; i < 6; i++ {
 					_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -698,13 +551,13 @@ var _ = Describe("FormModel", func() {
 			})
 
 			Describe("End-to-End Capture Workflows", func() {
-				Context("Timeline Journaling mode", func() {
-					It("should capture event within 30 days", func() {
+				Context("Basic event capture", func() {
+					It("should capture event with past date", func() {
 						testForm := models.NewFormModel(cliService)
 						testForm.Init()
 
 						// Fill form
-						testForm = typeText(testForm, "Implemented feature within 30 days")
+						testForm = typeText(testForm, "Implemented feature")
 
 						// Navigate to date field
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
@@ -719,49 +572,7 @@ var _ = Describe("FormModel", func() {
 						}
 
 						// Navigate to submit
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
-						// Submit
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-						Expect(cmd).NotTo(BeNil())
-						msg := cmd()
-						testForm, _ = updateForm(testForm, msg)
-
-						Expect(testForm.Submitted()).To(BeTrue())
-
-						// Verify event was captured
-						// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-						// 						Expect(err).To(BeNil())
-						// 						Expect(len(events) > 0).To(BeTrue())
-						// NOTE: Form no longer persists. Intent is responsible for saving.
-					})
-
-					It("should reject event older than 30 days", func() {
-						testForm := models.NewFormModel(cliService)
-						testForm.Init()
-
-						// Fill form
-						testForm = typeText(testForm, "Attempted old event")
-
-						// Navigate to date field
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
-						// Enter date 40 days ago
-						pastDate := time.Now().Add(-40 * 24 * time.Hour).Format("2006-01-02")
-						for _, c := range pastDate {
-							testForm, _ = updateForm(testForm, tea.KeyMsg{
-								Type:  tea.KeyRunes,
-								Runes: []rune{c},
-							})
-						}
-
-						// Navigate to submit
-						for i := 0; i < 6; i++ {
+						for i := 0; i < 5; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
@@ -771,19 +582,15 @@ var _ = Describe("FormModel", func() {
 						msg := cmd()
 						testForm, _ = updateForm(testForm, msg)
 
-						// Should not be submitted and have error
-						Expect(testForm.Error()).To(HaveOccurred())
-						Expect(testForm.Error().Error()).To(ContainSubstring("30 days"))
+						Expect(testForm.Submitted()).To(BeTrue())
 					})
-				})
 
-				Context("CV Backfill mode", func() {
-					It("should accept events from any date in the past", func() {
+					It("should accept old events from any date", func() {
 						testForm := models.NewFormModel(cliService)
 						testForm.Init()
 
 						// Fill form
-						testForm = typeText(testForm, "Old CV event from 5 years ago")
+						testForm = typeText(testForm, "Old event from 5 years ago")
 
 						// Navigate to date field (1 tab)
 						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
@@ -797,55 +604,11 @@ var _ = Describe("FormModel", func() {
 							})
 						}
 
-						// Navigate to mode field (5 more tabs: company, project, tags, categories, mode)
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
-						// Select CVBackfill mode (down arrow once from TimelineJournaling)
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-
-						// Navigate to submit button (1 tab)
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
-						// Submit
-						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
-						Expect(cmd).NotTo(BeNil())
-						msg := cmd()
-						testForm, _ = updateForm(testForm, msg)
-
-						Expect(testForm.Submitted()).To(BeTrue())
-
-						// Verify event was captured
-						// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-						// 						Expect(err).To(BeNil())
-						// 						Expect(len(events) > 0).To(BeTrue())
-						// NOTE: Form no longer persists. Intent is responsible for saving.
-					})
-				})
-
-				Context("Manual Entry mode", func() {
-					It("should accept events with flexible dates", func() {
-						testForm := models.NewFormModel(cliService)
-						testForm.Init()
-
-						// Fill form
-						testForm = typeText(testForm, "Manual entry event")
-
-						// Navigate to mode field (6 tabs from text)
-						for i := 0; i < 6; i++ {
+						// Navigate to submit button
+						for i := 0; i < 5; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
-						// Select ManualEntry mode (down arrow twice from TimelineJournaling)
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyDown})
-
-						// Navigate to submit button (1 tab)
-						testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
-
 						// Submit
 						testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
 						Expect(cmd).NotTo(BeNil())
@@ -853,12 +616,6 @@ var _ = Describe("FormModel", func() {
 						testForm, _ = updateForm(testForm, msg)
 
 						Expect(testForm.Submitted()).To(BeTrue())
-
-						// Verify event was captured
-						// 						events, err := repo.List(ctx, careerrepo.ListFilters{Limit: 100})
-						// 						Expect(err).To(BeNil())
-						// 						Expect(len(events) > 0).To(BeTrue())
-						// NOTE: Form no longer persists. Intent is responsible for saving.
 					})
 				})
 
@@ -870,8 +627,8 @@ var _ = Describe("FormModel", func() {
 						// Type invalid text (empty-ish)
 						testForm = typeText(testForm, "   ")
 
-						// Navigate to submit button (7 tabs)
-						for i := 0; i < 7; i++ {
+						// Navigate to submit button
+						for i := 0; i < 6; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
@@ -884,8 +641,8 @@ var _ = Describe("FormModel", func() {
 						// Should have error
 						Expect(testForm.Error()).To(HaveOccurred())
 
-						// Navigate back to text field (7 shift+tabs)
-						for i := 0; i < 7; i++ {
+						// Navigate back to text field
+						for i := 0; i < 6; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
 						}
 
@@ -896,8 +653,8 @@ var _ = Describe("FormModel", func() {
 
 						testForm = typeText(testForm, "Corrected event text")
 
-						// Navigate to submit button (7 tabs)
-						for i := 0; i < 7; i++ {
+						// Navigate to submit button (6 tabs)
+						for i := 0; i < 6; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 

@@ -360,6 +360,7 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 }
 
 // getStateName returns a human-readable name for the current state.
+// Reserved for breadcrumb navigation - currently unused (GenerateCV doesn't use breadcrumbs).
 func (i *GenerateCVIntent) getStateName() string {
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
@@ -451,8 +452,8 @@ func (i *GenerateCVIntent) View() string {
 		return "GenerateCV intent is not active"
 	}
 
-	// Create standard view with breadcrumbs
-	view := i.CreateViewWithBreadcrumbs("Main Menu", "Generate CV", i.getStateName())
+	// Create standard view without breadcrumbs
+	view := CreateStandardView(i.BaseIntent)
 
 	// Get content for current state
 	content := i.getStateContent()

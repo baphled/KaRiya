@@ -171,13 +171,12 @@ var _ = Describe("Form Submission Persistence", func() {
 			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "Infrastructure")
 
-			// Navigate through Tags, Categories, Mode fields to reach Submit button
+			// Navigate through Tags, Categories fields to reach Submit button
 			// Current position: ProjectField (3)
-			// Need to reach: SubmitButton (7)
+			// Need to reach: SubmitButton (6)
 			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // TagsField (4)
 			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // CategoriesField (5)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // ModeField (6)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
+			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (6)
 
 			// Submit form
 			_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})

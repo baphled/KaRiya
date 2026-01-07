@@ -242,12 +242,12 @@ func (m model) View() string {
 	scenario := m.scenarios[m.currentScenario]
 
 	// Add instructions at the top
-	instructions := fmt.Sprintf("\n  Visual Test Program for StandardView\n")
+	instructions := "\n  Visual Test Program for StandardView\n"
 	instructions += fmt.Sprintf("  Terminal Size: %dx%d\n", m.termInfo.Width, m.termInfo.Height)
 	instructions += fmt.Sprintf("  Scenario %d/%d: %s\n", m.currentScenario+1, len(m.scenarios), scenario.name)
 	instructions += fmt.Sprintf("  %s\n\n", scenario.description)
 	instructions += "  ← → or h/l Navigate scenarios  q Quit\n"
-	instructions += "  " + fmt.Sprintf("%s", time.Now().Format("15:04:05")) + "\n\n"
+	instructions += "  " + time.Now().Format("15:04:05") + "\n\n"
 
 	// Render the scenario
 	scenarioView := scenario.viewFunc(m.termInfo)
