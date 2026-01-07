@@ -140,8 +140,8 @@ var _ = Describe("Form Submission Persistence", func() {
 			// Create form model
 			form := models.NewFormModel(cliSvc)
 
-			// Enable optional fields so they are visible during navigation
-			form.ToggleOptionalFields()
+			// Optional fields are visible by default in manual mode (showOptionalFields=true)
+			// No need to toggle them
 
 			// Helper to type text
 			typeText := func(f *models.FormModel, text string) *models.FormModel {
@@ -215,8 +215,8 @@ var _ = Describe("Form Submission Debug", func() {
 			// Create form model
 			form := models.NewFormModel(cliSvc)
 
-			// Enable optional fields so they are visible during navigation
-			form.ToggleOptionalFields()
+			// Optional fields are visible by default in manual mode (showOptionalFields=true)
+			// No need to toggle them
 
 			// Check initial mode
 			Expect(form.GetInputValue(0)).To(Equal(""))
