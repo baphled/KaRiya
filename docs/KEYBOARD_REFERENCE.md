@@ -39,8 +39,7 @@
 | `Enter` | Confirm | Forms | Submit form or confirm selection |
 | `Space` | Toggle | Checkboxes | Select/deselect tags and categories |
 | `Esc` | Cancel | Forms | Cancel form entry and go back |
-| `T` / `t` | Jump to tags | Forms | Quick navigate to tags field |
-| `G` / `g` | Jump to categories | Forms | Quick navigate to categories field |
+| `Ctrl+O` | Toggle fields | Forms | Show/hide optional fields (manual mode) |
 
 **Form Fields Supported:**
 - Text input (event description)
