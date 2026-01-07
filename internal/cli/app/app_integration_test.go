@@ -49,7 +49,7 @@ var _ = Describe("App Menu Integration Tests", func() {
 		})
 
 		It("should update cursor position through bubble navigation keys", func() {
-			// Navigate two steps down
+			// Navigate two steps down (to Generate CV)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -58,10 +58,9 @@ var _ = Describe("App Menu Integration Tests", func() {
 			model = modelInterface.(*app.Model)
 			// Generate view
 			output := model.View()
-			menuItems := model.GetMenuItems()
-			// After StandardView migration, breadcrumbs show "Main Menu > Generate CV > ..."
-			// so the menu item name WILL appear in breadcrumbs - this is expected behavior
-			Expect(output).To(ContainSubstring(menuItems[2].Name)) // Intent name appears in breadcrumbs
+			// After entering GenerateCV intent, we should see the profile selection screen
+			// which shows "Select Profile" header (not the menu item name)
+			Expect(output).To(ContainSubstring("Select Profile"))
 		})
 	})
 
