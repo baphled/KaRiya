@@ -61,6 +61,9 @@ var _ = Describe("App Menu Integration Tests", func() {
 			// After selecting Generate CV intent, we should see the CV profile selection screen
 			// which shows "Select CV Profile" title
 			Expect(output).To(ContainSubstring("Select CV Profile"))
+			menuItems := model.GetMenuItems()
+			// After StandardView migration with breadcrumbs, "Generate CV" should appear in breadcrumbs
+			Expect(output).To(ContainSubstring(menuItems[2].Name)) // "Generate CV" appears in breadcrumbs
 		})
 	})
 
