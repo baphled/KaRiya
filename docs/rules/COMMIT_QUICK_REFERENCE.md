@@ -201,7 +201,8 @@ git commit -m "refactor(service): migrate to Filter interface"
 
 ```bash
 make fmt            # Format code
-make vet            # Run go vet  
+make vet            # Run go vet
+make staticcheck    # Run staticcheck
 make test           # Run all tests
 make pre-commit     # Quick checks
 make review-commit  # Comprehensive review

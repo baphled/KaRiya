@@ -41,10 +41,19 @@ vet:
 	@echo "Running go vet..."
 	@go vet ./...
 
+# Run staticcheck (advanced static analysis)
+staticcheck:
+	@echo "Running staticcheck..."
+	@command -v staticcheck >/dev/null 2>&1 || { echo "Installing staticcheck..."; go install honnef.co/go/tools/cmd/staticcheck@latest; }
+	@staticcheck ./...
+
 # Pre-commit checks (quick)
 pre-commit:
 	@echo "Running pre-commit checks..."
 	@go fmt ./...
+	@go vet ./...
+	@command -v staticcheck >/dev/null 2>&1 || go install honnef.co/go/tools/cmd/staticcheck@latest
+	@staticcheck ./...
 	@go build ./...
 	@go test ./...
 	@echo "✅ Pre-commit checks passed"
@@ -54,7 +63,7 @@ review-commit:
 	@bash scripts/review-commit.sh
 
 # Check full project compliance (all rules)
-check-compliance:
+check-compliance: staticcheck
 	@bash scripts/check-compliance.sh
 
 # Install git hooks for AI attribution
@@ -126,6 +135,7 @@ help:
 	@echo "  make pre-commit        - Quick pre-commit checks"
 	@echo "  make fmt               - Format code"
 	@echo "  make vet               - Run static analysis"
+	@echo "  make staticcheck       - Run staticcheck (advanced analysis)"
 	@echo ""
 	@echo "🤖 AI Attribution:"
 	@echo "  make install-git-hooks    - Install AI attribution hooks"

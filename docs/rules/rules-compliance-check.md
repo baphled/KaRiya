@@ -83,6 +83,7 @@ Run through this checklist periodically during work:
 # Run these commands to verify code quality
 go fmt ./...                    # Format code
 go vet ./...                   # Static analysis
+staticcheck ./...              # Advanced static analysis
 go test ./...                  # All tests pass
 go test -race ./...            # No race conditions
 make coverage                  # Check coverage
@@ -92,6 +93,7 @@ make coverage                  # Check coverage
 - [ ] All commands pass without errors
 - [ ] Coverage is 80% or higher
 - [ ] No warnings from go vet
+- [ ] No warnings from staticcheck
 - [ ] No race conditions detected
 
 ### 2. Commit Compliance Check
@@ -580,7 +582,7 @@ Priority order:
 Run targeted checks:
 ```bash
 # Just code quality
-go fmt ./... && go vet ./...
+go fmt ./... && go vet ./... && staticcheck ./...
 
 # Just tests
 make test
@@ -618,6 +620,7 @@ make check-compliance
 # Code quality
 make fmt                    # Format code
 make vet                    # Static analysis
+make staticcheck            # Advanced static analysis
 make test                   # Run tests
 
 # Compliance
