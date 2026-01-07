@@ -245,7 +245,7 @@ func TestStandardView_BuilderChaining(t *testing.T) {
 		SetUseFullWidth(true)
 
 	if view == nil {
-		t.Error("Expected chained builder to return non-nil view")
+		t.Fatal("Expected chained builder to return non-nil view")
 	}
 
 	// Verify all settings were applied
