@@ -1,11 +1,13 @@
 package components
 
 import (
+	"sync"
 	"time"
 )
 
 // LoadingMessageRotator rotates through a set of loading messages
 type LoadingMessageRotator struct {
+	mu             sync.RWMutex
 	messages       []string
 	currentIndex   int
 	rotateInterval time.Duration
@@ -68,14 +70,19 @@ func NewLoadingMessageRotator(messages []string, interval time.Duration) *Loadin
 
 // GetCurrent returns the current message without rotating
 func (r *LoadingMessageRotator) GetCurrent() string {
-	if r.currentIndex >= len(r.messages) {
-		r.currentIndex = 0
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	currentIndex := r.currentIndex
+	if currentIndex >= len(r.messages) {
+		currentIndex = 0
 	}
-	return r.messages[r.currentIndex]
+	return r.messages[currentIndex]
 }
 
 // Rotate advances to the next message if the interval has elapsed, then returns current
 func (r *LoadingMessageRotator) Rotate() string {
+	r.mu.Lock()
 	now := time.Now()
 	if now.Sub(r.lastRotation) >= r.rotateInterval {
 		r.currentIndex++
@@ -84,26 +91,35 @@ func (r *LoadingMessageRotator) Rotate() string {
 		}
 		r.lastRotation = now
 	}
+	r.mu.Unlock()
 
 	return r.GetCurrent()
 }
 
 // Reset resets to the first message
 func (r *LoadingMessageRotator) Reset() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	r.currentIndex = 0
 	r.lastRotation = time.Now()
 }
 
 // SetMessages updates the message set
 func (r *LoadingMessageRotator) SetMessages(messages []string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if len(messages) > 0 {
 		r.messages = messages
-		r.Reset()
+		r.currentIndex = 0
+		r.lastRotation = time.Now()
 	}
 }
 
 // SimpleSpinner provides a simple spinner animation for modals
 type SimpleSpinner struct {
+	mu            sync.RWMutex
 	frames        []string
 	currentFrame  int
 	lastUpdate    time.Time
@@ -127,14 +143,21 @@ func NewSimpleSpinner() *SimpleSpinner {
 
 // GetFrame returns the current spinner frame
 func (s *SimpleSpinner) GetFrame() string {
-	if s.currentFrame >= len(s.frames) {
-		s.currentFrame = 0
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	currentFrame := s.currentFrame
+	if currentFrame >= len(s.frames) {
+		currentFrame = 0
 	}
-	return s.frames[s.currentFrame]
+	return s.frames[currentFrame]
 }
 
 // Advance advances to the next frame
 func (s *SimpleSpinner) Advance() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	now := time.Now()
 	if now.Sub(s.lastUpdate) >= s.frameInterval {
 		s.currentFrame++
@@ -147,6 +170,9 @@ func (s *SimpleSpinner) Advance() {
 
 // SetFrames sets custom spinner frames
 func (s *SimpleSpinner) SetFrames(frames []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if len(frames) > 0 {
 		s.frames = frames
 		s.currentFrame = 0
@@ -155,5 +181,8 @@ func (s *SimpleSpinner) SetFrames(frames []string) {
 
 // SetFrameInterval sets the interval between frame changes
 func (s *SimpleSpinner) SetFrameInterval(interval time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.frameInterval = interval
 }

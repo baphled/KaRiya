@@ -58,9 +58,10 @@ var _ = Describe("App Menu Integration Tests", func() {
 			model = modelInterface.(*app.Model)
 			// Generate view
 			output := model.View()
-			// After entering GenerateCV intent, we should see the profile selection screen
-			// which shows "Select Profile" header (not the menu item name)
-			Expect(output).To(ContainSubstring("Select Profile"))
+			// After StandardView migration, breadcrumbs show "Main Menu ▸ ... ▸ Select Profile"
+			// Verify we entered the Generate CV intent by checking for its first state screen
+			Expect(output).To(ContainSubstring("Select Profile")) // GenerateCV intent's first screen
+			Expect(output).To(ContainSubstring("Main Menu"))      // Main menu in breadcrumbs
 		})
 	})
 
