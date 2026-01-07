@@ -185,6 +185,11 @@ var _ = Describe("FormModel", func() {
 		It("should render the form", func() {
 			view := form.View()
 			Expect(view).To(ContainSubstring("Event Text (required)"))
+			Expect(view).To(ContainSubstring("Date (optional)"))
+			Expect(view).To(ContainSubstring("Company (optional)"))
+			Expect(view).To(ContainSubstring("Project (optional)"))
+			// Note: "Capture Mode" was removed in favor of strategy system
+			Expect(view).To(ContainSubstring("Submit"))
 		})
 
 		It("should show character count", func() {
