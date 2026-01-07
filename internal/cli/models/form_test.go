@@ -260,7 +260,7 @@ var _ = Describe("FormModel", func() {
 			Expect(view).To(ContainSubstring("Date (optional)"))
 			Expect(view).To(ContainSubstring("Company (optional)"))
 			Expect(view).To(ContainSubstring("Project (optional)"))
-			Expect(view).To(ContainSubstring("Capture Mode"))
+			// Note: "Capture Mode" was removed in favor of strategy system
 			Expect(view).To(ContainSubstring("Submit"))
 		})
 

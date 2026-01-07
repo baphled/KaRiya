@@ -142,15 +142,17 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		It("should show 'esc' and 'm' in ChooseStrategy footer", func() {
 			intent.state.currentState = CaptureStateChooseStrategy
 			view := intent.View()
-			// Footer text now rendered by StandardView
-			Expect(view).NotTo(BeEmpty())
+
+			Expect(view).To(ContainSubstring("Esc"))
+			Expect(view).To(ContainSubstring("Main Menu"))
 		})
 
 		It("should show 'esc' and 'm' in Form footer", func() {
 			intent.state.currentState = CaptureStateForm
 			view := intent.View()
-			// Footer text now rendered by StandardView
-			Expect(view).NotTo(BeEmpty())
+
+			Expect(view).To(ContainSubstring("Esc"))
+			Expect(view).To(ContainSubstring("Main Menu"))
 		})
 
 		It("should show 'esc' and 'm' in Review footer", func() {
@@ -160,8 +162,9 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 				Date: time.Now(),
 			}
 			view := intent.View()
-			// Footer text now rendered by StandardView
-			Expect(view).NotTo(BeEmpty())
+
+			Expect(view).To(ContainSubstring("Esc"))
+			Expect(view).To(ContainSubstring("Main Menu"))
 		})
 
 		It("should show 'esc', 'm', and 'r' in Submit footer", func() {
@@ -173,8 +176,10 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 				},
 			}
 			view := intent.View()
-			// Footer text now rendered by StandardView
-			Expect(view).NotTo(BeEmpty())
+
+			Expect(view).To(ContainSubstring("Esc"))
+			Expect(view).To(ContainSubstring("Main Menu"))
+			Expect(view).To(ContainSubstring("Retry"))
 		})
 	})
 })
