@@ -439,6 +439,7 @@ Next session: [What to work on next]
 Common fixes:
 - go fmt ./...          # Formatting
 - go vet ./...          # Vet warnings
+- staticcheck ./...     # Staticcheck warnings
 - make test             # Fix failing tests
 - git reset <file>      # Remove generated files
 ```
@@ -501,6 +502,7 @@ Before marking task complete:
 - [ ] Coverage ≥ 80% (`make coverage`)
 - [ ] Code formatted (`make fmt`)
 - [ ] No vet warnings (`make vet`)
+- [ ] No staticcheck warnings (`make staticcheck`)
 - [ ] `make check-compliance` passed
 - [ ] All commits are atomic
 - [ ] Documentation updated
@@ -519,6 +521,7 @@ make token-check         # Token efficiency reminder
 # Code quality
 make fmt                 # Format code
 make vet                 # Static analysis
+make staticcheck         # Advanced static analysis
 make test                # Run all tests
 make coverage            # Generate coverage
 

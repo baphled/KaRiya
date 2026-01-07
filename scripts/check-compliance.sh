@@ -81,6 +81,18 @@ else
     check_fail "Fix vet warnings"
 fi
 
+# Staticcheck
+echo -n "Staticcheck: "
+if command -v staticcheck &> /dev/null; then
+    if staticcheck ./... > /dev/null 2>&1; then
+        check_pass
+    else
+        check_fail "Fix staticcheck warnings (run: staticcheck ./...)"
+    fi
+else
+    check_warn "staticcheck not installed (run: go install honnef.co/go/tools/cmd/staticcheck@latest)"
+fi
+
 echo ""
 
 # ============================================

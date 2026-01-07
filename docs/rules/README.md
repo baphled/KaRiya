@@ -270,6 +270,7 @@ make test              # Run all tests
 make coverage          # Generate coverage report
 make review-commit     # Atomic commit review
 make check-compliance  # Compliance verification
+make staticcheck       # Advanced static analysis
 ```
 
 ### Git Hooks (Referenced in Rules)

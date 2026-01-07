@@ -52,6 +52,7 @@ git commit -m "refactor(scope): improve X"
 ```bash
 make fmt                # Format
 make vet                # Static analysis
+make staticcheck        # Advanced static analysis
 make test               # All tests
 go test -race ./...     # Race check
 make coverage           # Coverage check
@@ -112,6 +113,7 @@ make review-commit       # Commit check
 make token-check         # Token tips
 make fmt                 # Format
 make vet                 # Analysis
+make staticcheck         # Advanced analysis
 make test                # Tests
 make coverage            # Coverage
 ```

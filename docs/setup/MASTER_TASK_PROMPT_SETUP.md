@@ -405,6 +405,7 @@ make test                # Run tests
 make coverage            # Coverage report
 make fmt                 # Format code
 make vet                 # Static analysis
+make staticcheck         # Advanced static analysis
 ```
 
 ---

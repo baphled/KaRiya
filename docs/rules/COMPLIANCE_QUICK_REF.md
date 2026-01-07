@@ -11,6 +11,7 @@ This prompt ensures ALL project rules are followed and token usage stays efficie
 ### ✅ Code Quality
 - [ ] `go fmt ./...` - Code formatted
 - [ ] `go vet ./...` - No static analysis warnings
+- [ ] `staticcheck ./...` - No advanced static analysis warnings
 - [ ] `go test ./...` - All tests pass
 - [ ] `go test -race ./...` - No race conditions
 - [ ] Coverage ≥ 80%
