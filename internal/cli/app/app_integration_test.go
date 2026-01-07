@@ -49,7 +49,7 @@ var _ = Describe("App Menu Integration Tests", func() {
 		})
 
 		It("should update cursor position through bubble navigation keys", func() {
-			// Navigate two steps down
+			// Navigate two steps down (to Generate CV)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})

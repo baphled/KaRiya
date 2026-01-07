@@ -103,3 +103,6 @@ type MainMenuMsg struct{}
 type EditEventMsg struct {
 	Event *career.CareerEvent
 }
+
+// QuitMsg is sent when user wants to quit the application
+type QuitMsg struct{}
