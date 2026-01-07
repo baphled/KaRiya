@@ -73,11 +73,11 @@ var (
 			BorderForeground(ColorBorder).
 			Background(ColorBackgroundCard)
 
-	InputFocused = InputBase.Copy().
+	InputFocused = InputBase.
 			BorderForeground(ColorBorderActive).
 			BorderStyle(lipgloss.ThickBorder())
 
-	InputError = InputBase.Copy().
+	InputError = InputBase.
 			BorderForeground(ColorBorderError).
 			BorderStyle(lipgloss.ThickBorder())
 
@@ -278,7 +278,7 @@ var (
 		Background(ColorBackgroundAlt).
 		Foreground(ColorTextSecondary)
 
-	TagSelected = TagBase.Copy().
+	TagSelected = TagBase.
 			BorderForeground(ColorAccentPurple).
 			Background(ColorAccentPurple).
 			Foreground(ColorTextPrimary).
@@ -312,13 +312,13 @@ var (
 		Background(ColorBackgroundAlt).
 		Foreground(ColorTextSecondary)
 
-	BadgeSelected = Badge.Copy().
+	BadgeSelected = Badge.
 			BorderForeground(ColorAccentPurple).
 			Background(ColorAccentPurple).
 			Foreground(ColorTextPrimary).
 			Bold(true)
 
-	BadgeFocused = Badge.Copy().
+	BadgeFocused = Badge.
 			BorderForeground(ColorAccentTeal).
 			BorderStyle(lipgloss.ThickBorder()).
 			Background(ColorBackgroundCard)
@@ -327,11 +327,11 @@ var (
 			Foreground(ColorError).
 			MarginTop(1)
 
-	ButtonPrimaryFocused = ButtonPrimary.Copy().
+	ButtonPrimaryFocused = ButtonPrimary.
 				Bold(true).
 				BorderStyle(lipgloss.ThickBorder())
 
-	ButtonSecondaryFocused = ButtonSecondary.Copy().
+	ButtonSecondaryFocused = ButtonSecondary.
 				Bold(true).
 				BorderStyle(lipgloss.ThickBorder())
 
@@ -340,7 +340,7 @@ var (
 		Bold(true).
 		MarginBottom(1)
 
-	LabelFocused = Label.Copy().
+	LabelFocused = Label.
 			Foreground(ColorAccentTeal).
 			Bold(true)
 
@@ -358,33 +358,33 @@ var (
 
 // WithBorder adds a border to a style with the default border color
 func WithBorder(style lipgloss.Style) lipgloss.Style {
-	return style.Copy().
+	return style.
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(ColorBorder)
 }
 
 // WithFocusedBorder adds a focused border to a style
 func WithFocusedBorder(style lipgloss.Style) lipgloss.Style {
-	return style.Copy().
+	return style.
 		BorderStyle(lipgloss.ThickBorder()).
 		BorderForeground(ColorBorderActive)
 }
 
 // WithErrorBorder adds an error border to a style
 func WithErrorBorder(style lipgloss.Style) lipgloss.Style {
-	return style.Copy().
+	return style.
 		BorderStyle(lipgloss.ThickBorder()).
 		BorderForeground(ColorBorderError)
 }
 
 // WithPadding adds consistent padding to a style
 func WithPadding(style lipgloss.Style, vertical, horizontal int) lipgloss.Style {
-	return style.Copy().Padding(vertical, horizontal)
+	return style.Padding(vertical, horizontal)
 }
 
 // WithMargin adds consistent margin to a style
 func WithMargin(style lipgloss.Style, vertical, horizontal int) lipgloss.Style {
-	return style.Copy().Margin(vertical, horizontal)
+	return style.Margin(vertical, horizontal)
 }
 
 // Responsive Layout Helpers
@@ -433,13 +433,13 @@ func ResponsiveStyle(terminalWidth int) lipgloss.Style {
 // ResponsiveCard returns a card style with responsive width
 func ResponsiveCard(terminalWidth int) lipgloss.Style {
 	width := MaxWidth(terminalWidth)
-	return CardBase.Copy().Width(width - 4) // Account for padding
+	return CardBase.Width(width - 4) // Account for padding
 }
 
 // ResponsiveInput returns an input style with responsive width
 func ResponsiveInput(terminalWidth int) lipgloss.Style {
 	width := MaxWidth(terminalWidth)
-	return InputBase.Copy().Width(width - 8) // Account for padding and borders
+	return InputBase.Width(width - 8) // Account for padding and borders
 }
 
 // TwoColumn splits content into two columns with responsive widths

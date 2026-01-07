@@ -80,7 +80,7 @@ func (ffc *FormFieldContainer) Render() string {
 
 	// Render label if present
 	if ffc.hasLabel {
-		labelStyle := styles.InputLabel.Copy().
+		labelStyle := styles.InputLabel.
 			Foreground(styles.ColorTextSecondary)
 		parts = append(parts, labelStyle.Render(ffc.label))
 	}
@@ -89,13 +89,13 @@ func (ffc *FormFieldContainer) Render() string {
 	if ffc.hasInput {
 		var inputStyle lipgloss.Style
 		if ffc.hasError {
-			inputStyle = styles.InputError.Copy().
+			inputStyle = styles.InputError.
 				Foreground(styles.ColorTextPrimary)
 		} else if ffc.isFocused {
-			inputStyle = styles.InputFocused.Copy().
+			inputStyle = styles.InputFocused.
 				Foreground(styles.ColorTextPrimary)
 		} else {
-			inputStyle = styles.InputBase.Copy().
+			inputStyle = styles.InputBase.
 				Foreground(styles.ColorTextPrimary)
 		}
 		parts = append(parts, inputStyle.Render(ffc.input))
@@ -103,7 +103,7 @@ func (ffc *FormFieldContainer) Render() string {
 
 	// Render error if present
 	if ffc.hasError {
-		errorStyle := styles.ErrorText.Copy().
+		errorStyle := styles.ErrorText.
 			Foreground(styles.ColorError).
 			MarginTop(1)
 		parts = append(parts, errorStyle.Render(ffc.error))
@@ -111,7 +111,7 @@ func (ffc *FormFieldContainer) Render() string {
 
 	// Render hint if present
 	if ffc.hasHint {
-		hintStyle := styles.InputHint.Copy().
+		hintStyle := styles.InputHint.
 			Foreground(styles.ColorTextMuted)
 		parts = append(parts, hintStyle.Render(ffc.hint))
 	}

@@ -229,7 +229,7 @@ func (m *EnhancedCaptureEventModel) View() string {
 func (m *EnhancedCaptureEventModel) viewInputForm() string {
 	// Header with emoji and styling
 	headerText := "📝 Capture Career Event"
-	header := styles.CardHeader.Copy().
+	header := styles.CardHeader.
 		Foreground(styles.ColorTextPrimary).
 		MarginBottom(1).
 		Render(headerText)
@@ -261,7 +261,7 @@ func (m *EnhancedCaptureEventModel) viewInputForm() string {
 
 	// Help footer with keyboard shortcuts
 	footerText := "Tab: Next • Shift+Tab: Prev • Enter: Review • Ctrl+C: Exit"
-	footer := styles.CardFooter.Copy().
+	footer := styles.CardFooter.
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(2).
 		Render(footerText)
@@ -309,7 +309,7 @@ func (m *EnhancedCaptureEventModel) renderFormField(label, input string, focused
 // viewReview renders the review screen showing captured data
 func (m *EnhancedCaptureEventModel) viewReview() string {
 	// Header
-	header := styles.CardHeader.Copy().
+	header := styles.CardHeader.
 		Foreground(styles.ColorTextPrimary).
 		MarginBottom(1).
 		Render("✓ Review Event")
@@ -338,7 +338,7 @@ func (m *EnhancedCaptureEventModel) viewReview() string {
 		editBtn,
 	)
 
-	footer := styles.CardFooter.Copy().
+	footer := styles.CardFooter.
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1).
 		Render("Enter: Confirm • Esc: Edit")
@@ -364,7 +364,7 @@ func (m *EnhancedCaptureEventModel) viewSuccess() string {
 
 	message := successStyle.Render(successMsg)
 
-	footer := styles.CardFooter.Copy().
+	footer := styles.CardFooter.
 		Foreground(styles.ColorTextSecondary).
 		Render("Press any key to continue...")
 

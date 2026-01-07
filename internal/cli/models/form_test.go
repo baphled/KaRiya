@@ -174,7 +174,7 @@ var _ = Describe("FormModel", func() {
 			}
 
 			// Press Enter to submit
-			testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+			_, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Should return a command (submitForm)
 			Expect(cmd).NotTo(BeNil())
@@ -188,7 +188,7 @@ var _ = Describe("FormModel", func() {
 			testForm = typeText(testForm, "Test event")
 
 			// Stay on text field and press Enter
-			testForm, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
+			_, cmd := updateForm(testForm, tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Should not submit (cmd should be from input field, not submitForm)
 			// The text input will handle the Enter key

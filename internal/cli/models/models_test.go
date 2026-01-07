@@ -11,6 +11,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// testContextKey is a custom type for context keys to avoid collisions
+type testContextKey string
+
 func TestModels(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "CLI Models Suite")
@@ -30,10 +33,10 @@ var _ = Describe("BaseStandardModel", func() {
 		})
 
 		It("should set and retrieve context", func() {
-			ctx := context.WithValue(context.Background(), "test", "value")
+			ctx := context.WithValue(context.Background(), testContextKey("test"), "value")
 			model.SetContext(ctx)
 			Expect(model.GetContext()).To(Equal(ctx))
-			Expect(model.GetContext().Value("test")).To(Equal("value"))
+			Expect(model.GetContext().Value(testContextKey("test"))).To(Equal("value"))
 		})
 
 		It("should initialize context metadata with empty data map", func() {

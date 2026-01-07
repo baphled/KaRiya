@@ -196,7 +196,7 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 				Tags: []string{"invalid-tag-not-in-allowed"},
 			}
 
-			summary, err := cliSvc.BulkUpdateMetadata(ctx, eventIDs, update)
+			summary, _ := cliSvc.BulkUpdateMetadata(ctx, eventIDs, update)
 
 			// Should have error in summary
 			Expect(summary).NotTo(BeNil())

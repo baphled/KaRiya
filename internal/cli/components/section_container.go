@@ -51,7 +51,7 @@ func (sc *SectionContainer) Render() string {
 
 	// Render title if present
 	if sc.hasTitle {
-		titleStyle := styles.HeaderSection.Copy().
+		titleStyle := styles.HeaderSection.
 			Foreground(styles.ColorTextPrimary)
 		parts = append(parts, titleStyle.Render(sc.title))
 

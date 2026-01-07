@@ -183,11 +183,8 @@ func (m HelpFooterModel) Style() lipgloss.Style {
 
 // RenderForWidth renders the footer constrained to a specific width
 func (m HelpFooterModel) RenderForWidth(width int) string {
-	originalWidth := m.width
 	m.width = width
-	view := m.View()
-	m.width = originalWidth
-	return view
+	return m.View()
 }
 
 // WithBorder renders the footer with a border
