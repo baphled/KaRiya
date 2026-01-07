@@ -106,10 +106,7 @@ func audienceStringToList(s string) []string {
 		return []string{}
 	}
 	// Simple split by comma
-	audiences := make([]string, 0)
-	for _, a := range stringToList(s) {
-		audiences = append(audiences, a)
-	}
+	audiences := append([]string(nil), stringToList(s)...)
 	return audiences
 }
 

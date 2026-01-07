@@ -362,7 +362,7 @@ func (m *FormModel) validateCurrentField() {
 func (m *FormModel) validateTextField() {
 	text := m.inputs[0].Value()
 	if len(text) > m.maxChars {
-		m.fieldErrors[TextField] = fmt.Sprintf("Text exceeds 2000 characters limit")
+		m.fieldErrors[TextField] = "Text exceeds 2000 characters limit"
 	} else {
 		delete(m.fieldErrors, TextField)
 	}
@@ -378,12 +378,12 @@ func (m *FormModel) validateDateField() {
 
 	eventDate, err := m.parseDate(dateStr)
 	if err != nil {
-		m.fieldErrors[DateField] = fmt.Sprintf("Invalid date format")
+		m.fieldErrors[DateField] = "Invalid date format"
 		return
 	}
 
 	if eventDate.After(time.Now()) {
-		m.fieldErrors[DateField] = fmt.Sprintf("Date cannot be in the future")
+		m.fieldErrors[DateField] = "Date cannot be in the future"
 		return
 	}
 

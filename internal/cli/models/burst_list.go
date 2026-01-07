@@ -374,12 +374,7 @@ func (m *BurstListModel) applyFiltersAndSort() {
 
 // filterBursts filters bursts based on current filters
 func (m *BurstListModel) filterBursts() []*career.Burst {
-	var filtered []*career.Burst
-
-	for _, burst := range m.bursts {
-		filtered = append(filtered, burst)
-	}
-
+	filtered := append([]*career.Burst(nil), m.bursts...)
 	return filtered
 }
 

@@ -118,7 +118,7 @@ func (cv *CVView) validateTargetRole() error {
 
 // validateTargetAudiences ensures at least one valid audience is specified
 func (cv *CVView) validateTargetAudiences() error {
-	if cv.TargetAudience == nil || len(cv.TargetAudience) == 0 {
+	if len(cv.TargetAudience) == 0 {
 		return ErrInvalidAudience
 	}
 
@@ -307,7 +307,7 @@ func (cb *CVBullet) validateText() error {
 
 // validateSourceEventIDs ensures at least one source event
 func (cb *CVBullet) validateSourceEventIDs() error {
-	if cb.SourceEventIDs == nil || len(cb.SourceEventIDs) == 0 {
+	if len(cb.SourceEventIDs) == 0 {
 		return ErrNoSourceEvents
 	}
 
@@ -415,7 +415,7 @@ func (cc *CVConfig) validateTargetRole() error {
 
 // validateTargetAudiences ensures at least one valid audience is specified
 func (cc *CVConfig) validateTargetAudiences() error {
-	if cc.TargetAudience == nil || len(cc.TargetAudience) == 0 {
+	if len(cc.TargetAudience) == 0 {
 		return ErrInvalidAudience
 	}
 

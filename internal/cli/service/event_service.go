@@ -202,7 +202,7 @@ type BulkOperationsSummary struct {
 // If any event fails validation, it's reported in the summary but operation continues for other events
 func (c *CLIEventService) BulkUpdateMetadata(ctx context.Context, eventIDs []string, update *BulkMetadataUpdate) (*BulkOperationsSummary, error) {
 	// Validate input
-	if eventIDs == nil || len(eventIDs) == 0 {
+	if len(eventIDs) == 0 {
 		return nil, ErrEmptyEventList
 	}
 

@@ -29,8 +29,7 @@ var _ = Describe("CLI Event Service - Bulk Operations", func() {
 
 	Context("BulkUpdateMetadata", func() {
 		It("should return error when event IDs is nil", func() {
-			var eventIDs []string
-			eventIDs = nil
+			var eventIDs []string = nil
 
 			summary, err := cliSvc.BulkUpdateMetadata(ctx, eventIDs, &service.BulkMetadataUpdate{})
 
