@@ -192,8 +192,12 @@ func TestStandardView_Render_WithBreadcrumbs(t *testing.T) {
 
 	output := view.Render()
 
-	if !strings.Contains(output, "Home > Settings") {
-		t.Error("Expected output to contain breadcrumbs with '>' separator")
+	if !strings.Contains(output, "Home") || !strings.Contains(output, "Settings") {
+		t.Error("Expected output to contain breadcrumbs 'Home' and 'Settings'")
+	}
+	// BreadcrumbBar uses ▸ separator
+	if !strings.Contains(output, "▸") {
+		t.Error("Expected output to contain breadcrumb separator '▸'")
 	}
 }
 
