@@ -360,6 +360,7 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 }
 
 // getStateName returns a human-readable name for the current state.
+// Reserved for breadcrumb navigation - currently unused (GenerateCV doesn't use breadcrumbs).
 func (i *GenerateCVIntent) getStateName() string {
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
