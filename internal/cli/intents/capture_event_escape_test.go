@@ -179,7 +179,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 			Expect(view).To(ContainSubstring("Esc"))
 			Expect(view).To(ContainSubstring("Main Menu"))
-			Expect(view).To(ContainSubstring("Retry"))
+			Expect(view).To(ContainSubstring("Back"))
 		})
 	})
 })
