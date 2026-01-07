@@ -557,26 +557,6 @@ func (m *FactEditorModel) renderFormContentWithContainers() string {
 	return formContent
 }
 
-// addFocusIndicatorToField adds a focus indicator to the rendered field
-func (m *FactEditorModel) addFocusIndicatorToField(fieldContent string, focused bool) string {
-	if focused {
-		// Add focus indicator before the first line
-		lines := strings.Split(fieldContent, "\n")
-		if len(lines) > 0 {
-			lines[0] = "► " + lines[0]
-			return strings.Join(lines, "\n")
-		}
-		return "► " + fieldContent
-	}
-	// Add space to align with focused fields
-	lines := strings.Split(fieldContent, "\n")
-	if len(lines) > 0 {
-		lines[0] = "  " + lines[0]
-		return strings.Join(lines, "\n")
-	}
-	return "  " + fieldContent
-}
-
 // getCharCountIndicator returns a visual indicator for character count
 func (m *FactEditorModel) getCharCountIndicator() string {
 	if m.characterCount > 1800 {
@@ -594,21 +574,6 @@ func (m *FactEditorModel) renderBadge(text string, selected, focused bool) strin
 		return styles.BadgeSelected.Render(badge)
 	}
 	return styles.Badge.Render(badge)
-}
-
-func (m *FactEditorModel) getFieldName(idx int) string {
-	switch idx {
-	case FactTextFieldIdx:
-		return "Fact Text"
-	case FactCompetenciesFieldIdx:
-		return "Competencies"
-	case FactRoleFitFieldIdx:
-		return "Role Fit"
-	case FactAudienceFieldIdx:
-		return "Audience"
-	default:
-		return "Unknown"
-	}
 }
 
 // Helper functions

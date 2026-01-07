@@ -315,27 +315,6 @@ func sanitizeFileName(name string) string {
 	return replacer.Replace(name)
 }
 
-// logInfo logs an info message if logger is available
-func (m *YAMLConfigManager) logInfo(format string, args ...interface{}) {
-	if m.logger != nil {
-		m.logger.Info(format, args...)
-	}
-}
-
-// logWarn logs a warning message if logger is available
-func (m *YAMLConfigManager) logWarn(format string, args ...interface{}) {
-	if m.logger != nil {
-		m.logger.Warn(format, args...)
-	}
-}
-
-// logError logs an error message if logger is available
-func (m *YAMLConfigManager) logError(format string, args ...interface{}) {
-	if m.logger != nil {
-		m.logger.Error(format, args...)
-	}
-}
-
 // GetConfigDirectory returns the configuration directory path
 func (m *YAMLConfigManager) GetConfigDirectory() string {
 	return m.configDir

@@ -33,7 +33,6 @@ type ImportReviewModel struct {
 	summary         map[string]int
 	width           int
 	height          int
-	err             error
 	helpFooter      components.HelpFooterModel
 }
 
@@ -275,7 +274,6 @@ type ImportProgressModel struct {
 	err        error
 	width      int
 	height     int
-	helpFooter components.HelpFooterModel // Help footer
 }
 
 // NewImportProgressModel creates a new import progress model

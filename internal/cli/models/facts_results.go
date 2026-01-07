@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -31,7 +30,6 @@ type FactsResultsModel struct {
 	rejected     []*career.Fact // Facts user rejected
 	width        int
 	height       int
-	helpFooter   components.HelpFooterModel // Help footer for keyboard shortcuts
 	scrollOffset int
 }
 
