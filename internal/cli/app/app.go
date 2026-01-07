@@ -13,7 +13,6 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -309,8 +308,10 @@ func (m *Model) viewMenu() string {
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, combined)
 }
 
-// renderResponsiveTable creates the menu table with responsive column widths
+// renderResponsiveTable creates the menu as simple text lines that can be centered
 func (m *Model) renderResponsiveTable() string {
+	var lines []string
+
 	// Calculate responsive column widths based on terminal size
 	category := m.terminalInfo.GetCategory()
 
@@ -339,34 +340,48 @@ func (m *Model) renderResponsiveTable() string {
 		descWidth = 60
 	}
 
-	// Create table rows
-	rows := make([]table.Row, len(m.menuItems))
+	// Create header row
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("12")).
+		Bold(true)
+
+	header := headerStyle.Render(
+		lipgloss.NewStyle().Width(actionWidth).Render("Action") + "  " +
+			lipgloss.NewStyle().Width(descWidth).Render("Description"),
+	)
+	lines = append(lines, header)
+
+	// Add separator
+	separator := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240")).
+		Render(lipgloss.NewStyle().Width(actionWidth + descWidth + 2).Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"))
+	lines = append(lines, separator)
+
+	// Create menu rows as simple text
 	for i, item := range m.menuItems {
-		// Add selection indicator
+		// Style based on selection
+		var rowStyle lipgloss.Style
 		indicator := "  "
+
 		if i == m.selectedMenuIndex {
 			indicator = "▶ "
+			rowStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("12")).
+				Bold(true)
+		} else {
+			rowStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("252"))
 		}
-		rows[i] = table.Row{indicator + item.Name, item.Help}
+
+		// Format row with fixed widths
+		actionText := lipgloss.NewStyle().Width(actionWidth).Render(indicator + item.Name)
+		descText := lipgloss.NewStyle().Width(descWidth).Render(item.Help)
+
+		row := rowStyle.Render(actionText + "  " + descText)
+		lines = append(lines, row)
 	}
 
-	// Create table with responsive columns
-	tableModel := table.New(
-		table.WithColumns([]table.Column{
-			{Title: "Action", Width: actionWidth},
-			{Title: "Description", Width: descWidth},
-		}),
-		table.WithRows(rows),
-		table.WithFocused(true),
-		table.WithHeight(len(m.menuItems)),
-	)
-
-	// Set cursor position
-	if m.selectedMenuIndex >= 0 && m.selectedMenuIndex < len(rows) {
-		tableModel.SetCursor(m.selectedMenuIndex)
-	}
-
-	return tableModel.View()
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
 // GetMenuItems returns the menu items from the model
