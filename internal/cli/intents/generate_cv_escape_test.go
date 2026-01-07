@@ -21,7 +21,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 				ID:             "profile1",
 				Name:           "Senior IC",
 				TargetRole:     "senior_ic",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 			},
 		}
 
@@ -295,7 +295,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 				ID:               "cv1",
 				Name:             "Test",
 				GeneratedAt:      time.Now(),
-				TargetAudience:   []string{"test"},
+				TargetAudience: "test",
 				SourceEventCount: 0,
 				SourceFactCount:  0,
 			}
@@ -309,7 +309,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			intent.state.generatedCV = &career.CVView{
 				ID:             "cv1",
 				Name:           "Test",
-				TargetAudience: []string{"test"},
+				TargetAudience: "test",
 			}
 			view := intent.View()
 
@@ -321,7 +321,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			intent.state.generatedCV = &career.CVView{
 				ID:             "cv1",
 				Name:           "Test",
-				TargetAudience: []string{"test"},
+				TargetAudience: "test",
 			}
 			view := intent.View()
 

@@ -423,12 +423,9 @@ func (m *CVConfigManagerModel) updateTableRows() {
 	}
 
 	for i, config := range pageConfigs {
-		audiences := ""
-		if len(config.TargetAudience) > 0 {
-			audiences = config.TargetAudience[0]
-			if len(config.TargetAudience) > 1 {
-				audiences = fmt.Sprintf("%d audiences", len(config.TargetAudience))
-			}
+		audience := config.TargetAudience
+		if len(audience) > 15 {
+			audience = audience[:12] + "..."
 		}
 
 		name := config.Name
@@ -446,7 +443,7 @@ func (m *CVConfigManagerModel) updateTableRows() {
 		row := table.Row{
 			name,
 			config.TargetRole,
-			audiences,
+			audience,
 			config.CreatedAt.Format("2006-01-02"),
 		}
 		rows = append(rows, row)

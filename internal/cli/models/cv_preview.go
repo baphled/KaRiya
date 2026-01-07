@@ -220,11 +220,20 @@ func (m *CVPreviewModel) updateTableRows() {
 		}
 
 		// Count bullets in this section
-		bulletCount := strings.Count(section.Content, "•") + strings.Count(section.Content, "-")
+		bulletCount := 0
+		for _, group := range section.Content {
+			bulletCount += len(group.Bullets)
+		}
 		bulletCountStr := fmt.Sprintf("%d", bulletCount)
 
-		// Get preview of content
-		contentPreview := section.Content
+		// Get preview of content (first bullet text or summary)
+		contentPreview := ""
+		if section.Summary != "" {
+			contentPreview = section.Summary
+		} else if len(section.Content) > 0 && len(section.Content[0].Bullets) > 0 {
+			contentPreview = section.Content[0].Bullets[0].Text
+		}
+
 		if len(contentPreview) > 48 {
 			contentPreview = contentPreview[:45] + "..."
 		}
@@ -303,9 +312,9 @@ func (m *CVPreviewModel) View() string {
 
 // renderMetadata renders CV metadata (role, audience, stats)
 func (m *CVPreviewModel) renderMetadata() string {
-	metadata := fmt.Sprintf("Role: %s | Audiences: %s | Events: %d | Facts: %d | Generated: %s",
+	metadata := fmt.Sprintf("Role: %s | Audience: %s | Events: %d | Facts: %d | Generated: %s",
 		m.cvView.TargetRole,
-		strings.Join(m.cvView.TargetAudience, ", "),
+		m.cvView.TargetAudience,
 		m.cvView.SourceEventCount,
 		m.cvView.SourceFactCount,
 		m.cvView.GeneratedAt.Format("2006-01-02 15:04"))
@@ -315,7 +324,31 @@ func (m *CVPreviewModel) renderMetadata() string {
 
 // renderExpandedSection renders the full content of an expanded section
 func (m *CVPreviewModel) renderExpandedSection(section *career.CVSection) string {
-	sectionContent := fmt.Sprintf("📌 %s\n\n%s", section.Title, section.Content)
+	var contentText string
+
+	// Summary sections use Summary field
+	if section.Summary != "" {
+		contentText = section.Summary
+	} else {
+		// Other sections use Content groups
+		var parts []string
+		for _, group := range section.Content {
+			if group.Header != "" {
+				// Include header with date range if available
+				header := group.Header
+				if group.StartDate != "" || group.EndDate != "" {
+					header += fmt.Sprintf(" (%s - %s)", group.StartDate, group.EndDate)
+				}
+				parts = append(parts, "\n"+header)
+			}
+			for _, bullet := range group.Bullets {
+				parts = append(parts, "  • "+bullet.Text)
+			}
+		}
+		contentText = strings.Join(parts, "\n")
+	}
+
+	sectionContent := fmt.Sprintf("📌 %s\n%s", section.Title, contentText)
 
 	// Wrap in a styled container
 	container := components.NewScreenContainer(sectionContent).

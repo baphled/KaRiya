@@ -19,16 +19,16 @@ type EnhancedBulletGenerator interface {
 		facts []*career.Fact,
 		achievements []*Achievement,
 		targetRole string,
-		targetAudiences []string) ([]*EnhancedBullet, error)
+		targetAudience string) ([]*EnhancedBullet, error)
 
 	// FilterByRole filters bullets based on role relevance
 	FilterByRole(bullets []*EnhancedBullet, role string) []*EnhancedBullet
 
 	// FilterByAudience filters bullets based on audience fit
-	FilterByAudience(bullets []*EnhancedBullet, audiences []string) []*EnhancedBullet
+	FilterByAudience(bullets []*EnhancedBullet, audience string) []*EnhancedBullet
 
 	// RankByRelevance ranks bullets using multi-factor scoring
-	RankByRelevance(bullets []*EnhancedBullet, role string, audiences []string) []*EnhancedBullet
+	RankByRelevance(bullets []*EnhancedBullet, role string, audience string) []*EnhancedBullet
 
 	// EnhanceWording improves bullet text for professional CV use
 	EnhanceWording(bullet *EnhancedBullet, role string) (*EnhancedBullet, error)
@@ -89,7 +89,7 @@ func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 	facts []*career.Fact,
 	achievements []*Achievement,
 	targetRole string,
-	targetAudiences []string) ([]*EnhancedBullet, error) {
+	targetAudience string) ([]*EnhancedBullet, error) {
 
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -112,13 +112,13 @@ func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 	bullets = ebg.FilterByRole(bullets, targetRole)
 
 	// Filter by audience
-	bullets = ebg.FilterByAudience(bullets, targetAudiences)
+	bullets = ebg.FilterByAudience(bullets, targetAudience)
 
 	// Calculate scores
-	bullets = ebg.calculateScores(bullets, targetRole, targetAudiences)
+	bullets = ebg.calculateScores(bullets, targetRole, targetAudience)
 
 	// Rank by relevance
-	bullets = ebg.RankByRelevance(bullets, targetRole, targetAudiences)
+	bullets = ebg.RankByRelevance(bullets, targetRole, targetAudience)
 
 	// Enhance wording
 	for i, bullet := range bullets {
@@ -136,8 +136,8 @@ func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 		bullets = bullets[:cap]
 	}
 
-	ebg.logger.Info("Generated %d enhanced bullets for role %s with %d audiences",
-		len(bullets), targetRole, len(targetAudiences))
+	ebg.logger.Info("Generated %d enhanced bullets for role %s with audience %s",
+		len(bullets), targetRole, targetAudience)
 
 	return bullets, nil
 }
@@ -160,8 +160,8 @@ func (ebg *DefaultEnhancedBulletGenerator) FilterByRole(bullets []*EnhancedBulle
 }
 
 // FilterByAudience filters bullets based on audience fit
-func (ebg *DefaultEnhancedBulletGenerator) FilterByAudience(bullets []*EnhancedBullet, audiences []string) []*EnhancedBullet {
-	if len(audiences) == 0 {
+func (ebg *DefaultEnhancedBulletGenerator) FilterByAudience(bullets []*EnhancedBullet, audience string) []*EnhancedBullet {
+	if audience == "" {
 		return bullets
 	}
 
@@ -171,7 +171,7 @@ func (ebg *DefaultEnhancedBulletGenerator) FilterByAudience(bullets []*EnhancedB
 }
 
 // RankByRelevance ranks bullets using multi-factor scoring
-func (ebg *DefaultEnhancedBulletGenerator) RankByRelevance(bullets []*EnhancedBullet, role string, audiences []string) []*EnhancedBullet {
+func (ebg *DefaultEnhancedBulletGenerator) RankByRelevance(bullets []*EnhancedBullet, role string, audience string) []*EnhancedBullet {
 	// Calculate final scores
 	for _, bullet := range bullets {
 		bullet.FinalScore = ebg.calculateFinalScore(bullet)
@@ -253,11 +253,18 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromFacts(facts []*caree
 	var bullets []*EnhancedBullet
 
 	for _, fact := range facts {
+		// Populate SourceEventIDs from fact's source event
+		sourceEventIDs := []string{}
+		if fact.SourceEventID != "" {
+			sourceEventIDs = []string{fact.SourceEventID}
+		}
+
 		bullet := &EnhancedBullet{
 			ID:              fact.ID,
 			Text:            fact.Text,
 			EnhancedText:    fact.Text,
 			SourceFactIDs:   []string{fact.ID},
+			SourceEventIDs:  sourceEventIDs,
 			Confidence:      0.85,
 			InclusionReason: "fact_extraction",
 			ImpactLevel:     "medium",
@@ -289,10 +296,10 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromEvents(events []*car
 }
 
 // calculateScores calculates all score components
-func (ebg *DefaultEnhancedBulletGenerator) calculateScores(bullets []*EnhancedBullet, role string, audiences []string) []*EnhancedBullet {
+func (ebg *DefaultEnhancedBulletGenerator) calculateScores(bullets []*EnhancedBullet, role string, audience string) []*EnhancedBullet {
 	for _, bullet := range bullets {
 		bullet.RoleScore = ebg.calculateRoleScore(bullet, role)
-		bullet.AudienceScore = ebg.calculateAudienceScore(bullet, audiences)
+		bullet.AudienceScore = ebg.calculateAudienceScore(bullet, audience)
 		bullet.MetricScore = ebg.calculateMetricScore(bullet)
 		bullet.ImpactScore = ebg.calculateImpactScore(bullet)
 	}
@@ -331,8 +338,8 @@ func (ebg *DefaultEnhancedBulletGenerator) calculateRoleScore(bullet *EnhancedBu
 }
 
 // calculateAudienceScore calculates audience fit score
-func (ebg *DefaultEnhancedBulletGenerator) calculateAudienceScore(bullet *EnhancedBullet, audiences []string) float64 {
-	if len(audiences) == 0 {
+func (ebg *DefaultEnhancedBulletGenerator) calculateAudienceScore(bullet *EnhancedBullet, audience string) float64 {
+	if audience == "" {
 		return 1.0
 	}
 

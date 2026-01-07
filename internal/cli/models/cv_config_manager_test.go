@@ -31,7 +31,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 			{
 				Name:           "Senior IC CV",
 				TargetRole:     "senior_ic",
-				TargetAudience: []string{"hiring_manager", "recruiter"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   map[string]interface{}{},
 				CreatedAt:      time.Now().Add(-30 * 24 * time.Hour),
 				UpdatedAt:      time.Now().Add(-30 * 24 * time.Hour),
@@ -39,7 +39,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 			{
 				Name:           "Staff Engineer CV",
 				TargetRole:     "staff",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   map[string]interface{}{},
 				CreatedAt:      time.Now().Add(-20 * 24 * time.Hour),
 				UpdatedAt:      time.Now().Add(-20 * 24 * time.Hour),
@@ -47,7 +47,7 @@ var _ = Describe("CVConfigManagerModel", func() {
 			{
 				Name:           "Engineering Manager CV",
 				TargetRole:     "em",
-				TargetAudience: []string{"recruiter", "peer"},
+				TargetAudience: "hiring_manager",
 				EventFilters:   map[string]interface{}{},
 				CreatedAt:      time.Now().Add(-10 * 24 * time.Hour),
 				UpdatedAt:      time.Now().Add(-10 * 24 * time.Hour),

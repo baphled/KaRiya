@@ -30,7 +30,7 @@ var _ = Describe("CVGeneratorModel", func() {
 		testConfig = &career.CVConfig{
 			Name:           "Test CV",
 			TargetRole:     "senior_ic",
-			TargetAudience: []string{"hiring_manager"},
+			TargetAudience: "hiring_manager",
 			EventFilters:   map[string]interface{}{},
 		}
 
@@ -54,7 +54,7 @@ var _ = Describe("CVGeneratorModel", func() {
 				ID:               uuid.New().String(),
 				Name:             "Test CV",
 				TargetRole:       "senior_ic",
-				TargetAudience:   []string{"hiring_manager"},
+				TargetAudience:   "hiring_manager",
 				GeneratedAt:      time.Now(),
 				SourceEventCount: 5,
 				SourceFactCount:  3,

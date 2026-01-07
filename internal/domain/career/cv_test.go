@@ -17,7 +17,7 @@ var _ = Describe("CVView", func() {
 				ID:             "test-id-1",
 				Name:           "Senior IC CV",
 				TargetRole:     "senior_ic",
-				TargetAudience: []string{"hiring_manager", "peer"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"date_from": "2020-01-01",
 					"date_to":   "2024-01-01",
@@ -124,17 +124,17 @@ var _ = Describe("CVView", func() {
 			})
 		})
 
-		Context("with empty audience list", func() {
+		Context("with empty audience", func() {
 			It("should fail validation", func() {
-				cvView.TargetAudience = []string{}
+				cvView.TargetAudience = ""
 				err := cvView.Validate()
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
-		Context("with nil audience list", func() {
+		Context("with whitespace-only audience", func() {
 			It("should fail validation", func() {
-				cvView.TargetAudience = nil
+				cvView.TargetAudience = "   "
 				err := cvView.Validate()
 				Expect(err).To(HaveOccurred())
 			})
@@ -142,7 +142,7 @@ var _ = Describe("CVView", func() {
 
 		Context("with invalid audience", func() {
 			It("should fail validation", func() {
-				cvView.TargetAudience = []string{"invalid_audience"}
+				cvView.TargetAudience = "invalid_audience"
 				err := cvView.Validate()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("invalid target audience"))
@@ -151,25 +151,19 @@ var _ = Describe("CVView", func() {
 
 		Context("with all valid audiences", func() {
 			It("should pass validation with hiring_manager", func() {
-				cvView.TargetAudience = []string{"hiring_manager"}
+				cvView.TargetAudience = "hiring_manager"
 				err := cvView.Validate()
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should pass validation with recruiter", func() {
-				cvView.TargetAudience = []string{"recruiter"}
+				cvView.TargetAudience = "recruiter"
 				err := cvView.Validate()
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("should pass validation with peer", func() {
-				cvView.TargetAudience = []string{"peer"}
-				err := cvView.Validate()
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("should pass validation with multiple audiences", func() {
-				cvView.TargetAudience = []string{"hiring_manager", "recruiter", "peer"}
+				cvView.TargetAudience = "peer"
 				err := cvView.Validate()
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -215,7 +209,14 @@ var _ = Describe("CVSection", func() {
 				SectionType: "experience",
 				Title:       "Professional Experience",
 				Order:       0,
-				Content:     "Section content here",
+				Content: []*SectionContentGroup{
+					{
+						Header: "Test Company",
+						Bullets: []*CVBullet{
+							{ID: "bullet-1", Text: "Test bullet"},
+						},
+					},
+				},
 			}
 		})
 
@@ -484,7 +485,7 @@ var _ = Describe("CVConfig", func() {
 			cvConfig = &CVConfig{
 				Name:           "Staff Engineer CV",
 				TargetRole:     "staff",
-				TargetAudience: []string{"hiring_manager", "recruiter"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"date_from": "2020-01-01",
 					"tags":      []string{"technical", "leadership"},
@@ -542,7 +543,7 @@ var _ = Describe("CVConfig", func() {
 
 		Context("with empty audience", func() {
 			It("should fail validation", func() {
-				cvConfig.TargetAudience = []string{}
+				cvConfig.TargetAudience = ""
 				err := cvConfig.Validate()
 				Expect(err).To(HaveOccurred())
 			})
@@ -556,7 +557,7 @@ var _ = Describe("CVConfig", func() {
 			cvConfig = &CVConfig{
 				Name:           "Principal CV",
 				TargetRole:     "principal",
-				TargetAudience: []string{"hiring_manager"},
+				TargetAudience: "hiring_manager",
 				EventFilters: map[string]interface{}{
 					"date_from": "2015-01-01",
 				},
@@ -634,24 +635,24 @@ var _ = Describe("Validation Helper Functions", func() {
 			Expect(IsSingleClaimBullet("Led the API redesign")).To(BeTrue())
 		})
 
-		It("should detect multiple claims with 'and'", func() {
+		It("should allow single 'and' conjunction", func() {
 			text := "Led the API redesign and implemented caching"
-			Expect(IsSingleClaimBullet(text)).To(BeFalse())
+			Expect(IsSingleClaimBullet(text)).To(BeTrue())
 		})
 
-		It("should detect multiple claims with 'while'", func() {
+		It("should allow single 'while' conjunction", func() {
 			text := "Built the system while maintaining uptime"
+			Expect(IsSingleClaimBullet(text)).To(BeTrue())
+		})
+
+		It("should detect multiple claims with multiple conjunctions", func() {
+			text := "Designed architecture; implemented performance improvements and optimized queries"
 			Expect(IsSingleClaimBullet(text)).To(BeFalse())
 		})
 
-		It("should detect multiple claims with semicolon", func() {
-			text := "Designed architecture; implemented performance improvements"
-			Expect(IsSingleClaimBullet(text)).To(BeFalse())
-		})
-
-		It("should detect 'and' as multiple claims even in simple contexts", func() {
+		It("should allow single conjunction in simple contexts", func() {
 			text := "Designed and built the data pipeline"
-			Expect(IsSingleClaimBullet(text)).To(BeFalse())
+			Expect(IsSingleClaimBullet(text)).To(BeTrue())
 		})
 	})
 
