@@ -212,7 +212,6 @@ func BenchmarkModalRenderWithLongMessage(b *testing.B) {
 // BenchmarkASCIILogoRender benchmarks logo rendering
 func BenchmarkASCIILogoRender(b *testing.B) {
 	logo := NewASCIILogo(false, 120)
-	logo.SetExternalCentering(true)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

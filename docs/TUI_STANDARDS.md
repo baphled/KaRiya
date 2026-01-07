@@ -251,18 +251,18 @@ header.SetBreadcrumb([]string{"Home", "List", "Details"})  // Future feature
 **Appearance**:
 ```
 ─────────────────────────────────────────────────────────────────────────
- Mode: Timeline Journaling │ Status: 3/10 events │ Ctrl+C to quit
+ Strategy: Quick │ Status: 3/10 events │ Ctrl+C to quit
 ```
 
 **Usage**:
 ```go
 footer := components.NewFooter(width)
 footer.SetStatus("3/10 events")
-footer.SetMode("Timeline Journaling")
+footer.SetStrategy("Quick")
 ```
 
 **Instances**:
-- ✅ Form: Shows capture mode
+- ✅ Form: Shows capture strategy (Quick/Manual)
 - ✅ List: Shows event count
 - ✅ Metadata Review: Shows review progress
 - ✅ All screens: Integrated or planned

@@ -16,7 +16,7 @@ and error-resistant.
 ## 2. Goals
 
 1. Provide an intuitive, interactive CLI interface for capturing career events
-2. Support multiple event capture modes (Timeline Journaling, CV Backfill, Manual Entry)
+2. Support flexible event capture strategies (Quick Capture, Manual Capture)
 3. Deliver a polished, professional user experience using BubbleTea and Lipgloss
 4. Ensure robust validation with helpful, corrective feedback
 5. Enable users to view and manage their captured events
@@ -46,10 +46,14 @@ and error-resistant.
 ## 4. Functional Requirements
 
 ### 4.1 Event Capture
-1. The CLI must support three capture modes:
-   - **CV Backfill Mode**: For importing events from existing CVs (allows older dates, no time constraints)
-   - **Timeline Journaling Mode**: For real-time event logging (within 30 days of today)
-   - **Manual Entry Mode**: For manually adding individual events (no date constraints)
+1. The CLI must support two capture strategies:
+   - **Quick Capture**: For rapid event logging with minimal required fields (Event text + Date)
+     - Optional fields hidden by default
+     - Toggle with 't' key to show/hide Company, Project, Tags, Categories
+   - **Manual Capture**: For detailed event entry with all fields visible by default
+     - All fields displayed: Event, Date, Company, Project, Tags, Categories
+     - Toggle with 't' key to hide optional fields if desired
+   - Both strategies support any date (past or present), no time constraints
 
 2. The system must accept the following inputs for each event:
    - **Text** (mandatory): Event description (1-2000 characters)
@@ -262,7 +266,7 @@ and error-resistant.
 ## 9. Acceptance Criteria
 
 1. ✓ Users can launch the CLI and be presented with a capture form
-2. ✓ Users can select from three capture modes (CV Backfill, Timeline Journaling, Manual Entry)
+2. ✓ Users can select from two capture strategies (Quick Capture, Manual Capture)
 3. ✓ Users can input event text, date, company, project, and tags
 4. ✓ All validation rules are enforced with clear error messages
 5. ✓ Users can correct invalid inputs and resubmit without losing data

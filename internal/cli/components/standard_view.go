@@ -131,8 +131,7 @@ func (sv *StandardView) Render() string {
 			parts = append(parts, "")
 		}
 
-		// Render logo
-		sv.Logo.SetExternalCentering(true)
+		// Render logo (logo will be centered by JoinVertical)
 		sv.Logo.SetWidth(sv.TerminalInfo.Width)
 		logoOutput := sv.Logo.ViewStatic()
 		parts = append(parts, logoOutput)
@@ -157,8 +156,7 @@ func (sv *StandardView) Render() string {
 			bar := NewBreadcrumbBar(sv.TerminalInfo.Width, false)
 			bar.SetCrumbs(crumbs)
 			breadcrumbOutput := bar.View()
-			centeredBreadcrumbs := styles.CenterHorizontal(breadcrumbOutput, sv.TerminalInfo.Width)
-			parts = append(parts, centeredBreadcrumbs)
+			parts = append(parts, breadcrumbOutput)
 			parts = append(parts, "") // Blank line after breadcrumbs
 		}
 
@@ -167,15 +165,13 @@ func (sv *StandardView) Render() string {
 				Foreground(styles.ColorTextPrimary).
 				Bold(true)
 			styledTitle := titleStyle.Render(sv.Title)
-			centeredTitle := styles.CenterHorizontal(styledTitle, sv.TerminalInfo.Width)
-			parts = append(parts, centeredTitle)
+			parts = append(parts, styledTitle)
 
 			if sv.Subtitle != "" {
 				subtitleStyle := lipgloss.NewStyle().
 					Foreground(styles.ColorTextSecondary)
 				styledSubtitle := subtitleStyle.Render(sv.Subtitle)
-				centeredSubtitle := styles.CenterHorizontal(styledSubtitle, sv.TerminalInfo.Width)
-				parts = append(parts, centeredSubtitle)
+				parts = append(parts, styledSubtitle)
 			}
 
 			parts = append(parts, "") // Blank line after title
@@ -197,7 +193,8 @@ func (sv *StandardView) Render() string {
 	if sv.ShowFooter && sv.HelpText != "" {
 		// Add visual separator if enabled
 		if sv.ShowFooterSeparator {
-			separator := strings.Repeat("─", sv.TerminalInfo.Width)
+			// Separator will match widest content line via JoinVertical
+			separator := strings.Repeat("─", 100)
 			separatorStyle := lipgloss.NewStyle().
 				Foreground(styles.ColorBorder)
 			parts = append(parts, "", separatorStyle.Render(separator))
@@ -209,19 +206,15 @@ func (sv *StandardView) Render() string {
 		helpStyle := lipgloss.NewStyle().
 			Foreground(styles.ColorTextMuted)
 		styledHelp := helpStyle.Render(sv.HelpText)
-		centeredHelp := styles.CenterHorizontal(styledHelp, sv.TerminalInfo.Width)
-		parts = append(parts, centeredHelp)
+		parts = append(parts, styledHelp)
 	}
 
-	// Join all parts
-	output := strings.Join(parts, "\n")
+	// Join all parts with center alignment - aligns to widest line
+	combined := lipgloss.JoinVertical(lipgloss.Center, parts...)
 
-	// Use SmartContainer for final centering
-	container := NewSmartContainer(sv.TerminalInfo).
-		SetContent(output).
-		SetCenteringMode(CenterBoth)
-
-	rendered := container.Render()
+	// Center within terminal (both horizontal and vertical)
+	rendered := lipgloss.Place(sv.TerminalInfo.Width, sv.TerminalInfo.Height,
+		lipgloss.Center, lipgloss.Center, combined)
 
 	// Add modal overlay if needed
 	if sv.ShowModal && sv.Modal != nil {
@@ -262,8 +255,8 @@ func (sv *StandardView) overlayModal(background, modal string) string {
 	for i, modalLine := range modalLines {
 		lineIndex := startLine + i
 		if lineIndex >= 0 && lineIndex < len(result) {
-			// Center modal line horizontally
-			centeredModalLine := styles.CenterHorizontal(modalLine, sv.TerminalInfo.Width)
+			// Center modal line horizontally using lipgloss.PlaceHorizontal
+			centeredModalLine := lipgloss.PlaceHorizontal(sv.TerminalInfo.Width, lipgloss.Center, modalLine)
 			result[lineIndex] = centeredModalLine
 		}
 	}

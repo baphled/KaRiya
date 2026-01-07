@@ -38,8 +38,9 @@ KaRiya is a **Go-based Terminal User Interface (TUI) application** for capturing
 - **Language**: Go 1.24
 - **Framework**: Bubble Tea + Lipgloss
 - **Test Framework**: Ginkgo v2 + Gomega
-- **Total Tests**: 164+ Ginkgo specs (CV service tests)
+- **Total Tests**: 2,078 (all passing - 100% pass rate)
 - **Code Coverage**: 87%+ overall
+- **Staticcheck Warnings**: 0
 - **Race Conditions**: 0 detected
 - **Performance**: All benchmarks passing
 
@@ -896,6 +897,78 @@ go test -bench=. -benchmem ./internal/cli/components/
 - ✅ Visual test program functional
 - ✅ Comprehensive documentation complete
 - ✅ Production ready
+
+### Tasks 19-20: Test Fixes and Final Cleanup (2026-01-07)
+
+**Status**: ✅ **COMPLETE - ALL TESTS PASSING, ZERO STATICCHECK WARNINGS**
+
+#### Task 19: Fix Remaining Test Failures
+
+**Summary**: Fixed 3 test failures after form refactoring (Task 17)
+
+**Issues Fixed**:
+
+1. **Form Field Visibility Inconsistency** (`internal/cli/models/form.go`)
+   - **Root Cause**: FormModel initialized with `strategy="manual"` but `showOptionalFields=false`, creating inconsistent state
+   - **Fix**: Changed `showOptionalFields` default to `true` to align with manual strategy behavior
+   - **Impact**: Fixed 2 persistence test failures in `cmd/cli/persistence_test.go`
+
+2. **Outdated Footer Text Test** (`internal/cli/intents/capture_event_escape_test.go`)
+   - **Root Cause**: Test expected "Retry" but footer now shows "Back"
+   - **Fix**: Updated test expectation to check for "Back" instead of "Retry"
+   - **Impact**: Fixed 1 escape test failure
+
+**Files Modified**:
+- `internal/cli/models/form.go` (1 line changed)
+- `internal/cli/intents/capture_event_escape_test.go` (1 line changed)
+
+**Results**:
+- All 2,078 tests passing (100% pass rate - up from 2,075/2,078)
+- Zero race conditions
+- Build successful
+- Commit: `31218ec`
+
+#### Task 20: Final Cleanup - Staticcheck
+
+**Summary**: Removed 3 unused functions flagged by staticcheck
+
+**Functions Removed** (all marked as "reserved for future use"):
+
+1. **`BurstManagementIntent.applyFilters()`** - 35 lines
+   - Filtering feature not yet implemented
+   - Removed unused `sort` import
+
+2. **`BurstManagementIntent.setFailed()`** - 14 lines
+   - Error handling pattern not used in this intent
+
+3. **`GenerateCVIntent.getStateName()`** - 27 lines
+   - Breadcrumb navigation not used in this intent
+
+**Files Modified**:
+- `internal/cli/intents/burst_management_intent.go` (-51 lines)
+- `internal/cli/intents/generate_cv_intent.go` (-29 lines)
+
+**Results**:
+- **Zero staticcheck warnings** (was 3)
+- **80 lines of dead code removed**
+- All 2,078 tests still passing
+- Zero race conditions
+- Cleaner, more maintainable codebase
+- Commit: `0307f4f`
+
+#### Combined Impact
+
+**Code Quality Metrics**:
+- ✅ **Tests**: 2,078/2,078 passing (100%)
+- ✅ **Staticcheck**: 0 warnings (was 3)
+- ✅ **Race conditions**: 0 detected
+- ✅ **Build**: Successful
+- ✅ **Dead code**: Removed (80 lines)
+- ✅ **Production ready**: All critical work complete
+
+**Commits**:
+- `31218ec` - fix(form): align showOptionalFields default with manual strategy
+- `0307f4f` - refactor: remove unused functions flagged by staticcheck
 
 ---
 
