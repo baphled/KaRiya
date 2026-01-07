@@ -20,7 +20,6 @@ type Form struct {
 	fields     []InputField
 	focusIndex int
 	submitted  bool
-	err        error
 	width      int
 }
 
