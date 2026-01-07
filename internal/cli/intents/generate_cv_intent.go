@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -17,12 +16,11 @@ import (
 
 // GenerateCVIntent implements the Intent interface for generating CVs.
 type GenerateCVIntent struct {
-	context   *GenerateCVContext
-	state     *GenerateCVModel
-	active    bool
-	result    *IntentResult[*GenerateCVResult]
-	logger    *logger.Logger
-	cvPreview *models.CVPreviewModel
+	context *GenerateCVContext
+	state   *GenerateCVModel
+	active  bool
+	result  *IntentResult[*GenerateCVResult]
+	logger  *logger.Logger
 }
 
 // NewGenerateCVIntent creates a new GenerateCV intent.

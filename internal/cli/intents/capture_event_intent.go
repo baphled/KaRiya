@@ -8,7 +8,6 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/cli/validation"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -543,37 +542,6 @@ func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *caree
 }
 
 // validateEventWithDetails performs comprehensive validation of the event and provides detailed error messages.
-// This uses the domain validators to check all event fields.
-func (i *CaptureEventIntent) validateEventWithDetails(event *career.CareerEvent) error {
-	if event == nil {
-		return fmt.Errorf("event cannot be nil")
-	}
-
-	// Validate text
-	eventValidator := validation.NewEventValidator()
-	if err := eventValidator.ValidateText(event.Text); err != nil {
-		return err
-	}
-
-	// Validate date
-	if err := eventValidator.ValidateDate(event.Date); err != nil {
-		return err
-	}
-
-	// Validate tags if present
-	if len(event.Tags) > 0 {
-		if err := eventValidator.ValidateTags(event.Tags); err != nil {
-			return err
-		}
-	}
-
-	// Validate using domain model
-	if err := event.Validate(); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 // View renders the intent's current state.
 func (i *CaptureEventIntent) View() string {
@@ -775,12 +743,6 @@ func (i *CaptureEventIntent) GetResult() *IntentResult[*CaptureEventResult] {
 // setCompleted marks the intent as completed with a result.
 func (i *CaptureEventIntent) setCompleted(result *CaptureEventResult) {
 	i.result = NewCompletedResult(result)
-	i.active = false
-}
-
-// setPartial marks the intent as partially completed with a result.
-func (i *CaptureEventIntent) setPartial(result *CaptureEventResult, code, message string) {
-	i.result = NewPartialResult(result, code, message)
 	i.active = false
 }
 

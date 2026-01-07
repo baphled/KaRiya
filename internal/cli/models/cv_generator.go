@@ -19,7 +19,6 @@ type CVGeneratorModel struct {
 	config      *career.CVConfig
 	generating  bool
 	generatedCV *career.CVView
-	err         error
 	headerModel components.HeaderModel
 }
 

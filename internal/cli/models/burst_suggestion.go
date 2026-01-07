@@ -6,7 +6,6 @@ import (
 	"math"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -53,7 +52,6 @@ type BurstSuggestionModel struct {
 	relatedEvents map[int][]*career.CareerEvent // Cache of related events
 	width         int
 	height        int
-	helpFooter    components.HelpFooterModel // Help footer
 }
 
 // NewBurstSuggestionModel creates a new burst suggestion model
