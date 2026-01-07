@@ -359,35 +359,6 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// getStateName returns a human-readable name for the current state.
-// Reserved for breadcrumb navigation - currently unused (GenerateCV doesn't use breadcrumbs).
-func (i *GenerateCVIntent) getStateName() string {
-	switch i.state.currentState {
-	case GenerateCVStateSelectProfile:
-		return "Select Profile"
-	case GenerateCVStateSelectAudience:
-		return "Select Audience"
-	case GenerateCVStateGenerating:
-		return "Generating"
-	case GenerateCVStatePreview:
-		return "Preview"
-	case GenerateCVStateReview:
-		return "Review"
-	case GenerateCVStateConfirm:
-		return "Confirm"
-	case GenerateCVStateExportSelectFormat:
-		return "Export Format"
-	case GenerateCVStateExportSelectLocation:
-		return "Export Location"
-	case GenerateCVStateExporting:
-		return "Exporting"
-	case GenerateCVStateExportComplete:
-		return "Complete"
-	default:
-		return string(i.state.currentState)
-	}
-}
-
 // getStateContent returns the content for the current state.
 func (i *GenerateCVIntent) getStateContent() string {
 	switch i.state.currentState {
