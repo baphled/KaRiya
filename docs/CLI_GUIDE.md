@@ -35,8 +35,8 @@ go build -o kariya-cli ./cmd/cli
 # Start with custom database path
 ./kariya-cli --db /path/to/events.db
 
-# Start in specific capture mode
-./kariya-cli --mode timeline
+# Start with specific capture strategy
+./kariya-cli --strategy quick
 
 # Show recent events on startup
 ./kariya-cli --list
@@ -61,49 +61,59 @@ go build -o kariya-cli ./cmd/cli
 
 ### 1. Event Capture
 
-Capture career events in three ways:
+Capture career events using two flexible strategies:
 
-#### Timeline Journaling
-Use this to log events as they happen (limited to last 30 days)
-
-```bash
-./kariya-cli --mode timeline
-```
-
-**Best for**: Real-time event logging, building career journals
-
-**Constraints**:
-- Event dates must be within last 30 days
-- Recent captures are fresher in memory
-- Good for immediate reflection
-
-#### CV Backfill
-Import historical events from your CV or career history
+#### Quick Capture
+Rapid event logging with minimal fields for fast entry
 
 ```bash
-./kariya-cli --mode backfill
+./kariya-cli --strategy quick
 ```
 
-**Best for**: Building comprehensive career history, importing from CV
-
-**Advantages**:
-- Accepts any date in the past
-- No time constraints
-- Perfect for filling gaps in career timeline
-
-#### Manual Entry
-Flexible entry for any event at any time
-
-```bash
-./kariya-cli --mode manual
-```
-
-**Best for**: Flexible event entry, capturing events from any time period
+**Best for**: Daily journaling, capturing events as they happen
 
 **Features**:
-- No date restrictions
-- Can be used as default capture mode
-- Quick metadata enrichment after capture
+- Minimal required fields (Event text + Date)
+- Optional fields hidden by default
+- Press 't' to toggle additional fields (Company, Project, Tags, Categories)
+- Fast workflow for frequent captures
+
+**Example workflow**:
+1. Enter event description
+2. Specify date (defaults to today)
+3. Press Enter to save
+4. Optionally press 't' to add Company/Project/Tags before saving
+
+#### Manual Capture
+Detailed event entry with all fields visible
+
+```bash
+./kariya-cli --strategy manual
+```
+
+**Best for**: Importing historical events, detailed entry, building comprehensive career history
+
+**Features**:
+- All fields visible by default (Event, Date, Company, Project, Tags, Categories)
+- No date restrictions - enter events from any time period
+- Press 't' to toggle optional field visibility if desired
+- Full control over event metadata
+- Ideal for CV backfill and retrospective journaling
+
+**Example workflow**:
+1. Fill in event description
+2. Specify date (any date, past or present)
+3. Add Company and Project details
+4. Select relevant Tags and Categories
+5. Press Enter to save
+
+### Field Toggle Feature
+
+Both strategies support the 't' key to toggle optional field visibility:
+- **Quick Strategy**: Press 't' to show Company, Project, Tags, Categories
+- **Manual Strategy**: Press 't' to hide optional fields for faster entry
+- Event text and Date fields are always visible
+- Toggle state persists during the current form session
 
 ### 2. Metadata Review & Enrichment
 
@@ -395,14 +405,45 @@ Quality indicators show:
 6. **Regular Backups**: Periodically backup your database file
 7. **CSV Templates**: Create reusable CSV templates for regular import workflows
 
+## Migration from Old Capture Modes
+
+If you're familiar with the old 3-mode system, here's how it maps to the new strategy system:
+
+| Old Mode | New Strategy | Notes |
+|----------|--------------|-------|
+| Timeline Journaling | Quick Capture | Same rapid entry, no date restrictions anymore |
+| CV Backfill | Manual Capture | All fields visible, import historical events |
+| Manual Entry | Manual Capture | Flexible field visibility with 't' toggle |
+
+### Key Improvements
+
+- **Simpler**: 2 strategies instead of 3 modes - easier to choose
+- **Flexible**: Toggle fields on/off in both strategies with 't' key
+- **Consistent**: Same field behavior across strategies
+- **No date restrictions**: Enter events from any date in either strategy (no more 30-day limit)
+- **User control**: You decide which fields to show/hide
+
+### Updated CLI Flags
+
+```bash
+# Old way
+./kariya-cli --mode timeline
+./kariya-cli --mode backfill
+./kariya-cli --mode manual
+
+# New way
+./kariya-cli --strategy quick
+./kariya-cli --strategy manual
+```
+
 ## Troubleshooting
 
 ### Issue: Can't capture events
 
 **Check**:
-- Ensure you're in one of the three capture modes (Timeline, Backfill, Manual)
-- Timeline mode limits dates to last 30 days
-- Use CV Backfill or Manual Entry for older dates
+- Ensure required fields are filled (Event text is always required)
+- Both Quick and Manual strategies accept any date (past or present)
+- If optional fields are hidden, press 't' to toggle them visible
 
 ### Issue: Metadata changes not saved
 
