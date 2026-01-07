@@ -7,6 +7,17 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
+// CaptureStrategy defines how the event should be captured.
+type CaptureStrategy string
+
+const (
+	// StrategyQuick captures only required fields (event text), date defaults to today
+	StrategyQuick CaptureStrategy = "quick"
+
+	// StrategyManual shows all fields with optional field toggle
+	StrategyManual CaptureStrategy = "manual"
+)
+
 // CaptureEventContext is the minimal context passed to CaptureEvent intent.
 // It contains only what's necessary to start the intent.
 type CaptureEventContext struct {
@@ -116,6 +127,15 @@ type CaptureEventModel struct {
 
 	// error tracks any errors during the intent.
 	error *IntentError
+
+	// selectedStrategyIndex tracks the selected strategy in the choose strategy screen (0=Quick, 1=Manual)
+	selectedStrategyIndex int
+
+	// strategy is the chosen capture strategy
+	strategy CaptureStrategy
+
+	// showOptionalFields tracks whether optional fields are visible (for manual mode toggle persistence)
+	showOptionalFields bool
 }
 
 // CaptureEventStates for navigation.
