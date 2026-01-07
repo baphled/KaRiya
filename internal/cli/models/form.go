@@ -98,8 +98,8 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		helpFooter:         components.NewHelpFooter("form", 80),
 		header:             components.NewHeader("Capture Career Event", 80),
 		footer:             components.NewFooter(80),
-		strategy:           "manual", // Default to manual mode (show all fields)
-		showOptionalFields: true,     // Show optional fields by default
+		strategy:           "manual", // Default to manual mode
+		showOptionalFields: false,    // Hide optional fields by default (toggle with Ctrl+O)
 	}
 }
 
