@@ -45,7 +45,7 @@ func NewCVExportSuccessModel(
 		selectedIdx:       0,
 		options:           []string{"View Export Details", "Back to Preview", "Back to Home"},
 	}
-	m.header.SetBreadcrumbs(m.breadcrumbs)
+	// Note: breadcrumbs now handled by StandardView
 	return m
 }
 

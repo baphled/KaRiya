@@ -542,9 +542,7 @@ func (m *MetadataReviewModel) View() string {
 	// Update list container with current state
 	m.listContainer.SetTable(m.table).
 		SetDimensions(m.width, m.height).
-		SetEmptyStateMessage("No events found").
-		SetHelpFooterKey("metadata_review").
-		SetBreadcrumbs(m.breadcrumbs)
+		SetEmptyStateMessage("No events found")
 
 	// Set pagination info
 	paginationText := m.pagination.GetPaginationInfo("events")
@@ -820,7 +818,7 @@ func (m *MetadataReviewModel) GetOriginalEventID(eventID string) string {
 // SetBreadcrumbs sets breadcrumb trail for display in header
 func (m *MetadataReviewModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
-	m.header.SetBreadcrumbs(crumbs)
+	// Note: header.SetBreadcrumbs removed - breadcrumbs now handled by StandardView
 }
 
 // NextPage implements ListItemCallbacks interface - moves to the next page

@@ -58,10 +58,10 @@ var _ = Describe("App Menu Integration Tests", func() {
 			model = modelInterface.(*app.Model)
 			// Generate view
 			output := model.View()
-			menuItems := model.GetMenuItems()
-			// After StandardView migration, breadcrumbs show "Main Menu > Generate CV > ..."
-			// so the menu item name WILL appear in breadcrumbs - this is expected behavior
-			Expect(output).To(ContainSubstring(menuItems[2].Name)) // Intent name appears in breadcrumbs
+			// After StandardView migration, breadcrumbs show "Main Menu ▸ ... ▸ Select Profile"
+			// Verify we entered the Generate CV intent by checking for its first state screen
+			Expect(output).To(ContainSubstring("Select Profile")) // GenerateCV intent's first screen
+			Expect(output).To(ContainSubstring("Main Menu"))      // Main menu in breadcrumbs
 		})
 	})
 

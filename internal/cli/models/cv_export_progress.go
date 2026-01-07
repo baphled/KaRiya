@@ -42,7 +42,7 @@ func NewCVExportProgressModel(
 		spinnerIdx:        0,
 		done:              false,
 	}
-	m.header.SetBreadcrumbs(m.breadcrumbs)
+	// Note: breadcrumbs now handled by StandardView
 	return m
 }
 

@@ -700,8 +700,7 @@ func (i *CaptureEventIntent) viewChooseStrategy() string {
 	sb.WriteString("│  q) Cancel                                     │\n")
 	sb.WriteString("│                                                │\n")
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nSelect strategy (1-3) | Esc: Cancel | m: Main menu | q: Quit\n")
-
+	// Footer now handled by StandardView
 	return sb.String()
 }
 
@@ -711,10 +710,9 @@ func (i *CaptureEventIntent) viewCaptureForm() string {
 	if i.state.captureForm == nil {
 		return "Error: Form not initialized"
 	}
-	// Add section heading and instructions as expected by the tests
+	// Add section heading (footer now handled by StandardView)
 	title := "=== Capture Event Details ===\n\n"
-	instructions := "Tab: Next | Shift+Tab: Previous | Ctrl+S/Enter: Submit | Esc: Back | m: Main menu\n\n"
-	return title + instructions + i.state.captureForm.View()
+	return title + i.state.captureForm.View()
 }
 
 // viewReviewInferredEvent renders the review UI for inferred bursts and facts.
@@ -765,8 +763,7 @@ func (i *CaptureEventIntent) viewReviewInferredEvent() string {
 	}
 	sb.WriteString("│                                                │\n")
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nCtrl+S: Submit | Esc: Back | e: Edit | m: Main menu\n")
-
+	// Footer now handled by StandardView
 	return sb.String()
 }
 
@@ -794,8 +791,7 @@ func (i *CaptureEventIntent) viewSubmit() string {
 	sb.WriteString("│ Ready to submit? Press Enter to confirm.       │\n")
 	sb.WriteString("│                                                │\n")
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
-	sb.WriteString("\nEnter: Confirm | Esc: Back | m: Main menu | r: Retry\n")
-
+	// Footer now handled by StandardView
 	return sb.String()
 }
 

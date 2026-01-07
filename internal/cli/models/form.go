@@ -956,5 +956,5 @@ func (m *FormModel) renderFormContentWithContainers() string {
 
 func (m *FormModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
-	m.header.SetBreadcrumbs(crumbs)
+	// Note: header.SetBreadcrumbs removed - breadcrumbs now handled by StandardView
 }
