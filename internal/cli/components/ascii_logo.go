@@ -12,15 +12,13 @@ import (
 
 // ASCIILogo represents the KaRiya logo with optional animation
 type ASCIILogo struct {
-	animated          bool
-	fadeProgress      float64 // 0.0 to 1.0
-	width             int
-	centered          bool
-	externalCentering bool // Skip internal centering when true
-	tagline           string
-	showTagline       bool
-	version           string
-	showVersion       bool
+	animated     bool
+	fadeProgress float64 // 0.0 to 1.0
+	width        int
+	tagline      string
+	showTagline  bool
+	version      string
+	showVersion  bool
 }
 
 const (
@@ -47,7 +45,6 @@ func NewASCIILogo(animated bool, width int) *ASCIILogo {
 		animated:     animated,
 		fadeProgress: 0.0,
 		width:        width,
-		centered:     true,
 		tagline:      "Career Event Management System",
 		showTagline:  true,
 		version:      "v1.0.0",
@@ -58,11 +55,6 @@ func NewASCIILogo(animated bool, width int) *ASCIILogo {
 // SetWidth sets the width for centering calculations
 func (l *ASCIILogo) SetWidth(width int) {
 	l.width = width
-}
-
-// SetCentered sets whether the logo should be centered
-func (l *ASCIILogo) SetCentered(centered bool) {
-	l.centered = centered
 }
 
 // SetTagline sets the tagline text
@@ -83,11 +75,6 @@ func (l *ASCIILogo) SetVersion(version string) {
 // ShowVersion controls version visibility
 func (l *ASCIILogo) ShowVersion(show bool) {
 	l.showVersion = show
-}
-
-// SetExternalCentering configures whether centering is handled externally
-func (l *ASCIILogo) SetExternalCentering(external bool) {
-	l.externalCentering = external
 }
 
 // Init initializes the logo component
@@ -145,12 +132,6 @@ func (l *ASCIILogo) render() string {
 
 	for i, line := range logoLines {
 		styledLine := l.applyFadeStyle(line)
-
-		// Only center internally if not handled externally
-		if l.centered && l.width > 0 && !l.externalCentering {
-			styledLine = styles.CenterHorizontal(styledLine, l.width)
-		}
-
 		styledLines[i] = styledLine
 	}
 
@@ -164,9 +145,6 @@ func (l *ASCIILogo) render() string {
 			Faint(l.fadeProgress < 1.0)
 
 		taglineText := taglineStyle.Render(l.tagline)
-		if l.centered && l.width > 0 && !l.externalCentering {
-			taglineText = styles.CenterHorizontal(taglineText, l.width)
-		}
 		parts = append(parts, "", taglineText)
 	}
 
@@ -178,9 +156,6 @@ func (l *ASCIILogo) render() string {
 			Faint(l.fadeProgress < 1.0)
 
 		versionText := versionStyle.Render(l.version)
-		if l.centered && l.width > 0 && !l.externalCentering {
-			versionText = styles.CenterHorizontal(versionText, l.width)
-		}
 		parts = append(parts, versionText)
 	}
 
