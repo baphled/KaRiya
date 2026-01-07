@@ -145,7 +145,8 @@ func (c *CenteredContainer) Render() string {
 
 	// Apply border if enabled
 	if c.showBorder {
-		borderStyle := c.borderStyle.Copy().
+		// Note: lipgloss styles are immutable, assignment is sufficient for copy
+		borderStyle := c.borderStyle.
 			Width(c.width - 4).
 			BorderStyle(lipgloss.RoundedBorder()).
 			BorderForeground(styles.ColorBorder)

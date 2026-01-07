@@ -120,7 +120,6 @@ type BurstManagementIntentModel struct {
 	loadingFacts  bool
 
 	// Edit and delete state
-	burstEditor tea.Model
 	deleteError error
 	editError   error
 
@@ -704,6 +703,7 @@ func (i *BurstManagementIntent) updateExtractingFactsView(msg tea.Msg) tea.Cmd {
 }
 
 // applyFilters filters the bursts based on current filter state.
+// Reserved for future filtering feature - currently unused.
 func (i *BurstManagementIntent) applyFilters() {
 	filtered := make([]*domain.Burst, 0)
 
@@ -763,9 +763,9 @@ func (i *BurstManagementIntent) View() string {
 
 	// Handle errors
 	if i.state.deleteError != nil {
-		i.SetError(fmt.Errorf("Failed to delete burst: %w", i.state.deleteError))
+		i.SetError(fmt.Errorf("failed to delete burst: %w", i.state.deleteError))
 	} else if i.state.confirmError != nil {
-		i.SetError(fmt.Errorf("Failed to confirm burst: %w", i.state.confirmError))
+		i.SetError(fmt.Errorf("failed to confirm burst: %w", i.state.confirmError))
 	}
 
 	// Get content for current state
@@ -1337,6 +1337,8 @@ func (i *BurstManagementIntent) setCancelled() {
 	i.active = false
 }
 
+// setFailed sets the intent result to failed state.
+// Reserved for future error handling - currently unused.
 func (i *BurstManagementIntent) setFailed(code, message string, cause error) {
 	i.result = &IntentResult[*BurstManagementResult]{
 		Status: Failed,

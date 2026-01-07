@@ -72,7 +72,7 @@ func (m *ImportWizardModel) View() string {
 	// Handle errors (but not during complete state - we show them in content there)
 	if len(m.data.Errors) > 0 && m.data.CurrentState != ImportCompleteState && m.data.CurrentState != ImportProgressState {
 		// Show first error as modal
-		m.SetError(fmt.Errorf("Import error: %s", m.data.Errors[0]))
+		m.SetError(fmt.Errorf("import error: %s", m.data.Errors[0]))
 	}
 
 	// Get content for current state

@@ -192,12 +192,9 @@ func TestStandardView_Render_WithBreadcrumbs(t *testing.T) {
 
 	output := view.Render()
 
-	if !strings.Contains(output, "Home") || !strings.Contains(output, "Settings") {
-		t.Error("Expected output to contain breadcrumbs 'Home' and 'Settings'")
-	}
-	// BreadcrumbBar uses ▸ separator
-	if !strings.Contains(output, "▸") {
-		t.Error("Expected output to contain breadcrumb separator '▸'")
+	// Breadcrumbs use "  ▸  " separator (with spaces)
+	if !strings.Contains(output, "▸") || !strings.Contains(output, "Home") || !strings.Contains(output, "Settings") {
+		t.Error("Expected output to contain breadcrumbs with '▸' separator")
 	}
 }
 
@@ -245,7 +242,7 @@ func TestStandardView_BuilderChaining(t *testing.T) {
 		SetUseFullWidth(true)
 
 	if view == nil {
-		t.Error("Expected chained builder to return non-nil view")
+		t.Fatal("Expected chained builder to return non-nil view")
 	}
 
 	// Verify all settings were applied
