@@ -126,6 +126,40 @@ Releases are **automatically created** when you push to `main`:
 - **Full Guide**: [docs/CI_CD_PIPELINE.md](docs/CI_CD_PIPELINE.md)
 - **Quick Reference**: [docs/CI_CD_QUICK_REF.md](docs/CI_CD_QUICK_REF.md)
 
+### Running CI Checks Locally
+
+**Before pushing**, run all CI checks locally to ensure they pass:
+
+```bash
+# Install all CI tools (one-time setup)
+make ci-install-tools
+
+# Run ALL CI checks (mirrors GitHub Actions)
+make ci-local
+```
+
+This runs:
+- ✅ Commitlint validation
+- ✅ AI attribution check  
+- ✅ Code formatting (go fmt)
+- ✅ Static analysis (go vet, staticcheck)
+- ✅ Tests with race detector & coverage
+- ✅ Multi-platform builds
+- ✅ Security scanning (gosec)
+
+**Individual checks**:
+```bash
+make fmt          # Format code
+make vet          # Static analysis
+make staticcheck  # Advanced linting
+make gosec        # Security scan
+make test         # Run tests
+```
+
+**Documentation**:
+- [CI Checks Summary](docs/CI_CHECKS_SUMMARY.md) - Complete CI/local command mapping
+- [CI Local Guide](docs/CI_LOCAL_GUIDE.md) - Detailed guide
+
 ### Validation
 
 ```bash

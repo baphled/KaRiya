@@ -31,7 +31,16 @@
         "logger",
         "classification",
         "deps",
-        "release"
+        "release",
+        "lint",
+        "security",
+        "workflow",
+        "config",
+        "docs",
+        "tests",
+        "intents",
+        "models",
+        "components"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],
