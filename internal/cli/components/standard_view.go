@@ -41,7 +41,13 @@ type StandardView struct {
 }
 
 // NewStandardView creates a new StandardView with default settings
+// If info is nil, uses sensible defaults (120x40)
 func NewStandardView(info *terminal.Info) *StandardView {
+	// Handle nil terminal info gracefully with defaults
+	if info == nil {
+		info = &terminal.Info{Width: 120, Height: 40}
+	}
+
 	return &StandardView{
 		ShowLogo:            false, // Logo must be explicitly set
 		LogoSpacing:         2,

@@ -278,3 +278,210 @@ func TestStandardView_Render_EmptyContent(t *testing.T) {
 	// This is acceptable behavior
 	_ = output // No assertion needed - just ensure it doesn't panic
 }
+
+// Edge case tests added for Task 16 Phase 2.1
+
+func TestStandardView_EmptyContentHandling(t *testing.T) {
+	termInfo := &terminal.Info{Width: 120, Height: 40}
+	view := NewStandardView(termInfo).
+		WithContent("").
+		WithHelp("Press q to quit")
+
+	output := view.Render()
+	if output == "" {
+		t.Error("Expected non-empty output even with empty content")
+	}
+	// Should still show help text
+	if !strings.Contains(output, "Press q to quit") {
+		t.Error("Expected help text to be visible with empty content")
+	}
+}
+
+func TestStandardView_VeryLongContent(t *testing.T) {
+	termInfo := &terminal.Info{Width: 120, Height: 40}
+
+	// Create content that exceeds terminal height
+	longContent := strings.Repeat("Line of content\n", 100)
+	view := NewStandardView(termInfo).
+		WithContent(longContent).
+		WithHelp("Help text")
+
+	output := view.Render()
+	if output == "" {
+		t.Error("Expected output even with very long content")
+	}
+
+	// Should not panic or crash
+	if len(output) == 0 {
+		t.Error("Expected rendered output for long content")
+	}
+}
+
+func TestStandardView_TerminalTooSmallForLogo(t *testing.T) {
+	// Terminal smaller than logo height
+	termInfo := &terminal.Info{Width: 80, Height: 10}
+	logo := NewASCIILogo(false, termInfo.Width)
+	view := NewStandardView(termInfo).
+		WithLogo(logo, 2).
+		WithContent("Test content").
+		WithHelp("Help")
+
+	output := view.Render()
+
+	// Should handle gracefully without panic
+	if output == "" {
+		t.Error("Expected output even with small terminal")
+	}
+}
+
+func TestStandardView_NilTerminalInfo(t *testing.T) {
+	// Test nil terminal info handling
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Expected graceful handling of nil terminal info, got panic: %v", r)
+		}
+	}()
+
+	view := NewStandardView(nil)
+	if view == nil {
+		t.Fatal("Expected NewStandardView to return non-nil view even with nil terminal info")
+	}
+
+	// Should use defaults when terminal info is nil
+	output := view.WithContent("Test").Render()
+	_ = output // Should not panic
+}
+
+func TestStandardView_EmptyBreadcrumbs(t *testing.T) {
+	termInfo := &terminal.Info{Width: 120, Height: 40}
+	view := NewStandardView(termInfo).
+		WithBreadcrumbs(). // Empty breadcrumbs
+		WithContent("Test content")
+
+	output := view.Render()
+
+	// Should handle empty breadcrumbs gracefully
+	if output == "" {
+		t.Error("Expected output with empty breadcrumbs")
+	}
+}
+
+func TestStandardView_VeryLongBreadcrumbs(t *testing.T) {
+	termInfo := &terminal.Info{Width: 80, Height: 40}
+	view := NewStandardView(termInfo).
+		WithBreadcrumbs(
+			"Very Long Menu Name",
+			"Another Very Long Submenu Name",
+			"Yet Another Extremely Long Section Name",
+			"Final Destination With Long Title",
+		).
+		WithContent("Test content")
+
+	output := view.Render()
+
+	// Should handle long breadcrumbs (truncation is implementation detail)
+	if output == "" {
+		t.Error("Expected output with long breadcrumbs")
+	}
+}
+
+func TestStandardView_EmptyHelpText(t *testing.T) {
+	termInfo := &terminal.Info{Width: 120, Height: 40}
+	view := NewStandardView(termInfo).
+		WithContent("Test content").
+		WithHelp("") // Empty help text
+
+	output := view.Render()
+
+	// Should handle empty help text gracefully
+	if output == "" {
+		t.Error("Expected output with empty help text")
+	}
+}
+
+func TestStandardView_FooterSeparatorDifferentWidths(t *testing.T) {
+	widths := []int{40, 80, 120, 160, 200}
+
+	for _, width := range widths {
+		termInfo := &terminal.Info{Width: width, Height: 40}
+		view := NewStandardView(termInfo).
+			WithContent("Test").
+			WithHelp("Help").
+			WithFooterSeparator(true)
+
+		output := view.Render()
+
+		if output == "" {
+			t.Errorf("Expected output for terminal width %d", width)
+		}
+
+		// Should contain separator
+		if !strings.Contains(output, "─") {
+			t.Errorf("Expected footer separator for width %d", width)
+		}
+	}
+}
+
+func TestStandardView_TerminalResize(t *testing.T) {
+	// Start with one size
+	termInfo := &terminal.Info{Width: 80, Height: 24}
+	view := NewStandardView(termInfo).
+		WithContent("Test content").
+		WithHelp("Help text")
+
+	output1 := view.Render()
+
+	// Simulate resize by creating new view with new terminal info
+	termInfo2 := &terminal.Info{Width: 120, Height: 40}
+	view2 := NewStandardView(termInfo2).
+		WithContent("Test content").
+		WithHelp("Help text")
+
+	output2 := view2.Render()
+
+	// Both should produce valid output
+	if output1 == "" {
+		t.Error("Expected output for small terminal")
+	}
+	if output2 == "" {
+		t.Error("Expected output for large terminal")
+	}
+}
+
+func TestStandardView_MinimalTerminal(t *testing.T) {
+	// Minimum viable terminal size (80x24)
+	termInfo := &terminal.Info{Width: 80, Height: 24}
+	logo := NewASCIILogo(false, termInfo.Width)
+	view := NewStandardView(termInfo).
+		WithLogo(logo, 2).
+		WithBreadcrumbs("Home", "Settings").
+		WithContent("Test content").
+		WithHelp("q Quit").
+		WithFooterSeparator(true)
+
+	output := view.Render()
+
+	// Should handle minimal terminal gracefully
+	if output == "" {
+		t.Error("Expected output for minimal terminal size")
+	}
+}
+
+func TestStandardView_MaximalTerminal(t *testing.T) {
+	// Very large terminal
+	termInfo := &terminal.Info{Width: 240, Height: 80}
+	logo := NewASCIILogo(false, termInfo.Width)
+	view := NewStandardView(termInfo).
+		WithLogo(logo, 2).
+		WithBreadcrumbs("Home", "Settings", "Advanced").
+		WithContent("Test content").
+		WithHelp("q Quit  h Help  m Menu").
+		WithFooterSeparator(true)
+
+	output := view.Render()
+
+	// Should handle large terminal gracefully
+	if output == "" {
+		t.Error("Expected output for large terminal size")
+	}
+}
