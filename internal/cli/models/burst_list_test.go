@@ -90,11 +90,8 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		gomega.Expect(output).To(gomega.ContainSubstring("Showing"))
 	})
 
-	ginkgo.It("should be case-insensitive", func() {
-		model.SetBursts(testBursts)
-		output := model.View()
-		gomega.Expect(output).To(gomega.ContainSubstring("Team Leadership"))
-	})
+	// Note: Filtering tests removed - competency-based filtering was removed in refactoring
+	// See commit: refactor(burst): remove competency focus from burst management
 
 	ginkgo.It("should sort by event count", func() {
 		model.SetBursts(testBursts)
@@ -169,6 +166,8 @@ var _ = ginkgo.Describe("BurstListModel", func() {
 		output := model.View()
 		gomega.Expect(len(output) > 0).To(gomega.BeTrue())
 	})
+
+	// Note: Filter test removed - competency-based filtering no longer exists
 
 	ginkgo.It("should update size on resize", func() {
 		msg := tea.WindowSizeMsg{Width: 200, Height: 40}

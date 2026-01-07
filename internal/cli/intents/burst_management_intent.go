@@ -2,6 +2,7 @@ package intents
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -65,6 +66,8 @@ type FactExtractionCompleteMsg struct {
 // - Selecting and viewing burst details
 // - Returning the selected burst or cancelling
 type BurstManagementIntent struct {
+	*BaseIntent
+
 	// context is the input context passed to the intent.
 	context *BurstManagementContext
 
@@ -117,6 +120,7 @@ type BurstManagementIntentModel struct {
 	loadingFacts  bool
 
 	// Edit and delete state
+	burstEditor tea.Model
 	deleteError error
 	editError   error
 
@@ -185,7 +189,8 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 	t.SetStyles(s)
 
 	intent := &BurstManagementIntent{
-		context: context,
+		BaseIntent: NewBaseIntent(),
+		context:    context,
 		state: &BurstManagementIntentModel{
 			context:        context,
 			currentState:   BurstStateList,
@@ -698,35 +703,183 @@ func (i *BurstManagementIntent) updateExtractingFactsView(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// View renders the intent's current state.
+// applyFilters filters the bursts based on current filter state.
+func (i *BurstManagementIntent) applyFilters() {
+	filtered := make([]*domain.Burst, 0)
+
+	for _, burst := range i.context.Bursts {
+		// Apply search text filter.
+		if i.state.searchText != "" {
+			if !strings.Contains(strings.ToLower(burst.Name), strings.ToLower(i.state.searchText)) &&
+				!strings.Contains(strings.ToLower(burst.Description), strings.ToLower(i.state.searchText)) {
+				continue
+			}
+		}
+
+		filtered = append(filtered, burst)
+	}
+
+	// Apply sorting.
+	sort.Slice(filtered, func(a, b int) bool {
+		switch i.state.sortBy {
+		case "name":
+			if i.state.sortOrder == "asc" {
+				return filtered[a].Name < filtered[b].Name
+			}
+			return filtered[a].Name > filtered[b].Name
+
+		default: // date
+			if i.state.sortOrder == "asc" {
+				return filtered[a].CreatedAt.Before(filtered[b].CreatedAt)
+			}
+			return filtered[a].CreatedAt.After(filtered[b].CreatedAt)
+		}
+	})
+
+	i.state.filteredBursts = filtered
+}
+
+// View renders the intent's current state using StandardView.
 func (i *BurstManagementIntent) View() string {
+	if !i.active {
+		return "BurstManagement intent is not active"
+	}
+
+	// Create standard view with dynamic breadcrumbs
+	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, i.getBreadcrumbs()...)
+
+	// Handle loading states with modals
+	if i.state.loadingEvents {
+		i.SetLoading("Loading burst events...")
+	} else if i.state.loadingFacts {
+		i.SetLoading("Loading burst facts...")
+	} else if i.state.extractingFacts {
+		message := "Extracting facts from burst events..."
+		if i.state.extractedFactsCount > 0 {
+			message = fmt.Sprintf("Extracted %d facts so far...", i.state.extractedFactsCount)
+		}
+		i.SetLoading(message)
+	}
+
+	// Handle errors
+	if i.state.deleteError != nil {
+		i.SetError(fmt.Errorf("Failed to delete burst: %w", i.state.deleteError))
+	} else if i.state.confirmError != nil {
+		i.SetError(fmt.Errorf("Failed to confirm burst: %w", i.state.confirmError))
+	}
+
+	// Get content for current state
+	content := i.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := i.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
+}
+
+// Helper methods for StandardView
+
+func (i *BurstManagementIntent) getBreadcrumbs() []string {
+	breadcrumbs := []string{"Main Menu", "Manage Bursts"}
+
+	// Add burst name for detail states
+	if i.state.selectedBurst != nil {
+		switch i.state.currentState {
+		case BurstStateDetail, BurstStateEdit, BurstStateDeleteConfirm, BurstStateConfirm:
+			breadcrumbs = append(breadcrumbs, i.state.selectedBurst.Name)
+		case BurstStateDetailEvents:
+			breadcrumbs = append(breadcrumbs, i.state.selectedBurst.Name, "Events")
+		case BurstStateDetailFacts:
+			breadcrumbs = append(breadcrumbs, i.state.selectedBurst.Name, "Facts")
+		case BurstStateExtractingFacts:
+			breadcrumbs = append(breadcrumbs, i.state.selectedBurst.Name, "Extracting Facts")
+		}
+	}
+
+	return breadcrumbs
+}
+
+func (i *BurstManagementIntent) getStateContent() string {
 	switch i.state.currentState {
 	case BurstStateList:
 		return i.viewList()
-
 	case BurstStateDetail:
 		return i.viewDetail()
-
 	case BurstStateDetailEvents:
 		return i.viewDetailEvents()
-
 	case BurstStateDetailFacts:
 		return i.viewDetailFacts()
-
 	case BurstStateEdit:
 		return i.viewEdit()
-
 	case BurstStateDeleteConfirm:
 		return i.viewDeleteConfirm()
-
 	case BurstStateConfirm:
 		return i.viewConfirm()
-
 	case BurstStateExtractingFacts:
 		return i.viewExtractingFacts()
 	}
-
 	return ""
+}
+
+func (i *BurstManagementIntent) getContextHelp() string {
+	base := "q Quit  m Main Menu"
+
+	switch i.state.currentState {
+	case BurstStateList:
+		return CombineFooters(
+			ListFooter(),
+			"Enter View details",
+			base,
+		)
+	case BurstStateDetail:
+		return CombineFooters(
+			DetailViewFooter(),
+			"e View events  f View facts  x Edit  d Delete  c Confirm",
+			"Esc Back",
+			base,
+		)
+	case BurstStateDetailEvents, BurstStateDetailFacts:
+		return CombineFooters(
+			DetailViewFooter(),
+			"Esc Back",
+			base,
+		)
+	case BurstStateEdit:
+		return CombineFooters(
+			FormFooter(),
+			"Ctrl+S Save",
+			"Esc Cancel",
+			base,
+		)
+	case BurstStateDeleteConfirm:
+		return CombineFooters(
+			"y/Enter Confirm deletion",
+			"n/Esc Cancel",
+			base,
+		)
+	case BurstStateConfirm:
+		if i.state.extractionComplete {
+			return CombineFooters(
+				"Enter Continue",
+				"Esc Back",
+				base,
+			)
+		}
+		return CombineFooters(
+			"y/Enter Confirm burst",
+			"n/Esc Cancel",
+			base,
+		)
+	case BurstStateExtractingFacts:
+		return CombineFooters(
+			"Please wait...",
+			base,
+		)
+	default:
+		return base
+	}
 }
 
 // viewList renders the burst list view with all bursts as a table.
@@ -1235,6 +1388,18 @@ func (i *BurstManagementIntent) setCompleted() {
 func (i *BurstManagementIntent) setCancelled() {
 	i.result = &IntentResult[*BurstManagementResult]{
 		Status: Cancelled,
+	}
+	i.active = false
+}
+
+func (i *BurstManagementIntent) setFailed(code, message string, cause error) {
+	i.result = &IntentResult[*BurstManagementResult]{
+		Status: Failed,
+		Error: &IntentError{
+			Code:    code,
+			Message: message,
+			Cause:   cause,
+		},
 	}
 	i.active = false
 }

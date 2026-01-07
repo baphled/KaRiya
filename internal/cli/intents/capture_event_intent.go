@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -59,6 +60,9 @@ type SubmitErrorMsg struct {
 // - Reviewing and refining inferred bursts and facts
 // - Submitting the final event
 type CaptureEventIntent struct {
+	// Embed BaseIntent for terminal awareness, logo, and state management
+	*BaseIntent
+
 	// context is the input context passed to the intent.
 	context *CaptureEventContext
 
@@ -74,6 +78,9 @@ type CaptureEventIntent struct {
 	// eventService is the CLI service for interacting with career events.
 	// Injected via context for dependency management.
 	eventService *service.CLIEventService
+
+	// loadingRotator rotates through capture-specific loading messages
+	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewCaptureEventIntent creates a new CaptureEvent intent.
@@ -86,8 +93,20 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 	// Create the form model for capturing event details
 	formModel := models.NewFormModel(context.CLIEventService)
 
+	// Create BaseIntent for terminal awareness and state management
+	base := NewBaseIntent()
+
+	// Create loading message rotator with capture-specific messages
+	loadingRotator := components.NewLoadingMessageRotator([]string{
+		"📝 Capturing event details...",
+		"🔍 Analyzing event information...",
+		"💡 Extracting key insights...",
+		"✨ Preparing your event...",
+	}, 2*time.Second)
+
 	// Capture event intent created successfully
 	return &CaptureEventIntent{
+		BaseIntent:   base,
 		context:      context,
 		eventService: context.CLIEventService,
 		state: &CaptureEventModel{
@@ -104,7 +123,8 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 				RejectedFields: make(map[string]string),
 			},
 		},
-		active: true,
+		loadingRotator: loadingRotator,
+		active:         true,
 	}, nil
 }
 
@@ -573,33 +593,84 @@ func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *caree
 
 // validateEventWithDetails performs comprehensive validation of the event and provides detailed error messages.
 
-// View renders the intent's current state.
-func (i *CaptureEventIntent) View() string {
-	if !i.active {
-		return "CaptureEvent intent is not active"
+// getStateName returns a human-readable name for the current state.
+func (i *CaptureEventIntent) getStateName() string {
+	switch i.state.currentState {
+	case CaptureStateChooseStrategy:
+		return "Choose Strategy"
+	case CaptureStateForm:
+		return "Enter Details"
+	case CaptureStateReview:
+		return "Review"
+	case CaptureStateSubmit:
+		return "Submit"
+	default:
+		return string(i.state.currentState)
 	}
+}
 
-	// Show error view if there's an error
-	if i.state.error != nil {
+// getStateContent returns the content for the current state.
+func (i *CaptureEventIntent) getStateContent() string {
+	// Show error content if there's an error and not already showing modal
+	if i.state.error != nil && !i.HasError() {
 		return i.viewError()
 	}
 
 	switch i.state.currentState {
 	case CaptureStateChooseStrategy:
 		return i.viewChooseStrategy()
-
 	case CaptureStateForm:
 		return i.viewCaptureForm()
-
 	case CaptureStateReview:
 		return i.viewReviewInferredEvent()
-
 	case CaptureStateSubmit:
 		return i.viewSubmit()
-
 	default:
 		return fmt.Sprintf("Unknown state: %s", i.state.currentState)
 	}
+}
+
+// getContextHelp returns context-aware help text for the current state.
+func (i *CaptureEventIntent) getContextHelp() string {
+	base := "q Quit  m Main Menu"
+
+	switch i.state.currentState {
+	case CaptureStateChooseStrategy:
+		return CombineFooters("1-3 Select  Esc Cancel", base)
+	case CaptureStateForm:
+		return CombineFooters(FormFooter(), base)
+	case CaptureStateReview:
+		return CombineFooters(NavigationFooter(), "a Accept  r Reject", base)
+	case CaptureStateSubmit:
+		return CombineFooters("Enter Continue  Esc Back", base)
+	default:
+		return base
+	}
+}
+
+// View renders the intent's current state using StandardView.
+func (i *CaptureEventIntent) View() string {
+	if !i.active {
+		return "CaptureEvent intent is not active"
+	}
+
+	// Create standard view with breadcrumbs
+	view := i.CreateViewWithBreadcrumbs("Main Menu", "Capture Event", i.getStateName())
+
+	// Sync state from CaptureEventModel to BaseIntent for modal display
+	if i.state.error != nil {
+		i.SetError(i.state.error)
+	}
+
+	// Get content for current state
+	content := i.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := i.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
 }
 
 // viewChooseStrategy renders the strategy selection UI.

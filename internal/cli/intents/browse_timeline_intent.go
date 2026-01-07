@@ -34,6 +34,9 @@ type FilterChangedMsg struct {
 // - Selecting and viewing event details
 // - Returning the selected event or cancelling
 type BrowseTimelineIntent struct {
+	// Embed BaseIntent for terminal awareness, logo, and state management
+	*BaseIntent
+
 	// context is the input context passed to the intent.
 	context *BrowseTimelineContext
 
@@ -54,6 +57,9 @@ type BrowseTimelineIntent struct {
 
 	// result is the final result of the intent (set when complete).
 	result *IntentResult[*BrowseTimelineResult]
+
+	// loadingRotator rotates through browse-specific loading messages
+	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -91,8 +97,20 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 		Bold(true)
 	t.SetStyles(s)
 
+	// Create BaseIntent for terminal awareness and state management
+	base := NewBaseIntent()
+
+	// Create loading message rotator with browse-specific messages
+	loadingRotator := components.NewLoadingMessageRotator([]string{
+		"📅 Loading timeline...",
+		"🔍 Filtering events...",
+		"📊 Organizing career history...",
+		"✨ Preparing event details...",
+	}, 2*time.Second)
+
 	intent := &BrowseTimelineIntent{
-		context: context,
+		BaseIntent: base,
+		context:    context,
 		state: &BrowseTimelineModel{
 			context:        context,
 			currentState:   BrowseStateTimeline,
@@ -102,9 +120,10 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 			selectedFacts:  make([]*career.Fact, 0),
 			viewedEvents:   make([]*career.CareerEvent, 0),
 		},
-		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Browse Timeline", 100),
-		active:        true,
+		table:          &t,
+		listContainer:  components.NewTableListContainer(t, "Browse Timeline", 100),
+		loadingRotator: loadingRotator,
+		active:         true,
 	}
 
 	// Initialize navigation handler
@@ -360,17 +379,58 @@ func (i *BrowseTimelineIntent) applyFilters() {
 	i.state.filteredEvents = filtered
 }
 
-// View renders the intent's current state.
-func (i *BrowseTimelineIntent) View() string {
+// getStateName returns a human-readable name for the current state.
+func (i *BrowseTimelineIntent) getStateName() string {
+	switch i.state.currentState {
+	case BrowseStateTimeline:
+		return "Timeline"
+	case BrowseStateEventDetail:
+		return "Event Detail"
+	default:
+		return string(i.state.currentState)
+	}
+}
+
+// getStateContent returns the content for the current state.
+func (i *BrowseTimelineIntent) getStateContent() string {
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		return i.viewTimeline()
-
 	case BrowseStateEventDetail:
 		return i.viewEventDetail()
+	default:
+		return ""
 	}
+}
 
-	return ""
+// getContextHelp returns context-aware help text for the current state.
+func (i *BrowseTimelineIntent) getContextHelp() string {
+	base := "q Quit  m Main Menu"
+
+	switch i.state.currentState {
+	case BrowseStateTimeline:
+		return CombineFooters(ListFooter(), "f Filter  Enter View Details", base)
+	case BrowseStateEventDetail:
+		return CombineFooters(DetailViewFooter(), base)
+	default:
+		return base
+	}
+}
+
+// View renders the intent's current state using StandardView.
+func (i *BrowseTimelineIntent) View() string {
+	// Create standard view with breadcrumbs
+	view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
+
+	// Get content for current state
+	content := i.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := i.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
 }
 
 // viewTimeline renders the timeline view with all events as a table.

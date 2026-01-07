@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -17,11 +19,18 @@ import (
 
 // GenerateCVIntent implements the Intent interface for generating CVs.
 type GenerateCVIntent struct {
-	context *GenerateCVContext
-	state   *GenerateCVModel
-	active  bool
-	result  *IntentResult[*GenerateCVResult]
-	logger  *logger.Logger
+	// Embed BaseIntent for terminal awareness, logo, and state management
+	*BaseIntent
+
+	context   *GenerateCVContext
+	state     *GenerateCVModel
+	active    bool
+	result    *IntentResult[*GenerateCVResult]
+	logger    *logger.Logger
+	cvPreview *models.CVPreviewModel
+
+	// loadingRotator rotates through CV-specific loading messages
+	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewGenerateCVIntent creates a new GenerateCV intent.
@@ -35,16 +44,30 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 		selectedProfile = context.AvailableProfiles[0]
 	}
 
+	// Create BaseIntent for terminal awareness and state management
+	base := NewBaseIntent()
+
+	// Create loading message rotator with CV-specific messages
+	loadingRotator := components.NewLoadingMessageRotator([]string{
+		"🔍 Analyzing career events...",
+		"📊 Calculating impact metrics...",
+		"✨ Generating professional bullets...",
+		"📝 Formatting final document...",
+		"✅ CV ready!",
+	}, 2*time.Second)
+
 	return &GenerateCVIntent{
-		context: context,
+		BaseIntent: base,
+		context:    context,
 		state: &GenerateCVModel{
 			context:         context,
 			currentState:    GenerateCVStateSelectProfile,
 			selectedProfile: selectedProfile,
 			selectedIndex:   0,
 		},
-		active: true,
-		logger: nil,
+		loadingRotator: loadingRotator,
+		active:         true,
+		logger:         nil,
 	}, nil
 }
 
@@ -338,8 +361,36 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// View renders the intent's current state.
-func (i *GenerateCVIntent) View() string {
+// getStateName returns a human-readable name for the current state.
+func (i *GenerateCVIntent) getStateName() string {
+	switch i.state.currentState {
+	case GenerateCVStateSelectProfile:
+		return "Select Profile"
+	case GenerateCVStateSelectAudience:
+		return "Select Audience"
+	case GenerateCVStateGenerating:
+		return "Generating"
+	case GenerateCVStatePreview:
+		return "Preview"
+	case GenerateCVStateReview:
+		return "Review"
+	case GenerateCVStateConfirm:
+		return "Confirm"
+	case GenerateCVStateExportSelectFormat:
+		return "Export Format"
+	case GenerateCVStateExportSelectLocation:
+		return "Export Location"
+	case GenerateCVStateExporting:
+		return "Exporting"
+	case GenerateCVStateExportComplete:
+		return "Complete"
+	default:
+		return string(i.state.currentState)
+	}
+}
+
+// getStateContent returns the content for the current state.
+func (i *GenerateCVIntent) getStateContent() string {
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
 		return i.viewSelectProfile()
@@ -361,8 +412,59 @@ func (i *GenerateCVIntent) View() string {
 		return i.viewExporting()
 	case GenerateCVStateExportComplete:
 		return i.viewExportComplete()
+	default:
+		return ""
 	}
-	return ""
+}
+
+// getContextHelp returns context-aware help text for the current state.
+func (i *GenerateCVIntent) getContextHelp() string {
+	base := "q Quit  m Main Menu"
+
+	switch i.state.currentState {
+	case GenerateCVStateSelectProfile:
+		return CombineFooters(NavigationFooter(), base)
+	case GenerateCVStateSelectAudience:
+		return CombineFooters(NavigationFooter(), base)
+	case GenerateCVStateGenerating:
+		return CombineFooters("Please wait...", base)
+	case GenerateCVStatePreview:
+		return CombineFooters(DetailViewFooter(), "e Edit  c Continue", base)
+	case GenerateCVStateReview:
+		return CombineFooters(DetailViewFooter(), "Enter Continue", base)
+	case GenerateCVStateConfirm:
+		return CombineFooters("y/Enter Confirm  e/x Export  n/Esc Back", base)
+	case GenerateCVStateExportSelectFormat:
+		return CombineFooters(NavigationFooter(), base)
+	case GenerateCVStateExportSelectLocation:
+		return CombineFooters(NavigationFooter(), base)
+	case GenerateCVStateExporting:
+		return CombineFooters("Please wait...", base)
+	case GenerateCVStateExportComplete:
+		return CombineFooters("Enter Continue  Esc Back", base)
+	default:
+		return base
+	}
+}
+
+// View renders the intent's current state using StandardView.
+func (i *GenerateCVIntent) View() string {
+	if !i.active {
+		return "GenerateCV intent is not active"
+	}
+
+	// Create standard view with breadcrumbs
+	view := i.CreateViewWithBreadcrumbs("Main Menu", "Generate CV", i.getStateName())
+
+	// Get content for current state
+	content := i.getStateContent()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := i.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
 }
 
 // viewSelectProfile renders the profile selection view.

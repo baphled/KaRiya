@@ -1,0 +1,227 @@
+package components
+
+import (
+	"strings"
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+
+	"github.com/baphled/kariya/internal/cli/styles"
+)
+
+// ASCIILogo represents the KaRiya logo with optional animation
+type ASCIILogo struct {
+	animated          bool
+	fadeProgress      float64 // 0.0 to 1.0
+	width             int
+	centered          bool
+	externalCentering bool // Skip internal centering when true
+	tagline           string
+	showTagline       bool
+	version           string
+	showVersion       bool
+}
+
+const (
+	// Bold ASCII art logo for KaRiya
+	logoArt = `██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗ 
+██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗
+█████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║
+██╔═██╗ ██╔══██║██╔══██╗██║  ╚██╔╝  ██╔══██║
+██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝`
+
+	// Animation settings
+	animationDuration = 300 * time.Millisecond
+	animationFrames   = 10
+	frameInterval     = 30 * time.Millisecond
+)
+
+// TickMsg is sent periodically to update the animation
+type TickMsg time.Time
+
+// NewASCIILogo creates a new ASCII logo component
+func NewASCIILogo(animated bool, width int) *ASCIILogo {
+	return &ASCIILogo{
+		animated:     animated,
+		fadeProgress: 0.0,
+		width:        width,
+		centered:     true,
+		tagline:      "Career Event Management System",
+		showTagline:  true,
+		version:      "v1.0.0",
+		showVersion:  true,
+	}
+}
+
+// SetWidth sets the width for centering calculations
+func (l *ASCIILogo) SetWidth(width int) {
+	l.width = width
+}
+
+// SetCentered sets whether the logo should be centered
+func (l *ASCIILogo) SetCentered(centered bool) {
+	l.centered = centered
+}
+
+// SetTagline sets the tagline text
+func (l *ASCIILogo) SetTagline(tagline string) {
+	l.tagline = tagline
+}
+
+// ShowTagline controls tagline visibility
+func (l *ASCIILogo) ShowTagline(show bool) {
+	l.showTagline = show
+}
+
+// SetVersion sets the version text
+func (l *ASCIILogo) SetVersion(version string) {
+	l.version = version
+}
+
+// ShowVersion controls version visibility
+func (l *ASCIILogo) ShowVersion(show bool) {
+	l.showVersion = show
+}
+
+// SetExternalCentering configures whether centering is handled externally
+func (l *ASCIILogo) SetExternalCentering(external bool) {
+	l.externalCentering = external
+}
+
+// Init initializes the logo component
+func (l *ASCIILogo) Init() tea.Cmd {
+	if l.animated {
+		return l.tick()
+	}
+	l.fadeProgress = 1.0
+	return nil
+}
+
+// Update handles animation updates
+func (l *ASCIILogo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg.(type) {
+	case TickMsg:
+		if l.animated && l.fadeProgress < 1.0 {
+			l.fadeProgress += 0.1 // 10 frames to reach 1.0
+			if l.fadeProgress < 1.0 {
+				return l, l.tick()
+			}
+			l.fadeProgress = 1.0
+		}
+	}
+	return l, nil
+}
+
+// tick returns a command that sends a TickMsg after the frame interval
+func (l *ASCIILogo) tick() tea.Cmd {
+	return tea.Tick(frameInterval, func(t time.Time) tea.Msg {
+		return TickMsg(t)
+	})
+}
+
+// View renders the logo
+func (l *ASCIILogo) View() string {
+	return l.render()
+}
+
+// ViewStatic renders the logo without animation (instant display)
+func (l *ASCIILogo) ViewStatic() string {
+	savedProgress := l.fadeProgress
+	l.fadeProgress = 1.0
+	result := l.render()
+	l.fadeProgress = savedProgress
+	return result
+}
+
+// render generates the logo output with current fade progress
+func (l *ASCIILogo) render() string {
+	var parts []string
+
+	// Render the ASCII art with fade effect
+	logoLines := strings.Split(logoArt, "\n")
+	styledLines := make([]string, len(logoLines))
+
+	for i, line := range logoLines {
+		styledLine := l.applyFadeStyle(line)
+
+		// Only center internally if not handled externally
+		if l.centered && l.width > 0 && !l.externalCentering {
+			styledLine = styles.CenterHorizontal(styledLine, l.width)
+		}
+
+		styledLines[i] = styledLine
+	}
+
+	logoRendered := strings.Join(styledLines, "\n")
+	parts = append(parts, logoRendered)
+
+	// Add tagline if enabled
+	if l.showTagline && l.tagline != "" {
+		taglineStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorTextSecondary).
+			Faint(l.fadeProgress < 1.0)
+
+		taglineText := taglineStyle.Render(l.tagline)
+		if l.centered && l.width > 0 && !l.externalCentering {
+			taglineText = styles.CenterHorizontal(taglineText, l.width)
+		}
+		parts = append(parts, "", taglineText)
+	}
+
+	// Add version if enabled
+	if l.showVersion && l.version != "" {
+		versionStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorTextMuted).
+			Italic(true).
+			Faint(l.fadeProgress < 1.0)
+
+		versionText := versionStyle.Render(l.version)
+		if l.centered && l.width > 0 && !l.externalCentering {
+			versionText = styles.CenterHorizontal(versionText, l.width)
+		}
+		parts = append(parts, versionText)
+	}
+
+	return strings.Join(parts, "\n")
+}
+
+// applyFadeStyle applies the fade effect based on current progress
+func (l *ASCIILogo) applyFadeStyle(text string) string {
+	if l.fadeProgress >= 1.0 {
+		// Full opacity - use primary teal color
+		return lipgloss.NewStyle().
+			Foreground(styles.ColorAccentTeal).
+			Bold(true).
+			Render(text)
+	}
+
+	// Fading in - adjust opacity by making it faint
+	return lipgloss.NewStyle().
+		Foreground(styles.ColorAccentTeal).
+		Bold(true).
+		Faint(true).
+		Render(text)
+}
+
+// GetHeight returns the height of the logo in lines
+func (l *ASCIILogo) GetHeight() int {
+	height := 6 // Logo art is 6 lines
+
+	if l.showTagline {
+		height += 2 // Empty line + tagline
+	}
+
+	if l.showVersion {
+		height += 1 // Version line
+	}
+
+	return height
+}
+
+// GetWidth returns the width of the logo
+func (l *ASCIILogo) GetWidth() int {
+	// The logo art is 51 characters wide
+	return 51
+}
