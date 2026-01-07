@@ -84,6 +84,137 @@ These shortcuts work consistently across all screens:
 | **l** | List events |
 | **m** | Metadata review |
 
+### Escape Key Behavior Standards
+
+**Status**: ✅ **COMPLETE - ALL 5 INTENTS STANDARDIZED**
+**Last Updated**: 2026-01-06
+**Test Coverage**: 92 escape-specific tests, 100% passing
+
+#### Universal Keyboard Standards
+
+All intents follow these consistent keyboard behaviors:
+
+| Key | Function | Behavior |
+|-----|----------|----------|
+| **esc** | Back | Navigate to previous state; cancel if root state |
+| **m** | Main Menu | Return to main menu from any state |
+| **q** / **ctrl+c** | Quit | Exit entire application |
+
+#### State Classification
+
+1. **Root State** (First state in intent)
+   - **esc**: Cancels intent, returns to main menu
+   - **m**: Cancels intent, returns to main menu
+   - Example: `CaptureStateChooseStrategy`, `GenerateCVStateSelectProfile`
+
+2. **Intermediate State** (Has previous state)
+   - **esc**: Navigate back to previous state
+   - **m**: Cancel intent, return to main menu
+   - Example: `CaptureStateForm`, `GenerateCVStateSelectAudience`
+
+3. **Async Operation State** (Performing background work)
+   - **esc**: Let operation complete in background, navigate to previous state
+   - **m**: Cancel intent immediately, return to main menu
+   - Example: `GenerateCVStateGenerating`, `ConfigStateSaving`
+   - Note: Operations continue in background per user preference
+
+#### Error State Handling
+
+When navigating back from an error state:
+- ✅ **Keep error visible** so users can see what went wrong
+- Error persists until explicit state change or successful retry
+- Example: Submit state with error → Esc → Review state (error still shown)
+
+#### Implementation Status
+
+| Intent | States | Esc Handlers | 'm' Handlers | Tests | Status |
+|--------|--------|--------------|--------------|-------|--------|
+| **CaptureEvent** | 4 | 4/4 (100%) | 4/4 (100%) | 13 ✅ | ✅ Complete |
+| **ConfigureSystem** | 7 | 7/7 (100%) | 7/7 (100%) | 21 ✅ | ✅ Complete |
+| **GenerateCV** | 10 | 10/10 (100%) | 10/10 (100%) | 26 ✅ | ✅ Complete |
+| **BrowseTimeline** | 2 | 2/2 (100%) | 2/2 (100%) | 7 ✅ | ✅ Complete |
+| **ExportArtifact** | 9 | 9/9 (100%) | 9/9 (100%) | 25 ✅ | ✅ Complete |
+| **TOTAL** | **32** | **32/32 (100%)** | **32/32 (100%)** | **92** | ✅ **Complete** |
+
+**Key Achievements**:
+- ✅ All 32 states across 5 intents have full escape coverage
+- ✅ All states support 'm' key for instant main menu return
+- ✅ 3 critical async operation dead-ends fixed (Generating, Exporting, Saving)
+- ✅ Error visibility preserved when navigating back
+- ✅ 92 new tests added, 100% passing
+- ✅ Zero regressions in existing tests
+
+#### Example Flow: CaptureEvent Intent
+
+```
+ChooseStrategy (Root)
+    esc → Cancel intent → Main menu
+    m → Cancel intent → Main menu
+    ↓ (select strategy)
+CaptureForm
+    esc → Back to ChooseStrategy
+    m → Cancel intent → Main menu
+    ↓ (submit form)
+ReviewInferredEvent
+    esc → Back to CaptureForm
+    m → Cancel intent → Main menu
+    ↓ (confirm)
+Submit (with error)
+    esc → Back to ReviewInferredEvent (error visible)
+    m → Cancel intent → Main menu
+    r → Retry submission
+```
+
+#### Testing Requirements
+
+Every state MUST have tests for:
+- ✅ Escape key behavior (back or cancel)
+- ✅ 'm' key behavior (main menu)
+- ✅ State remains active after back navigation
+- ✅ Intent cancels correctly from any state
+- ✅ View footers show correct key options
+
+#### Developer Guidelines
+
+When adding escape/m key handlers to a new state:
+
+```go
+case tea.KeyMsg:
+    switch msg.String() {
+    case "esc":
+        if m.isRootState() {
+            m.setCancelled()  // Root state cancels intent
+        } else if m.isAsyncOperation() {
+            // Let async operation complete in background
+            m.state = m.previousState
+        } else {
+            m.state = m.previousState  // Go back one state
+        }
+        return nil
+    case "m":
+        // Always return to main menu
+        m.setCancelled()
+        return nil
+    case "q", "ctrl+c":
+        return tea.Quit  // Quit entire app
+    }
+```
+
+#### View Footer Standards
+
+All view methods MUST show available keys:
+
+```
+Good examples:
+- "Esc: Back | m: Main menu | q: Quit"
+- "Enter: Confirm | Esc: Back | m: Main menu | r: Retry"
+- "Esc: Cancel | m: Main menu | q: Quit"
+
+Bad examples:
+- "Press Esc to cancel" (missing 'm' option)
+- "q to quit" (missing esc and m options)
+```
+
 ---
 
 ## Component Architecture

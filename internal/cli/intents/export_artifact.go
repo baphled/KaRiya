@@ -302,6 +302,11 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 				Code:    "export_cancelled",
 				Message: "Export cancelled by user",
 			}))
+		case "m":
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
 		}
 	}
 	return nil
@@ -328,6 +333,11 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 		case "esc":
 			m.selectedIndex = 0
 			m.state = ExportStateSelectType
+		case "m":
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
 		}
 	}
 	return nil
@@ -352,6 +362,11 @@ func (m *ExportArtifactModel) updateSelectDest(msg tea.Msg) tea.Cmd {
 		case "esc":
 			m.selectedIndex = 0
 			m.state = ExportStateSelectFormat
+		case "m":
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
 		}
 	}
 	return nil
@@ -368,6 +383,11 @@ func (m *ExportArtifactModel) updateConfigure(msg tea.Msg) tea.Cmd {
 		case "esc":
 			m.selectedIndex = 0
 			m.state = ExportStateSelectDest
+		case "m":
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
 		}
 	}
 	return nil
@@ -399,6 +419,11 @@ func (m *ExportArtifactModel) updatePreview(msg tea.Msg) tea.Cmd {
 			m.state = ExportStateConfirm
 		case "esc":
 			m.state = ExportStateConfigure
+		case "m":
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
 		}
 	}
 	return nil
@@ -413,6 +438,11 @@ func (m *ExportArtifactModel) updateConfirm(msg tea.Msg) tea.Cmd {
 			return m.startExport()
 		case "n", "esc":
 			m.state = ExportStatePreview
+		case "m":
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
 		}
 	}
 	return nil
@@ -429,7 +459,16 @@ func (m *ExportArtifactModel) updateInProgress(msg tea.Msg) tea.Cmd {
 		m.error = msg.Error
 		m.state = ExportStateFailed
 	case tea.KeyMsg:
-		if msg.String() == "esc" {
+		switch msg.String() {
+		case "esc":
+			// Let export complete in background
+			return nil
+		case "m":
+			// Return to main menu immediately (cancel)
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
 			return nil
 		}
 	}
@@ -439,7 +478,10 @@ func (m *ExportArtifactModel) updateInProgress(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updateComplete(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "enter" || msg.String() == "esc" {
+		switch msg.String() {
+		case "enter", "esc":
+			m.active = false
+		case "m":
 			m.active = false
 		}
 	}
@@ -453,6 +495,8 @@ func (m *ExportArtifactModel) updateFailed(msg tea.Msg) tea.Cmd {
 		case "r":
 			m.state = ExportStateConfirm
 		case "esc":
+			m.active = false
+		case "m":
 			m.active = false
 		}
 	}
@@ -489,7 +533,7 @@ func (m *ExportArtifactModel) viewSelectType() string {
 		}
 		s += prefix + string(t) + "\n"
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Select | [Esc] Cancel"
+	s += "\n↑/↓: Navigate | Enter: Select | Esc: Cancel | m: Main menu"
 	return s
 }
 
@@ -503,7 +547,7 @@ func (m *ExportArtifactModel) viewSelectFormat() string {
 		}
 		s += prefix + string(f) + "\n"
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Select | [Esc] Back"
+	s += "\n↑/↓: Navigate | Enter: Select | Esc: Back | m: Main menu"
 	return s
 }
 
@@ -516,7 +560,7 @@ func (m *ExportArtifactModel) viewSelectDest() string {
 		}
 		s += prefix + string(d) + "\n"
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Select | [Esc] Back"
+	s += "\n↑/↓: Navigate | Enter: Select | Esc: Back | m: Main menu"
 	return s
 }
 
@@ -528,7 +572,7 @@ func (m *ExportArtifactModel) viewConfigure() string {
 	if m.config.Destination == ExportDestinationFile {
 		s += "File Path: " + m.config.FilePath + "\n"
 	}
-	s += "\n[Enter] Continue | [Esc] Back"
+	s += "\nEnter: Continue | Esc: Back | m: Main menu"
 	return s
 }
 
@@ -552,7 +596,7 @@ func (m *ExportArtifactModel) viewPreview() string {
 	}
 
 	s += "\n════════════════════════════════════════════════════════\n"
-	s += "[↑/↓] Scroll | [PgUp/PgDn] Page | [Enter] Confirm | [Esc] Back"
+	s += "↑/↓: Scroll | PgUp/PgDn: Page | Enter: Confirm | Esc: Back | m: Main menu"
 
 	if len(m.previewLines) > viewHeight {
 		scrollPercent := (m.scrollOffset * 100) / len(m.previewLines)
@@ -567,19 +611,19 @@ func (m *ExportArtifactModel) viewConfirm() string {
 	s += "Artifact: " + string(m.config.ArtifactType) + "\n"
 	s += "Format: " + string(m.config.Format) + "\n"
 	s += "Destination: " + string(m.config.Destination) + "\n\n"
-	s += "[Y/Enter] Confirm | [N/Esc] Cancel"
+	s += "Y/Enter: Confirm | N/Esc: Cancel | m: Main menu"
 	return s
 }
 
 func (m *ExportArtifactModel) viewInProgress() string {
-	return "Exporting artifact...\n\nPlease wait..."
+	return "Exporting artifact...\n\nPlease wait...\n\nEsc: Let export complete in background | m: Cancel and return to menu"
 }
 
 func (m *ExportArtifactModel) viewComplete() string {
 	s := "Export Complete!\n\n"
 	s += "File: " + m.result.FilePath + "\n"
 	s += "Size: " + formatBytes(m.result.Size) + "\n\n"
-	s += "[Enter] Done"
+	s += "Enter: Done | m: Main menu"
 	return s
 }
 
@@ -588,7 +632,7 @@ func (m *ExportArtifactModel) viewFailed() string {
 	if m.error != nil {
 		s += "Error: " + m.error.Message + "\n"
 	}
-	s += "\n[R] Retry | [Esc] Cancel"
+	s += "\nR: Retry | Esc: Cancel | m: Main menu"
 	return s
 }
 

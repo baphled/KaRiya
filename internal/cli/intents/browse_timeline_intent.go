@@ -232,6 +232,11 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 			// Go back (no-op at timeline view).
 			i.setCancelled()
 			return nil
+
+		case "m":
+			// Return to main menu.
+			i.setCancelled()
+			return nil
 		}
 
 	case EventSelectedMsg:
@@ -274,6 +279,11 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 
 		case "q", "ctrl+c":
 			// Cancel.
+			i.setCancelled()
+			return nil
+
+		case "m":
+			// Return to main menu.
 			i.setCancelled()
 			return nil
 		}
@@ -434,7 +444,7 @@ func (i *BrowseTimelineIntent) viewEventDetail() string {
 		Foreground(styles.ColorTextSecondary).
 		MarginTop(1)
 
-	footer := footerStyle.Render("Enter to confirm, Esc to go back, q to cancel")
+	footer := footerStyle.Render("Enter to confirm | Esc: Back | m: Main menu | q: Quit")
 
 	return lipgloss.JoinVertical(lipgloss.Left, card, footer)
 }

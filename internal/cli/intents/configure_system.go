@@ -292,6 +292,15 @@ func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 					Message: "Configuration cancelled by user",
 				},
 			})
+		case "m":
+			// Return to main menu
+			m.setResult(&ConfigureSystemResult{
+				Success: false,
+				Error: &IntentError{
+					Code:    "config_cancelled",
+					Message: "User returned to main menu",
+				},
+			})
 		}
 	}
 	return nil
@@ -306,6 +315,15 @@ func (m *ConfigureSystemModel) updateEditSettings(msg tea.Msg) tea.Cmd {
 		case "esc":
 			m.selectedIndex = 0
 			m.state = ConfigStateSelectDomain
+		case "m":
+			// Return to main menu
+			m.setResult(&ConfigureSystemResult{
+				Success: false,
+				Error: &IntentError{
+					Code:    "config_cancelled",
+					Message: "User returned to main menu",
+				},
+			})
 		}
 	}
 	return nil
@@ -319,6 +337,15 @@ func (m *ConfigureSystemModel) updateReviewChanges(msg tea.Msg) tea.Cmd {
 			m.state = ConfigStateConfirm
 		case "esc":
 			m.state = ConfigStateEditSettings
+		case "m":
+			// Return to main menu
+			m.setResult(&ConfigureSystemResult{
+				Success: false,
+				Error: &IntentError{
+					Code:    "config_cancelled",
+					Message: "User returned to main menu",
+				},
+			})
 		}
 	}
 	return nil
@@ -333,6 +360,15 @@ func (m *ConfigureSystemModel) updateConfirm(msg tea.Msg) tea.Cmd {
 			return m.startSave()
 		case "n", "esc":
 			m.state = ConfigStateReviewChanges
+		case "m":
+			// Return to main menu
+			m.setResult(&ConfigureSystemResult{
+				Success: false,
+				Error: &IntentError{
+					Code:    "config_cancelled",
+					Message: "User returned to main menu",
+				},
+			})
 		}
 	}
 	return nil
@@ -346,6 +382,34 @@ func (m *ConfigureSystemModel) updateSaving(msg tea.Msg) tea.Cmd {
 	case ConfigErrorMsg:
 		m.state = ConfigStateFailed
 		m.error = msg.Error
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			// Note: Save operation continues in background per user decision
+			// Navigate back to review changes
+			m.state = ConfigStateReviewChanges
+			return nil
+		case "m":
+			// Cancel and return to main menu
+			m.setResult(&ConfigureSystemResult{
+				Success: false,
+				Error: &IntentError{
+					Code:    "config_cancelled",
+					Message: "User returned to main menu during save",
+				},
+			})
+			return nil
+		case "q", "ctrl+c":
+			// User wants to quit entirely
+			m.setResult(&ConfigureSystemResult{
+				Success: false,
+				Error: &IntentError{
+					Code:    "config_cancelled",
+					Message: "User quit during save",
+				},
+			})
+			return tea.Quit
+		}
 	}
 	return nil
 }
@@ -353,7 +417,11 @@ func (m *ConfigureSystemModel) updateSaving(msg tea.Msg) tea.Cmd {
 func (m *ConfigureSystemModel) updateComplete(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "enter" || msg.String() == "esc" {
+		switch msg.String() {
+		case "enter", "esc":
+			m.active = false
+		case "m":
+			// Return to main menu (same as enter/esc in this state)
 			m.active = false
 		}
 	}
@@ -368,6 +436,9 @@ func (m *ConfigureSystemModel) updateFailed(msg tea.Msg) tea.Cmd {
 			// Retry
 			m.state = ConfigStateConfirm
 		case "esc":
+			m.active = false
+		case "m":
+			// Return to main menu
 			m.active = false
 		}
 	}
@@ -404,7 +475,7 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 		}
 		s += prefix + string(d) + "\n"
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Select | [Esc] Cancel"
+	s += "\n[↑/↓] Navigate | [Enter] Select | [Esc] Cancel | [m] Main menu"
 	return s
 }
 
@@ -418,7 +489,7 @@ func (m *ConfigureSystemModel) viewEditSettings() string {
 		}
 		s += prefix + setting.Label + ": " + fmt.Sprintf("%v", setting.Value) + "\n"
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Edit | [Esc] Back"
+	s += "\n[↑/↓] Navigate | [Enter] Edit | [Esc] Back | [m] Main menu"
 	return s
 }
 
@@ -433,7 +504,7 @@ func (m *ConfigureSystemModel) viewReviewChanges() string {
 			s += key + ": " + fmt.Sprintf("%v", original) + " → " + fmt.Sprintf("%v", modified) + "\n"
 		}
 	}
-	s += "\n[Enter] Confirm | [Esc] Back"
+	s += "\n[Enter] Confirm | [Esc] Back | [m] Main menu"
 	return s
 }
 
@@ -450,19 +521,22 @@ func (m *ConfigureSystemModel) viewConfirm() string {
 		}
 		s += fmt.Sprintf("Changes: %d\n", changeCount)
 	}
-	s += "\n[Y/Enter] Confirm | [N/Esc] Cancel"
+	s += "\n[Y/Enter] Confirm | [N/Esc] Cancel | [m] Main menu"
 	return s
 }
 
 func (m *ConfigureSystemModel) viewSaving() string {
-	return "Saving configuration...\n\nPlease wait..."
+	s := "Saving configuration...\n\n"
+	s += "Please wait while changes are being saved.\n"
+	s += "\n[Esc] Back | [m] Main menu | [q] Quit"
+	return s
 }
 
 func (m *ConfigureSystemModel) viewComplete() string {
 	s := "Configuration Updated!\n\n"
 	s += "Domain: " + string(m.domain) + "\n"
 	s += "Changes saved successfully.\n\n"
-	s += "[Enter] Done"
+	s += "[Enter] Done | [m] Main menu"
 	return s
 }
 
@@ -471,7 +545,7 @@ func (m *ConfigureSystemModel) viewFailed() string {
 	if m.error != nil {
 		s += "Error: " + m.error.Message + "\n"
 	}
-	s += "\n[R] Retry | [Esc] Cancel"
+	s += "\n[R] Retry | [Esc] Cancel | [m] Main menu"
 	return s
 }
 
