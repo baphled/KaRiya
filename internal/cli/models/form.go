@@ -25,36 +25,37 @@ const (
 	ProjectField
 	TagsField
 	CategoriesField
-	ModeField
 	SubmitButton
 )
 
 // FormModel represents the event capture form state
 type FormModel struct {
 	*BaseStandardModel
-	cliService       *service.CLIEventService
-	inputs           []textinput.Model
-	focusIndex       int
-	modeIndex        int // Index for capture mode selection
-	tagIndex         int // Index for tag navigation when TagsField is focused
-	categoryIndex    int // Index for category navigation when CategoriesField is focused
-	modes            []careerservice.EventCaptureMode
-	err              error
-	submitted        bool
-	event            *career.CareerEvent
-	charCount        int
-	maxChars         int
-	tagSelector      *components.TagSelector
-	categorySelector *components.CategorySelector
-	fieldErrors      map[FormField]string       // Track field-level validation errors
-	editMode         bool                       // True if editing an existing event
-	editEventID      string                     // ID of event being edited
-	helpFooter       components.HelpFooterModel // Help footer for keyboard shortcuts
-	header           components.HeaderModel     // Header component
-	footer           components.FooterModel     // Footer component
-	breadcrumbs      []string                   // Navigation breadcrumb trail
-	width            int                        // Available terminal width
-	height           int                        // Available terminal height
+	cliService         *service.CLIEventService
+	inputs             []textinput.Model
+	focusIndex         int
+	modeIndex          int                              // Index for capture mode selection (DEPRECATED - to be removed)
+	tagIndex           int                              // Index for tag navigation when TagsField is focused
+	categoryIndex      int                              // Index for category navigation when CategoriesField is focused
+	modes              []careerservice.EventCaptureMode // DEPRECATED - to be removed
+	err                error
+	submitted          bool
+	event              *career.CareerEvent
+	charCount          int
+	maxChars           int
+	tagSelector        *components.TagSelector
+	categorySelector   *components.CategorySelector
+	fieldErrors        map[FormField]string       // Track field-level validation errors
+	editMode           bool                       // True if editing an existing event
+	editEventID        string                     // ID of event being edited
+	helpFooter         components.HelpFooterModel // Help footer for keyboard shortcuts
+	header             components.HeaderModel     // Header component
+	footer             components.FooterModel     // Footer component
+	breadcrumbs        []string                   // Navigation breadcrumb trail
+	width              int                        // Available terminal width
+	height             int                        // Available terminal height
+	strategy           string                     // Capture strategy: "quick" or "manual"
+	showOptionalFields bool                       // Toggle for optional field visibility (manual mode only)
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -67,7 +68,7 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 	inputs[0].Placeholder = "Enter event description (required, max 2000 chars)"
 	inputs[0].Focus()
 	// inputs[0].CharLimit = 2000 // Allow detection of exceeding limit
-	inputs[0].Width = 60
+	inputs[0].Width = 60 // Will be updated dynamically based on terminal size
 
 	// Date input (optional)
 	inputs[1] = textinput.New()
@@ -84,31 +85,24 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 	inputs[3].Placeholder = "Project name (optional)"
 	inputs[3].Width = 60
 
-	// Capture modes
-	modes := []careerservice.EventCaptureMode{
-		careerservice.TimelineJournaling,
-		careerservice.CVBackfill,
-		careerservice.ManualEntry,
-	}
-
 	return &FormModel{
-		BaseStandardModel: NewBaseStandardModel(),
-		cliService:        cliService,
-		inputs:            inputs,
-		focusIndex:        0,
-		modeIndex:         0,
-		tagIndex:          0,
-		categoryIndex:     0,
-		modes:             modes,
-		err:               nil,
-		submitted:         false,
-		maxChars:          2000,
-		tagSelector:       components.NewTagSelector(),
-		categorySelector:  components.NewCategorySelector(),
-		fieldErrors:       make(map[FormField]string),
-		helpFooter:        components.NewHelpFooter("form", 80),
-		header:            components.NewHeader("Capture Career Event", 80),
-		footer:            components.NewFooter(80),
+		BaseStandardModel:  NewBaseStandardModel(),
+		cliService:         cliService,
+		inputs:             inputs,
+		focusIndex:         0,
+		tagIndex:           0,
+		categoryIndex:      0,
+		err:                nil,
+		submitted:          false,
+		maxChars:           2000,
+		tagSelector:        components.NewTagSelector(),
+		categorySelector:   components.NewCategorySelector(),
+		fieldErrors:        make(map[FormField]string),
+		helpFooter:         components.NewHelpFooter("form", 80),
+		header:             components.NewHeader("Capture Career Event", 80),
+		footer:             components.NewFooter(80),
+		strategy:           "manual", // Default to manual mode (show all fields)
+		showOptionalFields: true,     // Show optional fields by default
 	}
 }
 
@@ -126,6 +120,12 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.helpFooter.SetWidth(msg.Width)
+
+		// Update input field widths adaptively
+		adaptiveWidth := m.getAdaptiveFieldWidth()
+		for i := range m.inputs {
+			m.inputs[i].Width = adaptiveWidth
+		}
 
 		return m, nil
 	case SubmitMsg:
@@ -212,30 +212,32 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			if m.focusIndex == int(ModeField) {
-				if msg.String() == "j" {
-					m.modeIndex++
-					if m.modeIndex >= len(m.modes) {
-						m.modeIndex = 0
-					}
-				} else if msg.String() == "k" {
-					m.modeIndex--
-					if m.modeIndex < 0 {
-						m.modeIndex = len(m.modes) - 1
-					}
-				}
-				return m, nil
-			}
 			// If not in a navigation field, fall through to text input
 
 		case "T", "t":
-			// Jump to tags field for selection (only if KeyType is not KeyRunes)
+			// Two behaviors for 't' key:
+			// 1. When not typing in a text field and tags are visible: jump to tags field
+			// 2. When typing disabled (KeyType != KeyRunes) and in manual mode: toggle optional fields
 			if msg.Type != tea.KeyRunes {
-				// Only if not typing in text field
-				if m.focusIndex != int(TextField) && m.focusIndex != int(CompanyField) && m.focusIndex != int(ProjectField) {
-					m.focusIndex = int(TagsField)
-					m.tagIndex = 0
+				// Priority 1: Toggle optional fields in manual mode (works anywhere)
+				if m.strategy == "manual" && msg.String() == "t" {
+					m.ToggleOptionalFields()
+					// If hiding fields, ensure focus is on a visible field
+					if !m.showOptionalFields && !m.isFieldVisible(FormField(m.focusIndex)) {
+						m.focusIndex = int(TextField)
+						cmds := m.updateFocus()
+						return m, tea.Batch(cmds...)
+					}
 					return m, nil
+				}
+
+				// Priority 2: Jump to tags field (if visible and not in text field)
+				if m.isFieldVisible(TagsField) {
+					if m.focusIndex != int(TextField) && m.focusIndex != int(CompanyField) && m.focusIndex != int(ProjectField) {
+						m.focusIndex = int(TagsField)
+						m.tagIndex = 0
+						return m, nil
+					}
 				}
 			}
 
@@ -296,40 +298,33 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			// Handle mode selection when on mode field
-			if m.focusIndex == int(ModeField) {
-				if s == "up" {
-					m.modeIndex--
-					if m.modeIndex < 0 {
-						m.modeIndex = len(m.modes) - 1
-					}
-					return m, nil
-				}
-				if s == "down" {
-					m.modeIndex++
-					if m.modeIndex >= len(m.modes) {
-						m.modeIndex = 0
-					}
-					return m, nil
-				}
-			}
-
 			// Handle navigation
 			if s == "enter" && m.focusIndex == int(SubmitButton) {
 				return m, m.submitForm()
 			}
 
+			// Navigate to next/previous field, skipping hidden fields
+			direction := 1
 			if s == "up" || s == "shift+tab" {
-				m.focusIndex--
-			} else {
-				m.focusIndex++
+				direction = -1
 			}
 
-			// Wrap around
-			if m.focusIndex > int(SubmitButton) {
-				m.focusIndex = 0
-			} else if m.focusIndex < 0 {
-				m.focusIndex = int(SubmitButton)
+			// Move focus and skip hidden fields
+			startIndex := m.focusIndex
+			for {
+				m.focusIndex += direction
+
+				// Wrap around
+				if m.focusIndex > int(SubmitButton) {
+					m.focusIndex = 0
+				} else if m.focusIndex < 0 {
+					m.focusIndex = int(SubmitButton)
+				}
+
+				// If this field is visible, or we've looped back to start, stop
+				if m.isFieldVisible(FormField(m.focusIndex)) || m.focusIndex == startIndex {
+					break
+				}
 			}
 
 			// Update focus state
@@ -346,6 +341,54 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.validateTextField()
 
 	return m, cmd
+}
+
+// isFieldVisible returns whether a field should be displayed based on current strategy
+func (m *FormModel) isFieldVisible(field FormField) bool {
+	// TextField and SubmitButton are always visible
+	if field == TextField || field == SubmitButton {
+		return true
+	}
+
+	// In quick mode, optional fields are hidden
+	// In manual mode, respect the showOptionalFields toggle
+	if m.strategy == "quick" {
+		return false
+	}
+
+	// In manual mode or edit mode, check the toggle
+	if field == DateField || field == CompanyField || field == ProjectField || field == TagsField || field == CategoriesField {
+		return m.showOptionalFields
+	}
+
+	return true
+}
+
+// getAdaptiveFieldWidth returns an appropriate field width based on terminal size
+func (m *FormModel) getAdaptiveFieldWidth() int {
+	if m.width == 0 {
+		return 60 // Default width
+	}
+
+	// Use 80% of available width, with min/max bounds
+	width := int(float64(m.width) * 0.8)
+
+	// Minimum width of 40 characters
+	if width < 40 {
+		return 40
+	}
+
+	// Maximum width of 80 characters for readability
+	if width > 80 {
+		return 80
+	}
+
+	return width
+}
+
+// isCompactMode returns true if the terminal is too small for full rendering
+func (m *FormModel) isCompactMode() bool {
+	return m.height > 0 && m.height < 25
 }
 
 // validateCurrentField validates the currently focused field
@@ -395,77 +438,12 @@ func (m *FormModel) View() string {
 	// Render form content using FormFieldContainers
 	formContent := m.renderFormContentWithContainers()
 
-	// Wrap in a card
+	// Wrap in a card (no title, no navigation helper)
 	formCard := styles.CardBase.
 		Width(styles.MaxWidth(80) - 4).
 		Render(formContent)
 
-	// Use header and footer components
-	headerView := m.header.View()
-	footerView := m.footer.View()
-
-	// Help footer with keyboard shortcuts
-	m.helpFooter.SetWidth(styles.MaxWidth(80))
-	helpFooterContent := m.helpFooter.View()
-
-	// Combine all sections
-	fullContent := lipgloss.JoinVertical(
-		lipgloss.Left,
-		headerView,
-		"",
-		formCard,
-		"",
-		footerView,
-		"",
-		helpFooterContent,
-	)
-
-	return fullContent
-}
-
-// renderModeSelector renders the capture mode selector
-func (m *FormModel) renderModeSelector() string {
-	var b strings.Builder
-
-	for i, mode := range m.modes {
-		selected := ""
-		if i == m.modeIndex {
-			selected = "►"
-		}
-		modeName := m.getModeName(mode)
-		modeDesc := m.getModeDescription(mode)
-		b.WriteString(fmt.Sprintf("║   %s %-20s - %-49s║\n", selected, modeName, modeDesc))
-	}
-
-	return b.String()
-}
-
-// getModeName returns a human-readable name for a capture mode
-func (m *FormModel) getModeName(mode careerservice.EventCaptureMode) string {
-	switch mode {
-	case careerservice.TimelineJournaling:
-		return "Timeline Journaling"
-	case careerservice.CVBackfill:
-		return "CV Backfill"
-	case careerservice.ManualEntry:
-		return "Manual Entry"
-	default:
-		return string(mode)
-	}
-}
-
-// getModeDescription returns a description for a capture mode
-func (m *FormModel) getModeDescription(mode careerservice.EventCaptureMode) string {
-	switch mode {
-	case careerservice.TimelineJournaling:
-		return "Real-time logging (last 30 days)"
-	case careerservice.CVBackfill:
-		return "Import from existing CV (any date)"
-	case careerservice.ManualEntry:
-		return "Manual entry (any date)"
-	default:
-		return ""
-	}
+	return formCard
 }
 
 // getCharCountIndicator returns a visual indicator for character count
@@ -533,17 +511,6 @@ func (m *FormModel) submitForm() tea.Cmd {
 		// Validate date is not in future
 		if eventDate.After(time.Now()) {
 			return SubmitMsg{Err: fmt.Errorf("date cannot be in the future")}
-		}
-
-		// Validate date based on capture mode (only for new events)
-		if !m.editMode {
-			mode := m.modes[m.modeIndex]
-			if mode == careerservice.TimelineJournaling {
-				thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
-				if eventDate.Before(thirtyDaysAgo) {
-					return SubmitMsg{Err: fmt.Errorf("timeline journaling events must be within the last 30 days")}
-				}
-			}
 		}
 
 		// Get optional fields
@@ -652,7 +619,6 @@ func (m *FormModel) TagSelector() *components.TagSelector {
 // Reset resets the form to its initial state
 func (m *FormModel) Reset() {
 	m.focusIndex = 0
-	m.modeIndex = 0
 	m.submitted = false
 	m.event = nil
 	m.err = nil
@@ -668,16 +634,6 @@ func (m *FormModel) Reset() {
 	m.categorySelector.Clear()
 
 	m.inputs[0].Focus()
-}
-
-// SetInitialMode sets the initial capture mode for the form
-func (m *FormModel) SetInitialMode(mode string) {
-	for i, m_mode := range m.modes {
-		if string(m_mode) == mode {
-			m.modeIndex = i
-			break
-		}
-	}
 }
 
 // LoadEventForEditing populates the form with an existing event's data
@@ -725,6 +681,31 @@ func (m *FormModel) IsEditMode() bool {
 // GetEditEventID returns the ID of the event being edited
 func (m *FormModel) GetEditEventID() string {
 	return m.editEventID
+}
+
+// SetStrategy sets the capture strategy and initializes field visibility accordingly
+func (m *FormModel) SetStrategy(strategy string) {
+	m.strategy = strategy
+	// Quick mode: hide optional fields (show only required event text)
+	// Manual mode: show all fields by default
+	m.showOptionalFields = (strategy == "manual")
+}
+
+// ToggleOptionalFields toggles the visibility of optional fields in manual mode
+func (m *FormModel) ToggleOptionalFields() {
+	if m.strategy == "manual" {
+		m.showOptionalFields = !m.showOptionalFields
+	}
+}
+
+// ShowOptionalFields returns whether optional fields should be displayed
+func (m *FormModel) ShowOptionalFields() bool {
+	return m.showOptionalFields
+}
+
+// GetStrategy returns the current capture strategy
+func (m *FormModel) GetStrategy() string {
+	return m.strategy
 }
 
 // CategorySelector returns the category selector instance
@@ -782,17 +763,15 @@ func (m *FormModel) renderCategorySelector() string {
 
 // renderFormContentWithContainers renders all form fields using the smart FormContainer
 func (m *FormModel) renderFormContentWithContainers() string {
-	// Create form container with responsive layout
-	formContainer := components.NewFormContainer().
-		SetWidth(m.width).
-		SetHeight(m.height).
-		SetLayout(components.Responsive).
-		SetPadding(0).
-		SetVerticalSpacing(2).
-		SetColumnGap(4).
-		SetMinFieldWidth(30)
+	var formParts []string
+	spacing := "\n\n"
+	if m.isCompactMode() {
+		spacing = "\n"
+	}
 
-	// Add text field
+	// Render each field/section manually for full control over layout
+
+	// 1. Event Text (required, full width)
 	textFieldErr := ""
 	if err, ok := m.fieldErrors[TextField]; ok {
 		textFieldErr = err
@@ -800,151 +779,167 @@ func (m *FormModel) renderFormContentWithContainers() string {
 	charInfo := fmt.Sprintf("Characters: %d/%d %s",
 		m.charCount, m.maxChars, m.getCharCountIndicator())
 
-	formContainer.AddField(components.FormField{
-		Label:      "Event Text (required):",
-		Input:      m.inputs[0].View(),
-		Error:      textFieldErr,
-		Hint:       charInfo,
-		IsFocused:  m.focusIndex == int(TextField),
-		IsRequired: true,
-		FullWidth:  true,
-	})
+	textLabel := styles.Label.Render("Event Text (required):")
+	textInput := m.inputs[0].View()
+	textField := textLabel + "\n" + textInput
+	if textFieldErr != "" {
+		textField += "\n" + styles.ErrorText.Render(textFieldErr)
+	}
+	if charInfo != "" {
+		textField += "\n" + styles.InputHint.Render(charInfo)
+	}
+	formParts = append(formParts, textField)
 
-	// Add date field
-	dateFieldErr := ""
-	if err, ok := m.fieldErrors[DateField]; ok {
-		dateFieldErr = err
+	// 2. Date (optional, full width)
+	if m.isFieldVisible(DateField) {
+		dateFieldErr := ""
+		if err, ok := m.fieldErrors[DateField]; ok {
+			dateFieldErr = err
+		}
+		dateLabel := styles.Label.Render("Date (optional):")
+		dateInput := m.inputs[1].View()
+		dateField := dateLabel + "\n" + dateInput
+		if dateFieldErr != "" {
+			dateField += "\n" + styles.ErrorText.Render(dateFieldErr)
+		}
+		formParts = append(formParts, dateField)
 	}
 
-	formContainer.AddField(components.FormField{
-		Label:      "Date (optional):",
-		Input:      m.inputs[1].View(),
-		Error:      dateFieldErr,
-		IsFocused:  m.focusIndex == int(DateField),
-		IsRequired: false,
-		FullWidth:  false,
-	})
+	// 3. Company and Project side-by-side
+	if m.isFieldVisible(CompanyField) || m.isFieldVisible(ProjectField) {
+		var companyPart, projectPart string
 
-	// Add company field
-	companyFieldErr := ""
-	if err, ok := m.fieldErrors[CompanyField]; ok {
-		companyFieldErr = err
-	}
+		// Calculate half-width for side-by-side layout
+		// Each column gets approximately half the available width minus spacing
+		columnWidth := (m.getAdaptiveFieldWidth() / 2) - 2
+		if columnWidth < 25 {
+			columnWidth = 25 // Minimum column width
+		}
 
-	formContainer.AddField(components.FormField{
-		Label:      "Company (optional):",
-		Input:      m.inputs[2].View(),
-		Error:      companyFieldErr,
-		IsFocused:  m.focusIndex == int(CompanyField),
-		IsRequired: false,
-		FullWidth:  false,
-	})
-
-	// Add project field
-	projectFieldErr := ""
-	if err, ok := m.fieldErrors[ProjectField]; ok {
-		projectFieldErr = err
-	}
-
-	formContainer.AddField(components.FormField{
-		Label:      "Project (optional):",
-		Input:      m.inputs[3].View(),
-		Error:      projectFieldErr,
-		IsFocused:  m.focusIndex == int(ProjectField),
-		IsRequired: false,
-		FullWidth:  false,
-	})
-
-	// Add tags field
-	var tagsDisplay string
-	if m.focusIndex == int(TagsField) {
-		tagsDisplay = m.renderTagSelector()
-	} else {
-		selectedTags := m.tagSelector.SelectedTags()
-		if len(selectedTags) > 0 {
-			for _, tag := range selectedTags {
-				tagsDisplay += styles.TagBase.Render(tag) + " "
+		if m.isFieldVisible(CompanyField) {
+			companyFieldErr := ""
+			if err, ok := m.fieldErrors[CompanyField]; ok {
+				companyFieldErr = err
 			}
-		} else {
-			tagsDisplay = styles.InfoText.Render("(none selected)")
+			companyLabel := styles.Label.Render("Company (optional):")
+			companyInput := m.inputs[2].View()
+			companyPart = companyLabel + "\n" + companyInput
+			if companyFieldErr != "" {
+				companyPart += "\n" + styles.ErrorText.Render(companyFieldErr)
+			}
+			// Apply fixed width to the entire column
+			companyPart = lipgloss.NewStyle().Width(columnWidth).Render(companyPart)
+		}
+
+		if m.isFieldVisible(ProjectField) {
+			projectFieldErr := ""
+			if err, ok := m.fieldErrors[ProjectField]; ok {
+				projectFieldErr = err
+			}
+			projectLabel := styles.Label.Render("Project (optional):")
+			projectInput := m.inputs[3].View()
+			projectPart = projectLabel + "\n" + projectInput
+			if projectFieldErr != "" {
+				projectPart += "\n" + styles.ErrorText.Render(projectFieldErr)
+			}
+			// Apply fixed width to the entire column
+			projectPart = lipgloss.NewStyle().Width(columnWidth).Render(projectPart)
+		}
+
+		// Combine side-by-side if both visible
+		if companyPart != "" && projectPart != "" {
+			combined := lipgloss.JoinHorizontal(lipgloss.Top, companyPart, "    ", projectPart)
+			formParts = append(formParts, combined)
+		} else if companyPart != "" {
+			formParts = append(formParts, companyPart)
+		} else if projectPart != "" {
+			formParts = append(formParts, projectPart)
 		}
 	}
 
-	tagsHint := ""
-	if m.focusIndex == int(TagsField) {
-		tagsHint = "Use Up/Down to navigate, Space to toggle"
-	}
+	// 4. Tags and Categories side-by-side
+	if m.isFieldVisible(TagsField) || m.isFieldVisible(CategoriesField) {
+		var tagsPart, categoriesPart string
 
-	formContainer.AddField(components.FormField{
-		Label:      "Tags:",
-		Input:      tagsDisplay,
-		Hint:       tagsHint,
-		IsFocused:  m.focusIndex == int(TagsField),
-		IsRequired: false,
-		FullWidth:  true,
-	})
+		// Use the same column width as Company/Project for consistency
+		columnWidth := (m.getAdaptiveFieldWidth() / 2) - 2
+		if columnWidth < 25 {
+			columnWidth = 25 // Minimum column width
+		}
 
-	// Add categories field
-	var categoriesDisplay string
-	if m.focusIndex == int(CategoriesField) {
-		categoriesDisplay = m.renderCategorySelector()
-	} else {
-		selectedCategories := m.categorySelector.SelectedCategories()
-		if len(selectedCategories) > 0 {
-			for _, category := range selectedCategories {
-				categoriesDisplay += styles.TagBase.Render(category) + " "
+		if m.isFieldVisible(TagsField) {
+			var tagsDisplay string
+			if m.focusIndex == int(TagsField) {
+				tagsDisplay = m.renderTagSelector()
+			} else {
+				selectedTags := m.tagSelector.SelectedTags()
+				if len(selectedTags) > 0 {
+					for _, tag := range selectedTags {
+						tagsDisplay += styles.TagBase.Render(tag) + " "
+					}
+				} else {
+					tagsDisplay = styles.InfoText.Render("(none selected)")
+				}
 			}
-		} else {
-			categoriesDisplay = styles.InfoText.Render("(none selected)")
+			tagsLabel := styles.Label.Render("Tags:")
+			tagsPart = tagsLabel + "\n" + tagsDisplay
+			// Apply fixed width to the entire column
+			tagsPart = lipgloss.NewStyle().Width(columnWidth).Render(tagsPart)
+		}
+
+		if m.isFieldVisible(CategoriesField) {
+			var categoriesDisplay string
+			if m.focusIndex == int(CategoriesField) {
+				categoriesDisplay = m.renderCategorySelector()
+			} else {
+				selectedCategories := m.categorySelector.SelectedCategories()
+				if len(selectedCategories) > 0 {
+					for _, category := range selectedCategories {
+						categoriesDisplay += styles.TagBase.Render(category) + " "
+					}
+				} else {
+					categoriesDisplay = styles.InfoText.Render("(none selected)")
+				}
+			}
+			categoriesLabel := styles.Label.Render("Categories:")
+			categoriesPart = categoriesLabel + "\n" + categoriesDisplay
+			// Apply fixed width to the entire column
+			categoriesPart = lipgloss.NewStyle().Width(columnWidth).Render(categoriesPart)
+		}
+
+		// Combine side-by-side if both visible
+		if tagsPart != "" && categoriesPart != "" {
+			combined := lipgloss.JoinHorizontal(lipgloss.Top, tagsPart, "    ", categoriesPart)
+			formParts = append(formParts, combined)
+		} else if tagsPart != "" {
+			formParts = append(formParts, tagsPart)
+		} else if categoriesPart != "" {
+			formParts = append(formParts, categoriesPart)
 		}
 	}
 
-	categoriesHint := ""
-	if m.focusIndex == int(CategoriesField) {
-		categoriesHint = "Use Up/Down to navigate, Space to toggle"
-	}
-
-	formContainer.AddField(components.FormField{
-		Label:      "Categories:",
-		Input:      categoriesDisplay,
-		Hint:       categoriesHint,
-		IsFocused:  m.focusIndex == int(CategoriesField),
-		IsRequired: false,
-		FullWidth:  true,
-	})
-
-	// Add mode field
-	modeContent := m.renderModeSelector()
-	modeHint := ""
-	if m.focusIndex == int(ModeField) {
-		modeHint = "Use Up/Down to navigate"
-	}
-
-	formContainer.AddField(components.FormField{
-		Label:      "Capture Mode:",
-		Input:      modeContent,
-		Hint:       modeHint,
-		IsFocused:  m.focusIndex == int(ModeField),
-		IsRequired: false,
-		FullWidth:  true,
-	})
-
-	// Add submit button
+	// 5. Submit button
 	var submitBtn string
 	if m.focusIndex == int(SubmitButton) {
 		submitBtn = styles.ButtonPrimary.Render("[ > Submit < ]")
 	} else {
 		submitBtn = styles.ButtonPrimary.Render("[ Submit ]")
 	}
+	formParts = append(formParts, submitBtn)
 
-	formContainer.AddField(components.FormField{
-		Input:     submitBtn,
-		IsFocused: m.focusIndex == int(SubmitButton),
-		FullWidth: true,
-	})
+	// Join all parts with spacing
+	formContent := strings.Join(formParts, spacing)
 
-	// Get rendered form
-	formContent := formContainer.Render()
+	// Add toggle hint in manual mode
+	if m.strategy == "manual" {
+		var toggleHint string
+		if m.showOptionalFields {
+			toggleHint = styles.InfoHint.Render("Press 't' to hide optional fields")
+		} else {
+			toggleHint = styles.InfoHint.Render("Press 't' to show optional fields")
+		}
+		formContent += "\n\n" + toggleHint
+	}
 
 	// Add model-level error if present
 	if m.err != nil {
