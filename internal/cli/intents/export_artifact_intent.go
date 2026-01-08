@@ -1,7 +1,6 @@
 package intents
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -21,12 +20,11 @@ type ExportArtifactIntent struct {
 }
 
 // NewExportArtifactIntent creates a new ExportArtifact intent
-func NewExportArtifactIntent(ctx context.Context) (*ExportArtifactIntent, error) {
-	if ctx == nil {
+func NewExportArtifactIntent(context *ExportArtifactContext) (*ExportArtifactIntent, error) {
+	if context == nil {
 		return nil, fmt.Errorf("context is required")
 	}
 
-	context := NewExportArtifactContext()
 	model := NewExportArtifactModel(context)
 
 	// Create BaseIntent for terminal awareness and state management

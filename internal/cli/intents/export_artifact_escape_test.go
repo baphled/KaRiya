@@ -15,7 +15,7 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 	)
 
 	BeforeEach(func() {
-		exportContext = intents.NewExportArtifactContext()
+		exportContext = intents.NewTestExportArtifactContext()
 		exportModel = intents.NewExportArtifactModel(exportContext)
 		exportModel.Init()
 	})
@@ -45,6 +45,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("SelectFormat State", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		})
@@ -74,6 +76,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("SelectDestination State", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to SelectDest
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectType -> SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectFormat -> SelectDest
@@ -104,6 +108,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("Configure State", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to Configure
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectType -> SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectFormat -> SelectDest
@@ -135,6 +141,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("Preview State", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to Preview
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectType -> SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectFormat -> SelectDest
@@ -167,6 +175,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("Confirm State", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to Confirm
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectType -> SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectFormat -> SelectDest
@@ -200,6 +210,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("InProgress State (Async Operation)", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to InProgress
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectType -> SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectFormat -> SelectDest
@@ -237,6 +249,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("Complete State", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to Complete by completing export
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectType -> SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectFormat -> SelectDest
@@ -276,6 +290,8 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 
 	Describe("Failed State", func() {
 		BeforeEach(func() {
+			// Select non-CV artifact type to avoid SelectCV state
+			exportModel.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Events (index 1)
 			// Navigate to Failed by simulating error
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectType -> SelectFormat
 			exportModel.Update(tea.KeyMsg{Type: tea.KeyEnter}) // SelectFormat -> SelectDest

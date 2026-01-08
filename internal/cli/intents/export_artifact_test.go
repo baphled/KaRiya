@@ -2,26 +2,74 @@ package intents
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
+// NewTestExportArtifactContext creates a test context with default values
+// Services and repositories are nil since most tests don't need them
+func NewTestExportArtifactContext() *ExportArtifactContext {
+	return &ExportArtifactContext{
+		ArtifactTypes:    DefaultArtifactTypes(),
+		SupportedFormats: DefaultSupportedFormats(),
+		DefaultFormat:    DefaultFormats(),
+		Destinations:     DefaultDestinations(),
+		// Services and repositories are nil for testing
+		ExportService: nil,
+
+		CareerService:   nil,
+		EventRepository: nil,
+		FactRepository:  nil,
+		BurstRepository: nil,
+		AppContext:      context.Background(),
+	}
+}
+
+// NewTestExportArtifactContextWithServices creates a test context with real services
+// Used for integration tests that need actual export functionality
+func NewTestExportArtifactContextWithServices() *ExportArtifactContext {
+	// Create logger (discard output during tests)
+	log := logger.New(nil, logger.ErrorLevel)
+
+	// Create in-memory repositories
+	eventRepo := careerrepo.NewMemoryRepository()
+	factRepo := careerrepo.NewMemoryFactRepository()
+	burstRepo := careerrepo.NewMemoryBurstRepository()
+
+	// Create export service
+	exportService := cv.NewExportService(log)
+
+	return &ExportArtifactContext{
+		ArtifactTypes:    DefaultArtifactTypes(),
+		SupportedFormats: DefaultSupportedFormats(),
+		DefaultFormat:    DefaultFormats(),
+		Destinations:     DefaultDestinations(),
+		ExportService:    exportService,
+		// Not needed for export
+
+		CareerService:   nil, // Not needed for export
+		EventRepository: eventRepo,
+		FactRepository:  factRepo,
+		BurstRepository: burstRepo,
+		AppContext:      context.Background(),
+	}
+}
+
 var _ = Describe("ExportArtifact Intent", func() {
 	var (
 		intent *ExportArtifactIntent
-		ctx    context.Context
 	)
-
-	BeforeEach(func() {
-		ctx = context.Background()
-	})
 
 	Describe("Intent Creation", func() {
 		It("should create a new ExportArtifact intent with valid context", func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(intent).NotTo(BeNil())
 			Expect(intent.model).NotTo(BeNil())
@@ -33,20 +81,20 @@ var _ = Describe("ExportArtifact Intent", func() {
 		})
 
 		It("should initialize with correct default state", func() {
-			intent, _ := NewExportArtifactIntent(ctx)
+			intent, _ := NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(intent.GetState()).To(Equal(ExportStateSelectType))
 		})
 
 		It("should initialize with correct artifact types", func() {
-			intent, _ := NewExportArtifactIntent(ctx)
-			Expect(intent.model.context.ArtifactTypes).To(HaveLen(5))
+			intent, _ := NewExportArtifactIntent(NewTestExportArtifactContext())
+			Expect(intent.model.context.ArtifactTypes).To(HaveLen(3))
 		})
 	})
 
 	Describe("Init Method", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -64,7 +112,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - SelectType State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -76,9 +124,9 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should show all artifact types", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("cv"))
 			Expect(view).To(ContainSubstring("events"))
 			Expect(view).To(ContainSubstring("facts"))
+			Expect(view).To(ContainSubstring("bursts"))
 		})
 
 		It("should show navigation instructions", func() {
@@ -90,18 +138,18 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should highlight selected item", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("> cv"))
+			Expect(view).To(ContainSubstring("> events"))
 		})
 	})
 
 	Describe("View Rendering - SelectFormat State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectFormat)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should render SelectFormat view", func() {
@@ -111,15 +159,16 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should show supported formats for artifact type", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("pdf"))
 			Expect(view).To(ContainSubstring("json"))
+			Expect(view).To(ContainSubstring("csv"))
+			Expect(view).To(ContainSubstring("txt"))
 		})
 	})
 
 	Describe("View Rendering - SelectDestination State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectDest)
@@ -134,18 +183,17 @@ var _ = Describe("ExportArtifact Intent", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("file"))
 			Expect(view).To(ContainSubstring("clipboard"))
-			Expect(view).To(ContainSubstring("email"))
 		})
 	})
 
 	Describe("View Rendering - Configure State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfigure)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should render Configure view", func() {
@@ -155,7 +203,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should show selected artifact type", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Artifact Type: cv"))
+			Expect(view).To(ContainSubstring("Artifact Type: events"))
 		})
 
 		It("should show selected format", func() {
@@ -172,11 +220,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Preview State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStatePreview)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should render Preview view", func() {
@@ -188,11 +236,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Confirm State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfirm)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should render Confirm view", func() {
@@ -211,7 +259,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - InProgress State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateInProgress)
@@ -226,11 +274,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Complete State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateComplete)
-			result := NewExportArtifactResult(true, ExportTypeCV, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
+			result := NewExportArtifactResult(true, ExportTypeEvents, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
 			intent.model.result = result
 		})
 
@@ -248,7 +296,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Failed State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateFailed)
@@ -272,7 +320,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - SelectType", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -302,11 +350,12 @@ var _ = Describe("ExportArtifact Intent", func() {
 		})
 
 		It("should transition to SelectFormat on enter", func() {
+			// Select Events (at index 0)
 			intent.SetSelectedIndex(0)
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter, Runes: []rune{'\n'}})
 			Expect(intent.GetState()).To(Equal(ExportStateSelectFormat))
 			Expect(intent.GetConfig()).NotTo(BeNil())
-			Expect(intent.GetConfig().ArtifactType).To(Equal(ExportTypeCV))
+			Expect(intent.GetConfig().ArtifactType).To(Equal(ExportTypeEvents))
 		})
 
 		It("should cancel on escape", func() {
@@ -320,17 +369,29 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - SelectFormat", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectFormat)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should navigate through formats", func() {
 			Expect(intent.GetSelectedIndex()).To(Equal(0))
 			intent.Update(tea.KeyMsg{Type: tea.KeyDown, Runes: []rune{'j'}})
 			Expect(intent.GetSelectedIndex()).To(Equal(1))
+		})
+
+		It("should navigate down with j key", func() {
+			intent.SetSelectedIndex(0)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(1))
+		})
+
+		It("should navigate up with k key", func() {
+			intent.SetSelectedIndex(1)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(0))
 		})
 
 		It("should transition to SelectDestination on enter", func() {
@@ -348,17 +409,29 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - SelectDestination", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectDest)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should navigate through destinations", func() {
 			Expect(intent.GetSelectedIndex()).To(Equal(0))
 			intent.Update(tea.KeyMsg{Type: tea.KeyDown, Runes: []rune{'j'}})
 			Expect(intent.GetSelectedIndex()).To(Equal(1))
+		})
+
+		It("should navigate down with j key", func() {
+			intent.SetSelectedIndex(0)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(1))
+		})
+
+		It("should navigate up with k key", func() {
+			intent.SetSelectedIndex(1)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(0))
 		})
 
 		It("should transition to Configure on enter", func() {
@@ -377,11 +450,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Configure", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfigure)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should transition to Preview on enter", func() {
@@ -398,11 +471,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Preview", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStatePreview)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should transition to Confirm on enter", func() {
@@ -419,11 +492,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Confirm", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfirm)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should transition to InProgress on confirm (y)", func() {
@@ -450,15 +523,15 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - InProgress", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateInProgress)
-			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
 		})
 
 		It("should transition to Complete on export completion", func() {
-			result := NewExportArtifactResult(true, ExportTypeCV, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
+			result := NewExportArtifactResult(true, ExportTypeEvents, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
 			intent.Update(ExportCompleteMsg{Result: result})
 			Expect(intent.GetState()).To(Equal(ExportStateComplete))
 			Expect(intent.GetResult()).NotTo(BeNil())
@@ -474,11 +547,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Complete", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateComplete)
-			result := NewExportArtifactResult(true, ExportTypeCV, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
+			result := NewExportArtifactResult(true, ExportTypeEvents, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
 			intent.model.result = result
 		})
 
@@ -496,7 +569,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Failed", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateFailed)
@@ -517,7 +590,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("Result Handling", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -538,7 +611,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should return Completed on successful export", func() {
 			intent.SetState(ExportStateComplete)
-			exportResult := NewExportArtifactResult(true, ExportTypeCV, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
+			exportResult := NewExportArtifactResult(true, ExportTypeEvents, ExportFormatPDF, ExportDestinationFile, "/tmp/cv.pdf", 1024)
 			intent.model.result = exportResult
 			result := intent.Result()
 			Expect(result.Status).To(Equal(Completed))
@@ -558,52 +631,52 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("Configuration Management", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
 
 		It("should create configuration with default format for artifact type", func() {
-			config := NewExportConfiguration(ExportTypeCV, intent.model.context)
-			Expect(config.ArtifactType).To(Equal(ExportTypeCV))
-			Expect(config.Format).To(Equal(ExportFormatPDF))
+			config := NewExportConfiguration(ExportTypeEvents, intent.model.context)
+			Expect(config.ArtifactType).To(Equal(ExportTypeEvents))
+			Expect(config.Format).To(Equal(ExportFormatJSON))
 			Expect(config.Destination).To(Equal(ExportDestinationFile))
 		})
 
 		It("should support different formats for different artifact types", func() {
-			cvConfig := NewExportConfiguration(ExportTypeCV, intent.model.context)
 			eventsConfig := NewExportConfiguration(ExportTypeEvents, intent.model.context)
-			Expect(cvConfig.Format).To(Equal(ExportFormatPDF))
+			factsConfig := NewExportConfiguration(ExportTypeFacts, intent.model.context)
 			Expect(eventsConfig.Format).To(Equal(ExportFormatJSON))
+			Expect(factsConfig.Format).To(Equal(ExportFormatJSON))
 		})
 	})
 
 	Describe("Export Context", func() {
 		It("should have all artifact types", func() {
-			ctx := NewExportArtifactContext()
-			Expect(ctx.ArtifactTypes).To(HaveLen(5))
+			ctx := NewTestExportArtifactContext()
+			Expect(ctx.ArtifactTypes).To(HaveLen(3))
 			Expect(ctx.ArtifactTypes).To(ContainElements(
-				ExportTypeCV, ExportTypeEvents, ExportTypeFacts, ExportTypeBursts, ExportTypeProfile,
+				ExportTypeEvents, ExportTypeFacts, ExportTypeBursts,
 			))
 		})
 
 		It("should have supported formats for each artifact type", func() {
-			ctx := NewExportArtifactContext()
-			Expect(ctx.SupportedFormats[ExportTypeCV]).To(ContainElements(ExportFormatPDF, ExportFormatJSON, ExportFormatMD))
-			Expect(ctx.SupportedFormats[ExportTypeEvents]).To(ContainElements(ExportFormatJSON, ExportFormatCSV, ExportFormatTXT))
+			ctx := NewTestExportArtifactContext()
+			Expect(ctx.SupportedFormats[ExportTypeEvents]).To(ContainElements(ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT))
+			Expect(ctx.SupportedFormats[ExportTypeFacts]).To(ContainElements(ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT))
 		})
 
 		It("should have default format for each artifact type", func() {
-			ctx := NewExportArtifactContext()
-			Expect(ctx.DefaultFormat[ExportTypeCV]).To(Equal(ExportFormatPDF))
+			ctx := NewTestExportArtifactContext()
 			Expect(ctx.DefaultFormat[ExportTypeEvents]).To(Equal(ExportFormatJSON))
+			Expect(ctx.DefaultFormat[ExportTypeFacts]).To(Equal(ExportFormatJSON))
 		})
 
 		It("should have all destinations", func() {
-			ctx := NewExportArtifactContext()
-			Expect(ctx.Destinations).To(HaveLen(3))
+			ctx := NewTestExportArtifactContext()
+			Expect(ctx.Destinations).To(HaveLen(2))
 			Expect(ctx.Destinations).To(ContainElements(
-				ExportDestinationFile, ExportDestinationClipboard, ExportDestinationEmail,
+				ExportDestinationFile, ExportDestinationClipboard,
 			))
 		})
 	})
@@ -611,7 +684,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("Intent Interface Compliance", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -633,6 +706,229 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should have Result method", func() {
 			Expect(intent.Result).NotTo(BeNil())
+		})
+	})
+
+	Describe("formatBytes utility function", func() {
+		It("should format 0 bytes", func() {
+			Expect(formatBytes(0)).To(Equal("0 B"))
+		})
+
+		It("should format bytes under 1KB", func() {
+			Expect(formatBytes(1)).To(Equal("1 B"))
+			Expect(formatBytes(512)).To(Equal("512 B"))
+			Expect(formatBytes(1023)).To(Equal("1023 B"))
+		})
+
+		It("should format 1KB exactly", func() {
+			Expect(formatBytes(1024)).To(Equal("1 KB"))
+		})
+
+		It("should format kilobytes", func() {
+			Expect(formatBytes(2048)).To(Equal("2 KB"))
+			Expect(formatBytes(5120)).To(Equal("5 KB"))
+		})
+
+		It("should format 1MB exactly", func() {
+			Expect(formatBytes(1048576)).To(Equal("1 MB"))
+		})
+
+		It("should format megabytes", func() {
+			Expect(formatBytes(2097152)).To(Equal("2 MB"))
+			Expect(formatBytes(10485760)).To(Equal("10 MB"))
+		})
+
+		It("should format 1GB exactly", func() {
+			Expect(formatBytes(1073741824)).To(Equal("1 GB"))
+		})
+
+		It("should format gigabytes", func() {
+			Expect(formatBytes(2147483648)).To(Equal("2 GB"))
+		})
+
+		It("should format 1TB exactly", func() {
+			Expect(formatBytes(1099511627776)).To(Equal("1 TB"))
+		})
+	})
+
+	Describe("Scroll percentage display in preview", func() {
+		var intent *ExportArtifactIntent
+
+		BeforeEach(func() {
+			var err error
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+			intent.SetState(ExportStatePreview)
+			intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
+		})
+
+		It("should not show scroll percentage for short content", func() {
+			// Set preview with only 5 lines (less than viewHeight of 15)
+			intent.model.preview = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
+			intent.model.previewLines = []string{"Line 1", "Line 2", "Line 3", "Line 4", "Line 5"}
+			intent.model.scrollOffset = 0
+
+			view := intent.model.viewPreview()
+			Expect(view).NotTo(ContainSubstring("% scrolled"))
+		})
+
+		It("should show 0% at top of long content", func() {
+			// Create 30 lines of content (more than viewHeight of 15)
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 0
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[0% scrolled]"))
+		})
+
+		It("should show 50% at middle of content", func() {
+			// Create 30 lines of content
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 15 // Middle of 30 lines
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[50% scrolled]"))
+		})
+
+		It("should show 100% at end of content", func() {
+			// Create 30 lines of content
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 30 // End of content
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[100% scrolled]"))
+		})
+
+		It("should show 33% at one-third of content", func() {
+			// Create 30 lines of content
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 10 // 10/30 = 33%
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[33% scrolled]"))
+		})
+	})
+
+	Describe("Format Mapping", func() {
+		It("should map TXT to ExportFormatText", func() {
+			result := mapToExportServiceFormat(ExportFormatTXT)
+			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+
+		It("should map MD to ExportFormatMarkdown", func() {
+			result := mapToExportServiceFormat(ExportFormatMD)
+			Expect(result).To(Equal(cv.ExportFormatMarkdown))
+		})
+
+		It("should map YAML to ExportFormatYAML", func() {
+			result := mapToExportServiceFormat(ExportFormatYAML)
+			Expect(result).To(Equal(cv.ExportFormatYAML))
+		})
+
+		It("should default to ExportFormatText for unknown formats", func() {
+			result := mapToExportServiceFormat(ExportFormat("unknown"))
+			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+
+		It("should default to ExportFormatText for JSON", func() {
+			result := mapToExportServiceFormat(ExportFormatJSON)
+			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+
+		It("should default to ExportFormatText for CSV", func() {
+			result := mapToExportServiceFormat(ExportFormatCSV)
+			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+	})
+
+	Describe("Real Export Implementation", func() {
+		var model *ExportArtifactModel
+
+		BeforeEach(func() {
+			context := NewTestExportArtifactContextWithServices()
+			intent, err := NewExportArtifactIntent(context)
+			Expect(err).NotTo(HaveOccurred())
+			model = intent.model
+
+			// Initialize config (normally done by state machine)
+			model.config = &ExportConfiguration{
+				ArtifactType: ExportTypeEvents,
+				Format:       ExportFormatTXT,
+				Destination:  ExportDestinationFile,
+			}
+		})
+
+		Describe("startExport integration", func() {
+
+			It("should call exportEvents for Events artifact type", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatJSON
+				model.config.Destination = ExportDestinationFile
+
+				cmd := model.startExport()
+				Expect(cmd).NotTo(BeNil())
+
+				msg := cmd()
+				completeMsg, ok := msg.(ExportCompleteMsg)
+				Expect(ok).To(BeTrue())
+				Expect(completeMsg.Result.Success).To(BeTrue())
+			})
+
+		})
+	})
+
+	Describe("Real Preview Data", func() {
+		var model *ExportArtifactModel
+		var testContext *ExportArtifactContext
+
+		BeforeEach(func() {
+			testContext = NewTestExportArtifactContextWithServices()
+			intent, err := NewExportArtifactIntent(testContext)
+			Expect(err).NotTo(HaveOccurred())
+			model = intent.model
+
+			// Initialize config
+			model.config = &ExportConfiguration{
+				ArtifactType: ExportTypeEvents,
+				Format:       ExportFormatTXT,
+				Destination:  ExportDestinationFile,
+			}
+		})
+
+		Describe("generatePreview integration", func() {
+			It("should call the correct preview generator based on artifact type", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatJSON
+
+				model.generatePreview()
+				Expect(model.preview).NotTo(BeEmpty())
+				Expect(model.previewLines).NotTo(BeEmpty())
+			})
+
+			It("should split preview into lines", func() {
+				model.config.ArtifactType = ExportTypeFacts
+				model.config.Format = ExportFormatJSON
+
+				model.generatePreview()
+				Expect(len(model.previewLines)).To(BeNumerically(">", 0))
+			})
 		})
 	})
 })
