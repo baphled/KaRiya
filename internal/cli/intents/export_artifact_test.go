@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	careerdomain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -933,6 +934,38 @@ var _ = Describe("ExportArtifact Intent", func() {
 				Expect(view).To(ContainSubstring("Senior Engineer"))
 				Expect(view).To(ContainSubstring("Staff Engineer"))
 			})
+		})
+	})
+
+	Describe("Format Mapping", func() {
+		It("should map TXT to ExportFormatText", func() {
+			result := mapToExportServiceFormat(ExportFormatTXT)
+			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+
+		It("should map MD to ExportFormatMarkdown", func() {
+			result := mapToExportServiceFormat(ExportFormatMD)
+			Expect(result).To(Equal(cv.ExportFormatMarkdown))
+		})
+
+		It("should map YAML to ExportFormatYAML", func() {
+			result := mapToExportServiceFormat(ExportFormatYAML)
+			Expect(result).To(Equal(cv.ExportFormatYAML))
+		})
+
+		It("should default to ExportFormatText for unknown formats", func() {
+			result := mapToExportServiceFormat(ExportFormat("unknown"))
+			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+
+		It("should default to ExportFormatText for JSON", func() {
+			result := mapToExportServiceFormat(ExportFormatJSON)
+			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+
+		It("should default to ExportFormatText for CSV", func() {
+			result := mapToExportServiceFormat(ExportFormatCSV)
+			Expect(result).To(Equal(cv.ExportFormatText))
 		})
 	})
 })

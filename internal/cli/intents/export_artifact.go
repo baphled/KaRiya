@@ -1082,3 +1082,19 @@ func DefaultDestinations() []ExportDestination {
 		ExportDestinationClipboard,
 	}
 }
+
+// mapToExportServiceFormat maps ExportFormat to cv.ExportFormat
+// This is needed because ExportArtifact uses its own format constants
+func mapToExportServiceFormat(format ExportFormat) cv.ExportFormat {
+	switch format {
+	case ExportFormatTXT:
+		return cv.ExportFormatText
+	case ExportFormatMD:
+		return cv.ExportFormatMarkdown
+	case ExportFormatYAML:
+		return cv.ExportFormatYAML
+	default:
+		// Default to text for unknown formats (JSON, CSV, etc.)
+		return cv.ExportFormatText
+	}
+}
