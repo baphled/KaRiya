@@ -267,8 +267,8 @@ var _ = Describe("ConfigureSystem Intent", func() {
 			intent.SetDomain(DomainSystem)
 		})
 
-		It("should transition to ReviewChanges on enter", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter, Runes: []rune{'\n'}})
+		It("should transition to ReviewChanges on Ctrl+S", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS, Runes: []rune("\x13")})
 			Expect(intent.GetState()).To(Equal(ConfigStateReviewChanges))
 		})
 
