@@ -670,10 +670,30 @@ GetExportPath() (string, error)
 **Test Status**: 110/110 passing ✅
 **Build Status**: Successful ✅
 
-**Next Session**: Continue with Phase 5 (CV Selection State)
+**Next Session**: Continue with Phase 6 (Format Mapping)
+
+### Session 2: 2026-01-08 (1 hour)
+
+**Completed Work**:
+- ✅ Phase 5: CV Selection State (ConfigManager integration) - 4 new tests added
+
+**Commits**:
+- `f5f43b6` - feat(export): implement CV selection with ConfigManager integration
+
+**Files Modified**: 4 files (+157/-19 lines)
+**Test Status**: 526/526 passing ✅
+**Build Status**: Successful ✅
+
+**Implementation Details**:
+- Added CVConfigManager to ExportArtifactContext
+- Implemented loadAvailableCVs() to fetch from ConfigManager and convert to CVView
+- Updated test helpers and app.go initialization
+- All existing CV selection tests continue to pass (navigation, view rendering, etc.)
+
+**Next Session**: Continue with Phase 6 (Format Mapping)
 
 ---
 
 **Last Updated**: 2026-01-08
 **Author**: AI Assistant (via OpenCode)
-**Status**: In Progress (27% complete - 4/10 phases done)
+**Status**: In Progress (50% complete - 5/10 phases done)
