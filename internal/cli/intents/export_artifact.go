@@ -601,7 +601,7 @@ func (m *ExportArtifactModel) viewPreview() string {
 
 	if len(m.previewLines) > viewHeight {
 		scrollPercent := (m.scrollOffset * 100) / len(m.previewLines)
-		s += "\n[" + string(rune(scrollPercent/10)) + "% scrolled]"
+		s += fmt.Sprintf("\n[%d%% scrolled]", scrollPercent)
 	}
 
 	return s
