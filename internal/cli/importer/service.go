@@ -162,7 +162,10 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 
 				// Save fact to repository
 				if err := is.careerService.SaveFact(ctx, &fact); err != nil {
-					fmt.Printf("Warning: Failed to save fact: %v\n", err)
+					// Silently skip if fact repository is not configured (expected in some test scenarios)
+					if err.Error() != "fact repository not configured" {
+						fmt.Printf("Warning: Failed to save fact: %v\n", err)
+					}
 					continue
 				}
 
