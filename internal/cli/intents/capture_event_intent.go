@@ -760,8 +760,8 @@ func (i *CaptureEventIntent) viewReviewInferredEvent() string {
 	sb.WriteString("│                                                │\n")
 
 	// Event summary
-	if i.state.result != nil && i.state.result.Event != nil {
-		title := i.state.result.Event.Text
+	if i.state.reviewState.Event != nil {
+		title := i.state.reviewState.Event.Text
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
@@ -811,13 +811,13 @@ func (i *CaptureEventIntent) viewSubmit() string {
 	sb.WriteString("┌─ Confirm Submission ───────────────────────────┐\n")
 	sb.WriteString("│                                                │\n")
 
-	if i.state.result != nil && i.state.result.Event != nil {
-		title := i.state.result.Event.Text
+	if i.state.reviewState.Event != nil {
+		title := i.state.reviewState.Event.Text
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
 		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
-		sb.WriteString(fmt.Sprintf("│ Date: %s                      │\n", i.state.result.Event.Date))
+		sb.WriteString(fmt.Sprintf("│ Date: %s                      │\n", i.state.reviewState.Event.Date))
 		sb.WriteString("│                                                │\n")
 		sb.WriteString(fmt.Sprintf("│ Bursts: %d                                    │\n", len(i.state.reviewState.AcceptedBursts)))
 		sb.WriteString(fmt.Sprintf("│ Facts: %d                                     │\n", len(i.state.reviewState.AcceptedFacts)))
