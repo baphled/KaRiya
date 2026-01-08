@@ -764,7 +764,11 @@ func (i *CaptureEventIntent) getContextHelp() string {
 		}
 		return CombineFooters(FormFooter(), base)
 	case CaptureStateReview:
-		return CombineFooters(NavigationFooter(), "a Accept  r Reject", base)
+		// Show different help when modal is active
+		if i.state.reviewState.EditingMode != EditingModeNone {
+			return "Editing... | Esc Cancel  Enter Save"
+		}
+		return CombineFooters(NavigationFooter(), "e Edit  b Bursts  f Facts  a Accept  r Reject  j/k Navigate", base)
 	case CaptureStateSubmit:
 		return CombineFooters("Enter Continue  Esc Back", base)
 	default:
