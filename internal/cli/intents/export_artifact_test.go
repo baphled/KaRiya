@@ -3,8 +3,11 @@ package intents
 import (
 	"context"
 	"fmt"
+	"time"
 
 	careerdomain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -26,6 +29,35 @@ func NewTestExportArtifactContext() *ExportArtifactContext {
 		EventRepository:     nil,
 		FactRepository:      nil,
 		BurstRepository:     nil,
+		AppContext:          context.Background(),
+	}
+}
+
+// NewTestExportArtifactContextWithServices creates a test context with real services
+// Used for integration tests that need actual export functionality
+func NewTestExportArtifactContextWithServices() *ExportArtifactContext {
+	// Create logger (discard output during tests)
+	log := logger.New(nil, logger.ErrorLevel)
+
+	// Create in-memory repositories
+	eventRepo := careerrepo.NewMemoryRepository()
+	factRepo := careerrepo.NewMemoryFactRepository()
+	burstRepo := careerrepo.NewMemoryBurstRepository()
+
+	// Create export service
+	exportService := cv.NewExportService(log)
+
+	return &ExportArtifactContext{
+		ArtifactTypes:       DefaultArtifactTypes(),
+		SupportedFormats:    DefaultSupportedFormats(),
+		DefaultFormat:       DefaultFormats(),
+		Destinations:        DefaultDestinations(),
+		ExportService:       exportService,
+		CVGenerationService: nil, // Not needed for export
+		CareerService:       nil, // Not needed for export
+		EventRepository:     eventRepo,
+		FactRepository:      factRepo,
+		BurstRepository:     burstRepo,
 		AppContext:          context.Background(),
 	}
 }
@@ -967,6 +999,300 @@ var _ = Describe("ExportArtifact Intent", func() {
 		It("should default to ExportFormatText for CSV", func() {
 			result := mapToExportServiceFormat(ExportFormatCSV)
 			Expect(result).To(Equal(cv.ExportFormatText))
+		})
+	})
+
+	Describe("Real Export Implementation", func() {
+		var model *ExportArtifactModel
+
+		BeforeEach(func() {
+			context := NewTestExportArtifactContextWithServices()
+			intent, err := NewExportArtifactIntent(context)
+			Expect(err).NotTo(HaveOccurred())
+			model = intent.model
+
+			// Initialize config (normally done by state machine)
+			model.config = &ExportConfiguration{
+				ArtifactType: ExportTypeCV,
+				Format:       ExportFormatTXT,
+				Destination:  ExportDestinationFile,
+			}
+		})
+
+		Describe("exportCV", func() {
+			It("should return error when selectedCV is nil", func() {
+				model.config.ArtifactType = ExportTypeCV
+				model.config.Format = ExportFormatTXT
+				model.config.Destination = ExportDestinationFile
+				model.selectedCV = nil
+
+				result, err := model.exportCV()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("no CV selected"))
+				Expect(result).To(BeNil())
+			})
+
+			It("should export CV to text format and save to file", func() {
+				// Setup a test CV
+				now := time.Now()
+				testCV := &careerdomain.CVView{
+					ID:               "test-cv-1",
+					Name:             "Senior Go Developer CV",
+					TargetRole:       "Senior Go Developer",
+					TargetAudience:   "Tech Companies",
+					GeneratedAt:      now,
+					SourceEventCount: 5,
+					SourceFactCount:  10,
+					Sections: []*careerdomain.CVSection{
+						{
+							Title:       "Summary",
+							SectionType: "summary",
+							Summary:     "Experienced Go developer",
+							Content:     []*careerdomain.SectionContentGroup{},
+						},
+					},
+				}
+
+				model.selectedCV = testCV
+				model.config.ArtifactType = ExportTypeCV
+				model.config.Format = ExportFormatTXT
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportCV()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Success).To(BeTrue())
+				Expect(result.ArtifactType).To(Equal(ExportTypeCV))
+				Expect(result.Format).To(Equal(ExportFormatTXT))
+				Expect(result.Destination).To(Equal(ExportDestinationFile))
+				Expect(result.FilePath).NotTo(BeEmpty())
+				Expect(result.FilePath).To(ContainSubstring(".txt"))
+				Expect(result.Size).To(BeNumerically(">", 0))
+			})
+
+			It("should export CV to markdown format and save to file", func() {
+				now := time.Now()
+				testCV := &careerdomain.CVView{
+					ID:               "test-cv-2",
+					Name:             "Full Stack Engineer CV",
+					TargetRole:       "Full Stack Engineer",
+					TargetAudience:   "Startups",
+					GeneratedAt:      now,
+					SourceEventCount: 3,
+					SourceFactCount:  8,
+					Sections: []*careerdomain.CVSection{
+						{
+							Title:       "Experience",
+							SectionType: "experience",
+							Summary:     "",
+							Content:     []*careerdomain.SectionContentGroup{},
+						},
+					},
+				}
+
+				model.selectedCV = testCV
+				model.config.ArtifactType = ExportTypeCV
+				model.config.Format = ExportFormatMD
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportCV()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.FilePath).To(ContainSubstring(".md"))
+			})
+
+			It("should export CV to YAML format and save to file", func() {
+				now := time.Now()
+				testCV := &careerdomain.CVView{
+					ID:               "test-cv-3",
+					Name:             "DevOps Engineer CV",
+					TargetRole:       "DevOps Engineer",
+					TargetAudience:   "Enterprise",
+					GeneratedAt:      now,
+					SourceEventCount: 7,
+					SourceFactCount:  15,
+					Sections:         []*careerdomain.CVSection{},
+				}
+
+				model.selectedCV = testCV
+				model.config.ArtifactType = ExportTypeCV
+				model.config.Format = ExportFormatYAML
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportCV()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.FilePath).To(ContainSubstring(".yaml"))
+			})
+
+			It("should export CV to clipboard", func() {
+				now := time.Now()
+				testCV := &careerdomain.CVView{
+					ID:               "test-cv-4",
+					Name:             "Backend Developer CV",
+					TargetRole:       "Backend Developer",
+					TargetAudience:   "SaaS Companies",
+					GeneratedAt:      now,
+					SourceEventCount: 4,
+					SourceFactCount:  9,
+					Sections:         []*careerdomain.CVSection{},
+				}
+
+				model.selectedCV = testCV
+				model.config.ArtifactType = ExportTypeCV
+				model.config.Format = ExportFormatMD
+				model.config.Destination = ExportDestinationClipboard
+
+				result, err := model.exportCV()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Success).To(BeTrue())
+				Expect(result.Destination).To(Equal(ExportDestinationClipboard))
+				Expect(result.FilePath).To(Equal("clipboard"))
+				Expect(result.Size).To(BeNumerically(">", 0))
+			})
+		})
+
+		Describe("exportEvents", func() {
+			It("should export events to JSON format", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatJSON
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportEvents()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Success).To(BeTrue())
+				Expect(result.FilePath).To(ContainSubstring(".json"))
+			})
+
+			It("should export events to CSV format", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatCSV
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportEvents()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.FilePath).To(ContainSubstring(".csv"))
+			})
+
+			It("should export events to clipboard", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatJSON
+				model.config.Destination = ExportDestinationClipboard
+
+				result, err := model.exportEvents()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.FilePath).To(Equal("clipboard"))
+			})
+		})
+
+		Describe("exportFacts", func() {
+			It("should export facts to JSON format", func() {
+				model.config.ArtifactType = ExportTypeFacts
+				model.config.Format = ExportFormatJSON
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportFacts()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Success).To(BeTrue())
+			})
+
+			It("should export facts to YAML format", func() {
+				model.config.ArtifactType = ExportTypeFacts
+				model.config.Format = ExportFormatYAML
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportFacts()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.FilePath).To(ContainSubstring(".yaml"))
+			})
+		})
+
+		Describe("exportBursts", func() {
+			It("should export bursts to JSON format", func() {
+				model.config.ArtifactType = ExportTypeBursts
+				model.config.Format = ExportFormatJSON
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportBursts()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.Success).To(BeTrue())
+			})
+
+			It("should export bursts to TXT format", func() {
+				model.config.ArtifactType = ExportTypeBursts
+				model.config.Format = ExportFormatTXT
+				model.config.Destination = ExportDestinationFile
+
+				result, err := model.exportBursts()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).NotTo(BeNil())
+				Expect(result.FilePath).To(ContainSubstring(".txt"))
+			})
+		})
+
+		Describe("startExport integration", func() {
+			It("should call exportCV for CV artifact type", func() {
+				now := time.Now()
+				testCV := &careerdomain.CVView{
+					ID:               "test-cv-integration",
+					Name:             "Test CV",
+					TargetRole:       "Developer",
+					TargetAudience:   "Tech",
+					GeneratedAt:      now,
+					SourceEventCount: 1,
+					SourceFactCount:  2,
+					Sections:         []*careerdomain.CVSection{},
+				}
+
+				model.selectedCV = testCV
+				model.config.ArtifactType = ExportTypeCV
+				model.config.Format = ExportFormatTXT
+				model.config.Destination = ExportDestinationFile
+
+				cmd := model.startExport()
+				Expect(cmd).NotTo(BeNil())
+
+				msg := cmd()
+				completeMsg, ok := msg.(ExportCompleteMsg)
+				Expect(ok).To(BeTrue())
+				Expect(completeMsg.Result).NotTo(BeNil())
+				Expect(completeMsg.Result.Success).To(BeTrue())
+			})
+
+			It("should call exportEvents for Events artifact type", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatJSON
+				model.config.Destination = ExportDestinationFile
+
+				cmd := model.startExport()
+				Expect(cmd).NotTo(BeNil())
+
+				msg := cmd()
+				completeMsg, ok := msg.(ExportCompleteMsg)
+				Expect(ok).To(BeTrue())
+				Expect(completeMsg.Result.Success).To(BeTrue())
+			})
+
+			It("should return error message when export fails", func() {
+				// CV export without selected CV should fail
+				model.config.ArtifactType = ExportTypeCV
+				model.config.Format = ExportFormatTXT
+				model.config.Destination = ExportDestinationFile
+				model.selectedCV = nil
+
+				cmd := model.startExport()
+				msg := cmd()
+				errorMsg, ok := msg.(ExportErrorMsg)
+				Expect(ok).To(BeTrue())
+				Expect(errorMsg.Error).NotTo(BeNil())
+			})
 		})
 	})
 })
