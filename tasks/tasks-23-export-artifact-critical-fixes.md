@@ -1,10 +1,65 @@
 # Task 23: ExportArtifact Critical Fixes
 
 **Created**: 2026-01-08
-**Status**: Ready for Implementation
+**Status**: IN PROGRESS (Phase 4/10 Complete - 27% Done)
 **Priority**: CRITICAL
-**Estimated Time**: 4-6 hours
+**Estimated Time**: 4-6 hours (2 hours spent)
 **Related**: Codebase Audit (2026-01-08)
+
+---
+
+## Progress Tracking
+
+### Completed Phases ✅
+
+**Phase 1: Critical Bug Fixes** (Tasks 1-3) - COMPLETE ✅
+- ✅ Fixed `formatBytes()` function (was showing garbage characters)
+- ✅ Fixed scroll percentage display (was showing garbage characters)
+- ✅ Added 14 comprehensive tests for both fixes
+- **Commit**: `4c0309f`, `3ab85a1`
+
+**Phase 2: Format Updates** (Tasks 4-7) - COMPLETE ✅
+- ✅ Added `ExportFormatYAML` constant
+- ✅ Updated CV formats (removed PDF/JSON, added TXT/MD/YAML)
+- ✅ Updated Events/Facts/Bursts formats (added YAML)
+- ✅ Removed `ExportDestinationEmail` (only File/Clipboard remain)
+- **Commit**: `2a631b9`
+
+**Phase 3: Vim Navigation** (Tasks 8-10) - COMPLETE ✅
+- ✅ Added `j` key for down navigation in format/destination selection
+- ✅ Added `k` key for up navigation in format/destination selection
+- ✅ Added 4 explicit vim navigation tests
+- **Commit**: `4fa6269`
+
+**Phase 4: Service Integration** (Tasks 11-14) - COMPLETE ✅
+- ✅ Added helper functions (DefaultArtifactTypes, DefaultSupportedFormats, DefaultFormats, DefaultDestinations)
+- ✅ Updated ExportArtifactContext to include ExportService, CVGenerationService, CareerService, and repositories
+- ✅ Changed NewExportArtifactIntent to accept *ExportArtifactContext instead of context.Context
+- ✅ Created NewTestExportArtifactContext helper for test consistency
+- ✅ Updated all 110+ test calls across 4 test files
+- ✅ Updated app.go to properly initialize ExportArtifact with all services
+- ✅ Removed obsolete NewExportArtifactContext function
+- **Commit**: `3ffcd79`
+- **Test Results**: 110/110 ExportArtifact tests passing ✓
+
+### Current Status: Phase 5 (Next)
+
+**Phase 5: CV Selection State** (Tasks 15-18) - READY TO START
+- Add new state `ExportStateSelectCV` for CV selection workflow
+- Implement CV list view (using CVGenerationService)
+- Add navigation between artifact type and CV selection
+- Update tests
+
+### Remaining Phases (Tasks 15-37, 23 tasks)
+
+- **Phase 5**: CV Selection State (Tasks 15-18) - Ready
+- **Phase 6**: Format Mapping (Tasks 19-20)
+- **Phase 7**: Real Export (Tasks 21-24)
+- **Phase 8**: Real Previews (Tasks 25-30)
+- **Phase 9**: LoadingRotator (Tasks 31-33)
+- **Phase 10**: Final Verification (Tasks 34-37)
+
+**Estimated Remaining Time**: 2-3 hours
 
 ---
 
@@ -25,9 +80,13 @@ The ExportArtifact intent is **completely non-functional** - exports don't actua
 
 ## Files to Modify
 
-- [ ] `internal/cli/intents/export_artifact.go` (main implementation)
-- [ ] `internal/cli/intents/export_artifact_intent.go` (add ExportService dependency)
-- [ ] `internal/cli/intents/export_artifact_test.go` (update tests for real export)
+- [x] `internal/cli/intents/export_artifact.go` (main implementation) - Phases 1-4 complete
+- [x] `internal/cli/intents/export_artifact_intent.go` (add ExportService dependency) - Phase 4 complete
+- [x] `internal/cli/intents/export_artifact_test.go` (update tests for real export) - Phases 1-4 complete
+- [x] `internal/cli/app/app.go` (service integration) - Phase 4 complete
+- [x] `internal/cli/intents/benchmarks_test.go` (update benchmarks) - Phase 4 complete
+- [x] `internal/cli/intents/consistency_test.go` (update consistency tests) - Phase 4 complete
+- [x] `internal/cli/intents/export_artifact_escape_test.go` (update escape tests) - Phase 4 complete
 
 ---
 
@@ -73,9 +132,9 @@ func formatBytes(bytes int64) string {
 ```
 
 **Tasks**:
-- [ ] Replace `string(rune(bytes))` with `fmt.Sprintf("%d", bytes)`
-- [ ] Add test for formatBytes with various sizes (1, 1024, 1048576)
-- [ ] Verify output: "1 B", "1 KB", "1 MB"
+- [x] Replace `string(rune(bytes))` with `fmt.Sprintf("%d", bytes)`
+- [x] Add test for formatBytes with various sizes (1, 1024, 1048576)
+- [x] Verify output: "1 B", "1 KB", "1 MB"
 
 #### 1.2 Fix Scroll Percentage Display
 **Location**: `internal/cli/intents/export_artifact.go:601-604`
@@ -97,9 +156,9 @@ if len(m.previewLines) > viewHeight {
 ```
 
 **Tasks**:
-- [ ] Replace `string(rune(scrollPercent/10))` with `fmt.Sprintf("%d%%", scrollPercent)`
-- [ ] Test with different scroll positions
-- [ ] Verify display shows "0%", "50%", "100%"
+- [x] Replace `string(rune(scrollPercent/10))` with `fmt.Sprintf("%d%%", scrollPercent)`
+- [x] Test with different scroll positions
+- [x] Verify display shows "0%", "50%", "100%"
 
 **Verification**:
 ```bash
@@ -582,6 +641,31 @@ GetExportPath() (string, error)
 
 ---
 
+## Session Progress Summary
+
+### Session 1: 2026-01-08 (2 hours)
+
+**Completed Work**:
+- ✅ Phase 1: Critical Bug Fixes (formatBytes, scroll percentage) - 14 tests added
+- ✅ Phase 2: Format Updates (YAML support, removed PDF/Email) - Updated all format mappings
+- ✅ Phase 3: Vim Navigation (j/k keys) - 4 navigation tests added
+- ✅ Phase 4: Service Integration (ExportService, repositories) - 110/110 tests passing
+
+**Commits**:
+- `4c0309f` - test: add tests for formatBytes() utility function
+- `3ab85a1` - test: add tests for scroll percentage display in preview
+- `2a631b9` - refactor(export): update export formats and remove email destination
+- `4fa6269` - feat(export): add vim j/k navigation to format and destination selection
+- `3ffcd79` - feat(export): integrate services and repositories into ExportArtifact intent
+
+**Files Modified**: 8 files (+432/-84 lines)
+**Test Status**: 110/110 passing ✅
+**Build Status**: Successful ✅
+
+**Next Session**: Continue with Phase 5 (CV Selection State)
+
+---
+
 **Last Updated**: 2026-01-08
 **Author**: AI Assistant (via OpenCode)
-**Status**: Ready for implementation
+**Status**: In Progress (27% complete - 4/10 phases done)
