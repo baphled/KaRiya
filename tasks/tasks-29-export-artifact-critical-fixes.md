@@ -1,4 +1,4 @@
-# Task 23: ExportArtifact Critical Fixes
+# Task 29: ExportArtifact Critical Fixes
 
 **Created**: 2026-01-08
 **Status**: ✅ COMPLETE - CV Export Removed (Architecture Decision)
@@ -679,7 +679,7 @@ GetExportPath() (string, error)
 
 **Commits** (REVERTED):
 - `f5f43b6` - feat(export): implement CV selection with ConfigManager integration *(reverted)*
-- `b766730` - docs: update Task 23 with Phase 5 completion *(reverted)*
+- `b766730` - docs: update Task 29 with Phase 5 completion *(reverted)*
 
 **Decision**: After implementation, user identified fundamental issue: CV export doesn't make sense in ExportArtifact because CVs are generated on-demand in GenerateCV intent and are not persisted.
 

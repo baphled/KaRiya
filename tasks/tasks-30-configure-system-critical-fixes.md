@@ -1,4 +1,4 @@
-# Task 24: ConfigureSystem Critical Fixes
+# Task 30: ConfigureSystem Critical Fixes
 
 **Created**: 2026-01-08
 **Status**: Ready for Implementation
@@ -626,7 +626,7 @@ case "down", "j":  // ADD "j"
 - [ ] Test vim navigation
 
 #### 4.2 Use LoadingRotator
-**Similar to Task 23** - use rotating messages in viewSaving()
+**Similar to Task 29** - use rotating messages in viewSaving()
 
 **Tasks**:
 - [ ] Use loadingRotator.GetMessage() in viewSaving()

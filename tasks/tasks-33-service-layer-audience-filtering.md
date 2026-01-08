@@ -1,4 +1,4 @@
-# Task 27: Service Layer Audience Filtering
+# Task 33: Service Layer Audience Filtering
 
 **Created**: 2026-01-08
 **Status**: Ready for Implementation

@@ -1,4 +1,4 @@
-# Task 26: BrowseTimeline Filter Implementation
+# Task 32: BrowseTimeline Filter Implementation
 
 **Created**: 2026-01-08
 **Status**: Ready for Implementation

@@ -1,4 +1,4 @@
-# Task 25: CaptureEvent Modal & Review Fixes
+# Task 31: CaptureEvent Modal & Review Fixes
 
 **Created**: 2026-01-08
 **Status**: Ready for Implementation
