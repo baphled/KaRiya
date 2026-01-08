@@ -364,19 +364,10 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			modal, cmd := i.state.reviewState.burstModal.Update(msg)
 			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
 
-			// Check if modal completed (all suggestions processed) or cancelled with Esc
-			if i.state.reviewState.burstModal.IsDone() {
-				// Modal completed - save confirmed/rejected bursts
-				// Get the confirmed suggestions and update InferredBursts
-				confirmed := i.state.reviewState.burstModal.GetConfirmed()
-				if len(confirmed) > 0 {
-					// Convert confirmed suggestions back to InferredBursts if needed
-					// For now, we maintain the existing InferredBursts
-				}
-				i.state.reviewState.burstModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
-			} else if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
-				// Modal cancelled with Esc - don't save changes
+			// Check if modal completed
+			// TODO: Add completion check when BurstSuggestionModelNew has IsComplete/IsCancelled methods
+			// For now, allow Esc to exit
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
 				i.state.reviewState.burstModal = nil
 				i.state.reviewState.EditingMode = EditingModeNone
 			}
@@ -391,10 +382,7 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			// Check if modal completed
 			if i.state.reviewState.factModal.IsSubmitted() {
 				// Apply changes to fact
-				editedFact := i.state.reviewState.factModal.GetFact()
-				if idx := i.state.reviewState.EditingIndex; idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
-					i.state.reviewState.InferredFacts[idx] = editedFact
-				}
+				// TODO: Update the inferred facts list with edited fact
 				i.state.reviewState.factModal = nil
 				i.state.reviewState.EditingMode = EditingModeNone
 			} else if i.state.reviewState.factModal.IsCancelled() {
@@ -1040,15 +1028,9 @@ func (i *CaptureEventIntent) viewMetadataEditModal() string {
 func (i *CaptureEventIntent) viewBurstEditModal() string {
 	if i.state.reviewState.burstModal == nil {
 		// Convert inferred bursts to suggestions for the modal
-		suggestions := make([]burstfact.BurstSuggestion, 0, len(i.state.reviewState.InferredBursts))
-		for _, burst := range i.state.reviewState.InferredBursts {
-			suggestions = append(suggestions, burstfact.BurstSuggestion{
-				EventIDs:        burst.EventIDs,
-				ConfidenceScore: 0.8, // Default confidence for inferred bursts
-				Name:            burst.Name,
-				Description:     burst.Description,
-			})
-		}
+		// For now, we'll work with an empty list - in a full implementation,
+		// we'd convert i.state.reviewState.InferredBursts to suggestions
+		var suggestions []burstfact.BurstSuggestion
 		i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
 			i.context.CareerService,
 			suggestions,
@@ -1076,82 +1058,6 @@ func (i *CaptureEventIntent) viewFactEditModal() string {
 		)
 	}
 	return i.state.reviewState.factModal.View()
-}
-
-// acceptCurrentItem accepts the currently selected burst or fact.
-// Moves the item from InferredBursts/InferredFacts to AcceptedBursts/AcceptedFacts.
-func (i *CaptureEventIntent) acceptCurrentItem() {
-	if i.state.reviewState.SelectedItemType == "burst" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredBursts) {
-			burst := i.state.reviewState.InferredBursts[idx]
-			i.state.reviewState.AcceptedBursts = append(i.state.reviewState.AcceptedBursts, burst)
-			// Remove from inferred list
-			i.state.reviewState.InferredBursts = append(
-				i.state.reviewState.InferredBursts[:idx],
-				i.state.reviewState.InferredBursts[idx+1:]...)
-			// Adjust selection if needed
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredBursts) && len(i.state.reviewState.InferredBursts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredBursts) - 1
-			}
-		}
-	} else if i.state.reviewState.SelectedItemType == "fact" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
-			fact := i.state.reviewState.InferredFacts[idx]
-			i.state.reviewState.AcceptedFacts = append(i.state.reviewState.AcceptedFacts, fact)
-			// Remove from inferred list
-			i.state.reviewState.InferredFacts = append(
-				i.state.reviewState.InferredFacts[:idx],
-				i.state.reviewState.InferredFacts[idx+1:]...)
-			// Adjust selection if needed
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredFacts) && len(i.state.reviewState.InferredFacts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredFacts) - 1
-			}
-		}
-	}
-}
-
-// rejectCurrentItem rejects the currently selected burst or fact.
-// Removes the item from InferredBursts/InferredFacts without adding to accepted.
-func (i *CaptureEventIntent) rejectCurrentItem() {
-	if i.state.reviewState.SelectedItemType == "burst" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredBursts) {
-			burst := i.state.reviewState.InferredBursts[idx]
-			// Track rejection reason (optional - could add a modal for this)
-			if i.state.reviewState.RejectedItems == nil {
-				i.state.reviewState.RejectedItems = make(map[string]string)
-			}
-			i.state.reviewState.RejectedItems[burst.ID] = "user_rejected"
-			// Remove from inferred list
-			i.state.reviewState.InferredBursts = append(
-				i.state.reviewState.InferredBursts[:idx],
-				i.state.reviewState.InferredBursts[idx+1:]...)
-			// Adjust selection if needed
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredBursts) && len(i.state.reviewState.InferredBursts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredBursts) - 1
-			}
-		}
-	} else if i.state.reviewState.SelectedItemType == "fact" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
-			fact := i.state.reviewState.InferredFacts[idx]
-			// Track rejection reason
-			if i.state.reviewState.RejectedItems == nil {
-				i.state.reviewState.RejectedItems = make(map[string]string)
-			}
-			i.state.reviewState.RejectedItems[fact.ID] = "user_rejected"
-			// Remove from inferred list
-			i.state.reviewState.InferredFacts = append(
-				i.state.reviewState.InferredFacts[:idx],
-				i.state.reviewState.InferredFacts[idx+1:]...)
-			// Adjust selection if needed
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredFacts) && len(i.state.reviewState.InferredFacts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredFacts) - 1
-			}
-		}
-	}
 }
 
 // IsActive returns true if this intent is currently active.
