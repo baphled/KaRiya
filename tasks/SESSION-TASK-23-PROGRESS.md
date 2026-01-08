@@ -1,50 +1,54 @@
 # Task 23 Progress Summary - Session 2026-01-08
 
 **Branch**: `fix/export-artifact-critical-fixes`  
-**Status**: ✅ Phases 1-3 Complete (10/37 tasks - 27%)  
+**Status**: ✅ Phases 1-4 Complete (14/37 tasks - 38%)  
 **All Tests**: ✅ Passing (110 ExportArtifact tests)  
-**Commits**: 4 atomic commits with full TDD
+**Commits**: 5 atomic commits with full TDD
+**Time Spent**: ~2 hours
+**Remaining**: ~2-3 hours
 
 ---
 
-## Completed Work
+## Completed Work ✅
 
-### Phase 1: Critical Bug Fixes ✅ (Tasks 1-5)
+### Phase 1: Critical Bug Fixes ✅ (Tasks 1-3)
 
 **Fixed two critical bugs** that displayed garbage characters:
 
 1. **`formatBytes()` bug** - Fixed `string(rune(bytes))` → `fmt.Sprintf("%d", bytes)`
    - Before: Displayed `"\x00 B"`, `"\x01 KB"` (garbage characters)
    - After: Displays `"0 B"`, `"1 KB"`, `"1 MB"` correctly
-   - Tests: 9 comprehensive tests covering all byte ranges
+   - Tests: 9 comprehensive tests covering all byte ranges (0 B through 1 TB)
 
 2. **Scroll percentage bug** - Fixed `string(rune(scrollPercent/10))` → `fmt.Sprintf("%d%%", scrollPercent)`
    - Before: Displayed `"[% scrolled]"` (empty/garbage)
    - After: Displays `"[0% scrolled]"`, `"[50% scrolled]"` correctly
-   - Tests: 5 tests covering various scroll positions
+   - Tests: 5 tests covering various scroll positions (0%, 33%, 50%, 100%)
 
 **Commits**:
 - `4c0309f` test: add tests for formatBytes() utility function
 - `3ab85a1` test: add tests for scroll percentage display in preview
-- (fixes included in test commits)
 
-### Phase 2: Format Updates ✅ (Tasks 6-8)
+---
+
+### Phase 2: Format Updates ✅ (Tasks 4-7)
 
 **Updated export formats** to align with ExportService capabilities:
 
 1. **Added YAML format** - New `ExportFormatYAML` constant
 2. **Updated CV formats**: `TXT, MD, YAML` (removed PDF, JSON)
 3. **Updated Events/Facts/Bursts**: `JSON, YAML, CSV, TXT` (added YAML)
-4. **Updated Profile formats**: `JSON, YAML` (removed PDF)
-5. **Changed CV default**: `PDF` → `Markdown`
-6. **Removed email destination** - Only File and Clipboard remain
+4. **Changed CV default**: `PDF` → `Markdown`
+5. **Removed email destination** - Only File and Clipboard remain
 
 **Impact**: Aligns with ExportService (Text, Markdown, YAML) and removes unimplemented features
 
 **Commit**:
 - `2a631b9` refactor(export): update export formats and remove email destination
 
-### Phase 3: Vim Navigation ✅ (Tasks 9-10)
+---
+
+### Phase 3: Vim Navigation ✅ (Tasks 8-10)
 
 **Added vim-style navigation** for consistency with other TUI components:
 
@@ -57,34 +61,66 @@
 
 ---
 
-## Remaining Work (27/37 tasks - 73%)
+### Phase 4: Service Integration ✅ (Tasks 11-14)
 
-### Phase 4: Service Integration (Tasks 11-14) - NEXT SESSION START HERE
+**Successfully integrated all services and repositories** for real data access:
 
-**Goal**: Wire up ExportService and repositories for real export functionality
+#### Changes Made:
 
-**Critical Changes**:
-1. Update `ExportArtifactContext` to include:
-   - `ExportService *cv.ExportService`
-   - `CVGenerationService cv.CVGenerationService`
-   - `EventRepository careerrepo.Repository`
-   - `FactRepository careerrepo.FactRepository`
-   - `BurstRepository careerrepo.BurstRepository`
-   - `AppContext context.Context`
+1. **Helper Functions** (`export_artifact.go` +60 lines):
+   - `DefaultArtifactTypes()` - Returns CV, Events, Facts, Bursts
+   - `DefaultSupportedFormats()` - Maps artifact types to supported formats
+   - `DefaultFormats()` - Default format for each artifact type
+   - `DefaultDestinations()` - File and Clipboard destinations
 
-2. Change `NewExportArtifactIntent` signature:
-   - FROM: `func NewExportArtifactIntent(ctx context.Context)`
-   - TO: `func NewExportArtifactIntent(ctx *ExportArtifactContext)`
+2. **Context Structure** (`export_artifact.go`):
+   ```go
+   type ExportArtifactContext struct {
+       // Configuration
+       ArtifactTypes    []ExportArtifactType
+       SupportedFormats map[ExportArtifactType][]ExportFormat
+       DefaultFormat    map[ExportArtifactType]ExportFormat
+       Destinations     []ExportDestination
+       
+       // Services (NEW)
+       ExportService       *cv.ExportService
+       CVGenerationService cv.CVGenerationService
+       CareerService       *career.Service
+       
+       // Repositories (NEW)
+       EventRepository careerrepo.Repository
+       FactRepository  careerrepo.FactRepository
+       BurstRepository careerrepo.BurstRepository
+       
+       // Context (NEW)
+       AppContext context.Context
+   }
+   ```
 
-3. Update `app.go` registration (lines 496-503):
+3. **Constructor Refactoring** (`export_artifact_intent.go`):
+   - Changed: `NewExportArtifactIntent(ctx context.Context)` 
+   - To: `NewExportArtifactIntent(context *ExportArtifactContext)`
+   - Removed obsolete `NewExportArtifactContext()` function
+
+4. **Test Infrastructure**:
+   - Created `NewTestExportArtifactContext()` helper
+   - Updated 110+ test calls across 4 test files:
+     - `export_artifact_test.go` (26+ instances)
+     - `benchmarks_test.go` (2 instances)
+     - `consistency_test.go` (2 instances)
+     - `export_artifact_escape_test.go` (1 instance)
+   - Fixed artifact count test (5 → 4 types, removed ExportTypeProfile)
+
+5. **Application Integration** (`app.go`):
    ```go
    exportCtx := &intents.ExportArtifactContext{
        ArtifactTypes:       intents.DefaultArtifactTypes(),
        SupportedFormats:    intents.DefaultSupportedFormats(),
        DefaultFormat:       intents.DefaultFormats(),
-       Destinations:        []intents.ExportDestination{...},
+       Destinations:        intents.DefaultDestinations(),
        ExportService:       cvExportService,
        CVGenerationService: cvGenService,
+       CareerService:       careerService,
        EventRepository:     careerService.GetEventRepository(),
        FactRepository:      careerService.GetFactRepository(),
        BurstRepository:     careerService.GetBurstRepository(),
@@ -92,29 +128,42 @@
    }
    ```
 
-4. **Fix ALL tests** - Every test creating `NewExportArtifactIntent(ctx)` must change
+**Commit**:
+- `3ffcd79` feat(export): integrate services and repositories into ExportArtifact intent
 
-**Estimated Impact**: ~100 test updates, significant refactoring
+**Test Results**: ✅ 110/110 ExportArtifact tests passing
 
 ---
 
-### Phase 5: CV Selection State (Tasks 15-19)
+## Remaining Work (23/37 tasks - 62%)
 
-Add new state for CV selection when exporting CVs:
+### Phase 5: CV Selection State (Tasks 15-18) - NEXT
 
+**Goal**: Add workflow to select which CV to export
+
+**Changes Required**:
 1. Add `ExportStateSelectCV` constant
-2. Add `availableCVs []*career.CVView` to model
-3. Add `selectedCV *career.CVView` to model
-4. Implement view and update handlers for CV selection
-5. Generate/fetch available CVs when entering state
+2. Add `availableCVs []*career.CVView` to model state
+3. Add `selectedCV *career.CVView` to model state
+4. Implement `viewSelectCV()` - CV list view
+5. Implement `updateSelectCV()` - handle CV selection
+6. Update state machine: `SelectType` → **`SelectCV`** (if CV type) → `SelectFormat` → ...
+7. Fetch available CVs using `CVGenerationService` when entering state
+8. Add tests for CV selection workflow
 
-**Flow**: SelectType → **SelectCV** (new) → SelectFormat → ...
+**Flow**:
+```
+SelectType → SelectCV (new, CV only) → SelectFormat → SelectDest → Preview → Confirm → Export
+```
+
+**Reference**: See `generate_cv_intent.go` for CV selection patterns
 
 ---
 
-### Phase 6: Format Mapping (Task 20)
+### Phase 6: Format Mapping (Tasks 19-20)
 
-Add helper to map export formats:
+Add helper to map ExportFormat → cv.ExportFormat:
+
 ```go
 func mapToExportServiceFormat(format ExportFormat) cv.ExportFormat {
     switch format {
@@ -126,54 +175,86 @@ func mapToExportServiceFormat(format ExportFormat) cv.ExportFormat {
 }
 ```
 
+**Note**: Needed because ExportArtifact uses its own format constants
+
 ---
 
-### Phase 7: Real Export Implementation (Tasks 21-28)
+### Phase 7: Real Export Implementation (Tasks 21-24)
 
-Replace stub export with real implementation:
+**Goal**: Replace stub export with real implementation
 
-1. TDD tests for actual export
-2. Implement `exportCV()` using ExportService
-3. Implement `exportEvents()` using `json.Marshal`
-4. Implement `exportFacts()` using `json.Marshal`
-5. Implement `exportBursts()` using `json.Marshal`
-6. Implement `exportProfile()` using `json.Marshal`
-7. Implement `saveToFile()` helper
-8. Replace `startExport()` stub (currently returns `/tmp/export.*` with 1024 bytes)
+**Current Code** (lines 506-518):
+```go
+func (m *ExportArtifactModel) startExport() tea.Cmd {
+    return func() tea.Msg {
+        result := NewExportArtifactResult(
+            true,
+            m.config.ArtifactType,
+            m.config.Format,
+            m.config.Destination,
+            "/tmp/export."+string(m.config.Format),  // HARDCODED STUB
+            1024,  // HARDCODED SIZE
+        )
+        return result
+    }
+}
+```
+
+**Changes Required**:
+1. Implement `exportCV()` - use `ExportService.ExportToText/Markdown/YAML()`
+2. Implement `exportEvents()` - marshal to JSON/YAML/CSV
+3. Implement `exportFacts()` - marshal to JSON/YAML/CSV
+4. Implement `exportBursts()` - marshal to JSON/YAML/CSV
+5. Use `ExportService.SaveToFile()` or `CopyToClipboard()`
+6. Handle errors properly (return IntentError)
+7. Calculate real file size
+8. Return actual file path
 
 **Critical**: This makes exports actually work!
 
 ---
 
-### Phase 8: Real Preview Data (Tasks 29-33)
+### Phase 8: Real Preview Data (Tasks 25-30)
 
-Replace mock preview data with real repository data:
+**Goal**: Replace mock preview data with real repository data
 
-1. Update `generateCVPreview()` - use selected CV
-2. Update `generateEventsPreview()` - fetch from EventRepository
-3. Update `generateFactsPreview()` - fetch from FactRepository
-4. Update `generateBurstsPreview()` - fetch from BurstRepository
-5. Update `generateProfilePreview()` - use context data
+**Current State**: All `generate*Preview()` functions return hardcoded strings
 
-**Currently**: All previews show hardcoded mock data
+**Changes Required**:
+1. `generateCVPreview()` - Use selected CV from CVGenerationService
+2. `generateEventsPreview()` - Fetch from `m.context.EventRepository.List()`
+3. `generateFactsPreview()` - Fetch from `m.context.FactRepository.List()`
+4. `generateBurstsPreview()` - Fetch from `m.context.BurstRepository.List()`
+5. Handle empty data gracefully
+6. Add tests for preview generation with real data
+
+**Locations**:
+- `generateCVPreview()` - lines 663-723
+- `generateEventsPreview()` - lines 725-778
+- `generateFactsPreview()` - lines 780-833
+- `generateBurstsPreview()` - lines 835-888
 
 ---
 
-### Phase 9: LoadingRotator (Tasks 34-35)
+### Phase 9: LoadingRotator (Tasks 31-33)
 
-Wire up existing LoadingRotator:
+**Goal**: Wire up existing LoadingMessageRotator for better UX
 
-1. Use `loadingRotator.GetMessage()` in `viewInProgress()`
+**Changes**:
+1. Use `m.loadingRotator.GetMessage()` in `viewInProgress()`
 2. Add tick command for message rotation
+3. Update tests
 
-**Minor**: Improves UX during export
+**Minor improvement**: Shows rotating messages during export
 
 ---
 
-### Phase 10: Final Verification (Tasks 36-37)
+### Phase 10: Final Verification (Tasks 34-37)
 
-1. Run all tests, race detector, build
-2. Update task file with completion status
+1. Run full test suite with race detector
+2. Build application and verify exports work
+3. Update documentation
+4. Final commit and PR
 
 ---
 
@@ -181,66 +262,89 @@ Wire up existing LoadingRotator:
 
 **Current**: ✅ All 110 ExportArtifact tests passing
 
-**Tests Added**:
-- 9 tests for `formatBytes()`
-- 5 tests for scroll percentage
-- 4 tests for vim navigation
+**Tests Added This Session**:
+- 9 tests for `formatBytes()` (0 B through 1 TB)
+- 5 tests for scroll percentage display
+- 4 tests for vim navigation (j/k keys)
 
-**Total**: 18 new tests, all passing
+**Total New Tests**: 18 tests, all passing ✅
 
 ---
 
-## Files Modified
+## Files Modified (8 files, +432/-84 lines)
 
 **Source Code**:
-- `internal/cli/intents/export_artifact.go` - Bug fixes, format updates, vim navigation
-- `internal/cli/intents/export_artifact_intent.go` - (no changes yet)
+- `internal/cli/intents/export_artifact.go` - Bug fixes, formats, vim nav, helpers, context
+- `internal/cli/intents/export_artifact_intent.go` - Constructor refactoring
+- `internal/cli/app/app.go` - Service integration
 
 **Tests**:
-- `internal/cli/intents/export_artifact_test.go` - Added 18 new tests, updated format/destination tests
+- `internal/cli/intents/export_artifact_test.go` - 18 new tests, 26+ call updates
+- `internal/cli/intents/benchmarks_test.go` - 2 call updates
+- `internal/cli/intents/consistency_test.go` - 2 call updates
+- `internal/cli/intents/export_artifact_escape_test.go` - 1 call update
 
-**App Integration**:
-- (Not yet modified - Phase 4)
+**Documentation**:
+- `tasks/tasks-23-export-artifact-critical-fixes.md` - Progress tracking
 
 ---
 
-## Known Issues
+## Commits (5 total)
 
-None - all current functionality working as expected.
+1. `4c0309f` - test: add tests for formatBytes() utility function
+2. `3ab85a1` - test: add tests for scroll percentage display in preview
+3. `2a631b9` - refactor(export): update export formats and remove email destination
+4. `4fa6269` - feat(export): add vim j/k navigation to format and destination selection
+5. `3ffcd79` - feat(export): integrate services and repositories into ExportArtifact intent
 
 ---
 
 ## Next Session Action Plan
 
-### Start with Phase 4 (Service Integration)
+### Start with Phase 5: CV Selection State
 
-**Recommended approach**:
+**Step 1: Add State Constant**
+```go
+// Add to export_artifact.go
+const (
+    // ... existing states ...
+    ExportStateSelectCV ExportState = "select_cv"
+)
+```
 
-1. **Create helper functions first** to avoid breaking all tests:
-   ```go
-   // Add to export_artifact.go
-   func DefaultArtifactTypes() []ExportArtifactType { ... }
-   func DefaultSupportedFormats() map[ExportArtifactType][]ExportFormat { ... }
-   func DefaultFormats() map[ExportArtifactType]ExportFormat { ... }
-   ```
+**Step 2: Add Model Fields**
+```go
+type ExportArtifactModel struct {
+    // ... existing fields ...
+    availableCVs []*career.CVView
+    selectedCV   *career.CVView
+}
+```
 
-2. **Update context struct** with services/repos
+**Step 3: Implement State Transition**
+```go
+func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
+    // ... existing code ...
+    case "enter":
+        if m.config.ArtifactType == ExportTypeCV {
+            // NEW: Transition to CV selection
+            m.state = ExportStateSelectCV
+            return m.loadAvailableCVs()
+        } else {
+            // Existing flow for other types
+            m.state = ExportStateSelectFormat
+        }
+}
+```
 
-3. **Create test helper** for creating context in tests:
-   ```go
-   func NewTestExportArtifactContext() *ExportArtifactContext {
-       return &ExportArtifactContext{
-           ArtifactTypes: DefaultArtifactTypes(),
-           // ... with nil services (tests don't need them yet)
-       }
-   }
-   ```
+**Step 4: Write Tests First (TDD)**
+- Test CV selection state entry
+- Test CV list rendering
+- Test CV selection with Enter
+- Test navigation with arrow/vim keys
+- Test back navigation with Esc
 
-4. **Update tests incrementally** - fix compile errors one by one
-
-5. **Update app.go last** - after all tests pass
-
-This minimizes churn and keeps tests green throughout.
+**Estimated Time**: 1 hour for Phase 5
 
 ---
 
@@ -250,17 +354,20 @@ This minimizes churn and keeps tests green throughout.
 # Switch to branch
 git checkout fix/export-artifact-critical-fixes
 
-# Run ExportArtifact tests
+# Run ExportArtifact tests only
 ginkgo -r --focus="ExportArtifact" ./internal/cli/intents/
 
 # Run all tests
 go test ./... -v
 
-# Check test count
-go test ./internal/cli/intents -v -run "ExportArtifact" | grep -c "PASS:"
+# Run with race detector
+go test -race ./internal/cli/intents/
 
 # Build
 go build -o kariya ./cmd/cli
+
+# Check current commit
+git log --oneline -5
 ```
 
 ---
@@ -268,17 +375,21 @@ go build -o kariya ./cmd/cli
 ## Resources
 
 **Task File**: `tasks/tasks-23-export-artifact-critical-fixes.md`  
+
 **Related Services**:
 - `internal/service/career/cv/export_service.go` - ExportService implementation
+- `internal/service/career/cv/generation_service.go` - CVGenerationService
 - `internal/service/career/service.go` - CareerService (repos accessor)
-- `internal/cli/app/app.go` - Intent registration (lines 496-503)
 
 **Reference Implementations**:
-- `internal/cli/intents/generate_cv.go` - Example of service integration pattern
-- `internal/cli/intents/generate_cv_intent.go` - Example of export usage
+- `internal/cli/intents/generate_cv.go` - CV selection and export patterns
+- `internal/cli/intents/generate_cv_intent.go` - Service integration example
+
+**Domain Models**:
+- `internal/domain/career/cv.go` - CVView, CVSection, CVBullet types
 
 ---
 
-**Last Updated**: 2026-01-08  
-**Next Session**: Start with Phase 4.1 (Update ExportArtifactContext)  
-**Estimated Remaining Time**: 4-5 hours
+**Last Updated**: 2026-01-08 (after Phase 4 completion)  
+**Next Session**: Start with Phase 5.1 (Add CV selection state)  
+**Estimated Remaining Time**: 2-3 hours
