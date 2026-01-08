@@ -750,4 +750,79 @@ var _ = Describe("ExportArtifact Intent", func() {
 			Expect(formatBytes(1099511627776)).To(Equal("1 TB"))
 		})
 	})
+
+	Describe("Scroll percentage display in preview", func() {
+		var intent *ExportArtifactIntent
+
+		BeforeEach(func() {
+			var err error
+			intent, err = NewExportArtifactIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+			intent.SetState(ExportStatePreview)
+			intent.SetConfig(NewExportConfiguration(ExportTypeCV, intent.model.context))
+		})
+
+		It("should not show scroll percentage for short content", func() {
+			// Set preview with only 5 lines (less than viewHeight of 15)
+			intent.model.preview = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5"
+			intent.model.previewLines = []string{"Line 1", "Line 2", "Line 3", "Line 4", "Line 5"}
+			intent.model.scrollOffset = 0
+
+			view := intent.model.viewPreview()
+			Expect(view).NotTo(ContainSubstring("% scrolled"))
+		})
+
+		It("should show 0% at top of long content", func() {
+			// Create 30 lines of content (more than viewHeight of 15)
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 0
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[0% scrolled]"))
+		})
+
+		It("should show 50% at middle of content", func() {
+			// Create 30 lines of content
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 15 // Middle of 30 lines
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[50% scrolled]"))
+		})
+
+		It("should show 100% at end of content", func() {
+			// Create 30 lines of content
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 30 // End of content
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[100% scrolled]"))
+		})
+
+		It("should show 33% at one-third of content", func() {
+			// Create 30 lines of content
+			lines := make([]string, 30)
+			for i := range lines {
+				lines[i] = fmt.Sprintf("Line %d", i+1)
+			}
+			intent.model.previewLines = lines
+			intent.model.scrollOffset = 10 // 10/30 = 33%
+
+			view := intent.model.viewPreview()
+			Expect(view).To(ContainSubstring("[33% scrolled]"))
+		})
+	})
 })
