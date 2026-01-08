@@ -27,7 +27,7 @@ Welcome to the KaRiya Career Journal & CV Generator documentation. This director
   - Quick reference guides
 
 ### Feature Specifications
-- **[features/](features/)** - Detailed feature specifications (8 documents)
+- **[features/](features/)** - Detailed feature specifications (16 documents)
   - Career event capture
   - Burst & fact extraction
   - CV generation
@@ -36,6 +36,25 @@ Welcome to the KaRiya Career Journal & CV Generator documentation. This director
   - Role & audience filtering
   - Metadata validation
   - Export & integration
+
+### User & Developer Guides
+- **[guides/](guides/)** - User and developer guides (8 documents)
+  - CV generation guide and examples
+  - CV troubleshooting
+  - View patterns guide
+  - Error handling guide
+  - List model rendering specification
+  - Focus indicator guide
+  - Style usage guide
+
+### Audits & Analysis
+- **[audits/](audits/)** - Code audits and analysis reports (9 documents)
+  - Legacy screen audits
+  - Intent framework readiness
+  - UI/UX consistency audits
+  - Focus indicator audits
+  - Error display audits
+  - Navigation audits
 
 ### Infrastructure & Testing
 - **[CI_CD_PIPELINE.md](CI_CD_PIPELINE.md)** - Complete CI/CD pipeline documentation with GitHub Actions, commitlint, and semantic-release
@@ -49,6 +68,17 @@ Welcome to the KaRiya Career Journal & CV Generator documentation. This director
 ### Reports & Analysis
 - **[reports/](reports/)** - Test reports and analysis documents
   - Test verification reports (dated)
+
+### Archived Documentation
+- **[archive/](archive/)** - Historical documentation (52+ documents)
+  - **[archive/phases/](archive/phases/)** - Completed phase reports (20 files)
+  - **[archive/plans/](archive/plans/)** - Completed implementation plans (6 files)
+  - **[archive/app-migration/](archive/app-migration/)** - App.go migration documentation (6 files)
+  - **[archive/investigations/](archive/investigations/)** - One-time analysis reports (10 files)
+  - **[archive/sessions/](archive/sessions/)** - Session summaries (6 files)
+  - **[archive/summaries/](archive/summaries/)** - Implementation summaries (2 files)
+  - **[archive/proposals/](archive/proposals/)** - Architecture proposals (2 files)
+  - **[archive/rules/](archive/rules/)** - Archived rule documents (5 files)
 
 ## 🚀 Quick Start
 
@@ -68,6 +98,7 @@ Welcome to the KaRiya Career Journal & CV Generator documentation. This director
 1. Review [PRD_MASTER.md](PRD_MASTER.md) for complete system design
 2. Dive into [features/](features/) for specific feature details
 3. Check [PRD_CLI.md](PRD_CLI.md) for CLI interface specs
+4. Read [guides/](guides/) for user and developer guides
 
 ### For Development Workflows
 1. Read [rules/master-task-prompt.md](rules/master-task-prompt.md) for the complete workflow
@@ -123,6 +154,12 @@ Step-by-step process guides:
 ### "How do I run tests?"
 → Check [integration-test-strategy.md](integration-test-strategy.md) or [tools/editor-setup/](tools/editor-setup/)
 
+### "Where are the old phase reports?"
+→ Check [archive/phases/](archive/phases/)
+
+### "How was feature X implemented?"
+→ Check [archive/plans/](archive/plans/) or [archive/investigations/](archive/investigations/)
+
 ## 🎯 Documentation Standards
 
 ### Document Types
@@ -145,12 +182,16 @@ Documents are heavily cross-referenced. Follow links to related topics for compr
 
 ## 📊 Documentation Statistics
 
-- **Total Documents**: ~42 files
+- **Total Documents**: ~160 files (108 active + 52 archived)
 - **PRDs**: 3 files
-- **Setup Guides**: 6 files
-- **Rules & Guidelines**: 16 files
-- **Feature Specs**: 8 files
+- **Setup Guides**: 7 files
+- **Rules & Guidelines**: 13 files
+- **Feature Specs**: 16 files
+- **User/Developer Guides**: 8 files
+- **Audits**: 9 files
 - **Infrastructure Docs**: 3 files
+- **Reports**: 2 files
+- **Archived**: 52 files (in archive/ subdirectories)
 
 ## 🛠️ Maintaining Documentation
 
@@ -185,7 +226,7 @@ For questions about:
 
 ---
 
-**Last Updated**: 2025-12-23
-**Status**: Production-ready documentation
+**Last Updated**: 2026-01-08
+**Status**: Production-ready documentation (recently reorganized)
 **Maintainer**: Development Team
 
