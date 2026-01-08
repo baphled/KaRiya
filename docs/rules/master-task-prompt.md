@@ -573,11 +573,38 @@ This workflow implements ALL project rules:
   - Footer: Issue references
 
 ### Task Processing
-- **Process Task List** (`docs/rules/process-task-list.md`)
-  - One task at a time
-  - Tool-driven verification
-  - Authority order (tools > checklist > guidelines)
-  - Deterministic execution
+
+**Core Principles:**
+- Execute **one task at a time** from the task checklist
+- Tool-driven verification (tool results are authoritative)
+- Deterministic execution with clear completion criteria
+
+**Authority Order (Highest → Lowest):**
+1. **Tool results** (tests, filesystem, git) - Always authoritative
+2. **Task checklist** - Defines scope and requirements
+3. **Language guidelines** - Go best practices
+4. **Senior engineer guidelines** - General best practices
+
+If a higher authority is satisfied, lower authorities must not block completion.
+
+**Task Completion Criteria:**
+
+A task is complete when **all** of the following are true:
+- ✅ Required files are created or modified
+- ✅ Associated tests exist and pass (if required by task)
+- ✅ Tool reports show no errors
+- ✅ Task checkbox is marked `[x]` in checklist file
+
+**Completion Action:**
+1. Mark the task checkbox as `[x]` in the task file
+2. Stop execution immediately
+3. Do not re-run tools unnecessarily
+4. Do not refactor code outside task scope
+5. Do not modify other tasks
+
+**Refactoring Constraint:**
+- Refactoring is **permitted only** on code directly modified by the current task
+- Architectural changes or cross-cutting refactors are forbidden unless explicitly required by task
 
 
 
@@ -763,7 +790,7 @@ Why inefficient:
 - [Rules Compliance Check](./rules-compliance-check.md)
 - [Senior Engineer Guidelines](./senior-engineer-guidelines.md)
 - [Go Guidelines](./go-guidelines.md)
-- [Process Task List](./process-task-list.md)
+- [Task Quick Reference](./TASK_QUICK_REF.md)
 
 ---
 

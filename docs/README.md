@@ -101,7 +101,7 @@ One-page cheat sheets for common operations:
 Step-by-step process guides:
 - [rules/generate-prd.md](rules/generate-prd.md)
 - [rules/generate-tasks.md](rules/generate-tasks.md)
-- [rules/process-task-list.md](rules/process-task-list.md)
+- [rules/master-task-prompt.md](rules/master-task-prompt.md) (includes task processing rules)
 
 ## 🔍 Finding What You Need
 

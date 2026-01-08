@@ -263,7 +263,7 @@ make check-compliance
 ### Task Execution
 - [`docs/rules/master-task-prompt.md`](../docs/rules/master-task-prompt.md) - Complete 5-phase workflow
 - [`docs/rules/TASK_QUICK_REF.md`](../docs/rules/TASK_QUICK_REF.md) - Quick reference checklist
-- [`docs/rules/process-task-list.md`](../docs/rules/process-task-list.md) - Task processing rules
+- [`docs/rules/master-task-prompt.md`](../docs/rules/master-task-prompt.md) - Task processing rules (Task Processing section)
 
 ### Standards
 - [`docs/TUI_STANDARDS.md`](../docs/TUI_STANDARDS.md) - TUI design standards

@@ -579,5 +579,5 @@ This feature enables:
 **Test Status**: 337+ tests passing (100% success rate)
 **Overall Project Status**: Production-ready
 **Template Source**: tasks-03-metadata-clarification.md
-**Process Guide**: docs/rules/process-task-list.md
+**Process Guide**: docs/rules/master-task-prompt.md (Task Processing section)
 

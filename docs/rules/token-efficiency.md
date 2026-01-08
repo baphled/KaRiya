@@ -416,7 +416,7 @@ make token-check
 
 **Related Documentation:**
 - [Rules Compliance Check](./rules-compliance-check.md)
-- [Process Task List](./process-task-list.md)
+- [Master Task Prompt](./master-task-prompt.md)
 - [Senior Engineer Guidelines](./senior-engineer-guidelines.md)
 
 ---
