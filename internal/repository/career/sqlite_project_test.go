@@ -20,7 +20,7 @@ var _ = Describe("SQLite Project and Company Fields", func() {
 
 	BeforeEach(func() {
 		// Create temp database file
-		dbPath = "/tmp/test_project_company_" + time.Now().Format("20060102150405") + ".db"
+		dbPath = os.TempDir() + "/test_project_company_" + time.Now().Format("20060102150405") + ".db"
 		var err error
 		repo, err = careerrepo.NewSQLiteRepository(dbPath)
 		Expect(err).ToNot(HaveOccurred())

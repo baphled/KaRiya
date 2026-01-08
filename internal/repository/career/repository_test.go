@@ -84,6 +84,9 @@ var _ = Describe("Memory Repository", func() {
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
 
+			// Small delay to ensure timestamps differ on fast systems
+			time.Sleep(10 * time.Millisecond)
+
 			// Update event
 			event.Text = "Updated Career Event Description"
 			err = repo.Update(ctx, event)
