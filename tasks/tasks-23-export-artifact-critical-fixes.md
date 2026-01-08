@@ -1,9 +1,9 @@
 # Task 23: ExportArtifact Critical Fixes
 
 **Created**: 2026-01-08
-**Status**: IN PROGRESS (Phase 4/10 Complete - 27% Done)
+**Status**: IN PROGRESS (Phase 5/10 Complete - 50% Done)
 **Priority**: CRITICAL
-**Estimated Time**: 4-6 hours (2 hours spent)
+**Estimated Time**: 4-6 hours (3 hours spent)
 **Related**: Codebase Audit (2026-01-08)
 
 ---
@@ -42,24 +42,32 @@
 - **Commit**: `3ffcd79`
 - **Test Results**: 110/110 ExportArtifact tests passing ✓
 
-### Current Status: Phase 5 (Next)
+**Phase 5: CV Selection State** (Tasks 15-18) - COMPLETE ✅
+- ✅ Added `CVConfigManager` field to `ExportArtifactContext`
+- ✅ Implemented `loadAvailableCVs()` to fetch CV configs from ConfigManager
+- ✅ Updated test helpers to include ConfigManager (NewTestExportArtifactContext, NewTestExportArtifactContextWithServices)
+- ✅ Updated `registerAllIntents()` signature to accept ConfigManager parameter
+- ✅ Updated app.go to pass ConfigManager to ExportArtifact intent
+- ✅ Added 4 comprehensive tests for loadAvailableCVs() function
+- ✅ Added tests for empty CV list scenario and error handling
+- **Test Results**: 526/526 tests passing (all intents) ✓
+- **Build Status**: Successful ✅
 
-**Phase 5: CV Selection State** (Tasks 15-18) - READY TO START
-- Add new state `ExportStateSelectCV` for CV selection workflow
-- Implement CV list view (using CVGenerationService)
-- Add navigation between artifact type and CV selection
-- Update tests
+### Current Status: Phase 6 (Next)
 
-### Remaining Phases (Tasks 15-37, 23 tasks)
+**Phase 6: Format Mapping** (Tasks 19-20) - READY TO START
+- Map intent export formats to service export formats
+- Update exportCV() to use proper format mapping
 
-- **Phase 5**: CV Selection State (Tasks 15-18) - Ready
-- **Phase 6**: Format Mapping (Tasks 19-20)
+### Remaining Phases (Tasks 19-37, 19 tasks)
+
+- **Phase 6**: Format Mapping (Tasks 19-20) - Ready
 - **Phase 7**: Real Export (Tasks 21-24)
 - **Phase 8**: Real Previews (Tasks 25-30)
 - **Phase 9**: LoadingRotator (Tasks 31-33)
 - **Phase 10**: Final Verification (Tasks 34-37)
 
-**Estimated Remaining Time**: 2-3 hours
+**Estimated Remaining Time**: 1.5-2 hours
 
 ---
 
