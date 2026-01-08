@@ -9,20 +9,34 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// NewTestExportArtifactContext creates a test context with default values
+// Services and repositories are nil since most tests don't need them
+func NewTestExportArtifactContext() *ExportArtifactContext {
+	return &ExportArtifactContext{
+		ArtifactTypes:    DefaultArtifactTypes(),
+		SupportedFormats: DefaultSupportedFormats(),
+		DefaultFormat:    DefaultFormats(),
+		Destinations:     DefaultDestinations(),
+		// Services and repositories are nil for testing
+		ExportService:       nil,
+		CVGenerationService: nil,
+		CareerService:       nil,
+		EventRepository:     nil,
+		FactRepository:      nil,
+		BurstRepository:     nil,
+		AppContext:          context.Background(),
+	}
+}
+
 var _ = Describe("ExportArtifact Intent", func() {
 	var (
 		intent *ExportArtifactIntent
-		ctx    context.Context
 	)
-
-	BeforeEach(func() {
-		ctx = context.Background()
-	})
 
 	Describe("Intent Creation", func() {
 		It("should create a new ExportArtifact intent with valid context", func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(intent).NotTo(BeNil())
 			Expect(intent.model).NotTo(BeNil())
@@ -34,20 +48,20 @@ var _ = Describe("ExportArtifact Intent", func() {
 		})
 
 		It("should initialize with correct default state", func() {
-			intent, _ := NewExportArtifactIntent(ctx)
+			intent, _ := NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(intent.GetState()).To(Equal(ExportStateSelectType))
 		})
 
 		It("should initialize with correct artifact types", func() {
-			intent, _ := NewExportArtifactIntent(ctx)
-			Expect(intent.model.context.ArtifactTypes).To(HaveLen(5))
+			intent, _ := NewExportArtifactIntent(NewTestExportArtifactContext())
+			Expect(intent.model.context.ArtifactTypes).To(HaveLen(4))
 		})
 	})
 
 	Describe("Init Method", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -65,7 +79,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - SelectType State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -98,7 +112,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - SelectFormat State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectFormat)
@@ -121,7 +135,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - SelectDestination State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectDest)
@@ -142,7 +156,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Configure State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfigure)
@@ -173,7 +187,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Preview State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStatePreview)
@@ -189,7 +203,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Confirm State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfirm)
@@ -212,7 +226,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - InProgress State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateInProgress)
@@ -227,7 +241,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Complete State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateComplete)
@@ -249,7 +263,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("View Rendering - Failed State", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateFailed)
@@ -273,7 +287,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - SelectType", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -321,7 +335,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - SelectFormat", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectFormat)
@@ -361,7 +375,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - SelectDestination", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateSelectDest)
@@ -402,7 +416,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Configure", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfigure)
@@ -423,7 +437,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Preview", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStatePreview)
@@ -444,7 +458,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Confirm", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateConfirm)
@@ -475,7 +489,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - InProgress", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateInProgress)
@@ -499,7 +513,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Complete", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateComplete)
@@ -521,7 +535,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("State Transitions - Failed", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStateFailed)
@@ -542,7 +556,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("Result Handling", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -583,7 +597,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("Configuration Management", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -605,27 +619,27 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 	Describe("Export Context", func() {
 		It("should have all artifact types", func() {
-			ctx := NewExportArtifactContext()
-			Expect(ctx.ArtifactTypes).To(HaveLen(5))
+			ctx := NewTestExportArtifactContext()
+			Expect(ctx.ArtifactTypes).To(HaveLen(4))
 			Expect(ctx.ArtifactTypes).To(ContainElements(
-				ExportTypeCV, ExportTypeEvents, ExportTypeFacts, ExportTypeBursts, ExportTypeProfile,
+				ExportTypeCV, ExportTypeEvents, ExportTypeFacts, ExportTypeBursts,
 			))
 		})
 
 		It("should have supported formats for each artifact type", func() {
-			ctx := NewExportArtifactContext()
+			ctx := NewTestExportArtifactContext()
 			Expect(ctx.SupportedFormats[ExportTypeCV]).To(ContainElements(ExportFormatTXT, ExportFormatMD, ExportFormatYAML))
 			Expect(ctx.SupportedFormats[ExportTypeEvents]).To(ContainElements(ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT))
 		})
 
 		It("should have default format for each artifact type", func() {
-			ctx := NewExportArtifactContext()
+			ctx := NewTestExportArtifactContext()
 			Expect(ctx.DefaultFormat[ExportTypeCV]).To(Equal(ExportFormatMD))
 			Expect(ctx.DefaultFormat[ExportTypeEvents]).To(Equal(ExportFormatJSON))
 		})
 
 		It("should have all destinations", func() {
-			ctx := NewExportArtifactContext()
+			ctx := NewTestExportArtifactContext()
 			Expect(ctx.Destinations).To(HaveLen(2))
 			Expect(ctx.Destinations).To(ContainElements(
 				ExportDestinationFile, ExportDestinationClipboard,
@@ -636,7 +650,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("Intent Interface Compliance", func() {
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -708,7 +722,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStatePreview)

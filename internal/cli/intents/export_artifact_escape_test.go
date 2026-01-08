@@ -15,7 +15,7 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 	)
 
 	BeforeEach(func() {
-		exportContext = intents.NewExportArtifactContext()
+		exportContext = intents.NewTestExportArtifactContext()
 		exportModel = intents.NewExportArtifactModel(exportContext)
 		exportModel.Init()
 	})

@@ -1,9 +1,13 @@
 package intents
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/service/career/cv"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -41,10 +45,24 @@ const (
 
 // ExportArtifactContext contains context for the ExportArtifact intent
 type ExportArtifactContext struct {
+	// Configuration
 	ArtifactTypes    []ExportArtifactType
 	SupportedFormats map[ExportArtifactType][]ExportFormat
 	DefaultFormat    map[ExportArtifactType]ExportFormat
 	Destinations     []ExportDestination
+
+	// Services
+	ExportService       *cv.ExportService
+	CVGenerationService cv.CVGenerationService
+	CareerService       *career.Service
+
+	// Repositories
+	EventRepository careerrepo.Repository
+	FactRepository  careerrepo.FactRepository
+	BurstRepository careerrepo.BurstRepository
+
+	// Context
+	AppContext context.Context
 }
 
 // ExportConfiguration holds the current export configuration
@@ -100,37 +118,6 @@ type ExportCancelledMsg struct{}
 // ExportErrorMsg represents an error during export
 type ExportErrorMsg struct {
 	Error *IntentError
-}
-
-// NewExportArtifactContext creates a new ExportArtifactContext with default values
-func NewExportArtifactContext() *ExportArtifactContext {
-	return &ExportArtifactContext{
-		ArtifactTypes: []ExportArtifactType{
-			ExportTypeCV,
-			ExportTypeEvents,
-			ExportTypeFacts,
-			ExportTypeBursts,
-			ExportTypeProfile,
-		},
-		SupportedFormats: map[ExportArtifactType][]ExportFormat{
-			ExportTypeCV:      {ExportFormatTXT, ExportFormatMD, ExportFormatYAML},
-			ExportTypeEvents:  {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
-			ExportTypeFacts:   {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
-			ExportTypeBursts:  {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
-			ExportTypeProfile: {ExportFormatJSON, ExportFormatYAML},
-		},
-		DefaultFormat: map[ExportArtifactType]ExportFormat{
-			ExportTypeCV:      ExportFormatMD,
-			ExportTypeEvents:  ExportFormatJSON,
-			ExportTypeFacts:   ExportFormatJSON,
-			ExportTypeBursts:  ExportFormatJSON,
-			ExportTypeProfile: ExportFormatJSON,
-		},
-		Destinations: []ExportDestination{
-			ExportDestinationFile,
-			ExportDestinationClipboard,
-		},
-	}
 }
 
 // NewExportConfiguration creates a new export configuration with defaults
@@ -940,4 +927,61 @@ func formatBytes(bytes int64) string {
 	}
 	units := []string{"K", "M", "G", "T", "P"}
 	return fmt.Sprintf("%d %sB", bytes/div, units[exp])
+}
+
+// DefaultArtifactTypes returns the default set of exportable artifact types
+func DefaultArtifactTypes() []ExportArtifactType {
+	return []ExportArtifactType{
+		ExportTypeCV,
+		ExportTypeEvents,
+		ExportTypeFacts,
+		ExportTypeBursts,
+	}
+}
+
+// DefaultSupportedFormats returns the default format support mapping
+func DefaultSupportedFormats() map[ExportArtifactType][]ExportFormat {
+	return map[ExportArtifactType][]ExportFormat{
+		ExportTypeCV: {
+			ExportFormatTXT,
+			ExportFormatMD,
+			ExportFormatYAML,
+		},
+		ExportTypeEvents: {
+			ExportFormatJSON,
+			ExportFormatCSV,
+			ExportFormatTXT,
+			ExportFormatYAML,
+		},
+		ExportTypeFacts: {
+			ExportFormatJSON,
+			ExportFormatCSV,
+			ExportFormatTXT,
+			ExportFormatYAML,
+		},
+		ExportTypeBursts: {
+			ExportFormatJSON,
+			ExportFormatCSV,
+			ExportFormatTXT,
+			ExportFormatYAML,
+		},
+	}
+}
+
+// DefaultFormats returns the default format for each artifact type
+func DefaultFormats() map[ExportArtifactType]ExportFormat {
+	return map[ExportArtifactType]ExportFormat{
+		ExportTypeCV:     ExportFormatMD,
+		ExportTypeEvents: ExportFormatJSON,
+		ExportTypeFacts:  ExportFormatJSON,
+		ExportTypeBursts: ExportFormatJSON,
+	}
+}
+
+// DefaultDestinations returns the default set of export destinations
+func DefaultDestinations() []ExportDestination {
+	return []ExportDestination{
+		ExportDestinationFile,
+		ExportDestinationClipboard,
+	}
 }

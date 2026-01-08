@@ -77,9 +77,7 @@ func TestGenerateCVUsesStandardView(t *testing.T) {
 
 // TestExportArtifactUsesStandardView verifies ExportArtifact uses StandardView patterns
 func TestExportArtifactUsesStandardView(t *testing.T) {
-	ctx := context.Background()
-
-	intent, err := NewExportArtifactIntent(ctx)
+	intent, err := NewExportArtifactIntent(NewTestExportArtifactContext())
 	if err != nil {
 		t.Fatalf("Failed to create intent: %v", err)
 	}
@@ -207,7 +205,7 @@ func TestAllIntentsInitializeSuccessfully(t *testing.T) {
 		{
 			name: "ExportArtifact",
 			createFunc: func() (interface{}, error) {
-				return NewExportArtifactIntent(context.Background())
+				return NewExportArtifactIntent(NewTestExportArtifactContext())
 			},
 			initFunc: func(i interface{}) {
 				i.(*ExportArtifactIntent).Init()
