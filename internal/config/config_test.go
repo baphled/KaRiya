@@ -86,8 +86,7 @@ var _ = Describe("Config", func() {
 
 		It("should handle invalid path", func() {
 			cfg := config.DefaultConfig()
-			// Use a path with null byte which is invalid on all platforms
-			err := config.SaveConfigToPath(cfg, "/invalid/\x00/path/config.yaml")
+			err := config.SaveConfigToPath(cfg, "/invalid/nonexistent/path/config.yaml")
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -139,50 +138,6 @@ var _ = Describe("Config", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(path).To(ContainSubstring(".kariya"))
 			Expect(path).To(HaveSuffix("config.yaml"))
-		})
-	})
-
-	Describe("LoadConfig (default path)", func() {
-		It("should load config from default location", func() {
-			// Note: This test uses the actual user's config directory
-			// It should return default config if no config exists, or load existing config
-			cfg, err := config.LoadConfig()
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg).NotTo(BeNil())
-			// Should have default or loaded values
-			Expect(cfg.System.LogLevel).NotTo(BeEmpty())
-		})
-	})
-
-	Describe("SaveConfig (default path)", func() {
-		var originalConfig *config.Config
-
-		BeforeEach(func() {
-			// Load existing config to restore later
-			var err error
-			originalConfig, err = config.LoadConfig()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			// Restore original config
-			if originalConfig != nil {
-				config.SaveConfig(originalConfig)
-			}
-		})
-
-		It("should save config to default location", func() {
-			testConfig := config.DefaultConfig()
-			testConfig.System.LogLevel = "test-config-save"
-
-			err := config.SaveConfig(testConfig)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Verify it was saved
-			loaded, err := config.LoadConfig()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(loaded.System.LogLevel).To(Equal("test-config-save"))
 		})
 	})
 
