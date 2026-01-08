@@ -2,6 +2,7 @@ package career
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -773,7 +774,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 			err := serviceWithoutRepo.SaveFact(ctx, fact)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fact repository not configured"))
+			Expect(errors.Is(err, ErrFactRepositoryNotConfigured)).To(BeTrue())
 		})
 	})
 
@@ -820,7 +821,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			serviceWithoutRepo := NewService(repo)
 			err := serviceWithoutRepo.DeleteFact(ctx, fact.ID)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("fact repository not configured"))
+			Expect(errors.Is(err, ErrFactRepositoryNotConfigured)).To(BeTrue())
 		})
 	})
 
