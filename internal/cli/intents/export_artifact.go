@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	careerdomain "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
@@ -92,6 +93,7 @@ type ExportState string
 
 const (
 	ExportStateSelectType   ExportState = "select_type"
+	ExportStateSelectCV     ExportState = "select_cv"
 	ExportStateSelectFormat ExportState = "select_format"
 	ExportStateSelectDest   ExportState = "select_destination"
 	ExportStateConfigure    ExportState = "configure"
@@ -120,6 +122,11 @@ type ExportCancelledMsg struct{}
 // ExportErrorMsg represents an error during export
 type ExportErrorMsg struct {
 	Error *IntentError
+}
+
+// CVsLoadedMsg represents successful loading of available CVs
+type CVsLoadedMsg struct {
+	CVs []*careerdomain.CVView
 }
 
 // NewExportConfiguration creates a new export configuration with defaults
@@ -164,6 +171,10 @@ type ExportArtifactModel struct {
 	result        *ExportArtifactResult
 	error         *IntentError
 	active        bool
+
+	// CV selection (for ExportTypeCV only)
+	availableCVs []*careerdomain.CVView
+	selectedCV   *careerdomain.CVView
 }
 
 // NewExportArtifactModel creates a new ExportArtifact intent model
@@ -192,6 +203,8 @@ func (m *ExportArtifactModel) Update(msg tea.Msg) tea.Cmd {
 	switch m.state {
 	case ExportStateSelectType:
 		return m.updateSelectType(msg)
+	case ExportStateSelectCV:
+		return m.updateSelectCV(msg)
 	case ExportStateSelectFormat:
 		return m.updateSelectFormat(msg)
 	case ExportStateSelectDest:
@@ -222,6 +235,8 @@ func (m *ExportArtifactModel) View() string {
 	switch m.state {
 	case ExportStateSelectType:
 		return m.viewSelectType()
+	case ExportStateSelectCV:
+		return m.viewSelectCV()
 	case ExportStateSelectFormat:
 		return m.viewSelectFormat()
 	case ExportStateSelectDest:
@@ -286,14 +301,60 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 		case "enter":
 			artifactType := m.context.ArtifactTypes[m.selectedIndex]
 			m.config = NewExportConfiguration(artifactType, m.context)
-			// Go directly to format selection
-			m.selectedIndex = 0
+			// If CV type, go to CV selection first
+			if artifactType == ExportTypeCV {
+				m.state = ExportStateSelectCV
+				m.selectedIndex = 0
+				return m.loadAvailableCVs()
+			}
+			// For other types, go directly to format selection
 			m.state = ExportStateSelectFormat
 		case "esc":
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
 				Message: "Export cancelled by user",
 			}))
+		case "m":
+			m.setResult(NewExportArtifactResultWithError(&IntentError{
+				Code:    "export_cancelled",
+				Message: "Export cancelled by user",
+			}))
+		}
+	}
+	return nil
+}
+
+func (m *ExportArtifactModel) updateSelectCV(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case CVsLoadedMsg:
+		m.availableCVs = msg.CVs
+		return nil
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if m.selectedIndex > 0 {
+				m.selectedIndex--
+			} else if len(m.availableCVs) > 0 {
+				// Wrap to bottom
+				m.selectedIndex = len(m.availableCVs) - 1
+			}
+		case "down", "j":
+			if m.selectedIndex < len(m.availableCVs)-1 {
+				m.selectedIndex++
+			} else if len(m.availableCVs) > 0 {
+				// Wrap to top
+				m.selectedIndex = 0
+			}
+		case "enter":
+			if len(m.availableCVs) > 0 {
+				m.selectedCV = m.availableCVs[m.selectedIndex]
+				m.selectedIndex = 0
+				m.state = ExportStateSelectFormat
+			}
+		case "esc":
+			m.selectedIndex = 0
+			m.state = ExportStateSelectType
 		case "m":
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
@@ -324,7 +385,12 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 			m.state = ExportStateSelectDest
 		case "esc":
 			m.selectedIndex = 0
-			m.state = ExportStateSelectType
+			// Go back to CV selection if artifact type is CV, otherwise SelectType
+			if m.config.ArtifactType == ExportTypeCV {
+				m.state = ExportStateSelectCV
+			} else {
+				m.state = ExportStateSelectType
+			}
 		case "m":
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
@@ -496,6 +562,14 @@ func (m *ExportArtifactModel) updateFailed(msg tea.Msg) tea.Cmd {
 }
 
 // loadAvailableCVs fetches available CVs from the CV generation service
+func (m *ExportArtifactModel) loadAvailableCVs() tea.Cmd {
+	return func() tea.Msg {
+		// TODO: In real implementation, fetch from CVGenerationService
+		// For now, return empty list (tests will handle mocking)
+		return CVsLoadedMsg{CVs: []*careerdomain.CVView{}}
+	}
+}
+
 func (m *ExportArtifactModel) startExport() tea.Cmd {
 	return func() tea.Msg {
 		var result *ExportArtifactResult
@@ -706,6 +780,26 @@ func (m *ExportArtifactModel) viewSelectType() string {
 		s += prefix + string(t) + "\n"
 	}
 	s += "\n↑/↓: Navigate | Enter: Select | Esc: Cancel | m: Main menu"
+	return s
+}
+
+func (m *ExportArtifactModel) viewSelectCV() string {
+	s := "Select CV to Export:\n\n"
+
+	if len(m.availableCVs) == 0 {
+		s += "No CVs available. Please generate a CV first.\n"
+		s += "\nEsc: Back | m: Main menu"
+		return s
+	}
+
+	for i, cv := range m.availableCVs {
+		prefix := "  "
+		if i == m.selectedIndex {
+			prefix = "▶ "
+		}
+		s += fmt.Sprintf("%s%s - %s\n", prefix, cv.Name, cv.TargetRole)
+	}
+	s += "\n↑/↓ or j/k: Navigate | Enter: Select | Esc: Back | m: Main menu"
 	return s
 }
 
