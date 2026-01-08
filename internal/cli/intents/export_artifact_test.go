@@ -3,6 +3,7 @@ package intents
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	careerdomain "github.com/baphled/kariya/internal/domain/career"
@@ -1292,6 +1293,271 @@ var _ = Describe("ExportArtifact Intent", func() {
 				errorMsg, ok := msg.(ExportErrorMsg)
 				Expect(ok).To(BeTrue())
 				Expect(errorMsg.Error).NotTo(BeNil())
+			})
+		})
+	})
+
+	Describe("Real Preview Data", func() {
+		var model *ExportArtifactModel
+		var testContext *ExportArtifactContext
+
+		BeforeEach(func() {
+			testContext = NewTestExportArtifactContextWithServices()
+			intent, err := NewExportArtifactIntent(testContext)
+			Expect(err).NotTo(HaveOccurred())
+			model = intent.model
+
+			// Initialize config
+			model.config = &ExportConfiguration{
+				ArtifactType: ExportTypeCV,
+				Format:       ExportFormatTXT,
+				Destination:  ExportDestinationFile,
+			}
+		})
+
+		Describe("generateCVPreview", func() {
+			It("should generate preview from real CV data", func() {
+				// Setup a test CV
+				now := time.Now()
+				testCV := &careerdomain.CVView{
+					ID:               "test-cv-1",
+					Name:             "Senior Developer CV",
+					TargetRole:       "Senior Developer",
+					TargetAudience:   "Tech Companies",
+					GeneratedAt:      now,
+					SourceEventCount: 5,
+					SourceFactCount:  10,
+					Sections: []*careerdomain.CVSection{
+						{
+							Title:       "Summary",
+							SectionType: "summary",
+							Summary:     "Experienced developer with 10 years",
+							Content:     []*careerdomain.SectionContentGroup{},
+						},
+					},
+				}
+
+				model.selectedCV = testCV
+				model.config.Format = ExportFormatTXT
+
+				preview := model.generateCVPreview()
+				Expect(preview).NotTo(BeEmpty())
+				// ExportService uppercases CV name in text format
+				Expect(strings.ToLower(preview)).To(ContainSubstring("senior developer cv"))
+				Expect(strings.ToLower(preview)).To(ContainSubstring("summary"))
+			})
+
+			It("should show error when no CV is selected", func() {
+				model.selectedCV = nil
+				model.config.Format = ExportFormatMD
+
+				preview := model.generateCVPreview()
+				Expect(preview).To(ContainSubstring("No CV selected"))
+			})
+
+			It("should support markdown format", func() {
+				now := time.Now()
+				testCV := &careerdomain.CVView{
+					ID:          "test-cv-2",
+					Name:        "Test CV",
+					TargetRole:  "Engineer",
+					GeneratedAt: now,
+					Sections:    []*careerdomain.CVSection{},
+				}
+
+				model.selectedCV = testCV
+				model.config.Format = ExportFormatMD
+
+				preview := model.generateCVPreview()
+				Expect(preview).To(ContainSubstring("# Test CV"))
+			})
+		})
+
+		Describe("generateEventsPreview", func() {
+			It("should generate preview from real events data", func() {
+				// Add test events to repository
+				event1 := &careerdomain.CareerEvent{
+					ID:      "evt-1",
+					Text:    "Led team standup",
+					Date:    time.Now().AddDate(0, 0, -1),
+					Company: "Tech Corp",
+					Tags:    []string{"leadership"},
+				}
+				event2 := &careerdomain.CareerEvent{
+					ID:      "evt-2",
+					Text:    "Completed API integration",
+					Date:    time.Now().AddDate(0, 0, -2),
+					Project: "Platform",
+					Tags:    []string{"technical"},
+				}
+
+				ctx := context.Background()
+				testContext.EventRepository.Create(ctx, event1)
+				testContext.EventRepository.Create(ctx, event2)
+
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatJSON
+
+				preview := model.generateEventsPreview()
+				Expect(preview).NotTo(BeEmpty())
+				Expect(preview).To(ContainSubstring("evt-1"))
+				Expect(preview).To(ContainSubstring("Led team standup"))
+			})
+
+			It("should show message when no events exist", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatCSV
+
+				preview := model.generateEventsPreview()
+				Expect(preview).NotTo(BeEmpty())
+				Expect(preview).To(ContainSubstring("No events"))
+			})
+
+			It("should support text format", func() {
+				event := &careerdomain.CareerEvent{
+					ID:      "evt-3",
+					Text:    "Test event",
+					Date:    time.Now(),
+					Company: "Acme",
+				}
+
+				ctx := context.Background()
+				testContext.EventRepository.Create(ctx, event)
+
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatTXT
+
+				preview := model.generateEventsPreview()
+				Expect(preview).To(ContainSubstring("Test event"))
+				Expect(preview).To(ContainSubstring("Acme"))
+			})
+		})
+
+		Describe("generateFactsPreview", func() {
+			It("should generate preview from real facts data", func() {
+				// Add test facts to repository
+				now := time.Now()
+				fact1 := &careerdomain.Fact{
+					ID:                   "fact-1",
+					Text:                 "Expert in Go",
+					CompetencyCategories: []string{"technical"},
+					RoleFit:              careerdomain.RoleFitPrincipal,
+					StrengthSignal:       "strong",
+					AudienceRelevance:    []string{"hiring_manager", "peer"},
+					SourceEventID:        "event-1",
+					CreatedAt:            now,
+					UpdatedAt:            now,
+				}
+				fact2 := &careerdomain.Fact{
+					ID:                   "fact-2",
+					Text:                 "Led 5-person team",
+					CompetencyCategories: []string{"leadership"},
+					RoleFit:              careerdomain.RoleFitStaff,
+					StrengthSignal:       "medium",
+					AudienceRelevance:    []string{"hiring_manager", "recruiter"},
+					SourceEventID:        "event-2",
+					CreatedAt:            now,
+					UpdatedAt:            now,
+				}
+
+				ctx := context.Background()
+				err := testContext.FactRepository.Create(ctx, fact1)
+				Expect(err).NotTo(HaveOccurred())
+				err = testContext.FactRepository.Create(ctx, fact2)
+				Expect(err).NotTo(HaveOccurred())
+
+				model.config.ArtifactType = ExportTypeFacts
+				model.config.Format = ExportFormatJSON
+
+				preview := model.generateFactsPreview()
+				Expect(preview).NotTo(BeEmpty())
+				Expect(preview).To(ContainSubstring("fact-1"))
+				Expect(preview).To(ContainSubstring("Expert in Go"))
+			})
+
+			It("should show message when no facts exist", func() {
+				model.config.ArtifactType = ExportTypeFacts
+				model.config.Format = ExportFormatYAML
+
+				preview := model.generateFactsPreview()
+				Expect(preview).NotTo(BeEmpty())
+				Expect(preview).To(ContainSubstring("No facts"))
+			})
+		})
+
+		Describe("generateBurstsPreview", func() {
+			It("should generate preview from real bursts data", func() {
+				// Add test bursts to repository
+				burst1 := &careerdomain.Burst{
+					ID:          "burst-1",
+					Name:        "Q4 2024 Platform Work",
+					Description: "Major platform improvements",
+					EventIDs:    []string{"evt-1", "evt-2"},
+					Confirmed:   true,
+				}
+				burst2 := &careerdomain.Burst{
+					ID:        "burst-2",
+					Name:      "API Development Sprint",
+					EventIDs:  []string{"evt-3"},
+					Confirmed: false,
+				}
+
+				ctx := context.Background()
+				testContext.BurstRepository.Create(ctx, burst1)
+				testContext.BurstRepository.Create(ctx, burst2)
+
+				model.config.ArtifactType = ExportTypeBursts
+				model.config.Format = ExportFormatJSON
+
+				preview := model.generateBurstsPreview()
+				Expect(preview).NotTo(BeEmpty())
+				Expect(preview).To(ContainSubstring("burst-1"))
+				Expect(preview).To(ContainSubstring("Q4 2024 Platform Work"))
+			})
+
+			It("should show message when no bursts exist", func() {
+				model.config.ArtifactType = ExportTypeBursts
+				model.config.Format = ExportFormatCSV
+
+				preview := model.generateBurstsPreview()
+				Expect(preview).NotTo(BeEmpty())
+				Expect(preview).To(ContainSubstring("No bursts"))
+			})
+
+			It("should support text format", func() {
+				burst := &careerdomain.Burst{
+					ID:       "burst-3",
+					Name:     "Test Burst",
+					EventIDs: []string{"e1", "e2"},
+				}
+
+				ctx := context.Background()
+				testContext.BurstRepository.Create(ctx, burst)
+
+				model.config.ArtifactType = ExportTypeBursts
+				model.config.Format = ExportFormatTXT
+
+				preview := model.generateBurstsPreview()
+				Expect(preview).To(ContainSubstring("Test Burst"))
+			})
+		})
+
+		Describe("generatePreview integration", func() {
+			It("should call the correct preview generator based on artifact type", func() {
+				model.config.ArtifactType = ExportTypeEvents
+				model.config.Format = ExportFormatJSON
+
+				model.generatePreview()
+				Expect(model.preview).NotTo(BeEmpty())
+				Expect(model.previewLines).NotTo(BeEmpty())
+			})
+
+			It("should split preview into lines", func() {
+				model.config.ArtifactType = ExportTypeFacts
+				model.config.Format = ExportFormatJSON
+
+				model.generatePreview()
+				Expect(len(model.previewLines)).To(BeNumerically(">", 0))
 			})
 		})
 	})

@@ -997,6 +997,52 @@ func (m *ExportArtifactModel) generatePreview() {
 	m.previewLines = strings.Split(preview, "\n")
 }
 
+func (m *ExportArtifactModel) generateCVPreview() string {
+	// Check if CV is selected
+	if m.selectedCV == nil {
+		return "No CV selected for export.\n\nPlease select a CV first."
+	}
+
+	// Check if export service is available
+	if m.context.ExportService == nil {
+		return "Preview not available - export service not initialized"
+	}
+
+	ctx := m.context.AppContext
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Generate preview based on format
+	var content string
+	var err error
+
+	// Build empty bullets map (kept for backward compatibility)
+	bulletsMap := make(map[string][]*careerdomain.CVBullet)
+
+	switch m.config.Format {
+	case ExportFormatTXT:
+		content, err = m.context.ExportService.ExportToText(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
+	case ExportFormatMD:
+		content, err = m.context.ExportService.ExportToMarkdown(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
+	case ExportFormatYAML:
+		content, err = m.context.ExportService.ExportToYAML(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
+	default:
+		return "Preview not available for format: " + string(m.config.Format)
+	}
+
+	if err != nil {
+		return fmt.Sprintf("Error generating CV preview: %v", err)
+	}
+
+	// Truncate if preview is too long (keep first 2000 characters)
+	if len(content) > 2000 {
+		content = content[:2000] + "\n\n...(preview truncated)..."
+	}
+
+	return content
+}
+
 func (m *ExportArtifactModel) generateEventsPreview() string {
 	// Check if repository is available
 	if m.context.EventRepository == nil {
