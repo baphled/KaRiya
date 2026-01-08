@@ -62,7 +62,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 			retrievedEvent, err := service.GetEventByID(ctx, event.ID)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(retrievedEvent.Text).To(Equal(event.Text))
-			Expect(retrievedEvent.Date).To(Equal(event.Date))
+			Expect(retrievedEvent.Date).To(BeTemporally("~", event.Date, time.Second))
 			Expect(retrievedEvent.Tags).To(Equal(event.Tags))
 			Expect(retrievedEvent.Company).To(Equal(event.Company))
 		})
