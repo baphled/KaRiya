@@ -578,16 +578,17 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	// ExportArtifact
 	_ = router.RegisterIntent("export_artifact", func() intents.Intent {
 		exportCtx := &intents.ExportArtifactContext{
-			ArtifactTypes:    intents.DefaultArtifactTypes(),
-			SupportedFormats: intents.DefaultSupportedFormats(),
-			DefaultFormat:    intents.DefaultFormats(),
-			Destinations:     intents.DefaultDestinations(),
-			ExportService:    cvExportService,
-			CareerService:    careerService,
-			EventRepository:  careerService.GetEventRepository(),
-			FactRepository:   careerService.GetFactRepository(),
-			BurstRepository:  careerService.GetBurstRepository(),
-			AppContext:       ctx,
+			ArtifactTypes:       intents.DefaultArtifactTypes(),
+			SupportedFormats:    intents.DefaultSupportedFormats(),
+			DefaultFormat:       intents.DefaultFormats(),
+			Destinations:        intents.DefaultDestinations(),
+			ExportService:       cvExportService,
+			CVGenerationService: cvGenService,
+			CareerService:       careerService,
+			EventRepository:     careerService.GetEventRepository(),
+			FactRepository:      careerService.GetFactRepository(),
+			BurstRepository:     careerService.GetBurstRepository(),
+			AppContext:          ctx,
 		}
 		intent, err := intents.NewExportArtifactIntent(exportCtx)
 		if err != nil {

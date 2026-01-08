@@ -21,43 +21,13 @@ func NewTestExportArtifactContext() *ExportArtifactContext {
 		DefaultFormat:    DefaultFormats(),
 		Destinations:     DefaultDestinations(),
 		// Services and repositories are nil for testing
-		ExportService: nil,
-
-		CareerService:   nil,
-		EventRepository: nil,
-		FactRepository:  nil,
-		BurstRepository: nil,
-		AppContext:      context.Background(),
-	}
-}
-
-// NewTestExportArtifactContextWithServices creates a test context with real services
-// Used for integration tests that need actual export functionality
-func NewTestExportArtifactContextWithServices() *ExportArtifactContext {
-	// Create logger (discard output during tests)
-	log := logger.New(nil, logger.ErrorLevel)
-
-	// Create in-memory repositories
-	eventRepo := careerrepo.NewMemoryRepository()
-	factRepo := careerrepo.NewMemoryFactRepository()
-	burstRepo := careerrepo.NewMemoryBurstRepository()
-
-	// Create export service
-	exportService := cv.NewExportService(log)
-
-	return &ExportArtifactContext{
-		ArtifactTypes:    DefaultArtifactTypes(),
-		SupportedFormats: DefaultSupportedFormats(),
-		DefaultFormat:    DefaultFormats(),
-		Destinations:     DefaultDestinations(),
-		ExportService:    exportService,
-		// Not needed for export
-
-		CareerService:   nil, // Not needed for export
-		EventRepository: eventRepo,
-		FactRepository:  factRepo,
-		BurstRepository: burstRepo,
-		AppContext:      context.Background(),
+		ExportService:       nil,
+		CVGenerationService: nil,
+		CareerService:       nil,
+		EventRepository:     nil,
+		FactRepository:      nil,
+		BurstRepository:     nil,
+		AppContext:          context.Background(),
 	}
 }
 
@@ -87,7 +57,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should initialize with correct artifact types", func() {
 			intent, _ := NewExportArtifactIntent(NewTestExportArtifactContext())
-			Expect(intent.model.context.ArtifactTypes).To(HaveLen(3))
+			Expect(intent.model.context.ArtifactTypes).To(HaveLen(4))
 		})
 	})
 
@@ -654,27 +624,27 @@ var _ = Describe("ExportArtifact Intent", func() {
 	Describe("Export Context", func() {
 		It("should have all artifact types", func() {
 			ctx := NewTestExportArtifactContext()
-			Expect(ctx.ArtifactTypes).To(HaveLen(3))
+			Expect(ctx.ArtifactTypes).To(HaveLen(4))
 			Expect(ctx.ArtifactTypes).To(ContainElements(
-				ExportTypeEvents, ExportTypeFacts, ExportTypeBursts,
+				ExportTypeCV, ExportTypeEvents, ExportTypeFacts, ExportTypeBursts,
 			))
 		})
 
 		It("should have supported formats for each artifact type", func() {
-			ctx := NewExportArtifactContext()
+			ctx := NewTestExportArtifactContext()
 			Expect(ctx.SupportedFormats[ExportTypeCV]).To(ContainElements(ExportFormatTXT, ExportFormatMD, ExportFormatYAML))
 			Expect(ctx.SupportedFormats[ExportTypeEvents]).To(ContainElements(ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT))
 		})
 
 		It("should have default format for each artifact type", func() {
-			ctx := NewExportArtifactContext()
+			ctx := NewTestExportArtifactContext()
 			Expect(ctx.DefaultFormat[ExportTypeCV]).To(Equal(ExportFormatMD))
 			Expect(ctx.DefaultFormat[ExportTypeEvents]).To(Equal(ExportFormatJSON))
 			Expect(ctx.DefaultFormat[ExportTypeFacts]).To(Equal(ExportFormatJSON))
 		})
 
 		It("should have all destinations", func() {
-			ctx := NewExportArtifactContext()
+			ctx := NewTestExportArtifactContext()
 			Expect(ctx.Destinations).To(HaveLen(2))
 			Expect(ctx.Destinations).To(ContainElements(
 				ExportDestinationFile, ExportDestinationClipboard,
@@ -757,7 +727,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		BeforeEach(func() {
 			var err error
-			intent, err = NewExportArtifactIntent(ctx)
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 			intent.SetState(ExportStatePreview)
