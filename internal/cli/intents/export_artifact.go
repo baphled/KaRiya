@@ -24,6 +24,7 @@ type ExportFormat string
 const (
 	ExportFormatPDF  ExportFormat = "pdf"
 	ExportFormatJSON ExportFormat = "json"
+	ExportFormatYAML ExportFormat = "yaml"
 	ExportFormatCSV  ExportFormat = "csv"
 	ExportFormatTXT  ExportFormat = "txt"
 	ExportFormatMD   ExportFormat = "markdown"
@@ -112,14 +113,14 @@ func NewExportArtifactContext() *ExportArtifactContext {
 			ExportTypeProfile,
 		},
 		SupportedFormats: map[ExportArtifactType][]ExportFormat{
-			ExportTypeCV:      {ExportFormatPDF, ExportFormatJSON, ExportFormatMD},
-			ExportTypeEvents:  {ExportFormatJSON, ExportFormatCSV, ExportFormatTXT},
-			ExportTypeFacts:   {ExportFormatJSON, ExportFormatCSV, ExportFormatTXT},
-			ExportTypeBursts:  {ExportFormatJSON, ExportFormatCSV, ExportFormatTXT},
-			ExportTypeProfile: {ExportFormatJSON, ExportFormatPDF},
+			ExportTypeCV:      {ExportFormatTXT, ExportFormatMD, ExportFormatYAML},
+			ExportTypeEvents:  {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
+			ExportTypeFacts:   {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
+			ExportTypeBursts:  {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
+			ExportTypeProfile: {ExportFormatJSON, ExportFormatYAML},
 		},
 		DefaultFormat: map[ExportArtifactType]ExportFormat{
-			ExportTypeCV:      ExportFormatPDF,
+			ExportTypeCV:      ExportFormatMD,
 			ExportTypeEvents:  ExportFormatJSON,
 			ExportTypeFacts:   ExportFormatJSON,
 			ExportTypeBursts:  ExportFormatJSON,
@@ -128,7 +129,6 @@ func NewExportArtifactContext() *ExportArtifactContext {
 		Destinations: []ExportDestination{
 			ExportDestinationFile,
 			ExportDestinationClipboard,
-			ExportDestinationEmail,
 		},
 	}
 }

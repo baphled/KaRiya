@@ -112,8 +112,9 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should show supported formats for artifact type", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("pdf"))
-			Expect(view).To(ContainSubstring("json"))
+			Expect(view).To(ContainSubstring("txt"))
+			Expect(view).To(ContainSubstring("markdown"))
+			Expect(view).To(ContainSubstring("yaml"))
 		})
 	})
 
@@ -135,7 +136,6 @@ var _ = Describe("ExportArtifact Intent", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("file"))
 			Expect(view).To(ContainSubstring("clipboard"))
-			Expect(view).To(ContainSubstring("email"))
 		})
 	})
 
@@ -567,14 +567,14 @@ var _ = Describe("ExportArtifact Intent", func() {
 		It("should create configuration with default format for artifact type", func() {
 			config := NewExportConfiguration(ExportTypeCV, intent.model.context)
 			Expect(config.ArtifactType).To(Equal(ExportTypeCV))
-			Expect(config.Format).To(Equal(ExportFormatPDF))
+			Expect(config.Format).To(Equal(ExportFormatMD))
 			Expect(config.Destination).To(Equal(ExportDestinationFile))
 		})
 
 		It("should support different formats for different artifact types", func() {
 			cvConfig := NewExportConfiguration(ExportTypeCV, intent.model.context)
 			eventsConfig := NewExportConfiguration(ExportTypeEvents, intent.model.context)
-			Expect(cvConfig.Format).To(Equal(ExportFormatPDF))
+			Expect(cvConfig.Format).To(Equal(ExportFormatMD))
 			Expect(eventsConfig.Format).To(Equal(ExportFormatJSON))
 		})
 	})
@@ -590,21 +590,21 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should have supported formats for each artifact type", func() {
 			ctx := NewExportArtifactContext()
-			Expect(ctx.SupportedFormats[ExportTypeCV]).To(ContainElements(ExportFormatPDF, ExportFormatJSON, ExportFormatMD))
-			Expect(ctx.SupportedFormats[ExportTypeEvents]).To(ContainElements(ExportFormatJSON, ExportFormatCSV, ExportFormatTXT))
+			Expect(ctx.SupportedFormats[ExportTypeCV]).To(ContainElements(ExportFormatTXT, ExportFormatMD, ExportFormatYAML))
+			Expect(ctx.SupportedFormats[ExportTypeEvents]).To(ContainElements(ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT))
 		})
 
 		It("should have default format for each artifact type", func() {
 			ctx := NewExportArtifactContext()
-			Expect(ctx.DefaultFormat[ExportTypeCV]).To(Equal(ExportFormatPDF))
+			Expect(ctx.DefaultFormat[ExportTypeCV]).To(Equal(ExportFormatMD))
 			Expect(ctx.DefaultFormat[ExportTypeEvents]).To(Equal(ExportFormatJSON))
 		})
 
 		It("should have all destinations", func() {
 			ctx := NewExportArtifactContext()
-			Expect(ctx.Destinations).To(HaveLen(3))
+			Expect(ctx.Destinations).To(HaveLen(2))
 			Expect(ctx.Destinations).To(ContainElements(
-				ExportDestinationFile, ExportDestinationClipboard, ExportDestinationEmail,
+				ExportDestinationFile, ExportDestinationClipboard,
 			))
 		})
 	})
