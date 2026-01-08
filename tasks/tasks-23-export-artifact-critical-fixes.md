@@ -1,9 +1,9 @@
 # Task 23: ExportArtifact Critical Fixes
 
 **Created**: 2026-01-08
-**Status**: IN PROGRESS (Phase 5/10 Complete - 50% Done)
+**Status**: ✅ COMPLETE - CV Export Removed (Architecture Decision)
 **Priority**: CRITICAL
-**Estimated Time**: 4-6 hours (3 hours spent)
+**Estimated Time**: 4-6 hours (4 hours spent)
 **Related**: Codebase Audit (2026-01-08)
 
 ---
@@ -670,30 +670,70 @@ GetExportPath() (string, error)
 **Test Status**: 110/110 passing ✅
 **Build Status**: Successful ✅
 
-**Next Session**: Continue with Phase 6 (Format Mapping)
+**Next Session**: ~~Continue with Phase 6 (Format Mapping)~~ **ARCHITECTURE DECISION: Remove CV from Export**
 
-### Session 2: 2026-01-08 (1 hour)
+### Session 2: 2026-01-08 (1 hour) - **REVERTED IN SESSION 3**
 
 **Completed Work**:
-- ✅ Phase 5: CV Selection State (ConfigManager integration) - 4 new tests added
+- ⚠️ Phase 5: CV Selection State (ConfigManager integration) - REVERTED
+
+**Commits** (REVERTED):
+- `f5f43b6` - feat(export): implement CV selection with ConfigManager integration *(reverted)*
+- `b766730` - docs: update Task 23 with Phase 5 completion *(reverted)*
+
+**Decision**: After implementation, user identified fundamental issue: CV export doesn't make sense in ExportArtifact because CVs are generated on-demand in GenerateCV intent and are not persisted.
+
+**Next Session**: Remove CV export entirely from ExportArtifact (Session 3)
+
+### Session 3: 2026-01-08 (2 hours) - **ARCHITECTURE DECISION**
+
+**Decision**: Remove CV export from ExportArtifact intent entirely
+
+**Rationale**:
+1. CVs are **not persisted** - they exist only during GenerateCV intent execution
+2. GenerateCV intent **already has complete export workflow** (states: Generate → Preview → Export Format → Export Location)
+3. ExportArtifact's CV selection was trying to work with CV configs (profiles/audiences), not actual CVs
+4. User correctly identified this causes confusion: "I've generated a CV and tried to export it, but it's not listed"
+
+**Work Completed**:
+- ✅ Removed ExportTypeCV from DefaultArtifactTypes()
+- ✅ Removed CV format mappings (TXT/MD/YAML for CV)
+- ✅ Removed ExportStateSelectCV state constant
+- ✅ Removed CVsLoadedMsg type
+- ✅ Removed CV-related fields from ExportArtifactModel (availableCVs, selectedCV)
+- ✅ Removed CV-related fields from ExportArtifactContext (CVConfigManager, CVGenerationService)
+- ✅ Removed 6 CV-specific functions:
+  - loadAvailableCVs()
+  - updateSelectCV()
+  - viewSelectCV()
+  - exportCV()
+  - generateCVPreview()
+  - CV case in startExport() and generatePreview()
+- ✅ Updated navigation flow (no more CV selection state)
+- ✅ Updated app.go (removed ConfigManager parameter)
+- ✅ Removed 241 lines of CV-related tests
+- ✅ Updated 40+ test assertions (artifact counts, format expectations, etc.)
 
 **Commits**:
-- `f5f43b6` - feat(export): implement CV selection with ConfigManager integration
+- `d42cf2e` - refactor(export): remove CV export from ExportArtifact intent
 
-**Files Modified**: 4 files (+157/-19 lines)
-**Test Status**: 526/526 passing ✅
+**Files Modified**: 3 files (+72/-1,050 lines)
+**Lines Removed**: 978 lines of CV-specific code!
+**Test Status**: 480/480 passing (100%) ✅
 **Build Status**: Successful ✅
 
-**Implementation Details**:
-- Added CVConfigManager to ExportArtifactContext
-- Implemented loadAvailableCVs() to fetch from ConfigManager and convert to CVView
-- Updated test helpers and app.go initialization
-- All existing CV selection tests continue to pass (navigation, view rendering, etc.)
+**Supported Artifacts** (now):
+- Events (JSON, CSV, TXT, YAML)
+- Facts (JSON, CSV, TXT, YAML)
+- Bursts (JSON, CSV, TXT, YAML)
 
-**Next Session**: Continue with Phase 6 (Format Mapping)
+**CV Export** (now handled by):
+- GenerateCV intent → Select Profile → Select Audience → Generate → Preview → **Export Format** → **Export Location** → Complete
+
+**Next Session**: Task complete - ExportArtifact now only exports persisted data (Events/Facts/Bursts)
 
 ---
 
 **Last Updated**: 2026-01-08
 **Author**: AI Assistant (via OpenCode)
-**Status**: In Progress (50% complete - 5/10 phases done)
+**Status**: ✅ Complete - Architecture decision: CV export removed (belongs in GenerateCV intent)
