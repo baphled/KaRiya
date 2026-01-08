@@ -10,22 +10,199 @@
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Quick Start](#quick-start)
-3. [Architecture Overview](#architecture-overview)
-4. [Development Guidelines & Rules](#development-guidelines--rules)
-5. [TUI Development](#tui-development)
-6. [User Guides & Features](#user-guides--features)
-7. [Implementation Resources](#implementation-resources)
-8. [Task Documentation](#task-documentation)
-9. [Key Files and Purposes](#key-files-and-purposes)
-10. [Recent Fixes](#recent-fixes)
-11. [Common Development Tasks](#common-development-tasks)
-12. [Deployment Guide](#deployment-guide)
-13. [Performance Benchmarks](#performance-benchmarks)
-14. [Workflow Patterns](#workflow-patterns)
-15. [Troubleshooting](#troubleshooting)
-16. [Project Metadata](#project-metadata)
+1. [Session Contract](#session-contract)
+2. [AI Mandatory Protocol](#ai-mandatory-protocol)
+3. [Task Template (Required Format)](#task-template-required-format)
+4. [Project Overview](#project-overview)
+5. [Quick Start](#quick-start)
+6. [Architecture Overview](#architecture-overview)
+7. [Development Guidelines & Rules](#development-guidelines--rules)
+8. [TUI Development](#tui-development)
+9. [User Guides & Features](#user-guides--features)
+10. [Implementation Resources](#implementation-resources)
+11. [Task Documentation](#task-documentation)
+12. [Key Files and Purposes](#key-files-and-purposes)
+13. [Recent Fixes](#recent-fixes)
+14. [Common Development Tasks](#common-development-tasks)
+15. [Deployment Guide](#deployment-guide)
+16. [Performance Benchmarks](#performance-benchmarks)
+17. [Workflow Patterns](#workflow-patterns)
+18. [Troubleshooting](#troubleshooting)
+19. [Project Metadata](#project-metadata)
+
+---
+
+## Session Contract
+
+**This contract is displayed when running `make session-start`.**
+
+By proceeding with this work session, you acknowledge and commit to:
+
+1. **TDD Protocol**: Tests are written **BEFORE** implementation code (Red-Green-Refactor)
+2. **Compliance First**: `make check-compliance` runs **before AND after** every task
+3. **Atomic Commits**: One logical change per commit, with AI attribution if AI-generated
+4. **Sequential Tasks**: One task at a time, in checklist order
+5. **Token Efficiency**: Tools over text, concise communication, batch operations
+
+**Violation of these rules requires stopping work and correcting before proceeding.**
+
+---
+
+## AI Mandatory Protocol
+
+### Session Start Requirements
+
+The AI assistant **MUST**:
+
+1. Ask user to run `make session-start`
+2. Wait for confirmation that it passed
+3. If it fails, **REFUSE to proceed** until violations are fixed
+4. Display: "Session contract acknowledged. Ready to proceed."
+
+### Before ANY Code Changes
+
+The AI assistant **MUST**:
+
+1. State the specific task being worked on (from task file)
+2. Confirm it is **ONE** atomic change
+3. State which test file will be created/modified **FIRST**
+4. Wait for user confirmation before proceeding
+
+### TDD Enforcement (CRITICAL)
+
+The AI assistant **MUST**:
+
+1. **Write the failing test FIRST** - this is non-negotiable
+2. Show the test to the user
+3. Ask user to run the test and confirm it **FAILS**
+4. **ONLY THEN** write implementation code
+5. If user asks for implementation first, **REFUSE** and explain TDD
+
+**Example refusal:**
+```
+I cannot write implementation code before the test exists and fails.
+This violates our TDD protocol (Session Contract #1).
+
+Let me write the test first. After you confirm it fails, I'll implement.
+```
+
+### Before Each Commit
+
+The AI assistant **MUST**:
+
+1. Run `make review-commit` (or ask user to run it)
+2. Include AI attribution in commit message if ANY code was AI-generated
+3. Verify commit is atomic (ONE logical change)
+4. If commit violates rules, **REFUSE** and explain corrections needed
+
+### After Task Completion
+
+The AI assistant **MUST**:
+
+1. Ask user to run `make check-compliance`
+2. Verify all task checkboxes in task file are complete
+3. Mark task as complete `[x]` in task file
+4. **STOP immediately** - do not proceed to next task without explicit user request
+
+### Refusal Protocol
+
+The AI assistant **MUST REFUSE** to proceed if:
+
+- User requests implementation before test (TDD violation)
+- `make session-start` has not been run or failed
+- `make check-compliance` fails after task completion
+- User attempts to commit without `make review-commit`
+- User attempts to skip required workflow steps
+
+**Refusal template:**
+```
+I cannot proceed with this request because it violates [specific rule].
+
+Required correction: [specific action needed]
+
+Once corrected, I can continue.
+```
+
+---
+
+## Task Template (Required Format)
+
+All task files **MUST** follow this structure:
+
+```markdown
+# Task XX: [Task Name]
+
+## Overview
+- **Goal**: [What we're achieving]
+- **Time Estimate**: [Estimated duration]
+- **Prerequisites**: [Required setup or knowledge]
+
+## Session Contract Acknowledgment
+- [ ] Ran `make session-start` and it passed
+- [ ] Acknowledge and commit to following all workflow rules
+- [ ] Token count: _____ (must be < 50k to start)
+
+## Pre-Task Checklist (MUST COMPLETE BEFORE STARTING)
+- [ ] `make check-compliance` passes
+- [ ] Reviewed existing patterns in: [list files/directories]
+- [ ] Confirmed this is ONE atomic task (not multiple changes)
+- [ ] Identified which test files will be created/modified
+
+## Files to Modify
+- [ ] List of files that will be changed
+- [ ] With checkboxes for tracking
+
+## TDD Checklist (MUST COMPLETE IN ORDER)
+
+### RED Phase
+- [ ] Test file created/modified: `path/to/test_file.go`
+- [ ] Test written and **FAILS** with error:
+  ```
+  [Paste actual error here]
+  ```
+- [ ] Test committed:
+  ```
+  git commit -m "test(scope): add failing test for X"
+  ```
+
+### GREEN Phase
+- [ ] Minimal implementation written
+- [ ] Test now **PASSES**
+- [ ] Implementation committed:
+  ```
+  git commit -m "feat(scope): implement X"
+  ```
+
+### REFACTOR Phase (if needed)
+- [ ] Code refactored for clarity/DRY
+- [ ] Tests still pass
+- [ ] Refactoring committed separately:
+  ```
+  git commit -m "refactor(scope): improve X"
+  ```
+
+## Pre-Commit Checklist (BEFORE EACH COMMIT)
+- [ ] `make review-commit` passes
+- [ ] AI attribution included (if AI-generated)
+- [ ] Commit message explains **WHY**, not just WHAT
+- [ ] Commit is atomic (ONE logical change)
+
+## Post-Task Checklist (MUST COMPLETE BEFORE NEXT TASK)
+- [ ] `make check-compliance` passes
+- [ ] All checkboxes above completed
+- [ ] Task marked complete `[x]` in task file
+- [ ] Token count: _____ (< 100k to continue)
+
+## Acceptance Criteria
+- [ ] Feature works as specified
+- [ ] All tests pass
+- [ ] Coverage maintained ≥ 80%
+- [ ] Documentation updated (if needed)
+
+## Rollback Plan
+- Steps to revert changes if needed
+- Safety considerations
+```
 
 ---
 

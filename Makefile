@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ci-local ci-install-tools gosec
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ci-local ci-install-tools gosec session-start verify-hooks tdd-check
 
 # Run all tests in verbose mode
 test:
@@ -135,6 +135,59 @@ token-check:
 # Show task workflow
 task-workflow:
 	@cat docs/rules/TASK_QUICK_REF.md
+
+# Session start - mandatory entry point for every work session
+session-start:
+	@echo "================================================"
+	@echo "🚀 STARTING WORK SESSION"
+	@echo "================================================"
+	@echo ""
+	@echo "📋 SESSION CONTRACT"
+	@echo "------------------------------------------------"
+	@echo ""
+	@echo "By proceeding, you acknowledge:"
+	@echo ""
+	@echo "  1. ✅ TDD Protocol: Tests written BEFORE implementation"
+	@echo "  2. ✅ Compliance First: check-compliance before AND after tasks"
+	@echo "  3. ✅ Atomic Commits: One logical change per commit + AI attribution"
+	@echo "  4. ✅ Sequential Tasks: One task at a time, in order"
+	@echo "  5. ✅ Token Efficiency: Tools over text, concise communication"
+	@echo ""
+	@echo "Violation requires stopping and correcting before proceeding."
+	@echo ""
+	@echo "================================================"
+	@echo "🔍 VERIFYING ENVIRONMENT"
+	@echo "================================================"
+	@echo ""
+	@bash scripts/verify-hooks.sh
+	@echo ""
+	@echo "================================================"
+	@echo "🔍 CHECKING COMPLIANCE"
+	@echo "================================================"
+	@echo ""
+	@bash scripts/check-compliance.sh
+	@echo ""
+	@echo "================================================"
+	@echo "✅ SESSION READY"
+	@echo "================================================"
+	@echo ""
+	@echo "You may now proceed with your work."
+	@echo "Remember to follow the 5-phase workflow for EVERY task."
+	@echo ""
+	@echo "Quick Reference:"
+	@echo "  make check-compliance  - Run before AND after every task"
+	@echo "  make review-commit     - Run before EVERY commit"
+	@echo "  make tdd-check         - Verify TDD compliance"
+	@echo "  make task-workflow     - Show workflow guide"
+	@echo ""
+
+# Verify git hooks installation
+verify-hooks:
+	@bash scripts/verify-hooks.sh
+
+# TDD compliance check
+tdd-check:
+	@bash scripts/tdd-check.sh
 
 # Show help for all available targets
 help:
