@@ -18,7 +18,9 @@ type SQLiteRepository struct {
 	db *sql.DB
 }
 
-// NewSQLiteRepository creates a new SQLite-backed repository
+// NewSQLiteRepository creates a new SQLite-backed repository.
+// Deprecated: Use NewSQLiteRepositoryWithDB after running migrations via career.RunMigrations().
+// This constructor is kept for backward compatibility with existing tests.
 func NewSQLiteRepository(dbPath string) (*SQLiteRepository, error) {
 	// Open the SQLite database
 	db, err := sql.Open("sqlite", dbPath)
@@ -26,71 +28,19 @@ func NewSQLiteRepository(dbPath string) (*SQLiteRepository, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Create the events table if it doesn't exist
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS career_events (
-			id TEXT PRIMARY KEY,
-			text TEXT NOT NULL,
-			date DATETIME NOT NULL,
-			tags TEXT,
-			categories TEXT,
-			company TEXT,
-			project TEXT,
-			created_at DATETIME NOT NULL,
-			updated_at DATETIME NOT NULL
-		)
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create events table: %w", err)
-	}
-
-	// Migrate existing database to add categories column if it doesn't exist
-	err = migrateAddCategoriesColumn(db)
-	if err != nil {
-		return nil, fmt.Errorf("failed to migrate database: %w", err)
+	// Run migrations to ensure schema is up to date
+	if err := RunMigrations(db); err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return &SQLiteRepository{db: db}, nil
 }
 
-// migrateAddCategoriesColumn adds the categories column if it doesn't exist
-func migrateAddCategoriesColumn(db *sql.DB) error {
-	// Check if categories column already exists
-	rows, err := db.Query("PRAGMA table_info(career_events)")
-	if err != nil {
-		return fmt.Errorf("failed to check table schema: %w", err)
-	}
-	defer rows.Close()
-
-	columnExists := false
-	for rows.Next() {
-		var cid int
-		var name string
-		var typ string
-		var notnull int
-		var dflt_value sql.NullString
-		var pk int
-
-		err := rows.Scan(&cid, &name, &typ, &notnull, &dflt_value, &pk)
-		if err != nil {
-			return fmt.Errorf("failed to scan column info: %w", err)
-		}
-
-		if name == "categories" {
-			columnExists = true
-			break
-		}
-	}
-
-	// If categories column doesn't exist, add it
-	if !columnExists {
-		_, err = db.Exec("ALTER TABLE career_events ADD COLUMN categories TEXT")
-		if err != nil {
-			return fmt.Errorf("failed to add categories column: %w", err)
-		}
-	}
-
-	return nil
+// NewSQLiteRepositoryWithDB creates a repository with an existing database connection.
+// This is useful when migrations have already been run on the database connection.
+// The caller is responsible for managing the database connection lifecycle.
+func NewSQLiteRepositoryWithDB(db *sql.DB) *SQLiteRepository {
+	return &SQLiteRepository{db: db}
 }
 
 // GetDB returns the underlying database connection for sharing with other repositories

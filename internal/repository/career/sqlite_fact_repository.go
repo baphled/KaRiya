@@ -17,37 +17,23 @@ type SQLiteFactRepository struct {
 	db *sql.DB
 }
 
-// NewSQLiteFactRepository creates a new SQLite fact repository
+// NewSQLiteFactRepository creates a new SQLite fact repository.
+// Deprecated: Use NewSQLiteFactRepositoryWithDB after running migrations via career.RunMigrations().
+// This constructor is kept for backward compatibility with existing tests.
 func NewSQLiteFactRepository(db *sql.DB) (*SQLiteFactRepository, error) {
-	repo := &SQLiteFactRepository{db: db}
-
-	// Initialize the schema
-	if err := repo.initSchema(); err != nil {
-		return nil, fmt.Errorf("failed to initialize fact schema: %w", err)
+	// Run migrations to ensure schema is up to date
+	if err := RunMigrations(db); err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	return repo, nil
+	return &SQLiteFactRepository{db: db}, nil
 }
 
-// initSchema creates the facts table if it doesn't exist
-func (r *SQLiteFactRepository) initSchema() error {
-	schema := `
-	CREATE TABLE IF NOT EXISTS facts (
-		id TEXT PRIMARY KEY,
-		text TEXT NOT NULL,
-		competencies TEXT NOT NULL,
-		role_fit TEXT NOT NULL,
-		audience_relevance TEXT NOT NULL,
-		strength_signal TEXT,
-		source_event_id TEXT,
-		source_burst_id TEXT,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL
-	);
-	`
-
-	_, err := r.db.Exec(schema)
-	return err
+// NewSQLiteFactRepositoryWithDB creates a fact repository with an existing database connection.
+// This is useful when migrations have already been run on the database connection.
+// The caller is responsible for managing the database connection lifecycle.
+func NewSQLiteFactRepositoryWithDB(db *sql.DB) *SQLiteFactRepository {
+	return &SQLiteFactRepository{db: db}
 }
 
 // Create adds a new fact to the database
