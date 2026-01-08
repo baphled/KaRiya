@@ -24,6 +24,9 @@ var _ = Describe("Data Persistence", func() {
 			// Create SQLite repository
 			repo, err := careerrepo.NewSQLiteRepository(dbPath)
 			Expect(err).ToNot(HaveOccurred())
+			DeferCleanup(func() {
+				repo.Close()
+			})
 
 			// Create service
 			svc := careerservice.NewService(repo)
@@ -61,6 +64,9 @@ var _ = Describe("Data Persistence", func() {
 			// Create first repository instance and add event
 			repo1, err := careerrepo.NewSQLiteRepository(dbPath)
 			Expect(err).ToNot(HaveOccurred())
+			DeferCleanup(func() {
+				repo1.Close()
+			})
 
 			svc1 := careerservice.NewService(repo1)
 			cliSvc1 := service.NewCLIEventService(svc1)
@@ -86,6 +92,9 @@ var _ = Describe("Data Persistence", func() {
 			// Create second repository instance pointing to same database
 			repo2, err := careerrepo.NewSQLiteRepository(dbPath)
 			Expect(err).ToNot(HaveOccurred())
+			DeferCleanup(func() {
+				repo2.Close()
+			})
 
 			svc2 := careerservice.NewService(repo2)
 
@@ -105,6 +114,9 @@ var _ = Describe("Data Persistence", func() {
 			// Create SQLite repository at custom path
 			repo, err := careerrepo.NewSQLiteRepository(dbPath)
 			Expect(err).ToNot(HaveOccurred())
+			DeferCleanup(func() {
+				repo.Close()
+			})
 
 			// Verify database file was created
 			Expect(dbPath).To(BeAnExistingFile())
