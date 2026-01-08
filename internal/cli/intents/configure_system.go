@@ -2,8 +2,16 @@ package intents
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/config"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // ConfigurationDomain represents a configuration domain (e.g., "system", "profile", "export")
@@ -51,6 +59,7 @@ type ConfigurationChanges struct {
 type ConfigureSystemContext struct {
 	Domains  []ConfigurationDomain
 	Settings map[ConfigurationDomain][]*ConfigurationSetting
+	Config   *config.Config // Configuration loaded from file
 }
 
 // ConfigureSystemResult contains the result of configuration
@@ -71,10 +80,25 @@ type ConfigureSystemModel struct {
 	result        *ConfigureSystemResult
 	error         *IntentError
 	active        bool
+
+	// Editing state
+	settingsInputs map[string]textinput.Model // One input per setting
+	focusedSetting int                        // Which setting is focused
+	editingValue   bool                       // Currently editing a value
 }
 
-// NewConfigureSystemContext creates a new ConfigureSystemContext with default values
+// NewConfigureSystemContext creates a new ConfigureSystemContext with values loaded from config file
 func NewConfigureSystemContext() *ConfigureSystemContext {
+	// Load config from file (or use defaults if file doesn't exist)
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		// Log error but continue with defaults
+		cfg = config.DefaultConfig()
+	}
+
+	// Populate settings from loaded config
+	settings := settingsFromConfig(cfg)
+
 	return &ConfigureSystemContext{
 		Domains: []ConfigurationDomain{
 			DomainSystem,
@@ -82,81 +106,121 @@ func NewConfigureSystemContext() *ConfigureSystemContext {
 			DomainExport,
 			DomainUI,
 		},
-		Settings: map[ConfigurationDomain][]*ConfigurationSetting{
-			DomainSystem: {
-				{
-					Key:          "log_level",
-					Label:        "Log Level",
-					Value:        "info",
-					DefaultValue: "info",
-					Type:         "select",
-					Options:      []string{"debug", "info", "warn", "error"},
-					Description:  "Logging verbosity level",
-				},
-				{
-					Key:          "data_dir",
-					Label:        "Data Directory",
-					Value:        "/home/user/.kariya",
-					DefaultValue: "/home/user/.kariya",
-					Type:         "string",
-					Description:  "Directory for storing application data",
-				},
+		Settings: settings,
+		Config:   cfg,
+	}
+}
+
+// settingsFromConfig populates settings from config values
+func settingsFromConfig(cfg *config.Config) map[ConfigurationDomain][]*ConfigurationSetting {
+	return map[ConfigurationDomain][]*ConfigurationSetting{
+		DomainSystem: {
+			{
+				Key:          "log_level",
+				Label:        "Log Level",
+				Value:        cfg.System.LogLevel,
+				DefaultValue: "info",
+				Type:         "select",
+				Options:      []string{"debug", "info", "warn", "error"},
+				Description:  "Logging verbosity level",
 			},
-			DomainProfile: {
-				{
-					Key:          "name",
-					Label:        "Full Name",
-					Value:        "John Doe",
-					DefaultValue: "",
-					Type:         "string",
-					Description:  "Your full name",
-				},
-				{
-					Key:          "email",
-					Label:        "Email",
-					Value:        "john@example.com",
-					DefaultValue: "",
-					Type:         "string",
-					Description:  "Your email address",
-				},
+			{
+				Key:          "data_dir",
+				Label:        "Data Directory",
+				Value:        cfg.System.DataDir,
+				DefaultValue: cfg.System.DataDir,
+				Type:         "string",
+				Description:  "Directory for storing application data",
 			},
-			DomainExport: {
-				{
-					Key:          "default_format",
-					Label:        "Default Export Format",
-					Value:        "pdf",
-					DefaultValue: "pdf",
-					Type:         "select",
-					Options:      []string{"pdf", "json", "csv", "txt"},
-					Description:  "Default format for exports",
-				},
-				{
-					Key:          "auto_open",
-					Label:        "Auto-Open Exported Files",
-					Value:        true,
-					DefaultValue: false,
-					Type:         "bool",
-					Description:  "Automatically open exported files",
-				},
+			{
+				Key:          "auto_backup",
+				Label:        "Auto Backup",
+				Value:        cfg.System.AutoBackup,
+				DefaultValue: true,
+				Type:         "bool",
+				Description:  "Automatically backup data",
 			},
-			DomainUI: {
-				{
-					Key:          "theme",
-					Label:        "Theme",
-					Value:        "dark",
-					DefaultValue: "dark",
-					Type:         "select",
-					Options:      []string{"light", "dark"},
-					Description:  "UI color theme",
-				},
-				{
-					Key:          "animations",
-					Label:        "Animations",
-					Value:        true,
-					DefaultValue: true,
-					Type:         "bool",
-					Description:  "Enable UI animations",
-				},
+			{
+				Key:          "backup_count",
+				Label:        "Backup Count",
+				Value:        cfg.System.BackupCount,
+				DefaultValue: 5,
+				Type:         "int",
+				Description:  "Number of backups to keep",
+			},
+		},
+		DomainProfile: {
+			{
+				Key:          "name",
+				Label:        "Full Name",
+				Value:        cfg.Profile.Name,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your full name",
+			},
+			{
+				Key:          "email",
+				Label:        "Email",
+				Value:        cfg.Profile.Email,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your email address",
+			},
+			{
+				Key:          "default_role",
+				Label:        "Default Role",
+				Value:        cfg.Profile.DefaultRole,
+				DefaultValue: "senior_ic",
+				Type:         "select",
+				Options:      []string{"junior_ic", "mid_ic", "senior_ic", "staff_ic", "principal_ic", "manager", "senior_manager", "director"},
+				Description:  "Default role for CV generation",
+			},
+			{
+				Key:          "default_audience",
+				Label:        "Default Audience",
+				Value:        cfg.Profile.DefaultAudience,
+				DefaultValue: "technical",
+				Type:         "select",
+				Options:      []string{"technical", "executive", "general"},
+				Description:  "Default audience for CV generation",
+			},
+		},
+		DomainExport: {
+			{
+				Key:          "default_destination",
+				Label:        "Default Destination",
+				Value:        cfg.Export.DefaultDestination,
+				DefaultValue: "file",
+				Type:         "select",
+				Options:      []string{"file", "clipboard"},
+				Description:  "Default export destination",
+			},
+			{
+				Key:          "auto_open",
+				Label:        "Auto-Open Exported Files",
+				Value:        cfg.Export.AutoOpen,
+				DefaultValue: false,
+				Type:         "bool",
+				Description:  "Automatically open exported files",
+			},
+		},
+		DomainUI: {
+			{
+				Key:          "theme",
+				Label:        "Theme",
+				Value:        cfg.Display.Theme,
+				DefaultValue: "dark",
+				Type:         "select",
+				Options:      []string{"light", "dark"},
+				Description:  "UI color theme",
+			},
+			{
+				Key:          "animations",
+				Label:        "Animations",
+				Value:        cfg.Display.Animations,
+				DefaultValue: true,
+				Type:         "bool",
+				Description:  "Enable UI animations",
 			},
 		},
 	}
@@ -256,17 +320,164 @@ func (m *ConfigureSystemModel) Result() *IntentResult[interface{}] {
 	}
 }
 
+// Helper methods for input management
+
+// initializeInputs creates text input components for all settings in the current domain
+func (m *ConfigureSystemModel) initializeInputs() {
+	m.settingsInputs = make(map[string]textinput.Model)
+	settings := m.context.Settings[m.domain]
+
+	for _, setting := range settings {
+		input := textinput.New()
+		input.Placeholder = setting.Description
+		input.SetValue(fmt.Sprintf("%v", setting.Value))
+
+		// Configure based on type
+		switch setting.Type {
+		case "int":
+			input.CharLimit = 10
+			input.Validate = validateInt
+		case "string":
+			input.CharLimit = 200
+		case "bool":
+			// For bool, we'll use "true"/"false" strings
+			input.CharLimit = 5
+		case "select":
+			// For select, show current value (user will need to type exact match)
+			input.CharLimit = 50
+		}
+
+		m.settingsInputs[setting.Key] = input
+	}
+
+	// Focus first input
+	if len(settings) > 0 {
+		first := m.settingsInputs[settings[0].Key]
+		first.Focus()
+		m.settingsInputs[settings[0].Key] = first
+	}
+}
+
+// validateInt validates that input is a valid integer
+func validateInt(s string) error {
+	if s == "" {
+		return nil
+	}
+	_, err := strconv.Atoi(s)
+	if err != nil {
+		return fmt.Errorf("must be a number")
+	}
+	return nil
+}
+
+// updateInputFocus moves focus to the currently selected setting
+func (m *ConfigureSystemModel) updateInputFocus() {
+	settings := m.context.Settings[m.domain]
+
+	// Blur all inputs
+	for key, input := range m.settingsInputs {
+		input.Blur()
+		m.settingsInputs[key] = input
+	}
+
+	// Focus current
+	if m.focusedSetting < len(settings) {
+		key := settings[m.focusedSetting].Key
+		input := m.settingsInputs[key]
+		input.Focus()
+		m.settingsInputs[key] = input
+	}
+}
+
+// updateFocusedInput updates the currently focused input with the message
+func (m *ConfigureSystemModel) updateFocusedInput(msg tea.Msg) tea.Cmd {
+	settings := m.context.Settings[m.domain]
+	if m.focusedSetting >= len(settings) {
+		return nil
+	}
+
+	key := settings[m.focusedSetting].Key
+	input := m.settingsInputs[key]
+
+	var cmd tea.Cmd
+	input, cmd = input.Update(msg)
+	m.settingsInputs[key] = input
+
+	return cmd
+}
+
+// saveCurrentValue saves the current input value to the changes map
+func (m *ConfigureSystemModel) saveCurrentValue() {
+	settings := m.context.Settings[m.domain]
+	if m.focusedSetting >= len(settings) {
+		return
+	}
+
+	setting := settings[m.focusedSetting]
+	input := m.settingsInputs[setting.Key]
+
+	// Convert value based on type
+	var newValue interface{}
+	switch setting.Type {
+	case "string", "select":
+		newValue = input.Value()
+	case "int":
+		val, err := strconv.Atoi(input.Value())
+		if err != nil {
+			// Invalid int, revert
+			m.revertCurrentValue()
+			return
+		}
+		newValue = val
+	case "bool":
+		v := input.Value()
+		newValue = (v == "true" || v == "True" || v == "TRUE")
+	}
+
+	// Store in changes
+	if m.changes == nil {
+		m.changes = &ConfigurationChanges{
+			Domain:   m.domain,
+			Original: make(map[string]interface{}),
+			Modified: make(map[string]interface{}),
+		}
+	}
+
+	if _, exists := m.changes.Original[setting.Key]; !exists {
+		m.changes.Original[setting.Key] = setting.Value
+	}
+	m.changes.Modified[setting.Key] = newValue
+
+	// Update setting value for display
+	setting.Value = newValue
+}
+
+// revertCurrentValue reverts the current input to its original value
+func (m *ConfigureSystemModel) revertCurrentValue() {
+	settings := m.context.Settings[m.domain]
+	if m.focusedSetting >= len(settings) {
+		return
+	}
+
+	setting := settings[m.focusedSetting]
+	input := m.settingsInputs[setting.Key]
+
+	// Reset to original value
+	input.SetValue(fmt.Sprintf("%v", setting.Value))
+	m.settingsInputs[setting.Key] = input
+}
+
 // State-specific update handlers
 
 func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "up":
+		case "up", "k":
 			if m.selectedIndex > 0 {
 				m.selectedIndex--
 			}
-		case "down":
+		case "down", "j":
 			if m.selectedIndex < len(m.context.Domains)-1 {
 				m.selectedIndex++
 			}
@@ -283,7 +494,10 @@ func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 				m.changes.Modified[setting.Key] = setting.Value
 			}
 			m.selectedIndex = 0
+			m.focusedSetting = 0
 			m.state = ConfigStateEditSettings
+			// Initialize inputs for editing
+			m.initializeInputs()
 		case "esc":
 			m.setResult(&ConfigureSystemResult{
 				Success: false,
@@ -307,14 +521,48 @@ func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 }
 
 func (m *ConfigureSystemModel) updateEditSettings(msg tea.Msg) tea.Cmd {
+	settings := m.context.Settings[m.domain]
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "up", "k":
+			if !m.editingValue && m.focusedSetting > 0 {
+				m.focusedSetting--
+				m.updateInputFocus()
+			}
+
+		case "down", "j":
+			if !m.editingValue && m.focusedSetting < len(settings)-1 {
+				m.focusedSetting++
+				m.updateInputFocus()
+			}
+
 		case "enter":
-			m.state = ConfigStateReviewChanges
+			if m.editingValue {
+				// Save current value
+				m.saveCurrentValue()
+				m.editingValue = false
+			} else {
+				// Start editing
+				m.editingValue = true
+			}
+
 		case "esc":
-			m.selectedIndex = 0
-			m.state = ConfigStateSelectDomain
+			if m.editingValue {
+				// Cancel editing
+				m.revertCurrentValue()
+				m.editingValue = false
+			} else {
+				// Go back to domain selection
+				m.selectedIndex = 0
+				m.state = ConfigStateSelectDomain
+			}
+
+		case "ctrl+s":
+			// Save all changes and move to review
+			m.state = ConfigStateReviewChanges
+
 		case "m":
 			// Return to main menu
 			m.setResult(&ConfigureSystemResult{
@@ -324,6 +572,12 @@ func (m *ConfigureSystemModel) updateEditSettings(msg tea.Msg) tea.Cmd {
 					Message: "User returned to main menu",
 				},
 			})
+
+		default:
+			// Pass to focused input if editing
+			if m.editingValue {
+				return m.updateFocusedInput(msg)
+			}
 		}
 	}
 	return nil
@@ -433,7 +687,8 @@ func (m *ConfigureSystemModel) updateFailed(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "r":
-			// Retry
+			// Retry - clear error and go back to Confirm
+			m.error = nil
 			m.state = ConfigStateConfirm
 		case "esc":
 			m.active = false
@@ -448,14 +703,120 @@ func (m *ConfigureSystemModel) updateFailed(msg tea.Msg) tea.Cmd {
 // startSave initiates the async save operation
 func (m *ConfigureSystemModel) startSave() tea.Cmd {
 	return func() tea.Msg {
-		// Simulate save operation (would be replaced with actual service call)
-		result := &ConfigureSystemResult{
-			Success: true,
-			Domain:  m.domain,
-			Changes: m.changes,
+		// Apply changes to config
+		cfg := m.context.Config
+
+		for key, value := range m.changes.Modified {
+			if err := applyConfigChange(cfg, m.domain, key, value); err != nil {
+				return ConfigCompleteMsg{
+					Result: &ConfigureSystemResult{
+						Success: false,
+						Error: &IntentError{
+							Code:    "save_failed",
+							Message: fmt.Sprintf("Failed to apply change: %s", err),
+						},
+					},
+				}
+			}
 		}
-		return ConfigCompleteMsg{Result: result}
+
+		// Save to file
+		if err := config.SaveConfig(cfg); err != nil {
+			return ConfigCompleteMsg{
+				Result: &ConfigureSystemResult{
+					Success: false,
+					Error: &IntentError{
+						Code:    "save_failed",
+						Message: fmt.Sprintf("Failed to save config: %s", err),
+					},
+				},
+			}
+		}
+
+		// Success
+		return ConfigCompleteMsg{
+			Result: &ConfigureSystemResult{
+				Success: true,
+				Domain:  m.domain,
+				Changes: m.changes,
+			},
+		}
 	}
+}
+
+// applyConfigChange applies a configuration change to the appropriate domain
+func applyConfigChange(cfg *config.Config, domain ConfigurationDomain, key string, value interface{}) error {
+	switch domain {
+	case DomainSystem:
+		return applySystemChange(&cfg.System, key, value)
+	case DomainProfile:
+		return applyProfileChange(&cfg.Profile, key, value)
+	case DomainExport:
+		return applyExportChange(&cfg.Export, key, value)
+	case DomainUI:
+		return applyDisplayChange(&cfg.Display, key, value)
+	}
+	return fmt.Errorf("unknown domain: %s", domain)
+}
+
+// applySystemChange applies a change to system configuration
+func applySystemChange(sys *config.SystemConfig, key string, value interface{}) error {
+	switch key {
+	case "data_dir":
+		sys.DataDir = value.(string)
+	case "log_level":
+		sys.LogLevel = value.(string)
+	case "auto_backup":
+		sys.AutoBackup = value.(bool)
+	case "backup_count":
+		sys.BackupCount = value.(int)
+	default:
+		return fmt.Errorf("unknown system setting: %s", key)
+	}
+	return nil
+}
+
+// applyProfileChange applies a change to profile configuration
+func applyProfileChange(prof *config.ProfileConfig, key string, value interface{}) error {
+	switch key {
+	case "name":
+		prof.Name = value.(string)
+	case "email":
+		prof.Email = value.(string)
+	case "default_role":
+		prof.DefaultRole = value.(string)
+	case "default_audience":
+		prof.DefaultAudience = value.(string)
+	default:
+		return fmt.Errorf("unknown profile setting: %s", key)
+	}
+	return nil
+}
+
+// applyExportChange applies a change to export configuration
+func applyExportChange(exp *config.ExportConfig, key string, value interface{}) error {
+	switch key {
+	case "default_destination":
+		exp.DefaultDestination = value.(string)
+	case "auto_open":
+		exp.AutoOpen = value.(bool)
+	default:
+		return fmt.Errorf("unknown export setting: %s", key)
+	}
+	return nil
+}
+
+// applyDisplayChange applies a change to display configuration
+func applyDisplayChange(disp *config.DisplayConfig, key string, value interface{}) error {
+	switch key {
+	case "theme":
+		disp.Theme = value.(string)
+	case "animations":
+		disp.Animations = value.(bool)
+	default:
+		return fmt.Errorf("unknown display setting: %s", key)
+	}
+	return nil
 }
 
 // setResult sets the intent result and marks intent as complete
@@ -467,50 +828,144 @@ func (m *ConfigureSystemModel) setResult(result *ConfigureSystemResult) {
 // View rendering methods
 
 func (m *ConfigureSystemModel) viewSelectDomain() string {
-	s := "Select Configuration Domain:\n\n"
+	var content strings.Builder
+	content.WriteString("\n⚙️  Select Configuration Domain\n\n")
+
+	// Domain descriptions
+	domainDescs := map[ConfigurationDomain]string{
+		DomainSystem:  "Log level, data directory, backups",
+		DomainProfile: "Name, email, default roles",
+		DomainExport:  "Default formats and destinations",
+		DomainUI:      "Theme and animations",
+	}
+
 	for i, d := range m.context.Domains {
 		prefix := "  "
+		itemStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+
 		if i == m.selectedIndex {
-			prefix = "> "
+			prefix = "▶ "
+			itemStyle = itemStyle.Foreground(styles.ColorAccentTeal).Bold(true)
 		}
-		s += prefix + string(d) + "\n"
+
+		// Domain name with capitalization
+		domainName := cases.Title(language.English).String(string(d))
+		line := fmt.Sprintf("%s%s", prefix, domainName)
+		content.WriteString(itemStyle.Render(line))
+
+		// Add description in muted color
+		if desc, ok := domainDescs[d]; ok {
+			descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted)
+			content.WriteString(" " + descStyle.Render("- "+desc))
+		}
+		content.WriteString("\n")
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Select | [Esc] Cancel | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewEditSettings() string {
-	s := "Edit Settings for " + string(m.domain) + ":\n\n"
+	var content strings.Builder
+	content.WriteString(fmt.Sprintf("\n📝 Edit %s Settings\n\n", cases.Title(language.English).String(string(m.domain))))
+
 	settings := m.context.Settings[m.domain]
+
 	for i, setting := range settings {
 		prefix := "  "
-		if i == m.selectedIndex {
-			prefix = "> "
+		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+
+		if i == m.focusedSetting {
+			prefix = "▶ "
+			labelStyle = labelStyle.Foreground(styles.ColorAccentTeal).Bold(true)
 		}
-		s += prefix + setting.Label + ": " + fmt.Sprintf("%v", setting.Value) + "\n"
+
+		input, hasInput := m.settingsInputs[setting.Key]
+
+		// Label
+		content.WriteString(labelStyle.Render(fmt.Sprintf("%s%s: ", prefix, setting.Label)))
+
+		// Value
+		if hasInput {
+			if i == m.focusedSetting && m.editingValue {
+				content.WriteString(input.View() + " ")
+				editIndicator := lipgloss.NewStyle().Foreground(styles.ColorInfo).Render("(editing)")
+				content.WriteString(editIndicator)
+			} else {
+				content.WriteString(input.Value())
+			}
+		} else {
+			content.WriteString(fmt.Sprintf("%v", setting.Value))
+		}
+		content.WriteString("\n")
+
+		// Description (muted)
+		descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).PaddingLeft(4)
+		content.WriteString(descStyle.Render(setting.Description) + "\n\n")
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Edit | [Esc] Back | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewReviewChanges() string {
-	s := "Review Changes for " + string(m.domain) + ":\n\n"
+	var content strings.Builder
+	content.WriteString(fmt.Sprintf("\n📋 Review Changes - %s\n\n", cases.Title(language.English).String(string(m.domain))))
+
 	if m.changes == nil {
-		return s + "No changes"
-	}
-	for key, modified := range m.changes.Modified {
-		original := m.changes.Original[key]
-		if original != modified {
-			s += key + ": " + fmt.Sprintf("%v", original) + " → " + fmt.Sprintf("%v", modified) + "\n"
+		noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes to review")
+		content.WriteString(noChanges)
+	} else {
+		hasChanges := false
+		for key, modified := range m.changes.Modified {
+			original := m.changes.Original[key]
+			if original != modified {
+				hasChanges = true
+				keyStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Bold(true)
+				oldStyle := lipgloss.NewStyle().Foreground(styles.ColorError).Strikethrough(true)
+				newStyle := lipgloss.NewStyle().Foreground(styles.ColorSuccess)
+
+				content.WriteString(keyStyle.Render(key) + ": ")
+				content.WriteString(oldStyle.Render(fmt.Sprintf("%v", original)))
+				content.WriteString(" → ")
+				content.WriteString(newStyle.Render(fmt.Sprintf("%v", modified)) + "\n")
+			}
+		}
+
+		if !hasChanges {
+			noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes made")
+			content.WriteString(noChanges)
 		}
 	}
-	s += "\n[Enter] Confirm | [Esc] Back | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewConfirm() string {
-	s := "Confirm Configuration Changes?\n\n"
-	s += "Domain: " + string(m.domain) + "\n"
+	var content strings.Builder
+	content.WriteString("\n❓ Confirm Configuration Changes?\n\n")
+
+	content.WriteString(fmt.Sprintf("Domain: %s\n", cases.Title(language.English).String(string(m.domain))))
+
 	if m.changes != nil {
 		changeCount := 0
 		for key, modified := range m.changes.Modified {
@@ -519,34 +974,73 @@ func (m *ConfigureSystemModel) viewConfirm() string {
 				changeCount++
 			}
 		}
-		s += fmt.Sprintf("Changes: %d\n", changeCount)
+		countStyle := lipgloss.NewStyle().Foreground(styles.ColorAccentTeal).Bold(true)
+		content.WriteString(fmt.Sprintf("Changes: %s\n", countStyle.Render(fmt.Sprintf("%d", changeCount))))
 	}
-	s += "\n[Y/Enter] Confirm | [N/Esc] Cancel | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewSaving() string {
-	s := "Saving configuration...\n\n"
-	s += "Please wait while changes are being saved.\n"
-	s += "\n[Esc] Back | [m] Main menu | [q] Quit"
-	return s
+	var content strings.Builder
+	content.WriteString("\n⏳ Saving Configuration...\n\n")
+
+	content.WriteString("Please wait while changes are being saved.\n\n")
+	content.WriteString("• Validating configuration\n")
+	content.WriteString("• Writing to disk\n")
+	content.WriteString("• Applying changes\n")
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorInfo).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewComplete() string {
-	s := "Configuration Updated!\n\n"
-	s += "Domain: " + string(m.domain) + "\n"
-	s += "Changes saved successfully.\n\n"
-	s += "[Enter] Done | [m] Main menu"
-	return s
+	var content strings.Builder
+	content.WriteString("\n✅ Configuration Updated!\n\n")
+
+	content.WriteString(fmt.Sprintf("Domain: %s\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString("Changes saved successfully.\n")
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorSuccess).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewFailed() string {
-	s := "Configuration Failed\n\n"
+	var content strings.Builder
+	content.WriteString("\n❌ Configuration Failed\n\n")
+
 	if m.error != nil {
-		s += "Error: " + m.error.Message + "\n"
+		errorStyle := lipgloss.NewStyle().Foreground(styles.ColorError)
+		content.WriteString(errorStyle.Render("Error: "+m.error.Message) + "\n")
 	}
-	s += "\n[R] Retry | [Esc] Cancel | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorError).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 // ConfigCompleteMsg represents completion of a configuration save
