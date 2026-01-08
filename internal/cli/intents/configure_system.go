@@ -697,14 +697,120 @@ func (m *ConfigureSystemModel) updateFailed(msg tea.Msg) tea.Cmd {
 // startSave initiates the async save operation
 func (m *ConfigureSystemModel) startSave() tea.Cmd {
 	return func() tea.Msg {
-		// Simulate save operation (would be replaced with actual service call)
-		result := &ConfigureSystemResult{
-			Success: true,
-			Domain:  m.domain,
-			Changes: m.changes,
+		// Apply changes to config
+		cfg := m.context.Config
+
+		for key, value := range m.changes.Modified {
+			if err := applyConfigChange(cfg, m.domain, key, value); err != nil {
+				return ConfigCompleteMsg{
+					Result: &ConfigureSystemResult{
+						Success: false,
+						Error: &IntentError{
+							Code:    "save_failed",
+							Message: fmt.Sprintf("Failed to apply change: %s", err),
+						},
+					},
+				}
+			}
 		}
-		return ConfigCompleteMsg{Result: result}
+
+		// Save to file
+		if err := config.SaveConfig(cfg); err != nil {
+			return ConfigCompleteMsg{
+				Result: &ConfigureSystemResult{
+					Success: false,
+					Error: &IntentError{
+						Code:    "save_failed",
+						Message: fmt.Sprintf("Failed to save config: %s", err),
+					},
+				},
+			}
+		}
+
+		// Success
+		return ConfigCompleteMsg{
+			Result: &ConfigureSystemResult{
+				Success: true,
+				Domain:  m.domain,
+				Changes: m.changes,
+			},
+		}
 	}
+}
+
+// applyConfigChange applies a configuration change to the appropriate domain
+func applyConfigChange(cfg *config.Config, domain ConfigurationDomain, key string, value interface{}) error {
+	switch domain {
+	case DomainSystem:
+		return applySystemChange(&cfg.System, key, value)
+	case DomainProfile:
+		return applyProfileChange(&cfg.Profile, key, value)
+	case DomainExport:
+		return applyExportChange(&cfg.Export, key, value)
+	case DomainUI:
+		return applyDisplayChange(&cfg.Display, key, value)
+	}
+	return fmt.Errorf("unknown domain: %s", domain)
+}
+
+// applySystemChange applies a change to system configuration
+func applySystemChange(sys *config.SystemConfig, key string, value interface{}) error {
+	switch key {
+	case "data_dir":
+		sys.DataDir = value.(string)
+	case "log_level":
+		sys.LogLevel = value.(string)
+	case "auto_backup":
+		sys.AutoBackup = value.(bool)
+	case "backup_count":
+		sys.BackupCount = value.(int)
+	default:
+		return fmt.Errorf("unknown system setting: %s", key)
+	}
+	return nil
+}
+
+// applyProfileChange applies a change to profile configuration
+func applyProfileChange(prof *config.ProfileConfig, key string, value interface{}) error {
+	switch key {
+	case "name":
+		prof.Name = value.(string)
+	case "email":
+		prof.Email = value.(string)
+	case "default_role":
+		prof.DefaultRole = value.(string)
+	case "default_audience":
+		prof.DefaultAudience = value.(string)
+	default:
+		return fmt.Errorf("unknown profile setting: %s", key)
+	}
+	return nil
+}
+
+// applyExportChange applies a change to export configuration
+func applyExportChange(exp *config.ExportConfig, key string, value interface{}) error {
+	switch key {
+	case "default_destination":
+		exp.DefaultDestination = value.(string)
+	case "auto_open":
+		exp.AutoOpen = value.(bool)
+	default:
+		return fmt.Errorf("unknown export setting: %s", key)
+	}
+	return nil
+}
+
+// applyDisplayChange applies a change to display configuration
+func applyDisplayChange(disp *config.DisplayConfig, key string, value interface{}) error {
+	switch key {
+	case "theme":
+		disp.Theme = value.(string)
+	case "animations":
+		disp.Animations = value.(bool)
+	default:
+		return fmt.Errorf("unknown display setting: %s", key)
+	}
+	return nil
 }
 
 // setResult sets the intent result and marks intent as complete
