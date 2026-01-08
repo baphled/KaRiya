@@ -3,9 +3,7 @@ package intents
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -879,45 +877,39 @@ func (m *ConfigureSystemModel) viewEditSettings() string {
 
 	for i, setting := range settings {
 		prefix := "  "
-		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
-
 		if i == m.focusedSetting {
-			prefix = "▶ "
-			labelStyle = labelStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+			prefix = "> "
 		}
 
+		// Show input if available
 		input, hasInput := m.settingsInputs[setting.Key]
 
-		// Label
-		content.WriteString(labelStyle.Render(fmt.Sprintf("%s%s: ", prefix, setting.Label)))
+		s += prefix + setting.Label + ": "
 
-		// Value
 		if hasInput {
 			if i == m.focusedSetting && m.editingValue {
-				content.WriteString(input.View() + " ")
-				editIndicator := lipgloss.NewStyle().Foreground(styles.ColorInfo).Render("(editing)")
-				content.WriteString(editIndicator)
+				// Show input in editing mode
+				s += input.View() + " (editing)"
 			} else {
-				content.WriteString(input.Value())
+				// Show current value
+				s += input.Value()
 			}
 		} else {
-			content.WriteString(fmt.Sprintf("%v", setting.Value))
+			// Fallback if input not initialized
+			s += fmt.Sprintf("%v", setting.Value)
 		}
-		content.WriteString("\n")
 
-		// Description (muted)
-		descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).PaddingLeft(4)
-		content.WriteString(descStyle.Render(setting.Description) + "\n\n")
+		s += "\n"
+		s += "    " + setting.Description + "\n\n"
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	// Dynamic footer based on editing state
+	footer := "\n↑/↓ or j/k: Navigate | Enter: Edit | Ctrl+S: Save All | Esc: Back"
+	if m.editingValue {
+		footer = "\nType to edit | Enter: Confirm | Esc: Cancel"
+	}
 
-	return cardStyle.Render(content.String())
+	return s + footer
 }
 
 func (m *ConfigureSystemModel) viewReviewChanges() string {
