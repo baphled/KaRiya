@@ -1383,6 +1383,200 @@ if pos, ok := prevResult.GetMetadata("scroll_position"); ok {
 
 ---
 
+## Database Migrations
+
+### Overview
+
+KaRiya uses **goose** for Rails-like database migrations with versioned SQL files. Migrations run automatically at application startup and handle both fresh databases and existing pre-goose databases.
+
+### Migration System
+
+**Framework**: [goose v3](https://github.com/pressly/goose)
+**Location**: `internal/repository/career/migrations/`
+**Tracking**: `goose_db_version` table
+
+### Current Migrations
+
+| Version | File | Description |
+|---------|------|-------------|
+| 001 | `001_create_career_events.sql` | Career events table + indexes (date, company) |
+| 002 | `002_add_categories_column.sql` | Add categories column |
+| 003 | `003_create_bursts.sql` | Bursts table + confirmed index |
+| 004 | `004_create_facts.sql` | Facts table + source indexes |
+
+### Database Indexes
+
+| Table | Index | Columns | Purpose |
+|-------|-------|---------|---------|
+| `career_events` | `idx_career_events_date` | `date` | Timeline queries, date range filters |
+| `career_events` | `idx_career_events_company` | `company` | Filter by company |
+| `bursts` | `idx_bursts_confirmed` | `confirmed` | Filter confirmed/unconfirmed |
+| `facts` | `idx_facts_source_event_id` | `source_event_id` | Join with events |
+| `facts` | `idx_facts_source_burst_id` | `source_burst_id` | Join with bursts |
+
+### How Migrations Work
+
+**At Application Startup** (`cmd/cli/main.go`):
+```go
+// 1. Open database connection
+db, err := sql.Open("sqlite", dbPath)
+
+// 2. Run migrations (handles both fresh and existing databases)
+if err := career.RunMigrations(db); err != nil {
+    return err
+}
+
+// 3. Create repositories with existing connection
+repo := career.NewSQLiteRepositoryWithDB(db)
+```
+
+**Baseline Detection**:
+- For **fresh databases**: Runs all migrations 001-004
+- For **existing databases** (pre-goose): Auto-detects which migrations have already been applied
+  - Checks for `career_events` table → baseline version 1
+  - Checks for `categories` column → baseline version 2
+  - Checks for `bursts` table → baseline version 3
+  - Checks for `facts` table → baseline version 4
+  - Marks detected migrations as applied without re-running them
+
+### Migration Files
+
+Each migration has **up** and **down** sections:
+
+```sql
+-- +goose Up
+-- Migration forward (create table, add column, etc.)
+CREATE TABLE IF NOT EXISTS career_events (...);
+CREATE INDEX IF NOT EXISTS idx_career_events_date ON career_events(date);
+
+-- +goose Down
+-- Migration rollback (drop table, remove index, etc.)
+DROP INDEX IF EXISTS idx_career_events_date;
+DROP TABLE IF EXISTS career_events;
+```
+
+**Note**: Migration 002 (add categories column) cannot be fully rolled back due to SQLite limitations (no `DROP COLUMN` support).
+
+### Running Migrations
+
+**Automatic** (recommended):
+Migrations run automatically when the application starts with SQLite mode.
+
+**Programmatic**:
+```go
+import "github.com/baphled/kariya/internal/repository/career"
+
+db, _ := sql.Open("sqlite", "path/to/db")
+if err := career.RunMigrations(db); err != nil {
+    log.Fatal(err)
+}
+```
+
+**Check Migration Status**:
+```go
+version, err := career.MigrationStatus(db)
+fmt.Printf("Current version: %d\n", version)
+```
+
+### Migration Storage
+
+Migrations are **embedded in the binary** via `//go:embed`:
+```go
+//go:embed migrations/*.sql
+var migrations embed.FS
+```
+
+This ensures:
+- Single binary distribution (no external files needed)
+- Migrations always in sync with code version
+- Simplified deployment
+
+### Test Database Setup
+
+**Reusable Test Helpers** (`internal/testutil`):
+```go
+import "github.com/baphled/kariya/internal/testutil"
+
+// Standard test setup
+db, cleanup := testutil.SetupTestDB(t)
+defer cleanup()
+
+// With path (for legacy constructors)
+dbPath, db, cleanup := testutil.SetupTestDBWithPath(t)
+defer cleanup()
+```
+
+### Repository Constructors
+
+**New Constructors** (recommended):
+```go
+// Use after running migrations
+repo := career.NewSQLiteRepositoryWithDB(db)
+burstRepo := career.NewSQLiteBurstRepositoryWithDB(db)
+factRepo := career.NewSQLiteFactRepositoryWithDB(db)
+```
+
+**Legacy Constructors** (backward compatible):
+```go
+// Runs migrations internally (for test compatibility)
+repo, err := career.NewSQLiteRepository(dbPath)
+burstRepo, err := career.NewSQLiteBurstRepository(db)
+factRepo, err := career.NewSQLiteFactRepository(db)
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `internal/repository/career/migrator.go` | Migration runner with baseline detection |
+| `internal/repository/career/migrator_test.go` | Migration tests (13 specs) |
+| `internal/repository/career/migrations/*.sql` | SQL migration files |
+| `internal/testutil/db.go` | Reusable test database helpers |
+| `internal/testutil/db_test.go` | Test helper tests (4 specs) |
+
+### Future Migrations
+
+To add a new migration:
+
+1. **Create migration file**:
+   ```bash
+   # Create 005_your_migration.sql in internal/repository/career/migrations/
+   ```
+
+2. **Add up/down sections**:
+   ```sql
+   -- +goose Up
+   ALTER TABLE career_events ADD COLUMN new_field TEXT;
+
+   -- +goose Down
+   -- Rollback instructions (if possible)
+   ```
+
+3. **Migration runs automatically** on next application start
+
+4. **Test migration**:
+   ```bash
+   go test ./internal/repository/career/migrator_test.go
+   ```
+
+### Troubleshooting
+
+**Issue**: "duplicate column name" error
+**Cause**: Trying to run migration on database that already has the change
+**Solution**: goose tracks applied migrations automatically; baseline detection handles this for pre-goose databases
+
+**Issue**: Migration fails on startup
+**Cause**: SQL syntax error in migration file
+**Solution**: Check migration file syntax, test with `go test ./internal/repository/career/migrator_test.go`
+
+**Issue**: Want to check current migration version
+**Solution**:
+```bash
+sqlite3 ~/.kariya/events.db "SELECT MAX(version_id) FROM goose_db_version"
+```
+
+---
+
 ## Project Metadata
 
 | Property | Value |
