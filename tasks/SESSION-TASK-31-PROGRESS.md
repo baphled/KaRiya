@@ -1,4 +1,4 @@
-# Task 25: CaptureEvent Modal & Review Fixes - Session Progress
+# Task 31: CaptureEvent Modal & Review Fixes - Session Progress
 
 **Date**: 2026-01-08
 **Branch**: `fix/export-artifact-critical-fixes`
@@ -356,7 +356,7 @@ c4d995d feat(capture): update help text for review state with context-aware shor
 
 ## Next Steps (Future Enhancements)
 
-These items are **not required** for Task 25 completion but could enhance UX:
+These items are **not required** for Task 31 completion but could enhance UX:
 
 1. **Visual Selection Indicator** (Nice to have)
    - Show which burst/fact is currently selected
@@ -422,7 +422,7 @@ These items are **not required** for Task 25 completion but could enhance UX:
 
 ## Conclusion
 
-**Task 25 is COMPLETE** - All 4 phases implemented successfully.
+**Task 31 is COMPLETE** - All 4 phases implemented successfully.
 
 CaptureEvent intent's review workflow is now fully functional:
 - ✅ Event data displays correctly
@@ -448,4 +448,4 @@ CaptureEvent intent's review workflow is now fully functional:
 ---
 
 **Last Updated**: 2026-01-08
-**Session**: Successful completion of Task 25
+**Session**: Successful completion of Task 31

@@ -1,4 +1,4 @@
-# Task 23 Progress Summary - Session 2026-01-08
+# Task 29 Progress Summary - Session 2026-01-08
 
 **Branch**: `fix/export-artifact-critical-fixes`  
 **Status**: ✅ **COMPLETE - Architecture Decision: CV Export Removed**
@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-Task 23 is **COMPLETE**. The ExportArtifact intent has been fully refactored and is now production-ready for exporting **persisted data only** (Events, Facts, Bursts).
+Task 29 is **COMPLETE**. The ExportArtifact intent has been fully refactored and is now production-ready for exporting **persisted data only** (Events, Facts, Bursts).
 
 **Key Architecture Decision**: CV export was **completely removed** from ExportArtifact because:
 1. CVs are **not persisted** - they exist only during GenerateCV intent execution
@@ -138,7 +138,7 @@ Task 23 is **COMPLETE**. The ExportArtifact intent has been fully refactored and
 **Commits** (later reverted):
 - `03b7387` feat(export): add CV selection state for exporting CVs
 - `f5f43b6` feat(export): implement CV selection with ConfigManager integration
-- `b766730` docs: update Task 23 with Phase 5 completion
+- `b766730` docs: update Task 29 with Phase 5 completion
 
 **Decision**: After implementation, identified fundamental architectural issue → led to removal in Session 3
 
@@ -258,7 +258,7 @@ func (m *ExportArtifactModel) startExport() tea.Cmd {
 
 **Commits**:
 - `d42cf2e` refactor(export): remove CV export from ExportArtifact intent
-- `1e25edb` docs: mark Task 23 complete with architecture decision
+- `1e25edb` docs: mark Task 29 complete with architecture decision
 
 **Impact**:
 - ✅ **978 lines of dead code removed**
@@ -336,11 +336,11 @@ func (m *ExportArtifactModel) startExport() tea.Cmd {
 8. `e56e68d` - feat(export): implement real export functionality for all artifact types
 9. `847c92f` - feat(export): replace mock previews with real data from repositories
 10. `f5f43b6` - feat(export): implement CV selection with ConfigManager integration
-11. `b766730` - docs: update Task 23 with Phase 5 completion
+11. `b766730` - docs: update Task 29 with Phase 5 completion
 
 **Session 3** (Architecture Decision):
 12. `d42cf2e` - refactor(export): remove CV export from ExportArtifact intent
-13. `1e25edb` - docs: mark Task 23 complete with architecture decision
+13. `1e25edb` - docs: mark Task 29 complete with architecture decision
 
 ---
 
@@ -432,7 +432,7 @@ go fmt ./...
 
 ## Next Steps
 
-Task 23 is **COMPLETE**. No further work required.
+Task 29 is **COMPLETE**. No further work required.
 
 ### Potential Future Enhancements (Not in scope)
 - Profile export (currently no UI for it)
