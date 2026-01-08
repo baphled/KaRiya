@@ -318,11 +318,11 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		formats := m.context.SupportedFormats[m.config.ArtifactType]
 		switch msg.String() {
-		case "up":
+		case "up", "k":
 			if m.selectedIndex > 0 {
 				m.selectedIndex--
 			}
-		case "down":
+		case "down", "j":
 			if m.selectedIndex < len(formats)-1 {
 				m.selectedIndex++
 			}
@@ -348,11 +348,11 @@ func (m *ExportArtifactModel) updateSelectDest(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "up":
+		case "up", "k":
 			if m.selectedIndex > 0 {
 				m.selectedIndex--
 			}
-		case "down":
+		case "down", "j":
 			if m.selectedIndex < len(m.context.Destinations)-1 {
 				m.selectedIndex++
 			}

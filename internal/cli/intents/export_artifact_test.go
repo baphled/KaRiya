@@ -334,6 +334,18 @@ var _ = Describe("ExportArtifact Intent", func() {
 			Expect(intent.GetSelectedIndex()).To(Equal(1))
 		})
 
+		It("should navigate down with j key", func() {
+			intent.SetSelectedIndex(0)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(1))
+		})
+
+		It("should navigate up with k key", func() {
+			intent.SetSelectedIndex(1)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(0))
+		})
+
 		It("should transition to SelectDestination on enter", func() {
 			intent.SetSelectedIndex(0)
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter, Runes: []rune{'\n'}})
@@ -360,6 +372,18 @@ var _ = Describe("ExportArtifact Intent", func() {
 			Expect(intent.GetSelectedIndex()).To(Equal(0))
 			intent.Update(tea.KeyMsg{Type: tea.KeyDown, Runes: []rune{'j'}})
 			Expect(intent.GetSelectedIndex()).To(Equal(1))
+		})
+
+		It("should navigate down with j key", func() {
+			intent.SetSelectedIndex(0)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(1))
+		})
+
+		It("should navigate up with k key", func() {
+			intent.SetSelectedIndex(1)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(intent.GetSelectedIndex()).To(Equal(0))
 		})
 
 		It("should transition to Configure on enter", func() {
