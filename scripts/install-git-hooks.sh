@@ -29,6 +29,26 @@ mkdir -p .git/hooks
 echo "Installing hooks..."
 echo ""
 
+# Install pre-commit hook
+if [ -f ".git/hooks/pre-commit" ]; then
+    echo -e "${YELLOW}⚠️  pre-commit hook already exists${NC}"
+    echo -n "Overwrite? (y/N): "
+    read -r response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo "Skipping pre-commit..."
+    else
+        cp .git-hooks/pre-commit .git/hooks/pre-commit
+        chmod +x .git/hooks/pre-commit
+        echo -e "${GREEN}✅ Installed pre-commit hook${NC}"
+    fi
+else
+    cp .git-hooks/pre-commit .git/hooks/pre-commit
+    chmod +x .git/hooks/pre-commit
+    echo -e "${GREEN}✅ Installed pre-commit hook${NC}"
+fi
+
+echo ""
+
 # Install prepare-commit-msg hook
 if [ -f ".git/hooks/prepare-commit-msg" ]; then
     echo -e "${YELLOW}⚠️  prepare-commit-msg hook already exists${NC}"
@@ -120,6 +140,7 @@ echo "✅ Installation Complete"
 echo "================================================"
 echo ""
 echo "Installed hooks:"
+echo "  - pre-commit: Code quality and TDD enforcement"
 echo "  - prepare-commit-msg: Adds AI attribution reminder"
 echo "  - commit-msg: Validates AI attribution format"
 if command -v node &> /dev/null && [ -f ".git/hooks/commit-msg-lint" ]; then
