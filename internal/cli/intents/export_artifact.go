@@ -59,10 +59,8 @@ type ExportArtifactContext struct {
 	Destinations     []ExportDestination
 
 	// Services
-	ExportService       *cv.ExportService
-	CVGenerationService cv.CVGenerationService
-	CVConfigManager     cv.ConfigManager
-	CareerService       *career.Service
+	ExportService *cv.ExportService
+	CareerService *career.Service
 
 	// Repositories
 	EventRepository careerrepo.Repository
@@ -98,7 +96,6 @@ type ExportState string
 
 const (
 	ExportStateSelectType   ExportState = "select_type"
-	ExportStateSelectCV     ExportState = "select_cv"
 	ExportStateSelectFormat ExportState = "select_format"
 	ExportStateSelectDest   ExportState = "select_destination"
 	ExportStateConfigure    ExportState = "configure"
@@ -127,11 +124,6 @@ type ExportCancelledMsg struct{}
 // ExportErrorMsg represents an error during export
 type ExportErrorMsg struct {
 	Error *IntentError
-}
-
-// CVsLoadedMsg represents successful loading of available CVs
-type CVsLoadedMsg struct {
-	CVs []*careerdomain.CVView
 }
 
 // NewExportConfiguration creates a new export configuration with defaults
@@ -176,10 +168,6 @@ type ExportArtifactModel struct {
 	result        *ExportArtifactResult
 	error         *IntentError
 	active        bool
-
-	// CV selection (for ExportTypeCV only)
-	availableCVs []*careerdomain.CVView
-	selectedCV   *careerdomain.CVView
 }
 
 // NewExportArtifactModel creates a new ExportArtifact intent model
@@ -208,8 +196,6 @@ func (m *ExportArtifactModel) Update(msg tea.Msg) tea.Cmd {
 	switch m.state {
 	case ExportStateSelectType:
 		return m.updateSelectType(msg)
-	case ExportStateSelectCV:
-		return m.updateSelectCV(msg)
 	case ExportStateSelectFormat:
 		return m.updateSelectFormat(msg)
 	case ExportStateSelectDest:
@@ -240,8 +226,6 @@ func (m *ExportArtifactModel) View() string {
 	switch m.state {
 	case ExportStateSelectType:
 		return m.viewSelectType()
-	case ExportStateSelectCV:
-		return m.viewSelectCV()
 	case ExportStateSelectFormat:
 		return m.viewSelectFormat()
 	case ExportStateSelectDest:
@@ -306,60 +290,14 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 		case "enter":
 			artifactType := m.context.ArtifactTypes[m.selectedIndex]
 			m.config = NewExportConfiguration(artifactType, m.context)
-			// If CV type, go to CV selection first
-			if artifactType == ExportTypeCV {
-				m.state = ExportStateSelectCV
-				m.selectedIndex = 0
-				return m.loadAvailableCVs()
-			}
-			// For other types, go directly to format selection
+			// Go directly to format selection
+			m.selectedIndex = 0
 			m.state = ExportStateSelectFormat
 		case "esc":
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
 				Message: "Export cancelled by user",
 			}))
-		case "m":
-			m.setResult(NewExportArtifactResultWithError(&IntentError{
-				Code:    "export_cancelled",
-				Message: "Export cancelled by user",
-			}))
-		}
-	}
-	return nil
-}
-
-func (m *ExportArtifactModel) updateSelectCV(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case CVsLoadedMsg:
-		m.availableCVs = msg.CVs
-		return nil
-
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "up", "k":
-			if m.selectedIndex > 0 {
-				m.selectedIndex--
-			} else if len(m.availableCVs) > 0 {
-				// Wrap to bottom
-				m.selectedIndex = len(m.availableCVs) - 1
-			}
-		case "down", "j":
-			if m.selectedIndex < len(m.availableCVs)-1 {
-				m.selectedIndex++
-			} else if len(m.availableCVs) > 0 {
-				// Wrap to top
-				m.selectedIndex = 0
-			}
-		case "enter":
-			if len(m.availableCVs) > 0 {
-				m.selectedCV = m.availableCVs[m.selectedIndex]
-				m.selectedIndex = 0
-				m.state = ExportStateSelectFormat
-			}
-		case "esc":
-			m.selectedIndex = 0
-			m.state = ExportStateSelectType
 		case "m":
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
@@ -390,12 +328,7 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 			m.state = ExportStateSelectDest
 		case "esc":
 			m.selectedIndex = 0
-			// Go back to CV selection if artifact type is CV, otherwise SelectType
-			if m.config.ArtifactType == ExportTypeCV {
-				m.state = ExportStateSelectCV
-			} else {
-				m.state = ExportStateSelectType
-			}
+			m.state = ExportStateSelectType
 		case "m":
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
@@ -567,41 +500,6 @@ func (m *ExportArtifactModel) updateFailed(msg tea.Msg) tea.Cmd {
 }
 
 // loadAvailableCVs fetches available CVs from the CV generation service
-func (m *ExportArtifactModel) loadAvailableCVs() tea.Cmd {
-	return func() tea.Msg {
-		// Get context
-		ctx := m.context.AppContext
-		if ctx == nil {
-			ctx = context.Background()
-		}
-
-		// Fetch CV configurations from ConfigManager
-		if m.context.CVConfigManager == nil {
-			// No config manager - return empty list
-			return CVsLoadedMsg{CVs: []*careerdomain.CVView{}}
-		}
-
-		configs, err := m.context.CVConfigManager.ListConfigs(ctx)
-		if err != nil {
-			// On error, return empty list (CV selection is optional)
-			return CVsLoadedMsg{CVs: []*careerdomain.CVView{}}
-		}
-
-		// Convert configs to CVView metadata
-		cvs := make([]*careerdomain.CVView, 0, len(configs))
-		for _, config := range configs {
-			cvs = append(cvs, &careerdomain.CVView{
-				Name:           config.Name,
-				TargetRole:     config.TargetRole,
-				TargetAudience: config.TargetAudience,
-				GeneratedAt:    config.UpdatedAt,
-			})
-		}
-
-		return CVsLoadedMsg{CVs: cvs}
-	}
-}
-
 func (m *ExportArtifactModel) startExport() tea.Cmd {
 	return func() tea.Msg {
 		var result *ExportArtifactResult
@@ -609,8 +507,6 @@ func (m *ExportArtifactModel) startExport() tea.Cmd {
 
 		// Call appropriate export function based on artifact type
 		switch m.config.ArtifactType {
-		case ExportTypeCV:
-			result, err = m.exportCV()
 		case ExportTypeEvents:
 			result, err = m.exportEvents()
 		case ExportTypeFacts:
@@ -629,73 +525,6 @@ func (m *ExportArtifactModel) startExport() tea.Cmd {
 		}
 		return ExportCompleteMsg{Result: result}
 	}
-}
-
-// exportCV exports a CV to the selected format and destination
-func (m *ExportArtifactModel) exportCV() (*ExportArtifactResult, error) {
-	// Validate CV is selected
-	if m.selectedCV == nil {
-		return nil, fmt.Errorf("no CV selected for export")
-	}
-
-	// Get context
-	ctx := m.context.AppContext
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	// Export CV to selected format
-	var content string
-	var err error
-	exportFormat := mapToExportServiceFormat(m.config.Format)
-
-	// Build empty bullets map (kept for backward compatibility with export interface)
-	bulletsMap := make(map[string][]*careerdomain.CVBullet)
-
-	switch m.config.Format {
-	case ExportFormatTXT:
-		content, err = m.context.ExportService.ExportToText(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
-	case ExportFormatMD:
-		content, err = m.context.ExportService.ExportToMarkdown(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
-	case ExportFormatYAML:
-		content, err = m.context.ExportService.ExportToYAML(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
-	default:
-		return nil, fmt.Errorf("unsupported CV export format: %s", m.config.Format)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate CV content: %w", err)
-	}
-
-	// Save to destination
-	var filePath string
-	switch m.config.Destination {
-	case ExportDestinationFile:
-		filePath, err = m.context.ExportService.SaveToFile(ctx, m.selectedCV.Name, exportFormat, content)
-		if err != nil {
-			return nil, fmt.Errorf("failed to save CV to file: %w", err)
-		}
-	case ExportDestinationClipboard:
-		err = m.context.ExportService.CopyToClipboard(ctx, content)
-		if err != nil {
-			return nil, fmt.Errorf("failed to copy CV to clipboard: %w", err)
-		}
-		filePath = "clipboard"
-	default:
-		return nil, fmt.Errorf("unsupported destination: %s", m.config.Destination)
-	}
-
-	// Calculate file size
-	size := int64(len(content))
-
-	return NewExportArtifactResult(
-		true,
-		m.config.ArtifactType,
-		m.config.Format,
-		m.config.Destination,
-		filePath,
-		size,
-	), nil
 }
 
 // exportEvents exports career events to the selected format and destination
@@ -884,26 +713,6 @@ func (m *ExportArtifactModel) viewSelectType() string {
 	return s
 }
 
-func (m *ExportArtifactModel) viewSelectCV() string {
-	s := "Select CV to Export:\n\n"
-
-	if len(m.availableCVs) == 0 {
-		s += "No CVs available. Please generate a CV first.\n"
-		s += "\nEsc: Back | m: Main menu"
-		return s
-	}
-
-	for i, cv := range m.availableCVs {
-		prefix := "  "
-		if i == m.selectedIndex {
-			prefix = "▶ "
-		}
-		s += fmt.Sprintf("%s%s - %s\n", prefix, cv.Name, cv.TargetRole)
-	}
-	s += "\n↑/↓ or j/k: Navigate | Enter: Select | Esc: Back | m: Main menu"
-	return s
-}
-
 func (m *ExportArtifactModel) viewSelectFormat() string {
 	formats := m.context.SupportedFormats[m.config.ArtifactType]
 	s := "Select Export Format for " + string(m.config.ArtifactType) + ":\n\n"
@@ -1023,52 +832,6 @@ func (m *ExportArtifactModel) generatePreview() {
 
 	m.preview = preview
 	m.previewLines = strings.Split(preview, "\n")
-}
-
-func (m *ExportArtifactModel) generateCVPreview() string {
-	// Check if CV is selected
-	if m.selectedCV == nil {
-		return "No CV selected for export.\n\nPlease select a CV first."
-	}
-
-	// Check if export service is available
-	if m.context.ExportService == nil {
-		return "Preview not available - export service not initialized"
-	}
-
-	ctx := m.context.AppContext
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	// Generate preview based on format
-	var content string
-	var err error
-
-	// Build empty bullets map (kept for backward compatibility)
-	bulletsMap := make(map[string][]*careerdomain.CVBullet)
-
-	switch m.config.Format {
-	case ExportFormatTXT:
-		content, err = m.context.ExportService.ExportToText(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
-	case ExportFormatMD:
-		content, err = m.context.ExportService.ExportToMarkdown(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
-	case ExportFormatYAML:
-		content, err = m.context.ExportService.ExportToYAML(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
-	default:
-		return "Preview not available for format: " + string(m.config.Format)
-	}
-
-	if err != nil {
-		return fmt.Sprintf("Error generating CV preview: %v", err)
-	}
-
-	// Truncate if preview is too long (keep first 2000 characters)
-	if len(content) > 2000 {
-		content = content[:2000] + "\n\n...(preview truncated)..."
-	}
-
-	return content
 }
 
 func (m *ExportArtifactModel) generateEventsPreview() string {
@@ -1274,7 +1037,6 @@ func formatBytes(bytes int64) string {
 // DefaultArtifactTypes returns the default set of exportable artifact types
 func DefaultArtifactTypes() []ExportArtifactType {
 	return []ExportArtifactType{
-		ExportTypeCV,
 		ExportTypeEvents,
 		ExportTypeFacts,
 		ExportTypeBursts,
@@ -1284,11 +1046,6 @@ func DefaultArtifactTypes() []ExportArtifactType {
 // DefaultSupportedFormats returns the default format support mapping
 func DefaultSupportedFormats() map[ExportArtifactType][]ExportFormat {
 	return map[ExportArtifactType][]ExportFormat{
-		ExportTypeCV: {
-			ExportFormatTXT,
-			ExportFormatMD,
-			ExportFormatYAML,
-		},
 		ExportTypeEvents: {
 			ExportFormatJSON,
 			ExportFormatCSV,
@@ -1313,7 +1070,6 @@ func DefaultSupportedFormats() map[ExportArtifactType][]ExportFormat {
 // DefaultFormats returns the default format for each artifact type
 func DefaultFormats() map[ExportArtifactType]ExportFormat {
 	return map[ExportArtifactType]ExportFormat{
-		ExportTypeCV:     ExportFormatMD,
 		ExportTypeEvents: ExportFormatJSON,
 		ExportTypeFacts:  ExportFormatJSON,
 		ExportTypeBursts: ExportFormatJSON,
