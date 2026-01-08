@@ -3,7 +3,7 @@
 **Created**: 2026-01-08
 **Audit Date**: 2026-01-08
 **Status**: Ready for Implementation
-**Total Tasks Created**: 6 (Tasks 29-34)
+**Total Tasks Created**: 6 (Tasks 23-28)
 
 ---
 
@@ -24,18 +24,18 @@ A comprehensive codebase audit identified **90+ partially implemented features**
 
 | Task | Title | Priority | Time | Status |
 |------|-------|----------|------|--------|
-| [Task 29](tasks-29-export-artifact-critical-fixes.md) | ExportArtifact Critical Fixes | CRITICAL | 4-6h | Ready |
-| [Task 30](tasks-30-configure-system-critical-fixes.md) | ConfigureSystem Critical Fixes | CRITICAL | 4-5h | Ready |
-| [Task 31](tasks-31-capture-event-modal-review-fixes.md) | CaptureEvent Modal & Review Fixes | HIGH | 3-4h | Ready |
-| [Task 32](tasks-32-browse-timeline-filter-implementation.md) | BrowseTimeline Filter Implementation | HIGH | 3-4h | Ready |
-| [Task 33](tasks-33-service-layer-audience-filtering.md) | Service Layer Audience Filtering | HIGH | 2-3h | Ready |
-| [Task 34](tasks-34-consistency-and-cleanup.md) | Consistency & Cleanup | MEDIUM | 2-3h | Ready |
+| [Task 23](tasks-23-export-artifact-critical-fixes.md) | ExportArtifact Critical Fixes | CRITICAL | 4-6h | Ready |
+| [Task 24](tasks-24-configure-system-critical-fixes.md) | ConfigureSystem Critical Fixes | CRITICAL | 4-5h | Ready |
+| [Task 25](tasks-25-capture-event-modal-review-fixes.md) | CaptureEvent Modal & Review Fixes | HIGH | 3-4h | Ready |
+| [Task 26](tasks-26-browse-timeline-filter-implementation.md) | BrowseTimeline Filter Implementation | HIGH | 3-4h | Ready |
+| [Task 27](tasks-27-service-layer-audience-filtering.md) | Service Layer Audience Filtering | HIGH | 2-3h | Ready |
+| [Task 28](tasks-28-consistency-and-cleanup.md) | Consistency & Cleanup | MEDIUM | 2-3h | Ready |
 
 **Total**: 6 tasks, 18-25 hours estimated
 
 ---
 
-## Task 29: ExportArtifact Critical Fixes (CRITICAL)
+## Task 23: ExportArtifact Critical Fixes (CRITICAL)
 
 **Priority**: CRITICAL | **Time**: 4-6 hours
 
@@ -57,7 +57,7 @@ Users cannot export their CVs, events, or artifacts. Feature advertised but comp
 
 ---
 
-## Task 30: ConfigureSystem Critical Fixes (CRITICAL)
+## Task 24: ConfigureSystem Critical Fixes (CRITICAL)
 
 **Priority**: CRITICAL | **Time**: 4-5 hours
 
@@ -78,7 +78,7 @@ Users cannot configure the system. All settings changes are lost immediately.
 
 ---
 
-## Task 31: CaptureEvent Modal & Review Fixes (HIGH)
+## Task 25: CaptureEvent Modal & Review Fixes (HIGH)
 
 **Priority**: HIGH | **Time**: 3-4 hours
 
@@ -98,7 +98,7 @@ Users cannot review or edit captured events properly. Inferred bursts/facts cann
 
 ---
 
-## Task 32: BrowseTimeline Filter Implementation (HIGH)
+## Task 26: BrowseTimeline Filter Implementation (HIGH)
 
 **Priority**: HIGH | **Time**: 3-4 hours
 
@@ -119,7 +119,7 @@ Users cannot filter or search their event timeline. Pagination is broken.
 
 ---
 
-## Task 33: Service Layer Audience Filtering (HIGH)
+## Task 27: Service Layer Audience Filtering (HIGH)
 
 **Priority**: HIGH | **Time**: 2-3 hours
 
@@ -140,7 +140,7 @@ Generated CVs are not tailored to target audience. All bullets appear regardless
 
 ---
 
-## Task 34: Consistency & Cleanup (MEDIUM)
+## Task 28: Consistency & Cleanup (MEDIUM)
 
 **Priority**: MEDIUM | **Time**: 2-3 hours
 
@@ -169,8 +169,8 @@ Improved user experience, cleaner codebase, better maintainability.
 **Goal**: Make broken features functional
 
 ```
-Day 1-2: Task 29 - ExportArtifact (4-6 hours)
-Day 3-4: Task 30 - ConfigureSystem (4-5 hours)
+Day 1-2: Task 23 - ExportArtifact (4-6 hours)
+Day 3-4: Task 24 - ConfigureSystem (4-5 hours)
 ```
 
 **Deliverables**:
@@ -184,9 +184,9 @@ Day 3-4: Task 30 - ConfigureSystem (4-5 hours)
 **Goal**: Complete partially implemented features
 
 ```
-Day 1: Task 31 - CaptureEvent Modals (3-4 hours)
-Day 2: Task 32 - BrowseTimeline Filters (3-4 hours)
-Day 3: Task 33 - Audience Filtering (2-3 hours)
+Day 1: Task 25 - CaptureEvent Modals (3-4 hours)
+Day 2: Task 26 - BrowseTimeline Filters (3-4 hours)
+Day 3: Task 27 - Audience Filtering (2-3 hours)
 ```
 
 **Deliverables**:
@@ -200,7 +200,7 @@ Day 3: Task 33 - Audience Filtering (2-3 hours)
 **Goal**: Cleanup and consistency
 
 ```
-Day 1: Task 34 - Consistency & Cleanup (2-3 hours)
+Day 1: Task 28 - Consistency & Cleanup (2-3 hours)
 ```
 
 **Deliverables**:
@@ -225,7 +225,7 @@ Day 1: Task 34 - Consistency & Cleanup (2-3 hours)
 - [ ] All advertised features work
 - [ ] All tests still passing
 
-### After Task 34 (Polish)
+### After Task 28 (Polish)
 - [ ] Help screen available from any screen
 - [ ] No dead code (0 .bak files)
 - [ ] Error messages displayed to users
@@ -263,7 +263,7 @@ make check-compliance
 ### Task Execution
 - [`docs/rules/master-task-prompt.md`](../docs/rules/master-task-prompt.md) - Complete 5-phase workflow
 - [`docs/rules/TASK_QUICK_REF.md`](../docs/rules/TASK_QUICK_REF.md) - Quick reference checklist
-- [`docs/rules/master-task-prompt.md`](../docs/rules/master-task-prompt.md) - Task processing rules (Task Processing section)
+- [`docs/rules/process-task-list.md`](../docs/rules/process-task-list.md) - Task processing rules
 
 ### Standards
 - [`docs/TUI_STANDARDS.md`](../docs/TUI_STANDARDS.md) - TUI design standards
