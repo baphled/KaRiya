@@ -3,13 +3,13 @@ package intents
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 // ConfigurationDomain represents a configuration domain (e.g., "system", "profile", "export")
@@ -847,7 +847,7 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 		}
 
 		// Domain name with capitalization
-		domainName := cases.Title(language.English).String(string(d))
+		domainName := strings.Title(string(d))
 		line := fmt.Sprintf("%s%s", prefix, domainName)
 		content.WriteString(itemStyle.Render(line))
 
@@ -871,50 +871,56 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 
 func (m *ConfigureSystemModel) viewEditSettings() string {
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("\n📝 Edit %s Settings\n\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("\n📝 Edit %s Settings\n\n", strings.Title(string(m.domain))))
 
 	settings := m.context.Settings[m.domain]
 
 	for i, setting := range settings {
 		prefix := "  "
+		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+
 		if i == m.focusedSetting {
-			prefix = "> "
+			prefix = "▶ "
+			labelStyle = labelStyle.Foreground(styles.ColorAccentTeal).Bold(true)
 		}
 
-		// Show input if available
 		input, hasInput := m.settingsInputs[setting.Key]
 
-		s += prefix + setting.Label + ": "
+		// Label
+		content.WriteString(labelStyle.Render(fmt.Sprintf("%s%s: ", prefix, setting.Label)))
 
+		// Value
 		if hasInput {
 			if i == m.focusedSetting && m.editingValue {
-				// Show input in editing mode
-				s += input.View() + " (editing)"
+				content.WriteString(input.View() + " ")
+				editIndicator := lipgloss.NewStyle().Foreground(styles.ColorInfo).Render("(editing)")
+				content.WriteString(editIndicator)
 			} else {
-				// Show current value
-				s += input.Value()
+				content.WriteString(input.Value())
 			}
 		} else {
-			// Fallback if input not initialized
-			s += fmt.Sprintf("%v", setting.Value)
+			content.WriteString(fmt.Sprintf("%v", setting.Value))
 		}
+		content.WriteString("\n")
 
-		s += "\n"
-		s += "    " + setting.Description + "\n\n"
+		// Description (muted)
+		descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).PaddingLeft(4)
+		content.WriteString(descStyle.Render(setting.Description) + "\n\n")
 	}
 
-	// Dynamic footer based on editing state
-	footer := "\n↑/↓ or j/k: Navigate | Enter: Edit | Ctrl+S: Save All | Esc: Back | m: Main menu"
-	if m.editingValue {
-		footer = "\nType to edit | Enter: Confirm | Esc: Cancel"
-	}
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
 
-	return s + footer
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewReviewChanges() string {
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("\n📋 Review Changes - %s\n\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("\n📋 Review Changes - %s\n\n", strings.Title(string(m.domain))))
 
 	if m.changes == nil {
 		noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes to review")
@@ -956,7 +962,7 @@ func (m *ConfigureSystemModel) viewConfirm() string {
 	var content strings.Builder
 	content.WriteString("\n❓ Confirm Configuration Changes?\n\n")
 
-	content.WriteString(fmt.Sprintf("Domain: %s\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("Domain: %s\n", strings.Title(string(m.domain))))
 
 	if m.changes != nil {
 		changeCount := 0
@@ -1003,7 +1009,7 @@ func (m *ConfigureSystemModel) viewComplete() string {
 	var content strings.Builder
 	content.WriteString("\n✅ Configuration Updated!\n\n")
 
-	content.WriteString(fmt.Sprintf("Domain: %s\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("Domain: %s\n", strings.Title(string(m.domain))))
 	content.WriteString("Changes saved successfully.\n")
 
 	cardStyle := lipgloss.NewStyle().
