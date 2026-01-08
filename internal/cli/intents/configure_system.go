@@ -468,11 +468,11 @@ func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "up":
+		case "up", "k":
 			if m.selectedIndex > 0 {
 				m.selectedIndex--
 			}
-		case "down":
+		case "down", "j":
 			if m.selectedIndex < len(m.context.Domains)-1 {
 				m.selectedIndex++
 			}
@@ -682,7 +682,8 @@ func (m *ConfigureSystemModel) updateFailed(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "r":
-			// Retry
+			// Retry - clear error and go back to Confirm
+			m.error = nil
 			m.state = ConfigStateConfirm
 		case "esc":
 			m.active = false
