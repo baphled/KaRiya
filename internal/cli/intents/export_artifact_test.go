@@ -635,4 +635,46 @@ var _ = Describe("ExportArtifact Intent", func() {
 			Expect(intent.Result).NotTo(BeNil())
 		})
 	})
+
+	Describe("formatBytes utility function", func() {
+		It("should format 0 bytes", func() {
+			Expect(formatBytes(0)).To(Equal("0 B"))
+		})
+
+		It("should format bytes under 1KB", func() {
+			Expect(formatBytes(1)).To(Equal("1 B"))
+			Expect(formatBytes(512)).To(Equal("512 B"))
+			Expect(formatBytes(1023)).To(Equal("1023 B"))
+		})
+
+		It("should format 1KB exactly", func() {
+			Expect(formatBytes(1024)).To(Equal("1 KB"))
+		})
+
+		It("should format kilobytes", func() {
+			Expect(formatBytes(2048)).To(Equal("2 KB"))
+			Expect(formatBytes(5120)).To(Equal("5 KB"))
+		})
+
+		It("should format 1MB exactly", func() {
+			Expect(formatBytes(1048576)).To(Equal("1 MB"))
+		})
+
+		It("should format megabytes", func() {
+			Expect(formatBytes(2097152)).To(Equal("2 MB"))
+			Expect(formatBytes(10485760)).To(Equal("10 MB"))
+		})
+
+		It("should format 1GB exactly", func() {
+			Expect(formatBytes(1073741824)).To(Equal("1 GB"))
+		})
+
+		It("should format gigabytes", func() {
+			Expect(formatBytes(2147483648)).To(Equal("2 GB"))
+		})
+
+		It("should format 1TB exactly", func() {
+			Expect(formatBytes(1099511627776)).To(Equal("1 TB"))
+		})
+	})
 })

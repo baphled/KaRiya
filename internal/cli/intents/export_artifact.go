@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -930,13 +931,13 @@ func (m *ExportArtifactModel) generateProfilePreview() string {
 func formatBytes(bytes int64) string {
 	const unit = 1024
 	if bytes < unit {
-		return string(rune(bytes)) + " B"
+		return fmt.Sprintf("%d B", bytes)
 	}
 	div, exp := int64(unit), 0
 	for n := bytes / unit; n >= unit; n /= unit {
 		div *= unit
 		exp++
 	}
-	units := []string{"", "K", "M", "G", "T"}
-	return string(rune(bytes/div)) + " " + units[exp] + "B"
+	units := []string{"K", "M", "G", "T", "P"}
+	return fmt.Sprintf("%d %sB", bytes/div, units[exp])
 }
