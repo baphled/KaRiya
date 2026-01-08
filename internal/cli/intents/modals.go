@@ -650,11 +650,3 @@ func slicesEqual(a, b []string) bool {
 
 	return true
 }
-
-// truncateString truncates a string to a maximum length.
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
