@@ -127,6 +127,7 @@ One-page cheat sheets for common operations:
 - [rules/COMPLIANCE_QUICK_REF.md](rules/COMPLIANCE_QUICK_REF.md)
 - [rules/TASK_QUICK_REF.md](rules/TASK_QUICK_REF.md)
 - [CI_CD_QUICK_REF.md](CI_CD_QUICK_REF.md)
+- [IMPLEMENTATION_INDEX.md](IMPLEMENTATION_INDEX.md) - Complete implementation documentation index
 
 ### Process Documentation
 Step-by-step process guides:
