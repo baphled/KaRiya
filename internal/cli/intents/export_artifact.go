@@ -122,6 +122,37 @@ type ExportErrorMsg struct {
 	Error *IntentError
 }
 
+// NewExportArtifactContext creates a new ExportArtifactContext with default values
+func NewExportArtifactContext() *ExportArtifactContext {
+	return &ExportArtifactContext{
+		ArtifactTypes: []ExportArtifactType{
+			ExportTypeCV,
+			ExportTypeEvents,
+			ExportTypeFacts,
+			ExportTypeBursts,
+			ExportTypeProfile,
+		},
+		SupportedFormats: map[ExportArtifactType][]ExportFormat{
+			ExportTypeCV:      {ExportFormatTXT, ExportFormatMD, ExportFormatYAML},
+			ExportTypeEvents:  {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
+			ExportTypeFacts:   {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
+			ExportTypeBursts:  {ExportFormatJSON, ExportFormatYAML, ExportFormatCSV, ExportFormatTXT},
+			ExportTypeProfile: {ExportFormatJSON, ExportFormatYAML},
+		},
+		DefaultFormat: map[ExportArtifactType]ExportFormat{
+			ExportTypeCV:      ExportFormatMD,
+			ExportTypeEvents:  ExportFormatJSON,
+			ExportTypeFacts:   ExportFormatJSON,
+			ExportTypeBursts:  ExportFormatJSON,
+			ExportTypeProfile: ExportFormatJSON,
+		},
+		Destinations: []ExportDestination{
+			ExportDestinationFile,
+			ExportDestinationClipboard,
+		},
+	}
+}
+
 // NewExportConfiguration creates a new export configuration with defaults
 func NewExportConfiguration(artifactType ExportArtifactType, ctx *ExportArtifactContext) *ExportConfiguration {
 	format := ctx.DefaultFormat[artifactType]
