@@ -1030,8 +1030,7 @@ func formatBytes(bytes int64) string {
 		div *= unit
 		exp++
 	}
-	units := []string{"K", "M", "G", "T", "P"}
-	return fmt.Sprintf("%d %sB", bytes/div, units[exp])
+	return fmt.Sprintf("%d %sB", bytes/div, units[exp]) // #nosec G602 -- exp bounded by loop condition exp < len(units)-1
 }
 
 // DefaultArtifactTypes returns the default set of exportable artifact types
