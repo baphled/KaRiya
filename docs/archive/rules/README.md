@@ -23,6 +23,11 @@ Files are archived when:
 **Reason**: Redundant with master-task-prompt.md
 **Replacement**: docs/rules/master-task-prompt.md contains all task instructions
 
+### process-task-list.md (Archived 2026-01-08)
+**Reason**: Consolidated into master-task-prompt.md for single source of truth
+**Replacement**: docs/rules/master-task-prompt.md "Task Processing" section contains all task processing rules
+**Key concepts preserved**: Authority order, completion criteria, refactoring constraints, one-task-at-a-time execution
+
 ## Restoration
 
 If you need to reference these files, they are preserved here unchanged. To restore a file to active use:

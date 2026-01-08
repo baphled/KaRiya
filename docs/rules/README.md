@@ -4,8 +4,8 @@ This directory contains all development standards, guidelines, and workflows for
 
 ## 📚 Documentation Overview
 
-### Total Documents: 14 files (~7,400+ lines)
-### Archived Documents: 3 files (see docs/archive/rules/)
+### Total Documents: 13 files (~7,240+ lines)
+### Archived Documents: 4 files (see docs/archive/rules/)
 ### Categories: Rules, Guidelines, Quick References, Processes, Best Practices
 
 ## 🎯 Quick Access
@@ -77,7 +77,7 @@ This directory contains all development standards, guidelines, and workflows for
 - Commands and templates
 - Token efficiency thresholds
 
-### 3. Process & Workflows (4 files)
+### 3. Process & Workflows (3 files)
 
 #### [master-task-prompt.md](master-task-prompt.md) (768 lines)
 - **Type**: Master Workflow
@@ -92,14 +92,6 @@ This directory contains all development standards, guidelines, and workflows for
   - Rule integration
   - Token efficiency
   - Examples and troubleshooting
-
-#### [process-task-list.md](process-task-list.md) (161 lines)
-- **Type**: Process Guidelines
-- **Purpose**: Deterministic task planning and execution
-- **Key Topics**:
-  - Authority order for task sources
-  - Checklist immutability rules
-  - Completion criteria
 
 #### [review-commit-prompt.md](review-commit-prompt.md) (650 lines)
 - **Type**: Process / Checklist
@@ -163,10 +155,9 @@ This directory contains all development standards, guidelines, and workflows for
 ### For AI Assistants
 
 **Essential Rules**
-1. [master-task-prompt.md](master-task-prompt.md) - Complete workflow
+1. [master-task-prompt.md](master-task-prompt.md) - Complete workflow (includes task processing rules)
 2. [AI_COMMIT_ATTRIBUTION.md](AI_COMMIT_ATTRIBUTION.md) - Attribution rules
 3. [token-efficiency.md](token-efficiency.md) - Token conservation
-4. [process-task-list.md](process-task-list.md) - Task processing
 
 **Quick References**
 - [TASK_QUICK_REF.md](TASK_QUICK_REF.md)
@@ -200,9 +191,9 @@ This directory contains all development standards, guidelines, and workflows for
 |----------|-------|-------|---------|
 | Rules & Guidelines | 3 | ~1,850 | Mandatory standards |
 | Quick References | 4 | ~742 | Fast lookup |
-| Process & Workflows | 4 | ~2,227 | Step-by-step guides |
+| Process & Workflows | 3 | ~2,066 | Step-by-step guides |
 | Best Practices | 2 | ~529 | Recommended practices |
-| **Total** | **14** | **~7,400+** | **Complete coverage** |
+| **Total** | **13** | **~7,240+** | **Complete coverage** |
 
 ## 📦 Archived Documentation
 

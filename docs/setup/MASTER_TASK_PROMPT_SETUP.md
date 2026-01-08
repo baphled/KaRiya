@@ -385,7 +385,7 @@ go test -v ./... -run "TestName"
 - **Rules Compliance:** `docs/rules/rules-compliance-check.md`
 - **Senior Engineer:** `docs/rules/senior-engineer-guidelines.md`
 - **Go Guidelines:** `docs/rules/go-guidelines.md`
-- **Process Task List:** `docs/rules/process-task-list.md`
+- **Task Processing:** Integrated into `docs/rules/master-task-prompt.md`
 
 ### Quick References
 - **Task Quick Ref:** `docs/rules/TASK_QUICK_REF.md`

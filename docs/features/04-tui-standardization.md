@@ -622,5 +622,5 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 **Production Ready**: YES
 **Template Source**: 03-burst-fact-extraction.md
 **Task Source**: tasks-04-tui-standardization.md
-**Process Guide**: docs/rules/process-task-list.md
+**Process Guide**: docs/rules/master-task-prompt.md (Task Processing section)
 

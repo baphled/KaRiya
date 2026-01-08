@@ -51,7 +51,7 @@ Run through this checklist periodically during work:
 
 ### ✅ Task Processing Rules
 
-**Process Task List** (`docs/rules/process-task-list.md`)
+**Master Task Prompt** (`docs/rules/master-task-prompt.md` - Task Processing section)
 - [ ] Working on exactly ONE task at a time
 - [ ] Task checklist is locked and followed sequentially
 - [ ] Using tools (not assumptions) to verify state
@@ -59,7 +59,7 @@ Run through this checklist periodically during work:
 - [ ] Not skipping ahead or batch-processing tasks
 
 **Task Processing Guidelines**
-- [ ] Strictly following task checklist order (see process-task-list.md)
+- [ ] Strictly following task checklist order (see master-task-prompt.md)
 - [ ] Referencing codebase before making changes
 - [ ] Following existing patterns in codebase
 - [ ] Avoiding side effects and scope creep
@@ -641,7 +641,7 @@ make pre-commit            # Quick checks
 - [Atomic Commits](./atomic-commits.md)
 - [Senior Engineer Guidelines](./senior-engineer-guidelines.md)
 - [Go Guidelines](./go-guidelines.md)
-- [Process Task List](./process-task-list.md)
+- [Master Task Prompt](./master-task-prompt.md)
 - [Token Efficiency Guide](./token-efficiency.md)
 
 ---

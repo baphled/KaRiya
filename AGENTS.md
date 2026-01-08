@@ -266,12 +266,6 @@ Keep these handy for quick lookups during development:
 
 In-depth process documentation for specific workflows:
 
-- **[`docs/rules/process-task-list.md`](docs/rules/process-task-list.md)** - Task list processing rules
-  - Deterministic task planning and execution
-  - Authority order for task sources (tools > checklist > guidelines)
-  - Checklist immutability rules
-  - Completion criteria
-
 - **[`docs/rules/review-commit-prompt.md`](docs/rules/review-commit-prompt.md)** - Commit review process
   - Step-by-step atomic commit review
   - Manual review checklist
@@ -565,7 +559,7 @@ Each task file MUST include:
 
 ### Task Processing Rules
 
-**Reference**: [`docs/rules/process-task-list.md`](docs/rules/process-task-list.md)
+**Reference**: [`docs/rules/master-task-prompt.md`](docs/rules/master-task-prompt.md) - See "Task Processing" section
 
 **Key Principles**:
 1. Execute tasks in order (top to bottom)
@@ -573,6 +567,8 @@ Each task file MUST include:
 3. One task at a time
 4. Use tools to verify completion
 5. Authority order: tools > checklist > guidelines
+6. Clear completion criteria (files modified, tests pass, checkbox marked)
+7. Refactoring only on directly modified code
 
 ### Completed Tasks
 

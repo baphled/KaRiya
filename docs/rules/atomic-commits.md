@@ -967,7 +967,7 @@ check-commit:
 ### Internal Documentation
 - [Senior Engineer Guidelines](./senior-engineer-guidelines.md)
 - [Go Guidelines](./go-guidelines.md)
-- [Task Processing](./process-task-list.md)
+- [Master Task Prompt](./master-task-prompt.md) - Task Processing section
 
 ### External Resources
 - [Conventional Commits](https://www.conventionalcommits.org/)
