@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -105,7 +106,6 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 	// Set up repository
 	var repo career.Repository
-	var err error
 
 	if inMemory {
 		repo = career.NewMemoryRepository()
@@ -125,11 +125,21 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			}
 		}
 
-		repo, err = career.NewSQLiteRepository(dbPath)
+		// Open database connection
+		db, err := sql.Open("sqlite", dbPath)
 		if err != nil {
-			fmt.Fprintf(errOut, "Error initializing database at '%s': %v\n", dbPath, err)
+			fmt.Fprintf(errOut, "Error opening database at '%s': %v\n", dbPath, err)
 			return 1
 		}
+
+		// Run migrations
+		if err := career.RunMigrations(db); err != nil {
+			fmt.Fprintf(errOut, "Error running migrations: %v\n", err)
+			return 1
+		}
+
+		// Create repository with existing connection
+		repo = career.NewSQLiteRepositoryWithDB(db)
 	}
 
 	svc := careerservice.NewService(repo)
@@ -143,24 +153,17 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		burstRepo := career.NewMemoryBurstRepository()
 		svc.SetBurstRepository(burstRepo)
 	} else {
-		// Use SQLite repositories for facts and bursts
+		// Use SQLite repositories for facts and bursts (migrations already run)
 		sqliteRepo, ok := repo.(*career.SQLiteRepository)
 		if ok && sqliteRepo != nil {
 			db := sqliteRepo.GetDB()
 
-			factRepo, err := career.NewSQLiteFactRepository(db)
-			if err != nil {
-				fmt.Fprintf(errOut, "Warning: Failed to initialize fact repository: %v\n", err)
-			} else {
-				svc.SetFactRepository(factRepo)
-			}
+			// Use the *WithDB constructors since migrations are already applied
+			factRepo := career.NewSQLiteFactRepositoryWithDB(db)
+			svc.SetFactRepository(factRepo)
 
-			burstRepo, err := career.NewSQLiteBurstRepository(db)
-			if err != nil {
-				fmt.Fprintf(errOut, "Warning: Failed to initialize burst repository: %v\n", err)
-			} else {
-				svc.SetBurstRepository(burstRepo)
-			}
+			burstRepo := career.NewSQLiteBurstRepositoryWithDB(db)
+			svc.SetBurstRepository(burstRepo)
 		}
 	}
 

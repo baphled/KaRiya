@@ -17,35 +17,23 @@ type SQLiteBurstRepository struct {
 	db *sql.DB
 }
 
-// NewSQLiteBurstRepository creates a new SQLite burst repository
+// NewSQLiteBurstRepository creates a new SQLite burst repository.
+// Deprecated: Use NewSQLiteBurstRepositoryWithDB after running migrations via career.RunMigrations().
+// This constructor is kept for backward compatibility with existing tests.
 func NewSQLiteBurstRepository(db *sql.DB) (*SQLiteBurstRepository, error) {
-	repo := &SQLiteBurstRepository{db: db}
-
-	// Initialize the schema
-	if err := repo.initSchema(); err != nil {
-		return nil, fmt.Errorf("failed to initialize burst schema: %w", err)
+	// Run migrations to ensure schema is up to date
+	if err := RunMigrations(db); err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	return repo, nil
+	return &SQLiteBurstRepository{db: db}, nil
 }
 
-// initSchema creates the bursts table if it doesn't exist
-func (r *SQLiteBurstRepository) initSchema() error {
-	schema := `
-	CREATE TABLE IF NOT EXISTS bursts (
-		id TEXT PRIMARY KEY,
-		name TEXT NOT NULL,
-		description TEXT,
-		event_ids TEXT NOT NULL,
-		confirmed INTEGER NOT NULL DEFAULT 0,
-		confirmed_at DATETIME,
-		created_at DATETIME NOT NULL,
-		updated_at DATETIME NOT NULL
-	);
-	`
-
-	_, err := r.db.Exec(schema)
-	return err
+// NewSQLiteBurstRepositoryWithDB creates a burst repository with an existing database connection.
+// This is useful when migrations have already been run on the database connection.
+// The caller is responsible for managing the database connection lifecycle.
+func NewSQLiteBurstRepositoryWithDB(db *sql.DB) *SQLiteBurstRepository {
+	return &SQLiteBurstRepository{db: db}
 }
 
 // Create adds a new burst to the database
