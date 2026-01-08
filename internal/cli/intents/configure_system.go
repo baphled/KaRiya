@@ -904,7 +904,7 @@ func (m *ConfigureSystemModel) viewEditSettings() string {
 	}
 
 	// Dynamic footer based on editing state
-	footer := "\n↑/↓ or j/k: Navigate | Enter: Edit | Ctrl+S: Save All | Esc: Back"
+	footer := "\n↑/↓ or j/k: Navigate | Enter: Edit | Ctrl+S: Save All | Esc: Back | m: Main menu"
 	if m.editingValue {
 		footer = "\nType to edit | Enter: Confirm | Esc: Cancel"
 	}
