@@ -2,6 +2,7 @@ package importer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -163,7 +164,7 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 				// Save fact to repository
 				if err := is.careerService.SaveFact(ctx, &fact); err != nil {
 					// Silently skip if fact repository is not configured (expected in some test scenarios)
-					if err.Error() != "fact repository not configured" {
+					if !errors.Is(err, careerservice.ErrFactRepositoryNotConfigured) {
 						fmt.Printf("Warning: Failed to save fact: %v\n", err)
 					}
 					continue

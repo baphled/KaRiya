@@ -328,8 +328,8 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 // DeleteBurst removes a burst from the repository
 func (s *Service) DeleteBurst(ctx context.Context, burstID string) error {
 	if s.burstRepo == nil {
-		s.logger.Warn("Burst repository not configured")
-		return fmt.Errorf("burst repository not configured")
+		// Burst repository is optional - return sentinel error without logging
+		return ErrBurstRepositoryNotConfigured
 	}
 
 	if burstID == "" {
@@ -609,8 +609,8 @@ func (s *Service) GetFactsBySourceBurstID(ctx context.Context, burstID string) (
 // SaveFact persists a fact to the repository
 func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 	if s.factRepo == nil {
-		s.logger.Warn("Fact repository not configured")
-		return fmt.Errorf("fact repository not configured")
+		// Fact repository is optional - return sentinel error without logging
+		return ErrFactRepositoryNotConfigured
 	}
 
 	if fact == nil {
@@ -681,8 +681,8 @@ func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 // DeleteFact removes a fact from the repository
 func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 	if s.factRepo == nil {
-		s.logger.Warn("Fact repository not configured")
-		return fmt.Errorf("fact repository not configured")
+		// Fact repository is optional - return sentinel error without logging
+		return ErrFactRepositoryNotConfigured
 	}
 
 	if factID == "" {
