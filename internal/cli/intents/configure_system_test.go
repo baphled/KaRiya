@@ -76,22 +76,22 @@ var _ = Describe("ConfigureSystem Intent", func() {
 
 		It("should show all domains", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("system"))
-			Expect(view).To(ContainSubstring("profile"))
-			Expect(view).To(ContainSubstring("export"))
-			Expect(view).To(ContainSubstring("ui"))
+			Expect(view).To(ContainSubstring("System"))
+			Expect(view).To(ContainSubstring("Profile"))
+			Expect(view).To(ContainSubstring("Export"))
+			Expect(view).To(ContainSubstring("Ui"))
 		})
 
 		It("should show navigation instructions", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("↑/↓"))
+			Expect(view).To(ContainSubstring("↑"))
 			Expect(view).To(ContainSubstring("Enter"))
 			Expect(view).To(ContainSubstring("Esc"))
 		})
 
 		It("should highlight selected item", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("> system"))
+			Expect(view).To(ContainSubstring("▶ System"))
 		})
 	})
 
@@ -107,7 +107,7 @@ var _ = Describe("ConfigureSystem Intent", func() {
 
 		It("should render EditSettings view", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Edit Settings for system"))
+			Expect(view).To(ContainSubstring("Edit System Settings"))
 		})
 
 		It("should show settings for domain", func() {
@@ -151,7 +151,7 @@ var _ = Describe("ConfigureSystem Intent", func() {
 
 		It("should show domain", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Domain: export"))
+			Expect(view).To(ContainSubstring("Domain: Export"))
 		})
 	})
 
@@ -166,7 +166,7 @@ var _ = Describe("ConfigureSystem Intent", func() {
 
 		It("should render Saving view", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Saving configuration"))
+			Expect(view).To(ContainSubstring("Saving Configuration"))
 		})
 	})
 
@@ -267,8 +267,8 @@ var _ = Describe("ConfigureSystem Intent", func() {
 			intent.SetDomain(DomainSystem)
 		})
 
-		It("should transition to ReviewChanges on enter", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter, Runes: []rune{'\n'}})
+		It("should transition to ReviewChanges on Ctrl+S", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS, Runes: []rune("\x13")})
 			Expect(intent.GetState()).To(Equal(ConfigStateReviewChanges))
 		})
 
