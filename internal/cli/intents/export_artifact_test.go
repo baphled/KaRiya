@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	careerdomain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -317,11 +318,12 @@ var _ = Describe("ExportArtifact Intent", func() {
 		})
 
 		It("should transition to SelectFormat on enter", func() {
-			intent.SetSelectedIndex(0)
+			// Select non-CV type (Events at index 1) to skip SelectCV
+			intent.SetSelectedIndex(1)
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter, Runes: []rune{'\n'}})
 			Expect(intent.GetState()).To(Equal(ExportStateSelectFormat))
 			Expect(intent.GetConfig()).NotTo(BeNil())
-			Expect(intent.GetConfig().ArtifactType).To(Equal(ExportTypeCV))
+			Expect(intent.GetConfig().ArtifactType).To(Equal(ExportTypeEvents))
 		})
 
 		It("should cancel on escape", func() {
@@ -366,9 +368,9 @@ var _ = Describe("ExportArtifact Intent", func() {
 			Expect(intent.GetState()).To(Equal(ExportStateSelectDest))
 		})
 
-		It("should go back to SelectType on escape", func() {
+		It("should go back to SelectCV on escape (when artifact type is CV)", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc, Runes: []rune{'\x1b'}})
-			Expect(intent.GetState()).To(Equal(ExportStateSelectType))
+			Expect(intent.GetState()).To(Equal(ExportStateSelectCV))
 		})
 	})
 
@@ -789,6 +791,148 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 			view := intent.model.viewPreview()
 			Expect(view).To(ContainSubstring("[33% scrolled]"))
+		})
+	})
+
+	Describe("CV Selection State", func() {
+		var intent *ExportArtifactIntent
+
+		BeforeEach(func() {
+			var err error
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		Describe("State Entry", func() {
+			It("should transition to SelectCV state when CV type is selected", func() {
+				// Select CV artifact type (index 0 - CV is first in DefaultArtifactTypes)
+				intent.model.selectedIndex = 0
+
+				// Press Enter to proceed
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should transition to SelectCV state
+				Expect(intent.model.state).To(Equal(ExportStateSelectCV))
+				Expect(intent.model.config).NotTo(BeNil())
+				Expect(intent.model.config.ArtifactType).To(Equal(ExportTypeCV))
+			})
+
+			It("should skip SelectCV state for non-CV artifact types", func() {
+				// Select Events artifact type (index 1 - Events is second)
+				intent.model.selectedIndex = 1
+
+				// Press Enter to proceed
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should transition directly to SelectFormat state
+				Expect(intent.model.state).To(Equal(ExportStateSelectFormat))
+				Expect(intent.model.config).NotTo(BeNil())
+				Expect(intent.model.config.ArtifactType).To(Equal(ExportTypeEvents))
+			})
+		})
+
+		Describe("CV List Navigation", func() {
+			BeforeEach(func() {
+				// Set up CV selection state with mock CVs
+				intent.model.state = ExportStateSelectCV
+				intent.model.availableCVs = []*careerdomain.CVView{
+					{Name: "CV 1", TargetRole: "Senior Engineer"},
+					{Name: "CV 2", TargetRole: "Staff Engineer"},
+					{Name: "CV 3", TargetRole: "Tech Lead"},
+				}
+				intent.model.selectedIndex = 0
+			})
+
+			It("should navigate down with arrow key", func() {
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyDown})
+				Expect(intent.model.selectedIndex).To(Equal(1))
+			})
+
+			It("should navigate down with j key", func() {
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				Expect(intent.model.selectedIndex).To(Equal(1))
+			})
+
+			It("should navigate up with arrow key", func() {
+				intent.model.selectedIndex = 1
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyUp})
+				Expect(intent.model.selectedIndex).To(Equal(0))
+			})
+
+			It("should navigate up with k key", func() {
+				intent.model.selectedIndex = 1
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				Expect(intent.model.selectedIndex).To(Equal(0))
+			})
+
+			It("should wrap at bottom when navigating down", func() {
+				intent.model.selectedIndex = 2 // Last item
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyDown})
+				Expect(intent.model.selectedIndex).To(Equal(0)) // Wraps to first
+			})
+
+			It("should wrap at top when navigating up", func() {
+				intent.model.selectedIndex = 0 // First item
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyUp})
+				Expect(intent.model.selectedIndex).To(Equal(2)) // Wraps to last
+			})
+		})
+
+		Describe("CV Selection", func() {
+			BeforeEach(func() {
+				intent.model.state = ExportStateSelectCV
+				intent.model.availableCVs = []*careerdomain.CVView{
+					{Name: "CV 1", TargetRole: "Senior Engineer"},
+					{Name: "CV 2", TargetRole: "Staff Engineer"},
+				}
+				intent.model.selectedIndex = 1
+			})
+
+			It("should select CV and transition to SelectFormat when Enter is pressed", func() {
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(intent.model.selectedCV).To(Equal(intent.model.availableCVs[1]))
+				Expect(intent.model.state).To(Equal(ExportStateSelectFormat))
+			})
+
+			It("should go back to SelectType when Escape is pressed", func() {
+				intent.model.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				Expect(intent.model.state).To(Equal(ExportStateSelectType))
+			})
+		})
+
+		Describe("View Rendering", func() {
+			BeforeEach(func() {
+				intent.model.state = ExportStateSelectCV
+				intent.model.availableCVs = []*careerdomain.CVView{
+					{Name: "CV 1", TargetRole: "Senior Engineer"},
+					{Name: "CV 2", TargetRole: "Staff Engineer"},
+				}
+				intent.model.selectedIndex = 0
+			})
+
+			It("should display list of available CVs", func() {
+				view := intent.View()
+
+				Expect(view).To(ContainSubstring("CV 1"))
+				Expect(view).To(ContainSubstring("CV 2"))
+			})
+
+			It("should highlight selected CV", func() {
+				view := intent.View()
+
+				// Should have selection indicator for first item
+				Expect(view).To(ContainSubstring("▶"))
+			})
+
+			It("should show CV target role", func() {
+				view := intent.View()
+
+				Expect(view).To(ContainSubstring("Senior Engineer"))
+				Expect(view).To(ContainSubstring("Staff Engineer"))
+			})
 		})
 	})
 })
