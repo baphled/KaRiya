@@ -342,6 +342,39 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 - BubbleTea bubbles (textinput, list, etc.)
 - Layout patterns and responsive design
 
+#### 5. StandardView System
+**File**: [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md)
+**Purpose**: Standardized view system for consistent layout across all TUI screens
+**When to use**: When creating any new TUI screen or updating existing screens
+**Key topics**:
+- StandardView component with logo, breadcrumbs, and context-aware help
+- Modal system (Error, Loading, Progress, Success, Warning)
+- Terminal size handling and responsive design
+- Performance benchmarks and testing
+**Related**: See [`docs/MODAL_PATTERNS.md`](docs/MODAL_PATTERNS.md) for modal usage patterns
+
+#### 6. Modal Patterns
+**File**: [`docs/MODAL_PATTERNS.md`](docs/MODAL_PATTERNS.md)
+**Purpose**: Modal usage patterns and implementation guide
+**When to use**: When implementing modals for errors, loading states, or user confirmation
+**Key topics**:
+- 5 modal types (Error, Loading, Progress, Success, Warning)
+- Modal state management
+- Accessibility and user experience patterns
+- Testing modal interactions
+**Related**: See [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
+
+#### 7. Forms System (Huh Library)
+**File**: [`docs/HUH_FORMS_GUIDE.md`](docs/HUH_FORMS_GUIDE.md)
+**Purpose**: Comprehensive guide to using Charm's huh library for forms
+**When to use**: When creating or modifying form inputs in the TUI
+**Key topics**:
+- Huh library integration and theming
+- Form configurations for burst, metadata, and fact editing
+- 20+ reusable validators (date parsing, email, URL, domain-specific)
+- Migration from manual textinput arrays
+**Related**: See [`docs/HUH_MIGRATION_SUMMARY.md`](docs/HUH_MIGRATION_SUMMARY.md) for migration lessons learned
+
 ### TUI Quick References
 
 - **[`docs/KEYBOARD_REFERENCE.md`](docs/KEYBOARD_REFERENCE.md)** - Complete keyboard shortcuts reference
@@ -355,6 +388,11 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
   - Typography and spacing
   - ANSI color codes
 
+- **[`docs/TERMINAL_SIZE_HANDLING.md`](docs/TERMINAL_SIZE_HANDLING.md)** - Terminal size handling patterns
+  - Responsive design for various terminal sizes
+  - Graceful degradation
+  - Testing across different dimensions
+
 - **[`docs/UNIFIED_SHORTCUT_SYSTEM_DESIGN.md`](docs/UNIFIED_SHORTCUT_SYSTEM_DESIGN.md)** - Shortcut system design
   - Shortcut registration and discovery
   - Context-aware help text
@@ -365,6 +403,15 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
   - Available components (help footer, tag selector, etc.)
   - Usage examples and APIs
   - Integration patterns
+
+- **[`docs/INTENT_DEVELOPMENT_CHECKLIST.md`](docs/INTENT_DEVELOPMENT_CHECKLIST.md)** - Intent development checklist
+  - Checklist for creating new intents
+  - State machine validation
+  - Testing requirements
+
+- **[`docs/QUICK_START_STANDARDVIEW.md`](docs/QUICK_START_STANDARDVIEW.md)** - StandardView quick start
+  - Quick reference for StandardView usage
+  - Common patterns and examples
 
 ---
 
