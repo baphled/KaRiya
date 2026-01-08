@@ -445,78 +445,36 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 
 		case "j", "down":
 			// Navigate down through items
-			burstCount := len(i.state.reviewState.InferredBursts)
-			factCount := len(i.state.reviewState.InferredFacts)
-			totalItems := burstCount + factCount
+			totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
 			if totalItems > 0 {
-				// Compute current global index from item type and local index
-				globalIndex := 0
-				switch i.state.reviewState.SelectedItemType {
-				case "burst":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < burstCount {
-						globalIndex = i.state.reviewState.SelectedIndex
-					}
-				case "fact":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < factCount {
-						globalIndex = burstCount + i.state.reviewState.SelectedIndex
-					} else {
-						globalIndex = burstCount
-					}
-				default:
-					// Default to the first item if nothing is selected yet
-					globalIndex = 0
+				i.state.reviewState.SelectedIndex++
+				if i.state.reviewState.SelectedIndex >= totalItems {
+					i.state.reviewState.SelectedIndex = 0
 				}
-
-				// Move down, wrapping around
-				globalIndex = (globalIndex + 1) % totalItems
-
-				// Derive new item type and list-local index from global index
-				if globalIndex < burstCount {
+				// Update SelectedItemType based on new index
+				if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
 					i.state.reviewState.SelectedItemType = "burst"
-					i.state.reviewState.SelectedIndex = globalIndex
 				} else {
 					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex = globalIndex - burstCount
+					i.state.reviewState.SelectedIndex = i.state.reviewState.SelectedIndex - len(i.state.reviewState.InferredBursts)
 				}
 			}
 			return nil
 
 		case "k", "up":
 			// Navigate up through items
-			burstCount := len(i.state.reviewState.InferredBursts)
-			factCount := len(i.state.reviewState.InferredFacts)
-			totalItems := burstCount + factCount
+			totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
 			if totalItems > 0 {
-				// Compute current global index from item type and local index
-				globalIndex := 0
-				switch i.state.reviewState.SelectedItemType {
-				case "burst":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < burstCount {
-						globalIndex = i.state.reviewState.SelectedIndex
-					} else {
-						globalIndex = 0
-					}
-				case "fact":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < factCount {
-						globalIndex = burstCount + i.state.reviewState.SelectedIndex
-					} else {
-						globalIndex = totalItems - 1
-					}
-				default:
-					// Default to the last item if nothing is selected yet
-					globalIndex = totalItems - 1
+				i.state.reviewState.SelectedIndex--
+				if i.state.reviewState.SelectedIndex < 0 {
+					i.state.reviewState.SelectedIndex = totalItems - 1
 				}
-
-				// Move up, wrapping around
-				globalIndex = (globalIndex - 1 + totalItems) % totalItems
-
-				// Derive new item type and list-local index from global index
-				if globalIndex < burstCount {
+				// Update SelectedItemType based on new index
+				if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
 					i.state.reviewState.SelectedItemType = "burst"
-					i.state.reviewState.SelectedIndex = globalIndex
 				} else {
 					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex = globalIndex - burstCount
+					i.state.reviewState.SelectedIndex = i.state.reviewState.SelectedIndex - len(i.state.reviewState.InferredBursts)
 				}
 			}
 			return nil
@@ -1058,6 +1016,82 @@ func (i *CaptureEventIntent) viewFactEditModal() string {
 		)
 	}
 	return i.state.reviewState.factModal.View()
+}
+
+// acceptCurrentItem accepts the currently selected burst or fact.
+// Moves the item from InferredBursts/InferredFacts to AcceptedBursts/AcceptedFacts.
+func (i *CaptureEventIntent) acceptCurrentItem() {
+	if i.state.reviewState.SelectedItemType == "burst" {
+		idx := i.state.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.state.reviewState.InferredBursts) {
+			burst := i.state.reviewState.InferredBursts[idx]
+			i.state.reviewState.AcceptedBursts = append(i.state.reviewState.AcceptedBursts, burst)
+			// Remove from inferred list
+			i.state.reviewState.InferredBursts = append(
+				i.state.reviewState.InferredBursts[:idx],
+				i.state.reviewState.InferredBursts[idx+1:]...)
+			// Adjust selection if needed
+			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredBursts) && len(i.state.reviewState.InferredBursts) > 0 {
+				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredBursts) - 1
+			}
+		}
+	} else if i.state.reviewState.SelectedItemType == "fact" {
+		idx := i.state.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
+			fact := i.state.reviewState.InferredFacts[idx]
+			i.state.reviewState.AcceptedFacts = append(i.state.reviewState.AcceptedFacts, fact)
+			// Remove from inferred list
+			i.state.reviewState.InferredFacts = append(
+				i.state.reviewState.InferredFacts[:idx],
+				i.state.reviewState.InferredFacts[idx+1:]...)
+			// Adjust selection if needed
+			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredFacts) && len(i.state.reviewState.InferredFacts) > 0 {
+				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredFacts) - 1
+			}
+		}
+	}
+}
+
+// rejectCurrentItem rejects the currently selected burst or fact.
+// Removes the item from InferredBursts/InferredFacts without adding to accepted.
+func (i *CaptureEventIntent) rejectCurrentItem() {
+	if i.state.reviewState.SelectedItemType == "burst" {
+		idx := i.state.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.state.reviewState.InferredBursts) {
+			burst := i.state.reviewState.InferredBursts[idx]
+			// Track rejection reason (optional - could add a modal for this)
+			if i.state.reviewState.RejectedItems == nil {
+				i.state.reviewState.RejectedItems = make(map[string]string)
+			}
+			i.state.reviewState.RejectedItems[burst.ID] = "user_rejected"
+			// Remove from inferred list
+			i.state.reviewState.InferredBursts = append(
+				i.state.reviewState.InferredBursts[:idx],
+				i.state.reviewState.InferredBursts[idx+1:]...)
+			// Adjust selection if needed
+			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredBursts) && len(i.state.reviewState.InferredBursts) > 0 {
+				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredBursts) - 1
+			}
+		}
+	} else if i.state.reviewState.SelectedItemType == "fact" {
+		idx := i.state.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
+			fact := i.state.reviewState.InferredFacts[idx]
+			// Track rejection reason
+			if i.state.reviewState.RejectedItems == nil {
+				i.state.reviewState.RejectedItems = make(map[string]string)
+			}
+			i.state.reviewState.RejectedItems[fact.ID] = "user_rejected"
+			// Remove from inferred list
+			i.state.reviewState.InferredFacts = append(
+				i.state.reviewState.InferredFacts[:idx],
+				i.state.reviewState.InferredFacts[idx+1:]...)
+			// Adjust selection if needed
+			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredFacts) && len(i.state.reviewState.InferredFacts) > 0 {
+				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredFacts) - 1
+			}
+		}
+	}
 }
 
 // IsActive returns true if this intent is currently active.
