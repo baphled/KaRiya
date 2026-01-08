@@ -86,7 +86,8 @@ var _ = Describe("Config", func() {
 
 		It("should handle invalid path", func() {
 			cfg := config.DefaultConfig()
-			err := config.SaveConfigToPath(cfg, "/invalid/nonexistent/path/config.yaml")
+			// Use a path with null byte which is invalid on all platforms
+			err := config.SaveConfigToPath(cfg, "/invalid/\x00/path/config.yaml")
 			Expect(err).To(HaveOccurred())
 		})
 	})
