@@ -155,6 +155,35 @@ gh pr create --base main --head next --title "release: prepare next release" --b
 #    - Create GitHub release with binaries
 #    - Update CHANGELOG.md
 #    - Create git tag
+
+# 6. Automatic sync: next will be automatically synced with main
+#    - The "Sync Next with Main" workflow runs after successful releases
+#    - If conflicts occur, a PR will be created for manual resolution
+#    - No manual intervention needed in most cases
+```
+
+### After Release: Automatic Sync
+
+After a successful release, the `next` branch is **automatically synced** with `main` to incorporate any release commits (CHANGELOG.md, VERSION, etc.).
+
+**Automatic Sync Process:**
+1. Release workflow completes successfully on `main`
+2. `Sync Next with Main` workflow triggers automatically
+3. Attempts to merge `main` into `next`
+4. If successful: ✅ No action needed - `next` is synced
+5. If conflicts: ⚠️ PR created for manual resolution
+
+**If Manual Resolution Needed:**
+```bash
+# Check if a sync PR exists
+gh pr list --base next --label sync-failure
+
+# Or manually sync if preferred
+git checkout next
+git pull origin next
+git merge main
+# Resolve conflicts if any
+git push origin next
 ```
 
 **Manual Merge Alternative:**

@@ -1,0 +1,123 @@
+name: Sync Next with Main
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Sync Next Branch
+    runs-on: ubuntu-latest
+    # Only run on successful releases
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync next with main
+        run: |
+          echo "Fetching latest changes..."
+          git fetch origin main next
+          
+          echo "Checking out next branch..."
+          git checkout next
+          
+          echo "Merging main into next..."
+          if git merge origin/main --no-edit -m "chore: sync next with main after release"; then
+            echo "✅ Merge successful"
+            
+            echo "Pushing changes to next..."
+            git push origin next
+            
+            echo "✅ Next branch synced with main successfully!"
+          else
+            echo "❌ Merge conflict detected!"
+            echo "Creating pull request for manual resolution..."
+            
+            # Abort the merge
+            git merge --abort
+            
+            # Create a PR from main to next for manual resolution
+            gh pr create \
+              --base next \
+              --head main \
+              --title "chore: sync next with main after release (merge conflict)" \
+              --body "⚠️ **Automatic sync failed due to merge conflicts**
+
+This PR was automatically created after a successful release to sync \`next\` with \`main\`.
+
+## What happened?
+
+After the release workflow completed on \`main\`, an automatic merge into \`next\` was attempted but failed due to conflicts.
+
+## What to do?
+
+1. Review the conflicts in this PR
+2. Resolve them manually
+3. Merge this PR to complete the sync
+
+## Changes from main
+
+\$(git log next..main --oneline)
+
+---
+*This PR was automatically created by the Sync Next with Main workflow*"
+            
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Next branch sync failed after release',
+              body: `## Sync Failure Alert
+
+The automatic sync of \`next\` branch with \`main\` failed after a successful release.
+
+**Release Run:** ${context.payload.workflow_run.html_url}
+**Sync Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+
+### Action Required
+
+Please manually sync the \`next\` branch with \`main\`:
+
+\`\`\`bash
+git checkout next
+git pull origin next
+git merge main
+# Resolve any conflicts
+git push origin next
+\`\`\`
+
+Or check if a PR was created for manual merge conflict resolution.
+
+---
+*This issue was automatically created by the Sync Next with Main workflow*`,
+              labels: ['ci/cd', 'sync-failure']
+            };
+            
+            await github.rest.issues.create(issue);
