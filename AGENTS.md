@@ -1,6 +1,6 @@
 # KaRiya Project Documentation
 
-**Last Updated**: 2026-01-07
+**Last Updated**: 2026-01-08
 **Project Status**: ✅ **PRODUCTION READY - ALL PHASES COMPLETE (100%)**
 **Test Coverage**: 240+ tests, 100% pass rate, 0 race conditions
 **Code Quality**: All linting checks passing, no technical debt
@@ -1100,6 +1100,39 @@ go test -v ./internal/cli/intents/...
 ---
 
 ## Deployment Guide
+
+### Branching Strategy
+
+KaRiya uses a **dual-branch workflow** for controlled releases:
+
+- **`next` branch**: Integration branch for feature development
+  - All feature branches merge here via PR
+  - Full CI runs on every merge
+  - Staging environment for testing features together
+  
+- **`main` branch**: Production releases only
+  - Only accepts merges from `next` branch
+  - Automatic semantic releases on merge
+  - Protected branch with strict checks
+
+**See**: [`docs/BRANCHING_STRATEGY.md`](docs/BRANCHING_STRATEGY.md) for complete workflow documentation.
+
+**Quick Workflow**:
+```bash
+# 1. Create feature branch from next
+git checkout next && git pull
+git checkout -b feature/my-feature
+
+# 2. Develop and commit (conventional commits)
+git commit -m "feat: add new feature"
+
+# 3. Push and create PR to next (NOT main)
+git push -u origin feature/my-feature
+gh pr create --base next --fill
+
+# 4. After merge to next, release when ready:
+#    Create PR: next → main (triggers automatic release)
+```
 
 ### Pre-Deployment Checklist
 

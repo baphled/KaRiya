@@ -4,14 +4,14 @@ on:
   push:
     branches:
       - main
-      - develop
+      - next
       - 'feature/**'
       - 'fix/**'
       - 'refactor/**'
   pull_request:
     branches:
+      - next
       - main
-      - develop
 
 env:
   GO_VERSION: '1.24'
