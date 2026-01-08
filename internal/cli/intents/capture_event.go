@@ -97,6 +97,11 @@ type ReviewInferredEventState struct {
 
 	// RejectedItems tracks items rejected by the user.
 	RejectedItems map[string]string // item_id -> rejection reason
+
+	// Modal sub-components for editing
+	metadataModal *models.MetadataEditorModelNew
+	burstModal    *models.BurstSuggestionModelNew
+	factModal     *models.FactEditorModelNew
 }
 
 // EditingModes for ReviewInferredEvent sub-flows.

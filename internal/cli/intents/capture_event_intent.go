@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -349,6 +350,64 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 // updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
 // It processes review confirmations, edits, and transitions to submit state.
 func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
+	// If a modal is active, pass updates to it
+	switch i.state.reviewState.EditingMode {
+	case EditingModeMetadata:
+		if i.state.reviewState.metadataModal != nil {
+			modal, cmd := i.state.reviewState.metadataModal.Update(msg)
+			i.state.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
+
+			// Check if modal completed
+			if i.state.reviewState.metadataModal.IsSubmitted() {
+				// Apply changes to event
+				i.state.reviewState.Event = i.state.reviewState.metadataModal.GetEvent()
+				// Clear modal and editing mode
+				i.state.reviewState.metadataModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			} else if i.state.reviewState.metadataModal.IsCancelled() {
+				// Clear modal without applying changes
+				i.state.reviewState.metadataModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+
+	case EditingModeBursts:
+		if i.state.reviewState.burstModal != nil {
+			modal, cmd := i.state.reviewState.burstModal.Update(msg)
+			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
+
+			// Check if modal completed
+			// TODO: Add completion check when BurstSuggestionModelNew has IsComplete/IsCancelled methods
+			// For now, allow Esc to exit
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
+				i.state.reviewState.burstModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+
+	case EditingModeFacts:
+		if i.state.reviewState.factModal != nil {
+			modal, cmd := i.state.reviewState.factModal.Update(msg)
+			i.state.reviewState.factModal = modal.(*models.FactEditorModelNew)
+
+			// Check if modal completed
+			if i.state.reviewState.factModal.IsSubmitted() {
+				// Apply changes to fact
+				// TODO: Update the inferred facts list with edited fact
+				i.state.reviewState.factModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			} else if i.state.reviewState.factModal.IsCancelled() {
+				// Clear modal without applying changes
+				i.state.reviewState.factModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+	}
+
+	// Normal review handling (no modal active)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -754,6 +813,17 @@ func (i *CaptureEventIntent) viewCaptureForm() string {
 // viewReviewInferredEvent renders the review UI for inferred bursts and facts.
 // Displays the captured event details, inferred bursts, and facts with accept/reject options.
 func (i *CaptureEventIntent) viewReviewInferredEvent() string {
+	// Check if editing mode is active and display appropriate modal
+	switch i.state.reviewState.EditingMode {
+	case EditingModeMetadata:
+		return i.viewMetadataEditModal()
+	case EditingModeBursts:
+		return i.viewBurstEditModal()
+	case EditingModeFacts:
+		return i.viewFactEditModal()
+	}
+
+	// Normal review view
 	var sb strings.Builder
 	sb.WriteString("\n")
 	sb.WriteString("┌─ Review Inferred Event ────────────────────────┐\n")
@@ -859,6 +929,56 @@ func (i *CaptureEventIntent) viewError() string {
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
 
 	return sb.String()
+}
+
+// viewMetadataEditModal displays the metadata editor modal.
+func (i *CaptureEventIntent) viewMetadataEditModal() string {
+	if i.state.reviewState.metadataModal == nil {
+		// Initialize metadata modal with event
+		i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+			i.state.reviewState.Event,
+			i.context.CareerService,
+			i.context.CLIEventService,
+			context.Background(),
+		)
+	}
+	return i.state.reviewState.metadataModal.View()
+}
+
+// viewBurstEditModal displays the burst suggestion modal.
+func (i *CaptureEventIntent) viewBurstEditModal() string {
+	if i.state.reviewState.burstModal == nil {
+		// Convert inferred bursts to suggestions for the modal
+		// For now, we'll work with an empty list - in a full implementation,
+		// we'd convert i.state.reviewState.InferredBursts to suggestions
+		var suggestions []burstfact.BurstSuggestion
+		i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+			i.context.CareerService,
+			suggestions,
+			context.Background(),
+		)
+	}
+	return i.state.reviewState.burstModal.View()
+}
+
+// viewFactEditModal displays the fact editor modal.
+func (i *CaptureEventIntent) viewFactEditModal() string {
+	if i.state.reviewState.factModal == nil {
+		// Use the first inferred fact, or create a new empty fact
+		var fact *career.Fact
+		if len(i.state.reviewState.InferredFacts) > 0 && i.state.reviewState.EditingIndex < len(i.state.reviewState.InferredFacts) {
+			fact = i.state.reviewState.InferredFacts[i.state.reviewState.EditingIndex]
+		} else {
+			// Create a new empty fact
+			fact = &career.Fact{}
+		}
+		i.state.reviewState.factModal = models.NewFactEditorModelNew(
+			fact,
+			i.context.CareerService,
+			context.Background(),
+		)
+	}
+	return i.state.reviewState.factModal.View()
 }
 
 // IsActive returns true if this intent is currently active.
