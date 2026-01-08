@@ -88,17 +88,20 @@ func (c *ConfigureSystemIntent) getContextHelp() string {
 	case ConfigStateSelectDomain:
 		return CombineFooters(NavigationFooter(), base)
 	case ConfigStateEditSettings:
-		return CombineFooters(FormFooter(), base)
+		if c.model.editingValue {
+			return CombineFooters("Type to edit  Enter Confirm  Esc Cancel", base)
+		}
+		return CombineFooters(NavigationFooter(), "Enter Edit  Ctrl+S Save All", base)
 	case ConfigStateReviewChanges:
-		return CombineFooters(DetailViewFooter(), "Enter Continue", base)
+		return CombineFooters("Enter Confirm  Esc Back", base)
 	case ConfigStateConfirm:
 		return CombineFooters("y/Enter Confirm  n/Esc Cancel", base)
 	case ConfigStateSaving:
 		return CombineFooters("Please wait...", base)
 	case ConfigStateComplete:
-		return CombineFooters("Enter Continue", base)
+		return CombineFooters("Enter Done", base)
 	case ConfigStateFailed:
-		return CombineFooters("Enter Retry  Esc Cancel", base)
+		return CombineFooters("r Retry  Esc Cancel", base)
 	default:
 		return base
 	}

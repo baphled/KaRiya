@@ -3,10 +3,13 @@ package intents
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // ConfigurationDomain represents a configuration domain (e.g., "system", "profile", "export")
@@ -823,77 +826,144 @@ func (m *ConfigureSystemModel) setResult(result *ConfigureSystemResult) {
 // View rendering methods
 
 func (m *ConfigureSystemModel) viewSelectDomain() string {
-	s := "Select Configuration Domain:\n\n"
+	var content strings.Builder
+	content.WriteString("\n⚙️  Select Configuration Domain\n\n")
+
+	// Domain descriptions
+	domainDescs := map[ConfigurationDomain]string{
+		DomainSystem:  "Log level, data directory, backups",
+		DomainProfile: "Name, email, default roles",
+		DomainExport:  "Default formats and destinations",
+		DomainUI:      "Theme and animations",
+	}
+
 	for i, d := range m.context.Domains {
 		prefix := "  "
+		itemStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+
 		if i == m.selectedIndex {
-			prefix = "> "
+			prefix = "▶ "
+			itemStyle = itemStyle.Foreground(styles.ColorAccentTeal).Bold(true)
 		}
-		s += prefix + string(d) + "\n"
+
+		// Domain name with capitalization
+		domainName := strings.Title(string(d))
+		line := fmt.Sprintf("%s%s", prefix, domainName)
+		content.WriteString(itemStyle.Render(line))
+
+		// Add description in muted color
+		if desc, ok := domainDescs[d]; ok {
+			descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted)
+			content.WriteString(" " + descStyle.Render("- "+desc))
+		}
+		content.WriteString("\n")
 	}
-	s += "\n[↑/↓] Navigate | [Enter] Select | [Esc] Cancel | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewEditSettings() string {
-	s := "Edit Settings for " + string(m.domain) + ":\n\n"
+	var content strings.Builder
+	content.WriteString(fmt.Sprintf("\n📝 Edit %s Settings\n\n", strings.Title(string(m.domain))))
+
 	settings := m.context.Settings[m.domain]
 
 	for i, setting := range settings {
 		prefix := "  "
+		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+
 		if i == m.focusedSetting {
-			prefix = "> "
+			prefix = "▶ "
+			labelStyle = labelStyle.Foreground(styles.ColorAccentTeal).Bold(true)
 		}
 
-		// Show input if available
 		input, hasInput := m.settingsInputs[setting.Key]
 
-		s += prefix + setting.Label + ": "
+		// Label
+		content.WriteString(labelStyle.Render(fmt.Sprintf("%s%s: ", prefix, setting.Label)))
 
+		// Value
 		if hasInput {
 			if i == m.focusedSetting && m.editingValue {
-				// Show input in editing mode
-				s += input.View() + " (editing)"
+				content.WriteString(input.View() + " ")
+				editIndicator := lipgloss.NewStyle().Foreground(styles.ColorInfo).Render("(editing)")
+				content.WriteString(editIndicator)
 			} else {
-				// Show current value
-				s += input.Value()
+				content.WriteString(input.Value())
 			}
 		} else {
-			// Fallback if input not initialized
-			s += fmt.Sprintf("%v", setting.Value)
+			content.WriteString(fmt.Sprintf("%v", setting.Value))
 		}
+		content.WriteString("\n")
 
-		s += "\n"
-		s += "    " + setting.Description + "\n\n"
+		// Description (muted)
+		descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).PaddingLeft(4)
+		content.WriteString(descStyle.Render(setting.Description) + "\n\n")
 	}
 
-	// Dynamic footer based on editing state
-	footer := "\n↑/↓ or j/k: Navigate | Enter: Edit | Ctrl+S: Save All | Esc: Back | m: Main menu"
-	if m.editingValue {
-		footer = "\nType to edit | Enter: Confirm | Esc: Cancel"
-	}
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
 
-	return s + footer
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewReviewChanges() string {
-	s := "Review Changes for " + string(m.domain) + ":\n\n"
+	var content strings.Builder
+	content.WriteString(fmt.Sprintf("\n📋 Review Changes - %s\n\n", strings.Title(string(m.domain))))
+
 	if m.changes == nil {
-		return s + "No changes"
-	}
-	for key, modified := range m.changes.Modified {
-		original := m.changes.Original[key]
-		if original != modified {
-			s += key + ": " + fmt.Sprintf("%v", original) + " → " + fmt.Sprintf("%v", modified) + "\n"
+		noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes to review")
+		content.WriteString(noChanges)
+	} else {
+		hasChanges := false
+		for key, modified := range m.changes.Modified {
+			original := m.changes.Original[key]
+			if original != modified {
+				hasChanges = true
+				keyStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Bold(true)
+				oldStyle := lipgloss.NewStyle().Foreground(styles.ColorError).Strikethrough(true)
+				newStyle := lipgloss.NewStyle().Foreground(styles.ColorSuccess)
+
+				content.WriteString(keyStyle.Render(key) + ": ")
+				content.WriteString(oldStyle.Render(fmt.Sprintf("%v", original)))
+				content.WriteString(" → ")
+				content.WriteString(newStyle.Render(fmt.Sprintf("%v", modified)) + "\n")
+			}
+		}
+
+		if !hasChanges {
+			noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes made")
+			content.WriteString(noChanges)
 		}
 	}
-	s += "\n[Enter] Confirm | [Esc] Back | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewConfirm() string {
-	s := "Confirm Configuration Changes?\n\n"
-	s += "Domain: " + string(m.domain) + "\n"
+	var content strings.Builder
+	content.WriteString("\n❓ Confirm Configuration Changes?\n\n")
+
+	content.WriteString(fmt.Sprintf("Domain: %s\n", strings.Title(string(m.domain))))
+
 	if m.changes != nil {
 		changeCount := 0
 		for key, modified := range m.changes.Modified {
@@ -902,34 +972,73 @@ func (m *ConfigureSystemModel) viewConfirm() string {
 				changeCount++
 			}
 		}
-		s += fmt.Sprintf("Changes: %d\n", changeCount)
+		countStyle := lipgloss.NewStyle().Foreground(styles.ColorAccentTeal).Bold(true)
+		content.WriteString(fmt.Sprintf("Changes: %s\n", countStyle.Render(fmt.Sprintf("%d", changeCount))))
 	}
-	s += "\n[Y/Enter] Confirm | [N/Esc] Cancel | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewSaving() string {
-	s := "Saving configuration...\n\n"
-	s += "Please wait while changes are being saved.\n"
-	s += "\n[Esc] Back | [m] Main menu | [q] Quit"
-	return s
+	var content strings.Builder
+	content.WriteString("\n⏳ Saving Configuration...\n\n")
+
+	content.WriteString("Please wait while changes are being saved.\n\n")
+	content.WriteString("• Validating configuration\n")
+	content.WriteString("• Writing to disk\n")
+	content.WriteString("• Applying changes\n")
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorInfo).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewComplete() string {
-	s := "Configuration Updated!\n\n"
-	s += "Domain: " + string(m.domain) + "\n"
-	s += "Changes saved successfully.\n\n"
-	s += "[Enter] Done | [m] Main menu"
-	return s
+	var content strings.Builder
+	content.WriteString("\n✅ Configuration Updated!\n\n")
+
+	content.WriteString(fmt.Sprintf("Domain: %s\n", strings.Title(string(m.domain))))
+	content.WriteString("Changes saved successfully.\n")
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorSuccess).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewFailed() string {
-	s := "Configuration Failed\n\n"
+	var content strings.Builder
+	content.WriteString("\n❌ Configuration Failed\n\n")
+
 	if m.error != nil {
-		s += "Error: " + m.error.Message + "\n"
+		errorStyle := lipgloss.NewStyle().Foreground(styles.ColorError)
+		content.WriteString(errorStyle.Render("Error: "+m.error.Message) + "\n")
 	}
-	s += "\n[R] Retry | [Esc] Cancel | [m] Main menu"
-	return s
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorError).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 // ConfigCompleteMsg represents completion of a configuration save

@@ -189,73 +189,7 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 		})
 	})
 
-	Describe("View Methods", func() {
-		It("should show 'm' in SelectDomain footer", func() {
-			model.state = ConfigStateSelectDomain
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Main menu"))
-		})
-
-		It("should show 'm' in EditSettings footer", func() {
-			model.state = ConfigStateEditSettings
-			model.domain = DomainSystem
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Main menu"))
-		})
-
-		It("should show 'm' in ReviewChanges footer", func() {
-			model.state = ConfigStateReviewChanges
-			model.domain = DomainSystem
-			model.changes = &ConfigurationChanges{
-				Domain:   DomainSystem,
-				Original: make(map[string]interface{}),
-				Modified: make(map[string]interface{}),
-			}
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Main menu"))
-		})
-
-		It("should show 'm' in Confirm footer", func() {
-			model.state = ConfigStateConfirm
-			model.domain = DomainSystem
-			model.changes = &ConfigurationChanges{
-				Domain:   DomainSystem,
-				Original: make(map[string]interface{}),
-				Modified: make(map[string]interface{}),
-			}
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Main menu"))
-		})
-
-		It("should show 'esc' and 'm' in Saving footer", func() {
-			model.state = ConfigStateSaving
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Esc"))
-			Expect(view).To(ContainSubstring("Main menu"))
-		})
-
-		It("should show 'm' in Complete footer", func() {
-			model.state = ConfigStateComplete
-			model.domain = DomainSystem
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Main menu"))
-		})
-
-		It("should show 'm' in Failed footer", func() {
-			model.state = ConfigStateFailed
-			model.error = &IntentError{
-				Code:    "TEST",
-				Message: "Test error",
-			}
-			view := model.View()
-
-			Expect(view).To(ContainSubstring("Main menu"))
-		})
-	})
+	// Note: View footer tests removed - footer text is now handled by
+	// StandardView via getContextHelp() in the intent, not the model.
+	// The model's View() methods now return pure content only.
 })
