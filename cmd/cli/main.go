@@ -304,7 +304,10 @@ func handleExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 
 		for _, fact := range facts {
 			if err := svc.SaveFact(ctx, &fact); err != nil {
-				fmt.Fprintf(errOut, "Warning: Failed to save fact: %v\n", err)
+				// Silently skip if fact repository is not configured (expected in some scenarios)
+				if err.Error() != "fact repository not configured" {
+					fmt.Fprintf(errOut, "Warning: Failed to save fact: %v\n", err)
+				}
 			} else {
 				factCount++
 				if len(fact.CompetencyCategories) > 0 {
