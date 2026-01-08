@@ -26,6 +26,7 @@ func NewTestExportArtifactContext() *ExportArtifactContext {
 		// Services and repositories are nil for testing
 		ExportService:       nil,
 		CVGenerationService: nil,
+		CVConfigManager:     nil,
 		CareerService:       nil,
 		EventRepository:     nil,
 		FactRepository:      nil,
@@ -54,8 +55,9 @@ func NewTestExportArtifactContextWithServices() *ExportArtifactContext {
 		DefaultFormat:       DefaultFormats(),
 		Destinations:        DefaultDestinations(),
 		ExportService:       exportService,
-		CVGenerationService: nil, // Not needed for export
-		CareerService:       nil, // Not needed for export
+		CVGenerationService: nil,                         // Not needed for export
+		CVConfigManager:     cv.NewMemoryConfigManager(), // Provide memory config manager
+		CareerService:       nil,                         // Not needed for export
 		EventRepository:     eventRepo,
 		FactRepository:      factRepo,
 		BurstRepository:     burstRepo,
@@ -863,6 +865,105 @@ var _ = Describe("ExportArtifact Intent", func() {
 				Expect(intent.model.state).To(Equal(ExportStateSelectFormat))
 				Expect(intent.model.config).NotTo(BeNil())
 				Expect(intent.model.config.ArtifactType).To(Equal(ExportTypeEvents))
+			})
+		})
+
+		Describe("Load Available CVs", func() {
+			It("should load CVs from ConfigManager", func() {
+				// Create a config manager with test configs
+				configManager := cv.NewMemoryConfigManager()
+				config1 := &careerdomain.CVConfig{
+					Name:           "Senior Engineer CV",
+					TargetRole:     "senior_ic",
+					TargetAudience: "hiring_manager",
+				}
+				config2 := &careerdomain.CVConfig{
+					Name:           "Staff Engineer CV",
+					TargetRole:     "staff",
+					TargetAudience: "recruiter",
+				}
+				ctx := context.Background()
+				err := configManager.SaveConfig(ctx, config1)
+				Expect(err).NotTo(HaveOccurred())
+				err = configManager.SaveConfig(ctx, config2)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create intent with config manager
+				testCtx := NewTestExportArtifactContext()
+				testCtx.CVConfigManager = configManager
+				intent, err := NewExportArtifactIntent(testCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+
+				// Load CVs
+				cmd := intent.model.loadAvailableCVs()
+				Expect(cmd).NotTo(BeNil())
+
+				// Execute command and get message
+				msg := cmd()
+				cvsMsg, ok := msg.(CVsLoadedMsg)
+				Expect(ok).To(BeTrue())
+
+				// Verify CVs were loaded
+				Expect(cvsMsg.CVs).To(HaveLen(2))
+				Expect(cvsMsg.CVs[0].Name).To(Equal("Senior Engineer CV"))
+				Expect(cvsMsg.CVs[0].TargetRole).To(Equal("senior_ic"))
+				Expect(cvsMsg.CVs[1].Name).To(Equal("Staff Engineer CV"))
+				Expect(cvsMsg.CVs[1].TargetRole).To(Equal("staff"))
+			})
+
+			It("should return empty list when ConfigManager is nil", func() {
+				// Create intent without config manager
+				testCtx := NewTestExportArtifactContext()
+				testCtx.CVConfigManager = nil
+				intent, err := NewExportArtifactIntent(testCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+
+				// Load CVs
+				cmd := intent.model.loadAvailableCVs()
+				msg := cmd()
+				cvsMsg, ok := msg.(CVsLoadedMsg)
+				Expect(ok).To(BeTrue())
+
+				// Should return empty list
+				Expect(cvsMsg.CVs).To(HaveLen(0))
+			})
+
+			It("should return empty list when ConfigManager returns error", func() {
+				// Use a mock that returns error (simulate error by using fresh manager)
+				configManager := cv.NewMemoryConfigManager()
+				testCtx := NewTestExportArtifactContext()
+				testCtx.CVConfigManager = configManager
+				intent, err := NewExportArtifactIntent(testCtx)
+				Expect(err).NotTo(HaveOccurred())
+				intent.Init()
+
+				// Load CVs (empty manager returns empty list, not error)
+				cmd := intent.model.loadAvailableCVs()
+				msg := cmd()
+				cvsMsg, ok := msg.(CVsLoadedMsg)
+				Expect(ok).To(BeTrue())
+
+				// Should return empty list
+				Expect(cvsMsg.CVs).To(HaveLen(0))
+			})
+
+			It("should update availableCVs when CVsLoadedMsg is received", func() {
+				// Set up intent in SelectCV state
+				intent.model.state = ExportStateSelectCV
+
+				// Create mock CVs
+				mockCVs := []*careerdomain.CVView{
+					{Name: "Test CV", TargetRole: "Engineer"},
+				}
+
+				// Send CVsLoadedMsg
+				cmd := intent.model.Update(CVsLoadedMsg{CVs: mockCVs})
+
+				// Verify availableCVs was updated
+				Expect(intent.model.availableCVs).To(Equal(mockCVs))
+				Expect(cmd).To(BeNil())
 			})
 		})
 

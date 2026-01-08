@@ -72,7 +72,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	// Initialize intent router
 	router := intents.NewDefaultIntentRouter()
-	registerAllIntents(router, cliService, careerService, log, ctx, cvGenService, cvExportService)
+	registerAllIntents(router, cliService, careerService, log, ctx, cvGenService, cvExportService, configMgr)
 
 	// Create menu items for all intents
 	menuItems := []MenuItem{
@@ -424,7 +424,7 @@ func createDefaultCVProfiles() []*intents.CVProfile {
 }
 
 // registerAllIntents registers all 10 intents with the router
-func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context, cvGenService cv.CVGenerationService, cvExportService *cv.ExportService) {
+func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context, cvGenService cv.CVGenerationService, cvExportService *cv.ExportService, configMgr cv.ConfigManager) {
 	// CaptureEvent
 	_ = router.RegisterIntent("capture_event", func() intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
@@ -501,6 +501,7 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			Destinations:        intents.DefaultDestinations(),
 			ExportService:       cvExportService,
 			CVGenerationService: cvGenService,
+			CVConfigManager:     configMgr,
 			CareerService:       careerService,
 			EventRepository:     careerService.GetEventRepository(),
 			FactRepository:      careerService.GetFactRepository(),

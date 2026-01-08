@@ -61,6 +61,7 @@ type ExportArtifactContext struct {
 	// Services
 	ExportService       *cv.ExportService
 	CVGenerationService cv.CVGenerationService
+	CVConfigManager     cv.ConfigManager
 	CareerService       *career.Service
 
 	// Repositories
@@ -568,9 +569,36 @@ func (m *ExportArtifactModel) updateFailed(msg tea.Msg) tea.Cmd {
 // loadAvailableCVs fetches available CVs from the CV generation service
 func (m *ExportArtifactModel) loadAvailableCVs() tea.Cmd {
 	return func() tea.Msg {
-		// TODO: In real implementation, fetch from CVGenerationService
-		// For now, return empty list (tests will handle mocking)
-		return CVsLoadedMsg{CVs: []*careerdomain.CVView{}}
+		// Get context
+		ctx := m.context.AppContext
+		if ctx == nil {
+			ctx = context.Background()
+		}
+
+		// Fetch CV configurations from ConfigManager
+		if m.context.CVConfigManager == nil {
+			// No config manager - return empty list
+			return CVsLoadedMsg{CVs: []*careerdomain.CVView{}}
+		}
+
+		configs, err := m.context.CVConfigManager.ListConfigs(ctx)
+		if err != nil {
+			// On error, return empty list (CV selection is optional)
+			return CVsLoadedMsg{CVs: []*careerdomain.CVView{}}
+		}
+
+		// Convert configs to CVView metadata
+		cvs := make([]*careerdomain.CVView, 0, len(configs))
+		for _, config := range configs {
+			cvs = append(cvs, &careerdomain.CVView{
+				Name:           config.Name,
+				TargetRole:     config.TargetRole,
+				TargetAudience: config.TargetAudience,
+				GeneratedAt:    config.UpdatedAt,
+			})
+		}
+
+		return CVsLoadedMsg{CVs: cvs}
 	}
 }
 
