@@ -72,7 +72,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	// Initialize intent router
 	router := intents.NewDefaultIntentRouter()
-	registerAllIntents(router, cliService, careerService, log, ctx, cvGenService, cvExportService, configMgr)
+	registerAllIntents(router, cliService, careerService, log, ctx, cvGenService, cvExportService)
 
 	// Create menu items for all intents
 	menuItems := []MenuItem{
@@ -424,7 +424,7 @@ func createDefaultCVProfiles() []*intents.CVProfile {
 }
 
 // registerAllIntents registers all 10 intents with the router
-func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context, cvGenService cv.CVGenerationService, cvExportService *cv.ExportService, configMgr cv.ConfigManager) {
+func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context, cvGenService cv.CVGenerationService, cvExportService *cv.ExportService) {
 	// CaptureEvent
 	_ = router.RegisterIntent("capture_event", func() intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
@@ -495,18 +495,16 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	// ExportArtifact
 	_ = router.RegisterIntent("export_artifact", func() intents.Intent {
 		exportCtx := &intents.ExportArtifactContext{
-			ArtifactTypes:       intents.DefaultArtifactTypes(),
-			SupportedFormats:    intents.DefaultSupportedFormats(),
-			DefaultFormat:       intents.DefaultFormats(),
-			Destinations:        intents.DefaultDestinations(),
-			ExportService:       cvExportService,
-			CVGenerationService: cvGenService,
-			CVConfigManager:     configMgr,
-			CareerService:       careerService,
-			EventRepository:     careerService.GetEventRepository(),
-			FactRepository:      careerService.GetFactRepository(),
-			BurstRepository:     careerService.GetBurstRepository(),
-			AppContext:          ctx,
+			ArtifactTypes:    intents.DefaultArtifactTypes(),
+			SupportedFormats: intents.DefaultSupportedFormats(),
+			DefaultFormat:    intents.DefaultFormats(),
+			Destinations:     intents.DefaultDestinations(),
+			ExportService:    cvExportService,
+			CareerService:    careerService,
+			EventRepository:  careerService.GetEventRepository(),
+			FactRepository:   careerService.GetFactRepository(),
+			BurstRepository:  careerService.GetBurstRepository(),
+			AppContext:       ctx,
 		}
 		intent, err := intents.NewExportArtifactIntent(exportCtx)
 		if err != nil {
