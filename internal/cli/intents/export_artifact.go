@@ -1000,235 +1000,199 @@ func (m *ExportArtifactModel) generatePreview() {
 }
 
 func (m *ExportArtifactModel) generateCVPreview() string {
-	switch m.config.Format {
-	case ExportFormatJSON:
-		return `{
-  "cv": {
-    "profile": {
-      "name": "John Doe",
-      "title": "Senior Software Engineer",
-      "summary": "Experienced software engineer with 8+ years in full-stack development"
-    },
-    "experience": [
-      {
-        "company": "Tech Corp",
-        "title": "Senior Engineer",
-        "duration": "2022 - Present",
-        "description": "Led team of 5 engineers on microservices architecture"
-      }
-    ],
-    "skills": ["Go", "Rust", "Python", "TypeScript"],
-    "education": [
-      {
-        "institution": "University",
-        "degree": "BS Computer Science",
-        "year": "2016"
-      }
-    ]
-  }
-}`
-	case ExportFormatMD:
-		return `# John Doe - Senior Software Engineer
-
-## Summary
-Experienced software engineer with 8+ years in full-stack development
-
-## Experience
-
-### Tech Corp | Senior Engineer (2022 - Present)
-- Led team of 5 engineers on microservices architecture
-- Improved system performance by 40%
-- Mentored 3 junior developers
-
-### Previous Company | Engineer (2020 - 2022)
-- Developed REST APIs serving 1M+ requests daily
-
-## Skills
-Go, Rust, Python, TypeScript, Kubernetes, Docker
-
-## Education
-**BS Computer Science** - University (2016)`
-	case ExportFormatPDF:
-		return "[PDF Preview - Binary format]\n\nWhen exported, this will contain a formatted PDF version of your CV with professional styling."
-	default:
-		return "Preview not available for this format"
+	// Check if CV is selected
+	if m.selectedCV == nil {
+		return "No CV selected for export.\n\nPlease select a CV first."
 	}
+
+	// Check if export service is available
+	if m.context.ExportService == nil {
+		return "Preview not available - export service not initialized"
+	}
+
+	ctx := m.context.AppContext
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Generate preview based on format
+	var content string
+	var err error
+
+	// Build empty bullets map (kept for backward compatibility)
+	bulletsMap := make(map[string][]*careerdomain.CVBullet)
+
+	switch m.config.Format {
+	case ExportFormatTXT:
+		content, err = m.context.ExportService.ExportToText(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
+	case ExportFormatMD:
+		content, err = m.context.ExportService.ExportToMarkdown(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
+	case ExportFormatYAML:
+		content, err = m.context.ExportService.ExportToYAML(ctx, m.selectedCV, m.selectedCV.Sections, bulletsMap)
+	default:
+		return "Preview not available for format: " + string(m.config.Format)
+	}
+
+	if err != nil {
+		return fmt.Sprintf("Error generating CV preview: %v", err)
+	}
+
+	// Truncate if preview is too long (keep first 2000 characters)
+	if len(content) > 2000 {
+		content = content[:2000] + "\n\n...(preview truncated)..."
+	}
+
+	return content
 }
 
 func (m *ExportArtifactModel) generateEventsPreview() string {
+	// Check if repository is available
+	if m.context.EventRepository == nil {
+		return "Preview not available - repository not initialized"
+	}
+
+	ctx := m.context.AppContext
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Fetch events from repository
+	events, err := m.context.EventRepository.List(ctx, careerrepo.ListFilters{
+		Limit: 10, // Limit preview to first 10 events
+	})
+	if err != nil {
+		return fmt.Sprintf("Error loading events: %v", err)
+	}
+
+	if len(events) == 0 {
+		return "No events found.\n\nCreate some career events first to preview exports."
+	}
+
+	// Generate preview based on format
+	var content string
 	switch m.config.Format {
 	case ExportFormatJSON:
-		return `{
-  "events": [
-    {
-      "id": "evt-001",
-      "title": "Led team standup meeting",
-      "date": "2025-12-15",
-      "company": "Acme Corp",
-      "project": "Platform Redesign",
-      "description": "Facilitated daily standup with 8 team members",
-      "impact": "high",
-      "tags": ["leadership", "communication"]
-    },
-    {
-      "id": "evt-002",
-      "title": "Completed API integration",
-      "date": "2025-12-14",
-      "company": "Acme Corp",
-      "project": "Platform Redesign",
-      "description": "Integrated payment gateway API",
-      "impact": "medium",
-      "tags": ["technical", "backend"]
-    }
-  ],
-  "total_events": 24,
-  "date_range": "2025-12-01 to 2025-12-31"
-}`
+		content, err = marshalToJSON(events)
 	case ExportFormatCSV:
-		return `date,title,company,project,description,impact,tags
-2025-12-15,Led team standup meeting,Acme Corp,Platform Redesign,Facilitated daily standup with 8 team members,high,leadership;communication
-2025-12-14,Completed API integration,Acme Corp,Platform Redesign,Integrated payment gateway API,medium,technical;backend
-2025-12-13,Code review completed,Acme Corp,Platform Redesign,Reviewed 12 pull requests from team,medium,code-review
-...
-Total: 24 events`
+		content, err = marshalEventsToCSV(events)
+	case ExportFormatYAML:
+		content, err = marshalToYAML(events)
 	case ExportFormatTXT:
-		return `CAREER EVENTS EXPORT
-====================
-
-Event 1: Led team standup meeting
-Date: 2025-12-15
-Company: Acme Corp
-Project: Platform Redesign
-Description: Facilitated daily standup with 8 team members
-Impact: High
-Tags: leadership, communication
-
-Event 2: Completed API integration
-Date: 2025-12-14
-Company: Acme Corp
-Project: Platform Redesign
-Description: Integrated payment gateway API
-Impact: Medium
-Tags: technical, backend
-
-...
-
-Total Events: 24
-Date Range: 2025-12-01 to 2025-12-31`
+		content, err = marshalEventsToText(events)
 	default:
-		return "Preview not available for this format"
+		return "Preview not available for format: " + string(m.config.Format)
 	}
+
+	if err != nil {
+		return fmt.Sprintf("Error generating events preview: %v", err)
+	}
+
+	// Truncate if preview is too long
+	if len(content) > 2000 {
+		content = content[:2000] + "\n\n...(preview truncated, showing first 10 events)..."
+	}
+
+	return content
 }
 
 func (m *ExportArtifactModel) generateFactsPreview() string {
+	// Check if repository is available
+	if m.context.FactRepository == nil {
+		return "Preview not available - repository not initialized"
+	}
+
+	ctx := m.context.AppContext
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Fetch facts from repository
+	facts, err := m.context.FactRepository.List(ctx, careerrepo.FactListFilters{
+		Limit: 10, // Limit preview to first 10 facts
+	})
+	if err != nil {
+		return fmt.Sprintf("Error loading facts: %v", err)
+	}
+
+	if len(facts) == 0 {
+		return "No facts found.\n\nExtract some facts from your career events first to preview exports."
+	}
+
+	// Generate preview based on format
+	var content string
 	switch m.config.Format {
 	case ExportFormatJSON:
-		return `{
-  "facts": [
-    {
-      "id": "fact-001",
-      "title": "Led 8-person team",
-      "category": "leadership",
-      "verified": true,
-      "source_events": ["evt-001", "evt-002"],
-      "confidence": 0.95,
-      "extracted_date": "2025-12-15"
-    },
-    {
-      "id": "fact-002",
-      "title": "Proficient in Go and Rust",
-      "category": "technical",
-      "verified": true,
-      "source_events": ["evt-003", "evt-004"],
-      "confidence": 0.98,
-      "extracted_date": "2025-12-14"
-    }
-  ],
-  "total_facts": 12
-}`
+		content, err = marshalToJSON(facts)
 	case ExportFormatCSV:
-		return `id,title,category,verified,confidence,source_events,extracted_date
-fact-001,Led 8-person team,leadership,true,0.95,"evt-001,evt-002",2025-12-15
-fact-002,Proficient in Go and Rust,technical,true,0.98,"evt-003,evt-004",2025-12-14
-fact-003,5+ years backend development,experience,true,0.92,"evt-005,evt-006",2025-12-13
-...
-Total: 12 facts`
+		content, err = marshalFactsToCSV(facts)
+	case ExportFormatYAML:
+		content, err = marshalToYAML(facts)
 	case ExportFormatTXT:
-		return `EXTRACTED FACTS
-================
-
-Fact 1: Led 8-person team
-Category: Leadership
-Verified: Yes
-Confidence: 95%
-Source Events: 2
-Extracted: 2025-12-15
-
-Fact 2: Proficient in Go and Rust
-Category: Technical
-Verified: Yes
-Confidence: 98%
-Source Events: 2
-Extracted: 2025-12-14
-
-...
-
-Total Facts: 12`
+		content, err = marshalFactsToText(facts)
 	default:
-		return "Preview not available for this format"
+		return "Preview not available for format: " + string(m.config.Format)
 	}
+
+	if err != nil {
+		return fmt.Sprintf("Error generating facts preview: %v", err)
+	}
+
+	// Truncate if preview is too long
+	if len(content) > 2000 {
+		content = content[:2000] + "\n\n...(preview truncated, showing first 10 facts)..."
+	}
+
+	return content
 }
 
 func (m *ExportArtifactModel) generateBurstsPreview() string {
+	// Check if repository is available
+	if m.context.BurstRepository == nil {
+		return "Preview not available - repository not initialized"
+	}
+
+	ctx := m.context.AppContext
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Fetch bursts from repository
+	bursts, err := m.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{
+		Limit: 10, // Limit preview to first 10 bursts
+	})
+	if err != nil {
+		return fmt.Sprintf("Error loading bursts: %v", err)
+	}
+
+	if len(bursts) == 0 {
+		return "No bursts found.\n\nCreate some bursts from your career events first to preview exports."
+	}
+
+	// Generate preview based on format
+	var content string
 	switch m.config.Format {
 	case ExportFormatJSON:
-		return `{
-  "bursts": [
-    {
-      "id": "burst-001",
-      "title": "Platform Redesign Phase 1",
-      "start_date": "2025-11-01",
-      "end_date": "2025-12-15",
-      "description": "Complete redesign of user-facing platform",
-      "impact": "high",
-      "team_size": 8,
-      "key_achievements": [
-        "30% improvement in page load time",
-        "Reduced API calls by 40%",
-        "Improved user satisfaction from 3.2 to 4.5 stars"
-      ]
-    }
-  ],
-  "total_bursts": 3
-}`
+		content, err = marshalToJSON(bursts)
 	case ExportFormatCSV:
-		return `id,title,start_date,end_date,duration_days,team_size,impact,key_achievements
-burst-001,Platform Redesign Phase 1,2025-11-01,2025-12-15,45,8,high,"30% improvement in page load time; Reduced API calls by 40%"
-burst-002,Backend Optimization,2025-10-15,2025-11-30,46,5,medium,"Reduced database queries by 50%"
-...
-Total: 3 bursts`
+		content, err = marshalBurstsToCSV(bursts)
+	case ExportFormatYAML:
+		content, err = marshalToYAML(bursts)
 	case ExportFormatTXT:
-		return `CAREER BURSTS
-==============
-
-Burst 1: Platform Redesign Phase 1
-Duration: 2025-11-01 to 2025-12-15 (45 days)
-Team Size: 8 people
-Impact: High
-
-Key Achievements:
-- 30% improvement in page load time
-- Reduced API calls by 40%
-- Improved user satisfaction from 3.2 to 4.5 stars
-
-Description: Complete redesign of user-facing platform
-
-...
-
-Total Bursts: 3`
+		content, err = marshalBurstsToText(bursts)
 	default:
-		return "Preview not available for this format"
+		return "Preview not available for format: " + string(m.config.Format)
 	}
+
+	if err != nil {
+		return fmt.Sprintf("Error generating bursts preview: %v", err)
+	}
+
+	// Truncate if preview is too long
+	if len(content) > 2000 {
+		content = content[:2000] + "\n\n...(preview truncated, showing first 10 bursts)..."
+	}
+
+	return content
 }
 
 func (m *ExportArtifactModel) generateProfilePreview() string {
