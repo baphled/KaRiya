@@ -14,6 +14,11 @@ import (
 	"golang.org/x/text/language"
 )
 
+// titleCase converts a string to title case using the proper Go 1.18+ API
+func titleCase(s string) string {
+	return cases.Title(language.English).String(s)
+}
+
 // ConfigurationDomain represents a configuration domain (e.g., "system", "profile", "export")
 type ConfigurationDomain string
 
@@ -849,7 +854,7 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 		}
 
 		// Domain name with capitalization
-		domainName := cases.Title(language.English).String(string(d))
+		domainName := titleCase(string(d))
 		line := fmt.Sprintf("%s%s", prefix, domainName)
 		content.WriteString(itemStyle.Render(line))
 
@@ -873,7 +878,7 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 
 func (m *ConfigureSystemModel) viewEditSettings() string {
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("\n📝 Edit %s Settings\n\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("\n📝 Edit %s Settings\n\n", titleCase(string(m.domain))))
 
 	settings := m.context.Settings[m.domain]
 
@@ -922,7 +927,7 @@ func (m *ConfigureSystemModel) viewEditSettings() string {
 
 func (m *ConfigureSystemModel) viewReviewChanges() string {
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("\n📋 Review Changes - %s\n\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("\n📋 Review Changes - %s\n\n", titleCase(string(m.domain))))
 
 	if m.changes == nil {
 		noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes to review")
@@ -964,7 +969,7 @@ func (m *ConfigureSystemModel) viewConfirm() string {
 	var content strings.Builder
 	content.WriteString("\n❓ Confirm Configuration Changes?\n\n")
 
-	content.WriteString(fmt.Sprintf("Domain: %s\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("Domain: %s\n", titleCase(string(m.domain))))
 
 	if m.changes != nil {
 		changeCount := 0
@@ -1011,7 +1016,7 @@ func (m *ConfigureSystemModel) viewComplete() string {
 	var content strings.Builder
 	content.WriteString("\n✅ Configuration Updated!\n\n")
 
-	content.WriteString(fmt.Sprintf("Domain: %s\n", cases.Title(language.English).String(string(m.domain))))
+	content.WriteString(fmt.Sprintf("Domain: %s\n", titleCase(string(m.domain))))
 	content.WriteString("Changes saved successfully.\n")
 
 	cardStyle := lipgloss.NewStyle().

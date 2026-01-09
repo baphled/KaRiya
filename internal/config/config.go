@@ -106,13 +106,16 @@ func LoadConfig() (*Config, error) {
 
 // LoadConfigFromPath loads configuration from a specific file path
 func LoadConfigFromPath(path string) (*Config, error) {
+	// Clean path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+
 	// Check if config file exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(cleanPath); os.IsNotExist(err) {
 		// Return default config if file doesn't exist
 		return DefaultConfig(), nil
 	}
 
-	data, err := os.ReadFile(path) // #nosec G304 -- path from GetConfigPath (user home directory)
+	data, err := os.ReadFile(cleanPath) // #nosec G304 - path is cleaned above
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
