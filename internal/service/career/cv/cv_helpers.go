@@ -1,6 +1,7 @@
 package cv
 
 import (
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -34,6 +35,7 @@ type NarrativeProfileData struct {
 }
 
 // DefaultNarrativeProfile returns the default narrative profile data.
+// This is used as fallback when no profile is configured.
 func DefaultNarrativeProfile() *NarrativeProfileData {
 	return &NarrativeProfileData{
 		Name:      "Yomi Colledge",
@@ -60,6 +62,67 @@ func DefaultNarrativeProfile() *NarrativeProfileData {
 			"Production-first mindset",
 		},
 	}
+}
+
+// NarrativeProfileFromConfig creates a NarrativeProfileData from config.ProfileConfig.
+// Falls back to default values for any empty fields.
+func NarrativeProfileFromConfig(cfg *config.ProfileConfig) *NarrativeProfileData {
+	if cfg == nil {
+		return DefaultNarrativeProfile()
+	}
+
+	defaults := DefaultNarrativeProfile()
+
+	profile := &NarrativeProfileData{
+		Name:              cfg.Name,
+		Role:              cfg.Title,
+		Location:          cfg.Location,
+		Email:             cfg.Email,
+		GitHub:            cfg.GitHub,
+		Portfolio:         cfg.Portfolio,
+		CoreStrengths:     cfg.CoreStrengths,
+		Languages:         cfg.Languages,
+		Frontend:          cfg.Frontend,
+		Systems:           cfg.Systems,
+		ValuePropositions: cfg.WhatIBring,
+	}
+
+	// Use defaults for empty fields
+	if profile.Name == "" {
+		profile.Name = defaults.Name
+	}
+	if profile.Role == "" {
+		profile.Role = defaults.Role
+	}
+	if profile.Location == "" {
+		profile.Location = defaults.Location
+	}
+	if profile.Email == "" {
+		profile.Email = defaults.Email
+	}
+	if profile.GitHub == "" {
+		profile.GitHub = defaults.GitHub
+	}
+	if profile.Portfolio == "" {
+		profile.Portfolio = defaults.Portfolio
+	}
+	if len(profile.CoreStrengths) == 0 {
+		profile.CoreStrengths = defaults.CoreStrengths
+	}
+	if profile.Languages == "" {
+		profile.Languages = defaults.Languages
+	}
+	if profile.Frontend == "" {
+		profile.Frontend = defaults.Frontend
+	}
+	if profile.Systems == "" {
+		profile.Systems = defaults.Systems
+	}
+	if len(profile.ValuePropositions) == 0 {
+		profile.ValuePropositions = defaults.ValuePropositions
+	}
+
+	return profile
 }
 
 // filterBulletsByConfidence filters bullets to only include those with confidence >= threshold.

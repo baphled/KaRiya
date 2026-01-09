@@ -262,6 +262,62 @@ func settingsFromConfig(cfg *config.Config) map[ConfigurationDomain][]*Configura
 				Description:  "Your email address",
 			},
 			{
+				Key:          "title",
+				Label:        "Professional Title",
+				Value:        cfg.Profile.Title,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your professional title (e.g., Senior Software Engineer)",
+			},
+			{
+				Key:          "location",
+				Label:        "Location",
+				Value:        cfg.Profile.Location,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your location (e.g., London, UK)",
+			},
+			{
+				Key:          "github",
+				Label:        "GitHub URL",
+				Value:        cfg.Profile.GitHub,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your GitHub profile URL",
+			},
+			{
+				Key:          "portfolio",
+				Label:        "Portfolio URL",
+				Value:        cfg.Profile.Portfolio,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your portfolio or personal website URL",
+			},
+			{
+				Key:          "languages",
+				Label:        "Programming Languages",
+				Value:        cfg.Profile.Languages,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your programming languages (comma-separated)",
+			},
+			{
+				Key:          "frontend",
+				Label:        "Frontend Technologies",
+				Value:        cfg.Profile.Frontend,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your frontend technologies (comma-separated)",
+			},
+			{
+				Key:          "systems",
+				Label:        "Systems/Infrastructure",
+				Value:        cfg.Profile.Systems,
+				DefaultValue: "",
+				Type:         "string",
+				Description:  "Your systems/infrastructure expertise (comma-separated)",
+			},
+			{
 				Key:          "default_role",
 				Label:        "Default Role",
 				Value:        cfg.Profile.DefaultRole,
@@ -881,6 +937,20 @@ func applyProfileChange(prof *config.ProfileConfig, key string, value interface{
 		prof.Name = value.(string)
 	case "email":
 		prof.Email = value.(string)
+	case "title":
+		prof.Title = value.(string)
+	case "location":
+		prof.Location = value.(string)
+	case "github":
+		prof.GitHub = value.(string)
+	case "portfolio":
+		prof.Portfolio = value.(string)
+	case "languages":
+		prof.Languages = value.(string)
+	case "frontend":
+		prof.Frontend = value.(string)
+	case "systems":
+		prof.Systems = value.(string)
 	case "default_role":
 		prof.DefaultRole = value.(string)
 	case "default_audience":
@@ -932,7 +1002,7 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 	// Domain descriptions
 	domainDescs := map[ConfigurationDomain]string{
 		DomainSystem:  "Log level, data directory, backups",
-		DomainProfile: "Name, email, default roles",
+		DomainProfile: "Name, email, title, skills, CV profile",
 		DomainExport:  "Default formats and destinations",
 		DomainUI:      "Theme and animations",
 	}

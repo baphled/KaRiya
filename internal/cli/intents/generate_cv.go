@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -84,6 +85,9 @@ type GenerateCVContext struct {
 
 	// ExportService exports CVs to various formats
 	ExportService *cv.ExportService
+
+	// ProfileConfig is the user's profile configuration for narrative CVs
+	ProfileConfig *config.ProfileConfig
 
 	// AppContext is the background context for operations
 	AppContext context.Context

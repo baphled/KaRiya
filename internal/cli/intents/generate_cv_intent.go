@@ -1204,8 +1204,9 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 		// Convert intent CVStructure to service CVStructure
 		structure := cv.CVStructure(i.state.selectedCVStructure)
 
-		// Export using structure-aware Export() method
-		content, err := i.context.ExportService.Export(ctx, i.state.generatedCV, sections, bulletsMap, structure, exportFormat)
+		// Export using structure-aware ExportWithProfile() method
+		// Pass the user's profile config for narrative CVs
+		content, err := i.context.ExportService.ExportWithProfile(ctx, i.state.generatedCV, sections, bulletsMap, structure, exportFormat, i.context.ProfileConfig)
 		if err != nil {
 			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to export: %v", err)}
 		}

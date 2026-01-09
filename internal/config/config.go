@@ -31,6 +31,17 @@ type ProfileConfig struct {
 	Email           string `yaml:"email"`
 	DefaultRole     string `yaml:"default_role"`
 	DefaultAudience string `yaml:"default_audience"`
+
+	// Narrative CV profile fields
+	Title         string   `yaml:"title"`          // e.g., "Senior Software Engineer / Technical Consultant"
+	Location      string   `yaml:"location"`       // e.g., "Remote (UK)"
+	GitHub        string   `yaml:"github"`         // e.g., "https://github.com/username"
+	Portfolio     string   `yaml:"portfolio"`      // e.g., "http://portfolio.example.com"
+	CoreStrengths []string `yaml:"core_strengths"` // List of core strengths
+	Languages     string   `yaml:"languages"`      // e.g., "Ruby, Go, PHP, C/C++, JavaScript, Shell"
+	Frontend      string   `yaml:"frontend"`       // e.g., "Vue.js, React"
+	Systems       string   `yaml:"systems"`        // e.g., "Linux, SQL, APIs, CI/CD, automation"
+	WhatIBring    []string `yaml:"what_i_bring"`   // List of value propositions
 }
 
 // CVConfig contains CV generation configuration
@@ -68,6 +79,15 @@ func DefaultConfig() *Config {
 			Email:           "",
 			DefaultRole:     "senior_ic",
 			DefaultAudience: "technical",
+			Title:           "",
+			Location:        "",
+			GitHub:          "",
+			Portfolio:       "",
+			CoreStrengths:   []string{},
+			Languages:       "",
+			Frontend:        "",
+			Systems:         "",
+			WhatIBring:      []string{},
 		},
 		CV: CVConfig{
 			DefaultFormat: "markdown",

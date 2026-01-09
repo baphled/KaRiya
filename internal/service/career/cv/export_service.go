@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"gopkg.in/yaml.v3"
@@ -332,7 +333,15 @@ func (es *ExportService) CopyToClipboard(ctx context.Context, content string) er
 
 // Export exports a CV using the specified structure and format.
 // For YAML format, always uses standard structure (it's a data format).
+// Uses default profile for narrative structure.
 func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure CVStructure, format ExportFormat) (string, error) {
+	return es.ExportWithProfile(ctx, cv, sections, bullets, structure, format, nil)
+}
+
+// ExportWithProfile exports a CV using the specified structure, format, and profile config.
+// For YAML format, always uses standard structure (it's a data format).
+// If profileCfg is nil, uses default profile.
+func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure CVStructure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
 	if cv == nil {
 		return "", fmt.Errorf("CV view is nil")
 	}
@@ -345,7 +354,7 @@ func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections
 	// Route to structure-specific renderer
 	switch structure {
 	case CVStructureNarrative:
-		return es.exportNarrative(ctx, cv, sections, format)
+		return es.exportNarrativeWithProfile(ctx, cv, sections, format, profileCfg)
 	case CVStructureStandard:
 		return es.exportStandard(ctx, cv, sections, bullets, format)
 	default:
@@ -365,22 +374,32 @@ func (es *ExportService) exportStandard(ctx context.Context, cv *career.CVView, 
 	}
 }
 
-// exportNarrative exports using the narrative CV structure.
+// exportNarrative exports using the narrative CV structure with default profile.
 func (es *ExportService) exportNarrative(ctx context.Context, cv *career.CVView, sections []*career.CVSection, format ExportFormat) (string, error) {
+	return es.exportNarrativeWithProfile(ctx, cv, sections, format, nil)
+}
+
+// exportNarrativeWithProfile exports using the narrative CV structure with optional profile config.
+func (es *ExportService) exportNarrativeWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
 	switch format {
 	case ExportFormatText:
-		return es.exportNarrativeText(ctx, cv, sections)
+		return es.exportNarrativeTextWithProfile(ctx, cv, sections, profileCfg)
 	case ExportFormatMarkdown:
-		return es.exportNarrativeMarkdown(ctx, cv, sections)
+		return es.exportNarrativeMarkdownWithProfile(ctx, cv, sections, profileCfg)
 	default:
 		return "", fmt.Errorf("unknown export format: %s", format)
 	}
 }
 
-// exportNarrativeText exports narrative CV to plain text format.
+// exportNarrativeText exports narrative CV to plain text format with default profile.
 func (es *ExportService) exportNarrativeText(ctx context.Context, cv *career.CVView, sections []*career.CVSection) (string, error) {
+	return es.exportNarrativeTextWithProfile(ctx, cv, sections, nil)
+}
+
+// exportNarrativeTextWithProfile exports narrative CV to plain text format with optional profile config.
+func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, profileCfg *config.ProfileConfig) (string, error) {
 	var buf bytes.Buffer
-	profile := DefaultNarrativeProfile()
+	profile := NarrativeProfileFromConfig(profileCfg)
 
 	// Profile header
 	buf.WriteString(strings.ToUpper(profile.Name) + "\n")
@@ -463,10 +482,15 @@ func (es *ExportService) exportNarrativeText(ctx context.Context, cv *career.CVV
 	return buf.String(), nil
 }
 
-// exportNarrativeMarkdown exports narrative CV to markdown format.
+// exportNarrativeMarkdown exports narrative CV to markdown format with default profile.
 func (es *ExportService) exportNarrativeMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection) (string, error) {
+	return es.exportNarrativeMarkdownWithProfile(ctx, cv, sections, nil)
+}
+
+// exportNarrativeMarkdownWithProfile exports narrative CV to markdown format with optional profile config.
+func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, profileCfg *config.ProfileConfig) (string, error) {
 	var buf bytes.Buffer
-	profile := DefaultNarrativeProfile()
+	profile := NarrativeProfileFromConfig(profileCfg)
 
 	// Profile header
 	buf.WriteString(fmt.Sprintf("# %s\n\n", profile.Name))
