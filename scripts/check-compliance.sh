@@ -103,9 +103,17 @@ echo "------------------------------------------------"
 
 if command -v ginkgo &> /dev/null; then
     # Using Ginkgo
+    # Exclude mock packages, test utilities, and packages with no statements from coverage calculation
     COVERAGE_OUTPUT=$(go test -cover ./... 2>/dev/null || true)
     if [ -n "$COVERAGE_OUTPUT" ]; then
-        COVERAGE=$(echo "$COVERAGE_OUTPUT" | grep -oP 'coverage: \K[0-9.]+' | awk '{sum+=$1; count++} END {if(count>0) print sum/count; else print 0}')
+        # Filter out mocks, testutil (but keep e2e), and packages with 0.0% or "no test files"
+        COVERAGE=$(echo "$COVERAGE_OUTPUT" | \
+            grep -v '/mocks' | \
+            grep -v 'testutil[^/]' | \
+            grep -v 'test_all_views' | \
+            grep -v '\[no test' | \
+            grep -oP 'coverage: \K[0-9.]+' | \
+            awk '$1 > 0 {sum+=$1; count++} END {if(count>0) printf "%.4f", sum/count; else print 0}')
         COVERAGE_INT=$(printf "%.0f" "$COVERAGE")
 
         if [ "$COVERAGE_INT" -ge 80 ]; then
