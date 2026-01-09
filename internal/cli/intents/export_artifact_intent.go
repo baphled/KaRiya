@@ -2,9 +2,7 @@ package intents
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -14,9 +12,6 @@ type ExportArtifactIntent struct {
 	*BaseIntent
 
 	model *ExportArtifactModel
-
-	// loadingRotator rotates through export-specific loading messages
-	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewExportArtifactIntent creates a new ExportArtifact intent
@@ -30,19 +25,9 @@ func NewExportArtifactIntent(context *ExportArtifactContext) (*ExportArtifactInt
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
 
-	// Create loading message rotator with export-specific messages
-	loadingRotator := components.NewLoadingMessageRotator([]string{
-		"📦 Preparing export...",
-		"🔍 Gathering data...",
-		"✨ Formatting output...",
-		"💾 Writing file...",
-		"✅ Export complete!",
-	}, 2*time.Second)
-
 	return &ExportArtifactIntent{
-		BaseIntent:     base,
-		model:          model,
-		loadingRotator: loadingRotator,
+		BaseIntent: base,
+		model:      model,
 	}, nil
 }
 
