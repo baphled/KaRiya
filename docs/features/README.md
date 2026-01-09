@@ -7,10 +7,10 @@ This directory contains detailed specifications for each feature of the KaRiya C
 ### Core Features
 
 1. **[01-career-event-capture.md](01-career-event-capture.md)**
-   - Event capture input modes (Timeline Journaling, CV Backfill, Manual Entry)
+   - Event capture strategies (Quick Capture, Manual Capture)
    - Validation rules and constraints
    - Allowed tags and metadata
-   - Date handling and restrictions
+   - Date handling (no restrictions)
 
 2. **[03-burst-fact-extraction.md](03-burst-fact-extraction.md)**
    - Burst grouping (related events)
@@ -276,8 +276,8 @@ For each feature, ensure:
 
 ### Example 2: Backfilling Career History
 
-1. User switches to CV Backfill mode (Feature 01, Feature 06)
-2. User enters historical events (Feature 01)
+1. User selects Manual Capture strategy (Feature 01, Feature 06)
+2. User enters historical events with all details (Feature 01)
 3. System validates dates and tags (Feature 08)
 4. System infers competencies (Feature 03)
 5. Events stored in canonical format (Feature 05)
