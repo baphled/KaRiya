@@ -10,11 +10,11 @@
 ## Table of Contents
 
 1. [Vision & Goals](#vision--goals)
-2. [Theme System Architecture](#theme-system-architecture)
-3. [Color Palette Structure](#color-palette-structure)
-4. [Style Set Structure](#style-set-structure)
-5. [Component Specifications](#component-specifications)
-6. [Animation Specifications](#animation-specifications)
+2. [Existing Libraries](#existing-libraries)
+3. [Theme System Architecture](#theme-system-architecture)
+4. [Color Palette Structure](#color-palette-structure)
+5. [Style Set Structure](#style-set-structure)
+6. [Component Integration](#component-integration)
 7. [Responsive Design](#responsive-design)
 8. [Terminal Detection](#terminal-detection)
 9. [Integration Guide](#integration-guide)
@@ -48,6 +48,41 @@ The visual overhaul draws inspiration from **btop** - a modern, polished termina
 - Custom user-defined themes (can be added later)
 - Per-component theme overrides
 - CSS-like stylesheets
+- Reinventing existing Charm components
+
+---
+
+## Existing Libraries
+
+### Already Available in KaRiya
+
+We leverage the excellent Charmbracelet ecosystem already in our dependencies:
+
+| Package | Purpose | Status |
+|---------|---------|--------|
+| `bubbles/progress` | Progress bars with gradient support | Available |
+| `bubbles/list` | Lists with selection, filtering, pagination | Available |
+| `bubbles/table` | Tables with selection and styling | Available |
+| `bubbles/spinner` | Loading spinners | Available |
+| `bubbles/help` | Help key bindings display | Available |
+| `bubbles/viewport` | Scrollable content areas | Available |
+| `bubbles/paginator` | Pagination controls | Available |
+| `harmonica` | Spring-based animations | Available |
+| `lipgloss` | Styling and layout | Available |
+| `huh` | Form handling | Available |
+
+### To Add
+
+| Package | Purpose | Reason |
+|---------|---------|--------|
+| `glamour` | Markdown rendering | CV preview rendering |
+
+### Key Principle
+
+**Do not reinvent existing components.** Instead:
+1. Use existing bubbles components
+2. Apply theme-aware styling to them
+3. Create thin wrappers only when necessary for theme integration
 
 ---
 
@@ -312,225 +347,240 @@ func GenerateStyles(palette *ColorPalette) *StyleSet {
 
 ---
 
-## Component Specifications
+## Component Integration
 
-### 1. SelectionList
+The goal is to apply theme-aware styling to existing Charm components, not to rebuild them.
 
-Enhanced list component with visual highlighting for selected items.
+### 1. bubbles/list - Selection Lists
 
-**Features:**
-- Full-width background highlighting on selected item
-- Thick left border indicator on focused item
-- Arrow indicator (▶) before selected item text
-- Smooth keyboard navigation (j/k, up/down)
+Use the existing `bubbles/list` component with theme-aware delegate styling.
 
-**Visual Example:**
-```
-┌─ Select Profile ─────────────────────────────┐
-│                                              │
-│   Senior Individual Contributor              │
-│ ▶ Staff Engineer                    ◀────────│← Selected (highlighted bg)
-│   Engineering Manager                        │
-│   Technical Lead                             │
-│                                              │
-│ ↑/↓ or j/k to move • Enter to select        │
-└──────────────────────────────────────────────┘
-```
+**What bubbles/list provides:**
+- Keyboard navigation (j/k, up/down, g/G, etc.)
+- Filtering and search
+- Pagination
+- Custom item rendering via delegates
 
-**Implementation:**
+**Theme Integration:**
+
 ```go
-type SelectionList struct {
-    items       []string
-    selected    int
-    focused     bool
-    theme       themes.Theme
-    width       int
-    height      int
-}
+import "github.com/charmbracelet/bubbles/list"
 
-func (s *SelectionList) View() string {
-    var rows []string
-    for i, item := range s.items {
-        style := s.theme.Styles().ListItem
-        if i == s.selected {
-            style = s.theme.Styles().ListItemSelected.
-                Width(s.width)
-            item = "▶ " + item
-        }
-        rows = append(rows, style.Render(item))
-    }
-    return lipgloss.JoinVertical(lipgloss.Left, rows...)
-}
-```
-
-### 2. KeyBadge
-
-Styled keyboard shortcut badges for help footers.
-
-**Visual Example:**
-```
- [↑/↓] Navigate   [Enter] Select   [Esc] Cancel   [?] Help
-```
-
-**Styling:**
-- Key in contrasting background (e.g., primary on card background)
-- Rounded corners
-- Consistent padding
-- Hint text in muted color
-
-**Implementation:**
-```go
-type KeyBadge struct {
-    key   string
-    hint  string
-    theme themes.Theme
-}
-
-func (k *KeyBadge) View() string {
-    keyStyle := k.theme.Styles().KeyBadge
-    hintStyle := k.theme.Styles().KeyBadgeHint
+// Create theme-aware item delegate
+func NewThemedItemDelegate(theme themes.Theme) list.DefaultDelegate {
+    d := list.NewDefaultDelegate()
     
-    return keyStyle.Render(k.key) + " " + hintStyle.Render(k.hint)
+    // Apply theme colors to delegate styles
+    d.Styles.SelectedTitle = d.Styles.SelectedTitle.
+        Foreground(theme.Primary()).
+        Background(theme.Palette().Selection)
+    
+    d.Styles.NormalTitle = d.Styles.NormalTitle.
+        Foreground(theme.Foreground())
+    
+    d.Styles.SelectedDesc = d.Styles.SelectedDesc.
+        Foreground(theme.Palette().ForegroundDim)
+    
+    return d
 }
 
-// Helper for building footers
-func BuildHelpFooter(theme themes.Theme, badges ...KeyBadge) string {
+// Usage
+delegate := NewThemedItemDelegate(theme)
+l := list.New(items, delegate, width, height)
+l.Styles.Title = theme.Styles().HeaderSection
+```
+
+### 2. bubbles/progress - Progress Bars
+
+Use the existing `bubbles/progress` component which already supports gradients.
+
+**What bubbles/progress provides:**
+- Percentage-based progress
+- Gradient color support (built-in!)
+- Customizable fill characters
+- Width adaptation
+
+**Theme Integration:**
+
+```go
+import "github.com/charmbracelet/bubbles/progress"
+
+// Create theme-aware progress bar
+func NewThemedProgress(theme themes.Theme) progress.Model {
+    p := progress.New(
+        progress.WithGradient(
+            string(theme.Primary()),
+            string(theme.Secondary()),
+        ),
+    )
+    return p
+}
+
+// Usage
+p := NewThemedProgress(theme)
+p.SetPercent(0.65)
+fmt.Println(p.View())  // Renders gradient progress bar
+```
+
+### 3. bubbles/table - Data Tables
+
+Use the existing `bubbles/table` component with theme-aware styling.
+
+**What bubbles/table provides:**
+- Column definitions with widths
+- Row selection and navigation
+- Header styling
+- Keyboard shortcuts
+
+**Theme Integration:**
+
+```go
+import "github.com/charmbracelet/bubbles/table"
+
+// Create theme-aware table styles
+func NewThemedTableStyles(theme themes.Theme) table.Styles {
+    s := table.DefaultStyles()
+    
+    s.Header = s.Header.
+        BorderStyle(lipgloss.NormalBorder()).
+        BorderForeground(theme.Border()).
+        BorderBottom(true).
+        Bold(true).
+        Foreground(theme.Primary())
+    
+    s.Selected = s.Selected.
+        Foreground(theme.Foreground()).
+        Background(theme.Palette().Selection).
+        Bold(true)
+    
+    s.Cell = s.Cell.
+        Foreground(theme.Foreground())
+    
+    return s
+}
+
+// Usage
+t := table.New(
+    table.WithColumns(columns),
+    table.WithRows(rows),
+    table.WithStyles(NewThemedTableStyles(theme)),
+)
+```
+
+### 4. bubbles/help - Help Key Bindings
+
+Use the existing `bubbles/help` component for consistent help display.
+
+**What bubbles/help provides:**
+- Key binding display
+- Short and full help views
+- Automatic wrapping
+
+**Theme Integration:**
+
+```go
+import "github.com/charmbracelet/bubbles/help"
+
+// Create theme-aware help styles
+func NewThemedHelpStyles(theme themes.Theme) help.Styles {
+    return help.Styles{
+        ShortKey: lipgloss.NewStyle().
+            Foreground(theme.Primary()).
+            Bold(true),
+        ShortDesc: lipgloss.NewStyle().
+            Foreground(theme.Palette().ForegroundDim),
+        ShortSeparator: lipgloss.NewStyle().
+            Foreground(theme.Palette().ForegroundMuted),
+        FullKey: lipgloss.NewStyle().
+            Foreground(theme.Primary()),
+        FullDesc: lipgloss.NewStyle().
+            Foreground(theme.Foreground()),
+        FullSeparator: lipgloss.NewStyle().
+            Foreground(theme.Palette().ForegroundMuted),
+    }
+}
+
+// Usage
+h := help.New()
+h.Styles = NewThemedHelpStyles(theme)
+```
+
+### 5. bubbles/spinner - Loading Spinners
+
+Use the existing `bubbles/spinner` with theme colors.
+
+**Theme Integration:**
+
+```go
+import "github.com/charmbracelet/bubbles/spinner"
+
+// Create theme-aware spinner
+func NewThemedSpinner(theme themes.Theme) spinner.Model {
+    s := spinner.New()
+    s.Spinner = spinner.Dot  // or spinner.Line, spinner.MiniDot, etc.
+    s.Style = lipgloss.NewStyle().Foreground(theme.Primary())
+    return s
+}
+```
+
+### 6. KeyBadge - New Thin Wrapper
+
+The only new component needed - a simple helper for styled key badges.
+
+**Purpose:** Provide consistent key badge styling across all help footers.
+
+```go
+// KeyBadge renders a styled keyboard shortcut badge
+// This is a thin helper, not a full Bubble Tea model
+type KeyBadge struct {
+    Key  string
+    Hint string
+}
+
+func (k KeyBadge) Render(theme themes.Theme) string {
+    keyStyle := lipgloss.NewStyle().
+        Background(theme.Palette().BackgroundAlt).
+        Foreground(theme.Primary()).
+        Padding(0, 1).
+        Bold(true)
+    
+    hintStyle := lipgloss.NewStyle().
+        Foreground(theme.Palette().ForegroundDim)
+    
+    return keyStyle.Render(k.Key) + " " + hintStyle.Render(k.Hint)
+}
+
+// Helper to build a help footer from multiple badges
+func RenderHelpFooter(theme themes.Theme, badges ...KeyBadge) string {
     var parts []string
-    for _, badge := range badges {
-        parts = append(parts, badge.View())
+    for _, b := range badges {
+        parts = append(parts, b.Render(theme))
     }
     return lipgloss.JoinHorizontal(lipgloss.Center, parts...)
 }
-```
 
-### 3. GradientProgress
-
-Progress bar with color gradient from start to end.
-
-**Visual Example:**
-```
-Generating CV... ████████████░░░░░░░░ 60%
-                 ↑ cyan → blue gradient
-```
-
-**Implementation:**
-```go
-type GradientProgress struct {
-    percent    float64
-    width      int
-    startColor lipgloss.Color
-    endColor   lipgloss.Color
-    theme      themes.Theme
-}
-
-func (g *GradientProgress) View() string {
-    filled := int(g.percent * float64(g.width))
-    empty := g.width - filled
-    
-    // Interpolate colors for gradient effect
-    bar := ""
-    for i := 0; i < filled; i++ {
-        color := interpolateColor(g.startColor, g.endColor, float64(i)/float64(g.width))
-        bar += lipgloss.NewStyle().Foreground(color).Render("█")
-    }
-    bar += lipgloss.NewStyle().Foreground(g.theme.Muted()).Render(strings.Repeat("░", empty))
-    
-    return bar + fmt.Sprintf(" %.0f%%", g.percent*100)
-}
-```
-
-### 4. ResponsiveCard
-
-Card component that adapts to terminal width.
-
-**Layout Modes:**
-
-| Mode | Width | Characteristics |
-|------|-------|-----------------|
-| Compact | < 60 | No borders, minimal padding |
-| Standard | 60-100 | Rounded borders, normal padding |
-| Wide | > 100 | Double padding, max-width constraint |
-
-**Implementation:**
-```go
-type ResponsiveCard struct {
-    title   string
-    content string
-    theme   themes.Theme
-    width   int
-}
-
-func (r *ResponsiveCard) View() string {
-    style := r.theme.Styles().CardBase
-    
-    if r.width < 60 {
-        // Compact: no border, minimal padding
-        style = style.UnsetBorder().Padding(0, 1)
-    } else if r.width > 100 {
-        // Wide: constrain width, extra padding
-        style = style.MaxWidth(100).Padding(1, 3)
-    }
-    
-    header := r.theme.Styles().CardHeader.Render(r.title)
-    body := r.theme.Styles().CardContent.Render(r.content)
-    
-    return style.Render(lipgloss.JoinVertical(lipgloss.Left, header, body))
-}
-```
-
-### 5. EnhancedTable
-
-Table with alternating row colors and hover effects.
-
-**Visual Example:**
-```
-┌─────────────────────────────────────────────┐
-│ Date       │ Company      │ Event          │
-├─────────────────────────────────────────────┤
-│ 2026-01-01 │ TechCorp     │ Led project... │← Row 1 (alt bg)
-│ 2025-12-15 │ StartupXYZ   │ Implemented... │← Row 2 (normal bg)
-│ 2025-11-30 │ BigCompany   │ Designed...    │← Row 3 (alt bg, selected)
-└─────────────────────────────────────────────┘
-```
-
-**Implementation:**
-```go
-type EnhancedTable struct {
-    headers  []string
-    rows     [][]string
-    selected int
-    theme    themes.Theme
-}
-
-func (t *EnhancedTable) View() string {
-    // Render headers
-    headerStyle := t.theme.Styles().CardHeader
-    
-    // Render rows with alternating backgrounds
-    var renderedRows []string
-    for i, row := range t.rows {
-        rowStyle := t.theme.Styles().ListItem
-        if i%2 == 0 {
-            rowStyle = rowStyle.Background(t.theme.Palette().BackgroundAlt)
-        }
-        if i == t.selected {
-            rowStyle = t.theme.Styles().ListItemSelected
-        }
-        renderedRows = append(renderedRows, renderRow(row, rowStyle))
-    }
-    
-    return lipgloss.JoinVertical(lipgloss.Left, renderedRows...)
-}
+// Usage
+footer := RenderHelpFooter(theme,
+    KeyBadge{"↑/↓", "Navigate"},
+    KeyBadge{"Enter", "Select"},
+    KeyBadge{"Esc", "Cancel"},
+)
 ```
 
 ---
 
 ## Animation Specifications
 
+### Overview
+
+Animations enhance the user experience but are kept subtle and optional. We use existing 
+libraries rather than building custom animation systems.
+
 ### Dependencies
 
-- **Harmonica**: Spring-based animations (`github.com/charmbracelet/harmonica`)
-- **Glamour**: Markdown rendering (`github.com/charmbracelet/glamour`)
+- **bubbles/spinner**: Loading spinners (already available)
+- **Harmonica**: Spring-based animations for smooth transitions (`github.com/charmbracelet/harmonica`)
+- **Glamour**: Markdown rendering for CV preview (`github.com/charmbracelet/glamour`)
 
 ### 1. Logo Fade-In
 
@@ -562,23 +612,27 @@ func (l *LogoAnimation) View() string {
 
 ### 2. Loading Spinner
 
-Enhanced spinner with rotating messages.
+Use `bubbles/spinner` with theme-aware styling and our existing `LoadingMessageRotator`.
 
 ```go
-type LoadingSpinner struct {
+import "github.com/charmbracelet/bubbles/spinner"
+
+// Use bubbles/spinner with theme colors
+func NewThemedSpinner(theme themes.Theme) spinner.Model {
+    s := spinner.New()
+    s.Spinner = spinner.Dot
+    s.Style = lipgloss.NewStyle().Foreground(theme.Primary())
+    return s
+}
+
+// Combine with existing LoadingMessageRotator for rotating messages
+type LoadingView struct {
     spinner  spinner.Model
-    messages []string
-    current  int
     rotator  *components.LoadingMessageRotator
 }
 
-// Messages rotate every 2 seconds
-var loadingMessages = []string{
-    "Processing...",
-    "Almost there...",
-    "Working on it...",
-    "Hang tight...",
-}
+// Messages rotate every 2 seconds (using existing component)
+// See: internal/cli/components/loading_messages.go
 ```
 
 ### 3. Smooth List Scrolling
@@ -857,21 +911,18 @@ internal/cli/
 │   ├── detector_test.go
 │   ├── styles.go          # StyleSet and GenerateStyles
 │   ├── styles_test.go
-│   └── default.go         # Default theme (current colors)
+│   ├── default.go         # Default theme (current colors)
+│   └── bubbles.go         # Theme integration helpers for bubbles components
 ├── components/
-│   ├── selection_list.go
-│   ├── selection_list_test.go
-│   ├── key_badge.go
-│   ├── key_badge_test.go
-│   ├── gradient_progress.go
-│   ├── gradient_progress_test.go
-│   ├── responsive_card.go
-│   ├── responsive_card_test.go
-│   ├── enhanced_table.go
-│   └── enhanced_table_test.go
+│   ├── key_badge.go       # KeyBadge helper (thin wrapper for styled keys)
+│   └── key_badge_test.go
 └── context/
     └── global.go          # Add ThemeManager field
 ```
+
+**Note:** We leverage existing `bubbles/*` components (list, table, progress, spinner, help) 
+rather than building custom versions. The `themes/bubbles.go` file provides helper functions 
+to apply theme-aware styling to these existing components.
 
 ---
 
