@@ -278,11 +278,12 @@ Once enriched, quality scores improve:
 
 ## Advanced Usage
 
-### Importing with Specific Mode
+### Importing with Specific Strategy
 
-The import always uses "Manual Entry" mode, which:
+The import always uses "Manual Capture" strategy, which:
 - Accepts any date in the past
 - No time restrictions
+- All fields visible for bulk data entry
 - Most flexible for bulk imports
 
 ### Handling Large Files
@@ -313,11 +314,12 @@ CSV import creates new events. To update existing events:
 
 ## Integration with Existing Features
 
-### Capture Modes
+### Capture Strategies
 
-CSV imports use **Manual Entry** mode, which:
+CSV imports use **Manual Capture** strategy, which:
 - Accepts any date in the past
 - No time restrictions
+- All fields visible for detailed data entry
 - Most flexible for bulk imports
 
 ### Event Classification

@@ -267,20 +267,19 @@ df -h .
 
 ---
 
-### Capture Mode Issues
+### Capture Strategy Issues
 
-#### Can't add events older than 30 days in Timeline mode
+#### Date Handling
 
-**Cause**: Timeline mode has a 30-day window constraint
+Both capture strategies accept any date (past or present). There are no date restrictions.
 
-**Solution**:
-- Use CV Backfill mode for older events: `--mode backfill`
-- Or change mode inside the form (up/down arrows)
-
-**Capture Modes Explained**:
-- **Timeline Journaling**: Events within last 30 days (real-time journaling)
-- **CV Backfill**: Any date in the past (importing from CV)
-- **Manual Entry**: Any date with full flexibility
+**Capture Strategies Explained**:
+- **Quick Capture**: Rapid event logging with minimal fields visible
+  - Event text and date are always visible
+  - Press 't' to toggle optional fields (Company, Project, Tags, Categories)
+- **Manual Capture**: Detailed entry with all fields visible by default
+  - All fields visible: Event, Date, Company, Project, Tags, Categories
+  - Press 't' to hide optional fields if desired
 
 #### Event date in the future is rejected
 

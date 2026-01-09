@@ -256,7 +256,7 @@ huh.NewSelect[string]().
     Title("Capture Strategy").
     Options(
         huh.NewOption("Quick Capture", "quick"),
-        huh.NewOption("Manual Entry", "manual"),
+        huh.NewOption("Manual Capture", "manual"),
         huh.NewOption("Import CSV", "csv"),
     ).
     Value(&selectedStrategy) // Bind to variable

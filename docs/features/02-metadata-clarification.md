@@ -128,9 +128,9 @@ After capturing events (manually or via CSV import), users need a dedicated work
    - Bulk-adjust company for events from same source
    - Bulk-add tags for events from same project
 
-### 4.6 Manual Entry Integration
+### 4.6 Post-Capture Metadata Review
 
-1. After manually capturing an event, show a quick metadata review:
+1. After capturing an event, show a quick metadata review:
    - Display captured event with current metadata
    - Offer to add optional metadata (company, project, tags, categories)
    - Allow editing before saving
