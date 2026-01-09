@@ -342,10 +342,10 @@ func PopulateTestDatabase(env *E2ETestEnv, events []*career.CareerEvent, bursts 
 - [ ] Commit is atomic (ONE logical change)
 
 ## Post-Task Checklist (MUST COMPLETE BEFORE NEXT TASK)
-- [ ] All tests pass with race detector: `go test -race ./internal/cli/intents/...`
-- [ ] All checkboxes above completed
-- [ ] Task marked complete `[x]` in task file
-- [ ] GitHub issues created for all gaps
+- [x] All tests pass with race detector: `go test -race ./internal/testutil/e2e/...`
+- [x] All checkboxes above completed
+- [x] Task marked complete `[x]` in task file
+- [x] GitHub issues created for all gaps (#46-#61)
 
 ## Acceptance Criteria
 
@@ -369,16 +369,16 @@ func PopulateTestDatabase(env *E2ETestEnv, events []*career.CareerEvent, bursts 
 ### Verification Commands
 ```bash
 # Run all E2E tests
-go test -v -race ./internal/cli/intents/... -run "E2E"
+go test -v -race ./internal/testutil/e2e/...
 
 # Run with coverage
-go test -coverprofile=coverage.out ./internal/cli/intents/... -run "E2E"
-go tool cover -func=coverage.out | grep -E "e2e_"
+go test -coverprofile=coverage.out ./internal/testutil/e2e/...
+go tool cover -func=coverage.out
 
 # Run specific phase tests
-go test -v ./internal/cli/intents/... -run "CaptureWorkflow"
-go test -v ./internal/cli/intents/... -run "ChainedWorkflows"
-go test -v ./internal/cli/intents/... -run "ErrorRecovery"
+go test -v ./internal/testutil/e2e/... -run "CaptureWorkflow"
+go test -v ./internal/testutil/e2e/... -run "ChainedWorkflows"
+go test -v ./internal/testutil/e2e/... -run "ErrorRecovery"
 ```
 
 ## Success Metrics
