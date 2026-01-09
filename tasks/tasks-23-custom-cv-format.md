@@ -50,10 +50,10 @@ Select Profile → Select Audience → Select Structure → Generate → Preview
 - [x] Narrative structure renders CV with correct sections in preview
 - [x] Narrative structure exports correctly to Text/Markdown formats
 - [x] YAML always uses standard structure (it's data format)
-- [ ] Profile configuration available in Configure System → Profile (Phase 5 - Future)
+- [x] Profile configuration available in Configure System → Profile
 - [x] All tests pass with zero regressions
 - [x] Code coverage maintained >87%
-- [ ] User guide complete with examples (after implementation)
+- [x] User guide complete with examples
 
 ---
 
@@ -249,11 +249,71 @@ Tests for Narrative Structure Preview:
 
 ---
 
-### Phase 5: Profile Configuration (Future - Not in Current Scope)
+### Phase 5: Profile Configuration ✅ COMPLETE
 
 **Objective**: Allow users to configure narrative profile in Configure System
 
-This phase is deferred. Current implementation uses hardcoded profile data.
+#### Step 5.1: Extend ProfileConfig
+**File**: `internal/config/config.go`
+
+- [x] Add `Title` field (professional title)
+- [x] Add `Location` field
+- [x] Add `GitHub` field (URL)
+- [x] Add `Portfolio` field (URL)
+- [x] Add `Languages` field (comma-separated)
+- [x] Add `Frontend` field (comma-separated)
+- [x] Add `Systems` field (comma-separated)
+- [x] Add `CoreStrengths` field (slice)
+- [x] Add `WhatIBring` field (slice)
+
+#### Step 5.2: Add Profile Conversion Helper
+**File**: `internal/service/career/cv/cv_helpers.go`
+
+- [x] Add `NarrativeProfileFromConfig()` function
+- [x] Falls back to defaults for empty fields
+
+#### Step 5.3: Add Profile-Aware Export
+**File**: `internal/service/career/cv/export_service.go`
+
+- [x] Add `ExportWithProfile()` method
+- [x] Add `exportNarrativeWithProfile()` internal method
+- [x] Add `exportNarrativeTextWithProfile()` for text output
+- [x] Add `exportNarrativeMarkdownWithProfile()` for markdown output
+
+#### Step 5.4: Update ConfigureSystem Intent
+**File**: `internal/cli/intents/configure_system.go`
+
+- [x] Add profile fields to `settingsFromConfig()` (Title, Location, GitHub, Portfolio, Languages, Frontend, Systems)
+- [x] Update `applyProfileChange()` to handle new fields
+- [x] Update domain description for Profile
+
+#### Step 5.5: Wire Profile to GenerateCV
+**File**: `internal/cli/intents/generate_cv.go`
+
+- [x] Add `ProfileConfig` field to `GenerateCVContext`
+
+**File**: `internal/cli/intents/generate_cv_intent.go`
+
+- [x] Update `exportCVAsync()` to use `ExportWithProfile()`
+
+**File**: `internal/cli/app/app.go`
+
+- [x] Load profile config and pass to GenerateCVContext
+
+#### Step 5.6: Add Tests
+**File**: `internal/service/career/cv/export_service_test.go`
+
+- [x] Test default profile when config is nil
+- [x] Test custom profile in text format
+- [x] Test custom profile in markdown format
+- [x] Test fallback to defaults for empty fields
+- [x] Test YAML ignores profile (uses standard structure)
+- [x] Test NarrativeProfileFromConfig with nil config
+- [x] Test NarrativeProfileFromConfig with full config
+- [x] Test NarrativeProfileFromConfig with partial config
+
+**Commits**:
+- `fc59cf4` - feat(intents): add configurable profile for narrative CV exports
 
 ---
 
@@ -400,8 +460,8 @@ If issues arise:
 ---
 
 **Last Updated**: 2026-01-09  
-**Status**: Phase 4 COMPLETE - Structure-aware export implemented  
-**Next Step**: Phase 5 (Future) - Profile configuration in Configure System
+**Status**: ✅ ALL PHASES COMPLETE - Task 23 finished  
+**Next Step**: Documentation updates and PR merge
 
 ## Implementation Summary
 
@@ -413,8 +473,9 @@ If issues arise:
 | Phase 2 | CV Structure types and selection state | 22 | 3 commits |
 | Phase 3 | Structure-aware preview | 42 | 2 commits |
 | Phase 4 | Structure-aware export | 7 | 3 commits |
+| Phase 5 | Profile configuration | 11 | 1 commit |
 
-**Total new tests**: 71
+**Total new tests**: 82
 
 ### Key Files Created
 
@@ -423,16 +484,19 @@ If issues arise:
 | `internal/cli/intents/generate_cv_structure_test.go` | Structure selection tests |
 | `internal/cli/intents/generate_cv_preview_test.go` | Preview rendering tests |
 | `internal/cli/intents/generate_cv_helpers.go` | Narrative preview helpers |
-| `internal/service/career/cv/cv_helpers.go` | Export helpers and types |
+| `internal/service/career/cv/cv_helpers.go` | Export helpers, types, and profile conversion |
 
 ### Key Files Modified
 
 | File | Changes |
 |------|---------|
-| `internal/cli/intents/generate_cv.go` | Added CVStructure type, state, model fields |
-| `internal/cli/intents/generate_cv_intent.go` | Added state handler, structure-aware preview and export |
-| `internal/service/career/cv/export_service.go` | Added Export() method with structure parameter |
-| `internal/service/career/cv/export_service_test.go` | Added structure-aware export tests |
+| `internal/cli/intents/generate_cv.go` | Added CVStructure type, state, model fields, ProfileConfig |
+| `internal/cli/intents/generate_cv_intent.go` | Added state handler, structure-aware preview and export with profile |
+| `internal/cli/intents/configure_system.go` | Added profile fields (Title, Location, GitHub, etc.) |
+| `internal/cli/app/app.go` | Load and pass profile config to GenerateCV |
+| `internal/config/config.go` | Added narrative profile fields to ProfileConfig |
+| `internal/service/career/cv/export_service.go` | Added Export() and ExportWithProfile() methods |
+| `internal/service/career/cv/export_service_test.go` | Added structure-aware and profile-aware export tests |
 
 ### Branch and PR
 

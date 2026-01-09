@@ -52,14 +52,26 @@ Press `Enter` on any bullet to see which events and facts contributed to it. Thi
 - How confident KaRiya is in the bullet (confidence score)
 - Why the bullet was included (inclusion reason)
 
-### 6. Export Your CV
+### 6. Select CV Structure
+
+Before generation, you can choose how your CV is structured:
+
+- **Standard**: Traditional CV format with Experience, Projects, Skills, and Summary sections. Best for most job applications.
+- **Narrative**: Language-agnostic format emphasizing pragmatic expertise with Core Strengths, Technologies, and "What I Bring" sections. Best for senior engineers with cross-domain experience.
+
+Use arrow keys or `j`/`k` to select, then press `Enter` to generate.
+
+### 7. Export Your CV
 
 After generation, you can export your CV in multiple formats:
 - **Text Export**: Plain text format, suitable for pasting
 - **Markdown Export**: Markdown format with formatting
+- **YAML Export**: Machine-readable data format
 - **Copy to Clipboard**: Quick copy for pasting elsewhere
 
 Exports are saved to `$HOME/.kariya/cv_exports/` by default.
+
+**Note**: YAML export always uses Standard structure since it's a data format, not a presentation format.
 
 ## CV Configuration Format
 
@@ -406,12 +418,98 @@ Format:
 
 **File Location**: `$HOME/.kariya/cv_exports/cv_name_YYYY-MM-DD_HH-MM-SS.md`
 
+### YAML Export
+
+Format:
+```yaml
+name: "Staff Engineer CV"
+targetRole: "staff"
+targetAudience: "hiring_manager"
+generatedAt: "2024-12-01T10:30:00Z"
+sections:
+  - type: "experience"
+    title: "Experience"
+    bullets:
+      - text: "Led team of 5 engineers..."
+        confidence: 0.95
+```
+
+**Use Cases**:
+- Machine processing and integration
+- Data interchange between tools
+- Programmatic CV manipulation
+
+**File Location**: `$HOME/.kariya/cv_exports/cv_name_YYYY-MM-DD_HH-MM-SS.yaml`
+
+**Note**: YAML always uses Standard structure regardless of selection.
+
 ### Copy to Clipboard
 
 - Copies the generated CV text to your system clipboard
 - Same format as plain text export
 - No file saved
 - Quick sharing or pasting
+
+## CV Structures
+
+KaRiya supports two CV structures that determine how your content is organized.
+
+### Standard Structure
+
+The traditional CV format with these sections:
+
+| Section | Content |
+|---------|---------|
+| **Summary** | Professional summary statement |
+| **Experience** | Work history with company, dates, and achievements |
+| **Projects** | Notable projects and contributions |
+| **Skills** | Technical skills and competencies |
+
+**Best for**:
+- Most job applications
+- Traditional company cultures
+- When specific role experience matters
+
+### Narrative Structure
+
+A language-agnostic format for professionals emphasizing pragmatic expertise:
+
+| Section | Content |
+|---------|---------|
+| **Profile Header** | Name, title, location, contact info |
+| **Summary** | Professional summary with language-agnostic emphasis |
+| **Core Strengths** | Key competencies (6 bullet points) |
+| **Languages & Technologies** | Languages, Frontend, Systems |
+| **Selected Experience** | High-confidence achievements (>= 0.75) |
+| **What I Bring** | Value propositions (4 bullet points) |
+
+**Best for**:
+- Senior engineers with cross-domain experience
+- Emphasizing "languages as tools, not identity"
+- Pragmatic, outcome-focused professionals
+- Roles requiring broad technical expertise
+
+### Configuring Your Profile for Narrative CVs
+
+For narrative CVs, you can customize your profile:
+
+1. Go to **Configure System** from main menu
+2. Select **Profile** domain
+3. Edit these fields:
+   - **Name**: Your full name
+   - **Email**: Your email address
+   - **Title**: Professional title (e.g., "Senior Software Engineer")
+   - **Location**: Your location (e.g., "Remote (UK)")
+   - **GitHub**: Your GitHub profile URL
+   - **Portfolio**: Your portfolio/website URL
+   - **Languages**: Programming languages (comma-separated)
+   - **Frontend**: Frontend technologies (comma-separated)
+   - **Systems**: Systems/infrastructure expertise (comma-separated)
+4. Save changes
+
+These values are used when exporting narrative CVs. Empty fields use sensible defaults.
+
+For more details, see the [Narrative CV Guide](NARRATIVE_CV_GUIDE.md).
 
 ## Keyboard Shortcuts
 
@@ -675,6 +773,6 @@ To export all your CVs:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-02
+**Document Version**: 1.1
+**Last Updated**: 2026-01-09
 

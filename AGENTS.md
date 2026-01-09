@@ -289,7 +289,7 @@ The KaRiya TUI is built on a **type-safe, intent-driven architecture**:
 |--------|---------|--------|-------|
 | CaptureEvent | Capture new career events | Choose Strategy → Form → Review → Confirm | 30+ |
 | BrowseTimeline | View career timeline | Timeline → Event Detail | 37 |
-| GenerateCV | Generate CVs | Profile → Audience → Preview → Review → Confirm | 41 |
+| GenerateCV | Generate CVs | Profile → Audience → Structure → Preview → Review → Confirm | 82+ |
 | ExportArtifact | Export artifacts | Select → Configure → Preview → Export | 400+ |
 | ConfigureSystem | System configuration | Domain → Settings → Staged Changes → Confirm | 400+ |
 
@@ -644,9 +644,10 @@ User-facing documentation for features and workflows.
 **File**: [`docs/guides/CV_GENERATION_GUIDE.md`](docs/guides/CV_GENERATION_GUIDE.md)
 **Purpose**: Generating CVs from career events
 **Audience**: Users creating CVs for job applications
-**Topics**: Profile and audience selection, CV preview, export options
+**Topics**: Profile and audience selection, CV structure (Standard/Narrative), preview, export options
 
 **Related**:
+- [`docs/guides/NARRATIVE_CV_GUIDE.md`](docs/guides/NARRATIVE_CV_GUIDE.md) - Narrative CV structure guide
 - [`docs/guides/CV_EXAMPLES.md`](docs/guides/CV_EXAMPLES.md) - CV generation examples
 - [`docs/guides/CV_TROUBLESHOOTING.md`](docs/guides/CV_TROUBLESHOOTING.md) - Common CV issues and solutions
 
@@ -1776,7 +1777,7 @@ sqlite3 ~/.kariya/events.db "SELECT MAX(version_id) FROM goose_db_version"
 | **Test Framework** | Ginkgo v2 + Gomega |
 | **Database** | SQLite (modernc.org/sqlite) |
 | **Status** | ✅ Production Ready |
-| **Last Updated** | 2026-01-06 |
+| **Last Updated** | 2026-01-09 |
 
 ---
 
