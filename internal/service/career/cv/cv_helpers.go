@@ -162,3 +162,63 @@ func getExperienceSections(sections []*career.CVSection) []*career.CVSection {
 	}
 	return experience
 }
+
+// ApplyProfileOverride applies a ProfileOverride to a ProfileConfig.
+// Creates a copy of the config so the original is not modified.
+// If override is nil, returns the original config unchanged.
+// If cfg is nil, creates a default config and applies overrides.
+func ApplyProfileOverride(cfg *config.ProfileConfig, override *ProfileOverride) *config.ProfileConfig {
+	if override == nil {
+		return cfg
+	}
+
+	// Create a copy of the config (or use defaults if nil)
+	var result config.ProfileConfig
+	if cfg != nil {
+		result = *cfg
+	}
+
+	// Apply overrides
+	if override.ProfessionalTitle != nil {
+		result.Title = *override.ProfessionalTitle
+	}
+	if len(override.CoreStrengths) > 0 {
+		result.CoreStrengths = override.CoreStrengths
+	}
+	if len(override.CareerDifferentiators) > 0 {
+		result.WhatIBring = override.CareerDifferentiators
+	}
+	// CareerPositioning could be used for summary, but we don't have a summary field in ProfileConfig
+	// So we'll skip it for now (it would require CV section modification)
+
+	return &result
+}
+
+// ApplyProfileOverrideToNarrative applies a ProfileOverride directly to NarrativeProfileData.
+// Creates a copy of the profile so the original is not modified.
+// If override is nil, returns the original profile unchanged.
+func ApplyProfileOverrideToNarrative(profile *NarrativeProfileData, override *ProfileOverride) *NarrativeProfileData {
+	if override == nil || profile == nil {
+		return profile
+	}
+
+	// Create a copy
+	result := *profile
+	result.CoreStrengths = make([]string, len(profile.CoreStrengths))
+	copy(result.CoreStrengths, profile.CoreStrengths)
+	result.ValuePropositions = make([]string, len(profile.ValuePropositions))
+	copy(result.ValuePropositions, profile.ValuePropositions)
+
+	// Apply overrides
+	if override.ProfessionalTitle != nil {
+		result.Role = *override.ProfessionalTitle
+	}
+	if len(override.CoreStrengths) > 0 {
+		result.CoreStrengths = override.CoreStrengths
+	}
+	if len(override.CareerDifferentiators) > 0 {
+		result.ValuePropositions = override.CareerDifferentiators
+	}
+
+	return &result
+}

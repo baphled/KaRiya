@@ -1419,9 +1419,15 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 		// Convert intent CVStructure to service CVStructure
 		structure := cv.CVStructure(i.state.selectedCVStructure)
 
+		// Apply ProfileOverride from the selected variant (if any)
+		profileCfg := i.context.ProfileConfig
+		if i.state.selectedVariant != nil && i.state.selectedVariant.ProfileOverride != nil {
+			profileCfg = cv.ApplyProfileOverride(profileCfg, i.state.selectedVariant.ProfileOverride)
+		}
+
 		// Export using structure-aware ExportWithProfile() method
-		// Pass the user's profile config for narrative CVs
-		content, err := i.context.ExportService.ExportWithProfile(ctx, i.state.generatedCV, sections, bulletsMap, structure, exportFormat, i.context.ProfileConfig)
+		// Pass the profile config (with variant overrides applied) for narrative CVs
+		content, err := i.context.ExportService.ExportWithProfile(ctx, i.state.generatedCV, sections, bulletsMap, structure, exportFormat, profileCfg)
 		if err != nil {
 			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to export: %v", err)}
 		}
