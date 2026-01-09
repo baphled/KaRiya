@@ -41,11 +41,11 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 **Critical Gaps**:
 | Gap | Impact | GitHub Issue |
 |-----|--------|--------------|
-| 'f' Filter shortcut not implemented | Users cannot filter events | TODO |
-| Date range filter not implemented | Cannot filter by date | TODO |
-| Company filter not implemented | Cannot filter by company | TODO |
-| Categories filter not implemented | Cannot filter by category | TODO |
-| Fact selection not connected | Cannot select facts from events | TODO |
+| 'f' Filter shortcut not implemented | Users cannot filter events | [#46](https://github.com/baphled/KaRiya/issues/46) |
+| Date range filter not implemented | Cannot filter by date | [#47](https://github.com/baphled/KaRiya/issues/47) |
+| Company filter not implemented | Cannot filter by company | [#48](https://github.com/baphled/KaRiya/issues/48) |
+| Categories filter not implemented | Cannot filter by category | [#49](https://github.com/baphled/KaRiya/issues/49) |
+| Fact selection not connected | Cannot select facts from events | [#50](https://github.com/baphled/KaRiya/issues/50) |
 
 **Notes**:
 - The `TimelineFilters` struct defines `DateFrom`, `DateTo`, `Companies`, and `Categories` fields
@@ -61,9 +61,9 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 **Gaps**:
 | Gap | Impact | GitHub Issue |
 |-----|--------|--------------|
-| Review/Edit state is a stub | Cannot edit generated CV content | TODO |
-| Hardcoded audience list | Cannot add custom audiences | TODO |
-| Profile creation not available | Must pre-create profiles | TODO |
+| Review/Edit state is a stub | Cannot edit generated CV content | [#51](https://github.com/baphled/KaRiya/issues/51) |
+| Hardcoded audience list | Cannot add custom audiences | N/A (part of #52) |
+| Profile creation not available | Must pre-create profiles | [#52](https://github.com/baphled/KaRiya/issues/52) |
 
 **Notes**:
 - The `viewReview()` method shows placeholder text: "(Full editing interface would be implemented here)"
@@ -79,10 +79,10 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 **Gaps**:
 | Gap | Impact | GitHub Issue |
 |-----|--------|--------------|
-| PDF export defined but not implemented | Format option exists but doesn't work | TODO |
-| Email export defined but not implemented | Destination option exists but doesn't work | TODO |
-| Profile export returns hardcoded data | Not real profile data | TODO |
-| CV export type not in defaults | Cannot export CVs directly | TODO |
+| PDF export defined but not implemented | Format option exists but doesn't work | [#53](https://github.com/baphled/KaRiya/issues/53) |
+| Email export defined but not implemented | Destination option exists but doesn't work | [#54](https://github.com/baphled/KaRiya/issues/54) |
+| Profile export returns hardcoded data | Not real profile data | [#55](https://github.com/baphled/KaRiya/issues/55) |
+| CV export type not in defaults | Cannot export CVs directly | N/A (low priority) |
 
 **Notes**:
 - `ExportFormatPDF` and `ExportDestinationEmail` are defined in constants
@@ -98,10 +98,10 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 **Gaps**:
 | Gap | Impact | Severity | GitHub Issue |
 |-----|--------|----------|--------------|
-| Select type shows text input | Must type exact values, no dropdown | Medium | TODO |
-| No validation for select options | Invalid values accepted | Medium | TODO |
-| Type assertion panic risk | Could crash on wrong types | **High** | TODO |
-| Config not applied at runtime | Changes require restart | Medium | TODO |
+| Select type shows text input | Must type exact values, no dropdown | Medium | [#56](https://github.com/baphled/KaRiya/issues/56) |
+| No validation for select options | Invalid values accepted | Medium | Part of #56 |
+| Type assertion panic risk | Could crash on wrong types | **High** | [#57](https://github.com/baphled/KaRiya/issues/57) |
+| Config not applied at runtime | Changes require restart | Medium | [#58](https://github.com/baphled/KaRiya/issues/58) |
 
 **Notes**:
 - Lines 763-820 contain direct type assertions without safety checks
@@ -143,10 +143,10 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 **Critical Gaps** (No actual functionality):
 | Gap | Impact | GitHub Issue |
 |-----|--------|--------------|
-| No file browser | Cannot select files | TODO |
-| No CSV parsing | Cannot read CSV content | TODO |
-| No database import | No repository calls | TODO |
-| No field mapping | Cannot map CSV columns | TODO |
+| No file browser | Cannot select files | [#59](https://github.com/baphled/KaRiya/issues/59) |
+| No CSV parsing | Cannot read CSV content | [#59](https://github.com/baphled/KaRiya/issues/59) |
+| No database import | No repository calls | [#59](https://github.com/baphled/KaRiya/issues/59) |
+| No field mapping | Cannot map CSV columns | [#59](https://github.com/baphled/KaRiya/issues/59) |
 
 **Notes**:
 - The `ImportWizardContext` has no repository or service references
@@ -162,9 +162,9 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 **Critical Gaps** (No actual functionality):
 | Gap | Impact | GitHub Issue |
 |-----|--------|--------------|
-| No text inputs for editing | Cannot modify values | TODO |
-| No entity loading | Cannot load events/facts/bursts | TODO |
-| No persistence | Changes never saved | TODO |
+| No text inputs for editing | Cannot modify values | [#60](https://github.com/baphled/KaRiya/issues/60) |
+| No entity loading | Cannot load events/facts/bursts | [#60](https://github.com/baphled/KaRiya/issues/60) |
+| No persistence | Changes never saved | [#60](https://github.com/baphled/KaRiya/issues/60) |
 
 **Notes**:
 - The `MetadataEditorContext` has no repository or service references
@@ -180,11 +180,11 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 **Critical Gaps** (No actual functionality):
 | Gap | Impact | GitHub Issue |
 |-----|--------|--------------|
-| No item selection UI | Cannot select items to operate on | TODO |
-| Delete operation not implemented | Doesn't delete anything | TODO |
-| Tag operation not implemented | Doesn't add tags | TODO |
-| Archive operation not implemented | Doesn't archive | TODO |
-| Export operation not implemented | Doesn't export | TODO |
+| No item selection UI | Cannot select items to operate on | [#61](https://github.com/baphled/KaRiya/issues/61) |
+| Delete operation not implemented | Doesn't delete anything | [#61](https://github.com/baphled/KaRiya/issues/61) |
+| Tag operation not implemented | Doesn't add tags | [#61](https://github.com/baphled/KaRiya/issues/61) |
+| Archive operation not implemented | Doesn't archive | [#61](https://github.com/baphled/KaRiya/issues/61) |
+| Export operation not implemented | Doesn't export | [#61](https://github.com/baphled/KaRiya/issues/61) |
 
 **Notes**:
 - The `BulkOperationsContext` has no repository or service references
@@ -232,33 +232,33 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 
 ---
 
-## GitHub Issues to Create
+## GitHub Issues Created
 
 ### BrowseTimeline (5 issues)
-1. `feat(browse): implement 'f' filter shortcut`
-2. `feat(browse): implement date range filtering`
-3. `feat(browse): implement company filter`
-4. `feat(browse): implement categories filter`
-5. `feat(browse): connect fact selection UI`
+1. [#46](https://github.com/baphled/KaRiya/issues/46) - feat(browse): implement 'f' filter shortcut
+2. [#47](https://github.com/baphled/KaRiya/issues/47) - feat(browse): implement date range filtering
+3. [#48](https://github.com/baphled/KaRiya/issues/48) - feat(browse): implement company filter
+4. [#49](https://github.com/baphled/KaRiya/issues/49) - feat(browse): implement categories filter
+5. [#50](https://github.com/baphled/KaRiya/issues/50) - feat(browse): connect fact selection UI
 
 ### GenerateCV (2 issues)
-6. `feat(cv): implement CV editing in review state`
-7. `feat(cv): add profile creation from intent`
+6. [#51](https://github.com/baphled/KaRiya/issues/51) - feat(cv): implement CV editing in review state
+7. [#52](https://github.com/baphled/KaRiya/issues/52) - feat(cv): add profile creation from intent
 
 ### ExportArtifact (3 issues)
-8. `fix(export): remove or implement PDF export option`
-9. `fix(export): remove or implement Email export option`
-10. `fix(export): implement actual profile export`
+8. [#53](https://github.com/baphled/KaRiya/issues/53) - fix(export): remove or implement PDF export option
+9. [#54](https://github.com/baphled/KaRiya/issues/54) - fix(export): remove or implement Email export option
+10. [#55](https://github.com/baphled/KaRiya/issues/55) - fix(export): implement actual profile export
 
 ### ConfigureSystem (3 issues)
-11. `feat(config): implement select dropdown UI`
-12. `fix(config): add type assertion safety checks`
-13. `feat(config): apply config changes at runtime`
+11. [#56](https://github.com/baphled/KaRiya/issues/56) - feat(config): implement select dropdown UI
+12. [#57](https://github.com/baphled/KaRiya/issues/57) - fix(config): add type assertion safety checks
+13. [#58](https://github.com/baphled/KaRiya/issues/58) - feat(config): apply config changes at runtime
 
 ### Secondary Intents (3 umbrella issues)
-14. `feat(import): implement ImportWizard functionality`
-15. `feat(metadata): implement MetadataEditor functionality`
-16. `feat(bulk): implement BulkOperations functionality`
+14. [#59](https://github.com/baphled/KaRiya/issues/59) - feat(import): implement ImportWizard functionality
+15. [#60](https://github.com/baphled/KaRiya/issues/60) - feat(metadata): implement MetadataEditor functionality
+16. [#61](https://github.com/baphled/KaRiya/issues/61) - feat(bulk): implement BulkOperations functionality
 
 ---
 
@@ -267,3 +267,4 @@ During the E2E integration test planning phase, a comprehensive audit was conduc
 | Date | Author | Description |
 |------|--------|-------------|
 | 2026-01-09 | AI + Human Review | Initial audit during Task 37 planning |
+| 2026-01-09 | AI + Human Review | Created 16 GitHub issues (#46-#61) |
