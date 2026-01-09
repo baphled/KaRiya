@@ -445,4 +445,159 @@ var _ = ginkgo.Describe("ExportService", func() {
 		})
 
 	})
+
+	ginkgo.Describe("Structure-Aware Export", func() {
+		var (
+			cv       *career.CVView
+			sections []*career.CVSection
+			bullets  map[string][]*career.CVBullet
+		)
+
+		ginkgo.BeforeEach(func() {
+			cv = &career.CVView{
+				ID:               "cv-1",
+				Name:             "Senior Software Engineer CV",
+				TargetRole:       "senior_ic",
+				TargetAudience:   "hiring_manager",
+				GeneratedAt:      time.Now(),
+				SourceEventCount: 10,
+				SourceFactCount:  5,
+			}
+
+			bullet1 := &career.CVBullet{
+				ID:              "bullet-1",
+				SectionID:       "section-exp",
+				Text:            "Led migration to microservices architecture",
+				SourceEventIDs:  []string{"event-1"},
+				Rank:            0.9,
+				InclusionReason: "ownership",
+				Confidence:      0.85,
+			}
+
+			bullet2 := &career.CVBullet{
+				ID:              "bullet-2",
+				SectionID:       "section-exp",
+				Text:            "Implemented CI/CD pipeline",
+				SourceEventIDs:  []string{"event-2"},
+				Rank:            0.7,
+				InclusionReason: "execution",
+				Confidence:      0.70, // Below narrative threshold
+			}
+
+			sections = []*career.CVSection{
+				{
+					ID:          "section-summary",
+					CVViewID:    "cv-1",
+					SectionType: "summary",
+					Title:       "Summary",
+					Order:       0,
+					Summary:     "Experienced software engineer with 10+ years in backend development.",
+				},
+				{
+					ID:          "section-exp",
+					CVViewID:    "cv-1",
+					SectionType: "experience",
+					Title:       "Experience",
+					Order:       1,
+					Content: []*career.SectionContentGroup{
+						{
+							Header:    "TechCorp",
+							StartDate: "Jan 2020",
+							EndDate:   "Present",
+							Bullets:   []*career.CVBullet{bullet1, bullet2},
+						},
+					},
+				},
+			}
+
+			bullets = map[string][]*career.CVBullet{
+				"section-exp": {bullet1, bullet2},
+			}
+		})
+
+		ginkgo.Describe("Export with Standard structure", func() {
+			ginkgo.It("should export to text format with standard structure", func() {
+				content, err := service.Export(ctx, cv, sections, bullets, CVStructureStandard, ExportFormatText)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(content).To(gomega.ContainSubstring("SENIOR SOFTWARE ENGINEER CV"))
+				gomega.Expect(content).To(gomega.ContainSubstring("EXPERIENCE"))
+				gomega.Expect(content).To(gomega.ContainSubstring("Led migration to microservices"))
+				// Standard includes all bullets regardless of confidence
+				gomega.Expect(content).To(gomega.ContainSubstring("Implemented CI/CD pipeline"))
+			})
+
+			ginkgo.It("should export to markdown format with standard structure", func() {
+				content, err := service.Export(ctx, cv, sections, bullets, CVStructureStandard, ExportFormatMarkdown)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				gomega.Expect(content).To(gomega.ContainSubstring("# Senior Software Engineer CV"))
+				gomega.Expect(content).To(gomega.ContainSubstring("## Experience"))
+				gomega.Expect(content).To(gomega.ContainSubstring("Led migration to microservices"))
+				// Standard includes all bullets regardless of confidence
+				gomega.Expect(content).To(gomega.ContainSubstring("Implemented CI/CD pipeline"))
+			})
+		})
+
+		ginkgo.Describe("Export with Narrative structure", func() {
+			ginkgo.It("should export to text format with narrative structure", func() {
+				content, err := service.Export(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatText)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				// Narrative includes profile header (uppercase in text format)
+				gomega.Expect(content).To(gomega.ContainSubstring("YOMI COLLEDGE"))
+				gomega.Expect(content).To(gomega.ContainSubstring("Senior Software Engineer"))
+				// Narrative sections
+				gomega.Expect(content).To(gomega.ContainSubstring("CORE STRENGTHS"))
+				gomega.Expect(content).To(gomega.ContainSubstring("LANGUAGES & TECHNOLOGIES"))
+				gomega.Expect(content).To(gomega.ContainSubstring("SELECTED EXPERIENCE"))
+				gomega.Expect(content).To(gomega.ContainSubstring("WHAT I BRING"))
+				// High confidence bullet appears
+				gomega.Expect(content).To(gomega.ContainSubstring("Led migration to microservices"))
+				// Low confidence bullet filtered out
+				gomega.Expect(content).NotTo(gomega.ContainSubstring("Implemented CI/CD pipeline"))
+			})
+
+			ginkgo.It("should export to markdown format with narrative structure", func() {
+				content, err := service.Export(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatMarkdown)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				// Narrative includes profile header
+				gomega.Expect(content).To(gomega.ContainSubstring("# Yomi Colledge"))
+				gomega.Expect(content).To(gomega.ContainSubstring("Senior Software Engineer"))
+				// Narrative sections
+				gomega.Expect(content).To(gomega.ContainSubstring("## Core Strengths"))
+				gomega.Expect(content).To(gomega.ContainSubstring("## Languages & Technologies"))
+				gomega.Expect(content).To(gomega.ContainSubstring("## Selected Experience"))
+				gomega.Expect(content).To(gomega.ContainSubstring("## What I Bring"))
+				// High confidence bullet appears
+				gomega.Expect(content).To(gomega.ContainSubstring("Led migration to microservices"))
+				// Low confidence bullet filtered out
+				gomega.Expect(content).NotTo(gomega.ContainSubstring("Implemented CI/CD pipeline"))
+			})
+		})
+
+		ginkgo.Describe("YAML export always uses standard structure", func() {
+			ginkgo.It("should use standard structure for YAML even when narrative requested", func() {
+				content, err := service.Export(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatYAML)
+				gomega.Expect(err).NotTo(gomega.HaveOccurred())
+				// YAML is data format, should contain raw data
+				gomega.Expect(content).To(gomega.ContainSubstring("name: Senior Software Engineer CV"))
+				gomega.Expect(content).To(gomega.ContainSubstring("target_role: senior_ic"))
+				// Should include all bullets (no filtering)
+				gomega.Expect(content).To(gomega.ContainSubstring("Led migration to microservices"))
+				gomega.Expect(content).To(gomega.ContainSubstring("Implemented CI/CD pipeline"))
+			})
+		})
+
+		ginkgo.Describe("Error handling", func() {
+			ginkgo.It("should return error for nil CV", func() {
+				_, err := service.Export(ctx, nil, sections, bullets, CVStructureStandard, ExportFormatText)
+				gomega.Expect(err).To(gomega.HaveOccurred())
+				gomega.Expect(err.Error()).To(gomega.ContainSubstring("CV view is nil"))
+			})
+
+			ginkgo.It("should return error for unknown format", func() {
+				_, err := service.Export(ctx, cv, sections, bullets, CVStructureStandard, ExportFormat("unknown"))
+				gomega.Expect(err).To(gomega.HaveOccurred())
+				gomega.Expect(err.Error()).To(gomega.ContainSubstring("unknown export format"))
+			})
+		})
+	})
 })
