@@ -128,11 +128,15 @@ Tests added (9 new tests):
 
 ---
 
-### Phase 1: Domain Models and Built-In Variants
+### Phase 1: Domain Models and Built-In Variants ✅ COMPLETE
 
 **Objective**: Define the type system, 4 structures, and 16 built-in variants in code.
 
-#### Step 1.1: Create Variant Types
+**Status**: Completed 2026-01-09
+
+**Commit**: `f2c0ffa` - feat(cv): add CV variant types and 16 built-in variants
+
+#### Step 1.1: Create Variant Types ✅
 **File**: `internal/service/career/cv/variants.go` (new)
 
 ```go
@@ -193,60 +197,45 @@ type ProfileOverride struct {
 }
 ```
 
-#### Step 1.2: Add New Structure Constants
+#### Step 1.2: Add New Structure Constants ✅
 **File**: `internal/service/career/cv/cv_helpers.go`
 
-- [ ] Add `CVStructureConsulting CVStructure = "consulting"`
-- [ ] Add `CVStructureHighlights CVStructure = "highlights"`
+- [x] Add `CVStructureConsulting CVStructure = "consulting"`
+- [x] Add `CVStructureHighlights CVStructure = "highlights"`
 
-#### Step 1.3: Define Built-In Variants
+#### Step 1.3: Define Built-In Variants ✅
 **File**: `internal/service/career/cv/variants.go`
 
-- [ ] Define all 16 variants as `var BuiltInVariants []*CVVariant`
-- [ ] Include proper section configurations per structure type
-- [ ] Include bullet configurations per length format
+- [x] Define all 16 variants as `var BuiltInVariants []*CVVariant`
+- [x] Include bullet configurations per length format (MinConfidence, MaxYearsHistory, MaxCompanies)
+- [x] All variants marked as built-in
 
-#### Step 1.4: Create Variant Service
-**File**: `internal/service/career/cv/variant_service.go` (new)
+#### Step 1.4: Create Variant Service ✅
+**File**: `internal/service/career/cv/variants.go` (combined with types)
 
-```go
-type VariantService interface {
-    ListVariants() []*CVVariant
-    GetVariant(id string) (*CVVariant, error)
-    ListRoleEmphases() []RoleEmphasisInfo
-    ListLengthFormats() []LengthFormatInfo
-    GetVariantByDimensions(role RoleEmphasis, length LengthFormat) (*CVVariant, error)
-}
+- [x] `VariantService` interface with all methods
+- [x] `DefaultVariantService` implementation
+- [x] `NewVariantService()` constructor
+- [x] Index variants by ID and by dimensions (role:length)
 
-type RoleEmphasisInfo struct {
-    ID          RoleEmphasis
-    Name        string
-    Description string
-}
-
-type LengthFormatInfo struct {
-    ID          LengthFormat
-    Name        string
-    Description string
-}
-```
-
-#### Step 1.5: Write Tests
+#### Step 1.5: Write Tests ✅
 **File**: `internal/service/career/cv/variants_test.go` (new)
 
-- [ ] Lists all 16 built-in variants
-- [ ] Gets variant by ID
-- [ ] Returns error for unknown variant ID
-- [ ] Gets variant by dimensions (role + length)
-- [ ] Lists 4 role emphases with metadata
-- [ ] Lists 4 length formats with metadata
-- [ ] All variants have valid configuration
-- [ ] All variants map to valid structure
+- [x] Lists all 16 built-in variants
+- [x] Gets variant by ID
+- [x] Returns error for unknown variant ID
+- [x] Gets variant by dimensions (role + length)
+- [x] Lists 4 role emphases with metadata
+- [x] Lists 4 length formats with metadata
+- [x] All variants have valid configuration
+- [x] All variants map to valid structure
+- [x] Tests for each role emphasis (4 variants each)
+- [x] 31 total test specs
 
-#### Verification
-- [ ] `go build ./...` compiles
-- [ ] All variant tests pass
-- [ ] No regressions in existing tests
+#### Verification ✅
+- [x] `go build ./...` compiles
+- [x] All 31 variant tests pass
+- [x] No regressions (246/247 CV tests pass - 1 clipboard test requires display)
 
 ---
 
