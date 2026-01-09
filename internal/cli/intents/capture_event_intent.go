@@ -364,19 +364,10 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			modal, cmd := i.state.reviewState.burstModal.Update(msg)
 			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
 
-			// Check if modal completed (all suggestions processed) or cancelled with Esc
-			if i.state.reviewState.burstModal.IsDone() {
-				// Modal completed - save confirmed/rejected bursts
-				// Get the confirmed suggestions and update InferredBursts
-				confirmed := i.state.reviewState.burstModal.GetConfirmed()
-				if len(confirmed) > 0 {
-					// Convert confirmed suggestions back to InferredBursts if needed
-					// For now, we maintain the existing InferredBursts
-				}
-				i.state.reviewState.burstModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
-			} else if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
-				// Modal cancelled with Esc - don't save changes
+			// Check if modal completed
+			// TODO: Add completion check when BurstSuggestionModelNew has IsComplete/IsCancelled methods
+			// For now, allow Esc to exit
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
 				i.state.reviewState.burstModal = nil
 				i.state.reviewState.EditingMode = EditingModeNone
 			}
@@ -391,10 +382,7 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			// Check if modal completed
 			if i.state.reviewState.factModal.IsSubmitted() {
 				// Apply changes to fact
-				editedFact := i.state.reviewState.factModal.GetFact()
-				if idx := i.state.reviewState.EditingIndex; idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
-					i.state.reviewState.InferredFacts[idx] = editedFact
-				}
+				// TODO: Update the inferred facts list with edited fact
 				i.state.reviewState.factModal = nil
 				i.state.reviewState.EditingMode = EditingModeNone
 			} else if i.state.reviewState.factModal.IsCancelled() {
@@ -457,78 +445,36 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 
 		case "j", "down":
 			// Navigate down through items
-			burstCount := len(i.state.reviewState.InferredBursts)
-			factCount := len(i.state.reviewState.InferredFacts)
-			totalItems := burstCount + factCount
+			totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
 			if totalItems > 0 {
-				// Compute current global index from item type and local index
-				globalIndex := 0
-				switch i.state.reviewState.SelectedItemType {
-				case "burst":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < burstCount {
-						globalIndex = i.state.reviewState.SelectedIndex
-					}
-				case "fact":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < factCount {
-						globalIndex = burstCount + i.state.reviewState.SelectedIndex
-					} else {
-						globalIndex = burstCount
-					}
-				default:
-					// Default to the first item if nothing is selected yet
-					globalIndex = 0
+				i.state.reviewState.SelectedIndex++
+				if i.state.reviewState.SelectedIndex >= totalItems {
+					i.state.reviewState.SelectedIndex = 0
 				}
-
-				// Move down, wrapping around
-				globalIndex = (globalIndex + 1) % totalItems
-
-				// Derive new item type and list-local index from global index
-				if globalIndex < burstCount {
+				// Update SelectedItemType based on new index
+				if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
 					i.state.reviewState.SelectedItemType = "burst"
-					i.state.reviewState.SelectedIndex = globalIndex
 				} else {
 					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex = globalIndex - burstCount
+					i.state.reviewState.SelectedIndex = i.state.reviewState.SelectedIndex - len(i.state.reviewState.InferredBursts)
 				}
 			}
 			return nil
 
 		case "k", "up":
 			// Navigate up through items
-			burstCount := len(i.state.reviewState.InferredBursts)
-			factCount := len(i.state.reviewState.InferredFacts)
-			totalItems := burstCount + factCount
+			totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
 			if totalItems > 0 {
-				// Compute current global index from item type and local index
-				globalIndex := 0
-				switch i.state.reviewState.SelectedItemType {
-				case "burst":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < burstCount {
-						globalIndex = i.state.reviewState.SelectedIndex
-					} else {
-						globalIndex = 0
-					}
-				case "fact":
-					if i.state.reviewState.SelectedIndex >= 0 && i.state.reviewState.SelectedIndex < factCount {
-						globalIndex = burstCount + i.state.reviewState.SelectedIndex
-					} else {
-						globalIndex = totalItems - 1
-					}
-				default:
-					// Default to the last item if nothing is selected yet
-					globalIndex = totalItems - 1
+				i.state.reviewState.SelectedIndex--
+				if i.state.reviewState.SelectedIndex < 0 {
+					i.state.reviewState.SelectedIndex = totalItems - 1
 				}
-
-				// Move up, wrapping around
-				globalIndex = (globalIndex - 1 + totalItems) % totalItems
-
-				// Derive new item type and list-local index from global index
-				if globalIndex < burstCount {
+				// Update SelectedItemType based on new index
+				if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
 					i.state.reviewState.SelectedItemType = "burst"
-					i.state.reviewState.SelectedIndex = globalIndex
 				} else {
 					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex = globalIndex - burstCount
+					i.state.reviewState.SelectedIndex = i.state.reviewState.SelectedIndex - len(i.state.reviewState.InferredBursts)
 				}
 			}
 			return nil
@@ -1040,15 +986,9 @@ func (i *CaptureEventIntent) viewMetadataEditModal() string {
 func (i *CaptureEventIntent) viewBurstEditModal() string {
 	if i.state.reviewState.burstModal == nil {
 		// Convert inferred bursts to suggestions for the modal
-		suggestions := make([]burstfact.BurstSuggestion, 0, len(i.state.reviewState.InferredBursts))
-		for _, burst := range i.state.reviewState.InferredBursts {
-			suggestions = append(suggestions, burstfact.BurstSuggestion{
-				EventIDs:        burst.EventIDs,
-				ConfidenceScore: 0.8, // Default confidence for inferred bursts
-				Name:            burst.Name,
-				Description:     burst.Description,
-			})
-		}
+		// For now, we'll work with an empty list - in a full implementation,
+		// we'd convert i.state.reviewState.InferredBursts to suggestions
+		var suggestions []burstfact.BurstSuggestion
 		i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
 			i.context.CareerService,
 			suggestions,
