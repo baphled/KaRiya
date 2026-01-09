@@ -4,6 +4,8 @@
 
 The **Narrative CV structure** is a language-agnostic format designed for senior engineers who want to emphasize pragmatic expertise over technology identity. This guide explains when and how to use narrative CVs effectively.
 
+> **Note**: The narrative structure is automatically selected when you choose **Language-Agnostic** role emphasis with Full, Standard, or Short length formats. Ultra-Short always uses the Highlights structure. See the [CV Variants Guide](CV_VARIANTS_GUIDE.md) for the complete variant system.
+
 ## When to Use Narrative Structure
 
 ### Best For
@@ -135,9 +137,22 @@ If any field is empty, the narrative CV uses sensible defaults. This ensures the
 1. **Generate CV** from main menu
 2. **Select Profile** (e.g., Staff Engineer)
 3. **Select Audience** (e.g., Hiring Manager)
-4. **Select Structure** - Choose **Narrative**
-5. **Review Preview** - See how it looks
-6. **Export** - Choose Text or Markdown format
+4. **Select Role Emphasis** - Choose **Language-Agnostic**
+5. **Select Length Format** - Choose Full, Standard, or Short (Ultra-Short uses Highlights structure)
+6. **Review Preview** - See how it looks
+7. **Export** - Choose Text or Markdown format
+
+### Variant Selection
+
+The narrative structure is used by these variants:
+
+| Variant | Length | Best For |
+|---------|--------|----------|
+| `language_agnostic_full` | 3+ pages | Complete history, internal promotion |
+| `language_agnostic_standard` | 2-3 pages | Most job applications |
+| `language_agnostic_short` | 1-2 pages | Quick reviews, networking |
+
+**Note**: `language_agnostic_ultra_short` uses the Highlights structure for a one-page format.
 
 ### Export Formats
 
@@ -247,11 +262,12 @@ For more troubleshooting, see [CV Troubleshooting Guide](CV_TROUBLESHOOTING.md).
 
 ## Related Documentation
 
+- [CV Variants Guide](CV_VARIANTS_GUIDE.md) - Complete guide to all 16 variants
 - [CV Generation Guide](CV_GENERATION_GUIDE.md) - Complete CV generation workflow
 - [CV Troubleshooting](CV_TROUBLESHOOTING.md) - Common issues and solutions
 - [Custom CV Format Proposal](../CUSTOM_CV_FORMAT_PROPOSAL.md) - Implementation details
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.1  
 **Last Updated**: 2026-01-09
