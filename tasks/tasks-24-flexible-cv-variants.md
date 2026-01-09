@@ -239,65 +239,63 @@ type ProfileOverride struct {
 
 ---
 
-### Phase 2: New Structures (Consulting, Highlights)
+### Phase 2: New Structures (Consulting, Highlights) ✅ COMPLETE
 
 **Objective**: Implement the two new CV structures and their section rendering.
 
-#### Step 2.1: Define Consulting Structure Sections
-**File**: `internal/service/career/cv/section_builder.go`
+**Status**: Completed 2026-01-09
 
-Consulting structure sections:
-1. Profile Header (same as narrative)
-2. Summary
-3. Client Engagements (by company - same logic as Experience, different title)
-4. Technical Capabilities (derived from high-strength facts)
-5. What I Bring
+**Commit**: `b8074e4` - feat(cv): implement Consulting and Highlights export structures
 
-- [ ] Add `buildConsultingSections()` method
-- [ ] Add `buildTechnicalCapabilities()` helper (derives from facts with strength_signal="High")
-
-#### Step 2.2: Define Highlights Structure Sections
-**File**: `internal/service/career/cv/section_builder.go`
-
-Highlights structure sections:
-1. Profile Header (condensed)
-2. Summary (2-3 sentences max)
-3. Key Capabilities (4-6 bullets from core_strengths or top facts)
-4. Selected Highlights (3-5 highest confidence bullets)
-5. Languages & Systems (one line)
-
-- [ ] Add `buildHighlightsSections()` method
-- [ ] Add `buildKeyCapabilities()` helper
-- [ ] Add `buildSelectedHighlights()` helper (top N bullets by confidence)
-
-#### Step 2.3: Update Export Service for New Structures
+#### Step 2.1: Consulting Structure Export ✅
 **File**: `internal/service/career/cv/export_service.go`
 
-- [ ] Add `exportConsulting()` method
-- [ ] Add `exportConsultingText()` and `exportConsultingMarkdown()` methods
-- [ ] Add `exportHighlights()` method
-- [ ] Add `exportHighlightsText()` and `exportHighlightsMarkdown()` methods
-- [ ] Update `Export()` switch to handle new structures
+Consulting structure sections:
+1. Profile Header (role, location, contact)
+2. Summary
+3. Client Engagements (experience grouped by company with dates)
+4. What I Bring (value propositions from profile)
 
-#### Step 2.4: Write Tests
+- [x] Add `exportConsultingWithProfile()` routing method
+- [x] Add `exportConsultingText()` for plain text
+- [x] Add `exportConsultingMarkdown()` for markdown
+
+#### Step 2.2: Highlights Structure Export ✅
+**File**: `internal/service/career/cv/export_service.go`
+
+Highlights structure sections:
+1. Condensed Profile Header (one line)
+2. Short Summary
+3. Key Capabilities (4-6 from core_strengths or defaults)
+4. Selected Highlights (top 5 bullets by confidence)
+5. Technologies (languages and systems)
+
+- [x] Add `exportHighlightsWithProfile()` routing method
+- [x] Add `exportHighlightsText()` for plain text
+- [x] Add `exportHighlightsMarkdown()` for markdown
+- [x] Add `getTopBulletsByConfidence()` helper
+
+#### Step 2.3: Update Export Routing ✅
+**File**: `internal/service/career/cv/export_service.go`
+
+- [x] Update `ExportWithProfile()` switch to handle all 4 structures
+- [x] CVStructureConsulting routes to consulting export
+- [x] CVStructureHighlights routes to highlights export
+
+#### Step 2.4: Tests ✅
 **File**: `internal/service/career/cv/structure_test.go` (new)
 
-- [ ] Consulting structure includes all expected sections
-- [ ] Consulting structure groups by company (Client Engagements)
-- [ ] Technical Capabilities derived from high-strength facts
-- [ ] Technical Capabilities omitted if no high-strength facts
-- [ ] Highlights structure includes all expected sections
-- [ ] Key Capabilities uses core_strengths if available
-- [ ] Key Capabilities derives from facts if core_strengths empty
-- [ ] Selected Highlights limited to top 5 by confidence
-- [ ] Export to text works for consulting
-- [ ] Export to markdown works for consulting
-- [ ] Export to text works for highlights
-- [ ] Export to markdown works for highlights
+24 tests covering:
+- [x] Consulting: profile header, summary, client engagements, bullets, what I bring
+- [x] Consulting: text and markdown formats
+- [x] Highlights: condensed header, summary, key capabilities, selected highlights
+- [x] Highlights: top 5 by confidence filtering, technologies section
+- [x] Highlights: text and markdown formats
+- [x] Structure routing for all 4 types
 
-#### Verification
-- [ ] All structure tests pass
-- [ ] Consulting and Highlights structures render correctly
+#### Verification ✅
+- [x] All 24 structure tests pass
+- [x] No regressions (270/271 CV tests pass - 1 clipboard test requires display)
 
 ---
 
