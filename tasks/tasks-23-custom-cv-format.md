@@ -451,6 +451,354 @@ If issues arise:
 
 ---
 
+### Phase 6: Role Emphasis Redesign - Technology-Focused CV Generation
+
+**Prerequisites**: Task 39 (User-Defined Skills Management) must be complete
+
+**Objective**: Replace current role emphasis with technology-focused system that uses user-defined skills for CV generation
+
+**Time Estimate**: 3-4 days
+
+#### Context
+
+Currently, CV generation uses "Role Emphasis" (Senior Backend, Staff/Principal, Consulting, Language-Agnostic) to determine presentation style. Phase 6 replaces that with a **Technology Focus** system that:
+
+1. Derives technologies from user-defined skills (Task 39)
+2. Allows selecting presentation style: Language Agnostic, Generalist (2-5 techs), or Specialist (1 tech)
+3. Allows selecting Focus Area: Backend, Frontend, Fullstack, DevOps (derived from skill categories)
+4. Populates CV Skills section with selected technologies
+
+#### New Flow
+
+```
+[Select Profile] ← Contains TargetRole (Principal/Staff/EM/Senior IC)
+    ↓
+[Select Audience] ← Hiring Manager / Recruiter / Peer
+    ↓
+[Extracting Technologies...] (loading - aggregate user skills)
+    ↓
+[Select Technology Focus] ← REPLACES "Role Emphasis"
+    ├─ Language Agnostic → [Select Focus Area] → [Select Length]
+    ├─ Generalist (2-5) → [Select Technologies] → [Select Focus Area] → [Select Length]
+    └─ Specialist (1) → [Select Technology] → [Select Focus Area] → [Select Length]
+    ↓
+[Select Length Format]
+    ↓
+[Generate CV]
+```
+
+#### Variant ID Structure
+
+**Language Agnostic:**
+```
+agnostic_{focus_area}_{length}
+Example: agnostic_backend_standard
+```
+
+**Generalist:**
+```
+generalist_{focus_area}_{length}
+Example: generalist_fullstack_short
+```
+
+**Specialist:**
+```
+specialist_{tech}_{focus_area}_{length}
+Example: specialist_ruby_backend_full
+```
+
+**Note**: Target Role (Principal/Staff/EM/Senior IC) is NOT part of variant ID - it's a generation parameter from the Profile that affects bullet filtering.
+
+#### CV Structure Mapping
+
+| Technology Focus | CV Structure |
+|-----------------|--------------|
+| Language Agnostic | Narrative |
+| Generalist | Standard |
+| Specialist | Standard |
+
+Ultra-Short always uses Highlights structure regardless of Technology Focus.
+
+#### Implementation Steps
+
+**Step 6.1: Technology Extraction Service**
+
+Create service to aggregate and filter user skills.
+
+Files to create:
+- [ ] `internal/service/career/technology/extractor.go` - Technology extraction service
+- [ ] `internal/service/career/technology/extractor_test.go` - Extraction tests
+
+**Step 6.2: Focus Area Analyzer**
+
+Suggest focus area based on skill categories.
+
+Files to create:
+- [ ] `internal/service/career/technology/focus_area.go` - Focus area analyzer
+- [ ] `internal/service/career/technology/focus_area_test.go` - Focus area tests
+
+Analysis Logic:
+1. Count skills by category
+2. Determine dominant focus area:
+   - If backend > 70%: Backend
+   - If frontend > 70%: Frontend
+   - If devops > 70%: DevOps
+   - If mix of backend + frontend: Fullstack
+3. Calculate confidence based on distribution
+4. Return suggestion with evidence
+
+**Step 6.3: Update Domain Types**
+
+Replace old RoleEmphasis with TechnologyFocus.
+
+Files to modify:
+- [ ] `internal/service/career/cv/variants.go` - Remove old RoleEmphasis constants, add TechnologyFocus type, add FocusArea type
+
+Remove:
+```go
+RoleEmphasisSeniorBackend
+RoleEmphasisStaffPrincipal
+RoleEmphasisConsulting
+RoleEmphasisLanguageAgnostic
+```
+
+Add:
+```go
+type TechnologyFocus string
+
+const (
+    TechnologyFocusLanguageAgnostic TechnologyFocus = "language_agnostic"
+    TechnologyFocusGeneralist       TechnologyFocus = "generalist"
+    TechnologyFocusSpecialist       TechnologyFocus = "specialist"
+)
+
+type FocusArea string
+
+const (
+    FocusAreaBackend   FocusArea = "backend"
+    FocusAreaFrontend  FocusArea = "frontend"
+    FocusAreaFullstack FocusArea = "fullstack"
+    FocusAreaDevOps    FocusArea = "devops"
+)
+```
+
+Update CVVariant:
+```go
+type CVVariant struct {
+    ID              string
+    Name            string
+    Description     string
+    TechnologyFocus TechnologyFocus  // NEW (replaces RoleEmphasis)
+    FocusArea       FocusArea        // NEW
+    LengthFormat    LengthFormat
+    Technologies    []string         // NEW - selected techs (for Generalist/Specialist)
+    BaseStructure   CVStructure
+    // ...
+}
+```
+
+**Step 6.4: Update State Machine**
+
+Add new states for technology and focus area selection.
+
+Files to modify:
+- [ ] `internal/cli/intents/generate_cv.go` - Add new states, state data fields, update types
+
+New states:
+```go
+const (
+    GenerateCVStateExtractingTechnologies GenerateCVState = "extracting_technologies"
+    GenerateCVStateSelectTechnologyFocus  GenerateCVState = "select_technology_focus"  // Renamed from SelectRoleEmphasis
+    GenerateCVStateSelectTechnologies     GenerateCVState = "select_technologies"      // NEW
+    GenerateCVStateSelectFocusArea        GenerateCVState = "select_focus_area"        // NEW
+    GenerateCVStateSelectLengthFormat     GenerateCVState = "select_length_format"
+)
+```
+
+New state data:
+```go
+type GenerateCVModel struct {
+    // ... existing fields ...
+    
+    // Technology extraction
+    extractedTechnologies []*technology.ExtractedTechnology
+    technologiesAvailable bool  // true if 3+ technologies found
+    
+    // Technology Focus selection
+    selectedTechnologyFocus TechnologyFocus
+    technologyFocusIndex    int
+    
+    // Technology selection (for Generalist/Specialist)
+    selectedTechnologies []string      // Skill IDs
+    technologyCursor     int
+    technologySelected   map[int]bool  // Multi-select state
+    
+    // Focus area
+    focusAreaSuggestion *technology.FocusAreaSuggestion
+    selectedFocusArea   FocusArea
+    focusAreaCursor     int
+}
+```
+
+**Step 6.5: Technology Extraction Flow**
+
+Extract technologies after audience selection.
+
+Files to modify:
+- [ ] `internal/cli/intents/generate_cv_intent.go` - Add extraction, technology selection, focus area views/handlers
+
+**Step 6.6: Technology Focus Selection View**
+
+Replace Role Emphasis view with Technology Focus.
+
+Files to create:
+- [ ] `internal/cli/intents/generate_cv_technology_test.go` - Technology selection tests
+
+**Step 6.7: Technology Selection View**
+
+Allow selecting technologies (multi or single).
+
+View shows:
+- For Generalist: "Select 2-5 technologies"
+- For Specialist: "Select 1 technology"
+- Event count per technology
+- Space to toggle, Enter to confirm
+
+**Step 6.8: Focus Area Selection View**
+
+Allow selecting focus area with suggestions.
+
+Files to create:
+- [ ] `internal/cli/intents/generate_cv_focus_area_test.go` - Focus area selection tests
+
+View shows:
+- 4 options: Backend, Frontend, Fullstack, DevOps
+- Highlight suggested option
+- Show evidence: "backend: 12 skills, frontend: 3 skills"
+
+**Step 6.9: Update Variant System**
+
+Create new variants, remove old ones.
+
+Files to modify:
+- [ ] `internal/service/career/cv/role_emphasis.go` - Remove old configs, add new technology focus configs
+
+Remove all 16 old variants (senior_backend_*, staff_principal_*, consulting_*, language_agnostic_*)
+
+Create new variant lookup:
+```go
+func GetVariantBySelections(
+    techFocus TechnologyFocus,
+    focusArea FocusArea,
+    length LengthFormat,
+    technologies []string,
+) (*CVVariant, error)
+```
+
+**Step 6.10: Update Bullet Generation**
+
+Filter/prioritize bullets based on selected technologies.
+
+Files to modify:
+- [ ] `internal/service/career/cv/bullet_generator.go` - Add technology-based filtering
+
+Technology-based filtering:
+- Language Agnostic: No filtering - show all
+- Specialist: Strongly filter - only bullets with selected tech
+- Generalist: Boost bullets with selected techs, keep others
+
+**Step 6.11: Skills Section Population**
+
+Populate Skills section with selected technologies.
+
+Update section builder to:
+- Prioritize selected technologies
+- Show selected technologies first, then others
+- Group by category
+- Include event counts
+
+**Step 6.12: Update Documentation**
+
+Rewrite variant and generation guides.
+
+Files to modify:
+- [ ] `docs/guides/CV_VARIANTS_GUIDE.md` - Complete rewrite
+- [ ] `docs/guides/CV_GENERATION_GUIDE.md` - Significant updates
+
+#### Phase 6 Acceptance Criteria
+
+- [ ] Users can select Technology Focus (Language Agnostic / Generalist / Specialist)
+- [ ] Users can select technologies (multi-select for Generalist, single for Specialist)
+- [ ] Users can select Focus Area (Backend/Frontend/Fullstack/DevOps) with suggestions
+- [ ] Technology extraction works with 3+ event threshold
+- [ ] Focus area is suggested based on skill categories
+- [ ] Old role emphasis variants removed
+- [ ] New variant system works with all combinations
+- [ ] CV Skills section populated with selected technologies
+- [ ] Bullet filtering works based on technology selection
+- [ ] All tests pass (100% pass rate)
+- [ ] Coverage maintained ≥ 80%
+- [ ] Zero staticcheck warnings
+- [ ] Zero race conditions
+- [ ] Documentation updated
+
+#### Phase 6 Breaking Changes
+
+**For Users:**
+- Old CV configs referencing `senior_backend`, `staff_principal`, `consulting` variants will not work
+- Must regenerate CVs using new flow
+
+**For Developers:**
+- `RoleEmphasis` type removed
+- `RoleEmphasisConfig` removed
+- All 16 old variants removed
+- New `TechnologyFocus` and `FocusArea` types added
+
+#### Phase 6 Notes
+
+**Variant ID Examples:**
+
+Language Agnostic:
+- `agnostic_backend_full`
+- `agnostic_frontend_standard`
+- `agnostic_fullstack_short`
+- `agnostic_devops_ultra_short`
+
+Generalist:
+- `generalist_backend_standard`
+- `generalist_fullstack_short`
+
+Specialist:
+- `specialist_ruby_backend_full`
+- `specialist_react_frontend_standard`
+- `specialist_kubernetes_devops_short`
+
+**Technology Threshold:**
+- Minimum 3 events with a skill to appear in selection
+- Prevents noise from rarely-used skills
+- Users can always add more skills in Manage Skills (Task 39)
+
+**Focus Area Suggestions:**
+- Backend: 70%+ backend category skills
+- Frontend: 70%+ frontend category skills
+- DevOps: 70%+ devops category skills
+- Fullstack: Mix of backend + frontend
+- User always makes final choice
+
+**Target Role Independence:**
+- Target Role (Principal/Staff/EM/Senior IC) remains in Profile
+- Affects bullet caps and filtering (per PRD)
+- Not part of variant identity
+- Orthogonal to Technology Focus
+
+**CV Structure Mapping:**
+- Language Agnostic → Narrative (emphasizes adaptability)
+- Generalist → Standard (traditional format)
+- Specialist → Standard (traditional format)
+- Ultra-Short → Highlights (always, regardless of focus)
+
+---
+
 ## References
 
 - [CV Generation Service](../internal/service/career/cv/cv_generation_service.go)
@@ -459,23 +807,25 @@ If issues arise:
 
 ---
 
-**Last Updated**: 2026-01-09  
-**Status**: ✅ ALL PHASES COMPLETE - Task 23 finished  
-**Next Step**: Documentation updates and PR merge
+**Last Updated**: 2026-01-11  
+**Status**: ✅ PHASES 1-5 COMPLETE - Phase 6 requires Task 39 (User-Defined Skills)  
+**Next Step**: Complete Task 39, then implement Phase 6 (Role Emphasis Redesign)
 
 ## Implementation Summary
 
 ### Completed Phases
 
-| Phase | Description | Tests Added | Commits |
-|-------|-------------|-------------|---------|
-| Phase 1 | Cleanup - Reset branch | - | Branch reset |
-| Phase 2 | CV Structure types and selection state | 22 | 3 commits |
-| Phase 3 | Structure-aware preview | 42 | 2 commits |
-| Phase 4 | Structure-aware export | 7 | 3 commits |
-| Phase 5 | Profile configuration | 11 | 1 commit |
+| Phase | Description | Tests Added | Commits | Status |
+|-------|-------------|-------------|---------|--------|
+| Phase 1 | Cleanup - Reset branch | - | Branch reset | ✅ Complete |
+| Phase 2 | CV Structure types and selection state | 22 | 3 commits | ✅ Complete |
+| Phase 3 | Structure-aware preview | 42 | 2 commits | ✅ Complete |
+| Phase 4 | Structure-aware export | 7 | 3 commits | ✅ Complete |
+| Phase 5 | Profile configuration | 11 | 1 commit | ✅ Complete |
+| Phase 6 | Role Emphasis Redesign (Technology Focus) | TBD | TBD | ⏳ Blocked by Task 39 |
 
-**Total new tests**: 82
+**Total new tests (Phases 1-5)**: 82  
+**Estimated tests (Phase 6)**: ~150
 
 ### Key Files Created
 

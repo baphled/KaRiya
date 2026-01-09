@@ -663,11 +663,6 @@ func (es *ExportService) getTopBulletsByConfidence(bullets map[string][]*career.
 	return allBullets
 }
 
-// exportNarrative exports using the narrative CV structure with default profile.
-func (es *ExportService) exportNarrative(ctx context.Context, cv *career.CVView, sections []*career.CVSection, format ExportFormat) (string, error) {
-	return es.exportNarrativeWithProfile(ctx, cv, sections, format, nil)
-}
-
 // exportNarrativeWithProfile exports using the narrative CV structure with optional profile config.
 func (es *ExportService) exportNarrativeWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
 	switch format {
@@ -678,11 +673,6 @@ func (es *ExportService) exportNarrativeWithProfile(ctx context.Context, cv *car
 	default:
 		return "", fmt.Errorf("unknown export format: %s", format)
 	}
-}
-
-// exportNarrativeText exports narrative CV to plain text format with default profile.
-func (es *ExportService) exportNarrativeText(ctx context.Context, cv *career.CVView, sections []*career.CVSection) (string, error) {
-	return es.exportNarrativeTextWithProfile(ctx, cv, sections, nil)
 }
 
 // exportNarrativeTextWithProfile exports narrative CV to plain text format with optional profile config.
@@ -769,11 +759,6 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 	buf.WriteString("References available on request.\n")
 
 	return buf.String(), nil
-}
-
-// exportNarrativeMarkdown exports narrative CV to markdown format with default profile.
-func (es *ExportService) exportNarrativeMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection) (string, error) {
-	return es.exportNarrativeMarkdownWithProfile(ctx, cv, sections, nil)
 }
 
 // exportNarrativeMarkdownWithProfile exports narrative CV to markdown format with optional profile config.

@@ -41,7 +41,9 @@
         "intents",
         "models",
         "components",
-        "ci"
+        "ci",
+        "cv",
+        "tui"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],
