@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -26,9 +25,6 @@ type GenerateCVIntent struct {
 	active  bool
 	result  *IntentResult[*GenerateCVResult]
 	logger  *logger.Logger
-
-	// loadingRotator rotates through CV-specific loading messages
-	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewGenerateCVIntent creates a new GenerateCV intent.
@@ -45,15 +41,6 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
 
-	// Create loading message rotator with CV-specific messages
-	loadingRotator := components.NewLoadingMessageRotator([]string{
-		"🔍 Analyzing career events...",
-		"📊 Calculating impact metrics...",
-		"✨ Generating professional bullets...",
-		"📝 Formatting final document...",
-		"✅ CV ready!",
-	}, 2*time.Second)
-
 	return &GenerateCVIntent{
 		BaseIntent: base,
 		context:    context,
@@ -63,9 +50,8 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 			selectedProfile: selectedProfile,
 			selectedIndex:   0,
 		},
-		loadingRotator: loadingRotator,
-		active:         true,
-		logger:         nil,
+		active: true,
+		logger: nil,
 	}, nil
 }
 

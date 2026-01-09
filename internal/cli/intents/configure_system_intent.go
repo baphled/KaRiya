@@ -3,9 +3,7 @@ package intents
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -15,9 +13,6 @@ type ConfigureSystemIntent struct {
 	*BaseIntent
 
 	model *ConfigureSystemModel
-
-	// loadingRotator rotates through configuration-specific loading messages
-	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewConfigureSystemIntent creates a new ConfigureSystem intent
@@ -32,19 +27,9 @@ func NewConfigureSystemIntent(ctx context.Context) (*ConfigureSystemIntent, erro
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
 
-	// Create loading message rotator with configuration-specific messages
-	loadingRotator := components.NewLoadingMessageRotator([]string{
-		"⚙️  Loading configuration...",
-		"🔍 Checking settings...",
-		"✨ Applying changes...",
-		"💾 Saving configuration...",
-		"✅ Configuration updated!",
-	}, 2*time.Second)
-
 	return &ConfigureSystemIntent{
-		BaseIntent:     base,
-		model:          model,
-		loadingRotator: loadingRotator,
+		BaseIntent: base,
+		model:      model,
 	}, nil
 }
 
