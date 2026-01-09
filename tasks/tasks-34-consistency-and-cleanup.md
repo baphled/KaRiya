@@ -1,18 +1,19 @@
-# Task 34: Consistency & Cleanup
+# Task 34: Consistency & Cleanup (MERGED WITH DEAD CODE AUDIT)
 
 **Created**: 2026-01-08
-**Status**: Ready for Implementation
+**Updated**: 2026-01-09
+**Status**: PARTIALLY COMPLETE (Dead Code Removal Done)
 **Priority**: MEDIUM
-**Estimated Time**: 2-3 hours
-**Related**: Codebase Audit (2026-01-08)
+**Estimated Time**: 4-5 hours (expanded from 2-3 hours)
+**Related**: Codebase Audit (2026-01-08), Dead Code Audit (2026-01-09)
 
 ---
 
 ## Overview
 
-Various consistency issues and dead code throughout the codebase: help screen not implemented, error messages not displayed, unused code, orphaned message types, and backup files that should be removed.
+This task was merged with a comprehensive dead code audit on 2026-01-09. The dead code removal is complete. Remaining items (help screen, error display, etc.) still need implementation.
 
-**Issues**:
+**Original Issues**:
 - Help screen ('?' key) does nothing
 - CV generation errors never shown to user
 - Unused loadingRotator components in 3 intents
@@ -21,20 +22,98 @@ Various consistency issues and dead code throughout the codebase: help screen no
 - Stub functions that should be removed or implemented
 - Unused CLI flags
 
+**Added from Dead Code Audit**:
+- Superseded packages (context, layout, workflow, validation)
+- Superseded navigation files (handlers, key_handler, registry)
+- 17 unused component files
+- Unused service files (data_quality, config_initializer, burst_fact/workflow)
+- Unused examples directory
+- Unused testing.go utilities
+
 ---
 
-## Files to Modify
+## Completed: Dead Code Removal (2026-01-09)
 
-- [ ] `internal/cli/app/app.go`
-- [ ] `internal/cli/app/messages.go`
-- [ ] `internal/cli/intents/capture_event_intent.go`
-- [ ] `internal/cli/intents/browse_timeline_intent.go`
-- [ ] `internal/cli/intents/generate_cv_intent.go`
-- [ ] `internal/cli/components/audience_relevance_selector.go`
-- [ ] `cmd/cli/main.go`
-- [ ] Delete: `internal/cli/app/app.go.bak`
-- [ ] Delete: `internal/cli/models/fact_list.go.bak`
-- [ ] Delete: `internal/cli/models/burst_list.go.bak`
+### Summary
+- **Files removed**: 56
+- **Lines removed**: 14,367
+- **Dead functions reduced**: 613 → 236 (377 removed, 61% reduction)
+- **All tests passing**: 20 packages
+- **Staticcheck warnings**: 0
+
+### Packages Removed (Entire Directories)
+- [x] `internal/cli/context/` - GlobalContext (Phase 5.1 never started)
+- [x] `internal/cli/layout/` - Superseded by StandardView
+- [x] `internal/cli/workflow/` - Superseded by Intent architecture
+- [x] `internal/cli/validation/` - Never wired up, legacy Task 03 code
+
+### Navigation Files Removed
+- [x] `internal/cli/navigation/handlers.go`
+- [x] `internal/cli/navigation/key_handler.go`
+- [x] `internal/cli/navigation/key_handler_test.go`
+- [x] `internal/cli/navigation/registry.go`
+- [x] `internal/cli/navigation/registry_test.go`
+- [x] `internal/cli/navigation/registry_integration_test.go`
+
+**Kept** (actively used):
+- `list_navigator.go`, `constants.go`, `help.go` and their tests
+- Added `suite_test.go` for Ginkgo test runner
+
+### Components Removed (17 files)
+- [x] `card_container.go` + test
+- [x] `centered_container.go`
+- [x] `form.go` + test
+- [x] `form_container.go` + test
+- [x] `form_field_container.go` + test
+- [x] `list_container.go` + test
+- [x] `list_item.go` + test
+- [x] `navigation_menu.go` + test
+- [x] `pagination.go` + test
+- [x] `progress.go` + test
+- [x] `screen_container.go` + test
+- [x] `section_container.go` + test
+- [x] `smart_container.go` + test
+- [x] `spinner.go` + test
+- [x] `text_utils.go` + test
+- [x] `intent_header.go`
+
+**Kept** (actively used or needed for Task 31):
+- `modal_container.go` - Used by `modals.go` (Task 31)
+- `audience_relevance_selector.go` - Decision pending (stub function)
+
+### Services Removed
+- [x] `internal/service/career/data_quality.go` + test
+- [x] `internal/service/career/cv/config_initializer.go` + test
+- [x] `internal/service/career/burst_fact/workflow.go` + test
+- [x] `internal/service/career/burst_fact/integration_test.go`
+
+**Kept** (PRD requirements):
+- `traceability_service.go` - PRD Section 5.5 explainability
+- `classification/classifier.go` - Used by category_selector
+
+### Other Files Removed
+- [x] `examples/enhanced_capture_example.go` - Orphaned example
+- [x] `internal/cli/intents/testing.go` + test - YAGNI
+- [x] `internal/cli/app/app.go.bak`
+- [x] `internal/cli/models/fact_list.go.bak`
+- [x] `internal/cli/models/burst_list.go.bak`
+
+**Kept** (used by tests):
+- `internal/repository/career/mocks/mock_helper.go` - Used by service_test.go
+
+---
+
+## Remaining: Original Task 34 Items
+
+### Files to Modify
+
+- [ ] `internal/cli/app/app.go` - Help screen implementation
+- [ ] `internal/cli/app/messages.go` - Remove orphaned message types
+- [ ] `internal/cli/intents/capture_event_intent.go` - LoadingRotator decision
+- [ ] `internal/cli/intents/browse_timeline_intent.go` - LoadingRotator decision
+- [ ] `internal/cli/intents/generate_cv_intent.go` - Error display, LoadingRotator
+- [ ] `internal/cli/components/audience_relevance_selector.go` - ToggleSelected stub
+- [ ] `cmd/cli/main.go` - Unused CLI flags
 
 ---
 
