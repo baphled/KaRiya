@@ -52,14 +52,33 @@ Press `Enter` on any bullet to see which events and facts contributed to it. Thi
 - How confident KaRiya is in the bullet (confidence score)
 - Why the bullet was included (inclusion reason)
 
-### 6. Select CV Structure
+### 6. Select CV Variant
 
-Before generation, you can choose how your CV is structured:
+Before generation, you select your CV variant through a two-step process:
 
-- **Standard**: Traditional CV format with Experience, Projects, Skills, and Summary sections. Best for most job applications.
-- **Narrative**: Language-agnostic format emphasizing pragmatic expertise with Core Strengths, Technologies, and "What I Bring" sections. Best for senior engineers with cross-domain experience.
+#### Step 1: Select Role Emphasis
 
-Use arrow keys or `j`/`k` to select, then press `Enter` to generate.
+Choose what aspect of your experience to highlight:
+
+- **Senior Backend**: Technical depth, architecture, product impact
+- **Staff/Principal**: Leadership, strategy, cross-team influence
+- **Consulting**: Client engagements, delivery, rapid assessment
+- **Language-Agnostic**: Adaptability, multi-language expertise
+
+#### Step 2: Select Length Format
+
+Choose how detailed your CV should be:
+
+- **Full (3+ pages)**: Complete history, all qualifying bullets
+- **Standard (2-3 pages)**: Last 10 years, higher-confidence bullets
+- **Short (1-2 pages)**: Last 5 years, top companies only
+- **Ultra-Short (1 page)**: Highlights format, top 3 companies
+
+Use arrow keys or `j`/`k` to navigate, then press `Enter` to select.
+
+The combination of role emphasis and length format automatically determines the CV structure (Standard, Narrative, Consulting, or Highlights).
+
+For complete details on all 16 variants, see the [CV Variants Guide](CV_VARIANTS_GUIDE.md).
 
 ### 7. Export Your CV
 
@@ -452,11 +471,11 @@ sections:
 
 ## CV Structures
 
-KaRiya supports two CV structures that determine how your content is organized.
+KaRiya supports four CV structures, automatically selected based on your variant choice.
 
 ### Standard Structure
 
-The traditional CV format with these sections:
+The traditional CV format, used by Senior Backend and Staff/Principal variants.
 
 | Section | Content |
 |---------|---------|
@@ -472,11 +491,12 @@ The traditional CV format with these sections:
 
 ### Narrative Structure
 
-A language-agnostic format for professionals emphasizing pragmatic expertise:
+A language-agnostic format for professionals emphasizing pragmatic expertise, used by Language-Agnostic variants.
 
 | Section | Content |
 |---------|---------|
 | **Profile Header** | Name, title, location, contact info |
+| **Positioning Statement** | Career positioning (optional) |
 | **Summary** | Professional summary with language-agnostic emphasis |
 | **Core Strengths** | Key competencies (6 bullet points) |
 | **Languages & Technologies** | Languages, Frontend, Systems |
@@ -488,6 +508,43 @@ A language-agnostic format for professionals emphasizing pragmatic expertise:
 - Emphasizing "languages as tools, not identity"
 - Pragmatic, outcome-focused professionals
 - Roles requiring broad technical expertise
+
+### Consulting Structure
+
+A client-focused format for consulting professionals, used by Consulting variants.
+
+| Section | Content |
+|---------|---------|
+| **Profile Header** | Name, title, location, contact info |
+| **Summary** | Professional summary |
+| **Client Engagements** | Experience grouped by company with dates |
+| **Technical Capabilities** | Skills and tools (optional) |
+| **What I Bring** | Value propositions |
+
+**Best for**:
+- Consulting firm applications
+- Client-facing technical roles
+- Positions requiring diverse project experience
+
+### Highlights Structure
+
+A one-page executive summary format, used by all Ultra-Short variants.
+
+| Section | Content |
+|---------|---------|
+| **Condensed Header** | Single-line profile |
+| **Summary** | Brief professional summary |
+| **Key Capabilities** | 4-6 core competencies |
+| **Selected Highlights** | Top 5 bullets by confidence |
+| **Technologies** | Languages and systems |
+
+**Best for**:
+- One-page requirements
+- Executive summaries
+- Quick introductions and networking
+- Initial recruiter screenings
+
+For complete details on how variants map to structures, see the [CV Variants Guide](CV_VARIANTS_GUIDE.md).
 
 ### Configuring Your Profile for Narrative CVs
 
@@ -766,13 +823,20 @@ To export all your CVs:
 ## Next Steps
 
 1. **Create Your First Config**: Start with one target role and audience
-2. **Generate and Review**: See how your events become bullets
-3. **Explore Sources**: Click bullets to understand traceability
-4. **Iterate on Events**: Improve events to improve CV quality
-5. **Export and Customize**: Export and tailor for specific roles
+2. **Select a Variant**: Choose role emphasis and length format for your target job
+3. **Generate and Review**: See how your events become bullets
+4. **Explore Sources**: Click bullets to understand traceability
+5. **Iterate on Events**: Improve events to improve CV quality
+6. **Export and Customize**: Export and tailor for specific roles
+
+## Related Documentation
+
+- [CV Variants Guide](CV_VARIANTS_GUIDE.md) - Complete guide to the 16 built-in variants
+- [Narrative CV Guide](NARRATIVE_CV_GUIDE.md) - Details on narrative structure configuration
+- [CV Troubleshooting](CV_TROUBLESHOOTING.md) - Common issues and solutions
 
 ---
 
-**Document Version**: 1.1
+**Document Version**: 1.2
 **Last Updated**: 2026-01-09
 
