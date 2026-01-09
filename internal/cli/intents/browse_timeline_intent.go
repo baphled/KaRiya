@@ -57,9 +57,6 @@ type BrowseTimelineIntent struct {
 
 	// result is the final result of the intent (set when complete).
 	result *IntentResult[*BrowseTimelineResult]
-
-	// loadingRotator rotates through browse-specific loading messages
-	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -100,14 +97,6 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
 
-	// Create loading message rotator with browse-specific messages
-	loadingRotator := components.NewLoadingMessageRotator([]string{
-		"📅 Loading timeline...",
-		"🔍 Filtering events...",
-		"📊 Organizing career history...",
-		"✨ Preparing event details...",
-	}, 2*time.Second)
-
 	intent := &BrowseTimelineIntent{
 		BaseIntent: base,
 		context:    context,
@@ -120,10 +109,9 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 			selectedFacts:  make([]*career.Fact, 0),
 			viewedEvents:   make([]*career.CareerEvent, 0),
 		},
-		table:          &t,
-		listContainer:  components.NewTableListContainer(t, "Browse Timeline", 100),
-		loadingRotator: loadingRotator,
-		active:         true,
+		table:         &t,
+		listContainer: components.NewTableListContainer(t, "Browse Timeline", 100),
+		active:        true,
 	}
 
 	// Initialize navigation handler

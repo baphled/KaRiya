@@ -35,11 +35,6 @@ func (a *AudienceRelevanceSelector) GetSelected() []string {
 	return result
 }
 
-// ToggleSelected toggles the current selected option
-func (a *AudienceRelevanceSelector) ToggleSelected() {
-	// This is a placeholder - implementation would depend on current focus
-}
-
 // IsSelected checks if an audience type is selected
 func (a *AudienceRelevanceSelector) IsSelected(audience string) bool {
 	return a.selected[audience]

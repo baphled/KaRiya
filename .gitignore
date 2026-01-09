@@ -1,8 +1,13 @@
 # Test coverage
 coverage.out
+coverage*.out
+*_coverage.out
 coverage/
 coverage.html
 *.test
+
+# Test temp directories
+**/tmp/
 
 .opencode
 

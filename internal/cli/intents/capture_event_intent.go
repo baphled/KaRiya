@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -81,9 +80,6 @@ type CaptureEventIntent struct {
 	// eventService is the CLI service for interacting with career events.
 	// Injected via context for dependency management.
 	eventService *service.CLIEventService
-
-	// loadingRotator rotates through capture-specific loading messages
-	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewCaptureEventIntent creates a new CaptureEvent intent.
@@ -98,14 +94,6 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
-
-	// Create loading message rotator with capture-specific messages
-	loadingRotator := components.NewLoadingMessageRotator([]string{
-		"📝 Capturing event details...",
-		"🔍 Analyzing event information...",
-		"💡 Extracting key insights...",
-		"✨ Preparing your event...",
-	}, 2*time.Second)
 
 	// Capture event intent created successfully
 	return &CaptureEventIntent{
@@ -126,8 +114,7 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 				RejectedFields: make(map[string]string),
 			},
 		},
-		loadingRotator: loadingRotator,
-		active:         true,
+		active: true,
 	}, nil
 }
 

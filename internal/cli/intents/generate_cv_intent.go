@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -26,9 +25,6 @@ type GenerateCVIntent struct {
 	active  bool
 	result  *IntentResult[*GenerateCVResult]
 	logger  *logger.Logger
-
-	// loadingRotator rotates through CV-specific loading messages
-	loadingRotator *components.LoadingMessageRotator
 }
 
 // NewGenerateCVIntent creates a new GenerateCV intent.
@@ -45,15 +41,6 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
 
-	// Create loading message rotator with CV-specific messages
-	loadingRotator := components.NewLoadingMessageRotator([]string{
-		"🔍 Analyzing career events...",
-		"📊 Calculating impact metrics...",
-		"✨ Generating professional bullets...",
-		"📝 Formatting final document...",
-		"✅ CV ready!",
-	}, 2*time.Second)
-
 	return &GenerateCVIntent{
 		BaseIntent: base,
 		context:    context,
@@ -63,9 +50,8 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 			selectedProfile: selectedProfile,
 			selectedIndex:   0,
 		},
-		loadingRotator: loadingRotator,
-		active:         true,
-		logger:         nil,
+		active: true,
+		logger: nil,
 	}, nil
 }
 
@@ -498,7 +484,21 @@ func (i *GenerateCVIntent) viewSelectProfile() string {
 // viewSelectAudience renders the audience selection view.
 func (i *GenerateCVIntent) viewSelectAudience() string {
 	var content strings.Builder
-	content.WriteString("\n👥 Select Target Audience\n\n")
+
+	// Display error message prominently if generation failed
+	if i.state.generationError != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorError).
+			Bold(true)
+		content.WriteString(errorStyle.Render("❌ CV Generation Failed") + "\n\n")
+		content.WriteString(fmt.Sprintf("Error: %s\n\n", i.state.generationError.Error()))
+		content.WriteString("Please try selecting a different audience or check your data.\n\n")
+		content.WriteString(strings.Repeat("─", 50) + "\n\n")
+		// Clear error after displaying so it doesn't persist
+		i.state.generationError = nil
+	}
+
+	content.WriteString("👥 Select Target Audience\n\n")
 
 	if i.state.selectedProfile != nil {
 		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
