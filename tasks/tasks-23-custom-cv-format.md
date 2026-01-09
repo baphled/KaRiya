@@ -46,13 +46,13 @@ Select Profile → Select Audience → Select Structure → Generate → Preview
 
 ## Success Criteria
 
-- [ ] CV Structure selection appears before generation (Standard/Narrative)
-- [ ] Narrative structure renders CV with correct sections in preview
-- [ ] Narrative structure exports correctly to Text/Markdown formats
-- [ ] YAML always uses standard structure (it's data format)
-- [ ] Profile configuration available in Configure System → Profile (Phase 2 - Future)
-- [ ] All tests pass with zero regressions
-- [ ] Code coverage maintained >87%
+- [x] CV Structure selection appears before generation (Standard/Narrative)
+- [x] Narrative structure renders CV with correct sections in preview
+- [x] Narrative structure exports correctly to Text/Markdown formats
+- [x] YAML always uses standard structure (it's data format)
+- [ ] Profile configuration available in Configure System → Profile (Phase 5 - Future)
+- [x] All tests pass with zero regressions
+- [x] Code coverage maintained >87%
 - [ ] User guide complete with examples (after implementation)
 
 ---
@@ -204,35 +204,48 @@ Tests for Narrative Structure Preview:
 #### Step 4.1: Write Failing Tests First
 **File**: `internal/service/career/cv/export_service_test.go`
 
-- [ ] Exports standard structure to text format
-- [ ] Exports standard structure to markdown format
-- [ ] Exports narrative structure to text format
-- [ ] Exports narrative structure to markdown format
-- [ ] Always uses standard structure for YAML format
-- [ ] Returns error for nil CV
+- [x] Exports standard structure to text format
+- [x] Exports standard structure to markdown format
+- [x] Exports narrative structure to text format
+- [x] Exports narrative structure to markdown format
+- [x] Always uses standard structure for YAML format
+- [x] Returns error for nil CV
+
+**Commits**:
+- `7ee650b` - test(service): add structure-aware CV export tests
 
 #### Step 4.2: Create Export Helper File
 **File**: `internal/service/career/cv/cv_helpers.go` (new)
 
-- [ ] Add `CVStructure` type and constants
-- [ ] Add `NarrativeProfileData` struct
-- [ ] Add `DefaultNarrativeProfile()` function
-- [ ] Add `extractStrengthsFromSections()` helper
-- [ ] Add `extractTechnologiesFromSections()` helper
-- [ ] Add `extractValuePropositions()` helper
+- [x] Add `CVStructure` type and constants
+- [x] Add `NarrativeProfileData` struct
+- [x] Add `DefaultNarrativeProfile()` function
+- [x] Add `extractStrengthsFromSections()` helper (not needed - using hardcoded profile)
+- [x] Add `extractTechnologiesFromSections()` helper (not needed - using hardcoded profile)
+- [x] Add `extractValuePropositions()` helper (not needed - using hardcoded profile)
 
 #### Step 4.3: Add Export Method with Structure
 **File**: `internal/service/career/cv/export_service.go`
 
-- [ ] Add `Export()` method with structure parameter
-- [ ] Add `renderStandard()` internal method (delegates to existing ExportToText/Markdown)
-- [ ] Add `renderNarrative()` internal method (narrative structure rendering)
-- [ ] Keep existing `ExportToText()`, `ExportToMarkdown()`, `ExportToYAML()` unchanged (backward compat)
+- [x] Add `Export()` method with structure parameter
+- [x] Add `exportStandard()` internal method (delegates to existing ExportToText/Markdown)
+- [x] Add `exportNarrative()` internal method (narrative structure rendering)
+- [x] Add `exportNarrativeText()` for plain text narrative output
+- [x] Add `exportNarrativeMarkdown()` for markdown narrative output
+- [x] Keep existing `ExportToText()`, `ExportToMarkdown()`, `ExportToYAML()` unchanged (backward compat)
+
+**Commits**:
+- `669501b` - feat(service): implement structure-aware CV export
 
 #### Step 4.4: Wire Export in Intent
 **File**: `internal/cli/intents/generate_cv_intent.go`
 
-- [ ] Update `exportCVAsync()` to use new `Export()` method with structure
+- [x] Update `exportCVAsync()` to use new `Export()` method with structure
+
+**Commits**:
+- `f13128f` - feat(intents): wire structure-aware export in GenerateCV intent
+
+**Phase 4 Status**: ✅ COMPLETE
 
 ---
 
@@ -387,5 +400,42 @@ If issues arise:
 ---
 
 **Last Updated**: 2026-01-09  
-**Status**: Phase 3 COMPLETE - Structure-aware preview implemented  
-**Next Step**: Phase 4 - Add structure-aware export (TDD)
+**Status**: Phase 4 COMPLETE - Structure-aware export implemented  
+**Next Step**: Phase 5 (Future) - Profile configuration in Configure System
+
+## Implementation Summary
+
+### Completed Phases
+
+| Phase | Description | Tests Added | Commits |
+|-------|-------------|-------------|---------|
+| Phase 1 | Cleanup - Reset branch | - | Branch reset |
+| Phase 2 | CV Structure types and selection state | 22 | 3 commits |
+| Phase 3 | Structure-aware preview | 42 | 2 commits |
+| Phase 4 | Structure-aware export | 7 | 3 commits |
+
+**Total new tests**: 71
+
+### Key Files Created
+
+| File | Purpose |
+|------|---------|
+| `internal/cli/intents/generate_cv_structure_test.go` | Structure selection tests |
+| `internal/cli/intents/generate_cv_preview_test.go` | Preview rendering tests |
+| `internal/cli/intents/generate_cv_helpers.go` | Narrative preview helpers |
+| `internal/service/career/cv/cv_helpers.go` | Export helpers and types |
+
+### Key Files Modified
+
+| File | Changes |
+|------|---------|
+| `internal/cli/intents/generate_cv.go` | Added CVStructure type, state, model fields |
+| `internal/cli/intents/generate_cv_intent.go` | Added state handler, structure-aware preview and export |
+| `internal/service/career/cv/export_service.go` | Added Export() method with structure parameter |
+| `internal/service/career/cv/export_service_test.go` | Added structure-aware export tests |
+
+### Branch and PR
+
+- **Branch**: `feature/custom-cv-export-format`
+- **PR**: #44
+- **Base**: `next`
