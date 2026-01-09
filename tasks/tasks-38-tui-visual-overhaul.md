@@ -2,11 +2,27 @@
 
 ## Overview
 - **Goal**: Comprehensive visual overhaul with theme system, btop-inspired aesthetics, and professional polish
-- **Time Estimate**: 15 days (major overhaul)
+- **Time Estimate**: 10 days (leveraging existing bubbles components)
 - **Prerequisites**: 
   - Task 20 (Coverage Improvement) - ✅ Completed
   - Understanding of Lipgloss, Bubble Tea, and KaRiya's current TUI architecture
 - **Reference**: `docs/TUI_VISUAL_OVERHAUL_SPEC.md` for complete design specification
+
+## Key Principle: Leverage Existing Libraries
+
+**DO NOT reinvent existing components.** We already have these in `go.mod`:
+
+| Package | Purpose | Action |
+|---------|---------|--------|
+| `bubbles/list` | Lists with selection | Apply theme styling |
+| `bubbles/table` | Tables | Apply theme styling |
+| `bubbles/progress` | Progress bars with gradients | Apply theme styling |
+| `bubbles/spinner` | Loading spinners | Apply theme styling |
+| `bubbles/help` | Help key bindings | Apply theme styling |
+| `bubbles/viewport` | Scrollable content | Apply theme styling |
+| `harmonica` | Spring animations | Already available |
+
+**New component needed:** Only `KeyBadge` - a thin wrapper for styled keyboard shortcuts.
 
 ## Session Contract Acknowledgment
 - [ ] Ran `make session-start` and it passed
@@ -36,17 +52,15 @@
 - [ ] `internal/cli/themes/detector.go` - Terminal theme detection
 - [ ] `internal/cli/themes/detector_test.go` - Detector tests
 
-### New Files (Enhanced Components)
-- [ ] `internal/cli/components/selection_list.go` - Enhanced list with highlighting
-- [ ] `internal/cli/components/selection_list_test.go`
-- [ ] `internal/cli/components/key_badge.go` - Styled key badges
+### New Files (Theme Integration & KeyBadge)
+- [ ] `internal/cli/themes/bubbles.go` - Theme integration helpers for bubbles components
+- [ ] `internal/cli/themes/bubbles_test.go` - Tests for theme integration helpers
+- [ ] `internal/cli/components/key_badge.go` - Styled key badges (thin wrapper)
 - [ ] `internal/cli/components/key_badge_test.go`
-- [ ] `internal/cli/components/gradient_progress.go` - Gradient progress bars
-- [ ] `internal/cli/components/gradient_progress_test.go`
-- [ ] `internal/cli/components/responsive_card.go` - Responsive card layouts
-- [ ] `internal/cli/components/responsive_card_test.go`
-- [ ] `internal/cli/components/enhanced_table.go` - Table with alternating rows
-- [ ] `internal/cli/components/enhanced_table_test.go`
+
+**Note:** We use existing `bubbles/*` components (list, table, progress, spinner, help)
+rather than building custom versions. The `themes/bubbles.go` provides helper functions
+to apply theme-aware styling to these existing components.
 
 ### Modified Files
 - [ ] `internal/cli/styles/styles.go` - Refactor to use theme system
@@ -165,31 +179,30 @@
 
 ---
 
-### PHASE 2: Core Component Enhancements (Days 4-7)
+### PHASE 2: Theme Integration & KeyBadge (Days 4-5)
 
-#### Day 4: SelectionList Component
+**Note:** We use existing `bubbles/*` components instead of building custom ones.
+This phase focuses on creating theme integration helpers and the only new component (KeyBadge).
 
-##### TDD: SelectionList Tests
-- [ ] Test file: `internal/cli/components/selection_list_test.go`
-- [ ] Test item rendering
-- [ ] Test selection highlighting with background fill
-- [ ] Test arrow indicator on selected item
-- [ ] Test keyboard navigation (j/k, up/down)
-- [ ] Test theme integration
-- [ ] Commit: `test(components): add tests for selection list`
+#### Day 4: Bubbles Theme Integration Helpers
 
-##### Implement SelectionList
-- [ ] Create `internal/cli/components/selection_list.go`
-- [ ] Implement full-width background highlighting
-- [ ] Implement arrow indicator (▶)
-- [ ] Implement Init/Update/View Bubble Tea model
-- [ ] Use theme from context
-- [ ] Commit: `feat(components): implement enhanced selection list`
+##### TDD: Theme Integration Helper Tests
+- [ ] Test file: `internal/cli/themes/bubbles_test.go`
+- [ ] Test `NewThemedList()` applies theme to bubbles/list
+- [ ] Test `NewThemedTable()` applies theme to bubbles/table
+- [ ] Test `NewThemedProgress()` applies theme to bubbles/progress
+- [ ] Test `NewThemedSpinner()` applies theme to bubbles/spinner
+- [ ] Test `NewThemedHelp()` applies theme to bubbles/help
+- [ ] Commit: `test(themes): add tests for bubbles theme integration`
 
-##### Update Intents to Use SelectionList
-- [ ] Update CaptureEvent strategy selection
-- [ ] Update GenerateCV profile/audience selection
-- [ ] Commit: `refactor(intents): use selection list component`
+##### Implement Theme Integration Helpers
+- [ ] Create `internal/cli/themes/bubbles.go`
+- [ ] Implement `NewThemedListStyles(theme)` - returns `list.Styles`
+- [ ] Implement `NewThemedTableStyles(theme)` - returns `table.Styles`
+- [ ] Implement `NewThemedProgress(theme)` - returns configured `progress.Model`
+- [ ] Implement `NewThemedSpinner(theme)` - returns configured `spinner.Model`
+- [ ] Implement `NewThemedHelpStyles(theme)` - returns `help.Styles`
+- [ ] Commit: `feat(themes): implement bubbles theme integration helpers`
 
 #### Day 5: KeyBadge Component
 
@@ -203,9 +216,9 @@
 
 ##### Implement KeyBadge
 - [ ] Create `internal/cli/components/key_badge.go`
-- [ ] Implement `KeyBadge` struct
-- [ ] Implement `View()` method
-- [ ] Implement `BuildHelpFooter()` helper
+- [ ] Implement `KeyBadge` struct (simple, not a full Bubble Tea model)
+- [ ] Implement `Render(theme)` method
+- [ ] Implement `RenderHelpFooter()` helper
 - [ ] Commit: `feat(components): implement styled key badges`
 
 ##### Update StandardView and Intents
@@ -213,95 +226,30 @@
 - [ ] Update all intent footers
 - [ ] Commit: `refactor(intents): use key badges in all footers`
 
-#### Day 6: Responsive Cards
-
-##### TDD: ResponsiveCard Tests
-- [ ] Test file: `internal/cli/components/responsive_card_test.go`
-- [ ] Test compact mode (< 60 cols)
-- [ ] Test standard mode (60-100 cols)
-- [ ] Test wide mode (> 100 cols)
-- [ ] Test with different content sizes
-- [ ] Commit: `test(components): add tests for responsive cards`
-
-##### Implement ResponsiveCard
-- [ ] Create `internal/cli/components/responsive_card.go`
-- [ ] Implement layout mode detection
-- [ ] Implement adaptive styling
-- [ ] Implement max-width constraint for wide mode
-- [ ] Commit: `feat(components): implement responsive card layout`
-
-##### Replace Hardcoded ASCII Boxes
-- [ ] Update CaptureEvent viewReviewInferredEvent
-- [ ] Update CaptureEvent viewSubmit
-- [ ] Update error display views
-- [ ] Commit: `refactor(capture-event): replace ascii boxes with responsive cards`
-
-#### Day 7: Enhanced Table
-
-##### TDD: EnhancedTable Tests
-- [ ] Test file: `internal/cli/components/enhanced_table_test.go`
-- [ ] Test alternating row colors
-- [ ] Test selection/hover styling
-- [ ] Test header rendering
-- [ ] Test theme integration
-- [ ] Commit: `test(components): add tests for enhanced table`
-
-##### Implement EnhancedTable
-- [ ] Create `internal/cli/components/enhanced_table.go`
-- [ ] Implement alternating row styling
-- [ ] Implement selection highlighting
-- [ ] Implement header styling
-- [ ] Commit: `feat(components): implement enhanced table`
-
-##### Update BrowseTimeline
-- [ ] Replace basic table with EnhancedTable
-- [ ] Commit: `refactor(browse-timeline): use enhanced table component`
-
 ##### Compliance Check
 - [ ] Run `make check-compliance`
 - [ ] Fix any issues
 
 ---
 
-### PHASE 3: Animation & Polish (Days 8-10)
+### PHASE 3: Glamour Integration & Polish (Days 6-7)
 
-#### Day 8: Dependencies & Gradient Progress
+**Note:** `harmonica` is already available in `go.mod`. We only need to add `glamour` for markdown rendering.
 
-##### Add Dependencies
+#### Day 6: Add Glamour & Update Loading States
+
+##### Add Glamour Dependency
 - [ ] Run: `go get github.com/charmbracelet/glamour`
-- [ ] Run: `go get github.com/charmbracelet/harmonica`
 - [ ] Update `go.mod` and `go.sum`
-- [ ] Commit: `deps: add glamour and harmonica for visual polish`
+- [ ] Commit: `deps: add glamour for markdown rendering`
 
-##### TDD: GradientProgress Tests
-- [ ] Test file: `internal/cli/components/gradient_progress_test.go`
-- [ ] Test progress rendering at 0%, 50%, 100%
-- [ ] Test color interpolation
-- [ ] Test width adaptation
-- [ ] Commit: `test(components): add tests for gradient progress`
+##### Update Loading States with Themed Spinners
+- [ ] Update modal loading spinner to use `NewThemedSpinner()`
+- [ ] Verify existing `LoadingMessageRotator` works with theme
+- [ ] Apply theme colors throughout
+- [ ] Commit: `refactor(components): use themed spinners in loading states`
 
-##### Implement GradientProgress
-- [ ] Create `internal/cli/components/gradient_progress.go`
-- [ ] Implement color interpolation function
-- [ ] Implement gradient bar rendering
-- [ ] Implement percentage display
-- [ ] Commit: `feat(components): implement gradient progress bar`
-
-#### Day 9: Loading Animations
-
-##### TDD: Loading Animation Tests
-- [ ] Test spinner animation frames
-- [ ] Test message rotation timing
-- [ ] Test theme integration
-- [ ] Commit: `test(components): add tests for loading animations`
-
-##### Enhance Loading States
-- [ ] Update modal loading spinner
-- [ ] Add message rotation
-- [ ] Apply theme colors
-- [ ] Commit: `feat(components): enhance loading animations`
-
-#### Day 10: Markdown Rendering (Glamour)
+#### Day 7: Markdown Rendering (Glamour)
 
 ##### TDD: CV Preview Tests
 - [ ] Test markdown rendering
@@ -309,8 +257,8 @@
 - [ ] Commit: `test(generate-cv): add tests for markdown preview`
 
 ##### Implement CV Markdown Preview
-- [ ] Update GenerateCV intent
-- [ ] Use Glamour for CV preview rendering
+- [ ] Create `GenerateGlamourStyle(theme)` helper
+- [ ] Update GenerateCV intent to use Glamour for CV preview
 - [ ] Apply theme-matched styling
 - [ ] Commit: `feat(generate-cv): use glamour for cv preview`
 
@@ -320,9 +268,9 @@
 
 ---
 
-### PHASE 4: Intent Updates (Days 11-13)
+### PHASE 4: Intent Updates (Days 8-9)
 
-#### Day 11: CaptureEvent & BrowseTimeline
+#### Day 8: CaptureEvent & BrowseTimeline
 
 ##### Update CaptureEvent Intent
 - [ ] Use theme from context throughout
@@ -333,28 +281,26 @@
 
 ##### Update BrowseTimeline Intent
 - [ ] Use theme from context throughout
-- [ ] Apply EnhancedTable
+- [ ] Apply themed `bubbles/table` styles via `NewThemedTableStyles()`
 - [ ] Apply key badges
 - [ ] Remove all hardcoded styles
 - [ ] Run existing tests
 - [ ] Commit: `refactor(browse-timeline): migrate to theme system`
 
-#### Day 12: GenerateCV & ExportArtifact
+#### Day 9: GenerateCV, ExportArtifact & ConfigureSystem
 
 ##### Update GenerateCV Intent
 - [ ] Use theme from context
-- [ ] Apply SelectionList for profile/audience
-- [ ] Apply gradient progress for generation
+- [ ] Apply themed `bubbles/list` for profile/audience via `NewThemedListStyles()`
+- [ ] Apply themed `bubbles/progress` for generation via `NewThemedProgress()`
 - [ ] Apply Glamour for preview
 - [ ] Commit: `refactor(generate-cv): migrate to theme system`
 
 ##### Update ExportArtifact Intent
 - [ ] Use theme from context
-- [ ] Apply gradient progress for export
+- [ ] Apply themed `bubbles/progress` for export
 - [ ] Update all views to use theme
 - [ ] Commit: `refactor(export-artifact): migrate to theme system`
-
-#### Day 13: ConfigureSystem & Huh Forms
 
 ##### Update ConfigureSystem Intent
 - [ ] Use theme from context
@@ -373,9 +319,9 @@
 
 ---
 
-### PHASE 5: Testing & Documentation (Days 14-15)
+### PHASE 5: Testing & Documentation (Day 10)
 
-#### Day 14: Comprehensive Testing
+#### Day 10: Comprehensive Testing & Documentation
 
 ##### Visual Testing
 - [ ] Test default theme in all intents
@@ -399,8 +345,6 @@
 - [ ] Test complete browse workflow
 - [ ] Test complete CV generation workflow
 - [ ] Test complete export workflow
-
-#### Day 15: Documentation & Polish
 
 ##### Create Theme Customization Guide
 - [ ] Create `docs/THEME_CUSTOMIZATION_GUIDE.md`
@@ -446,10 +390,11 @@
 - [ ] Theme system fully functional with runtime switching
 - [ ] Terminal theme auto-detection working
 - [ ] All hardcoded `styles.Color*` references replaced with theme calls
-- [ ] Selection lists have background highlighting
+- [ ] Themed bubbles/list used for selections (via `NewThemedListStyles()`)
+- [ ] Themed bubbles/table used for data display (via `NewThemedTableStyles()`)
 - [ ] Key badges used in all footers
-- [ ] Gradient progress bars implemented
-- [ ] All layouts responsive to terminal width
+- [ ] Themed bubbles/progress bars in loading states (via `NewThemedProgress()`)
+- [ ] Glamour used for CV preview rendering
 - [ ] Huh forms unified with main theme
 - [ ] All existing tests pass
 - [ ] Code coverage maintained ≥ 80%
@@ -465,12 +410,14 @@
 6. Run `make check-compliance` after rollback
 
 ## Notes
-- This is a major overhaul but architecturally sound
+- **Leverages existing bubbles/* components** - no need to build custom list/table/progress/spinner
 - Theme system is backwards compatible (default theme = current colors)
+- Only new component is KeyBadge (thin wrapper for styled keys)
 - Each phase builds on previous phases
 - Can pause after any phase if needed
 - Reference `docs/TUI_VISUAL_OVERHAUL_SPEC.md` for detailed specifications
 - Additional themes can be added incrementally after Phase 1
+- Time reduced from 15 to 10 days by reusing existing components
 
 ## Success Metrics
 - [ ] KaRiya looks as polished as btop
