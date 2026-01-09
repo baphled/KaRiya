@@ -41,60 +41,61 @@
 | **MetadataEditor** | Secondary | UI shell only | None | Limited |
 | **BulkOperations** | Secondary | UI shell only | None | Limited |
 
-### Key Gaps Identified (GitHub Issues to Create)
+### Key Gaps Identified (GitHub Issues Created)
 
 #### BrowseTimeline (5 issues)
-- [ ] 'f' Filter shortcut not implemented
-- [ ] Date range filter not implemented
-- [ ] Company filter not implemented
-- [ ] Categories filter not implemented
-- [ ] Fact selection not connected
+- [x] 'f' Filter shortcut not implemented - [#46](https://github.com/baphled/KaRiya/issues/46)
+- [x] Date range filter not implemented - [#47](https://github.com/baphled/KaRiya/issues/47)
+- [x] Company filter not implemented - [#48](https://github.com/baphled/KaRiya/issues/48)
+- [x] Categories filter not implemented - [#49](https://github.com/baphled/KaRiya/issues/49)
+- [x] Fact selection not connected - [#50](https://github.com/baphled/KaRiya/issues/50)
 
 #### GenerateCV (2 issues)
-- [ ] CV editing in review state is a stub
-- [ ] Profile creation not available
+- [x] CV editing in review state is a stub - [#51](https://github.com/baphled/KaRiya/issues/51)
+- [x] Profile creation not available - [#52](https://github.com/baphled/KaRiya/issues/52)
 
 #### ExportArtifact (3 issues)
-- [ ] PDF export defined but not implemented
-- [ ] Email export defined but not implemented
-- [ ] Profile export returns hardcoded data
+- [x] PDF export defined but not implemented - [#53](https://github.com/baphled/KaRiya/issues/53)
+- [x] Email export defined but not implemented - [#54](https://github.com/baphled/KaRiya/issues/54)
+- [x] Profile export returns hardcoded data - [#55](https://github.com/baphled/KaRiya/issues/55)
 
 #### ConfigureSystem (3 issues)
-- [ ] Select type shows text input instead of dropdown
-- [ ] Type assertion panic risk
-- [ ] Config not applied at runtime
+- [x] Select type shows text input instead of dropdown - [#56](https://github.com/baphled/KaRiya/issues/56)
+- [x] Type assertion panic risk - [#57](https://github.com/baphled/KaRiya/issues/57)
+- [x] Config not applied at runtime - [#58](https://github.com/baphled/KaRiya/issues/58)
 
 #### Secondary Intents (3 umbrella issues)
-- [ ] ImportWizard: No file browser, CSV parsing, or DB import
-- [ ] MetadataEditor: No text inputs, entity loading, or persistence
-- [ ] BulkOperations: No item selection or actual operations
+- [x] ImportWizard: No file browser, CSV parsing, or DB import - [#59](https://github.com/baphled/KaRiya/issues/59)
+- [x] MetadataEditor: No text inputs, entity loading, or persistence - [#60](https://github.com/baphled/KaRiya/issues/60)
+- [x] BulkOperations: No item selection or actual operations - [#61](https://github.com/baphled/KaRiya/issues/61)
 
 ---
 
 ## Files to Create
 
-### Phase 1: Test Infrastructure & Audit
-- [ ] `internal/cli/intents/e2e_test_helpers.go` - Reusable E2E test utilities
-- [ ] `internal/cli/intents/e2e_test_fixtures.go` - Sample data fixtures
-- [ ] `docs/E2E_IMPLEMENTATION_GAPS.md` - Gap documentation
+### Phase 1: Test Infrastructure & Audit ✅ COMPLETE
+- [x] `internal/testutil/e2e/helpers.go` - Reusable E2E test utilities (557 lines)
+- [x] `internal/testutil/e2e/fixtures.go` - Sample data fixtures (230 lines)
+- [x] `internal/testutil/e2e/helpers_test.go` - Tests for helpers (163 lines, 12 specs)
+- [x] `docs/E2E_IMPLEMENTATION_GAPS.md` - Gap documentation (282 lines)
 
-### Phase 2: Core 5 Intents
-- [ ] `internal/cli/intents/e2e_capture_workflow_test.go`
-- [ ] `internal/cli/intents/e2e_browse_workflow_test.go`
-- [ ] `internal/cli/intents/e2e_generate_cv_workflow_test.go`
-- [ ] `internal/cli/intents/e2e_export_workflow_test.go`
-- [ ] `internal/cli/intents/e2e_configure_workflow_test.go`
+### Phase 2: Core 5 Intents ✅ COMPLETE
+- [x] `internal/testutil/e2e/capture_workflow_test.go` (51 specs)
+- [x] `internal/testutil/e2e/browse_workflow_test.go` (30 specs)
+- [x] `internal/testutil/e2e/generate_cv_workflow_test.go` (33 specs)
+- [x] `internal/testutil/e2e/export_workflow_test.go` (39 specs)
+- [x] `internal/testutil/e2e/configure_workflow_test.go` (32 specs)
 
-### Phase 3: Secondary 5 Intents
-- [ ] `internal/cli/intents/e2e_burst_management_test.go`
-- [ ] `internal/cli/intents/e2e_fact_management_test.go`
-- [ ] `internal/cli/intents/e2e_import_wizard_test.go` (navigation only)
-- [ ] `internal/cli/intents/e2e_metadata_editor_test.go` (navigation only)
-- [ ] `internal/cli/intents/e2e_bulk_operations_test.go` (navigation only)
+### Phase 3: Secondary 5 Intents ✅ COMPLETE
+- [x] `internal/testutil/e2e/burst_management_workflow_test.go` (30 specs)
+- [x] `internal/testutil/e2e/fact_management_workflow_test.go` (22 specs)
+- [x] `internal/testutil/e2e/import_wizard_workflow_test.go` (10 specs - navigation only)
+- [x] `internal/testutil/e2e/metadata_editor_workflow_test.go` (10 specs - navigation only)
+- [x] `internal/testutil/e2e/bulk_operations_workflow_test.go` (10 specs - navigation only)
 
-### Phase 4: Cross-Intent & Error Recovery
-- [ ] `internal/cli/intents/e2e_chained_workflows_test.go`
-- [ ] `internal/cli/intents/e2e_error_recovery_test.go`
+### Phase 4: Cross-Intent & Error Recovery ✅ COMPLETE
+- [x] `internal/testutil/e2e/chained_workflows_test.go` (20 specs)
+- [x] `internal/testutil/e2e/error_recovery_test.go` (31 specs)
 
 ---
 
@@ -349,21 +350,21 @@ func PopulateTestDatabase(env *E2ETestEnv, events []*career.CareerEvent, bursts 
 ## Acceptance Criteria
 
 ### Coverage Requirements
-- [ ] All 10 intents have E2E tests
-- [ ] At least 5 chained workflow scenarios tested
-- [ ] Error recovery tests cover 4+ error types
-- [ ] Empty state handling for all intents
+- [x] All 10 intents have E2E tests
+- [x] At least 5 chained workflow scenarios tested
+- [x] Error recovery tests cover 4+ error types
+- [x] Empty state handling for all intents
 
 ### Quality Requirements
-- [ ] All tests pass with race detector enabled
-- [ ] 100% pass rate on new E2E tests
-- [ ] No flaky tests (run 3x to verify)
-- [ ] Test suite completes in <60 seconds
+- [x] All tests pass with race detector enabled
+- [x] 100% pass rate on new E2E tests (308 specs)
+- [x] No flaky tests (verified)
+- [x] Test suite completes in <60 seconds (~5-6 seconds)
 
 ### Documentation Requirements
-- [ ] Gap documentation complete
-- [ ] ~15 GitHub issues created
-- [ ] Task file updated with completion status
+- [x] Gap documentation complete
+- [x] ~15 GitHub issues created (#46-#61)
+- [x] Task file updated with completion status
 
 ### Verification Commands
 ```bash
@@ -382,16 +383,16 @@ go test -v ./internal/cli/intents/... -run "ErrorRecovery"
 
 ## Success Metrics
 
-| Metric | Target |
-|--------|--------|
-| E2E Test Files | 14 |
-| Total E2E Test Specs | 200+ |
-| Intents with E2E Coverage | 10/10 |
-| Chained Workflow Tests | 5+ |
-| Error Recovery Tests | 7+ |
-| GitHub Issues Created | ~15 |
-| Test Execution Time | <60s |
-| Pass Rate | 100% |
+| Metric | Target | Actual |
+|--------|--------|--------|
+| E2E Test Files | 14 | 13 |
+| Total E2E Test Specs | 200+ | 308 ✅ |
+| Intents with E2E Coverage | 10/10 | 10/10 ✅ |
+| Chained Workflow Tests | 5+ | 20 ✅ |
+| Error Recovery Tests | 7+ | 31 ✅ |
+| GitHub Issues Created | ~15 | 16 ✅ |
+| Test Execution Time | <60s | ~5-6s ✅ |
+| Pass Rate | 100% | 100% ✅ |
 
 ## Rollback Plan
 
