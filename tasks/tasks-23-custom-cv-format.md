@@ -158,36 +158,36 @@ Tests to implement:
 #### Step 3.1: Write Failing Tests First
 
 Tests for Standard Structure Preview:
-- [ ] Renders CV name as header
-- [ ] Renders all sections in order
-- [ ] Renders experience with company headers and dates
-- [ ] Renders bullets for each group
+- [x] Renders CV name as header
+- [x] Renders all sections in order
+- [x] Renders experience with company headers and dates
+- [x] Renders bullets for each group
 
 Tests for Narrative Structure Preview:
-- [ ] Renders profile header with name, role, location, contact
-- [ ] Renders Summary section
-- [ ] Renders Core Strengths section
-- [ ] Renders Languages & Technologies section
-- [ ] Renders Selected Experience with confidence filtering
-- [ ] Renders What I Bring section
-- [ ] Uses default values when sections are empty
-- [ ] Filters bullets by confidence >= 0.75
+- [x] Renders profile header with name, role, location, contact
+- [x] Renders Summary section
+- [x] Renders Core Strengths section
+- [x] Renders Languages & Technologies section
+- [x] Renders Selected Experience with confidence filtering
+- [x] Renders What I Bring section
+- [x] Uses default values when sections are empty
+- [x] Filters bullets by confidence >= 0.75
 
 #### Step 3.2: Create Helper File
 **File**: `internal/cli/intents/generate_cv_helpers.go` (new)
 
-- [ ] Add `NarrativeProfileData` struct
-- [ ] Add `DefaultNarrativeProfile()` function (hardcoded for Phase 1)
-- [ ] Add `extractStrengthsFromSections()` helper
-- [ ] Add `extractTechnologiesFromSections()` helper
-- [ ] Add `extractValuePropositions()` helper
+- [x] Add `NarrativeProfileData` struct
+- [x] Add `DefaultNarrativeProfile()` function (hardcoded for Phase 1)
+- [x] Add `extractStrengthsFromSections()` helper
+- [x] Add `extractTechnologiesFromSections()` helper
+- [x] Add `extractValuePropositions()` helper
 
 #### Step 3.3: Split Preview Method
 **File**: `internal/cli/intents/generate_cv_intent.go`
 
-- [ ] Modify `viewPreview()` to switch on `selectedCVStructure`
-- [ ] Rename current preview logic to `viewPreviewStandard()`
-- [ ] Implement `viewPreviewNarrative()` with:
+- [x] Modify `viewPreview()` to switch on `selectedCVStructure`
+- [x] Rename current preview logic to `viewPreviewStandard()`
+- [x] Implement `viewPreviewNarrative()` with:
   - Profile header (using DefaultNarrativeProfile())
   - Summary section
   - Core Strengths section (using extractStrengthsFromSections or defaults)
@@ -387,5 +387,5 @@ If issues arise:
 ---
 
 **Last Updated**: 2026-01-09  
-**Status**: Phase 2 COMPLETE - Structure selection implemented  
-**Next Step**: Phase 3 - Add structure-aware preview (TDD)
+**Status**: Phase 3 COMPLETE - Structure-aware preview implemented  
+**Next Step**: Phase 4 - Add structure-aware export (TDD)
