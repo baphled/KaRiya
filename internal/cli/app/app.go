@@ -37,9 +37,10 @@ type Model struct {
 	cvExportService *cv.ExportService
 
 	// UI state
-	state  AppState
-	width  int
-	height int
+	state       AppState
+	width       int
+	height      int
+	showingHelp bool
 
 	// Menu state
 	selectedMenuIndex int
@@ -142,8 +143,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.state == StateMenu {
 				return m, tea.Quit
 			}
-		case "?":
-			// Help screen could be implemented here
+		case "?", "h":
+			// Toggle help screen
+			m.showingHelp = !m.showingHelp
 			return m, nil
 		case "home", "esc", "escape":
 			if m.state == StateIntent {
@@ -207,6 +209,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View renders the current screen
 func (m *Model) View() string {
+	// Show help overlay if active
+	if m.showingHelp {
+		return m.renderHelpScreen()
+	}
+
 	if m.state == StateMenu {
 		return m.viewMenu()
 	} else if m.state == StateIntent {
@@ -217,6 +224,82 @@ func (m *Model) View() string {
 		return "No active intent"
 	}
 	return ""
+}
+
+// renderHelpScreen renders the keyboard reference help screen
+func (m *Model) renderHelpScreen() string {
+	// Build help content
+	titleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("12")).
+		Bold(true)
+
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("14")).
+		Bold(true)
+
+	keyStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("10"))
+
+	descStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("252"))
+
+	borderStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240"))
+
+	var lines []string
+
+	// Title
+	lines = append(lines, "")
+	lines = append(lines, titleStyle.Render("  KaRiya Keyboard Reference"))
+	lines = append(lines, borderStyle.Render("  ════════════════════════════════════════════════════════"))
+	lines = append(lines, "")
+
+	// Global shortcuts
+	lines = append(lines, headerStyle.Render("  Global Shortcuts"))
+	lines = append(lines, borderStyle.Render("  ──────────────────────────────────────────────────────────"))
+	lines = append(lines, keyStyle.Render("  ?/h")+"       "+descStyle.Render("Toggle this help screen"))
+	lines = append(lines, keyStyle.Render("  q")+"         "+descStyle.Render("Quit application (from menu)"))
+	lines = append(lines, keyStyle.Render("  Ctrl+C")+"    "+descStyle.Render("Force quit application"))
+	lines = append(lines, keyStyle.Render("  Esc")+"       "+descStyle.Render("Go back / Cancel / Return to menu"))
+	lines = append(lines, "")
+
+	// Navigation
+	lines = append(lines, headerStyle.Render("  Navigation"))
+	lines = append(lines, borderStyle.Render("  ──────────────────────────────────────────────────────────"))
+	lines = append(lines, keyStyle.Render("  ↑/k")+"       "+descStyle.Render("Move up / Previous item"))
+	lines = append(lines, keyStyle.Render("  ↓/j")+"       "+descStyle.Render("Move down / Next item"))
+	lines = append(lines, keyStyle.Render("  ←/h")+"       "+descStyle.Render("Move left / Previous"))
+	lines = append(lines, keyStyle.Render("  →/l")+"       "+descStyle.Render("Move right / Next"))
+	lines = append(lines, keyStyle.Render("  Enter")+"     "+descStyle.Render("Confirm / Select"))
+	lines = append(lines, keyStyle.Render("  Space")+"     "+descStyle.Render("Toggle selection"))
+	lines = append(lines, "")
+
+	// Form shortcuts
+	lines = append(lines, headerStyle.Render("  Forms & Input"))
+	lines = append(lines, borderStyle.Render("  ──────────────────────────────────────────────────────────"))
+	lines = append(lines, keyStyle.Render("  Tab")+"       "+descStyle.Render("Next field"))
+	lines = append(lines, keyStyle.Render("  Shift+Tab")+" "+descStyle.Render("Previous field"))
+	lines = append(lines, keyStyle.Render("  Ctrl+O")+"    "+descStyle.Render("Toggle optional fields"))
+	lines = append(lines, "")
+
+	// List shortcuts
+	lines = append(lines, headerStyle.Render("  Lists & Browse"))
+	lines = append(lines, borderStyle.Render("  ──────────────────────────────────────────────────────────"))
+	lines = append(lines, keyStyle.Render("  e")+"         "+descStyle.Render("Edit selected item"))
+	lines = append(lines, keyStyle.Render("  d")+"         "+descStyle.Render("Delete selected item"))
+	lines = append(lines, keyStyle.Render("  /")+"         "+descStyle.Render("Search"))
+	lines = append(lines, keyStyle.Render("  f")+"         "+descStyle.Render("Filter"))
+	lines = append(lines, "")
+
+	// Footer
+	lines = append(lines, borderStyle.Render("  ════════════════════════════════════════════════════════"))
+	lines = append(lines, descStyle.Render("  Press ")+keyStyle.Render("?")+" "+descStyle.Render("or")+" "+keyStyle.Render("h")+" "+descStyle.Render("to close this help"))
+	lines = append(lines, "")
+
+	helpContent := lipgloss.JoinVertical(lipgloss.Left, lines...)
+
+	// Center the help screen
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, helpContent)
 }
 
 // handleMenuInput processes menu navigation and selection

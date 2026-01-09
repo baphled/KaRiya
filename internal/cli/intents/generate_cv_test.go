@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -329,6 +330,27 @@ var _ = Describe("GenerateCVIntent", func() {
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).To(ContainSubstring("Select Target Audience"))
+		})
+
+		It("should display generation error in audience selection view", func() {
+			intent.state.currentState = GenerateCVStateSelectAudience
+			intent.state.generationError = fmt.Errorf("failed to process events: insufficient data")
+			view := intent.View()
+			Expect(view).To(ContainSubstring("CV Generation Failed"))
+			Expect(view).To(ContainSubstring("insufficient data"))
+		})
+
+		It("should clear generation error after displaying", func() {
+			intent.state.currentState = GenerateCVStateSelectAudience
+			intent.state.generationError = fmt.Errorf("test error")
+			// First render shows the error
+			view := intent.View()
+			Expect(view).To(ContainSubstring("CV Generation Failed"))
+			// Error should be cleared
+			Expect(intent.state.generationError).To(BeNil())
+			// Second render should not show error
+			view = intent.View()
+			Expect(view).NotTo(ContainSubstring("CV Generation Failed"))
 		})
 
 		It("should render preview view", func() {
