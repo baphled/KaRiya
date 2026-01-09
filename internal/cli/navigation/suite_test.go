@@ -1,4 +1,4 @@
-package workflow_test
+package navigation
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestWorkflowSuite(t *testing.T) {
+func TestNavigation(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Workflow Package Suite")
+	RunSpecs(t, "Navigation Suite")
 }
