@@ -102,50 +102,48 @@ var _ = Describe("GenerateCV Full Workflow", func() {
 		_ = cmd
 	})
 
-	Describe("Structure Selection State", func() {
+	Describe("Role Emphasis Selection State", func() {
 		BeforeEach(func() {
-			// Navigate to structure selection: Profile -> Audience -> Structure
+			// Navigate to role emphasis selection: Profile -> Audience -> Role Emphasis
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Select profile
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Select audience
 		})
 
-		It("should show structure selection screen after audience selection", func() {
+		It("should show role emphasis selection screen after audience selection", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Structure"))
-			Expect(view).To(ContainSubstring("Standard"))
-			Expect(view).To(ContainSubstring("Narrative"))
+			Expect(view).To(ContainSubstring("Role Emphasis"))
+			Expect(view).To(ContainSubstring("Senior Backend"))
+			Expect(view).To(ContainSubstring("Staff/Principal"))
 		})
 
-		It("should show Standard selected by default", func() {
+		It("should show Senior Backend selected by default", func() {
 			view := intent.View()
 			// The selected item has a marker
-			Expect(view).To(ContainSubstring("Standard"))
-			// Standard description should be visible
-			Expect(view).To(ContainSubstring("Traditional CV"))
+			Expect(view).To(ContainSubstring("Senior Backend"))
+			// Senior Backend description should be visible
+			Expect(view).To(ContainSubstring("backend engineering"))
 		})
 
-		It("should allow navigation to Narrative option", func() {
-			// Press down to select Narrative
+		It("should allow navigation to other role emphasis options", func() {
+			// Press down to select Staff/Principal
 			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Narrative"))
-			// Narrative description should be visible
-			Expect(view).To(ContainSubstring("Language-agnostic"))
+			Expect(view).To(ContainSubstring("Staff/Principal"))
 		})
 
 		It("should allow vim-style navigation (j/k)", func() {
-			// Press 'j' to move down to Narrative
+			// Press 'j' to move down to Staff/Principal
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Narrative"))
+			Expect(view).To(ContainSubstring("Staff/Principal"))
 
-			// Press 'k' to move back up to Standard
+			// Press 'k' to move back up to Senior Backend
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("k")})
 
 			view = intent.View()
-			Expect(view).To(ContainSubstring("Standard"))
+			Expect(view).To(ContainSubstring("Senior Backend"))
 		})
 
 		It("should go back to audience selection on Escape", func() {
@@ -156,17 +154,19 @@ var _ = Describe("GenerateCV Full Workflow", func() {
 		})
 	})
 
-	Describe("Standard Structure Workflow", func() {
+	Describe("Senior Backend Variant Workflow", func() {
 		BeforeEach(func() {
-			// Navigate to structure selection
+			// Navigate to role emphasis selection
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Select profile
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Select audience
-			// Standard is selected by default
+			// Senior Backend is selected by default
 		})
 
-		It("should generate CV with Standard structure", func() {
-			// Select Standard (default) and generate
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		It("should generate CV with Senior Backend Standard variant", func() {
+			// Select Senior Backend (default)
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			// Standard is default (index 1)
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format -> generating
 
 			// Should transition to generating state
 			view := intent.View()
@@ -174,56 +174,63 @@ var _ = Describe("GenerateCV Full Workflow", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should show standard preview format", func() {
-			// Generate with Standard structure
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		It("should show preview format", func() {
+			// Generate with Senior Backend Standard
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format
 
 			// Process the generation message if available
-			// In tests without actual service, it may show preview directly
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 	})
 
-	Describe("Narrative Structure Workflow", func() {
+	Describe("Language-Agnostic Variant Workflow", func() {
 		BeforeEach(func() {
-			// Navigate to structure selection
+			// Navigate to role emphasis selection
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Select profile
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Select audience
 		})
 
-		It("should select Narrative structure with down arrow", func() {
-			// Move to Narrative
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+		It("should select Language-Agnostic role emphasis", func() {
+			// Move to Language-Agnostic (index 3)
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Staff/Principal
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Consulting
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Language-Agnostic
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Narrative"))
+			Expect(view).To(ContainSubstring("Language-Agnostic"))
 		})
 
-		It("should generate CV with Narrative structure", func() {
-			// Select Narrative
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		It("should generate CV with Language-Agnostic variant", func() {
+			// Select Language-Agnostic
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // Staff/Principal
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // Consulting
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // Language-Agnostic
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format -> generating
 
 			// Should transition to generating or preview
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should show narrative preview with profile sections", func() {
-			// Select Narrative and generate
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		It("should show narrative-based preview for Language-Agnostic", func() {
+			// Language-Agnostic uses Narrative base structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // Staff/Principal
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // Consulting
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // Language-Agnostic
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format
 
-			// The view should eventually show narrative-specific content
-			// Note: In unit tests without full service, the preview may be basic
+			// The view should eventually show content
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 	})
 
-	Describe("Full Workflow: Profile -> Audience -> Structure -> Generate -> Preview", func() {
-		It("should complete full Standard workflow without errors", func() {
+	Describe("Full Workflow: Profile -> Audience -> Role Emphasis -> Length -> Generate -> Preview", func() {
+		It("should complete full Senior Backend Standard workflow without errors", func() {
 			// Step 1: Select Profile
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Profile"))
@@ -234,12 +241,17 @@ var _ = Describe("GenerateCV Full Workflow", func() {
 			Expect(view).To(ContainSubstring("Audience"))
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Step 3: Select Structure (Standard is default)
+			// Step 3: Select Role Emphasis (Senior Backend is default)
 			view = intent.View()
-			Expect(view).To(ContainSubstring("Structure"))
+			Expect(view).To(ContainSubstring("Role Emphasis"))
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Step 4: Should be generating or at preview
+			// Step 4: Select Length Format (Standard is default at index 1)
+			view = intent.View()
+			Expect(view).To(ContainSubstring("Length"))
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Step 5: Should be generating or at preview
 			view = intent.View()
 			Expect(view).NotTo(BeEmpty())
 
@@ -249,29 +261,40 @@ var _ = Describe("GenerateCV Full Workflow", func() {
 			_ = result
 		})
 
-		It("should complete full Narrative workflow without errors", func() {
+		It("should complete full Language-Agnostic workflow without errors", func() {
 			// Step 1: Select Profile
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Step 2: Select Audience
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Step 3: Select Narrative Structure
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Move to Narrative
+			// Step 3: Select Language-Agnostic Role Emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Staff/Principal
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Consulting
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Language-Agnostic
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Step 4: Should be generating or at preview
+			// Step 4: Select Length Format
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Step 5: Should be generating or at preview
 			view := intent.View()
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should allow going back through all states", func() {
-			// Go forward to structure selection
+			// Go forward to length format selection
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Profile -> Audience
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Audience -> Structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Audience -> Role Emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Role Emphasis -> Length Format
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Structure"))
+			Expect(view).To(ContainSubstring("Length"))
+
+			// Go back to Role Emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
+			view = intent.View()
+			Expect(view).To(ContainSubstring("Role Emphasis"))
 
 			// Go back to Audience
 			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})

@@ -64,7 +64,7 @@ var _ = Describe("GenerateCVIntent - Structure Selection", func() {
 		})
 	})
 
-	Describe("State Transitions", func() {
+	Describe("State Transitions (Variant-Based Flow)", func() {
 		BeforeEach(func() {
 			intent.Init()
 			// Navigate to audience selection first
@@ -72,156 +72,256 @@ var _ = Describe("GenerateCVIntent - Structure Selection", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
 		})
 
-		It("should transition from select_audience to select_structure on enter", func() {
+		It("should transition from select_audience to select_role_emphasis on enter", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectStructure))
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
 		})
 
-		It("should transition from select_structure to generating on enter", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectStructure))
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // structure -> generating
+		It("should transition from select_role_emphasis to select_length_format on enter", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectLengthFormat))
+		})
+
+		It("should transition from select_length_format to generating on enter", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format -> generating
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateGenerating))
 		})
 
-		It("should go back to select_audience on esc from select_structure", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectStructure))
+		It("should go back to select_audience on esc from select_role_emphasis", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
 		})
 
-		It("should cancel on q from select_structure", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectStructure))
+		It("should go back to select_role_emphasis on esc from select_length_format", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectLengthFormat))
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
+		})
+
+		It("should cancel on q from select_role_emphasis", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
 
-		It("should cancel on m (main menu) from select_structure", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectStructure))
+		It("should cancel on m (main menu) from select_length_format", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectLengthFormat))
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
 			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
 	})
 
-	Describe("Structure Selection UI", func() {
+	Describe("Role Emphasis Selection UI", func() {
 		BeforeEach(func() {
 			intent.Init()
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
 		})
 
-		It("should show Standard and Narrative structure options", func() {
+		It("should show all 4 role emphasis options", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Standard"))
-			Expect(view).To(ContainSubstring("Narrative"))
+			Expect(view).To(ContainSubstring("Senior Backend"))
+			Expect(view).To(ContainSubstring("Staff/Principal"))
+			Expect(view).To(ContainSubstring("Consulting"))
+			Expect(view).To(ContainSubstring("Language-Agnostic"))
 		})
 
-		It("should show descriptions for each structure", func() {
+		It("should show descriptions for each role emphasis", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Traditional CV"))
-			Expect(view).To(ContainSubstring("professional format"))
+			Expect(view).To(ContainSubstring("backend engineering"))
+			Expect(view).To(ContainSubstring("technical leadership"))
 		})
 
-		It("should highlight currently selected structure with marker", func() {
+		It("should highlight currently selected role emphasis with marker", func() {
 			view := intent.View()
-			// First structure (Standard) should be selected by default
 			Expect(view).To(ContainSubstring("▶"))
 		})
 
-		It("should default to Standard structure", func() {
-			Expect(intent.state.structureIndex).To(Equal(0))
-			Expect(intent.state.selectedCVStructure).To(Equal(CVStructureStandard))
+		It("should default to first role emphasis (Senior Backend)", func() {
+			Expect(intent.state.roleEmphasisIndex).To(Equal(0))
 		})
 	})
 
-	Describe("Navigation", func() {
+	Describe("Length Format Selection UI", func() {
 		BeforeEach(func() {
 			intent.Init()
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+		})
+
+		It("should show all 4 length format options", func() {
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Full"))
+			Expect(view).To(ContainSubstring("Standard"))
+			Expect(view).To(ContainSubstring("Short"))
+			Expect(view).To(ContainSubstring("1-Page"))
+		})
+
+		It("should show page counts for each length format", func() {
+			view := intent.View()
+			Expect(view).To(ContainSubstring("3+"))
+			Expect(view).To(ContainSubstring("2-3"))
+			Expect(view).To(ContainSubstring("1-2"))
+		})
+
+		It("should highlight currently selected length format with marker", func() {
+			view := intent.View()
+			Expect(view).To(ContainSubstring("▶"))
+		})
+
+		It("should default to Standard length format (index 1)", func() {
+			Expect(intent.state.lengthFormatIndex).To(Equal(1))
+		})
+	})
+
+	Describe("Role Emphasis Navigation", func() {
+		BeforeEach(func() {
+			intent.Init()
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
 		})
 
 		It("should navigate down with j key", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-			Expect(intent.state.structureIndex).To(Equal(1))
+			Expect(intent.state.roleEmphasisIndex).To(Equal(1))
 		})
 
 		It("should navigate down with down arrow", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
-			Expect(intent.state.structureIndex).To(Equal(1))
+			Expect(intent.state.roleEmphasisIndex).To(Equal(1))
 		})
 
 		It("should navigate up with k key", func() {
-			intent.state.structureIndex = 1
+			intent.state.roleEmphasisIndex = 1
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-			Expect(intent.state.structureIndex).To(Equal(0))
+			Expect(intent.state.roleEmphasisIndex).To(Equal(0))
 		})
 
 		It("should navigate up with up arrow", func() {
-			intent.state.structureIndex = 1
+			intent.state.roleEmphasisIndex = 1
 			intent.Update(tea.KeyMsg{Type: tea.KeyUp})
-			Expect(intent.state.structureIndex).To(Equal(0))
+			Expect(intent.state.roleEmphasisIndex).To(Equal(0))
 		})
 
 		It("should not go below 0", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyUp})
-			Expect(intent.state.structureIndex).To(Equal(0))
+			Expect(intent.state.roleEmphasisIndex).To(Equal(0))
 		})
 
-		It("should not go above max index (1)", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
-			Expect(intent.state.structureIndex).To(Equal(1))
+		It("should not go above max index (3)", func() {
+			for i := 0; i < 5; i++ {
+				intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			Expect(intent.state.roleEmphasisIndex).To(Equal(3))
 		})
 	})
 
-	Describe("Structure Storage", func() {
+	Describe("Length Format Navigation", func() {
 		BeforeEach(func() {
 			intent.Init()
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
 		})
 
-		It("should store Standard structure when selected at index 0", func() {
-			Expect(intent.state.structureIndex).To(Equal(0))
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state.selectedCVStructure).To(Equal(CVStructureStandard))
+		It("should navigate down with j key", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(intent.state.lengthFormatIndex).To(Equal(2)) // default is 1
 		})
 
-		It("should store Narrative structure when selected at index 1", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // select Narrative
-			Expect(intent.state.structureIndex).To(Equal(1))
+		It("should navigate up with k key", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(intent.state.lengthFormatIndex).To(Equal(0)) // default is 1, up goes to 0
+		})
+
+		It("should not go above max index (3)", func() {
+			for i := 0; i < 5; i++ {
+				intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			}
+			Expect(intent.state.lengthFormatIndex).To(Equal(3))
+		})
+	})
+
+	Describe("Variant Selection and Storage", func() {
+		BeforeEach(func() {
+			intent.Init()
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+		})
+
+		It("should store selected role emphasis", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // select Staff/Principal
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state.selectedCVStructure).To(Equal(CVStructureNarrative))
+			Expect(intent.state.selectedRoleEmphasis).To(Equal(RoleEmphasisStaffPrincipal))
+		})
+
+		It("should store selected length format and look up variant", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // select Senior Backend
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectLengthFormat))
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // select Standard (default at index 1)
+			Expect(intent.state.selectedLengthFormat).To(Equal(LengthStandard))
+			Expect(intent.state.selectedVariant).NotTo(BeNil())
+			Expect(intent.state.selectedVariant.ID).To(Equal("senior_backend_standard"))
+		})
+
+		It("should set base structure from variant", func() {
+			// Select Consulting role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Staff/Principal
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Consulting
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			// Select Full length format
+			intent.Update(tea.KeyMsg{Type: tea.KeyUp}) // go to Full (index 0)
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			// Consulting Full uses CVStructureConsulting
+			Expect(intent.state.selectedCVStructure).To(Equal(CVStructure("consulting")))
 		})
 	})
 
 	Describe("Breadcrumbs", func() {
-		BeforeEach(func() {
+		It("should include 'Select Role Emphasis' in breadcrumbs", func() {
 			intent.Init()
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			crumbs := intent.getBreadcrumbs()
+			Expect(crumbs).To(ContainElement("Select Role Emphasis"))
 		})
 
-		It("should include 'Select Structure' in breadcrumbs", func() {
+		It("should include 'Select Length' in breadcrumbs", func() {
+			intent.Init()
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
 			crumbs := intent.getBreadcrumbs()
-			Expect(crumbs).To(ContainElement("Select Structure"))
+			Expect(crumbs).To(ContainElement("Select Length"))
 		})
 	})
 
-	Describe("Result Metadata", func() {
+	Describe("Result Metadata with Variant", func() {
 		BeforeEach(func() {
 			intent.Init()
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // select Narrative
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // structure -> generating
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			// Select Language-Agnostic (index 3)
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // 1
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // 2
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})  // 3
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format (Standard) -> generating
 		})
 
-		It("should include selected structure in result when completed", func() {
+		It("should include selected variant in result when completed", func() {
 			// Simulate CV generation completion
 			intent.Update(CVGenerationCompleteMsg{
 				CV: &career.CVView{
@@ -242,10 +342,11 @@ var _ = Describe("GenerateCVIntent - Structure Selection", func() {
 
 			Expect(intent.result).NotTo(BeNil())
 			Expect(intent.result.Data).NotTo(BeNil())
-			Expect(intent.result.Data.SelectedStructure).To(Equal(CVStructureNarrative))
+			Expect(intent.result.Data.SelectedVariant).NotTo(BeNil())
+			Expect(intent.result.Data.SelectedVariant.ID).To(Equal("language_agnostic_standard"))
 		})
 
-		It("should include structure in metadata", func() {
+		It("should include role_emphasis and length_format in metadata", func() {
 			// Simulate CV generation completion
 			intent.Update(CVGenerationCompleteMsg{
 				CV: &career.CVView{
@@ -265,8 +366,15 @@ var _ = Describe("GenerateCVIntent - Structure Selection", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			Expect(intent.result).NotTo(BeNil())
-			Expect(intent.result.Metadata).To(HaveKey("structure"))
-			Expect(intent.result.Metadata["structure"]).To(Equal(CVStructureNarrative))
+			Expect(intent.result.Metadata).To(HaveKey("role_emphasis"))
+			Expect(intent.result.Metadata).To(HaveKey("length_format"))
+			Expect(intent.result.Metadata).To(HaveKey("variant_id"))
+			Expect(intent.result.Metadata["variant_id"]).To(Equal("language_agnostic_standard"))
+		})
+
+		It("should set base structure from variant (Narrative for Language-Agnostic)", func() {
+			// Language-Agnostic uses CVStructureNarrative as base
+			Expect(intent.state.selectedCVStructure).To(Equal(CVStructure("narrative")))
 		})
 	})
 })

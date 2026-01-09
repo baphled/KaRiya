@@ -127,6 +127,10 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSelectAudience(msg)
 	case GenerateCVStateSelectStructure:
 		return i.updateSelectStructure(msg)
+	case GenerateCVStateSelectRoleEmphasis:
+		return i.updateSelectRoleEmphasis(msg)
+	case GenerateCVStateSelectLengthFormat:
+		return i.updateSelectLengthFormat(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -216,7 +220,9 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		case "enter":
 			// Set selected audience based on current index
 			i.state.selectedAudience = audiences[i.state.audienceIndex]
-			i.state.currentState = GenerateCVStateSelectStructure
+			// Go to variant-based selection (role emphasis first)
+			i.state.currentState = GenerateCVStateSelectRoleEmphasis
+			i.state.roleEmphasisIndex = 0
 			return nil
 		}
 
@@ -233,7 +239,8 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		}
 	case AudienceSelectedMsg:
 		i.state.selectedAudience = msg.Audience
-		i.state.currentState = GenerateCVStateSelectStructure
+		i.state.currentState = GenerateCVStateSelectRoleEmphasis
+		i.state.roleEmphasisIndex = 0
 	}
 	return nil
 }
@@ -265,6 +272,99 @@ func (i *GenerateCVIntent) updateSelectStructure(msg tea.Msg) tea.Cmd {
 			return nil
 		case "m":
 			// Return to main menu
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
+	}
+	return nil
+}
+
+// updateSelectRoleEmphasis handles messages while selecting role emphasis.
+func (i *GenerateCVIntent) updateSelectRoleEmphasis(msg tea.Msg) tea.Cmd {
+	roleEmphases := []RoleEmphasis{
+		RoleEmphasisSeniorBackend,
+		RoleEmphasisStaffPrincipal,
+		RoleEmphasisConsulting,
+		RoleEmphasisLanguageAgnostic,
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.roleEmphasisIndex > 0 {
+				i.state.roleEmphasisIndex--
+			}
+			return nil
+		case "down", "j":
+			if i.state.roleEmphasisIndex < len(roleEmphases)-1 {
+				i.state.roleEmphasisIndex++
+			}
+			return nil
+		case "enter":
+			i.state.selectedRoleEmphasis = roleEmphases[i.state.roleEmphasisIndex]
+			i.state.currentState = GenerateCVStateSelectLengthFormat
+			i.state.lengthFormatIndex = 1 // Default to "standard"
+			return nil
+		case "esc":
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		case "m":
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
+	}
+	return nil
+}
+
+// updateSelectLengthFormat handles messages while selecting length format.
+func (i *GenerateCVIntent) updateSelectLengthFormat(msg tea.Msg) tea.Cmd {
+	lengthFormats := []LengthFormat{
+		LengthFull,
+		LengthStandard,
+		LengthShort,
+		LengthUltraShort,
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.lengthFormatIndex > 0 {
+				i.state.lengthFormatIndex--
+			}
+			return nil
+		case "down", "j":
+			if i.state.lengthFormatIndex < len(lengthFormats)-1 {
+				i.state.lengthFormatIndex++
+			}
+			return nil
+		case "enter":
+			i.state.selectedLengthFormat = lengthFormats[i.state.lengthFormatIndex]
+			// Look up the variant
+			variantService := cv.NewVariantService()
+			variant, err := variantService.GetVariantByDimensions(i.state.selectedRoleEmphasis, i.state.selectedLengthFormat)
+			if err != nil {
+				// Fallback to standard structure if variant not found
+				i.state.selectedCVStructure = CVStructureStandard
+			} else {
+				i.state.selectedVariant = variant
+				// Set the structure from the variant's base structure
+				i.state.selectedCVStructure = CVStructure(variant.BaseStructure)
+			}
+			i.state.currentState = GenerateCVStateGenerating
+			i.state.isGenerating = true
+			return i.generateCVAsync()
+		case "esc":
+			i.state.currentState = GenerateCVStateSelectRoleEmphasis
+			return nil
+		case "m":
 			i.setCancelled()
 			return nil
 		case "q", "ctrl+c":
@@ -454,6 +554,10 @@ func (i *GenerateCVIntent) getStateContent() string {
 		return i.viewSelectAudience()
 	case GenerateCVStateSelectStructure:
 		return i.viewSelectStructure()
+	case GenerateCVStateSelectRoleEmphasis:
+		return i.viewSelectRoleEmphasis()
+	case GenerateCVStateSelectLengthFormat:
+		return i.viewSelectLengthFormat()
 	case GenerateCVStateGenerating:
 		return i.viewGenerating()
 	case GenerateCVStatePreview:
@@ -491,6 +595,16 @@ func (i *GenerateCVIntent) getContextHelp() string {
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateSelectStructure:
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectRoleEmphasis:
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectLengthFormat:
 		return CombineThemedFooters(
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -590,6 +704,10 @@ func (i *GenerateCVIntent) getBreadcrumbs() []string {
 		crumbs = append(crumbs, "Select Audience")
 	case GenerateCVStateSelectStructure:
 		crumbs = append(crumbs, "Select Structure")
+	case GenerateCVStateSelectRoleEmphasis:
+		crumbs = append(crumbs, "Select Role Emphasis")
+	case GenerateCVStateSelectLengthFormat:
+		crumbs = append(crumbs, "Select Length")
 	case GenerateCVStateGenerating:
 		crumbs = append(crumbs, "Generating")
 	case GenerateCVStatePreview:
@@ -732,6 +850,91 @@ func (i *GenerateCVIntent) viewSelectStructure() string {
 	card := cardStyle.Render(content.String())
 
 	return card
+}
+
+// viewSelectRoleEmphasis renders the role emphasis selection view.
+func (i *GenerateCVIntent) viewSelectRoleEmphasis() string {
+	var content strings.Builder
+	content.WriteString("\n🎯 Select Role Emphasis\n\n")
+
+	if i.state.selectedProfile != nil {
+		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
+		content.WriteString(fmt.Sprintf("Role: %s\n", i.state.selectedProfile.TargetRole))
+		content.WriteString(fmt.Sprintf("Audience: %s\n\n", i.state.selectedAudience))
+	}
+
+	// Get role emphasis configs for display
+	roleConfigs := cv.ListRoleEmphasisConfigs()
+
+	content.WriteString("Select role emphasis:\n\n")
+	for idx, config := range roleConfigs {
+		prefix := "  "
+		if idx == i.state.roleEmphasisIndex {
+			prefix = "▶ "
+		}
+
+		emphasisStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		if idx == i.state.roleEmphasisIndex {
+			emphasisStyle = emphasisStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+		}
+
+		line := fmt.Sprintf("%s%s\n   %s", prefix, config.Name, config.Description)
+		content.WriteString(emphasisStyle.Render(line) + "\n\n")
+	}
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
+}
+
+// viewSelectLengthFormat renders the length format selection view.
+func (i *GenerateCVIntent) viewSelectLengthFormat() string {
+	var content strings.Builder
+	content.WriteString("\n📏 Select CV Length\n\n")
+
+	if i.state.selectedProfile != nil {
+		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
+		content.WriteString(fmt.Sprintf("Role: %s\n", i.state.selectedProfile.TargetRole))
+		content.WriteString(fmt.Sprintf("Audience: %s\n", i.state.selectedAudience))
+	}
+
+	// Show selected role emphasis
+	roleConfig := cv.GetRoleEmphasisConfig(i.state.selectedRoleEmphasis)
+	content.WriteString(fmt.Sprintf("Emphasis: %s\n\n", roleConfig.Name))
+
+	// Get length format configs for display
+	lengthConfigs := cv.ListLengthFormatConfigs()
+
+	content.WriteString("Select CV length:\n\n")
+	for idx, config := range lengthConfigs {
+		prefix := "  "
+		if idx == i.state.lengthFormatIndex {
+			prefix = "▶ "
+		}
+
+		lengthStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		if idx == i.state.lengthFormatIndex {
+			lengthStyle = lengthStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+		}
+
+		// Include target pages in description
+		line := fmt.Sprintf("%s%s (%s pages)\n   %s", prefix, config.Name, config.TargetPages, config.Description)
+		content.WriteString(lengthStyle.Render(line) + "\n\n")
+	}
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
 }
 
 // viewGenerating renders the CV generation progress view.
@@ -981,18 +1184,30 @@ func (i *GenerateCVIntent) setCompleted() {
 			GeneratedCV:       i.state.generatedCV,
 			SelectedProfile:   i.state.selectedProfile,
 			SelectedStructure: i.state.selectedCVStructure,
+			SelectedVariant:   i.state.selectedVariant,
 			AcceptedFields:    make(map[string]bool),
 		},
 		Metadata: map[string]interface{}{
-			"profile":     i.state.selectedProfile.ID,
-			"audience":    i.state.selectedAudience,
-			"structure":   i.state.selectedCVStructure,
-			"timestamp":   time.Now(),
-			"event_count": len(i.context.Events),
-			"fact_count":  len(i.context.Facts),
+			"profile":       i.state.selectedProfile.ID,
+			"audience":      i.state.selectedAudience,
+			"structure":     i.state.selectedCVStructure,
+			"role_emphasis": i.state.selectedRoleEmphasis,
+			"length_format": i.state.selectedLengthFormat,
+			"variant_id":    getVariantID(i.state.selectedVariant),
+			"timestamp":     time.Now(),
+			"event_count":   len(i.context.Events),
+			"fact_count":    len(i.context.Facts),
 		},
 	}
 	i.active = false
+}
+
+// getVariantID safely returns the variant ID or empty string
+func getVariantID(v *cv.CVVariant) string {
+	if v == nil {
+		return ""
+	}
+	return v.ID
 }
 
 // setCancelled marks the intent as cancelled by the user.

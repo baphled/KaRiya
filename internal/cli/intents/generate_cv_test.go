@@ -161,15 +161,17 @@ var _ = Describe("GenerateCVIntent", func() {
 			intent.state.currentState = GenerateCVStateSelectAudience
 		})
 
-		It("should transition to structure selection on enter", func() {
+		It("should transition to role emphasis selection on enter", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectStructure))
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
 		})
 
-		It("should generate CV when structure selected and async generation completes", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectStructure))
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // structure -> generating
+		It("should generate CV when variant selected and async generation completes", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectLengthFormat))
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format -> generating
 			// Simulate async generation completion
 			intent.Update(CVGenerationCompleteMsg{
 				CV: &career.CVView{

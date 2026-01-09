@@ -266,17 +266,18 @@ var _ = Describe("GenerateCVIntent - Structure-Aware Preview", func() {
 		})
 	})
 
-	Describe("Structure Selection Affects Preview", func() {
+	Describe("Variant Selection Affects Preview", func() {
 		BeforeEach(func() {
 			intent.Init()
 			// Navigate through the flow
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // profile -> audience
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
 		})
 
-		It("should use standard preview when Standard structure selected", func() {
-			// Select Standard (index 0) and generate
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // structure -> generating
+		It("should use standard preview when Senior Backend variant selected", func() {
+			// Senior Backend with Standard length uses standard base structure
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis (Senior Backend) -> length format
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format (Standard) -> generating
 
 			// Simulate generation complete
 			intent.Update(CVGenerationCompleteMsg{
@@ -293,11 +294,14 @@ var _ = Describe("GenerateCVIntent - Structure-Aware Preview", func() {
 			Expect(view).To(ContainSubstring("Implemented CI/CD pipeline"))
 		})
 
-		It("should use narrative preview when Narrative structure selected", func() {
-			// Navigate to Narrative (index 1)
-			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
-			Expect(intent.state.structureIndex).To(Equal(1))
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // structure -> generating
+		It("should use narrative preview when Language-Agnostic variant selected", func() {
+			// Navigate to Language-Agnostic (index 3)
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Staff/Principal
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Consulting
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown}) // Language-Agnostic
+			Expect(intent.state.roleEmphasisIndex).To(Equal(3))
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format (Standard) -> generating
 
 			// Simulate generation complete
 			intent.Update(CVGenerationCompleteMsg{
@@ -306,7 +310,7 @@ var _ = Describe("GenerateCVIntent - Structure-Aware Preview", func() {
 			})
 
 			Expect(intent.state.currentState).To(Equal(GenerateCVStatePreview))
-			Expect(intent.state.selectedCVStructure).To(Equal(CVStructureNarrative))
+			Expect(intent.state.selectedCVStructure).To(Equal(CVStructure("narrative")))
 
 			// Use direct method to test content (viewport wrapper returns empty without initialization)
 			view := intent.viewPreviewNarrative()

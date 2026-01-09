@@ -11,6 +11,30 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
+// CV variant types - reexport from cv package for convenience
+type (
+	// RoleEmphasis defines what aspect of experience to emphasize
+	RoleEmphasis = cv.RoleEmphasis
+	// LengthFormat defines CV density/length
+	LengthFormat = cv.LengthFormat
+)
+
+// Role emphasis constants
+const (
+	RoleEmphasisSeniorBackend    = cv.RoleEmphasisSeniorBackend
+	RoleEmphasisStaffPrincipal   = cv.RoleEmphasisStaffPrincipal
+	RoleEmphasisConsulting       = cv.RoleEmphasisConsulting
+	RoleEmphasisLanguageAgnostic = cv.RoleEmphasisLanguageAgnostic
+)
+
+// Length format constants
+const (
+	LengthFull       = cv.LengthFull
+	LengthStandard   = cv.LengthStandard
+	LengthShort      = cv.LengthShort
+	LengthUltraShort = cv.LengthUltraShort
+)
+
 // CVStructure represents the structure/format of a CV.
 type CVStructure string
 
@@ -33,7 +57,14 @@ const (
 	GenerateCVStateSelectAudience GenerateCVState = "select_audience"
 
 	// GenerateCVStateSelectStructure - User selects CV structure (Standard or Narrative).
+	// DEPRECATED: Use SelectRoleEmphasis + SelectLengthFormat for variant-based selection.
 	GenerateCVStateSelectStructure GenerateCVState = "select_structure"
+
+	// GenerateCVStateSelectRoleEmphasis - User selects role emphasis (senior_backend, staff_principal, etc.)
+	GenerateCVStateSelectRoleEmphasis GenerateCVState = "select_role_emphasis"
+
+	// GenerateCVStateSelectLengthFormat - User selects length format (full, standard, short, ultra_short)
+	GenerateCVStateSelectLengthFormat GenerateCVState = "select_length_format"
 
 	// GenerateCVStateGenerating - CV is being generated.
 	GenerateCVStateGenerating GenerateCVState = "generating"
@@ -133,6 +164,9 @@ type GenerateCVResult struct {
 	// SelectedStructure is the CV structure that was selected.
 	SelectedStructure CVStructure
 
+	// SelectedVariant is the CV variant that was selected (if variant-based generation was used).
+	SelectedVariant *cv.CVVariant
+
 	// AcceptedFields tracks which fields were accepted.
 	AcceptedFields map[string]bool
 
@@ -168,6 +202,21 @@ type GenerateCVModel struct {
 
 	// structureIndex is the index for structure selection UI
 	structureIndex int
+
+	// selectedRoleEmphasis is the selected role emphasis for variant-based generation
+	selectedRoleEmphasis RoleEmphasis
+
+	// roleEmphasisIndex is the index for role emphasis selection UI
+	roleEmphasisIndex int
+
+	// selectedLengthFormat is the selected length format for variant-based generation
+	selectedLengthFormat LengthFormat
+
+	// lengthFormatIndex is the index for length format selection UI
+	lengthFormatIndex int
+
+	// selectedVariant is the selected CV variant (combination of role emphasis and length)
+	selectedVariant *cv.CVVariant
 
 	// generatedCV is the generated CV.
 	generatedCV *career.CVView
