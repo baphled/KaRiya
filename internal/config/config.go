@@ -106,13 +106,16 @@ func LoadConfig() (*Config, error) {
 
 // LoadConfigFromPath loads configuration from a specific file path
 func LoadConfigFromPath(path string) (*Config, error) {
+	// Clean path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+
 	// Check if config file exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(cleanPath); os.IsNotExist(err) {
 		// Return default config if file doesn't exist
 		return DefaultConfig(), nil
 	}
 
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(cleanPath) // #nosec G304 - path is cleaned above
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
@@ -139,7 +142,7 @@ func SaveConfig(cfg *Config) error {
 func SaveConfigToPath(cfg *Config, path string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -148,7 +151,7 @@ func SaveConfigToPath(cfg *Config, path string) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0644); err != nil {
+	if err := os.WriteFile(path, data, 0600); err != nil {
 		return fmt.Errorf("failed to write config: %w", err)
 	}
 

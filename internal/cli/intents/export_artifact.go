@@ -667,7 +667,7 @@ func (m *ExportArtifactModel) saveToDestination(ctx context.Context, name string
 		}
 
 		exportDir := filepath.Join(homeDir, ".kariya", "exports")
-		if err := os.MkdirAll(exportDir, 0755); err != nil {
+		if err := os.MkdirAll(exportDir, 0750); err != nil {
 			return "", fmt.Errorf("failed to create export directory: %w", err)
 		}
 
@@ -676,7 +676,7 @@ func (m *ExportArtifactModel) saveToDestination(ctx context.Context, name string
 		filename := fmt.Sprintf("%s_%s%s", name, timestamp, extension)
 		filePath = filepath.Join(exportDir, filename)
 
-		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filePath, []byte(content), 0600); err != nil {
 			return "", fmt.Errorf("failed to write file: %w", err)
 		}
 
