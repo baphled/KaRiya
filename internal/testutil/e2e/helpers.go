@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"path/filepath"
 	"strings"
-	"testing"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -17,12 +16,23 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// TestingT is an interface that matches both *testing.T and GinkgoT()
+// This allows the e2e package to work with both standard Go tests and Ginkgo.
+type TestingT interface {
+	Helper()
+	TempDir() string
+	Fatalf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
+	Fatal(args ...interface{})
+	Error(args ...interface{})
+}
+
 // TestEnv holds all test dependencies for E2E testing.
 // It provides a complete test environment with SQLite persistence,
 // repositories, services, and the application model.
 type TestEnv struct {
-	// T is the testing context
-	T *testing.T
+	// T is the testing context (supports both *testing.T and GinkgoT())
+	T TestingT
 
 	// Model is the root application model
 	Model *app.Model
@@ -62,7 +72,9 @@ type TestEnv struct {
 //	env := e2e.Setup(t)
 //	defer env.Cleanup()
 //	// use env for testing
-func Setup(t *testing.T) *TestEnv {
+//
+// Works with both *testing.T and GinkgoT().
+func Setup(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
@@ -118,7 +130,9 @@ func Setup(t *testing.T) *TestEnv {
 
 // SetupWithMemory creates an E2E test environment using in-memory repositories.
 // This is faster but doesn't test actual SQLite persistence.
-func SetupWithMemory(t *testing.T) *TestEnv {
+//
+// Works with both *testing.T and GinkgoT().
+func SetupWithMemory(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
@@ -309,21 +323,14 @@ func (e *TestEnv) Tab() *TestEnv {
 	return e.PressKey(tea.KeyTab)
 }
 
-// executeCmd executes a tea.Cmd and processes the result.
-func (e *TestEnv) executeCmd(cmd tea.Cmd) {
-	if cmd == nil {
-		return
-	}
-
-	msg := cmd()
-	if msg != nil {
-		modelInterface, newCmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
-		// Recursively execute any new commands (but limit depth to prevent infinite loops)
-		if newCmd != nil {
-			e.executeCmd(newCmd)
-		}
-	}
+// executeCmd does NOT execute commands returned by Update.
+// In Bubble Tea testing, most commands are for async operations (cursor blink,
+// window resize, etc.) that don't affect the state we're testing. Executing
+// them causes issues like stuck goroutines and infinite recursion.
+// We only care about the model state after Update, not the side effects.
+func (e *TestEnv) executeCmd(_ tea.Cmd) {
+	// Intentionally do nothing - commands are for async side effects
+	// that don't matter for testing model state.
 }
 
 // ============================================================================

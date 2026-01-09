@@ -1,214 +1,209 @@
 package e2e_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/testutil/e2e"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestSetup(t *testing.T) {
-	env := e2e.Setup(t)
-	defer env.Cleanup()
+var _ = Describe("E2E Test Helpers", func() {
+	Describe("Setup", func() {
+		It("should create a complete test environment with SQLite", func() {
+			env := e2e.Setup(GinkgoT())
+			defer env.Cleanup()
 
-	if env.Model == nil {
-		t.Fatal("Model should not be nil")
-	}
-	if env.DB == nil {
-		t.Fatal("DB should not be nil for SQLite setup")
-	}
-	if env.Service == nil {
-		t.Fatal("Service should not be nil")
-	}
-}
+			Expect(env.Model).NotTo(BeNil())
+			Expect(env.DB).NotTo(BeNil())
+			Expect(env.Service).NotTo(BeNil())
+		})
+	})
 
-func TestSetupWithMemory(t *testing.T) {
-	env := e2e.SetupWithMemory(t)
-	defer env.Cleanup()
+	Describe("SetupWithMemory", func() {
+		It("should create a test environment with in-memory repositories", func() {
+			env := e2e.SetupWithMemory(GinkgoT())
+			defer env.Cleanup()
 
-	if env.Model == nil {
-		t.Fatal("Model should not be nil")
-	}
-	if env.DB != nil {
-		t.Fatal("DB should be nil for memory setup")
-	}
-	if env.Service == nil {
-		t.Fatal("Service should not be nil")
-	}
-}
+			Expect(env.Model).NotTo(BeNil())
+			Expect(env.DB).To(BeNil())
+			Expect(env.Service).NotTo(BeNil())
+		})
+	})
 
-func TestNavigationHelpers(t *testing.T) {
-	env := e2e.SetupWithMemory(t)
-	defer env.Cleanup()
+	Describe("Navigation Helpers", func() {
+		var env *e2e.TestEnv
 
-	// Test that we start at the menu
-	if !env.IsInMenuState() {
-		t.Error("Should start in menu state")
-	}
+		BeforeEach(func() {
+			env = e2e.SetupWithMemory(GinkgoT())
+		})
 
-	// Test navigation
-	env.NavigateDown().NavigateDown()
+		AfterEach(func() {
+			env.Cleanup()
+		})
 
-	// Should still be in menu (just different selection)
-	if !env.IsInMenuState() {
-		t.Error("Should still be in menu after navigation")
-	}
-}
+		It("should start in menu state", func() {
+			Expect(env.IsInMenuState()).To(BeTrue())
+		})
 
-func TestSelectIntent(t *testing.T) {
-	env := e2e.SetupWithMemory(t)
-	defer env.Cleanup()
+		It("should remain in menu after navigation", func() {
+			env.NavigateDown().NavigateDown()
+			Expect(env.IsInMenuState()).To(BeTrue())
+		})
+	})
 
-	// Select CaptureEvent (index 0)
-	env.SelectIntent(0)
+	Describe("SelectIntent", func() {
+		var env *e2e.TestEnv
 
-	// Should no longer be in menu state
-	// The view should change to show intent content
-	view := env.GetView()
-	if view == "" {
-		t.Error("View should not be empty")
-	}
-}
+		BeforeEach(func() {
+			env = e2e.SetupWithMemory(GinkgoT())
+		})
 
-func TestSelectIntentByName(t *testing.T) {
-	env := e2e.SetupWithMemory(t)
-	defer env.Cleanup()
+		AfterEach(func() {
+			env.Cleanup()
+		})
 
-	// Select by name
-	env.SelectIntentByName("browse_timeline")
+		It("should select intent by index", func() {
+			env.SelectIntent(0)
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
 
-	// View should show timeline content
-	view := env.GetView()
-	if view == "" {
-		t.Error("View should not be empty")
-	}
-}
+	Describe("SelectIntentByName", func() {
+		var env *e2e.TestEnv
 
-func TestViewAssertions(t *testing.T) {
-	env := e2e.SetupWithMemory(t)
-	defer env.Cleanup()
+		BeforeEach(func() {
+			env = e2e.SetupWithMemory(GinkgoT())
+		})
 
-	// Menu should contain certain text
-	env.AssertViewContains("Career Event Management System")
-	env.AssertViewContains("Capture Event")
-}
+		AfterEach(func() {
+			env.Cleanup()
+		})
 
-func TestDataPopulation(t *testing.T) {
-	env := e2e.Setup(t)
-	defer env.Cleanup()
+		It("should select intent by name", func() {
+			env.SelectIntentByName("browse_timeline")
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty())
+		})
+	})
 
-	// Start with empty database
-	env.AssertEventCount(0)
-	env.AssertBurstCount(0)
-	env.AssertFactCount(0)
+	Describe("View Assertions", func() {
+		var env *e2e.TestEnv
 
-	// Add test data
-	env.PopulateTestData(5, 2, 3)
+		BeforeEach(func() {
+			env = e2e.SetupWithMemory(GinkgoT())
+		})
 
-	// Verify counts
-	env.AssertEventCount(5)
-	env.AssertBurstCount(2)
-	env.AssertFactCount(3)
-}
+		AfterEach(func() {
+			env.Cleanup()
+		})
 
-func TestSimulateRestart(t *testing.T) {
-	env := e2e.Setup(t)
-	defer env.Cleanup()
+		It("should assert view contains expected text", func() {
+			env.AssertViewContains("Career Event Management System")
+			env.AssertViewContains("Capture Event")
+		})
+	})
 
-	// Add some data
-	event := e2e.CreateMinimalEvent("test_event_1")
-	env.AddEvent(event)
-	env.AssertEventCount(1)
+	Describe("Data Population", func() {
+		var env *e2e.TestEnv
 
-	// Simulate restart
-	env.SimulateRestart()
+		BeforeEach(func() {
+			env = e2e.Setup(GinkgoT())
+		})
 
-	// Data should still be there
-	env.AssertEventCount(1)
+		AfterEach(func() {
+			env.Cleanup()
+		})
 
-	// Should be back at menu
-	if !env.IsInMenuState() {
-		t.Error("Should be in menu state after restart")
-	}
-}
+		It("should start with empty database", func() {
+			env.AssertEventCount(0)
+			env.AssertBurstCount(0)
+			env.AssertFactCount(0)
+		})
 
-func TestCreateSampleEvents(t *testing.T) {
-	events := e2e.CreateSampleEvents(10)
+		It("should populate test data", func() {
+			env.PopulateTestData(5, 2, 3)
+			env.AssertEventCount(5)
+			env.AssertBurstCount(2)
+			env.AssertFactCount(3)
+		})
+	})
 
-	if len(events) != 10 {
-		t.Errorf("Expected 10 events, got %d", len(events))
-	}
+	Describe("SimulateRestart", func() {
+		var env *e2e.TestEnv
 
-	for i, event := range events {
-		if event.ID == "" {
-			t.Errorf("Event %d has empty ID", i)
-		}
-		if event.Text == "" {
-			t.Errorf("Event %d has empty Text", i)
-		}
-		if event.Date.IsZero() {
-			t.Errorf("Event %d has zero Date", i)
-		}
-	}
-}
+		BeforeEach(func() {
+			env = e2e.Setup(GinkgoT())
+		})
 
-func TestCreateSampleBursts(t *testing.T) {
-	events := e2e.CreateSampleEvents(5)
-	bursts := e2e.CreateSampleBursts(3, events)
+		AfterEach(func() {
+			env.Cleanup()
+		})
 
-	if len(bursts) != 3 {
-		t.Errorf("Expected 3 bursts, got %d", len(bursts))
-	}
+		It("should preserve data after restart", func() {
+			event := e2e.CreateMinimalEvent("test_event_1")
+			env.AddEvent(event)
+			env.AssertEventCount(1)
 
-	for i, burst := range bursts {
-		if burst.ID == "" {
-			t.Errorf("Burst %d has empty ID", i)
-		}
-		if burst.Name == "" {
-			t.Errorf("Burst %d has empty Name", i)
-		}
-		if len(burst.EventIDs) == 0 {
-			t.Errorf("Burst %d has no event IDs", i)
-		}
-	}
-}
+			env.SimulateRestart()
 
-func TestCreateSampleFacts(t *testing.T) {
-	events := e2e.CreateSampleEvents(5)
-	facts := e2e.CreateSampleFacts(5, events)
+			env.AssertEventCount(1)
+			Expect(env.IsInMenuState()).To(BeTrue())
+		})
+	})
 
-	if len(facts) != 5 {
-		t.Errorf("Expected 5 facts, got %d", len(facts))
-	}
+	Describe("Fixture Generators", func() {
+		Describe("CreateSampleEvents", func() {
+			It("should create valid sample events", func() {
+				events := e2e.CreateSampleEvents(10)
 
-	for i, fact := range facts {
-		if fact.ID == "" {
-			t.Errorf("Fact %d has empty ID", i)
-		}
-		if fact.Text == "" {
-			t.Errorf("Fact %d has empty Text", i)
-		}
-		if len(fact.CompetencyCategories) == 0 {
-			t.Errorf("Fact %d has no competency categories", i)
-		}
-	}
-}
+				Expect(events).To(HaveLen(10))
+				for _, event := range events {
+					Expect(event.ID).NotTo(BeEmpty())
+					Expect(event.Text).NotTo(BeEmpty())
+					Expect(event.Date.IsZero()).To(BeFalse())
+				}
+			})
+		})
 
-func TestCreateSampleProfiles(t *testing.T) {
-	profiles := e2e.CreateSampleProfiles()
+		Describe("CreateSampleBursts", func() {
+			It("should create valid sample bursts with event references", func() {
+				events := e2e.CreateSampleEvents(5)
+				bursts := e2e.CreateSampleBursts(3, events)
 
-	if len(profiles) < 3 {
-		t.Errorf("Expected at least 3 profiles, got %d", len(profiles))
-	}
+				Expect(bursts).To(HaveLen(3))
+				for _, burst := range bursts {
+					Expect(burst.ID).NotTo(BeEmpty())
+					Expect(burst.Name).NotTo(BeEmpty())
+					Expect(burst.EventIDs).NotTo(BeEmpty())
+				}
+			})
+		})
 
-	for i, profile := range profiles {
-		if profile.ID == "" {
-			t.Errorf("Profile %d has empty ID", i)
-		}
-		if profile.Name == "" {
-			t.Errorf("Profile %d has empty Name", i)
-		}
-		if profile.TargetRole == "" {
-			t.Errorf("Profile %d has empty TargetRole", i)
-		}
-	}
-}
+		Describe("CreateSampleFacts", func() {
+			It("should create valid sample facts with event references", func() {
+				events := e2e.CreateSampleEvents(5)
+				facts := e2e.CreateSampleFacts(5, events)
+
+				Expect(facts).To(HaveLen(5))
+				for _, fact := range facts {
+					Expect(fact.ID).NotTo(BeEmpty())
+					Expect(fact.Text).NotTo(BeEmpty())
+					Expect(fact.CompetencyCategories).NotTo(BeEmpty())
+				}
+			})
+		})
+
+		Describe("CreateSampleProfiles", func() {
+			It("should create valid sample profiles", func() {
+				profiles := e2e.CreateSampleProfiles()
+
+				Expect(len(profiles)).To(BeNumerically(">=", 3))
+				for _, profile := range profiles {
+					Expect(profile.ID).NotTo(BeEmpty())
+					Expect(profile.Name).NotTo(BeEmpty())
+					Expect(profile.TargetRole).NotTo(BeEmpty())
+				}
+			})
+		})
+	})
+})
