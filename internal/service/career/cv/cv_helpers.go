@@ -14,6 +14,12 @@ const (
 
 	// CVStructureNarrative is a language-agnostic professional format with Core Strengths, Technologies, What I Bring sections.
 	CVStructureNarrative CVStructure = "narrative"
+
+	// CVStructureConsulting emphasizes client engagements and technical capabilities for consulting roles.
+	CVStructureConsulting CVStructure = "consulting"
+
+	// CVStructureHighlights is a condensed 1-page format with key capabilities and selected highlights.
+	CVStructureHighlights CVStructure = "highlights"
 )
 
 // MinConfidenceForNarrative is the minimum confidence score for bullets to appear in narrative CV.
