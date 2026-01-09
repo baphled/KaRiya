@@ -197,14 +197,14 @@ func FileLogger() *Logger {
 	}
 
 	logDir := homeDir + "/.kariya/logs"
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+	if err := os.MkdirAll(logDir, 0750); err != nil {
 		// Fallback to console if we can't create directory
 		return ConsoleLogger()
 	}
 
 	// Create log file with timestamp
 	logFile := logDir + "/kariya.log"
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600) // #nosec G304 -- path constructed from user home dir
 	if err != nil {
 		// Fallback to console if we can't open file
 		return ConsoleLogger()

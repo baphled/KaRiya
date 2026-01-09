@@ -40,7 +40,7 @@ func NewYAMLConfigManager(log *logger.Logger) (*YAMLConfigManager, error) {
 	configDir := filepath.Join(homeDir, ".kariya", "cv_configs")
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -68,7 +68,7 @@ func (m *YAMLConfigManager) LoadConfig(ctx context.Context, name string) (*caree
 	}
 
 	// Read file
-	data, err := os.ReadFile(configPath)
+	data, err := os.ReadFile(configPath) // #nosec G304 -- path constructed from validated config directory
 	if err != nil {
 		if os.IsNotExist(err) {
 			m.logger.Info("Config not found: %s at path %s", name, configPath)
@@ -120,7 +120,7 @@ func (m *YAMLConfigManager) SaveConfig(ctx context.Context, config *career.CVCon
 	}
 
 	// Ensure directory exists
-	if err := os.MkdirAll(m.configDir, 0755); err != nil {
+	if err := os.MkdirAll(m.configDir, 0750); err != nil {
 		m.logger.Error("Failed to create config directory: %v at path %s", err, m.configDir)
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
@@ -149,16 +149,24 @@ func (m *YAMLConfigManager) SaveConfig(ctx context.Context, config *career.CVCon
 
 	// Write data to temp file
 	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		if closeErr := tmpFile.Close(); closeErr != nil {
+			m.logger.Error("Failed to close temp file: %v", closeErr)
+		}
+		if removeErr := os.Remove(tmpPath); removeErr != nil {
+			m.logger.Error("Failed to remove temp file: %v", removeErr)
+		}
 		m.logger.Error("Failed to write to temp file: %v", err)
 		return fmt.Errorf("failed to write to temp file: %w", err)
 	}
-	tmpFile.Close()
+	if err := tmpFile.Close(); err != nil {
+		m.logger.Error("Failed to close temp file: %v", err)
+	}
 
 	// Atomic rename
 	if err := os.Rename(tmpPath, configPath); err != nil {
-		os.Remove(tmpPath)
+		if removeErr := os.Remove(tmpPath); removeErr != nil {
+			m.logger.Error("Failed to remove temp file: %v", removeErr)
+		}
 		m.logger.Error("Failed to rename temp file: %v from %s to %s", err, tmpPath, configPath)
 		return fmt.Errorf("failed to save config file: %w", err)
 	}
@@ -330,7 +338,7 @@ func (m *YAMLConfigManager) VerifyDirectory() error {
 				m.logger.Warn("Config directory does not exist: %s, attempting to create", m.configDir)
 			}
 			// Try to create it
-			if err := os.MkdirAll(m.configDir, 0755); err != nil {
+			if err := os.MkdirAll(m.configDir, 0750); err != nil {
 				if m.logger != nil {
 					m.logger.Error("Failed to create config directory: %v", err)
 				}
@@ -361,7 +369,9 @@ func (m *YAMLConfigManager) VerifyDirectory() error {
 		return fmt.Errorf("config directory is not writable: %w", err)
 	}
 	// Clean up test file
-	os.Remove(testFile)
+	if err := os.Remove(testFile); err != nil && m.logger != nil {
+		m.logger.Error("Failed to remove write test file: %v", err)
+	}
 
 	if m.logger != nil {
 		m.logger.Info("Config directory verified: %s", m.configDir)

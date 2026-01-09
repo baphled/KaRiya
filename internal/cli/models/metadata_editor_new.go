@@ -52,7 +52,7 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 	availableTags := tagSelector.AvailableTags()
 
 	categorySelector := components.NewCategorySelector()
-	categorySelector.SetSelected(event.Categories)
+	_ = categorySelector.SetSelected(event.Categories) // Error ignored: existing event categories should be valid
 	availableCategories := categorySelector.AvailableCategories()
 
 	// Extract form data from event
