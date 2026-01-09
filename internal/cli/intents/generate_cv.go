@@ -10,6 +10,17 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
+// CVStructure represents the structure/format of a CV.
+type CVStructure string
+
+const (
+	// CVStructureStandard is the traditional CV structure with Experience, Projects, Skills sections.
+	CVStructureStandard CVStructure = "standard"
+
+	// CVStructureNarrative is a language-agnostic professional format with Core Strengths, Technologies, What I Bring sections.
+	CVStructureNarrative CVStructure = "narrative"
+)
+
 // GenerateCVState represents the state of the GenerateCV intent.
 type GenerateCVState string
 
@@ -19,6 +30,9 @@ const (
 
 	// GenerateCVStateSelectAudience - User selects target audience(s).
 	GenerateCVStateSelectAudience GenerateCVState = "select_audience"
+
+	// GenerateCVStateSelectStructure - User selects CV structure (Standard or Narrative).
+	GenerateCVStateSelectStructure GenerateCVState = "select_structure"
 
 	// GenerateCVStateGenerating - CV is being generated.
 	GenerateCVStateGenerating GenerateCVState = "generating"
@@ -112,6 +126,9 @@ type GenerateCVResult struct {
 	// SelectedProfile is the profile that was used.
 	SelectedProfile *CVProfile
 
+	// SelectedStructure is the CV structure that was selected.
+	SelectedStructure CVStructure
+
 	// AcceptedFields tracks which fields were accepted.
 	AcceptedFields map[string]bool
 
@@ -141,6 +158,12 @@ type GenerateCVModel struct {
 
 	// audienceIndex is the index for audience selection UI
 	audienceIndex int
+
+	// selectedCVStructure is the selected CV structure (Standard or Narrative).
+	selectedCVStructure CVStructure
+
+	// structureIndex is the index for structure selection UI
+	structureIndex int
 
 	// generatedCV is the generated CV.
 	generatedCV *career.CVView

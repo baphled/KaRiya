@@ -46,10 +46,12 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 		BaseIntent: base,
 		context:    context,
 		state: &GenerateCVModel{
-			context:         context,
-			currentState:    GenerateCVStateSelectProfile,
-			selectedProfile: selectedProfile,
-			selectedIndex:   0,
+			context:             context,
+			currentState:        GenerateCVStateSelectProfile,
+			selectedProfile:     selectedProfile,
+			selectedIndex:       0,
+			selectedCVStructure: CVStructureStandard, // Default to standard
+			structureIndex:      0,
 		},
 		active: true,
 		logger: nil,
@@ -123,6 +125,8 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSelectProfile(msg)
 	case GenerateCVStateSelectAudience:
 		return i.updateSelectAudience(msg)
+	case GenerateCVStateSelectStructure:
+		return i.updateSelectStructure(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -212,9 +216,8 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		case "enter":
 			// Set selected audience based on current index
 			i.state.selectedAudience = audiences[i.state.audienceIndex]
-			i.state.currentState = GenerateCVStateGenerating
-			i.state.isGenerating = true
-			return i.generateCVAsync()
+			i.state.currentState = GenerateCVStateSelectStructure
+			return nil
 		}
 
 		// Handle global keys (q=quit, ?=help, esc=back)
@@ -230,9 +233,44 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		}
 	case AudienceSelectedMsg:
 		i.state.selectedAudience = msg.Audience
-		i.state.currentState = GenerateCVStateGenerating
-		i.state.isGenerating = true
-		return i.generateCVAsync()
+		i.state.currentState = GenerateCVStateSelectStructure
+	}
+	return nil
+}
+
+// updateSelectStructure handles messages while selecting CV structure.
+func (i *GenerateCVIntent) updateSelectStructure(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.structureIndex > 0 {
+				i.state.structureIndex--
+			}
+			return nil
+		case "down", "j":
+			if i.state.structureIndex < 1 { // Only 2 options: Standard (0) and Narrative (1)
+				i.state.structureIndex++
+			}
+			return nil
+		case "enter":
+			// Set selected structure based on current index
+			structures := []CVStructure{CVStructureStandard, CVStructureNarrative}
+			i.state.selectedCVStructure = structures[i.state.structureIndex]
+			i.state.currentState = GenerateCVStateGenerating
+			i.state.isGenerating = true
+			return i.generateCVAsync()
+		case "esc":
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
 	}
 	return nil
 }
@@ -414,6 +452,8 @@ func (i *GenerateCVIntent) getStateContent() string {
 		return i.viewSelectProfile()
 	case GenerateCVStateSelectAudience:
 		return i.viewSelectAudience()
+	case GenerateCVStateSelectStructure:
+		return i.viewSelectStructure()
 	case GenerateCVStateGenerating:
 		return i.viewGenerating()
 	case GenerateCVStatePreview:
@@ -446,6 +486,11 @@ func (i *GenerateCVIntent) getContextHelp() string {
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateSelectAudience:
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectStructure:
 		return CombineThemedFooters(
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -543,6 +588,8 @@ func (i *GenerateCVIntent) getBreadcrumbs() []string {
 		crumbs = append(crumbs, "Select Profile")
 	case GenerateCVStateSelectAudience:
 		crumbs = append(crumbs, "Select Audience")
+	case GenerateCVStateSelectStructure:
+		crumbs = append(crumbs, "Select Structure")
 	case GenerateCVStateGenerating:
 		crumbs = append(crumbs, "Generating")
 	case GenerateCVStatePreview:
@@ -636,6 +683,55 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 	}
 
 	return i.getCardStyle().Render(content.String())
+}
+
+// viewSelectStructure renders the CV structure selection view.
+func (i *GenerateCVIntent) viewSelectStructure() string {
+	var content strings.Builder
+	content.WriteString("\n📐 Select CV Structure\n\n")
+
+	if i.state.selectedProfile != nil {
+		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
+		content.WriteString(fmt.Sprintf("Role: %s\n", i.state.selectedProfile.TargetRole))
+		content.WriteString(fmt.Sprintf("Audience: %s\n\n", i.state.selectedAudience))
+	}
+
+	// Define available structures with descriptions
+	structures := []struct {
+		value       string
+		label       string
+		description string
+	}{
+		{"standard", "Standard", "Traditional CV with Experience, Projects, Skills, Summary sections"},
+		{"narrative", "Narrative", "Language-agnostic professional format with Core Strengths, Technologies, What I Bring sections"},
+	}
+
+	content.WriteString("Select CV structure:\n\n")
+	for idx, structure := range structures {
+		prefix := "  "
+		if idx == i.state.structureIndex {
+			prefix = "▶ "
+		}
+
+		structureStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		if idx == i.state.structureIndex {
+			structureStyle = structureStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+		}
+
+		line := fmt.Sprintf("%s%s\n   %s", prefix, structure.label, structure.description)
+		content.WriteString(structureStyle.Render(line) + "\n\n")
+	}
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	return card
 }
 
 // viewGenerating renders the CV generation progress view.
@@ -778,13 +874,15 @@ func (i *GenerateCVIntent) setCompleted() {
 	i.result = &IntentResult[*GenerateCVResult]{
 		Status: Completed,
 		Data: &GenerateCVResult{
-			GeneratedCV:     i.state.generatedCV,
-			SelectedProfile: i.state.selectedProfile,
-			AcceptedFields:  make(map[string]bool),
+			GeneratedCV:       i.state.generatedCV,
+			SelectedProfile:   i.state.selectedProfile,
+			SelectedStructure: i.state.selectedCVStructure,
+			AcceptedFields:    make(map[string]bool),
 		},
 		Metadata: map[string]interface{}{
 			"profile":     i.state.selectedProfile.ID,
 			"audience":    i.state.selectedAudience,
+			"structure":   i.state.selectedCVStructure,
 			"timestamp":   time.Now(),
 			"event_count": len(i.context.Events),
 			"fact_count":  len(i.context.Facts),
