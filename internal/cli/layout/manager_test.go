@@ -41,6 +41,22 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
+	Describe("NewManagerWithConfig", func() {
+		It("should create manager with custom config", func() {
+			customConfig := layout.DefaultConfig
+			customConfig.NormalMargins.Left = 10
+			customConfig.NormalMargins.Right = 10
+
+			info.Update(tea.WindowSizeMsg{Width: 100, Height: 40})
+			customManager := layout.NewManagerWithConfig(info, customConfig)
+
+			Expect(customManager).NotTo(BeNil())
+			margins := customManager.GetMargins()
+			Expect(margins.Left).To(Equal(10))
+			Expect(margins.Right).To(Equal(10))
+		})
+	})
+
 	Describe("GetContentArea", func() {
 		Context("with normal terminal size", func() {
 			BeforeEach(func() {
@@ -165,6 +181,25 @@ var _ = Describe("Manager", func() {
 			Expect(columns[0]).To(BeNumerically(">=", columns[1]))
 			Expect(columns[1]).To(BeNumerically(">=", columns[2]))
 		})
+
+		It("should handle zero or negative count", func() {
+			columns := manager.CalculateColumns(0, 2)
+			Expect(columns).To(HaveLen(0))
+
+			columns = manager.CalculateColumns(-1, 2)
+			Expect(columns).To(HaveLen(0))
+		})
+
+		It("should handle insufficient available width", func() {
+			info.Update(tea.WindowSizeMsg{Width: 20, Height: 10})
+			columns := manager.CalculateColumns(10, 2) // Too many columns for tiny terminal
+
+			Expect(columns).To(HaveLen(10))
+			// Should return minimal widths when not enough space
+			for _, col := range columns {
+				Expect(col).To(BeNumerically(">=", 1))
+			}
+		})
 	})
 
 	Describe("ShouldUseCompactLayout", func() {
@@ -198,6 +233,29 @@ var _ = Describe("Manager", func() {
 		It("should return false for normal width terminals", func() {
 			info.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 			Expect(manager.ShouldUseListLayout()).To(BeFalse())
+		})
+
+		It("should return false when terminal info is invalid", func() {
+			invalidInfo := &terminal.Info{IsValid: false}
+			manager.UpdateTerminalInfo(invalidInfo)
+			Expect(manager.ShouldUseListLayout()).To(BeFalse())
+		})
+	})
+
+	Describe("GetTerminalInfo", func() {
+		It("should return current terminal info", func() {
+			returnedInfo := manager.GetTerminalInfo()
+			Expect(returnedInfo).To(Equal(info))
+		})
+
+		It("should return updated terminal info after update", func() {
+			newInfo := terminal.NewInfo()
+			newInfo.Update(tea.WindowSizeMsg{Width: 200, Height: 60})
+			manager.UpdateTerminalInfo(newInfo)
+
+			returnedInfo := manager.GetTerminalInfo()
+			Expect(returnedInfo).To(Equal(newInfo))
+			Expect(returnedInfo.Width).To(Equal(200))
 		})
 	})
 
