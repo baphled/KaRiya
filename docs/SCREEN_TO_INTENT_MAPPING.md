@@ -42,7 +42,7 @@ This document maps all 25+ UI screens in the KaRiya TUI to their corresponding i
 ```
 Initial
   ↓
-ChooseStrategy (Timeline / CV Backfill / Manual)
+ChooseStrategy (Quick / Manual)
   ↓
 EventForm (Text, Date, Company, Project)
   ↓

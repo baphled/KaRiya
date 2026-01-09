@@ -57,7 +57,7 @@ The diagram illustrates the primary user workflows in the KaRiya Career Journal 
 3. **Generate CV**: Starts the CV composition process
 
 ### Event Capture Flow
-- Choose capture mode
+- Choose capture strategy (Quick or Manual)
 - Input event data
 - Review extracted facts
 - Tag and categorize events
