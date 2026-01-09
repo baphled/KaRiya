@@ -154,9 +154,9 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.tagIndex < len(availableTags) {
 					tag := availableTags[m.tagIndex]
 					if m.tagSelector.IsSelected(tag) {
-						m.tagSelector.DeselectTag(tag)
+						_ = m.tagSelector.DeselectTag(tag) // Error ignored: toggle based on IsSelected check
 					} else {
-						m.tagSelector.SelectTag(tag)
+						_ = m.tagSelector.SelectTag(tag) // Error ignored: toggle based on IsSelected check
 					}
 				}
 				return m, nil
@@ -166,9 +166,9 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.categoryIndex < len(availableCategories) {
 					category := availableCategories[m.categoryIndex]
 					if m.categorySelector.IsSelected(category) {
-						m.categorySelector.DeselectCategory(category)
+						_ = m.categorySelector.DeselectCategory(category) // Error ignored: toggle based on IsSelected check
 					} else {
-						m.categorySelector.SelectCategory(category)
+						_ = m.categorySelector.SelectCategory(category) // Error ignored: toggle based on IsSelected check
 					}
 				}
 				return m, nil
@@ -542,7 +542,10 @@ func (m *FormModel) parseDate(dateStr string) (time.Time, error) {
 		if len(parts) >= 3 {
 			// Simple parsing for "N unit ago"
 			amount := 0
-			fmt.Sscanf(parts[0], "%d", &amount)
+			if _, err := fmt.Sscanf(parts[0], "%d", &amount); err != nil {
+				// If we can't parse the number, amount stays 0 and falls through
+				amount = 0
+			}
 			unit := parts[1]
 
 			switch unit {
@@ -639,7 +642,7 @@ func (m *FormModel) LoadEventForEditing(event *career.CareerEvent) {
 
 	// Set categories in category selector
 	if len(event.Categories) > 0 {
-		m.categorySelector.SetSelected(event.Categories)
+		_ = m.categorySelector.SetSelected(event.Categories) // Error ignored: existing event categories should be valid
 	}
 
 	// Focus first input

@@ -30,7 +30,9 @@ func ParseDateString(s string) (time.Time, error) {
 	relativeRegex := regexp.MustCompile(`^(\d+)\s+(day|days|week|weeks|month|months)\s+ago$`)
 	if matches := relativeRegex.FindStringSubmatch(strings.ToLower(s)); len(matches) == 3 {
 		var amount int
-		fmt.Sscanf(matches[1], "%d", &amount)
+		if _, err := fmt.Sscanf(matches[1], "%d", &amount); err != nil {
+			amount = 0 // Fallback to 0 if parsing fails
+		}
 		unit := matches[2]
 
 		now := time.Now()
