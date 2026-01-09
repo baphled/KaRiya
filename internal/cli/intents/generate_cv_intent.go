@@ -1188,25 +1188,24 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 		// Build empty bullets map (kept for backward compatibility with export interface)
 		bulletsMap := make(map[string][]*career.CVBullet)
 
-		// Get export content based on format
-		var content string
-		var err error
+		// Map intent export format to service export format
 		var exportFormat cv.ExportFormat
-
 		switch i.state.selectedExportFormat {
 		case CVExportFormatText:
-			content, err = i.context.ExportService.ExportToText(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatText
 		case CVExportFormatMarkdown:
-			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatMarkdown
 		case CVExportFormatYAML:
-			content, err = i.context.ExportService.ExportToYAML(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatYAML
 		default:
 			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("unknown export format")}
 		}
 
+		// Convert intent CVStructure to service CVStructure
+		structure := cv.CVStructure(i.state.selectedCVStructure)
+
+		// Export using structure-aware Export() method
+		content, err := i.context.ExportService.Export(ctx, i.state.generatedCV, sections, bulletsMap, structure, exportFormat)
 		if err != nil {
 			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to export: %v", err)}
 		}
