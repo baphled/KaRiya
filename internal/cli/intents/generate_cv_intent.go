@@ -753,11 +753,29 @@ func (i *GenerateCVIntent) viewGenerating() string {
 }
 
 // viewPreview renders the CV preview view with scrollable content.
+// Routes to structure-specific preview based on selectedCVStructure.
 func (i *GenerateCVIntent) viewPreview() string {
 	if i.state.generatedCV == nil {
 		return "No CV generated yet"
 	}
 
+	var content string
+	switch i.state.selectedCVStructure {
+	case CVStructureNarrative:
+		content = i.viewPreviewNarrative()
+	default:
+		content = i.viewPreviewStandard()
+	}
+
+	// Set viewport content
+	i.state.previewViewport.SetContent(content)
+
+	// Render viewport
+	return i.state.previewViewport.View()
+}
+
+// viewPreviewStandard renders the standard CV preview (traditional format).
+func (i *GenerateCVIntent) viewPreviewStandard() string {
 	var content strings.Builder
 
 	// Header with metadata
@@ -815,13 +833,99 @@ func (i *GenerateCVIntent) viewPreview() string {
 		}
 	}
 
-	// Set viewport content
-	i.state.previewViewport.SetContent(content.String())
+	return content.String()
+}
 
-	// Render viewport
-	viewportContent := i.state.previewViewport.View()
+// viewPreviewNarrative renders the narrative CV preview (professional format).
+func (i *GenerateCVIntent) viewPreviewNarrative() string {
+	var content strings.Builder
+	profile := DefaultNarrativeProfile()
 
-	return viewportContent
+	// Profile header
+	content.WriteString(fmt.Sprintf("# %s\n\n", profile.Name))
+	content.WriteString(fmt.Sprintf("**%s**\n", profile.Role))
+	content.WriteString(fmt.Sprintf("%s\n", profile.Location))
+	content.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
+	content.WriteString(fmt.Sprintf("GitHub: %s\n", profile.GitHub))
+	content.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
+
+	content.WriteString(strings.Repeat("─", 80) + "\n\n")
+
+	// Summary section
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorAccentTeal)
+
+	summary := getSummaryFromSections(i.state.generatedCV.Sections)
+	content.WriteString(titleStyle.Render("SUMMARY") + "\n")
+	content.WriteString(strings.Repeat("─", 7) + "\n")
+	if summary != "" {
+		content.WriteString(summary + "\n\n")
+	} else {
+		content.WriteString("Experienced software engineer with strong technical leadership skills.\n\n")
+	}
+
+	// Core Strengths section
+	content.WriteString(titleStyle.Render("CORE STRENGTHS") + "\n")
+	content.WriteString(strings.Repeat("─", 14) + "\n")
+	strengths := extractStrengthsFromSections(i.state.generatedCV.Sections)
+	for _, strength := range strengths {
+		content.WriteString(fmt.Sprintf("  • %s\n", strength))
+	}
+	content.WriteString("\n")
+
+	// Languages & Technologies section
+	content.WriteString(titleStyle.Render("LANGUAGES & TECHNOLOGIES") + "\n")
+	content.WriteString(strings.Repeat("─", 24) + "\n")
+	languages, frontend, systems := extractTechnologiesFromSections(i.state.generatedCV.Sections)
+	content.WriteString(fmt.Sprintf("**Languages:** %s\n", languages))
+	content.WriteString(fmt.Sprintf("**Frontend:** %s\n", frontend))
+	content.WriteString(fmt.Sprintf("**Systems:** %s\n\n", systems))
+
+	// Selected Experience section (filtered by confidence)
+	content.WriteString(titleStyle.Render("SELECTED EXPERIENCE") + "\n")
+	content.WriteString(strings.Repeat("─", 19) + "\n")
+
+	experienceSections := getExperienceSections(i.state.generatedCV.Sections)
+	for _, section := range experienceSections {
+		for _, group := range section.Content {
+			// Filter bullets by confidence
+			highConfidenceBullets := filterBulletsByConfidence(group.Bullets, MinConfidenceForNarrative)
+			if len(highConfidenceBullets) == 0 {
+				continue
+			}
+
+			// Group header with dates
+			if group.Header != "" {
+				if group.StartDate != "" && group.EndDate != "" {
+					content.WriteString(fmt.Sprintf("\n### %s\n", group.Header))
+					content.WriteString(fmt.Sprintf("*%s - %s*\n\n", group.StartDate, group.EndDate))
+				} else {
+					content.WriteString(fmt.Sprintf("\n### %s\n\n", group.Header))
+				}
+			}
+
+			// High-confidence bullets only
+			for _, bullet := range highConfidenceBullets {
+				content.WriteString(fmt.Sprintf("  • %s\n", bullet.Text))
+			}
+		}
+	}
+	content.WriteString("\n")
+
+	// What I Bring section
+	content.WriteString(titleStyle.Render("WHAT I BRING") + "\n")
+	content.WriteString(strings.Repeat("─", 12) + "\n")
+	valueProps := extractValuePropositions(i.state.generatedCV.Sections)
+	for _, prop := range valueProps {
+		content.WriteString(fmt.Sprintf("  • %s\n", prop))
+	}
+	content.WriteString("\n")
+
+	content.WriteString(strings.Repeat("─", 80) + "\n")
+	content.WriteString("**References available on request.**\n")
+
+	return content.String()
 }
 
 // viewReview renders the CV review/edit view.
