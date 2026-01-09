@@ -534,7 +534,10 @@ func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 				}
 
 				// Reload bursts
-				i.context.LoadBursts()
+				if err := i.context.LoadBursts(); err != nil {
+					i.state.editError = err
+					return nil
+				}
 				i.state.filteredBursts = i.context.Bursts
 
 				// Go back to detail view
@@ -562,7 +565,10 @@ func (i *BurstManagementIntent) updateDeleteConfirmView(msg tea.Msg) tea.Cmd {
 				}
 
 				// Reload bursts
-				i.context.LoadBursts()
+				if err := i.context.LoadBursts(); err != nil {
+					i.state.deleteError = err
+					return nil
+				}
 				i.state.filteredBursts = i.context.Bursts
 				i.state.selectedBurst = nil
 				i.state.selectedIndex = 0
@@ -1413,7 +1419,9 @@ func (i *BurstManagementIntent) confirmBurstOnly() tea.Cmd {
 		}
 
 		// Reload bursts
-		i.context.LoadBursts()
+		if err := i.context.LoadBursts(); err != nil {
+			return BurstConfirmedMsg{Error: err}
+		}
 		i.state.filteredBursts = i.context.Bursts
 
 		// Stay in confirm state to show success message

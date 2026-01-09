@@ -120,7 +120,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			kariyaDir := filepath.Join(homeDir, ".kariya")
 			dbPath = filepath.Join(kariyaDir, "events.db")
 
-			if err := os.MkdirAll(kariyaDir, 0755); err != nil {
+			if err := os.MkdirAll(kariyaDir, 0750); err != nil {
 				fmt.Fprintf(errOut, "Error creating kariya directory: %v\n", err)
 				return 1
 			}
@@ -451,7 +451,7 @@ func handleNonInteractiveImport(filePath string, skipReview bool, reviewFacts bo
 
 	importService := importer.NewImportService(svc)
 
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304 -- user-provided import file path (intentional)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error opening import file: %v\n", err)
 		return 1

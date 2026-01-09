@@ -31,12 +31,17 @@ func SetupTestDB(t testing.TB) (*sql.DB, func()) {
 	}
 
 	if err := career.RunMigrations(db); err != nil {
-		db.Close()
+		closeErr := db.Close()
+		if closeErr != nil {
+			t.Fatalf("failed to run migrations: %v (also failed to close db: %v)", err, closeErr)
+		}
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
 	cleanup := func() {
-		db.Close()
+		if err := db.Close(); err != nil {
+			t.Errorf("failed to close test db: %v", err)
+		}
 	}
 
 	return db, cleanup
@@ -65,12 +70,17 @@ func SetupTestDBWithPath(t testing.TB) (string, *sql.DB, func()) {
 	}
 
 	if err := career.RunMigrations(db); err != nil {
-		db.Close()
+		closeErr := db.Close()
+		if closeErr != nil {
+			t.Fatalf("failed to run migrations: %v (also failed to close db: %v)", err, closeErr)
+		}
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
 	cleanup := func() {
-		db.Close()
+		if err := db.Close(); err != nil {
+			t.Errorf("failed to close test db: %v", err)
+		}
 	}
 
 	return dbPath, db, cleanup
