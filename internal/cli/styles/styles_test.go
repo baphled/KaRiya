@@ -255,6 +255,270 @@ var _ = Describe("Styles", func() {
 		})
 	})
 
+	Describe("Getter Functions", func() {
+		Describe("Color Getters", func() {
+			It("should return background colors", func() {
+				Expect(styles.GetColorBackground()).To(Equal(styles.ColorBackground))
+				Expect(styles.GetColorBackgroundAlt()).To(Equal(styles.ColorBackgroundAlt))
+				Expect(styles.GetColorBackgroundCard()).To(Equal(styles.ColorBackgroundCard))
+			})
+
+			It("should return accent colors", func() {
+				Expect(styles.GetColorAccentTeal()).To(Equal(styles.ColorAccentTeal))
+				Expect(styles.GetColorAccentGreen()).To(Equal(styles.ColorAccentGreen))
+				Expect(styles.GetColorAccentPurple()).To(Equal(styles.ColorAccentPurple))
+			})
+
+			It("should return text colors", func() {
+				Expect(styles.GetColorTextPrimary()).To(Equal(styles.ColorTextPrimary))
+				Expect(styles.GetColorTextSecondary()).To(Equal(styles.ColorTextSecondary))
+				Expect(styles.GetColorTextMuted()).To(Equal(styles.ColorTextMuted))
+			})
+
+			It("should return status colors", func() {
+				Expect(styles.GetColorError()).To(Equal(styles.ColorError))
+				Expect(styles.GetColorWarning()).To(Equal(styles.ColorWarning))
+				Expect(styles.GetColorSuccess()).To(Equal(styles.ColorSuccess))
+				Expect(styles.GetColorInfo()).To(Equal(styles.ColorInfo))
+			})
+
+			It("should return border colors", func() {
+				Expect(styles.GetColorBorder()).To(Equal(styles.ColorBorder))
+				Expect(styles.GetColorBorderActive()).To(Equal(styles.ColorBorderActive))
+				Expect(styles.GetColorBorderError()).To(Equal(styles.ColorBorderError))
+			})
+		})
+
+		Describe("Button Style Getters", func() {
+			It("should return button styles", func() {
+				Expect(styles.GetButtonBase()).ToNot(BeNil())
+				Expect(styles.GetButtonPrimary()).ToNot(BeNil())
+				Expect(styles.GetButtonSecondary()).ToNot(BeNil())
+				Expect(styles.GetButtonFocused()).ToNot(BeNil())
+				Expect(styles.GetButtonDisabled()).ToNot(BeNil())
+				Expect(styles.GetButtonPrimaryFocused()).ToNot(BeNil())
+				Expect(styles.GetButtonSecondaryFocused()).ToNot(BeNil())
+			})
+
+			It("should return button styles that can render", func() {
+				Expect(styles.GetButtonBase().Render("Test")).ToNot(BeEmpty())
+				Expect(styles.GetButtonPrimary().Render("Primary")).ToNot(BeEmpty())
+				Expect(styles.GetButtonSecondary().Render("Secondary")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Input Style Getters", func() {
+			It("should return input styles", func() {
+				Expect(styles.GetInputBase()).ToNot(BeNil())
+				Expect(styles.GetInputFocused()).ToNot(BeNil())
+				Expect(styles.GetInputError()).ToNot(BeNil())
+				Expect(styles.GetInputLabel()).ToNot(BeNil())
+				Expect(styles.GetInputHint()).ToNot(BeNil())
+			})
+
+			It("should return input styles that can render", func() {
+				Expect(styles.GetInputBase().Render("Input")).ToNot(BeEmpty())
+				Expect(styles.GetInputFocused().Render("Focused")).ToNot(BeEmpty())
+				Expect(styles.GetInputError().Render("Error")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Card Style Getters", func() {
+			It("should return card styles", func() {
+				Expect(styles.GetCardBase()).ToNot(BeNil())
+				Expect(styles.GetCardHeader()).ToNot(BeNil())
+				Expect(styles.GetCardContent()).ToNot(BeNil())
+				Expect(styles.GetCardFooter()).ToNot(BeNil())
+			})
+
+			It("should return card styles that can render", func() {
+				Expect(styles.GetCardBase().Render("Card")).ToNot(BeEmpty())
+				Expect(styles.GetCardHeader().Render("Header")).ToNot(BeEmpty())
+				Expect(styles.GetCardContent().Render("Content")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Modal Style Getters", func() {
+			It("should return modal styles", func() {
+				Expect(styles.GetModalBase()).ToNot(BeNil())
+				Expect(styles.GetModalTitle()).ToNot(BeNil())
+				Expect(styles.GetModalMessage()).ToNot(BeNil())
+				Expect(styles.GetModalButtonContainer()).ToNot(BeNil())
+				Expect(styles.GetModalInstructions()).ToNot(BeNil())
+				Expect(styles.GetModalDestructive()).ToNot(BeNil())
+				Expect(styles.GetModalDestructiveTitle()).ToNot(BeNil())
+			})
+
+			It("should return modal styles that can render", func() {
+				Expect(styles.GetModalBase().Render("Modal")).ToNot(BeEmpty())
+				Expect(styles.GetModalTitle().Render("Title")).ToNot(BeEmpty())
+				Expect(styles.GetModalMessage().Render("Message")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Header Style Getters", func() {
+			It("should return header styles", func() {
+				Expect(styles.GetHeaderMain()).ToNot(BeNil())
+				Expect(styles.GetHeaderSection()).ToNot(BeNil())
+				Expect(styles.GetHeaderSubsection()).ToNot(BeNil())
+			})
+
+			It("should return header styles that can render", func() {
+				Expect(styles.GetHeaderMain().Render("Main")).ToNot(BeEmpty())
+				Expect(styles.GetHeaderSection().Render("Section")).ToNot(BeEmpty())
+				Expect(styles.GetHeaderSubsection().Render("Subsection")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Message Style Getters", func() {
+			Context("Error styles", func() {
+				It("should return error styles", func() {
+					Expect(styles.GetErrorBox()).ToNot(BeNil())
+					Expect(styles.GetErrorText()).ToNot(BeNil())
+					Expect(styles.GetErrorHint()).ToNot(BeNil())
+					Expect(styles.GetErrorMsg()).ToNot(BeNil())
+				})
+
+				It("should return error styles that can render", func() {
+					Expect(styles.GetErrorBox().Render("Error")).ToNot(BeEmpty())
+					Expect(styles.GetErrorText().Render("Error Text")).ToNot(BeEmpty())
+				})
+			})
+
+			Context("Warning styles", func() {
+				It("should return warning styles", func() {
+					Expect(styles.GetWarningBox()).ToNot(BeNil())
+					Expect(styles.GetWarningText()).ToNot(BeNil())
+					Expect(styles.GetWarningHint()).ToNot(BeNil())
+					Expect(styles.GetWarning()).ToNot(BeNil())
+				})
+
+				It("should return warning styles that can render", func() {
+					Expect(styles.GetWarningBox().Render("Warning")).ToNot(BeEmpty())
+					Expect(styles.GetWarningText().Render("Warning Text")).ToNot(BeEmpty())
+				})
+			})
+
+			Context("Success styles", func() {
+				It("should return success styles", func() {
+					Expect(styles.GetSuccessBox()).ToNot(BeNil())
+					Expect(styles.GetSuccessText()).ToNot(BeNil())
+					Expect(styles.GetSuccessHint()).ToNot(BeNil())
+				})
+
+				It("should return success styles that can render", func() {
+					Expect(styles.GetSuccessBox().Render("Success")).ToNot(BeEmpty())
+					Expect(styles.GetSuccessText().Render("Success Text")).ToNot(BeEmpty())
+				})
+			})
+
+			Context("Info styles", func() {
+				It("should return info styles", func() {
+					Expect(styles.GetInfoBox()).ToNot(BeNil())
+					Expect(styles.GetInfoText()).ToNot(BeNil())
+					Expect(styles.GetInfoHint()).ToNot(BeNil())
+				})
+
+				It("should return info styles that can render", func() {
+					Expect(styles.GetInfoBox().Render("Info")).ToNot(BeEmpty())
+					Expect(styles.GetInfoText().Render("Info Text")).ToNot(BeEmpty())
+				})
+			})
+		})
+
+		Describe("List Style Getters", func() {
+			It("should return list styles", func() {
+				Expect(styles.GetListItem()).ToNot(BeNil())
+				Expect(styles.GetListItemSelected()).ToNot(BeNil())
+				Expect(styles.GetListItemFocused()).ToNot(BeNil())
+			})
+
+			It("should return list styles that can render", func() {
+				Expect(styles.GetListItem().Render("Item")).ToNot(BeEmpty())
+				Expect(styles.GetListItemSelected().Render("Selected")).ToNot(BeEmpty())
+				Expect(styles.GetListItemFocused().Render("Focused")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Tag Style Getters", func() {
+			It("should return tag styles", func() {
+				Expect(styles.GetTagBase()).ToNot(BeNil())
+				Expect(styles.GetTagSelected()).ToNot(BeNil())
+			})
+
+			It("should return tag styles that can render", func() {
+				Expect(styles.GetTagBase().Render("tag")).ToNot(BeEmpty())
+				Expect(styles.GetTagSelected().Render("selected")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Progress Style Getters", func() {
+			It("should return progress styles", func() {
+				Expect(styles.GetProgressBar()).ToNot(BeNil())
+				Expect(styles.GetProgressText()).ToNot(BeNil())
+			})
+
+			It("should return progress styles that can render", func() {
+				Expect(styles.GetProgressBar().Render("████")).ToNot(BeEmpty())
+				Expect(styles.GetProgressText().Render("50%")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Spinner Style Getter", func() {
+			It("should return spinner style", func() {
+				Expect(styles.GetSpinnerStyle()).ToNot(BeNil())
+			})
+
+			It("should return spinner style that can render", func() {
+				Expect(styles.GetSpinnerStyle().Render("⠋")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Badge Style Getters", func() {
+			It("should return badge styles", func() {
+				Expect(styles.GetBadge()).ToNot(BeNil())
+				Expect(styles.GetBadgeSelected()).ToNot(BeNil())
+				Expect(styles.GetBadgeFocused()).ToNot(BeNil())
+			})
+
+			It("should return badge styles that can render", func() {
+				Expect(styles.GetBadge().Render("badge")).ToNot(BeEmpty())
+				Expect(styles.GetBadgeSelected().Render("selected")).ToNot(BeEmpty())
+				Expect(styles.GetBadgeFocused().Render("focused")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Label Style Getters", func() {
+			It("should return label styles", func() {
+				Expect(styles.GetLabel()).ToNot(BeNil())
+				Expect(styles.GetLabelFocused()).ToNot(BeNil())
+				Expect(styles.GetHint()).ToNot(BeNil())
+			})
+
+			It("should return label styles that can render", func() {
+				Expect(styles.GetLabel().Render("Label")).ToNot(BeEmpty())
+				Expect(styles.GetLabelFocused().Render("Focused Label")).ToNot(BeEmpty())
+				Expect(styles.GetHint().Render("Hint")).ToNot(BeEmpty())
+			})
+		})
+
+		Describe("Spacing Constants Getter", func() {
+			It("should return spacing constants struct", func() {
+				spacing := styles.GetSpacingConstants()
+				Expect(spacing.PaddingHorizontalSmall).To(Equal(1))
+				Expect(spacing.PaddingHorizontalBase).To(Equal(2))
+				Expect(spacing.PaddingHorizontalLarge).To(Equal(3))
+				Expect(spacing.PaddingVerticalSmall).To(Equal(0))
+				Expect(spacing.PaddingVerticalBase).To(Equal(1))
+				Expect(spacing.MarginSmall).To(Equal(1))
+				Expect(spacing.MarginBase).To(Equal(2))
+				Expect(spacing.MarginLarge).To(Equal(3))
+				Expect(spacing.MaxContentWidth).To(Equal(120))
+				Expect(spacing.GridGutterWidth).To(Equal(2))
+			})
+		})
+	})
+
 	Describe("Helper Functions", func() {
 		Describe("WithBorder", func() {
 			It("should add a border to a style", func() {

@@ -142,6 +142,50 @@ var _ = Describe("Config", func() {
 		})
 	})
 
+	Describe("LoadConfig (default path)", func() {
+		It("should load config from default location", func() {
+			// Note: This test uses the actual user's config directory
+			// It should return default config if no config exists, or load existing config
+			cfg, err := config.LoadConfig()
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg).NotTo(BeNil())
+			// Should have default or loaded values
+			Expect(cfg.System.LogLevel).NotTo(BeEmpty())
+		})
+	})
+
+	Describe("SaveConfig (default path)", func() {
+		var originalConfig *config.Config
+
+		BeforeEach(func() {
+			// Load existing config to restore later
+			var err error
+			originalConfig, err = config.LoadConfig()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			// Restore original config
+			if originalConfig != nil {
+				config.SaveConfig(originalConfig)
+			}
+		})
+
+		It("should save config to default location", func() {
+			testConfig := config.DefaultConfig()
+			testConfig.System.LogLevel = "test-config-save"
+
+			err := config.SaveConfig(testConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify it was saved
+			loaded, err := config.LoadConfig()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loaded.System.LogLevel).To(Equal("test-config-save"))
+		})
+	})
+
 	Describe("Config Struct", func() {
 		It("should marshal to YAML correctly", func() {
 			cfg := config.DefaultConfig()

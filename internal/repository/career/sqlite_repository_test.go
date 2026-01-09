@@ -260,4 +260,46 @@ var _ = Describe("SQLite Repository", func() {
 				"Should count only event within recent date range")
 		})
 	})
+
+	Describe("NewSQLiteRepositoryWithDB", func() {
+		It("should create repository with existing database connection", func() {
+			// Create a new repository using the existing connection from repo
+			repoWithDB := NewSQLiteRepositoryWithDB(repo.GetDB())
+			Expect(repoWithDB).NotTo(BeNil())
+
+			// Test that it can perform basic operations
+			event := createSQLiteTestEvent()
+			err := repoWithDB.Create(ctx, event)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(event.ID).NotTo(BeEmpty())
+		})
+
+		It("should share database connection across operations", func() {
+			// Use the existing database connection
+			repoWithDB := NewSQLiteRepositoryWithDB(repo.GetDB())
+
+			// Create multiple events using the same connection
+			for i := 0; i < 3; i++ {
+				event := createSQLiteTestEvent()
+				err := repoWithDB.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			// Verify events were created
+			count, err := repoWithDB.Count(ctx, ListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(BeNumerically(">=", 3))
+		})
+	})
+
+	Describe("GetDB", func() {
+		It("should return the underlying database connection", func() {
+			db := repo.GetDB()
+			Expect(db).NotTo(BeNil())
+
+			// Verify it's a functional connection
+			err := db.Ping()
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
