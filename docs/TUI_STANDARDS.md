@@ -386,6 +386,32 @@ Home
 4. **Errors**: Error text uses consistent red color with clear messaging
 5. **Success**: Success states use consistent green color
 
+### Theme System
+
+KaRiya uses a theme system for consistent, customizable styling. All intents should use themed styling instead of hardcoded colors.
+
+**Key Principles**:
+
+1. **Use Theme Helpers**: Access colors via `i.Theme().PrimaryColor()` etc.
+2. **Provide Fallbacks**: Always handle `nil` theme gracefully
+3. **Pre-composed Styles**: Use `theme.Styles().CardBase` etc. for common patterns
+4. **Bubbles Integration**: Use `themes.NewThemedTableStyles()` for bubbles components
+
+**Example Pattern**:
+
+```go
+func (i *MyIntent) getCardStyle() lipgloss.Style {
+    if theme := i.Theme(); theme != nil {
+        return theme.Styles().CardBase
+    }
+    return lipgloss.NewStyle().
+        Padding(1, 2).
+        BorderStyle(lipgloss.RoundedBorder())
+}
+```
+
+See [Theme Customization Guide](THEME_CUSTOMIZATION_GUIDE.md) for complete documentation.
+
 ---
 
 ## Component Integration Pattern
