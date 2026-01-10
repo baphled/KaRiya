@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -21,6 +22,7 @@ type ModalContainer struct {
 	hasMessage      bool
 	hasButtons      bool
 	hasInstructions bool
+	theme           themes.Theme
 }
 
 // NewModalContainer creates a new ModalContainer.
@@ -74,6 +76,47 @@ func (mc *ModalContainer) WithDestructiveStyle() *ModalContainer {
 	return mc
 }
 
+// WithTheme sets the theme for the modal.
+// This method uses the builder pattern to allow method chaining.
+func (mc *ModalContainer) WithTheme(theme themes.Theme) *ModalContainer {
+	mc.theme = theme
+	return mc
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getPrimaryColor returns the primary text color from theme or fallback.
+func (mc *ModalContainer) getPrimaryColor() lipgloss.Color {
+	if mc.theme != nil {
+		return mc.theme.ForegroundColor()
+	}
+	return styles.ColorTextPrimary
+}
+
+// getAccentColor returns the accent color from theme or fallback.
+func (mc *ModalContainer) getAccentColor() lipgloss.Color {
+	if mc.theme != nil {
+		return mc.theme.PrimaryColor()
+	}
+	return styles.ColorAccentTeal
+}
+
+// getMutedColor returns the muted text color from theme or fallback.
+func (mc *ModalContainer) getMutedColor() lipgloss.Color {
+	if mc.theme != nil {
+		return mc.theme.MutedColor()
+	}
+	return styles.ColorTextMuted
+}
+
+// getErrorColor returns the error color from theme or fallback.
+func (mc *ModalContainer) getErrorColor() lipgloss.Color {
+	if mc.theme != nil {
+		return mc.theme.ErrorColor()
+	}
+	return styles.ColorError
+}
+
 // Render returns the styled modal container as a string.
 // It combines title, message, buttons, and instructions with appropriate styling.
 func (mc *ModalContainer) Render() string {
@@ -84,25 +127,25 @@ func (mc *ModalContainer) Render() string {
 
 	if mc.isDestructive {
 		titleStyle = styles.ModalDestructiveTitle.
-			Foreground(styles.ColorError)
+			Foreground(mc.getErrorColor())
 		messageStyle = lipgloss.NewStyle().
-			Foreground(styles.ColorTextPrimary).
+			Foreground(mc.getPrimaryColor()).
 			MarginBottom(2)
 		buttonStyle = lipgloss.NewStyle().
-			Foreground(styles.ColorError).
+			Foreground(mc.getErrorColor()).
 			Bold(true)
 	} else {
 		titleStyle = styles.ModalTitle.
-			Foreground(styles.ColorTextPrimary)
+			Foreground(mc.getPrimaryColor())
 		messageStyle = styles.ModalMessage.
-			Foreground(styles.ColorTextPrimary)
+			Foreground(mc.getPrimaryColor())
 		buttonStyle = lipgloss.NewStyle().
-			Foreground(styles.ColorAccentTeal).
+			Foreground(mc.getAccentColor()).
 			Bold(true)
 	}
 
 	instructionStyle = styles.ModalInstructions.
-		Foreground(styles.ColorTextMuted)
+		Foreground(mc.getMutedColor())
 
 	// Render title if present
 	if mc.hasTitle {
@@ -137,10 +180,10 @@ func (mc *ModalContainer) Render() string {
 	var modalStyle lipgloss.Style
 	if mc.isDestructive {
 		modalStyle = styles.ModalDestructive.
-			Foreground(styles.ColorTextPrimary)
+			Foreground(mc.getPrimaryColor())
 	} else {
 		modalStyle = styles.ModalBase.
-			Foreground(styles.ColorTextPrimary)
+			Foreground(mc.getPrimaryColor())
 	}
 
 	return modalStyle.Render(content)

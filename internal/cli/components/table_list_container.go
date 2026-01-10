@@ -2,6 +2,7 @@ package components
 
 import (
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -22,6 +23,7 @@ type TableListContainer struct {
 	width          int
 	height         int
 	selectedIdx    int // Cursor position for selection
+	theme          themes.Theme
 }
 
 // NewTableListContainer creates a new TableListContainer with default styling
@@ -227,6 +229,30 @@ func (tlc *TableListContainer) SyncCursorFromTable() *TableListContainer {
 	return tlc
 }
 
+// WithTheme sets the theme for the container
+func (tlc *TableListContainer) WithTheme(theme themes.Theme) *TableListContainer {
+	tlc.theme = theme
+	return tlc
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getMutedColor returns the muted text color from theme or fallback.
+func (tlc *TableListContainer) getMutedColor() lipgloss.Color {
+	if tlc.theme != nil {
+		return tlc.theme.MutedColor()
+	}
+	return styles.ColorTextMuted
+}
+
+// getSecondaryColor returns the secondary text color from theme or fallback.
+func (tlc *TableListContainer) getSecondaryColor() lipgloss.Color {
+	if tlc.theme != nil {
+		return tlc.theme.MutedColor()
+	}
+	return styles.ColorTextSecondary
+}
+
 // Render returns the complete table list view with all components
 func (tlc *TableListContainer) Render() string {
 	footerView := tlc.footer.View()
@@ -244,7 +270,7 @@ func (tlc *TableListContainer) Render() string {
 	// Handle empty state
 	if tlc.showEmptyState && len(tlc.table.Rows()) == 0 {
 		emptyStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
+			Foreground(tlc.getMutedColor()).
 			Italic(true)
 		emptyContent := emptyStyle.Render(tlc.emptyMessage)
 
@@ -253,7 +279,7 @@ func (tlc *TableListContainer) Render() string {
 		// Add pagination even for empty state
 		if tlc.showPagination && tlc.paginationInfo != "" {
 			paginationStyle := lipgloss.NewStyle().
-				Foreground(styles.ColorTextSecondary).
+				Foreground(tlc.getSecondaryColor()).
 				MarginTop(1)
 			paginationView := paginationStyle.Render(tlc.paginationInfo)
 			parts = append(parts, "", paginationView)
@@ -274,7 +300,7 @@ func (tlc *TableListContainer) Render() string {
 	// Add pagination if enabled
 	if tlc.showPagination && tlc.paginationInfo != "" {
 		paginationStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
+			Foreground(tlc.getSecondaryColor()).
 			MarginTop(1)
 		paginationView := paginationStyle.Render(tlc.paginationInfo)
 		parts = append(parts, "", paginationView)
