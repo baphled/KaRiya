@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	careerdomain "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career"
@@ -168,17 +169,62 @@ type ExportArtifactModel struct {
 	result        *ExportArtifactResult
 	error         *IntentError
 	active        bool
+	navHandler    *navigation.ListNavigationHandler
 }
 
 // NewExportArtifactModel creates a new ExportArtifact intent model
 func NewExportArtifactModel(ctx *ExportArtifactContext) *ExportArtifactModel {
-	return &ExportArtifactModel{
+	model := &ExportArtifactModel{
 		state:         ExportStateSelectType,
 		context:       ctx,
 		selectedIndex: 0,
 		active:        false,
 		scrollOffset:  0,
 	}
+	// Initialize navigation handler for list navigation
+	model.navHandler = navigation.NewListNavigationHandler(model)
+	return model
+}
+
+// ListNavigator interface implementation for state-aware list navigation
+
+// GetTotalItems returns the total number of items in the current list based on state
+func (m *ExportArtifactModel) GetTotalItems() int {
+	switch m.state {
+	case ExportStateSelectType:
+		return len(m.context.ArtifactTypes)
+	case ExportStateSelectFormat:
+		if m.config != nil {
+			return len(m.context.SupportedFormats[m.config.ArtifactType])
+		}
+		return 0
+	case ExportStateSelectDest:
+		return len(m.context.Destinations)
+	default:
+		return 0
+	}
+}
+
+// GetSelectedIndex returns the current selection index
+func (m *ExportArtifactModel) GetSelectedIndex() int {
+	return m.selectedIndex
+}
+
+// SetSelectedIndex sets the selection index with bounds checking
+func (m *ExportArtifactModel) SetSelectedIndex(idx int) {
+	if idx < 0 {
+		idx = 0
+	}
+	total := m.GetTotalItems()
+	if total > 0 && idx >= total {
+		idx = total - 1
+	}
+	m.selectedIndex = idx
+}
+
+// GetPageSize returns items per page for pagination
+func (m *ExportArtifactModel) GetPageSize() int {
+	return 10
 }
 
 // Init initializes the intent
@@ -278,23 +324,6 @@ func (m *ExportArtifactModel) Result() *IntentResult[interface{}] {
 func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "up", "k":
-			if m.selectedIndex > 0 {
-				m.selectedIndex--
-			}
-		case "down", "j":
-			if m.selectedIndex < len(m.context.ArtifactTypes)-1 {
-				m.selectedIndex++
-			}
-		case "enter":
-			artifactType := m.context.ArtifactTypes[m.selectedIndex]
-			m.config = NewExportConfiguration(artifactType, m.context)
-			// Go directly to format selection
-			m.selectedIndex = 0
-			m.state = ExportStateSelectFormat
-		}
-
 		// Handle global keys (q=quit, ?=help, esc=back)
 		switch HandleGlobalKeys(msg) {
 		case KeyQuit:
@@ -307,6 +336,21 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 				Code:    "export_cancelled",
 				Message: "Export cancelled by user",
 			}))
+			return nil
+		}
+
+		// Handle navigation via centralized handler
+		if m.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
+		switch msg.String() {
+		case "enter":
+			artifactType := m.context.ArtifactTypes[m.selectedIndex]
+			m.config = NewExportConfiguration(artifactType, m.context)
+			// Go directly to format selection
+			m.selectedIndex = 0
+			m.state = ExportStateSelectFormat
 		}
 	}
 	return nil
@@ -328,16 +372,12 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-		formats := m.context.SupportedFormats[m.config.ArtifactType]
+		// Handle navigation via centralized handler
+		if m.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
 		switch msg.String() {
-		case "up", "k":
-			if m.selectedIndex > 0 {
-				m.selectedIndex--
-			}
-		case "down", "j":
-			if m.selectedIndex < len(formats)-1 {
-				m.selectedIndex++
-			}
 		case "enter":
 			formats := m.context.SupportedFormats[m.config.ArtifactType]
 			m.config.Format = formats[m.selectedIndex]
@@ -364,15 +404,12 @@ func (m *ExportArtifactModel) updateSelectDest(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
+		// Handle navigation via centralized handler
+		if m.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
 		switch msg.String() {
-		case "up", "k":
-			if m.selectedIndex > 0 {
-				m.selectedIndex--
-			}
-		case "down", "j":
-			if m.selectedIndex < len(m.context.Destinations)-1 {
-				m.selectedIndex++
-			}
 		case "enter":
 			m.config.Destination = m.context.Destinations[m.selectedIndex]
 			m.selectedIndex = 0

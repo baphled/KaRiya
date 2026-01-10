@@ -135,19 +135,20 @@ From `docs/KEYBOARD_REFERENCE.md`:
 - [ ] Modify: `internal/cli/intents/result.go` (add selection metadata)
 - [ ] Modify: All list-based intents
 
-### Phase 5: ListNavigationHandler Adoption - PENDING
-**Time**: 1-2 days | **Risk**: Low | **Status**: NOT STARTED
+### Phase 5: ListNavigationHandler Adoption - IN PROGRESS
+**Time**: 1-2 days | **Risk**: Low | **Status**: IN PROGRESS
 
 Already using ListNavigationHandler:
 - [x] `browse_timeline_intent.go`
 - [x] `burst_management_intent.go`
 - [x] `fact_management_intent.go`
+- [x] `bulk_operations_intent.go` (migrated 2026-01-10)
 
 Need to add:
-- [ ] `metadata_editor_intent.go`
-- [ ] `bulk_operations_intent.go`
 - [ ] `configure_system.go`
 - [ ] `export_artifact.go`
+
+Note: `metadata_editor_intent.go` does not need migration - it's a form-based editor, not a list navigator.
 
 ### Phase 6: Help Modal BaseIntent Integration - PENDING
 **Time**: 1 day | **Risk**: Low | **Status**: NOT STARTED
@@ -166,6 +167,7 @@ Need to add:
 ## Git Log (Commits Made)
 
 ```
+988375a feat(intents): migrate BulkOperations to ListNavigationHandler
 87d5795 feat(intents): standardize all intents with HandleGlobalKeys
 88eaef9 feat(intents): standardize BrowseTimeline key handling with HandleGlobalKeys
 92491b7 fix(cli): remove conflicting 'h' key bindings per KEYBOARD_REFERENCE.md
