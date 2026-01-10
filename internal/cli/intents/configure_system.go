@@ -589,21 +589,22 @@ func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 			m.state = ConfigStateEditSettings
 			// Initialize inputs for editing
 			m.initializeInputs()
-		case "esc":
+		}
+
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// At root state, back means cancel
 			m.setResult(&ConfigureSystemResult{
 				Success: false,
 				Error: &IntentError{
 					Code:    "config_cancelled",
 					Message: "Configuration cancelled by user",
-				},
-			})
-		case "m":
-			// Return to main menu
-			m.setResult(&ConfigureSystemResult{
-				Success: false,
-				Error: &IntentError{
-					Code:    "config_cancelled",
-					Message: "User returned to main menu",
 				},
 			})
 		}
@@ -654,16 +655,6 @@ func (m *ConfigureSystemModel) updateEditSettings(msg tea.Msg) tea.Cmd {
 			// Save all changes and move to review
 			m.state = ConfigStateReviewChanges
 
-		case "m":
-			// Return to main menu
-			m.setResult(&ConfigureSystemResult{
-				Success: false,
-				Error: &IntentError{
-					Code:    "config_cancelled",
-					Message: "User returned to main menu",
-				},
-			})
-
 		default:
 			// Pass to focused input if editing
 			if m.editingValue {
@@ -677,20 +668,21 @@ func (m *ConfigureSystemModel) updateEditSettings(msg tea.Msg) tea.Cmd {
 func (m *ConfigureSystemModel) updateReviewChanges(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.state = ConfigStateEditSettings
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			m.state = ConfigStateConfirm
-		case "esc":
-			m.state = ConfigStateEditSettings
-		case "m":
-			// Return to main menu
-			m.setResult(&ConfigureSystemResult{
-				Success: false,
-				Error: &IntentError{
-					Code:    "config_cancelled",
-					Message: "User returned to main menu",
-				},
-			})
 		}
 	}
 	return nil
@@ -699,21 +691,24 @@ func (m *ConfigureSystemModel) updateReviewChanges(msg tea.Msg) tea.Cmd {
 func (m *ConfigureSystemModel) updateConfirm(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.state = ConfigStateReviewChanges
+			return nil
+		}
+
 		switch msg.String() {
 		case "y", "enter":
 			m.state = ConfigStateSaving
 			return m.startSave()
-		case "n", "esc":
+		case "n":
 			m.state = ConfigStateReviewChanges
-		case "m":
-			// Return to main menu
-			m.setResult(&ConfigureSystemResult{
-				Success: false,
-				Error: &IntentError{
-					Code:    "config_cancelled",
-					Message: "User returned to main menu",
-				},
-			})
 		}
 	}
 	return nil
@@ -728,24 +723,10 @@ func (m *ConfigureSystemModel) updateSaving(msg tea.Msg) tea.Cmd {
 		m.state = ConfigStateFailed
 		m.error = msg.Error
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Note: Save operation continues in background per user decision
-			// Navigate back to review changes
-			m.state = ConfigStateReviewChanges
-			return nil
-		case "m":
-			// Cancel and return to main menu
-			m.setResult(&ConfigureSystemResult{
-				Success: false,
-				Error: &IntentError{
-					Code:    "config_cancelled",
-					Message: "User returned to main menu during save",
-				},
-			})
-			return nil
-		case "q", "ctrl+c":
-			// User wants to quit entirely
+		// Handle global keys (q=quit, ?=help)
+		// Note: esc allows going back even during save
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			m.setResult(&ConfigureSystemResult{
 				Success: false,
 				Error: &IntentError{
@@ -754,6 +735,14 @@ func (m *ConfigureSystemModel) updateSaving(msg tea.Msg) tea.Cmd {
 				},
 			})
 			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// Note: Save operation continues in background per user decision
+			// Navigate back to review changes
+			m.state = ConfigStateReviewChanges
+			return nil
 		}
 	}
 	return nil
@@ -762,11 +751,17 @@ func (m *ConfigureSystemModel) updateSaving(msg tea.Msg) tea.Cmd {
 func (m *ConfigureSystemModel) updateComplete(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter", "esc":
+		// Handle global keys
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyBack:
 			m.active = false
-		case "m":
-			// Return to main menu (same as enter/esc in this state)
+			return nil
+		}
+
+		switch msg.String() {
+		case "enter":
 			m.active = false
 		}
 	}
@@ -776,16 +771,23 @@ func (m *ConfigureSystemModel) updateComplete(msg tea.Msg) tea.Cmd {
 func (m *ConfigureSystemModel) updateFailed(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.active = false
+			return nil
+		}
+
 		switch msg.String() {
 		case "r":
 			// Retry - clear error and go back to Confirm
 			m.error = nil
 			m.state = ConfigStateConfirm
-		case "esc":
-			m.active = false
-		case "m":
-			// Return to main menu
-			m.active = false
 		}
 	}
 	return nil

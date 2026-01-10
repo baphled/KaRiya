@@ -282,19 +282,15 @@ func humanizeBytes(bytes int64) string {
 func (m *ImportWizardModel) handleFileSelectState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			m.data.CurrentState = ImportCompleteState
-			m.result = &IntentResult[*ImportWizardResult]{
-				Status: Cancelled,
-				Data: &ImportWizardResult{
-					Action: "cancelled",
-				},
-			}
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			return tea.Quit
-
-		case "esc":
-			// Cancel and return to menu
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
 			m.result = &IntentResult[*ImportWizardResult]{
 				Status: Cancelled,
 				Data: &ImportWizardResult{
@@ -303,7 +299,9 @@ func (m *ImportWizardModel) handleFileSelectState(msg tea.Msg) tea.Cmd {
 			}
 			m.active = false
 			return nil
+		}
 
+		switch msg.String() {
 		case "enter":
 			if m.data.FilePath != "" {
 				m.data.CurrentState = ImportPreviewState
@@ -316,19 +314,20 @@ func (m *ImportWizardModel) handleFileSelectState(msg tea.Msg) tea.Cmd {
 func (m *ImportWizardModel) handlePreviewState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			m.result = &IntentResult[*ImportWizardResult]{
-				Status: Cancelled,
-				Data: &ImportWizardResult{
-					Action: "cancelled",
-				},
-			}
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			return tea.Quit
-
-		case "esc":
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// Go back to file selection
 			m.data.CurrentState = ImportFileSelectState
+			return nil
+		}
 
+		switch msg.String() {
 		case "enter":
 			m.data.StartImport()
 			m.data.CurrentState = ImportProgressState
@@ -340,8 +339,10 @@ func (m *ImportWizardModel) handlePreviewState(msg tea.Msg) tea.Cmd {
 func (m *ImportWizardModel) handleProgressState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
+		// Handle global keys first (q=quit, ?=help)
+		// Note: esc doesn't go back during import progress
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			// Cancel import and quit
 			m.data.CancelImport()
 			m.result = &IntentResult[*ImportWizardResult]{
@@ -354,7 +355,12 @@ func (m *ImportWizardModel) handleProgressState(msg tea.Msg) tea.Cmd {
 				},
 			}
 			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		}
 
+		switch msg.String() {
 		case "p":
 			if m.data.IsImporting && !m.data.IsPaused {
 				m.data.PauseImport()

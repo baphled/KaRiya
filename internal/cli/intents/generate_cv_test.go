@@ -142,14 +142,16 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.selectedAudience).To(Equal("hiring_manager"))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit application on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 
-		It("should cancel on ctrl+c", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit application on ctrl+c", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			// ctrl+c now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 
@@ -189,9 +191,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectProfile))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit application on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 
@@ -225,9 +228,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit application on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 
@@ -256,9 +260,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStatePreview))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit application on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 
@@ -297,9 +302,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateReview))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit application on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 

@@ -293,12 +293,16 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 			// Go directly to format selection
 			m.selectedIndex = 0
 			m.state = ExportStateSelectFormat
-		case "esc":
-			m.setResult(NewExportArtifactResultWithError(&IntentError{
-				Code:    "export_cancelled",
-				Message: "Export cancelled by user",
-			}))
-		case "m":
+		}
+
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
 				Message: "Export cancelled by user",
@@ -311,6 +315,19 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.selectedIndex = 0
+			m.state = ExportStateSelectType
+			return nil
+		}
+
 		formats := m.context.SupportedFormats[m.config.ArtifactType]
 		switch msg.String() {
 		case "up", "k":
@@ -326,14 +343,6 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 			m.config.Format = formats[m.selectedIndex]
 			m.selectedIndex = 0
 			m.state = ExportStateSelectDest
-		case "esc":
-			m.selectedIndex = 0
-			m.state = ExportStateSelectType
-		case "m":
-			m.setResult(NewExportArtifactResultWithError(&IntentError{
-				Code:    "export_cancelled",
-				Message: "Export cancelled by user",
-			}))
 		}
 	}
 	return nil
@@ -342,6 +351,19 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updateSelectDest(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.selectedIndex = 0
+			m.state = ExportStateSelectFormat
+			return nil
+		}
+
 		switch msg.String() {
 		case "up", "k":
 			if m.selectedIndex > 0 {
@@ -355,14 +377,6 @@ func (m *ExportArtifactModel) updateSelectDest(msg tea.Msg) tea.Cmd {
 			m.config.Destination = m.context.Destinations[m.selectedIndex]
 			m.selectedIndex = 0
 			m.state = ExportStateConfigure
-		case "esc":
-			m.selectedIndex = 0
-			m.state = ExportStateSelectFormat
-		case "m":
-			m.setResult(NewExportArtifactResultWithError(&IntentError{
-				Code:    "export_cancelled",
-				Message: "Export cancelled by user",
-			}))
 		}
 	}
 	return nil
@@ -371,19 +385,24 @@ func (m *ExportArtifactModel) updateSelectDest(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updateConfigure(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.selectedIndex = 0
+			m.state = ExportStateSelectDest
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			m.generatePreview()
 			m.scrollOffset = 0
 			m.state = ExportStatePreview
-		case "esc":
-			m.selectedIndex = 0
-			m.state = ExportStateSelectDest
-		case "m":
-			m.setResult(NewExportArtifactResultWithError(&IntentError{
-				Code:    "export_cancelled",
-				Message: "Export cancelled by user",
-			}))
 		}
 	}
 	return nil
@@ -392,6 +411,18 @@ func (m *ExportArtifactModel) updateConfigure(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updatePreview(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.state = ExportStateConfigure
+			return nil
+		}
+
 		switch msg.String() {
 		case "up", "k":
 			if m.scrollOffset > 0 {
@@ -413,13 +444,6 @@ func (m *ExportArtifactModel) updatePreview(msg tea.Msg) tea.Cmd {
 			}
 		case "enter":
 			m.state = ExportStateConfirm
-		case "esc":
-			m.state = ExportStateConfigure
-		case "m":
-			m.setResult(NewExportArtifactResultWithError(&IntentError{
-				Code:    "export_cancelled",
-				Message: "Export cancelled by user",
-			}))
 		}
 	}
 	return nil
@@ -428,17 +452,24 @@ func (m *ExportArtifactModel) updatePreview(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updateConfirm(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.state = ExportStatePreview
+			return nil
+		}
+
 		switch msg.String() {
 		case "y", "enter":
 			m.state = ExportStateInProgress
 			return m.startExport()
-		case "n", "esc":
+		case "n":
 			m.state = ExportStatePreview
-		case "m":
-			m.setResult(NewExportArtifactResultWithError(&IntentError{
-				Code:    "export_cancelled",
-				Message: "Export cancelled by user",
-			}))
 		}
 	}
 	return nil
@@ -455,16 +486,17 @@ func (m *ExportArtifactModel) updateInProgress(msg tea.Msg) tea.Cmd {
 		m.error = msg.Error
 		m.state = ExportStateFailed
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			// Let export complete in background
-			return nil
-		case "m":
-			// Return to main menu immediately (cancel)
+		// Handle global keys (q=quit, ?=help)
+		// Note: esc doesn't go back during export - let it complete
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
 				Code:    "export_cancelled",
 				Message: "Export cancelled by user",
 			}))
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
 			return nil
 		}
 	}
@@ -474,10 +506,17 @@ func (m *ExportArtifactModel) updateInProgress(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updateComplete(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter", "esc":
+		// Handle global keys
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyBack:
 			m.active = false
-		case "m":
+			return nil
+		}
+
+		switch msg.String() {
+		case "enter":
 			m.active = false
 		}
 	}
@@ -487,13 +526,21 @@ func (m *ExportArtifactModel) updateComplete(msg tea.Msg) tea.Cmd {
 func (m *ExportArtifactModel) updateFailed(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			m.active = false
+			return nil
+		}
+
 		switch msg.String() {
 		case "r":
 			m.state = ExportStateConfirm
-		case "esc":
-			m.active = false
-		case "m":
-			m.active = false
 		}
 	}
 	return nil

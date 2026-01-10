@@ -76,14 +76,11 @@ var _ = Describe("E2E GenerateCV Workflow", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should cancel and return to menu when pressing 'q'", func() {
+		It("should quit application when pressing 'q'", func() {
+			// Note: q now quits the entire app
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
-		})
-
-		It("should cancel and return to menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 	})
 
@@ -113,14 +110,11 @@ var _ = Describe("E2E GenerateCV Workflow", func() {
 			env.AssertViewContainsAny("Profile", "Select", "Senior", "Staff")
 		})
 
-		It("should cancel and return to menu when pressing 'q'", func() {
+		It("should quit application when pressing 'q'", func() {
+			// Note: q now quits the entire app
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
-		})
-
-		It("should cancel and return to menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 	})
 
@@ -139,11 +133,13 @@ var _ = Describe("E2E GenerateCV Workflow", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should cancel from audience selection with 'q'", func() {
+		It("should quit application from audience selection with 'q'", func() {
 			env.SelectIntentByName("generate_cv")
 			env.Confirm() // Go to audience selection
+			// Note: q now quits the entire app
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 
 		It("should go back from audience to profile with Escape", func() {

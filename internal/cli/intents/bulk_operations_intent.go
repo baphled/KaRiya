@@ -328,18 +328,15 @@ func (m *BulkOperationsModel) getCompleteContent() string {
 func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			m.data.CurrentState = BulkCompleteState
-			m.result = &IntentResult[*BulkOperationsResult]{
-				Status: Cancelled,
-				Data: &BulkOperationsResult{
-					Operation: "cancelled",
-				},
-			}
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			return tea.Quit
-
-		case "esc":
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
 			m.result = &IntentResult[*BulkOperationsResult]{
 				Status: Cancelled,
 				Data: &BulkOperationsResult{
@@ -348,7 +345,9 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 			}
 			m.active = false
 			return nil
+		}
 
+		switch msg.String() {
 		case "enter":
 			if m.data.SelectedOp != "" {
 				m.data.CurrentState = BulkConfigureState
@@ -396,22 +395,23 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 func (m *BulkOperationsModel) handleConfigureState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// Go back to select operation state
+			m.data.CurrentState = BulkSelectOpState
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			m.data.StartExecution()
 			m.data.CurrentState = BulkExecuteState
-
-		case "esc":
-			m.data.CurrentState = BulkSelectOpState
-
-		case "q", "ctrl+c":
-			m.result = &IntentResult[*BulkOperationsResult]{
-				Status: Cancelled,
-				Data: &BulkOperationsResult{
-					Operation: "cancelled",
-				},
-			}
-			return tea.Quit
 		}
 	}
 	return nil
@@ -420,6 +420,28 @@ func (m *BulkOperationsModel) handleConfigureState(msg tea.Msg) tea.Cmd {
 func (m *BulkOperationsModel) handleExecuteState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help)
+		// Note: esc doesn't go back during execution - use 'c' to cancel
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			m.data.CompleteExecution()
+			m.result = &IntentResult[*BulkOperationsResult]{
+				Status: Cancelled,
+				Data: &BulkOperationsResult{
+					Operation:      m.data.SelectedOp,
+					ProcessedCount: m.data.ProcessedCount,
+					SuccessCount:   m.data.SuccessCount,
+					FailureCount:   m.data.FailureCount,
+					SkippedCount:   m.data.SkippedCount,
+					Message:        "Operation cancelled",
+				},
+			}
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		}
+
 		switch msg.String() {
 		case "p":
 			if m.data.IsExecuting && !m.data.IsPaused {
@@ -442,21 +464,6 @@ func (m *BulkOperationsModel) handleExecuteState(msg tea.Msg) tea.Cmd {
 					Results:        m.data.Results,
 					Errors:         m.data.Errors,
 					Message:        "Operation completed",
-				},
-			}
-			return tea.Quit
-
-		case "q", "ctrl+c":
-			m.data.CompleteExecution()
-			m.result = &IntentResult[*BulkOperationsResult]{
-				Status: Cancelled,
-				Data: &BulkOperationsResult{
-					Operation:      m.data.SelectedOp,
-					ProcessedCount: m.data.ProcessedCount,
-					SuccessCount:   m.data.SuccessCount,
-					FailureCount:   m.data.FailureCount,
-					SkippedCount:   m.data.SkippedCount,
-					Message:        "Operation cancelled",
 				},
 			}
 			return tea.Quit

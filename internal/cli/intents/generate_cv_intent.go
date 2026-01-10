@@ -168,14 +168,17 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 				i.state.audienceIndex = 0
 			}
 			return nil
-		case "esc":
-			i.setCancelled()
+		}
+
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
 			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
+		case KeyBack:
+			// At root state, back means cancel
 			i.setCancelled()
 			return nil
 		}
@@ -212,15 +215,17 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 			i.state.currentState = GenerateCVStateGenerating
 			i.state.isGenerating = true
 			return i.generateCVAsync()
-		case "q", "ctrl+c":
-			i.setCancelled()
+		}
+
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
 			return nil
-		case "esc":
+		case KeyBack:
 			i.state.currentState = GenerateCVStateSelectProfile
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
 			return nil
 		}
 	case AudienceSelectedMsg:
@@ -294,17 +299,16 @@ func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 		i.state.currentState = GenerateCVStatePreview
 		return nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
 			// Let generation complete in background, navigate back
 			i.state.currentState = GenerateCVStateSelectAudience
-			return nil
-		case "m":
-			// Cancel and return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -317,6 +321,18 @@ func (i *GenerateCVIntent) updatePreview(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		}
+
 		switch msg.String() {
 		case "up", "k", "down", "j", "pgup", "pgdown":
 			// Handle viewport scrolling
@@ -328,16 +344,6 @@ func (i *GenerateCVIntent) updatePreview(msg tea.Msg) tea.Cmd {
 		case "c":
 			i.state.currentState = GenerateCVStateConfirm
 			return nil
-		case "q", "ctrl+c":
-			i.setCancelled()
-			return nil
-		case "esc":
-			i.state.currentState = GenerateCVStateSelectAudience
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
 		}
 	}
 	return nil
@@ -347,19 +353,21 @@ func (i *GenerateCVIntent) updatePreview(msg tea.Msg) tea.Cmd {
 func (i *GenerateCVIntent) updateReview(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			i.state.currentState = GenerateCVStatePreview
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			i.state.currentState = GenerateCVStateConfirm
-			return nil
-		case "q", "ctrl+c":
-			i.setCancelled()
-			return nil
-		case "esc":
-			i.state.currentState = GenerateCVStatePreview
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -370,6 +378,18 @@ func (i *GenerateCVIntent) updateReview(msg tea.Msg) tea.Cmd {
 func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			i.state.currentState = GenerateCVStateReview
+			return nil
+		}
+
 		switch msg.String() {
 		case "y", "enter":
 			i.setCompleted()
@@ -379,15 +399,8 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 			i.state.currentState = GenerateCVStateExportSelectFormat
 			i.state.selectedIndex = 0
 			return nil
-		case "n", "esc":
+		case "n":
 			i.state.currentState = GenerateCVStateReview
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -794,6 +807,18 @@ func (i *GenerateCVIntent) setCancelled() {
 func (i *GenerateCVIntent) updateExportSelectFormat(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			i.state.currentState = GenerateCVStateConfirm
+			return nil
+		}
+
 		switch msg.String() {
 		case "up", "k":
 			if i.state.selectedIndex > 0 {
@@ -813,16 +838,6 @@ func (i *GenerateCVIntent) updateExportSelectFormat(msg tea.Msg) tea.Cmd {
 				i.state.selectedIndex = 0
 			}
 			return nil
-		case "esc":
-			i.state.currentState = GenerateCVStateConfirm
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
-			i.setCancelled()
-			return nil
 		}
 	}
 	return nil
@@ -832,6 +847,18 @@ func (i *GenerateCVIntent) updateExportSelectFormat(msg tea.Msg) tea.Cmd {
 func (i *GenerateCVIntent) updateExportSelectLocation(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			i.state.currentState = GenerateCVStateExportSelectFormat
+			return nil
+		}
+
 		switch msg.String() {
 		case "up", "k":
 			if i.state.selectedIndex > 0 {
@@ -857,16 +884,6 @@ func (i *GenerateCVIntent) updateExportSelectLocation(msg tea.Msg) tea.Cmd {
 				return i.exportCVAsync()
 			}
 			return nil
-		case "esc":
-			i.state.currentState = GenerateCVStateExportSelectFormat
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
-			i.setCancelled()
-			return nil
 		}
 	}
 	return nil
@@ -886,18 +903,17 @@ func (i *GenerateCVIntent) updateExporting(msg tea.Msg) tea.Cmd {
 		i.state.currentState = GenerateCVStateExportComplete
 		return nil
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			i.state.isExporting = false
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
 			// Let export complete in background, navigate back
 			i.state.currentState = GenerateCVStateExportSelectLocation
-			return nil
-		case "m":
-			// Cancel and return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
-			i.state.isExporting = false
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -908,6 +924,19 @@ func (i *GenerateCVIntent) updateExporting(msg tea.Msg) tea.Cmd {
 func (i *GenerateCVIntent) updateExportComplete(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			i.state.currentState = GenerateCVStateExportSelectLocation
+			i.state.exportError = nil
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			// Complete with export info
@@ -933,17 +962,6 @@ func (i *GenerateCVIntent) updateExportComplete(msg tea.Msg) tea.Cmd {
 				},
 			}
 			i.active = false
-			return nil
-		case "esc":
-			i.state.currentState = GenerateCVStateExportSelectLocation
-			i.state.exportError = nil
-			return nil
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
-		case "q", "ctrl+c":
-			i.setCancelled()
 			return nil
 		}
 	}

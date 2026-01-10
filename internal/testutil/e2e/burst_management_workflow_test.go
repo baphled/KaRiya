@@ -156,10 +156,12 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should return to main menu when pressing 'q' from list", func() {
+		It("should quit application when pressing 'q' from list", func() {
 			env.SelectIntentByName("burst_management")
+			// Note: q now quits the entire app
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 	})
 
@@ -180,9 +182,11 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			env.AssertViewContainsAny("List", "Bursts", "Name")
 		})
 
-		It("should return to main menu when pressing 'q' from detail", func() {
+		It("should quit application when pressing 'q' from detail", func() {
+			// Note: q now quits the entire app
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 	})
 

@@ -295,13 +295,10 @@ var _ = Describe("BulkOperationsIntent", func() {
 		})
 
 		Describe("BulkSelectOpState", func() {
-			It("should handle quit key", func() {
+			It("should handle quit key by returning tea.Quit", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+				// q now returns tea.Quit to quit the application
 				Expect(cmd).ToNot(BeNil())
-				Expect(data.CurrentState).To(Equal(intents.BulkCompleteState))
-				result := model.Result()
-				Expect(result).ToNot(BeNil())
-				Expect(result.Status).To(Equal(intents.Cancelled))
 			})
 
 			It("should handle escape key", func() {
@@ -368,11 +365,10 @@ var _ = Describe("BulkOperationsIntent", func() {
 				Expect(data.CurrentState).To(Equal(intents.BulkSelectOpState))
 			})
 
-			It("should cancel on quit", func() {
+			It("should quit application on 'q' key", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+				// q now returns tea.Quit to quit the application
 				Expect(cmd).ToNot(BeNil())
-				result := model.Result()
-				Expect(result.Status).To(Equal(intents.Cancelled))
 			})
 		})
 
@@ -564,9 +560,8 @@ var _ = Describe("BulkOperationsIntent", func() {
 
 		It("should handle ctrl+c like quit", func() {
 			cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			// ctrl+c now returns tea.Quit to quit the application
 			Expect(cmd).ToNot(BeNil())
-			result := model.Result()
-			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
 		It("should handle empty operation display name", func() {

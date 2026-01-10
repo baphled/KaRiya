@@ -251,20 +251,15 @@ func (m *MetadataEditorModel) getConfirmContent() string {
 func (m *MetadataEditorModel) handleReviewState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			m.result = &IntentResult[*MetadataEditorResult]{
-				Status: Cancelled,
-				Data: &MetadataEditorResult{
-					Action: "cancelled",
-				},
-			}
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			return tea.Quit
-
-		case "e":
-			m.data.CurrentState = MetadataEditState
-
-		case "esc":
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
 			m.result = &IntentResult[*MetadataEditorResult]{
 				Status: Cancelled,
 				Data: &MetadataEditorResult{
@@ -274,6 +269,11 @@ func (m *MetadataEditorModel) handleReviewState(msg tea.Msg) tea.Cmd {
 			m.active = false
 			return nil
 		}
+
+		switch msg.String() {
+		case "e":
+			m.data.CurrentState = MetadataEditState
+		}
 	}
 	return nil
 }
@@ -281,24 +281,25 @@ func (m *MetadataEditorModel) handleReviewState(msg tea.Msg) tea.Cmd {
 func (m *MetadataEditorModel) handleEditState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// Go back to review state
+			m.data.ResetChanges()
+			m.data.CurrentState = MetadataReviewState
+			return nil
+		}
+
 		switch msg.String() {
 		case "ctrl+s":
 			if m.data.HasChanges() {
 				m.data.CurrentState = MetadataConfirmState
 			}
-
-		case "esc":
-			m.data.ResetChanges()
-			m.data.CurrentState = MetadataReviewState
-
-		case "q", "ctrl+c":
-			m.result = &IntentResult[*MetadataEditorResult]{
-				Status: Cancelled,
-				Data: &MetadataEditorResult{
-					Action: "cancelled",
-				},
-			}
-			return tea.Quit
 		}
 	}
 	return nil
@@ -307,6 +308,19 @@ func (m *MetadataEditorModel) handleEditState(msg tea.Msg) tea.Cmd {
 func (m *MetadataEditorModel) handleConfirmState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// Go back to edit state
+			m.data.CurrentState = MetadataEditState
+			return nil
+		}
+
 		switch msg.String() {
 		case "y", "enter":
 			m.result = &IntentResult[*MetadataEditorResult]{
@@ -322,17 +336,8 @@ func (m *MetadataEditorModel) handleConfirmState(msg tea.Msg) tea.Cmd {
 			}
 			return tea.Quit
 
-		case "n", "esc":
+		case "n":
 			m.data.CurrentState = MetadataEditState
-
-		case "q", "ctrl+c":
-			m.result = &IntentResult[*MetadataEditorResult]{
-				Status: Cancelled,
-				Data: &MetadataEditorResult{
-					Action: "cancelled",
-				},
-			}
-			return tea.Quit
 		}
 	}
 	return nil

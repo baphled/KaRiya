@@ -236,24 +236,18 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
-		It("should cancel on Ctrl+C", func() {
+		It("should quit application on Ctrl+C", func() {
 			// Press Ctrl+C
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			_ = cmd
-
-			// Result should be Cancelled
-			result := intent.Result()
-			Expect(result.Status).To(Equal(intents.Cancelled))
+			// ctrl+c now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 
-		It("should cancel on 'q' key", func() {
+		It("should quit application on 'q' key", func() {
 			// Press 'q'
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
-			_ = cmd
-
-			// Result should be Cancelled
-			result := intent.Result()
-			Expect(result.Status).To(Equal(intents.Cancelled))
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 

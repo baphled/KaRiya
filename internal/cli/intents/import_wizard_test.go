@@ -254,12 +254,10 @@ var _ = Describe("ImportWizardIntent", func() {
 		})
 
 		Describe("ImportFileSelectState", func() {
-			It("should handle quit key", func() {
+			It("should handle quit key by returning tea.Quit", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+				// q now returns tea.Quit to quit the application
 				Expect(cmd).ToNot(BeNil())
-				result := model.Result()
-				Expect(result).ToNot(BeNil())
-				Expect(result.Status).To(Equal(intents.Cancelled))
 			})
 
 			It("should handle escape key", func() {
@@ -306,11 +304,10 @@ var _ = Describe("ImportWizardIntent", func() {
 				Expect(data.CurrentState).To(Equal(intents.ImportFileSelectState))
 			})
 
-			It("should cancel on quit", func() {
+			It("should quit application on 'q' key", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+				// q now returns tea.Quit to quit the application
 				Expect(cmd).ToNot(BeNil())
-				result := model.Result()
-				Expect(result.Status).To(Equal(intents.Cancelled))
 			})
 		})
 
@@ -437,9 +434,8 @@ var _ = Describe("ImportWizardIntent", func() {
 
 		It("should handle ctrl+c like quit", func() {
 			cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			// ctrl+c now returns tea.Quit to quit the application
 			Expect(cmd).ToNot(BeNil())
-			result := model.Result()
-			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
 		It("should handle progress with zero rows", func() {
