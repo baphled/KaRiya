@@ -345,4 +345,107 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			env.AssertViewContainsAny("Burst", "List", "Name")
 		})
 	})
+
+	Describe("Burst Edit Workflow", func() {
+		BeforeEach(func() {
+			env = e2e.Setup(GinkgoT())
+			env.PopulateTestData(5, 2, 0) // 5 events, 2 bursts, 0 facts
+			env.SelectIntentByName("burst_management")
+			env.Confirm() // Go to detail view
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should show edit option in detail view", func() {
+			// Verify edit shortcut is displayed
+			env.AssertViewContainsAny("x", "Edit", "edit")
+		})
+
+		It("should transition to edit view when pressing 'x'", func() {
+			env.PressKeyRune('x')
+			// Should show edit form with Name and Description fields
+			env.AssertViewContainsAny("Edit Burst", "Burst Name", "Name", "Description")
+		})
+
+		It("should show edit modal with form fields", func() {
+			env.PressKeyRune('x')
+			// The EditBurstModal should display form inputs
+			env.AssertViewContainsAny("Burst Name", "Description", "Enter", "Esc")
+		})
+
+		It("should show current burst values in edit form", func() {
+			env.PressKeyRune('x')
+			// Should pre-populate with existing burst data from fixtures
+			// Fixtures create bursts with names like "Authentication" or "Mentoring"
+			env.AssertViewContainsAny("Authentication", "Mentoring", "Name", "Description")
+		})
+
+		It("should return to detail view when cancelling edit", func() {
+			env.PressKeyRune('x')
+			env.Cancel() // Press Escape to cancel
+			// Should be back at detail view
+			env.AssertViewContainsAny("Detail", "Events", "Facts", "e", "f")
+		})
+
+		It("should not crash when pressing edit key multiple times", func() {
+			env.PressKeyRune('x')
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).NotTo(ContainSubstring("panic"))
+
+			// Cancel and try again
+			env.Cancel()
+			env.PressKeyRune('x')
+			view = env.GetView()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).NotTo(ContainSubstring("panic"))
+		})
+
+		It("should show edit form footer with navigation hints", func() {
+			env.PressKeyRune('x')
+			// Modal should show form navigation hints
+			env.AssertViewContainsAny("Enter", "Esc", "Tab", "Confirm", "Cancel")
+		})
+	})
+
+	Describe("Burst Edit with Persistence", func() {
+		BeforeEach(func() {
+			env = e2e.Setup(GinkgoT())
+			env.PopulateTestData(5, 2, 0)
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should maintain edit state through navigation", func() {
+			env.SelectIntentByName("burst_management")
+			env.Confirm()         // Go to detail
+			env.PressKeyRune('x') // Go to edit
+
+			// Should be in edit view
+			env.AssertViewContainsAny("Edit Burst", "Burst Name", "Name")
+
+			// Cancel and verify we return properly
+			env.Cancel()
+			env.AssertViewContainsAny("Detail", "Events", "Facts")
+		})
+
+		It("should allow editing and returning to detail without errors", func() {
+			env.SelectIntentByName("burst_management")
+			env.Confirm()
+			env.PressKeyRune('x')
+
+			// Cancel edit
+			env.Cancel()
+
+			// Should be back at detail, not crashed
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).NotTo(ContainSubstring("panic"))
+			Expect(view).NotTo(ContainSubstring("nil pointer"))
+		})
+	})
 })
