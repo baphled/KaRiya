@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // DefaultIntentRouter implements the IntentRouter interface.
@@ -34,6 +35,9 @@ type DefaultIntentRouter struct {
 
 	// logo is the shared logo instance passed to all intents
 	logo *components.ASCIILogo
+
+	// themeManager manages the application's theme system
+	themeManager *themes.ThemeManager
 }
 
 // NewDefaultIntentRouter creates a new intent router.
@@ -43,6 +47,7 @@ func NewDefaultIntentRouter() *DefaultIntentRouter {
 		intentHistory:  make([]Intent, 0),
 		resultHandlers: make(map[string]func(result *IntentResult[interface{}]) tea.Cmd),
 		terminalInfo:   terminal.NewInfo(),
+		themeManager:   themes.NewThemeManager(),
 	}
 }
 
@@ -96,6 +101,13 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]int
 	if r.logo != nil {
 		if setter, ok := intent.(interface{ SetLogo(*components.ASCIILogo) }); ok {
 			setter.SetLogo(r.logo)
+		}
+	}
+
+	// Propagate theme manager to the new intent if it's theme-aware
+	if r.themeManager != nil {
+		if setter, ok := intent.(interface{ SetThemeManager(*themes.ThemeManager) }); ok {
+			setter.SetThemeManager(r.themeManager)
 		}
 	}
 
@@ -252,4 +264,38 @@ func (r *DefaultIntentRouter) GetLogo() *components.ASCIILogo {
 	defer r.mu.RUnlock()
 
 	return r.logo
+}
+
+// SetThemeManager sets the theme manager for the router
+func (r *DefaultIntentRouter) SetThemeManager(tm *themes.ThemeManager) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.themeManager = tm
+
+	// Propagate to active intent if it's theme-aware
+	if r.activeIntent != nil {
+		if setter, ok := r.activeIntent.(interface{ SetThemeManager(*themes.ThemeManager) }); ok {
+			setter.SetThemeManager(tm)
+		}
+	}
+}
+
+// GetThemeManager returns the theme manager
+func (r *DefaultIntentRouter) GetThemeManager() *themes.ThemeManager {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.themeManager
+}
+
+// Theme returns the currently active theme for convenience
+func (r *DefaultIntentRouter) Theme() themes.Theme {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if r.themeManager == nil {
+		return nil
+	}
+	return r.themeManager.Active()
 }

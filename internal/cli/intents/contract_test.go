@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 func TestNewBaseIntent(t *testing.T) {
@@ -380,5 +381,62 @@ func TestBaseIntent_StateIndependence(t *testing.T) {
 	base.ClearLoading()
 	if !base.HasError() || !base.ShouldShowSuccess() || !base.IsProgressEnabled() {
 		t.Error("Expected other states to remain unaffected when clearing loading")
+	}
+}
+
+// Theme Management Tests
+
+func TestBaseIntent_ThemeManagement(t *testing.T) {
+	base := intents.NewBaseIntent()
+
+	// Initially no theme manager
+	if base.GetThemeManager() != nil {
+		t.Error("Expected GetThemeManager to return nil initially")
+	}
+
+	// Theme should return nil when no manager is set
+	if base.Theme() != nil {
+		t.Error("Expected Theme to return nil when no manager is set")
+	}
+
+	// Set theme manager
+	tm := themes.NewThemeManager()
+	base.SetThemeManager(tm)
+
+	if base.GetThemeManager() != tm {
+		t.Error("Expected GetThemeManager to return the set theme manager")
+	}
+
+	// Theme should return the active theme
+	theme := base.Theme()
+	if theme == nil {
+		t.Error("Expected Theme to return non-nil when manager is set")
+	}
+
+	if theme.Name() != "default" {
+		t.Errorf("Expected theme name 'default', got '%s'", theme.Name())
+	}
+}
+
+func TestBaseIntent_ThemeStyles(t *testing.T) {
+	base := intents.NewBaseIntent()
+	tm := themes.NewThemeManager()
+	base.SetThemeManager(tm)
+
+	theme := base.Theme()
+	if theme == nil {
+		t.Fatal("Expected theme to be non-nil")
+	}
+
+	// Verify we can access palette
+	palette := theme.Palette()
+	if palette == nil {
+		t.Error("Expected palette to be non-nil")
+	}
+
+	// Verify we can access styles
+	styles := theme.Styles()
+	if styles == nil {
+		t.Error("Expected styles to be non-nil")
 	}
 }
