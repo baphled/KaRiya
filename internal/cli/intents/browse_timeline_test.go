@@ -206,15 +206,24 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			Expect(len(intent.state.viewedEvents)).To(Equal(1))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now quits the app, returns tea.Quit command
+			Expect(cmd).ToNot(BeNil())
+			// Result should be nil (not cancelled, app is quitting)
+			Expect(intent.result).To(BeNil())
 		})
 
-		It("should cancel on ctrl+c", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit on ctrl+c", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			// ctrl+c now quits the app, returns tea.Quit command
+			Expect(cmd).ToNot(BeNil())
+			// Result should be nil (not cancelled, app is quitting)
+			Expect(intent.result).To(BeNil())
 		})
+
+		// Note: 'h' key is vim-style left navigation, not home
+		// Going home is done by pressing Esc (KeyBack) from root state
 	})
 
 	Describe("Update - Event Detail View", func() {
@@ -234,10 +243,16 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			Expect(intent.state.currentState).To(Equal(BrowseStateTimeline))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now quits the app, returns tea.Quit command
+			Expect(cmd).ToNot(BeNil())
+			// Result should be nil (not cancelled, app is quitting)
+			Expect(intent.result).To(BeNil())
 		})
+
+		// Note: 'h' key is vim-style left navigation, not home
+		// Going home from detail is done by pressing Esc twice (back to timeline, then to main menu)
 	})
 
 	Describe("View Rendering", func() {
