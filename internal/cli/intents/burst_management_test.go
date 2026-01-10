@@ -384,27 +384,21 @@ var _ = Describe("BurstManagement Intent", func() {
 			intent.state.selectedBurst = testBurst
 		})
 
-		It("should transition to edit state on 'x' key", func() {
+		It("should transition to edit state and initialize modal on 'x' key", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 			Expect(intent.state.currentState).To(Equal(BurstStateEdit))
-			Expect(cmd).To(BeNil()) // initBurstEditor returns nil for now
+			Expect(intent.state.editModal).NotTo(BeNil(), "EditBurstModal should be initialized")
+			Expect(cmd).NotTo(BeNil(), "Should return form init command")
 		})
 
-		It("should render edit view with burst details", func() {
-			intent.state.currentState = BurstStateEdit
+		It("should render edit modal with form fields", func() {
+			// Transition to edit state which initializes the modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(intent.state.editModal).NotTo(BeNil())
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Edit Burst"))
-			Expect(view).To(ContainSubstring(testBurst.Name))
-			Expect(view).To(ContainSubstring(testBurst.Description))
-			// Footer shortcuts now rendered by StandardView
-		})
-
-		It("should show placeholder message in edit view", func() {
-			intent.state.currentState = BurstStateEdit
-
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Full edit functionality coming soon"))
+			Expect(view).To(ContainSubstring("Burst Name"), "Should show Name field")
+			Expect(view).To(ContainSubstring("Description"), "Should show Description field")
 		})
 
 		It("should cancel edit on 'Esc' key and return to detail", func() {
@@ -415,11 +409,29 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.editError).To(BeNil())
 		})
 
-		It("should save burst on 'Ctrl+S' key", func() {
-			intent.state.currentState = BurstStateEdit
-			intent.state.selectedBurst.Name = "Updated Burst Name"
+		It("should save burst when modal completes with acceptance", func() {
+			// Transition to edit state to initialize modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(intent.state.editModal).NotTo(BeNil())
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			// Simulate modal completion with updated name
+			modifiedBurst := &careerdom.Burst{
+				ID:          testBurst.ID,
+				Name:        "Updated Burst Name",
+				Description: testBurst.Description,
+				EventIDs:    testBurst.EventIDs,
+				CreatedAt:   testBurst.CreatedAt,
+				UpdatedAt:   testBurst.UpdatedAt,
+			}
+			intent.state.editModal.SetTestResult(&ModalEditResult[*careerdom.Burst]{
+				Original: testBurst,
+				Modified: modifiedBurst,
+				Accepted: true,
+				Changes:  map[string]interface{}{"name": "Updated Burst Name"},
+			})
+
+			// Trigger update to process the modal result
+			intent.Update(nil)
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 
 			// Verify burst was updated in repository
@@ -435,12 +447,23 @@ var _ = Describe("BurstManagement Intent", func() {
 				Name: "Non-existent Burst",
 			}
 			intent.state.selectedBurst = nonExistentBurst
-			intent.state.currentState = BurstStateEdit
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			// Transition to edit state to initialize modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(intent.state.editModal).NotTo(BeNil())
 
-			// Should stay in edit state with error
-			Expect(intent.state.currentState).To(Equal(BurstStateEdit))
+			// Simulate modal completion
+			intent.state.editModal.SetTestResult(&ModalEditResult[*careerdom.Burst]{
+				Original: nonExistentBurst,
+				Modified: nonExistentBurst,
+				Accepted: true,
+			})
+
+			// Trigger update to process the modal result
+			intent.Update(nil)
+
+			// Should return to detail with error set
+			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 			Expect(intent.state.editError).NotTo(BeNil())
 		})
 
@@ -469,7 +492,10 @@ var _ = Describe("BurstManagement Intent", func() {
 		})
 
 		It("should reload bursts list after successful save", func() {
-			intent.state.currentState = BurstStateEdit
+			// Transition to edit state to initialize modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			Expect(intent.state.editModal).NotTo(BeNil())
+
 			originalCount := len(intent.state.filteredBursts)
 
 			// Add a new burst to the repository
@@ -482,7 +508,20 @@ var _ = Describe("BurstManagement Intent", func() {
 			}
 			mockRepo.bursts = append(mockRepo.bursts, newBurst)
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+			// Simulate modal completion
+			modifiedBurst := &careerdom.Burst{
+				ID:          testBurst.ID,
+				Name:        testBurst.Name,
+				Description: testBurst.Description,
+			}
+			intent.state.editModal.SetTestResult(&ModalEditResult[*careerdom.Burst]{
+				Original: testBurst,
+				Modified: modifiedBurst,
+				Accepted: true,
+			})
+
+			// Trigger update to process the modal result
+			intent.Update(nil)
 
 			// Verify bursts were reloaded
 			Expect(len(intent.state.filteredBursts)).To(Equal(originalCount + 1))
@@ -1055,15 +1094,29 @@ var _ = Describe("BurstManagement Intent", func() {
 				intent.state.selectedBurst = testBurst
 				originalName := testBurst.Name
 
-				// Press 'x' to edit
+				// Press 'x' to edit - this initializes the modal
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 				Expect(intent.state.currentState).To(Equal(BurstStateEdit))
+				Expect(intent.state.editModal).NotTo(BeNil())
 
-				// Change burst name
-				testBurst.Name = "Updated Burst Name"
+				// Simulate modal completion with updated name
+				modifiedBurst := &careerdom.Burst{
+					ID:          testBurst.ID,
+					Name:        "Updated Burst Name",
+					Description: testBurst.Description,
+					EventIDs:    testBurst.EventIDs,
+					CreatedAt:   testBurst.CreatedAt,
+					UpdatedAt:   testBurst.UpdatedAt,
+				}
+				intent.state.editModal.SetTestResult(&ModalEditResult[*careerdom.Burst]{
+					Original: testBurst,
+					Modified: modifiedBurst,
+					Accepted: true,
+					Changes:  map[string]interface{}{"name": "Updated Burst Name"},
+				})
 
-				// Press Ctrl+S to save
-				intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
+				// Trigger update to process modal result
+				intent.Update(nil)
 				Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 
 				// Verify burst was updated

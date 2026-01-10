@@ -122,6 +122,7 @@ type BurstManagementIntentModel struct {
 	// Edit and delete state
 	deleteError error
 	editError   error
+	editModal   *EditBurstModal
 
 	// Confirmation state
 	confirmError        error
@@ -307,14 +308,6 @@ func (i *BurstManagementIntent) getPrimaryColor() lipgloss.Color {
 		return theme.ForegroundColor()
 	}
 	return styles.ColorTextPrimary
-}
-
-// getSecondaryColor returns the secondary/dim text color from theme or fallback.
-func (i *BurstManagementIntent) getSecondaryColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.MutedColor()
-	}
-	return styles.ColorTextSecondary
 }
 
 // getBackgroundCardColor returns the card background color from theme or fallback.
@@ -587,55 +580,70 @@ func (i *BurstManagementIntent) initBurstEditor() tea.Cmd {
 		return nil
 	}
 
-	// Import the models package to access BurstEditorModel
-	// Note: We'll create a simple inline editor instead of importing models
-	// to avoid circular dependencies
-	return nil
+	// Create the EditBurstModal with the selected burst
+	i.state.editModal = NewEditBurstModal(i.state.selectedBurst)
+
+	// Return the form's init command to initialize the huh form
+	return i.state.editModal.form.Init()
 }
 
-// updateEditView handles the edit state
+// updateEditView handles the edit state using the EditBurstModal
 func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		// Handle global keys first (q=quit, ?=help, esc=back)
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			return tea.Quit
-		case KeyHelp:
-			i.ToggleHelp()
-			return nil
-		case KeyBack:
-			// Cancel edit and go back to detail
-			i.state.currentState = BurstStateDetail
-			i.state.editError = nil
-			return nil
-		}
-
-		switch msg.String() {
-		case "ctrl+s":
-			// Save changes
-			if i.state.selectedBurst != nil {
-				err := i.context.UpdateBurst(i.state.selectedBurst)
-				if err != nil {
-					i.state.editError = err
-					return nil
-				}
-
-				// Reload bursts
-				if err := i.context.LoadBursts(); err != nil {
-					i.state.editError = err
-					return nil
-				}
-				i.state.filteredBursts = i.context.Bursts
-
-				// Go back to detail view
+	// If modal is not initialized, handle legacy behavior (fallback)
+	if i.state.editModal == nil {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch HandleGlobalKeys(msg) {
+			case KeyQuit:
+				return tea.Quit
+			case KeyHelp:
+				i.ToggleHelp()
+				return nil
+			case KeyBack:
 				i.state.currentState = BurstStateDetail
+				i.state.editError = nil
 				return nil
 			}
 		}
+		return nil
 	}
 
-	return nil
+	// Delegate to the modal for form handling
+	cmd := i.state.editModal.Update(msg)
+
+	// Check if modal completed (form submitted or cancelled)
+	if result := i.state.editModal.Result(); result != nil {
+		if result.Accepted {
+			// Apply changes from the modal to the selected burst
+			i.state.selectedBurst.Name = result.Modified.Name
+			i.state.selectedBurst.Description = result.Modified.Description
+
+			// Save the updated burst to repository
+			err := i.context.UpdateBurst(i.state.selectedBurst)
+			if err != nil {
+				i.state.editError = err
+				i.state.editModal = nil
+				i.state.currentState = BurstStateDetail
+				return nil
+			}
+
+			// Reload bursts list to reflect changes
+			if err := i.context.LoadBursts(); err != nil {
+				i.state.editError = err
+				i.state.editModal = nil
+				i.state.currentState = BurstStateDetail
+				return nil
+			}
+			i.state.filteredBursts = i.context.Bursts
+		}
+
+		// Clear modal and return to detail view
+		i.state.editModal = nil
+		i.state.currentState = BurstStateDetail
+		return nil
+	}
+
+	return cmd
 }
 
 // updateDeleteConfirmView handles the delete confirmation state
@@ -1112,12 +1120,18 @@ func (i *BurstManagementIntent) viewDetailFacts() string {
 	return content.String()
 }
 
-// viewEdit renders the edit view for a burst
+// viewEdit renders the edit view for a burst using the EditBurstModal
 func (i *BurstManagementIntent) viewEdit() string {
 	if i.state.selectedBurst == nil {
 		return "No burst selected."
 	}
 
+	// If modal is active, render it
+	if i.state.editModal != nil {
+		return i.state.editModal.View()
+	}
+
+	// Fallback view if modal not initialized (should not happen normally)
 	var content strings.Builder
 
 	// Header
@@ -1145,21 +1159,13 @@ func (i *BurstManagementIntent) viewEdit() string {
 		content.WriteString(fmt.Sprintf("Description: %s\n", i.state.selectedBurst.Description))
 	}
 
-	// Note: For now, this is a simple view showing current values
-	// A full implementation would use text inputs for editing
-	noteStyle := lipgloss.NewStyle().
-		Foreground(i.getSecondaryColor()).
-		Italic(true).
-		MarginTop(1)
-
 	content.WriteString("\n")
-	content.WriteString(noteStyle.Render("Note: Full edit functionality coming soon."))
+	content.WriteString("Initializing edit form...")
 	content.WriteString("\n")
 
 	// Apply themed card styling
 	card := i.getCardStyle().Render(content.String())
 
-	// Footer now handled by StandardView
 	return card
 }
 

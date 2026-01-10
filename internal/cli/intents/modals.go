@@ -397,6 +397,15 @@ func (m *EditBurstModal) GetFooter() string {
 	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
 }
 
+// SetTestResult sets the result directly for testing purposes.
+// This allows tests to simulate modal completion without interacting with the huh form.
+func (m *EditBurstModal) SetTestResult(result *ModalEditResult[*career.Burst]) {
+	m.result = result
+	if result != nil && result.Modified != nil {
+		m.modified = result.Modified
+	}
+}
+
 func (m *EditBurstModal) syncModified() {
 	m.modified = &career.Burst{
 		ID:          m.original.ID,
