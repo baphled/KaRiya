@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // HeaderModel renders a consistent screen header with title and subtitle
@@ -16,6 +17,7 @@ type HeaderModel struct {
 	width       int
 	height      int
 	showBorder  bool
+	theme       themes.Theme
 }
 
 // NewHeader creates a new header with a title
@@ -79,6 +81,22 @@ func (h *HeaderModel) ClearBreadcrumbs() {
 	h.breadcrumbs = []string{}
 }
 
+// WithTheme sets the theme for the header
+func (h *HeaderModel) WithTheme(theme themes.Theme) *HeaderModel {
+	h.theme = theme
+	return h
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getSecondaryColor returns the secondary text color from theme or fallback.
+func (h *HeaderModel) getSecondaryColor() lipgloss.Color {
+	if h.theme != nil {
+		return h.theme.MutedColor()
+	}
+	return styles.ColorTextSecondary
+}
+
 // View renders the header
 func (h HeaderModel) View() string {
 	if h.width <= 0 {
@@ -129,7 +147,7 @@ func (h HeaderModel) renderTitle() string {
 // renderSubtitle renders the subtitle
 func (h HeaderModel) renderSubtitle() string {
 	subtitleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
+		Foreground(h.getSecondaryColor()).
 		Italic(true).
 		MarginTop(1)
 
@@ -150,7 +168,7 @@ func (h HeaderModel) renderBreadcrumbs() string {
 	}
 
 	breadcrumbStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
+		Foreground(h.getSecondaryColor())
 
 	separator := " ▸ "
 	return breadcrumbStyle.Render(strings.Join(h.breadcrumbs, separator))

@@ -3,6 +3,7 @@ package intents
 import (
 	"testing"
 
+	"github.com/baphled/kariya/internal/cli/themes"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -266,5 +267,117 @@ func TestDefaultIntentRouter_HandleMessage_WithResult(t *testing.T) {
 
 	if intentResult.Status != Completed {
 		t.Errorf("expected Completed status, got %s", intentResult.Status)
+	}
+}
+
+// =============================================================================
+// Theme Management Tests
+// =============================================================================
+
+// ThemeAwareMockIntent is a mock intent that supports theme management.
+type ThemeAwareMockIntent struct {
+	*MockIntent
+	themeManager *themes.ThemeManager
+}
+
+func NewThemeAwareMockIntent() *ThemeAwareMockIntent {
+	return &ThemeAwareMockIntent{
+		MockIntent: NewMockIntent(),
+	}
+}
+
+func (m *ThemeAwareMockIntent) SetThemeManager(tm *themes.ThemeManager) {
+	m.themeManager = tm
+}
+
+func (m *ThemeAwareMockIntent) GetThemeManager() *themes.ThemeManager {
+	return m.themeManager
+}
+
+func TestDefaultIntentRouter_ThemeManager_InitializedByDefault(t *testing.T) {
+	router := NewDefaultIntentRouter()
+
+	tm := router.GetThemeManager()
+	if tm == nil {
+		t.Error("expected theme manager to be initialized by default")
+	}
+}
+
+func TestDefaultIntentRouter_SetThemeManager(t *testing.T) {
+	router := NewDefaultIntentRouter()
+	customTM := themes.NewThemeManager()
+
+	router.SetThemeManager(customTM)
+
+	if router.GetThemeManager() != customTM {
+		t.Error("expected custom theme manager to be set")
+	}
+}
+
+func TestDefaultIntentRouter_Theme_ReturnsActiveTheme(t *testing.T) {
+	router := NewDefaultIntentRouter()
+
+	theme := router.Theme()
+	if theme == nil {
+		t.Error("expected Theme() to return the active theme")
+	}
+
+	// Default theme should be "default"
+	if theme.Name() != "default" {
+		t.Errorf("expected default theme name 'default', got '%s'", theme.Name())
+	}
+}
+
+func TestDefaultIntentRouter_Theme_NilWhenNoThemeManager(t *testing.T) {
+	router := NewDefaultIntentRouter()
+	router.SetThemeManager(nil)
+
+	theme := router.Theme()
+	if theme != nil {
+		t.Error("expected Theme() to return nil when no theme manager")
+	}
+}
+
+func TestDefaultIntentRouter_PropagatesThemeToIntent(t *testing.T) {
+	router := NewDefaultIntentRouter()
+	mockIntent := NewThemeAwareMockIntent()
+	factory := func() Intent { return mockIntent }
+
+	_ = router.RegisterIntent("test_intent", factory)
+	_, _ = router.ActivateIntent("test_intent", nil)
+
+	// Get the actual intent that was activated (factory creates a new instance)
+	active := router.GetActiveIntent()
+	themeAware, ok := active.(*ThemeAwareMockIntent)
+	if !ok {
+		t.Fatal("expected ThemeAwareMockIntent")
+	}
+
+	if themeAware.GetThemeManager() == nil {
+		t.Error("expected theme manager to be propagated to intent")
+	}
+}
+
+func TestDefaultIntentRouter_SetThemeManager_PropagatestoActiveIntent(t *testing.T) {
+	router := NewDefaultIntentRouter()
+	mockIntent := NewThemeAwareMockIntent()
+	factory := func() Intent { return mockIntent }
+
+	_ = router.RegisterIntent("test_intent", factory)
+	_, _ = router.ActivateIntent("test_intent", nil)
+
+	// Set a new theme manager
+	newTM := themes.NewThemeManager()
+	router.SetThemeManager(newTM)
+
+	// The active intent should have received the new theme manager
+	active := router.GetActiveIntent()
+	themeAware, ok := active.(*ThemeAwareMockIntent)
+	if !ok {
+		t.Fatal("expected ThemeAwareMockIntent")
+	}
+
+	if themeAware.GetThemeManager() != newTM {
+		t.Error("expected new theme manager to be propagated to active intent")
 	}
 }

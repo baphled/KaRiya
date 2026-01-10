@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // Intent defines the contract for all intent implementations.
@@ -203,6 +204,9 @@ type BaseIntent struct {
 	logo        *components.ASCIILogo
 	logoSpacing int
 
+	// Theme management
+	themeManager *themes.ThemeManager
+
 	// State management
 	isLoading      bool
 	loadingMessage string
@@ -261,6 +265,26 @@ func (b *BaseIntent) SetLogoSpacing(spacing int) {
 // GetLogoSpacing returns the spacing before the logo
 func (b *BaseIntent) GetLogoSpacing() int {
 	return b.logoSpacing
+}
+
+// Theme Management Methods
+
+// SetThemeManager sets the theme manager for the intent
+func (b *BaseIntent) SetThemeManager(tm *themes.ThemeManager) {
+	b.themeManager = tm
+}
+
+// GetThemeManager returns the theme manager
+func (b *BaseIntent) GetThemeManager() *themes.ThemeManager {
+	return b.themeManager
+}
+
+// Theme returns the currently active theme, or nil if no theme manager is set
+func (b *BaseIntent) Theme() themes.Theme {
+	if b.themeManager == nil {
+		return nil
+	}
+	return b.themeManager.Active()
 }
 
 // Loading State Methods

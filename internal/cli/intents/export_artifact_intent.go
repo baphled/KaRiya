@@ -3,6 +3,7 @@ package intents
 import (
 	"fmt"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -69,29 +70,69 @@ func (e *ExportArtifactIntent) getStateName() string {
 
 // getContextHelp returns context-aware help text for the current state.
 func (e *ExportArtifactIntent) getContextHelp() string {
-	base := "q Quit  m Main Menu"
+	theme := e.Theme()
 
 	switch e.model.state {
 	case ExportStateSelectType:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStateSelectFormat:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStateSelectDest:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStateConfigure:
-		return CombineFooters(FormFooter(), base)
+		return CombineThemedFooters(
+			ThemedFormFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStatePreview:
-		return CombineFooters(DetailViewFooter(), "Enter Continue", base)
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Continue"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStateConfirm:
-		return CombineFooters("y/Enter Confirm  n/Esc Cancel", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y/Enter", "Confirm"),
+				components.NewKeyBadge("n/Esc", "Cancel"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStateInProgress:
-		return CombineFooters("Please wait...", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("...", "Please wait"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStateComplete:
-		return CombineFooters("Enter Continue", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Continue"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case ExportStateFailed:
-		return CombineFooters("Enter Retry  Esc Cancel", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Retry"),
+				components.CancelBadge(),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	default:
-		return base
+		return ThemedGlobalBadges(theme)
 	}
 }
 

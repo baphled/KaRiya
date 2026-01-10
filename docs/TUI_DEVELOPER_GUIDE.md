@@ -45,8 +45,9 @@ import (
 
 1. [TUI Standards](./TUI_STANDARDS.md) - Design principles and guidelines
 2. [Keyboard Reference](./KEYBOARD_REFERENCE.md) - All keyboard shortcuts
-3. [BubbleTea Docs](https://github.com/charmbracelet/bubbletea/tree/master/examples) - Framework examples
-4. [Lipgloss Styling](https://github.com/charmbracelet/lipgloss/examples) - Styling examples
+3. [Theme Customization Guide](./THEME_CUSTOMIZATION_GUIDE.md) - Theme system documentation
+4. [BubbleTea Docs](https://github.com/charmbracelet/bubbletea/tree/master/examples) - Framework examples
+5. [Lipgloss Styling](https://github.com/charmbracelet/lipgloss/examples) - Styling examples
 
 ---
 
@@ -362,6 +363,63 @@ view := lipgloss.NewStyle().
     Width(m.width).
     Height(m.height).
     Render(content)
+```
+
+### Theme System Integration
+
+KaRiya uses a theme system for consistent styling across all UI components. See [Theme Customization Guide](THEME_CUSTOMIZATION_GUIDE.md) for full details.
+
+**Quick Start:**
+
+```go
+import "github.com/baphled/kariya/internal/cli/themes"
+
+// Access theme in an intent (via BaseIntent)
+func (i *MyIntent) View() string {
+    theme := i.Theme()
+    if theme == nil {
+        return i.renderWithDefaults()
+    }
+    
+    // Use pre-composed styles
+    card := theme.Styles().CardBase.Render("Content")
+    return card
+}
+```
+
+**Helper Method Pattern (Recommended):**
+
+```go
+// Create helpers for commonly used colors with fallbacks
+func (i *MyIntent) getCardStyle() lipgloss.Style {
+    if theme := i.Theme(); theme != nil {
+        return theme.Styles().CardBase
+    }
+    return lipgloss.NewStyle().
+        Padding(1, 2).
+        BorderStyle(lipgloss.RoundedBorder()).
+        BorderForeground(styles.ColorBorder)
+}
+
+func (i *MyIntent) getAccentColor() lipgloss.Color {
+    if theme := i.Theme(); theme != nil {
+        return theme.PrimaryColor()
+    }
+    return styles.ColorAccentTeal
+}
+```
+
+**Themed Bubbles Components:**
+
+```go
+// Apply theme to bubbles/table
+if theme := i.Theme(); theme != nil {
+    i.table.SetStyles(themes.NewThemedTableStyles(theme))
+}
+
+// Apply theme to bubbles/list
+listStyles := themes.NewThemedListStyles(theme)
+myList.Styles = listStyles
 ```
 
 ---

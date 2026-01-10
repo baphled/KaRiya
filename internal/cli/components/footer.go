@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // FooterModel renders a consistent screen footer with status, mode, and help text
@@ -18,6 +19,7 @@ type FooterModel struct {
 	showMode      bool
 	showHelp      bool
 	helpFooter    *HelpFooterModel // Optional help footer
+	theme         themes.Theme
 }
 
 // NewFooter creates a new footer with width
@@ -78,6 +80,30 @@ func (f *FooterModel) SetShowHelp(show bool) {
 	f.showHelp = show && f.helpFooter != nil
 }
 
+// WithTheme sets the theme for the footer
+func (f *FooterModel) WithTheme(theme themes.Theme) *FooterModel {
+	f.theme = theme
+	return f
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getSecondaryColor returns the secondary text color from theme or fallback.
+func (f *FooterModel) getSecondaryColor() lipgloss.Color {
+	if f.theme != nil {
+		return f.theme.MutedColor()
+	}
+	return styles.ColorTextSecondary
+}
+
+// getMutedColor returns the muted text color from theme or fallback.
+func (f *FooterModel) getMutedColor() lipgloss.Color {
+	if f.theme != nil {
+		return f.theme.MutedColor()
+	}
+	return styles.ColorTextMuted
+}
+
 // GetStatusMessage returns the current status message
 func (f FooterModel) GetStatusMessage() string {
 	return f.statusMessage
@@ -124,10 +150,10 @@ func (f FooterModel) View() string {
 // renderStatusAndMode renders status and mode on the same line
 func (f FooterModel) renderStatusAndMode() string {
 	statusStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
+		Foreground(f.getSecondaryColor())
 
 	modeStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
+		Foreground(f.getMutedColor()).
 		Italic(true)
 
 	// Format: "3/10 events  |  Capture Mode: Timeline"
@@ -149,7 +175,7 @@ func (f FooterModel) renderStatusAndMode() string {
 // renderStatus renders just the status message
 func (f FooterModel) renderStatus() string {
 	statusStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
+		Foreground(f.getSecondaryColor())
 
 	status := f.statusMessage
 	if len(status) > f.width {
@@ -162,7 +188,7 @@ func (f FooterModel) renderStatus() string {
 // renderMode renders just the mode context
 func (f FooterModel) renderMode() string {
 	modeStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
+		Foreground(f.getMutedColor()).
 		Italic(true)
 
 	mode := f.modeContext

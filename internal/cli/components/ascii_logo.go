@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // ASCIILogo represents the KaRiya logo with optional animation
@@ -19,6 +20,7 @@ type ASCIILogo struct {
 	showTagline  bool
 	version      string
 	showVersion  bool
+	theme        themes.Theme
 }
 
 const (
@@ -75,6 +77,38 @@ func (l *ASCIILogo) SetVersion(version string) {
 // ShowVersion controls version visibility
 func (l *ASCIILogo) ShowVersion(show bool) {
 	l.showVersion = show
+}
+
+// WithTheme sets the theme for the logo
+func (l *ASCIILogo) WithTheme(theme themes.Theme) *ASCIILogo {
+	l.theme = theme
+	return l
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getAccentColor returns the accent color from theme or fallback.
+func (l *ASCIILogo) getAccentColor() lipgloss.Color {
+	if l.theme != nil {
+		return l.theme.PrimaryColor()
+	}
+	return styles.ColorAccentTeal
+}
+
+// getSecondaryColor returns the secondary text color from theme or fallback.
+func (l *ASCIILogo) getSecondaryColor() lipgloss.Color {
+	if l.theme != nil {
+		return l.theme.MutedColor()
+	}
+	return styles.ColorTextSecondary
+}
+
+// getMutedColor returns the muted text color from theme or fallback.
+func (l *ASCIILogo) getMutedColor() lipgloss.Color {
+	if l.theme != nil {
+		return l.theme.MutedColor()
+	}
+	return styles.ColorTextMuted
 }
 
 // Init initializes the logo component
@@ -141,7 +175,7 @@ func (l *ASCIILogo) render() string {
 	// Add tagline if enabled
 	if l.showTagline && l.tagline != "" {
 		taglineStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
+			Foreground(l.getSecondaryColor()).
 			Faint(l.fadeProgress < 1.0)
 
 		taglineText := taglineStyle.Render(l.tagline)
@@ -151,7 +185,7 @@ func (l *ASCIILogo) render() string {
 	// Add version if enabled
 	if l.showVersion && l.version != "" {
 		versionStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
+			Foreground(l.getMutedColor()).
 			Italic(true).
 			Faint(l.fadeProgress < 1.0)
 
@@ -165,16 +199,16 @@ func (l *ASCIILogo) render() string {
 // applyFadeStyle applies the fade effect based on current progress
 func (l *ASCIILogo) applyFadeStyle(text string) string {
 	if l.fadeProgress >= 1.0 {
-		// Full opacity - use primary teal color
+		// Full opacity - use primary accent color
 		return lipgloss.NewStyle().
-			Foreground(styles.ColorAccentTeal).
+			Foreground(l.getAccentColor()).
 			Bold(true).
 			Render(text)
 	}
 
 	// Fading in - adjust opacity by making it faint
 	return lipgloss.NewStyle().
-		Foreground(styles.ColorAccentTeal).
+		Foreground(l.getAccentColor()).
 		Bold(true).
 		Faint(true).
 		Render(text)

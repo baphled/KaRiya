@@ -5,10 +5,9 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type FactManagementModel struct {
@@ -37,18 +36,8 @@ func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
 		table.WithWidth(100),
 	)
 
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		Foreground(styles.ColorAccentTeal).
-		Bold(true).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderBottom(true).
-		BorderForeground(styles.ColorAccentTeal)
-	s.Selected = s.Selected.
-		Foreground(styles.ColorAccentTeal).
-		Background(styles.ColorBackground).
-		Bold(true)
-	t.SetStyles(s)
+	// Apply default styles initially - theme styles will be applied in Init()
+	t.SetStyles(table.DefaultStyles())
 
 	model := &FactManagementModel{
 		BaseIntent:    NewBaseIntent(),
@@ -63,6 +52,11 @@ func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
 }
 
 func (m *FactManagementModel) Init() tea.Cmd {
+	// Apply themed table styles if theme is available
+	if theme := m.Theme(); theme != nil {
+		m.table.SetStyles(themes.NewThemedTableStyles(theme))
+	}
+
 	// Mark intent as active
 	m.active = true
 
@@ -223,42 +217,54 @@ func (m *FactManagementModel) getStateContent() string {
 }
 
 func (m *FactManagementModel) getContextHelp() string {
-	base := "q Quit  m Main Menu"
+	theme := m.Theme()
 
 	switch m.data.CurrentState {
 	case FactListState:
-		return CombineFooters(
-			ListFooter(),
-			"e Edit  d Delete  n New  r Refresh",
-			base,
+		return CombineThemedFooters(
+			ThemedListFooter(theme),
+			ThemedCustomFooter(theme,
+				components.EditBadge(),
+				components.DeleteBadge(),
+				components.NewKeyBadge("n", "New"),
+				components.NewKeyBadge("r", "Refresh"),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case FactViewState:
-		return CombineFooters(
-			DetailViewFooter(),
-			"e Edit  d Delete",
-			"Esc Back",
-			base,
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme,
+				components.EditBadge(),
+				components.DeleteBadge(),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case FactEditorState:
-		return CombineFooters(
-			FormFooter(),
-			"Ctrl+S Save",
-			"Esc Cancel",
-			base,
+		return CombineThemedFooters(
+			ThemedFormFooter(theme),
+			ThemedCustomFooter(theme,
+				components.SaveBadge(),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case FactDeleteConfirmState:
-		return CombineFooters(
-			"y/Enter Confirm",
-			"n/Esc Cancel",
-			base,
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y/Enter", "Confirm"),
+				components.NewKeyBadge("n/Esc", "Cancel"),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case FactResultsState:
-		return CombineFooters(
-			"Esc Back",
-			base,
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.BackBadge(),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	default:
-		return base
+		return ThemedGlobalBadges(theme)
 	}
 }
 

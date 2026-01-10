@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -131,22 +132,51 @@ func (m *ImportWizardModel) getStateContent() string {
 
 // getContextHelp returns context-aware help text
 func (m *ImportWizardModel) getContextHelp() string {
-	base := "q Quit"
+	theme := m.Theme()
 
 	switch m.data.CurrentState {
 	case ImportFileSelectState:
-		return CombineFooters("Enter Select file", "Esc Cancel", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Select file"),
+				components.CancelBadge(),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case ImportPreviewState:
-		return CombineFooters("Enter Start import", "Esc Back", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Start import"),
+				components.BackBadge(),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case ImportProgressState:
 		if m.data.IsPaused {
-			return CombineFooters("p Resume", "c Cancel import", base)
+			return CombineThemedFooters(
+				ThemedCustomFooter(theme,
+					components.NewKeyBadge("p", "Resume"),
+					components.NewKeyBadge("c", "Cancel import"),
+				),
+				ThemedCustomFooter(theme, components.QuitBadge()),
+			)
 		}
-		return CombineFooters("p Pause", "c Cancel import", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("p", "Pause"),
+				components.NewKeyBadge("c", "Cancel import"),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case ImportCompleteState:
-		return CombineFooters("Enter Done", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Done"),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	default:
-		return base
+		return ThemedCustomFooter(theme, components.QuitBadge())
 	}
 }
 

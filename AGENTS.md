@@ -509,17 +509,29 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 - Router architecture
 - Visual workflow diagrams
 
-#### 4. Styling & Components
+#### 4. Theme System
+**File**: [`docs/THEME_CUSTOMIZATION_GUIDE.md`](docs/THEME_CUSTOMIZATION_GUIDE.md)
+**Purpose**: Theme system for consistent, customizable styling
+**When to use**: When styling any UI component or creating custom themes
+**Key topics**:
+- Theme architecture (ColorPalette, StyleSet, ThemeManager)
+- Using themes in intents (helper method pattern)
+- Creating custom themes
+- Bubbles component integration (themed tables, lists, etc.)
+- API reference for all theme methods
+**Related**: See [`docs/LIPGLOSS_BUBBLES_GUIDE.md`](docs/LIPGLOSS_BUBBLES_GUIDE.md) for Lipgloss basics
+
+#### 5. Styling & Components
 **File**: [`docs/LIPGLOSS_BUBBLES_GUIDE.md`](docs/LIPGLOSS_BUBBLES_GUIDE.md)
 **Purpose**: BubbleTea framework and Lipgloss styling usage
-**When to use**: When styling components or using BubbleTea bubbles
+**When to use**: When learning Lipgloss basics or using BubbleTea bubbles
 **Key topics**:
 - Lipgloss style composition
 - Color schemes and themes
 - BubbleTea bubbles (textinput, list, etc.)
 - Layout patterns and responsive design
 
-#### 5. StandardView System
+#### 6. StandardView System
 **File**: [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md)
 **Purpose**: Standardized view system for consistent layout across all TUI screens
 **When to use**: When creating any new TUI screen or updating existing screens
@@ -530,7 +542,7 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 - Performance benchmarks and testing
 **Related**: See [`docs/MODAL_PATTERNS.md`](docs/MODAL_PATTERNS.md) for modal usage patterns
 
-#### 6. Modal Patterns
+#### 7. Modal Patterns
 **File**: [`docs/MODAL_PATTERNS.md`](docs/MODAL_PATTERNS.md)
 **Purpose**: Modal usage patterns and implementation guide
 **When to use**: When implementing modals for errors, loading states, or user confirmation
@@ -541,7 +553,7 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 - Testing modal interactions
 **Related**: See [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
 
-#### 7. Forms System (Huh Library)
+#### 8. Forms System (Huh Library)
 **File**: [`docs/HUH_FORMS_GUIDE.md`](docs/HUH_FORMS_GUIDE.md)
 **Purpose**: Comprehensive guide to using Charm's huh library for forms
 **When to use**: When creating or modifying form inputs in the TUI
