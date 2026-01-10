@@ -5,23 +5,28 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type BulkOperationsModel struct {
 	*BaseIntent
-	data   *BulkOperationsContext
-	result *IntentResult[*BulkOperationsResult]
-	active bool
+	data       *BulkOperationsContext
+	result     *IntentResult[*BulkOperationsResult]
+	active     bool
+	navHandler *navigation.ListNavigationHandler
 }
 
 func NewBulkOperationsIntent(data *BulkOperationsContext) *BulkOperationsModel {
-	return &BulkOperationsModel{
+	model := &BulkOperationsModel{
 		BaseIntent: NewBaseIntent(),
 		data:       data,
 		result:     nil,
 		active:     false,
 	}
+	// Initialize navigation handler
+	model.navHandler = navigation.NewListNavigationHandler(model)
+	return model
 }
 
 func (m *BulkOperationsModel) Init() tea.Cmd {
@@ -347,6 +352,11 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
+		// Try list navigation handler first (handles up/down/j/k/pgup/pgdn/home/end/g/G)
+		if m.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			if m.data.SelectedOp != "" {
@@ -358,34 +368,6 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 			idx := int(msg.String()[0] - '1')
 			if idx >= 0 && idx < len(m.data.AvailableOps) {
 				m.data.SelectOperation(m.data.AvailableOps[idx])
-			}
-
-		case "up", "k":
-			// Navigate up in list
-			if m.data.SelectedOp == "" && len(m.data.AvailableOps) > 0 {
-				m.data.SelectOperation(m.data.AvailableOps[0])
-			} else {
-				// Find current index and move up
-				for i, op := range m.data.AvailableOps {
-					if op == m.data.SelectedOp && i > 0 {
-						m.data.SelectOperation(m.data.AvailableOps[i-1])
-						break
-					}
-				}
-			}
-
-		case "down", "j":
-			// Navigate down in list
-			if m.data.SelectedOp == "" && len(m.data.AvailableOps) > 0 {
-				m.data.SelectOperation(m.data.AvailableOps[0])
-			} else {
-				// Find current index and move down
-				for i, op := range m.data.AvailableOps {
-					if op == m.data.SelectedOp && i < len(m.data.AvailableOps)-1 {
-						m.data.SelectOperation(m.data.AvailableOps[i+1])
-						break
-					}
-				}
 			}
 		}
 	}
@@ -470,4 +452,47 @@ func (m *BulkOperationsModel) handleExecuteState(msg tea.Msg) tea.Cmd {
 		}
 	}
 	return nil
+}
+
+// ListNavigator interface implementation
+
+// GetTotalItems returns the total number of available operations.
+func (m *BulkOperationsModel) GetTotalItems() int {
+	return len(m.data.AvailableOps)
+}
+
+// GetSelectedIndex returns the current selection index.
+func (m *BulkOperationsModel) GetSelectedIndex() int {
+	if m.data.SelectedOp == "" {
+		return 0
+	}
+	for i, op := range m.data.AvailableOps {
+		if op == m.data.SelectedOp {
+			return i
+		}
+	}
+	return 0
+}
+
+// SetSelectedIndex sets the selection index and updates the selected operation.
+func (m *BulkOperationsModel) SetSelectedIndex(idx int) {
+	if len(m.data.AvailableOps) == 0 {
+		m.data.SelectedOp = ""
+		return
+	}
+
+	// Clamp index to valid range
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(m.data.AvailableOps) {
+		idx = len(m.data.AvailableOps) - 1
+	}
+
+	m.data.SelectedOp = m.data.AvailableOps[idx]
+}
+
+// GetPageSize returns the page size for pagination.
+func (m *BulkOperationsModel) GetPageSize() int {
+	return 10
 }

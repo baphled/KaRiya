@@ -10,11 +10,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/baphled/kariya/internal/cli/components"
-<<<<<<< HEAD
-	"github.com/baphled/kariya/internal/cli/themes"
-=======
 	"github.com/baphled/kariya/internal/cli/navigation"
->>>>>>> 88eaef9 (feat(intents): standardize BrowseTimeline key handling with HandleGlobalKeys)
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // CreateStandardView creates a standardized view with logo and automatic state modals.
@@ -269,7 +266,6 @@ func TickEvery(d time.Duration) func() time.Duration {
 	}
 }
 
-<<<<<<< HEAD
 // =============================================================================
 // Theme-Aware KeyBadge Footer Functions
 // =============================================================================
@@ -385,7 +381,8 @@ func CombineThemedFooters(footers ...string) string {
 		return ""
 	}
 	return strings.Join(nonEmpty, "  ")
-=======
+}
+
 // ============================================================================
 // Global Key Handling
 // ============================================================================
@@ -489,5 +486,4 @@ func GetCombinedKeyMap(includeList, includeForm bool) navigation.CombinedKeyMap 
 // Per docs/KEYBOARD_REFERENCE.md: q=quit, ?=help, Esc=back
 func GlobalFooter() string {
 	return "q Quit  ? Help  Esc Back"
->>>>>>> 88eaef9 (feat(intents): standardize BrowseTimeline key handling with HandleGlobalKeys)
 }
