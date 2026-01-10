@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -61,6 +62,54 @@ func (i *GenerateCVIntent) Init() tea.Cmd {
 		i.state.selectedProfile = i.context.DefaultProfile
 	}
 	return nil
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getCardStyle returns a themed card style, with fallback to default styling.
+func (i *GenerateCVIntent) getCardStyle() lipgloss.Style {
+	if theme := i.Theme(); theme != nil {
+		return theme.Styles().CardBase
+	}
+	// Fallback to default styling
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+}
+
+// getPrimaryColor returns the primary text color from theme or fallback.
+func (i *GenerateCVIntent) getPrimaryColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.ForegroundColor()
+	}
+	return styles.ColorTextPrimary
+}
+
+// getAccentColor returns the accent color from theme or fallback.
+func (i *GenerateCVIntent) getAccentColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.PrimaryColor()
+	}
+	return styles.ColorAccentTeal
+}
+
+// getErrorColor returns the error color from theme or fallback.
+func (i *GenerateCVIntent) getErrorColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.ErrorColor()
+	}
+	return styles.ColorError
+}
+
+// getBorderColor returns the border color from theme or fallback.
+func (i *GenerateCVIntent) getBorderColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.BorderColor()
+	}
+	return styles.ColorBorder
 }
 
 // Update processes a message in the intent.
@@ -239,7 +288,7 @@ func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 		i.state.previewViewport = viewport.New(80, 20)
 		i.state.previewViewport.Style = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(styles.ColorBorder).
+			BorderForeground(i.getBorderColor()).
 			Padding(1, 2)
 
 		i.state.currentState = GenerateCVStatePreview
@@ -375,31 +424,79 @@ func (i *GenerateCVIntent) getStateContent() string {
 
 // getContextHelp returns context-aware help text for the current state.
 func (i *GenerateCVIntent) getContextHelp() string {
-	base := "q Quit  m Main Menu"
+	theme := i.Theme()
 
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateSelectAudience:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateGenerating:
-		return CombineFooters("Please wait...", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("...", "Please wait"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStatePreview:
-		return CombineFooters(DetailViewFooter(), "e Edit  c Continue", base)
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme,
+				components.EditBadge(),
+				components.NewKeyBadge("c", "Continue"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateReview:
-		return CombineFooters(DetailViewFooter(), "Enter Continue", base)
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Continue"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateConfirm:
-		return CombineFooters("y/Enter Confirm  e/x Export  n/Esc Back", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y/Enter", "Confirm"),
+				components.NewKeyBadge("e/x", "Export"),
+				components.NewKeyBadge("n/Esc", "Back"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateExportSelectFormat:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateExportSelectLocation:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateExporting:
-		return CombineFooters("Please wait...", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("...", "Please wait"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case GenerateCVStateExportComplete:
-		return CombineFooters("Enter Continue  Esc Back", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Continue"),
+				components.BackBadge(),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	default:
-		return base
+		return ThemedGlobalBadges(theme)
 	}
 }
 
@@ -471,14 +568,7 @@ func (i *GenerateCVIntent) viewSelectProfile() string {
 		}
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewSelectAudience renders the audience selection view.
@@ -488,7 +578,7 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 	// Display error message prominently if generation failed
 	if i.state.generationError != nil {
 		errorStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorError).
+			Foreground(i.getErrorColor()).
 			Bold(true)
 		content.WriteString(errorStyle.Render("❌ CV Generation Failed") + "\n\n")
 		content.WriteString(fmt.Sprintf("Error: %s\n\n", i.state.generationError.Error()))
@@ -522,9 +612,9 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 				prefix = "▶ "
 			}
 
-			audienceStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+			audienceStyle := lipgloss.NewStyle().Foreground(i.getPrimaryColor())
 			if idx == i.state.audienceIndex {
-				audienceStyle = audienceStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+				audienceStyle = audienceStyle.Foreground(i.getAccentColor()).Bold(true)
 			}
 
 			line := fmt.Sprintf("%s%s - %s", prefix, aud.label, aud.description)
@@ -532,16 +622,7 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 		}
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewGenerating renders the CV generation progress view.
@@ -559,16 +640,7 @@ func (i *GenerateCVIntent) viewGenerating() string {
 	content.WriteString("Extracting achievements and metrics...\n")
 	content.WriteString("Generating professional bullets...\n")
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewPreview renders the CV preview view with scrollable content.
@@ -597,10 +669,10 @@ func (i *GenerateCVIntent) viewPreview() string {
 			content.WriteString("\n")
 		}
 
-		// Section title
+		// Section title with themed color
 		titleStyle := lipgloss.NewStyle().
 			Bold(true).
-			Foreground(styles.ColorAccentTeal).
+			Foreground(i.getAccentColor()).
 			MarginTop(1)
 		content.WriteString(titleStyle.Render(strings.ToUpper(section.Title)) + "\n")
 		content.WriteString(strings.Repeat("─", len(section.Title)) + "\n")
@@ -656,16 +728,7 @@ func (i *GenerateCVIntent) viewReview() string {
 		content.WriteString("(Full editing interface would be implemented here)\n")
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewConfirm renders the CV confirmation view.
@@ -680,16 +743,7 @@ func (i *GenerateCVIntent) viewConfirm() string {
 		content.WriteString("Are you sure you want to complete CV generation?\n")
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }
 
 // Result returns the final result of the intent.
@@ -984,16 +1038,7 @@ func (i *GenerateCVIntent) viewExportSelectFormat() string {
 		content.WriteString(fmt.Sprintf("   %s\n\n", format.description))
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewExportSelectLocation renders the save location selection view
@@ -1031,16 +1076,7 @@ func (i *GenerateCVIntent) viewExportSelectLocation() string {
 		content.WriteString(fmt.Sprintf("   %s\n\n", option.description))
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewExporting renders the export progress view
@@ -1074,16 +1110,7 @@ func (i *GenerateCVIntent) viewExporting() string {
 		content.WriteString("• Copying to clipboard\n")
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewExportComplete renders the export completion view
@@ -1115,14 +1142,5 @@ func (i *GenerateCVIntent) viewExportComplete() string {
 		}
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
-
-	return card
+	return i.getCardStyle().Render(content.String())
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // ModalType defines the type of modal
@@ -40,6 +41,7 @@ type ModalContent struct {
 	fadeStartTime  time.Time
 	spinner        *SimpleSpinner
 	messageRotator *LoadingMessageRotator
+	theme          themes.Theme
 }
 
 // NewErrorModal creates a new error modal
@@ -109,6 +111,54 @@ func NewWarningModal(title, message string) *ModalContent {
 func (m *ModalContent) SetMessageRotator(rotator *LoadingMessageRotator) *ModalContent {
 	m.messageRotator = rotator
 	return m
+}
+
+// WithTheme sets the theme for the modal
+func (m *ModalContent) WithTheme(theme themes.Theme) *ModalContent {
+	m.theme = theme
+	return m
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getErrorColor returns the error color from theme or fallback.
+func (m *ModalContent) getErrorColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.ErrorColor()
+	}
+	return styles.ColorError
+}
+
+// getInfoColor returns the info color from theme or fallback.
+func (m *ModalContent) getInfoColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.InfoColor()
+	}
+	return styles.ColorInfo
+}
+
+// getSuccessColor returns the success color from theme or fallback.
+func (m *ModalContent) getSuccessColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.SuccessColor()
+	}
+	return styles.ColorSuccess
+}
+
+// getWarningColor returns the warning color from theme or fallback.
+func (m *ModalContent) getWarningColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.WarningColor()
+	}
+	return styles.ColorWarning
+}
+
+// getBorderColor returns the border color from theme or fallback.
+func (m *ModalContent) getBorderColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.BorderColor()
+	}
+	return styles.ColorBorder
 }
 
 // Render renders the modal centered in the given terminal dimensions
@@ -250,17 +300,17 @@ func (m *ModalContent) calculateOpacity() float64 {
 func (m *ModalContent) getStyleForType() (lipgloss.Color, string) {
 	switch m.Type {
 	case ModalError:
-		return styles.ColorError, "⚠️"
+		return m.getErrorColor(), "⚠️"
 	case ModalLoading:
-		return styles.ColorInfo, "⏳"
+		return m.getInfoColor(), "⏳"
 	case ModalProgress:
-		return styles.ColorInfo, "📊"
+		return m.getInfoColor(), "📊"
 	case ModalSuccess:
-		return styles.ColorSuccess, "✅"
+		return m.getSuccessColor(), "✅"
 	case ModalWarning:
-		return styles.ColorWarning, "⚠️"
+		return m.getWarningColor(), "⚠️"
 	default:
-		return styles.ColorBorder, "ℹ️"
+		return m.getBorderColor(), "ℹ️"
 	}
 }
 

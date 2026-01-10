@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -173,18 +174,9 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		table.WithWidth(105), // Adjusted for 5 columns
 	)
 
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		Foreground(styles.ColorAccentTeal).
-		Bold(true).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderBottom(true).
-		BorderForeground(styles.ColorAccentTeal)
-	s.Selected = s.Selected.
-		Foreground(styles.ColorAccentTeal).
-		Background(styles.ColorBackground).
-		Bold(true)
-	t.SetStyles(s)
+	// Apply default styles initially - theme styles will be applied in Init()
+	// when the theme manager is available via BaseIntent
+	t.SetStyles(table.DefaultStyles())
 
 	intent := &BurstManagementIntent{
 		BaseIntent: NewBaseIntent(),
@@ -246,6 +238,11 @@ func (i *BurstManagementIntent) formatCreatedDate(createdAt time.Time) string {
 
 // Init is called when the intent is activated.
 func (i *BurstManagementIntent) Init() tea.Cmd {
+	// Apply themed table styles if theme is available
+	if theme := i.Theme(); theme != nil {
+		i.table.SetStyles(themes.NewThemedTableStyles(theme))
+	}
+
 	// Load bursts from repository
 	_ = i.context.LoadBursts()
 
@@ -256,6 +253,76 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 	}
 	i.updateTableRows()
 	return nil
+}
+
+// getCardStyle returns a themed card style, with fallback to default styling.
+func (i *BurstManagementIntent) getCardStyle() lipgloss.Style {
+	if theme := i.Theme(); theme != nil {
+		return theme.Styles().CardBase
+	}
+	// Fallback to default styling
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+}
+
+// getSuccessColor returns the success color from theme or fallback.
+func (i *BurstManagementIntent) getSuccessColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.SuccessColor()
+	}
+	return styles.ColorSuccess
+}
+
+// getInfoColor returns the info color from theme or fallback.
+func (i *BurstManagementIntent) getInfoColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.InfoColor()
+	}
+	return styles.ColorInfo
+}
+
+// getWarningColor returns the warning color from theme or fallback.
+func (i *BurstManagementIntent) getWarningColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.WarningColor()
+	}
+	return styles.ColorWarning
+}
+
+// getErrorColor returns the error color from theme or fallback.
+func (i *BurstManagementIntent) getErrorColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.ErrorColor()
+	}
+	return styles.ColorError
+}
+
+// getPrimaryColor returns the primary text color from theme or fallback.
+func (i *BurstManagementIntent) getPrimaryColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.ForegroundColor()
+	}
+	return styles.ColorTextPrimary
+}
+
+// getSecondaryColor returns the secondary/dim text color from theme or fallback.
+func (i *BurstManagementIntent) getSecondaryColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.MutedColor()
+	}
+	return styles.ColorTextSecondary
+}
+
+// getBackgroundCardColor returns the card background color from theme or fallback.
+func (i *BurstManagementIntent) getBackgroundCardColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.Palette().BackgroundCard
+	}
+	return styles.ColorBackgroundCard
 }
 
 // updateTableRows updates the table rows based on filtered bursts, paginated
@@ -793,61 +860,76 @@ func (i *BurstManagementIntent) getStateContent() string {
 }
 
 func (i *BurstManagementIntent) getContextHelp() string {
-	base := "q Quit  m Main Menu"
+	theme := i.Theme()
 
 	switch i.state.currentState {
 	case BurstStateList:
-		return CombineFooters(
-			ListFooter(),
-			"Enter View details",
-			base,
+		return CombineThemedFooters(
+			ThemedListFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "View details"),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case BurstStateDetail:
-		return CombineFooters(
-			DetailViewFooter(),
-			"e View events  f View facts  x Edit  d Delete  c Confirm",
-			"Esc Back",
-			base,
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("e", "View events"),
+				components.NewKeyBadge("f", "View facts"),
+				components.NewKeyBadge("x", "Edit"),
+				components.DeleteBadge(),
+				components.NewKeyBadge("c", "Confirm"),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case BurstStateDetailEvents, BurstStateDetailFacts:
-		return CombineFooters(
-			DetailViewFooter(),
-			"Esc Back",
-			base,
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedGlobalBadges(theme),
 		)
 	case BurstStateEdit:
-		return CombineFooters(
-			FormFooter(),
-			"Ctrl+S Save",
-			"Esc Cancel",
-			base,
+		return CombineThemedFooters(
+			ThemedFormFooter(theme),
+			ThemedCustomFooter(theme,
+				components.SaveBadge(),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case BurstStateDeleteConfirm:
-		return CombineFooters(
-			"y/Enter Confirm deletion",
-			"n/Esc Cancel",
-			base,
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y/Enter", "Confirm deletion"),
+				components.NewKeyBadge("n/Esc", "Cancel"),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case BurstStateConfirm:
 		if i.state.extractionComplete {
-			return CombineFooters(
-				"Enter Continue",
-				"Esc Back",
-				base,
+			return CombineThemedFooters(
+				ThemedCustomFooter(theme,
+					components.NewKeyBadge("Enter", "Continue"),
+					components.BackBadge(),
+				),
+				ThemedGlobalBadges(theme),
 			)
 		}
-		return CombineFooters(
-			"y/Enter Confirm burst",
-			"n/Esc Cancel",
-			base,
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y/Enter", "Confirm burst"),
+				components.NewKeyBadge("n/Esc", "Cancel"),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	case BurstStateExtractingFacts:
-		return CombineFooters(
-			"Please wait...",
-			base,
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("...", "Please wait"),
+			),
+			ThemedGlobalBadges(theme),
 		)
 	default:
-		return base
+		return ThemedGlobalBadges(theme)
 	}
 }
 
@@ -882,12 +964,12 @@ func (i *BurstManagementIntent) viewDetail() string {
 	// Title with confirmation status indicator
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorTextPrimary)
+		Foreground(i.getPrimaryColor())
 
 	title := "Burst Details"
 	if i.state.selectedBurst.Confirmed {
 		confirmedStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorSuccess).
+			Foreground(i.getSuccessColor()).
 			Bold(true)
 		title = "Burst Details " + confirmedStyle.Render("✓ Confirmed")
 	}
@@ -910,15 +992,8 @@ func (i *BurstManagementIntent) viewDetail() string {
 	content.WriteString(fmt.Sprintf("Created: %s\n", i.state.selectedBurst.CreatedAt.Format("2006-01-02")))
 	content.WriteString(fmt.Sprintf("Updated: %s\n", i.state.selectedBurst.UpdatedAt.Format("2006-01-02")))
 
-	// Apply card styling.
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
+	// Apply themed card styling
+	card := i.getCardStyle().Render(content.String())
 
 	// Footer now handled by StandardView
 	return card
@@ -927,19 +1002,19 @@ func (i *BurstManagementIntent) viewDetail() string {
 // viewDetailEvents renders the events view for a burst
 func (i *BurstManagementIntent) viewDetailEvents() string {
 	if i.state.loadingEvents {
-		infoStyle := lipgloss.NewStyle().Foreground(styles.ColorInfo)
+		infoStyle := lipgloss.NewStyle().Foreground(i.getInfoColor())
 		return infoStyle.Render("Loading events...")
 	}
 
 	if len(i.state.burstEvents) == 0 {
-		errorStyle := lipgloss.NewStyle().Foreground(styles.ColorError)
+		errorStyle := lipgloss.NewStyle().Foreground(i.getErrorColor())
 		return errorStyle.Render("No events found for this burst.")
 	}
 
 	var content strings.Builder
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorTextPrimary).
+		Foreground(i.getPrimaryColor()).
 		MarginBottom(1)
 
 	content.WriteString(headerStyle.Render(
@@ -963,13 +1038,13 @@ func (i *BurstManagementIntent) viewDetailEvents() string {
 // viewDetailFacts renders the facts view for a burst
 func (i *BurstManagementIntent) viewDetailFacts() string {
 	if i.state.loadingFacts {
-		infoStyle := lipgloss.NewStyle().Foreground(styles.ColorInfo)
+		infoStyle := lipgloss.NewStyle().Foreground(i.getInfoColor())
 		return infoStyle.Render("Loading facts...")
 	}
 
 	if len(i.state.burstFacts) == 0 {
 		warningStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorWarning).
+			Foreground(i.getWarningColor()).
 			MarginBottom(1)
 
 		return warningStyle.Render("No facts extracted yet. Confirm the burst in detail view to extract facts.")
@@ -978,7 +1053,7 @@ func (i *BurstManagementIntent) viewDetailFacts() string {
 	var content strings.Builder
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorTextPrimary).
+		Foreground(i.getPrimaryColor()).
 		MarginBottom(1)
 
 	content.WriteString(headerStyle.Render(
@@ -1018,7 +1093,7 @@ func (i *BurstManagementIntent) viewEdit() string {
 	// Header
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorTextPrimary).
+		Foreground(i.getPrimaryColor()).
 		MarginBottom(1)
 
 	content.WriteString(headerStyle.Render("Edit Burst"))
@@ -1027,7 +1102,7 @@ func (i *BurstManagementIntent) viewEdit() string {
 	// Show error if any
 	if i.state.editError != nil {
 		errorStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorError).
+			Foreground(i.getErrorColor()).
 			MarginBottom(1)
 		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.editError)))
 		content.WriteString("\n\n")
@@ -1043,7 +1118,7 @@ func (i *BurstManagementIntent) viewEdit() string {
 	// Note: For now, this is a simple view showing current values
 	// A full implementation would use text inputs for editing
 	noteStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
+		Foreground(i.getSecondaryColor()).
 		Italic(true).
 		MarginTop(1)
 
@@ -1051,15 +1126,8 @@ func (i *BurstManagementIntent) viewEdit() string {
 	content.WriteString(noteStyle.Render("Note: Full edit functionality coming soon."))
 	content.WriteString("\n")
 
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
+	// Apply themed card styling
+	card := i.getCardStyle().Render(content.String())
 
 	// Footer now handled by StandardView
 	return card
@@ -1076,7 +1144,7 @@ func (i *BurstManagementIntent) viewDeleteConfirm() string {
 	// Warning header
 	warningStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorError).
+		Foreground(i.getErrorColor()).
 		MarginBottom(1)
 
 	content.WriteString(warningStyle.Render("⚠️  DELETE BURST - Are you sure?"))
@@ -1085,7 +1153,7 @@ func (i *BurstManagementIntent) viewDeleteConfirm() string {
 	// Show error if any
 	if i.state.deleteError != nil {
 		errorStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorError).
+			Foreground(i.getErrorColor()).
 			MarginBottom(1)
 		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.deleteError)))
 		content.WriteString("\n\n")
@@ -1093,14 +1161,14 @@ func (i *BurstManagementIntent) viewDeleteConfirm() string {
 
 	// Burst details
 	infoStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary)
+		Foreground(i.getPrimaryColor())
 
 	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst Name: %s", i.state.selectedBurst.Name)))
 	content.WriteString("\n\n")
 
 	// Warning messages
 	warningTextStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorWarning).
+		Foreground(i.getWarningColor()).
 		Bold(true)
 
 	content.WriteString(warningTextStyle.Render("This will remove the burst grouping but NOT delete the events."))
@@ -1108,13 +1176,19 @@ func (i *BurstManagementIntent) viewDeleteConfirm() string {
 	content.WriteString(warningTextStyle.Render("This action cannot be undone."))
 	content.WriteString("\n")
 
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorError).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	// Apply themed card styling with error border
+	var cardStyle lipgloss.Style
+	if theme := i.Theme(); theme != nil {
+		// Use assignment instead of deprecated Copy()
+		cardStyle = theme.Styles().CardBase.BorderForeground(theme.ErrorColor())
+	} else {
+		cardStyle = lipgloss.NewStyle().
+			Padding(1, 2).
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(i.getErrorColor()).
+			Background(i.getBackgroundCardColor()).
+			Foreground(i.getPrimaryColor())
+	}
 
 	card := cardStyle.Render(content.String())
 
@@ -1133,7 +1207,7 @@ func (i *BurstManagementIntent) viewConfirm() string {
 	// Header
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorSuccess).
+		Foreground(i.getSuccessColor()).
 		MarginBottom(1)
 
 	content.WriteString(headerStyle.Render("Confirm Burst"))
@@ -1142,7 +1216,7 @@ func (i *BurstManagementIntent) viewConfirm() string {
 	// Show error if any
 	if i.state.confirmError != nil {
 		errorStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorError).
+			Foreground(i.getErrorColor()).
 			MarginBottom(1)
 		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.confirmError)))
 		content.WriteString("\n\n")
@@ -1150,7 +1224,7 @@ func (i *BurstManagementIntent) viewConfirm() string {
 
 	// Burst details
 	infoStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary)
+		Foreground(i.getPrimaryColor())
 
 	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
 	content.WriteString("\n\n")
@@ -1159,7 +1233,7 @@ func (i *BurstManagementIntent) viewConfirm() string {
 	if i.state.showReextractPrompt {
 		// Facts already exist
 		warningStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorWarning).
+			Foreground(i.getWarningColor()).
 			Bold(true)
 
 		content.WriteString(warningStyle.Render(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount)))
@@ -1169,7 +1243,7 @@ func (i *BurstManagementIntent) viewConfirm() string {
 	} else if i.state.extractionComplete {
 		// Extraction completed successfully
 		successStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorSuccess).
+			Foreground(i.getSuccessColor()).
 			Bold(true)
 
 		content.WriteString(successStyle.Render(fmt.Sprintf("✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount)))
@@ -1182,15 +1256,8 @@ func (i *BurstManagementIntent) viewConfirm() string {
 		content.WriteString("\n")
 	}
 
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
+	// Apply themed card styling
+	card := i.getCardStyle().Render(content.String())
 
 	// Footer now handled by StandardView
 	return card
@@ -1207,7 +1274,7 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 	// Header
 	headerStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorInfo).
+		Foreground(i.getInfoColor()).
 		MarginBottom(1)
 
 	content.WriteString(headerStyle.Render("Extracting Facts"))
@@ -1215,13 +1282,13 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 
 	// Progress indicator
 	infoStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary)
+		Foreground(i.getPrimaryColor())
 
 	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
 	content.WriteString("\n\n")
 
 	progressStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorInfo).
+		Foreground(i.getInfoColor()).
 		Bold(true)
 
 	content.WriteString(progressStyle.Render("⏳ Extracting and saving facts..."))
@@ -1231,15 +1298,8 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 	content.WriteString(infoStyle.Render("This may take a few moments."))
 	content.WriteString("\n")
 
-	// Apply card styling
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	card := cardStyle.Render(content.String())
+	// Apply themed card styling
+	card := i.getCardStyle().Render(content.String())
 
 	// Footer now handled by StandardView
 	return card

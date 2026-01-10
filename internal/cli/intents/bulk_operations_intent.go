@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -138,22 +139,52 @@ func (m *BulkOperationsModel) getStateContent() string {
 }
 
 func (m *BulkOperationsModel) getContextHelp() string {
-	base := "q Quit"
+	theme := m.Theme()
 
 	switch m.data.CurrentState {
 	case BulkSelectOpState:
-		return CombineFooters(NavigationFooter(), "Enter Select operation", "Esc Back", base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Select operation"),
+				components.BackBadge(),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case BulkConfigureState:
-		return CombineFooters("Enter Execute", "Esc Back", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Execute"),
+				components.BackBadge(),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case BulkExecuteState:
 		if m.data.IsPaused {
-			return CombineFooters("p Resume", "c Complete now", base)
+			return CombineThemedFooters(
+				ThemedCustomFooter(theme,
+					components.NewKeyBadge("p", "Resume"),
+					components.NewKeyBadge("c", "Complete now"),
+				),
+				ThemedCustomFooter(theme, components.QuitBadge()),
+			)
 		}
-		return CombineFooters("p Pause", "c Complete now", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("p", "Pause"),
+				components.NewKeyBadge("c", "Complete now"),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case BulkCompleteState:
-		return CombineFooters("Enter Done", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Done"),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	default:
-		return base
+		return ThemedCustomFooter(theme, components.QuitBadge())
 	}
 }
 

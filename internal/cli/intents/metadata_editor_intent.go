@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -116,20 +117,43 @@ func (m *MetadataEditorModel) getStateContent() string {
 
 // getContextHelp returns context-aware help text
 func (m *MetadataEditorModel) getContextHelp() string {
-	base := "q Quit"
+	theme := m.Theme()
 
 	switch m.data.CurrentState {
 	case MetadataReviewState:
-		return CombineFooters("e Edit metadata", "Esc Back", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("e", "Edit metadata"),
+				components.BackBadge(),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case MetadataEditState:
 		if m.data.HasChanges() {
-			return CombineFooters(FormFooter(), "Ctrl+S Save changes", "Esc Cancel", base)
+			return CombineThemedFooters(
+				ThemedFormFooter(theme),
+				ThemedCustomFooter(theme,
+					components.NewKeyBadge("Ctrl+S", "Save changes"),
+					components.CancelBadge(),
+				),
+				ThemedCustomFooter(theme, components.QuitBadge()),
+			)
 		}
-		return CombineFooters(FormFooter(), "Esc Back", base)
+		return CombineThemedFooters(
+			ThemedFormFooter(theme),
+			ThemedCustomFooter(theme, components.BackBadge()),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	case MetadataConfirmState:
-		return CombineFooters("y/Enter Confirm", "n/Esc Back", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y/Enter", "Confirm"),
+				components.NewKeyBadge("n/Esc", "Back"),
+			),
+			ThemedCustomFooter(theme, components.QuitBadge()),
+		)
 	default:
-		return base
+		return ThemedCustomFooter(theme, components.QuitBadge())
 	}
 }
 

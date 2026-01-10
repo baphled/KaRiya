@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -129,6 +130,38 @@ func (i *CaptureEventIntent) Init() tea.Cmd {
 	// Otherwise, initialize for a new event.
 	i.initializeFormForNew()
 	return func() tea.Msg { return nil }
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getCardStyle returns a themed card style, with fallback to default styling.
+func (i *CaptureEventIntent) getCardStyle() lipgloss.Style {
+	if theme := i.Theme(); theme != nil {
+		return theme.Styles().CardBase
+	}
+	// Fallback to default styling
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+}
+
+// getPrimaryColor returns the primary text color from theme or fallback.
+func (i *CaptureEventIntent) getPrimaryColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.ForegroundColor()
+	}
+	return styles.ColorTextPrimary
+}
+
+// getAccentColor returns the accent color from theme or fallback.
+func (i *CaptureEventIntent) getAccentColor() lipgloss.Color {
+	if theme := i.Theme(); theme != nil {
+		return theme.PrimaryColor()
+	}
+	return styles.ColorAccentTeal
 }
 
 // initializeFormForEdit initializes the form for editing an existing event.
@@ -739,27 +772,60 @@ func (i *CaptureEventIntent) getStateContent() string {
 
 // getContextHelp returns context-aware help text for the current state.
 func (i *CaptureEventIntent) getContextHelp() string {
-	base := "q Quit  m Main Menu"
+	theme := i.Theme()
 
 	switch i.state.currentState {
 	case CaptureStateChooseStrategy:
-		return CombineFooters(NavigationFooter(), base)
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case CaptureStateForm:
 		// Show different help based on strategy
 		if i.state.strategy == StrategyManual {
-			return CombineFooters(FormFooter(), "Ctrl+O Toggle fields", base)
+			return CombineThemedFooters(
+				ThemedFormFooter(theme),
+				ThemedCustomFooter(theme,
+					components.NewKeyBadge("Ctrl+O", "Toggle fields"),
+				),
+				ThemedGlobalBadges(theme),
+			)
 		}
-		return CombineFooters(FormFooter(), base)
+		return CombineThemedFooters(
+			ThemedFormFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	case CaptureStateReview:
 		// Show different help when modal is active
 		if i.state.reviewState.EditingMode != EditingModeNone {
-			return "Editing... | Esc Cancel  Enter Save"
+			return ThemedCustomFooter(theme,
+				components.NewKeyBadge("Editing", "..."),
+				components.CancelBadge(),
+				components.SaveBadge(),
+			)
 		}
-		return CombineFooters(NavigationFooter(), "e Edit  b Bursts  f Facts  a Accept  r Reject  j/k Navigate", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NavigateBadge(),
+				components.EditBadge(),
+				components.NewKeyBadge("b", "Bursts"),
+				components.NewKeyBadge("f", "Facts"),
+				components.NewKeyBadge("a", "Accept"),
+				components.NewKeyBadge("r", "Reject"),
+				components.BackBadge(),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case CaptureStateSubmit:
-		return CombineFooters("Enter Continue  Esc Back", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "Continue"),
+				components.BackBadge(),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	default:
-		return base
+		return ThemedGlobalBadges(theme)
 	}
 }
 
@@ -816,25 +882,18 @@ func (i *CaptureEventIntent) viewChooseStrategy() string {
 			prefix = "▶ "
 		}
 
-		// Apply highlighting to selected item
-		optStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		// Apply themed highlighting to selected item
+		optStyle := lipgloss.NewStyle().Foreground(i.getPrimaryColor())
 		if idx == i.state.selectedStrategyIndex {
-			optStyle = optStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+			optStyle = optStyle.Foreground(i.getAccentColor()).Bold(true)
 		}
 
 		line := fmt.Sprintf("%s%s - %s", prefix, s.label, s.description)
 		content.WriteString(optStyle.Render(line) + "\n")
 	}
 
-	// Card styling (matching GenerateCV pattern)
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	// Apply themed card styling
+	return i.getCardStyle().Render(content.String())
 }
 
 // viewCaptureForm renders the form for capturing event details.

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -90,6 +91,91 @@ type ConfigureSystemModel struct {
 	settingsInputs map[string]textinput.Model // One input per setting
 	focusedSetting int                        // Which setting is focused
 	editingValue   bool                       // Currently editing a value
+
+	// Theme support - set by parent intent
+	theme themes.Theme
+}
+
+// SetTheme sets the theme for the model (called by parent intent)
+func (m *ConfigureSystemModel) SetTheme(theme themes.Theme) {
+	m.theme = theme
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getCardStyle returns a themed card style, with fallback to default styling.
+func (m *ConfigureSystemModel) getCardStyle() lipgloss.Style {
+	if m.theme != nil {
+		return m.theme.Styles().CardBase
+	}
+	// Fallback to default styling
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+}
+
+// getCardStyleWithBorder returns a card style with custom border color.
+func (m *ConfigureSystemModel) getCardStyleWithBorder(borderColor lipgloss.Color) lipgloss.Style {
+	if m.theme != nil {
+		return m.theme.Styles().CardBase.BorderForeground(borderColor)
+	}
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(borderColor).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+}
+
+// getPrimaryColor returns the primary text color from theme or fallback.
+func (m *ConfigureSystemModel) getPrimaryColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.ForegroundColor()
+	}
+	return styles.ColorTextPrimary
+}
+
+// getAccentColor returns the accent color from theme or fallback.
+func (m *ConfigureSystemModel) getAccentColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.PrimaryColor()
+	}
+	return styles.ColorAccentTeal
+}
+
+// getMutedColor returns the muted text color from theme or fallback.
+func (m *ConfigureSystemModel) getMutedColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.MutedColor()
+	}
+	return styles.ColorTextMuted
+}
+
+// getSuccessColor returns the success color from theme or fallback.
+func (m *ConfigureSystemModel) getSuccessColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.SuccessColor()
+	}
+	return styles.ColorSuccess
+}
+
+// getErrorColor returns the error color from theme or fallback.
+func (m *ConfigureSystemModel) getErrorColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.ErrorColor()
+	}
+	return styles.ColorError
+}
+
+// getInfoColor returns the info color from theme or fallback.
+func (m *ConfigureSystemModel) getInfoColor() lipgloss.Color {
+	if m.theme != nil {
+		return m.theme.InfoColor()
+	}
+	return styles.ColorInfo
 }
 
 // NewConfigureSystemContext creates a new ConfigureSystemContext with values loaded from config file
@@ -846,11 +932,11 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 
 	for i, d := range m.context.Domains {
 		prefix := "  "
-		itemStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		itemStyle := lipgloss.NewStyle().Foreground(m.getPrimaryColor())
 
 		if i == m.selectedIndex {
 			prefix = "▶ "
-			itemStyle = itemStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+			itemStyle = itemStyle.Foreground(m.getAccentColor()).Bold(true)
 		}
 
 		// Domain name with capitalization
@@ -860,20 +946,13 @@ func (m *ConfigureSystemModel) viewSelectDomain() string {
 
 		// Add description in muted color
 		if desc, ok := domainDescs[d]; ok {
-			descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted)
+			descStyle := lipgloss.NewStyle().Foreground(m.getMutedColor())
 			content.WriteString(" " + descStyle.Render("- "+desc))
 		}
 		content.WriteString("\n")
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return m.getCardStyle().Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewEditSettings() string {
@@ -884,11 +963,11 @@ func (m *ConfigureSystemModel) viewEditSettings() string {
 
 	for i, setting := range settings {
 		prefix := "  "
-		labelStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		labelStyle := lipgloss.NewStyle().Foreground(m.getPrimaryColor())
 
 		if i == m.focusedSetting {
 			prefix = "▶ "
-			labelStyle = labelStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+			labelStyle = labelStyle.Foreground(m.getAccentColor()).Bold(true)
 		}
 
 		input, hasInput := m.settingsInputs[setting.Key]
@@ -900,7 +979,7 @@ func (m *ConfigureSystemModel) viewEditSettings() string {
 		if hasInput {
 			if i == m.focusedSetting && m.editingValue {
 				content.WriteString(input.View() + " ")
-				editIndicator := lipgloss.NewStyle().Foreground(styles.ColorInfo).Render("(editing)")
+				editIndicator := lipgloss.NewStyle().Foreground(m.getInfoColor()).Render("(editing)")
 				content.WriteString(editIndicator)
 			} else {
 				content.WriteString(input.Value())
@@ -911,18 +990,11 @@ func (m *ConfigureSystemModel) viewEditSettings() string {
 		content.WriteString("\n")
 
 		// Description (muted)
-		descStyle := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).PaddingLeft(4)
+		descStyle := lipgloss.NewStyle().Foreground(m.getMutedColor()).PaddingLeft(4)
 		content.WriteString(descStyle.Render(setting.Description) + "\n\n")
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return m.getCardStyle().Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewReviewChanges() string {
@@ -930,7 +1002,7 @@ func (m *ConfigureSystemModel) viewReviewChanges() string {
 	content.WriteString(fmt.Sprintf("\n📋 Review Changes - %s\n\n", titleCase(string(m.domain))))
 
 	if m.changes == nil {
-		noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes to review")
+		noChanges := lipgloss.NewStyle().Foreground(m.getMutedColor()).Render("No changes to review")
 		content.WriteString(noChanges)
 	} else {
 		hasChanges := false
@@ -938,9 +1010,9 @@ func (m *ConfigureSystemModel) viewReviewChanges() string {
 			original := m.changes.Original[key]
 			if original != modified {
 				hasChanges = true
-				keyStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary).Bold(true)
-				oldStyle := lipgloss.NewStyle().Foreground(styles.ColorError).Strikethrough(true)
-				newStyle := lipgloss.NewStyle().Foreground(styles.ColorSuccess)
+				keyStyle := lipgloss.NewStyle().Foreground(m.getPrimaryColor()).Bold(true)
+				oldStyle := lipgloss.NewStyle().Foreground(m.getErrorColor()).Strikethrough(true)
+				newStyle := lipgloss.NewStyle().Foreground(m.getSuccessColor())
 
 				content.WriteString(keyStyle.Render(key) + ": ")
 				content.WriteString(oldStyle.Render(fmt.Sprintf("%v", original)))
@@ -950,19 +1022,12 @@ func (m *ConfigureSystemModel) viewReviewChanges() string {
 		}
 
 		if !hasChanges {
-			noChanges := lipgloss.NewStyle().Foreground(styles.ColorTextMuted).Render("No changes made")
+			noChanges := lipgloss.NewStyle().Foreground(m.getMutedColor()).Render("No changes made")
 			content.WriteString(noChanges)
 		}
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return m.getCardStyle().Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewConfirm() string {
@@ -979,18 +1044,11 @@ func (m *ConfigureSystemModel) viewConfirm() string {
 				changeCount++
 			}
 		}
-		countStyle := lipgloss.NewStyle().Foreground(styles.ColorAccentTeal).Bold(true)
+		countStyle := lipgloss.NewStyle().Foreground(m.getAccentColor()).Bold(true)
 		content.WriteString(fmt.Sprintf("Changes: %s\n", countStyle.Render(fmt.Sprintf("%d", changeCount))))
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return m.getCardStyle().Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewSaving() string {
@@ -1002,14 +1060,7 @@ func (m *ConfigureSystemModel) viewSaving() string {
 	content.WriteString("• Writing to disk\n")
 	content.WriteString("• Applying changes\n")
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorInfo).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return m.getCardStyleWithBorder(m.getInfoColor()).Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewComplete() string {
@@ -1019,14 +1070,7 @@ func (m *ConfigureSystemModel) viewComplete() string {
 	content.WriteString(fmt.Sprintf("Domain: %s\n", titleCase(string(m.domain))))
 	content.WriteString("Changes saved successfully.\n")
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorSuccess).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return m.getCardStyleWithBorder(m.getSuccessColor()).Render(content.String())
 }
 
 func (m *ConfigureSystemModel) viewFailed() string {
@@ -1034,18 +1078,11 @@ func (m *ConfigureSystemModel) viewFailed() string {
 	content.WriteString("\n❌ Configuration Failed\n\n")
 
 	if m.error != nil {
-		errorStyle := lipgloss.NewStyle().Foreground(styles.ColorError)
+		errorStyle := lipgloss.NewStyle().Foreground(m.getErrorColor())
 		content.WriteString(errorStyle.Render("Error: "+m.error.Message) + "\n")
 	}
 
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorError).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
-
-	return cardStyle.Render(content.String())
+	return m.getCardStyleWithBorder(m.getErrorColor()).Render(content.String())
 }
 
 // ConfigCompleteMsg represents completion of a configuration save

@@ -3,24 +3,46 @@
 package forms
 
 import (
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
 // Theme returns the Catppuccin theme configured for KaRiya forms.
+// Deprecated: Use ThemedForm or themes.GenerateHuhTheme for theme-aware forms.
 func Theme() *huh.Theme {
 	return huh.ThemeCatppuccin()
 }
 
+// ThemedForm returns a huh.Theme that matches the given KaRiya theme.
+// If theme is nil, falls back to Catppuccin theme.
+func ThemedForm(theme themes.Theme) *huh.Theme {
+	return themes.GenerateHuhTheme(theme)
+}
+
 // NewForm creates a new form with KaRiya's default theme and configuration.
+// Note: For theme-aware forms, use NewThemedForm instead.
 func NewForm(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).WithTheme(Theme())
+}
+
+// NewThemedForm creates a new form with the given KaRiya theme.
+// This ensures forms match the rest of the TUI styling.
+func NewThemedForm(theme themes.Theme, groups ...*huh.Group) *huh.Form {
+	return huh.NewForm(groups...).WithTheme(ThemedForm(theme))
 }
 
 // NewFormWithAccessible creates a form optimized for accessibility.
 func NewFormWithAccessible(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).
 		WithTheme(Theme()).
+		WithAccessible(true)
+}
+
+// NewThemedFormWithAccessible creates an accessible form with the given KaRiya theme.
+func NewThemedFormWithAccessible(theme themes.Theme, groups ...*huh.Group) *huh.Form {
+	return huh.NewForm(groups...).
+		WithTheme(ThemedForm(theme)).
 		WithAccessible(true)
 }
 

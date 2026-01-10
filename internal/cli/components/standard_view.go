@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // StandardView provides a standardized view layout with logo, content, and help footer
@@ -38,6 +39,7 @@ type StandardView struct {
 	ShowFooterSeparator bool
 	TerminalInfo        *terminal.Info
 	UseFullWidth        bool
+	theme               themes.Theme
 }
 
 // NewStandardView creates a new StandardView with default settings
@@ -121,6 +123,46 @@ func (sv *StandardView) SetUseFullWidth(full bool) *StandardView {
 	return sv
 }
 
+// WithTheme sets the theme for the view
+func (sv *StandardView) WithTheme(theme themes.Theme) *StandardView {
+	sv.theme = theme
+	return sv
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getPrimaryColor returns the primary text color from theme or fallback.
+func (sv *StandardView) getPrimaryColor() lipgloss.Color {
+	if sv.theme != nil {
+		return sv.theme.ForegroundColor()
+	}
+	return styles.ColorTextPrimary
+}
+
+// getSecondaryColor returns the secondary text color from theme or fallback.
+func (sv *StandardView) getSecondaryColor() lipgloss.Color {
+	if sv.theme != nil {
+		return sv.theme.MutedColor()
+	}
+	return styles.ColorTextSecondary
+}
+
+// getMutedColor returns the muted text color from theme or fallback.
+func (sv *StandardView) getMutedColor() lipgloss.Color {
+	if sv.theme != nil {
+		return sv.theme.MutedColor()
+	}
+	return styles.ColorTextMuted
+}
+
+// getBorderColor returns the border color from theme or fallback.
+func (sv *StandardView) getBorderColor() lipgloss.Color {
+	if sv.theme != nil {
+		return sv.theme.BorderColor()
+	}
+	return styles.ColorBorder
+}
+
 // Render renders the complete view with all components
 func (sv *StandardView) Render() string {
 	var parts []string
@@ -162,14 +204,14 @@ func (sv *StandardView) Render() string {
 
 		if sv.Title != "" {
 			titleStyle := lipgloss.NewStyle().
-				Foreground(styles.ColorTextPrimary).
+				Foreground(sv.getPrimaryColor()).
 				Bold(true)
 			styledTitle := titleStyle.Render(sv.Title)
 			parts = append(parts, styledTitle)
 
 			if sv.Subtitle != "" {
 				subtitleStyle := lipgloss.NewStyle().
-					Foreground(styles.ColorTextSecondary)
+					Foreground(sv.getSecondaryColor())
 				styledSubtitle := subtitleStyle.Render(sv.Subtitle)
 				parts = append(parts, styledSubtitle)
 			}
@@ -196,7 +238,7 @@ func (sv *StandardView) Render() string {
 			// Separator will match widest content line via JoinVertical
 			separator := strings.Repeat("─", 100)
 			separatorStyle := lipgloss.NewStyle().
-				Foreground(styles.ColorBorder)
+				Foreground(sv.getBorderColor())
 			parts = append(parts, "", separatorStyle.Render(separator))
 		} else {
 			parts = append(parts, "") // Just blank line
@@ -204,7 +246,7 @@ func (sv *StandardView) Render() string {
 
 		// Render help text
 		helpStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted)
+			Foreground(sv.getMutedColor())
 		styledHelp := helpStyle.Render(sv.HelpText)
 		parts = append(parts, styledHelp)
 	}

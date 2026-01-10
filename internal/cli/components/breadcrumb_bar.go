@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // Breadcrumb represents a single breadcrumb in the navigation trail
@@ -21,6 +22,7 @@ type BreadcrumbBar struct {
 	width    int
 	boxed    bool
 	showIcon bool
+	theme    themes.Theme
 }
 
 // Icon constants for different intents
@@ -86,6 +88,38 @@ func (b *BreadcrumbBar) ShowIcons(show bool) *BreadcrumbBar {
 	return b
 }
 
+// WithTheme sets the theme for the breadcrumb bar
+func (b *BreadcrumbBar) WithTheme(theme themes.Theme) *BreadcrumbBar {
+	b.theme = theme
+	return b
+}
+
+// Theme helper methods for consistent themed styling.
+
+// getAccentColor returns the accent color from theme or fallback.
+func (b *BreadcrumbBar) getAccentColor() lipgloss.Color {
+	if b.theme != nil {
+		return b.theme.PrimaryColor()
+	}
+	return styles.ColorAccentTeal
+}
+
+// getMutedColor returns the muted text color from theme or fallback.
+func (b *BreadcrumbBar) getMutedColor() lipgloss.Color {
+	if b.theme != nil {
+		return b.theme.MutedColor()
+	}
+	return styles.ColorTextMuted
+}
+
+// getBorderColor returns the border color from theme or fallback.
+func (b *BreadcrumbBar) getBorderColor() lipgloss.Color {
+	if b.theme != nil {
+		return b.theme.BorderColor()
+	}
+	return styles.ColorBorder
+}
+
 // View renders the breadcrumb bar
 func (b *BreadcrumbBar) View() string {
 	if len(b.crumbs) == 0 {
@@ -108,16 +142,16 @@ func (b *BreadcrumbBar) View() string {
 
 		// Style based on position
 		if i == len(b.crumbs)-1 {
-			// Last breadcrumb - current location (bold and teal)
+			// Last breadcrumb - current location (bold and accent color)
 			styledPart := lipgloss.NewStyle().
-				Foreground(styles.ColorAccentTeal).
+				Foreground(b.getAccentColor()).
 				Bold(true).
 				Render(part)
 			parts = append(parts, styledPart)
 		} else {
 			// Previous breadcrumbs - muted
 			styledPart := lipgloss.NewStyle().
-				Foreground(styles.ColorTextMuted).
+				Foreground(b.getMutedColor()).
 				Render(part)
 			parts = append(parts, styledPart)
 		}
@@ -136,7 +170,7 @@ func (b *BreadcrumbBar) View() string {
 	if b.boxed {
 		boxStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(styles.ColorBorder).
+			BorderForeground(b.getBorderColor()).
 			Padding(0, 1)
 
 		return boxStyle.Render(breadcrumbStr)
@@ -164,7 +198,7 @@ func (b *BreadcrumbBar) renderTruncated() string {
 		firstPart = first.Label
 	}
 	firstPart = lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
+		Foreground(b.getMutedColor()).
 		Render(firstPart)
 
 	// Last crumb
@@ -174,12 +208,12 @@ func (b *BreadcrumbBar) renderTruncated() string {
 		lastPart = last.Label
 	}
 	lastPart = lipgloss.NewStyle().
-		Foreground(styles.ColorAccentTeal).
+		Foreground(b.getAccentColor()).
 		Bold(true).
 		Render(lastPart)
 
 	ellipsis := lipgloss.NewStyle().
-		Foreground(styles.ColorTextMuted).
+		Foreground(b.getMutedColor()).
 		Render("...")
 
 	return firstPart + "  ▸  " + ellipsis + "  ▸  " + lastPart

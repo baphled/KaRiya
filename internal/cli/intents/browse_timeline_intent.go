@@ -8,7 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -81,18 +81,9 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 		table.WithWidth(100),
 	)
 
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		Foreground(styles.ColorAccentTeal).
-		Bold(true).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderBottom(true).
-		BorderForeground(styles.ColorAccentTeal)
-	s.Selected = s.Selected.
-		Foreground(styles.ColorAccentTeal).
-		Background(styles.ColorBackground).
-		Bold(true)
-	t.SetStyles(s)
+	// Apply default styles initially - theme styles will be applied in Init()
+	// when the theme manager is available via BaseIntent
+	t.SetStyles(table.DefaultStyles())
 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
@@ -122,6 +113,11 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 
 // Init is called when the intent is activated.
 func (i *BrowseTimelineIntent) Init() tea.Cmd {
+	// Apply themed table styles if theme is available
+	if theme := i.Theme(); theme != nil {
+		i.table.SetStyles(themes.NewThemedTableStyles(theme))
+	}
+
 	// Apply initial filters and sorting to the provided events.
 	i.applyFilters()
 
@@ -393,15 +389,26 @@ func (i *BrowseTimelineIntent) getStateContent() string {
 
 // getContextHelp returns context-aware help text for the current state.
 func (i *BrowseTimelineIntent) getContextHelp() string {
-	base := "q Quit  m Main Menu"
+	theme := i.Theme()
 
 	switch i.state.currentState {
 	case BrowseStateTimeline:
-		return CombineFooters(ListFooter(), "f Filter  Enter View Details", base)
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NavigateBadge(),
+				components.SelectBadge(),
+				components.FilterBadge(),
+				components.NewKeyBadge("Enter", "View Details"),
+			),
+			ThemedGlobalBadges(theme),
+		)
 	case BrowseStateEventDetail:
-		return CombineFooters(DetailViewFooter(), base)
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
 	default:
-		return base
+		return ThemedGlobalBadges(theme)
 	}
 }
 
@@ -471,13 +478,16 @@ func (i *BrowseTimelineIntent) viewEventDetail() string {
 		content.WriteString(fmt.Sprintf("Categories: %s\n", strings.Join(i.state.selectedEvent.Categories, ", ")))
 	}
 
-	// Apply card styling.
-	cardStyle := lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	// Apply themed card styling
+	var cardStyle lipgloss.Style
+	if theme := i.Theme(); theme != nil {
+		cardStyle = theme.Styles().CardBase
+	} else {
+		// Fallback if no theme available
+		cardStyle = lipgloss.NewStyle().
+			Padding(1, 2).
+			BorderStyle(lipgloss.RoundedBorder())
+	}
 
 	card := cardStyle.Render(content.String())
 
