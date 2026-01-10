@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -167,9 +168,9 @@ func (m *FactEditorModelNew) View() string {
 	// Add error if present
 	if m.err != nil {
 		errorStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#F38BA8")). // Catppuccin Red
+			Foreground(styles.ColorError).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#F38BA8")).
+			BorderForeground(styles.ColorError).
 			Padding(1, 2).
 			MarginTop(1)
 
