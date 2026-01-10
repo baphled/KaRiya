@@ -148,12 +148,14 @@ Already using ListNavigationHandler:
 
 Note: `metadata_editor_intent.go` does not need migration - it's a form-based editor, not a list navigator.
 
-### Phase 6: Help Modal BaseIntent Integration - PENDING
-**Time**: 1 day | **Risk**: Low | **Status**: NOT STARTED
+### Phase 6: Help Modal BaseIntent Integration - COMPLETED
+**Time**: 1 day | **Risk**: Low | **Status**: COMPLETED
 
-- [ ] Add help modal state to BaseIntent
-- [ ] Integrate help modal toggle with `?` key
-- [ ] Remove TODO placeholders from all intents
+- [x] Add help modal state to BaseIntent (helpModal field + Show/Hide/Toggle/IsVisible methods)
+- [x] Integrate help modal toggle with `?` key in all 10 intents
+- [x] Remove all 49 TODO placeholders from intents
+- [x] Add 4 new tests for help modal in BaseIntent
+- [x] Commit: `7597add feat(intents): integrate help modal into BaseIntent and all intents`
 
 ### Phase 7-8: Optional Future Work - PENDING
 - [ ] Add stateless + bubbleo dependencies
@@ -165,6 +167,7 @@ Note: `metadata_editor_intent.go` does not need migration - it's a form-based ed
 ## Git Log (Commits Made)
 
 ```
+7597add feat(intents): integrate help modal into BaseIntent and all intents
 b90a4cd feat(intents): migrate ExportArtifact to ListNavigationHandler
 5cf2ded feat(intents): migrate ConfigureSystem to ListNavigationHandler
 988375a feat(intents): migrate BulkOperations to ListNavigationHandler
@@ -190,13 +193,16 @@ cb9c11a docs(docs): add Task 38 navigation standardization plan
 - [x] All 2,000+ tests pass
 - [x] No race conditions
 
-### Phases 4-5 (PENDING)
-- [ ] Selection preserved when navigating back
-- [ ] All 7 additional intents use `ListNavigationHandler`
-- [ ] Documentation updated
+### Phase 5 (COMPLETED)
+- [x] All intents with list navigation use `ListNavigationHandler` (6 total)
+- [x] Documentation updated in task file
 
-### Phase 6 (PENDING)
-- [ ] `?` shows help modal on all screens (integrated with BaseIntent)
+### Phase 6 (COMPLETED)
+- [x] `?` shows help modal on all screens (integrated with BaseIntent)
+- [x] All 10 intents call ToggleHelp() on '?' key
+
+### Phase 4 (DEFERRED)
+- [ ] Selection preserved when navigating back (requires router architectural changes)
 
 ---
 
@@ -215,4 +221,4 @@ Each phase is independently revertible via git revert.
 ---
 
 **Last Updated**: 2026-01-10
-**Status**: Phases 1-3, 5 COMPLETED, Phases 4, 6 PENDING
+**Status**: Phases 1-3, 5-6 COMPLETED, Phase 4 DEFERRED (low priority)
