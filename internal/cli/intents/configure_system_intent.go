@@ -49,6 +49,14 @@ func (c *ConfigureSystemIntent) Update(msg tea.Msg) tea.Cmd {
 	if theme := c.Theme(); theme != nil {
 		c.model.SetTheme(theme)
 	}
+
+	// Handle help modal toggle at intent level before delegating to model
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if HandleGlobalKeys(keyMsg) == KeyHelp {
+			c.ToggleHelp()
+			return nil
+		}
+	}
 	return c.model.Update(msg)
 }
 
@@ -190,14 +198,14 @@ func (c *ConfigureSystemIntent) GetResult() *ConfigureSystemResult {
 	return c.model.result
 }
 
-// SetSelectedIndex sets the selected index (for testing)
+// SetSelectedIndex sets the selected index with clamping (for testing)
 func (c *ConfigureSystemIntent) SetSelectedIndex(index int) {
-	c.model.selectedIndex = index
+	c.model.SetSelectedIndex(index)
 }
 
 // GetSelectedIndex returns the selected index (for testing)
 func (c *ConfigureSystemIntent) GetSelectedIndex() int {
-	return c.model.selectedIndex
+	return c.model.GetSelectedIndex()
 }
 
 // SetState sets the state (for testing)
@@ -213,4 +221,14 @@ func (c *ConfigureSystemIntent) SetDomain(domain ConfigurationDomain) {
 // IsActive returns whether the intent is active
 func (c *ConfigureSystemIntent) IsActive() bool {
 	return c.model.active
+}
+
+// GetDomainCount returns the number of domains (for testing)
+func (c *ConfigureSystemIntent) GetDomainCount() int {
+	return c.model.GetTotalItems()
+}
+
+// GetDomainPageSize returns the domain list page size (for testing)
+func (c *ConfigureSystemIntent) GetDomainPageSize() int {
+	return c.model.GetPageSize()
 }

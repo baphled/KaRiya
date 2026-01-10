@@ -29,18 +29,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
-		It("should cancel intent when 'm' is pressed", func() {
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
-		})
 	})
 
 	Describe("SelectFormat State", func() {
@@ -58,19 +46,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			Expect(view).To(ContainSubstring("Select Artifact Type"))
 			result := exportModel.Result()
 			Expect(result).To(BeNil())
-		})
-
-		It("should cancel intent when 'm' is pressed", func() {
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
 		})
 	})
 
@@ -91,19 +66,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			result := exportModel.Result()
 			Expect(result).To(BeNil())
 		})
-
-		It("should cancel intent when 'm' is pressed", func() {
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
-		})
 	})
 
 	Describe("Configure State", func() {
@@ -123,19 +85,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			Expect(view).To(ContainSubstring("Select Export Destination"))
 			result := exportModel.Result()
 			Expect(result).To(BeNil())
-		})
-
-		It("should cancel intent when 'm' is pressed", func() {
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
 		})
 	})
 
@@ -158,19 +107,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			result := exportModel.Result()
 			Expect(result).To(BeNil())
 		})
-
-		It("should cancel intent when 'm' is pressed", func() {
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
-		})
 	})
 
 	Describe("Confirm State", func() {
@@ -192,19 +128,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			Expect(view).To(ContainSubstring("Preview Export"))
 			result := exportModel.Result()
 			Expect(result).To(BeNil())
-		})
-
-		It("should cancel intent when 'm' is pressed", func() {
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
 		})
 	})
 
@@ -230,20 +153,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			// Should not cancel - no result set
 			result := exportModel.Result()
 			Expect(result).To(BeNil())
-		})
-
-		It("should cancel intent immediately when 'm' is pressed", func() {
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show both escape and 'm' options in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("Esc: Let export complete in background"))
-			Expect(view).To(ContainSubstring("m: Cancel and return to menu"))
 		})
 	})
 
@@ -271,21 +180,6 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			exportModel.Update(intents.ExportCompleteMsg{Result: result})
 		})
 
-		It("should close intent when 'm' is pressed", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("Export Complete"))
-
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			result := exportModel.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Completed))
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
-		})
 	})
 
 	Describe("Failed State", func() {
@@ -309,19 +203,5 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			})
 		})
 
-		It("should close intent when 'm' is pressed", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("Export Failed"))
-
-			exportModel.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			// In Failed state, model becomes inactive
-			// Result may or may not be set depending on implementation
-		})
-
-		It("should show 'm' key in footer", func() {
-			view := exportModel.View()
-			Expect(view).To(ContainSubstring("m: Main menu"))
-		})
 	})
 })

@@ -302,13 +302,15 @@ func (m *FactManagementModel) GetPageSize() int {
 func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Try navigation handler first
-		if m.navHandler.HandleKey(msg.String()) {
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			m.ToggleHelp()
 			return nil
-		}
-
-		switch msg.String() {
-		case "q", "ctrl+c":
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
 			m.data.CurrentState = FactCompletedState
 			m.result = &IntentResult[*FactManagementResult]{
 				Status: Cancelled,
@@ -318,6 +320,14 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 				},
 			}
 			return nil
+		}
+
+		// Try navigation handler
+		if m.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
+		switch msg.String() {
 
 		case "enter", " ":
 			if m.data.SelectedFact != nil {
@@ -370,11 +380,21 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 func (m *FactManagementModel) handleViewState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c", "esc":
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			m.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to list state
 			m.data.CurrentState = FactListState
 			m.data.SelectedFact = nil
+			return nil
+		}
 
+		switch msg.String() {
 		case "e":
 			if m.data.SelectedFact != nil {
 				m.data.StartEditFact(m.data.SelectedFact)
@@ -471,9 +491,17 @@ func (m *FactManagementModel) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
 func (m *FactManagementModel) handleResultsState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc":
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			m.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to list state
 			m.data.CurrentState = FactListState
+			return nil
 		}
 	}
 	return nil

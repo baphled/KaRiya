@@ -73,9 +73,10 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit application on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 
@@ -212,11 +213,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should cancel on q key from events view", func() {
+		It("should quit application on q key from events view", func() {
 			intent.state.currentState = BurstStateDetailEvents
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should handle no burst selected error when loading events", func() {
@@ -331,11 +333,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should cancel on q key from facts view", func() {
+		It("should quit application on q key from facts view", func() {
 			intent.state.currentState = BurstStateDetailFacts
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should handle no burst selected error when loading facts", func() {
@@ -614,11 +617,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(view).To(ContainSubstring("No burst selected"))
 		})
 
-		It("should cancel on 'q' key from delete confirm", func() {
+		It("should quit application on 'q' key from delete confirm", func() {
 			intent.state.currentState = BurstStateDeleteConfirm
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should show warning styling in delete confirm view", func() {
@@ -908,11 +912,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.confirmError).To(BeNil())
 		})
 
-		It("should cancel from extracting state on 'q' key", func() {
+		It("should quit application from extracting state on 'q' key", func() {
 			intent.state.currentState = BurstStateExtractingFacts
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now returns tea.Quit to quit the application
+			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should return to detail view on any key after extraction completes", func() {

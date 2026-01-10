@@ -75,11 +75,6 @@ var _ = Describe("E2E ExportArtifact Workflow", func() {
 			env.Cancel()
 			env.AssertViewContains("Capture Event")
 		})
-
-		It("should cancel and return to menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
-		})
 	})
 
 	Describe("Format Selection State", func() {
@@ -112,11 +107,6 @@ var _ = Describe("E2E ExportArtifact Workflow", func() {
 			env.Confirm()
 			env.AssertViewContainsAny("Destination", "file", "clipboard", "File", "Clipboard")
 		})
-
-		It("should cancel and return to menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
-		})
 	})
 
 	Describe("Destination Selection State", func() {
@@ -138,11 +128,6 @@ var _ = Describe("E2E ExportArtifact Workflow", func() {
 		It("should go back to format selection when pressing Escape", func() {
 			env.Cancel()
 			env.AssertViewContainsAny("Format", "JSON", "CSV", "json", "csv")
-		})
-
-		It("should cancel and return to menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
 		})
 	})
 
@@ -174,14 +159,6 @@ var _ = Describe("E2E ExportArtifact Workflow", func() {
 			env.Confirm() // Go to destination selection
 			env.Cancel()  // Go back to format
 			env.AssertViewContainsAny("Format", "JSON", "CSV", "json", "csv")
-		})
-
-		It("should cancel completely with 'm' from destination", func() {
-			env.SelectIntentByName("export_artifact")
-			env.Confirm()         // Type
-			env.Confirm()         // Format
-			env.PressKeyRune('m') // Cancel to main menu
-			env.AssertViewContains("Capture Event")
 		})
 	})
 

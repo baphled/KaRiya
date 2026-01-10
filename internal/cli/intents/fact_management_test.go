@@ -176,12 +176,10 @@ var _ = Describe("FactManagement Intent", func() {
 			Expect(result).To(BeNil())
 		})
 
-		It("should return result when intent is cancelled", func() {
-			// Simulate cancelling the intent by pressing 'q'
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
-			result := model.Result()
-			Expect(result).NotTo(BeNil())
-			Expect(result.Status).To(Equal(Cancelled))
+		It("should quit application on 'q' key", func() {
+			// q now returns tea.Quit to quit the application
+			cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
+			Expect(cmd).ToNot(BeNil())
 		})
 	})
 })

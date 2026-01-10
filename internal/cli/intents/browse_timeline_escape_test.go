@@ -65,20 +65,17 @@ var _ = Describe("BrowseTimeline - Escape Key Behavior", func() {
 			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
-		It("should cancel intent when 'm' is pressed", func() {
-			browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
+		// Note: 'h' key is vim-style left navigation, not home
+		// Going home is done by pressing Esc (KeyBack) from root state
 
+		It("should return tea.Quit command when 'q' is pressed", func() {
+			cmd := browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+
+			// q should return tea.Quit, not cancel the intent
+			Expect(cmd).ToNot(BeNil())
+			// The intent result should be nil (not cancelled, app is quitting)
 			result := browseIntent.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should cancel intent when 'q' is pressed", func() {
-			browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-
-			result := browseIntent.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
+			Expect(result).To(BeNil())
 		})
 	})
 
@@ -109,32 +106,25 @@ var _ = Describe("BrowseTimeline - Escape Key Behavior", func() {
 			Expect(result).To(BeNil())
 		})
 
-		It("should cancel intent when 'm' is pressed", func() {
-			// Verify we're in event detail
-			view := browseIntent.View()
-			Expect(view).To(ContainSubstring("Event Details"))
+		// Note: 'h' key is vim-style left navigation, not home
+		// Going home from detail is done by pressing Esc twice (back to timeline, then to main menu)
 
-			// Press 'm'
-			browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
+		It("should return tea.Quit command when 'q' is pressed", func() {
+			cmd := browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
+			// q should return tea.Quit, not cancel the intent
+			Expect(cmd).ToNot(BeNil())
+			// The intent result should be nil (not cancelled, app is quitting)
 			result := browseIntent.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
+			Expect(result).To(BeNil())
 		})
 
-		It("should cancel intent when 'q' is pressed", func() {
-			browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-
-			result := browseIntent.Result()
-			Expect(result).ToNot(BeNil())
-			Expect(result.Status).To(Equal(intents.Cancelled))
-		})
-
-		It("should show updated footer with 'm' option in event detail view", func() {
+		It("should render event detail view correctly", func() {
 			// Footer is now rendered by StandardView, not by View() method
-			// This test verified footer text which is no longer part of View() output
+			// This test verifies the view renders correctly
 			view := browseIntent.View()
-			Expect(view).NotTo(BeEmpty()) // Just verify view renders
+			Expect(view).NotTo(BeEmpty()) // Verify view renders
+			Expect(view).To(ContainSubstring("Event Details"))
 		})
 	})
 })

@@ -74,14 +74,11 @@ var _ = Describe("E2E CaptureEvent Workflow", func() {
 			env.AssertViewNotContains("Select Capture Strategy")
 		})
 
-		It("should cancel intent when pressing 'q' at strategy selection", func() {
+		It("should quit application when pressing 'q' at strategy selection", func() {
+			// Note: q now quits the entire app, not just cancel to main menu
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
-		})
-
-		It("should cancel intent when pressing 'm' at strategy selection", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 	})
 
@@ -144,12 +141,6 @@ var _ = Describe("E2E CaptureEvent Workflow", func() {
 			// Verify we're no longer in the form state
 			env.AssertViewNotContains("Enter Details")
 		})
-
-		It("should return to main menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
-			env.AssertViewNotContains("Enter Details")
-		})
 	})
 
 	Describe("Cancel at Each State", func() {
@@ -176,17 +167,12 @@ var _ = Describe("E2E CaptureEvent Workflow", func() {
 			env.AssertViewNotContains("Enter Details")
 		})
 
-		It("should cancel completely with 'm' from form", func() {
+		It("should quit application with 'q' from strategy selection", func() {
 			env.SelectIntentByName("capture_event")
-			env.Confirm()         // Select Quick strategy
-			env.PressKeyRune('m') // Return to main menu
-			env.AssertViewContains("Capture Event")
-		})
-
-		It("should cancel completely with 'q' from strategy selection", func() {
-			env.SelectIntentByName("capture_event")
+			// Note: q now quits the entire app
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 	})
 

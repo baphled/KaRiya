@@ -135,7 +135,7 @@ func GetGroupedHelp() string {
 		"Actions":    {KeySelect, KeyToggle, KeyEdit, KeyDelete},
 		"Modes":      {KeyCapture, KeyList, KeyMetadata, KeyPending, KeyFacts, KeyGenerate, KeyCV},
 		"Tools":      {KeyFilter, KeySort, KeySearch, KeyBulk},
-		"Global":     {KeyHelp, KeyHome, KeyQuit, KeyBack},
+		"Global":     {KeyHelp, KeyQuit, KeyBack},
 	}
 
 	var result strings.Builder

@@ -28,13 +28,6 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 			Expect(model.result.Success).To(BeFalse())
 		})
 
-		It("should cancel intent when 'm' is pressed", func() {
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(model.active).To(BeFalse())
-			Expect(model.result).NotTo(BeNil())
-			Expect(model.result.Success).To(BeFalse())
-		})
 	})
 
 	Describe("EditSettings State", func() {
@@ -53,14 +46,6 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 
 			Expect(model.state).To(Equal(ConfigStateSelectDomain))
 			Expect(model.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(model.active).To(BeFalse())
-			Expect(model.result).NotTo(BeNil())
-			Expect(model.result.Success).To(BeFalse())
 		})
 	})
 
@@ -81,14 +66,6 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 			Expect(model.state).To(Equal(ConfigStateEditSettings))
 			Expect(model.active).To(BeTrue())
 		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(model.active).To(BeFalse())
-			Expect(model.result).NotTo(BeNil())
-			Expect(model.result.Success).To(BeFalse())
-		})
 	})
 
 	Describe("Confirm State", func() {
@@ -107,14 +84,6 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 
 			Expect(model.state).To(Equal(ConfigStateReviewChanges))
 			Expect(model.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(model.active).To(BeFalse())
-			Expect(model.result).NotTo(BeNil())
-			Expect(model.result.Success).To(BeFalse())
 		})
 	})
 
@@ -135,14 +104,6 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 			Expect(model.state).To(Equal(ConfigStateReviewChanges))
 			Expect(model.active).To(BeTrue())
 		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(model.active).To(BeFalse())
-			Expect(model.result).NotTo(BeNil())
-			Expect(model.result.Success).To(BeFalse())
-		})
 	})
 
 	Describe("Complete State", func() {
@@ -159,12 +120,6 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 
 			Expect(model.active).To(BeFalse())
 		})
-
-		It("should deactivate when 'm' is pressed", func() {
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(model.active).To(BeFalse())
-		})
 	})
 
 	Describe("Failed State", func() {
@@ -178,12 +133,6 @@ var _ = Describe("ConfigureSystem - Escape Key Behavior", func() {
 
 		It("should deactivate when esc is pressed", func() {
 			model.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-			Expect(model.active).To(BeFalse())
-		})
-
-		It("should deactivate when 'm' is pressed", func() {
-			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
 
 			Expect(model.active).To(BeFalse())
 		})

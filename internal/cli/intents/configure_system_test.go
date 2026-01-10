@@ -507,4 +507,68 @@ var _ = Describe("ConfigureSystem Intent", func() {
 			Expect(intent.Result).NotTo(BeNil())
 		})
 	})
+
+	Describe("ListNavigator Interface - Domain Selection", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewConfigureSystemIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		Describe("GetDomainCount", func() {
+			It("should return the number of domains", func() {
+				Expect(intent.GetDomainCount()).To(Equal(4))
+			})
+		})
+
+		Describe("GetSelectedIndex / SetSelectedIndex", func() {
+			It("should get and set selected index", func() {
+				intent.SetSelectedIndex(2)
+				Expect(intent.GetSelectedIndex()).To(Equal(2))
+			})
+
+			It("should clamp negative index to 0", func() {
+				intent.SetSelectedIndex(-1)
+				Expect(intent.GetSelectedIndex()).To(Equal(0))
+			})
+
+			It("should clamp index above max to last item", func() {
+				intent.SetSelectedIndex(100)
+				Expect(intent.GetSelectedIndex()).To(Equal(3))
+			})
+		})
+
+		Describe("GetDomainPageSize", func() {
+			It("should return a reasonable page size", func() {
+				Expect(intent.GetDomainPageSize()).To(BeNumerically(">", 0))
+			})
+		})
+
+		Describe("Navigation with ListNavigationHandler", func() {
+			It("should support page down navigation (ctrl+d)", func() {
+				// With 4 domains and page size >= 4, page down should go to last item
+				intent.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
+				Expect(intent.GetSelectedIndex()).To(Equal(3))
+			})
+
+			It("should support page up navigation (ctrl+u)", func() {
+				intent.SetSelectedIndex(3)
+				intent.Update(tea.KeyMsg{Type: tea.KeyCtrlU})
+				Expect(intent.GetSelectedIndex()).To(Equal(0))
+			})
+
+			It("should support g for go to first", func() {
+				intent.SetSelectedIndex(3)
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+				Expect(intent.GetSelectedIndex()).To(Equal(0))
+			})
+
+			It("should support G for go to last", func() {
+				intent.SetSelectedIndex(0)
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+				Expect(intent.GetSelectedIndex()).To(Equal(3))
+			})
+		})
+	})
 })

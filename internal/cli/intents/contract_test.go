@@ -440,3 +440,70 @@ func TestBaseIntent_ThemeStyles(t *testing.T) {
 		t.Error("Expected styles to be non-nil")
 	}
 }
+
+// Help Modal Tests
+
+func TestBaseIntent_HelpModalInitialization(t *testing.T) {
+	base := intents.NewBaseIntent()
+
+	// Help modal should be initialized and not visible
+	if base.IsHelpVisible() {
+		t.Error("Expected help modal to be hidden initially")
+	}
+}
+
+func TestBaseIntent_HelpModalToggle(t *testing.T) {
+	base := intents.NewBaseIntent()
+
+	// Initially hidden
+	if base.IsHelpVisible() {
+		t.Error("Expected help modal to be hidden initially")
+	}
+
+	// Toggle to show
+	base.ToggleHelp()
+	if !base.IsHelpVisible() {
+		t.Error("Expected help modal to be visible after toggle")
+	}
+
+	// Toggle to hide
+	base.ToggleHelp()
+	if base.IsHelpVisible() {
+		t.Error("Expected help modal to be hidden after second toggle")
+	}
+}
+
+func TestBaseIntent_HelpModalShowHide(t *testing.T) {
+	base := intents.NewBaseIntent()
+
+	// Show help
+	base.ShowHelp()
+	if !base.IsHelpVisible() {
+		t.Error("Expected help modal to be visible after ShowHelp")
+	}
+
+	// Hide help
+	base.HideHelp()
+	if base.IsHelpVisible() {
+		t.Error("Expected help modal to be hidden after HideHelp")
+	}
+}
+
+func TestBaseIntent_HelpModalSize(t *testing.T) {
+	base := intents.NewBaseIntent()
+
+	// Set terminal info
+	info := terminal.NewInfo()
+	info.Width = 120
+	info.Height = 40
+	info.IsValid = true
+	base.UpdateTerminalInfo(info)
+
+	// Help modal should use terminal dimensions
+	base.ShowHelp()
+
+	// The help modal should be created with appropriate size
+	if !base.IsHelpVisible() {
+		t.Error("Expected help modal to be visible")
+	}
+}

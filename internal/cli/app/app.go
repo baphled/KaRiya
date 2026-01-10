@@ -143,8 +143,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.state == StateMenu {
 				return m, tea.Quit
 			}
-		case "?", "h":
-			// Toggle help screen
+		case "?":
+			// Toggle help screen (only ? key, not 'h' which is vim-style left navigation)
 			m.showingHelp = !m.showingHelp
 			return m, nil
 		case "home", "esc", "escape":
@@ -257,7 +257,7 @@ func (m *Model) renderHelpScreen() string {
 	// Global shortcuts
 	lines = append(lines, headerStyle.Render("  Global Shortcuts"))
 	lines = append(lines, borderStyle.Render("  ──────────────────────────────────────────────────────────"))
-	lines = append(lines, keyStyle.Render("  ?/h")+"       "+descStyle.Render("Toggle this help screen"))
+	lines = append(lines, keyStyle.Render("  ?")+"         "+descStyle.Render("Toggle this help screen"))
 	lines = append(lines, keyStyle.Render("  q")+"         "+descStyle.Render("Quit application (from menu)"))
 	lines = append(lines, keyStyle.Render("  Ctrl+C")+"    "+descStyle.Render("Force quit application"))
 	lines = append(lines, keyStyle.Render("  Esc")+"       "+descStyle.Render("Go back / Cancel / Return to menu"))
@@ -293,7 +293,7 @@ func (m *Model) renderHelpScreen() string {
 
 	// Footer
 	lines = append(lines, borderStyle.Render("  ════════════════════════════════════════════════════════"))
-	lines = append(lines, descStyle.Render("  Press ")+keyStyle.Render("?")+" "+descStyle.Render("or")+" "+keyStyle.Render("h")+" "+descStyle.Render("to close this help"))
+	lines = append(lines, descStyle.Render("  Press ")+keyStyle.Render("?")+" "+descStyle.Render("or")+" "+keyStyle.Render("Esc")+" "+descStyle.Render("to close this help"))
 	lines = append(lines, "")
 
 	helpContent := lipgloss.JoinVertical(lipgloss.Left, lines...)

@@ -58,13 +58,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			Expect(intent.result).NotTo(BeNil())
 		})
 
-		It("should cancel intent when 'm' is pressed", func() {
-			intent.state.currentState = GenerateCVStateSelectProfile
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-		})
 	})
 
 	Describe("SelectAudience State", func() {
@@ -79,13 +72,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectProfile))
 			Expect(intent.active).To(BeTrue())
 		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-		})
 	})
 
 	Describe("Generating State", func() {
@@ -99,13 +85,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
 			Expect(intent.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
 		})
 	})
 
@@ -124,13 +103,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
 			Expect(intent.active).To(BeTrue())
 		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-		})
 	})
 
 	Describe("Review State", func() {
@@ -144,13 +116,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 
 			Expect(intent.state.currentState).To(Equal(GenerateCVStatePreview))
 			Expect(intent.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
 		})
 	})
 
@@ -167,13 +132,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateReview))
 			Expect(intent.active).To(BeTrue())
 		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-		})
 	})
 
 	Describe("ExportSelectFormat State", func() {
@@ -186,13 +144,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateConfirm))
 			Expect(intent.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
 		})
 	})
 
@@ -208,13 +159,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportSelectFormat))
 			Expect(intent.active).To(BeTrue())
 		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-		})
 	})
 
 	Describe("Exporting State", func() {
@@ -228,13 +172,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportSelectLocation))
 			Expect(intent.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
 		})
 	})
 
@@ -254,13 +191,6 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportSelectLocation))
 			Expect(intent.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
 		})
 	})
 

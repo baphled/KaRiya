@@ -76,10 +76,6 @@ var _ = Describe("E2E ConfigureSystem Workflow", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should cancel and return to menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
-		})
 	})
 
 	Describe("Edit Settings State", func() {
@@ -107,11 +103,6 @@ var _ = Describe("E2E ConfigureSystem Workflow", func() {
 			env.Cancel()
 			env.AssertViewContainsAny("Domain", "System", "Profile", "Export", "UI")
 		})
-
-		It("should cancel and return to menu when pressing 'm'", func() {
-			env.PressKeyRune('m')
-			env.AssertViewContains("Capture Event")
-		})
 	})
 
 	Describe("Cancel at Each State", func() {
@@ -134,13 +125,6 @@ var _ = Describe("E2E ConfigureSystem Workflow", func() {
 			env.Confirm() // Go to edit settings
 			env.Cancel()  // Go back to domain
 			env.AssertViewContainsAny("Domain", "System", "Profile", "Export", "UI")
-		})
-
-		It("should cancel completely with 'm' from edit settings", func() {
-			env.SelectIntentByName("configure_system")
-			env.Confirm()         // Go to edit settings
-			env.PressKeyRune('m') // Cancel to main menu
-			env.AssertViewContains("Capture Event")
 		})
 	})
 

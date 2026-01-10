@@ -295,13 +295,10 @@ var _ = Describe("BulkOperationsIntent", func() {
 		})
 
 		Describe("BulkSelectOpState", func() {
-			It("should handle quit key", func() {
+			It("should handle quit key by returning tea.Quit", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+				// q now returns tea.Quit to quit the application
 				Expect(cmd).ToNot(BeNil())
-				Expect(data.CurrentState).To(Equal(intents.BulkCompleteState))
-				result := model.Result()
-				Expect(result).ToNot(BeNil())
-				Expect(result.Status).To(Equal(intents.Cancelled))
 			})
 
 			It("should handle escape key", func() {
@@ -318,11 +315,11 @@ var _ = Describe("BulkOperationsIntent", func() {
 			})
 
 			It("should navigate with arrow keys", func() {
-				// Move down to select first item
-				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+				// Start with first item selected (using number key to initialize)
+				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})
 				Expect(data.SelectedOp).To(Equal("delete"))
 
-				// Move down again
+				// Move down
 				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 				Expect(data.SelectedOp).To(Equal("tag"))
 
@@ -368,11 +365,10 @@ var _ = Describe("BulkOperationsIntent", func() {
 				Expect(data.CurrentState).To(Equal(intents.BulkSelectOpState))
 			})
 
-			It("should cancel on quit", func() {
+			It("should quit application on 'q' key", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+				// q now returns tea.Quit to quit the application
 				Expect(cmd).ToNot(BeNil())
-				result := model.Result()
-				Expect(result.Status).To(Equal(intents.Cancelled))
 			})
 		})
 
@@ -540,6 +536,106 @@ var _ = Describe("BulkOperationsIntent", func() {
 		})
 	})
 
+	Describe("ListNavigator Interface", func() {
+		BeforeEach(func() {
+			model.Init()
+		})
+
+		Describe("GetTotalItems", func() {
+			It("should return the number of available operations", func() {
+				Expect(model.GetTotalItems()).To(Equal(4))
+			})
+
+			It("should return 0 when no operations available", func() {
+				data.AvailableOps = []string{}
+				Expect(model.GetTotalItems()).To(Equal(0))
+			})
+		})
+
+		Describe("GetSelectedIndex", func() {
+			It("should return 0 when no selection", func() {
+				Expect(model.GetSelectedIndex()).To(Equal(0))
+			})
+
+			It("should return correct index for selected operation", func() {
+				data.SelectedOp = "tag" // index 1
+				Expect(model.GetSelectedIndex()).To(Equal(1))
+			})
+
+			It("should return correct index for last operation", func() {
+				data.SelectedOp = "export" // index 3
+				Expect(model.GetSelectedIndex()).To(Equal(3))
+			})
+		})
+
+		Describe("SetSelectedIndex", func() {
+			It("should select operation at given index", func() {
+				model.SetSelectedIndex(2)
+				Expect(data.SelectedOp).To(Equal("archive"))
+			})
+
+			It("should clamp negative index to 0", func() {
+				model.SetSelectedIndex(-1)
+				Expect(data.SelectedOp).To(Equal("delete"))
+			})
+
+			It("should clamp index above max to last item", func() {
+				model.SetSelectedIndex(100)
+				Expect(data.SelectedOp).To(Equal("export"))
+			})
+
+			It("should handle empty list gracefully", func() {
+				data.AvailableOps = []string{}
+				model.SetSelectedIndex(0)
+				Expect(data.SelectedOp).To(Equal(""))
+			})
+		})
+
+		Describe("GetPageSize", func() {
+			It("should return a reasonable page size", func() {
+				Expect(model.GetPageSize()).To(BeNumerically(">", 0))
+			})
+		})
+
+		Describe("Navigation with ListNavigationHandler", func() {
+			It("should support page down navigation (ctrl+d)", func() {
+				// With 4 items and page size 10, page down should go to last item
+				model.Update(tea.KeyMsg{Type: tea.KeyCtrlD})
+				Expect(data.SelectedOp).To(Equal("export"))
+			})
+
+			It("should support page up navigation (ctrl+u)", func() {
+				data.SelectedOp = "export"
+				model.Update(tea.KeyMsg{Type: tea.KeyCtrlU})
+				Expect(data.SelectedOp).To(Equal("delete"))
+			})
+
+			It("should support home key (g)", func() {
+				data.SelectedOp = "export"
+				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+				Expect(data.SelectedOp).To(Equal("delete"))
+			})
+
+			It("should support end key (G)", func() {
+				data.SelectedOp = "delete"
+				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+				Expect(data.SelectedOp).To(Equal("export"))
+			})
+
+			It("should support g for go to first", func() {
+				data.SelectedOp = "export"
+				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+				Expect(data.SelectedOp).To(Equal("delete"))
+			})
+
+			It("should support G for go to last", func() {
+				data.SelectedOp = "delete"
+				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+				Expect(data.SelectedOp).To(Equal("export"))
+			})
+		})
+	})
+
 	Describe("Edge Cases", func() {
 		BeforeEach(func() {
 			model.Init()
@@ -564,9 +660,8 @@ var _ = Describe("BulkOperationsIntent", func() {
 
 		It("should handle ctrl+c like quit", func() {
 			cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			// ctrl+c now returns tea.Quit to quit the application
 			Expect(cmd).ToNot(BeNil())
-			result := model.Result()
-			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
 		It("should handle empty operation display name", func() {

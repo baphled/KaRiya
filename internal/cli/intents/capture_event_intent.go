@@ -258,18 +258,17 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			i.state.currentState = CaptureStateForm
 			return nil
 
-		case "q", "ctrl+c":
-			// User cancelled
-			i.setCancelled()
-			return nil
+		}
 
-		case "esc":
-			// User cancelled (this is the root state)
-			i.setCancelled()
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
 			return nil
-
-		case "m":
-			// Return to main menu
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
 			i.setCancelled()
 			return nil
 		}
@@ -294,26 +293,24 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 	// Check for special messages that indicate form completion or navigation
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to strategy selection
+			i.state.currentState = CaptureStateChooseStrategy
+			return nil
+		}
+
 		switch msg.String() {
 		case "ctrl+s":
 			// User pressed Ctrl+S to submit the form
 			// Trigger form submission
 			return i.state.captureForm.SubmitForm()
-
-		case "q", "ctrl+c":
-			// User cancelled
-			i.setCancelled()
-			return nil
-
-		case "esc":
-			// Go back to strategy selection
-			i.state.currentState = CaptureStateChooseStrategy
-			return nil
-
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
 		}
 
 	case models.SubmitMsg:
@@ -430,26 +427,24 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	// Normal review handling (no modal active)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to form
+			i.state.currentState = CaptureStateForm
+			return nil
+		}
+
 		switch msg.String() {
 		case "ctrl+s", "enter":
 			// Confirm review and submit
 			i.state.currentState = CaptureStateSubmit
 			return i.performSubmit()
-
-		case "q", "ctrl+c":
-			// Cancel review
-			i.setCancelled()
-			return nil
-
-		case "esc":
-			// Go back to form
-			i.state.currentState = CaptureStateForm
-			return nil
-
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
 
 		case "e":
 			// Edit metadata (modal sub-flow)
@@ -562,22 +557,20 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			// Cancel submission
-			i.setCancelled()
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
 			return nil
-
-		case "esc":
+		case KeyBack:
 			// Go back to review state (keep error visible per user preference)
 			i.state.currentState = CaptureStateReview
 			return nil
+		}
 
-		case "m":
-			// Return to main menu
-			i.setCancelled()
-			return nil
-
+		switch msg.String() {
 		case "r":
 			// Retry submission
 			return i.performSubmit()
