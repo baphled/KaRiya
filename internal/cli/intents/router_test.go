@@ -270,6 +270,7 @@ func TestDefaultIntentRouter_HandleMessage_WithResult(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 // =============================================================================
 // Theme Management Tests
 // =============================================================================
@@ -379,5 +380,72 @@ func TestDefaultIntentRouter_SetThemeManager_PropagatestoActiveIntent(t *testing
 
 	if themeAware.GetThemeManager() != newTM {
 		t.Error("expected new theme manager to be propagated to active intent")
+=======
+// MockIntentWithSelection extends MockIntent with selection state for testing
+type MockIntentWithSelection struct {
+	*MockIntent
+	selectedIndex int
+}
+
+func NewMockIntentWithSelection() *MockIntentWithSelection {
+	return &MockIntentWithSelection{
+		MockIntent:    NewMockIntent(),
+		selectedIndex: 0,
+	}
+}
+
+func (m *MockIntentWithSelection) GetSelectedIndex() int {
+	return m.selectedIndex
+}
+
+func (m *MockIntentWithSelection) SetSelectedIndex(idx int) {
+	m.selectedIndex = idx
+}
+
+func TestDefaultIntentRouter_SelectionPreservation(t *testing.T) {
+	router := NewDefaultIntentRouter()
+
+	// Create intent1 with selection capability
+	intent1 := NewMockIntentWithSelection()
+	factory1 := func() Intent { return intent1 }
+
+	// Create intent2
+	intent2 := NewMockIntent()
+	factory2 := func() Intent { return intent2 }
+
+	_ = router.RegisterIntent("intent1", factory1) // nolint: errcheck
+	_ = router.RegisterIntent("intent2", factory2) // nolint: errcheck
+
+	// Activate intent1
+	_, _ = router.ActivateIntent("intent1", nil) // nolint: errcheck
+
+	// Get the active intent and set selection to index 5
+	active1 := router.GetActiveIntent().(*MockIntentWithSelection)
+	active1.SetSelectedIndex(5)
+
+	// Verify selection is set
+	if active1.GetSelectedIndex() != 5 {
+		t.Errorf("expected selected index 5, got %d", active1.GetSelectedIndex())
+	}
+
+	// Navigate to intent2 (intent1 goes to history)
+	_, _ = router.ActivateIntent("intent2", nil) // nolint: errcheck
+
+	// Go back to intent1
+	_, err := router.Back()
+	if err != nil {
+		t.Errorf("expected no error when going back, got %v", err)
+	}
+
+	// Verify intent1 is active again with selection preserved
+	restoredIntent := router.GetActiveIntent().(*MockIntentWithSelection)
+	if restoredIntent.GetSelectedIndex() != 5 {
+		t.Errorf("expected selection to be preserved at index 5, got %d", restoredIntent.GetSelectedIndex())
+	}
+
+	// Verify it's the same instance
+	if restoredIntent != intent1 {
+		t.Errorf("expected the same intent instance to be restored")
+>>>>>>> 795eee1 (test(intents): add selection preservation tests for Phase 4 completion)
 	}
 }
