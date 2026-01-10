@@ -270,7 +270,6 @@ func TestDefaultIntentRouter_HandleMessage_WithResult(t *testing.T) {
 	}
 }
 
-<<<<<<< HEAD
 // =============================================================================
 // Theme Management Tests
 // =============================================================================
@@ -380,7 +379,9 @@ func TestDefaultIntentRouter_SetThemeManager_PropagatestoActiveIntent(t *testing
 
 	if themeAware.GetThemeManager() != newTM {
 		t.Error("expected new theme manager to be propagated to active intent")
-=======
+	}
+}
+
 // MockIntentWithSelection extends MockIntent with selection state for testing
 type MockIntentWithSelection struct {
 	*MockIntent
@@ -446,6 +447,5 @@ func TestDefaultIntentRouter_SelectionPreservation(t *testing.T) {
 	// Verify it's the same instance
 	if restoredIntent != intent1 {
 		t.Errorf("expected the same intent instance to be restored")
->>>>>>> 795eee1 (test(intents): add selection preservation tests for Phase 4 completion)
 	}
 }

@@ -128,12 +128,18 @@ From `docs/KEYBOARD_REFERENCE.md`:
 - [x] Removed all `case "m":` handlers (m key no longer mapped)
 - [x] All 2,000+ tests passing
 
-### Phase 4: Selection Preservation - PENDING
-**Time**: 1-2 days | **Risk**: Medium | **Status**: NOT STARTED
+### Phase 4: Selection Preservation - COMPLETED
+**Time**: 1-2 days | **Risk**: Medium | **Status**: COMPLETED
 
-- [ ] Modify: `internal/cli/intents/contract.go` (add selection state)
-- [ ] Modify: `internal/cli/intents/result.go` (add selection metadata)
-- [ ] Modify: All list-based intents
+Investigation revealed selection preservation **already works by design**:
+- Router stores actual intent objects (not copies) in history
+- When Back() is called, the same instance with all state intact is restored
+- Selection state (`selectedIndex`) is automatically preserved
+
+Tests added to verify:
+- [x] `router_test.go`: MockIntentWithSelection + TestDefaultIntentRouter_SelectionPreservation
+- [x] `browse_timeline_test.go`: Selection Preservation describe block (2 tests)
+- [x] Commit: `795eee1 test(intents): add selection preservation tests for Phase 4 completion`
 
 ### Phase 5: ListNavigationHandler Adoption - COMPLETED
 **Time**: 1-2 days | **Risk**: Low | **Status**: COMPLETED
@@ -167,6 +173,7 @@ Note: `metadata_editor_intent.go` does not need migration - it's a form-based ed
 ## Git Log (Commits Made)
 
 ```
+795eee1 test(intents): add selection preservation tests for Phase 4 completion
 7597add feat(intents): integrate help modal into BaseIntent and all intents
 b90a4cd feat(intents): migrate ExportArtifact to ListNavigationHandler
 5cf2ded feat(intents): migrate ConfigureSystem to ListNavigationHandler
@@ -193,6 +200,10 @@ cb9c11a docs(docs): add Task 38 navigation standardization plan
 - [x] All 2,000+ tests pass
 - [x] No race conditions
 
+### Phase 4 (COMPLETED)
+- [x] Selection preserved when navigating back (verified - works by design)
+- [x] Tests added to confirm selection preservation
+
 ### Phase 5 (COMPLETED)
 - [x] All intents with list navigation use `ListNavigationHandler` (6 total)
 - [x] Documentation updated in task file
@@ -200,9 +211,6 @@ cb9c11a docs(docs): add Task 38 navigation standardization plan
 ### Phase 6 (COMPLETED)
 - [x] `?` shows help modal on all screens (integrated with BaseIntent)
 - [x] All 10 intents call ToggleHelp() on '?' key
-
-### Phase 4 (DEFERRED)
-- [ ] Selection preserved when navigating back (requires router architectural changes)
 
 ---
 
@@ -221,4 +229,4 @@ Each phase is independently revertible via git revert.
 ---
 
 **Last Updated**: 2026-01-10
-**Status**: Phases 1-3, 5-6 COMPLETED, Phase 4 DEFERRED (low priority)
+**Status**: ✅ ALL PHASES COMPLETE (100%)
