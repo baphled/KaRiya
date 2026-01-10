@@ -192,6 +192,25 @@ func (m *EditMetadataModal) IsComplete() bool {
 	return m.result != nil
 }
 
+// GetTitle returns the modal title for overlay rendering.
+func (m *EditMetadataModal) GetTitle() string {
+	return "Edit Event Metadata"
+}
+
+// GetContent returns just the form content without the modal container.
+// This allows parent intents to compose the modal as an overlay.
+func (m *EditMetadataModal) GetContent() string {
+	if m.result != nil && m.result.Accepted {
+		return ""
+	}
+	return m.form.View()
+}
+
+// GetFooter returns the footer instructions for the modal.
+func (m *EditMetadataModal) GetFooter() string {
+	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
+}
+
 // Private helper methods
 
 func (m *EditMetadataModal) syncModified() {
@@ -359,6 +378,25 @@ func (m *EditBurstModal) IsComplete() bool {
 	return m.result != nil
 }
 
+// GetTitle returns the modal title for overlay rendering.
+func (m *EditBurstModal) GetTitle() string {
+	return "Edit Burst"
+}
+
+// GetContent returns just the form content without the modal container.
+// This allows parent intents to compose the modal as an overlay.
+func (m *EditBurstModal) GetContent() string {
+	if m.result != nil && m.result.Accepted {
+		return ""
+	}
+	return m.form.View()
+}
+
+// GetFooter returns the footer instructions for the modal.
+func (m *EditBurstModal) GetFooter() string {
+	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
+}
+
 func (m *EditBurstModal) syncModified() {
 	m.modified = &career.Burst{
 		ID:          m.original.ID,
@@ -518,6 +556,25 @@ func (m *EditFactModal) Result() *ModalEditResult[*career.Fact] {
 // IsComplete returns true if the modal has finished.
 func (m *EditFactModal) IsComplete() bool {
 	return m.result != nil
+}
+
+// GetTitle returns the modal title for overlay rendering.
+func (m *EditFactModal) GetTitle() string {
+	return "Edit Fact"
+}
+
+// GetContent returns just the form content without the modal container.
+// This allows parent intents to compose the modal as an overlay.
+func (m *EditFactModal) GetContent() string {
+	if m.result != nil && m.result.Accepted {
+		return ""
+	}
+	return m.form.View()
+}
+
+// GetFooter returns the footer instructions for the modal.
+func (m *EditFactModal) GetFooter() string {
+	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
 }
 
 func (m *EditFactModal) syncModified() {

@@ -389,3 +389,211 @@ func (m *ModalContent) RotateMessage() string {
 	}
 	return m.Message
 }
+
+// ============================================================================
+// Modal Overlay System
+// ============================================================================
+
+const (
+	// MinOverlayWidth is the minimum width for overlay modals
+	MinOverlayWidth = 40
+	// MaxOverlayWidth is the maximum width for overlay modals
+	MaxOverlayWidth = 120
+	// DefaultOverlayWidth is the default width for overlay modals
+	DefaultOverlayWidth = 60
+)
+
+// OverlayModal represents a modal that renders as an overlay on top of dimmed content.
+// It supports configurable width, title, content, and footer.
+type OverlayModal struct {
+	Title   string
+	Content string
+	Footer  string
+	Width   int
+}
+
+// NewOverlayModal creates a new overlay modal with the given title and content.
+func NewOverlayModal(title, content string) *OverlayModal {
+	return &OverlayModal{
+		Title:   title,
+		Content: content,
+		Width:   DefaultOverlayWidth,
+	}
+}
+
+// SetWidth sets the modal width, clamping to min/max bounds.
+func (o *OverlayModal) SetWidth(width int) *OverlayModal {
+	if width < MinOverlayWidth {
+		width = MinOverlayWidth
+	}
+	if width > MaxOverlayWidth {
+		width = MaxOverlayWidth
+	}
+	o.Width = width
+	return o
+}
+
+// SetFooter sets the footer text for the modal.
+func (o *OverlayModal) SetFooter(footer string) *OverlayModal {
+	o.Footer = footer
+	return o
+}
+
+// RenderCentered renders the modal centered over the dimmed background.
+func (o *OverlayModal) RenderCentered(background string, termWidth, termHeight int) string {
+	return RenderOverlay(background, o.buildContent(), termWidth, termHeight)
+}
+
+// buildContent assembles the modal content with title, body, and footer.
+func (o *OverlayModal) buildContent() string {
+	var parts []string
+
+	// Add title with styling
+	if o.Title != "" {
+		titleStyle := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(styles.ColorTextPrimary).
+			MarginBottom(1)
+		parts = append(parts, titleStyle.Render(o.Title))
+	}
+
+	// Add content
+	if o.Content != "" {
+		parts = append(parts, o.Content)
+	}
+
+	// Add footer with muted styling
+	if o.Footer != "" {
+		footerStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorTextMuted).
+			MarginTop(1)
+		parts = append(parts, footerStyle.Render(o.Footer))
+	}
+
+	return strings.Join(parts, "\n")
+}
+
+// DimContent applies a dimmed/faded style to the content.
+// This is used to visually distinguish the background from the modal overlay.
+func DimContent(content string) string {
+	if content == "" {
+		return ""
+	}
+
+	dimStyle := lipgloss.NewStyle().Faint(true)
+	return dimStyle.Render(content)
+}
+
+// RenderOverlay renders modal content centered over a dimmed background.
+// It handles the centering calculation and compositing.
+func RenderOverlay(background, modalContent string, termWidth, termHeight int) string {
+	// Dim the background
+	dimmedBg := DimContent(background)
+
+	// Create modal box with border
+	modalStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Padding(1, 2).
+		MaxWidth(MaxOverlayWidth)
+
+	modalBox := modalStyle.Render(modalContent)
+
+	// Calculate modal dimensions
+	modalHeight := lipgloss.Height(modalBox)
+	modalWidth := lipgloss.Width(modalBox)
+
+	// Calculate center position
+	centerX := (termWidth - modalWidth) / 2
+	centerY := (termHeight - modalHeight) / 2
+
+	// Ensure non-negative positions
+	if centerX < 0 {
+		centerX = 0
+	}
+	if centerY < 0 {
+		centerY = 0
+	}
+
+	// Split background into lines
+	bgLines := strings.Split(dimmedBg, "\n")
+
+	// Ensure we have enough background lines
+	for len(bgLines) < termHeight {
+		bgLines = append(bgLines, "")
+	}
+
+	// Split modal into lines
+	modalLines := strings.Split(modalBox, "\n")
+
+	// Overlay modal onto background
+	for i, modalLine := range modalLines {
+		bgLineIdx := centerY + i
+		if bgLineIdx < 0 || bgLineIdx >= len(bgLines) {
+			continue
+		}
+
+		// Ensure background line is wide enough
+		bgLine := bgLines[bgLineIdx]
+		for lipgloss.Width(bgLine) < centerX {
+			bgLine += " "
+		}
+
+		// Build the new line: prefix + modal line + suffix
+		prefix := truncateToWidth(bgLine, centerX)
+		suffix := ""
+		afterModal := centerX + lipgloss.Width(modalLine)
+		if lipgloss.Width(bgLine) > afterModal {
+			suffix = substringFromWidth(bgLine, afterModal)
+		}
+
+		bgLines[bgLineIdx] = prefix + modalLine + suffix
+	}
+
+	return strings.Join(bgLines[:termHeight], "\n")
+}
+
+// truncateToWidth truncates a string to fit within the specified width.
+func truncateToWidth(s string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+
+	result := ""
+	currentWidth := 0
+
+	for _, r := range s {
+		charWidth := lipgloss.Width(string(r))
+		if currentWidth+charWidth > width {
+			break
+		}
+		result += string(r)
+		currentWidth += charWidth
+	}
+
+	// Pad with spaces if needed
+	for currentWidth < width {
+		result += " "
+		currentWidth++
+	}
+
+	return result
+}
+
+// substringFromWidth returns the substring starting from the specified width position.
+func substringFromWidth(s string, startWidth int) string {
+	if startWidth <= 0 {
+		return s
+	}
+
+	currentWidth := 0
+	for i, r := range s {
+		charWidth := lipgloss.Width(string(r))
+		if currentWidth >= startWidth {
+			return s[i:]
+		}
+		currentWidth += charWidth
+	}
+
+	return ""
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -157,6 +158,36 @@ func (m *FactEditorModelNew) Revert() {
 // GetError returns the current error
 func (m *FactEditorModelNew) GetError() error {
 	return m.err
+}
+
+// GetTitle returns the modal title for overlay rendering.
+func (m *FactEditorModelNew) GetTitle() string {
+	return "Fact Editor"
+}
+
+// GetContent returns just the form content without header/footer.
+// This allows parent intents to compose the modal as an overlay.
+func (m *FactEditorModelNew) GetContent() string {
+	formView := m.form.View()
+
+	// Add error if present
+	if m.err != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(styles.ColorError).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(styles.ColorError).
+			Padding(1, 2).
+			MarginTop(1)
+
+		formView += "\n\n" + errorStyle.Render(m.err.Error())
+	}
+
+	return formView
+}
+
+// GetFooter returns the footer instructions for the modal.
+func (m *FactEditorModelNew) GetFooter() string {
+	return "Enter: Confirm | Esc: Cancel | Tab: Next Field | Shift+Tab: Previous"
 }
 
 // View renders the editor UI

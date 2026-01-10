@@ -474,6 +474,59 @@ func (m *BurstSuggestionModelNew) IsDone() bool {
 	return len(m.confirmed)+len(m.rejected) == len(m.suggestions)
 }
 
+// GetTitle returns the modal title for overlay rendering.
+func (m *BurstSuggestionModelNew) GetTitle() string {
+	if m.editing {
+		return "Edit Burst Name & Description"
+	}
+	return fmt.Sprintf("Burst Suggestion %d of %d", m.currentIdx+1, len(m.suggestions))
+}
+
+// GetContent returns the view content without wrapper for overlay rendering.
+// This allows parent intents to compose the modal as an overlay.
+func (m *BurstSuggestionModelNew) GetContent() string {
+	if len(m.suggestions) == 0 {
+		return "No burst suggestions available"
+	}
+
+	if m.editing {
+		if m.editForm == nil {
+			return "Edit form not initialized"
+		}
+		return m.editForm.View()
+	}
+
+	// Return review view content
+	current := m.suggestions[m.currentIdx]
+	var parts []string
+
+	// Progress bar
+	progressBar := m.renderProgressBar()
+	parts = append(parts, progressBar)
+
+	// Confidence score
+	confidenceVis := m.renderConfidenceScore(current.ConfidenceScore)
+	parts = append(parts, confidenceVis)
+
+	// Burst details
+	burstDetails := m.renderBurstDetails(current)
+	parts = append(parts, burstDetails)
+
+	// Related events preview
+	relatedEventsView := m.renderRelatedEvents(current)
+	parts = append(parts, relatedEventsView)
+
+	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+}
+
+// GetFooter returns the footer instructions for the modal.
+func (m *BurstSuggestionModelNew) GetFooter() string {
+	if m.editing {
+		return "Tab: Navigate | Enter: Save | Esc: Cancel"
+	}
+	return "Up/Down: Navigate | y: Confirm | n: Reject | e: Edit | Esc: Back"
+}
+
 // createBurstFromSuggestion converts a BurstSuggestion into a Burst domain object
 func (m *BurstSuggestionModelNew) createBurstFromSuggestion(suggestion burstfact.BurstSuggestion) *career.Burst {
 	// Generate a name if none provided
