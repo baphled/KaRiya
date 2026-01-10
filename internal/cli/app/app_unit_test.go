@@ -117,15 +117,8 @@ var _ = Describe("App Unit Tests", func() {
 				Expect(view).NotTo(ContainSubstring("Keyboard Reference"))
 			})
 
-			It("should toggle help screen on h key", func() {
-				// Press h to show help
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("h")}
-				newModel, _ := model.Update(msg)
-				model = newModel.(*app.Model)
-
-				view := model.View()
-				Expect(view).To(ContainSubstring("Keyboard Reference"))
-			})
+			// Note: 'h' key is vim-style left navigation, not help
+			// Help is toggled only with '?' key per KEYBOARD_REFERENCE.md
 
 			It("should show navigation shortcuts in help", func() {
 				// Show help

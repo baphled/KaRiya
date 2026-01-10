@@ -77,34 +77,22 @@ var _ = Describe("KeyMaps", func() {
 			})
 		})
 
-		Describe("Home binding", func() {
-			It("should match 'h' key when in global context", func() {
-				Expect(key.Matches(keyMsg("h"), keyMap.Home)).To(BeTrue())
-			})
-
-			It("should have help text", func() {
-				help := keyMap.Home.Help()
-				Expect(help.Key).To(Equal("h"))
-				Expect(help.Desc).To(Equal("home"))
-			})
-		})
-
 		Describe("help.KeyMap interface", func() {
 			It("should implement ShortHelp", func() {
 				shortHelp := keyMap.ShortHelp()
-				Expect(shortHelp).To(HaveLen(4))
-				// Should include quit, help, back, home
+				Expect(shortHelp).To(HaveLen(3))
+				// Should include quit, help, back (no home key per KEYBOARD_REFERENCE.md)
 				keys := make([]string, len(shortHelp))
 				for i, binding := range shortHelp {
 					keys[i] = binding.Help().Key
 				}
-				Expect(keys).To(ContainElements("q/ctrl+c", "?", "esc", "h"))
+				Expect(keys).To(ContainElements("q/ctrl+c", "?", "esc"))
 			})
 
 			It("should implement FullHelp", func() {
 				fullHelp := keyMap.FullHelp()
-				Expect(fullHelp).To(HaveLen(1)) // One column of global keys
-				Expect(fullHelp[0]).To(HaveLen(4))
+				Expect(fullHelp).To(HaveLen(1))    // One column of global keys
+				Expect(fullHelp[0]).To(HaveLen(3)) // quit, help, back
 			})
 		})
 	})

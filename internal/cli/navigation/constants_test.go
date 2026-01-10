@@ -59,10 +59,6 @@ var _ = Describe("Navigation Constants", func() {
 			Expect(KeyHelp).To(Equal(NavigationKey("?")))
 		})
 
-		It("should define KeyHome as h", func() {
-			Expect(KeyHome).To(Equal(NavigationKey("h")))
-		})
-
 		It("should define KeyQuit as q", func() {
 			Expect(KeyQuit).To(Equal(NavigationKey("q")))
 		})
@@ -85,9 +81,9 @@ var _ = Describe("Navigation Constants", func() {
 	})
 
 	Describe("AllNavigationKeys", func() {
-		It("should return all 23 navigation keys", func() {
+		It("should return all 22 navigation keys", func() {
 			keys := AllNavigationKeys()
-			Expect(keys).To(HaveLen(23))
+			Expect(keys).To(HaveLen(22))
 		})
 
 		It("should include all primary navigation keys", func() {
@@ -109,7 +105,6 @@ var _ = Describe("Navigation Constants", func() {
 			Expect(keys).To(ContainElement(KeyEdit))
 			Expect(keys).To(ContainElement(KeyDelete))
 			Expect(keys).To(ContainElement(KeyHelp))
-			Expect(keys).To(ContainElement(KeyHome))
 			Expect(keys).To(ContainElement(KeyQuit))
 			Expect(keys).To(ContainElement(KeyBulk))
 			Expect(keys).To(ContainElement(KeyCapture))

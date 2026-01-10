@@ -13,12 +13,10 @@ import (
 //   - q/ctrl+c: Quit application
 //   - ?: Show context-sensitive help
 //   - esc: Go back / Cancel
-//   - h: Go to home screen (main menu)
 type GlobalKeyMap struct {
 	Quit key.Binding
 	Help key.Binding
 	Back key.Binding
-	Home key.Binding
 }
 
 // DefaultGlobalKeyMap returns the standard global key bindings per documentation.
@@ -36,24 +34,20 @@ func DefaultGlobalKeyMap() GlobalKeyMap {
 			key.WithKeys("esc"),
 			key.WithHelp("esc", "back"),
 		),
-		Home: key.NewBinding(
-			key.WithKeys("h"),
-			key.WithHelp("h", "home"),
-		),
 	}
 }
 
 // ShortHelp implements help.KeyMap interface.
 // Returns a slice of key bindings to show in the short help view.
 func (k GlobalKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Quit, k.Help, k.Back, k.Home}
+	return []key.Binding{k.Quit, k.Help, k.Back}
 }
 
 // FullHelp implements help.KeyMap interface.
 // Returns a slice of key binding columns for the full help view.
 func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Quit, k.Help, k.Back, k.Home},
+		{k.Quit, k.Help, k.Back},
 	}
 }
 
