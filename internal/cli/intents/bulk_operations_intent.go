@@ -338,7 +338,7 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		case KeyBack:
 			// At root state, back means cancel and return to main menu
@@ -382,7 +382,7 @@ func (m *BulkOperationsModel) handleConfigureState(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to select operation state
@@ -420,7 +420,7 @@ func (m *BulkOperationsModel) handleExecuteState(msg tea.Msg) tea.Cmd {
 			}
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		}
 

@@ -213,7 +213,7 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// At root state, back means cancel and return to main menu
@@ -272,7 +272,7 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to timeline view

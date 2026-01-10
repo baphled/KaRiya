@@ -49,6 +49,14 @@ func (c *ConfigureSystemIntent) Update(msg tea.Msg) tea.Cmd {
 	if theme := c.Theme(); theme != nil {
 		c.model.SetTheme(theme)
 	}
+
+	// Handle help modal toggle at intent level before delegating to model
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if HandleGlobalKeys(keyMsg) == KeyHelp {
+			c.ToggleHelp()
+			return nil
+		}
+	}
 	return c.model.Update(msg)
 }
 

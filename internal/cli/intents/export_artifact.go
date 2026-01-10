@@ -329,7 +329,7 @@ func (m *ExportArtifactModel) updateSelectType(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		case KeyBack:
 			m.setResult(NewExportArtifactResultWithError(&IntentError{
@@ -364,7 +364,7 @@ func (m *ExportArtifactModel) updateSelectFormat(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		case KeyBack:
 			m.selectedIndex = 0
@@ -396,7 +396,7 @@ func (m *ExportArtifactModel) updateSelectDest(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		case KeyBack:
 			m.selectedIndex = 0
@@ -427,7 +427,7 @@ func (m *ExportArtifactModel) updateConfigure(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		case KeyBack:
 			m.selectedIndex = 0
@@ -453,7 +453,7 @@ func (m *ExportArtifactModel) updatePreview(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		case KeyBack:
 			m.state = ExportStateConfigure
@@ -494,7 +494,7 @@ func (m *ExportArtifactModel) updateConfirm(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		case KeyBack:
 			m.state = ExportStatePreview
@@ -533,7 +533,7 @@ func (m *ExportArtifactModel) updateInProgress(msg tea.Msg) tea.Cmd {
 			}))
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		}
 	}
@@ -568,7 +568,7 @@ func (m *ExportArtifactModel) updateFailed(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ExportArtifactIntent)
 			return nil
 		case KeyBack:
 			m.active = false

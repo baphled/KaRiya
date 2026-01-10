@@ -307,7 +307,7 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		case KeyBack:
 			// At root state, back means cancel and return to main menu
@@ -385,7 +385,7 @@ func (m *FactManagementModel) handleViewState(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to list state
@@ -496,7 +496,7 @@ func (m *FactManagementModel) handleResultsState(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to list state

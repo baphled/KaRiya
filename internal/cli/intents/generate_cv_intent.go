@@ -175,7 +175,7 @@ func (i *GenerateCVIntent) updateSelectProfile(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// At root state, back means cancel
@@ -222,7 +222,7 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			i.state.currentState = GenerateCVStateSelectProfile
@@ -304,7 +304,7 @@ func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Let generation complete in background, navigate back
@@ -326,7 +326,7 @@ func (i *GenerateCVIntent) updatePreview(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			i.state.currentState = GenerateCVStateSelectAudience
@@ -358,7 +358,7 @@ func (i *GenerateCVIntent) updateReview(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			i.state.currentState = GenerateCVStatePreview
@@ -383,7 +383,7 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			i.state.currentState = GenerateCVStateReview
@@ -812,7 +812,7 @@ func (i *GenerateCVIntent) updateExportSelectFormat(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			i.state.currentState = GenerateCVStateConfirm
@@ -852,7 +852,7 @@ func (i *GenerateCVIntent) updateExportSelectLocation(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			i.state.currentState = GenerateCVStateExportSelectFormat
@@ -909,7 +909,7 @@ func (i *GenerateCVIntent) updateExporting(msg tea.Msg) tea.Cmd {
 			i.state.isExporting = false
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Let export complete in background, navigate back
@@ -929,7 +929,7 @@ func (i *GenerateCVIntent) updateExportComplete(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			i.state.currentState = GenerateCVStateExportSelectLocation

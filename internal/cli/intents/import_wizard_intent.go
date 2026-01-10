@@ -287,7 +287,7 @@ func (m *ImportWizardModel) handleFileSelectState(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		case KeyBack:
 			// At root state, back means cancel and return to main menu
@@ -319,7 +319,7 @@ func (m *ImportWizardModel) handlePreviewState(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to file selection
@@ -356,7 +356,7 @@ func (m *ImportWizardModel) handleProgressState(msg tea.Msg) tea.Cmd {
 			}
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			m.ToggleHelp()
 			return nil
 		}
 

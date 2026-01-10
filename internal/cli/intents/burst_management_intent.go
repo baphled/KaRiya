@@ -436,7 +436,7 @@ func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// At root state, back means cancel and return to main menu
@@ -479,7 +479,7 @@ func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to list.
@@ -541,7 +541,7 @@ func (i *BurstManagementIntent) updateDetailEventsView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Back to detail
@@ -569,7 +569,7 @@ func (i *BurstManagementIntent) updateDetailFactsView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Back to detail
@@ -602,7 +602,7 @@ func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Cancel edit and go back to detail
@@ -647,7 +647,7 @@ func (i *BurstManagementIntent) updateDeleteConfirmView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Cancel delete
@@ -732,7 +732,7 @@ func (i *BurstManagementIntent) updateConfirmView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		}
 
@@ -796,7 +796,7 @@ func (i *BurstManagementIntent) updateExtractingFactsView(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		}
 	}

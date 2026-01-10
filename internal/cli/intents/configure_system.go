@@ -575,7 +575,7 @@ func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ConfigureSystemIntent)
 			return nil
 		case KeyBack:
 			// At root state, back means cancel
@@ -678,7 +678,7 @@ func (m *ConfigureSystemModel) updateReviewChanges(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ConfigureSystemIntent)
 			return nil
 		case KeyBack:
 			m.state = ConfigStateEditSettings
@@ -701,7 +701,7 @@ func (m *ConfigureSystemModel) updateConfirm(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ConfigureSystemIntent)
 			return nil
 		case KeyBack:
 			m.state = ConfigStateReviewChanges
@@ -741,7 +741,7 @@ func (m *ConfigureSystemModel) updateSaving(msg tea.Msg) tea.Cmd {
 			})
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ConfigureSystemIntent)
 			return nil
 		case KeyBack:
 			// Note: Save operation continues in background per user decision
@@ -781,7 +781,7 @@ func (m *ConfigureSystemModel) updateFailed(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			// Help modal is handled at the intent wrapper level (ConfigureSystemIntent)
 			return nil
 		case KeyBack:
 			m.active = false

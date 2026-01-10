@@ -265,7 +265,7 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// At root state, back means cancel and return to main menu
@@ -298,7 +298,7 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to strategy selection
@@ -432,7 +432,7 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to form
@@ -562,7 +562,7 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 		case KeyQuit:
 			return tea.Quit
 		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
+			i.ToggleHelp()
 			return nil
 		case KeyBack:
 			// Go back to review state (keep error visible per user preference)

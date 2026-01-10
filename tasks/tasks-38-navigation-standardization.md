@@ -135,18 +135,16 @@ From `docs/KEYBOARD_REFERENCE.md`:
 - [ ] Modify: `internal/cli/intents/result.go` (add selection metadata)
 - [ ] Modify: All list-based intents
 
-### Phase 5: ListNavigationHandler Adoption - IN PROGRESS
-**Time**: 1-2 days | **Risk**: Low | **Status**: IN PROGRESS
+### Phase 5: ListNavigationHandler Adoption - COMPLETED
+**Time**: 1-2 days | **Risk**: Low | **Status**: COMPLETED
 
 Already using ListNavigationHandler:
 - [x] `browse_timeline_intent.go`
 - [x] `burst_management_intent.go`
 - [x] `fact_management_intent.go`
 - [x] `bulk_operations_intent.go` (migrated 2026-01-10)
-
-Need to add:
-- [ ] `configure_system.go`
-- [ ] `export_artifact.go`
+- [x] `configure_system.go` (migrated 2026-01-10)
+- [x] `export_artifact.go` (migrated 2026-01-10)
 
 Note: `metadata_editor_intent.go` does not need migration - it's a form-based editor, not a list navigator.
 
@@ -167,6 +165,8 @@ Note: `metadata_editor_intent.go` does not need migration - it's a form-based ed
 ## Git Log (Commits Made)
 
 ```
+b90a4cd feat(intents): migrate ExportArtifact to ListNavigationHandler
+5cf2ded feat(intents): migrate ConfigureSystem to ListNavigationHandler
 988375a feat(intents): migrate BulkOperations to ListNavigationHandler
 87d5795 feat(intents): standardize all intents with HandleGlobalKeys
 88eaef9 feat(intents): standardize BrowseTimeline key handling with HandleGlobalKeys
@@ -215,4 +215,4 @@ Each phase is independently revertible via git revert.
 ---
 
 **Last Updated**: 2026-01-10
-**Status**: Phases 1-3 COMPLETED, Phases 4-6 PENDING
+**Status**: Phases 1-3, 5 COMPLETED, Phases 4, 6 PENDING
