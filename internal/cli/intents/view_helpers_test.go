@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // CreateStandardView Tests
@@ -564,4 +565,256 @@ func TestCombineFooters_WithEmptyStrings(t *testing.T) {
 	if !strings.Contains(combined, "Footer 1") || !strings.Contains(combined, "Footer 2") {
 		t.Errorf("Expected combined footer to contain non-empty parts, got '%s'", combined)
 	}
+}
+
+// =============================================================================
+// Theme-Aware KeyBadge Footer Helper Tests
+// =============================================================================
+
+func TestThemedNavigationFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedNavigationFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed navigation footer")
+	}
+
+	// Should contain navigation elements
+	expectedParts := []string{"Navigate", "Select", "Back"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed navigation footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedNavigationFooter_NilTheme(t *testing.T) {
+	footer := intents.ThemedNavigationFooter(nil)
+
+	if footer == "" {
+		t.Error("Expected non-empty footer even with nil theme")
+	}
+
+	// Should still contain navigation elements (fallback styling)
+	if !strings.Contains(footer, "Navigate") {
+		t.Errorf("Expected footer to contain 'Navigate', got '%s'", footer)
+	}
+}
+
+func TestThemedFormFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedFormFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed form footer")
+	}
+
+	// Should contain form elements
+	expectedParts := []string{"Next", "Previous", "Submit", "Cancel"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed form footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedListFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedListFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed list footer")
+	}
+
+	// Should contain list elements including search
+	expectedParts := []string{"Navigate", "Select", "Search", "Back"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed list footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedDetailViewFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedDetailViewFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed detail view footer")
+	}
+
+	// Should contain scroll and back elements
+	expectedParts := []string{"Scroll", "Back"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed detail view footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedConfirmFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedConfirmFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed confirm footer")
+	}
+
+	// Should contain confirm and cancel
+	expectedParts := []string{"Confirm", "Cancel"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed confirm footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedEditFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedEditFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed edit footer")
+	}
+
+	// Should contain save and cancel
+	expectedParts := []string{"Save", "Cancel"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed edit footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedExportFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedExportFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed export footer")
+	}
+
+	// Should contain navigate, select, confirm, back
+	expectedParts := []string{"Navigate", "Select", "Confirm", "Back"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed export footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedMenuFooter(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedMenuFooter(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed menu footer")
+	}
+
+	// Should contain menu elements
+	expectedParts := []string{"Navigate", "Select", "Help", "Quit"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed menu footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedCustomFooter(t *testing.T) {
+	theme := createTestTheme()
+
+	footer := intents.ThemedCustomFooter(theme,
+		components.NewKeyBadge("x", "Custom1"),
+		components.NewKeyBadge("y", "Custom2"),
+	)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed custom footer")
+	}
+
+	// Should contain custom badges
+	expectedParts := []string{"Custom1", "Custom2", "x", "y"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed custom footer to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestThemedCustomFooter_Empty(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedCustomFooter(theme)
+
+	if footer != "" {
+		t.Errorf("Expected empty footer with no badges, got '%s'", footer)
+	}
+}
+
+func TestThemedGlobalBadges(t *testing.T) {
+	theme := createTestTheme()
+	footer := intents.ThemedGlobalBadges(theme)
+
+	if footer == "" {
+		t.Error("Expected non-empty themed global badges")
+	}
+
+	// Should contain quit and main menu
+	expectedParts := []string{"Quit", "Main Menu"}
+	for _, part := range expectedParts {
+		if !strings.Contains(footer, part) {
+			t.Errorf("Expected themed global badges to contain '%s', got '%s'", part, footer)
+		}
+	}
+}
+
+func TestCombineThemedFooters(t *testing.T) {
+	theme := createTestTheme()
+
+	footer1 := intents.ThemedNavigationFooter(theme)
+	footer2 := intents.ThemedGlobalBadges(theme)
+
+	combined := intents.CombineThemedFooters(footer1, footer2)
+
+	if combined == "" {
+		t.Error("Expected non-empty combined themed footer")
+	}
+
+	// Should contain elements from both footers
+	expectedParts := []string{"Navigate", "Quit"}
+	for _, part := range expectedParts {
+		if !strings.Contains(combined, part) {
+			t.Errorf("Expected combined themed footer to contain '%s', got '%s'", part, combined)
+		}
+	}
+}
+
+func TestCombineThemedFooters_Empty(t *testing.T) {
+	combined := intents.CombineThemedFooters()
+
+	if combined != "" {
+		t.Errorf("Expected empty combined themed footer, got '%s'", combined)
+	}
+}
+
+func TestCombineThemedFooters_WithEmptyStrings(t *testing.T) {
+	theme := createTestTheme()
+
+	footer1 := intents.ThemedNavigationFooter(theme)
+
+	combined := intents.CombineThemedFooters(footer1, "", "   ")
+
+	// Should skip empty strings
+	if combined == "" {
+		t.Error("Expected non-empty combined footer")
+	}
+
+	// Should contain elements from non-empty footer
+	if !strings.Contains(combined, "Navigate") {
+		t.Errorf("Expected combined footer to contain 'Navigate', got '%s'", combined)
+	}
+}
+
+// Helper function to create a test theme
+func createTestTheme() themes.Theme {
+	return themes.NewDefaultTheme()
 }

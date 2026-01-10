@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/themes"
 )
 
 // CreateStandardView creates a standardized view with logo and automatic state modals.
@@ -259,4 +260,121 @@ func TickEvery(d time.Duration) func() time.Duration {
 	return func() time.Duration {
 		return d
 	}
+}
+
+// =============================================================================
+// Theme-Aware KeyBadge Footer Functions
+// =============================================================================
+// These functions use the KeyBadge component for styled, consistent help footers.
+// They accept a theme parameter and return professionally styled keyboard shortcuts.
+
+// ThemedNavigationFooter returns styled navigation shortcuts using KeyBadge.
+// Used for list views, menu selections, and browsing.
+func ThemedNavigationFooter(theme themes.Theme) string {
+	return components.RenderHelpFooter(theme,
+		components.NavigateBadge(),
+		components.SelectBadge(),
+		components.BackBadge(),
+	)
+}
+
+// ThemedFormFooter returns styled form navigation shortcuts using KeyBadge.
+// Used for form inputs and field navigation.
+func ThemedFormFooter(theme themes.Theme) string {
+	return components.RenderHelpFooter(theme,
+		components.NextBadge(),
+		components.PrevBadge(),
+		components.SubmitBadge(),
+		components.CancelBadge(),
+	)
+}
+
+// ThemedListFooter returns styled list view shortcuts including search using KeyBadge.
+// Used for lists with search and scroll capabilities.
+func ThemedListFooter(theme themes.Theme) string {
+	return components.RenderHelpFooter(theme,
+		components.NavigateBadge(),
+		components.SelectBadge(),
+		components.SearchBadge(),
+		components.BackBadge(),
+	)
+}
+
+// ThemedDetailViewFooter returns styled detail view shortcuts using KeyBadge.
+// Used for viewing detailed content with scrolling.
+func ThemedDetailViewFooter(theme themes.Theme) string {
+	return components.RenderHelpFooter(theme,
+		components.NewKeyBadge("↑/↓", "Scroll"),
+		components.BackBadge(),
+	)
+}
+
+// ThemedBrowseFooter returns styled browse view shortcuts using KeyBadge.
+// Used for browsing lists with edit and delete capabilities.
+func ThemedBrowseFooter(theme themes.Theme) string {
+	return components.RenderBrowseFooter(theme)
+}
+
+// ThemedConfirmFooter returns styled confirmation shortcuts using KeyBadge.
+// Used for confirmation dialogs.
+func ThemedConfirmFooter(theme themes.Theme) string {
+	return components.RenderConfirmFooter(theme)
+}
+
+// ThemedEditFooter returns styled edit shortcuts using KeyBadge.
+// Used for edit views.
+func ThemedEditFooter(theme themes.Theme) string {
+	return components.RenderEditFooter(theme)
+}
+
+// ThemedExportFooter returns styled export shortcuts using KeyBadge.
+// Used for export views.
+func ThemedExportFooter(theme themes.Theme) string {
+	return components.RenderExportFooter(theme)
+}
+
+// ThemedMenuFooter returns styled menu shortcuts using KeyBadge.
+// Used for main menus.
+func ThemedMenuFooter(theme themes.Theme) string {
+	return components.RenderMenuFooter(theme)
+}
+
+// ThemedCustomFooter creates a custom themed footer from KeyBadges.
+// Use this when standard footers don't match the required shortcuts.
+//
+// Example:
+//
+//	footer := ThemedCustomFooter(theme,
+//	    components.NavigateBadge(),
+//	    components.NewKeyBadge("f", "Filter"),
+//	    components.NewKeyBadge("Enter", "View Details"),
+//	    components.QuitBadge(),
+//	)
+func ThemedCustomFooter(theme themes.Theme, badges ...components.KeyBadge) string {
+	return components.RenderHelpFooter(theme, badges...)
+}
+
+// ThemedGlobalBadges returns the standard global badges (Quit, Main Menu).
+// Can be appended to other footers for consistency.
+func ThemedGlobalBadges(theme themes.Theme) string {
+	return components.RenderHelpFooter(theme,
+		components.QuitBadge(),
+		components.NewKeyBadge("m", "Main Menu"),
+	)
+}
+
+// CombineThemedFooters combines multiple themed footer strings.
+// Unlike CombineFooters, this doesn't add separators as KeyBadges
+// have their own visual separation.
+func CombineThemedFooters(footers ...string) string {
+	var nonEmpty []string
+	for _, footer := range footers {
+		if strings.TrimSpace(footer) != "" {
+			nonEmpty = append(nonEmpty, footer)
+		}
+	}
+	if len(nonEmpty) == 0 {
+		return ""
+	}
+	return strings.Join(nonEmpty, "  ")
 }
