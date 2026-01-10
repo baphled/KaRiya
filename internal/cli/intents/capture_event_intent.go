@@ -908,18 +908,26 @@ func (i *CaptureEventIntent) viewCaptureForm() string {
 
 // viewReviewInferredEvent renders the review UI for inferred bursts and facts.
 // Displays the captured event details, inferred bursts, and facts with accept/reject options.
+// When in editing mode, the modal is rendered as an overlay on top of the review content.
 func (i *CaptureEventIntent) viewReviewInferredEvent() string {
-	// Check if editing mode is active and display appropriate modal
+	// Build the base review view
+	baseView := i.buildReviewBaseView()
+
+	// Check if editing mode is active and render modal as overlay
 	switch i.state.reviewState.EditingMode {
 	case EditingModeMetadata:
-		return i.viewMetadataEditModal()
+		return i.renderModalOverlay(baseView, i.getMetadataModalContent())
 	case EditingModeBursts:
-		return i.viewBurstEditModal()
+		return i.renderModalOverlay(baseView, i.getBurstModalContent())
 	case EditingModeFacts:
-		return i.viewFactEditModal()
+		return i.renderModalOverlay(baseView, i.getFactModalContent())
 	}
 
-	// Normal review view
+	return baseView
+}
+
+// buildReviewBaseView builds the base review view content.
+func (i *CaptureEventIntent) buildReviewBaseView() string {
 	var sb strings.Builder
 	sb.WriteString("\n")
 	sb.WriteString("┌─ Review Inferred Event ────────────────────────┐\n")
@@ -967,6 +975,95 @@ func (i *CaptureEventIntent) viewReviewInferredEvent() string {
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
 	// Footer now handled by StandardView
 	return sb.String()
+}
+
+// renderModalOverlay renders a modal overlay on top of the background content.
+func (i *CaptureEventIntent) renderModalOverlay(background string, modalContent *modalContentData) string {
+	if modalContent == nil {
+		return background
+	}
+
+	// Get terminal dimensions
+	info := i.GetTerminalInfo()
+	width := 80
+	height := 24
+	if info != nil {
+		width = info.Width
+		height = info.Height
+	}
+
+	// Create overlay modal
+	overlay := components.NewOverlayModal(modalContent.title, modalContent.content)
+	overlay.SetFooter(modalContent.footer)
+	overlay.SetWidth(80) // Use a standard modal width
+
+	return overlay.RenderCentered(background, width, height)
+}
+
+// modalContentData holds modal content for overlay rendering.
+type modalContentData struct {
+	title   string
+	content string
+	footer  string
+}
+
+// getMetadataModalContent returns the modal content for metadata editing.
+func (i *CaptureEventIntent) getMetadataModalContent() *modalContentData {
+	if i.state.reviewState.metadataModal == nil {
+		// Initialize metadata modal with event
+		i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+			i.state.reviewState.Event,
+			i.context.CareerService,
+			i.context.CLIEventService,
+			context.Background(),
+		)
+	}
+	return &modalContentData{
+		title:   i.state.reviewState.metadataModal.GetTitle(),
+		content: i.state.reviewState.metadataModal.GetContent(),
+		footer:  i.state.reviewState.metadataModal.GetFooter(),
+	}
+}
+
+// getBurstModalContent returns the modal content for burst editing.
+func (i *CaptureEventIntent) getBurstModalContent() *modalContentData {
+	if i.state.reviewState.burstModal == nil {
+		// Convert inferred bursts to suggestions for the modal
+		var suggestions []burstfact.BurstSuggestion
+		i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+			i.context.CareerService,
+			suggestions,
+			context.Background(),
+		)
+	}
+	return &modalContentData{
+		title:   i.state.reviewState.burstModal.GetTitle(),
+		content: i.state.reviewState.burstModal.GetContent(),
+		footer:  i.state.reviewState.burstModal.GetFooter(),
+	}
+}
+
+// getFactModalContent returns the modal content for fact editing.
+func (i *CaptureEventIntent) getFactModalContent() *modalContentData {
+	if i.state.reviewState.factModal == nil {
+		// Use the first inferred fact, or create a new empty fact
+		var fact *career.Fact
+		if len(i.state.reviewState.InferredFacts) > 0 && i.state.reviewState.EditingIndex < len(i.state.reviewState.InferredFacts) {
+			fact = i.state.reviewState.InferredFacts[i.state.reviewState.EditingIndex]
+		} else {
+			fact = &career.Fact{}
+		}
+		i.state.reviewState.factModal = models.NewFactEditorModelNew(
+			fact,
+			i.context.CareerService,
+			context.Background(),
+		)
+	}
+	return &modalContentData{
+		title:   i.state.reviewState.factModal.GetTitle(),
+		content: i.state.reviewState.factModal.GetContent(),
+		footer:  i.state.reviewState.factModal.GetFooter(),
+	}
 }
 
 // viewSubmit renders the submit confirmation.
@@ -1025,56 +1122,6 @@ func (i *CaptureEventIntent) viewError() string {
 	sb.WriteString("└────────────────────────────────────────────────┘\n")
 
 	return sb.String()
-}
-
-// viewMetadataEditModal displays the metadata editor modal.
-func (i *CaptureEventIntent) viewMetadataEditModal() string {
-	if i.state.reviewState.metadataModal == nil {
-		// Initialize metadata modal with event
-		i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
-			i.state.reviewState.Event,
-			i.context.CareerService,
-			i.context.CLIEventService,
-			context.Background(),
-		)
-	}
-	return i.state.reviewState.metadataModal.View()
-}
-
-// viewBurstEditModal displays the burst suggestion modal.
-func (i *CaptureEventIntent) viewBurstEditModal() string {
-	if i.state.reviewState.burstModal == nil {
-		// Convert inferred bursts to suggestions for the modal
-		// For now, we'll work with an empty list - in a full implementation,
-		// we'd convert i.state.reviewState.InferredBursts to suggestions
-		var suggestions []burstfact.BurstSuggestion
-		i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
-			i.context.CareerService,
-			suggestions,
-			context.Background(),
-		)
-	}
-	return i.state.reviewState.burstModal.View()
-}
-
-// viewFactEditModal displays the fact editor modal.
-func (i *CaptureEventIntent) viewFactEditModal() string {
-	if i.state.reviewState.factModal == nil {
-		// Use the first inferred fact, or create a new empty fact
-		var fact *career.Fact
-		if len(i.state.reviewState.InferredFacts) > 0 && i.state.reviewState.EditingIndex < len(i.state.reviewState.InferredFacts) {
-			fact = i.state.reviewState.InferredFacts[i.state.reviewState.EditingIndex]
-		} else {
-			// Create a new empty fact
-			fact = &career.Fact{}
-		}
-		i.state.reviewState.factModal = models.NewFactEditorModelNew(
-			fact,
-			i.context.CareerService,
-			context.Background(),
-		)
-	}
-	return i.state.reviewState.factModal.View()
 }
 
 // acceptCurrentItem accepts the currently selected burst or fact.
