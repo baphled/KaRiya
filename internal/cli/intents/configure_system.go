@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/config"
@@ -94,6 +95,9 @@ type ConfigureSystemModel struct {
 
 	// Theme support - set by parent intent
 	theme themes.Theme
+
+	// Navigation handler for domain selection
+	domainNavHandler *navigation.ListNavigationHandler
 }
 
 // SetTheme sets the theme for the model (called by parent intent)
@@ -319,12 +323,15 @@ func settingsFromConfig(cfg *config.Config) map[ConfigurationDomain][]*Configura
 
 // NewConfigureSystemModel creates a new ConfigureSystem intent model
 func NewConfigureSystemModel(ctx *ConfigureSystemContext) *ConfigureSystemModel {
-	return &ConfigureSystemModel{
+	model := &ConfigureSystemModel{
 		state:         ConfigStateSelectDomain,
 		context:       ctx,
 		selectedIndex: 0,
 		active:        false,
 	}
+	// Initialize domain navigation handler
+	model.domainNavHandler = navigation.NewListNavigationHandler(model)
+	return model
 }
 
 // Init initializes the intent
@@ -563,15 +570,31 @@ func (m *ConfigureSystemModel) revertCurrentValue() {
 func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			// TODO: Toggle help modal when integrated into BaseIntent
+			return nil
+		case KeyBack:
+			// At root state, back means cancel
+			m.setResult(&ConfigureSystemResult{
+				Success: false,
+				Error: &IntentError{
+					Code:    "config_cancelled",
+					Message: "Configuration cancelled by user",
+				},
+			})
+			return nil
+		}
+
+		// Try list navigation handler (handles up/down/j/k/pgup/pgdn/home/end/g/G)
+		if m.domainNavHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
 		switch msg.String() {
-		case "up", "k":
-			if m.selectedIndex > 0 {
-				m.selectedIndex--
-			}
-		case "down", "j":
-			if m.selectedIndex < len(m.context.Domains)-1 {
-				m.selectedIndex++
-			}
 		case "enter":
 			m.domain = m.context.Domains[m.selectedIndex]
 			m.changes = &ConfigurationChanges{
@@ -589,24 +612,6 @@ func (m *ConfigureSystemModel) updateSelectDomain(msg tea.Msg) tea.Cmd {
 			m.state = ConfigStateEditSettings
 			// Initialize inputs for editing
 			m.initializeInputs()
-		}
-
-		// Handle global keys (q=quit, ?=help, esc=back)
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			return tea.Quit
-		case KeyHelp:
-			// TODO: Toggle help modal when integrated into BaseIntent
-			return nil
-		case KeyBack:
-			// At root state, back means cancel
-			m.setResult(&ConfigureSystemResult{
-				Success: false,
-				Error: &IntentError{
-					Code:    "config_cancelled",
-					Message: "Configuration cancelled by user",
-				},
-			})
 		}
 	}
 	return nil
@@ -1095,4 +1100,33 @@ type ConfigCompleteMsg struct {
 // ConfigErrorMsg represents an error during configuration save
 type ConfigErrorMsg struct {
 	Error *IntentError
+}
+
+// ListNavigator interface implementation for domain selection
+
+// GetTotalItems returns the total number of domains.
+func (m *ConfigureSystemModel) GetTotalItems() int {
+	return len(m.context.Domains)
+}
+
+// GetSelectedIndex returns the current selection index.
+func (m *ConfigureSystemModel) GetSelectedIndex() int {
+	return m.selectedIndex
+}
+
+// SetSelectedIndex sets the selection index.
+func (m *ConfigureSystemModel) SetSelectedIndex(idx int) {
+	// Clamp index to valid range
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(m.context.Domains) {
+		idx = len(m.context.Domains) - 1
+	}
+	m.selectedIndex = idx
+}
+
+// GetPageSize returns the page size for pagination.
+func (m *ConfigureSystemModel) GetPageSize() int {
+	return 10
 }

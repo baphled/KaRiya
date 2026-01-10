@@ -190,14 +190,14 @@ func (c *ConfigureSystemIntent) GetResult() *ConfigureSystemResult {
 	return c.model.result
 }
 
-// SetSelectedIndex sets the selected index (for testing)
+// SetSelectedIndex sets the selected index with clamping (for testing)
 func (c *ConfigureSystemIntent) SetSelectedIndex(index int) {
-	c.model.selectedIndex = index
+	c.model.SetSelectedIndex(index)
 }
 
 // GetSelectedIndex returns the selected index (for testing)
 func (c *ConfigureSystemIntent) GetSelectedIndex() int {
-	return c.model.selectedIndex
+	return c.model.GetSelectedIndex()
 }
 
 // SetState sets the state (for testing)
@@ -213,4 +213,14 @@ func (c *ConfigureSystemIntent) SetDomain(domain ConfigurationDomain) {
 // IsActive returns whether the intent is active
 func (c *ConfigureSystemIntent) IsActive() bool {
 	return c.model.active
+}
+
+// GetDomainCount returns the number of domains (for testing)
+func (c *ConfigureSystemIntent) GetDomainCount() int {
+	return c.model.GetTotalItems()
+}
+
+// GetDomainPageSize returns the domain list page size (for testing)
+func (c *ConfigureSystemIntent) GetDomainPageSize() int {
+	return c.model.GetPageSize()
 }
