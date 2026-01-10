@@ -183,6 +183,12 @@ func GetCardFooter() lipgloss.Style {
 	return CardFooter
 }
 
+// GetContentCard returns the content card style for view content areas
+// Returns a copy to prevent mutation of the original style
+func GetContentCard() lipgloss.Style {
+	return ContentCard.Copy()
+}
+
 // ============================================================================
 // Modal/Dialog Styles Export
 // ============================================================================

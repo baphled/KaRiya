@@ -111,6 +111,16 @@ var (
 	CardFooter = lipgloss.NewStyle().
 			Foreground(ColorTextSecondary).
 			MarginTop(1)
+
+	// ContentCard is the standard card style for view content areas
+	// Used by intents and models for consistent content presentation
+	// This style includes padding, rounded border, and standard colors
+	ContentCard = lipgloss.NewStyle().
+			Padding(1, 2).
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(ColorBorder).
+			Background(ColorBackgroundCard).
+			Foreground(ColorTextPrimary)
 )
 
 // Modal/Dialog styles

@@ -122,6 +122,11 @@ var _ = Describe("Styles", func() {
 			rendered := styles.CardFooter.Render("Card footer")
 			Expect(rendered).ToNot(BeEmpty())
 		})
+
+		It("should have content card style for view content areas", func() {
+			rendered := styles.ContentCard.Render("Content card text")
+			Expect(rendered).ToNot(BeEmpty())
+		})
 	})
 
 	Describe("Header Styles", func() {
@@ -329,12 +334,25 @@ var _ = Describe("Styles", func() {
 				Expect(styles.GetCardHeader()).ToNot(BeNil())
 				Expect(styles.GetCardContent()).ToNot(BeNil())
 				Expect(styles.GetCardFooter()).ToNot(BeNil())
+				Expect(styles.GetContentCard()).ToNot(BeNil())
 			})
 
 			It("should return card styles that can render", func() {
 				Expect(styles.GetCardBase().Render("Card")).ToNot(BeEmpty())
 				Expect(styles.GetCardHeader().Render("Header")).ToNot(BeEmpty())
 				Expect(styles.GetCardContent().Render("Content")).ToNot(BeEmpty())
+				Expect(styles.GetContentCard().Render("Content Card")).ToNot(BeEmpty())
+			})
+
+			It("should return a copy of ContentCard style to prevent mutation", func() {
+				style1 := styles.GetContentCard()
+				style2 := styles.GetContentCard()
+				// Modify style1
+				style1 = style1.Bold(true)
+				// style2 should not be affected
+				rendered1 := style1.Render("Bold")
+				rendered2 := style2.Render("NotBold")
+				Expect(rendered1).ToNot(Equal(rendered2))
 			})
 		})
 
