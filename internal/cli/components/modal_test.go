@@ -507,3 +507,5 @@ func TestModalContent_LargeTerminalRendering(t *testing.T) {
 		t.Error("Expected output for large terminal")
 	}
 }
+
+// Modal Overlay Tests are in modal_overlay_test.go (Ginkgo)
