@@ -343,10 +343,11 @@ var _ = Describe("ExportArtifact Intent", func() {
 			Expect(intent.GetSelectedIndex()).To(Equal(0))
 		})
 
-		It("should not go above last artifact type", func() {
-			intent.SetSelectedIndex(4)
+		It("should not go below last artifact type", func() {
+			// There are 3 artifact types (indices 0, 1, 2), so max index is 2
+			intent.SetSelectedIndex(2)
 			intent.Update(tea.KeyMsg{Type: tea.KeyDown, Runes: []rune{'j'}})
-			Expect(intent.GetSelectedIndex()).To(Equal(4))
+			Expect(intent.GetSelectedIndex()).To(Equal(2))
 		})
 
 		It("should transition to SelectFormat on enter", func() {
@@ -928,6 +929,122 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 				model.generatePreview()
 				Expect(len(model.previewLines)).To(BeNumerically(">", 0))
+			})
+		})
+	})
+
+	Describe("ListNavigator Interface", func() {
+		var intent *ExportArtifactIntent
+
+		BeforeEach(func() {
+			var err error
+			intent, err = NewExportArtifactIntent(NewTestExportArtifactContext())
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		Describe("GetTotalItems", func() {
+			It("should return artifact types count in SelectType state", func() {
+				intent.SetState(ExportStateSelectType)
+				Expect(intent.model.GetTotalItems()).To(Equal(3)) // events, facts, bursts
+			})
+
+			It("should return formats count in SelectFormat state", func() {
+				intent.SetState(ExportStateSelectFormat)
+				intent.SetConfig(NewExportConfiguration(ExportTypeEvents, intent.model.context))
+				Expect(intent.model.GetTotalItems()).To(Equal(4)) // json, csv, txt, yaml
+			})
+
+			It("should return destinations count in SelectDest state", func() {
+				intent.SetState(ExportStateSelectDest)
+				Expect(intent.model.GetTotalItems()).To(Equal(2)) // file, clipboard
+			})
+
+			It("should return 0 for non-list states", func() {
+				intent.SetState(ExportStateConfigure)
+				Expect(intent.model.GetTotalItems()).To(Equal(0))
+			})
+		})
+
+		Describe("GetSelectedIndex", func() {
+			It("should return current selected index", func() {
+				intent.model.selectedIndex = 2
+				Expect(intent.model.GetSelectedIndex()).To(Equal(2))
+			})
+		})
+
+		Describe("SetSelectedIndex", func() {
+			It("should update selected index", func() {
+				intent.model.SetSelectedIndex(1)
+				Expect(intent.model.selectedIndex).To(Equal(1))
+			})
+
+			It("should clamp to valid range", func() {
+				intent.SetState(ExportStateSelectType)
+				intent.model.SetSelectedIndex(10)               // Out of range
+				Expect(intent.model.selectedIndex).To(Equal(2)) // Max index for 3 items
+			})
+
+			It("should clamp negative values to 0", func() {
+				intent.model.SetSelectedIndex(-1)
+				Expect(intent.model.selectedIndex).To(Equal(0))
+			})
+		})
+
+		Describe("GetPageSize", func() {
+			It("should return 10", func() {
+				Expect(intent.model.GetPageSize()).To(Equal(10))
+			})
+		})
+
+		Describe("Navigation Handler Integration", func() {
+			It("should navigate down with handler in SelectType state", func() {
+				intent.SetState(ExportStateSelectType)
+				intent.model.selectedIndex = 0
+
+				handled := intent.model.navHandler.HandleKey("down")
+				Expect(handled).To(BeTrue())
+				Expect(intent.model.selectedIndex).To(Equal(1))
+			})
+
+			It("should navigate up with handler in SelectType state", func() {
+				intent.SetState(ExportStateSelectType)
+				intent.model.selectedIndex = 2
+
+				handled := intent.model.navHandler.HandleKey("up")
+				Expect(handled).To(BeTrue())
+				Expect(intent.model.selectedIndex).To(Equal(1))
+			})
+
+			It("should navigate with vim keys", func() {
+				intent.SetState(ExportStateSelectType)
+				intent.model.selectedIndex = 0
+
+				handled := intent.model.navHandler.HandleKey("j")
+				Expect(handled).To(BeTrue())
+				Expect(intent.model.selectedIndex).To(Equal(1))
+
+				handled = intent.model.navHandler.HandleKey("k")
+				Expect(handled).To(BeTrue())
+				Expect(intent.model.selectedIndex).To(Equal(0))
+			})
+
+			It("should clamp at boundaries", func() {
+				intent.SetState(ExportStateSelectType)
+				intent.model.selectedIndex = 0
+
+				// Try to go above first item
+				handled := intent.model.navHandler.HandleKey("up")
+				Expect(handled).To(BeTrue())
+				Expect(intent.model.selectedIndex).To(Equal(0))
+
+				// Go to last item
+				intent.model.selectedIndex = 2
+
+				// Try to go below last item
+				handled = intent.model.navHandler.HandleKey("down")
+				Expect(handled).To(BeTrue())
+				Expect(intent.model.selectedIndex).To(Equal(2))
 			})
 		})
 	})

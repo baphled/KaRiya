@@ -6,7 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/themes"
 )
 
@@ -377,4 +381,109 @@ func CombineThemedFooters(footers ...string) string {
 		return ""
 	}
 	return strings.Join(nonEmpty, "  ")
+}
+
+// ============================================================================
+// Global Key Handling
+// ============================================================================
+// These helpers provide standardized key handling across all intents,
+// implementing the keyboard shortcuts defined in docs/KEYBOARD_REFERENCE.md
+
+// GlobalKeyResult represents the result of handling a global key
+type GlobalKeyResult int
+
+const (
+	// KeyNotHandled indicates the key was not a global key
+	KeyNotHandled GlobalKeyResult = iota
+	// KeyQuit indicates the user wants to quit the application
+	KeyQuit
+	// KeyHelp indicates the user wants to see help
+	KeyHelp
+	// KeyBack indicates the user wants to go back
+	KeyBack
+)
+
+// HandleGlobalKeys checks if a key message matches any global shortcuts.
+// Returns the type of global key matched, or KeyNotHandled if no match.
+// This function should be called at the beginning of each intent's Update method.
+//
+// Per docs/KEYBOARD_REFERENCE.md:
+//   - q/ctrl+c: Quit application
+//   - ?: Show context-sensitive help
+//   - esc: Go back / Cancel
+//
+// Example usage:
+//
+//	func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
+//	    if keyMsg, ok := msg.(tea.KeyMsg); ok {
+//	        switch HandleGlobalKeys(keyMsg) {
+//	        case KeyQuit:
+//	            return tea.Quit
+//	        case KeyHelp:
+//	            i.helpModal.Toggle()
+//	            return nil
+//	        case KeyBack:
+//	            return i.handleBack()
+//	        }
+//	    }
+//	    // ... handle intent-specific keys
+//	}
+func HandleGlobalKeys(msg tea.KeyMsg) GlobalKeyResult {
+	globalKeys := navigation.DefaultGlobalKeyMap()
+
+	switch {
+	case key.Matches(msg, globalKeys.Quit):
+		return KeyQuit
+	case key.Matches(msg, globalKeys.Help):
+		return KeyHelp
+	case key.Matches(msg, globalKeys.Back):
+		return KeyBack
+	}
+
+	return KeyNotHandled
+}
+
+// HandleListKeys checks if a key message matches any list navigation shortcuts.
+// Returns true if the key was handled by the ListNavigationHandler.
+// This is a convenience wrapper that ensures consistent list navigation.
+//
+// Example usage:
+//
+//	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+//	    if HandleListKeys(keyMsg, i.navHandler) {
+//	        return nil
+//	    }
+//	}
+func HandleListKeys(msg tea.KeyMsg, handler *navigation.ListNavigationHandler) bool {
+	if handler == nil {
+		return false
+	}
+	return handler.HandleKey(msg.String())
+}
+
+// GetCombinedKeyMap returns a combined keymap for help display.
+// Includes global keys and optionally list or form keys.
+func GetCombinedKeyMap(includeList, includeForm bool) navigation.CombinedKeyMap {
+	global := navigation.DefaultGlobalKeyMap()
+	list := navigation.ListKeyMap{}
+	form := navigation.FormKeyMap{}
+
+	if includeList {
+		list = navigation.DefaultListKeyMap()
+	}
+	if includeForm {
+		form = navigation.DefaultFormKeyMap()
+	}
+
+	return navigation.CombinedKeyMap{
+		Global: global,
+		List:   list,
+		Form:   form,
+	}
+}
+
+// GlobalFooter returns the standard global shortcuts footer.
+// Per docs/KEYBOARD_REFERENCE.md: q=quit, ?=help, Esc=back
+func GlobalFooter() string {
+	return "q Quit  ? Help  Esc Back"
 }

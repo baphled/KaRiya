@@ -208,12 +208,25 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Try navigation handler first
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
+			i.setCancelled()
+			return nil
+		}
+
+		// Try list navigation handler
 		if i.navHandler.HandleKey(msg.String()) {
 			return nil
 		}
 
-		// Handle non-navigation keys
+		// Handle intent-specific keys
 		switch msg.String() {
 		case "enter":
 			// Select current event and move to detail view.
@@ -224,21 +237,6 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 					i.state.currentState = BrowseStateEventDetail
 				}
 			}
-			return nil
-
-		case "q", "ctrl+c":
-			// Cancel without selection.
-			i.setCancelled()
-			return nil
-
-		case "esc":
-			// Go back (no-op at timeline view).
-			i.setCancelled()
-			return nil
-
-		case "m":
-			// Return to main menu.
-			i.setCancelled()
 			return nil
 		}
 
@@ -269,25 +267,24 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to timeline view
+			i.state.currentState = BrowseStateTimeline
+			return nil
+		}
+
+		// Handle intent-specific keys
 		switch msg.String() {
 		case "enter":
 			// Confirm selection and return event.
 			i.setCompleted()
-			return nil
-
-		case "esc":
-			// Go back to timeline.
-			i.state.currentState = BrowseStateTimeline
-			return nil
-
-		case "q", "ctrl+c":
-			// Cancel.
-			i.setCancelled()
-			return nil
-
-		case "m":
-			// Return to main menu.
-			i.setCancelled()
 			return nil
 		}
 	}

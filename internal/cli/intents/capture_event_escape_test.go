@@ -49,13 +49,6 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
 
-		It("should cancel intent when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-			Expect(intent.result.Status).To(Equal(Cancelled))
-		})
 	})
 
 	Describe("Form State", func() {
@@ -68,14 +61,6 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
 			Expect(intent.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
 	})
 
@@ -93,14 +78,6 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
 			Expect(intent.active).To(BeTrue())
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
 	})
 
@@ -127,14 +104,6 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 			Expect(intent.state.error).To(Equal(originalError))
 			Expect(intent.state.error.Code).To(Equal("TEST_ERROR"))
-		})
-
-		It("should return to main menu when 'm' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
-
-			Expect(intent.active).To(BeFalse())
-			Expect(intent.result).NotTo(BeNil())
-			Expect(intent.result.Status).To(Equal(Cancelled))
 		})
 	})
 

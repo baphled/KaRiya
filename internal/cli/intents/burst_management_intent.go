@@ -431,7 +431,20 @@ func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Try navigation handler first
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
+			i.setCancelled()
+			return nil
+		}
+
+		// Try navigation handler
 		if i.navHandler.HandleKey(msg.String()) {
 			return nil
 		}
@@ -443,13 +456,6 @@ func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 				i.state.viewedBursts = append(i.state.viewedBursts, i.state.selectedBurst)
 				i.state.currentState = BurstStateDetail
 			}
-			return nil
-
-		case "q", "ctrl+c":
-			i.setCancelled()
-			return nil
-		case "esc":
-			i.setCancelled()
 			return nil
 		}
 
@@ -468,6 +474,19 @@ func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to list.
+			i.state.currentState = BurstStateList
+			return nil
+		}
+
 		switch msg.String() {
 		case "e":
 			// View events
@@ -500,16 +519,6 @@ func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 			// Confirm selection and return burst.
 			i.setCompleted()
 			return nil
-
-		case "esc":
-			// Go back to list.
-			i.state.currentState = BurstStateList
-			return nil
-
-		case "q", "ctrl+c":
-			// Cancel.
-			i.setCancelled()
-			return nil
 		}
 	}
 
@@ -527,14 +536,16 @@ func (i *BurstManagementIntent) updateDetailEventsView(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
 			// Back to detail
 			i.state.currentState = BurstStateDetail
-			return nil
-
-		case "q", "ctrl+c":
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -553,14 +564,16 @@ func (i *BurstManagementIntent) updateDetailFactsView(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
 			// Back to detail
 			i.state.currentState = BurstStateDetail
-			return nil
-
-		case "q", "ctrl+c":
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -584,13 +597,21 @@ func (i *BurstManagementIntent) initBurstEditor() tea.Cmd {
 func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
 			// Cancel edit and go back to detail
 			i.state.currentState = BurstStateDetail
 			i.state.editError = nil
 			return nil
+		}
 
+		switch msg.String() {
 		case "ctrl+s":
 			// Save changes
 			if i.state.selectedBurst != nil {
@@ -621,6 +642,20 @@ func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 func (i *BurstManagementIntent) updateDeleteConfirmView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Cancel delete
+			i.state.currentState = BurstStateDetail
+			i.state.deleteError = nil
+			return nil
+		}
+
 		switch msg.String() {
 		case "y":
 			// Confirm delete
@@ -645,14 +680,10 @@ func (i *BurstManagementIntent) updateDeleteConfirmView(msg tea.Msg) tea.Cmd {
 				return nil
 			}
 
-		case "n", "esc":
+		case "n":
 			// Cancel delete
 			i.state.currentState = BurstStateDetail
 			i.state.deleteError = nil
-			return nil
-
-		case "q", "ctrl+c":
-			i.setCancelled()
 			return nil
 		}
 	}
@@ -696,6 +727,15 @@ func (i *BurstManagementIntent) updateConfirmView(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case tea.KeyMsg:
+		// Handle global quit key in all confirm sub-states
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		}
+
 		if i.state.showReextractPrompt {
 			switch msg.String() {
 			case "y":
@@ -708,35 +748,21 @@ func (i *BurstManagementIntent) updateConfirmView(msg tea.Msg) tea.Cmd {
 			case "n", "esc":
 				// Don't re-extract, just mark as confirmed
 				return i.confirmBurstOnly()
-
-			case "q", "ctrl+c":
-				i.setCancelled()
-				return nil
 			}
 		} else if i.state.extractionComplete {
 			// Extraction complete, any key returns to detail
-			switch msg.String() {
-			case "q", "ctrl+c":
-				i.setCancelled()
-				return nil
-			default:
-				// Any other key returns to detail
-				i.state.currentState = BurstStateDetail
-				i.state.confirmError = nil
-				i.state.extractionComplete = false
-				i.state.extractedFactsCount = 0
-				return nil
-			}
+			// Any key returns to detail
+			i.state.currentState = BurstStateDetail
+			i.state.confirmError = nil
+			i.state.extractionComplete = false
+			i.state.extractedFactsCount = 0
+			return nil
 		} else {
-			switch msg.String() {
-			case "esc":
+			// Handle back (esc)
+			if HandleGlobalKeys(msg) == KeyBack {
 				// Go back to detail
 				i.state.currentState = BurstStateDetail
 				i.state.confirmError = nil
-				return nil
-
-			case "q", "ctrl+c":
-				i.setCancelled()
 				return nil
 			}
 		}
@@ -764,9 +790,13 @@ func (i *BurstManagementIntent) updateExtractingFactsView(msg tea.Msg) tea.Cmd {
 		return i.confirmBurstOnly()
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			i.setCancelled()
+		// Handle global keys (q=quit, ?=help)
+		// Note: esc doesn't go back during extraction
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
 			return nil
 		}
 	}

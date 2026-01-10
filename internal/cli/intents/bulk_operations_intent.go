@@ -5,23 +5,28 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type BulkOperationsModel struct {
 	*BaseIntent
-	data   *BulkOperationsContext
-	result *IntentResult[*BulkOperationsResult]
-	active bool
+	data       *BulkOperationsContext
+	result     *IntentResult[*BulkOperationsResult]
+	active     bool
+	navHandler *navigation.ListNavigationHandler
 }
 
 func NewBulkOperationsIntent(data *BulkOperationsContext) *BulkOperationsModel {
-	return &BulkOperationsModel{
+	model := &BulkOperationsModel{
 		BaseIntent: NewBaseIntent(),
 		data:       data,
 		result:     nil,
 		active:     false,
 	}
+	// Initialize navigation handler
+	model.navHandler = navigation.NewListNavigationHandler(model)
+	return model
 }
 
 func (m *BulkOperationsModel) Init() tea.Cmd {
@@ -328,18 +333,15 @@ func (m *BulkOperationsModel) getCompleteContent() string {
 func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			m.data.CurrentState = BulkCompleteState
-			m.result = &IntentResult[*BulkOperationsResult]{
-				Status: Cancelled,
-				Data: &BulkOperationsResult{
-					Operation: "cancelled",
-				},
-			}
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
 			return tea.Quit
-
-		case "esc":
+		case KeyHelp:
+			m.ToggleHelp()
+			return nil
+		case KeyBack:
+			// At root state, back means cancel and return to main menu
 			m.result = &IntentResult[*BulkOperationsResult]{
 				Status: Cancelled,
 				Data: &BulkOperationsResult{
@@ -348,7 +350,14 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 			}
 			m.active = false
 			return nil
+		}
 
+		// Try list navigation handler first (handles up/down/j/k/pgup/pgdn/home/end/g/G)
+		if m.navHandler.HandleKey(msg.String()) {
+			return nil
+		}
+
+		switch msg.String() {
 		case "enter":
 			if m.data.SelectedOp != "" {
 				m.data.CurrentState = BulkConfigureState
@@ -360,34 +369,6 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 			if idx >= 0 && idx < len(m.data.AvailableOps) {
 				m.data.SelectOperation(m.data.AvailableOps[idx])
 			}
-
-		case "up", "k":
-			// Navigate up in list
-			if m.data.SelectedOp == "" && len(m.data.AvailableOps) > 0 {
-				m.data.SelectOperation(m.data.AvailableOps[0])
-			} else {
-				// Find current index and move up
-				for i, op := range m.data.AvailableOps {
-					if op == m.data.SelectedOp && i > 0 {
-						m.data.SelectOperation(m.data.AvailableOps[i-1])
-						break
-					}
-				}
-			}
-
-		case "down", "j":
-			// Navigate down in list
-			if m.data.SelectedOp == "" && len(m.data.AvailableOps) > 0 {
-				m.data.SelectOperation(m.data.AvailableOps[0])
-			} else {
-				// Find current index and move down
-				for i, op := range m.data.AvailableOps {
-					if op == m.data.SelectedOp && i < len(m.data.AvailableOps)-1 {
-						m.data.SelectOperation(m.data.AvailableOps[i+1])
-						break
-					}
-				}
-			}
 		}
 	}
 	return nil
@@ -396,22 +377,23 @@ func (m *BulkOperationsModel) handleSelectOpState(msg tea.Msg) tea.Cmd {
 func (m *BulkOperationsModel) handleConfigureState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			m.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to select operation state
+			m.data.CurrentState = BulkSelectOpState
+			return nil
+		}
+
 		switch msg.String() {
 		case "enter":
 			m.data.StartExecution()
 			m.data.CurrentState = BulkExecuteState
-
-		case "esc":
-			m.data.CurrentState = BulkSelectOpState
-
-		case "q", "ctrl+c":
-			m.result = &IntentResult[*BulkOperationsResult]{
-				Status: Cancelled,
-				Data: &BulkOperationsResult{
-					Operation: "cancelled",
-				},
-			}
-			return tea.Quit
 		}
 	}
 	return nil
@@ -420,6 +402,28 @@ func (m *BulkOperationsModel) handleConfigureState(msg tea.Msg) tea.Cmd {
 func (m *BulkOperationsModel) handleExecuteState(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help)
+		// Note: esc doesn't go back during execution - use 'c' to cancel
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			m.data.CompleteExecution()
+			m.result = &IntentResult[*BulkOperationsResult]{
+				Status: Cancelled,
+				Data: &BulkOperationsResult{
+					Operation:      m.data.SelectedOp,
+					ProcessedCount: m.data.ProcessedCount,
+					SuccessCount:   m.data.SuccessCount,
+					FailureCount:   m.data.FailureCount,
+					SkippedCount:   m.data.SkippedCount,
+					Message:        "Operation cancelled",
+				},
+			}
+			return tea.Quit
+		case KeyHelp:
+			m.ToggleHelp()
+			return nil
+		}
+
 		switch msg.String() {
 		case "p":
 			if m.data.IsExecuting && !m.data.IsPaused {
@@ -445,22 +449,50 @@ func (m *BulkOperationsModel) handleExecuteState(msg tea.Msg) tea.Cmd {
 				},
 			}
 			return tea.Quit
-
-		case "q", "ctrl+c":
-			m.data.CompleteExecution()
-			m.result = &IntentResult[*BulkOperationsResult]{
-				Status: Cancelled,
-				Data: &BulkOperationsResult{
-					Operation:      m.data.SelectedOp,
-					ProcessedCount: m.data.ProcessedCount,
-					SuccessCount:   m.data.SuccessCount,
-					FailureCount:   m.data.FailureCount,
-					SkippedCount:   m.data.SkippedCount,
-					Message:        "Operation cancelled",
-				},
-			}
-			return tea.Quit
 		}
 	}
 	return nil
+}
+
+// ListNavigator interface implementation
+
+// GetTotalItems returns the total number of available operations.
+func (m *BulkOperationsModel) GetTotalItems() int {
+	return len(m.data.AvailableOps)
+}
+
+// GetSelectedIndex returns the current selection index.
+func (m *BulkOperationsModel) GetSelectedIndex() int {
+	if m.data.SelectedOp == "" {
+		return 0
+	}
+	for i, op := range m.data.AvailableOps {
+		if op == m.data.SelectedOp {
+			return i
+		}
+	}
+	return 0
+}
+
+// SetSelectedIndex sets the selection index and updates the selected operation.
+func (m *BulkOperationsModel) SetSelectedIndex(idx int) {
+	if len(m.data.AvailableOps) == 0 {
+		m.data.SelectedOp = ""
+		return
+	}
+
+	// Clamp index to valid range
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(m.data.AvailableOps) {
+		idx = len(m.data.AvailableOps) - 1
+	}
+
+	m.data.SelectedOp = m.data.AvailableOps[idx]
+}
+
+// GetPageSize returns the page size for pagination.
+func (m *BulkOperationsModel) GetPageSize() int {
+	return 10
 }

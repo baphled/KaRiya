@@ -24,7 +24,6 @@ const (
 	KeyList     NavigationKey = "l" // List events
 	KeyMetadata NavigationKey = "m" // Open metadata review
 	KeyHelp     NavigationKey = "?" // Show help
-	KeyHome     NavigationKey = "h" // Go to home screen
 	KeyQuit     NavigationKey = "q" // Quit application
 	KeyPending  NavigationKey = "p" // Review pending items
 	KeyFacts    NavigationKey = "t" // View all facts
@@ -48,7 +47,6 @@ func AllNavigationKeys() []NavigationKey {
 		KeyEdit,
 		KeyDelete,
 		KeyHelp,
-		KeyHome,
 		KeyQuit,
 		KeyBulk,
 		KeyCapture,
@@ -76,7 +74,6 @@ var KeyDescription = map[NavigationKey]string{
 	KeyEdit:     "Edit selected item",
 	KeyDelete:   "Delete selected item",
 	KeyHelp:     "Show help information",
-	KeyHome:     "Go to home screen",
 	KeyQuit:     "Quit application",
 	KeyBulk:     "Enter bulk operations mode",
 	KeyCapture:  "Capture new event",

@@ -117,15 +117,8 @@ var _ = Describe("App Unit Tests", func() {
 				Expect(view).NotTo(ContainSubstring("Keyboard Reference"))
 			})
 
-			It("should toggle help screen on h key", func() {
-				// Press h to show help
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("h")}
-				newModel, _ := model.Update(msg)
-				model = newModel.(*app.Model)
-
-				view := model.View()
-				Expect(view).To(ContainSubstring("Keyboard Reference"))
-			})
+			// Note: 'h' key is vim-style left navigation, not help
+			// Help is toggled only with '?' key per KEYBOARD_REFERENCE.md
 
 			It("should show navigation shortcuts in help", func() {
 				// Show help
@@ -249,7 +242,7 @@ var _ = Describe("App Unit Tests", func() {
 				}
 			})
 
-			It("should reset selected menu index", func() {
+			It("should return to menu on escape", func() {
 				// Navigate down in menu first
 				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -257,8 +250,8 @@ var _ = Describe("App Unit Tests", func() {
 				// Activate intent
 				model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-				// Complete intent
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
+				// Cancel intent with escape (q now quits the app)
+				msg := tea.KeyMsg{Type: tea.KeyEsc}
 				newModel, cmdResult := model.Update(msg)
 				model = newModel.(*app.Model)
 
@@ -276,11 +269,11 @@ var _ = Describe("App Unit Tests", func() {
 				Expect(state).To(Equal(app.StateMenu))
 			})
 
-			It("should return batch command with intent result", func() {
+			It("should return tea.Quit on 'q' key", func() {
 				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
 				newModel, cmdResult := model.Update(msg)
 				Expect(newModel).NotTo(BeNil())
-				// Should return batch command
+				// q now returns tea.Quit
 				Expect(cmdResult).NotTo(BeNil())
 			})
 		})

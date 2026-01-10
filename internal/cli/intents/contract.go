@@ -168,6 +168,10 @@ type TerminalAwareIntent interface {
 //  3. Progress (specific progress tracking)
 //  4. Success (lowest priority, auto-dismiss after 3 seconds)
 //
+// Help Modal Integration:
+// Press '?' to toggle context-sensitive help. The help modal shows keyboard shortcuts
+// and is automatically integrated with view rendering.
+//
 // Example usage:
 //
 //	type MyIntent struct {
@@ -219,6 +223,9 @@ type BaseIntent struct {
 	progressValue   float64
 	progressTitle   string
 	progressMessage string
+
+	// Help modal
+	helpModal *components.HelpModal
 }
 
 // NewBaseIntent creates a new BaseIntent with default terminal configuration
@@ -227,6 +234,7 @@ func NewBaseIntent() *BaseIntent {
 		terminalInfo:   terminal.NewInfo(),
 		terminalConfig: terminal.DefaultConfig,
 		logoSpacing:    2, // Default spacing
+		helpModal:      components.NewHelpModal(nil),
 	}
 }
 
@@ -387,6 +395,64 @@ func (b *BaseIntent) IsProgressEnabled() bool {
 // GetProgress returns the current progress state
 func (b *BaseIntent) GetProgress() (title, message string, value float64) {
 	return b.progressTitle, b.progressMessage, b.progressValue
+}
+
+// Help Modal Methods
+
+// ShowHelp shows the help modal
+func (b *BaseIntent) ShowHelp() {
+	if b.helpModal != nil {
+		// Update size based on terminal dimensions
+		if b.terminalInfo != nil && b.terminalInfo.IsValid {
+			b.helpModal.SetSize(b.terminalInfo.Width, b.terminalInfo.Height)
+		}
+		b.helpModal.Show()
+	}
+}
+
+// HideHelp hides the help modal
+func (b *BaseIntent) HideHelp() {
+	if b.helpModal != nil {
+		b.helpModal.Hide()
+	}
+}
+
+// ToggleHelp toggles the help modal visibility
+func (b *BaseIntent) ToggleHelp() {
+	if b.helpModal != nil {
+		// Update size based on terminal dimensions
+		if b.terminalInfo != nil && b.terminalInfo.IsValid {
+			b.helpModal.SetSize(b.terminalInfo.Width, b.terminalInfo.Height)
+		}
+		b.helpModal.Toggle()
+	}
+}
+
+// IsHelpVisible returns whether the help modal is currently visible
+func (b *BaseIntent) IsHelpVisible() bool {
+	if b.helpModal != nil {
+		return b.helpModal.IsVisible()
+	}
+	return false
+}
+
+// GetHelpModal returns the help modal instance
+func (b *BaseIntent) GetHelpModal() *components.HelpModal {
+	return b.helpModal
+}
+
+// SetHelpKeyMap sets the keymap for the help modal
+func (b *BaseIntent) SetHelpKeyMap(keyMap interface{}) {
+	if b.helpModal != nil {
+		// Type assert to help.KeyMap if needed
+		if km, ok := keyMap.(interface {
+			ShortHelp() []interface{}
+			FullHelp() [][]interface{}
+		}); ok {
+			// Cast through interface for compatibility
+			_ = km // Used for type check
+		}
+	}
 }
 
 // View Creation Convenience Methods

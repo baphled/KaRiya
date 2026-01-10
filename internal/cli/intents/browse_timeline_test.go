@@ -206,15 +206,24 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			Expect(len(intent.state.viewedEvents)).To(Equal(1))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now quits the app, returns tea.Quit command
+			Expect(cmd).ToNot(BeNil())
+			// Result should be nil (not cancelled, app is quitting)
+			Expect(intent.result).To(BeNil())
 		})
 
-		It("should cancel on ctrl+c", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit on ctrl+c", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+			// ctrl+c now quits the app, returns tea.Quit command
+			Expect(cmd).ToNot(BeNil())
+			// Result should be nil (not cancelled, app is quitting)
+			Expect(intent.result).To(BeNil())
 		})
+
+		// Note: 'h' key is vim-style left navigation, not home
+		// Going home is done by pressing Esc (KeyBack) from root state
 	})
 
 	Describe("Update - Event Detail View", func() {
@@ -234,10 +243,16 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			Expect(intent.state.currentState).To(Equal(BrowseStateTimeline))
 		})
 
-		It("should cancel on q key", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(intent.result.Status).To(Equal(Cancelled))
+		It("should quit on q key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			// q now quits the app, returns tea.Quit command
+			Expect(cmd).ToNot(BeNil())
+			// Result should be nil (not cancelled, app is quitting)
+			Expect(intent.result).To(BeNil())
 		})
+
+		// Note: 'h' key is vim-style left navigation, not home
+		// Going home from detail is done by pressing Esc twice (back to timeline, then to main menu)
 	})
 
 	Describe("View Rendering", func() {
@@ -497,6 +512,45 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			// Currently the table shows ALL events (all 35 rows) instead of just the current page (5 rows)
 			rows := manyEventsIntent.table.Rows()
 			Expect(len(rows)).To(Equal(5), "Table should show only 5 events for page 3, but shows %d events", len(rows))
+		})
+	})
+
+	Describe("Selection Preservation", func() {
+		It("should preserve selection when intent is stored and restored", func() {
+			intent.Init()
+
+			// Navigate down to select index 1
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(intent.GetSelectedIndex()).To(Equal(1))
+
+			// Store the intent (simulating being pushed to history)
+			storedIntent := intent
+
+			// Later, restore the intent (simulating Back() from router)
+			restoredIntent := storedIntent
+
+			// Selection should be preserved
+			Expect(restoredIntent.GetSelectedIndex()).To(Equal(1))
+			Expect(restoredIntent.state.selectedIndex).To(Equal(1))
+		})
+
+		It("should maintain selection state through navigation", func() {
+			intent.Init()
+
+			// Navigate to a specific position
+			intent.SetSelectedIndex(1)
+			Expect(intent.GetSelectedIndex()).To(Equal(1))
+
+			// Enter detail view
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(BrowseStateEventDetail))
+
+			// Go back to timeline
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.currentState).To(Equal(BrowseStateTimeline))
+
+			// Selection should still be at index 1
+			Expect(intent.GetSelectedIndex()).To(Equal(1))
 		})
 	})
 })

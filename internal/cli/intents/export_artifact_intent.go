@@ -39,6 +39,13 @@ func (e *ExportArtifactIntent) Init() tea.Cmd {
 
 // Update handles messages
 func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
+	// Handle help modal toggle at intent level before delegating to model
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if HandleGlobalKeys(keyMsg) == KeyHelp {
+			e.ToggleHelp()
+			return nil
+		}
+	}
 	return e.model.Update(msg)
 }
 

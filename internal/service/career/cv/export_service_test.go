@@ -388,9 +388,12 @@ var _ = ginkgo.Describe("ExportService", func() {
 
 		ginkgo.Describe("CopyToClipboard", func() {
 			ginkgo.It("should copy content to clipboard", func() {
-				// Skip on CI environments without clipboard utilities
+				// Skip on CI environments or headless environments without clipboard utilities
 				if os.Getenv("CI") != "" {
 					ginkgo.Skip("Skipping clipboard test on CI - no clipboard utilities available")
+				}
+				if os.Getenv("DISPLAY") == "" && os.Getenv("WAYLAND_DISPLAY") == "" {
+					ginkgo.Skip("Skipping clipboard test - no display available (headless environment)")
 				}
 
 				testContent := "Test CV Content for Clipboard"

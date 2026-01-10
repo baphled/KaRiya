@@ -48,9 +48,11 @@ var _ = Describe("E2E MetadataEditor Workflow (Navigation Only)", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should return to main menu when pressing 'q'", func() {
+		It("should quit application when pressing 'q'", func() {
+			// Note: q now quits the entire app
+			// This test verifies the quit command is handled without panic
 			env.Quit()
-			env.AssertViewContains("Capture Event")
+			// After quit, the app terminates - we can't assert view content
 		})
 	})
 
