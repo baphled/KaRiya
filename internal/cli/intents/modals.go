@@ -35,11 +35,12 @@ type EditMetadataModal struct {
 	// form is the huh form for editing
 	form *huh.Form
 
-	// formData holds the form field values
-	company    string
-	project    string
-	tags       string
-	categories string
+	// formData holds the form field values (pointers so form binding works)
+	company         *string
+	project         *string
+	tags            *string
+	categories      *string
+	submitConfirmed *bool
 
 	// width and height track terminal dimensions for responsive layout
 	width  int
@@ -65,14 +66,29 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 		Categories: categories,
 	}
 
-	// Initialize form field values
+	// Initialize form field values as pointers so form binding updates the modal's fields
 	companyVal := company
 	projectVal := project
 	tagsVal := formatStringSlice(tags)
 	categoriesVal := formatStringSlice(categories)
+	submitConfirmed := false
 
-	// Create huh form
-	form := forms.NewForm(
+	modal := &EditMetadataModal{
+		original:        original,
+		modified:        copyMetadataSnapshot(original),
+		result:          nil,
+		form:            nil, // Will be set below
+		company:         &companyVal,
+		project:         &projectVal,
+		tags:            &tagsVal,
+		categories:      &categoriesVal,
+		submitConfirmed: &submitConfirmed,
+		width:           80,
+		height:          24,
+	}
+
+	// Create huh form with pointers to modal's fields
+	modal.form = forms.NewForm(
 		huh.NewGroup(
 			forms.NewInput(forms.FieldConfig{
 				Key:         "company",
@@ -81,7 +97,7 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 				Placeholder: "Enter company name...",
 				CharLimit:   100,
 				Validate:    forms.CompanyName,
-			}).Value(&companyVal),
+			}).Value(modal.company),
 
 			forms.NewInput(forms.FieldConfig{
 				Key:         "project",
@@ -89,7 +105,7 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 				Description: "Project name",
 				Placeholder: "Enter project name...",
 				CharLimit:   100,
-			}).Value(&projectVal),
+			}).Value(modal.project),
 
 			huh.NewInput().
 				Key("tags").
@@ -97,7 +113,7 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 				Description("Comma-separated tags").
 				Placeholder("tag1, tag2, tag3").
 				CharLimit(256).
-				Value(&tagsVal),
+				Value(modal.tags),
 
 			huh.NewInput().
 				Key("categories").
@@ -105,22 +121,19 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 				Description("Comma-separated categories").
 				Placeholder("category1, category2").
 				CharLimit(256).
-				Value(&categoriesVal),
+				Value(modal.categories),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(modal.submitConfirmed),
 		),
 	)
 
-	return &EditMetadataModal{
-		original:   original,
-		modified:   copyMetadataSnapshot(original),
-		result:     nil,
-		form:       form,
-		company:    companyVal,
-		project:    projectVal,
-		tags:       tagsVal,
-		categories: categoriesVal,
-		width:      80,
-		height:     24,
-	}
+	return modal
 }
 
 // Update handles user input for metadata editing.
@@ -215,14 +228,21 @@ func (m *EditMetadataModal) GetFooter() string {
 
 func (m *EditMetadataModal) syncModified() {
 	m.modified = &MetadataSnapshot{
-		Company:    m.company,
-		Project:    m.project,
-		Tags:       parseStringSlice(m.tags),
-		Categories: parseStringSlice(m.categories),
+		Company:    *m.company,
+		Project:    *m.project,
+		Tags:       parseStringSlice(*m.tags),
+		Categories: parseStringSlice(*m.categories),
 	}
 }
 
 func (m *EditMetadataModal) createResult() {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !*m.submitConfirmed {
+		m.createCancelledResult()
+		return
+	}
+
 	m.result = &ModalEditResult[*MetadataSnapshot]{
 		Original: m.original,
 		Modified: m.modified,
@@ -418,6 +438,13 @@ func (m *EditBurstModal) syncModified() {
 }
 
 func (m *EditBurstModal) createResult() {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.createCancelledResult()
+		return
+	}
+
 	m.result = &ModalEditResult[*career.Burst]{
 		Original: m.original,
 		Modified: m.modified,
@@ -603,6 +630,13 @@ func (m *EditFactModal) syncModified() {
 }
 
 func (m *EditFactModal) createResult() {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.createCancelledResult()
+		return
+	}
+
 	m.result = &ModalEditResult[*career.Fact]{
 		Original: m.original,
 		Modified: m.modified,

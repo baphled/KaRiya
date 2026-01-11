@@ -7,16 +7,19 @@ import (
 
 // BurstFormData holds the form data for burst editing.
 type BurstFormData struct {
-	Name        string
-	Description string
+	Name            string
+	Description     string
+	SubmitConfirmed bool
 }
 
 // NewBurstEditorForm creates a form for editing a burst.
-// The form has two fields: Name (required) and Description (optional).
+// The form has two fields: Name (required) and Description (optional),
+// plus a Submit confirmation button.
 func NewBurstEditorForm(burst *career.Burst) *huh.Form {
 	data := &BurstFormData{
-		Name:        burst.Name,
-		Description: burst.Description,
+		Name:            burst.Name,
+		Description:     burst.Description,
+		SubmitConfirmed: false,
 	}
 
 	return NewForm(
@@ -38,6 +41,14 @@ func NewBurstEditorForm(burst *career.Burst) *huh.Form {
 				CharLimit:   1000,
 				Validate:    Description,
 			}).Value(&data.Description),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }
@@ -45,6 +56,9 @@ func NewBurstEditorForm(burst *career.Burst) *huh.Form {
 // NewBurstEditorFormWithData creates a form for editing a burst with initial form data.
 // This variant allows external data binding for more control.
 func NewBurstEditorFormWithData(data *BurstFormData) *huh.Form {
+	// Initialize submit confirmation to false
+	data.SubmitConfirmed = false
+
 	return NewForm(
 		huh.NewGroup(
 			NewInput(FieldConfig{
@@ -64,6 +78,14 @@ func NewBurstEditorFormWithData(data *BurstFormData) *huh.Form {
 				CharLimit:   1000,
 				Validate:    Description,
 			}).Value(&data.Description),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }

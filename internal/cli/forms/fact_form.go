@@ -15,6 +15,7 @@ type FactFormData struct {
 	RoleFit              string
 	AudienceRelevance    string // Comma-separated
 	StrengthSignal       string
+	SubmitConfirmed      bool
 }
 
 // RoleFitOptions returns the available role fit options.
@@ -28,9 +29,11 @@ func RoleFitOptions() []SelectOption {
 }
 
 // NewFactEditorForm creates a form for editing a fact.
-// The form has 5 fields: Text, Competency Categories, Role Fit, Audience Relevance, Strength Signal.
+// The form has 5 fields: Text, Competency Categories, Role Fit, Audience Relevance, Strength Signal,
+// plus a Submit confirmation button.
 func NewFactEditorForm(fact *career.Fact) *huh.Form {
 	data := GetFactFormData(fact)
+	data.SubmitConfirmed = false
 
 	roleFitOpts := RoleFitOptions()
 	huhRoleFitOpts := make([]huh.Option[string], len(roleFitOpts))
@@ -89,12 +92,23 @@ func NewFactEditorForm(fact *career.Fact) *huh.Form {
 					"must be a number between 0.0 and 1.0",
 				),
 			}).Value(&data.StrengthSignal),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }
 
 // NewFactEditorFormWithData creates a form for editing a fact with initial form data.
 func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
+	// Initialize submit confirmation to false
+	data.SubmitConfirmed = false
+
 	roleFitOpts := RoleFitOptions()
 	huhRoleFitOpts := make([]huh.Option[string], len(roleFitOpts))
 	for i, opt := range roleFitOpts {
@@ -152,6 +166,14 @@ func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
 					"must be a number between 0.0 and 1.0",
 				),
 			}).Value(&data.StrengthSignal),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }

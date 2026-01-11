@@ -110,4 +110,45 @@ var _ = Describe("BurstForm", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("Submit button", func() {
+		It("should include a confirm/submit field in the form", func() {
+			data := &forms.BurstFormData{
+				Name:        "Test Burst",
+				Description: "Test description",
+			}
+
+			form := forms.NewBurstEditorFormWithData(data)
+
+			// The form should render without error
+			view := form.View()
+			Expect(view).NotTo(BeEmpty())
+
+			// The form should have a submit key that can be retrieved
+			submitValue := form.GetBool("submit")
+			Expect(submitValue).To(BeFalse(), "Submit should start as false")
+		})
+
+		It("should have submit confirmation data field", func() {
+			data := &forms.BurstFormData{
+				Name:        "Test Burst",
+				Description: "Test description",
+			}
+
+			// Verify that submit confirmation is tracked
+			Expect(data.SubmitConfirmed).To(BeFalse(), "Submit should not be confirmed initially")
+		})
+
+		It("should initialize SubmitConfirmed to false", func() {
+			data := &forms.BurstFormData{
+				Name:        "Test",
+				Description: "Desc",
+			}
+
+			// Create form which should initialize SubmitConfirmed
+			forms.NewBurstEditorFormWithData(data)
+
+			Expect(data.SubmitConfirmed).To(BeFalse())
+		})
+	})
 })
