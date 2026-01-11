@@ -187,27 +187,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	default:
 		// Check for RequestEditEventMsg before routing to intent
 		if editMsg, ok := msg.(intents.RequestEditEventMsg); ok {
-			// User wants to edit an event - activate CaptureEvent intent with PreviousEvent
-			captureCtx := &intents.CaptureEventContext{
-				CaptureStrategy: "manual",
-				PreviousEvent:   editMsg.Event,
-				Metadata:        make(map[string]string),
-				CLIEventService: m.cliService,
-				CareerService:   m.careerService,
+			// User wants to edit an event - activate CaptureEvent intent with event in context
+			// The context-aware factory will use previousEvent to enter edit mode
+			activationCtx := map[string]interface{}{
+				"previousEvent": editMsg.Event,
 			}
 
-			// Temporarily register the edit intent
-			_ = m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
-				intent, err := intents.NewCaptureEventIntent(captureCtx)
-				if err != nil {
-					m.logger.Error("Failed to create CaptureEvent intent for editing: %v", err)
-					return nil
-				}
-				return intent
-			})
-
-			// Activate the edit intent
-			cmd, err := m.intentRouter.ActivateIntent("capture_event_edit", make(map[string]interface{}))
+			cmd, err := m.intentRouter.ActivateIntent("capture_event", activationCtx)
 			if err != nil {
 				m.logger.Error("Failed to activate CaptureEvent for editing: %v", err)
 				return m, nil
@@ -539,14 +525,23 @@ func createDefaultCVProfiles() []*intents.CVProfile {
 
 // registerAllIntents registers all 10 intents with the router
 func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context, cvGenService cv.CVGenerationService, cvExportService *cv.ExportService) {
-	// CaptureEvent
-	_ = router.RegisterIntent("capture_event", func() intents.Intent {
+	// CaptureEvent - supports both new capture and edit mode via activation context
+	// When "previousEvent" is provided in context, intent enters edit mode
+	_ = router.RegisterIntentWithContext("capture_event", func(activationCtx map[string]interface{}) intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
 			CaptureStrategy: "manual",
 			Metadata:        make(map[string]string),
 			CLIEventService: cliService,
 			CareerService:   careerService,
 		}
+
+		// Check for edit mode - if previousEvent is in activation context, use it
+		if activationCtx != nil {
+			if prevEvent, ok := activationCtx["previousEvent"].(*career.CareerEvent); ok && prevEvent != nil {
+				captureCtx.PreviousEvent = prevEvent
+			}
+		}
+
 		intent, err := intents.NewCaptureEventIntent(captureCtx)
 		if err != nil {
 			log.Error("Failed to create CaptureEvent intent: %v", err)
