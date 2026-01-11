@@ -1,6 +1,8 @@
 package intents
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -766,4 +768,140 @@ func slicesEqual(a, b []string) bool {
 	}
 
 	return true
+}
+
+// DeleteConfirmationModal provides a clear, prominent modal for confirming delete actions.
+// This modal reduces the risk of accidental deletions by:
+// - Using warning colors (Catppuccin Red)
+// - Displaying item details for verification
+// - Requiring explicit confirmation
+// - Supporting both keyboard shortcuts (y/n) and standard keys (Enter/Esc)
+type DeleteConfirmationModal struct {
+	// itemType is the type of item being deleted ("event", "burst", "fact")
+	itemType string
+
+	// itemTitle is the display title of the item (e.g., event text, burst summary)
+	itemTitle string
+
+	// itemDescription is additional details about the item
+	itemDescription string
+
+	// result holds the user's decision
+	result *DeleteConfirmationResult
+
+	// width and height track terminal dimensions
+	width  int
+	height int
+}
+
+// DeleteConfirmationResult represents the outcome of a delete confirmation.
+type DeleteConfirmationResult struct {
+	// Confirmed is true if the user confirmed the deletion
+	Confirmed bool
+}
+
+// NewDeleteConfirmationModal creates a new delete confirmation modal.
+// itemType: the type of item ("event", "burst", "fact")
+// itemTitle: the display title of the item
+// itemDescription: additional details about the item
+func NewDeleteConfirmationModal(itemType, itemTitle, itemDescription string) *DeleteConfirmationModal {
+	return &DeleteConfirmationModal{
+		itemType:        itemType,
+		itemTitle:       itemTitle,
+		itemDescription: itemDescription,
+		result:          nil,
+		width:           120,
+		height:          40,
+	}
+}
+
+// Update handles user input for the delete confirmation modal.
+func (m *DeleteConfirmationModal) Update(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return nil
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "y", "Y", "enter":
+			// Confirm deletion
+			m.result = &DeleteConfirmationResult{Confirmed: true}
+			return nil
+
+		case "n", "N", "esc":
+			// Cancel deletion
+			m.result = &DeleteConfirmationResult{Confirmed: false}
+			return nil
+		}
+	}
+
+	return nil
+}
+
+// View renders the delete confirmation modal with warning styling.
+func (m *DeleteConfirmationModal) View() string {
+	// Warning header
+	warningStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#F38BA8")). // Catppuccin Red
+		Bold(true)
+
+	var content strings.Builder
+	content.WriteString(warningStyle.Render("⚠️  Delete " + m.itemType + "?"))
+	content.WriteString("\n\n")
+
+	// Item title
+	titleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#CDD6F4")). // Catppuccin Text
+		Bold(true)
+	content.WriteString(titleStyle.Render(m.itemTitle))
+	content.WriteString("\n")
+
+	// Description if provided
+	if m.itemDescription != "" {
+		descStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#A6ADC8")) // Catppuccin Subtext0
+		content.WriteString("\n")
+		content.WriteString(descStyle.Render(m.itemDescription))
+		content.WriteString("\n")
+	}
+
+	// Warning message
+	content.WriteString("\n")
+	content.WriteString(warningStyle.Render("This action cannot be undone."))
+	content.WriteString("\n")
+
+	// Wrap in modal container
+	title := warningStyle.Render("Delete Confirmation")
+	instructions := "y/Enter: Confirm Delete  |  n/Esc: Cancel"
+
+	modal := components.NewModalContainer().
+		SetTitle(title).
+		SetMessage(content.String()).
+		SetInstructions(instructions).
+		WithWidth(m.width - 4).
+		WithScrollHint(false)
+
+	return modal.Render()
+}
+
+// Result returns the deletion confirmation result.
+func (m *DeleteConfirmationModal) Result() *DeleteConfirmationResult {
+	return m.result
+}
+
+// IsComplete returns true if the user has made a decision.
+func (m *DeleteConfirmationModal) IsComplete() bool {
+	return m.result != nil
+}
+
+// WasConfirmed returns true if the user confirmed the deletion.
+func (m *DeleteConfirmationModal) WasConfirmed() bool {
+	return m.result != nil && m.result.Confirmed
+}
+
+// GetTitle returns the modal title for overlay rendering.
+func (m *DeleteConfirmationModal) GetTitle() string {
+	return "Delete Confirmation"
 }
