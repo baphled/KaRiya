@@ -26,6 +26,99 @@ func NewForm(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).WithTheme(Theme())
 }
 
+// NewFormWithHeight creates a new form with KaRiya's default theme and a fixed height.
+// When height is set, the form becomes scrollable if content exceeds the height.
+// Use this for forms displayed in modals or constrained containers.
+func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
+	return huh.NewForm(groups...).WithTheme(Theme()).WithHeight(height)
+}
+
+// NewFormWithDimensions creates a new form with KaRiya's default theme and fixed dimensions.
+// When height is set, the form becomes scrollable if content exceeds the height.
+// Width controls the form's rendering width.
+func NewFormWithDimensions(width, height int, groups ...*huh.Group) *huh.Form {
+	form := huh.NewForm(groups...).WithTheme(Theme())
+	if height > 0 {
+		form = form.WithHeight(height)
+	}
+	if width > 0 {
+		form = form.WithWidth(width)
+	}
+	return form
+}
+
+// NewThemedFormWithHeight creates a form with the given theme and height.
+// When height is set, the form becomes scrollable if content exceeds the height.
+func NewThemedFormWithHeight(theme themes.Theme, height int, groups ...*huh.Group) *huh.Form {
+	return huh.NewForm(groups...).WithTheme(ThemedForm(theme)).WithHeight(height)
+}
+
+// DefaultFormHeight calculates a reasonable form height based on terminal dimensions.
+// It reserves space for: logo (~7 lines), breadcrumbs (~2 lines), footer (~3 lines),
+// modal chrome (~4 lines), and some padding (~4 lines) = ~20 lines overhead.
+// Minimum height is 10 lines to ensure usability.
+func DefaultFormHeight(terminalHeight int) int {
+	const overhead = 20
+	const minHeight = 10
+
+	height := terminalHeight - overhead
+	if height < minHeight {
+		height = minHeight
+	}
+	return height
+}
+
+// ConfirmButtonHeight is the space reserved for the fixed confirm button group.
+const ConfirmButtonHeight = 5
+
+// FieldsHeight calculates the height for form fields when using a fixed confirm button.
+// This reserves space for the confirm button to always be visible.
+func FieldsHeight(terminalHeight int) int {
+	formHeight := DefaultFormHeight(terminalHeight)
+	fieldsHeight := formHeight - ConfirmButtonHeight
+	if fieldsHeight < 5 {
+		fieldsHeight = 5
+	}
+	return fieldsHeight
+}
+
+// NewFormWithFixedConfirm creates a form with scrollable fields and a fixed confirm button.
+// The confirm button remains visible at the bottom while fields scroll above it.
+// fieldsGroup: the form fields that can scroll
+// confirmValue: pointer to bool for submit confirmation
+// width, height: dimensions for the form
+func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, height int) *huh.Form {
+	// Calculate height for fields group (reserve space for confirm)
+	fieldsHeight := height - ConfirmButtonHeight
+	if fieldsHeight < 5 {
+		fieldsHeight = 5
+	}
+
+	// Create confirm group (fixed at bottom)
+	confirmGroup := huh.NewGroup(
+		huh.NewConfirm().
+			Key("submit").
+			Title("Save Changes").
+			Description("Submit the form to save your changes").
+			Affirmative("Submit").
+			Negative("Cancel").
+			Value(confirmValue),
+	)
+
+	// Apply height to fields group to make it scrollable
+	fieldsGroup = fieldsGroup.WithHeight(fieldsHeight)
+
+	form := huh.NewForm(fieldsGroup, confirmGroup).
+		WithTheme(Theme()).
+		WithLayout(huh.LayoutStack)
+
+	if width > 0 {
+		form = form.WithWidth(width)
+	}
+
+	return form
+}
+
 // NewThemedForm creates a new form with the given KaRiya theme.
 // This ensures forms match the rest of the TUI styling.
 func NewThemedForm(theme themes.Theme, groups ...*huh.Group) *huh.Form {
@@ -125,10 +218,13 @@ type FieldConfig struct {
 }
 
 // NewInput creates a pre-configured input field.
+// Note: Prompt("> ") is set explicitly to fix a huh library display issue
+// where empty fields show only the first character of the placeholder.
 func NewInput(config FieldConfig) *huh.Input {
 	input := huh.NewInput().
 		Key(config.Key).
-		Title(config.Title)
+		Title(config.Title).
+		Prompt("> ") // Explicit prompt fixes placeholder display issue
 
 	if config.Description != "" {
 		input = input.Description(config.Description)

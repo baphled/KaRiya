@@ -7,17 +7,20 @@ import (
 
 // MetadataFormData holds the form data for event metadata editing.
 type MetadataFormData struct {
-	Date       string
-	Company    string
-	Project    string
-	Tags       []string
-	Categories []string
+	Date            string
+	Company         string
+	Project         string
+	Tags            []string
+	Categories      []string
+	SubmitConfirmed bool
 }
 
 // NewMetadataEditorForm creates a form for editing event metadata.
-// The form has 5 fields: Date, Company, Project, Tags, Categories.
+// The form has 5 fields: Date, Company, Project, Tags, Categories,
+// plus a Submit confirmation button.
 func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCategories []string) *huh.Form {
 	data := GetMetadataFormData(event)
+	data.SubmitConfirmed = false
 
 	// Convert tags and categories to options
 	tagOptions := make([]huh.Option[string], len(availableTags))
@@ -72,12 +75,23 @@ func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCa
 				Options(categoryOptions...).
 				Value(&data.Categories).
 				Limit(5),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }
 
 // NewMetadataEditorFormWithData creates a form for editing event metadata with initial form data.
 func NewMetadataEditorFormWithData(data *MetadataFormData, availableTags, availableCategories []string) *huh.Form {
+	// Initialize submit confirmation to false
+	data.SubmitConfirmed = false
+
 	// Convert tags and categories to options
 	tagOptions := make([]huh.Option[string], len(availableTags))
 	for i, tag := range availableTags {
@@ -131,6 +145,14 @@ func NewMetadataEditorFormWithData(data *MetadataFormData, availableTags, availa
 				Options(categoryOptions...).
 				Value(&data.Categories).
 				Limit(5),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }

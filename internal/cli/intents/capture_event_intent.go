@@ -90,8 +90,8 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 		return nil, err
 	}
 
-	// Create the form model for capturing event details
-	formModel := models.NewFormModel(context.CLIEventService)
+	// Create the huh-based form model for capturing event details
+	formModel := models.NewHuhCaptureForm(context.CLIEventService)
 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
@@ -176,8 +176,15 @@ func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
 		i.state.captureForm.SetStrategy(string(StrategyManual))
 		i.state.showOptionalFields = true
 
+		// CRITICAL: Load the event data into the form fields
+		// This populates all input fields with the existing event data
+		i.state.captureForm.LoadEventForEditing(i.context.PreviousEvent)
+
 		// Skip strategy selection and go straight to form
 		i.state.currentState = CaptureStateForm
+
+		// CRITICAL: Initialize the form so it can accept input
+		return i.state.captureForm.Init()
 	}
 	// Return a no-op command to satisfy the intent lifecycle
 	return func() tea.Msg { return nil }
@@ -256,7 +263,9 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			}
 
 			i.state.currentState = CaptureStateForm
-			return nil
+
+			// CRITICAL: Initialize the form so it can accept input
+			return i.state.captureForm.Init()
 
 		}
 
@@ -1229,7 +1238,7 @@ func (i *CaptureEventIntent) GetState() string {
 }
 
 // GetForm returns the current form model instance (for test and debug)
-func (i *CaptureEventIntent) GetForm() *models.FormModel {
+func (i *CaptureEventIntent) GetForm() *models.HuhCaptureForm {
 	if i == nil || i.state == nil {
 		return nil
 	}

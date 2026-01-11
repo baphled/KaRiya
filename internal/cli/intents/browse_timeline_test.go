@@ -243,6 +243,22 @@ var _ = Describe("BrowseTimelineIntent", func() {
 			Expect(intent.state.currentState).To(Equal(BrowseStateTimeline))
 		})
 
+		It("should send RequestEditEventMsg when pressing 'e' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(cmd).ToNot(BeNil())
+
+			// Execute the command to get the message
+			msg := cmd()
+
+			// Verify it's a RequestEditEventMsg
+			editMsg, ok := msg.(RequestEditEventMsg)
+			Expect(ok).To(BeTrue(), "Expected RequestEditEventMsg, got %T", msg)
+
+			// Verify the event is the selected event
+			Expect(editMsg.Event).To(Equal(intent.state.selectedEvent))
+			Expect(editMsg.Event.ID).To(Equal("event2")) // event2 is first after desc sort
+		})
+
 		It("should quit on q key", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 			// q now quits the app, returns tea.Quit command

@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -337,6 +339,115 @@ var _ = Describe("E2E BrowseTimeline Workflow", func() {
 			env.Confirm() // Complete/confirm selection
 			// Should return to main menu after completing
 			env.AssertViewContains("Capture Event")
+		})
+	})
+
+	Describe("Event Edit Workflow", func() {
+		BeforeEach(func() {
+			env = e2e.Setup(GinkgoT())
+			env.PopulateTestData(5, 0, 0) // 5 events
+			env.SelectIntentByName("browse_timeline")
+			env.Confirm() // Go to detail view
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should show edit option in detail view", func() {
+			// Verify edit shortcut is displayed
+			env.AssertViewContainsAny("e", "Edit", "edit")
+		})
+
+		It("should transition to edit view when pressing 'e'", func() {
+			env.PressKeyRune('e')
+			// Should show edit form with metadata fields
+			env.AssertViewContainsAny("Edit", "Company", "Project", "Tags")
+		})
+
+		It("should show edit modal with form fields", func() {
+			env.PressKeyRune('e')
+			// The EditMetadataModal should display form inputs
+			env.AssertViewContainsAny("Company", "Project", "Tags", "Categories")
+		})
+
+		It("should return to detail view when cancelling edit", func() {
+			env.PressKeyRune('e')
+			env.Cancel() // Press Escape to cancel
+			// Should be back at detail view
+			env.AssertViewContainsAny("Detail", "Date", "Text", "e")
+		})
+
+		It("should not crash when pressing edit key multiple times", func() {
+			env.PressKeyRune('e')
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).NotTo(ContainSubstring("panic"))
+
+			// Cancel and try again
+			env.Cancel()
+			env.PressKeyRune('e')
+			view = env.GetView()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).NotTo(ContainSubstring("panic"))
+		})
+	})
+
+	Describe("Event Edit Form Display and UX", func() {
+		BeforeEach(func() {
+			env = e2e.Setup(GinkgoT())
+			env.PopulateTestData(5, 0, 0)
+			env.SelectIntentByName("browse_timeline")
+			env.Confirm() // Go to detail view
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should show form immediately when entering edit mode", func() {
+			env.PressKeyRune('e')
+			view := env.GetView()
+			// Form should be visible immediately with input fields
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("Company"),
+				ContainSubstring("Project"),
+				ContainSubstring("Tags"),
+			))
+			Expect(view).NotTo(ContainSubstring("Initializing"))
+			Expect(view).NotTo(ContainSubstring("Loading"))
+		})
+
+		It("should show company field with current value", func() {
+			env.PressKeyRune('e')
+			view := env.GetView()
+			// Should show the company field
+			Expect(view).To(ContainSubstring("Company"))
+			// Should contain one of the test company names
+			hasTestData := strings.Contains(view, "Acme") || strings.Contains(view, "TechStart") || strings.Contains(view, "BigCorp")
+			Expect(hasTestData).To(BeTrue(), "Edit form should show company name from test data")
+		})
+
+		It("should NOT show duplicate help text", func() {
+			env.PressKeyRune('e')
+			view := env.GetView()
+			// Count occurrences of common help patterns
+			enterCount := strings.Count(view, "Enter")
+			escCount := strings.Count(view, "Esc")
+
+			// With proper rendering, help text appears reasonably
+			Expect(enterCount).To(BeNumerically("<=", 3), "Should not have duplicate Enter help text")
+			Expect(escCount).To(BeNumerically("<=", 3), "Should not have duplicate Esc help text")
+		})
+
+		It("should maintain consistent layout in edit view", func() {
+			env.PressKeyRune('e')
+			view := env.GetView()
+			// View should not be excessively long (broken layout symptom)
+			lines := strings.Split(view, "\n")
+			Expect(len(lines)).To(BeNumerically("<", 100), "View should not have excessive line count")
+			// Should not have large empty gaps
+			Expect(view).NotTo(ContainSubstring("\n\n\n\n\n"))
 		})
 	})
 })

@@ -1,9 +1,6 @@
 package intents
 
 import (
-	"strings"
-	"unicode"
-
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -22,6 +19,7 @@ import (
 // - Restores original on cancellation
 // - Uses huh library for form handling
 // - Professional styling with Catppuccin theme
+// - Scrollable when content exceeds terminal height
 type EditMetadataModal struct {
 	// original is the unmodified metadata from the event (never mutated)
 	original *MetadataSnapshot
@@ -35,11 +33,15 @@ type EditMetadataModal struct {
 	// form is the huh form for editing
 	form *huh.Form
 
-	// formData holds the form field values
-	company    string
-	project    string
-	tags       string
-	categories string
+	// formGroup stores the form group for rebuilding with new height
+	formGroup *huh.Group
+
+	// formData holds the form field values (pointers so form binding works)
+	company         *string
+	project         *string
+	tags            []string // MultiSelect uses slice directly
+	categories      []string // MultiSelect uses slice directly
+	submitConfirmed *bool
 
 	// width and height track terminal dimensions for responsive layout
 	width  int
@@ -68,59 +70,86 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 	// Initialize form field values
 	companyVal := company
 	projectVal := project
-	tagsVal := formatStringSlice(tags)
-	categoriesVal := formatStringSlice(categories)
+	submitConfirmed := false
 
-	// Create huh form
-	form := forms.NewForm(
-		huh.NewGroup(
-			forms.NewInput(forms.FieldConfig{
-				Key:         "company",
-				Title:       "Company",
-				Description: "Company name",
-				Placeholder: "Enter company name...",
-				CharLimit:   100,
-				Validate:    forms.CompanyName,
-			}).Value(&companyVal),
+	// Copy slices for multi-select binding (ensure not nil)
+	tagsCopy := make([]string, len(tags))
+	copy(tagsCopy, tags)
+	categoriesCopy := make([]string, len(categories))
+	copy(categoriesCopy, categories)
 
-			forms.NewInput(forms.FieldConfig{
-				Key:         "project",
-				Title:       "Project",
-				Description: "Project name",
-				Placeholder: "Enter project name...",
-				CharLimit:   100,
-			}).Value(&projectVal),
+	// Build tag options from AllowedTags
+	tagOptions := make([]huh.Option[string], 0)
+	for tag := range career.AllowedTags {
+		tagOptions = append(tagOptions, huh.NewOption(tag, tag))
+	}
 
-			huh.NewInput().
-				Key("tags").
-				Title("Tags").
-				Description("Comma-separated tags").
-				Placeholder("tag1, tag2, tag3").
-				CharLimit(256).
-				Value(&tagsVal),
+	// Build category options from AllowedCategories
+	categoryOptions := make([]huh.Option[string], 0)
+	for cat := range career.AllowedCategories {
+		categoryOptions = append(categoryOptions, huh.NewOption(cat, cat))
+	}
 
-			huh.NewInput().
-				Key("categories").
-				Title("Categories").
-				Description("Comma-separated categories").
-				Placeholder("category1, category2").
-				CharLimit(256).
-				Value(&categoriesVal),
-		),
+	modal := &EditMetadataModal{
+		original:        original,
+		modified:        copyMetadataSnapshot(original),
+		result:          nil,
+		form:            nil, // Will be set below
+		formGroup:       nil, // Will be set below
+		company:         &companyVal,
+		project:         &projectVal,
+		tags:            tagsCopy,
+		categories:      categoriesCopy,
+		submitConfirmed: &submitConfirmed,
+		width:           80,
+		height:          24,
+	}
+
+	// Create form group with fields only (confirm button is separate)
+	modal.formGroup = huh.NewGroup(
+		forms.NewInput(forms.FieldConfig{
+			Key:         "company",
+			Title:       "Company",
+			Description: "Company name",
+			Placeholder: "Enter company name...",
+			CharLimit:   100,
+			Validate:    forms.CompanyName,
+		}).Value(modal.company),
+
+		forms.NewInput(forms.FieldConfig{
+			Key:         "project",
+			Title:       "Project",
+			Description: "Project name",
+			Placeholder: "Enter project name...",
+			CharLimit:   100,
+		}).Value(modal.project),
+
+		huh.NewMultiSelect[string]().
+			Key("tags").
+			Title("Tags").
+			Description("Select relevant tags").
+			Options(tagOptions...).
+			Value(&modal.tags).
+			Limit(8),
+
+		huh.NewMultiSelect[string]().
+			Key("categories").
+			Title("Categories").
+			Description("Select relevant categories").
+			Options(categoryOptions...).
+			Value(&modal.categories).
+			Limit(6),
 	)
 
-	return &EditMetadataModal{
-		original:   original,
-		modified:   copyMetadataSnapshot(original),
-		result:     nil,
-		form:       form,
-		company:    companyVal,
-		project:    projectVal,
-		tags:       tagsVal,
-		categories: categoriesVal,
-		width:      80,
-		height:     24,
-	}
+	// Create form with fixed confirm button at bottom
+	modal.form = forms.NewFormWithFixedConfirm(
+		modal.formGroup,
+		modal.submitConfirmed,
+		modal.width-4, // Leave margin for modal chrome
+		forms.DefaultFormHeight(modal.height),
+	)
+
+	return modal
 }
 
 // Update handles user input for metadata editing.
@@ -129,6 +158,10 @@ func (m *EditMetadataModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Update form dimensions without losing state
+		m.form = m.form.
+			WithHeight(forms.DefaultFormHeight(m.height)).
+			WithWidth(m.width - 4) // Leave margin for modal chrome
 		return nil
 	}
 
@@ -177,7 +210,9 @@ func (m *EditMetadataModal) View() string {
 	modal := components.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
-		SetInstructions("Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous")
+		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
+		WithWidth(m.width - 4). // Use terminal width minus margin
+		WithScrollHint(true)    // Show scroll indicator
 
 	return modal.Render()
 }
@@ -215,14 +250,21 @@ func (m *EditMetadataModal) GetFooter() string {
 
 func (m *EditMetadataModal) syncModified() {
 	m.modified = &MetadataSnapshot{
-		Company:    m.company,
-		Project:    m.project,
-		Tags:       parseStringSlice(m.tags),
-		Categories: parseStringSlice(m.categories),
+		Company:    *m.company,
+		Project:    *m.project,
+		Tags:       m.tags,       // MultiSelect binds directly to []string
+		Categories: m.categories, // MultiSelect binds directly to []string
 	}
 }
 
 func (m *EditMetadataModal) createResult() {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !*m.submitConfirmed {
+		m.createCancelledResult()
+		return
+	}
+
 	m.result = &ModalEditResult[*MetadataSnapshot]{
 		Original: m.original,
 		Modified: m.modified,
@@ -265,6 +307,7 @@ func (m *EditMetadataModal) computeChanges() map[string]interface{} {
 
 // EditBurstModal handles inline editing of burst details (Name, Description).
 // Uses huh library for form handling with professional styling and accessibility.
+// Scrollable when content exceeds terminal height.
 type EditBurstModal struct {
 	// original is the unmodified burst (never mutated)
 	original *career.Burst
@@ -295,8 +338,16 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 	// Create form data from burst
 	formData := forms.GetBurstFormData(&originalCopy)
 
-	// Create huh form
-	form := forms.NewBurstEditorFormWithData(formData)
+	// Default dimensions
+	defaultWidth := 80
+	defaultHeight := 24
+
+	// Create huh form with default dimensions (will be updated on WindowSizeMsg)
+	form := forms.NewBurstEditorFormWithDataAndDimensions(
+		formData,
+		defaultWidth-4, // Leave margin for modal chrome
+		forms.DefaultFormHeight(defaultHeight),
+	)
 
 	return &EditBurstModal{
 		original: &originalCopy,
@@ -304,8 +355,8 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 		result:   nil,
 		form:     form,
 		formData: formData,
-		width:    80,
-		height:   24,
+		width:    defaultWidth,
+		height:   defaultHeight,
 	}
 }
 
@@ -315,6 +366,10 @@ func (m *EditBurstModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Update form dimensions without losing state
+		m.form = m.form.
+			WithHeight(forms.DefaultFormHeight(m.height)).
+			WithWidth(m.width - 4) // Leave margin for modal chrome
 		return nil
 	}
 
@@ -363,7 +418,9 @@ func (m *EditBurstModal) View() string {
 	modal := components.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
-		SetInstructions("Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous")
+		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
+		WithWidth(m.width - 4). // Use terminal width minus margin
+		WithScrollHint(true)    // Show scroll indicator
 
 	return modal.Render()
 }
@@ -397,6 +454,15 @@ func (m *EditBurstModal) GetFooter() string {
 	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
 }
 
+// SetTestResult sets the result directly for testing purposes.
+// This allows tests to simulate modal completion without interacting with the huh form.
+func (m *EditBurstModal) SetTestResult(result *ModalEditResult[*career.Burst]) {
+	m.result = result
+	if result != nil && result.Modified != nil {
+		m.modified = result.Modified
+	}
+}
+
 func (m *EditBurstModal) syncModified() {
 	m.modified = &career.Burst{
 		ID:          m.original.ID,
@@ -409,6 +475,13 @@ func (m *EditBurstModal) syncModified() {
 }
 
 func (m *EditBurstModal) createResult() {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.createCancelledResult()
+		return
+	}
+
 	m.result = &ModalEditResult[*career.Burst]{
 		Original: m.original,
 		Modified: m.modified,
@@ -445,6 +518,7 @@ func (m *EditBurstModal) computeChanges() map[string]interface{} {
 
 // EditFactModal handles inline editing of fact details (Text, CompetencyCategories, RoleFit, AudienceRelevance, StrengthSignal).
 // Uses huh library for form handling with professional styling and accessibility.
+// Scrollable when content exceeds terminal height.
 type EditFactModal struct {
 	// original is the unmodified fact (never mutated)
 	original *career.Fact
@@ -475,8 +549,16 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 	// Create form data from fact
 	formData := forms.GetFactFormData(&originalCopy)
 
-	// Create huh form
-	form := forms.NewFactEditorFormWithData(formData)
+	// Default dimensions
+	defaultWidth := 80
+	defaultHeight := 24
+
+	// Create huh form with default dimensions (will be updated on WindowSizeMsg)
+	form := forms.NewFactEditorFormWithDataAndDimensions(
+		formData,
+		defaultWidth-4, // Leave margin for modal chrome
+		forms.DefaultFormHeight(defaultHeight),
+	)
 
 	return &EditFactModal{
 		original: &originalCopy,
@@ -484,8 +566,8 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 		result:   nil,
 		form:     form,
 		formData: formData,
-		width:    80,
-		height:   24,
+		width:    defaultWidth,
+		height:   defaultHeight,
 	}
 }
 
@@ -495,6 +577,10 @@ func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Update form dimensions without losing state
+		m.form = m.form.
+			WithHeight(forms.DefaultFormHeight(m.height)).
+			WithWidth(m.width - 4) // Leave margin for modal chrome
 		return nil
 	}
 
@@ -543,7 +629,9 @@ func (m *EditFactModal) View() string {
 	modal := components.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
-		SetInstructions("Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous")
+		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
+		WithWidth(m.width - 4). // Use terminal width minus margin
+		WithScrollHint(true)    // Show scroll indicator
 
 	return modal.Render()
 }
@@ -579,13 +667,14 @@ func (m *EditFactModal) GetFooter() string {
 
 func (m *EditFactModal) syncModified() {
 	// Apply form data to modified fact
+	// Note: StrengthSignal is preserved from original as it's auto-generated
 	m.modified = &career.Fact{
 		ID:                   m.original.ID,
 		Text:                 m.formData.Text,
-		CompetencyCategories: parseStringSlice(m.formData.CompetencyCategories),
+		CompetencyCategories: m.formData.CompetencyCategories,
 		RoleFit:              career.RoleFit(m.formData.RoleFit),
-		AudienceRelevance:    parseStringSlice(m.formData.AudienceRelevance),
-		StrengthSignal:       m.formData.StrengthSignal,
+		AudienceRelevance:    m.formData.AudienceRelevance,
+		StrengthSignal:       m.original.StrengthSignal, // Preserved from original
 		SourceEventID:        m.original.SourceEventID,
 		SourceBurstID:        m.original.SourceBurstID,
 		CreatedAt:            m.original.CreatedAt,
@@ -594,6 +683,13 @@ func (m *EditFactModal) syncModified() {
 }
 
 func (m *EditFactModal) createResult() {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.createCancelledResult()
+		return
+	}
+
 	m.result = &ModalEditResult[*career.Fact]{
 		Original: m.original,
 		Modified: m.modified,
@@ -655,42 +751,6 @@ func copyMetadataSnapshot(original *MetadataSnapshot) *MetadataSnapshot {
 	}
 
 	return &copy
-}
-
-// formatStringSlice converts a string slice to comma-separated format.
-func formatStringSlice(items []string) string {
-	if len(items) == 0 {
-		return ""
-	}
-
-	result := ""
-	for i, item := range items {
-		if i > 0 {
-			result += ", "
-		}
-		result += item
-	}
-	return result
-}
-
-// parseStringSlice converts comma-separated string to a slice.
-func parseStringSlice(input string) []string {
-	if input == "" {
-		return []string{}
-	}
-
-	// Split by comma and trim spaces from each item
-	parts := strings.Split(input, ",")
-	var result []string
-
-	for _, part := range parts {
-		trimmed := strings.TrimFunc(part, unicode.IsSpace)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-
-	return result
 }
 
 // slicesEqual checks if two string slices are equal.

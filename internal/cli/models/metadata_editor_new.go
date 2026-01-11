@@ -123,6 +123,13 @@ func (m *MetadataEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleFormCompletion processes the completed form and saves the metadata.
 func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.cancelled = true
+		return m, nil
+	}
+
 	// Apply form data to event
 	err := forms.ApplyMetadataFormData(m.event, m.formData)
 	if err != nil {
