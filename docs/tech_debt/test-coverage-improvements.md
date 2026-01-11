@@ -264,47 +264,103 @@ Describe("EditXxxModal", func() {
 
 ## Phase 5: Export Format Tests (Priority: MEDIUM)
 
-**Issue**: Export marshal functions (CSV, YAML, Text) have 0% coverage.
+**Issue**: Export marshal functions and preview generators have 0% or low coverage.
 
 **File**: `internal/cli/intents/export_artifact.go`
 
-**Uncovered Functions**:
-| Line | Function | Description |
-|------|----------|-------------|
-| 656 | `exportFacts()` | Fact export |
-| 698 | `exportBursts()` | Burst export |
-| 1023 | `generateBurstsPreview()` | Burst preview |
-| 1073 | `generateProfilePreview()` | Profile preview |
-| 1216 | `marshalEventsYAML()` | Events to YAML |
-| 1243 | `marshalEventsCSV()` | Events to CSV |
-| 1284 | `marshalEventsText()` | Events to Text |
-| 1308 | `marshalFactsYAML()` | Facts to YAML |
-| 1329 | `marshalFactsCSV()` | Facts to CSV |
-| 1366 | `marshalFactsText()` | Facts to Text |
+**Current Coverage Status**:
+| Line | Function | Coverage | Priority |
+|------|----------|----------|----------|
+| 656 | `exportFacts()` | 0.0% | HIGH |
+| 698 | `exportBursts()` | 0.0% | HIGH |
+| 1023 | `generateBurstsPreview()` | 0.0% | MEDIUM |
+| 1073 | `generateProfilePreview()` | 0.0% | MEDIUM |
+| 1216 | `marshalToYAML()` | 0.0% | HIGH |
+| 1225 | `marshalEventsToCSV()` | 0.0% | HIGH |
+| 1247 | `marshalEventsToText()` | 0.0% | HIGH |
+| 1276 | `marshalFactsToCSV()` | 0.0% | HIGH |
+| 1299 | `marshalFactsToText()` | 0.0% | HIGH |
+| 1324 | `marshalBurstsToCSV()` | 0.0% | HIGH |
+| 1343 | `marshalBurstsToText()` | 0.0% | HIGH |
 
-### Subtask 5.1: Add Export Function Tests (TDD)
-- [ ] **RED**: Write failing tests for each export type
+**Partially Covered (may need edge case tests)**:
+| Line | Function | Coverage |
+|------|----------|----------|
+| 614 | `exportEvents()` | 60.0% |
+| 923 | `generateEventsPreview()` | 63.6% |
+| 973 | `generateFactsPreview()` | 36.4% |
+| 1207 | `marshalToJSON()` | 75.0% |
+
+### Subtask 5.1: Add Marshal Function Tests (TDD) - HIGH PRIORITY
+- [ ] **RED**: Write failing tests for marshal functions
 - [ ] **GREEN**: Verify implementation
-- [ ] **REFACTOR**: Cover edge cases
+- [ ] **REFACTOR**: Cover edge cases (empty data, special characters)
 
-### Subtask 5.2: Add Marshal Function Tests (TDD)
-- [ ] **RED**: Write failing tests for each marshal function
-- [ ] **GREEN**: Verify output format
+**Functions to test**:
+- `marshalToYAML()` - Generic YAML marshalling
+- `marshalEventsToCSV()` - Events CSV with headers
+- `marshalEventsToText()` - Events plain text format
+- `marshalFactsToCSV()` - Facts CSV with headers
+- `marshalFactsToText()` - Facts plain text format
+- `marshalBurstsToCSV()` - Bursts CSV with headers
+- `marshalBurstsToText()` - Bursts plain text format
+
+### Subtask 5.2: Add Export Function Tests (TDD) - HIGH PRIORITY
+- [ ] **RED**: Write failing tests for export functions
+- [ ] **GREEN**: Verify implementation
+- [ ] **REFACTOR**: Test error handling
+
+**Functions to test**:
+- `exportFacts()` - Full facts export workflow
+- `exportBursts()` - Full bursts export workflow
+
+### Subtask 5.3: Add Preview Generator Tests (TDD) - MEDIUM PRIORITY
+- [ ] **RED**: Write failing tests for preview generators
+- [ ] **GREEN**: Verify implementation
 - [ ] **REFACTOR**: Test with various data sizes
+
+**Functions to test**:
+- `generateBurstsPreview()` - Bursts preview for all formats
+- `generateProfilePreview()` - Profile export preview
 
 **Test Cases**:
 ```go
+Describe("Marshal Functions", func() {
+    Describe("marshalToYAML", func() {
+        It("should marshal events to valid YAML", func() {...})
+        It("should handle empty slice", func() {...})
+        It("should handle special characters", func() {...})
+    })
+
+    Describe("marshalEventsToCSV", func() {
+        It("should include CSV headers", func() {...})
+        It("should escape commas in fields", func() {...})
+        It("should handle empty events", func() {...})
+    })
+
+    // Similar for Text, Facts, Bursts...
+})
+
 Describe("Export Functions", func() {
-    DescribeTable("marshal formats",
-        func(dataType, format string, expected interface{}) {...},
-        Entry("events to YAML", "events", "yaml", ...),
-        Entry("events to CSV", "events", "csv", ...),
-        Entry("events to Text", "events", "text", ...),
-        Entry("facts to YAML", "facts", "yaml", ...),
-        Entry("facts to CSV", "facts", "csv", ...),
-        Entry("facts to Text", "facts", "text", ...),
-        Entry("bursts to YAML", "bursts", "yaml", ...),
-    )
+    Describe("exportFacts", func() {
+        It("should export facts in JSON format", func() {...})
+        It("should export facts in YAML format", func() {...})
+        It("should export facts in CSV format", func() {...})
+        It("should export facts in Text format", func() {...})
+        It("should handle empty facts list", func() {...})
+    })
+    // Similar for exportBursts...
+})
+
+Describe("Preview Generators", func() {
+    Describe("generateBurstsPreview", func() {
+        It("should generate JSON preview", func() {...})
+        It("should generate YAML preview", func() {...})
+        It("should generate CSV preview", func() {...})
+        It("should generate Text preview", func() {...})
+        It("should handle empty bursts", func() {...})
+    })
+    // Similar for generateProfilePreview...
 })
 ```
 
@@ -312,9 +368,13 @@ Describe("Export Functions", func() {
 - `internal/cli/intents/export_formats_test.go`
 
 **Acceptance Criteria**:
-- [ ] All marshal functions tested
-- [ ] Output format validated
+- [ ] All 0% coverage marshal functions tested (7 functions)
+- [ ] Export functions tested (exportFacts, exportBursts)
+- [ ] Preview generators tested (generateBurstsPreview, generateProfilePreview)
+- [ ] Output format validated for each format type
 - [ ] Edge cases (empty data, special characters) tested
+- [ ] CSV header row validated
+- [ ] Error handling tested
 
 **Estimated Time**: 2-3 hours
 
