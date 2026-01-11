@@ -1,302 +1,328 @@
-# Task 35: Test Coverage Improvement (62.5% → 80%)
+# Task 35: Test Coverage and Quality Improvements
 
-**Status**: Ready for Implementation  
-**Priority**: HIGH  
-**Estimated Time**: 2-3 days  
-**Current Coverage**: 62.5%  
-**Target Coverage**: 80%  
-**Gap**: 17.5%
+**Status**: In Progress (Phases 1-4 complete, Phases 5-11 pending)
+**Priority**: MEDIUM-HIGH
+**Estimated Time**: 4-5 days total
+**Current Coverage**: 80.34%
+**Target Coverage**: 85%+
 
 ---
 
 ## Overview
 
-Increase test coverage from 62.5% to 80% to meet compliance requirements. This task focuses on identifying and testing uncovered code paths, particularly in CLI/TUI components, edge cases, and error handling paths.
+This task consolidates test coverage improvements, architectural refinements, and code quality enhancements identified across multiple reviews:
+
+1. **PR #74 Analysis**: Test patterns, mocks, edge cases (COMPLETE)
+2. **PR #72 Review**: Architectural improvements for intent routing and modals
+3. **Coverage Gaps**: Critical workflows with 0% coverage
 
 ---
 
-## Current Situation
+## Current Situation (Updated 2026-01-11)
 
-### Compliance Check Results
-```
-Test Coverage: 62.4926% ❌ (Target: 80%)
-Status: ❌ Fail - Coverage significantly below 80%
-```
+### Coverage Stats
+| Package | Coverage | Status |
+|---------|----------|--------|
+| **Overall** | 80.34% | ✅ Meets 80% threshold |
+| Intent Framework | 88.1% | ✅ Good |
+| GlobalContext | 100% | ✅ Excellent |
+| Domain Models | >95% | ✅ Excellent |
+| Repository | 52.6% | ⚠️ Needs improvement |
+| Service | >85% | ✅ Good |
+| CV Service | 100% | ✅ Excellent |
+| Intents | 61.6% | ⚠️ Needs improvement |
 
-### Known Coverage Stats (from AGENTS.md)
-- **Overall**: 62.5% (needs improvement)
-- **Intent Framework**: 88.1% ✅
-- **GlobalContext**: 100% ✅
-- **Domain Models**: >95% ✅
-- **Repository**: >90% ✅
-- **Service**: >85% ✅
-- **CV Service**: 100% ✅
-
-### Gap Analysis
-The coverage gap is likely in:
-1. **CLI/TUI components** (intents, models, app)
-2. **Error handling paths** (untested error cases)
-3. **Edge cases** (boundary conditions, nil checks)
-4. **Integration points** (message passing, state transitions)
-
----
-
-## Phase 1: Identify Coverage Gaps
-
-### Acceptance Criteria
-- [ ] Generate detailed coverage report with file-level breakdown
-- [ ] Identify files with <60% coverage
-- [ ] Identify specific uncovered functions/lines
-- [ ] Create prioritized list of files to improve
-
-### Steps
-
-1. **Generate detailed coverage report**
-   ```bash
-   go test -coverprofile=coverage.out ./...
-   go tool cover -html=coverage.out -o coverage.html
-   go tool cover -func=coverage.out | sort -k3 -n > coverage-by-file.txt
-   ```
-
-2. **Analyze by package**
-   ```bash
-   go test -cover ./internal/cli/... -coverprofile=cli-coverage.out
-   go test -cover ./internal/domain/... -coverprofile=domain-coverage.out
-   go test -cover ./internal/repository/... -coverprofile=repo-coverage.out
-   go test -cover ./internal/service/... -coverprofile=service-coverage.out
-   ```
-
-3. **Identify lowest coverage files**
-   ```bash
-   # Files with <60% coverage
-   go tool cover -func=coverage.out | awk '$3 < 60 {print}'
-   ```
-
-4. **Document findings** in this task file
+### Key Gaps Identified
+1. **Flaky timer test** in `contract_test.go` (uses `time.Sleep`)
+2. **CaptureEvent submit workflow** - 0% coverage on core functions
+3. **Delete event workflow** - 0% coverage
+4. **Modal lifecycle** - Update/View/Result methods untested
+5. **Export formats** - Marshal functions untested
+6. **Intent registration** - Temporary patterns need cleanup
+7. **Delete confirmation** - Uses inline view instead of modal
 
 ---
 
-## Phase 2: Prioritize Test Improvements
-
-### Categorize Gaps
-
-#### High Priority (Business Logic)
-Files in:
-- `internal/cli/intents/` - Intent state machines
-- `internal/cli/models/` - TUI models
-- `internal/service/career/` - Business logic
-
-#### Medium Priority (Infrastructure)
-Files in:
-- `internal/cli/app/` - Application root
-- `internal/cli/components/` - Reusable components
-- `internal/cli/context/` - Global context
-
-#### Low Priority (Auxiliary)
-Files in:
-- `cmd/` - CLI entry points (hard to test)
-- Helper utilities (may be covered indirectly)
-
-### Create Test Plan
-For each low-coverage file:
-- [ ] Identify untested functions
-- [ ] Determine test strategy (unit vs integration)
-- [ ] Estimate time to test
-- [ ] Assign to appropriate test suite
+## Session Contract Acknowledgment
+- [ ] Ran `make session-start` and it passed
+- [ ] Acknowledge and commit to following all workflow rules
+- [ ] Token count: _____ (must be < 50k to start)
 
 ---
 
-## Phase 3: Write Missing Tests
+## PART A: Test Coverage Improvements (from PR #74 analysis)
 
-### Testing Strategy
+### Phase 1: Fix Flaky Timer Test ✅ COMPLETE
 
-#### Unit Tests (Ginkgo/Gomega)
-For functions with:
-- Pure logic (no side effects)
-- Deterministic behavior
-- Clear inputs/outputs
-
-Example structure:
-```go
-var _ = Describe("FunctionName", func() {
-    Context("when condition A", func() {
-        It("should produce result X", func() {
-            // Arrange
-            // Act
-            // Assert
-        })
-    })
-    
-    Context("when condition B", func() {
-        It("should handle error Y", func() {
-            // Test error path
-        })
-    })
-})
-```
-
-#### Integration Tests
-For components with:
-- State machines (intents)
-- Message passing
-- Multi-component interactions
-
-Use test harnesses from `internal/cli/intents/testing.go`
-
-#### Edge Case Tests
-Focus on:
-- Nil checks
-- Empty inputs
-- Boundary conditions
-- Error paths
-- Concurrent access
-
-### Implementation Checklist
-
-#### CLI/App Package
-- [ ] `internal/cli/app/app.go` - Add tests for init, update, view
-- [ ] `internal/cli/app/messages.go` - Test all message types
-
-#### Intent Models (if <80%)
-- [ ] `capture_event_intent.go` - Test all states
-- [ ] `browse_timeline_intent.go` - Test all states
-- [ ] `generate_cv_intent.go` - Test all states
-- [ ] `export_artifact_intent.go` - Test all states
-- [ ] `configure_system_intent.go` - Test all states
-- [ ] `burst_management_intent.go` - Test all states
-
-#### CLI Models
-- [ ] `form.go` - Test form validation, submission
-- [ ] `burst_editor.go` - Test editor operations
-- [ ] `fact_editor.go` - Test editor operations
-- [ ] `metadata_editor.go` - Test editor operations
-
-#### Components
-- [ ] `standard_view.go` - Additional edge cases
-- [ ] `modal.go` - Additional modal types
-- [ ] `loading_messages.go` - Edge cases
-
-#### Context
-- [ ] `global.go` - Additional concurrent access tests
-
-### Acceptance Criteria
-- [ ] All new tests pass
-- [ ] No regressions in existing tests
-- [ ] Coverage improves by at least 5% per package
+**Issue**: Test uses `time.Sleep(3500ms)` - slow and potentially flaky.
+**File**: `internal/cli/intents/contract_test.go:147`
+**Status**: ✅ Fixed - now uses `Eventually` pattern
 
 ---
 
-## Phase 4: Verify Coverage Improvement
+### Phase 2: CaptureEvent Submit Workflow Tests (Priority: HIGH)
 
-### Steps
+**Issue**: Core user journey (event submission) has 0% coverage.
+**File**: `internal/cli/intents/capture_event_intent.go`
 
-1. **Run full test suite with coverage**
-   ```bash
-   go test -v -cover ./... -coverprofile=coverage-new.out
-   ```
+**Uncovered Functions**:
+| Line | Function | Description |
+|------|----------|-------------|
+| 168 | `initializeFormForEdit()` | Edit form initialization |
+| 595 | `performSubmit()` | Core submit logic |
+| 696 | `performEnrichment()` | Enrichment workflow |
+| 1101 | `viewError()` | Error view |
+| 1131 | `acceptCurrentItem()` | Accept enrichment item |
+| 1165 | `rejectCurrentItem()` | Reject enrichment item |
 
-2. **Compare before/after**
-   ```bash
-   # Before
-   go tool cover -func=coverage.out | grep "total"
-   # After
-   go tool cover -func=coverage-new.out | grep "total"
-   ```
+**Subtasks**:
+- [ ] Add submit workflow tests (TDD)
+- [ ] Add enrichment workflow tests (TDD)
+- [ ] Add accept/reject tests (TDD)
 
-3. **Generate updated report**
-   ```bash
-   go tool cover -html=coverage-new.out -o coverage-after.html
-   ```
-
-4. **Verify compliance**
-   ```bash
-   make check-compliance
-   ```
-
-### Acceptance Criteria
-- [ ] Overall coverage ≥80%
-- [ ] No package <70% coverage
-- [ ] All tests passing (100% pass rate)
-- [ ] Zero race conditions
-- [ ] Compliance check passes
+**Files to Create**: `internal/cli/intents/capture_event_submit_test.go`
+**Estimated Time**: 2-3 hours
 
 ---
 
-## Phase 5: Document and Update
+### Phase 3: Delete Event Workflow Tests (Priority: HIGH)
 
-### Tasks
-- [ ] Update AGENTS.md with new coverage stats
-- [ ] Update test documentation if patterns changed
-- [ ] Commit all new tests with proper messages
-- [ ] Update this task file with final results
+**Issue**: Delete event has 0% coverage.
+**File**: `internal/cli/intents/browse_timeline_intent.go`
 
-### Acceptance Criteria
-- [ ] AGENTS.md reflects new coverage (80%+)
-- [ ] All commits follow atomic commit guidelines
-- [ ] Task marked as complete
+**Uncovered Functions**:
+| Line | Function | Description |
+|------|----------|-------------|
+| 324 | `updateDeleteConfirm()` | Delete confirmation handler |
+| 367 | `removeEventFromList()` | Event removal logic |
+| 616 | `viewDeleteConfirm()` | Delete confirmation view |
 
----
+**Subtasks**:
+- [ ] Add delete confirmation tests (TDD)
+- [ ] Add event removal tests (TDD)
 
-## Notes & Considerations
-
-### Quick Wins
-Focus on files with many untested lines but simple logic:
-- Error handling paths (add error injection tests)
-- View methods (test rendering with various states)
-- Helper functions (straightforward unit tests)
-
-### Difficult Areas
-Some areas may be hard to test:
-- TUI rendering (can use test harnesses)
-- Terminal interactions (can mock)
-- Concurrent operations (use race detector)
-
-Don't force 100% - some code is legitimately hard to test (e.g., main() functions, panic handlers). Aim for reasonable coverage of business logic.
-
-### Tools
-- `go test -cover` - Basic coverage
-- `go tool cover -html` - Visual coverage report
-- `go test -race` - Race condition detection
-- `make check-compliance` - Full compliance check
-
-### Time Estimates
-- Phase 1 (Analysis): 2-3 hours
-- Phase 2 (Planning): 1-2 hours
-- Phase 3 (Implementation): 1-2 days (depends on gap size)
-- Phase 4 (Verification): 1 hour
-- Phase 5 (Documentation): 1 hour
-
-**Total**: 2-3 days
+**Files to Create**: `internal/cli/intents/browse_timeline_delete_test.go`
+**Estimated Time**: 1-2 hours
 
 ---
 
-## Success Criteria
+### Phase 4: Modal Lifecycle Tests (Priority: MEDIUM)
 
-- [x] Task file created
-- [ ] Coverage gaps identified and documented
-- [ ] Test plan created
-- [ ] Missing tests written
-- [ ] Coverage ≥80% achieved
-- [ ] All tests passing
-- [ ] Zero race conditions
-- [ ] Compliance check passes
-- [ ] Documentation updated
+**Issue**: Modal Update/View/Result methods have 0% coverage.
+**File**: `internal/cli/intents/modals.go`
+
+**Uncovered**:
+- EditMetadataModal: Update, View, Result, computeChanges
+- EditBurstModal: View, IsComplete, syncModified, computeChanges
+- EditFactModal: Update, View, Result, computeChanges
+
+**Subtasks**:
+- [ ] Add EditMetadataModal lifecycle tests (TDD)
+- [ ] Add EditBurstModal lifecycle tests (TDD)
+- [ ] Add EditFactModal lifecycle tests (TDD)
+
+**Files to Modify**: `internal/cli/intents/modals_test.go`
+**Estimated Time**: 3-4 hours
 
 ---
 
-## Resources
+### Phase 5: Export Format Tests (Priority: MEDIUM)
 
-### Existing Test Patterns
-- See `internal/cli/intents/*_test.go` for Ginkgo test examples
-- See `internal/cli/intents/testing.go` for test harnesses
-- See `internal/service/career/cv/*_test.go` for comprehensive test suites
+**Issue**: Export marshal functions have 0% coverage.
+**File**: `internal/cli/intents/export_artifact.go`
 
-### Coverage Documentation
-- Go coverage tutorial: https://go.dev/blog/cover
-- Ginkgo documentation: https://onsi.github.io/ginkgo/
-- Gomega matchers: https://onsi.github.io/gomega/
+**Uncovered Functions**:
+- `exportFacts()`, `exportBursts()`
+- `generateBurstsPreview()`, `generateProfilePreview()`
+- `marshalToYAML()`, `marshalEventsToCSV()`, `marshalEventsToText()`
+- `marshalFactsToCSV()`, `marshalFactsToText()`
+- `marshalBurstsToCSV()`, `marshalBurstsToText()`
 
-### Related Files
-- `Makefile` - `make test`, `make coverage` targets
-- `docs/rules/go-guidelines.md` - Testing standards
-- `AGENTS.md` - Current test coverage stats
+**Files to Create**: `internal/cli/intents/export_formats_test.go`
+**Estimated Time**: 2-3 hours
+
+---
+
+### Phase 6: Consolidate Test Fixtures (Priority: MEDIUM)
+
+**Issue**: Test data creation duplicated across files.
+
+**Current Duplication**:
+- `internal/repository/career/sqlite_repository_test.go` - creates test events
+- `internal/testutil/e2e/fixtures.go` - creates minimal events
+- Various intent tests create their own test data
+
+**Subtasks**:
+- [ ] Create `internal/testutil/fixtures/` package
+- [ ] Implement builder pattern for events, bursts, facts
+- [ ] Refactor existing tests to use shared fixtures
+
+**Estimated Time**: 4-5 hours
+
+---
+
+## PART B: Architectural Improvements (from PR #72 review)
+
+### Phase 7: Intent Registration Refactoring (Priority: MEDIUM)
+
+**Issue**: Temporary intent registration creates new intent names dynamically.
+**File**: `internal/cli/app/app.go:200`
+
+**Options to Evaluate**:
+1. Edit flag approach: Reuse `capture_event` with `isEditMode` flag
+2. Dedicated edit intent: Register `capture_event_edit` once at startup
+3. Context-based routing: Router handles edit context automatically
+
+**Subtasks**:
+- [ ] Document chosen approach with pros/cons
+- [ ] Implement new registration pattern (TDD)
+- [ ] Remove temporary registration code
+
+**Files to Modify**:
+- `internal/cli/app/app.go`
+- `internal/cli/intents/capture_event_intent.go`
+- `internal/cli/intents/router.go`
+
+**Estimated Time**: 4-6 hours
+
+---
+
+### Phase 8: Delete Confirmation Modal (Priority: HIGH)
+
+**Issue**: Delete confirmation uses inline view instead of modal.
+**Impact**: Less prominent warning, risk of accidental deletions.
+
+**Subtasks**:
+- [ ] Create DeleteConfirmationModal using existing modal system (TDD)
+- [ ] Integrate modal into BrowseTimeline (TDD)
+- [ ] Apply pattern to BurstManagement and FactManagement (TDD)
+
+**Files to Modify**:
+- `internal/cli/intents/modals.go` - Add DeleteConfirmationModal
+- `internal/cli/intents/browse_timeline_intent.go` - Use modal
+- `internal/cli/intents/burst_management_intent.go` - Add delete modal
+- `internal/cli/intents/fact_management_intent.go` - Add delete modal
+
+**Estimated Time**: 6-8 hours
+
+---
+
+### Phase 9: Error Modal for Delete Failures (Priority: MEDIUM)
+
+**Issue**: Delete errors stored in state but not prominently displayed.
+**Goal**: Immediate, clear error feedback using modal system.
+
+**Subtasks**:
+- [ ] Show error modal when delete fails (TDD)
+- [ ] Add "Retry" and "Cancel" options
+- [ ] Include error details and suggested actions
+
+**Files to Modify**:
+- `internal/cli/intents/browse_timeline_intent.go`
+- `internal/cli/components/modal.go` (if enhancement needed)
+
+**Estimated Time**: 3-4 hours
+
+---
+
+### Phase 10: Form State Management Documentation (Priority: LOW)
+
+**Issue**: Form cancel behavior not explicitly documented or tested.
+
+**Subtasks**:
+- [ ] Document HuhCaptureForm lifecycle in code comments
+- [ ] Add state diagram to `docs/HUH_FORMS_GUIDE.md`
+- [ ] Add form cancel tests (TDD)
+
+**Files to Modify**:
+- `internal/cli/models/huh_capture_form.go`
+- `docs/HUH_FORMS_GUIDE.md`
+- Create `internal/cli/models/huh_capture_form_test.go`
+
+**Estimated Time**: 2-3 hours
+
+---
+
+### Phase 11: Intent Router Enhancement (Priority: LOW)
+
+**Issue**: Message-based routing is ad-hoc, pattern not formalized.
+**Goal**: Formalize message-based routing as reusable pattern.
+
+**Subtasks**:
+- [ ] Document `RequestEditEventMsg` pattern in `TUI_INTENT_DIAGRAM.md`
+- [ ] Create `RouteToIntent()` helper in router (TDD)
+- [ ] Use helper for `RequestEditEventMsg`
+
+**Files to Modify**:
+- `internal/cli/intents/router.go`
+- `internal/cli/app/app.go`
+- `docs/TUI_INTENT_DIAGRAM.md`
+
+**Estimated Time**: 3-4 hours
+
+---
+
+## Summary
+
+### Effort Breakdown
+
+| Phase | Description | Priority | Time |
+|-------|-------------|----------|------|
+| 1 | Fix Flaky Timer | HIGH | ✅ Done |
+| 2 | CaptureEvent Submit Tests | HIGH | 2-3 hrs |
+| 3 | Delete Event Tests | HIGH | 1-2 hrs |
+| 4 | Modal Lifecycle Tests | MEDIUM | 3-4 hrs |
+| 5 | Export Format Tests | MEDIUM | 2-3 hrs |
+| 6 | Consolidate Fixtures | MEDIUM | 4-5 hrs |
+| 7 | Intent Registration | MEDIUM | 4-6 hrs |
+| 8 | Delete Confirmation Modal | HIGH | 6-8 hrs |
+| 9 | Error Modal for Delete | MEDIUM | 3-4 hrs |
+| 10 | Form Documentation | LOW | 2-3 hrs |
+| 11 | Router Enhancement | LOW | 3-4 hrs |
+| **Total** | | | **32-45 hours** |
+
+### Suggested Order
+1. Phase 2-3: High priority test coverage (4-5 hrs)
+2. Phase 8: Delete modal - highest user impact (6-8 hrs)
+3. Phase 4-5: Medium priority tests (5-7 hrs)
+4. Phase 9: Error modal - builds on Phase 8 (3-4 hrs)
+5. Phase 7: Intent registration - careful design needed (4-6 hrs)
+6. Phase 6: Fixture consolidation - maintenance improvement (4-5 hrs)
+7. Phase 10-11: Documentation and router (5-7 hrs)
+
+### Success Metrics
+
+| Metric | Current | Target |
+|--------|---------|--------|
+| Overall Coverage | 80.34% | 85%+ |
+| Intents Coverage | 61.6% | 75%+ |
+| Repository Coverage | 52.6% | 75%+ |
+| Flaky Tests | 0 | 0 |
+| Delete Uses Modal | No | Yes |
+| Intent Registration | Temporary | Clean |
+
+---
+
+## Rollback Plan
+
+- **Test additions (Phases 2-6)**: Delete new test files if issues
+- **Modal changes (Phases 8-9)**: Revert to inline view if modal causes issues
+- **Intent registration (Phase 7)**: Revert to temporary pattern
+- **Documentation (Phases 10-11)**: No rollback needed
+
+---
+
+## Related Documentation
+- `docs/TESTING_PATTERNS.md` - Testing patterns guide
+- `docs/TUI_INTENT_DIAGRAM.md` - Intent architecture
+- `docs/MODAL_PATTERNS.md` - Modal usage patterns
+- `docs/HUH_FORMS_GUIDE.md` - Huh forms developer guide
+- `docs/rules/master-task-prompt.md` - Development workflow
+
+---
+
+**Document Version**: 2.0 (Consolidated)
+**Created**: 2026-01-11
+**Last Updated**: 2026-01-11
+**Status**: IN PROGRESS
+**Related PRs**: #72, #74
