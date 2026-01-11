@@ -182,6 +182,9 @@ func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
 
 		// Skip strategy selection and go straight to form
 		i.state.currentState = CaptureStateForm
+
+		// CRITICAL: Initialize the form so it can accept input
+		return i.state.captureForm.Init()
 	}
 	// Return a no-op command to satisfy the intent lifecycle
 	return func() tea.Msg { return nil }
@@ -260,7 +263,9 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			}
 
 			i.state.currentState = CaptureStateForm
-			return nil
+
+			// CRITICAL: Initialize the form so it can accept input
+			return i.state.captureForm.Init()
 
 		}
 
