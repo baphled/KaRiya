@@ -176,6 +176,10 @@ func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
 		i.state.captureForm.SetStrategy(string(StrategyManual))
 		i.state.showOptionalFields = true
 
+		// CRITICAL: Load the event data into the form fields
+		// This populates all input fields with the existing event data
+		i.state.captureForm.LoadEventForEditing(i.context.PreviousEvent)
+
 		// Skip strategy selection and go straight to form
 		i.state.currentState = CaptureStateForm
 	}
