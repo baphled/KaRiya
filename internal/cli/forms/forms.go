@@ -68,6 +68,57 @@ func DefaultFormHeight(terminalHeight int) int {
 	return height
 }
 
+// ConfirmButtonHeight is the space reserved for the fixed confirm button group.
+const ConfirmButtonHeight = 5
+
+// FieldsHeight calculates the height for form fields when using a fixed confirm button.
+// This reserves space for the confirm button to always be visible.
+func FieldsHeight(terminalHeight int) int {
+	formHeight := DefaultFormHeight(terminalHeight)
+	fieldsHeight := formHeight - ConfirmButtonHeight
+	if fieldsHeight < 5 {
+		fieldsHeight = 5
+	}
+	return fieldsHeight
+}
+
+// NewFormWithFixedConfirm creates a form with scrollable fields and a fixed confirm button.
+// The confirm button remains visible at the bottom while fields scroll above it.
+// fieldsGroup: the form fields that can scroll
+// confirmValue: pointer to bool for submit confirmation
+// width, height: dimensions for the form
+func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, height int) *huh.Form {
+	// Calculate height for fields group (reserve space for confirm)
+	fieldsHeight := height - ConfirmButtonHeight
+	if fieldsHeight < 5 {
+		fieldsHeight = 5
+	}
+
+	// Create confirm group (fixed at bottom)
+	confirmGroup := huh.NewGroup(
+		huh.NewConfirm().
+			Key("submit").
+			Title("Save Changes").
+			Description("Submit the form to save your changes").
+			Affirmative("Submit").
+			Negative("Cancel").
+			Value(confirmValue),
+	)
+
+	// Apply height to fields group to make it scrollable
+	fieldsGroup = fieldsGroup.WithHeight(fieldsHeight)
+
+	form := huh.NewForm(fieldsGroup, confirmGroup).
+		WithTheme(Theme()).
+		WithLayout(huh.LayoutStack)
+
+	if width > 0 {
+		form = form.WithWidth(width)
+	}
+
+	return form
+}
+
 // NewThemedForm creates a new form with the given KaRiya theme.
 // This ensures forms match the rest of the TUI styling.
 func NewThemedForm(theme themes.Theme, groups ...*huh.Group) *huh.Form {

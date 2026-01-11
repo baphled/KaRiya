@@ -105,7 +105,7 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 		height:          24,
 	}
 
-	// Create form group with pointers to modal's fields
+	// Create form group with fields only (confirm button is separate)
 	modal.formGroup = huh.NewGroup(
 		forms.NewInput(forms.FieldConfig{
 			Key:         "company",
@@ -139,21 +139,14 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 			Options(categoryOptions...).
 			Value(&modal.categories).
 			Limit(6),
-
-		huh.NewConfirm().
-			Key("submit").
-			Title("Save Changes").
-			Description("Submit the form to save your changes").
-			Affirmative("Submit").
-			Negative("Cancel").
-			Value(modal.submitConfirmed),
 	)
 
-	// Create form with default dimensions (will be updated on WindowSizeMsg)
-	modal.form = forms.NewFormWithDimensions(
+	// Create form with fixed confirm button at bottom
+	modal.form = forms.NewFormWithFixedConfirm(
+		modal.formGroup,
+		modal.submitConfirmed,
 		modal.width-4, // Leave margin for modal chrome
 		forms.DefaultFormHeight(modal.height),
-		modal.formGroup,
 	)
 
 	return modal

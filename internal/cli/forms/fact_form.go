@@ -79,6 +79,7 @@ func NewFactEditorFormWithDataAndHeight(data *FactFormData, height int) *huh.For
 // NewFactEditorFormWithDataAndDimensions creates a form for editing a fact with initial form data and dimensions.
 // When height > 0, the form becomes scrollable if content exceeds the height.
 // When width > 0, the form will be constrained to that width.
+// The confirm button is fixed at the bottom, always visible.
 func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
@@ -90,7 +91,8 @@ func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height in
 		huhRoleFitOpts[i] = huh.NewOption(opt.Value, opt.Key)
 	}
 
-	group := huh.NewGroup(
+	// Create fields group (scrollable)
+	fieldsGroup := huh.NewGroup(
 		NewText(FieldConfig{
 			Key:         "text",
 			Title:       "Fact Text",
@@ -122,17 +124,9 @@ func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height in
 			Options(AudienceRelevanceOptions()...).
 			Value(&data.AudienceRelevance).
 			Limit(3),
-
-		huh.NewConfirm().
-			Key("submit").
-			Title("Save Changes").
-			Description("Submit the form to save your changes").
-			Affirmative("Submit").
-			Negative("Cancel").
-			Value(&data.SubmitConfirmed),
 	)
 
-	return NewFormWithDimensions(width, height, group)
+	return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
 }
 
 // ApplyFactFormData applies the form data to a fact domain object.
