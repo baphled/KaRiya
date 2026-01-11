@@ -1,6 +1,7 @@
 package importer
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	repo "github.com/baphled/kariya/internal/repository/career"
 )
 
 // ParsedRow represents a single CSV row with its parsed data and validation status
@@ -25,17 +27,21 @@ type ParsedRow struct {
 
 // CSVParser handles parsing and validation of CSV files
 type CSVParser struct {
-	existingEvents *[]*career.CareerEvent
-	dateFormats    []string
-	categoryMapper *CategoryMapper
-	tagMapper      *TagMapper
-	mapData        bool // Whether to auto-map categories and tags
+	existingEvents  *[]*career.CareerEvent
+	skillRepository repo.SkillRepository // For skill lookup and auto-creation
+	ctx             context.Context      // Context for repository calls
+	dateFormats     []string
+	categoryMapper  *CategoryMapper
+	tagMapper       *TagMapper
+	mapData         bool // Whether to auto-map categories and tags
 }
 
 // NewCSVParser creates a new CSV parser
-func NewCSVParser(existingEvents []*career.CareerEvent) *CSVParser {
+func NewCSVParser(existingEvents []*career.CareerEvent, skillRepo repo.SkillRepository, ctx context.Context) *CSVParser {
 	return &CSVParser{
-		existingEvents: &existingEvents,
+		existingEvents:  &existingEvents,
+		skillRepository: skillRepo,
+		ctx:             ctx,
 		dateFormats: []string{
 			"2006-01",      // YYYY-MM
 			"2006-01-02",   // YYYY-MM-DD
@@ -51,8 +57,8 @@ func NewCSVParser(existingEvents []*career.CareerEvent) *CSVParser {
 }
 
 // NewCSVParserWithMapping creates a CSV parser with auto-mapping enabled
-func NewCSVParserWithMapping(existingEvents []*career.CareerEvent) *CSVParser {
-	parser := NewCSVParser(existingEvents)
+func NewCSVParserWithMapping(existingEvents []*career.CareerEvent, skillRepo repo.SkillRepository, ctx context.Context) *CSVParser {
+	parser := NewCSVParser(existingEvents, skillRepo, ctx)
 	parser.mapData = true
 	return parser
 }
@@ -183,6 +189,7 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 	event := &career.CareerEvent{
 		Tags:       []string{},
 		Categories: []string{},
+		Skills:     []string{},
 	}
 
 	// Parse Text (required)
@@ -280,6 +287,40 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 					} else {
 						event.Categories = append(event.Categories, cat)
 					}
+				}
+			}
+		}
+	}
+
+	// Parse Skills (optional, semicolon-separated)
+	// Auto-creates skills with category "other" if not found
+	if skillsStr, ok := rawData["Skills"]; ok && strings.TrimSpace(skillsStr) != "" && p.skillRepository != nil {
+		rawSkills := strings.Split(skillsStr, ";")
+
+		for _, skillName := range rawSkills {
+			skillName = strings.TrimSpace(skillName)
+			if skillName == "" {
+				continue
+			}
+
+			// Try to find existing skill by name (case-insensitive)
+			existingSkill, err := p.skillRepository.GetByName(p.ctx, skillName)
+			if err == nil && existingSkill != nil {
+				// Skill exists - use its ID
+				event.Skills = append(event.Skills, existingSkill.ID)
+			} else {
+				// Skill not found - create new one with category "other"
+				newSkill := &career.Skill{
+					Name:     skillName,
+					Category: "other",
+				}
+				if err := p.skillRepository.Create(p.ctx, newSkill); err != nil {
+					// If creation fails, add validation error but continue
+					parsedRow.ValidationErrors = append(parsedRow.ValidationErrors,
+						fmt.Sprintf("Failed to create skill %s: %v", skillName, err))
+				} else {
+					// Skill created - use its ID
+					event.Skills = append(event.Skills, newSkill.ID)
 				}
 			}
 		}

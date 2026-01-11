@@ -2,6 +2,7 @@ package importer_test
 
 import (
 	"bytes"
+	"context"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/importer"
@@ -16,7 +17,7 @@ var _ = Describe("CSV Parser", func() {
 	)
 
 	BeforeEach(func() {
-		parser = importer.NewCSVParser([]*career.CareerEvent{})
+		parser = importer.NewCSVParser([]*career.CareerEvent{}, nil, context.Background())
 
 	})
 
@@ -237,7 +238,7 @@ Test event,,Technical,technical,,`
 				UpdatedAt: time.Now(),
 			}
 
-			parserWithExisting := importer.NewCSVParser([]*career.CareerEvent{existingEvent})
+			parserWithExisting := importer.NewCSVParser([]*career.CareerEvent{existingEvent}, nil, context.Background())
 
 			csv := `Text,Date,Categories,Tags,Project,Company
 Existing event,2024-01,Technical,technical,,MyCompany`
