@@ -442,5 +442,130 @@ func (r *SQLiteSkillRepository) GetEventCountsForSkills(ctx context.Context) (ma
 	return counts, nil
 }
 
+// GetLastUsedForSkills returns a map of skill IDs to their last used dates (from events)
+func (r *SQLiteSkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT es.skill_id, MAX(ce.date) as last_used
+		FROM event_skills es
+		INNER JOIN career_events ce ON es.event_id = ce.id
+		GROUP BY es.skill_id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get last used dates for skills: %w", err)
+	}
+	defer rows.Close()
+
+	lastUsedMap := make(map[string]time.Time)
+	for rows.Next() {
+		var skillID string
+		var lastUsedStr string
+
+		err := rows.Scan(&skillID, &lastUsedStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan last used date: %w", err)
+		}
+
+		// Parse the date string (SQLite stores as string in format "2006-01-02 15:04:05 -0700 MST")
+		lastUsed, err := time.Parse("2006-01-02 15:04:05 -0700 MST", lastUsedStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse last used date: %w", err)
+		}
+
+		lastUsedMap[skillID] = lastUsed
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating last used dates: %w", err)
+	}
+
+	// Return empty map if no associations
+	if len(lastUsedMap) == 0 {
+		return make(map[string]time.Time), nil
+	}
+
+	return lastUsedMap, nil
+}
+
+// GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC
+func (r *SQLiteSkillRepository) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT ce.id, ce.text, ce.date, ce.categories, ce.tags, ce.project, ce.company, ce.created_at, ce.updated_at
+		FROM career_events ce
+		INNER JOIN event_skills es ON ce.id = es.event_id
+		WHERE es.skill_id = ?
+		ORDER BY ce.date DESC
+	`, skillID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get events using skill: %w", err)
+	}
+	defer rows.Close()
+
+	var events []*career.CareerEvent
+	for rows.Next() {
+		var event career.CareerEvent
+		var categoriesStr string
+		var tagsStr string
+
+		err := rows.Scan(
+			&event.ID,
+			&event.Text,
+			&event.Date,
+			&categoriesStr,
+			&tagsStr,
+			&event.Project,
+			&event.Company,
+			&event.CreatedAt,
+			&event.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan event: %w", err)
+		}
+
+		// Parse categories
+		if categoriesStr != "" {
+			event.Categories = strings.Split(categoriesStr, ",")
+		}
+
+		// Parse tags
+		if tagsStr != "" {
+			event.Tags = strings.Split(tagsStr, ",")
+		}
+
+		// Load skill IDs for this event
+		skillRows, err := r.db.QueryContext(ctx, `
+			SELECT skill_id FROM event_skills WHERE event_id = ?
+		`, event.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load skill IDs: %w", err)
+		}
+
+		var skillIDs []string
+		for skillRows.Next() {
+			var skillID string
+			if err := skillRows.Scan(&skillID); err != nil {
+				skillRows.Close()
+				return nil, fmt.Errorf("failed to scan skill ID: %w", err)
+			}
+			skillIDs = append(skillIDs, skillID)
+		}
+		skillRows.Close()
+
+		event.Skills = skillIDs
+
+		events = append(events, &event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating events: %w", err)
+	}
+
+	// Return empty slice if no events found
+	if len(events) == 0 {
+		return []*career.CareerEvent{}, nil
+	}
+
+	return events, nil
+}
+
 // Unused import check - remove if sql.NullString not needed
 var _ = strings.Builder{}

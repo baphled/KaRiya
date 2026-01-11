@@ -3,6 +3,7 @@ package career
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
 )
@@ -43,6 +44,12 @@ type SkillRepository interface {
 
 	// GetEventCountsForSkills returns a map of skill IDs to event counts
 	GetEventCountsForSkills(ctx context.Context) (map[string]int, error)
+
+	// GetLastUsedForSkills returns a map of skill IDs to their last used dates (from events)
+	GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error)
+
+	// GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC
+	GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error)
 }
 
 // SkillFilters provides flexible filtering options for skills
