@@ -45,10 +45,15 @@ Currently, KaRiya has no user-defined skills. Skills are derived automatically f
 ### Forms
 - [x] `internal/cli/forms/skill_form.go` - Skill add/edit form configuration
 
+### Components (NEW - for detail and events views)
+- [ ] `internal/cli/intents/manage_skills_detail_view.go` - Detail view rendering helper
+- [ ] `internal/cli/intents/manage_skills_events_view.go` - Events view rendering helper
+
 ## Files to Modify
 
 - [x] `internal/domain/career/event.go` - Add Skills field
 - [x] `internal/repository/career/sqlite_repository.go` - Handle skill associations in GetByID, List, Create, Update
+- [ ] `internal/repository/career/skill_repository.go` - Add GetEventCountsForSkills, GetLastUsedForSkills (for detail view)
 - [ ] `internal/cli/models/form.go` - Add optional skills multi-select field
 - [ ] `internal/cli/forms/metadata_form.go` - Add skills field to metadata editor
 - [x] `internal/cli/app/app.go` - Register ManageSkills intent, add to menu
@@ -310,25 +315,84 @@ func ApplySkillFormData(skill *career.Skill, data *SkillFormData) error
 #### States
 ```go
 const (
-    SkillsStateList   SkillsState = "list"     // View all skills grouped by category
-    SkillsStateAdd    SkillsState = "add"      // Add new skill (huh form)
-    SkillsStateEdit   SkillsState = "edit"     // Edit existing skill (huh form)
-    SkillsStateDelete SkillsState = "delete"   // Confirm deletion
+    SkillsStateList         SkillsState = "list"          // View all skills grouped by category
+    SkillsStateDetail       SkillsState = "detail"        // View single skill details (NEW - matches bursts/facts)
+    SkillsStateDetailEvents SkillsState = "detail_events" // View events using this skill (NEW - matches bursts)
+    SkillsStateAdd          SkillsState = "add"           // Add new skill (huh form)
+    SkillsStateEdit         SkillsState = "edit"          // Edit existing skill (huh form)
+    SkillsStateDelete       SkillsState = "delete"        // Confirm deletion
 )
 ```
 
 #### View Structure
-- List: Skills grouped by category, sorted alphabetically, shows level and years if present
-- Add: Huh form for new skill with suggestions
-- Edit: Huh form pre-populated with existing skill
-- Delete: Confirmation modal
+
+**List View** (SkillsStateList):
+- Skills grouped by category, sorted alphabetically
+- Table shows: Name, Level, Years Used, Event Count
+- Pagination: 15 skills per page
+- Focus indicator: ▶ marker on selected row
+- Empty state: "No skills yet. Press 'n' to add your first skill."
+
+**Detail View** (SkillsStateDetail) - **NEW**:
+- Shows single skill with full details:
+  - Name
+  - Category
+  - Level (if set)
+  - Years Used (if set)
+  - Last Used (derived from events)
+  - Event Count (number of events with this skill)
+  - Created/Updated timestamps
+- Actions available: View events (`v`), Edit (`e`), Delete (`d`)
+
+**Detail Events View** (SkillsStateDetailEvents) - **NEW**:
+- Shows all events that use this skill
+- Table format: Date, Event Text (truncated), Company
+- Pagination: 10 events per page
+- Allows navigation back to detail view (Esc)
+
+**Add/Edit** (SkillsStateAdd/Edit):
+- Huh form for skill input with suggestions
+- Fields: Name, Category, Level, Years Used
+
+**Delete** (SkillsStateDelete):
+- Confirmation modal showing skill name and event count
+- Warning if skill is used by events
+- Options: Confirm (`y`), Cancel (`n/Esc`)
 
 #### Keyboard Shortcuts
-- List: `n` add, `e` edit, `d` delete, `j/k` navigate, `Esc` back
-- Add/Edit: Form navigation (Tab, Enter, Esc)
-- Delete: `y` confirm, `n` cancel, `Esc` cancel
+
+**List View**:
+- `j/k` or `↑/↓` - Navigate skills
+- `Enter` - View skill detail (NEW - matches bursts/facts)
+- `n` - Add new skill
+- `e` - Edit selected skill (quick edit from list)
+- `d` - Delete selected skill (quick delete from list)
+- `Esc` - Back to main menu
+
+**Detail View** (NEW):
+- `v` - View events using this skill (NEW - matches bursts)
+- `e` - Edit skill
+- `d` - Delete skill
+- `Esc` - Back to list
+
+**Detail Events View** (NEW):
+- `j/k` or `↑/↓` - Navigate events
+- `Esc` - Back to detail view
+
+**Add/Edit Form**:
+- `Tab` - Next field
+- `Shift+Tab` - Previous field
+- `Enter` - Submit (when on submit button)
+- `Ctrl+S` - Save (from any field)
+- `Esc` - Cancel
+
+**Delete Confirmation**:
+- `y` - Confirm deletion
+- `n/Esc` - Cancel
 
 **TDD Checklist - Phase 4:**
+
+#### Basic List Operations (Completed):
 - [x] Write failing test: ManageSkillsIntent.Init loads skills
 - [x] Test passes
 - [x] Write failing test: Navigate list with j/k
@@ -339,13 +403,13 @@ const (
 - [x] Test passes
 - [x] Write failing test: Add skill form cancel returns to list
 - [x] Test passes
-- [x] Write failing test: Press e transitions to Edit state
+- [x] Write failing test: Press e transitions to Edit state (quick edit from list)
 - [x] Test passes
 - [x] Write failing test: Edit skill form submission updates skill
 - [x] Test passes
 - [x] Write failing test: Edit skill form cancel returns to list
 - [x] Test passes
-- [x] Write failing test: Press d transitions to Delete state
+- [x] Write failing test: Press d transitions to Delete state (quick delete from list)
 - [x] Test passes
 - [x] Write failing test: Delete confirmation removes skill
 - [x] Test passes
@@ -357,8 +421,99 @@ const (
 - [x] Test passes
 - [x] Write failing test: Escape from list returns result
 - [x] Test passes
-- [x] Commit: `test(skills): add ManageSkills intent tests` (already done in previous commits)
-- [x] Commit: `feat(skills): implement ManageSkills intent` (already done in previous commits)
+
+#### Detail View Operations (NEW - To Match Bursts/Facts):
+- [ ] Write failing test: Press Enter from list transitions to Detail state
+- [ ] Test passes
+- [ ] Write failing test: Detail view shows skill name, category, level, years used
+- [ ] Test passes
+- [ ] Write failing test: Detail view shows event count for skill
+- [ ] Test passes
+- [ ] Write failing test: Detail view shows last used date (derived from events)
+- [ ] Test passes
+- [ ] Write failing test: Press v from detail transitions to DetailEvents state
+- [ ] Test passes
+- [ ] Write failing test: DetailEvents view shows all events using skill
+- [ ] Test passes
+- [ ] Write failing test: DetailEvents view paginates events (10 per page)
+- [ ] Test passes
+- [ ] Write failing test: Press Esc from DetailEvents returns to Detail
+- [ ] Test passes
+- [ ] Write failing test: Press e from detail transitions to Edit state
+- [ ] Test passes
+- [ ] Write failing test: Press d from detail transitions to Delete state
+- [ ] Test passes
+- [ ] Write failing test: Press Esc from detail returns to List
+- [ ] Test passes
+- [ ] Write failing test: List view shows event count per skill
+- [ ] Test passes
+
+#### Commits:
+- [x] Commit: `test(skills): add ManageSkills intent tests (basic list)` (already done)
+- [x] Commit: `feat(skills): implement ManageSkills intent (basic list)` (already done)
+- [ ] Commit: `test(skills): add detail view and events view tests (TDD RED)`
+- [ ] Commit: `feat(skills): add detail view and events view states`
+
+### Phase 4B: Filter and Sort (Optional Enhancement)
+
+**Goal**: Add filtering and sorting capabilities to skill list (matches planned burst features)
+
+**Priority**: ⚠️ **OPTIONAL** - Can be deferred to future task if time-constrained
+
+#### Filter Options
+- **By Category**: Show only skills in specific category (backend, frontend, devops, etc.)
+- **By Level**: Show only skills with specific level (beginner, intermediate, advanced, expert)
+- **By Usage**: Show only skills with >0 events (hide unused skills)
+
+#### Sort Options
+- **By Name** (A-Z, Z-A) - Default
+- **By Event Count** (Most used first, Least used first)
+- **By Last Used** (Most recent first, Oldest first)
+- **By Category** (Grouped view - already default)
+
+#### UI Implementation
+- Add filter/sort bar below header (above skill table)
+- Show active filters with clear button
+- Keyboard shortcuts:
+  - `f` - Open filter menu
+  - `s` - Open sort menu
+  - `x` - Clear all filters
+
+#### Repository Enhancement
+```go
+type SkillFilters struct {
+    Category    string   // Filter by category
+    Level       string   // Filter by level
+    MinEvents   int      // Minimum event count (e.g., >0 for used skills only)
+    SortBy      string   // "name", "events", "last_used", "category"
+    SortOrder   string   // "asc", "desc"
+}
+
+// Update List signature
+List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error)
+```
+
+**TDD Checklist - Phase 4B (Optional):**
+- [ ] Write failing test: Filter by category
+- [ ] Test passes
+- [ ] Write failing test: Filter by level
+- [ ] Test passes
+- [ ] Write failing test: Filter by min events (used skills only)
+- [ ] Test passes
+- [ ] Write failing test: Sort by name (A-Z, Z-A)
+- [ ] Test passes
+- [ ] Write failing test: Sort by event count
+- [ ] Test passes
+- [ ] Write failing test: Sort by last used
+- [ ] Test passes
+- [ ] Write failing test: Clear filters returns all skills
+- [ ] Test passes
+- [ ] Write failing test: Press f opens filter menu
+- [ ] Test passes
+- [ ] Write failing test: Press s opens sort menu
+- [ ] Test passes
+- [ ] Commit: `test(skills): add filter and sort tests (TDD RED)`
+- [ ] Commit: `feat(skills): add filter and sort capabilities`
 
 ### Phase 5: Event Capture Integration
 
@@ -678,21 +833,43 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [ ] Token count: _____ (< 100k to continue)
 
 ## Acceptance Criteria
+
+### Core Management (Phase 4)
 - [ ] Users can add, edit, and delete skills via Manage Skills intent
 - [ ] Skills are persisted in database
+- [ ] Users can view skill details (name, category, level, event count, last used)
+- [ ] Users can view all events using a specific skill
+- [ ] Skills can be navigated with Enter key (list → detail → events, matches bursts/facts)
+- [ ] List view shows event count for each skill
+
+### Event Integration (Phase 5)
 - [ ] Skills can be associated with events during capture (optional field, visible in both quick and manual modes)
 - [ ] Skills can be edited via metadata editor
+
+### CSV Import (Phase 5B)
 - [ ] Skills can be imported via CSV with optional Skills column (semicolon-separated)
 - [ ] CSV import auto-creates skills that don't exist (category: "other")
 - [ ] CSV import matches existing skills by name (case-insensitive)
+
+### CV Generation (Phase 7)
 - [ ] Skills appear in CV generation (skills section, grouped by category)
 - [ ] Skill suggestions shown when adding new skill (extracted from event text)
+
+### Optional Enhancements (Phase 4B)
+- [ ] Filter skills by category (optional, can defer)
+- [ ] Filter skills by level (optional, can defer)
+- [ ] Sort skills by name, event count, last used (optional, can defer)
+
+### Quality Assurance
 - [ ] All tests pass (100% pass rate)
 - [ ] Coverage maintained ≥ 80%
 - [ ] Zero staticcheck warnings
 - [ ] Zero race conditions
+
+### Documentation
 - [ ] Documentation updated (add docs/SKILLS_GUIDE.md)
 - [ ] CSV documentation updated (CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md)
+- [ ] SKILLS_GUIDE includes detail view and events view usage
 
 ## Rollback Plan
 - Migrations can be rolled back via `goose down`
@@ -705,12 +882,15 @@ Text,Date,Categories,Tags,Project,Company,Skills
 ## Documentation to Create
 
 ### docs/SKILLS_GUIDE.md
-- How to manage skills
+- How to manage skills (add, edit, delete)
+- How to view skill details (name, category, level, event count, last used)
+- How to view events using a skill (detail → events view)
 - How to associate skills with events (manual capture, metadata editor, CSV import)
 - How skills appear in CVs
 - Category suggestions
 - Best practices for skill management
 - CSV import workflow for skills
+- Keyboard shortcuts for all views (list, detail, events)
 
 ### CSV Documentation Updates
 - **CSV_FORMAT_GUIDE.md**: Add Skills field specification
@@ -725,6 +905,101 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - Group skills by category in list view
 - Show skill count and event count per category
 - Empty state shows helpful message with "n to add skill"
+- **NEW**: Detail view pattern matches burst_management_intent.go
+- **NEW**: Events view pattern matches burst detail events view
+
+### Implementation Patterns (Match Bursts/Facts)
+
+#### Detail View Pattern (from burst_management_intent.go)
+```go
+// State transition from list
+case "enter":
+    if m.state == SkillsStateList && len(m.skills) > 0 {
+        m.selectedSkill = m.skills[m.cursor]
+        m.state = SkillsStateDetail
+        return nil
+    }
+
+// Detail view rendering
+func (m *ManageSkillsModel) viewDetail() string {
+    skill := m.selectedSkill
+    
+    // Fetch event count and last used
+    eventCount := m.getEventCount(skill.ID)
+    lastUsed := m.getLastUsed(skill.ID)
+    
+    // Render detail view with StandardView
+    content := fmt.Sprintf(`
+Skill: %s
+Category: %s
+Level: %s
+Years Used: %d
+Event Count: %d
+Last Used: %s
+Created: %s
+Updated: %s
+
+Press 'v' to view events | 'e' to edit | 'd' to delete | Esc to go back
+`, skill.Name, skill.Category, skill.Level, eventCount, lastUsed, ...)
+    
+    return m.standardView.Render(content, footer)
+}
+```
+
+#### Events View Pattern (from burst_management_intent.go)
+```go
+// State transition from detail
+case "v":
+    if m.state == SkillsStateDetail {
+        m.loadEventsForSkill(m.selectedSkill.ID)
+        m.state = SkillsStateDetailEvents
+        return nil
+    }
+
+// Events view rendering
+func (m *ManageSkillsModel) viewDetailEvents() string {
+    // Render table of events using this skill
+    // Paginate 10 events per page
+    // Show: Date | Event Text (truncated) | Company
+    
+    return m.standardView.Render(eventsTable, footer)
+}
+```
+
+#### Repository Methods Needed
+```go
+// internal/repository/career/skill_repository.go
+
+// GetEventCountsForSkills returns event count for each skill
+GetEventCountsForSkills(ctx context.Context) (map[string]int, error)
+
+// GetLastUsedForSkills returns last used date for each skill
+GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error)
+
+// GetEventsUsingSkill returns all events that use a specific skill
+GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error)
+```
+
+**Implementation queries**:
+```sql
+-- Event count per skill
+SELECT skill_id, COUNT(*) as event_count
+FROM event_skills
+GROUP BY skill_id;
+
+-- Last used per skill
+SELECT es.skill_id, MAX(ce.date) as last_used
+FROM event_skills es
+JOIN career_events ce ON es.event_id = ce.id
+GROUP BY es.skill_id;
+
+-- Events using skill
+SELECT ce.*
+FROM career_events ce
+JOIN event_skills es ON ce.id = es.event_id
+WHERE es.skill_id = ?
+ORDER BY ce.date DESC;
+```
 
 ### Category Suggestions
 Common categories to suggest (user can define custom):
@@ -773,6 +1048,38 @@ When adding a new skill, suggest technologies found in event text:
 - ❌ Rejected: Forces users to pre-create all skills before import
 - ❌ Poor UX for bulk imports with many skills
 - ❌ Loses skill data from CSV if not pre-created
+
+### Feature Parity with Bursts and Facts
+
+To ensure consistency across all management intents, skills now have the same capabilities:
+
+| Feature | Bursts | Facts | Skills (Updated) |
+|---------|--------|-------|------------------|
+| **Browse in List** | ✅ Table view | ✅ Table view | ✅ Table view |
+| **View Details** | ✅ Detail state | ✅ Detail state | ✅ Detail state (NEW) |
+| **Edit** | ✅ EditBurstModal | ✅ EditFactModal | ✅ EditSkillModal |
+| **Delete** | ✅ Confirmation | ✅ Confirmation | ✅ Confirmation |
+| **Create New** | ✅ Press `n` | ✅ Press `n` | ✅ Press `n` |
+| **View Related Items** | ✅ Events + Facts (`v`, `f`) | ❌ No related | ✅ Events (`v`) (NEW) |
+| **Enter from List** | ✅ Enter → Detail | ✅ Enter → Detail | ✅ Enter → Detail (NEW) |
+| **Event Count** | ✅ Shown in detail | ❌ Not applicable | ✅ Shown in detail (NEW) |
+| **Quick Actions** | ✅ Edit/Delete from list | ✅ Edit/Delete from list | ✅ Edit/Delete from list |
+| **Pagination** | ✅ 15 per page | ✅ 15 per page | ✅ 15 per page |
+| **Empty State** | ✅ Helpful message | ✅ Helpful message | ✅ Helpful message |
+| **Filter/Sort** | ⚠️ Planned | ❌ Not implemented | ⚠️ Optional (Phase 4B) |
+| **Bulk Operations** | ❌ Not integrated | ❌ Not integrated | ❌ Not planned |
+
+**Key Improvements in This Task**:
+1. ✅ Added detail view state (matches bursts/facts)
+2. ✅ Added events view state (matches bursts)
+3. ✅ Added Enter key navigation (matches bursts/facts)
+4. ✅ Added event count display (matches bursts)
+5. ✅ Consistent keyboard shortcuts across all intents
+
+**Deferred to Future Tasks**:
+- Filter/sort capabilities (optional, Phase 4B)
+- Bulk operations integration (separate task for all intents)
+- "Work through all" review mode (separate enhancement task)
 
 ### Integration with Task 40
 This task creates the foundation for Task 40 (Role Emphasis Redesign), which will:
