@@ -1,6 +1,6 @@
 # Task 35: Test Coverage and Quality Improvements
 
-**Status**: In Progress (Phases 1-4 complete, Phases 5-11 pending)
+**Status**: In Progress (Phases 1-5 ✅ complete, Phases 6-11 pending)
 **Priority**: MEDIUM-HIGH
 **Estimated Time**: 4-5 days total
 **Current Coverage**: 80.34%
@@ -60,86 +60,68 @@ This task consolidates test coverage improvements, architectural refinements, an
 
 ---
 
-### Phase 2: CaptureEvent Submit Workflow Tests (Priority: HIGH)
+### Phase 2: CaptureEvent Submit Workflow Tests ✅ COMPLETE
 
 **Issue**: Core user journey (event submission) has 0% coverage.
 **File**: `internal/cli/intents/capture_event_intent.go`
-
-**Uncovered Functions**:
-| Line | Function | Description |
-|------|----------|-------------|
-| 168 | `initializeFormForEdit()` | Edit form initialization |
-| 595 | `performSubmit()` | Core submit logic |
-| 696 | `performEnrichment()` | Enrichment workflow |
-| 1101 | `viewError()` | Error view |
-| 1131 | `acceptCurrentItem()` | Accept enrichment item |
-| 1165 | `rejectCurrentItem()` | Reject enrichment item |
+**Status**: ✅ Fixed - created `capture_event_submit_test.go`
 
 **Subtasks**:
-- [ ] Add submit workflow tests (TDD)
-- [ ] Add enrichment workflow tests (TDD)
-- [ ] Add accept/reject tests (TDD)
+- [x] Add submit workflow tests (TDD)
+- [x] Add enrichment workflow tests (TDD)
+- [x] Add accept/reject tests (TDD)
 
-**Files to Create**: `internal/cli/intents/capture_event_submit_test.go`
-**Estimated Time**: 2-3 hours
+**Files Created**: `internal/cli/intents/capture_event_submit_test.go`
 
 ---
 
-### Phase 3: Delete Event Workflow Tests (Priority: HIGH)
+### Phase 3: Delete Event Workflow Tests ✅ COMPLETE
 
 **Issue**: Delete event has 0% coverage.
 **File**: `internal/cli/intents/browse_timeline_intent.go`
-
-**Uncovered Functions**:
-| Line | Function | Description |
-|------|----------|-------------|
-| 324 | `updateDeleteConfirm()` | Delete confirmation handler |
-| 367 | `removeEventFromList()` | Event removal logic |
-| 616 | `viewDeleteConfirm()` | Delete confirmation view |
+**Status**: ✅ Fixed - created `browse_timeline_delete_test.go`
 
 **Subtasks**:
-- [ ] Add delete confirmation tests (TDD)
-- [ ] Add event removal tests (TDD)
+- [x] Add delete confirmation tests (TDD)
+- [x] Add event removal tests (TDD)
 
-**Files to Create**: `internal/cli/intents/browse_timeline_delete_test.go`
-**Estimated Time**: 1-2 hours
+**Files Created**: `internal/cli/intents/browse_timeline_delete_test.go`
 
 ---
 
-### Phase 4: Modal Lifecycle Tests (Priority: MEDIUM)
+### Phase 4: Modal Lifecycle Tests ✅ COMPLETE
 
 **Issue**: Modal Update/View/Result methods have 0% coverage.
 **File**: `internal/cli/intents/modals.go`
-
-**Uncovered**:
-- EditMetadataModal: Update, View, Result, computeChanges
-- EditBurstModal: View, IsComplete, syncModified, computeChanges
-- EditFactModal: Update, View, Result, computeChanges
+**Status**: ✅ Fixed - created `modals_lifecycle_test.go`
 
 **Subtasks**:
-- [ ] Add EditMetadataModal lifecycle tests (TDD)
-- [ ] Add EditBurstModal lifecycle tests (TDD)
-- [ ] Add EditFactModal lifecycle tests (TDD)
+- [x] Add EditMetadataModal lifecycle tests (TDD)
+- [x] Add EditBurstModal lifecycle tests (TDD)
+- [x] Add EditFactModal lifecycle tests (TDD)
 
-**Files to Modify**: `internal/cli/intents/modals_test.go`
-**Estimated Time**: 3-4 hours
+**Files Created**: `internal/cli/intents/modals_lifecycle_test.go`
 
 ---
 
-### Phase 5: Export Format Tests (Priority: MEDIUM)
+### Phase 5: Export Format Tests ✅ COMPLETE
 
 **Issue**: Export marshal functions have 0% coverage.
 **File**: `internal/cli/intents/export_artifact.go`
+**Status**: ✅ Fixed - created `export_formats_test.go` with 66 tests
 
-**Uncovered Functions**:
-- `exportFacts()`, `exportBursts()`
-- `generateBurstsPreview()`, `generateProfilePreview()`
-- `marshalToYAML()`, `marshalEventsToCSV()`, `marshalEventsToText()`
-- `marshalFactsToCSV()`, `marshalFactsToText()`
-- `marshalBurstsToCSV()`, `marshalBurstsToText()`
+**Tests Added**:
+- marshalToJSON (3 tests)
+- marshalToYAML (3 tests)
+- marshalEventsToCSV (6 tests)
+- marshalEventsToText (14 tests)
+- marshalFactsToCSV (5 tests)
+- marshalFactsToText (12 tests)
+- marshalBurstsToCSV (5 tests)
+- marshalBurstsToText (12 tests)
+- escapeCSV (6 tests)
 
-**Files to Create**: `internal/cli/intents/export_formats_test.go`
-**Estimated Time**: 2-3 hours
+**Files Created**: `internal/cli/intents/export_formats_test.go`
 
 ---
 
