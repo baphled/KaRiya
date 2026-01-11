@@ -1,5 +1,3 @@
-//go:build ignore
-
 package main
 
 import (
@@ -108,8 +106,7 @@ func main() {
 		intent2.Update(msg)
 	}
 
-	// Note: GetInputValue is not available via interface, form values are accessed differently
-	fmt.Printf("Text input sent to form\n")
+	fmt.Printf("Input 0 value after typing: '%s'\n", formModel.GetInputValue(0))
 
 	// Send Tab to move to next field
 	fmt.Println("Sending Tab to move to date field...")
@@ -121,7 +118,7 @@ func main() {
 		intent2.Update(msg)
 	}
 
-	fmt.Printf("Date input sent to form\n")
+	fmt.Printf("Input 1 value after typing date: '%s'\n", formModel.GetInputValue(1))
 
 	fmt.Println("\n--- STEP 2: Press Ctrl+S with data ---")
 	cmd = intent2.Update(tea.KeyMsg{Type: tea.KeyCtrlS})

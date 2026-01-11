@@ -54,34 +54,6 @@ const (
 	SizeXLarge
 )
 
-// Layout overhead constants for consistent UI sizing across all components.
-// These values represent the vertical space consumed by UI chrome.
-const (
-	// StandardViewOverhead is the space used by StandardView (logo + breadcrumbs + footer).
-	// Logo spacing (2) + logo (~9) + blank (1) + breadcrumbs (~2) + blank (1) + footer (~3) = ~18 lines
-	StandardViewOverhead = 18
-
-	// ModalOverhead is the additional space for modal chrome on top of StandardViewOverhead.
-	// Modal border (2) + title (1) + padding (1) = ~4 lines
-	ModalOverhead = 4
-
-	// FormOverhead is the space for form chrome (header, confirm button area).
-	// Confirm button group takes ~5 lines.
-	FormOverhead = 5
-
-	// TableHeaderOverhead is the space for table headers and borders.
-	TableHeaderOverhead = 3
-
-	// MinContentHeight is the minimum height for any scrollable content area.
-	MinContentHeight = 10
-
-	// MinContentWidth is the minimum width for any content area.
-	MinContentWidth = 40
-
-	// DefaultPageSize is the fallback page size when terminal size is unknown.
-	DefaultPageSize = 15
-)
-
 // NewInfo creates a new Info instance with default values
 func NewInfo() *Info {
 	return &Info{
@@ -151,75 +123,6 @@ func (i *Info) ContentArea(margins Margins) (width, height int) {
 	height = max(height, 5)
 
 	return
-}
-
-// ContentHeight returns the available height for content after subtracting overhead.
-// The overhead parameter should be the sum of all UI chrome above/below the content.
-// Returns at least MinContentHeight.
-func (i *Info) ContentHeight(overhead int) int {
-	_, safeHeight := i.GetSafeDimensions(DefaultConfig)
-	h := safeHeight - overhead
-	if h < MinContentHeight {
-		h = MinContentHeight
-	}
-	return h
-}
-
-// ContentWidth returns the available width for content after subtracting margins.
-// Returns at least MinContentWidth.
-func (i *Info) ContentWidth(horizontalMargin int) int {
-	safeWidth, _ := i.GetSafeDimensions(DefaultConfig)
-	w := safeWidth - horizontalMargin
-	if w < MinContentWidth {
-		w = MinContentWidth
-	}
-	return w
-}
-
-// FormContentHeight returns the height available for form content.
-// This accounts for StandardView overhead only - forms handle their own internal chrome.
-func (i *Info) FormContentHeight() int {
-	return i.ContentHeight(StandardViewOverhead)
-}
-
-// ModalContentHeight returns the height available for modal content (not forms).
-// This accounts for StandardView overhead and modal chrome.
-func (i *Info) ModalContentHeight() int {
-	return i.ContentHeight(StandardViewOverhead + ModalOverhead)
-}
-
-// ModalFormContentHeight returns the height available for a form inside a modal.
-// This accounts for StandardView and modal chrome - forms handle their own internal chrome.
-func (i *Info) ModalFormContentHeight() int {
-	return i.ContentHeight(StandardViewOverhead + ModalOverhead)
-}
-
-// PageSize returns the dynamic page size based on available content height.
-// This is useful for paginated lists and tables.
-// The itemHeight parameter specifies how many lines each item takes.
-func (i *Info) PageSize(itemHeight int) int {
-	if itemHeight <= 0 {
-		itemHeight = 1
-	}
-
-	// Available height for list items (after standard view and table header)
-	availableHeight := i.ContentHeight(StandardViewOverhead + TableHeaderOverhead)
-
-	// Calculate how many items fit
-	pageSize := availableHeight / itemHeight
-	if pageSize < 5 {
-		pageSize = 5 // Minimum 5 items per page
-	}
-	if pageSize > 50 {
-		pageSize = 50 // Maximum 50 items per page
-	}
-	return pageSize
-}
-
-// TablePageSize returns the page size optimized for table views.
-// Assumes each row is 1 line tall.
-func (i *Info) TablePageSize() int {
-	return i.PageSize(1)
 }
 
 // max returns the larger of two integers

@@ -37,8 +37,6 @@ type EditMetadataModal struct {
 	formGroup *huh.Group
 
 	// formData holds the form field values (pointers so form binding works)
-	text            *string
-	date            *string
 	company         *string
 	project         *string
 	tags            []string // MultiSelect uses slice directly
@@ -52,8 +50,6 @@ type EditMetadataModal struct {
 
 // MetadataSnapshot represents a snapshot of event metadata for editing.
 type MetadataSnapshot struct {
-	Text       string
-	Date       string
 	Company    string
 	Project    string
 	Tags       []string
@@ -61,26 +57,10 @@ type MetadataSnapshot struct {
 }
 
 // NewEditMetadataModal creates a new metadata editing modal using huh forms.
-// text: the event text to edit
-// date: the event date (YYYY-MM-DD format)
-// company, project: event metadata
-// tags, categories: event classification
+// original: the original metadata to display
 // Returns a new modal ready for interaction.
-func NewEditMetadataModal(text, date, company, project string, tags, categories []string) *EditMetadataModal {
-	return NewEditMetadataModalWithDimensions(text, date, company, project, tags, categories, 80, 24)
-}
-
-// NewEditMetadataModalWithDimensions creates a new metadata editing modal with specified dimensions.
-// text: the event text to edit
-// date: the event date (YYYY-MM-DD format)
-// company, project: event metadata
-// tags, categories: event classification
-// width, height: terminal dimensions for scrollable form
-// Returns a new modal ready for interaction.
-func NewEditMetadataModalWithDimensions(text, date, company, project string, tags, categories []string, width, height int) *EditMetadataModal {
+func NewEditMetadataModal(company, project string, tags, categories []string) *EditMetadataModal {
 	original := &MetadataSnapshot{
-		Text:       text,
-		Date:       date,
 		Company:    company,
 		Project:    project,
 		Tags:       tags,
@@ -88,8 +68,6 @@ func NewEditMetadataModalWithDimensions(text, date, company, project string, tag
 	}
 
 	// Initialize form field values
-	textVal := text
-	dateVal := date
 	companyVal := company
 	projectVal := project
 	submitConfirmed := false
@@ -118,36 +96,17 @@ func NewEditMetadataModalWithDimensions(text, date, company, project string, tag
 		result:          nil,
 		form:            nil, // Will be set below
 		formGroup:       nil, // Will be set below
-		text:            &textVal,
-		date:            &dateVal,
 		company:         &companyVal,
 		project:         &projectVal,
 		tags:            tagsCopy,
 		categories:      categoriesCopy,
 		submitConfirmed: &submitConfirmed,
-		width:           width,
-		height:          height,
+		width:           80,
+		height:          24,
 	}
 
 	// Create form group with fields only (confirm button is separate)
 	modal.formGroup = huh.NewGroup(
-		forms.NewText(forms.FieldConfig{
-			Key:         "text",
-			Title:       "Event Description",
-			Description: "Describe what you accomplished (required, 10-2000 characters)",
-			Placeholder: "Enter event description...",
-			CharLimit:   2000,
-			Validate:    forms.Compose(forms.Required, forms.MinLength(10), forms.MaxLength(2000)),
-		}).Value(modal.text).Lines(5),
-
-		forms.NewInput(forms.FieldConfig{
-			Key:         "date",
-			Title:       "Date",
-			Description: "YYYY-MM-DD, 'today', or relative like '1 week ago'",
-			Placeholder: "Defaults to today",
-			Validate:    forms.DateFormat,
-		}).Value(modal.date),
-
 		forms.NewInput(forms.FieldConfig{
 			Key:         "company",
 			Title:       "Company",
@@ -183,12 +142,11 @@ func NewEditMetadataModalWithDimensions(text, date, company, project string, tag
 	)
 
 	// Create form with fixed confirm button at bottom
-	// Note: height is expected to be the AVAILABLE content height after StandardView + Modal overhead
 	modal.form = forms.NewFormWithFixedConfirm(
 		modal.formGroup,
 		modal.submitConfirmed,
 		modal.width-4, // Leave margin for modal chrome
-		modal.height,  // Use height directly - caller already accounted for overhead
+		forms.DefaultFormHeight(modal.height),
 	)
 
 	return modal
@@ -198,20 +156,12 @@ func NewEditMetadataModalWithDimensions(text, date, company, project string, tag
 func (m *EditMetadataModal) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		// WindowSizeMsg contains FULL terminal dimensions
-		// Calculate available content height after StandardView (18) + Modal (4) overhead
-		const overhead = 22 // StandardView + Modal chrome
-		contentHeight := msg.Height - overhead
-		if contentHeight < 10 {
-			contentHeight = 10
-		}
-
 		m.width = msg.Width
-		m.height = contentHeight
+		m.height = msg.Height
 		// Update form dimensions without losing state
 		m.form = m.form.
-			WithHeight(contentHeight).
-			WithWidth(msg.Width - 4) // Leave margin for modal chrome
+			WithHeight(forms.DefaultFormHeight(m.height)).
+			WithWidth(m.width - 4) // Leave margin for modal chrome
 		return nil
 	}
 
@@ -248,7 +198,7 @@ func (m *EditMetadataModal) View() string {
 	// Wrap in modal container
 	title := styles.ModalTitle.
 		Foreground(styles.ColorTextPrimary).
-		Render("Edit Event")
+		Render("Edit Event Metadata")
 
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -279,7 +229,7 @@ func (m *EditMetadataModal) IsComplete() bool {
 
 // GetTitle returns the modal title for overlay rendering.
 func (m *EditMetadataModal) GetTitle() string {
-	return "Edit Event"
+	return "Edit Event Metadata"
 }
 
 // GetContent returns just the form content without the modal container.
@@ -300,8 +250,6 @@ func (m *EditMetadataModal) GetFooter() string {
 
 func (m *EditMetadataModal) syncModified() {
 	m.modified = &MetadataSnapshot{
-		Text:       *m.text,
-		Date:       *m.date,
 		Company:    *m.company,
 		Project:    *m.project,
 		Tags:       m.tags,       // MultiSelect binds directly to []string
@@ -337,12 +285,6 @@ func (m *EditMetadataModal) createCancelledResult() {
 func (m *EditMetadataModal) computeChanges() map[string]interface{} {
 	changes := make(map[string]interface{})
 
-	if m.original.Text != m.modified.Text {
-		changes["text"] = m.modified.Text
-	}
-	if m.original.Date != m.modified.Date {
-		changes["date"] = m.modified.Date
-	}
 	if m.original.Company != m.modified.Company {
 		changes["company"] = m.modified.Company
 	}
@@ -797,20 +739,18 @@ func copyMetadataSnapshot(original *MetadataSnapshot) *MetadataSnapshot {
 		return nil
 	}
 
-	cpy := *original
-	cpy.Text = original.Text
-	cpy.Date = original.Date
-	cpy.Tags = make([]string, len(original.Tags))
-	cpy.Categories = make([]string, len(original.Categories))
+	copy := *original
+	copy.Tags = make([]string, len(original.Tags))
+	copy.Categories = make([]string, len(original.Categories))
 
 	for i, tag := range original.Tags {
-		cpy.Tags[i] = tag
+		copy.Tags[i] = tag
 	}
 	for i, cat := range original.Categories {
-		cpy.Categories[i] = cat
+		copy.Categories[i] = cat
 	}
 
-	return &cpy
+	return &copy
 }
 
 // slicesEqual checks if two string slices are equal.
