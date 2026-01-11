@@ -1,4 +1,4 @@
-package e2e_test
+package intents_test
 
 import (
 	"github.com/baphled/kariya/internal/testutil/e2e"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("E2E ConfigureSystem Workflow", func() {
+var _ = Describe("Configure Navigation", func() {
 	var env *e2e.TestEnv
 
 	Describe("Navigation to ConfigureSystem Intent", func() {
@@ -292,19 +292,4 @@ var _ = Describe("E2E ConfigureSystem Workflow", func() {
 		})
 	})
 
-	Describe("Session Persistence", func() {
-		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should show configuration options after restart", func() {
-			env.SimulateRestart()
-			env.SelectIntentByName("configure_system")
-			env.AssertViewContainsAny("System", "Profile", "Export", "UI", "Domain")
-		})
-	})
 })

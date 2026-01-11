@@ -1,4 +1,4 @@
-package e2e_test
+package intents_test
 
 import (
 	"strings"
@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("E2E CaptureEvent Workflow", func() {
+var _ = Describe("Capture Navigation", func() {
 	var env *e2e.TestEnv
 
 	Describe("Navigation to CaptureEvent Intent", func() {
@@ -233,52 +233,6 @@ var _ = Describe("E2E CaptureEvent Workflow", func() {
 		})
 	})
 
-	Describe("Database Persistence", func() {
-		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should start with empty database", func() {
-			env.AssertEventCount(0)
-		})
-
-		It("should not persist event when cancelled before submission", func() {
-			env.SelectIntentByName("capture_event")
-			env.Confirm() // Select Quick strategy
-			env.TypeText("Test event text")
-			env.Cancel() // Cancel from form
-			env.AssertEventCount(0)
-		})
-
-		It("should not persist event when returning to main menu", func() {
-			env.SelectIntentByName("capture_event")
-			env.Confirm() // Select Quick strategy
-			env.TypeText("Test event text")
-			env.PressKeyRune('m') // Return to main menu
-			env.AssertEventCount(0)
-		})
-	})
-
-	Describe("Session Persistence", func() {
-		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should show empty timeline after restart with no events", func() {
-			env.SimulateRestart()
-			env.SelectIntentByName("browse_timeline")
-			env.AssertViewContainsAny("No events", "empty", "Timeline")
-		})
-	})
-
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
@@ -346,4 +300,5 @@ var _ = Describe("E2E CaptureEvent Workflow", func() {
 			env.AssertViewContains("Quick")
 		})
 	})
+
 })

@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ci-local ci-install-tools gosec session-start verify-hooks tdd-check
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start verify-hooks tdd-check
 
 # Run all tests in verbose mode
 test:
@@ -112,6 +112,19 @@ list-ai-commits:
 	@echo "AI-Generated Commits:"
 	@git log --all --grep="AI-Generated-By:" --oneline
 
+# Create AI-attributed commit (for AI-generated code)
+ai-commit:
+	@if [ -z "$(MSG)" ]; then \
+		echo "Usage: make ai-commit MSG=\"feat(scope): description\""; \
+		echo ""; \
+		echo "Examples:"; \
+		echo "  make ai-commit MSG=\"feat(forms): add date validation helpers\""; \
+		echo "  make ai-commit MSG=\"fix(tests): resolve race condition\""; \
+		echo ""; \
+		exit 1; \
+	fi
+	@bash scripts/ai-commit.sh "$(MSG)"
+
 # Show token efficiency reminder
 token-check:
 	@echo "================================================"
@@ -213,6 +226,7 @@ help:
 	@echo "  make gosec             - Run security scanner"
 	@echo ""
 	@echo "🤖 AI Attribution:"
+	@echo "  make ai-commit MSG=\"...\"  - Create AI-attributed commit (recommended)"
 	@echo "  make install-git-hooks    - Install AI attribution hooks"
 	@echo "  make check-ai-attribution - Check latest commit"
 	@echo "  make audit-ai-commits     - Audit all AI commits"
