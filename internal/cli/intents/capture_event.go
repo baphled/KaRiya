@@ -126,7 +126,8 @@ type CaptureEventModel struct {
 	currentState string // ChooseCaptureStrategy, CaptureForm, ReviewInferredEvent, Submit
 
 	// captureForm is the form for capturing event details.
-	captureForm *models.FormModel
+	// Uses CaptureForm interface to support both legacy and huh-based forms.
+	captureForm models.CaptureForm
 
 	// reviewState is the state of the ReviewInferredEvent sub-flow.
 	reviewState *ReviewInferredEventState
