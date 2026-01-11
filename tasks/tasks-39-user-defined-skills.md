@@ -342,7 +342,7 @@ const (
   - Last Used (derived from events)
   - Event Count (number of events with this skill)
   - Created/Updated timestamps
-- Actions available: View events (`v`), Edit (`e`), Delete (`d`)
+- Actions available: View events (`Enter`), Edit (`e`), Delete (`d`)
 
 **Detail Events View** (SkillsStateDetailEvents) - **NEW**:
 - Shows all events that use this skill
@@ -370,7 +370,7 @@ const (
 - `Esc` - Back to main menu
 
 **Detail View** (NEW):
-- `v` - View events using this skill (NEW - matches bursts)
+- `Enter` - View events using this skill (NEW - natural progression, like list→detail)
 - `e` - Edit skill
 - `d` - Delete skill
 - `Esc` - Back to list
@@ -431,7 +431,7 @@ const (
 - [ ] Test passes
 - [ ] Write failing test: Detail view shows last used date (derived from events)
 - [ ] Test passes
-- [ ] Write failing test: Press v from detail transitions to DetailEvents state
+- [ ] Write failing test: Press Enter from detail transitions to DetailEvents state
 - [ ] Test passes
 - [ ] Write failing test: DetailEvents view shows all events using skill
 - [ ] Test passes
@@ -908,6 +908,30 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - **NEW**: Detail view pattern matches burst_management_intent.go
 - **NEW**: Events view pattern matches burst detail events view
 
+### Keyboard Shortcut Rationale
+
+**Why Skills use `Enter` for viewing events (not `v`)**:
+
+Bursts use letter keys (`v`, `f`) because they have **multiple** related item types:
+- `v` = View events
+- `f` = View facts
+
+Skills have only **one** related item type (events), so we use:
+- `Enter` = View events (natural progression: list→detail→events)
+
+**Benefits**:
+- ✅ More intuitive (Enter = "go deeper" at every level)
+- ✅ Consistent navigation pattern (Enter throughout)
+- ✅ Saves `v` for future use if needed
+- ✅ Easier to remember (fewer keys to learn)
+
+**Consistency Check**:
+- List → Detail: `Enter` (all intents)
+- Detail → Related: `Enter` (skills), `v`/`f` (bursts only, multiple types)
+- Back: `Esc` (always, all intents)
+- Edit: `e` (all intents)
+- Delete: `d` (all intents)
+
 ### Implementation Patterns (Match Bursts/Facts)
 
 #### Detail View Pattern (from burst_management_intent.go)
@@ -939,7 +963,7 @@ Last Used: %s
 Created: %s
 Updated: %s
 
-Press 'v' to view events | 'e' to edit | 'd' to delete | Esc to go back
+Press Enter to view events | 'e' to edit | 'd' to delete | Esc to go back
 `, skill.Name, skill.Category, skill.Level, eventCount, lastUsed, ...)
     
     return m.standardView.Render(content, footer)
@@ -949,7 +973,7 @@ Press 'v' to view events | 'e' to edit | 'd' to delete | Esc to go back
 #### Events View Pattern (from burst_management_intent.go)
 ```go
 // State transition from detail
-case "v":
+case "enter":
     if m.state == SkillsStateDetail {
         m.loadEventsForSkill(m.selectedSkill.ID)
         m.state = SkillsStateDetailEvents
@@ -1060,7 +1084,7 @@ To ensure consistency across all management intents, skills now have the same ca
 | **Edit** | ✅ EditBurstModal | ✅ EditFactModal | ✅ EditSkillModal |
 | **Delete** | ✅ Confirmation | ✅ Confirmation | ✅ Confirmation |
 | **Create New** | ✅ Press `n` | ✅ Press `n` | ✅ Press `n` |
-| **View Related Items** | ✅ Events + Facts (`v`, `f`) | ❌ No related | ✅ Events (`v`) (NEW) |
+| **View Related Items** | ✅ Events + Facts (`v`, `f`) | ❌ No related | ✅ Events (`Enter`) (NEW) |
 | **Enter from List** | ✅ Enter → Detail | ✅ Enter → Detail | ✅ Enter → Detail (NEW) |
 | **Event Count** | ✅ Shown in detail | ❌ Not applicable | ✅ Shown in detail (NEW) |
 | **Quick Actions** | ✅ Edit/Delete from list | ✅ Edit/Delete from list | ✅ Edit/Delete from list |
