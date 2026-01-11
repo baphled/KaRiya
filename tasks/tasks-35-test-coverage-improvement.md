@@ -1,6 +1,6 @@
 # Task 35: Test Coverage and Quality Improvements
 
-**Status**: In Progress (Phases 1-5 ✅ complete, Phases 6-11 pending)
+**Status**: In Progress (Phases 1-6 ✅ complete, Phases 7-11 pending)
 **Priority**: MEDIUM-HIGH
 **Estimated Time**: 4-5 days total
 **Current Coverage**: 80.34%
@@ -125,21 +125,45 @@ This task consolidates test coverage improvements, architectural refinements, an
 
 ---
 
-### Phase 6: Consolidate Test Fixtures (Priority: MEDIUM)
+### Phase 6: Consolidate Test Fixtures ✅ COMPLETE
 
 **Issue**: Test data creation duplicated across files.
+**Status**: ✅ Fixed - created fixtures package with factory-go + gofakeit
 
-**Current Duplication**:
-- `internal/repository/career/sqlite_repository_test.go` - creates test events
-- `internal/testutil/e2e/fixtures.go` - creates minimal events
-- Various intent tests create their own test data
+**Libraries Added**:
+- `github.com/bluele/factory-go` - Factory pattern (like FactoryBot)
+- `github.com/brianvoe/gofakeit/v7` - Realistic fake data (300+ generators)
 
-**Subtasks**:
-- [ ] Create `internal/testutil/fixtures/` package
-- [ ] Implement builder pattern for events, bursts, facts
-- [ ] Refactor existing tests to use shared fixtures
+**Features Implemented**:
+- `EventFactory` - Creates events with realistic text, companies, projects
+- `BurstFactory` - Creates bursts with sequential IDs, linked events
+- `FactFactory` - Creates facts with valid role fits, audiences, signals
+- Quick helpers: `Event()`, `Burst()`, `Fact()`, `BurstConfirmed()`, `FactFromBurst()`
+- Batch helpers: `Events(n)`, `Bursts(n, events)`, `Facts(n, events)`
+- `SetSeed()` for reproducible tests
 
-**Estimated Time**: 4-5 hours
+**Files Created**:
+- `internal/testutil/fixtures/factories.go` - Factory implementations
+- `internal/testutil/fixtures/factories_test.go` - 26 tests
+
+**Usage Examples**:
+```go
+// Factory with fake data
+event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+
+// With overrides
+event := fixtures.EventFactory.MustCreateWithOption(map[string]interface{}{
+    "Company": "TechCorp",
+}).(*career.CareerEvent)
+
+// Quick minimal objects
+event := fixtures.Event("my-id")
+burst := fixtures.Burst("burst-id", "evt-1", "evt-2")
+
+// Batch creation
+events := fixtures.Events(10)
+facts := fixtures.Facts(5, events)
+```
 
 ---
 
