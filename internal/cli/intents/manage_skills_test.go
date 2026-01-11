@@ -2,7 +2,6 @@ package intents_test
 
 import (
 	"context"
-	"testing"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	domain "github.com/baphled/kariya/internal/domain/career"
@@ -13,11 +12,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestManageSkillsIntent(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "ManageSkills Intent Suite")
-}
 
 var _ = Describe("ManageSkillsIntent", func() {
 	var (
@@ -59,6 +53,7 @@ var _ = Describe("ManageSkillsIntent", func() {
 
 		// Create context
 		intentCtx = &intents.ManageSkillsContext{
+			Ctx:             ctx,
 			SkillRepository: skillRepo,
 			Service:         service,
 		}
@@ -73,7 +68,7 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("Init", func() {
 		It("should initialize and load skills", func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 
 			// Should return a command to load skills
 			Expect(cmd).NotTo(BeNil())
@@ -88,7 +83,7 @@ var _ = Describe("ManageSkillsIntent", func() {
 
 		It("should start in list state", func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			Expect(intent.State()).To(Equal(intents.SkillsStateList))
 		})
@@ -97,10 +92,10 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("List State Navigation", func() {
 		BeforeEach(func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			// Load skills
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 		})
@@ -146,10 +141,10 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("Add Skill Workflow", func() {
 		BeforeEach(func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			// Load skills
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 		})
@@ -194,10 +189,20 @@ var _ = Describe("ManageSkillsIntent", func() {
 			cmd := intent.Update(msg)
 			Expect(cmd).NotTo(BeNil())
 
-			// Should transition back to list
-			Eventually(func() intents.SkillsState {
-				return intent.State()
-			}).Should(Equal(intents.SkillsStateList))
+			// Execute the create command
+			createMsg := cmd()
+			Expect(createMsg).To(BeAssignableToTypeOf(intents.SkillCreatedMsg{}))
+
+			// Handle the created message
+			cmd2 := intent.Update(createMsg)
+			Expect(cmd2).NotTo(BeNil())
+
+			// Execute the reload command
+			reloadMsg := cmd2()
+			intent.Update(reloadMsg)
+
+			// Should be back in list state
+			Expect(intent.State()).To(Equal(intents.SkillsStateList))
 
 			// Verify skill was created
 			skills, err := skillRepo.List(ctx, nil)
@@ -218,10 +223,10 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("Edit Skill Workflow", func() {
 		BeforeEach(func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			// Load skills
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 		})
@@ -234,12 +239,12 @@ var _ = Describe("ManageSkillsIntent", func() {
 		})
 
 		It("should show form pre-populated with selected skill", func() {
-			// Select Ruby (first skill)
+			// Skills are ordered by name ASC, so first skill is "Docker"
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Skill Name"))
-			Expect(view).To(ContainSubstring("Ruby"))
+			Expect(view).To(ContainSubstring("Docker"))
 		})
 
 		It("should return to list when edit is cancelled", func() {
@@ -255,7 +260,8 @@ var _ = Describe("ManageSkillsIntent", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 
 			// Simulate form completion with updated data
-			updatedSkill := testSkills[0]
+			// Skills are ordered by name ASC, so first skill is "Docker" (testSkills[4])
+			updatedSkill := testSkills[4] // Docker
 			updatedSkill.Level = "expert" // Was "advanced"
 
 			msg := intents.SkillFormCompleteMsg{
@@ -266,10 +272,20 @@ var _ = Describe("ManageSkillsIntent", func() {
 			cmd := intent.Update(msg)
 			Expect(cmd).NotTo(BeNil())
 
-			// Should transition back to list
-			Eventually(func() intents.SkillsState {
-				return intent.State()
-			}).Should(Equal(intents.SkillsStateList))
+			// Execute the update command
+			updateMsg := cmd()
+			Expect(updateMsg).To(BeAssignableToTypeOf(intents.SkillUpdatedMsg{}))
+
+			// Handle the updated message
+			cmd2 := intent.Update(updateMsg)
+			Expect(cmd2).NotTo(BeNil())
+
+			// Execute the reload command
+			reloadMsg := cmd2()
+			intent.Update(reloadMsg)
+
+			// Should be back in list state
+			Expect(intent.State()).To(Equal(intents.SkillsStateList))
 
 			// Verify skill was updated
 			skill, err := skillRepo.GetByID(ctx, updatedSkill.ID)
@@ -281,10 +297,10 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("Delete Skill Workflow", func() {
 		BeforeEach(func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			// Load skills
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 		})
@@ -301,7 +317,8 @@ var _ = Describe("ManageSkillsIntent", func() {
 
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Delete"))
-			Expect(view).To(ContainSubstring("Ruby")) // Selected skill name
+			// Skills are ordered by name ASC, so first skill is "Docker"
+			Expect(view).To(ContainSubstring("Docker")) // Selected skill name
 		})
 
 		It("should return to list when delete is cancelled with n", func() {
@@ -321,15 +338,27 @@ var _ = Describe("ManageSkillsIntent", func() {
 		})
 
 		It("should delete skill and return to list when confirmed with y", func() {
-			skillToDelete := testSkills[0]
+			// Skills are ordered by name ASC, so first skill is "Docker" (testSkills[4])
+			skillToDelete := testSkills[4] // Docker is first in sorted order
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
 
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			Expect(cmd).NotTo(BeNil())
 
-			// Should transition back to list
-			Eventually(func() intents.SkillsState {
-				return intent.State()
-			}).Should(Equal(intents.SkillsStateList))
+			// Execute the delete command
+			deleteMsg := cmd()
+			Expect(deleteMsg).To(BeAssignableToTypeOf(intents.SkillDeletedMsg{}))
+
+			// Handle the deleted message
+			cmd2 := intent.Update(deleteMsg)
+			Expect(cmd2).NotTo(BeNil())
+
+			// Execute the reload command
+			reloadMsg := cmd2()
+			intent.Update(reloadMsg)
+
+			// Should be back in list state
+			Expect(intent.State()).To(Equal(intents.SkillsStateList))
 
 			// Verify skill was deleted
 			_, err := skillRepo.GetByID(ctx, skillToDelete.ID)
@@ -344,10 +373,10 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("List View Rendering", func() {
 		BeforeEach(func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			// Load skills
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 		})
@@ -392,7 +421,7 @@ var _ = Describe("ManageSkillsIntent", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Reload intent
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 
@@ -416,7 +445,7 @@ var _ = Describe("ManageSkillsIntent", func() {
 			}
 
 			intent = intents.NewManageSkillsIntent(emptyCtx)
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 
@@ -429,10 +458,10 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("Escape to Complete", func() {
 		BeforeEach(func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			// Load skills
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 		})
@@ -451,17 +480,21 @@ var _ = Describe("ManageSkillsIntent", func() {
 	Describe("View Integration", func() {
 		BeforeEach(func() {
 			intent = intents.NewManageSkillsIntent(intentCtx)
-			intent.Init(ctx)
+			intent.Init()
 
 			// Load skills
-			cmd := intent.Init(ctx)
+			cmd := intent.Init()
 			msg := cmd()
 			intent.Update(msg)
 		})
 
 		It("should use StandardView with logo", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("KaRiya"))
+			// Check for ASCII art logo characters or the description
+			Expect(view).To(Or(
+				ContainSubstring("Career Event Management System"),
+				ContainSubstring("██"),
+			))
 		})
 
 		It("should show breadcrumbs", func() {

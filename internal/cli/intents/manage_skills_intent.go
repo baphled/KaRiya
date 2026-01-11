@@ -1,7 +1,6 @@
 package intents
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -44,6 +43,10 @@ func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
 	baseIntent := NewBaseIntent()
 	baseIntent.SetThemeManager(themes.NewThemeManager())
 
+	// Initialize logo
+	logo := components.NewASCIILogo(false, 80)
+	baseIntent.SetLogo(logo)
+
 	return &ManageSkillsIntent{
 		BaseIntent:    baseIntent,
 		context:       ctx,
@@ -55,12 +58,12 @@ func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
 }
 
 // Init initializes the intent and loads skills
-func (i *ManageSkillsIntent) Init(ctx context.Context) tea.Cmd {
+func (i *ManageSkillsIntent) Init() tea.Cmd {
 	i.active = true
 
 	// Load skills asynchronously
 	return func() tea.Msg {
-		skills, err := i.context.SkillRepository.List(ctx, nil)
+		skills, err := i.context.SkillRepository.List(i.context.Ctx, nil)
 		return SkillsLoadedMsg{
 			Skills: skills,
 			Error:  err,
@@ -232,7 +235,7 @@ func (i *ManageSkillsIntent) handleSkillCreated(msg SkillCreatedMsg) tea.Cmd {
 	i.currentState = SkillsStateList
 	i.form = nil
 
-	return i.Init(i.context.Ctx)
+	return i.Init()
 }
 
 func (i *ManageSkillsIntent) handleSkillUpdated(msg SkillUpdatedMsg) tea.Cmd {
@@ -248,7 +251,7 @@ func (i *ManageSkillsIntent) handleSkillUpdated(msg SkillUpdatedMsg) tea.Cmd {
 	i.currentState = SkillsStateList
 	i.form = nil
 
-	return i.Init(i.context.Ctx)
+	return i.Init()
 }
 
 func (i *ManageSkillsIntent) handleSkillDeleted(msg SkillDeletedMsg) tea.Cmd {
@@ -263,7 +266,7 @@ func (i *ManageSkillsIntent) handleSkillDeleted(msg SkillDeletedMsg) tea.Cmd {
 	// Transition back to list and reload
 	i.currentState = SkillsStateList
 
-	return i.Init(i.context.Ctx)
+	return i.Init()
 }
 
 func (i *ManageSkillsIntent) handleKeyPress(msg tea.KeyMsg) tea.Cmd {
