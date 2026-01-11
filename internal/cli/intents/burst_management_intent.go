@@ -450,6 +450,14 @@ func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 				i.state.currentState = BurstStateDetail
 			}
 			return nil
+
+		case "n":
+			// Create new burst
+			i.context.StartNewBurst()
+			i.state.selectedBurst = i.context.EditingBurst
+			i.state.editModal = NewEditBurstModal(i.context.EditingBurst)
+			i.state.currentState = BurstStateEdit
+			return nil
 		}
 
 	case BurstSelectedMsg:
@@ -618,12 +626,25 @@ func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 			i.state.selectedBurst.Name = result.Modified.Name
 			i.state.selectedBurst.Description = result.Modified.Description
 
-			// Save the updated burst to repository
-			err := i.context.UpdateBurst(i.state.selectedBurst)
+			// Determine if we're creating or updating
+			var err error
+			if i.context.IsNewBurst {
+				// Creating a new burst
+				err = i.context.CreateBurst(i.state.selectedBurst)
+			} else {
+				// Updating existing burst
+				err = i.context.UpdateBurst(i.state.selectedBurst)
+			}
+
 			if err != nil {
 				i.state.editError = err
 				i.state.editModal = nil
-				i.state.currentState = BurstStateDetail
+				// Return to appropriate state based on whether it's a new burst
+				if i.context.IsNewBurst {
+					i.state.currentState = BurstStateList
+				} else {
+					i.state.currentState = BurstStateDetail
+				}
 				return nil
 			}
 
@@ -631,15 +652,46 @@ func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 			if err := i.context.LoadBursts(); err != nil {
 				i.state.editError = err
 				i.state.editModal = nil
-				i.state.currentState = BurstStateDetail
+				if i.context.IsNewBurst {
+					i.state.currentState = BurstStateList
+				} else {
+					i.state.currentState = BurstStateDetail
+				}
 				return nil
 			}
 			i.state.filteredBursts = i.context.Bursts
+
+			// For new burst, select it and go to detail view
+			if i.context.IsNewBurst {
+				// Find the newly created burst
+				for _, b := range i.state.filteredBursts {
+					if b.Name == i.state.selectedBurst.Name {
+						i.state.selectedBurst = b
+						break
+					}
+				}
+				i.context.IsNewBurst = false
+			}
+		} else {
+			// User cancelled - clear new burst state if applicable
+			if i.context.IsNewBurst {
+				i.context.CancelEdit()
+				i.state.selectedBurst = nil
+			}
 		}
 
-		// Clear modal and return to detail view
+		// Clear modal and return to appropriate view
 		i.state.editModal = nil
-		i.state.currentState = BurstStateDetail
+		if i.context.IsNewBurst || i.state.selectedBurst == nil {
+			i.state.currentState = BurstStateList
+			// Select first burst if available
+			if len(i.state.filteredBursts) > 0 {
+				i.state.selectedBurst = i.state.filteredBursts[0]
+				i.state.selectedIndex = 0
+			}
+		} else {
+			i.state.currentState = BurstStateDetail
+		}
 		return nil
 	}
 
@@ -906,6 +958,7 @@ func (i *BurstManagementIntent) getContextHelp() string {
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
 				components.NewKeyBadge("Enter", "View details"),
+				components.NewKeyBadge("n", "New burst"),
 			),
 			ThemedGlobalBadges(theme),
 		)

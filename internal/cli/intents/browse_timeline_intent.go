@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -199,6 +200,12 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case BrowseStateEventDetail:
 		return i.updateEventDetail(msg)
+
+	case BrowseStateEditEvent:
+		return i.updateEditEvent(msg)
+
+	case BrowseStateDeleteConfirm:
+		return i.updateDeleteConfirm(msg)
 	}
 
 	return nil
@@ -286,10 +293,143 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 			// Confirm selection and return event.
 			i.setCompleted()
 			return nil
+
+		case "e":
+			// Edit event metadata
+			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
+				i.state.editModal = NewEditMetadataModal(
+					i.state.selectedEvent.Company,
+					i.state.selectedEvent.Project,
+					i.state.selectedEvent.Tags,
+					i.state.selectedEvent.Categories,
+				)
+				i.state.currentState = BrowseStateEditEvent
+			}
+			return nil
+
+		case "d":
+			// Delete event - go to confirmation
+			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
+				i.state.currentState = BrowseStateDeleteConfirm
+				i.state.deleteError = nil
+			}
+			return nil
 		}
 	}
 
 	return nil
+}
+
+// updateEditEvent handles messages while editing event metadata.
+func (i *BrowseTimelineIntent) updateEditEvent(msg tea.Msg) tea.Cmd {
+	if i.state.editModal == nil {
+		i.state.currentState = BrowseStateEventDetail
+		return nil
+	}
+
+	// Update the modal
+	cmd := i.state.editModal.Update(msg)
+
+	// Check if modal is complete
+	if i.state.editModal.IsComplete() {
+		result := i.state.editModal.Result()
+		if result != nil && result.Accepted {
+			// Apply changes to the event
+			i.state.selectedEvent.Company = result.Modified.Company
+			i.state.selectedEvent.Project = result.Modified.Project
+			i.state.selectedEvent.Tags = result.Modified.Tags
+			i.state.selectedEvent.Categories = result.Modified.Categories
+
+			// Save to service if available
+			if i.context.CLIEventService != nil {
+				// Use context.Background() since we don't have a context in the intent
+				_ = i.context.CLIEventService.UpdateEventMetadata(
+					i.getContext(),
+					i.state.selectedEvent,
+				)
+			}
+
+			// Update the table row
+			i.updateTableRows()
+		}
+
+		// Return to detail view
+		i.state.editModal = nil
+		i.state.currentState = BrowseStateEventDetail
+		return nil
+	}
+
+	return cmd
+}
+
+// updateDeleteConfirm handles delete confirmation.
+func (i *BrowseTimelineIntent) updateDeleteConfirm(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "y", "Y":
+			// Confirm delete
+			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
+				err := i.context.CLIEventService.DeleteEvent(
+					i.getContext(),
+					i.state.selectedEvent.ID,
+				)
+				if err != nil {
+					i.state.deleteError = err
+					return nil
+				}
+
+				// Remove from filtered events
+				i.removeEventFromList(i.state.selectedEvent.ID)
+
+				// Clear selection and go back to timeline
+				i.state.selectedEvent = nil
+				i.state.currentState = BrowseStateTimeline
+
+				// Select first event if available
+				if len(i.state.filteredEvents) > 0 {
+					i.state.selectedIndex = 0
+					i.state.selectedEvent = i.state.filteredEvents[0]
+				}
+			}
+			return nil
+
+		case "n", "N", "esc":
+			// Cancel delete
+			i.state.currentState = BrowseStateEventDetail
+			i.state.deleteError = nil
+			return nil
+		}
+	}
+
+	return nil
+}
+
+// removeEventFromList removes an event from both context.Events and filteredEvents.
+func (i *BrowseTimelineIntent) removeEventFromList(eventID string) {
+	// Remove from context.Events
+	for idx, evt := range i.context.Events {
+		if evt.ID == eventID {
+			i.context.Events = append(i.context.Events[:idx], i.context.Events[idx+1:]...)
+			break
+		}
+	}
+
+	// Remove from filteredEvents
+	for idx, evt := range i.state.filteredEvents {
+		if evt.ID == eventID {
+			i.state.filteredEvents = append(i.state.filteredEvents[:idx], i.state.filteredEvents[idx+1:]...)
+			break
+		}
+	}
+
+	// Update table rows
+	i.updateTableRows()
+}
+
+// getContext returns a context for service calls.
+func (i *BrowseTimelineIntent) getContext() context.Context {
+	return context.Background()
 }
 
 // applyFilters filters the events based on current filter state.
@@ -367,6 +507,10 @@ func (i *BrowseTimelineIntent) getStateName() string {
 		return "Timeline"
 	case BrowseStateEventDetail:
 		return "Event Detail"
+	case BrowseStateEditEvent:
+		return "Edit Event"
+	case BrowseStateDeleteConfirm:
+		return "Delete Event"
 	default:
 		return string(i.state.currentState)
 	}
@@ -379,6 +523,10 @@ func (i *BrowseTimelineIntent) getStateContent() string {
 		return i.viewTimeline()
 	case BrowseStateEventDetail:
 		return i.viewEventDetail()
+	case BrowseStateEditEvent:
+		return i.viewEditEvent()
+	case BrowseStateDeleteConfirm:
+		return i.viewDeleteConfirm()
 	default:
 		return ""
 	}
@@ -400,8 +548,35 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 			ThemedGlobalBadges(theme),
 		)
 	case BrowseStateEventDetail:
+		// Add edit and delete badges if service is available
+		badges := []components.KeyBadge{
+			components.NewKeyBadge("Enter", "Select"),
+		}
+		if i.context.CLIEventService != nil {
+			badges = append(badges,
+				components.NewKeyBadge("e", "Edit"),
+				components.NewKeyBadge("d", "Delete"),
+			)
+		}
 		return CombineThemedFooters(
-			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme, badges...),
+			ThemedGlobalBadges(theme),
+		)
+	case BrowseStateEditEvent:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Tab", "Next Field"),
+				components.NewKeyBadge("Enter", "Submit"),
+				components.NewKeyBadge("Esc", "Cancel"),
+			),
+			ThemedGlobalBadges(theme),
+		)
+	case BrowseStateDeleteConfirm:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y", "Confirm Delete"),
+				components.NewKeyBadge("n/Esc", "Cancel"),
+			),
 			ThemedGlobalBadges(theme),
 		)
 	default:
@@ -490,6 +665,78 @@ func (i *BrowseTimelineIntent) viewEventDetail() string {
 
 	// Footer now handled by StandardView
 	return card
+}
+
+// viewEditEvent renders the edit event modal overlay.
+func (i *BrowseTimelineIntent) viewEditEvent() string {
+	if i.state.editModal == nil {
+		return "No edit modal available."
+	}
+
+	// Render the event detail as background with modal overlay
+	background := i.viewEventDetail()
+
+	// Get modal content
+	modalContent := i.state.editModal.View()
+
+	// Combine background and modal
+	return lipgloss.JoinVertical(lipgloss.Left, background, "\n", modalContent)
+}
+
+// viewDeleteConfirm renders the delete confirmation dialog.
+func (i *BrowseTimelineIntent) viewDeleteConfirm() string {
+	if i.state.selectedEvent == nil {
+		return "No event selected."
+	}
+
+	var content strings.Builder
+
+	// Warning header
+	warningStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#F38BA8")). // Catppuccin Red
+		Bold(true)
+
+	content.WriteString(warningStyle.Render("⚠️  Delete Event?"))
+	content.WriteString("\n\n")
+
+	// Event summary
+	content.WriteString(fmt.Sprintf("Date: %s\n", i.state.selectedEvent.Date.Format("2006-01-02")))
+	if i.state.selectedEvent.Company != "" {
+		content.WriteString(fmt.Sprintf("Company: %s\n", i.state.selectedEvent.Company))
+	}
+
+	// Truncate text for display
+	text := i.state.selectedEvent.Text
+	if len(text) > 100 {
+		text = text[:100] + "..."
+	}
+	content.WriteString(fmt.Sprintf("\nText: %s\n", text))
+
+	// Error message if delete failed
+	if i.state.deleteError != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F38BA8")).
+			MarginTop(1)
+		content.WriteString("\n")
+		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.deleteError.Error())))
+	}
+
+	// Confirmation prompt
+	content.WriteString("\n\nThis action cannot be undone.\n")
+
+	// Apply card styling
+	var cardStyle lipgloss.Style
+	if theme := i.Theme(); theme != nil {
+		cardStyle = theme.Styles().CardBase.
+			BorderForeground(lipgloss.Color("#F38BA8")) // Red border for warning
+	} else {
+		cardStyle = lipgloss.NewStyle().
+			Padding(1, 2).
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#F38BA8"))
+	}
+
+	return cardStyle.Render(content.String())
 }
 
 // Result returns the final result of the intent.

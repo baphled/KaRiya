@@ -18,6 +18,7 @@ type FactManagementModel struct {
 	navHandler    *navigation.ListNavigationHandler
 	result        *IntentResult[*FactManagementResult]
 	active        bool
+	editModal     *EditFactModal
 }
 
 func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
@@ -337,6 +338,7 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 
 		case "n":
 			m.data.StartNewFact()
+			m.editModal = NewEditFactModal(m.data.EditingFact)
 			m.data.CurrentState = FactEditorState
 
 			return nil
@@ -398,6 +400,7 @@ func (m *FactManagementModel) handleViewState(msg tea.Msg) tea.Cmd {
 		case "e":
 			if m.data.SelectedFact != nil {
 				m.data.StartEditFact(m.data.SelectedFact)
+				m.editModal = NewEditFactModal(m.data.EditingFact)
 				m.data.CurrentState = FactEditorState
 			}
 
@@ -412,10 +415,43 @@ func (m *FactManagementModel) handleViewState(msg tea.Msg) tea.Cmd {
 }
 
 func (m *FactManagementModel) handleEditorState(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+s":
+	// If modal is not initialized, handle legacy behavior (fallback)
+	if m.editModal == nil {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch HandleGlobalKeys(msg) {
+			case KeyQuit:
+				return tea.Quit
+			case KeyHelp:
+				m.ToggleHelp()
+				return nil
+			case KeyBack:
+				m.data.CancelEdit()
+				if m.data.IsNewFact {
+					m.data.CurrentState = FactListState
+				} else {
+					m.data.CurrentState = FactViewState
+				}
+				return nil
+			}
+		}
+		return nil
+	}
+
+	// Delegate to the modal for form handling
+	cmd := m.editModal.Update(msg)
+
+	// Check if modal completed (form submitted or cancelled)
+	if result := m.editModal.Result(); result != nil {
+		if result.Accepted {
+			// Apply changes from the modal to the editing fact
+			m.data.EditingFact.Text = result.Modified.Text
+			m.data.EditingFact.CompetencyCategories = result.Modified.CompetencyCategories
+			m.data.EditingFact.RoleFit = result.Modified.RoleFit
+			m.data.EditingFact.AudienceRelevance = result.Modified.AudienceRelevance
+			m.data.EditingFact.StrengthSignal = result.Modified.StrengthSignal
+
+			// Save the fact
 			if err := m.data.SaveEdit(); err != nil {
 				m.data.SetFormError("general", fmt.Sprintf("Save failed: %v", err))
 			} else {
@@ -432,21 +468,22 @@ func (m *FactManagementModel) handleEditorState(msg tea.Msg) tea.Cmd {
 						Message: fmt.Sprintf("Fact %s successfully", action),
 					},
 				}
-				m.data.CurrentState = FactListState
-				m.data.CancelEdit()
 				m.updateTableRows()
 			}
-
-		case "esc":
-			m.data.CancelEdit()
-			if m.data.IsNewFact {
-				m.data.CurrentState = FactListState
-			} else {
-				m.data.CurrentState = FactViewState
-			}
 		}
+
+		// Clear modal and return to appropriate state
+		m.editModal = nil
+		m.data.CancelEdit()
+		if m.data.IsNewFact {
+			m.data.CurrentState = FactListState
+		} else {
+			m.data.CurrentState = FactViewState
+		}
+		return nil
 	}
-	return nil
+
+	return cmd
 }
 
 func (m *FactManagementModel) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
@@ -552,6 +589,12 @@ func (m *FactManagementModel) getViewFactContent() string {
 // viewEditor removed - unused wrapper method
 
 func (m *FactManagementModel) getEditorContent() string {
+	// If modal is available, render it
+	if m.editModal != nil {
+		return m.editModal.View()
+	}
+
+	// Fallback for legacy behavior
 	var content string
 	content += "✏️  Edit Fact\n\n"
 

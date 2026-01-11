@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -15,6 +16,9 @@ type BrowseTimelineContext struct {
 
 	// SelectedEventID is the initially selected event (may be empty).
 	SelectedEventID string
+
+	// CLIEventService is the service for event CRUD operations (edit/delete).
+	CLIEventService *service.CLIEventService
 }
 
 // Validate ensures the context is complete.
@@ -83,7 +87,7 @@ type BrowseTimelineModel struct {
 	context *BrowseTimelineContext
 
 	// currentState tracks which view is active.
-	currentState string // BrowseStateTimeline, BrowseStateEventDetail
+	currentState string // BrowseStateTimeline, BrowseStateEventDetail, BrowseStateEditEvent, BrowseStateDeleteConfirm
 
 	// filteredEvents are the events after applying current filters.
 	filteredEvents []*career.CareerEvent
@@ -102,10 +106,18 @@ type BrowseTimelineModel struct {
 
 	// viewedEvents tracks events viewed during the session.
 	viewedEvents []*career.CareerEvent
+
+	// editModal is the modal for editing event metadata.
+	editModal *EditMetadataModal
+
+	// deleteError stores any error from delete operation.
+	deleteError error
 }
 
 // BrowseTimelineStates for navigation.
 const (
-	BrowseStateTimeline    = "timeline"
-	BrowseStateEventDetail = "event_detail"
+	BrowseStateTimeline      = "timeline"
+	BrowseStateEventDetail   = "event_detail"
+	BrowseStateEditEvent     = "edit_event"
+	BrowseStateDeleteConfirm = "delete_confirm"
 )
