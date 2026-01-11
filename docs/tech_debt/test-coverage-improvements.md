@@ -147,14 +147,14 @@ Describe("Enrichment Workflow", func() {
 | 616 | `viewDeleteConfirm()` | Delete confirmation view |
 
 ### Subtask 3.1: Add Delete Confirmation Tests (TDD)
-- [ ] **RED**: Write failing tests for delete confirmation
-- [ ] **GREEN**: Verify existing implementation
-- [ ] **REFACTOR**: Cover edge cases
+- [x] **RED**: Write failing tests for delete confirmation
+- [x] **GREEN**: Verify existing implementation
+- [x] **REFACTOR**: Cover edge cases
 
 ### Subtask 3.2: Add Event Removal Tests (TDD)
-- [ ] **RED**: Write failing tests for event removal
-- [ ] **GREEN**: Verify implementation
-- [ ] **REFACTOR**: Test list state after removal
+- [x] **RED**: Write failing tests for event removal
+- [x] **GREEN**: Verify implementation
+- [x] **REFACTOR**: Test list state after removal
 
 **Test Cases to Add**:
 ```go
@@ -172,12 +172,20 @@ Describe("Delete Event Workflow", func() {
 - `internal/cli/intents/browse_timeline_delete_test.go`
 
 **Acceptance Criteria**:
-- [ ] Delete confirmation fully tested
-- [ ] Delete cancellation tested
-- [ ] List state verified after deletion
-- [ ] Error handling tested
+- [x] Delete confirmation fully tested
+- [x] Delete cancellation tested
+- [x] List state verified after deletion
+- [x] Error handling tested
 
 **Estimated Time**: 1-2 hours
+**Actual Time**: 30 minutes
+
+**Tests Added**:
+- `browse_timeline_delete_test.go`: 28 new tests covering:
+  - updateDeleteConfirm: y/Y confirm, n/N/Esc cancel, other keys ignored
+  - removeEventFromList: event removal from both context.Events and filteredEvents
+  - getContext: background context creation
+  - viewDeleteConfirm: event details, error display, text truncation
 
 ---
 
