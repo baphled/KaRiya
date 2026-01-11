@@ -670,6 +670,63 @@ go tool cover -html=coverage.out
 
 ## Advanced Patterns
 
+### Modal Overlays with Line Replacement
+
+For custom modals that need to overlay on top of existing content, use the **line replacement pattern** to avoid ANSI code width issues and content shifting:
+
+```go
+func (i *YourIntent) View() string {
+    if i.modal != nil {
+        // Get base view
+        baseView := i.CreateViewWithBreadcrumbs(...).Render()
+        
+        // Build modal box
+        modalContent := i.modal.View() // Plain text, no border
+        modalStyle := lipgloss.NewStyle().
+            Border(lipgloss.RoundedBorder()).
+            BorderForeground(lipgloss.Color("#F38BA8")).
+            Padding(1, 2).
+            Width(60)
+        modalBox := modalStyle.Render(modalContent)
+        
+        // Dim background and split into lines
+        dimStyle := lipgloss.NewStyle().Faint(true)
+        bgLines := strings.Split(dimStyle.Render(baseView), "\n")
+        modalLines := strings.Split(modalBox, "\n")
+        
+        // Calculate vertical center
+        startLine := (len(bgLines) - len(modalLines)) / 2
+        
+        // Replace background lines with centered modal lines
+        result := make([]string, len(bgLines))
+        copy(result, bgLines)
+        termInfo := i.GetTerminalInfo()
+        
+        for i, modalLine := range modalLines {
+            lineIndex := startLine + i
+            if lineIndex >= 0 && lineIndex < len(result) {
+                // Use lipgloss.PlaceHorizontal for clean centering
+                result[lineIndex] = lipgloss.PlaceHorizontal(
+                    termInfo.Width,
+                    lipgloss.Center,
+                    modalLine,
+                )
+            }
+        }
+        
+        return strings.Join(result, "\n")
+    }
+    // Normal view...
+}
+```
+
+**Key Points:**
+- Modal's `View()` returns plain content (no border)
+- Border applied in intent's overlay code
+- `lipgloss.PlaceHorizontal` handles ANSI codes correctly
+- Replace entire lines instead of splicing content
+- See [MODAL_PATTERNS.md](./MODAL_PATTERNS.md#overlay-modals-custom-content) for full details
+
 ### Custom Message Types
 
 ```go

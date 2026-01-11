@@ -489,6 +489,155 @@ Each modal type has distinct visual styling:
 
 ---
 
+## Overlay Modals (Custom Content)
+
+For custom confirmation dialogs and user input modals that need to overlay existing content, use the **line-replacement pattern** to avoid content shifting issues.
+
+### The Problem
+
+ANSI escape codes (for colors and styling) can cause width calculation issues when trying to splice modal content into background text. The `RenderOverlay` function's string manipulation approach can lead to:
+- Content shifting to the right
+- Misaligned text
+- Incorrect centering
+
+### The Solution: Line Replacement Pattern
+
+**Replace entire background lines** with centered modal lines instead of trying to splice content.
+
+```go
+func (i *YourIntent) View() string {
+    // Show modal overlay if active
+    if i.modal != nil {
+        // 1. Get base view
+        view := i.CreateViewWithBreadcrumbs("Menu", "Section", "State")
+        content := i.getStateContent()
+        view.WithContent(content)
+        baseView := view.Render()
+
+        // 2. Build modal content (just the text, no container)
+        modalContent := i.modal.View()
+        termInfo := i.GetTerminalInfo()
+        
+        // 3. Create modal box with border and styling
+        modalStyle := lipgloss.NewStyle().
+            Border(lipgloss.RoundedBorder()).
+            BorderForeground(lipgloss.Color("#F38BA8")). // Red for warnings
+            Padding(1, 2).
+            Width(60) // Fixed width for consistency
+        
+        modalBox := modalStyle.Render(modalContent)
+        
+        // 4. Dim background
+        dimStyle := lipgloss.NewStyle().Faint(true)
+        dimmedBg := dimStyle.Render(baseView)
+        
+        // 5. Split into lines
+        bgLines := strings.Split(dimmedBg, "\n")
+        modalLines := strings.Split(modalBox, "\n")
+        
+        // 6. Calculate vertical center
+        bgHeight := len(bgLines)
+        modalHeight := len(modalLines)
+        startLine := (bgHeight - modalHeight) / 2
+        if startLine < 0 {
+            startLine = 0
+        }
+        
+        // 7. Replace background lines with centered modal lines
+        result := make([]string, len(bgLines))
+        copy(result, bgLines)
+        
+        for i, modalLine := range modalLines {
+            lineIndex := startLine + i
+            if lineIndex >= 0 && lineIndex < len(result) {
+                // Use lipgloss.PlaceHorizontal for proper centering
+                centeredLine := lipgloss.PlaceHorizontal(
+                    termInfo.Width,
+                    lipgloss.Center,
+                    modalLine,
+                )
+                result[lineIndex] = centeredLine
+            }
+        }
+        
+        return strings.Join(result, "\n")
+    }
+    
+    // Normal view when no modal
+    // ...
+}
+```
+
+### Modal View() Method Pattern
+
+Your modal's `View()` method should return **plain content only**, without container or border:
+
+```go
+func (m *DeleteConfirmationModal) View() string {
+    // Just build the text content
+    var content strings.Builder
+    
+    // Warning header
+    warningStyle := lipgloss.NewStyle().
+        Foreground(lipgloss.Color("#F38BA8")).
+        Bold(true)
+    
+    content.WriteString(warningStyle.Render("⚠️  Delete " + m.itemType + "?"))
+    content.WriteString("\n\n")
+    
+    // Item details
+    content.WriteString(m.itemTitle)
+    content.WriteString("\n")
+    
+    if m.itemDescription != "" {
+        content.WriteString("\n")
+        content.WriteString(m.itemDescription)
+        content.WriteString("\n")
+    }
+    
+    // Warning
+    content.WriteString("\n")
+    content.WriteString(warningStyle.Render("This action cannot be undone."))
+    content.WriteString("\n\n")
+    
+    // Footer
+    footerStyle := lipgloss.NewStyle().
+        Foreground(lipgloss.Color("#A6ADC8"))
+    content.WriteString(footerStyle.Render("y/Enter: Confirm  |  n/Esc: Cancel"))
+    
+    return content.String()  // Plain text, no border
+}
+```
+
+### Why This Pattern Works
+
+1. **No ANSI code issues** - `lipgloss.PlaceHorizontal` handles width calculation correctly
+2. **No splicing** - Replaces entire lines instead of inserting characters
+3. **Clean centering** - Each modal line is independently centered
+4. **Predictable layout** - Fixed modal width prevents size variations
+5. **Consistent with StandardView** - Uses the same pattern for modal overlays
+
+### Key Guidelines
+
+✅ **Do:**
+- Use `lipgloss.PlaceHorizontal` for horizontal centering
+- Replace entire background lines with modal lines
+- Use fixed modal width (60-80 characters)
+- Return plain content from modal's `View()` method
+- Apply border and styling in the intent's overlay code
+
+❌ **Don't:**
+- Use `OverlayModal.RenderCentered()` for custom modals (causes double-wrapping)
+- Try to splice modal content into background strings
+- Include borders in modal's `View()` method (add them in the overlay code)
+- Use variable-width modals (makes centering unpredictable)
+
+### Example: Delete Confirmation
+
+See `internal/cli/intents/browse_timeline_intent.go` for a complete working example of this pattern.
+
+---
+
 ## Common Patterns
 
 ### Pattern 1: Error → Retry
