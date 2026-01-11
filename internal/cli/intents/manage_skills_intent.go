@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
@@ -27,6 +28,13 @@ type ManageSkillsIntent struct {
 	// skills data
 	skills        []*domain.Skill
 	selectedIndex int
+	selectedSkill *domain.Skill // Selected skill for detail view
+
+	// detail view data
+	eventCounts  map[string]int        // Skill ID -> event count
+	lastUsedMap  map[string]time.Time  // Skill ID -> last used date
+	skillEvents  []*domain.CareerEvent // Events for selected skill
+	eventsLoaded bool                  // Whether events have been loaded
 
 	// form for add/edit
 	form *huh.Form
@@ -93,6 +101,9 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 	case SkillDeletedMsg:
 		return i.handleSkillDeleted(msg)
 
+	case SkillEventsLoadedMsg:
+		return i.handleSkillEventsLoaded(msg)
+
 	case tea.KeyMsg:
 		// If we have a form active, handle it specially
 		if i.form != nil {
@@ -151,6 +162,10 @@ func (i *ManageSkillsIntent) View() string {
 	switch i.currentState {
 	case SkillsStateList:
 		return i.viewList()
+	case SkillsStateDetail:
+		return i.viewDetail()
+	case SkillsStateDetailEvents:
+		return i.viewDetailEvents()
 	case SkillsStateAdd, SkillsStateEdit:
 		return i.viewForm()
 	case SkillsStateDelete:
@@ -273,6 +288,10 @@ func (i *ManageSkillsIntent) handleKeyPress(msg tea.KeyMsg) tea.Cmd {
 	switch i.currentState {
 	case SkillsStateList:
 		return i.handleListKeys(msg)
+	case SkillsStateDetail:
+		return i.handleDetailKeys(msg)
+	case SkillsStateDetailEvents:
+		return i.handleDetailEventsKeys(msg)
 	case SkillsStateDelete:
 		return i.handleDeleteKeys(msg)
 	default:
@@ -293,6 +312,15 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 			i.selectedIndex--
 		}
 		return nil
+
+	case "enter":
+		// View skill detail
+		if len(i.skills) == 0 {
+			return nil
+		}
+		i.selectedSkill = i.skills[i.selectedIndex]
+		i.currentState = SkillsStateDetail
+		return i.loadDetailData()
 
 	case "n":
 		// Add new skill
@@ -572,7 +600,7 @@ func (i *ManageSkillsIntent) renderEmptyState() string {
 }
 
 func (i *ManageSkillsIntent) renderListHelp() string {
-	return "j/k:navigate • n:add • e:edit • d:delete • Esc:back"
+	return "j/k:navigate • Enter:detail • n:add • e:edit • d:delete • Esc:back"
 }
 
 func (i *ManageSkillsIntent) groupSkillsByCategory() map[string][]*domain.Skill {
@@ -594,4 +622,234 @@ func (i *ManageSkillsIntent) groupSkillsByCategory() map[string][]*domain.Skill 
 	}
 
 	return grouped
+}
+
+// loadDetailData loads event counts and last used dates for detail view
+func (i *ManageSkillsIntent) loadDetailData() tea.Cmd {
+	// Load synchronously since we need this data immediately
+	eventCounts, err := i.context.SkillRepository.GetEventCountsForSkills(i.context.Ctx)
+	if err != nil {
+		// If loading fails, use empty maps
+		i.eventCounts = make(map[string]int)
+	} else {
+		i.eventCounts = eventCounts
+	}
+
+	lastUsedMap, err := i.context.SkillRepository.GetLastUsedForSkills(i.context.Ctx)
+	if err != nil {
+		// If loading fails, use empty map
+		i.lastUsedMap = make(map[string]time.Time)
+	} else {
+		i.lastUsedMap = lastUsedMap
+	}
+
+	return nil
+}
+
+// handleSkillEventsLoaded handles the SkillEventsLoadedMsg
+func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) tea.Cmd {
+	if msg.Error != nil {
+		// Show error but stay in detail view
+		return nil
+	}
+
+	i.skillEvents = msg.Events
+	i.eventsLoaded = true
+	return nil
+}
+
+// handleDetailKeys handles key presses in detail view
+func (i *ManageSkillsIntent) handleDetailKeys(msg tea.KeyMsg) tea.Cmd {
+	switch msg.String() {
+	case "enter":
+		// View events using this skill
+		i.currentState = SkillsStateDetailEvents
+		i.eventsLoaded = false
+		return i.loadEventsForSkill()
+
+	case "e":
+		// Edit this skill
+		i.currentState = SkillsStateEdit
+		i.form = forms.NewSkillForm(i.selectedSkill, nil)
+		return i.form.Init()
+
+	case "d":
+		// Delete this skill
+		i.currentState = SkillsStateDelete
+		return nil
+
+	case "esc":
+		// Back to list
+		i.currentState = SkillsStateList
+		i.selectedSkill = nil
+		return nil
+	}
+
+	return nil
+}
+
+// handleDetailEventsKeys handles key presses in detail events view
+func (i *ManageSkillsIntent) handleDetailEventsKeys(msg tea.KeyMsg) tea.Cmd {
+	switch msg.String() {
+	case "esc":
+		// Back to detail view
+		i.currentState = SkillsStateDetail
+		i.skillEvents = nil
+		i.eventsLoaded = false
+		return nil
+	}
+
+	return nil
+}
+
+// loadEventsForSkill loads events that use the selected skill
+func (i *ManageSkillsIntent) loadEventsForSkill() tea.Cmd {
+	return func() tea.Msg {
+		events, err := i.context.SkillRepository.GetEventsUsingSkill(i.context.Ctx, i.selectedSkill.ID)
+		return SkillEventsLoadedMsg{
+			Events: events,
+			Error:  err,
+		}
+	}
+}
+
+// viewDetail renders the detail view
+func (i *ManageSkillsIntent) viewDetail() string {
+	if i.selectedSkill == nil {
+		return "No skill selected"
+	}
+
+	content := i.renderSkillDetail()
+	help := i.renderDetailHelp()
+
+	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Skills", i.selectedSkill.Name)
+	view.WithContent(content)
+	view.WithHelp(help)
+	return view.Render()
+}
+
+// viewDetailEvents renders the events view
+func (i *ManageSkillsIntent) viewDetailEvents() string {
+	if i.selectedSkill == nil {
+		return "No skill selected"
+	}
+
+	content := i.renderSkillEvents()
+	help := i.renderEventsHelp()
+
+	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Skills", i.selectedSkill.Name, "Events")
+	view.WithContent(content)
+	view.WithHelp(help)
+	return view.Render()
+}
+
+// renderSkillDetail renders the skill detail content
+func (i *ManageSkillsIntent) renderSkillDetail() string {
+	skill := i.selectedSkill
+	theme := i.Theme()
+
+	labelStyle := lipgloss.NewStyle().
+		Foreground(theme.MutedColor()).
+		Width(15)
+
+	valueStyle := lipgloss.NewStyle().
+		Foreground(theme.PrimaryColor()).
+		Bold(true)
+
+	var lines []string
+
+	// Name
+	lines = append(lines, labelStyle.Render("Name:")+valueStyle.Render(skill.Name))
+
+	// Category
+	lines = append(lines, labelStyle.Render("Category:")+valueStyle.Render(skill.Category))
+
+	// Level (if set)
+	if skill.Level != "" {
+		lines = append(lines, labelStyle.Render("Level:")+valueStyle.Render(skill.Level))
+	}
+
+	// Years Used (if set)
+	if skill.YearsUsed != nil {
+		yearText := fmt.Sprintf("%d year", *skill.YearsUsed)
+		if *skill.YearsUsed != 1 {
+			yearText += "s"
+		}
+		lines = append(lines, labelStyle.Render("Years Used:")+valueStyle.Render(yearText))
+	}
+
+	// Event Count
+	eventCount := 0
+	if i.eventCounts != nil {
+		eventCount = i.eventCounts[skill.ID]
+	}
+	lines = append(lines, labelStyle.Render("Event Count:")+valueStyle.Render(fmt.Sprintf("%d", eventCount)))
+
+	// Last Used (if available)
+	if i.lastUsedMap != nil {
+		if lastUsed, ok := i.lastUsedMap[skill.ID]; ok {
+			lines = append(lines, labelStyle.Render("Last Used:")+valueStyle.Render(lastUsed.Format("2006-01-02")))
+		}
+	}
+
+	// Timestamps
+	lines = append(lines, "")
+	lines = append(lines, labelStyle.Render("Created:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.CreatedAt.Format("2006-01-02 15:04")))
+	lines = append(lines, labelStyle.Render("Updated:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.UpdatedAt.Format("2006-01-02 15:04")))
+
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+}
+
+// renderSkillEvents renders the events using this skill
+func (i *ManageSkillsIntent) renderSkillEvents() string {
+	theme := i.Theme()
+
+	if !i.eventsLoaded {
+		loadingStyle := lipgloss.NewStyle().
+			Foreground(theme.SecondaryColor()).
+			MarginTop(2)
+		return loadingStyle.Render("Loading events...")
+	}
+
+	if len(i.skillEvents) == 0 {
+		emptyStyle := lipgloss.NewStyle().
+			Foreground(theme.MutedColor()).
+			MarginTop(2)
+		return emptyStyle.Render("No events use this skill yet.")
+	}
+
+	var lines []string
+	lines = append(lines, fmt.Sprintf("Events using '%s' (%d total):", i.selectedSkill.Name, len(i.skillEvents)))
+	lines = append(lines, "")
+
+	// Render each event
+	for _, event := range i.skillEvents {
+		dateStr := event.Date.Format("2006-01-02")
+		eventText := event.Text
+		if len(eventText) > 80 {
+			eventText = eventText[:77] + "..."
+		}
+
+		dateStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
+		line := dateStyle.Render(dateStr) + " " + eventText
+
+		if event.Company != "" {
+			companyStyle := lipgloss.NewStyle().Foreground(theme.MutedColor())
+			line += " " + companyStyle.Render(fmt.Sprintf("(%s)", event.Company))
+		}
+
+		lines = append(lines, "  "+line)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+}
+
+// renderDetailHelp renders the help text for detail view
+func (i *ManageSkillsIntent) renderDetailHelp() string {
+	return "Enter:view events • e:edit • d:delete • Esc:back"
+}
+
+// renderEventsHelp renders the help text for events view
+func (i *ManageSkillsIntent) renderEventsHelp() string {
+	return "Esc:back to detail"
 }

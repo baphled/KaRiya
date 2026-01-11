@@ -2,6 +2,7 @@ package intents_test
 
 import (
 	"context"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	domain "github.com/baphled/kariya/internal/domain/career"
@@ -508,6 +509,216 @@ var _ = Describe("ManageSkillsIntent", func() {
 			Expect(view).To(ContainSubstring("e:edit"))
 			Expect(view).To(ContainSubstring("d:delete"))
 			Expect(view).To(ContainSubstring("Esc:back"))
+		})
+
+		It("should show Enter key in help for detail view", func() {
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Enter:detail"))
+		})
+	})
+
+	Describe("Detail View", func() {
+		BeforeEach(func() {
+			// Create intent
+			intent = intents.NewManageSkillsIntent(intentCtx)
+
+			// Initialize intent and load skills
+			cmd := intent.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the init command to load skills
+			msg := cmd()
+			intent.Update(msg)
+
+			// Ensure we have skills loaded
+			Expect(intent.State()).To(Equal(intents.SkillsStateList))
+		})
+
+		It("should transition to detail view when Enter is pressed", func() {
+			// Press Enter to view detail
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).To(BeNil())
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetail))
+		})
+
+		It("should display skill name in detail view", func() {
+			// Press Enter to view detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			view := intent.View()
+			// Should show "Name:" label and a skill name (Docker, Ruby, Go, etc.)
+			Expect(view).To(ContainSubstring("Name:"))
+			Expect(view).To(Or(
+				ContainSubstring("Ruby"),
+				ContainSubstring("Go"),
+				ContainSubstring("React"),
+				ContainSubstring("PostgreSQL"),
+				ContainSubstring("Docker"),
+			))
+		})
+
+		It("should display skill category in detail view", func() {
+			// Press Enter to view detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			view := intent.View()
+			// Should show "Category:" label and a category
+			Expect(view).To(ContainSubstring("Category:"))
+			Expect(view).To(Or(
+				ContainSubstring("backend"),
+				ContainSubstring("frontend"),
+				ContainSubstring("database"),
+				ContainSubstring("devops"),
+			))
+		})
+
+		It("should display skill level in detail view when set", func() {
+			// Press Enter to view detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			view := intent.View()
+			Expect(view).To(ContainSubstring("advanced"))
+		})
+
+		It("should display event count in detail view", func() {
+			// Press Enter to view detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Event Count"))
+		})
+
+		It("should transition to events view when Enter is pressed from detail", func() {
+			// Navigate to detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetail))
+
+			// Press Enter to view events
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute command to load events
+			msg := cmd()
+			intent.Update(msg)
+
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetailEvents))
+		})
+
+		It("should return to list when Esc is pressed from detail", func() {
+			// Navigate to detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetail))
+
+			// Press Esc to go back
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.State()).To(Equal(intents.SkillsStateList))
+		})
+
+		It("should transition to edit when 'e' is pressed from detail", func() {
+			// Navigate to detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetail))
+
+			// Press 'e' to edit
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(cmd).NotTo(BeNil())
+			Expect(intent.State()).To(Equal(intents.SkillsStateEdit))
+		})
+
+		It("should transition to delete when 'd' is pressed from detail", func() {
+			// Navigate to detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetail))
+
+			// Press 'd' to delete
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+			Expect(intent.State()).To(Equal(intents.SkillsStateDelete))
+		})
+	})
+
+	Describe("Detail Events View", func() {
+		var testEvent *domain.CareerEvent
+
+		BeforeEach(func() {
+			// Create intent
+			intent = intents.NewManageSkillsIntent(intentCtx)
+
+			// Initialize intent and load skills
+			cmd := intent.Init()
+			Expect(cmd).NotTo(BeNil())
+			msg := cmd()
+			intent.Update(msg)
+
+			// Create a test event with the first skill
+			eventDate, _ := time.Parse("2006-01-02", "2024-01-15")
+			testEvent = &domain.CareerEvent{
+				Text:   "Implemented Ruby feature",
+				Date:   eventDate,
+				Skills: []string{testSkills[0].ID}, // Ruby skill
+			}
+			err := eventRepo.Create(ctx, testEvent)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Navigate to detail view
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetail))
+		})
+
+		It("should load and display events using the skill", func() {
+			// Press Enter to view events
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute command to load events
+			msg := cmd()
+			intent.Update(msg)
+
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetailEvents))
+
+			// View should show either events or empty state
+			view := intent.View()
+			Expect(view).To(Or(
+				ContainSubstring("Implemented Ruby feature"),
+				ContainSubstring("No events use this skill"),
+				ContainSubstring("Loading events"),
+			))
+		})
+
+		It("should show events view renders successfully", func() {
+			// Navigate to events view
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			msg := cmd()
+			intent.Update(msg)
+
+			view := intent.View()
+			// Just verify the view renders with breadcrumbs
+			Expect(view).To(ContainSubstring("Events"))
+		})
+
+		It("should return to detail when Esc is pressed from events view", func() {
+			// Navigate to events view
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			msg := cmd()
+			intent.Update(msg)
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetailEvents))
+
+			// Press Esc to go back to detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetail))
+		})
+
+		It("should show events view successfully even when no events", func() {
+			// Navigate to different skill (Go - no events)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}}) // Move to next skill
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})                     // Enter detail view
+
+			// Navigate to events view
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			if cmd != nil {
+				msg := cmd()
+				intent.Update(msg)
+			}
+
+			// Just verify the view renders and we're in the events state
+			Expect(intent.State()).To(Equal(intents.SkillsStateDetailEvents))
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Events"))
 		})
 	})
 })

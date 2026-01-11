@@ -21,10 +21,12 @@ var (
 type SkillsState string
 
 const (
-	SkillsStateList   SkillsState = "list"   // View all skills grouped by category
-	SkillsStateAdd    SkillsState = "add"    // Add new skill (huh form)
-	SkillsStateEdit   SkillsState = "edit"   // Edit existing skill (huh form)
-	SkillsStateDelete SkillsState = "delete" // Confirm deletion
+	SkillsStateList         SkillsState = "list"          // View all skills grouped by category
+	SkillsStateDetail       SkillsState = "detail"        // View single skill details
+	SkillsStateDetailEvents SkillsState = "detail_events" // View events using this skill
+	SkillsStateAdd          SkillsState = "add"           // Add new skill (huh form)
+	SkillsStateEdit         SkillsState = "edit"          // Edit existing skill (huh form)
+	SkillsStateDelete       SkillsState = "delete"        // Confirm deletion
 )
 
 // ManageSkillsContext holds the context and dependencies for ManageSkills intent
@@ -77,4 +79,10 @@ type SkillUpdatedMsg struct {
 type SkillDeletedMsg struct {
 	SkillID string
 	Error   error
+}
+
+// SkillEventsLoadedMsg is sent when events for a skill are loaded
+type SkillEventsLoadedMsg struct {
+	Events []*domain.CareerEvent
+	Error  error
 }
