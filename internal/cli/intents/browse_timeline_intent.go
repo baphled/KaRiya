@@ -29,6 +29,12 @@ type FilterChangedMsg struct {
 	Filters *TimelineFilters
 }
 
+// RequestEditEventMsg requests that the app route to CaptureEvent intent for editing.
+// This is sent to the app router which will activate CaptureEvent with PreviousEvent set.
+type RequestEditEventMsg struct {
+	Event *career.CareerEvent
+}
+
 // BrowseTimelineIntent implements the Intent interface for browsing career events.
 // It owns the complete lifecycle of timeline browsing, including:
 // - Displaying a filtered and sorted timeline of events
@@ -201,9 +207,6 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 	case BrowseStateEventDetail:
 		return i.updateEventDetail(msg)
 
-	case BrowseStateEditEvent:
-		return i.updateEditEvent(msg)
-
 	case BrowseStateDeleteConfirm:
 		return i.updateDeleteConfirm(msg)
 	}
@@ -295,17 +298,12 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 			return nil
 
 		case "e":
-			// Edit event metadata
-			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-				i.state.editModal = NewEditMetadataModal(
-					i.state.selectedEvent.Company,
-					i.state.selectedEvent.Project,
-					i.state.selectedEvent.Tags,
-					i.state.selectedEvent.Categories,
-				)
-				i.state.currentState = BrowseStateEditEvent
-				// Return form init command to properly initialize the huh form
-				return i.state.editModal.form.Init()
+			// Edit event - send message to app to route to CaptureEvent intent
+			if i.state.selectedEvent != nil {
+				// Send RequestEditEventMsg which app router will handle
+				return func() tea.Msg {
+					return RequestEditEventMsg{Event: i.state.selectedEvent}
+				}
 			}
 			return nil
 
@@ -320,48 +318,6 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 	}
 
 	return nil
-}
-
-// updateEditEvent handles messages while editing event metadata.
-func (i *BrowseTimelineIntent) updateEditEvent(msg tea.Msg) tea.Cmd {
-	if i.state.editModal == nil {
-		i.state.currentState = BrowseStateEventDetail
-		return nil
-	}
-
-	// Update the modal
-	cmd := i.state.editModal.Update(msg)
-
-	// Check if modal is complete
-	if i.state.editModal.IsComplete() {
-		result := i.state.editModal.Result()
-		if result != nil && result.Accepted {
-			// Apply changes to the event
-			i.state.selectedEvent.Company = result.Modified.Company
-			i.state.selectedEvent.Project = result.Modified.Project
-			i.state.selectedEvent.Tags = result.Modified.Tags
-			i.state.selectedEvent.Categories = result.Modified.Categories
-
-			// Save to service if available
-			if i.context.CLIEventService != nil {
-				// Use context.Background() since we don't have a context in the intent
-				_ = i.context.CLIEventService.UpdateEventMetadata(
-					i.getContext(),
-					i.state.selectedEvent,
-				)
-			}
-
-			// Update the table row
-			i.updateTableRows()
-		}
-
-		// Return to detail view
-		i.state.editModal = nil
-		i.state.currentState = BrowseStateEventDetail
-		return nil
-	}
-
-	return cmd
 }
 
 // updateDeleteConfirm handles delete confirmation.
@@ -509,8 +465,6 @@ func (i *BrowseTimelineIntent) getStateName() string {
 		return "Timeline"
 	case BrowseStateEventDetail:
 		return "Event Detail"
-	case BrowseStateEditEvent:
-		return "Edit Event"
 	case BrowseStateDeleteConfirm:
 		return "Delete Event"
 	default:
@@ -525,8 +479,6 @@ func (i *BrowseTimelineIntent) getStateContent() string {
 		return i.viewTimeline()
 	case BrowseStateEventDetail:
 		return i.viewEventDetail()
-	case BrowseStateEditEvent:
-		return i.viewEditEvent()
 	case BrowseStateDeleteConfirm:
 		return i.viewDeleteConfirm()
 	default:
@@ -562,15 +514,6 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 		}
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme, badges...),
-			ThemedGlobalBadges(theme),
-		)
-	case BrowseStateEditEvent:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Tab", "Next Field"),
-				components.NewKeyBadge("Enter", "Submit"),
-				components.NewKeyBadge("Esc", "Cancel"),
-			),
 			ThemedGlobalBadges(theme),
 		)
 	case BrowseStateDeleteConfirm:
@@ -667,17 +610,6 @@ func (i *BrowseTimelineIntent) viewEventDetail() string {
 
 	// Footer now handled by StandardView
 	return card
-}
-
-// viewEditEvent renders the edit event form content.
-func (i *BrowseTimelineIntent) viewEditEvent() string {
-	if i.state.editModal == nil {
-		return "No edit modal available."
-	}
-
-	// Render just the form content (not full modal container)
-	// StandardView already provides the layout structure
-	return i.state.editModal.GetContent()
 }
 
 // viewDeleteConfirm renders the delete confirmation dialog.

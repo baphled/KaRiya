@@ -87,7 +87,7 @@ type BrowseTimelineModel struct {
 	context *BrowseTimelineContext
 
 	// currentState tracks which view is active.
-	currentState string // BrowseStateTimeline, BrowseStateEventDetail, BrowseStateEditEvent, BrowseStateDeleteConfirm
+	currentState string // BrowseStateTimeline, BrowseStateEventDetail, BrowseStateDeleteConfirm
 
 	// filteredEvents are the events after applying current filters.
 	filteredEvents []*career.CareerEvent
@@ -107,9 +107,6 @@ type BrowseTimelineModel struct {
 	// viewedEvents tracks events viewed during the session.
 	viewedEvents []*career.CareerEvent
 
-	// editModal is the modal for editing event metadata.
-	editModal *EditMetadataModal
-
 	// deleteError stores any error from delete operation.
 	deleteError error
 }
@@ -118,6 +115,5 @@ type BrowseTimelineModel struct {
 const (
 	BrowseStateTimeline      = "timeline"
 	BrowseStateEventDetail   = "event_detail"
-	BrowseStateEditEvent     = "edit_event"
 	BrowseStateDeleteConfirm = "delete_confirm"
 )
