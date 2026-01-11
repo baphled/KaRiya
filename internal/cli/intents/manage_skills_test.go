@@ -515,6 +515,30 @@ var _ = Describe("ManageSkillsIntent", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Enter:detail"))
 		})
+
+		It("should show event count for skills with events", func() {
+			// Create an event with a skill
+			eventDate, _ := time.Parse("2006-01-02", "2024-01-15")
+			testEvent := &domain.CareerEvent{
+				Text:   "Ruby implementation",
+				Date:   eventDate,
+				Skills: []string{testSkills[0].ID}, // Ruby skill
+			}
+			err := eventRepo.Create(ctx, testEvent)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Reload skills to get event counts
+			cmd := intent.Init()
+			msg := cmd()
+			intent.Update(msg)
+
+			view := intent.View()
+			// Should show event count indicator (e.g., "(1 event)" or "[1]")
+			Expect(view).To(Or(
+				ContainSubstring("1 event"),
+				ContainSubstring("[1]"),
+			))
+		})
 	})
 
 	Describe("Detail View", func() {

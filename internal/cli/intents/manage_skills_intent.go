@@ -212,6 +212,16 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 
 	i.skills = msg.Skills
 	i.selectedIndex = 0
+
+	// Load event counts for displaying in list view
+	eventCounts, err := i.context.SkillRepository.GetEventCountsForSkills(i.context.Ctx)
+	if err == nil {
+		i.eventCounts = eventCounts
+	} else {
+		// If loading fails, use empty map
+		i.eventCounts = make(map[string]int)
+	}
+
 	return nil
 }
 
@@ -572,6 +582,18 @@ func (i *ManageSkillsIntent) renderSkillItem(skill *domain.Skill) string {
 			yearText += "s"
 		}
 		line += " " + yearsStyle.Render(fmt.Sprintf("[%s]", yearText))
+	}
+
+	// Add event count if available
+	if i.eventCounts != nil {
+		if count, ok := i.eventCounts[skill.ID]; ok && count > 0 {
+			countStyle := lipgloss.NewStyle().Foreground(theme.MutedColor())
+			eventText := fmt.Sprintf("%d event", count)
+			if count != 1 {
+				eventText += "s"
+			}
+			line += " " + countStyle.Render(fmt.Sprintf("(%s)", eventText))
+		}
 	}
 
 	// Apply selection styling
