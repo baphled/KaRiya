@@ -606,13 +606,49 @@ func (i *BrowseTimelineIntent) View() string {
 		view.WithContent(content)
 		baseView := view.Render()
 
-		// Create overlay modal with content from deleteModal
+		// Build modal content with border
 		modalContent := i.deleteModal.View()
-		overlay := components.NewOverlayModal("⚠️  Delete Confirmation", modalContent)
-		overlay.SetWidth(60) // Compact width for delete confirmation
-
 		termInfo := i.GetTerminalInfo()
-		return overlay.RenderCentered(baseView, termInfo.Width, termInfo.Height)
+
+		// Create modal box with border and padding
+		modalStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#F38BA8")). // Red border for warning
+			Padding(1, 2).
+			Width(60)
+
+		modalBox := modalStyle.Render(modalContent)
+
+		// Dim background
+		dimStyle := lipgloss.NewStyle().Faint(true)
+		dimmedBg := dimStyle.Render(baseView)
+
+		// Split into lines
+		bgLines := strings.Split(dimmedBg, "\n")
+		modalLines := strings.Split(modalBox, "\n")
+
+		// Calculate vertical center
+		bgHeight := len(bgLines)
+		modalHeight := len(modalLines)
+		startLine := (bgHeight - modalHeight) / 2
+		if startLine < 0 {
+			startLine = 0
+		}
+
+		// Replace background lines with centered modal lines
+		result := make([]string, len(bgLines))
+		copy(result, bgLines)
+
+		for i, modalLine := range modalLines {
+			lineIndex := startLine + i
+			if lineIndex >= 0 && lineIndex < len(result) {
+				// Center modal line horizontally
+				centeredLine := lipgloss.PlaceHorizontal(termInfo.Width, lipgloss.Center, modalLine)
+				result[lineIndex] = centeredLine
+			}
+		}
+
+		return strings.Join(result, "\n")
 	}
 
 	// Create standard view with breadcrumbs
