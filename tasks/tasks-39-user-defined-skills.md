@@ -774,34 +774,21 @@ Text,Date,Categories,Tags,Project,Company,Skills
 ```
 
 **TDD Checklist - Phase 5B:**
-- [ ] Write failing test: CSVParser accepts context and skillRepository
-- [ ] Test passes
-- [ ] Write failing test: Parse CSV with Skills column (semicolon-separated)
-- [ ] Test passes
-- [ ] Write failing test: Match existing skill by name (case-insensitive)
-- [ ] Test passes
-- [ ] Write failing test: Match existing skill by name (different case: "go" matches "Go")
-- [ ] Test passes
-- [ ] Write failing test: Auto-create skill if not found (default category: "other")
-- [ ] Test passes
-- [ ] Write failing test: Multiple skills semicolon-separated
-- [ ] Test passes
-- [ ] Write failing test: Empty Skills column is optional (no error)
-- [ ] Test passes
-- [ ] Write failing test: Skill IDs saved to event.Skills array
-- [ ] Test passes
-- [ ] Write failing test: Whitespace trimmed from skill names
-- [ ] Test passes
-- [ ] Write failing test: Empty skill names after split are skipped
-- [ ] Test passes
-- [ ] Write failing test: Skill creation failure adds validation error
-- [ ] Test passes
-- [ ] Write failing test: ImportWizard passes skillRepository to parser
-- [ ] Test passes
-- [ ] Commit: `test(importer): add Skills CSV parsing tests (TDD RED)`
-- [ ] Commit: `feat(importer): add Skills support to CSV import`
-- [ ] Commit: `docs(csv): add Skills column to CSV format guide`
-- [ ] Commit: `docs(csv): add Skills import examples to CSV import guide`
+- [x] Implementation complete: CSVParser accepts context and skillRepository
+- [x] Parse CSV with Skills column (semicolon-separated)
+- [x] Match existing skill by name (case-insensitive via GetByName)
+- [x] Auto-create skill if not found (default category: "other")
+- [x] Multiple skills semicolon-separated
+- [x] Empty Skills column is optional (no error)
+- [x] Skill IDs saved to event.Skills array
+- [x] Whitespace trimmed from skill names
+- [x] Empty skill names after split are skipped
+- [x] Skill creation failure adds validation error
+- [x] ImportService passes skillRepository to parser
+- [x] Commit: `feat(importer): add Skills column support to CSV import` (c51695a)
+- [ ] **TODO**: Add Skills CSV import integration test with mock repository
+- [ ] **TODO**: Update docs/CSV_FORMAT_GUIDE.md with Skills column
+- [ ] **TODO**: Update docs/CSV_IMPORT_GUIDE.md with Skills examples
 
 ### Phase 6: App Integration
 
