@@ -31,9 +31,9 @@ Currently, KaRiya has no user-defined skills. Skills are derived automatically f
 - [x] `internal/domain/career/skill_test.go` - Domain model tests
 
 ### Repository Layer
-- [ ] `internal/repository/career/skill_repository.go` - Repository interface
-- [ ] `internal/repository/career/sqlite_skill_repository.go` - SQLite implementation
-- [ ] `internal/repository/career/sqlite_skill_repository_test.go` - Repository tests
+- [x] `internal/repository/career/skill_repository.go` - Repository interface
+- [x] `internal/repository/career/sqlite_skill_repository.go` - SQLite implementation
+- [x] `internal/repository/career/sqlite_skill_repository_test.go` - Repository tests
 - [x] `internal/repository/career/migrations/005_create_skills.sql` - Skills table migration
 - [x] `internal/repository/career/migrations/006_create_event_skills.sql` - Junction table migration
 
