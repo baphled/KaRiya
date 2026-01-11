@@ -304,6 +304,8 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 					i.state.selectedEvent.Categories,
 				)
 				i.state.currentState = BrowseStateEditEvent
+				// Return form init command to properly initialize the huh form
+				return i.state.editModal.form.Init()
 			}
 			return nil
 

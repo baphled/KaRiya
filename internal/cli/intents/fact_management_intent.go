@@ -188,7 +188,11 @@ func (m *FactManagementModel) getBreadcrumbs() []string {
 	switch m.data.CurrentState {
 	case FactViewState, FactEditorState, FactDeleteConfirmState:
 		if m.data.SelectedFact != nil {
-			factName := fmt.Sprintf("Fact #%s", m.data.SelectedFact.ID[:8])
+			factID := m.data.SelectedFact.ID
+			if len(factID) > 8 {
+				factID = factID[:8]
+			}
+			factName := fmt.Sprintf("Fact #%s", factID)
 			breadcrumbs = append(breadcrumbs, factName)
 		}
 	case FactResultsState:
@@ -340,8 +344,8 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 			m.data.StartNewFact()
 			m.editModal = NewEditFactModal(m.data.EditingFact)
 			m.data.CurrentState = FactEditorState
-
-			return nil
+			// Return form init command to properly initialize the huh form
+			return m.editModal.form.Init()
 
 		case "r":
 			if err := m.data.LoadFacts(); err != nil {
@@ -402,6 +406,8 @@ func (m *FactManagementModel) handleViewState(msg tea.Msg) tea.Cmd {
 				m.data.StartEditFact(m.data.SelectedFact)
 				m.editModal = NewEditFactModal(m.data.EditingFact)
 				m.data.CurrentState = FactEditorState
+				// Return form init command to properly initialize the huh form
+				return m.editModal.form.Init()
 			}
 
 		case "d":

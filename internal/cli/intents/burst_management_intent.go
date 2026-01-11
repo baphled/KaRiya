@@ -1179,9 +1179,10 @@ func (i *BurstManagementIntent) viewEdit() string {
 		return "No burst selected."
 	}
 
-	// If modal is active, render it
+	// If modal is active, render just the form content (not the full modal container)
+	// This avoids duplicate help text since StandardView provides context-aware help
 	if i.state.editModal != nil {
-		return i.state.editModal.View()
+		return i.state.editModal.GetContent()
 	}
 
 	// Fallback view if modal not initialized (should not happen normally)
