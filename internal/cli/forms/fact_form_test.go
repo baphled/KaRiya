@@ -17,8 +17,8 @@ var _ = Describe("FactForm", func() {
 			Text:                 "Led migration of monolith to microservices",
 			CompetencyCategories: []string{"technical", "leadership"},
 			RoleFit:              career.RoleFitStaff,
-			AudienceRelevance:    []string{"startup", "technical"},
-			StrengthSignal:       "0.85",
+			AudienceRelevance:    []string{"hiring_manager", "peer"},
+			StrengthSignal:       "leadership",
 		}
 	})
 
@@ -35,40 +35,40 @@ var _ = Describe("FactForm", func() {
 			data := forms.GetFactFormData(testFact)
 
 			Expect(data.Text).To(Equal("Led migration of monolith to microservices"))
-			Expect(data.CompetencyCategories).To(Equal("technical, leadership"))
+			Expect(data.CompetencyCategories).To(Equal([]string{"technical", "leadership"}))
 			Expect(data.RoleFit).To(Equal(string(career.RoleFitStaff)))
-			Expect(data.AudienceRelevance).To(Equal("startup, technical"))
-			Expect(data.StrengthSignal).To(Equal("0.85"))
+			Expect(data.AudienceRelevance).To(Equal([]string{"hiring_manager", "peer"}))
 		})
 
 		It("should apply data to fact", func() {
-			newFact := &career.Fact{}
+			newFact := &career.Fact{
+				StrengthSignal: "existing_signal", // Pre-existing signal
+			}
 			data := &forms.FactFormData{
 				Text:                 "Improved system performance by 50%",
-				CompetencyCategories: "performance, optimization",
+				CompetencyCategories: []string{"technical", "product"},
 				RoleFit:              string(career.RoleFitSeniorIC),
-				AudienceRelevance:    "enterprise, technical",
-				StrengthSignal:       "0.90",
+				AudienceRelevance:    []string{"hiring_manager", "recruiter"},
 			}
 
 			err := forms.ApplyFactFormData(newFact, data)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(newFact.Text).To(Equal("Improved system performance by 50%"))
-			Expect(newFact.CompetencyCategories).To(Equal([]string{"performance", "optimization"}))
+			Expect(newFact.CompetencyCategories).To(Equal([]string{"technical", "product"}))
 			Expect(newFact.RoleFit).To(Equal(career.RoleFitSeniorIC))
-			Expect(newFact.AudienceRelevance).To(Equal([]string{"enterprise", "technical"}))
-			Expect(newFact.StrengthSignal).To(Equal("0.90"))
+			Expect(newFact.AudienceRelevance).To(Equal([]string{"hiring_manager", "recruiter"}))
+			// StrengthSignal is NOT modified by ApplyFactFormData
+			Expect(newFact.StrengthSignal).To(Equal("existing_signal"))
 		})
 
 		It("should handle empty competency categories", func() {
 			newFact := &career.Fact{}
 			data := &forms.FactFormData{
-				Text:                 "Sample fact",
-				CompetencyCategories: "",
+				Text:                 "Sample fact text here",
+				CompetencyCategories: []string{},
 				RoleFit:              string(career.RoleFitStaff),
-				AudienceRelevance:    "",
-				StrengthSignal:       "0.5",
+				AudienceRelevance:    []string{},
 			}
 
 			err := forms.ApplyFactFormData(newFact, data)
@@ -76,6 +76,24 @@ var _ = Describe("FactForm", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(newFact.CompetencyCategories).To(Equal([]string{}))
 			Expect(newFact.AudienceRelevance).To(Equal([]string{}))
+		})
+
+		It("should handle nil slices from fact", func() {
+			factWithNilSlices := &career.Fact{
+				ID:                   "fact-456",
+				Text:                 "Some fact",
+				CompetencyCategories: nil,
+				RoleFit:              career.RoleFitStaff,
+				AudienceRelevance:    nil,
+				StrengthSignal:       "technical expertise",
+			}
+
+			data := forms.GetFactFormData(factWithNilSlices)
+
+			Expect(data.CompetencyCategories).NotTo(BeNil())
+			Expect(data.CompetencyCategories).To(Equal([]string{}))
+			Expect(data.AudienceRelevance).NotTo(BeNil())
+			Expect(data.AudienceRelevance).To(Equal([]string{}))
 		})
 	})
 
@@ -91,14 +109,29 @@ var _ = Describe("FactForm", func() {
 		})
 	})
 
+	Describe("CompetencyCategoryOptions", func() {
+		It("should return all 6 competency category options", func() {
+			options := forms.CompetencyCategoryOptions()
+
+			Expect(options).To(HaveLen(6))
+		})
+	})
+
+	Describe("AudienceRelevanceOptions", func() {
+		It("should return all 3 audience relevance options", func() {
+			options := forms.AudienceRelevanceOptions()
+
+			Expect(options).To(HaveLen(3))
+		})
+	})
+
 	Describe("NewFactEditorFormWithData", func() {
 		It("should create a form with initial data", func() {
 			data := &forms.FactFormData{
-				Text:                 "Initial fact",
-				CompetencyCategories: "cat1, cat2",
+				Text:                 "Initial fact text here",
+				CompetencyCategories: []string{"technical", "leadership"},
 				RoleFit:              string(career.RoleFitPrincipal),
-				AudienceRelevance:    "aud1, aud2",
-				StrengthSignal:       "0.75",
+				AudienceRelevance:    []string{"hiring_manager"},
 			}
 
 			form := forms.NewFactEditorFormWithData(data)

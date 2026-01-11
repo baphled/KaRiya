@@ -1,9 +1,6 @@
 package intents
 
 import (
-	"strings"
-	"unicode"
-
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/styles"
@@ -38,8 +35,8 @@ type EditMetadataModal struct {
 	// formData holds the form field values (pointers so form binding works)
 	company         *string
 	project         *string
-	tags            *string
-	categories      *string
+	tags            []string // MultiSelect uses slice directly
+	categories      []string // MultiSelect uses slice directly
 	submitConfirmed *bool
 
 	// width and height track terminal dimensions for responsive layout
@@ -66,12 +63,16 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 		Categories: categories,
 	}
 
-	// Initialize form field values as pointers so form binding updates the modal's fields
+	// Initialize form field values
 	companyVal := company
 	projectVal := project
-	tagsVal := formatStringSlice(tags)
-	categoriesVal := formatStringSlice(categories)
 	submitConfirmed := false
+
+	// Copy slices for multi-select binding (ensure not nil)
+	tagsCopy := make([]string, len(tags))
+	copy(tagsCopy, tags)
+	categoriesCopy := make([]string, len(categories))
+	copy(categoriesCopy, categories)
 
 	modal := &EditMetadataModal{
 		original:        original,
@@ -80,11 +81,23 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 		form:            nil, // Will be set below
 		company:         &companyVal,
 		project:         &projectVal,
-		tags:            &tagsVal,
-		categories:      &categoriesVal,
+		tags:            tagsCopy,
+		categories:      categoriesCopy,
 		submitConfirmed: &submitConfirmed,
 		width:           80,
 		height:          24,
+	}
+
+	// Build tag options from AllowedTags
+	tagOptions := make([]huh.Option[string], 0)
+	for tag := range career.AllowedTags {
+		tagOptions = append(tagOptions, huh.NewOption(tag, tag))
+	}
+
+	// Build category options from AllowedCategories
+	categoryOptions := make([]huh.Option[string], 0)
+	for cat := range career.AllowedCategories {
+		categoryOptions = append(categoryOptions, huh.NewOption(cat, cat))
 	}
 
 	// Create huh form with pointers to modal's fields
@@ -107,23 +120,21 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 				CharLimit:   100,
 			}).Value(modal.project),
 
-			huh.NewInput().
+			huh.NewMultiSelect[string]().
 				Key("tags").
 				Title("Tags").
-				Description("Comma-separated tags").
-				Placeholder("tag1, tag2, tag3").
-				Prompt("> "). // Fix placeholder display
-				CharLimit(256).
-				Value(modal.tags),
+				Description("Select relevant tags").
+				Options(tagOptions...).
+				Value(&modal.tags).
+				Limit(8),
 
-			huh.NewInput().
+			huh.NewMultiSelect[string]().
 				Key("categories").
 				Title("Categories").
-				Description("Comma-separated categories").
-				Placeholder("category1, category2").
-				Prompt("> "). // Fix placeholder display
-				CharLimit(256).
-				Value(modal.categories),
+				Description("Select relevant categories").
+				Options(categoryOptions...).
+				Value(&modal.categories).
+				Limit(6),
 
 			huh.NewConfirm().
 				Key("submit").
@@ -232,8 +243,8 @@ func (m *EditMetadataModal) syncModified() {
 	m.modified = &MetadataSnapshot{
 		Company:    *m.company,
 		Project:    *m.project,
-		Tags:       parseStringSlice(*m.tags),
-		Categories: parseStringSlice(*m.categories),
+		Tags:       m.tags,       // MultiSelect binds directly to []string
+		Categories: m.categories, // MultiSelect binds directly to []string
 	}
 }
 
@@ -617,13 +628,14 @@ func (m *EditFactModal) GetFooter() string {
 
 func (m *EditFactModal) syncModified() {
 	// Apply form data to modified fact
+	// Note: StrengthSignal is preserved from original as it's auto-generated
 	m.modified = &career.Fact{
 		ID:                   m.original.ID,
 		Text:                 m.formData.Text,
-		CompetencyCategories: parseStringSlice(m.formData.CompetencyCategories),
+		CompetencyCategories: m.formData.CompetencyCategories,
 		RoleFit:              career.RoleFit(m.formData.RoleFit),
-		AudienceRelevance:    parseStringSlice(m.formData.AudienceRelevance),
-		StrengthSignal:       m.formData.StrengthSignal,
+		AudienceRelevance:    m.formData.AudienceRelevance,
+		StrengthSignal:       m.original.StrengthSignal, // Preserved from original
 		SourceEventID:        m.original.SourceEventID,
 		SourceBurstID:        m.original.SourceBurstID,
 		CreatedAt:            m.original.CreatedAt,
@@ -700,42 +712,6 @@ func copyMetadataSnapshot(original *MetadataSnapshot) *MetadataSnapshot {
 	}
 
 	return &copy
-}
-
-// formatStringSlice converts a string slice to comma-separated format.
-func formatStringSlice(items []string) string {
-	if len(items) == 0 {
-		return ""
-	}
-
-	result := ""
-	for i, item := range items {
-		if i > 0 {
-			result += ", "
-		}
-		result += item
-	}
-	return result
-}
-
-// parseStringSlice converts comma-separated string to a slice.
-func parseStringSlice(input string) []string {
-	if input == "" {
-		return []string{}
-	}
-
-	// Split by comma and trim spaces from each item
-	parts := strings.Split(input, ",")
-	var result []string
-
-	for _, part := range parts {
-		trimmed := strings.TrimFunc(part, unicode.IsSpace)
-		if trimmed != "" {
-			result = append(result, trimmed)
-		}
-	}
-
-	return result
 }
 
 // slicesEqual checks if two string slices are equal.
