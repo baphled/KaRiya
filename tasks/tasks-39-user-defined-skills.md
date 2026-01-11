@@ -559,25 +559,24 @@ List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error)
 - Allow editing skill associations on existing events
 
 **TDD Checklist - Phase 5:**
-- [ ] Write failing test: FormModel includes skills field
-- [ ] Test passes
-- [ ] Write failing test: Skills field visible in quick mode
-- [ ] Test passes
-- [ ] Write failing test: Skills field visible in manual mode
-- [ ] Test passes
-- [ ] Write failing test: Skills field is optional
-- [ ] Test passes
-- [ ] Write failing test: Skills saved on event creation
-- [ ] Test passes
-- [ ] Write failing test: Skills loaded on event edit
-- [ ] Test passes
-- [ ] Write failing test: MetadataForm includes skills field
-- [ ] Test passes
-- [ ] Write failing test: Skills updated via metadata editor
-- [ ] Test passes
-- [ ] Commit: `test(forms): add skill selection to event forms`
-- [ ] Commit: `feat(forms): add skill selection to event capture`
-- [ ] Commit: `feat(forms): add skill selection to metadata editor`
+- [x] Write failing test: FormModel includes skills field
+- [x] Test passes
+- [x] Write failing test: Skills field visible in quick mode
+- [x] Test passes
+- [x] Write failing test: Skills field visible in manual mode
+- [x] Test passes
+- [x] Write failing test: Skills field is optional
+- [x] Test passes
+- [x] Write failing test: Skills saved on event creation
+- [x] Test passes
+- [x] Write failing test: Skills loaded on event edit
+- [x] Test passes
+- [x] Write failing test: MetadataForm includes skills field
+- [x] Test passes
+- [x] Write failing test: Skills updated via metadata editor
+- [x] Test passes
+- [x] Commit: `feat(forms): add skill field to FormModel` (a0384ea)
+- [x] Commit: `feat(forms): complete skills integration in metadata editor` (e95672a)
 
 ### Phase 5B: CSV Import Integration
 
