@@ -306,7 +306,7 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 		case "e":
 			// Edit event
 			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-				// Pass raw terminal dimensions - modal will calculate content height internally
+				// Pass available content dimensions (after StandardView + Modal overhead)
 				i.state.editModal = NewEditMetadataModalWithDimensions(
 					i.state.selectedEvent.Text,
 					i.state.selectedEvent.Date.Format("2006-01-02"),
@@ -314,8 +314,8 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 					i.state.selectedEvent.Project,
 					i.state.selectedEvent.Tags,
 					i.state.selectedEvent.Categories,
-					i.TerminalWidth(),
-					i.TerminalHeight(),
+					i.ContentWidth(),
+					i.ModalFormContentHeight(),
 				)
 				i.state.currentState = BrowseStateEditEvent
 				// Return form init command to properly initialize the huh form

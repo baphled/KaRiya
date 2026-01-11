@@ -183,11 +183,12 @@ func NewEditMetadataModalWithDimensions(text, date, company, project string, tag
 	)
 
 	// Create form with fixed confirm button at bottom
+	// Note: height is expected to be the AVAILABLE content height after StandardView + Modal overhead
 	modal.form = forms.NewFormWithFixedConfirm(
 		modal.formGroup,
 		modal.submitConfirmed,
 		modal.width-4, // Leave margin for modal chrome
-		forms.DefaultFormHeight(modal.height),
+		modal.height,  // Use height directly - caller already accounted for overhead
 	)
 
 	return modal
@@ -197,12 +198,20 @@ func NewEditMetadataModalWithDimensions(text, date, company, project string, tag
 func (m *EditMetadataModal) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		// WindowSizeMsg contains FULL terminal dimensions
+		// Calculate available content height after StandardView (18) + Modal (4) overhead
+		const overhead = 22 // StandardView + Modal chrome
+		contentHeight := msg.Height - overhead
+		if contentHeight < 10 {
+			contentHeight = 10
+		}
+
 		m.width = msg.Width
-		m.height = msg.Height
+		m.height = contentHeight
 		// Update form dimensions without losing state
 		m.form = m.form.
-			WithHeight(forms.DefaultFormHeight(m.height)).
-			WithWidth(m.width - 4) // Leave margin for modal chrome
+			WithHeight(contentHeight).
+			WithWidth(msg.Width - 4) // Leave margin for modal chrome
 		return nil
 	}
 

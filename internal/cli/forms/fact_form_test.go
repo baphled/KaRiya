@@ -180,12 +180,12 @@ var _ = Describe("FactForm", func() {
 				AudienceRelevance:    []string{"hiring_manager"},
 			}
 
-			// Simulate terminal with 40 lines (40 - 20 overhead = 20 lines)
+			// Simulate terminal with 40 lines (40 - 16 overhead = 24 lines)
 			height := forms.DefaultFormHeight(40)
 			form := forms.NewFactEditorFormWithDataAndHeight(data, height)
 
 			Expect(form).NotTo(BeNil())
-			Expect(height).To(Equal(20))
+			Expect(height).To(Equal(24))
 		})
 	})
 })

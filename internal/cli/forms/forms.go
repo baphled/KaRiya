@@ -53,13 +53,16 @@ func NewThemedFormWithHeight(theme themes.Theme, height int, groups ...*huh.Grou
 	return huh.NewForm(groups...).WithTheme(ThemedForm(theme)).WithHeight(height)
 }
 
-// DefaultFormHeight calculates a reasonable form height based on terminal dimensions.
-// It reserves space for: logo (~7 lines), breadcrumbs (~2 lines), footer (~3 lines),
-// modal chrome (~4 lines), and some padding (~4 lines) = ~20 lines overhead.
-// Minimum height is 10 lines to ensure usability.
+// DefaultFormHeight calculates form height for forms displayed in StandardView.
+// StandardView renders from top (no centering), so we reserve minimal overhead:
+// - Logo + spacing: ~11 lines
+// - Breadcrumbs: ~2 lines
+// - Footer: ~3 lines
+// Total overhead: ~16 lines
+// Minimum height is 15 lines to ensure scrollable content is useful.
 func DefaultFormHeight(terminalHeight int) int {
-	const overhead = 20
-	const minHeight = 10
+	const overhead = 16  // Logo + breadcrumbs + footer when NOT centered
+	const minHeight = 15 // Minimum for useful scrolling
 
 	height := terminalHeight - overhead
 	if height < minHeight {

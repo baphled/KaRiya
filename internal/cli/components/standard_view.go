@@ -251,12 +251,12 @@ func (sv *StandardView) Render() string {
 		parts = append(parts, styledHelp)
 	}
 
-	// Join all parts with center alignment - aligns to widest line
-	combined := lipgloss.JoinVertical(lipgloss.Center, parts...)
+	// Join all parts with left alignment (no horizontal centering)
+	combined := lipgloss.JoinVertical(lipgloss.Left, parts...)
 
-	// Center within terminal (both horizontal and vertical)
-	rendered := lipgloss.Place(sv.TerminalInfo.Width, sv.TerminalInfo.Height,
-		lipgloss.Center, lipgloss.Center, combined)
+	// Fill terminal width but DO NOT center vertically - content flows from top
+	// This allows content to take up full screen and scroll naturally
+	rendered := combined
 
 	// Add modal overlay if needed
 	if sv.ShowModal && sv.Modal != nil {

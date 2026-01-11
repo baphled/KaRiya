@@ -186,9 +186,9 @@ var _ = Describe("BurstForm", func() {
 				Description: "Test description",
 			}
 
-			// Simulate small terminal (30 lines - 20 overhead = 10 lines)
+			// Simulate small terminal (30 lines - 16 overhead = 14 lines, but min is 15)
 			height := forms.DefaultFormHeight(30)
-			Expect(height).To(Equal(10))
+			Expect(height).To(Equal(15))
 
 			form := forms.NewBurstEditorFormWithDataAndHeight(data, height)
 			Expect(form).NotTo(BeNil())
@@ -200,9 +200,9 @@ var _ = Describe("BurstForm", func() {
 				Description: "Test description",
 			}
 
-			// Simulate large terminal (50 lines - 20 overhead = 30 lines)
+			// Simulate large terminal (50 lines - 16 overhead = 34 lines)
 			height := forms.DefaultFormHeight(50)
-			Expect(height).To(Equal(30))
+			Expect(height).To(Equal(34))
 
 			form := forms.NewBurstEditorFormWithDataAndHeight(data, height)
 			Expect(form).NotTo(BeNil())
@@ -211,21 +211,21 @@ var _ = Describe("BurstForm", func() {
 
 	Describe("DefaultFormHeight", func() {
 		It("should calculate height with overhead subtracted", func() {
-			// 40 lines terminal - 20 overhead = 20 lines for form
+			// 40 lines terminal - 16 overhead = 24 lines for form
 			height := forms.DefaultFormHeight(40)
-			Expect(height).To(Equal(20))
+			Expect(height).To(Equal(24))
 		})
 
 		It("should return minimum height for small terminals", func() {
-			// 25 lines terminal - 20 overhead = 5 lines, but min is 10
+			// 25 lines terminal - 16 overhead = 9 lines, but min is 15
 			height := forms.DefaultFormHeight(25)
-			Expect(height).To(Equal(10))
+			Expect(height).To(Equal(15))
 		})
 
 		It("should never return less than minimum", func() {
 			// Very small terminal
 			height := forms.DefaultFormHeight(10)
-			Expect(height).To(Equal(10))
+			Expect(height).To(Equal(15))
 		})
 	})
 })
