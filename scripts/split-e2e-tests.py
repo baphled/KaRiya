@@ -144,7 +144,6 @@ var _ = Describe("E2E """
 
 import (
 \t"github.com/baphled/kariya/internal/testutil/e2e"
-\ttea "github.com/charmbracelet/bubbletea"
 \t. "github.com/onsi/ginkgo/v2"
 \t. "github.com/onsi/gomega"
 )
