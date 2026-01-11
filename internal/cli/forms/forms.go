@@ -125,10 +125,13 @@ type FieldConfig struct {
 }
 
 // NewInput creates a pre-configured input field.
+// Note: Prompt("> ") is set explicitly to fix a huh library display issue
+// where empty fields show only the first character of the placeholder.
 func NewInput(config FieldConfig) *huh.Input {
 	input := huh.NewInput().
 		Key(config.Key).
-		Title(config.Title)
+		Title(config.Title).
+		Prompt("> ") // Explicit prompt fixes placeholder display issue
 
 	if config.Description != "" {
 		input = input.Description(config.Description)

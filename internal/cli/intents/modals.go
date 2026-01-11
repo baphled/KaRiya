@@ -112,6 +112,7 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 				Title("Tags").
 				Description("Comma-separated tags").
 				Placeholder("tag1, tag2, tag3").
+				Prompt("> "). // Fix placeholder display
 				CharLimit(256).
 				Value(modal.tags),
 
@@ -120,6 +121,7 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 				Title("Categories").
 				Description("Comma-separated categories").
 				Placeholder("category1, category2").
+				Prompt("> "). // Fix placeholder display
 				CharLimit(256).
 				Value(modal.categories),
 

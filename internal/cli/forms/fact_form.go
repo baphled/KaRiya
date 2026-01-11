@@ -57,6 +57,7 @@ func NewFactEditorForm(fact *career.Fact) *huh.Form {
 				Title("Competency Categories").
 				Description("Comma-separated competency categories").
 				Placeholder("technical, leadership, communication").
+				Prompt("> "). // Fix placeholder display
 				CharLimit(256).
 				Value(&data.CompetencyCategories),
 
@@ -72,6 +73,7 @@ func NewFactEditorForm(fact *career.Fact) *huh.Form {
 				Title("Audience Relevance").
 				Description("Comma-separated audience types").
 				Placeholder("startup, enterprise, technical").
+				Prompt("> "). // Fix placeholder display
 				CharLimit(256).
 				Value(&data.AudienceRelevance),
 
@@ -131,6 +133,7 @@ func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
 				Title("Competency Categories").
 				Description("Comma-separated competency categories").
 				Placeholder("technical, leadership, communication").
+				Prompt("> "). // Fix placeholder display
 				CharLimit(256).
 				Value(&data.CompetencyCategories),
 
@@ -146,6 +149,7 @@ func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
 				Title("Audience Relevance").
 				Description("Comma-separated audience types").
 				Placeholder("startup, enterprise, technical").
+				Prompt("> "). // Fix placeholder display
 				CharLimit(256).
 				Value(&data.AudienceRelevance),
 
