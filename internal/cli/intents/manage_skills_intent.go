@@ -74,22 +74,6 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// If we have a form active, update it first
-	if i.form != nil {
-		form, cmd := i.form.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			i.form = f
-
-			// Check if form completed or aborted
-			if i.form.State == huh.StateCompleted {
-				return i.handleFormSubmit()
-			} else if i.form.State == huh.StateAborted {
-				return i.handleFormCancel()
-			}
-		}
-		return cmd
-	}
-
 	switch msg := msg.(type) {
 	case SkillsLoadedMsg:
 		return i.handleSkillsLoaded(msg)
@@ -107,11 +91,49 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSkillDeleted(msg)
 
 	case tea.KeyMsg:
+		// If we have a form active, handle it specially
+		if i.form != nil {
+			// Check for Esc key to cancel form
+			if msg.Type == tea.KeyEsc {
+				i.handleFormCancel()
+				return nil
+			}
+
+			// Update form with key messages
+			form, cmd := i.form.Update(msg)
+			if f, ok := form.(*huh.Form); ok {
+				i.form = f
+
+				// Check if form completed
+				if i.form.State == huh.StateCompleted {
+					return i.handleFormSubmit()
+				} else if i.form.State == huh.StateAborted {
+					return i.handleFormCancel()
+				}
+			}
+			return cmd
+		}
 		return i.handleKeyPress(msg)
 
 	case tea.WindowSizeMsg:
 		// BaseIntent doesn't have UpdateTerminalSize, just store in terminal info
 		return nil
+	}
+
+	// If we have a form active, let it handle other messages
+	if i.form != nil {
+		form, cmd := i.form.Update(msg)
+		if f, ok := form.(*huh.Form); ok {
+			i.form = f
+
+			// Check if form completed
+			if i.form.State == huh.StateCompleted {
+				return i.handleFormSubmit()
+			} else if i.form.State == huh.StateAborted {
+				return i.handleFormCancel()
+			}
+		}
+		return cmd
 	}
 
 	return nil
