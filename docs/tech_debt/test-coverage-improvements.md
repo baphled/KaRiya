@@ -203,19 +203,19 @@ Describe("Delete Event Workflow", func() {
 | 575-710 | EditFactModal | Update, View, Result, computeChanges |
 
 ### Subtask 4.1: Add EditMetadataModal Tests (TDD)
-- [ ] **RED**: Write failing tests for modal lifecycle
-- [ ] **GREEN**: Verify implementation
-- [ ] **REFACTOR**: Cover edge cases
+- [x] **RED**: Write failing tests for modal lifecycle
+- [x] **GREEN**: Verify implementation
+- [x] **REFACTOR**: Cover edge cases
 
 ### Subtask 4.2: Add EditBurstModal Tests (TDD)
-- [ ] **RED**: Write failing tests for modal lifecycle
-- [ ] **GREEN**: Verify implementation
-- [ ] **REFACTOR**: Cover edge cases
+- [x] **RED**: Write failing tests for modal lifecycle
+- [x] **GREEN**: Verify implementation
+- [x] **REFACTOR**: Cover edge cases
 
 ### Subtask 4.3: Add EditFactModal Tests (TDD)
-- [ ] **RED**: Write failing tests for modal lifecycle
-- [ ] **GREEN**: Verify implementation
-- [ ] **REFACTOR**: Cover edge cases
+- [x] **RED**: Write failing tests for modal lifecycle
+- [x] **GREEN**: Verify implementation
+- [x] **REFACTOR**: Cover edge cases
 
 **Test Cases for Each Modal**:
 ```go
@@ -245,12 +245,20 @@ Describe("EditXxxModal", func() {
 - `internal/cli/intents/modals_test.go` (expand existing)
 
 **Acceptance Criteria**:
-- [ ] All 3 modals have Update/View/Result tests
-- [ ] Change tracking tested
-- [ ] Focus navigation tested
-- [ ] Cancel/confirm flows tested
+- [x] All 3 modals have Update/View/Result tests
+- [x] Change tracking tested
+- [x] Focus navigation tested (WindowSizeMsg handling)
+- [x] Cancel/confirm flows tested
 
 **Estimated Time**: 3-4 hours
+**Actual Time**: 45 minutes
+
+**Tests Added**:
+- `modals_lifecycle_test.go`: 63 new tests covering:
+  - EditMetadataModal: Update, View, Result, IsComplete, computeChanges, syncModified
+  - EditBurstModal: Update, View, Result, IsComplete, SetTestResult, computeChanges, syncModified
+  - EditFactModal: Update, View, Result, IsComplete, computeChanges, syncModified
+  - Helper functions: copyMetadataSnapshot, slicesEqual
 
 ---
 
