@@ -308,4 +308,87 @@ var _ = Describe("DefaultIntentRouter", func() {
 			Expect(restoredIntent).To(Equal(intent1))
 		})
 	})
+
+	Describe("Context-Aware Factory Registration", func() {
+		Describe("RegisterIntentWithContext", func() {
+			It("should register a context-aware factory", func() {
+				factory := func(ctx map[string]interface{}) intents.Intent {
+					return intents.NewMockIntentWithContext(ctx)
+				}
+				err := router.RegisterIntentWithContext("context_intent", factory)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should return error for duplicate registration", func() {
+				factory := func(ctx map[string]interface{}) intents.Intent {
+					return intents.NewMockIntentWithContext(ctx)
+				}
+				_ = router.RegisterIntentWithContext("context_intent", factory)
+				err := router.RegisterIntentWithContext("context_intent", factory)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Describe("ActivateIntent with context", func() {
+			BeforeEach(func() {
+				factory := func(ctx map[string]interface{}) intents.Intent {
+					return intents.NewMockIntentWithContext(ctx)
+				}
+				_ = router.RegisterIntentWithContext("context_intent", factory)
+			})
+
+			It("should pass context to factory", func() {
+				ctx := map[string]interface{}{
+					"editMode": true,
+					"eventID":  "event-123",
+				}
+				_, err := router.ActivateIntent("context_intent", ctx)
+				Expect(err).NotTo(HaveOccurred())
+
+				active := router.GetActiveIntent().(*intents.MockIntentWithContext)
+				Expect(active.GetContextValue("editMode")).To(BeTrue())
+				Expect(active.GetContextValue("eventID")).To(Equal("event-123"))
+			})
+
+			It("should work with nil context", func() {
+				_, err := router.ActivateIntent("context_intent", nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				active := router.GetActiveIntent().(*intents.MockIntentWithContext)
+				Expect(active.GetContext()).To(BeNil())
+			})
+
+			It("should work with empty context", func() {
+				_, err := router.ActivateIntent("context_intent", make(map[string]interface{}))
+				Expect(err).NotTo(HaveOccurred())
+
+				active := router.GetActiveIntent().(*intents.MockIntentWithContext)
+				Expect(active.GetContext()).To(BeEmpty())
+			})
+		})
+
+		Describe("Mixed registration", func() {
+			It("should support both context-aware and context-less factories", func() {
+				// Register context-less factory
+				_ = router.RegisterIntent("simple_intent", func() intents.Intent {
+					return intents.NewMockIntent()
+				})
+
+				// Register context-aware factory
+				_ = router.RegisterIntentWithContext("context_intent", func(ctx map[string]interface{}) intents.Intent {
+					return intents.NewMockIntentWithContext(ctx)
+				})
+
+				// Activate both
+				_, err1 := router.ActivateIntent("simple_intent", nil)
+				Expect(err1).NotTo(HaveOccurred())
+
+				_, err2 := router.ActivateIntent("context_intent", map[string]interface{}{"key": "value"})
+				Expect(err2).NotTo(HaveOccurred())
+
+				active := router.GetActiveIntent().(*intents.MockIntentWithContext)
+				Expect(active.GetContextValue("key")).To(Equal("value"))
+			})
+		})
+	})
 })

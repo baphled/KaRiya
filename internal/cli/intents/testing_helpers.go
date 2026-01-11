@@ -248,3 +248,33 @@ func (m *MockIntentWithErrors) ClearErrors() {
 	m.ErrorCount = 0
 	m.updateCount = 0
 }
+
+// MockIntentWithContext extends MockIntent with context awareness for testing.
+// It captures the context passed during activation for verification.
+type MockIntentWithContext struct {
+	*MockIntent
+	// Context is the activation context passed to the factory
+	Context map[string]interface{}
+}
+
+// NewMockIntentWithContext creates a new MockIntentWithContext for testing.
+// It accepts the activation context for verification in tests.
+func NewMockIntentWithContext(ctx map[string]interface{}) *MockIntentWithContext {
+	return &MockIntentWithContext{
+		MockIntent: NewMockIntent(),
+		Context:    ctx,
+	}
+}
+
+// GetContext returns the context passed during activation.
+func (m *MockIntentWithContext) GetContext() map[string]interface{} {
+	return m.Context
+}
+
+// GetContextValue returns a specific value from the activation context.
+func (m *MockIntentWithContext) GetContextValue(key string) interface{} {
+	if m.Context == nil {
+		return nil
+	}
+	return m.Context[key]
+}

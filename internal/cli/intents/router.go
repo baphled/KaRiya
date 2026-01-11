@@ -11,11 +11,21 @@ import (
 	"github.com/baphled/kariya/internal/cli/themes"
 )
 
+// IntentFactory is a function that creates an Intent without context.
+type IntentFactory = func() Intent
+
+// IntentFactoryWithContext is a function that creates an Intent with activation context.
+// The context allows passing data (like an event to edit) during intent activation.
+type IntentFactoryWithContext = func(ctx map[string]interface{}) Intent
+
 // DefaultIntentRouter implements the IntentRouter interface.
 // It manages the lifecycle of intents and enforces the boundary contract.
 type DefaultIntentRouter struct {
-	// intents maps intent names to their factory functions.
-	intents map[string]func() Intent
+	// intents maps intent names to their factory functions (context-less).
+	intents map[string]IntentFactory
+
+	// intentsWithContext maps intent names to context-aware factory functions.
+	intentsWithContext map[string]IntentFactoryWithContext
 
 	// activeIntent is the currently active intent.
 	activeIntent Intent
@@ -43,25 +53,48 @@ type DefaultIntentRouter struct {
 // NewDefaultIntentRouter creates a new intent router.
 func NewDefaultIntentRouter() *DefaultIntentRouter {
 	return &DefaultIntentRouter{
-		intents:        make(map[string]func() Intent),
-		intentHistory:  make([]Intent, 0),
-		resultHandlers: make(map[string]func(result *IntentResult[interface{}]) tea.Cmd),
-		terminalInfo:   terminal.NewInfo(),
-		themeManager:   themes.NewThemeManager(),
+		intents:            make(map[string]IntentFactory),
+		intentsWithContext: make(map[string]IntentFactoryWithContext),
+		intentHistory:      make([]Intent, 0),
+		resultHandlers:     make(map[string]func(result *IntentResult[interface{}]) tea.Cmd),
+		terminalInfo:       terminal.NewInfo(),
+		themeManager:       themes.NewThemeManager(),
 	}
 }
 
 // RegisterIntent registers an intent factory with the router.
 // The factory function is called each time the intent is activated.
-func (r *DefaultIntentRouter) RegisterIntent(name string, factory func() Intent) error {
+// For intents that need activation context (like edit mode), use RegisterIntentWithContext.
+func (r *DefaultIntentRouter) RegisterIntent(name string, factory IntentFactory) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if _, exists := r.intents[name]; exists {
 		return fmt.Errorf("intent %q already registered", name)
 	}
+	if _, exists := r.intentsWithContext[name]; exists {
+		return fmt.Errorf("intent %q already registered (with context)", name)
+	}
 
 	r.intents[name] = factory
+	return nil
+}
+
+// RegisterIntentWithContext registers a context-aware intent factory with the router.
+// The factory receives activation context (e.g., event to edit) when the intent is activated.
+// This enables patterns like edit mode where the same intent handles both create and edit.
+func (r *DefaultIntentRouter) RegisterIntentWithContext(name string, factory IntentFactoryWithContext) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.intentsWithContext[name]; exists {
+		return fmt.Errorf("intent %q already registered", name)
+	}
+	if _, exists := r.intents[name]; exists {
+		return fmt.Errorf("intent %q already registered (without context)", name)
+	}
+
+	r.intentsWithContext[name] = factory
 	return nil
 }
 
@@ -76,13 +109,24 @@ func (r *DefaultIntentRouter) RegisterResultHandler(intentName string, handler f
 
 // ActivateIntent activates an intent by name.
 // This is the ONLY way intents are activated, enforcing strict transition rules.
+// The context parameter is passed to context-aware factories (registered via RegisterIntentWithContext).
+// For context-less factories, the context is ignored.
 func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]interface{}) (tea.Cmd, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	factory, exists := r.intents[name]
-	if !exists {
+	// Check for context-aware factory first
+	var intent Intent
+	if factoryWithCtx, exists := r.intentsWithContext[name]; exists {
+		intent = factoryWithCtx(context)
+	} else if factory, exists := r.intents[name]; exists {
+		intent = factory()
+	} else {
 		return nil, fmt.Errorf("intent %q not found", name)
+	}
+
+	if intent == nil {
+		return nil, fmt.Errorf("failed to create intent %q: factory returned nil", name)
 	}
 
 	// Push the current intent to history (if any).
@@ -90,11 +134,7 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]int
 		r.intentHistory = append(r.intentHistory, r.activeIntent)
 	}
 
-	// Create and activate the new intent.
-	intent := factory()
-	if intent == nil {
-		return nil, fmt.Errorf("failed to create intent %q: factory returned nil", name)
-	}
+	// Set the new active intent
 	r.activeIntent = intent
 
 	// Propagate logo to the new intent if it has BaseIntent
