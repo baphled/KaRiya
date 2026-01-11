@@ -667,20 +667,15 @@ func (i *BrowseTimelineIntent) viewEventDetail() string {
 	return card
 }
 
-// viewEditEvent renders the edit event modal overlay.
+// viewEditEvent renders the edit event form content.
 func (i *BrowseTimelineIntent) viewEditEvent() string {
 	if i.state.editModal == nil {
 		return "No edit modal available."
 	}
 
-	// Render the event detail as background with modal overlay
-	background := i.viewEventDetail()
-
-	// Get modal content
-	modalContent := i.state.editModal.View()
-
-	// Combine background and modal
-	return lipgloss.JoinVertical(lipgloss.Left, background, "\n", modalContent)
+	// Render just the form content (not full modal container)
+	// StandardView already provides the layout structure
+	return i.state.editModal.GetContent()
 }
 
 // viewDeleteConfirm renders the delete confirmation dialog.

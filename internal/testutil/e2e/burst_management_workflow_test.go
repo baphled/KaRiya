@@ -366,47 +366,47 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 		})
 
 		It("should transition to edit view when pressing 'x'", func() {
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			// Should show edit form with Name and Description fields
 			env.AssertViewContainsAny("Edit Burst", "Burst Name", "Name", "Description")
 		})
 
 		It("should show edit modal with form fields", func() {
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			// The EditBurstModal should display form inputs
 			env.AssertViewContainsAny("Burst Name", "Description", "Enter", "Esc")
 		})
 
 		It("should show current burst values in edit form", func() {
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			// Should pre-populate with existing burst data from fixtures
 			// Fixtures create bursts with names like "Authentication" or "Mentoring"
 			env.AssertViewContainsAny("Authentication", "Mentoring", "Name", "Description")
 		})
 
 		It("should return to detail view when cancelling edit", func() {
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			env.Cancel() // Press Escape to cancel
 			// Should be back at detail view
 			env.AssertViewContainsAny("Detail", "Events", "Facts", "e", "f")
 		})
 
 		It("should not crash when pressing edit key multiple times", func() {
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
 
 			// Cancel and try again
 			env.Cancel()
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			view = env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
 		})
 
 		It("should show edit form footer with navigation hints", func() {
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			// Modal should show form navigation hints
 			env.AssertViewContainsAny("Enter", "Esc", "Tab", "Confirm", "Cancel")
 		})
@@ -425,7 +425,7 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 		It("should maintain edit state through navigation", func() {
 			env.SelectIntentByName("burst_management")
 			env.Confirm()         // Go to detail
-			env.PressKeyRune('x') // Go to edit
+			env.PressKeyRune('e') // Go to edit
 
 			// Should be in edit view
 			env.AssertViewContainsAny("Edit Burst", "Burst Name", "Name")
@@ -438,7 +438,7 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 		It("should allow editing and returning to detail without errors", func() {
 			env.SelectIntentByName("burst_management")
 			env.Confirm()
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 
 			// Cancel edit
 			env.Cancel()
@@ -473,7 +473,7 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			env.Confirm() // Go to detail view
 
 			// Enter edit mode
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 			env.AssertViewContainsAny("Edit Burst", "Burst Name", "Name")
 
 			// Get the active intent and access its modal
@@ -530,7 +530,7 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			// Navigate to edit mode
 			env.SelectIntentByName("burst_management")
 			env.Confirm()
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 
 			// Get the active intent
 			activeIntent := env.Model.GetActiveIntent()
@@ -582,7 +582,7 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			// Navigate to edit mode
 			env.SelectIntentByName("burst_management")
 			env.Confirm()
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 
 			// Get the active intent
 			activeIntent := env.Model.GetActiveIntent()
@@ -622,7 +622,7 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			// Navigate to edit mode
 			env.SelectIntentByName("burst_management")
 			env.Confirm()
-			env.PressKeyRune('x')
+			env.PressKeyRune('e')
 
 			// Get the active intent and set result
 			activeIntent := env.Model.GetActiveIntent()

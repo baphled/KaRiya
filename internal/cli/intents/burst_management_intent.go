@@ -489,20 +489,20 @@ func (i *BurstManagementIntent) updateDetailView(msg tea.Msg) tea.Cmd {
 		}
 
 		switch msg.String() {
-		case "e":
-			// View events
+		case "v":
+			// View events linked to this burst
 			i.state.currentState = BurstStateDetailEvents
 			i.state.loadingEvents = true
 			return i.loadEventsForBurst()
 
 		case "f":
-			// View facts
+			// View facts extracted from this burst
 			i.state.currentState = BurstStateDetailFacts
 			i.state.loadingFacts = true
 			return i.loadFactsForBurst()
 
-		case "x":
-			// Edit burst
+		case "e":
+			// Edit burst (standardized shortcut per TUI_STANDARDS.md)
 			i.state.currentState = BurstStateEdit
 			return i.initBurstEditor()
 
@@ -966,9 +966,9 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("e", "View events"),
+				components.NewKeyBadge("v", "View events"),
 				components.NewKeyBadge("f", "View facts"),
-				components.NewKeyBadge("x", "Edit"),
+				components.EditBadge(),
 				components.DeleteBadge(),
 				components.NewKeyBadge("c", "Confirm"),
 			),

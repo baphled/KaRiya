@@ -536,7 +536,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			events = make([]*career.CareerEvent, 0)
 		}
 		browserCtx := &intents.BrowseTimelineContext{
-			Events: events,
+			Events:          events,
+			CLIEventService: cliService,
 		}
 		intent, err := intents.NewBrowseTimelineIntent(browserCtx)
 		if err != nil {

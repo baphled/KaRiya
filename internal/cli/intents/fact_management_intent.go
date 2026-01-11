@@ -589,9 +589,10 @@ func (m *FactManagementModel) getViewFactContent() string {
 // viewEditor removed - unused wrapper method
 
 func (m *FactManagementModel) getEditorContent() string {
-	// If modal is available, render it
+	// If modal is available, render just the form content (not full modal container)
+	// StandardView already provides the layout structure
 	if m.editModal != nil {
-		return m.editModal.View()
+		return m.editModal.GetContent()
 	}
 
 	// Fallback for legacy behavior

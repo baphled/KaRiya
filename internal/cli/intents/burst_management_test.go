@@ -155,8 +155,8 @@ var _ = Describe("BurstManagement Intent", func() {
 			intent.state.selectedBurst = testBurst
 		})
 
-		It("should transition to events view on 'e' key", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+		It("should transition to events view on 'v' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
 			Expect(intent.state.currentState).To(Equal(BurstStateDetailEvents))
 			Expect(intent.state.loadingEvents).To(BeTrue())
 			Expect(cmd).NotTo(BeNil())
@@ -384,8 +384,8 @@ var _ = Describe("BurstManagement Intent", func() {
 			intent.state.selectedBurst = testBurst
 		})
 
-		It("should transition to edit state and initialize modal on 'x' key", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+		It("should transition to edit state and initialize modal on 'e' key", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 			Expect(intent.state.currentState).To(Equal(BurstStateEdit))
 			Expect(intent.state.editModal).NotTo(BeNil(), "EditBurstModal should be initialized")
 			Expect(cmd).NotTo(BeNil(), "Should return form init command")
@@ -393,7 +393,7 @@ var _ = Describe("BurstManagement Intent", func() {
 
 		It("should render edit modal with form fields", func() {
 			// Transition to edit state which initializes the modal
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 			Expect(intent.state.editModal).NotTo(BeNil())
 
 			view := intent.View()
@@ -411,7 +411,7 @@ var _ = Describe("BurstManagement Intent", func() {
 
 		It("should save burst when modal completes with acceptance", func() {
 			// Transition to edit state to initialize modal
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 			Expect(intent.state.editModal).NotTo(BeNil())
 
 			// Simulate modal completion with updated name
@@ -449,7 +449,7 @@ var _ = Describe("BurstManagement Intent", func() {
 			intent.state.selectedBurst = nonExistentBurst
 
 			// Transition to edit state to initialize modal
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 			Expect(intent.state.editModal).NotTo(BeNil())
 
 			// Simulate modal completion
@@ -493,7 +493,7 @@ var _ = Describe("BurstManagement Intent", func() {
 
 		It("should reload bursts list after successful save", func() {
 			// Transition to edit state to initialize modal
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 			Expect(intent.state.editModal).NotTo(BeNil())
 
 			originalCount := len(intent.state.filteredBursts)
@@ -1094,8 +1094,8 @@ var _ = Describe("BurstManagement Intent", func() {
 				intent.state.selectedBurst = testBurst
 				originalName := testBurst.Name
 
-				// Press 'x' to edit - this initializes the modal
-				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				// Press 'e' to edit - this initializes the modal
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 				Expect(intent.state.currentState).To(Equal(BurstStateEdit))
 				Expect(intent.state.editModal).NotTo(BeNil())
 
