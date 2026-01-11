@@ -144,9 +144,8 @@ var _ = Describe("BaseIntent", func() {
 			base.SetSuccess("Test message")
 			Expect(base.ShouldShowSuccess()).To(BeTrue())
 
-			time.Sleep(3500 * time.Millisecond)
-
-			Expect(base.ShouldShowSuccess()).To(BeFalse())
+			// Use Eventually to avoid flaky time.Sleep - checks every 100ms until condition is met or 5s timeout
+			Eventually(base.ShouldShowSuccess, 5*time.Second, 100*time.Millisecond).Should(BeFalse())
 		})
 	})
 
