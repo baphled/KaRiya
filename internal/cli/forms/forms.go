@@ -23,7 +23,10 @@ func ThemedForm(theme themes.Theme) *huh.Theme {
 // NewForm creates a new form with KaRiya's default theme and configuration.
 // Note: For theme-aware forms, use NewThemedForm instead.
 func NewForm(groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).WithTheme(Theme())
+	return huh.NewForm(groups...).
+		WithTheme(Theme()).
+		WithShowHelp(false).
+		WithShowErrors(false)
 }
 
 // NewFormWithHeight creates a new form with KaRiya's default theme and a fixed height.

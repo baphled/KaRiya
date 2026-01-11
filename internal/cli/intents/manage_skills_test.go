@@ -2,6 +2,7 @@ package intents_test
 
 import (
 	"context"
+	"testing"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	domain "github.com/baphled/kariya/internal/domain/career"
@@ -12,6 +13,11 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+func TestManageSkillsIntent(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "ManageSkills Intent Suite")
+}
 
 var _ = Describe("ManageSkillsIntent", func() {
 	var (
