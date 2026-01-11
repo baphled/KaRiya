@@ -73,6 +73,13 @@ func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
 // NewFactEditorFormWithDataAndHeight creates a form for editing a fact with initial form data and height.
 // When height > 0, the form becomes scrollable if content exceeds the height.
 func NewFactEditorFormWithDataAndHeight(data *FactFormData, height int) *huh.Form {
+	return NewFactEditorFormWithDataAndDimensions(data, 0, height)
+}
+
+// NewFactEditorFormWithDataAndDimensions creates a form for editing a fact with initial form data and dimensions.
+// When height > 0, the form becomes scrollable if content exceeds the height.
+// When width > 0, the form will be constrained to that width.
+func NewFactEditorFormWithDataAndDimensions(data *FactFormData, width, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
 
@@ -125,10 +132,7 @@ func NewFactEditorFormWithDataAndHeight(data *FactFormData, height int) *huh.For
 			Value(&data.SubmitConfirmed),
 	)
 
-	if height > 0 {
-		return NewFormWithHeight(height, group)
-	}
-	return NewForm(group)
+	return NewFormWithDimensions(width, height, group)
 }
 
 // ApplyFactFormData applies the form data to a fact domain object.

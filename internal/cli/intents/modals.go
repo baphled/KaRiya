@@ -149,8 +149,12 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 			Value(modal.submitConfirmed),
 	)
 
-	// Create form with default height (will be updated on WindowSizeMsg)
-	modal.form = forms.NewFormWithHeight(forms.DefaultFormHeight(modal.height), modal.formGroup)
+	// Create form with default dimensions (will be updated on WindowSizeMsg)
+	modal.form = forms.NewFormWithDimensions(
+		modal.width-4, // Leave margin for modal chrome
+		forms.DefaultFormHeight(modal.height),
+		modal.formGroup,
+	)
 
 	return modal
 }
@@ -161,8 +165,10 @@ func (m *EditMetadataModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		// Rebuild form with new height for scrolling
-		m.form = forms.NewFormWithHeight(forms.DefaultFormHeight(m.height), m.formGroup)
+		// Update form dimensions without losing state
+		m.form = m.form.
+			WithHeight(forms.DefaultFormHeight(m.height)).
+			WithWidth(m.width - 4) // Leave margin for modal chrome
 		return nil
 	}
 
@@ -211,7 +217,9 @@ func (m *EditMetadataModal) View() string {
 	modal := components.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
-		SetInstructions("Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous")
+		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
+		WithWidth(m.width - 4). // Use terminal width minus margin
+		WithScrollHint(true)    // Show scroll indicator
 
 	return modal.Render()
 }
@@ -338,10 +346,15 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 	formData := forms.GetBurstFormData(&originalCopy)
 
 	// Default dimensions
+	defaultWidth := 80
 	defaultHeight := 24
 
-	// Create huh form with default height (will be updated on WindowSizeMsg)
-	form := forms.NewBurstEditorFormWithDataAndHeight(formData, forms.DefaultFormHeight(defaultHeight))
+	// Create huh form with default dimensions (will be updated on WindowSizeMsg)
+	form := forms.NewBurstEditorFormWithDataAndDimensions(
+		formData,
+		defaultWidth-4, // Leave margin for modal chrome
+		forms.DefaultFormHeight(defaultHeight),
+	)
 
 	return &EditBurstModal{
 		original: &originalCopy,
@@ -349,7 +362,7 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 		result:   nil,
 		form:     form,
 		formData: formData,
-		width:    80,
+		width:    defaultWidth,
 		height:   defaultHeight,
 	}
 }
@@ -360,8 +373,10 @@ func (m *EditBurstModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		// Rebuild form with new height for scrolling
-		m.form = forms.NewBurstEditorFormWithDataAndHeight(m.formData, forms.DefaultFormHeight(m.height))
+		// Update form dimensions without losing state
+		m.form = m.form.
+			WithHeight(forms.DefaultFormHeight(m.height)).
+			WithWidth(m.width - 4) // Leave margin for modal chrome
 		return nil
 	}
 
@@ -410,7 +425,9 @@ func (m *EditBurstModal) View() string {
 	modal := components.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
-		SetInstructions("Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous")
+		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
+		WithWidth(m.width - 4). // Use terminal width minus margin
+		WithScrollHint(true)    // Show scroll indicator
 
 	return modal.Render()
 }
@@ -540,10 +557,15 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 	formData := forms.GetFactFormData(&originalCopy)
 
 	// Default dimensions
+	defaultWidth := 80
 	defaultHeight := 24
 
-	// Create huh form with default height (will be updated on WindowSizeMsg)
-	form := forms.NewFactEditorFormWithDataAndHeight(formData, forms.DefaultFormHeight(defaultHeight))
+	// Create huh form with default dimensions (will be updated on WindowSizeMsg)
+	form := forms.NewFactEditorFormWithDataAndDimensions(
+		formData,
+		defaultWidth-4, // Leave margin for modal chrome
+		forms.DefaultFormHeight(defaultHeight),
+	)
 
 	return &EditFactModal{
 		original: &originalCopy,
@@ -551,7 +573,7 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 		result:   nil,
 		form:     form,
 		formData: formData,
-		width:    80,
+		width:    defaultWidth,
 		height:   defaultHeight,
 	}
 }
@@ -562,8 +584,10 @@ func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		// Rebuild form with new height for scrolling
-		m.form = forms.NewFactEditorFormWithDataAndHeight(m.formData, forms.DefaultFormHeight(m.height))
+		// Update form dimensions without losing state
+		m.form = m.form.
+			WithHeight(forms.DefaultFormHeight(m.height)).
+			WithWidth(m.width - 4) // Leave margin for modal chrome
 		return nil
 	}
 
@@ -612,7 +636,9 @@ func (m *EditFactModal) View() string {
 	modal := components.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
-		SetInstructions("Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous")
+		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
+		WithWidth(m.width - 4). // Use terminal width minus margin
+		WithScrollHint(true)    // Show scroll indicator
 
 	return modal.Render()
 }

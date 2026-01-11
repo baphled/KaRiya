@@ -33,6 +33,20 @@ func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).WithTheme(Theme()).WithHeight(height)
 }
 
+// NewFormWithDimensions creates a new form with KaRiya's default theme and fixed dimensions.
+// When height is set, the form becomes scrollable if content exceeds the height.
+// Width controls the form's rendering width.
+func NewFormWithDimensions(width, height int, groups ...*huh.Group) *huh.Form {
+	form := huh.NewForm(groups...).WithTheme(Theme())
+	if height > 0 {
+		form = form.WithHeight(height)
+	}
+	if width > 0 {
+		form = form.WithWidth(width)
+	}
+	return form
+}
+
 // NewThemedFormWithHeight creates a form with the given theme and height.
 // When height is set, the form becomes scrollable if content exceeds the height.
 func NewThemedFormWithHeight(theme themes.Theme, height int, groups ...*huh.Group) *huh.Form {

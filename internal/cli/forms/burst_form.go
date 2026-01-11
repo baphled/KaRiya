@@ -62,6 +62,13 @@ func NewBurstEditorFormWithData(data *BurstFormData) *huh.Form {
 // NewBurstEditorFormWithDataAndHeight creates a form for editing a burst with initial form data and height.
 // When height > 0, the form becomes scrollable if content exceeds the height.
 func NewBurstEditorFormWithDataAndHeight(data *BurstFormData, height int) *huh.Form {
+	return NewBurstEditorFormWithDataAndDimensions(data, 0, height)
+}
+
+// NewBurstEditorFormWithDataAndDimensions creates a form for editing a burst with initial form data and dimensions.
+// When height > 0, the form becomes scrollable if content exceeds the height.
+// When width > 0, the form will be constrained to that width.
+func NewBurstEditorFormWithDataAndDimensions(data *BurstFormData, width, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
 
@@ -93,10 +100,7 @@ func NewBurstEditorFormWithDataAndHeight(data *BurstFormData, height int) *huh.F
 			Value(&data.SubmitConfirmed),
 	)
 
-	if height > 0 {
-		return NewFormWithHeight(height, group)
-	}
-	return NewForm(group)
+	return NewFormWithDimensions(width, height, group)
 }
 
 // ApplyBurstFormData applies the form data to a burst domain object.
