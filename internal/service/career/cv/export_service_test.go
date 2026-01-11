@@ -2,18 +2,37 @@ package cv
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 )
+
+// MockClipboard is a test implementation of ClipboardWriter
+type MockClipboard struct {
+	Content     string
+	Unsupported bool
+	WriteError  error
+}
+
+func (m *MockClipboard) WriteAll(text string) error {
+	if m.WriteError != nil {
+		return m.WriteError
+	}
+	m.Content = text
+	return nil
+}
+
+func (m *MockClipboard) IsUnsupported() bool {
+	return m.Unsupported
+}
 
 var _ = ginkgo.Describe("ExportService", func() {
 	var (
@@ -387,29 +406,41 @@ var _ = ginkgo.Describe("ExportService", func() {
 		})
 
 		ginkgo.Describe("CopyToClipboard", func() {
-			ginkgo.It("should copy content to clipboard", func() {
-				// Skip on CI environments or headless environments without clipboard utilities
-				if os.Getenv("CI") != "" {
-					ginkgo.Skip("Skipping clipboard test on CI - no clipboard utilities available")
-				}
-				if os.Getenv("DISPLAY") == "" && os.Getenv("WAYLAND_DISPLAY") == "" {
-					ginkgo.Skip("Skipping clipboard test - no display available (headless environment)")
-				}
+			var mockClipboard *MockClipboard
 
+			ginkgo.BeforeEach(func() {
+				mockClipboard = &MockClipboard{}
+				service = NewExportServiceWithClipboard(log, mockClipboard)
+			})
+
+			ginkgo.It("should copy content to clipboard when supported", func() {
 				testContent := "Test CV Content for Clipboard"
 				err := service.CopyToClipboard(ctx, testContent)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
-				// Verify content was copied
-				clipboardContent, err := clipboard.ReadAll()
-				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				gomega.Expect(clipboardContent).To(gomega.Equal(testContent))
+				// Verify content was copied to mock
+				gomega.Expect(mockClipboard.Content).To(gomega.Equal(testContent))
 			})
 
 			ginkgo.It("should return error for empty content", func() {
 				err := service.CopyToClipboard(ctx, "")
 				gomega.Expect(err).To(gomega.HaveOccurred())
 				gomega.Expect(err.Error()).To(gomega.ContainSubstring("content is empty"))
+			})
+
+			ginkgo.It("should return ErrClipboardUnsupported when clipboard is not available", func() {
+				mockClipboard.Unsupported = true
+				err := service.CopyToClipboard(ctx, "test content")
+				gomega.Expect(err).To(gomega.HaveOccurred())
+				gomega.Expect(errors.Is(err, ErrClipboardUnsupported)).To(gomega.BeTrue())
+				gomega.Expect(err.Error()).To(gomega.ContainSubstring("clipboard not available"))
+			})
+
+			ginkgo.It("should return error when clipboard write fails", func() {
+				mockClipboard.WriteError = errors.New("clipboard write failed")
+				err := service.CopyToClipboard(ctx, "test content")
+				gomega.Expect(err).To(gomega.HaveOccurred())
+				gomega.Expect(err.Error()).To(gomega.ContainSubstring("failed to copy to clipboard"))
 			})
 		})
 
