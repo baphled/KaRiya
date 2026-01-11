@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Generatecv Navigation", func() {
+var _ = Describe("GenerateCV Navigation", func() {
 	var env *e2e.TestEnv
 
 	Describe("Navigation to GenerateCV Intent", func() {

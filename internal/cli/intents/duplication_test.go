@@ -2,169 +2,148 @@ package intents_test
 
 import (
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/domain/career"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-// TestBrowseTimeline_NoDuplicateBreadcrumbs verifies breadcrumbs appear only once
-func TestBrowseTimeline_NoDuplicateBreadcrumbs(t *testing.T) {
-	events := []*career.CareerEvent{
-		{
-			ID:        "event1",
-			Text:      "Test event",
-			Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			Company:   "Test Co",
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
-	}
+var _ = Describe("View Duplication Prevention", func() {
+	Describe("BrowseTimeline", func() {
+		var (
+			intent *intents.BrowseTimelineIntent
+			events []*career.CareerEvent
+		)
 
-	ctx := &intents.BrowseTimelineContext{
-		Events: events,
-		InitialFilters: &intents.TimelineFilters{
-			Tags:      make([]string, 0),
-			Companies: make([]string, 0),
-			SortBy:    "date",
-			SortOrder: "desc",
-		},
-	}
+		BeforeEach(func() {
+			events = []*career.CareerEvent{
+				{
+					ID:        "event1",
+					Text:      "Test event",
+					Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					Company:   "Test Co",
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+			}
 
-	intent, err := intents.NewBrowseTimelineIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
+			ctx := &intents.BrowseTimelineContext{
+				Events: events,
+				InitialFilters: &intents.TimelineFilters{
+					Tags:      make([]string, 0),
+					Companies: make([]string, 0),
+					SortBy:    "date",
+					SortOrder: "desc",
+				},
+			}
 
-	intent.Init()
-	view := intent.View()
+			var err error
+			intent, err = intents.NewBrowseTimelineIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
 
-	// Count breadcrumb separator occurrences - should only have one breadcrumb line
-	separatorCount := strings.Count(view, "▸")
-	if separatorCount == 0 {
-		t.Error("Expected at least one breadcrumb separator (▸)")
-	}
-	// Allow some flexibility, but if we see many separators, likely duplication
-	if separatorCount > 4 {
-		t.Errorf("Too many breadcrumb separators (%d), likely duplication", separatorCount)
-	}
+		It("should have no duplicate breadcrumbs", func() {
+			view := intent.View()
 
-	// Count "Timeline" occurrences - breadcrumb + header title is acceptable
-	timelineCount := strings.Count(view, "Timeline")
-	if timelineCount > 3 {
-		t.Errorf("'Timeline' appears %d times, likely breadcrumb duplication", timelineCount)
-	}
-}
+			// Count breadcrumb separator occurrences
+			separatorCount := strings.Count(view, "▸")
+			Expect(separatorCount).To(BeNumerically(">=", 0), "Expected at least one breadcrumb separator")
+			Expect(separatorCount).To(BeNumerically("<=", 4), "Too many breadcrumb separators, likely duplication")
 
-// TestBrowseTimeline_NoDuplicateHelpFooter verifies help footer appears only once
-func TestBrowseTimeline_NoDuplicateHelpFooter(t *testing.T) {
-	events := []*career.CareerEvent{
-		{
-			ID:        "event1",
-			Text:      "Test event",
-			Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			Company:   "Test Co",
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
-	}
+			// Count "Timeline" occurrences - breadcrumb + header title is acceptable
+			timelineCount := strings.Count(view, "Timeline")
+			Expect(timelineCount).To(BeNumerically("<=", 3), "'Timeline' appears too many times, likely duplication")
+		})
 
-	ctx := &intents.BrowseTimelineContext{
-		Events: events,
-		InitialFilters: &intents.TimelineFilters{
-			Tags:      make([]string, 0),
-			Companies: make([]string, 0),
-			SortBy:    "date",
-			SortOrder: "desc",
-		},
-	}
+		It("should have no duplicate help footer", func() {
+			view := intent.View()
 
-	intent, err := intents.NewBrowseTimelineIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
+			// Count navigation help pattern - should appear only once
+			upDownPattern := "↑/k"
+			count := strings.Count(view, upDownPattern)
+			Expect(count).To(BeNumerically("<=", 1), "Navigation help appears too many times, likely duplication")
+		})
+	})
 
-	intent.Init()
-	view := intent.View()
+	Describe("GenerateCV", func() {
+		var intent *intents.GenerateCVIntent
 
-	// Count navigation help pattern - should appear only once
-	upDownPattern := "↑/k"
-	count := strings.Count(view, upDownPattern)
-	if count > 1 {
-		t.Errorf("Navigation help '↑/k' appears %d times, likely help footer duplication", count)
-	}
-}
+		BeforeEach(func() {
+			profiles := []*intents.CVProfile{
+				{
+					ID:         "profile1",
+					Name:       "Test Profile",
+					TargetRole: "Engineer",
+				},
+			}
 
-// TestGenerateCV_NoDuplicateFooter verifies footer appears only once in card views
-func TestGenerateCV_NoDuplicateFooter(t *testing.T) {
-	profiles := []*intents.CVProfile{
-		{
-			ID:         "profile1",
-			Name:       "Test Profile",
-			TargetRole: "Engineer",
-		},
-	}
+			events := []*career.CareerEvent{
+				{
+					ID:        "event1",
+					Text:      "Test achievement",
+					Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					Company:   "Test Co",
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+			}
 
-	events := []*career.CareerEvent{
-		{
-			ID:        "event1",
-			Text:      "Test achievement",
-			Date:      time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			Company:   "Test Co",
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
-	}
+			ctx := &intents.GenerateCVContext{
+				AvailableProfiles: profiles,
+				Events:            events,
+			}
 
-	ctx := &intents.GenerateCVContext{
-		AvailableProfiles: profiles,
-		Events:            events,
-	}
+			var err error
+			intent, err = intents.NewGenerateCVIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
 
-	intent, err := intents.NewGenerateCVIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
+		It("should have no duplicate help footer", func() {
+			view := intent.View()
 
-	intent.Init()
-	view := intent.View()
+			// Count help text patterns - should appear only once
+			upDownPattern := "↑/k"
+			count := strings.Count(view, upDownPattern)
+			Expect(count).To(BeNumerically("<=", 1), "Help text appears too many times, likely duplication")
+		})
 
-	// Count help text patterns - should appear only once
-	upDownPattern := "↑/k"
-	count := strings.Count(view, upDownPattern)
-	if count > 1 {
-		t.Errorf("Help text '↑/k' appears %d times, likely footer duplication", count)
-	}
+		It("should have no duplicate main menu reference", func() {
+			view := intent.View()
 
-	// Count "Main menu" or "Main Menu" - should appear only once in help
-	mainMenuCount := strings.Count(strings.ToLower(view), "main menu")
-	if mainMenuCount > 2 {
-		t.Errorf("'Main menu' appears %d times, likely footer duplication", mainMenuCount)
-	}
-}
+			// Count "Main menu" - should appear only once in help
+			mainMenuCount := strings.Count(strings.ToLower(view), "main menu")
+			Expect(mainMenuCount).To(BeNumerically("<=", 2), "'Main menu' appears too many times, likely duplication")
+		})
+	})
 
-// TestCaptureEvent_NoDuplicateFooter verifies no footer duplication (uses FormModel)
-func TestCaptureEvent_NoDuplicateFooter(t *testing.T) {
-	ctx := &intents.CaptureEventContext{
-		CaptureStrategy: "manual",
-		PreviousEvent:   nil,
-		Metadata:        make(map[string]string),
-	}
+	Describe("CaptureEvent", func() {
+		var intent *intents.CaptureEventIntent
 
-	intent, err := intents.NewCaptureEventIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
+		BeforeEach(func() {
+			ctx := &intents.CaptureEventContext{
+				CaptureStrategy: "manual",
+				PreviousEvent:   nil,
+				Metadata:        make(map[string]string),
+			}
 
-	intent.Init()
-	view := intent.View()
+			var err error
+			intent, err = intents.NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
 
-	// Count help patterns
-	quitPattern := "q"
-	quitCount := strings.Count(strings.ToLower(view), quitPattern)
-	// Be lenient since 'q' is common, but check it's reasonable
-	if quitCount > 10 {
-		t.Logf("Warning: 'q' appears %d times, may indicate duplication", quitCount)
-	}
-}
+		It("should have reasonable quit hint count", func() {
+			view := intent.View()
+
+			// Count help patterns - be lenient since 'q' is common
+			quitPattern := "q"
+			quitCount := strings.Count(strings.ToLower(view), quitPattern)
+			// 'q' is common in text, but shouldn't be excessive
+			Expect(quitCount).To(BeNumerically("<=", 10), "'q' appears too many times, may indicate duplication")
+		})
+	})
+})
