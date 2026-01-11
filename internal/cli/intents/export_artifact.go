@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	careerdomain "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
@@ -765,8 +764,11 @@ func (m *ExportArtifactModel) saveToDestination(ctx context.Context, name string
 		}
 
 	case ExportDestinationClipboard:
-		if err = clipboard.WriteAll(content); err != nil {
-			return "", fmt.Errorf("failed to copy to clipboard: %w", err)
+		if m.context.ExportService == nil {
+			return "", fmt.Errorf("export service not available")
+		}
+		if err = m.context.ExportService.CopyToClipboard(ctx, content); err != nil {
+			return "", err
 		}
 		filePath = "clipboard"
 
