@@ -1,6 +1,6 @@
 # Task 35: Test Coverage and Quality Improvements
 
-**Status**: In Progress (Phases 1-6 ✅ complete, Phases 7-11 pending)
+**Status**: In Progress (Phases 1-7 ✅ complete, Phases 8-11 pending)
 **Priority**: MEDIUM-HIGH
 **Estimated Time**: 4-5 days total
 **Current Coverage**: 80.34%
@@ -169,27 +169,35 @@ facts := fixtures.Facts(5, events)
 
 ## PART B: Architectural Improvements (from PR #72 review)
 
-### Phase 7: Intent Registration Refactoring (Priority: MEDIUM)
+### Phase 7: Intent Registration Refactoring ✅ COMPLETE
 
 **Issue**: Temporary intent registration creates new intent names dynamically.
 **File**: `internal/cli/app/app.go:200`
+**Status**: ✅ Fixed - implemented context-aware factory pattern (Option 3)
 
-**Options to Evaluate**:
-1. Edit flag approach: Reuse `capture_event` with `isEditMode` flag
-2. Dedicated edit intent: Register `capture_event_edit` once at startup
-3. Context-based routing: Router handles edit context automatically
+**Approach Chosen**: Context-based routing
+- Router handles edit context automatically via `RegisterIntentWithContext`
+- Activation context allows passing data (like event to edit) during intent activation
+- No temporary registration needed
 
-**Subtasks**:
-- [ ] Document chosen approach with pros/cons
-- [ ] Implement new registration pattern (TDD)
-- [ ] Remove temporary registration code
+**Changes Made**:
+- Added `IntentFactory` and `IntentFactoryWithContext` types to router
+- Added `RegisterIntentWithContext()` method to `DefaultIntentRouter`
+- Updated `ActivateIntent()` to support both context-aware and context-less factories
+- Added `MockIntentWithContext` to testing helpers
+- Added 6 new tests for context-aware factory pattern
+- Changed `capture_event` to use `RegisterIntentWithContext`
+- Simplified `RequestEditEventMsg` handler to pass event via activation context
 
-**Files to Modify**:
-- `internal/cli/app/app.go`
-- `internal/cli/intents/capture_event_intent.go`
-- `internal/cli/intents/router.go`
+**Files Modified**:
+- `internal/cli/intents/router.go` - Context-aware factory support
+- `internal/cli/intents/router_test.go` - 6 new tests
+- `internal/cli/intents/testing_helpers.go` - MockIntentWithContext
+- `internal/cli/app/app.go` - Updated registration and edit handler
 
-**Estimated Time**: 4-6 hours
+**Commits**:
+- `76e48c7` - feat(intents): add context-aware intent factory registration
+- `b4b2bdb` - refactor(cli): use context-aware factory for edit event workflow
 
 ---
 
@@ -280,7 +288,7 @@ facts := fixtures.Facts(5, events)
 | 4 | Modal Lifecycle Tests | MEDIUM | 3-4 hrs |
 | 5 | Export Format Tests | MEDIUM | 2-3 hrs |
 | 6 | Consolidate Fixtures | MEDIUM | 4-5 hrs |
-| 7 | Intent Registration | MEDIUM | 4-6 hrs |
+| 7 | Intent Registration | MEDIUM | ✅ Done |
 | 8 | Delete Confirmation Modal | HIGH | 6-8 hrs |
 | 9 | Error Modal for Delete | MEDIUM | 3-4 hrs |
 | 10 | Form Documentation | LOW | 2-3 hrs |
@@ -329,6 +337,6 @@ facts := fixtures.Facts(5, events)
 
 **Document Version**: 2.0 (Consolidated)
 **Created**: 2026-01-11
-**Last Updated**: 2026-01-11
+**Last Updated**: 2026-01-12
 **Status**: IN PROGRESS
 **Related PRs**: #72, #74
