@@ -11,12 +11,12 @@ var _ = Describe("Edit Modals Overlay Interface", func() {
 		var modal *EditMetadataModal
 
 		BeforeEach(func() {
-			modal = NewEditMetadataModal("Company", "Project", []string{"tag1"}, []string{"cat1"})
+			modal = NewEditMetadataModal("Test event text", "2024-01-15", "Company", "Project", []string{"tag1"}, []string{"cat1"})
 		})
 
 		Describe("GetTitle", func() {
 			It("returns the correct title", func() {
-				Expect(modal.GetTitle()).To(Equal("Edit Event Metadata"))
+				Expect(modal.GetTitle()).To(Equal("Edit Event"))
 			})
 		})
 

@@ -110,7 +110,8 @@ func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, 
 
 	form := huh.NewForm(fieldsGroup, confirmGroup).
 		WithTheme(Theme()).
-		WithLayout(huh.LayoutStack)
+		WithLayout(huh.LayoutStack).
+		WithHeight(height) // Constrain form output to fit in available space
 
 	if width > 0 {
 		form = form.WithWidth(width)

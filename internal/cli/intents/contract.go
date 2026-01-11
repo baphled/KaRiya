@@ -253,6 +253,83 @@ func (b *BaseIntent) GetMinimumSize() (width, height int) {
 	return b.terminalConfig.MinWidth, b.terminalConfig.MinHeight
 }
 
+// Content Dimension Convenience Methods
+// These provide easy access to calculated content areas from terminal info.
+
+// ContentWidth returns the available width for content (terminal width minus margins).
+// Use this for setting form/table widths.
+func (b *BaseIntent) ContentWidth() int {
+	if b.terminalInfo == nil {
+		return terminal.DefaultConfig.DefaultWidth - 4
+	}
+	return b.terminalInfo.ContentWidth(4) // Standard 2-char margin on each side
+}
+
+// ContentHeight returns the available height for content after StandardView overhead.
+// Use this for setting form/table heights.
+func (b *BaseIntent) ContentHeight() int {
+	if b.terminalInfo == nil {
+		return terminal.DefaultConfig.DefaultHeight - terminal.StandardViewOverhead
+	}
+	return b.terminalInfo.ContentHeight(terminal.StandardViewOverhead)
+}
+
+// FormContentHeight returns the height available for form content.
+// This accounts for StandardView overhead only - forms handle their own internal chrome.
+// Use this when passing height to form constructors.
+func (b *BaseIntent) FormContentHeight() int {
+	if b.terminalInfo == nil {
+		return terminal.DefaultConfig.DefaultHeight - terminal.StandardViewOverhead
+	}
+	return b.terminalInfo.ContentHeight(terminal.StandardViewOverhead)
+}
+
+// ModalContentHeight returns the height available for modal content.
+// This accounts for StandardView overhead and modal chrome.
+// Use this when rendering content inside a modal (not a form).
+func (b *BaseIntent) ModalContentHeight() int {
+	if b.terminalInfo == nil {
+		return terminal.DefaultConfig.DefaultHeight - terminal.StandardViewOverhead - terminal.ModalOverhead
+	}
+	return b.terminalInfo.ModalContentHeight()
+}
+
+// ModalFormContentHeight returns the height for a form inside a modal.
+// This accounts for StandardView and modal chrome - forms handle their own internal chrome.
+// Use this when passing height to form constructors inside modals.
+func (b *BaseIntent) ModalFormContentHeight() int {
+	if b.terminalInfo == nil {
+		return terminal.DefaultConfig.DefaultHeight - terminal.StandardViewOverhead - terminal.ModalOverhead
+	}
+	return b.terminalInfo.ContentHeight(terminal.StandardViewOverhead + terminal.ModalOverhead)
+}
+
+// PageSize returns the dynamic page size based on terminal height.
+// Use this for paginated lists and tables.
+// Returns DefaultPageSize when terminal info is not available or not yet valid.
+func (b *BaseIntent) PageSize() int {
+	if b.terminalInfo == nil || !b.terminalInfo.IsValid {
+		return terminal.DefaultPageSize
+	}
+	return b.terminalInfo.TablePageSize()
+}
+
+// TerminalWidth returns the raw terminal width (or default if not available).
+func (b *BaseIntent) TerminalWidth() int {
+	if b.terminalInfo == nil || !b.terminalInfo.IsValid {
+		return terminal.DefaultConfig.DefaultWidth
+	}
+	return b.terminalInfo.Width
+}
+
+// TerminalHeight returns the raw terminal height (or default if not available).
+func (b *BaseIntent) TerminalHeight() int {
+	if b.terminalInfo == nil || !b.terminalInfo.IsValid {
+		return terminal.DefaultConfig.DefaultHeight
+	}
+	return b.terminalInfo.Height
+}
+
 // Logo Management Methods
 
 // SetLogo sets the shared logo instance

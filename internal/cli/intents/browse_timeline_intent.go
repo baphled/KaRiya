@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -131,7 +132,7 @@ func (i *BrowseTimelineIntent) Init() tea.Cmd {
 
 // updateTableRows updates the table rows based on filtered events
 func (i *BrowseTimelineIntent) updateTableRows() {
-	pageSize := 15
+	pageSize := i.PageSize() // Dynamic based on terminal height
 	total := len(i.state.filteredEvents)
 
 	// Determine which page current selection is on
@@ -192,6 +193,14 @@ func (i *BrowseTimelineIntent) updateTableRows() {
 func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
+	}
+
+	// Handle WindowSizeMsg - forward to edit modal if active
+	// The modal's form will calculate appropriate content height internally
+	if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
+		if i.state.currentState == BrowseStateEditEvent && i.state.editModal != nil {
+			return i.state.editModal.Update(wsMsg)
+		}
 	}
 
 	switch i.state.currentState {
@@ -295,13 +304,18 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 			return nil
 
 		case "e":
-			// Edit event metadata
+			// Edit event
 			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-				i.state.editModal = NewEditMetadataModal(
+				// Pass raw terminal dimensions - modal will calculate content height internally
+				i.state.editModal = NewEditMetadataModalWithDimensions(
+					i.state.selectedEvent.Text,
+					i.state.selectedEvent.Date.Format("2006-01-02"),
 					i.state.selectedEvent.Company,
 					i.state.selectedEvent.Project,
 					i.state.selectedEvent.Tags,
 					i.state.selectedEvent.Categories,
+					i.TerminalWidth(),
+					i.TerminalHeight(),
 				)
 				i.state.currentState = BrowseStateEditEvent
 				// Return form init command to properly initialize the huh form
@@ -337,6 +351,15 @@ func (i *BrowseTimelineIntent) updateEditEvent(msg tea.Msg) tea.Cmd {
 		result := i.state.editModal.Result()
 		if result != nil && result.Accepted {
 			// Apply changes to the event
+			i.state.selectedEvent.Text = result.Modified.Text
+
+			// Parse and apply date if changed
+			if result.Modified.Date != "" {
+				if parsedDate, err := forms.ParseDateString(result.Modified.Date); err == nil {
+					i.state.selectedEvent.Date = parsedDate
+				}
+			}
+
 			i.state.selectedEvent.Company = result.Modified.Company
 			i.state.selectedEvent.Project = result.Modified.Project
 			i.state.selectedEvent.Tags = result.Modified.Tags
@@ -613,7 +636,7 @@ func (i *BrowseTimelineIntent) viewTimeline() string {
 	i.updateTableRows()
 
 	// Build pagination info with page number indicator
-	pageSize := 15
+	pageSize := i.PageSize() // Dynamic based on terminal height
 	totalItems := len(i.state.filteredEvents)
 	currentPage := (i.state.selectedIndex / pageSize) + 1
 	totalPages := (totalItems + pageSize - 1) / pageSize
@@ -827,6 +850,7 @@ func (i *BrowseTimelineIntent) SetSelectedIndex(idx int) {
 }
 
 // GetPageSize returns the page size for pagination.
+// Uses dynamic calculation based on terminal height.
 func (i *BrowseTimelineIntent) GetPageSize() int {
-	return 15
+	return i.PageSize() // Delegates to BaseIntent's dynamic calculation
 }

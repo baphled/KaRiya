@@ -90,8 +90,8 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 		return nil, err
 	}
 
-	// Create the form model for capturing event details
-	formModel := models.NewFormModel(context.CLIEventService)
+	// Create the huh-based form model for capturing event details
+	formModel := models.NewHuhFormModel(context.CLIEventService)
 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
@@ -176,8 +176,14 @@ func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
 		i.state.captureForm.SetStrategy(string(StrategyManual))
 		i.state.showOptionalFields = true
 
+		// Load the existing event data into the form
+		i.state.captureForm.LoadEventForEditing(i.context.PreviousEvent)
+
 		// Skip strategy selection and go straight to form
 		i.state.currentState = CaptureStateForm
+
+		// Initialize the form to set up focus
+		return i.state.captureForm.Init()
 	}
 	// Return a no-op command to satisfy the intent lifecycle
 	return func() tea.Msg { return nil }
@@ -202,6 +208,15 @@ func (i *CaptureEventIntent) initializeFormForNew() tea.Cmd {
 func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
+	}
+
+	// Handle WindowSizeMsg - forward to form with raw terminal dimensions
+	// The form's DefaultFormHeight() will calculate appropriate content height
+	if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
+		// Forward to form if in form state
+		if i.state.currentState == CaptureStateForm && i.state.captureForm != nil {
+			i.state.captureForm.Update(wsMsg)
+		}
 	}
 
 	switch i.state.currentState {
@@ -256,7 +271,8 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			}
 
 			i.state.currentState = CaptureStateForm
-			return nil
+			// Initialize the form to set up focus
+			return i.state.captureForm.Init()
 
 		}
 
@@ -276,7 +292,8 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 	case StrategySelectedMsg:
 		// Strategy was selected (possibly by router or other component)
 		i.state.currentState = CaptureStateForm
-		return nil
+		// Initialize the form to set up focus
+		return i.state.captureForm.Init()
 	}
 
 	return nil
@@ -895,8 +912,20 @@ func (i *CaptureEventIntent) viewCaptureForm() string {
 	if i.state.captureForm == nil {
 		return "Error: Form not initialized"
 	}
-	// Return just the form view - StandardView handles title and navigation
-	return i.state.captureForm.View()
+
+	var content strings.Builder
+
+	// Add title based on strategy
+	if i.state.strategy == StrategyQuick {
+		content.WriteString("\n⚡ Quick Capture\n\n")
+	} else {
+		content.WriteString("\n📝 Enter Event Details\n\n")
+	}
+
+	// Add the form
+	content.WriteString(i.state.captureForm.View())
+
+	return content.String()
 }
 
 // viewReviewInferredEvent renders the review UI for inferred bursts and facts.
@@ -1228,8 +1257,9 @@ func (i *CaptureEventIntent) GetState() string {
 	return string(i.state.currentState)
 }
 
-// GetForm returns the current form model instance (for test and debug)
-func (i *CaptureEventIntent) GetForm() *models.FormModel {
+// GetForm returns the current form model instance (for test and debug).
+// Returns the CaptureForm interface which may be FormModel or HuhFormModel.
+func (i *CaptureEventIntent) GetForm() models.CaptureForm {
 	if i == nil || i.state == nil {
 		return nil
 	}
