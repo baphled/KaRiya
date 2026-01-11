@@ -43,12 +43,12 @@ Currently, KaRiya has no user-defined skills. Skills are derived automatically f
 - [ ] `internal/cli/intents/manage_skills_test.go` - Intent tests
 
 ### Forms
-- [ ] `internal/cli/forms/skill_form.go` - Skill add/edit form configuration
+- [x] `internal/cli/forms/skill_form.go` - Skill add/edit form configuration
 
 ## Files to Modify
 
-- [ ] `internal/domain/career/event.go` - Add Skills field
-- [ ] `internal/repository/career/sqlite_repository.go` - Handle skill associations in GetByID, List, Create, Update
+- [x] `internal/domain/career/event.go` - Add Skills field
+- [x] `internal/repository/career/sqlite_repository.go` - Handle skill associations in GetByID, List, Create, Update
 - [ ] `internal/cli/models/form.go` - Add optional skills multi-select field
 - [ ] `internal/cli/forms/metadata_form.go` - Add skills field to metadata editor
 - [ ] `internal/cli/app/app.go` - Register ManageSkills intent, add to menu
@@ -202,39 +202,39 @@ type SkillFilters struct {
 - Modify `Delete()` to cascade delete associations (handled by FK)
 
 **TDD Checklist - Phase 2:**
-- [ ] Write failing test: SkillRepository.Create
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.Create duplicate name fails
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.GetByID
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.List (no filters)
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.List (category filter)
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.List (level filter)
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.Update
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.Delete
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.GetByName
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.GetByCategory
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.GetSkillsForEvent
-- [ ] Test passes
-- [ ] Write failing test: SkillRepository.GetEventCountsForSkills
-- [ ] Test passes
-- [ ] Write failing test: EventRepository.GetByID loads skill IDs
-- [ ] Test passes
-- [ ] Write failing test: EventRepository.Create saves skill associations
-- [ ] Test passes
-- [ ] Write failing test: EventRepository.Update updates skill associations
-- [ ] Test passes
-- [ ] Commit: `test(skill): add repository tests`
-- [ ] Commit: `feat(skill): implement SkillRepository`
-- [ ] Commit: `feat(event): add skill associations to EventRepository`
+- [x] Write failing test: SkillRepository.Create
+- [x] Test passes
+- [x] Write failing test: SkillRepository.Create duplicate name fails
+- [x] Test passes
+- [x] Write failing test: SkillRepository.GetByID
+- [x] Test passes
+- [x] Write failing test: SkillRepository.List (no filters)
+- [x] Test passes
+- [x] Write failing test: SkillRepository.List (category filter)
+- [x] Test passes
+- [x] Write failing test: SkillRepository.List (level filter)
+- [x] Test passes
+- [x] Write failing test: SkillRepository.Update
+- [x] Test passes
+- [x] Write failing test: SkillRepository.Delete
+- [x] Test passes
+- [x] Write failing test: SkillRepository.GetByName
+- [x] Test passes
+- [x] Write failing test: SkillRepository.GetByCategory
+- [x] Test passes
+- [x] Write failing test: SkillRepository.GetSkillsForEvent
+- [x] Test passes
+- [x] Write failing test: SkillRepository.GetEventCountsForSkills
+- [x] Test passes
+- [x] Write failing test: EventRepository.GetByID loads skill IDs
+- [x] Test passes
+- [x] Write failing test: EventRepository.Create saves skill associations
+- [x] Test passes
+- [x] Write failing test: EventRepository.Update updates skill associations
+- [x] Test passes
+- [x] Commit: `test(repo): add SkillRepository tests (TDD RED)` (f07b7a1)
+- [x] Commit: `feat(repo): implement SkillRepository` - merged with above commit
+- [x] Commit: `feat(repo): add event-skill associations` (1f5c8f3)
 
 ### Phase 3: Skill Form Configuration
 
@@ -270,32 +270,32 @@ func ApplySkillFormData(skill *career.Skill, data *SkillFormData) error
 - User can type custom skill name
 
 **TDD Checklist - Phase 3:**
-- [ ] Write failing test: SkillForm creation (new skill)
-- [ ] Test passes
-- [ ] Write failing test: SkillForm creation (edit existing)
-- [ ] Test passes
-- [ ] Write failing test: SkillName validator (required)
-- [ ] Test passes
-- [ ] Write failing test: SkillName validator (length)
-- [ ] Test passes
-- [ ] Write failing test: SkillName validator (trimmed)
-- [ ] Test passes
-- [ ] Write failing test: SkillCategory validator
-- [ ] Test passes
-- [ ] Write failing test: SkillLevel validator (optional)
-- [ ] Test passes
-- [ ] Write failing test: SkillLevel validator (enum)
-- [ ] Test passes
-- [ ] Write failing test: YearsUsed validator (optional)
-- [ ] Test passes
-- [ ] Write failing test: YearsUsed validator (range)
-- [ ] Test passes
-- [ ] Write failing test: ApplySkillFormData (new skill)
-- [ ] Test passes
-- [ ] Write failing test: ApplySkillFormData (update existing)
-- [ ] Test passes
-- [ ] Commit: `test(forms): add skill form tests`
-- [ ] Commit: `feat(forms): add skill form configuration`
+- [x] Write failing test: SkillForm creation (new skill)
+- [x] Test passes
+- [x] Write failing test: SkillForm creation (edit existing)
+- [x] Test passes
+- [x] Write failing test: SkillName validator (required)
+- [x] Test passes
+- [x] Write failing test: SkillName validator (length)
+- [x] Test passes
+- [x] Write failing test: SkillName validator (trimmed)
+- [x] Test passes
+- [x] Write failing test: SkillCategory validator
+- [x] Test passes
+- [x] Write failing test: SkillLevel validator (optional)
+- [x] Test passes
+- [x] Write failing test: SkillLevel validator (enum)
+- [x] Test passes
+- [x] Write failing test: YearsUsed validator (optional)
+- [x] Test passes
+- [x] Write failing test: YearsUsed validator (range)
+- [x] Test passes
+- [x] Write failing test: ApplySkillFormData (new skill)
+- [x] Test passes
+- [x] Write failing test: ApplySkillFormData (update existing)
+- [x] Test passes
+- [x] Commit: `test(cli): add skill form tests` (ea92cc7)
+- [x] Commit: `feat(cli): implement skill form configuration` (8eb7999)
 
 ### Phase 4: Manage Skills Intent
 
