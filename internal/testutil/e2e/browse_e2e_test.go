@@ -1,3 +1,12 @@
+// browse_e2e_test.go - E2E tests for BrowseTimeline intent DATA PERSISTENCE.
+//
+// This file tests:
+//   - Event data loading from database
+//   - Event data integrity after restart
+//   - Workflow completion with data verification
+//
+// For keyboard navigation tests, see:
+//   - internal/cli/intents/browse_navigation_test.go
 package e2e_test
 
 import (

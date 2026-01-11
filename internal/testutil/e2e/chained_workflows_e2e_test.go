@@ -1,3 +1,12 @@
+// chained_workflows_e2e_test.go - E2E tests for CROSS-INTENT DATA PERSISTENCE.
+//
+// This file tests:
+//   - Data flow between multiple intents
+//   - Persistence across intent transitions
+//   - Complex multi-step workflow integrity
+//
+// Note: These tests verify that data persists correctly across
+// multiple intent transitions, not navigation behavior.
 package e2e_test
 
 import (

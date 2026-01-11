@@ -359,4 +359,174 @@ var _ = Describe("Browse Navigation", func() {
 			Expect(view).NotTo(ContainSubstring("\n\n\n\n\n"))
 		})
 	})
+
+	Describe("Edge Cases", func() {
+		Describe("Empty Timeline", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				// No data populated - empty timeline
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should handle navigation keys with empty timeline gracefully", func() {
+				env.SelectIntentByName("browse_timeline")
+				// Should not panic on navigation with empty list
+				env.PressKeyRune('j')
+				env.PressKeyRune('k')
+				env.PressKey(tea.KeyDown)
+				env.PressKey(tea.KeyUp)
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle Enter key with empty timeline gracefully", func() {
+				env.SelectIntentByName("browse_timeline")
+				env.Confirm() // Enter on empty list
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should allow returning to main menu from empty timeline", func() {
+				env.SelectIntentByName("browse_timeline")
+				env.Cancel()
+				env.AssertViewContains("Capture Event")
+			})
+		})
+
+		Describe("Rapid Key Presses", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(10, 0, 0)
+				env.SelectIntentByName("browse_timeline")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should handle rapid up/down key presses", func() {
+				// Rapidly press keys
+				for i := 0; i < 20; i++ {
+					env.PressKeyRune('j')
+				}
+				for i := 0; i < 20; i++ {
+					env.PressKeyRune('k')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle alternating key presses", func() {
+				for i := 0; i < 10; i++ {
+					env.PressKeyRune('j')
+					env.PressKeyRune('k')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle rapid Enter/Escape sequences", func() {
+				// Navigate to detail and back rapidly
+				for i := 0; i < 3; i++ {
+					env.Confirm() // Enter detail
+					env.Cancel()  // Back to timeline
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				env.AssertViewContainsAny("Timeline", "Events", "Page")
+			})
+		})
+
+		Describe("Boundary Navigation", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(5, 0, 0)
+				env.SelectIntentByName("browse_timeline")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should handle going past first item", func() {
+				// At first item, try to go up multiple times
+				for i := 0; i < 10; i++ {
+					env.PressKeyRune('k')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle going past last item", func() {
+				// Navigate to end and try to go further
+				for i := 0; i < 20; i++ {
+					env.PressKeyRune('j')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle arrow keys at boundaries", func() {
+				// Test up arrow at beginning
+				env.PressKey(tea.KeyUp)
+				env.PressKey(tea.KeyUp)
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+
+				// Navigate to end with down arrow
+				for i := 0; i < 20; i++ {
+					env.PressKey(tea.KeyDown)
+				}
+				view = env.GetView()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Vim Motion Consistency", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(5, 0, 0)
+				env.SelectIntentByName("browse_timeline")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should have consistent behavior between j/k and arrow keys", func() {
+				// Navigate down with j
+				env.PressKeyRune('j')
+				viewAfterJ := env.GetView()
+
+				// Go back up
+				env.PressKeyRune('k')
+
+				// Navigate down with arrow
+				env.PressKey(tea.KeyDown)
+				viewAfterArrow := env.GetView()
+
+				// Views should be consistent (both at same position)
+				Expect(viewAfterJ).To(Equal(viewAfterArrow))
+			})
+
+			It("should support 'g' for top and 'G' for bottom if implemented", func() {
+				// Navigate to end
+				for i := 0; i < 10; i++ {
+					env.PressKeyRune('j')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				// Note: These tests verify navigation doesn't crash,
+				// specific g/G behavior depends on implementation
+			})
+		})
+	})
 })

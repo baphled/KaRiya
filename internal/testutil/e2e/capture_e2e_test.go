@@ -1,3 +1,11 @@
+// capture_e2e_test.go - E2E tests for CaptureEvent intent DATA PERSISTENCE.
+//
+// This file tests:
+//   - Event creation and storage in database
+//   - Event data integrity after workflows
+//
+// For keyboard navigation tests, see:
+//   - internal/cli/intents/capture_event_navigation_test.go (if exists)
 package e2e_test
 
 import (

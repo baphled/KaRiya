@@ -1,3 +1,12 @@
+// burst_management_e2e_test.go - E2E tests for BurstManagement intent DATA PERSISTENCE.
+//
+// This file tests:
+//   - Burst data loading from database
+//   - Burst confirmation and modification persistence
+//   - Burst data integrity after restart
+//
+// For keyboard navigation tests, see:
+//   - internal/cli/intents/burst_management_navigation_test.go
 package e2e_test
 
 import (

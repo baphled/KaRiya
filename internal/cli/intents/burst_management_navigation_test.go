@@ -449,4 +449,246 @@ var _ = Describe("Burst Management Navigation", func() {
 			Expect(view).NotTo(ContainSubstring("\n\n\n\n\n"))
 		})
 	})
+
+	Describe("Edge Cases", func() {
+		Describe("Empty Burst List", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				// No data populated - empty burst list
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should handle navigation keys with empty list gracefully", func() {
+				env.SelectIntentByName("burst_management")
+				// Should not panic on navigation with empty list
+				env.PressKeyRune('j')
+				env.PressKeyRune('k')
+				env.PressKey(tea.KeyDown)
+				env.PressKey(tea.KeyUp)
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle Enter key with empty list gracefully", func() {
+				env.SelectIntentByName("burst_management")
+				env.Confirm() // Enter on empty list
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should allow returning to main menu from empty list", func() {
+				env.SelectIntentByName("burst_management")
+				env.Cancel()
+				env.AssertViewContains("Capture Event")
+			})
+		})
+
+		Describe("Rapid Key Presses", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(10, 3, 0) // More events to support multiple bursts
+				env.SelectIntentByName("burst_management")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should handle rapid up/down key presses", func() {
+				// Rapidly press keys
+				for i := 0; i < 20; i++ {
+					env.PressKeyRune('j')
+				}
+				for i := 0; i < 20; i++ {
+					env.PressKeyRune('k')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle alternating key presses", func() {
+				for i := 0; i < 10; i++ {
+					env.PressKeyRune('j')
+					env.PressKeyRune('k')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle rapid Enter/Escape sequences", func() {
+				// Navigate to detail and back rapidly
+				for i := 0; i < 3; i++ {
+					env.Confirm() // Enter detail
+					env.Cancel()  // Back to list
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				env.AssertViewContainsAny("List", "Bursts", "Name")
+			})
+		})
+
+		Describe("Boundary Navigation", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(10, 2, 0) // More events to support bursts
+				env.SelectIntentByName("burst_management")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should handle going past first item", func() {
+				// At first item, try to go up multiple times
+				for i := 0; i < 10; i++ {
+					env.PressKeyRune('k')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle going past last item", func() {
+				// Navigate to end and try to go further
+				for i := 0; i < 20; i++ {
+					env.PressKeyRune('j')
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle arrow keys at boundaries", func() {
+				// Test up arrow at beginning
+				env.PressKey(tea.KeyUp)
+				env.PressKey(tea.KeyUp)
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+
+				// Navigate to end with down arrow
+				for i := 0; i < 20; i++ {
+					env.PressKey(tea.KeyDown)
+				}
+				view = env.GetView()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Filter State During Navigation", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(10, 3, 0) // More events to support multiple bursts
+				env.SelectIntentByName("burst_management")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should maintain list state during navigation", func() {
+				// Navigate through list
+				env.PressKeyRune('j')
+				env.PressKeyRune('j')
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+
+				// Enter detail and return
+				env.Confirm()
+				env.Cancel()
+				view = env.GetView()
+
+				// State should be maintained (or at least not crash)
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle navigation with mixed confirmation states", func() {
+				env.PressKeyRune('j')
+				env.Confirm()
+				// Detail view shows burst info, including name and description
+				env.AssertViewContainsAny("Burst Details", "Name", "Description", "Events")
+				env.Cancel()
+
+				env.PressKeyRune('j')
+				env.Confirm()
+				env.AssertViewContainsAny("Burst Details", "Name", "Description", "Events")
+			})
+		})
+
+		Describe("Multi-Select Scenarios", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(10, 3, 0) // More events to support multiple bursts
+				env.SelectIntentByName("burst_management")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should handle viewing multiple bursts in sequence", func() {
+				for i := 0; i < 3; i++ {
+					env.Confirm()         // View detail
+					env.Cancel()          // Back to list
+					env.PressKeyRune('j') // Next item
+				}
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			})
+
+			It("should handle edit operations on multiple bursts", func() {
+				// Edit first burst
+				env.Confirm()
+				env.PressKeyRune('e')
+				env.Cancel() // Cancel edit
+				env.Cancel() // Back to list
+
+				// Move to second burst
+				env.PressKeyRune('j')
+				env.Confirm()
+				env.PressKeyRune('e')
+				env.Cancel() // Cancel edit
+				env.Cancel() // Back to list
+
+				view := env.GetView()
+				Expect(view).NotTo(BeEmpty())
+				env.AssertViewContainsAny("List", "Bursts", "Name")
+			})
+		})
+
+		Describe("Vim Motion Consistency", func() {
+			BeforeEach(func() {
+				env = e2e.SetupWithMemory(GinkgoT())
+				env.PopulateTestData(10, 2, 0) // More events to support bursts
+				env.SelectIntentByName("burst_management")
+			})
+
+			AfterEach(func() {
+				env.Cleanup()
+			})
+
+			It("should have consistent behavior between j/k and arrow keys", func() {
+				// Navigate down with j
+				env.PressKeyRune('j')
+				viewAfterJ := env.GetView()
+
+				// Go back up
+				env.PressKeyRune('k')
+
+				// Navigate down with arrow
+				env.PressKey(tea.KeyDown)
+				viewAfterArrow := env.GetView()
+
+				// Views should be consistent (both at same position)
+				Expect(viewAfterJ).To(Equal(viewAfterArrow))
+			})
+		})
+	})
 })

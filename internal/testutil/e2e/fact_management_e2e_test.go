@@ -1,3 +1,12 @@
+// fact_management_e2e_test.go - E2E tests for FactManagement intent DATA PERSISTENCE.
+//
+// This file tests:
+//   - Fact data loading from database
+//   - Fact creation/modification persistence
+//   - Fact data integrity
+//
+// For keyboard navigation tests, see:
+//   - internal/cli/intents/fact_management_navigation_test.go (if exists)
 package e2e_test
 
 import (

@@ -1,3 +1,11 @@
+// export_e2e_test.go - E2E tests for ExportArtifact intent DATA PERSISTENCE.
+//
+// This file tests:
+//   - Export operations with persisted data
+//   - Export data integrity
+//
+// For keyboard navigation tests, see:
+//   - internal/cli/intents/export_artifact_navigation_test.go (if exists)
 package e2e_test
 
 import (

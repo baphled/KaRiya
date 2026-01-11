@@ -1,3 +1,11 @@
+// configure_e2e_test.go - E2E tests for ConfigureSystem intent DATA PERSISTENCE.
+//
+// This file tests:
+//   - Configuration persistence across restarts
+//   - Settings data integrity
+//
+// For keyboard navigation tests, see:
+//   - internal/cli/intents/configure_system_navigation_test.go (if exists)
 package e2e_test
 
 import (

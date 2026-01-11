@@ -1,3 +1,11 @@
+// generate_cv_e2e_test.go - E2E tests for GenerateCV intent DATA PERSISTENCE.
+//
+// This file tests:
+//   - CV generation with persisted career data
+//   - Generated CV data integrity
+//
+// For keyboard navigation tests, see:
+//   - internal/cli/intents/generate_cv_navigation_test.go (if exists)
 package e2e_test
 
 import (

@@ -1,3 +1,12 @@
+// error_recovery_test.go - E2E tests for ERROR RECOVERY with DATA PERSISTENCE.
+//
+// This file tests:
+//   - Error handling when database is empty
+//   - Recovery behavior with data integrity
+//   - Graceful degradation scenarios
+//
+// Note: These tests focus on how the application handles error
+// conditions while maintaining data integrity.
 package e2e_test
 
 import (
