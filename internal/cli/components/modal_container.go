@@ -23,6 +23,8 @@ type ModalContainer struct {
 	hasButtons      bool
 	hasInstructions bool
 	theme           themes.Theme
+	width           int  // 0 means auto
+	showScrollHint  bool // Show scroll indicator when content is scrollable
 }
 
 // NewModalContainer creates a new ModalContainer.
@@ -80,6 +82,20 @@ func (mc *ModalContainer) WithDestructiveStyle() *ModalContainer {
 // This method uses the builder pattern to allow method chaining.
 func (mc *ModalContainer) WithTheme(theme themes.Theme) *ModalContainer {
 	mc.theme = theme
+	return mc
+}
+
+// WithWidth sets the width for the modal.
+// This method uses the builder pattern to allow method chaining.
+func (mc *ModalContainer) WithWidth(width int) *ModalContainer {
+	mc.width = width
+	return mc
+}
+
+// WithScrollHint enables the scroll indicator hint.
+// This method uses the builder pattern to allow method chaining.
+func (mc *ModalContainer) WithScrollHint(show bool) *ModalContainer {
+	mc.showScrollHint = show
 	return mc
 }
 
@@ -173,6 +189,15 @@ func (mc *ModalContainer) Render() string {
 		parts = append(parts, instructionStyle.Render(mc.instructions))
 	}
 
+	// Add scroll hint if enabled
+	if mc.showScrollHint {
+		scrollHint := lipgloss.NewStyle().
+			Foreground(mc.getMutedColor()).
+			Italic(true).
+			Render("↑↓ Scroll")
+		parts = append(parts, scrollHint)
+	}
+
 	// Combine all parts
 	content := strings.Join(parts, "\n")
 
@@ -184,6 +209,11 @@ func (mc *ModalContainer) Render() string {
 	} else {
 		modalStyle = styles.ModalBase.
 			Foreground(mc.getPrimaryColor())
+	}
+
+	// Apply width if specified
+	if mc.width > 0 {
+		modalStyle = modalStyle.Width(mc.width)
 	}
 
 	return modalStyle.Render(content)

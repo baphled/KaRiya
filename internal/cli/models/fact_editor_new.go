@@ -101,6 +101,13 @@ func (m *FactEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleFormCompletion processes the completed form and saves the fact.
 func (m *FactEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.cancelled = true
+		return m, nil
+	}
+
 	// Apply form data to fact
 	err := forms.ApplyFactFormData(m.fact, m.formData)
 	if err != nil {
