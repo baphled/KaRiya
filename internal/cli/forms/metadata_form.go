@@ -12,13 +12,14 @@ type MetadataFormData struct {
 	Project         string
 	Tags            []string
 	Categories      []string
+	Skills          []string
 	SubmitConfirmed bool
 }
 
 // NewMetadataEditorForm creates a form for editing event metadata.
-// The form has 5 fields: Date, Company, Project, Tags, Categories,
+// The form has 6 fields: Date, Company, Project, Tags, Categories, Skills,
 // plus a Submit confirmation button.
-func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCategories []string) *huh.Form {
+func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCategories []string, availableSkills []*career.Skill) *huh.Form {
 	data := GetMetadataFormData(event)
 	data.SubmitConfirmed = false
 
@@ -31,6 +32,12 @@ func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCa
 	categoryOptions := make([]huh.Option[string], len(availableCategories))
 	for i, cat := range availableCategories {
 		categoryOptions[i] = huh.NewOption(cat, cat)
+	}
+
+	// Convert skills to options (skill ID as value, skill name as label)
+	skillOptions := make([]huh.Option[string], len(availableSkills))
+	for i, skill := range availableSkills {
+		skillOptions[i] = huh.NewOption(skill.Name, skill.ID)
 	}
 
 	return NewForm(
