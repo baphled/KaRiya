@@ -840,7 +840,8 @@ func (m *DeleteConfirmationModal) Update(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// View renders the delete confirmation modal with warning styling.
+// View renders the delete confirmation modal content (without container).
+// The container and overlay are handled by the intent using RenderOverlay.
 func (m *DeleteConfirmationModal) View() string {
 	// Warning header
 	warningStyle := lipgloss.NewStyle().
@@ -870,20 +871,14 @@ func (m *DeleteConfirmationModal) View() string {
 	// Warning message
 	content.WriteString("\n")
 	content.WriteString(warningStyle.Render("This action cannot be undone."))
-	content.WriteString("\n")
+	content.WriteString("\n\n")
 
-	// Wrap in modal container
-	title := warningStyle.Render("Delete Confirmation")
-	instructions := "y/Enter: Confirm Delete  |  n/Esc: Cancel"
+	// Footer instructions
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#A6ADC8")) // Catppuccin Subtext0
+	content.WriteString(footerStyle.Render("y/Enter: Confirm Delete  |  n/Esc: Cancel"))
 
-	modal := components.NewModalContainer().
-		SetTitle(title).
-		SetMessage(content.String()).
-		SetInstructions(instructions).
-		WithWidth(m.width - 4).
-		WithScrollHint(false)
-
-	return modal.Render()
+	return content.String()
 }
 
 // Result returns the deletion confirmation result.

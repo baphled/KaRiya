@@ -606,10 +606,13 @@ func (i *BrowseTimelineIntent) View() string {
 		view.WithContent(content)
 		baseView := view.Render()
 
-		// Render modal centered on top of dimmed background
-		modalView := i.deleteModal.View()
+		// Create overlay modal with content from deleteModal
+		modalContent := i.deleteModal.View()
+		overlay := components.NewOverlayModal("⚠️  Delete Confirmation", modalContent)
+		overlay.SetWidth(60) // Compact width for delete confirmation
+
 		termInfo := i.GetTerminalInfo()
-		return components.RenderOverlay(baseView, modalView, termInfo.Width, termInfo.Height)
+		return overlay.RenderCentered(baseView, termInfo.Width, termInfo.Height)
 	}
 
 	// Create standard view with breadcrumbs
