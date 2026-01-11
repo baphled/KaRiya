@@ -181,6 +181,31 @@ Go provides a built-in `testing` package for unit tests and benchmarks. For more
   })
   ```
 
+### Test Naming Conventions
+
+KaRiya uses specific naming conventions to distinguish between different types of tests:
+
+* **Unit Tests:** `foo_test.go` - Co-located with source files, test individual functions/methods
+* **Integration Tests:** `integration_test.go` - Test multiple components working together
+* **E2E Tests:** `*_e2e_test.go` - Test end-to-end workflows with SQLite persistence
+  * Location: `internal/testutil/e2e/`
+  * Use `e2e.Setup(GinkgoT())` for full database setup
+  * Verify data persistence with `SimulateRestart()`
+  * Example: `browse_e2e_test.go`, `capture_e2e_test.go`
+* **Navigation Tests:** `*_navigation_test.go` - Test UI/navigation with in-memory storage
+  * Location: `internal/cli/intents/`
+  * Use `e2e.SetupWithMemory(GinkgoT())` for fast setup
+  * Focus on key presses and screen transitions
+  * Example: `browse_navigation_test.go`, `capture_navigation_test.go`
+
+**When to use each type:**
+- Use **E2E tests** when you need to verify data persistence across app restarts
+- Use **Navigation tests** when you need to verify UI behavior without persistence concerns
+- Use **Unit tests** for testing individual functions in isolation
+- Use **Integration tests** for testing interactions between services/repositories
+
+See `AGENTS.md` section "E2E Test Structure" for detailed examples.
+
 ## Code Style
 
 1. Format code with the standard **gofmt** tool (or run `go fmt`). This automatically formats code (indentation, spacing, etc.) according to Go conventions. Additionally, run **`go vet`** to catch common issues (unused variables, misuse of `unsafe`, etc.). These tools should be part of your development/CI process so that code is always formatted and vetted.
