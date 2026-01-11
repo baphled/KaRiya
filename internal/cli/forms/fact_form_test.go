@@ -139,4 +139,53 @@ var _ = Describe("FactForm", func() {
 			Expect(form).NotTo(BeNil())
 		})
 	})
+
+	Describe("NewFactEditorFormWithDataAndHeight", func() {
+		It("should create a form with specified height", func() {
+			data := &forms.FactFormData{
+				Text:                 "Test fact for height testing",
+				CompetencyCategories: []string{"technical"},
+				RoleFit:              string(career.RoleFitStaff),
+				AudienceRelevance:    []string{"hiring_manager"},
+			}
+
+			form := forms.NewFactEditorFormWithDataAndHeight(data, 20)
+
+			Expect(form).NotTo(BeNil())
+			// Form should render and be scrollable
+			view := form.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should create form without height when height is 0", func() {
+			data := &forms.FactFormData{
+				Text:                 "Test fact for height testing",
+				CompetencyCategories: []string{"technical"},
+				RoleFit:              string(career.RoleFitStaff),
+				AudienceRelevance:    []string{"hiring_manager"},
+			}
+
+			form := forms.NewFactEditorFormWithDataAndHeight(data, 0)
+
+			Expect(form).NotTo(BeNil())
+			view := form.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should use dynamic height for scrolling", func() {
+			data := &forms.FactFormData{
+				Text:                 "Test fact for height testing",
+				CompetencyCategories: []string{"technical"},
+				RoleFit:              string(career.RoleFitStaff),
+				AudienceRelevance:    []string{"hiring_manager"},
+			}
+
+			// Simulate terminal with 40 lines (40 - 20 overhead = 20 lines)
+			height := forms.DefaultFormHeight(40)
+			form := forms.NewFactEditorFormWithDataAndHeight(data, height)
+
+			Expect(form).NotTo(BeNil())
+			Expect(height).To(Equal(20))
+		})
+	})
 })

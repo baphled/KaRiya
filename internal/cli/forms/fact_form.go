@@ -67,6 +67,12 @@ func NewFactEditorForm(fact *career.Fact) *huh.Form {
 
 // NewFactEditorFormWithData creates a form for editing a fact with initial form data.
 func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
+	return NewFactEditorFormWithDataAndHeight(data, 0)
+}
+
+// NewFactEditorFormWithDataAndHeight creates a form for editing a fact with initial form data and height.
+// When height > 0, the form becomes scrollable if content exceeds the height.
+func NewFactEditorFormWithDataAndHeight(data *FactFormData, height int) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
 
@@ -77,49 +83,52 @@ func NewFactEditorFormWithData(data *FactFormData) *huh.Form {
 		huhRoleFitOpts[i] = huh.NewOption(opt.Value, opt.Key)
 	}
 
-	return NewForm(
-		huh.NewGroup(
-			NewText(FieldConfig{
-				Key:         "text",
-				Title:       "Fact Text",
-				Description: "Factual achievement or accomplishment (10-2000 characters)",
-				Placeholder: "Enter fact text...",
-				CharLimit:   2000,
-				Validate:    Compose(Required, MinLength(10), MaxLength(2000)),
-			}).Value(&data.Text),
+	group := huh.NewGroup(
+		NewText(FieldConfig{
+			Key:         "text",
+			Title:       "Fact Text",
+			Description: "Factual achievement or accomplishment (10-2000 characters)",
+			Placeholder: "Enter fact text...",
+			CharLimit:   2000,
+			Validate:    Compose(Required, MinLength(10), MaxLength(2000)),
+		}).Value(&data.Text),
 
-			huh.NewMultiSelect[string]().
-				Key("competency_categories").
-				Title("Competency Categories").
-				Description("Select relevant competency categories").
-				Options(CompetencyCategoryOptions()...).
-				Value(&data.CompetencyCategories).
-				Limit(6),
+		huh.NewMultiSelect[string]().
+			Key("competency_categories").
+			Title("Competency Categories").
+			Description("Select relevant competency categories").
+			Options(CompetencyCategoryOptions()...).
+			Value(&data.CompetencyCategories).
+			Limit(6),
 
-			huh.NewSelect[string]().
-				Key("role_fit").
-				Title("Role Fit").
-				Description("Best fit role level for this fact").
-				Options(huhRoleFitOpts...).
-				Value(&data.RoleFit),
+		huh.NewSelect[string]().
+			Key("role_fit").
+			Title("Role Fit").
+			Description("Best fit role level for this fact").
+			Options(huhRoleFitOpts...).
+			Value(&data.RoleFit),
 
-			huh.NewMultiSelect[string]().
-				Key("audience_relevance").
-				Title("Audience Relevance").
-				Description("Select target audience types").
-				Options(AudienceRelevanceOptions()...).
-				Value(&data.AudienceRelevance).
-				Limit(3),
+		huh.NewMultiSelect[string]().
+			Key("audience_relevance").
+			Title("Audience Relevance").
+			Description("Select target audience types").
+			Options(AudienceRelevanceOptions()...).
+			Value(&data.AudienceRelevance).
+			Limit(3),
 
-			huh.NewConfirm().
-				Key("submit").
-				Title("Save Changes").
-				Description("Submit the form to save your changes").
-				Affirmative("Submit").
-				Negative("Cancel").
-				Value(&data.SubmitConfirmed),
-		),
+		huh.NewConfirm().
+			Key("submit").
+			Title("Save Changes").
+			Description("Submit the form to save your changes").
+			Affirmative("Submit").
+			Negative("Cancel").
+			Value(&data.SubmitConfirmed),
 	)
+
+	if height > 0 {
+		return NewFormWithHeight(height, group)
+	}
+	return NewForm(group)
 }
 
 // ApplyFactFormData applies the form data to a fact domain object.

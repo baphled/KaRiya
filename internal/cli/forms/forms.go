@@ -26,6 +26,34 @@ func NewForm(groups ...*huh.Group) *huh.Form {
 	return huh.NewForm(groups...).WithTheme(Theme())
 }
 
+// NewFormWithHeight creates a new form with KaRiya's default theme and a fixed height.
+// When height is set, the form becomes scrollable if content exceeds the height.
+// Use this for forms displayed in modals or constrained containers.
+func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
+	return huh.NewForm(groups...).WithTheme(Theme()).WithHeight(height)
+}
+
+// NewThemedFormWithHeight creates a form with the given theme and height.
+// When height is set, the form becomes scrollable if content exceeds the height.
+func NewThemedFormWithHeight(theme themes.Theme, height int, groups ...*huh.Group) *huh.Form {
+	return huh.NewForm(groups...).WithTheme(ThemedForm(theme)).WithHeight(height)
+}
+
+// DefaultFormHeight calculates a reasonable form height based on terminal dimensions.
+// It reserves space for: logo (~7 lines), breadcrumbs (~2 lines), footer (~3 lines),
+// modal chrome (~4 lines), and some padding (~4 lines) = ~20 lines overhead.
+// Minimum height is 10 lines to ensure usability.
+func DefaultFormHeight(terminalHeight int) int {
+	const overhead = 20
+	const minHeight = 10
+
+	height := terminalHeight - overhead
+	if height < minHeight {
+		height = minHeight
+	}
+	return height
+}
+
 // NewThemedForm creates a new form with the given KaRiya theme.
 // This ensures forms match the rest of the TUI styling.
 func NewThemedForm(theme themes.Theme, groups ...*huh.Group) *huh.Form {

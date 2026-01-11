@@ -19,6 +19,7 @@ import (
 // - Restores original on cancellation
 // - Uses huh library for form handling
 // - Professional styling with Catppuccin theme
+// - Scrollable when content exceeds terminal height
 type EditMetadataModal struct {
 	// original is the unmodified metadata from the event (never mutated)
 	original *MetadataSnapshot
@@ -31,6 +32,9 @@ type EditMetadataModal struct {
 
 	// form is the huh form for editing
 	form *huh.Form
+
+	// formGroup stores the form group for rebuilding with new height
+	formGroup *huh.Group
 
 	// formData holds the form field values (pointers so form binding works)
 	company         *string
@@ -74,20 +78,6 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 	categoriesCopy := make([]string, len(categories))
 	copy(categoriesCopy, categories)
 
-	modal := &EditMetadataModal{
-		original:        original,
-		modified:        copyMetadataSnapshot(original),
-		result:          nil,
-		form:            nil, // Will be set below
-		company:         &companyVal,
-		project:         &projectVal,
-		tags:            tagsCopy,
-		categories:      categoriesCopy,
-		submitConfirmed: &submitConfirmed,
-		width:           80,
-		height:          24,
-	}
-
 	// Build tag options from AllowedTags
 	tagOptions := make([]huh.Option[string], 0)
 	for tag := range career.AllowedTags {
@@ -100,51 +90,67 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 		categoryOptions = append(categoryOptions, huh.NewOption(cat, cat))
 	}
 
-	// Create huh form with pointers to modal's fields
-	modal.form = forms.NewForm(
-		huh.NewGroup(
-			forms.NewInput(forms.FieldConfig{
-				Key:         "company",
-				Title:       "Company",
-				Description: "Company name",
-				Placeholder: "Enter company name...",
-				CharLimit:   100,
-				Validate:    forms.CompanyName,
-			}).Value(modal.company),
+	modal := &EditMetadataModal{
+		original:        original,
+		modified:        copyMetadataSnapshot(original),
+		result:          nil,
+		form:            nil, // Will be set below
+		formGroup:       nil, // Will be set below
+		company:         &companyVal,
+		project:         &projectVal,
+		tags:            tagsCopy,
+		categories:      categoriesCopy,
+		submitConfirmed: &submitConfirmed,
+		width:           80,
+		height:          24,
+	}
 
-			forms.NewInput(forms.FieldConfig{
-				Key:         "project",
-				Title:       "Project",
-				Description: "Project name",
-				Placeholder: "Enter project name...",
-				CharLimit:   100,
-			}).Value(modal.project),
+	// Create form group with pointers to modal's fields
+	modal.formGroup = huh.NewGroup(
+		forms.NewInput(forms.FieldConfig{
+			Key:         "company",
+			Title:       "Company",
+			Description: "Company name",
+			Placeholder: "Enter company name...",
+			CharLimit:   100,
+			Validate:    forms.CompanyName,
+		}).Value(modal.company),
 
-			huh.NewMultiSelect[string]().
-				Key("tags").
-				Title("Tags").
-				Description("Select relevant tags").
-				Options(tagOptions...).
-				Value(&modal.tags).
-				Limit(8),
+		forms.NewInput(forms.FieldConfig{
+			Key:         "project",
+			Title:       "Project",
+			Description: "Project name",
+			Placeholder: "Enter project name...",
+			CharLimit:   100,
+		}).Value(modal.project),
 
-			huh.NewMultiSelect[string]().
-				Key("categories").
-				Title("Categories").
-				Description("Select relevant categories").
-				Options(categoryOptions...).
-				Value(&modal.categories).
-				Limit(6),
+		huh.NewMultiSelect[string]().
+			Key("tags").
+			Title("Tags").
+			Description("Select relevant tags").
+			Options(tagOptions...).
+			Value(&modal.tags).
+			Limit(8),
 
-			huh.NewConfirm().
-				Key("submit").
-				Title("Save Changes").
-				Description("Submit the form to save your changes").
-				Affirmative("Submit").
-				Negative("Cancel").
-				Value(modal.submitConfirmed),
-		),
+		huh.NewMultiSelect[string]().
+			Key("categories").
+			Title("Categories").
+			Description("Select relevant categories").
+			Options(categoryOptions...).
+			Value(&modal.categories).
+			Limit(6),
+
+		huh.NewConfirm().
+			Key("submit").
+			Title("Save Changes").
+			Description("Submit the form to save your changes").
+			Affirmative("Submit").
+			Negative("Cancel").
+			Value(modal.submitConfirmed),
 	)
+
+	// Create form with default height (will be updated on WindowSizeMsg)
+	modal.form = forms.NewFormWithHeight(forms.DefaultFormHeight(modal.height), modal.formGroup)
 
 	return modal
 }
@@ -155,6 +161,8 @@ func (m *EditMetadataModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Rebuild form with new height for scrolling
+		m.form = forms.NewFormWithHeight(forms.DefaultFormHeight(m.height), m.formGroup)
 		return nil
 	}
 
@@ -298,6 +306,7 @@ func (m *EditMetadataModal) computeChanges() map[string]interface{} {
 
 // EditBurstModal handles inline editing of burst details (Name, Description).
 // Uses huh library for form handling with professional styling and accessibility.
+// Scrollable when content exceeds terminal height.
 type EditBurstModal struct {
 	// original is the unmodified burst (never mutated)
 	original *career.Burst
@@ -328,8 +337,11 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 	// Create form data from burst
 	formData := forms.GetBurstFormData(&originalCopy)
 
-	// Create huh form
-	form := forms.NewBurstEditorFormWithData(formData)
+	// Default dimensions
+	defaultHeight := 24
+
+	// Create huh form with default height (will be updated on WindowSizeMsg)
+	form := forms.NewBurstEditorFormWithDataAndHeight(formData, forms.DefaultFormHeight(defaultHeight))
 
 	return &EditBurstModal{
 		original: &originalCopy,
@@ -338,7 +350,7 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 		form:     form,
 		formData: formData,
 		width:    80,
-		height:   24,
+		height:   defaultHeight,
 	}
 }
 
@@ -348,6 +360,8 @@ func (m *EditBurstModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Rebuild form with new height for scrolling
+		m.form = forms.NewBurstEditorFormWithDataAndHeight(m.formData, forms.DefaultFormHeight(m.height))
 		return nil
 	}
 
@@ -494,6 +508,7 @@ func (m *EditBurstModal) computeChanges() map[string]interface{} {
 
 // EditFactModal handles inline editing of fact details (Text, CompetencyCategories, RoleFit, AudienceRelevance, StrengthSignal).
 // Uses huh library for form handling with professional styling and accessibility.
+// Scrollable when content exceeds terminal height.
 type EditFactModal struct {
 	// original is the unmodified fact (never mutated)
 	original *career.Fact
@@ -524,8 +539,11 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 	// Create form data from fact
 	formData := forms.GetFactFormData(&originalCopy)
 
-	// Create huh form
-	form := forms.NewFactEditorFormWithData(formData)
+	// Default dimensions
+	defaultHeight := 24
+
+	// Create huh form with default height (will be updated on WindowSizeMsg)
+	form := forms.NewFactEditorFormWithDataAndHeight(formData, forms.DefaultFormHeight(defaultHeight))
 
 	return &EditFactModal{
 		original: &originalCopy,
@@ -534,7 +552,7 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 		form:     form,
 		formData: formData,
 		width:    80,
-		height:   24,
+		height:   defaultHeight,
 	}
 }
 
@@ -544,6 +562,8 @@ func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		// Rebuild form with new height for scrolling
+		m.form = forms.NewFactEditorFormWithDataAndHeight(m.formData, forms.DefaultFormHeight(m.height))
 		return nil
 	}
 

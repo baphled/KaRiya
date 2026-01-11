@@ -151,4 +151,81 @@ var _ = Describe("BurstForm", func() {
 			Expect(data.SubmitConfirmed).To(BeFalse())
 		})
 	})
+
+	Describe("NewBurstEditorFormWithDataAndHeight", func() {
+		It("should create a form with specified height", func() {
+			data := &forms.BurstFormData{
+				Name:        "Test Burst",
+				Description: "Test description",
+			}
+
+			form := forms.NewBurstEditorFormWithDataAndHeight(data, 20)
+
+			Expect(form).NotTo(BeNil())
+			// Form should render and be scrollable
+			view := form.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should create form without height when height is 0", func() {
+			data := &forms.BurstFormData{
+				Name:        "Test Burst",
+				Description: "Test description",
+			}
+
+			form := forms.NewBurstEditorFormWithDataAndHeight(data, 0)
+
+			Expect(form).NotTo(BeNil())
+			view := form.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should use dynamic height for small terminals", func() {
+			data := &forms.BurstFormData{
+				Name:        "Test Burst",
+				Description: "Test description",
+			}
+
+			// Simulate small terminal (30 lines - 20 overhead = 10 lines)
+			height := forms.DefaultFormHeight(30)
+			Expect(height).To(Equal(10))
+
+			form := forms.NewBurstEditorFormWithDataAndHeight(data, height)
+			Expect(form).NotTo(BeNil())
+		})
+
+		It("should use dynamic height for large terminals", func() {
+			data := &forms.BurstFormData{
+				Name:        "Test Burst",
+				Description: "Test description",
+			}
+
+			// Simulate large terminal (50 lines - 20 overhead = 30 lines)
+			height := forms.DefaultFormHeight(50)
+			Expect(height).To(Equal(30))
+
+			form := forms.NewBurstEditorFormWithDataAndHeight(data, height)
+			Expect(form).NotTo(BeNil())
+		})
+	})
+
+	Describe("DefaultFormHeight", func() {
+		It("should calculate height with overhead subtracted", func() {
+			// 40 lines terminal - 20 overhead = 20 lines for form
+			height := forms.DefaultFormHeight(40)
+			Expect(height).To(Equal(20))
+		})
+
+		It("should return minimum height for small terminals", func() {
+			// 25 lines terminal - 20 overhead = 5 lines, but min is 10
+			height := forms.DefaultFormHeight(25)
+			Expect(height).To(Equal(10))
+		})
+
+		It("should never return less than minimum", func() {
+			// Very small terminal
+			height := forms.DefaultFormHeight(10)
+			Expect(height).To(Equal(10))
+		})
+	})
 })
