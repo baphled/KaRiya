@@ -1527,3 +1527,12 @@ func (i *BurstManagementIntent) confirmBurstOnly() tea.Cmd {
 		return BurstConfirmedMsg{Burst: i.state.selectedBurst}
 	}
 }
+
+// SetTestModalResult sets the edit modal's result directly for testing purposes.
+// This allows E2E tests to simulate modal completion without interacting with the huh form.
+// Only use this method in tests.
+func (i *BurstManagementIntent) SetTestModalResult(result *ModalEditResult[*domain.Burst]) {
+	if i.state.editModal != nil {
+		i.state.editModal.SetTestResult(result)
+	}
+}

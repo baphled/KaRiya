@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -446,6 +448,221 @@ var _ = Describe("E2E BurstManagement Workflow", func() {
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
 			Expect(view).NotTo(ContainSubstring("nil pointer"))
+		})
+	})
+
+	Describe("Burst Edit Data Persistence", func() {
+		BeforeEach(func() {
+			env = e2e.Setup(GinkgoT())
+			env.PopulateTestData(5, 2, 0) // 5 events, 2 bursts, 0 facts
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should persist burst name changes to database", func() {
+			// Get original bursts from database
+			originalBursts := env.GetBursts()
+			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			originalName := originalBursts[0].Name
+			burstID := originalBursts[0].ID
+
+			// Navigate to burst management and select first burst
+			env.SelectIntentByName("burst_management")
+			env.Confirm() // Go to detail view
+
+			// Enter edit mode
+			env.PressKeyRune('x')
+			env.AssertViewContainsAny("Edit Burst", "Burst Name", "Name")
+
+			// Get the active intent and access its modal
+			activeIntent := env.Model.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			burstIntent, ok := activeIntent.(*intents.BurstManagementIntent)
+			Expect(ok).To(BeTrue(), "Active intent should be BurstManagementIntent")
+
+			// Simulate form completion with updated name
+			newName := "UPDATED_BURST_NAME_E2E_TEST"
+			modifiedBurst := &career.Burst{
+				ID:          burstID,
+				Name:        newName,
+				Description: originalBursts[0].Description,
+				EventIDs:    originalBursts[0].EventIDs,
+				CreatedAt:   originalBursts[0].CreatedAt,
+				UpdatedAt:   originalBursts[0].UpdatedAt,
+			}
+
+			// Set the test result on the modal (bypasses form interaction)
+			burstIntent.SetTestModalResult(&intents.ModalEditResult[*career.Burst]{
+				Original: originalBursts[0],
+				Modified: modifiedBurst,
+				Accepted: true,
+				Changes:  map[string]interface{}{"name": newName},
+			})
+
+			// Trigger update to process the modal result
+			env.Model.Update(nil)
+
+			// Verify the data persisted to the database
+			updatedBursts := env.GetBursts()
+			var foundBurst *career.Burst
+			for _, b := range updatedBursts {
+				if b.ID == burstID {
+					foundBurst = b
+					break
+				}
+			}
+
+			Expect(foundBurst).NotTo(BeNil(), "Should find the updated burst in database")
+			Expect(foundBurst.Name).To(Equal(newName), "Burst name should be updated in database")
+			Expect(foundBurst.Name).NotTo(Equal(originalName), "Burst name should differ from original")
+		})
+
+		It("should persist burst description changes to database", func() {
+			// Get original bursts from database
+			originalBursts := env.GetBursts()
+			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			originalDesc := originalBursts[0].Description
+			burstID := originalBursts[0].ID
+
+			// Navigate to edit mode
+			env.SelectIntentByName("burst_management")
+			env.Confirm()
+			env.PressKeyRune('x')
+
+			// Get the active intent
+			activeIntent := env.Model.GetActiveIntent()
+			burstIntent := activeIntent.(*intents.BurstManagementIntent)
+
+			// Simulate form completion with updated description
+			newDesc := "UPDATED_DESCRIPTION_E2E_TEST"
+			modifiedBurst := &career.Burst{
+				ID:          burstID,
+				Name:        originalBursts[0].Name,
+				Description: newDesc,
+				EventIDs:    originalBursts[0].EventIDs,
+				CreatedAt:   originalBursts[0].CreatedAt,
+				UpdatedAt:   originalBursts[0].UpdatedAt,
+			}
+
+			burstIntent.SetTestModalResult(&intents.ModalEditResult[*career.Burst]{
+				Original: originalBursts[0],
+				Modified: modifiedBurst,
+				Accepted: true,
+				Changes:  map[string]interface{}{"description": newDesc},
+			})
+
+			// Trigger update
+			env.Model.Update(nil)
+
+			// Verify persistence
+			updatedBursts := env.GetBursts()
+			var foundBurst *career.Burst
+			for _, b := range updatedBursts {
+				if b.ID == burstID {
+					foundBurst = b
+					break
+				}
+			}
+
+			Expect(foundBurst).NotTo(BeNil())
+			Expect(foundBurst.Description).To(Equal(newDesc))
+			Expect(foundBurst.Description).NotTo(Equal(originalDesc))
+		})
+
+		It("should NOT persist changes when edit is cancelled", func() {
+			// Get original bursts
+			originalBursts := env.GetBursts()
+			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			originalName := originalBursts[0].Name
+			burstID := originalBursts[0].ID
+
+			// Navigate to edit mode
+			env.SelectIntentByName("burst_management")
+			env.Confirm()
+			env.PressKeyRune('x')
+
+			// Get the active intent
+			activeIntent := env.Model.GetActiveIntent()
+			burstIntent := activeIntent.(*intents.BurstManagementIntent)
+
+			// Simulate form cancellation (Accepted: false)
+			burstIntent.SetTestModalResult(&intents.ModalEditResult[*career.Burst]{
+				Original: originalBursts[0],
+				Modified: originalBursts[0], // No changes
+				Accepted: false,             // Cancelled!
+				Changes:  map[string]interface{}{},
+			})
+
+			// Trigger update
+			env.Model.Update(nil)
+
+			// Verify data was NOT changed
+			unchangedBursts := env.GetBursts()
+			var foundBurst *career.Burst
+			for _, b := range unchangedBursts {
+				if b.ID == burstID {
+					foundBurst = b
+					break
+				}
+			}
+
+			Expect(foundBurst).NotTo(BeNil())
+			Expect(foundBurst.Name).To(Equal(originalName), "Burst name should NOT change when cancelled")
+		})
+
+		It("should persist changes and survive application restart", func() {
+			// Get original bursts
+			originalBursts := env.GetBursts()
+			Expect(len(originalBursts)).To(BeNumerically(">=", 1))
+			burstID := originalBursts[0].ID
+
+			// Navigate to edit mode
+			env.SelectIntentByName("burst_management")
+			env.Confirm()
+			env.PressKeyRune('x')
+
+			// Get the active intent and set result
+			activeIntent := env.Model.GetActiveIntent()
+			burstIntent := activeIntent.(*intents.BurstManagementIntent)
+
+			newName := "PERSISTED_ACROSS_RESTART"
+			modifiedBurst := &career.Burst{
+				ID:          burstID,
+				Name:        newName,
+				Description: originalBursts[0].Description,
+				EventIDs:    originalBursts[0].EventIDs,
+				CreatedAt:   originalBursts[0].CreatedAt,
+				UpdatedAt:   originalBursts[0].UpdatedAt,
+			}
+
+			burstIntent.SetTestModalResult(&intents.ModalEditResult[*career.Burst]{
+				Original: originalBursts[0],
+				Modified: modifiedBurst,
+				Accepted: true,
+				Changes:  map[string]interface{}{"name": newName},
+			})
+
+			// Trigger update
+			env.Model.Update(nil)
+
+			// Simulate application restart (new model, same database)
+			env.SimulateRestart()
+
+			// Verify data persisted across restart
+			persistedBursts := env.GetBursts()
+			var foundBurst *career.Burst
+			for _, b := range persistedBursts {
+				if b.ID == burstID {
+					foundBurst = b
+					break
+				}
+			}
+
+			Expect(foundBurst).NotTo(BeNil(), "Burst should exist after restart")
+			Expect(foundBurst.Name).To(Equal(newName), "Burst name should persist after restart")
 		})
 	})
 })
