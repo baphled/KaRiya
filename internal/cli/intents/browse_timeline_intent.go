@@ -59,6 +59,9 @@ type BrowseTimelineIntent struct {
 	// navHandler handles list navigation
 	navHandler *navigation.ListNavigationHandler
 
+	// deleteModal is the delete confirmation modal (nil when not active)
+	deleteModal *DeleteConfirmationModal
+
 	// active indicates whether this intent is currently active.
 	active bool
 
@@ -200,6 +203,24 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// Handle delete modal if active
+	if i.deleteModal != nil {
+		cmd := i.deleteModal.Update(msg)
+
+		// Check if modal is complete
+		if i.deleteModal.IsComplete() {
+			if i.deleteModal.WasConfirmed() {
+				// User confirmed - delete the event
+				i.handleDeleteConfirmation()
+			} else {
+				// User cancelled - just clear the modal
+				i.deleteModal = nil
+			}
+		}
+
+		return cmd
+	}
+
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		return i.updateTimelineView(msg)
@@ -308,10 +329,18 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 			return nil
 
 		case "d":
-			// Delete event - go to confirmation
-			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-				i.state.currentState = BrowseStateDeleteConfirm
-				i.state.deleteError = nil
+			// Delete event - show confirmation modal
+			if i.state.selectedEvent != nil {
+				// Create delete confirmation modal
+				title := i.state.selectedEvent.Text
+				if len(title) > 100 {
+					title = title[:100] + "..."
+				}
+				description := fmt.Sprintf("Date: %s", i.state.selectedEvent.Date.Format("2006-01-02"))
+				if i.state.selectedEvent.Company != "" {
+					description += fmt.Sprintf("\nCompany: %s", i.state.selectedEvent.Company)
+				}
+				i.deleteModal = NewDeleteConfirmationModal("event", title, description)
 			}
 			return nil
 		}
@@ -361,6 +390,44 @@ func (i *BrowseTimelineIntent) updateDeleteConfirm(msg tea.Msg) tea.Cmd {
 	}
 
 	return nil
+}
+
+// handleDeleteConfirmation performs the actual deletion after modal confirmation.
+func (i *BrowseTimelineIntent) handleDeleteConfirmation() {
+	if i.state.selectedEvent == nil {
+		i.deleteModal = nil
+		return
+	}
+
+	// Attempt to delete via service
+	if i.context.CLIEventService != nil {
+		err := i.context.CLIEventService.DeleteEvent(
+			i.getContext(),
+			i.state.selectedEvent.ID,
+		)
+		if err != nil {
+			// TODO: Show error modal (Phase 9)
+			i.state.deleteError = err
+			i.deleteModal = nil
+			return
+		}
+	}
+
+	// Remove from filtered events
+	i.removeEventFromList(i.state.selectedEvent.ID)
+
+	// Clear selection and modal
+	i.state.selectedEvent = nil
+	i.deleteModal = nil
+
+	// Go back to timeline
+	i.state.currentState = BrowseStateTimeline
+
+	// Select first event if available
+	if len(i.state.filteredEvents) > 0 {
+		i.state.selectedIndex = 0
+		i.state.selectedEvent = i.state.filteredEvents[0]
+	}
 }
 
 // removeEventFromList removes an event from both context.Events and filteredEvents.
@@ -531,6 +598,21 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 
 // View renders the intent's current state using StandardView.
 func (i *BrowseTimelineIntent) View() string {
+	// Show delete modal overlay if active
+	if i.deleteModal != nil {
+		// Get base view
+		view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
+		content := i.getStateContent()
+		view.WithContent(content)
+
+		// Overlay modal on top
+		modalView := i.deleteModal.View()
+		baseView := view.Render()
+
+		// Simple overlay - modal appears on top of existing content
+		return lipgloss.JoinVertical(lipgloss.Center, baseView, "", modalView)
+	}
+
 	// Create standard view with breadcrumbs
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
 
@@ -761,4 +843,9 @@ func (i *BrowseTimelineIntent) SetSelectedIndex(idx int) {
 // GetPageSize returns the page size for pagination.
 func (i *BrowseTimelineIntent) GetPageSize() int {
 	return 15
+}
+
+// GetDeleteModal returns the current delete modal (for testing).
+func (i *BrowseTimelineIntent) GetDeleteModal() *DeleteConfirmationModal {
+	return i.deleteModal
 }
