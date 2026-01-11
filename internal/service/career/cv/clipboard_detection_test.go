@@ -2,6 +2,7 @@ package cv
 
 import (
 	"os"
+	"runtime"
 
 	"github.com/atotto/clipboard"
 	. "github.com/onsi/ginkgo/v2"
@@ -21,14 +22,19 @@ var _ = Describe("Clipboard Detection and Error Handling", func() {
 			GinkgoWriter.Printf("SystemClipboard.IsUnsupported() = %v\n", isUnsupported)
 			GinkgoWriter.Printf("DISPLAY = %s\n", os.Getenv("DISPLAY"))
 			GinkgoWriter.Printf("WAYLAND_DISPLAY = %s\n", os.Getenv("WAYLAND_DISPLAY"))
+			GinkgoWriter.Printf("GOOS = %s\n", runtime.GOOS)
 
-			// In headless/SSH environments, this should be true
-			// In GUI environments with display, this should be false
-			if os.Getenv("CI") != "" || (os.Getenv("DISPLAY") == "" && os.Getenv("WAYLAND_DISPLAY") == "") {
-				Expect(isUnsupported).To(BeTrue(), "Clipboard should be unsupported in headless environment")
+			// Platform-specific behavior:
+			// - Linux: Requires X11/Wayland display server, should be unsupported in headless CI
+			// - macOS: Uses pbcopy/pbpaste which work without display server, may work in CI
+			// - Windows: Uses native APIs, may work in CI
+			//
+			// Only assert unsupported on Linux in headless environments
+			if runtime.GOOS == "linux" && os.Getenv("CI") != "" && os.Getenv("DISPLAY") == "" && os.Getenv("WAYLAND_DISPLAY") == "" {
+				Expect(isUnsupported).To(BeTrue(), "Clipboard should be unsupported on Linux in headless environment")
 			}
 
-			// The test always passes - it just documents the behavior
+			// The test always passes - it documents the platform-specific behavior
 			Expect(true).To(BeTrue())
 		})
 
