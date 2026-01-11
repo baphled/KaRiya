@@ -44,7 +44,25 @@ cat docs/rules/AI_COMMIT_ATTRIBUTION.md | less
 
 ## Step 3: Try It Out
 
-### Example: Commit AI-Generated Code
+### Recommended: Use `make ai-commit` Command
+
+The easiest way to create AI-attributed commits:
+
+```bash
+# 1. Stage your changes
+git add -p internal/service/career/service.go
+
+# 2. Create AI-attributed commit
+make ai-commit MSG="feat(service): add event filtering by date range"
+```
+
+**What happens**:
+- ✅ Validates commit message format
+- ✅ Automatically adds AI attribution
+- ✅ Adds your name from git config as reviewer
+- ✅ Creates the commit
+
+### Alternative: Manual Commit
 
 1. Make changes (or stage existing changes):
    ```bash

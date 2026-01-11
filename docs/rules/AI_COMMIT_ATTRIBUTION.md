@@ -114,6 +114,12 @@ AI-Generated-By: Cursor (Claude 3.5 Sonnet)
 AI-Generated-By: Cursor (GPT-4)
 ```
 
+#### OpenCode
+```
+AI-Generated-By: OpenCode (Claude Sonnet 4)
+AI-Generated-By: OpenCode (Claude 3.5 Sonnet)
+```
+
 ### Reviewed-By Format
 
 ```
@@ -256,7 +262,38 @@ Reviewed-By: Alex Rodriguez <alex@example.com>
 
 ## Automation
 
-### Git Commit Template
+### Recommended: `make ai-commit` Command
+
+**The easiest way to create AI-attributed commits** is using the `make ai-commit` command:
+
+```bash
+# Stage your changes
+git add -p internal/cli/forms/validators.go
+
+# Create AI-attributed commit
+make ai-commit MSG="feat(forms): add date validation helpers"
+```
+
+**What it does**:
+1. Validates commit message follows conventional commit format
+2. Checks that changes are staged
+3. Automatically adds AI attribution (`AI-Generated-By: OpenCode (Claude Sonnet 4)`)
+4. Adds reviewer attribution from `git config user.name`
+5. Creates the commit
+
+**Environment variables** (optional):
+```bash
+# Override agent/model if using different AI assistant
+AI_AGENT="Cursor" AI_MODEL="Claude 3.5 Sonnet" make ai-commit MSG="feat: ..."
+```
+
+**Advantages**:
+- ✅ No manual attribution needed
+- ✅ Automatic format validation
+- ✅ Consistent attribution format
+- ✅ Prevents common mistakes
+
+### Alternative: Git Commit Template
 
 Create a commit message template that includes AI attribution placeholders:
 

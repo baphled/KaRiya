@@ -92,6 +92,8 @@ The AI assistant **MUST**:
 
 1. Run `make review-commit` (or ask user to run it)
 2. Include AI attribution in commit message if ANY code was AI-generated
+   - **Recommended**: Use `make ai-commit MSG="type(scope): description"` for automatic attribution
+   - Manual: Add `AI-Generated-By: <Agent> (<Model>)` and `Reviewed-By: <Name>` trailers
 3. Verify commit is atomic (ONE logical change)
 4. If commit violates rules, **REFUSE** and explain corrections needed
 
@@ -261,6 +263,9 @@ staticcheck ./...
 
 # Compliance check
 make check-compliance
+
+# AI-attributed commit (recommended for AI-generated code)
+make ai-commit MSG="feat(scope): description"
 
 # Run ALL CI checks locally (mirrors GitHub Actions)
 make ci-local

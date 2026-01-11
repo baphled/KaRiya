@@ -1,4 +1,4 @@
-package e2e_test
+package intents_test
 
 import (
 	"github.com/baphled/kariya/internal/testutil/e2e"
@@ -6,11 +6,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// MetadataEditor is a UI shell only - testing navigation and rendering only
-var _ = Describe("E2E MetadataEditor Workflow (Navigation Only)", func() {
+// BulkOperations is a UI shell only - testing navigation and rendering only
+var _ = Describe("BulkOperations Navigation", func() {
 	var env *e2e.TestEnv
 
-	Describe("Navigation to MetadataEditor Intent", func() {
+	Describe("Navigation to BulkOperations Intent", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 		})
@@ -19,28 +19,28 @@ var _ = Describe("E2E MetadataEditor Workflow (Navigation Only)", func() {
 			env.Cleanup()
 		})
 
-		It("should show MetadataEditor as menu item", func() {
-			env.AssertViewContainsAny("Edit Metadata", "Metadata")
+		It("should show BulkOperations as menu item", func() {
+			env.AssertViewContainsAny("Bulk Operations", "Bulk")
 		})
 
-		It("should navigate to MetadataEditor when selected", func() {
-			env.SelectIntentByName("metadata_editor")
-			env.AssertViewContainsAny("Metadata", "Edit", "Entity", "Select")
+		It("should navigate to BulkOperations when selected", func() {
+			env.SelectIntentByName("bulk_operations")
+			env.AssertViewContainsAny("Bulk", "Operations", "Select", "Action")
 		})
 	})
 
 	Describe("State Navigation", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
-			env.SelectIntentByName("metadata_editor")
+			env.SelectIntentByName("bulk_operations")
 		})
 
 		AfterEach(func() {
 			env.Cleanup()
 		})
 
-		It("should show initial metadata state", func() {
-			env.AssertViewContainsAny("Metadata", "Select", "Entity", "Type")
+		It("should show initial bulk operations state", func() {
+			env.AssertViewContainsAny("Bulk", "Select", "Operation", "Action")
 		})
 
 		It("should return to main menu when pressing Escape", func() {
@@ -66,19 +66,19 @@ var _ = Describe("E2E MetadataEditor Workflow (Navigation Only)", func() {
 		})
 
 		It("should render without panics", func() {
-			env.SelectIntentByName("metadata_editor")
+			env.SelectIntentByName("bulk_operations")
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
 		})
 
 		It("should show breadcrumbs or context", func() {
-			env.SelectIntentByName("metadata_editor")
-			env.AssertViewContainsAny("Metadata", "Editor", "Main Menu")
+			env.SelectIntentByName("bulk_operations")
+			env.AssertViewContainsAny("Bulk", "Operations", "Main Menu")
 		})
 
 		It("should show footer with navigation hints", func() {
-			env.SelectIntentByName("metadata_editor")
+			env.SelectIntentByName("bulk_operations")
 			env.AssertViewContainsAny("q", "Esc", "Quit")
 		})
 	})
@@ -93,10 +93,10 @@ var _ = Describe("E2E MetadataEditor Workflow (Navigation Only)", func() {
 		})
 
 		It("should allow re-entering after cancellation", func() {
-			env.SelectIntentByName("metadata_editor")
+			env.SelectIntentByName("bulk_operations")
 			env.Cancel()
-			env.SelectIntentByName("metadata_editor")
-			env.AssertViewContainsAny("Metadata", "Edit", "Entity")
+			env.SelectIntentByName("bulk_operations")
+			env.AssertViewContainsAny("Bulk", "Operations", "Select")
 		})
 	})
 })
