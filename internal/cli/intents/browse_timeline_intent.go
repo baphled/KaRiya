@@ -600,17 +600,16 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 func (i *BrowseTimelineIntent) View() string {
 	// Show delete modal overlay if active
 	if i.deleteModal != nil {
-		// Get base view
+		// Get base view (without help text to reduce clutter)
 		view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
 		content := i.getStateContent()
 		view.WithContent(content)
-
-		// Overlay modal on top
-		modalView := i.deleteModal.View()
 		baseView := view.Render()
 
-		// Simple overlay - modal appears on top of existing content
-		return lipgloss.JoinVertical(lipgloss.Center, baseView, "", modalView)
+		// Render modal centered on top of dimmed background
+		modalView := i.deleteModal.View()
+		termInfo := i.GetTerminalInfo()
+		return components.RenderOverlay(baseView, modalView, termInfo.Width, termInfo.Height)
 	}
 
 	// Create standard view with breadcrumbs
