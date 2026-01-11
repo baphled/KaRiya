@@ -30,8 +30,18 @@ func (s *SystemClipboard) WriteAll(text string) error {
 }
 
 // IsUnsupported returns true if clipboard is not available in this environment
+// This performs an actual write test because clipboard.Unsupported is unreliable
+// (it checks if utilities exist, not if they actually work)
 func (s *SystemClipboard) IsUnsupported() bool {
-	return clipboard.Unsupported
+	// First check the library's flag
+	if clipboard.Unsupported {
+		return true
+	}
+
+	// Test if clipboard actually works by attempting a small write
+	// This catches cases where utilities exist but no display is available
+	testErr := clipboard.WriteAll("")
+	return testErr != nil
 }
 
 // ExportService handles exporting CVs to various formats
@@ -298,9 +308,9 @@ func (es *ExportService) GetExportPath() (string, error) {
 }
 
 // ErrClipboardUnsupported is returned when clipboard operations are not available in the environment.
-// On Linux, this typically means xclip, xsel, or wl-clipboard is not installed.
+// On Linux, this typically means no display server is available (e.g., running over SSH).
 // On macOS and Windows, clipboard support is built-in and this error should not occur.
-var ErrClipboardUnsupported = fmt.Errorf("clipboard not available: on Linux, install xclip, xsel, or wl-clipboard")
+var ErrClipboardUnsupported = fmt.Errorf("clipboard not available in headless environment (SSH/no display). Use 'Save to file' instead")
 
 // CopyToClipboard copies the given content to the system clipboard
 func (es *ExportService) CopyToClipboard(ctx context.Context, content string) error {

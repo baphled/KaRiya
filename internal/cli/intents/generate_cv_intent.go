@@ -896,7 +896,7 @@ func (i *GenerateCVIntent) updateExporting(msg tea.Msg) tea.Cmd {
 		i.state.isExporting = false
 		if msg.Error != nil {
 			i.state.exportError = msg.Error
-			i.state.currentState = GenerateCVStateExportSelectLocation
+			i.state.currentState = GenerateCVStateExportComplete // Show error in complete view, not selection view
 			return nil
 		}
 		i.state.exportedPath = msg.Path
@@ -1134,13 +1134,14 @@ func (i *GenerateCVIntent) viewExporting() string {
 // viewExportComplete renders the export completion view
 func (i *GenerateCVIntent) viewExportComplete() string {
 	var content strings.Builder
-	content.WriteString("\n✅ Export Complete!\n\n")
 
 	if i.state.exportError != nil {
-		content.WriteString("❌ Error during export\n\n")
+		content.WriteString("\n❌ Export Failed\n\n")
 		content.WriteString(fmt.Sprintf("Error: %v\n\n", i.state.exportError))
 		content.WriteString("Try a different location or format.\n")
 	} else {
+		content.WriteString("\n✅ Export Complete!\n\n")
+
 		formatName := "Text"
 		switch i.state.selectedExportFormat {
 		case CVExportFormatMarkdown:
