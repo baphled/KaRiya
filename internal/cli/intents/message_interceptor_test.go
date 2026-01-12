@@ -173,4 +173,170 @@ var _ = Describe("MessageInterceptor", func() {
 			Expect(fallbackCalled).To(BeTrue())
 		})
 	})
+
+	Describe("OnContextAwareBack", func() {
+		It("should call cancel handler when in edit mode", func() {
+			cancelCalled := false
+			goBackCalled := false
+
+			interceptor.OnContextAwareBack(
+				func() bool { return true },                        // isEditMode
+				func() tea.Cmd { goBackCalled = true; return nil }, // goBack
+				func() tea.Cmd { cancelCalled = true; return nil }, // cancel
+			)
+
+			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(cancelCalled).To(BeTrue())
+			Expect(goBackCalled).To(BeFalse())
+		})
+
+		It("should call goBack handler when not in edit mode", func() {
+			cancelCalled := false
+			goBackCalled := false
+
+			interceptor.OnContextAwareBack(
+				func() bool { return false },                       // isEditMode
+				func() tea.Cmd { goBackCalled = true; return nil }, // goBack
+				func() tea.Cmd { cancelCalled = true; return nil }, // cancel
+			)
+
+			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(goBackCalled).To(BeTrue())
+			Expect(cancelCalled).To(BeFalse())
+		})
+
+		It("should return command from cancel handler", func() {
+			expectedCmd := tea.Quit
+			interceptor.OnContextAwareBack(
+				func() bool { return true },           // isEditMode
+				func() tea.Cmd { return nil },         // goBack
+				func() tea.Cmd { return expectedCmd }, // cancel
+			)
+
+			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return command from goBack handler", func() {
+			expectedCmd := tea.Quit
+			interceptor.OnContextAwareBack(
+				func() bool { return false },          // isEditMode
+				func() tea.Cmd { return expectedCmd }, // goBack
+				func() tea.Cmd { return nil },         // cancel
+			)
+
+			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("OnModalAwareBack", func() {
+		It("should call closeModal handler when modal is active", func() {
+			closeModalCalled := false
+			goBackCalled := false
+
+			interceptor.OnModalAwareBack(
+				func() bool { return true },                            // hasActiveModal
+				func() tea.Cmd { closeModalCalled = true; return nil }, // closeModal
+				func() tea.Cmd { goBackCalled = true; return nil },     // goBack
+			)
+
+			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(closeModalCalled).To(BeTrue())
+			Expect(goBackCalled).To(BeFalse())
+		})
+
+		It("should call goBack handler when no modal is active", func() {
+			closeModalCalled := false
+			goBackCalled := false
+
+			interceptor.OnModalAwareBack(
+				func() bool { return false },                           // hasActiveModal
+				func() tea.Cmd { closeModalCalled = true; return nil }, // closeModal
+				func() tea.Cmd { goBackCalled = true; return nil },     // goBack
+			)
+
+			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(goBackCalled).To(BeTrue())
+			Expect(closeModalCalled).To(BeFalse())
+		})
+
+		It("should return command from closeModal handler", func() {
+			expectedCmd := tea.Quit
+			interceptor.OnModalAwareBack(
+				func() bool { return true },           // hasActiveModal
+				func() tea.Cmd { return expectedCmd }, // closeModal
+				func() tea.Cmd { return nil },         // goBack
+			)
+
+			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should return command from goBack handler", func() {
+			expectedCmd := tea.Quit
+			interceptor.OnModalAwareBack(
+				func() bool { return false },          // hasActiveModal
+				func() tea.Cmd { return nil },         // closeModal
+				func() tea.Cmd { return expectedCmd }, // goBack
+			)
+
+			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("StandardQuitHandler", func() {
+		It("should return tea.Quit command", func() {
+			handler := intents.StandardQuitHandler()
+			cmd := handler()
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should work with MessageInterceptor", func() {
+			interceptor.OnQuit(intents.StandardQuitHandler())
+			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("StandardHelpHandler", func() {
+		It("should toggle help on BaseIntent", func() {
+			baseIntent := intents.NewBaseIntent()
+			handler := intents.StandardHelpHandler(baseIntent)
+
+			// Initially help is not visible
+			Expect(baseIntent.IsHelpVisible()).To(BeFalse())
+
+			// Call handler
+			handler()
+
+			// Help should now be visible
+			Expect(baseIntent.IsHelpVisible()).To(BeTrue())
+
+			// Call again to toggle back
+			handler()
+
+			// Help should be hidden again
+			Expect(baseIntent.IsHelpVisible()).To(BeFalse())
+		})
+
+		It("should work with MessageInterceptor", func() {
+			baseIntent := intents.NewBaseIntent()
+			interceptor.OnHelp(intents.StandardHelpHandler(baseIntent))
+
+			// Initially help is not visible
+			Expect(baseIntent.IsHelpVisible()).To(BeFalse())
+
+			// Press help key
+			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+
+			// Help should now be visible
+			Expect(baseIntent.IsHelpVisible()).To(BeTrue())
+		})
+	})
 })
