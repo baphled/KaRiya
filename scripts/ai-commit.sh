@@ -109,7 +109,7 @@ rm -f "$TEMP_MSG_FILE"
 
 # Use environment variables with sensible defaults
 AGENT_NAME="${AI_AGENT:-OpenCode}"
-MODEL_NAME="${AI_MODEL:-Claude Sonnet 4}"
+MODEL_NAME="${AI_MODEL:-Claude Sonnet 4.5}"
 
 # Get reviewer name from git config
 REVIEWER_NAME=$(git config user.name)
