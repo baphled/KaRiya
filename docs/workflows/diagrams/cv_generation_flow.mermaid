@@ -1,0 +1,61 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'fontSize': '16px' } } }%%
+graph TD
+    Start([Start: Generate CV])
+    
+    SelectProfile[1. Select Profile]
+    SelectAudience[2. Select Audience]
+    Generating[3. Generating CV...]
+    Preview[4. Preview CV]
+    Review[5. Review/Edit CV]
+    Confirm[6. Confirm]
+    
+    ExportFormat[7. Select Export Format]
+    ExportLocation[8. Select Save Location]
+    Exporting[9. Exporting...]
+    ExportComplete[10. Export Complete]
+    
+    Complete([Complete])
+    Cancel([Cancel])
+    
+    Start --> SelectProfile
+    
+    SelectProfile -->|Enter: Select| SelectAudience
+    SelectProfile -->|Esc/m: Cancel| Cancel
+    
+    SelectAudience -->|Enter: Generate| Generating
+    SelectAudience -->|Esc: Back| SelectProfile
+    SelectAudience -->|m: Main Menu| Cancel
+    
+    Generating -->|Success| Preview
+    Generating -->|Error| SelectAudience
+    Generating -->|Esc: Let complete| SelectAudience
+    
+    Preview -->|e/Enter: Edit| Review
+    Preview -->|c: Continue| Confirm
+    Preview -->|Esc: Back| SelectAudience
+    
+    Review -->|Enter: Continue| Confirm
+    Review -->|Esc: Back| Preview
+    
+    Confirm -->|y/Enter: Complete| Complete
+    Confirm -->|e/x: Export| ExportFormat
+    Confirm -->|n/Esc: Back| Review
+    
+    ExportFormat -->|Enter: Select| ExportLocation
+    ExportFormat -->|Esc: Back| Confirm
+    
+    ExportLocation -->|Enter: Export| Exporting
+    ExportLocation -->|Cancel: Back| Confirm
+    ExportLocation -->|Esc: Back| ExportFormat
+    
+    Exporting -->|Success| ExportComplete
+    Exporting -->|Error| ExportComplete
+    Exporting -->|Esc: Let complete| ExportLocation
+    
+    ExportComplete -->|Enter: Done| Complete
+    ExportComplete -->|Esc: Retry| ExportLocation
+    
+    style Generating fill:#ffd700,stroke:#333,stroke-width:2px
+    style Exporting fill:#ffd700,stroke:#333,stroke-width:2px
+    style Complete fill:#90EE90,stroke:#333,stroke-width:2px
+    style Cancel fill:#FFB6C1,stroke:#333,stroke-width:2px

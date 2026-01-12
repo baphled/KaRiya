@@ -1141,10 +1141,12 @@ internal/cli/
 ### Guidelines & Standards
 - `docs/TUI_STANDARDS.md` - UI/UX standards
 - `docs/TUI_DEVELOPER_GUIDE.md` - General development guidelines
-- `docs/KEYBOARD_REFERENCE.md` - Keyboard shortcuts
+- `docs/KEYBOARD_SHORTCUTS_GUIDE.md` - User keyboard reference
+- `docs/development/KEYBOARD_SYSTEM_GUIDE.md` - Keyboard implementation
 - `AGENTS.md` - Agent guidelines
 
 ### Workflow Documentation
+- `docs/workflows/` - Detailed workflow guides
 - `docs/WORKFLOW_DIAGRAM.md` - High-level workflows
 - `docs/PRD_MASTER.md` - Product requirements
 - `docs/PRD_USER_STORIES.md` - User stories

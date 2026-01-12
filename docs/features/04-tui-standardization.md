@@ -243,7 +243,9 @@ All 13 models now have consistent implementation:
 
 ### Documentation
 - [x] TUI_STANDARDS.md created with design standards
-- [x] KEYBOARD_REFERENCE.md with all shortcuts
+- [x] KEYBOARD_SHORTCUTS_GUIDE.md with all shortcuts (user-facing)
+- [x] KEYBOARD_SYSTEM_GUIDE.md for keyboard implementation (developer)
+- [x] Workflow guides created (CV Generation, Event Capture)
 - [x] Developer guide for adding new screens
 - [x] README.md updated with navigation overview
 - [x] CLI_GUIDE.md updated with consistent documentation
@@ -388,9 +390,15 @@ internal/cli/components/
 ### Documentation
 ```
 docs/
-├── TUI_STANDARDS.md              # Design standards (329 lines)
-├── KEYBOARD_REFERENCE.md         # Keyboard shortcuts
-└── TUI_DEVELOPER_GUIDE.md        # Developer guide
+├── TUI_STANDARDS.md                    # Design standards (592 lines)
+├── KEYBOARD_SHORTCUTS_GUIDE.md         # User keyboard reference (400+ lines)
+├── TUI_DEVELOPER_GUIDE.md              # Developer guide (929 lines)
+├── development/
+│   └── KEYBOARD_SYSTEM_GUIDE.md        # Keyboard implementation (500+ lines)
+└── workflows/
+    ├── CV_GENERATION_WORKFLOW.md       # CV workflow guide (800+ lines)
+    ├── EVENT_CAPTURE_WORKFLOW.md       # Capture workflow guide (700+ lines)
+    └── README.md                        # Workflow index
 ```
 
 ### Model Integration

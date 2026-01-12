@@ -561,10 +561,12 @@ Every model should have tests for:
 
 For user-facing documentation, see:
 - `docs/CLI_GUIDE.md` - User guide with examples
-- `docs/KEYBOARD_REFERENCE.md` - Detailed keyboard reference
+- `docs/KEYBOARD_SHORTCUTS_GUIDE.md` - Complete keyboard reference
+- `docs/workflows/` - Detailed workflow guides
 - `README.md` - Main project documentation
 
 For developer documentation, see:
+- `docs/development/KEYBOARD_SYSTEM_GUIDE.md` - Keyboard system implementation
 - `docs/rules/` - Development rules and guidelines
 - Source code comments - Inline documentation
 

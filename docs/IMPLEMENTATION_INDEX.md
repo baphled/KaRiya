@@ -176,11 +176,23 @@ This index provides a complete guide to all KaRiya TUI intent architecture docum
 - **Audience**: All developers
 - **Reading Time**: 20-30 minutes
 
-#### 10. **KEYBOARD_REFERENCE.md**
-- **Purpose**: Keyboard shortcut reference
-- **Contents**: All keyboard shortcuts and their functions
-- **Audience**: Users, developers
-- **Reading Time**: 5-10 minutes
+#### 10. **KEYBOARD_SHORTCUTS_GUIDE.md**
+- **Purpose**: Complete keyboard reference for users
+- **Contents**: All keyboard shortcuts, workflow-specific shortcuts, vim-style navigation
+- **Audience**: Users, new team members
+- **Reading Time**: 10-15 minutes
+
+#### 11. **development/KEYBOARD_SYSTEM_GUIDE.md**
+- **Purpose**: Keyboard system implementation guide
+- **Contents**: Architecture, integration patterns, testing, best practices
+- **Audience**: Developers
+- **Reading Time**: 15-20 minutes
+
+#### 12. **workflows/** Directory
+- **Purpose**: Detailed workflow guides
+- **Contents**: CV Generation workflow, Event Capture workflow, state machines, diagrams
+- **Audience**: Users, developers, product managers
+- **Reading Time**: 20-30 minutes per workflow
 
 ---
 
@@ -247,11 +259,16 @@ IMPLEMENTATION_SUMMARY.md (Overview)
     │   └─ IMPLEMENTATION_CHECKLIST.md (Detailed Tasks)
     │       └─ IMPLEMENTATION_ENHANCEMENTS.md (Recommendations)
     │
-    ├─ WORKFLOW_DIAGRAM.md (Workflows)
+    ├─ workflows/ (Detailed Workflow Guides)
+    │   ├─ CV_GENERATION_WORKFLOW.md
+    │   ├─ EVENT_CAPTURE_WORKFLOW.md
+    │   └─ README.md (Workflow Index)
     │
     ├─ TUI_DEVELOPER_GUIDE.md (Best Practices)
     │
-    └─ KEYBOARD_REFERENCE.md (Shortcuts)
+    ├─ KEYBOARD_SHORTCUTS_GUIDE.md (User Shortcuts)
+    │
+    └─ development/KEYBOARD_SYSTEM_GUIDE.md (Dev Shortcuts)
 ```
 
 ---
@@ -269,7 +286,9 @@ IMPLEMENTATION_SUMMARY.md (Overview)
 | WORKFLOW_DIAGRAM.md | ⭕ | ✅ | ✅ | ✅ | ✅ |
 | TUI_STANDARDS.md | ⭕ | ✅ | ✅ | ⭕ | ✅ |
 | TUI_DEVELOPER_GUIDE.md | ⭕ | ✅ | ✅ | ❌ | ❌ |
-| KEYBOARD_REFERENCE.md | ❌ | ⭕ | ✅ | ❌ | ✅ |
+| KEYBOARD_SHORTCUTS_GUIDE.md | ❌ | ⭕ | ✅ | ❌ | ✅ |
+| KEYBOARD_SYSTEM_GUIDE.md | ⭕ | ✅ | ✅✅ | ❌ | ❌ |
+| workflows/ (CV, Capture) | ⭕ | ✅ | ✅ | ✅✅ | ✅ |
 
 **Legend**: ✅✅ = Essential | ✅ = Important | ⭕ = Optional | ❌ = Not needed
 
