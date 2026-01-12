@@ -40,8 +40,8 @@ The **Skills List** shows all your skills organized by category:
 │   Terraform       Beginner    1 yr   [3]   │
 └─────────────────────────────────────────────┘
 
-j/k or ↑/↓ - Navigate | Enter - View detail
-n - Add skill | e - Edit | d - Delete | Esc - Back
+j/k or ↑/↓ - Navigate | Enter - View detail | n - Add skill
+e - Edit | d - Delete | f - Filter | s - Sort | x - Clear filters | Esc - Back
 ```
 
 **Columns**:
@@ -49,6 +49,167 @@ n - Add skill | e - Edit | d - Delete | Esc - Back
 - **Level**: Your proficiency level (Beginner, Intermediate, Advanced, Expert)
 - **Years Used**: How many years you've used this skill
 - **[Count]**: Number of events using this skill
+
+### Filtering and Sorting Skills
+
+KaRiya provides powerful filtering and sorting capabilities to help you focus on specific skills.
+
+#### Filtering Skills
+
+Press `f` from the Skills List to open the **Filter Menu**:
+
+```
+┌─────────────────────────────────────────────┐
+│ Filter Skills                               │
+├─────────────────────────────────────────────┤
+│                                             │
+│ Filter by Category:                         │
+│ ▶ All Categories                            │
+│   Backend                                   │
+│   Frontend                                  │
+│   DevOps                                    │
+│   Database                                  │
+│   Cloud                                     │
+│                                             │
+│ Filter by Level:                            │
+│   All Levels                                │
+│   Beginner                                  │
+│   Intermediate                              │
+│   Advanced                                  │
+│   Expert                                    │
+│                                             │
+│ Other Filters:                              │
+│   Used skills only (has events)             │
+└─────────────────────────────────────────────┘
+
+j/k or ↑/↓ - Navigate | Enter - Apply filter
+u - Used skills only (quick) | Esc - Cancel
+```
+
+**Filter Options**:
+
+1. **By Category**: Show only skills in a specific category
+   - Example: Select "Backend" to see only Go, Ruby, Python, etc.
+   - Useful for focusing on one technical area
+
+2. **By Level**: Show only skills at a specific proficiency level
+   - Example: Select "Expert" to see your strongest skills
+   - Useful for CV preparation targeting senior roles
+
+3. **Used Skills Only**: Show only skills associated with events
+   - Press `u` for quick access to this filter
+   - Hides skills you've defined but not yet used in events
+   - Useful for finding which skills need event associations
+
+**Applying Filters**:
+- Navigate with `j/k` or arrow keys
+- Press `Enter` to apply the selected filter
+- Press `u` for quick "Used skills only" filter
+- Press `Esc` to cancel without filtering
+
+#### Sorting Skills
+
+Press `s` from the Skills List to open the **Sort Menu**:
+
+```
+┌─────────────────────────────────────────────┐
+│ Sort Skills                                 │
+├─────────────────────────────────────────────┤
+│                                             │
+│ ▶ Name (A-Z)                                │
+│   Name (Z-A)                                │
+│   Most Used (event count)                   │
+│   Least Used (event count)                  │
+│   Recently Used (last used date)            │
+│   Oldest Used (last used date)              │
+│   Category                                  │
+└─────────────────────────────────────────────┘
+
+j/k or ↑/↓ - Navigate | Enter - Apply sort
+e - Most used (quick) | Esc - Cancel
+```
+
+**Sort Options**:
+
+1. **By Name (A-Z / Z-A)**: Alphabetical sorting (default)
+   - A-Z: Standard alphabetical order
+   - Z-A: Reverse alphabetical order
+
+2. **By Event Count**: Sort by how often you've used each skill
+   - Most Used: Skills with highest event count first
+   - Least Used: Skills with lowest event count first
+   - Press `e` for quick "Most used" sort
+   - Useful for identifying your most frequently used skills
+
+3. **By Last Used Date**: Sort by when you last used each skill
+   - Recently Used: Most recent usage first
+   - Oldest Used: Oldest usage first
+   - Useful for CV preparation (highlight recent experience)
+
+4. **By Category**: Group skills by category, then sort by name
+   - Shows all Backend skills together, then Frontend, etc.
+   - Default view in the Skills List
+
+**Applying Sorting**:
+- Navigate with `j/k` or arrow keys
+- Press `Enter` to apply the selected sort
+- Press `e` for quick "Most used" sort
+- Press `Esc` to cancel without sorting
+
+#### Clearing Filters and Sorting
+
+When filters or custom sorting are active, the footer shows:
+
+```
+j/k or ↑/↓ - Navigate | Enter - View detail | n - Add skill
+e - Edit | d - Delete | f - Filter | s - Sort | x - Clear filters | Esc - Back
+```
+
+Press `x` to **clear all filters and sorting**, returning to the default view (grouped by category, sorted by name).
+
+**Active Filter Indicator**:
+
+When filters are active, you'll see an indicator at the top of the list:
+
+```
+┌─────────────────────────────────────────────┐
+│ Manage Skills                               │
+│ 🔍 Filtered: Backend, Advanced level       │
+├─────────────────────────────────────────────┤
+│                                             │
+│ Backend (3 skills)                          │
+│ ▶ Go              Advanced    5 yrs  [12]  │
+│   PostgreSQL      Advanced    6 yrs  [18]  │
+│   Redis           Advanced    4 yrs  [10]  │
+└─────────────────────────────────────────────┘
+```
+
+#### Common Filtering/Sorting Workflows
+
+**Workflow 1: Find Skills to Add to Events**
+1. Press `f` to open filter menu
+2. Select "Used skills only"
+3. Review skills without events
+4. Press `x` to show all skills
+5. Press `Esc` to return to main menu
+
+**Workflow 2: Prioritize Skills for CV**
+1. Press `s` to open sort menu
+2. Select "Most Used (event count)" (or press `e` for quick access)
+3. Review top skills with highest event counts
+4. These are your strongest skills to highlight
+
+**Workflow 3: Focus on Recent Experience**
+1. Press `s` to open sort menu
+2. Select "Recently Used (last used date)"
+3. Review skills you've used recently
+4. Useful for roles requiring current experience
+
+**Workflow 4: Audit a Specific Category**
+1. Press `f` to open filter menu
+2. Select specific category (e.g., "DevOps")
+3. Review all skills in that category
+4. Identify gaps or skills to develop
 
 ### Adding a New Skill
 
@@ -280,7 +441,28 @@ See [CSV_IMPORT_GUIDE.md](./CSV_IMPORT_GUIDE.md) for details.
 | `n` | Add new skill |
 | `e` | Edit selected skill (quick) |
 | `d` | Delete selected skill (quick) |
+| `f` | Open filter menu |
+| `s` | Open sort menu |
+| `x` | Clear all filters and sorting |
 | `Esc` | Back to main menu |
+
+### Filter Menu
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` or `↑` / `↓` | Navigate filter options |
+| `Enter` | Apply selected filter |
+| `u` | Quick: Used skills only |
+| `Esc` | Cancel without filtering |
+
+### Sort Menu
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` or `↑` / `↓` | Navigate sort options |
+| `Enter` | Apply selected sort |
+| `e` | Quick: Most used (event count desc) |
+| `Esc` | Cancel without sorting |
 
 ### Skill Detail View
 
