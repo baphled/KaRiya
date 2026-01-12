@@ -34,6 +34,11 @@
   - ✅ Events view showing all events using a skill
   - ✅ Event count display in list view
   - ✅ 47 test specs (100% passing)
+- ✅ **Form Alignment Fix**: HuhSkillForm wrapper pattern (Commits: be0e66b, 29bc7ec, d28f46b, bbafd34, 5f38c5a, aa0f972)
+  - ✅ Created HuhSkillForm wrapper model for proper form centering
+  - ✅ Refactored ManageSkillsIntent to use wrapper
+  - ✅ Added comprehensive documentation (FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md)
+  - ✅ Fixed LayoutStack width bug in forms package
 
 ### All Phases Complete:
 - ✅ **Phase 1**: Domain Model & Migrations (commits 519d149, 510b890)
@@ -43,15 +48,16 @@
 - ✅ **Phase 5**: Event Capture Integration (commits a0384ea, e95672a)
 - ✅ **Phase 5B**: CSV Import Integration (commit c51695a)
 - ✅ **Phase 6**: App Integration (menu registration at line 82, intent registration at line 583)
+- ✅ **Form Alignment**: HuhSkillForm wrapper (commits be0e66b through aa0f972)
 - 🔜 **Phase 7**: CV Generation Integration (MOVED TO TASK 40 - Role Emphasis Redesign)
 
 ### Metrics:
-- **Files Created**: 11/11 (100%)
-- **Files Modified**: 8/11 (73% - Phase 7 deferred to Task 40)
+- **Files Created**: 12/12 (100%) - includes HuhSkillForm wrapper
+- **Files Modified**: 9/11 (82% - Phase 7 deferred to Task 40)
 - **Test Specs**: 240+ (47 new in Phase 4, metadata form tests fixed)
 - **Code Coverage**: Repository 100%, Intent >95%
-- **Commits**: 13 total (10 feature + 1 fix + 2 docs, all following TDD)
-- **Documentation**: 3 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md)
+- **Commits**: 19 total (10 feature + 1 fix + 8 form alignment/docs, all following TDD)
+- **Documentation**: 5 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md, FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md)
 
 ## Context
 
@@ -78,9 +84,12 @@ Currently, KaRiya has no user-defined skills. Skills are derived automatically f
 ### Forms
 - [x] `internal/cli/forms/skill_form.go` - Skill add/edit form configuration
 
+### Models
+- [x] `internal/cli/models/huh_skill_form.go` - HuhSkillForm wrapper for form alignment (Form Alignment Fix)
+
 ### Components (NEW - for detail and events views)
-- [ ] `internal/cli/intents/manage_skills_detail_view.go` - Detail view rendering helper
-- [ ] `internal/cli/intents/manage_skills_events_view.go` - Events view rendering helper
+- [ ] `internal/cli/intents/manage_skills_detail_view.go` - Detail view rendering helper (OPTIONAL - views inline in intent)
+- [ ] `internal/cli/intents/manage_skills_events_view.go` - Events view rendering helper (OPTIONAL - views inline in intent)
 
 ## Files to Modify
 
