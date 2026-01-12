@@ -90,12 +90,18 @@ Let me write the test first. After you confirm it fails, I'll implement.
 
 The AI assistant **MUST**:
 
-1. Run `make review-commit` (or ask user to run it)
-2. Include AI attribution in commit message if ANY code was AI-generated
-   - **Recommended**: Use `make ai-commit MSG="type(scope): description"` for automatic attribution
-   - Manual: Add `AI-Generated-By: <Agent> (<Model>)` and `Reviewed-By: <Name>` trailers
+1. **Run `make check-compliance`** to verify code quality before committing
+2. **Use `make ai-commit MSG="type(scope): description"`** for all AI-generated commits (automatic attribution)
+   - This is the **required** method for AI-generated code commits
+   - Manual workflow (NOT recommended): `make review-commit` + manual attribution
 3. Verify commit is atomic (ONE logical change)
 4. If commit violates rules, **REFUSE** and explain corrections needed
+
+**Critical Order**:
+```bash
+make check-compliance          # MUST pass before commit
+make ai-commit MSG="..."       # Commit with automatic AI attribution
+```
 
 ### After Task Completion
 
@@ -113,7 +119,8 @@ The AI assistant **MUST REFUSE** to proceed if:
 - User requests implementation before test (TDD violation)
 - `make session-start` has not been run or failed
 - `make check-compliance` fails after task completion
-- User attempts to commit without `make review-commit`
+- User attempts to commit without `make check-compliance` passing
+- User attempts AI-generated commit without `make ai-commit`
 - User attempts to skip required workflow steps
 
 **Refusal template:**
@@ -184,8 +191,8 @@ All task files **MUST** follow this structure:
   ```
 
 ## Pre-Commit Checklist (BEFORE EACH COMMIT)
-- [ ] `make review-commit` passes
-- [ ] AI attribution included (if AI-generated)
+- [ ] `make check-compliance` passes (REQUIRED before commit)
+- [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
 - [ ] Commit message explains **WHY**, not just WHAT
 - [ ] Commit is atomic (ONE logical change)
 
@@ -383,8 +390,8 @@ These documents form the foundation of our development practices. Read them in t
 - Phase 5: Task Completion (summary, handoff notes)
 **Essential commands**:
 ```bash
-make check-compliance  # Before and after every task
-make review-commit     # Before every commit
+make check-compliance  # Before and after every task AND before every commit
+make ai-commit MSG="type(scope): description"  # For all AI-generated commits
 ```
 
 #### 3. Go Coding Standards

@@ -638,8 +638,8 @@ func (b *SectionBuilder) buildSkillsSection(
 - [ ] Commit: `docs(cv): update variant and generation guides`
 
 ## Pre-Commit Checklist (BEFORE EACH COMMIT)
-- [ ] `make review-commit` passes
-- [ ] AI attribution included (if AI-generated)
+- [ ] `make check-compliance` passes (REQUIRED before commit)
+- [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
 - [ ] Commit message explains **WHY**, not just WHAT
 - [ ] Commit is atomic (ONE logical change)
 

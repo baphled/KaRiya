@@ -35,8 +35,8 @@ make clean-coverage
 1. Review tasks in project documentation
 2. Follow Red-Green-Refactor methodology
 3. Ensure high test coverage
-4. Run linters before committing
-5. **Follow AI commit attribution rules** (see below)
+4. **Run `make check-compliance` before EVERY commit** (REQUIRED)
+5. **Use `make ai-commit` for all AI-generated code** (see below)
 
 ## AI Commit Attribution 🤖
 

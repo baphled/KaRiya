@@ -9,13 +9,13 @@ git add -p <file>
 # 2. Review what you're committing
 git diff --cached --stat
 
-# 3. Run automated review
-make review-commit
+# 3. REQUIRED: Run compliance check before commit
+make check-compliance
 
-# 4. Commit with AI attribution (recommended for AI code)
+# 4. Commit with AI attribution (REQUIRED for AI-generated code)
 make ai-commit MSG="feat(scope): description"
 
-# OR: Manual commit
+# OR: Manual commit (NOT recommended for AI-generated code)
 git commit
 ```
 
