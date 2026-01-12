@@ -25,8 +25,8 @@ make check-compliance  # Before finishing
 view *_test.go          # See existing tests
 # Write failing test
 git add *_test.go
-make review-commit
-git commit -m "test(scope): add failing test for X"
+make check-compliance   # REQUIRED before commit
+make ai-commit MSG="test(scope): add failing test for X"
 ```
 
 **GREEN: Implement**
@@ -35,8 +35,8 @@ view *.go               # See existing code
 # Write minimal implementation
 make test               # Verify passes
 git add *.go
-make review-commit
-git commit -m "feat(scope): implement X"
+make check-compliance   # REQUIRED before commit
+make ai-commit MSG="feat(scope): implement X"
 ```
 
 **REFACTOR: Clean Up (if needed)**
@@ -44,8 +44,8 @@ git commit -m "feat(scope): implement X"
 # Improve without changing behavior
 make test               # Still passes
 git add *.go
-make review-commit
-git commit -m "refactor(scope): improve X"
+make check-compliance   # REQUIRED before commit
+make ai-commit MSG="refactor(scope): improve X"
 ```
 
 ### 3. Verify Compliance
@@ -92,11 +92,14 @@ make check-compliance   # Full check
 ## Before Each Commit
 
 ```bash
-make review-commit
+make check-compliance   # REQUIRED before every commit
+make ai-commit MSG="type(scope): description"
 ```
 
 Check:
+- [ ] **`make check-compliance` passes** (REQUIRED)
 - [ ] ONE logical change
+- [ ] Use `make ai-commit` for AI-generated code
 - [ ] Clear message (type, scope, subject)
 - [ ] Explains WHY
 - [ ] No generated files
@@ -108,8 +111,8 @@ Check:
 ## Commands
 
 ```bash
-make check-compliance    # Full check
-make review-commit       # Commit check
+make check-compliance    # Full check (REQUIRED before every commit)
+make ai-commit MSG="..." # AI-generated commit with attribution
 make token-check         # Token tips
 make fmt                 # Format
 make vet                 # Analysis
@@ -155,13 +158,15 @@ make check-compliance
 # RED
 view internal/service/career/service_test.go
 # Add test
-git commit -m "test: add test for X"
+make check-compliance
+make ai-commit MSG="test: add test for X"
 
 # GREEN
 view internal/service/career/service.go
 # Implement
 make test
-git commit -m "feat: implement X"
+make check-compliance
+make ai-commit MSG="feat: implement X"
 
 # Verify
 make check-compliance

@@ -485,8 +485,9 @@ Before writing any code:
 
 Before running `git commit`:
 
-- [ ] `make review-commit` passed
+- [ ] **`make check-compliance` passed** (REQUIRED before every commit)
 - [ ] One logical change only
+- [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
 - [ ] Commit message written (type, scope, subject)
 - [ ] Message explains WHY
 - [ ] No generated files
@@ -514,8 +515,8 @@ Before marking task complete:
 
 ```bash
 # Compliance and checks
-make check-compliance    # Full rules compliance check
-make review-commit       # Commit-specific review
+make check-compliance    # Full rules compliance check (REQUIRED before every commit)
+make ai-commit MSG="..." # AI-generated commit with automatic attribution
 make token-check         # Token efficiency reminder
 
 # Code quality

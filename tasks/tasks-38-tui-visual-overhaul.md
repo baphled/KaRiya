@@ -374,8 +374,8 @@ This phase focuses on creating theme integration helpers and the only new compon
 ---
 
 ## Pre-Commit Checklist (BEFORE EACH COMMIT)
-- [ ] `make review-commit` passes
-- [ ] AI attribution included (AI-generated code)
+- [ ] `make check-compliance` passes (REQUIRED before commit)
+- [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
 - [ ] Commit message explains **WHY**, not just WHAT
 - [ ] Commit is atomic (ONE logical change)
 - [ ] Tests pass for committed code
