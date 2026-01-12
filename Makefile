@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start verify-hooks tdd-check
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start verify-hooks tdd-check generate-diagrams diagrams
 
 # Run all tests in verbose mode
 test:
@@ -202,6 +202,13 @@ verify-hooks:
 tdd-check:
 	@bash scripts/tdd-check.sh
 
+# Generate workflow diagrams
+generate-diagrams:
+	@bash scripts/generate_workflow_diagrams.sh
+
+# Alias for convenience
+diagrams: generate-diagrams
+
 # Show help for all available targets
 help:
 	@echo "================================================"
@@ -240,7 +247,11 @@ help:
 	@echo "🏗️  Build:"
 	@echo "  make build             - Build the application"
 	@echo ""
-	@echo "📚 Documentation:"
+	@echo "📊 Documentation:"
+	@echo "  make generate-diagrams - Generate workflow diagrams (Mermaid)"
+	@echo "  make diagrams          - Alias for generate-diagrams"
+	@echo ""
+	@echo "📚 Reference:"
 	@echo "  docs/rules/master-task-prompt.md     - Full task guide"
 	@echo "  docs/rules/TASK_QUICK_REF.md         - Quick reference"
 	@echo "  docs/rules/AI_COMMIT_ATTRIBUTION.md  - AI attribution rules"
