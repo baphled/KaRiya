@@ -857,7 +857,7 @@ Text,Date,Categories,Tags,Project,Company,Skills
 
 ## Post-Task Checklist (MUST COMPLETE BEFORE NEXT TASK)
 - [x] `make check-compliance` passes ✅ (80.71% coverage, all tests pass)
-- [x] All checkboxes above completed (Phase 4B and Phase 7 explicitly deferred)
+- [x] All checkboxes above completed (Phase 4B ✅ COMPLETE, Phase 7 moved to Task 40)
 - [x] Task marked complete `[x]` in task file
 - [x] Token count: N/A (task complete)
 
@@ -886,10 +886,13 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [ ] Focus area determination from skill categories - TASK 40
 - [ ] Skill suggestions shown when adding new skill (extracted from event text) - FUTURE ENHANCEMENT
 
-### Optional Enhancements (Phase 4B) ⚠️ DEFERRED
-- [ ] Filter skills by category (optional, can defer)
-- [ ] Filter skills by level (optional, can defer)
-- [ ] Sort skills by name, event count, last used (optional, can defer)
+### Optional Enhancements (Phase 4B) ✅ COMPLETE
+- [x] Filter skills by category (commits: 0c76670, abf95bd)
+- [x] Filter skills by level (commits: 0c76670, abf95bd)
+- [x] Sort skills by name, event count, last used (commits: 0c76670, abf95bd)
+- [x] Filter by usage (min events - "used skills only") (commits: 0c76670, abf95bd)
+- [x] Clear filters with 'x' key (commits: 0c76670, abf95bd)
+- [x] 26 comprehensive tests passing (verified 2026-01-12)
 
 ### Quality Assurance (Phase 4) ✅ COMPLETE
 - [x] All tests pass (100% pass rate)
@@ -897,10 +900,11 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [x] Zero staticcheck warnings (verified with build)
 - [x] Zero race conditions
 
-### Documentation ✅ COMPLETE
+### Documentation ⚠️ PARTIAL - Filter/Sort Not Documented
 - [x] Documentation updated (add docs/SKILLS_GUIDE.md) - COMPLETE (commit 3d09115)
 - [x] CSV documentation updated (CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md) - COMPLETE (commit a5e54db)
 - [x] SKILLS_GUIDE includes detail view and events view usage - COMPLETE (commit 3d09115)
+- [ ] SKILLS_GUIDE.md needs filter/sort documentation (Phase 4B features not documented) - **TODO**
 
 ## Rollback Plan
 - Migrations can be rolled back via `goose down`
@@ -1121,7 +1125,7 @@ To ensure consistency across all management intents, skills now have the same ca
 | **Quick Actions** | ✅ Edit/Delete from list | ✅ Edit/Delete from list | ✅ Edit/Delete from list |
 | **Pagination** | ✅ 15 per page | ✅ 15 per page | ✅ 15 per page |
 | **Empty State** | ✅ Helpful message | ✅ Helpful message | ✅ Helpful message |
-| **Filter/Sort** | ⚠️ Planned | ❌ Not implemented | ⚠️ Optional (Phase 4B) |
+| **Filter/Sort** | ⚠️ Planned | ❌ Not implemented | ✅ COMPLETE (Phase 4B) |
 | **Bulk Operations** | ❌ Not integrated | ❌ Not integrated | ❌ Not planned |
 
 **Key Improvements in This Task**:
@@ -1131,8 +1135,10 @@ To ensure consistency across all management intents, skills now have the same ca
 4. ✅ Added event count display (matches bursts)
 5. ✅ Consistent keyboard shortcuts across all intents
 
+**Completed Enhancements**:
+- ✅ Filter/sort capabilities (Phase 4B - commits 0c76670, abf95bd)
+
 **Deferred to Future Tasks**:
-- Filter/sort capabilities (optional, Phase 4B)
 - Bulk operations integration (separate task for all intents)
 - "Work through all" review mode (separate enhancement task)
 
