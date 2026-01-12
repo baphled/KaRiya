@@ -4,7 +4,7 @@ This directory contains all development standards, guidelines, and workflows for
 
 ## 📚 Documentation Overview
 
-### Total Documents: 13 files (~7,240+ lines)
+### Total Documents: 14 files (~7,790+ lines)
 ### Archived Documents: 4 files (see docs/archive/rules/)
 ### Categories: Rules, Guidelines, Quick References, Processes, Best Practices
 
@@ -77,7 +77,7 @@ This directory contains all development standards, guidelines, and workflows for
 - Commands and templates
 - Token efficiency thresholds
 
-### 3. Process & Workflows (3 files)
+### 3. Process & Workflows (4 files)
 
 #### [master-task-prompt.md](master-task-prompt.md) (768 lines)
 - **Type**: Master Workflow
@@ -101,6 +101,19 @@ This directory contains all development standards, guidelines, and workflows for
   - Automated script usage
   - Common issues and solutions
   - Integration patterns
+
+#### [FORMS_WORKFLOW_GUIDE.md](FORMS_WORKFLOW_GUIDE.md) (~550 lines)
+- **Type**: Workflow Guide
+- **Purpose**: Step-by-step workflows for creating and integrating forms
+- **Key Topics**:
+  - Creating form configurations
+  - Modal integration (inline editing)
+  - Model integration (full-screen forms)
+  - Custom validators
+  - Integration checklists
+  - Common pitfalls
+  - Testing strategy
+- **Cross-References**: [`docs/FORMS_GUIDE.md`](../FORMS_GUIDE.md) for API details
 
 #### [rules-compliance-check.md](rules-compliance-check.md) (648 lines)
 - **Type**: Comprehensive Checklist
@@ -191,7 +204,7 @@ This directory contains all development standards, guidelines, and workflows for
 |----------|-------|-------|---------|
 | Rules & Guidelines | 3 | ~1,850 | Mandatory standards |
 | Quick References | 4 | ~742 | Fast lookup |
-| Process & Workflows | 3 | ~2,066 | Step-by-step guides |
+| Process & Workflows | 4 | ~2,616 | Step-by-step guides |
 | Best Practices | 2 | ~529 | Recommended practices |
 | **Total** | **13** | **~7,240+** | **Complete coverage** |
 
