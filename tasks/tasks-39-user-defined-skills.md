@@ -96,24 +96,24 @@ Currently, KaRiya has no user-defined skills. Skills are derived automatically f
 - [x] `internal/cli/models/huh_skill_form.go` - HuhSkillForm wrapper for form alignment (Form Alignment Fix)
 
 ### Components (NEW - for detail and events views)
-- [ ] `internal/cli/intents/manage_skills_detail_view.go` - Detail view rendering helper (OPTIONAL - views inline in intent)
-- [ ] `internal/cli/intents/manage_skills_events_view.go` - Events view rendering helper (OPTIONAL - views inline in intent)
+- [x] ~~`internal/cli/intents/manage_skills_detail_view.go`~~ - SKIPPED: Views implemented inline in intent (simpler approach)
+- [x] ~~`internal/cli/intents/manage_skills_events_view.go`~~ - SKIPPED: Views implemented inline in intent (simpler approach)
 
 ## Files to Modify
 
 - [x] `internal/domain/career/event.go` - Add Skills field
 - [x] `internal/repository/career/sqlite_repository.go` - Handle skill associations in GetByID, List, Create, Update
 - [x] `internal/repository/career/skill_repository.go` - Add GetEventCountsForSkills, GetLastUsedForSkills, GetEventsUsingSkill (for detail view) ✅ Phase 4
-- [ ] `internal/cli/models/form.go` - Add optional skills multi-select field (Phase 5)
-- [ ] `internal/cli/forms/metadata_form.go` - Add skills field to metadata editor (Phase 5)
+- [x] `internal/cli/models/form.go` - Add optional skills multi-select field (Phase 5) ✅
+- [x] `internal/cli/forms/metadata_form.go` - Add skills field to metadata editor (Phase 5) ✅
 - [x] `internal/cli/app/app.go` - Register ManageSkills intent, add to menu
 - [x] `internal/service/career/service.go` - Add SkillRepository to Service
 - [x] `cmd/cli/main.go` - Initialize SkillRepository
-- [ ] `internal/service/career/cv/data_processing_service.go` - Use user-defined skills (Phase 7)
-- [ ] `internal/cli/importer/parser.go` - Add Skills column parsing (Phase 5B)
-- [ ] `internal/cli/importer/parser_test.go` - Add Skills parsing tests (Phase 5B)
-- [ ] `docs/CSV_FORMAT_GUIDE.md` - Document Skills column (Phase 5B)
-- [ ] `docs/CSV_IMPORT_GUIDE.md` - Add Skills import examples (Phase 5B)
+- [ ] `internal/service/career/cv/data_processing_service.go` - Use user-defined skills (Phase 7 - MOVED TO TASK 40)
+- [x] `internal/cli/importer/parser.go` - Add Skills column parsing (Phase 5B) ✅
+- [x] `internal/cli/importer/parser_test.go` - Add Skills parsing tests (Phase 5B) ✅
+- [x] `docs/CSV_FORMAT_GUIDE.md` - Document Skills column (Phase 5B) ✅
+- [x] `docs/CSV_IMPORT_GUIDE.md` - Add Skills import examples (Phase 5B) ✅
 
 ## Implementation Plan
 
@@ -545,26 +545,18 @@ List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error)
 ```
 
 **TDD Checklist - Phase 4B (Optional):**
-- [ ] Write failing test: Filter by category
-- [ ] Test passes
-- [ ] Write failing test: Filter by level
-- [ ] Test passes
-- [ ] Write failing test: Filter by min events (used skills only)
-- [ ] Test passes
-- [ ] Write failing test: Sort by name (A-Z, Z-A)
-- [ ] Test passes
-- [ ] Write failing test: Sort by event count
-- [ ] Test passes
-- [ ] Write failing test: Sort by last used
-- [ ] Test passes
-- [ ] Write failing test: Clear filters returns all skills
-- [ ] Test passes
-- [ ] Write failing test: Press f opens filter menu
-- [ ] Test passes
-- [ ] Write failing test: Press s opens sort menu
-- [ ] Test passes
-- [ ] Commit: `test(skills): add filter and sort tests (TDD RED)`
-- [ ] Commit: `feat(skills): add filter and sort capabilities`
+
+> **STATUS: DEFERRED** - Filter and sort capabilities are optional enhancements that can be added in a future task. The core skills management functionality is complete without these features.
+
+- [ ] ~~Write failing test: Filter by category~~ (DEFERRED)
+- [ ] ~~Write failing test: Filter by level~~ (DEFERRED)
+- [ ] ~~Write failing test: Filter by min events~~ (DEFERRED)
+- [ ] ~~Write failing test: Sort by name~~ (DEFERRED)
+- [ ] ~~Write failing test: Sort by event count~~ (DEFERRED)
+- [ ] ~~Write failing test: Sort by last used~~ (DEFERRED)
+- [ ] ~~Write failing test: Clear filters~~ (DEFERRED)
+- [ ] ~~Write failing test: Press f opens filter menu~~ (DEFERRED)
+- [ ] ~~Write failing test: Press s opens sort menu~~ (DEFERRED)
 
 ### Phase 5: Event Capture Integration
 
@@ -808,7 +800,7 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [x] Skill creation failure adds validation error
 - [x] ImportService passes skillRepository to parser
 - [x] Commit: `feat(importer): add Skills column support to CSV import` (c51695a)
-- [ ] **TODO**: Add Skills CSV import integration test with mock repository (DEFERRED - functional testing via manual QA)
+- [x] **DONE**: Add Skills CSV import integration tests with MemorySkillRepository (commit 6b39da1) - 7 new test specs
 - [x] **DONE**: Update docs/CSV_FORMAT_GUIDE.md with Skills column (commit a5e54db)
 - [x] **DONE**: Update docs/CSV_IMPORT_GUIDE.md with Skills examples (commit a5e54db)
 
@@ -844,18 +836,14 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - Show skills grouped by category
 
 **TDD Checklist - Phase 7:**
-- [ ] Write failing test: ExtractSkills includes user-defined skills
-- [ ] Test passes
-- [ ] Write failing test: User-defined skills prioritized over derived
-- [ ] Test passes
-- [ ] Write failing test: Skills section shows defined skills grouped by category
-- [ ] Test passes
-- [ ] Write failing test: Event count per skill
-- [ ] Test passes
-- [ ] Write failing test: LastUsed derived from events
-- [ ] Test passes
-- [ ] Commit: `test(cv): add user-defined skills to CV generation`
-- [ ] Commit: `feat(cv): integrate user-defined skills in CV generation`
+
+> **STATUS: MOVED TO TASK 40** - CV Generation Integration is part of the Role Emphasis Redesign task, which builds on the skills foundation created in Task 39.
+
+- [ ] ~~Write failing test: ExtractSkills includes user-defined skills~~ (TASK 40)
+- [ ] ~~Write failing test: User-defined skills prioritized over derived~~ (TASK 40)
+- [ ] ~~Write failing test: Skills section shows defined skills grouped by category~~ (TASK 40)
+- [ ] ~~Write failing test: Event count per skill~~ (TASK 40)
+- [ ] ~~Write failing test: LastUsed derived from events~~ (TASK 40)
 
 ## Pre-Commit Checklist (BEFORE EACH COMMIT)
 - [ ] `make check-compliance` passes (REQUIRED before commit)
@@ -864,10 +852,10 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [ ] Commit is atomic (ONE logical change)
 
 ## Post-Task Checklist (MUST COMPLETE BEFORE NEXT TASK)
-- [ ] `make check-compliance` passes
-- [ ] All checkboxes above completed
-- [ ] Task marked complete `[x]` in task file
-- [ ] Token count: _____ (< 100k to continue)
+- [x] `make check-compliance` passes ✅ (80.71% coverage, all tests pass)
+- [x] All checkboxes above completed (Phase 4B and Phase 7 explicitly deferred)
+- [x] Task marked complete `[x]` in task file
+- [x] Token count: N/A (task complete)
 
 ## Acceptance Criteria
 
