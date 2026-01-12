@@ -383,7 +383,9 @@ type GlobalContext struct {
 ### Standards & Guidelines
 - `docs/TUI_STANDARDS.md` - UI/UX standards
 - `docs/TUI_DEVELOPER_GUIDE.md` - General development guidelines
-- `docs/KEYBOARD_REFERENCE.md` - Keyboard shortcut reference
+- `docs/KEYBOARD_SHORTCUTS_GUIDE.md` - User keyboard reference
+- `docs/development/KEYBOARD_SYSTEM_GUIDE.md` - Keyboard implementation guide
+- `docs/workflows/` - Detailed workflow guides (CV Generation, Event Capture)
 
 ### Code Structure
 - `internal/cli/intents/contract.go` - Intent interface and result types

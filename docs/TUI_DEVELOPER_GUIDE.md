@@ -44,8 +44,9 @@ import (
 ### Recommended Reading
 
 1. [TUI Standards](./TUI_STANDARDS.md) - Design principles and guidelines
-2. [Keyboard Reference](./KEYBOARD_REFERENCE.md) - All keyboard shortcuts
-3. [Theme Customization Guide](./THEME_CUSTOMIZATION_GUIDE.md) - Theme system documentation
+2. [Keyboard Shortcuts Guide](./KEYBOARD_SHORTCUTS_GUIDE.md) - All keyboard shortcuts (user-facing)
+3. [Keyboard System Guide](./development/KEYBOARD_SYSTEM_GUIDE.md) - Keyboard implementation (developer)
+4. [Theme Customization Guide](./THEME_CUSTOMIZATION_GUIDE.md) - Theme system documentation
 4. [BubbleTea Docs](https://github.com/charmbracelet/bubbletea/tree/master/examples) - Framework examples
 5. [Lipgloss Styling](https://github.com/charmbracelet/lipgloss/examples) - Styling examples
 
@@ -866,5 +867,5 @@ When creating a new TUI component, ensure:
 **Version**: 1.0
 **Status**: Complete and ready for reference
 
-For more information, see [TUI Standards](./TUI_STANDARDS.md) and [Keyboard Reference](./KEYBOARD_REFERENCE.md).
+For more information, see [TUI Standards](./TUI_STANDARDS.md) and [Keyboard Shortcuts Guide](./KEYBOARD_SHORTCUTS_GUIDE.md).
 
