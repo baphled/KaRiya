@@ -147,14 +147,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Toggle help screen (only ? key, not 'h' which is vim-style left navigation)
 			m.showingHelp = !m.showingHelp
 			return m, nil
-		case "home", "esc", "escape":
-			if m.state == StateIntent {
-				m.state = StateMenu
-				m.selectedMenuIndex = 0
-				return m, nil
-			}
 		}
 
+		// Route messages to appropriate handler based on state
+		// Note: We don't intercept escape here - intents handle their own back navigation
+		// per TUI Standards (intermediate states go back one state, root states cancel intent)
 		if m.state == StateMenu {
 			return m.handleMenuInput(msg)
 		} else if m.state == StateIntent {
