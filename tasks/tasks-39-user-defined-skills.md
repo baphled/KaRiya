@@ -39,6 +39,13 @@
   - ✅ Refactored ManageSkillsIntent to use wrapper
   - ✅ Added comprehensive documentation (FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md)
   - ✅ Fixed LayoutStack width bug in forms package
+- ✅ **Test Fixes**: Post-integration test fixes (Commits: 0ffad28, d0fdd23, 6b39da1, fdc1c85)
+  - ✅ Fixed E2E menu order mismatch after adding `manage_skills` intent
+  - ✅ Fixed nil context panic in ManageSkillsIntent tests
+  - ✅ Fixed view integration tests with outdated expectations
+  - ✅ Enabled skipped repository tests (GetSkillsForEvent, GetEventCountsForSkills)
+  - ✅ Added CSV import integration tests with MemorySkillRepository
+  - ✅ Fixed case-sensitivity comment in parser.go
 
 ### All Phases Complete:
 - ✅ **Phase 1**: Domain Model & Migrations (commits 519d149, 510b890)
@@ -49,14 +56,15 @@
 - ✅ **Phase 5B**: CSV Import Integration (commit c51695a)
 - ✅ **Phase 6**: App Integration (menu registration at line 82, intent registration at line 583)
 - ✅ **Form Alignment**: HuhSkillForm wrapper (commits be0e66b through aa0f972)
+- ✅ **Test Fixes**: Post-integration fixes (commits 0ffad28, d0fdd23, 6b39da1, fdc1c85)
 - 🔜 **Phase 7**: CV Generation Integration (MOVED TO TASK 40 - Role Emphasis Redesign)
 
 ### Metrics:
 - **Files Created**: 12/12 (100%) - includes HuhSkillForm wrapper
 - **Files Modified**: 9/11 (82% - Phase 7 deferred to Task 40)
-- **Test Specs**: 240+ (47 new in Phase 4, metadata form tests fixed)
-- **Code Coverage**: Repository 100%, Intent >95%
-- **Commits**: 19 total (10 feature + 1 fix + 8 form alignment/docs, all following TDD)
+- **Test Specs**: 240+ (47 new in Phase 4, metadata form tests fixed, 7 new CSV import tests)
+- **Code Coverage**: 80.71% overall, Repository 100%, Intent >95%
+- **Commits**: 23 total (10 feature + 1 fix + 8 form alignment/docs + 4 test fixes, all following TDD)
 - **Documentation**: 5 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md, FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md)
 
 ## Context
@@ -1142,3 +1150,48 @@ This task creates the foundation for Task 40 (Role Emphasis Redesign), which wil
 - Allow selecting technologies for CV generation (Generalist: 2-5, Specialist: 1)
 - Filter/prioritize CV bullets based on technology selection
 - Determine Focus Area from skill categories
+
+## Lessons Learned
+
+### 1. Menu Order Matters in E2E Tests
+When adding a new intent to the main menu, E2E test helpers that use hardcoded menu indices must be updated. The `SelectIntentByName()` helper in `internal/testutil/e2e/helpers.go` had a map of intent names to menu positions that became stale.
+
+**Fix**: Updated the `intentOrder` map to include `manage_skills` at position 2, shifting all subsequent intents.
+
+### 2. Test Context Must Be Properly Initialized
+The `ManageSkillsContext` struct requires a `Ctx` field for repository calls. Missing this field causes nil pointer panics when the intent tries to use the repository.
+
+**Fix**: Always include `Ctx: context.Background()` when creating test contexts.
+
+### 3. View Integration Tests Can Have Outdated Expectations
+Test assertions about view output can become stale when:
+- Footer format changes (e.g., `n:add` vs `n  New skill`)
+- Logo/branding expectations change
+- StandardView centering affects line widths
+
+**Fix**: Update tests to match actual view output rather than assumed format. For centered layouts, avoid strict line-width assertions.
+
+### 4. CSV Import Tests Need Valid Domain Data
+The parser validates all fields including tags. Tests using shorthand tag values (e.g., `tech` instead of `technical`) will fail validation.
+
+**Fix**: Use valid domain values in test fixtures (check `domain/career/event.go` for allowed values).
+
+### 5. Comment Accuracy Matters
+The parser.go comment claimed skill lookup was "case-insensitive" when the actual implementation in `MemorySkillRepository.GetByName()` is case-sensitive. This could mislead developers.
+
+**Fix**: Keep comments in sync with implementation behavior.
+
+### 6. Skipped Tests Should Be Reviewed After Feature Implementation
+Repository tests for `GetSkillsForEvent` and `GetEventCountsForSkills` were skipped during initial development. After the feature was complete, these needed proper implementations.
+
+**Fix**: Search for `Skip(` in test files after feature completion to ensure all deferred tests are implemented.
+
+### 7. Unused Helper Functions Create Linting Errors
+Refactoring tests can leave helper functions unused (e.g., `splitLines`, `visibleLength`). Staticcheck flags these as errors.
+
+**Fix**: Remove unused code when refactoring tests. Run `staticcheck ./...` before committing.
+
+### 8. Test File Imports Must Match Usage
+Adding tests that use `MemorySkillRepository` requires importing the repository package. Forgetting the import causes undefined errors.
+
+**Fix**: Check import statements when adding new test dependencies.
