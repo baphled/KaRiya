@@ -1,18 +1,11 @@
 package components_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/cli/components"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestSkillSelector(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "SkillSelector Suite")
-}
 
 var _ = Describe("SkillSelector", func() {
 	var (
