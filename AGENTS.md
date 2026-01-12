@@ -607,6 +607,112 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
   - Quick reference for StandardView usage
   - Common patterns and examples
 
+- **[`docs/development/NAVIGATION_TESTING_GUIDE.md`](docs/development/NAVIGATION_TESTING_GUIDE.md)** - Navigation testing comprehensive guide
+  - E2E test framework usage (helpers, assertions, data population)
+  - Navigation test patterns (forward, backward, multi-intent, error recovery)
+  - Escape key testing matrix (per state type)
+  - Common navigation bugs and prevention
+  - State transition testing and debugging techniques
+
+- **[`docs/development/NAVIGATION_TESTING_CHECKLIST.md`](docs/development/NAVIGATION_TESTING_CHECKLIST.md)** - Navigation testing quick reference
+  - Pre-implementation checklist (state machine definition, escape behavior)
+  - Test coverage requirements (escape, forward, back, universal shortcuts)
+  - Copy-paste test templates (escape, navigation, E2E)
+  - Pre-commit checklist and verification steps
+
+---
+
+## Workflow Documentation
+
+KaRiya provides comprehensive workflow guides for complex user journeys. Each guide includes state machines, keyboard shortcuts, navigation patterns, and troubleshooting.
+
+### Workflow-Specific Guides
+
+#### Complete Workflow Guides
+
+| Guide | Purpose | States | Complexity | Documentation |
+|-------|---------|--------|------------|---------------|
+| **[CV Generation Workflow](docs/workflows/CV_GENERATION_WORKFLOW.md)** | Generate role and audience-specific CVs from career events | 10 states | ⭐⭐⭐⭐⭐ High | 800+ lines |
+| **[Event Capture Workflow](docs/workflows/EVENT_CAPTURE_WORKFLOW.md)** | Capture events with optional burst/fact extraction | 4 states + 3 modals | ⭐⭐⭐⭐ High | 700+ lines |
+
+**See Also**: [Workflow Documentation Index](docs/workflows/README.md) for complete workflow catalog and navigation guide
+
+#### What's Included in Each Guide
+
+Each workflow guide provides:
+- **Overview**: Purpose, when to use, prerequisites
+- **State Machine Diagram**: Visual representation of all states and transitions (Mermaid)
+- **Step-by-Step Guide**: Detailed walkthrough of each state with screenshots
+- **Complete Keyboard Reference**: Comprehensive table of all shortcuts per state
+- **Navigation Patterns**: Forward navigation, back navigation, error recovery
+- **Common Workflows**: Real-world examples with timing estimates
+- **Troubleshooting**: Specific issues and solutions for that workflow
+- **Technical Details**: Implementation notes, IntentResult flow, async operations
+
+### Workflow Diagram Generation
+
+Workflow diagrams are generated programmatically from the actual implementation to ensure accuracy.
+
+#### Generate Diagrams
+
+```bash
+# Generate all workflow diagrams
+make generate-diagrams
+
+# Or run script directly
+./scripts/generate_workflow_diagrams.sh
+```
+
+**Script**: `scripts/generate_workflow_diagrams.sh`  
+**Output**: `docs/workflows/diagrams/*.mermaid`
+
+#### Generated Diagrams
+
+- `docs/workflows/diagrams/cv_generation_flow.mermaid` - CV Generation state machine (10 states)
+- `docs/workflows/diagrams/event_capture_flow.mermaid` - Event Capture state machine (4 states + 3 modals)
+
+#### Viewing Diagrams
+
+- **GitHub**: Automatic Mermaid rendering
+- **VS Code**: Install "Markdown Preview Mermaid Support" extension
+- **Online**: Copy content to https://mermaid.live
+- **Documentation**: Embedded in workflow guides
+
+### Keyboard Shortcuts
+
+All keyboard shortcuts are centralized in two comprehensive guides:
+
+| Guide | Audience | Purpose | Lines |
+|-------|----------|---------|-------|
+| **[Keyboard Shortcuts Guide](docs/KEYBOARD_SHORTCUTS_GUIDE.md)** | Users | Complete keyboard reference for using KaRiya TUI | 400+ |
+| **[Keyboard System Guide](docs/development/KEYBOARD_SYSTEM_GUIDE.md)** | Developers | Implementing and extending keyboard shortcuts | 500+ |
+
+**Key Features**:
+- Quick reference card (printable)
+- Workflow-specific shortcuts for all 5 intents
+- Vim-style navigation support
+- Common key combinations and patterns
+- Screen-specific examples
+- Accessibility features
+- Comprehensive troubleshooting
+
+### Navigation Patterns
+
+All KaRiya workflows follow consistent navigation:
+
+**Universal Shortcuts** (work everywhere):
+- **Esc**: Go back one state (or cancel if root state)
+- **m**: Return to main menu from any state
+- **q** / **Ctrl+C**: Quit application
+
+**State Types**:
+1. **Root State**: First state in workflow (Esc = cancel)
+2. **Intermediate State**: Has previous state (Esc = go back)
+3. **Async Operation**: Background work (Esc = let complete, navigate back)
+4. **Final State**: Workflow complete or error (Esc = retry/cancel)
+
+**Error Handling**: Errors are preserved when navigating back so users maintain context
+
 ---
 
 ## User Guides & Features
