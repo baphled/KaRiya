@@ -218,37 +218,36 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Handle global keys first (q=quit, ?=help, esc=back)
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			return tea.Quit
-		case KeyHelp:
-			i.ToggleHelp()
-			return nil
-		case KeyBack:
-			// At root state, back means cancel and return to main menu
-			i.setCancelled()
-			return nil
-		}
-
-		// Try list navigation handler
-		if i.navHandler.HandleKey(msg.String()) {
-			return nil
-		}
-
-		// Handle intent-specific keys
-		switch msg.String() {
-		case "enter":
-			// Select current event and move to detail view.
-			if len(i.state.filteredEvents) > 0 {
-				if i.state.selectedIndex < len(i.state.filteredEvents) {
-					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-					i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
-					i.state.currentState = BrowseStateEventDetail
+		// Use MessageInterceptor for global keys (quit, help, back)
+		return NewMessageInterceptor().
+			OnQuit(StandardQuitHandler()).
+			OnHelp(StandardHelpHandler(i.BaseIntent)).
+			OnBack(func() tea.Cmd {
+				// At root state, back means cancel and return to main menu
+				i.setCancelled()
+				return nil
+			}).
+			InterceptOr(msg, func() tea.Cmd {
+				// Try list navigation handler
+				if i.navHandler.HandleKey(msg.String()) {
+					return nil
 				}
-			}
-			return nil
-		}
+
+				// Handle intent-specific keys
+				switch msg.String() {
+				case "enter":
+					// Select current event and move to detail view.
+					if len(i.state.filteredEvents) > 0 {
+						if i.state.selectedIndex < len(i.state.filteredEvents) {
+							i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
+							i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
+							i.state.currentState = BrowseStateEventDetail
+						}
+					}
+					return nil
+				}
+				return nil
+			})
 
 	case EventSelectedMsg:
 		// Event was selected (possibly by router or other component).
@@ -277,44 +276,43 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Handle global keys first (q=quit, ?=help, esc=back)
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			return tea.Quit
-		case KeyHelp:
-			i.ToggleHelp()
-			return nil
-		case KeyBack:
-			// Go back to timeline view
-			i.state.currentState = BrowseStateTimeline
-			return nil
-		}
+		// Use MessageInterceptor for global keys (quit, help, back)
+		return NewMessageInterceptor().
+			OnQuit(StandardQuitHandler()).
+			OnHelp(StandardHelpHandler(i.BaseIntent)).
+			OnBack(func() tea.Cmd {
+				// Go back to timeline view
+				i.state.currentState = BrowseStateTimeline
+				return nil
+			}).
+			InterceptOr(msg, func() tea.Cmd {
+				// Handle intent-specific keys
+				switch msg.String() {
+				case "enter":
+					// Confirm selection and return event.
+					i.setCompleted()
+					return nil
 
-		// Handle intent-specific keys
-		switch msg.String() {
-		case "enter":
-			// Confirm selection and return event.
-			i.setCompleted()
-			return nil
+				case "e":
+					// Edit event - send message to app to route to CaptureEvent intent
+					if i.state.selectedEvent != nil {
+						// Send RequestEditEventMsg which app router will handle
+						return func() tea.Msg {
+							return RequestEditEventMsg{Event: i.state.selectedEvent}
+						}
+					}
+					return nil
 
-		case "e":
-			// Edit event - send message to app to route to CaptureEvent intent
-			if i.state.selectedEvent != nil {
-				// Send RequestEditEventMsg which app router will handle
-				return func() tea.Msg {
-					return RequestEditEventMsg{Event: i.state.selectedEvent}
+				case "d":
+					// Delete event - go to confirmation
+					if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
+						i.state.currentState = BrowseStateDeleteConfirm
+						i.state.deleteError = nil
+					}
+					return nil
 				}
-			}
-			return nil
-
-		case "d":
-			// Delete event - go to confirmation
-			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-				i.state.currentState = BrowseStateDeleteConfirm
-				i.state.deleteError = nil
-			}
-			return nil
-		}
+				return nil
+			})
 	}
 
 	return nil

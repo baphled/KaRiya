@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -16,6 +17,7 @@ var _ = Describe("BrowseTimeline - Escape Key Behavior", func() {
 		browseContext *intents.BrowseTimelineContext
 		browseIntent  *intents.BrowseTimelineIntent
 		sampleEvents  []*career.CareerEvent
+		mockService   *service.CLIEventService
 	)
 
 	BeforeEach(func() {
@@ -42,8 +44,12 @@ var _ = Describe("BrowseTimeline - Escape Key Behavior", func() {
 			},
 		}
 
+		// Create mock service for delete functionality
+		mockService = &service.CLIEventService{}
+
 		browseContext = &intents.BrowseTimelineContext{
-			Events: sampleEvents,
+			Events:          sampleEvents,
+			CLIEventService: mockService,
 			InitialFilters: &intents.TimelineFilters{
 				SortBy:    "date",
 				SortOrder: "desc",
@@ -125,6 +131,49 @@ var _ = Describe("BrowseTimeline - Escape Key Behavior", func() {
 			view := browseIntent.View()
 			Expect(view).NotTo(BeEmpty()) // Verify view renders
 			Expect(view).To(ContainSubstring("Event Details"))
+		})
+	})
+
+	Describe("Delete Confirmation View", func() {
+		BeforeEach(func() {
+			// Navigate to event detail first
+			browseIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			// Then to delete confirmation
+			browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+		})
+
+		It("should go back to event detail when escape is pressed", func() {
+			// Verify we're in delete confirmation state by checking the view
+			view := browseIntent.View()
+			Expect(view).To(Or(
+				ContainSubstring("delete"),
+				ContainSubstring("Delete"),
+				ContainSubstring("confirm"),
+			))
+
+			// Press escape
+			browseIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Verify we're back in event detail view
+			view = browseIntent.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+
+			// Intent should not be cancelled yet
+			result := browseIntent.Result()
+			Expect(result).To(BeNil())
+		})
+
+		It("should go back to event detail when 'n' is pressed", func() {
+			// Press 'n' to cancel delete
+			browseIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+			// Verify we're back in event detail view
+			view := browseIntent.View()
+			Expect(view).To(ContainSubstring("Event Details"))
+
+			// Intent should not be cancelled yet
+			result := browseIntent.Result()
+			Expect(result).To(BeNil())
 		})
 	})
 })

@@ -616,7 +616,38 @@ func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// Delegate to the modal for form handling
+	// Check global keys BEFORE delegating to modal
+	// This ensures esc, q, ?, m keys work even when modal has focus
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Close modal and return to appropriate state
+			i.state.editModal = nil
+			if i.context.IsNewBurst {
+				i.context.CancelEdit()
+				i.state.selectedBurst = nil
+				i.state.currentState = BurstStateList
+			} else {
+				i.state.currentState = BurstStateDetail
+			}
+			i.state.editError = nil
+			return nil
+		}
+		// Also handle 'm' for main menu explicitly
+		if msg.String() == "m" {
+			i.state.editModal = nil
+			i.setCancelled()
+			return nil
+		}
+	}
+
+	// NOW delegate to the modal for form handling
 	cmd := i.state.editModal.Update(msg)
 
 	// Check if modal completed (form submitted or cancelled)

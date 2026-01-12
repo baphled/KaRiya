@@ -63,6 +63,13 @@ func (m *HuhCaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Handle escape BEFORE delegating to form
+		// This allows the parent intent to handle back navigation
+		if msg.String() == "esc" {
+			// Signal back navigation to parent intent
+			return m, nil // Parent intent will check for escape via HandleGlobalKeys
+		}
+
 		if msg.String() == "ctrl+s" {
 			m.formData.SubmitConfirmed = true
 			return m, m.submitForm()

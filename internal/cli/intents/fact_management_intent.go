@@ -421,30 +421,37 @@ func (m *FactManagementModel) handleViewState(msg tea.Msg) tea.Cmd {
 }
 
 func (m *FactManagementModel) handleEditorState(msg tea.Msg) tea.Cmd {
+	// Handle global keys FIRST (before delegating to modal or legacy handling)
+	// This ensures esc, q, ?, m keys work even when modal has focus
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			m.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Close modal if active
+			if m.editModal != nil {
+				m.editModal = nil
+			}
+			m.data.CancelEdit()
+			if m.data.IsNewFact {
+				m.data.CurrentState = FactListState
+			} else {
+				m.data.CurrentState = FactViewState
+			}
+			return nil
+		}
+	}
+
 	// If modal is not initialized, handle legacy behavior (fallback)
 	if m.editModal == nil {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch HandleGlobalKeys(msg) {
-			case KeyQuit:
-				return tea.Quit
-			case KeyHelp:
-				m.ToggleHelp()
-				return nil
-			case KeyBack:
-				m.data.CancelEdit()
-				if m.data.IsNewFact {
-					m.data.CurrentState = FactListState
-				} else {
-					m.data.CurrentState = FactViewState
-				}
-				return nil
-			}
-		}
 		return nil
 	}
 
-	// Delegate to the modal for form handling
+	// NOW delegate to the modal for form handling
 	cmd := m.editModal.Update(msg)
 
 	// Check if modal completed (form submitted or cancelled)

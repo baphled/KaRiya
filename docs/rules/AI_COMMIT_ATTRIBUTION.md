@@ -116,6 +116,7 @@ AI-Generated-By: Cursor (GPT-4)
 
 #### OpenCode
 ```
+AI-Generated-By: OpenCode (Claude Sonnet 4.5)
 AI-Generated-By: OpenCode (Claude Sonnet 4)
 AI-Generated-By: OpenCode (Claude 3.5 Sonnet)
 ```
