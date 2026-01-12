@@ -74,6 +74,13 @@ func (m *FactEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Handle escape BEFORE delegating to form
+		// This ensures the parent intent can navigate back
+		if msg.String() == "esc" {
+			m.cancelled = true
+			return m, nil
+		}
+
 		// Handle quit
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			return m, func() tea.Msg { return QuitMsg{} }
