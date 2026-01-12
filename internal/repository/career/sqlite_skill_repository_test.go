@@ -321,15 +321,103 @@ var _ = Describe("SQLiteSkillRepository", func() {
 
 	Describe("GetSkillsForEvent", func() {
 		It("should retrieve skills associated with an event", func() {
-			// This will be tested after we implement event-skill associations
-			Skip("Requires event-skill associations - will be implemented in Phase 2")
+			// Create main repository for events
+			mainRepo, err := NewSQLiteRepository(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create skills
+			skill1 := &career.Skill{Name: "Ruby", Category: "backend"}
+			skill2 := &career.Skill{Name: "Go", Category: "backend"}
+			skill3 := &career.Skill{Name: "Python", Category: "backend"}
+			err = repository.Create(ctx, skill1)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(ctx, skill2)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(ctx, skill3)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create event with two skills
+			event := createTestEventWithSkills("Backend work", "2024-01-15", []string{skill1.ID, skill2.ID})
+			err = mainRepo.Create(ctx, event)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Retrieve skills for the event
+			skills, err := repository.GetSkillsForEvent(ctx, event.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skills).To(HaveLen(2))
+
+			// Verify the correct skills were returned
+			skillNames := []string{skills[0].Name, skills[1].Name}
+			Expect(skillNames).To(ContainElements("Ruby", "Go"))
+			Expect(skillNames).NotTo(ContainElement("Python"))
+		})
+
+		It("should return empty list for event with no skills", func() {
+			// Create main repository for events
+			mainRepo, err := NewSQLiteRepository(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create event with no skills
+			event := createTestEventWithSkills("No skills event", "2024-01-15", nil)
+			err = mainRepo.Create(ctx, event)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Retrieve skills for the event
+			skills, err := repository.GetSkillsForEvent(ctx, event.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skills).To(BeEmpty())
 		})
 	})
 
 	Describe("GetEventCountsForSkills", func() {
 		It("should return event counts for all skills", func() {
-			// This will be tested after we implement event-skill associations
-			Skip("Requires event-skill associations - will be implemented in Phase 2")
+			// Create main repository for events
+			mainRepo, err := NewSQLiteRepository(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create skills
+			skill1 := &career.Skill{Name: "Ruby", Category: "backend"}
+			skill2 := &career.Skill{Name: "Go", Category: "backend"}
+			skill3 := &career.Skill{Name: "Python", Category: "backend"}
+			err = repository.Create(ctx, skill1)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(ctx, skill2)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(ctx, skill3)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create events with different skill combinations
+			event1 := createTestEventWithSkills("Event 1", "2024-01-15", []string{skill1.ID, skill2.ID})
+			event2 := createTestEventWithSkills("Event 2", "2024-02-15", []string{skill1.ID})
+			event3 := createTestEventWithSkills("Event 3", "2024-03-15", []string{skill2.ID, skill3.ID})
+
+			err = mainRepo.Create(ctx, event1)
+			Expect(err).NotTo(HaveOccurred())
+			err = mainRepo.Create(ctx, event2)
+			Expect(err).NotTo(HaveOccurred())
+			err = mainRepo.Create(ctx, event3)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Get event counts
+			counts, err := repository.GetEventCountsForSkills(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify counts: Ruby=2, Go=2, Python=1
+			Expect(counts[skill1.ID]).To(Equal(2))
+			Expect(counts[skill2.ID]).To(Equal(2))
+			Expect(counts[skill3.ID]).To(Equal(1))
+		})
+
+		It("should return empty map when no events exist", func() {
+			// Create skills with no events
+			skill := &career.Skill{Name: "Unused", Category: "backend"}
+			err := repository.Create(ctx, skill)
+			Expect(err).NotTo(HaveOccurred())
+
+			counts, err := repository.GetEventCountsForSkills(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			// The skill should not appear in the counts since it has no events
+			Expect(counts[skill.ID]).To(Equal(0))
 		})
 	})
 
