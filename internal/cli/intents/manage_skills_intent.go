@@ -8,10 +8,11 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -37,7 +38,7 @@ type ManageSkillsIntent struct {
 	eventsLoaded bool                  // Whether events have been loaded
 
 	// form for add/edit
-	form *huh.Form
+	skillForm *models.HuhSkillForm
 
 	// active indicates whether this intent is currently active
 	active bool
@@ -50,10 +51,6 @@ type ManageSkillsIntent struct {
 func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
 	baseIntent := NewBaseIntent()
 	baseIntent.SetThemeManager(themes.NewThemeManager())
-
-	// Initialize logo
-	logo := components.NewASCIILogo(false, 80)
-	baseIntent.SetLogo(logo)
 
 	return &ManageSkillsIntent{
 		BaseIntent:    baseIntent,
@@ -89,8 +86,12 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 	case SkillsLoadedMsg:
 		return i.handleSkillsLoaded(msg)
 
-	case SkillFormCompleteMsg:
+	case models.SkillFormCompleteMsg:
 		return i.handleFormComplete(msg)
+
+	case SkillFormCompleteMsg:
+		// Handle the legacy message type for backward compatibility with tests
+		return i.handleLegacyFormComplete(msg)
 
 	case SkillCreatedMsg:
 		return i.handleSkillCreated(msg)
@@ -105,48 +106,38 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSkillEventsLoaded(msg)
 
 	case tea.KeyMsg:
-		// If we have a form active, handle it specially
-		if i.form != nil {
+		// If we have a form active, forward key messages to it
+		if i.skillForm != nil {
 			// Check for Esc key to cancel form
 			if msg.Type == tea.KeyEsc {
-				i.handleFormCancel()
-				return nil
+				return i.handleFormCancel()
 			}
 
-			// Update form with key messages
-			form, cmd := i.form.Update(msg)
-			if f, ok := form.(*huh.Form); ok {
-				i.form = f
-
-				// Check if form completed
-				if i.form.State == huh.StateCompleted {
-					return i.handleFormSubmit()
-				} else if i.form.State == huh.StateAborted {
-					return i.handleFormCancel()
-				}
-			}
+			// Forward to skillForm
+			_, cmd := i.skillForm.Update(msg)
 			return cmd
 		}
 		return i.handleKeyPress(msg)
 
 	case tea.WindowSizeMsg:
-		// BaseIntent doesn't have UpdateTerminalSize, just store in terminal info
+		// Update terminal info
+		termInfo := terminal.NewInfo()
+		termInfo.Width = msg.Width
+		termInfo.Height = msg.Height
+		termInfo.IsValid = true
+		i.UpdateTerminalInfo(termInfo)
+
+		// Forward to skillForm if active - it handles its own dimensions
+		if i.skillForm != nil {
+			_, cmd := i.skillForm.Update(msg)
+			return cmd
+		}
 		return nil
 	}
 
 	// If we have a form active, let it handle other messages
-	if i.form != nil {
-		form, cmd := i.form.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			i.form = f
-
-			// Check if form completed
-			if i.form.State == huh.StateCompleted {
-				return i.handleFormSubmit()
-			} else if i.form.State == huh.StateAborted {
-				return i.handleFormCancel()
-			}
-		}
+	if i.skillForm != nil {
+		_, cmd := i.skillForm.Update(msg)
 		return cmd
 	}
 
@@ -159,19 +150,112 @@ func (i *ManageSkillsIntent) View() string {
 		return ""
 	}
 
+	// Create standard view with breadcrumbs
+	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, i.getBreadcrumbs()...)
+
+	// Reduce logo spacing on small terminals to maximize form visibility
+	if info := i.GetTerminalInfo(); info != nil && info.Height < 30 {
+		if logo := i.GetLogo(); logo != nil {
+			view.WithLogo(logo, 0) // No spacing above logo for small terminals
+		}
+	}
+
+	// Get content for current state
+	content := i.getStateContent()
+	view.WithContent(content)
+
+	// Add context-aware help
+	help := i.getContextHelp()
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	return view.Render()
+}
+
+// getStateContent returns the content for the current state
+func (i *ManageSkillsIntent) getStateContent() string {
 	switch i.currentState {
 	case SkillsStateList:
-		return i.viewList()
+		return i.renderSkillsList()
 	case SkillsStateDetail:
-		return i.viewDetail()
+		return i.renderSkillDetail()
 	case SkillsStateDetailEvents:
-		return i.viewDetailEvents()
+		return i.renderSkillEvents()
 	case SkillsStateAdd, SkillsStateEdit:
-		return i.viewForm()
+		return i.renderForm()
 	case SkillsStateDelete:
-		return i.viewDeleteConfirm()
+		return i.renderDeleteConfirm()
 	default:
 		return "Unknown state"
+	}
+}
+
+// getBreadcrumbs returns breadcrumbs for the current state
+func (i *ManageSkillsIntent) getBreadcrumbs() []string {
+	breadcrumbs := []string{"Skills"}
+
+	switch i.currentState {
+	case SkillsStateDetail, SkillsStateDetailEvents:
+		if i.selectedSkill != nil {
+			breadcrumbs = append(breadcrumbs, i.selectedSkill.Name)
+		}
+		if i.currentState == SkillsStateDetailEvents {
+			breadcrumbs = append(breadcrumbs, "Events")
+		}
+	case SkillsStateAdd:
+		breadcrumbs = append(breadcrumbs, "Add")
+	case SkillsStateEdit:
+		breadcrumbs = append(breadcrumbs, "Edit")
+	case SkillsStateDelete:
+		breadcrumbs = append(breadcrumbs, "Delete")
+	}
+
+	return breadcrumbs
+}
+
+// getContextHelp returns help text for the current state
+func (i *ManageSkillsIntent) getContextHelp() string {
+	theme := i.Theme()
+
+	switch i.currentState {
+	case SkillsStateList:
+		return CombineThemedFooters(
+			ThemedListFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "View details"),
+				components.NewKeyBadge("n", "New skill"),
+			),
+			ThemedGlobalBadges(theme),
+		)
+	case SkillsStateDetail:
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "View events"),
+				components.EditBadge(),
+				components.DeleteBadge(),
+			),
+			ThemedGlobalBadges(theme),
+		)
+	case SkillsStateDetailEvents:
+		return CombineThemedFooters(
+			ThemedDetailViewFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case SkillsStateAdd, SkillsStateEdit:
+		return CombineThemedFooters(
+			ThemedFormFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case SkillsStateDelete:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y", "Confirm"),
+				components.NewKeyBadge("n/Esc", "Cancel"),
+			),
+			ThemedGlobalBadges(theme),
+		)
+	default:
+		return ThemedGlobalBadges(theme)
 	}
 }
 
@@ -225,10 +309,54 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 	return nil
 }
 
-func (i *ManageSkillsIntent) handleFormComplete(msg SkillFormCompleteMsg) tea.Cmd {
+func (i *ManageSkillsIntent) handleFormComplete(msg models.SkillFormCompleteMsg) tea.Cmd {
 	if msg.Cancelled {
 		i.currentState = SkillsStateList
-		i.form = nil
+		i.skillForm = nil
+		return nil
+	}
+
+	// Extract form data and create/update skill
+	formData := msg.Data
+	if formData == nil {
+		return nil
+	}
+
+	// Check if user cancelled via the submit button
+	if !formData.SubmitConfirmed {
+		i.currentState = SkillsStateList
+		i.skillForm = nil
+		return nil
+	}
+
+	// Create skill from form data
+	var skill *domain.Skill
+	if i.currentState == SkillsStateEdit && len(i.skills) > 0 {
+		// Editing existing skill - preserve ID
+		skill = i.skills[i.selectedIndex]
+	} else {
+		// Creating new skill
+		skill = &domain.Skill{}
+	}
+
+	// Apply form data to skill
+	forms.ApplySkillFormData(skill, formData)
+
+	// Save skill based on state
+	if i.currentState == SkillsStateAdd {
+		return i.createSkill(skill)
+	} else if i.currentState == SkillsStateEdit {
+		return i.updateSkill(skill)
+	}
+
+	return nil
+}
+
+// handleLegacyFormComplete handles the legacy SkillFormCompleteMsg (used by tests)
+func (i *ManageSkillsIntent) handleLegacyFormComplete(msg SkillFormCompleteMsg) tea.Cmd {
+	if msg.Cancelled {
+		i.currentState = SkillsStateList
+		i.skillForm = nil
 		return nil
 	}
 
@@ -258,7 +386,7 @@ func (i *ManageSkillsIntent) handleSkillCreated(msg SkillCreatedMsg) tea.Cmd {
 
 	// Transition back to list and reload
 	i.currentState = SkillsStateList
-	i.form = nil
+	i.skillForm = nil
 
 	return i.Init()
 }
@@ -274,7 +402,7 @@ func (i *ManageSkillsIntent) handleSkillUpdated(msg SkillUpdatedMsg) tea.Cmd {
 
 	// Transition back to list and reload
 	i.currentState = SkillsStateList
-	i.form = nil
+	i.skillForm = nil
 
 	return i.Init()
 }
@@ -335,8 +463,8 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 	case "n":
 		// Add new skill
 		i.currentState = SkillsStateAdd
-		i.form = forms.NewSkillForm(nil, nil)
-		return i.form.Init()
+		i.skillForm = models.NewHuhSkillForm()
+		return i.skillForm.Init()
 
 	case "e":
 		// Edit selected skill
@@ -344,8 +472,8 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 			return nil
 		}
 		i.currentState = SkillsStateEdit
-		i.form = forms.NewSkillForm(i.skills[i.selectedIndex], nil)
-		return i.form.Init()
+		i.skillForm = models.NewHuhSkillFormWithData(i.skills[i.selectedIndex])
+		return i.skillForm.Init()
 
 	case "d":
 		// Delete selected skill
@@ -396,45 +524,9 @@ func (i *ManageSkillsIntent) handleDeleteKeys(msg tea.KeyMsg) tea.Cmd {
 	return nil
 }
 
-func (i *ManageSkillsIntent) handleFormSubmit() tea.Cmd {
-	// Extract form data
-	var skill *domain.Skill
-
-	if i.currentState == SkillsStateEdit {
-		// Editing existing skill
-		skill = i.skills[i.selectedIndex]
-	} else {
-		// Creating new skill
-		skill = &domain.Skill{}
-	}
-
-	// Apply form data
-	formData := &forms.SkillFormData{
-		Name:      i.form.GetString("name"),
-		Category:  i.form.GetString("category"),
-		Level:     i.form.GetString("level"),
-		YearsUsed: i.form.GetString("years"),
-	}
-
-	err := forms.ApplySkillFormData(skill, formData)
-	if err != nil {
-		// Stay in form state with error
-		return nil
-	}
-
-	// Save skill based on state
-	if i.currentState == SkillsStateAdd {
-		return i.createSkill(skill)
-	} else if i.currentState == SkillsStateEdit {
-		return i.updateSkill(skill)
-	}
-
-	return nil
-}
-
 func (i *ManageSkillsIntent) handleFormCancel() tea.Cmd {
 	i.currentState = SkillsStateList
-	i.form = nil
+	i.skillForm = nil
 	return nil
 }
 
@@ -470,37 +562,44 @@ func (i *ManageSkillsIntent) viewList() string {
 	return view.Render()
 }
 
-func (i *ManageSkillsIntent) viewForm() string {
-	if i.form == nil {
+func (i *ManageSkillsIntent) renderForm() string {
+	if i.skillForm == nil {
 		return "Form not initialized"
 	}
 
-	title := "Add Skill"
-	if i.currentState == SkillsStateEdit {
-		title = "Edit Skill"
-	}
-
-	content := i.form.View()
-
-	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Skills", title)
-	view.WithContent(content)
-	return view.Render()
+	return i.skillForm.View()
 }
 
-func (i *ManageSkillsIntent) viewDeleteConfirm() string {
+func (i *ManageSkillsIntent) renderDeleteConfirm() string {
 	if len(i.skills) == 0 {
 		return "No skill selected"
 	}
 
 	skill := i.skills[i.selectedIndex]
 
-	modalContent := fmt.Sprintf("Are you sure you want to delete '%s'?\n\nThis action cannot be undone.\n\ny:confirm • n/Esc:cancel", skill.Name)
+	modalContent := fmt.Sprintf("Are you sure you want to delete '%s'?\n\nThis action cannot be undone.", skill.Name)
 	modal := components.NewWarningModal("Delete Skill", modalContent)
 
-	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Skills", "Delete")
-	view.WithContent(i.renderSkillsList())
-	view.ShowModalOverlay(modal)
-	return view.Render()
+	// Get terminal dimensions
+	width, height := 80, 24
+	if termInfo := i.GetTerminalInfo(); termInfo != nil && termInfo.IsValid {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	return modal.Render(width, height)
+}
+
+// getCardStyle returns a themed card style for consistent content presentation.
+func (i *ManageSkillsIntent) getCardStyle() lipgloss.Style {
+	if theme := i.Theme(); theme != nil {
+		return theme.Styles().CardBase
+	}
+	// Fallback to default styling
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#585B70"))
 }
 
 func (i *ManageSkillsIntent) renderSkillsList() string {
@@ -526,7 +625,8 @@ func (i *ManageSkillsIntent) renderSkillsList() string {
 		sections = append(sections, i.renderCategory(category, skills))
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
+	return i.getCardStyle().Render(content)
 }
 
 func (i *ManageSkillsIntent) renderCategory(category string, skills []*domain.Skill) string {
@@ -618,7 +718,7 @@ func (i *ManageSkillsIntent) renderEmptyState() string {
 
 	message := "No skills defined yet.\n\nPress 'n' to add your first skill."
 
-	return emptyStyle.Render(message)
+	return i.getCardStyle().Render(emptyStyle.Render(message))
 }
 
 func (i *ManageSkillsIntent) renderListHelp() string {
@@ -692,8 +792,8 @@ func (i *ManageSkillsIntent) handleDetailKeys(msg tea.KeyMsg) tea.Cmd {
 	case "e":
 		// Edit this skill
 		i.currentState = SkillsStateEdit
-		i.form = forms.NewSkillForm(i.selectedSkill, nil)
-		return i.form.Init()
+		i.skillForm = models.NewHuhSkillFormWithData(i.selectedSkill)
+		return i.skillForm.Init()
 
 	case "d":
 		// Delete this skill
@@ -819,7 +919,8 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 	lines = append(lines, labelStyle.Render("Created:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.CreatedAt.Format("2006-01-02 15:04")))
 	lines = append(lines, labelStyle.Render("Updated:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.UpdatedAt.Format("2006-01-02 15:04")))
 
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
+	return i.getCardStyle().Render(content)
 }
 
 // renderSkillEvents renders the events using this skill
@@ -830,14 +931,14 @@ func (i *ManageSkillsIntent) renderSkillEvents() string {
 		loadingStyle := lipgloss.NewStyle().
 			Foreground(theme.SecondaryColor()).
 			MarginTop(2)
-		return loadingStyle.Render("Loading events...")
+		return i.getCardStyle().Render(loadingStyle.Render("Loading events..."))
 	}
 
 	if len(i.skillEvents) == 0 {
 		emptyStyle := lipgloss.NewStyle().
 			Foreground(theme.MutedColor()).
 			MarginTop(2)
-		return emptyStyle.Render("No events use this skill yet.")
+		return i.getCardStyle().Render(emptyStyle.Render("No events use this skill yet."))
 	}
 
 	var lines []string
@@ -863,7 +964,8 @@ func (i *ManageSkillsIntent) renderSkillEvents() string {
 		lines = append(lines, "  "+line)
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
+	return i.getCardStyle().Render(content)
 }
 
 // renderDetailHelp renders the help text for detail view

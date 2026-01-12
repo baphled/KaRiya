@@ -116,7 +116,8 @@ func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, 
 		WithLayout(huh.LayoutStack)
 
 	if width > 0 {
-		form = form.WithWidth(width)
+		// Subtract 1 to compensate for LayoutStack adding an extra character
+		form = form.WithWidth(width - 1)
 	}
 
 	return form

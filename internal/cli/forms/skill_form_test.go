@@ -11,13 +11,7 @@ var _ = Describe("SkillForm", func() {
 	Describe("NewSkillForm", func() {
 		Context("creating form for new skill", func() {
 			It("should create form with empty fields", func() {
-				form := forms.NewSkillForm(nil, nil)
-				Expect(form).NotTo(BeNil())
-			})
-
-			It("should include category suggestions", func() {
-				suggestions := []string{"backend", "frontend", "devops"}
-				form := forms.NewSkillForm(nil, suggestions)
+				form := forms.NewSkillForm(nil)
 				Expect(form).NotTo(BeNil())
 			})
 		})
@@ -29,7 +23,7 @@ var _ = Describe("SkillForm", func() {
 					Category: "backend",
 					Level:    "advanced",
 				}
-				form := forms.NewSkillForm(skill, nil)
+				form := forms.NewSkillForm(skill)
 				Expect(form).NotTo(BeNil())
 			})
 		})
@@ -43,7 +37,7 @@ var _ = Describe("SkillForm", func() {
 				Level:     "expert",
 				YearsUsed: "5",
 			}
-			form := forms.NewSkillFormWithData(data, nil)
+			form := forms.NewSkillFormWithData(data)
 			Expect(form).NotTo(BeNil())
 		})
 	})
@@ -87,8 +81,7 @@ var _ = Describe("SkillForm", func() {
 					YearsUsed: "2",
 				}
 
-				err := forms.ApplySkillFormData(skill, data)
-				Expect(err).NotTo(HaveOccurred())
+				forms.ApplySkillFormData(skill, data)
 				Expect(skill.Name).To(Equal("Kubernetes"))
 				Expect(skill.Category).To(Equal("devops"))
 				Expect(skill.Level).To(Equal("advanced"))
@@ -110,8 +103,7 @@ var _ = Describe("SkillForm", func() {
 					YearsUsed: "5",
 				}
 
-				err := forms.ApplySkillFormData(skill, data)
-				Expect(err).NotTo(HaveOccurred())
+				forms.ApplySkillFormData(skill, data)
 				Expect(skill.Level).To(Equal("expert"))
 				Expect(*skill.YearsUsed).To(Equal(5))
 			})
@@ -125,8 +117,7 @@ var _ = Describe("SkillForm", func() {
 					YearsUsed: "",
 				}
 
-				err := forms.ApplySkillFormData(skill, data)
-				Expect(err).NotTo(HaveOccurred())
+				forms.ApplySkillFormData(skill, data)
 				Expect(skill.Name).To(Equal("Python"))
 				Expect(skill.Category).To(Equal("backend"))
 				Expect(skill.Level).To(Equal(""))
@@ -141,15 +132,14 @@ var _ = Describe("SkillForm", func() {
 					Level:    "intermediate",
 				}
 
-				err := forms.ApplySkillFormData(skill, data)
-				Expect(err).NotTo(HaveOccurred())
+				forms.ApplySkillFormData(skill, data)
 				Expect(skill.Name).To(Equal("PostgreSQL"))
 				Expect(skill.Category).To(Equal("database"))
 			})
 		})
 
 		Context("with invalid data", func() {
-			It("should reject invalid years format", func() {
+			It("should ignore invalid years format", func() {
 				skill := &career.Skill{}
 				data := &forms.SkillFormData{
 					Name:      "Go",
@@ -157,12 +147,11 @@ var _ = Describe("SkillForm", func() {
 					YearsUsed: "invalid",
 				}
 
-				err := forms.ApplySkillFormData(skill, data)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("years"))
+				forms.ApplySkillFormData(skill, data)
+				Expect(skill.YearsUsed).To(BeNil())
 			})
 
-			It("should reject negative years", func() {
+			It("should ignore negative years", func() {
 				skill := &career.Skill{}
 				data := &forms.SkillFormData{
 					Name:      "Go",
@@ -170,11 +159,11 @@ var _ = Describe("SkillForm", func() {
 					YearsUsed: "-1",
 				}
 
-				err := forms.ApplySkillFormData(skill, data)
-				Expect(err).To(HaveOccurred())
+				forms.ApplySkillFormData(skill, data)
+				Expect(skill.YearsUsed).To(BeNil())
 			})
 
-			It("should reject years over 50", func() {
+			It("should ignore years over 50", func() {
 				skill := &career.Skill{}
 				data := &forms.SkillFormData{
 					Name:      "Go",
@@ -182,8 +171,8 @@ var _ = Describe("SkillForm", func() {
 					YearsUsed: "51",
 				}
 
-				err := forms.ApplySkillFormData(skill, data)
-				Expect(err).To(HaveOccurred())
+				forms.ApplySkillFormData(skill, data)
+				Expect(skill.YearsUsed).To(BeNil())
 			})
 		})
 	})

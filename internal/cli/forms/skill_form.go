@@ -11,10 +11,11 @@ import (
 
 // SkillFormData holds the form data for skill editing.
 type SkillFormData struct {
-	Name      string
-	Category  string
-	Level     string
-	YearsUsed string
+	Name            string
+	Category        string
+	Level           string
+	YearsUsed       string
+	SubmitConfirmed bool
 }
 
 // Common skill categories as suggestions
@@ -38,40 +39,10 @@ var ValidSkillLevels = []string{
 
 // NewSkillForm creates a form for adding or editing a skill.
 // If skill is nil, creates form for new skill. Otherwise, pre-populates with existing data.
-// categoryOptions provides suggestions for category field (can be nil).
-func NewSkillForm(skill *career.Skill, categoryOptions []string) *huh.Form {
-	var data *SkillFormData
+func NewSkillForm(skill *career.Skill) *huh.Form {
+	data := &SkillFormData{}
 	if skill != nil {
 		data = GetSkillFormData(skill)
-	} else {
-		data = &SkillFormData{}
-	}
-
-	return NewSkillFormWithData(data, categoryOptions)
-}
-
-// NewSkillFormWithData creates a form for editing a skill with initial form data.
-// This variant allows external data binding for more control.
-// categoryOptions provides suggestions for category field (can be nil).
-func NewSkillFormWithData(data *SkillFormData, categoryOptions []string) *huh.Form {
-	// Use provided categories or fall back to common ones
-	categories := categoryOptions
-	if categories == nil {
-		categories = CommonSkillCategories
-	}
-
-	// Build category select options
-	categorySelectOptions := make([]SelectOption, len(categories))
-	for i, cat := range categories {
-		categorySelectOptions[i] = SelectOption{Key: cat, Value: cat}
-	}
-
-	// Build level select options (with empty option for "not specified")
-	levelOptions := []SelectOption{
-		{Key: "", Value: "(not specified)"},
-	}
-	for _, level := range ValidSkillLevels {
-		levelOptions = append(levelOptions, SelectOption{Key: level, Value: level})
 	}
 
 	return NewForm(
@@ -85,10 +56,10 @@ func NewSkillFormWithData(data *SkillFormData, categoryOptions []string) *huh.Fo
 				Validate:    SkillName,
 			}).Value(&data.Name),
 
-			NewSelect("category", "Category", "Skill category or domain", categorySelectOptions).
+			NewSelect("category", "Category", "Skill category or domain", buildCategoryOptions()).
 				Value(&data.Category),
 
-			NewSelect("level", "Proficiency Level", "Your proficiency level (optional)", levelOptions).
+			NewSelect("level", "Proficiency Level", "Your proficiency level (optional)", buildLevelOptions()).
 				Value(&data.Level),
 
 			NewInput(FieldConfig{
@@ -99,8 +70,86 @@ func NewSkillFormWithData(data *SkillFormData, categoryOptions []string) *huh.Fo
 				CharLimit:   2,
 				Validate:    SkillYearsUsed,
 			}).Value(&data.YearsUsed),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
+}
+
+// NewSkillFormWithData creates a form for editing a skill with initial form data.
+// This variant allows external data binding for more control.
+func NewSkillFormWithData(data *SkillFormData) *huh.Form {
+	return NewSkillFormWithDataAndHeight(data, 0)
+}
+
+// NewSkillFormWithDataAndHeight creates a form for editing a skill with initial form data and height.
+// When height > 0, the form becomes scrollable if content exceeds the height.
+func NewSkillFormWithDataAndHeight(data *SkillFormData, height int) *huh.Form {
+	return NewSkillFormWithDataAndDimensions(data, 0, height)
+}
+
+// NewSkillFormWithDataAndDimensions creates a form for editing a skill with initial form data and dimensions.
+// When height > 0, the form becomes scrollable if content exceeds the height.
+// When width > 0, the form will be constrained to that width.
+// The confirm button is fixed at the bottom, always visible.
+func NewSkillFormWithDataAndDimensions(data *SkillFormData, width, height int) *huh.Form {
+	// Initialize submit confirmation to false
+	data.SubmitConfirmed = false
+
+	// Create fields group (scrollable)
+	fieldsGroup := huh.NewGroup(
+		NewInput(FieldConfig{
+			Key:         "name",
+			Title:       "Skill Name",
+			Description: "Name of the skill or technology (required)",
+			Placeholder: "e.g., Ruby, Kubernetes, React",
+			CharLimit:   100,
+			Validate:    SkillName,
+		}).Value(&data.Name),
+
+		NewSelect("category", "Category", "Skill category or domain", buildCategoryOptions()).
+			Value(&data.Category),
+
+		NewSelect("level", "Proficiency Level", "Your proficiency level (optional)", buildLevelOptions()).
+			Value(&data.Level),
+
+		NewInput(FieldConfig{
+			Key:         "years",
+			Title:       "Years of Experience",
+			Description: "Number of years using this skill (optional, 0-50)",
+			Placeholder: "e.g., 3",
+			CharLimit:   2,
+			Validate:    SkillYearsUsed,
+		}).Value(&data.YearsUsed),
+	)
+
+	return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
+}
+
+// buildCategoryOptions builds the category select options.
+func buildCategoryOptions() []SelectOption {
+	options := make([]SelectOption, len(CommonSkillCategories))
+	for i, cat := range CommonSkillCategories {
+		options[i] = SelectOption{Key: cat, Value: cat}
+	}
+	return options
+}
+
+// buildLevelOptions builds the level select options.
+func buildLevelOptions() []SelectOption {
+	options := []SelectOption{
+		{Key: "", Value: "(not specified)"},
+	}
+	for _, level := range ValidSkillLevels {
+		options = append(options, SelectOption{Key: level, Value: level})
+	}
+	return options
 }
 
 // GetSkillFormData extracts form data from a skill domain object.
@@ -119,36 +168,20 @@ func GetSkillFormData(skill *career.Skill) *SkillFormData {
 }
 
 // ApplySkillFormData applies the form data to a skill domain object.
-// Validates data and returns error if invalid.
-func ApplySkillFormData(skill *career.Skill, data *SkillFormData) error {
-	// Trim whitespace
-	name := strings.TrimSpace(data.Name)
-	category := strings.TrimSpace(data.Category)
-	level := strings.TrimSpace(data.Level)
+func ApplySkillFormData(skill *career.Skill, data *SkillFormData) {
+	skill.Name = strings.TrimSpace(data.Name)
+	skill.Category = strings.TrimSpace(data.Category)
+	skill.Level = strings.TrimSpace(data.Level)
+
 	yearsStr := strings.TrimSpace(data.YearsUsed)
-
-	// Apply required fields
-	skill.Name = name
-	skill.Category = category
-	skill.Level = level
-
-	// Parse and validate years if provided
 	if yearsStr != "" {
 		years, err := strconv.Atoi(yearsStr)
-		if err != nil {
-			return fmt.Errorf("invalid years format: must be a number")
+		if err == nil && years >= 0 && years <= 50 {
+			skill.YearsUsed = &years
 		}
-
-		if years < 0 || years > 50 {
-			return fmt.Errorf("years must be between 0 and 50")
-		}
-
-		skill.YearsUsed = &years
 	} else {
 		skill.YearsUsed = nil
 	}
-
-	return nil
 }
 
 // Skill-specific validators
