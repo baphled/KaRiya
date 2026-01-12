@@ -820,4 +820,203 @@ var _ = Describe("ManageSkillsIntent", func() {
 			Expect(view).To(ContainSubstring("Events"))
 		})
 	})
+
+	Describe("Filter and Sort", func() {
+		BeforeEach(func() {
+			intent = intents.NewManageSkillsIntent(intentCtx)
+			intent.Init()
+
+			// Load skills
+			cmd := intent.Init()
+			msg := cmd()
+			intent.Update(msg)
+
+			// Create some events with skills for testing MinEvents filter
+			eventDate, _ := time.Parse("2006-01-02", "2024-01-15")
+			// Create events associated with Ruby (3 events), Go (2 events)
+			for i := 0; i < 3; i++ {
+				event := &domain.CareerEvent{
+					Text:   "Ruby work",
+					Date:   eventDate.AddDate(0, 0, i),
+					Skills: []string{testSkills[0].ID}, // Ruby
+				}
+				err := eventRepo.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+			}
+			for i := 0; i < 2; i++ {
+				event := &domain.CareerEvent{
+					Text:   "Go work",
+					Date:   eventDate.AddDate(0, 0, i),
+					Skills: []string{testSkills[1].ID}, // Go
+				}
+				err := eventRepo.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+			}
+		})
+
+		Context("Filter Menu", func() {
+			It("should transition to filter menu when pressing f", func() {
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+				Expect(intent.State()).To(Equal(intents.SkillsStateFilter))
+			})
+
+			It("should show filter options in filter menu", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Filter"))
+				Expect(view).To(ContainSubstring("Category"))
+				Expect(view).To(ContainSubstring("Level"))
+				Expect(view).To(ContainSubstring("Used skills only"))
+			})
+
+			It("should return to list when Esc is pressed in filter menu", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+				Expect(intent.State()).To(Equal(intents.SkillsStateFilter))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+			})
+
+			It("should apply category filter when selected", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				// Select backend category (first option after "All")
+				intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should return to list with filter applied
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+				Expect(intent.ActiveFilters().Category).To(Equal("backend"))
+			})
+
+			It("should apply used skills only filter", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				// Navigate to "Used skills only" option
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'u'}})
+
+				// Should return to list with MinEvents filter
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+				Expect(intent.ActiveFilters().MinEvents).To(Equal(1))
+			})
+		})
+
+		Context("Sort Menu", func() {
+			It("should transition to sort menu when pressing s", func() {
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+				Expect(intent.State()).To(Equal(intents.SkillsStateSort))
+			})
+
+			It("should show sort options in sort menu", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Sort"))
+				Expect(view).To(ContainSubstring("Name"))
+				Expect(view).To(ContainSubstring("Event"))
+				Expect(view).To(ContainSubstring("Category"))
+			})
+
+			It("should return to list when Esc is pressed in sort menu", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+				Expect(intent.State()).To(Equal(intents.SkillsStateSort))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+			})
+
+			It("should apply sort by event count when selected", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+				// Select "Most used" option
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+				Expect(intent.ActiveFilters().SortBy).To(Equal("events"))
+				Expect(intent.ActiveFilters().SortOrder).To(Equal("desc"))
+			})
+		})
+
+		Context("Clear Filters", func() {
+			It("should clear all filters when pressing x", func() {
+				// Apply a filter first
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+				intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(intent.ActiveFilters().Category).To(Equal("backend"))
+
+				// Clear filters with 'x'
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+
+				// Filters should be cleared
+				Expect(intent.ActiveFilters().Category).To(BeEmpty())
+				Expect(intent.ActiveFilters().SortBy).To(BeEmpty())
+			})
+
+			It("should reload skills after clearing filters", func() {
+				// Apply used skills filter
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'u'}})
+
+				// Clear filters
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+				Expect(cmd).NotTo(BeNil())
+			})
+		})
+
+		Context("Filter Bar Display", func() {
+			It("should show filter bar when filters are active", func() {
+				// Apply a filter
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+				intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("backend"))
+				Expect(view).To(ContainSubstring("x"))
+			})
+
+			It("should not show filter bar when no filters are active", func() {
+				view := intent.View()
+				// Should not show clear filter indicator
+				Expect(view).NotTo(ContainSubstring("Clear filter"))
+			})
+
+			It("should show sort indicator when sorting is active", func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}}) // Sort by events
+
+				view := intent.View()
+				// When sorting is active, the footer should show "Clear filters" option
+				Expect(view).To(ContainSubstring("Clear"))
+			})
+		})
+
+		Context("Help Footer Updates", func() {
+			It("should show filter/sort shortcuts in list help", func() {
+				view := intent.View()
+				Expect(view).To(ContainSubstring("f"))
+				Expect(view).To(ContainSubstring("Filter"))
+				Expect(view).To(ContainSubstring("s"))
+				Expect(view).To(ContainSubstring("Sort"))
+			})
+
+			It("should show clear filter shortcut when filters active", func() {
+				// Apply a filter
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+				intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("x"))
+				Expect(view).To(ContainSubstring("Clear"))
+			})
+		})
+	})
 })

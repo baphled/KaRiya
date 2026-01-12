@@ -27,6 +27,8 @@ const (
 	SkillsStateAdd          SkillsState = "add"           // Add new skill (huh form)
 	SkillsStateEdit         SkillsState = "edit"          // Edit existing skill (huh form)
 	SkillsStateDelete       SkillsState = "delete"        // Confirm deletion
+	SkillsStateFilter       SkillsState = "filter"        // Filter menu
+	SkillsStateSort         SkillsState = "sort"          // Sort menu
 )
 
 // ManageSkillsContext holds the context and dependencies for ManageSkills intent
