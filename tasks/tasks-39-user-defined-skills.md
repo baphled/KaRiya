@@ -509,7 +509,7 @@ const (
 
 **Goal**: Add filtering and sorting capabilities to skill list (matches planned burst features)
 
-**Priority**: ⚠️ **OPTIONAL** - Can be deferred to future task if time-constrained
+**Status**: ✅ **COMPLETE** (2026-01-12)
 
 #### Filter Options
 - **By Category**: Show only skills in specific category (backend, frontend, devops, etc.)
@@ -520,15 +520,13 @@ const (
 - **By Name** (A-Z, Z-A) - Default
 - **By Event Count** (Most used first, Least used first)
 - **By Last Used** (Most recent first, Oldest first)
-- **By Category** (Grouped view - already default)
+- **By Category** (Grouped view)
 
 #### UI Implementation
-- Add filter/sort bar below header (above skill table)
-- Show active filters with clear button
-- Keyboard shortcuts:
-  - `f` - Open filter menu
-  - `s` - Open sort menu
-  - `x` - Clear all filters
+- Filter menu (press `f`) with category, level, and "used skills only" options
+- Sort menu (press `s`) with name, event count, and category sort options
+- Clear filters (press `x`) returns to default view
+- Footer shows "Clear filters" when filters/sorting active
 
 #### Repository Enhancement
 ```go
@@ -539,24 +537,22 @@ type SkillFilters struct {
     SortBy      string   // "name", "events", "last_used", "category"
     SortOrder   string   // "asc", "desc"
 }
-
-// Update List signature
-List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error)
 ```
 
-**TDD Checklist - Phase 4B (Optional):**
+**TDD Checklist - Phase 4B:**
 
-> **STATUS: DEFERRED** - Filter and sort capabilities are optional enhancements that can be added in a future task. The core skills management functionality is complete without these features.
-
-- [ ] ~~Write failing test: Filter by category~~ (DEFERRED)
-- [ ] ~~Write failing test: Filter by level~~ (DEFERRED)
-- [ ] ~~Write failing test: Filter by min events~~ (DEFERRED)
-- [ ] ~~Write failing test: Sort by name~~ (DEFERRED)
-- [ ] ~~Write failing test: Sort by event count~~ (DEFERRED)
-- [ ] ~~Write failing test: Sort by last used~~ (DEFERRED)
-- [ ] ~~Write failing test: Clear filters~~ (DEFERRED)
-- [ ] ~~Write failing test: Press f opens filter menu~~ (DEFERRED)
-- [ ] ~~Write failing test: Press s opens sort menu~~ (DEFERRED)
+- [x] Write failing test: Filter by category
+- [x] Write failing test: Filter by level
+- [x] Write failing test: Filter by min events (used skills only)
+- [x] Write failing test: Sort by name (asc/desc)
+- [x] Write failing test: Sort by event count
+- [x] Write failing test: Sort by last used
+- [x] Write failing test: Sort by category
+- [x] Write failing test: Clear filters
+- [x] Write failing test: Press f opens filter menu
+- [x] Write failing test: Press s opens sort menu
+- [x] Commit: `feat(repo): add filter and sort capabilities to skill repository` (0c76670)
+- [x] Commit: `feat(intents): add filter and sort capabilities to ManageSkillsIntent` (abf95bd)
 
 ### Phase 5: Event Capture Integration
 
