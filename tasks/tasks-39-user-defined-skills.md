@@ -65,14 +65,15 @@
 - ✅ **Test Fixes**: Post-integration fixes (commits 0ffad28, d0fdd23, 6b39da1, fdc1c85)
 - ✅ **Reusable Components**: EventDetailCard component (commit 45aaacd)
 - 🔜 **Phase 7**: CV Generation Integration (MOVED TO TASK 40 - Role Emphasis Redesign)
+- 🔄 **Phase 8**: TUI Workflow Compliance (IN PROGRESS - 2026-01-12)
 
 ### Metrics:
-- **Files Created**: 13/13 (100%) - includes HuhSkillForm wrapper + EventDetailCard component
-- **Files Modified**: 11/11 (100% - Phase 7 deferred to Task 40)
-- **Test Specs**: 240+ (47 new in Phase 4, metadata form tests fixed, 7 new CSV import tests)
+- **Files Created**: 16/16 (100% with Phase 8) - includes HuhSkillForm wrapper + EventDetailCard component + escape/navigation tests + workflow doc
+- **Files Modified**: 12/12 (100% with Phase 8 - Phase 7 deferred to Task 40)
+- **Test Specs**: 360+ (47 new in Phase 4, 7 CSV import tests, ~120 new in Phase 8)
 - **Code Coverage**: 80.54% overall, Repository 100%, Intent >95%
-- **Commits**: 24 total (10 feature + 1 fix + 8 form alignment/docs + 4 test fixes + 1 refactor, all following TDD)
-- **Documentation**: 5 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md, FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md)
+- **Commits**: 29 total (10 feature + 1 fix + 8 form alignment/docs + 4 test fixes + 1 refactor + 5 TUI compliance, all following TDD)
+- **Documentation**: 6 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md, FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md, SKILLS_MANAGEMENT_WORKFLOW.md)
 
 ## Context
 
@@ -849,6 +850,284 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [ ] ~~Write failing test: Event count per skill~~ (TASK 40)
 - [ ] ~~Write failing test: LastUsed derived from events~~ (TASK 40)
 
+### Phase 8: TUI Workflow Compliance
+
+**Goal**: Ensure ManageSkills intent fully adopts all KaRiya TUI workflow requirements
+
+**Status**: 🔄 IN PROGRESS (2026-01-12)
+
+**Time Estimate**: 4-6 hours  
+**Test Additions**: ~120 new tests across 3 files
+
+#### Overview
+
+This phase addresses gaps identified in TUI workflow compliance audit:
+
+**Critical Gaps**:
+1. Missing universal key handlers (`q`, `?`, `Ctrl+C`) in all 9 states
+2. No dedicated escape test file (`manage_skills_escape_test.go`)
+3. Not using `MessageInterceptor` pattern for consistent global key handling
+4. Missing navigation test file (`manage_skills_navigation_test.go`)
+5. No workflow documentation (`docs/workflows/SKILLS_MANAGEMENT_WORKFLOW.md`)
+
+**Requirements Source**: Complete TUI workflow requirements checklist compiled from:
+- `docs/TUI_STANDARDS.md` - Core TUI standards
+- `docs/TUI_DEVELOPER_GUIDE.md` - Developer guide
+- `docs/TUI_INTENT_DIAGRAM.md` - Intent architecture
+- `docs/STANDARDVIEW_GUIDE.md` - StandardView system
+- `docs/KEYBOARD_SHORTCUTS_GUIDE.md` - Keyboard shortcuts
+- `docs/development/NAVIGATION_TESTING_GUIDE.md` - Navigation testing
+- `docs/development/NAVIGATION_TESTING_CHECKLIST.md` - Testing checklist
+
+#### Files to Create
+
+- [ ] `internal/cli/intents/manage_skills_escape_test.go` (~250 lines, ~36 tests)
+- [ ] `internal/cli/intents/manage_skills_navigation_test.go` (~350 lines, ~64 tests)
+- [ ] `docs/workflows/SKILLS_MANAGEMENT_WORKFLOW.md` (~500 lines)
+
+#### Files to Modify
+
+- [ ] `internal/cli/intents/manage_skills_intent.go` (~100 lines changed)
+
+#### Phase 8A: Refactor Key Handlers (TDD)
+
+**Goal**: Convert all state handlers to use `MessageInterceptor` pattern
+
+**Pattern**: Replace manual switch statements with `MessageInterceptor`:
+
+```go
+// BEFORE (current)
+func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
+    switch msg.String() {
+    case "esc":
+        i.result = &IntentResult[*ManageSkillsResult]{...}
+        i.active = false
+        return nil
+    }
+}
+
+// AFTER (MessageInterceptor)
+func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
+    return NewMessageInterceptor().
+        OnQuit(StandardQuitHandler()).
+        OnHelp(StandardHelpHandler(i.BaseIntent)).
+        OnBack(func() tea.Cmd {
+            i.setCancelled()
+            return nil
+        }).
+        InterceptOr(msg, func() tea.Cmd {
+            // navigation handler + intent-specific keys
+        })
+}
+```
+
+**TDD Checklist - Phase 8A**:
+
+- [x] Write failing test: `q` returns `tea.Quit` from List state
+- [x] Write failing test: `q` returns `tea.Quit` from Detail state
+- [x] Write failing test: `q` returns `tea.Quit` from DetailEvents state
+- [x] Write failing test: `q` returns `tea.Quit` from DetailEventDetail state
+- [x] Write failing test: `q` returns `tea.Quit` from Filter state
+- [x] Write failing test: `q` returns `tea.Quit` from Sort state
+- [x] Write failing test: `q` returns `tea.Quit` from Delete state
+- [x] Write failing test: `q` returns `tea.Quit` from Add state (form active)
+- [x] Write failing test: `q` returns `tea.Quit` from Edit state (form active)
+- [x] Write failing test: `?` toggles help in List state
+- [x] Write failing test: `Ctrl+C` returns `tea.Quit`
+- [x] Implement `setCancelled()` helper method
+- [x] Refactor `handleListKeys` to use `MessageInterceptor`
+- [x] Refactor `handleDetailKeys` to use `MessageInterceptor`
+- [x] Refactor `handleDetailEventsKeys` to use `MessageInterceptor`
+- [x] Refactor `handleEventDetailKeys` to use `MessageInterceptor`
+- [x] Refactor `handleDeleteKeys` to use `MessageInterceptor`
+- [x] Refactor `handleFilterKeys` to use `MessageInterceptor`
+- [x] Refactor `handleSortKeys` to use `MessageInterceptor`
+- [x] Update form handling to intercept global keys before form
+- [x] All tests pass
+- [x] Commit: `test(intents): add global key handler tests for ManageSkills` (dcf8e7c)
+- [x] Commit: `feat(intents): implement MessageInterceptor pattern for ManageSkills global keys` (9cc24af)
+
+#### Phase 8B: Comprehensive Escape Tests
+
+**Goal**: Create dedicated escape test file with tests for all 9 states
+
+**Test Matrix**:
+
+| State | Esc Behavior | q Behavior | ? Behavior | Tests |
+|-------|--------------|------------|------------|-------|
+| List (root) | Cancel intent | tea.Quit | Toggle help | 4 |
+| Detail | → List | tea.Quit | Toggle help | 4 |
+| DetailEvents | → Detail | tea.Quit | Toggle help | 4 |
+| DetailEventDetail | → DetailEvents | tea.Quit | Toggle help | 4 |
+| Add (form) | → List | tea.Quit | Toggle help | 4 |
+| Edit (form) | → List | tea.Quit | Toggle help | 4 |
+| Delete | → List | tea.Quit | Toggle help | 4 |
+| Filter | → List | tea.Quit | Toggle help | 4 |
+| Sort | → List | tea.Quit | Toggle help | 4 |
+
+**Total**: ~36 escape/global key tests
+
+**TDD Checklist - Phase 8B**:
+
+- [ ] Create `manage_skills_escape_test.go`
+- [ ] Write List state escape tests (4 tests)
+- [ ] Write Detail state escape tests (4 tests)
+- [ ] Write DetailEvents state escape tests (4 tests)
+- [ ] Write DetailEventDetail state escape tests (4 tests)
+- [ ] Write Add state escape tests (4 tests)
+- [ ] Write Edit state escape tests (4 tests)
+- [ ] Write Delete state escape tests (4 tests)
+- [ ] Write Filter state escape tests (4 tests)
+- [ ] Write Sort state escape tests (4 tests)
+- [ ] All tests pass
+- [ ] Commit: `test(skills): add comprehensive escape key tests for all states`
+
+#### Phase 8C: Navigation Tests
+
+**Goal**: Create E2E navigation tests using `e2e.TestEnv` framework
+
+**Test Categories** (~64 tests):
+- Menu Navigation (4 tests)
+- Empty List (3 tests)
+- List with Data (6 tests)
+- Detail Navigation (5 tests)
+- Events Navigation (5 tests)
+- Filter Menu (6 tests)
+- Sort Menu (6 tests)
+- Add/Edit Forms (10 tests)
+- Delete Confirmation (5 tests)
+- Workflow (5 tests)
+- Vim-style (4 tests)
+- View Rendering (5 tests)
+
+**TDD Checklist - Phase 8C**:
+
+- [ ] Create `manage_skills_navigation_test.go`
+- [ ] Write menu navigation tests
+- [ ] Write empty list navigation tests
+- [ ] Write list with data navigation tests
+- [ ] Write detail navigation tests
+- [ ] Write events navigation tests
+- [ ] Write filter menu navigation tests
+- [ ] Write sort menu navigation tests
+- [ ] Write add/edit form navigation tests
+- [ ] Write delete confirmation navigation tests
+- [ ] Write workflow navigation tests
+- [ ] Write vim-style navigation tests
+- [ ] Write view rendering tests
+- [ ] All tests pass
+- [ ] Commit: `test(skills): add comprehensive navigation tests`
+
+#### Phase 8D: Workflow Documentation
+
+**Goal**: Create comprehensive workflow guide matching CV Generation format
+
+**Document Structure**:
+1. Overview (What, When, Prerequisites)
+2. Workflow States & Navigation (State machine diagram, state table)
+3. Step-by-Step Guide (All 9 states with screenshots/examples)
+4. Complete Keyboard Reference (Universal + state-specific keys)
+5. Navigation Patterns (Back navigation, context preservation)
+6. Common Workflows (Adding skill, filtering, viewing events)
+7. Troubleshooting (Common issues and solutions)
+8. Technical Details (State machine implementation, IntentResult flow)
+
+**State Machine** (Mermaid diagram):
+```mermaid
+graph TD
+    Start([Start: Manage Skills])
+    List[1. Skills List]
+    Detail[2. Skill Detail]
+    DetailEvents[3. Events Using Skill]
+    DetailEventDetail[4. Event Detail]
+    Add[5. Add Skill]
+    Edit[6. Edit Skill]
+    Delete[7. Delete Confirmation]
+    Filter[8. Filter Menu]
+    Sort[9. Sort Menu]
+    Complete([Complete])
+    Cancel([Cancel])
+    
+    Start --> List
+    List -->|Enter| Detail
+    List -->|n| Add
+    List -->|e| Edit
+    List -->|d| Delete
+    List -->|f| Filter
+    List -->|s| Sort
+    List -->|Esc| Cancel
+    
+    Detail -->|Enter| DetailEvents
+    Detail -->|e| Edit
+    Detail -->|d| Delete
+    Detail -->|Esc| List
+    
+    DetailEvents -->|Enter| DetailEventDetail
+    DetailEvents -->|Esc| Detail
+    
+    DetailEventDetail -->|Esc| DetailEvents
+    
+    Add -->|Submit| List
+    Add -->|Esc| List
+    
+    Edit -->|Submit| List
+    Edit -->|Esc| List
+    
+    Delete -->|y| List
+    Delete -->|n/Esc| List
+    
+    Filter -->|Enter| List
+    Filter -->|Esc| List
+    
+    Sort -->|Enter| List
+    Sort -->|Esc| List
+```
+
+**TDD Checklist - Phase 8D**:
+
+- [ ] Create `docs/workflows/SKILLS_MANAGEMENT_WORKFLOW.md`
+- [ ] Write Overview section
+- [ ] Create Mermaid state machine diagram
+- [ ] Write State Summary Table
+- [ ] Write Step-by-Step Guide for all 9 states
+- [ ] Write Complete Keyboard Reference
+- [ ] Write Navigation Patterns section
+- [ ] Write Common Workflows section
+- [ ] Write Troubleshooting section
+- [ ] Write Technical Details section
+- [ ] Verify all navigation paths documented
+- [ ] Commit: `docs(workflows): add comprehensive Skills Management workflow guide`
+
+#### Phase 8E: Final Verification
+
+**Verification Checklist**:
+
+- [ ] Run `make check-compliance` - passes
+- [ ] Run `go test -race ./internal/cli/intents/...` - all pass
+- [ ] Run `ginkgo -r --focus="ManageSkills" ./internal/cli/intents/` - all pass
+- [ ] Verify escape key works in all 9 states (manual test)
+- [ ] Verify `q` quits from all states (manual test)
+- [ ] Verify `?` toggles help (manual test)
+- [ ] Review workflow documentation for accuracy
+- [ ] Update task metrics with final test count
+- [ ] Update AGENTS.md if needed
+
+#### Commits Summary - Phase 8
+
+1. `test(skills): add global key handler tests`
+2. `feat(skills): implement MessageInterceptor pattern for global keys`
+3. `test(skills): add comprehensive escape key tests for all states`
+4. `test(skills): add comprehensive navigation tests`
+5. `docs(workflows): add comprehensive Skills Management workflow guide`
+
+#### Phase 8 Metrics
+
+- **Time**: 4-6 hours
+- **Tests Added**: ~120 (20 global key + 36 escape + 64 navigation)
+- **Files Created**: 3 (2 test files + 1 doc)
+- **Files Modified**: 1 (intent implementation)
+- **Documentation**: 1 comprehensive workflow guide (~500 lines)
+
 ## Pre-Commit Checklist (BEFORE EACH COMMIT)
 - [ ] `make check-compliance` passes (REQUIRED before commit)
 - [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
@@ -856,10 +1135,10 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [ ] Commit is atomic (ONE logical change)
 
 ## Post-Task Checklist (MUST COMPLETE BEFORE NEXT TASK)
-- [x] `make check-compliance` passes ✅ (80.71% coverage, all tests pass)
-- [x] All checkboxes above completed (Phase 4B ✅ COMPLETE, Phase 7 moved to Task 40)
-- [x] Task marked complete `[x]` in task file
-- [x] Token count: N/A (task complete)
+- [ ] `make check-compliance` passes (with Phase 8)
+- [ ] All checkboxes above completed (Phase 8 ⏳ IN PROGRESS)
+- [ ] Task marked complete `[x]` in task file
+- [ ] Token count: _____ (< 100k to continue)
 
 ## Acceptance Criteria
 
@@ -900,11 +1179,19 @@ Text,Date,Categories,Tags,Project,Company,Skills
 - [x] Zero staticcheck warnings (verified with build)
 - [x] Zero race conditions
 
-### Documentation ✅ COMPLETE
+### Documentation ✅ COMPLETE (Phase 8 🔄 IN PROGRESS)
 - [x] Documentation updated (add docs/SKILLS_GUIDE.md) - COMPLETE (commit 3d09115)
 - [x] CSV documentation updated (CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md) - COMPLETE (commit a5e54db)
 - [x] SKILLS_GUIDE includes detail view and events view usage - COMPLETE (commit 3d09115)
 - [x] SKILLS_GUIDE.md filter/sort documentation (Phase 4B features) - COMPLETE (commit e9e6028)
+- [ ] Workflow documentation (docs/workflows/SKILLS_MANAGEMENT_WORKFLOW.md) - IN PROGRESS (Phase 8D)
+
+### TUI Workflow Compliance (Phase 8) 🔄 IN PROGRESS
+- [ ] Universal key handlers (`q`, `?`, `Ctrl+C`) in all 9 states
+- [ ] MessageInterceptor pattern for consistent global key handling
+- [ ] Comprehensive escape key tests (~36 tests covering all states)
+- [ ] Navigation tests using E2E framework (~64 tests)
+- [ ] Workflow documentation with state diagrams and keyboard reference
 
 ## Rollback Plan
 - Migrations can be rolled back via `goose down`
