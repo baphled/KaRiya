@@ -1,6 +1,7 @@
 package intents_test
 
 import (
+	"context"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -13,33 +14,32 @@ import (
 
 var _ = Describe("FactManagement - Escape Key Behavior", func() {
 	var (
-		context *intents.FactManagementContext
-		intent  *intents.FactManagementModel
-		facts   []*career.Fact
+		ctx         context.Context
+		factContext *intents.FactManagementContext
+		intent      *intents.FactManagementModel
+		mockRepo    *intents.MockFactRepository
 	)
 
 	BeforeEach(func() {
+		ctx = context.Background()
+		mockRepo = intents.NewMockFactRepository()
+
 		now := time.Now()
-		facts = []*career.Fact{
-			{
-				ID:        "fact-1",
-				Text:      "Improved API performance by 40%",
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-			{
-				ID:        "fact-2",
-				Text:      "Led team of 5 engineers",
-				CreatedAt: now,
-				UpdatedAt: now,
-			},
-		}
+		mockRepo.Create(ctx, &career.Fact{
+			ID:        "fact-1",
+			Text:      "Improved API performance by 40%",
+			CreatedAt: now,
+			UpdatedAt: now,
+		})
+		mockRepo.Create(ctx, &career.Fact{
+			ID:        "fact-2",
+			Text:      "Led team of 5 engineers",
+			CreatedAt: now,
+			UpdatedAt: now,
+		})
 
-		context = &intents.FactManagementContext{
-			Facts: facts,
-		}
-
-		intent = intents.NewFactManagementIntent(context)
+		factContext = intents.NewFactManagementContext(mockRepo, ctx)
+		intent = intents.NewFactManagementIntent(factContext)
 		intent.Init()
 	})
 
