@@ -3,7 +3,7 @@
 **Last Updated**: 2026-01-12  
 **Status**: Complete - All form implementations documented  
 **Library**: [github.com/charmbracelet/huh](https://github.com/charmbracelet/huh) v0.8.0  
-**Form Wrappers**: 2 (HuhCaptureForm, HuhSkillForm)
+**Form Wrappers**: 2 (CaptureForm, SkillForm)
 
 ---
 
@@ -1080,12 +1080,12 @@ func (m *EditModal) GetFooter() string {
 
 Models embed huh forms for full-screen editing. See examples in [`internal/cli/models/`](../internal/cli/models/).
 
-#### Strategy-Aware Forms (HuhCaptureForm)
+#### Strategy-Aware Forms (CaptureForm)
 
 **File**: `internal/cli/models/huh_capture_form.go`
 
 ```go
-type HuhCaptureForm struct {
+type CaptureForm struct {
     form     *huh.Form
     data     *forms.CaptureEventFormData
     strategy string
@@ -1093,12 +1093,12 @@ type HuhCaptureForm struct {
 }
 
 // Rebuild form when strategy changes
-func (m *HuhCaptureForm) SetStrategy(newStrategy string) {
+func (m *CaptureForm) SetStrategy(newStrategy string) {
     m.strategy = newStrategy
     m.rebuildForm()
 }
 
-func (m *HuhCaptureForm) rebuildForm() {
+func (m *CaptureForm) rebuildForm() {
     m.form = forms.NewCaptureEventForm(
         m.data,
         m.strategy,
@@ -1108,7 +1108,7 @@ func (m *HuhCaptureForm) rebuildForm() {
 }
 
 // Handle keyboard shortcuts
-func (m *HuhCaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *CaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     case tea.KeyMsg:
         // Ctrl+S to submit
@@ -1350,7 +1350,7 @@ func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
 
 #### The Solution: Wrapper Models
 
-Create a wrapper model (like `HuhCaptureForm`, `HuhSkillForm`) that:
+Create a wrapper model (like `CaptureForm`, `SkillForm`) that:
 
 1. **Starts with sensible defaults** (80x24)
 2. **Handles `tea.WindowSizeMsg` internally**
@@ -1488,8 +1488,8 @@ func (i *MyIntent) renderForm() string {
 
 | Wrapper | Purpose | File |
 |---------|---------|------|
-| `HuhCaptureForm` | Career event capture | `internal/cli/models/huh_capture_form.go` |
-| `HuhSkillForm` | Skill management | `internal/cli/models/huh_skill_form.go` |
+| `CaptureForm` | Career event capture | `internal/cli/models/capture_form.go` |
+| `SkillForm` | Skill management | `internal/cli/models/skill_form.go` |
 
 #### When to Create a Wrapper
 

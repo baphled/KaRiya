@@ -5,7 +5,7 @@
 **Test Coverage**: 240+ tests, 100% pass rate, 0 race conditions
 **Code Quality**: All linting checks passing, no technical debt
 **Forms**: Huh library integration (Phase 4/5 complete)
-**Form Wrappers**: 2 (HuhCaptureForm, HuhSkillForm) - Required for intent forms
+**Form Wrappers**: 2 (CaptureForm, SkillForm) - Required for intent forms
 
 ---
 
@@ -578,7 +578,7 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 - **⚠️ Form Alignment & Wrapper Pattern** - CRITICAL for intent forms
 - Testing strategies and comprehensive examples
 
-> **⚠️ CRITICAL**: Forms in intents MUST use wrapper models (e.g., `HuhCaptureForm`, `HuhSkillForm`).
+> **⚠️ CRITICAL**: Forms in intents MUST use wrapper models (e.g., `CaptureForm`, `SkillForm`).
 > Direct `*huh.Form` usage causes left-alignment issues. See [Form Alignment and the Wrapper Pattern](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern).
 
 ### TUI Quick References
@@ -1433,7 +1433,7 @@ go test -bench=. -benchmem ./internal/cli/components/
 
 > **⚠️ CRITICAL: Form Alignment Rule**
 > 
-> Forms used in **intents** MUST use a wrapper model (like `HuhCaptureForm`, `HuhSkillForm`).
+> Forms used in **intents** MUST use a wrapper model (like `CaptureForm`, `SkillForm`).
 > Direct use of `*huh.Form` in intents causes **left-alignment issues** because:
 > - Form dimensions are captured at creation time and become stale
 > - `WindowSizeMsg` handling is scattered and error-prone

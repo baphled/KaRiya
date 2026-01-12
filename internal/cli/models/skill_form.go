@@ -13,8 +13,8 @@ type SkillFormCompleteMsg struct {
 	Cancelled bool
 }
 
-// HuhSkillForm wraps a huh form for managing skills.
-type HuhSkillForm struct {
+// SkillForm wraps a huh form for managing skills.
+type SkillForm struct {
 	*BaseStandardModel
 	formData *forms.SkillFormData
 	form     *huh.Form
@@ -22,9 +22,9 @@ type HuhSkillForm struct {
 	height   int
 }
 
-// NewHuhSkillForm creates a new huh-based skill form.
-func NewHuhSkillForm() *HuhSkillForm {
-	m := &HuhSkillForm{
+// NewSkillForm creates a new skill form.
+func NewSkillForm() *SkillForm {
+	m := &SkillForm{
 		BaseStandardModel: NewBaseStandardModel(),
 		formData:          &forms.SkillFormData{},
 		width:             80,
@@ -35,9 +35,9 @@ func NewHuhSkillForm() *HuhSkillForm {
 	return m
 }
 
-// NewHuhSkillFormWithData creates a new huh-based skill form with existing data.
-func NewHuhSkillFormWithData(skill *career.Skill) *HuhSkillForm {
-	m := &HuhSkillForm{
+// NewSkillFormWithData creates a new skill form with existing data.
+func NewSkillFormWithData(skill *career.Skill) *SkillForm {
+	m := &SkillForm{
 		BaseStandardModel: NewBaseStandardModel(),
 		formData:          forms.GetSkillFormData(skill),
 		width:             80,
@@ -49,7 +49,7 @@ func NewHuhSkillFormWithData(skill *career.Skill) *HuhSkillForm {
 }
 
 // rebuildForm creates a new form with current settings.
-func (m *HuhSkillForm) rebuildForm() {
+func (m *SkillForm) rebuildForm() {
 	m.form = forms.NewSkillFormWithDataAndDimensions(
 		m.formData,
 		m.width-4,
@@ -58,12 +58,12 @@ func (m *HuhSkillForm) rebuildForm() {
 }
 
 // Init initializes the form.
-func (m *HuhSkillForm) Init() tea.Cmd {
+func (m *SkillForm) Init() tea.Cmd {
 	return m.form.Init()
 }
 
 // Update handles messages.
-func (m *HuhSkillForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *SkillForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -97,12 +97,12 @@ func (m *HuhSkillForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the form.
-func (m *HuhSkillForm) View() string {
+func (m *SkillForm) View() string {
 	return m.form.View()
 }
 
 // submitForm creates a SkillFormCompleteMsg.
-func (m *HuhSkillForm) submitForm() tea.Cmd {
+func (m *SkillForm) submitForm() tea.Cmd {
 	return func() tea.Msg {
 		return SkillFormCompleteMsg{
 			Data:      m.formData,
@@ -112,12 +112,12 @@ func (m *HuhSkillForm) submitForm() tea.Cmd {
 }
 
 // GetFormData returns the current form data.
-func (m *HuhSkillForm) GetFormData() *forms.SkillFormData {
+func (m *SkillForm) GetFormData() *forms.SkillFormData {
 	return m.formData
 }
 
 // SetFormData sets the form data and rebuilds the form.
-func (m *HuhSkillForm) SetFormData(data *forms.SkillFormData) {
+func (m *SkillForm) SetFormData(data *forms.SkillFormData) {
 	m.formData = data
 	m.rebuildForm()
 }

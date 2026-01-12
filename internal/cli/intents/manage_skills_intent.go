@@ -38,7 +38,7 @@ type ManageSkillsIntent struct {
 	eventsLoaded bool                  // Whether events have been loaded
 
 	// form for add/edit
-	skillForm *models.HuhSkillForm
+	skillForm *models.SkillForm
 
 	// active indicates whether this intent is currently active
 	active bool
@@ -463,7 +463,7 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 	case "n":
 		// Add new skill
 		i.currentState = SkillsStateAdd
-		i.skillForm = models.NewHuhSkillForm()
+		i.skillForm = models.NewSkillForm()
 		return i.skillForm.Init()
 
 	case "e":
@@ -472,7 +472,7 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 			return nil
 		}
 		i.currentState = SkillsStateEdit
-		i.skillForm = models.NewHuhSkillFormWithData(i.skills[i.selectedIndex])
+		i.skillForm = models.NewSkillFormWithData(i.skills[i.selectedIndex])
 		return i.skillForm.Init()
 
 	case "d":
@@ -778,7 +778,7 @@ func (i *ManageSkillsIntent) handleDetailKeys(msg tea.KeyMsg) tea.Cmd {
 	case "e":
 		// Edit this skill
 		i.currentState = SkillsStateEdit
-		i.skillForm = models.NewHuhSkillFormWithData(i.selectedSkill)
+		i.skillForm = models.NewSkillFormWithData(i.selectedSkill)
 		return i.skillForm.Init()
 
 	case "d":
