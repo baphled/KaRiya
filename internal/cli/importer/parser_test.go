@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/domain/career"
+	repo "github.com/baphled/kariya/internal/repository/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -456,6 +457,163 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
 			Expect(rows[0].IsValid).To(BeTrue())
 			// Skills should be empty because skillRepository is nil
 			Expect(rows[0].Event.Skills).To(BeEmpty())
+		})
+	})
+
+	Describe("Skills Import with MemorySkillRepository", func() {
+		var (
+			skillRepo       *repo.MemorySkillRepository
+			parserWithSkill *importer.CSVParser
+			ctx             context.Context
+		)
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			skillRepo = repo.NewMemorySkillRepository()
+			parserWithSkill = importer.NewCSVParser([]*career.CareerEvent{}, skillRepo, ctx)
+		})
+
+		It("should create new skills when not found in repository", func() {
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			Expect(rows[0].Event.Skills).To(HaveLen(2))
+
+			// Verify skills were created in repository
+			goSkill, err := skillRepo.GetByName(ctx, "Go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(goSkill).NotTo(BeNil())
+			Expect(goSkill.Category).To(Equal("other"))
+
+			rubySkill, err := skillRepo.GetByName(ctx, "Ruby")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rubySkill).NotTo(BeNil())
+			Expect(rubySkill.Category).To(Equal("other"))
+		})
+
+		It("should reuse existing skills from repository", func() {
+			// Pre-create a skill
+			existingSkill := &career.Skill{Name: "Go", Category: "backend", Level: "expert"}
+			err := skillRepo.Create(ctx, existingSkill)
+			Expect(err).NotTo(HaveOccurred())
+
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			Expect(rows[0].Event.Skills).To(HaveLen(2))
+
+			// Verify the existing skill ID was used
+			Expect(rows[0].Event.Skills).To(ContainElement(existingSkill.ID))
+
+			// Verify Ruby was created as new
+			rubySkill, err := skillRepo.GetByName(ctx, "Ruby")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rubySkill.Category).To(Equal("other"))
+		})
+
+		It("should handle multiple events with shared skills", func() {
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Event 1,2024-01,Technical,technical,Project1,Company1,Go;Docker
+Event 2,2024-02,Technical,technical,Project2,Company2,Go;Kubernetes`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(2))
+			Expect(rows[0].IsValid).To(BeTrue(), "Row 0 validation errors: %v", rows[0].ValidationErrors)
+			Expect(rows[1].IsValid).To(BeTrue(), "Row 1 validation errors: %v", rows[1].ValidationErrors)
+			Expect(rows[0].Event).NotTo(BeNil())
+			Expect(rows[1].Event).NotTo(BeNil())
+
+			// Both events should have Go skill
+			goSkill, err := skillRepo.GetByName(ctx, "Go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows[0].Event.Skills).To(ContainElement(goSkill.ID))
+			Expect(rows[1].Event.Skills).To(ContainElement(goSkill.ID))
+
+			// Check other skills exist
+			dockerSkill, err := skillRepo.GetByName(ctx, "Docker")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows[0].Event.Skills).To(ContainElement(dockerSkill.ID))
+
+			k8sSkill, err := skillRepo.GetByName(ctx, "Kubernetes")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows[1].Event.Skills).To(ContainElement(k8sSkill.ID))
+		})
+
+		It("should trim whitespace from skill names", func() {
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,  Go  ;  Ruby  `
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].Event.Skills).To(HaveLen(2))
+
+			// Verify skills were created with trimmed names
+			goSkill, err := skillRepo.GetByName(ctx, "Go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(goSkill).NotTo(BeNil())
+
+			rubySkill, err := skillRepo.GetByName(ctx, "Ruby")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rubySkill).NotTo(BeNil())
+		})
+
+		It("should handle case-sensitive skill matching", func() {
+			// Pre-create a skill with specific case
+			existingSkill := &career.Skill{Name: "Go", Category: "backend"}
+			err := skillRepo.Create(ctx, existingSkill)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Import with different case - should create new skill
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,go`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].Event.Skills).To(HaveLen(1))
+
+			// Should have created a new skill "go" (lowercase)
+			lowercaseSkill, err := skillRepo.GetByName(ctx, "go")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(lowercaseSkill).NotTo(BeNil())
+			Expect(lowercaseSkill.ID).NotTo(Equal(existingSkill.ID))
+		})
+
+		It("should skip empty skill names in semicolon-separated list", func() {
+			csvData := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;;Ruby;  ;Python`
+
+			reader := bytes.NewReader([]byte(csvData))
+			rows, err := parserWithSkill.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].Event.Skills).To(HaveLen(3))
+
+			// Verify only non-empty skills were created
+			skills, err := skillRepo.List(ctx, nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(skills).To(HaveLen(3))
 		})
 	})
 
