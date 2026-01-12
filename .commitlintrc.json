@@ -41,7 +41,8 @@
         "intents",
         "models",
         "components",
-        "ci"
+        "ci",
+        "navigation"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],
