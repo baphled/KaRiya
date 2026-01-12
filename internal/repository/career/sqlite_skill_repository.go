@@ -282,7 +282,11 @@ func (r *SQLiteSkillRepository) List(ctx context.Context, filters *SkillFilters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list skills: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close rows: %w", closeErr)
+		}
+	}()
 
 	var skills []*career.Skill
 	for rows.Next() {
@@ -406,7 +410,11 @@ func (r *SQLiteSkillRepository) GetByCategory(ctx context.Context, category stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to get skills by category: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close rows: %w", closeErr)
+		}
+	}()
 
 	var skills []*career.Skill
 	for rows.Next() {
@@ -459,7 +467,11 @@ func (r *SQLiteSkillRepository) GetSkillsForEvent(ctx context.Context, eventID s
 	if err != nil {
 		return nil, fmt.Errorf("failed to get skills for event: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close rows: %w", closeErr)
+		}
+	}()
 
 	var skills []*career.Skill
 	for rows.Next() {
@@ -510,7 +522,11 @@ func (r *SQLiteSkillRepository) GetEventCountsForSkills(ctx context.Context) (ma
 	if err != nil {
 		return nil, fmt.Errorf("failed to get event counts for skills: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close rows: %w", closeErr)
+		}
+	}()
 
 	counts := make(map[string]int)
 	for rows.Next() {
@@ -548,7 +564,11 @@ func (r *SQLiteSkillRepository) GetLastUsedForSkills(ctx context.Context) (map[s
 	if err != nil {
 		return nil, fmt.Errorf("failed to get last used dates for skills: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close rows: %w", closeErr)
+		}
+	}()
 
 	lastUsedMap := make(map[string]time.Time)
 	for rows.Next() {
@@ -593,7 +613,11 @@ func (r *SQLiteSkillRepository) GetEventsUsingSkill(ctx context.Context, skillID
 	if err != nil {
 		return nil, fmt.Errorf("failed to get events using skill: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("failed to close rows: %w", closeErr)
+		}
+	}()
 
 	var events []*career.CareerEvent
 	for rows.Next() {
