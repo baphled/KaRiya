@@ -543,12 +543,12 @@ func (r *SQLiteSkillRepository) GetEventsUsingSkill(ctx context.Context, skillID
 		for skillRows.Next() {
 			var skillID string
 			if err := skillRows.Scan(&skillID); err != nil {
-				skillRows.Close()
+				_ = skillRows.Close()
 				return nil, fmt.Errorf("failed to scan skill ID: %w", err)
 			}
 			skillIDs = append(skillIDs, skillID)
 		}
-		skillRows.Close()
+		_ = skillRows.Close()
 
 		event.Skills = skillIDs
 

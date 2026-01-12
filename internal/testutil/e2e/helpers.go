@@ -89,7 +89,7 @@ func Setup(t TestingT) *TestEnv {
 
 	// Run migrations
 	if err := careerrepo.RunMigrations(db); err != nil {
-		db.Close()
+		_ = db.Close()
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -110,7 +110,7 @@ func Setup(t TestingT) *TestEnv {
 	model := app.NewModel(cliService, svc)
 
 	cleanup := func() {
-		db.Close()
+		_ = db.Close()
 	}
 
 	return &TestEnv{
