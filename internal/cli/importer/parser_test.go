@@ -377,4 +377,86 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Extra`
 		})
 	})
 
+	Describe("Skills Column Handling", func() {
+		It("should handle CSV without Skills column", func() {
+			csv := `Text,Date,Categories,Tags,Project,Company
+Test event,2024-01,Technical,technical,MyProject,MyCompany`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := parser.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			Expect(rows[0].Event.Skills).To(BeEmpty())
+		})
+
+		It("should handle empty Skills column", func() {
+			csv := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := parser.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			Expect(rows[0].Event.Skills).To(BeEmpty())
+		})
+
+		It("should handle whitespace-only Skills column", func() {
+			csv := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,   `
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := parser.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			Expect(rows[0].Event.Skills).To(BeEmpty())
+		})
+
+		It("should handle empty skill names after splitting", func() {
+			csv := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,;;`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := parser.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			Expect(rows[0].Event.Skills).To(BeEmpty())
+		})
+
+		It("should handle mixed empty and whitespace skill names", func() {
+			csv := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,; ;  ;`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := parser.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			Expect(rows[0].Event.Skills).To(BeEmpty())
+		})
+
+		It("should skip processing skills when skillRepository is nil", func() {
+			// Parser already initialized with nil skillRepository in BeforeEach
+			csv := `Text,Date,Categories,Tags,Project,Company,Skills
+Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := parser.Parse(reader)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rows).To(HaveLen(1))
+			Expect(rows[0].IsValid).To(BeTrue())
+			// Skills should be empty because skillRepository is nil
+			Expect(rows[0].Event.Skills).To(BeEmpty())
+		})
+	})
+
 })
