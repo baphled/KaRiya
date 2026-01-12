@@ -101,6 +101,12 @@ func (r *MemorySkillRepository) List(ctx context.Context, filters *SkillFilters)
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	// Get event counts for MinEvents filtering
+	eventCounts := make(map[string]int)
+	for skillID, eventIDs := range r.skillEvents {
+		eventCounts[skillID] = len(eventIDs)
+	}
+
 	var result []*career.Skill
 
 	// Collect all skills that match the filters
@@ -115,15 +121,113 @@ func (r *MemorySkillRepository) List(ctx context.Context, filters *SkillFilters)
 			if filters.Level != "" && skill.Level != filters.Level {
 				continue
 			}
+
+			// Filter by minimum events
+			if filters.MinEvents > 0 && eventCounts[skill.ID] < filters.MinEvents {
+				continue
+			}
 		}
 
 		result = append(result, skill)
 	}
 
-	// Sort by name
-	sort.Slice(result, func(i, j int) bool {
-		return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
-	})
+	// Determine sort order and field
+	sortOrder := "asc"
+	sortBy := "name"
+	if filters != nil {
+		if filters.SortOrder == "desc" {
+			sortOrder = "desc"
+		}
+		if filters.SortBy != "" {
+			sortBy = filters.SortBy
+		}
+	}
+
+	// Sort based on sortBy and sortOrder
+	switch sortBy {
+	case "name":
+		sort.Slice(result, func(i, j int) bool {
+			cmp := strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
+			if sortOrder == "desc" {
+				return !cmp
+			}
+			return cmp
+		})
+	case "events":
+		sort.Slice(result, func(i, j int) bool {
+			countI := eventCounts[result[i].ID]
+			countJ := eventCounts[result[j].ID]
+			if countI == countJ {
+				// Secondary sort by name ascending
+				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
+			}
+			if sortOrder == "desc" {
+				return countI > countJ
+			}
+			return countI < countJ
+		})
+	case "last_used":
+		// Get last used dates from event repository if available
+		lastUsedDates := make(map[string]time.Time)
+		if r.eventRepo != nil {
+			for skillID, eventIDs := range r.skillEvents {
+				var maxDate time.Time
+				for _, eventID := range eventIDs {
+					if event, err := r.eventRepo.GetByID(ctx, eventID); err == nil {
+						if event.Date.After(maxDate) {
+							maxDate = event.Date
+						}
+					}
+				}
+				if !maxDate.IsZero() {
+					lastUsedDates[skillID] = maxDate
+				}
+			}
+		}
+
+		sort.Slice(result, func(i, j int) bool {
+			dateI, hasI := lastUsedDates[result[i].ID]
+			dateJ, hasJ := lastUsedDates[result[j].ID]
+
+			// Skills without dates should sort last for DESC, first for ASC
+			if !hasI && !hasJ {
+				// Both have no date, sort by name
+				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
+			}
+			if !hasI {
+				return sortOrder == "asc"
+			}
+			if !hasJ {
+				return sortOrder == "desc"
+			}
+
+			// Both have dates
+			if dateI.Equal(dateJ) {
+				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
+			}
+			if sortOrder == "desc" {
+				return dateI.After(dateJ)
+			}
+			return dateI.Before(dateJ)
+		})
+	case "category":
+		sort.Slice(result, func(i, j int) bool {
+			cmp := result[i].Category < result[j].Category
+			if result[i].Category == result[j].Category {
+				// Secondary sort by name
+				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
+			}
+			if sortOrder == "desc" {
+				return !cmp
+			}
+			return cmp
+		})
+	default:
+		// Default to name sort
+		sort.Slice(result, func(i, j int) bool {
+			return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
+		})
+	}
 
 	// Apply pagination
 	if filters != nil {

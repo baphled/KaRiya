@@ -474,6 +474,215 @@ var _ = Describe("SQLiteSkillRepository", func() {
 		})
 	})
 
+	Describe("List with sorting and MinEvents filter", func() {
+		var (
+			mainRepo *SQLiteRepository
+			skill1   *career.Skill
+			skill2   *career.Skill
+			skill3   *career.Skill
+			skill4   *career.Skill
+		)
+
+		BeforeEach(func() {
+			var err error
+			// Create main repository for events
+			mainRepo, err = NewSQLiteRepository(dbPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create skills with different categories and levels
+			skill1 = &career.Skill{Name: "Ruby", Category: "backend", Level: "advanced"}
+			skill2 = &career.Skill{Name: "Go", Category: "backend", Level: "intermediate"}
+			skill3 = &career.Skill{Name: "React", Category: "frontend", Level: "advanced"}
+			skill4 = &career.Skill{Name: "Vue", Category: "frontend", Level: "beginner"}
+
+			err = repository.Create(ctx, skill1)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(ctx, skill2)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(ctx, skill3)
+			Expect(err).NotTo(HaveOccurred())
+			err = repository.Create(ctx, skill4)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Create events with skill associations
+			// skill1 (Ruby): 3 events
+			// skill2 (Go): 2 events
+			// skill3 (React): 1 event
+			// skill4 (Vue): 0 events (unused)
+			event1 := createTestEventWithSkills("Event 1", "2024-01-15", []string{skill1.ID})
+			event2 := createTestEventWithSkills("Event 2", "2024-02-15", []string{skill1.ID, skill2.ID})
+			event3 := createTestEventWithSkills("Event 3", "2024-03-15", []string{skill1.ID, skill2.ID, skill3.ID})
+
+			err = mainRepo.Create(ctx, event1)
+			Expect(err).NotTo(HaveOccurred())
+			err = mainRepo.Create(ctx, event2)
+			Expect(err).NotTo(HaveOccurred())
+			err = mainRepo.Create(ctx, event3)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("MinEvents filter", func() {
+			It("should filter skills with minimum event count > 0 (used skills only)", func() {
+				filters := &SkillFilters{
+					MinEvents: 1,
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				// Should exclude skill4 (Vue) which has 0 events
+				Expect(skills).To(HaveLen(3))
+
+				skillNames := make([]string, len(skills))
+				for i, s := range skills {
+					skillNames[i] = s.Name
+				}
+				Expect(skillNames).To(ContainElements("Ruby", "Go", "React"))
+				Expect(skillNames).NotTo(ContainElement("Vue"))
+			})
+
+			It("should filter skills with minimum event count >= 2", func() {
+				filters := &SkillFilters{
+					MinEvents: 2,
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				// Should only include Ruby (3) and Go (2)
+				Expect(skills).To(HaveLen(2))
+
+				skillNames := make([]string, len(skills))
+				for i, s := range skills {
+					skillNames[i] = s.Name
+				}
+				Expect(skillNames).To(ContainElements("Ruby", "Go"))
+			})
+
+			It("should combine MinEvents with category filter", func() {
+				filters := &SkillFilters{
+					Category:  "backend",
+					MinEvents: 2,
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				// Should only include backend skills with >= 2 events: Ruby (3), Go (2)
+				Expect(skills).To(HaveLen(2))
+				for _, s := range skills {
+					Expect(s.Category).To(Equal("backend"))
+				}
+			})
+		})
+
+		Context("Sorting", func() {
+			It("should sort skills by name ascending (default)", func() {
+				filters := &SkillFilters{
+					SortBy:    "name",
+					SortOrder: "asc",
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(4))
+				Expect(skills[0].Name).To(Equal("Go"))
+				Expect(skills[1].Name).To(Equal("React"))
+				Expect(skills[2].Name).To(Equal("Ruby"))
+				Expect(skills[3].Name).To(Equal("Vue"))
+			})
+
+			It("should sort skills by name descending", func() {
+				filters := &SkillFilters{
+					SortBy:    "name",
+					SortOrder: "desc",
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(4))
+				Expect(skills[0].Name).To(Equal("Vue"))
+				Expect(skills[1].Name).To(Equal("Ruby"))
+				Expect(skills[2].Name).To(Equal("React"))
+				Expect(skills[3].Name).To(Equal("Go"))
+			})
+
+			It("should sort skills by event count descending (most used first)", func() {
+				filters := &SkillFilters{
+					SortBy:    "events",
+					SortOrder: "desc",
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(4))
+				// Ruby=3, Go=2, React=1, Vue=0
+				Expect(skills[0].Name).To(Equal("Ruby"))
+				Expect(skills[1].Name).To(Equal("Go"))
+				Expect(skills[2].Name).To(Equal("React"))
+				Expect(skills[3].Name).To(Equal("Vue"))
+			})
+
+			It("should sort skills by event count ascending (least used first)", func() {
+				filters := &SkillFilters{
+					SortBy:    "events",
+					SortOrder: "asc",
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(4))
+				// Vue=0, React=1, Go=2, Ruby=3
+				Expect(skills[0].Name).To(Equal("Vue"))
+				Expect(skills[1].Name).To(Equal("React"))
+				Expect(skills[2].Name).To(Equal("Go"))
+				Expect(skills[3].Name).To(Equal("Ruby"))
+			})
+
+			It("should sort skills by last used date descending (most recent first)", func() {
+				filters := &SkillFilters{
+					SortBy:    "last_used",
+					SortOrder: "desc",
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(4))
+				// Ruby, Go, React all used in Event 3 (2024-03-15)
+				// Vue never used - should be last
+				Expect(skills[3].Name).To(Equal("Vue"))
+			})
+
+			It("should sort skills by category", func() {
+				filters := &SkillFilters{
+					SortBy:    "category",
+					SortOrder: "asc",
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(4))
+				// backend skills first (Go, Ruby), then frontend (React, Vue)
+				Expect(skills[0].Category).To(Equal("backend"))
+				Expect(skills[1].Category).To(Equal("backend"))
+				Expect(skills[2].Category).To(Equal("frontend"))
+				Expect(skills[3].Category).To(Equal("frontend"))
+			})
+
+			It("should combine sorting with filtering", func() {
+				filters := &SkillFilters{
+					Category:  "backend",
+					SortBy:    "events",
+					SortOrder: "desc",
+				}
+
+				skills, err := repository.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(skills).To(HaveLen(2))
+				// Ruby (3 events) before Go (2 events)
+				Expect(skills[0].Name).To(Equal("Ruby"))
+				Expect(skills[1].Name).To(Equal("Go"))
+			})
+		})
+	})
+
 	Describe("GetEventsUsingSkill", func() {
 		It("should return all events that use a specific skill", func() {
 			// Create main repository for events

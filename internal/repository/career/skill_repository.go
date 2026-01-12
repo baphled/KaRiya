@@ -60,6 +60,18 @@ type SkillFilters struct {
 	// Level to filter by (beginner, intermediate, advanced, expert)
 	Level string
 
+	// MinEvents filters to skills with at least this many event associations
+	// Use MinEvents=1 to show only "used" skills
+	MinEvents int
+
+	// SortBy specifies the field to sort by: "name", "events", "last_used", "category"
+	// Default is "name"
+	SortBy string
+
+	// SortOrder specifies ascending ("asc") or descending ("desc")
+	// Default is "asc"
+	SortOrder string
+
 	// Pagination
 	Offset int
 	Limit  int

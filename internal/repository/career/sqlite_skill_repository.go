@@ -163,23 +163,101 @@ func (r *SQLiteSkillRepository) GetByName(ctx context.Context, name string) (*ca
 
 // List retrieves skills with optional filtering
 func (r *SQLiteSkillRepository) List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error) {
-	query := `SELECT id, name, category, level, years_used, last_used, created_at, updated_at FROM skills WHERE 1=1`
+	// Determine if we need to join with event_skills for sorting or filtering by event count
+	needsEventJoin := filters != nil && (filters.MinEvents > 0 || filters.SortBy == "events" || filters.SortBy == "last_used")
+
+	var query string
 	args := []interface{}{}
+
+	if needsEventJoin {
+		// Use subquery to get event counts and last used dates
+		query = `
+			SELECT s.id, s.name, s.category, s.level, s.years_used, s.last_used, s.created_at, s.updated_at,
+			       COALESCE(ec.event_count, 0) as event_count,
+			       ec.max_event_date
+			FROM skills s
+			LEFT JOIN (
+				SELECT es.skill_id, 
+				       COUNT(es.event_id) as event_count,
+				       MAX(ce.date) as max_event_date
+				FROM event_skills es
+				INNER JOIN career_events ce ON es.event_id = ce.id
+				GROUP BY es.skill_id
+			) ec ON s.id = ec.skill_id
+			WHERE 1=1`
+	} else {
+		query = `SELECT id, name, category, level, years_used, last_used, created_at, updated_at FROM skills WHERE 1=1`
+	}
 
 	// Apply filters
 	if filters != nil {
 		if filters.Category != "" {
-			query += " AND category = ?"
+			if needsEventJoin {
+				query += " AND s.category = ?"
+			} else {
+				query += " AND category = ?"
+			}
 			args = append(args, filters.Category)
 		}
 		if filters.Level != "" {
-			query += " AND level = ?"
+			if needsEventJoin {
+				query += " AND s.level = ?"
+			} else {
+				query += " AND level = ?"
+			}
 			args = append(args, filters.Level)
+		}
+		if filters.MinEvents > 0 {
+			query += " AND COALESCE(ec.event_count, 0) >= ?"
+			args = append(args, filters.MinEvents)
 		}
 	}
 
 	// Add ordering
-	query += " ORDER BY name ASC"
+	if filters != nil && filters.SortBy != "" {
+		sortOrder := "ASC"
+		if filters.SortOrder == "desc" {
+			sortOrder = "DESC"
+		}
+
+		switch filters.SortBy {
+		case "name":
+			if needsEventJoin {
+				query += fmt.Sprintf(" ORDER BY s.name %s", sortOrder)
+			} else {
+				query += fmt.Sprintf(" ORDER BY name %s", sortOrder)
+			}
+		case "events":
+			query += fmt.Sprintf(" ORDER BY event_count %s, s.name ASC", sortOrder)
+		case "last_used":
+			// NULL values (never used) should sort last for DESC, first for ASC
+			if sortOrder == "DESC" {
+				query += " ORDER BY CASE WHEN ec.max_event_date IS NULL THEN 1 ELSE 0 END, ec.max_event_date DESC, s.name ASC"
+			} else {
+				query += " ORDER BY CASE WHEN ec.max_event_date IS NULL THEN 1 ELSE 0 END, ec.max_event_date ASC, s.name ASC"
+			}
+		case "category":
+			if needsEventJoin {
+				query += fmt.Sprintf(" ORDER BY s.category %s, s.name ASC", sortOrder)
+			} else {
+				query += fmt.Sprintf(" ORDER BY category %s, name ASC", sortOrder)
+			}
+		default:
+			// Default to name
+			if needsEventJoin {
+				query += " ORDER BY s.name ASC"
+			} else {
+				query += " ORDER BY name ASC"
+			}
+		}
+	} else {
+		// Default ordering
+		if needsEventJoin {
+			query += " ORDER BY s.name ASC"
+		} else {
+			query += " ORDER BY name ASC"
+		}
+	}
 
 	// Apply pagination
 	if filters != nil {
@@ -212,16 +290,33 @@ func (r *SQLiteSkillRepository) List(ctx context.Context, filters *SkillFilters)
 		var yearsUsed sql.NullInt64
 		var lastUsed sql.NullTime
 
-		err := rows.Scan(
-			&skill.ID,
-			&skill.Name,
-			&skill.Category,
-			&skill.Level,
-			&yearsUsed,
-			&lastUsed,
-			&skill.CreatedAt,
-			&skill.UpdatedAt,
-		)
+		if needsEventJoin {
+			var eventCount int
+			var maxEventDate sql.NullString
+			err = rows.Scan(
+				&skill.ID,
+				&skill.Name,
+				&skill.Category,
+				&skill.Level,
+				&yearsUsed,
+				&lastUsed,
+				&skill.CreatedAt,
+				&skill.UpdatedAt,
+				&eventCount,
+				&maxEventDate,
+			)
+		} else {
+			err = rows.Scan(
+				&skill.ID,
+				&skill.Name,
+				&skill.Category,
+				&skill.Level,
+				&yearsUsed,
+				&lastUsed,
+				&skill.CreatedAt,
+				&skill.UpdatedAt,
+			)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan skill: %w", err)
 		}
