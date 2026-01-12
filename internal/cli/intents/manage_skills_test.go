@@ -2,6 +2,8 @@ package intents_test
 
 import (
 	"context"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -13,6 +15,26 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+// Helper functions for form rendering tests
+
+// splitLines splits a string into lines
+func splitLines(s string) []string {
+	return strings.Split(s, "\n")
+}
+
+// visibleLength returns the visible length of a string (excluding ANSI codes)
+func visibleLength(s string) int {
+	// Remove ANSI escape codes
+	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	clean := ansiRegex.ReplaceAllString(s, "")
+	return len(clean)
+}
+
+// indexOf returns the index of substr in s, or -1 if not found
+func indexOf(s, substr string) int {
+	return strings.Index(s, substr)
+}
 
 var _ = Describe("ManageSkillsIntent", func() {
 	var (
@@ -653,6 +675,78 @@ var _ = Describe("ManageSkillsIntent", func() {
 			// Press 'd' to delete
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
 			Expect(intent.State()).To(Equal(intents.SkillsStateDelete))
+		})
+	})
+
+	Describe("Form Rendering", func() {
+		BeforeEach(func() {
+			intent = intents.NewManageSkillsIntent(intentCtx)
+			intent.Init()
+
+			// Load skills
+			cmd := intent.Init()
+			msg := cmd()
+			intent.Update(msg)
+		})
+
+		It("should render form within terminal width bounds", func() {
+			// Set terminal size
+			intent.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+			// Enter add state
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			Expect(intent.State()).To(Equal(intents.SkillsStateAdd))
+
+			view := intent.View()
+
+			// Check that view contains form fields
+			Expect(view).To(ContainSubstring("Skill Name"))
+			Expect(view).To(ContainSubstring("Category"))
+
+			// Check no line exceeds terminal width (80 chars)
+			lines := splitLines(view)
+			for _, line := range lines {
+				// Allow some margin for ANSI codes
+				Expect(visibleLength(line)).To(BeNumerically("<=", 80),
+					"Line exceeds terminal width: %s", line)
+			}
+		})
+
+		It("should update form dimensions on window resize", func() {
+			// Enter add state with initial size
+			intent.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+			// Resize window
+			intent.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
+			view := intent.View()
+
+			// Form should still render correctly
+			Expect(view).To(ContainSubstring("Skill Name"))
+		})
+
+		It("should show form fields in correct order", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+			view := intent.View()
+
+			// Fields should appear in order
+			nameIndex := indexOf(view, "Skill Name")
+			categoryIndex := indexOf(view, "Category")
+			levelIndex := indexOf(view, "Proficiency Level")
+			yearsIndex := indexOf(view, "Years of Experience")
+
+			Expect(nameIndex).To(BeNumerically("<", categoryIndex))
+			Expect(categoryIndex).To(BeNumerically("<", levelIndex))
+			Expect(levelIndex).To(BeNumerically("<", yearsIndex))
+		})
+
+		It("should show submit button in form", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Save Changes"))
 		})
 	})
 
