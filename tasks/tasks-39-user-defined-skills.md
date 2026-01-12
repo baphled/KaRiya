@@ -46,6 +46,12 @@
   - ✅ Enabled skipped repository tests (GetSkillsForEvent, GetEventCountsForSkills)
   - ✅ Added CSV import integration tests with MemorySkillRepository
   - ✅ Fixed case-sensitivity comment in parser.go
+- ✅ **Reusable Event Detail Component**: (Commit: 45aaacd - 2026-01-12)
+  - ✅ Created EventDetailCard component for reusable event detail rendering
+  - ✅ Refactored BrowseTimeline to use component (reduced 41 lines)
+  - ✅ Updated ManageSkills to use component for event detail view
+  - ✅ Theme-aware component using themes.Theme interface
+  - ✅ Maintains SkillsStateDetailEventDetail state for proper navigation
 
 ### All Phases Complete:
 - ✅ **Phase 1**: Domain Model & Migrations (commits 519d149, 510b890)
@@ -57,14 +63,15 @@
 - ✅ **Phase 6**: App Integration (menu registration at line 82, intent registration at line 583)
 - ✅ **Form Alignment**: HuhSkillForm wrapper (commits be0e66b through aa0f972)
 - ✅ **Test Fixes**: Post-integration fixes (commits 0ffad28, d0fdd23, 6b39da1, fdc1c85)
+- ✅ **Reusable Components**: EventDetailCard component (commit 45aaacd)
 - 🔜 **Phase 7**: CV Generation Integration (MOVED TO TASK 40 - Role Emphasis Redesign)
 
 ### Metrics:
-- **Files Created**: 12/12 (100%) - includes HuhSkillForm wrapper
-- **Files Modified**: 9/11 (82% - Phase 7 deferred to Task 40)
+- **Files Created**: 13/13 (100%) - includes HuhSkillForm wrapper + EventDetailCard component
+- **Files Modified**: 11/11 (100% - Phase 7 deferred to Task 40)
 - **Test Specs**: 240+ (47 new in Phase 4, metadata form tests fixed, 7 new CSV import tests)
-- **Code Coverage**: 80.71% overall, Repository 100%, Intent >95%
-- **Commits**: 23 total (10 feature + 1 fix + 8 form alignment/docs + 4 test fixes, all following TDD)
+- **Code Coverage**: 80.54% overall, Repository 100%, Intent >95%
+- **Commits**: 24 total (10 feature + 1 fix + 8 form alignment/docs + 4 test fixes + 1 refactor, all following TDD)
 - **Documentation**: 5 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md, FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md)
 
 ## Context
@@ -95,9 +102,10 @@ Currently, KaRiya has no user-defined skills. Skills are derived automatically f
 ### Models
 - [x] `internal/cli/models/huh_skill_form.go` - HuhSkillForm wrapper for form alignment (Form Alignment Fix)
 
-### Components (NEW - for detail and events views)
+### Components
 - [x] ~~`internal/cli/intents/manage_skills_detail_view.go`~~ - SKIPPED: Views implemented inline in intent (simpler approach)
 - [x] ~~`internal/cli/intents/manage_skills_events_view.go`~~ - SKIPPED: Views implemented inline in intent (simpler approach)
+- [x] `internal/cli/components/event_detail_card.go` - Reusable event detail rendering component (added 2026-01-12)
 
 ## Files to Modify
 
@@ -1179,3 +1187,22 @@ Refactoring tests can leave helper functions unused (e.g., `splitLines`, `visibl
 Adding tests that use `MemorySkillRepository` requires importing the repository package. Forgetting the import causes undefined errors.
 
 **Fix**: Check import statements when adding new test dependencies.
+
+### 9. Reusable Components Eliminate Duplication (2026-01-12)
+When multiple intents need to display the same information (event details), extract the rendering logic into a reusable component rather than duplicating code or trying to reuse entire intents.
+
+**Problem**: ManageSkills needed to show event details, and BrowseTimeline already had event detail rendering. Initial attempt was to inject BrowseTimelineIntent, which was over-engineered.
+
+**Solution**: Created `EventDetailCard` component that both intents can use:
+- **Component**: `internal/cli/components/event_detail_card.go` (80 lines)
+- **API**: Simple `RenderEventDetailCard(event, theme)` function
+- **Benefits**: Single source of truth, consistent display, theme-aware
+- **Impact**: BrowseTimeline reduced by 41 lines, ManageSkills gained event detail view
+
+**Key Insights**:
+- Extract **view components**, not entire intents, for shared rendering
+- Use `themes.Theme` interface for flexibility (not concrete `*ThemeManager`)
+- Keep components simple: take data + theme, return styled string
+- Document the "why" for the component (avoids future re-duplication)
+
+**Commit**: `45aaacd` - refactor(components): extract event detail rendering into reusable component
