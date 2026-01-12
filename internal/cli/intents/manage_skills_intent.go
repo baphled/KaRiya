@@ -552,16 +552,6 @@ func (i *ManageSkillsIntent) updateSkill(skill *domain.Skill) tea.Cmd {
 
 // View renderers
 
-func (i *ManageSkillsIntent) viewList() string {
-	content := i.renderSkillsList()
-	help := i.renderListHelp()
-
-	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Skills")
-	view.WithContent(content)
-	view.WithHelp(help)
-	return view.Render()
-}
-
 func (i *ManageSkillsIntent) renderForm() string {
 	if i.skillForm == nil {
 		return "Form not initialized"
@@ -721,10 +711,6 @@ func (i *ManageSkillsIntent) renderEmptyState() string {
 	return i.getCardStyle().Render(emptyStyle.Render(message))
 }
 
-func (i *ManageSkillsIntent) renderListHelp() string {
-	return "j/k:navigate • Enter:detail • n:add • e:edit • d:delete • Esc:back"
-}
-
 func (i *ManageSkillsIntent) groupSkillsByCategory() map[string][]*domain.Skill {
 	grouped := make(map[string][]*domain.Skill)
 
@@ -835,36 +821,6 @@ func (i *ManageSkillsIntent) loadEventsForSkill() tea.Cmd {
 	}
 }
 
-// viewDetail renders the detail view
-func (i *ManageSkillsIntent) viewDetail() string {
-	if i.selectedSkill == nil {
-		return "No skill selected"
-	}
-
-	content := i.renderSkillDetail()
-	help := i.renderDetailHelp()
-
-	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Skills", i.selectedSkill.Name)
-	view.WithContent(content)
-	view.WithHelp(help)
-	return view.Render()
-}
-
-// viewDetailEvents renders the events view
-func (i *ManageSkillsIntent) viewDetailEvents() string {
-	if i.selectedSkill == nil {
-		return "No skill selected"
-	}
-
-	content := i.renderSkillEvents()
-	help := i.renderEventsHelp()
-
-	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Skills", i.selectedSkill.Name, "Events")
-	view.WithContent(content)
-	view.WithHelp(help)
-	return view.Render()
-}
-
 // renderSkillDetail renders the skill detail content
 func (i *ManageSkillsIntent) renderSkillDetail() string {
 	skill := i.selectedSkill
@@ -966,14 +922,4 @@ func (i *ManageSkillsIntent) renderSkillEvents() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
 	return i.getCardStyle().Render(content)
-}
-
-// renderDetailHelp renders the help text for detail view
-func (i *ManageSkillsIntent) renderDetailHelp() string {
-	return "Enter:view events • e:edit • d:delete • Esc:back"
-}
-
-// renderEventsHelp renders the help text for events view
-func (i *ManageSkillsIntent) renderEventsHelp() string {
-	return "Esc:back to detail"
 }
