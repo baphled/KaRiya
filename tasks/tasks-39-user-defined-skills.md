@@ -1003,21 +1003,23 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 
 **TDD Checklist - Phase 8C**:
 
-- [ ] Create `manage_skills_navigation_test.go`
-- [ ] Write menu navigation tests
-- [ ] Write empty list navigation tests
-- [ ] Write list with data navigation tests
-- [ ] Write detail navigation tests
-- [ ] Write events navigation tests
-- [ ] Write filter menu navigation tests
-- [ ] Write sort menu navigation tests
-- [ ] Write add/edit form navigation tests
-- [ ] Write delete confirmation navigation tests
-- [ ] Write workflow navigation tests
-- [ ] Write vim-style navigation tests
-- [ ] Write view rendering tests
-- [ ] All tests pass
-- [ ] Commit: `test(skills): add comprehensive navigation tests`
+- [x] Create `manage_skills_navigation_test.go` (392 lines, 43 tests)
+- [x] Write menu navigation tests (4 tests)
+- [x] Write empty list navigation tests (3 tests)
+- [x] Write list with data navigation tests (not added - requires e2e SkillRepository support)
+- [x] Write detail navigation tests (not added - requires e2e SkillRepository support)
+- [x] Write events navigation tests (not added - requires e2e SkillRepository support)
+- [x] Write filter menu navigation tests (6 tests)
+- [x] Write sort menu navigation tests (6 tests)
+- [x] Write add/edit form navigation tests (10 tests - focused on Add form)
+- [x] Write delete confirmation navigation tests (not added - requires e2e SkillRepository support)
+- [x] Write workflow navigation tests (5 tests)
+- [x] Write vim-style navigation tests (4 tests)
+- [x] Write view rendering tests (5 tests)
+- [x] All tests pass (43/43 passing - 100%)
+- [x] Commit: `test(intents): add comprehensive navigation tests for ManageSkills` (c280910)
+
+**Note**: Tests focused on empty state navigation and form workflows. Tests requiring populated skills data (detail/events/delete) will be added once e2e.TestEnv supports SkillRepository.
 
 #### Phase 8D: Workflow Documentation
 
