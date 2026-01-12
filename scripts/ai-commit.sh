@@ -133,13 +133,20 @@ echo "Reviewer: ${REVIEWER_NAME}"
 echo ""
 
 # Build full commit message with attribution
-FULL_COMMIT_MSG="${COMMIT_MSG}
+# Use temporary file to handle multi-line messages properly
+COMMIT_MSG_FILE=$(mktemp)
+
+# Write commit message to temp file
+# This preserves newlines and formatting
+cat > "$COMMIT_MSG_FILE" << EOF
+${COMMIT_MSG}
 
 AI-Generated-By: ${AGENT_NAME} (${MODEL_NAME})
-Reviewed-By: ${REVIEWER_NAME}"
+Reviewed-By: ${REVIEWER_NAME}
+EOF
 
-# Create the commit
-if git commit -m "$FULL_COMMIT_MSG"; then
+# Create the commit using the temp file
+if git commit -F "$COMMIT_MSG_FILE"; then
     echo ""
     echo -e "${GREEN}✅ Commit created successfully${NC}"
     echo ""
@@ -148,9 +155,13 @@ if git commit -m "$FULL_COMMIT_MSG"; then
     git log -1 --pretty=%B
     echo "─────────────────────────────────────────────"
     echo ""
+    
+    # Clean up temp file
+    rm -f "$COMMIT_MSG_FILE"
 else
     echo ""
     echo -e "${RED}❌ Commit failed${NC}"
+    rm -f "$COMMIT_MSG_FILE"
     exit 1
 fi
 

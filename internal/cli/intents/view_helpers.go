@@ -443,6 +443,114 @@ func HandleGlobalKeys(msg tea.KeyMsg) GlobalKeyResult {
 	return KeyNotHandled
 }
 
+// MessageInterceptor provides a middleware layer for handling global keys before delegation.
+// This ensures escape, quit, and other global keys are always processed first,
+// preventing sub-components (forms, modals) from consuming them.
+//
+// Usage:
+//
+//	func (i *Intent) updateWithForm(msg tea.Msg) tea.Cmd {
+//	    interceptor := NewMessageInterceptor()
+//	    return interceptor.
+//	        OnBack(func() tea.Cmd {
+//	            i.state = previousState
+//	            return nil
+//	        }).
+//	        OnQuit(func() tea.Cmd {
+//	            return tea.Quit
+//	        }).
+//	        OnHelp(func() tea.Cmd {
+//	            i.ToggleHelp()
+//	            return nil
+//	        }).
+//	        InterceptOr(msg, func() tea.Cmd {
+//	            // Only called if no global keys matched
+//	            return i.formModel.Update(msg)
+//	        })
+//	}
+type MessageInterceptor struct {
+	backHandler GlobalKeyHandler
+	quitHandler GlobalKeyHandler
+	helpHandler GlobalKeyHandler
+}
+
+// GlobalKeyHandler is a function that handles a global key event.
+type GlobalKeyHandler func() tea.Cmd
+
+// NewMessageInterceptor creates a new message interceptor with no handlers.
+// Use the OnBack, OnQuit, and OnHelp methods to configure behavior.
+func NewMessageInterceptor() *MessageInterceptor {
+	return &MessageInterceptor{}
+}
+
+// OnBack sets the handler for escape key (back navigation).
+// This handler is called when the user presses Escape.
+func (m *MessageInterceptor) OnBack(handler GlobalKeyHandler) *MessageInterceptor {
+	m.backHandler = handler
+	return m
+}
+
+// OnQuit sets the handler for quit key (q or Ctrl+C).
+// This handler is called when the user wants to quit the application.
+func (m *MessageInterceptor) OnQuit(handler GlobalKeyHandler) *MessageInterceptor {
+	m.quitHandler = handler
+	return m
+}
+
+// OnHelp sets the handler for help key (?).
+// This handler is called when the user requests help.
+func (m *MessageInterceptor) OnHelp(handler GlobalKeyHandler) *MessageInterceptor {
+	m.helpHandler = handler
+	return m
+}
+
+// InterceptOr checks for global keys and calls the appropriate handler.
+// If no global key is matched, it calls the fallback function.
+// This ensures global keys are always processed before sub-component delegation.
+//
+// Returns:
+//   - tea.Cmd from the matched global key handler, OR
+//   - tea.Cmd from the fallback function if no global keys matched
+func (m *MessageInterceptor) InterceptOr(msg tea.Msg, fallback func() tea.Cmd) tea.Cmd {
+	// Check if this is a key message
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		// Not a key message, call fallback
+		return fallback()
+	}
+
+	// Check for global keys
+	result := HandleGlobalKeys(keyMsg)
+
+	switch result {
+	case KeyBack:
+		if m.backHandler != nil {
+			return m.backHandler()
+		}
+	case KeyQuit:
+		if m.quitHandler != nil {
+			return m.quitHandler()
+		}
+	case KeyHelp:
+		if m.helpHandler != nil {
+			return m.helpHandler()
+		}
+	}
+
+	// No global key matched or no handler set, call fallback
+	return fallback()
+}
+
+// Intercept is similar to InterceptOr but returns nil if no fallback is needed.
+// Use this when you only want to handle global keys without further processing.
+//
+// Returns:
+//   - tea.Cmd from the matched global key handler, OR
+//   - nil if no global keys matched
+func (m *MessageInterceptor) Intercept(msg tea.Msg) tea.Cmd {
+	return m.InterceptOr(msg, func() tea.Cmd { return nil })
+}
+
 // HandleListKeys checks if a key message matches any list navigation shortcuts.
 // Returns true if the key was handled by the ListNavigationHandler.
 // This is a convenience wrapper that ensures consistent list navigation.
