@@ -689,9 +689,47 @@ go build -o kariya ./cmd/cli
 
 ---
 
+## Bug Confirmation
+
+**Status**: ✅ **CONFIRMED via E2E Test**
+
+**Test Date**: 2026-01-12  
+**Test Method**: E2E test simulating real user interaction
+
+**Test Results**:
+- ✅ Bug reproduced successfully in E2E environment
+- ✅ Escape key in form state returns to **main menu** (incorrect - should return to strategy selection)
+- ✅ Behavior matches user report: "Escape doesn't work"
+
+**Actual Behavior Observed**:
+```
+1. User enters CaptureEvent intent
+2. Selects "Quick" strategy → enters form state
+3. Presses Escape
+4. Result: Returns to MAIN MENU (not strategy selection)
+   Expected: Returns to STRATEGY SELECTION (one state back)
+```
+
+**Test Output**:
+```
+Expected to be back at strategy selection after pressing Escape
+Expected
+    <string>: [Shows main menu with "Capture Event" menu item]
+To satisfy at least one of these matchers: [Quick Manual Strategy]
+```
+
+**Conclusion**: 
+The escape key is being handled somewhere (since it returns to main menu), but it's bypassing the proper state machine navigation. This suggests either:
+1. Form is consuming escape and triggering intent cancellation
+2. HandleGlobalKeys is being called but after form has already processed the escape
+
+**Exploration Test**: `internal/cli/intents/escape_bug_exploration_test.go` (created and removed after confirmation)
+
+---
+
 ## Resolution Summary
 
-**Status**: In Progress
+**Status**: Confirmed, Ready for Fix
 
 **Fix Description**:
 *(To be filled in after implementation)*
