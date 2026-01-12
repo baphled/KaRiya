@@ -607,6 +607,19 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
   - Quick reference for StandardView usage
   - Common patterns and examples
 
+- **[`docs/development/NAVIGATION_TESTING_GUIDE.md`](docs/development/NAVIGATION_TESTING_GUIDE.md)** - Navigation testing comprehensive guide
+  - E2E test framework usage (helpers, assertions, data population)
+  - Navigation test patterns (forward, backward, multi-intent, error recovery)
+  - Escape key testing matrix (per state type)
+  - Common navigation bugs and prevention
+  - State transition testing and debugging techniques
+
+- **[`docs/development/NAVIGATION_TESTING_CHECKLIST.md`](docs/development/NAVIGATION_TESTING_CHECKLIST.md)** - Navigation testing quick reference
+  - Pre-implementation checklist (state machine definition, escape behavior)
+  - Test coverage requirements (escape, forward, back, universal shortcuts)
+  - Copy-paste test templates (escape, navigation, E2E)
+  - Pre-commit checklist and verification steps
+
 ---
 
 ## Workflow Documentation
