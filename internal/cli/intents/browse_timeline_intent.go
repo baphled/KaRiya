@@ -564,50 +564,9 @@ func (i *BrowseTimelineIntent) viewTimeline() string {
 	return i.listContainer.Render()
 }
 
-// viewEventDetail renders the event detail view.
+// viewEventDetail renders the event detail view using the reusable component.
 func (i *BrowseTimelineIntent) viewEventDetail() string {
-	if i.state.selectedEvent == nil {
-		return "No event selected."
-	}
-
-	var content strings.Builder
-	content.WriteString("\nEvent Details\n\n")
-
-	// Event header.
-	content.WriteString(fmt.Sprintf("Date: %s\n", i.state.selectedEvent.Date.Format("2006-01-02")))
-
-	if i.state.selectedEvent.Company != "" {
-		content.WriteString(fmt.Sprintf("Company: %s\n", i.state.selectedEvent.Company))
-	}
-	if i.state.selectedEvent.Project != "" {
-		content.WriteString(fmt.Sprintf("Project: %s\n", i.state.selectedEvent.Project))
-	}
-
-	content.WriteString(fmt.Sprintf("\nText:\n%s\n", i.state.selectedEvent.Text))
-
-	// Tags and categories.
-	if len(i.state.selectedEvent.Tags) > 0 {
-		content.WriteString(fmt.Sprintf("\nTags: %s\n", strings.Join(i.state.selectedEvent.Tags, ", ")))
-	}
-	if len(i.state.selectedEvent.Categories) > 0 {
-		content.WriteString(fmt.Sprintf("Categories: %s\n", strings.Join(i.state.selectedEvent.Categories, ", ")))
-	}
-
-	// Apply themed card styling
-	var cardStyle lipgloss.Style
-	if theme := i.Theme(); theme != nil {
-		cardStyle = theme.Styles().CardBase
-	} else {
-		// Fallback if no theme available
-		cardStyle = lipgloss.NewStyle().
-			Padding(1, 2).
-			BorderStyle(lipgloss.RoundedBorder())
-	}
-
-	card := cardStyle.Render(content.String())
-
-	// Footer now handled by StandardView
-	return card
+	return components.RenderEventDetailCard(i.state.selectedEvent, i.Theme())
 }
 
 // viewDeleteConfirm renders the delete confirmation dialog.

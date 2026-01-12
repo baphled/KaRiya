@@ -3,16 +3,17 @@ package intents
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	career "github.com/baphled/kariya/internal/repository/career"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -32,11 +33,23 @@ type ManageSkillsIntent struct {
 	selectedIndex int
 	selectedSkill *domain.Skill // Selected skill for detail view
 
+	// table components for skills list view
+	table         *table.Model
+	listContainer *components.TableListContainer
+	navHandler    *navigation.ListNavigationHandler
+
 	// detail view data
 	eventCounts  map[string]int        // Skill ID -> event count
 	lastUsedMap  map[string]time.Time  // Skill ID -> last used date
 	skillEvents  []*domain.CareerEvent // Events for selected skill
 	eventsLoaded bool                  // Whether events have been loaded
+
+	// events table components for skill events view
+	eventsTable           *table.Model
+	eventsListContainer   *components.TableListContainer
+	eventsNavHandler      *navigation.ListNavigationHandler
+	eventsSelectedIndex   int                 // Selection index for events list
+	selectedEventFromList *domain.CareerEvent // Selected event for detail view from events list
 
 	// form for add/edit
 	skillForm *models.SkillForm
@@ -68,20 +81,108 @@ func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
 	baseIntent := NewBaseIntent()
 	baseIntent.SetThemeManager(themes.NewThemeManager())
 
-	return &ManageSkillsIntent{
-		BaseIntent:    baseIntent,
-		context:       ctx,
-		currentState:  SkillsStateList,
-		skills:        []*domain.Skill{},
-		selectedIndex: 0,
-		filters:       &SkillsFilters{},
-		active:        true,
+	// Create table model for skills list
+	skillsColumns := []table.Column{
+		{Title: "Name", Width: 25},
+		{Title: "Category", Width: 15},
+		{Title: "Level", Width: 12},
+		{Title: "Years", Width: 8},
+		{Title: "Events", Width: 8},
 	}
+
+	skillsTable := table.New(
+		table.WithColumns(skillsColumns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	// Apply default styles initially - theme styles will be applied in Init()
+	skillsTable.SetStyles(table.DefaultStyles())
+
+	// Create table model for skill events list
+	eventsColumns := []table.Column{
+		{Title: "Date", Width: 12},
+		{Title: "Event", Width: 50},
+		{Title: "Company", Width: 20},
+	}
+
+	eventsTable := table.New(
+		table.WithColumns(eventsColumns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+	eventsTable.SetStyles(table.DefaultStyles())
+
+	intent := &ManageSkillsIntent{
+		BaseIntent:          baseIntent,
+		context:             ctx,
+		currentState:        SkillsStateList,
+		skills:              []*domain.Skill{},
+		selectedIndex:       0,
+		filters:             &SkillsFilters{},
+		active:              true,
+		table:               &skillsTable,
+		listContainer:       components.NewTableListContainer(skillsTable, "Manage Skills", 100),
+		eventsTable:         &eventsTable,
+		eventsListContainer: components.NewTableListContainer(eventsTable, "Skill Events", 100),
+	}
+
+	// Initialize navigation handler for skills list
+	intent.navHandler = navigation.NewListNavigationHandler(intent)
+
+	// Initialize navigation handler for events list using wrapper
+	intent.eventsNavHandler = navigation.NewListNavigationHandler(&skillEventsNavigator{intent: intent})
+
+	return intent
+}
+
+// skillEventsNavigator wraps ManageSkillsIntent to implement ListNavigator for the events list
+type skillEventsNavigator struct {
+	intent *ManageSkillsIntent
+}
+
+func (n *skillEventsNavigator) GetTotalItems() int {
+	return len(n.intent.skillEvents)
+}
+
+func (n *skillEventsNavigator) GetSelectedIndex() int {
+	return n.intent.eventsSelectedIndex
+}
+
+func (n *skillEventsNavigator) SetSelectedIndex(idx int) {
+	// Validate and set index
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(n.intent.skillEvents) {
+		idx = len(n.intent.skillEvents) - 1
+	}
+	if idx < 0 {
+		idx = 0 // Handle empty list
+	}
+
+	n.intent.eventsSelectedIndex = idx
+
+	// Update table display
+	n.intent.updateEventsTableRows()
+}
+
+func (n *skillEventsNavigator) GetPageSize() int {
+	return 15
 }
 
 // Init initializes the intent and loads skills
 func (i *ManageSkillsIntent) Init() tea.Cmd {
 	i.active = true
+
+	// Apply themed table styles if theme is available
+	if theme := i.Theme(); theme != nil {
+		i.table.SetStyles(themes.NewThemedTableStyles(theme))
+	}
 
 	// Load skills asynchronously
 	return func() tea.Msg {
@@ -91,6 +192,152 @@ func (i *ManageSkillsIntent) Init() tea.Cmd {
 			Error:  err,
 		}
 	}
+}
+
+// updateTableRows updates the table rows based on skills
+func (i *ManageSkillsIntent) updateTableRows() {
+	pageSize := 15
+	total := len(i.skills)
+
+	// Determine which page current selection is on
+	page := 0
+	if pageSize > 0 && i.selectedIndex >= 0 {
+		page = i.selectedIndex / pageSize
+	}
+
+	start := page * pageSize
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	// Handle empty list
+	if total == 0 {
+		i.table.SetRows([]table.Row{})
+		i.listContainer.SetTable(*i.table)
+		return
+	}
+
+	pageSkills := i.skills[start:end]
+
+	rows := make([]table.Row, 0, len(pageSkills))
+	for idx, skill := range pageSkills {
+		realIdx := start + idx
+
+		// Use centralized indicator formatting
+		name := i.navHandler.FormatRowText(realIdx, skill.Name)
+
+		// Category
+		category := skill.Category
+		if category == "" {
+			category = "-"
+		}
+
+		// Level
+		level := skill.Level
+		if level == "" {
+			level = "-"
+		}
+
+		// Years
+		years := "-"
+		if skill.YearsUsed != nil {
+			years = fmt.Sprintf("%d", *skill.YearsUsed)
+		}
+
+		// Event count
+		eventCount := "-"
+		if i.eventCounts != nil {
+			if count, ok := i.eventCounts[skill.ID]; ok {
+				eventCount = fmt.Sprintf("%d", count)
+			}
+		}
+
+		rows = append(rows, table.Row{name, category, level, years, eventCount})
+	}
+
+	i.table.SetRows(rows)
+
+	// Calculate relative cursor position for this page
+	relativeCursor := 0
+	if i.selectedIndex >= start && i.selectedIndex < end {
+		relativeCursor = i.selectedIndex - start
+	}
+
+	// Set table cursor to relative position within the page
+	i.table.SetCursor(relativeCursor)
+
+	// Sync the container's selectedIdx to match our relative cursor
+	i.listContainer.SetSelectedIdx(relativeCursor)
+
+	// Update the container with the modified table
+	i.listContainer.SetTable(*i.table)
+}
+
+// updateEventsTableRows updates the events table rows based on skillEvents
+func (i *ManageSkillsIntent) updateEventsTableRows() {
+	pageSize := 15
+	total := len(i.skillEvents)
+
+	// Determine which page current selection is on
+	page := 0
+	if pageSize > 0 && i.eventsSelectedIndex >= 0 {
+		page = i.eventsSelectedIndex / pageSize
+	}
+
+	start := page * pageSize
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
+
+	// Handle empty list
+	if total == 0 {
+		i.eventsTable.SetRows([]table.Row{})
+		i.eventsListContainer.SetTable(*i.eventsTable)
+		return
+	}
+
+	pageEvents := i.skillEvents[start:end]
+
+	rows := make([]table.Row, 0, len(pageEvents))
+	for idx, event := range pageEvents {
+		realIdx := start + idx
+
+		// Use centralized indicator formatting
+		dateStr := i.eventsNavHandler.FormatRowText(realIdx, event.Date.Format("2006-01-02"))
+
+		// Truncate text to first 50 chars
+		text := event.Text
+		if len(text) > 50 {
+			text = text[:50] + "..."
+		}
+
+		// Company
+		company := event.Company
+		if company == "" {
+			company = "-"
+		}
+
+		rows = append(rows, table.Row{dateStr, text, company})
+	}
+
+	i.eventsTable.SetRows(rows)
+
+	// Calculate relative cursor position for this page
+	relativeCursor := 0
+	if i.eventsSelectedIndex >= start && i.eventsSelectedIndex < end {
+		relativeCursor = i.eventsSelectedIndex - start
+	}
+
+	// Set table cursor to relative position within the page
+	i.eventsTable.SetCursor(relativeCursor)
+
+	// Sync the container's selectedIdx to match our relative cursor
+	i.eventsListContainer.SetSelectedIdx(relativeCursor)
+
+	// Update the container with the modified table
+	i.eventsListContainer.SetTable(*i.eventsTable)
 }
 
 // Update handles messages and state transitions
@@ -197,6 +444,8 @@ func (i *ManageSkillsIntent) getStateContent() string {
 		return i.renderSkillDetail()
 	case SkillsStateDetailEvents:
 		return i.renderSkillEvents()
+	case SkillsStateDetailEventDetail:
+		return i.renderEventDetail()
 	case SkillsStateAdd, SkillsStateEdit:
 		return i.renderForm()
 	case SkillsStateDelete:
@@ -215,12 +464,15 @@ func (i *ManageSkillsIntent) getBreadcrumbs() []string {
 	breadcrumbs := []string{"Skills"}
 
 	switch i.currentState {
-	case SkillsStateDetail, SkillsStateDetailEvents:
+	case SkillsStateDetail, SkillsStateDetailEvents, SkillsStateDetailEventDetail:
 		if i.selectedSkill != nil {
 			breadcrumbs = append(breadcrumbs, i.selectedSkill.Name)
 		}
 		if i.currentState == SkillsStateDetailEvents {
 			breadcrumbs = append(breadcrumbs, "Events")
+		}
+		if i.currentState == SkillsStateDetailEventDetail {
+			breadcrumbs = append(breadcrumbs, "Events", "Detail")
 		}
 	case SkillsStateAdd:
 		breadcrumbs = append(breadcrumbs, "Add")
@@ -265,7 +517,19 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		)
 	case SkillsStateDetailEvents:
 		return CombineThemedFooters(
+			ThemedListFooter(theme),
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Enter", "View details"),
+				components.EditBadge(),
+			),
+			ThemedGlobalBadges(theme),
+		)
+	case SkillsStateDetailEventDetail:
+		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme,
+				components.EditBadge(),
+			),
 			ThemedGlobalBadges(theme),
 		)
 	case SkillsStateAdd, SkillsStateEdit:
@@ -358,6 +622,9 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 		// If loading fails, use empty map
 		i.eventCounts = make(map[string]int)
 	}
+
+	// Update table rows with new skills data
+	i.updateTableRows()
 
 	return nil
 }
@@ -483,6 +750,8 @@ func (i *ManageSkillsIntent) handleKeyPress(msg tea.KeyMsg) tea.Cmd {
 		return i.handleDetailKeys(msg)
 	case SkillsStateDetailEvents:
 		return i.handleDetailEventsKeys(msg)
+	case SkillsStateDetailEventDetail:
+		return i.handleEventDetailKeys(msg)
 	case SkillsStateDelete:
 		return i.handleDeleteKeys(msg)
 	case SkillsStateFilter:
@@ -495,19 +764,12 @@ func (i *ManageSkillsIntent) handleKeyPress(msg tea.KeyMsg) tea.Cmd {
 }
 
 func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
+	// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+	if i.navHandler.HandleKey(msg.String()) {
+		return nil
+	}
+
 	switch msg.String() {
-	case "j", "down":
-		if i.selectedIndex < len(i.skills)-1 {
-			i.selectedIndex++
-		}
-		return nil
-
-	case "k", "up":
-		if i.selectedIndex > 0 {
-			i.selectedIndex--
-		}
-		return nil
-
 	case "enter":
 		// View skill detail
 		if len(i.skills) == 0 {
@@ -860,142 +1122,22 @@ func (i *ManageSkillsIntent) getCardStyle() lipgloss.Style {
 
 func (i *ManageSkillsIntent) renderSkillsList() string {
 	if len(i.skills) == 0 {
-		return i.renderEmptyState()
+		i.listContainer.SetEmptyStateMessage("No skills defined yet.\n\nPress 'n' to add your first skill.")
+		return i.listContainer.Render()
 	}
 
-	// Group skills by category
-	grouped := i.groupSkillsByCategory()
+	// Ensure table rows are synchronized with current state
+	i.updateTableRows()
 
-	var sections []string
+	// Build pagination info with page number indicator
+	pageSize := 15
+	totalItems := len(i.skills)
+	currentPage := (i.selectedIndex / pageSize) + 1
+	totalPages := (totalItems + pageSize - 1) / pageSize
+	paginationInfo := fmt.Sprintf("Skills: %d | Page %d of %d", totalItems, currentPage, totalPages)
+	i.listContainer.SetPaginationInfo(paginationInfo)
 
-	// Sort categories alphabetically
-	categories := make([]string, 0, len(grouped))
-	for cat := range grouped {
-		categories = append(categories, cat)
-	}
-	sort.Strings(categories)
-
-	// Render each category
-	for _, category := range categories {
-		skills := grouped[category]
-		sections = append(sections, i.renderCategory(category, skills))
-	}
-
-	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
-	return i.getCardStyle().Render(content)
-}
-
-func (i *ManageSkillsIntent) renderCategory(category string, skills []*domain.Skill) string {
-	theme := i.Theme()
-	categoryStyle := lipgloss.NewStyle().
-		Foreground(theme.PrimaryColor()).
-		Bold(true).
-		MarginTop(1)
-
-	var lines []string
-	lines = append(lines, categoryStyle.Render("▸ "+category))
-
-	for _, skill := range skills {
-		lines = append(lines, i.renderSkillItem(skill))
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
-}
-
-func (i *ManageSkillsIntent) renderSkillItem(skill *domain.Skill) string {
-	theme := i.Theme()
-
-	// Check if this skill is selected
-	isSelected := false
-	for idx, s := range i.skills {
-		if s.ID == skill.ID && idx == i.selectedIndex {
-			isSelected = true
-			break
-		}
-	}
-
-	// Build skill line
-	line := "  "
-	if isSelected {
-		line += "▶ "
-	} else {
-		line += "  "
-	}
-
-	line += skill.Name
-
-	// Add level if present
-	if skill.Level != "" {
-		levelStyle := lipgloss.NewStyle().Foreground(theme.MutedColor())
-		line += " " + levelStyle.Render(fmt.Sprintf("(%s)", skill.Level))
-	}
-
-	// Add years if present
-	if skill.YearsUsed != nil {
-		yearsStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
-		yearText := fmt.Sprintf("%d yr", *skill.YearsUsed)
-		if *skill.YearsUsed != 1 {
-			yearText += "s"
-		}
-		line += " " + yearsStyle.Render(fmt.Sprintf("[%s]", yearText))
-	}
-
-	// Add event count if available
-	if i.eventCounts != nil {
-		if count, ok := i.eventCounts[skill.ID]; ok && count > 0 {
-			countStyle := lipgloss.NewStyle().Foreground(theme.MutedColor())
-			eventText := fmt.Sprintf("%d event", count)
-			if count != 1 {
-				eventText += "s"
-			}
-			line += " " + countStyle.Render(fmt.Sprintf("(%s)", eventText))
-		}
-	}
-
-	// Apply selection styling
-	if isSelected {
-		selectedStyle := lipgloss.NewStyle().
-			Foreground(theme.SuccessColor()).
-			Bold(true)
-		return selectedStyle.Render(line)
-	}
-
-	return line
-}
-
-func (i *ManageSkillsIntent) renderEmptyState() string {
-	theme := i.Theme()
-
-	emptyStyle := lipgloss.NewStyle().
-		Foreground(theme.MutedColor()).
-		Align(lipgloss.Center).
-		MarginTop(3).
-		MarginBottom(3)
-
-	message := "No skills defined yet.\n\nPress 'n' to add your first skill."
-
-	return i.getCardStyle().Render(emptyStyle.Render(message))
-}
-
-func (i *ManageSkillsIntent) groupSkillsByCategory() map[string][]*domain.Skill {
-	grouped := make(map[string][]*domain.Skill)
-
-	for _, skill := range i.skills {
-		category := skill.Category
-		if category == "" {
-			category = "other"
-		}
-		grouped[category] = append(grouped[category], skill)
-	}
-
-	// Sort skills within each category by name
-	for category := range grouped {
-		sort.Slice(grouped[category], func(i, j int) bool {
-			return strings.ToLower(grouped[category][i].Name) < strings.ToLower(grouped[category][j].Name)
-		})
-	}
-
-	return grouped
+	return i.listContainer.Render()
 }
 
 // loadDetailData loads event counts and last used dates for detail view
@@ -1029,6 +1171,16 @@ func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) t
 
 	i.skillEvents = msg.Events
 	i.eventsLoaded = true
+	i.eventsSelectedIndex = 0
+
+	// Apply themed table styles for events table
+	if theme := i.Theme(); theme != nil {
+		i.eventsTable.SetStyles(themes.NewThemedTableStyles(theme))
+	}
+
+	// Update table rows with new events data
+	i.updateEventsTableRows()
+
 	return nil
 }
 
@@ -1064,12 +1216,36 @@ func (i *ManageSkillsIntent) handleDetailKeys(msg tea.KeyMsg) tea.Cmd {
 
 // handleDetailEventsKeys handles key presses in detail events view
 func (i *ManageSkillsIntent) handleDetailEventsKeys(msg tea.KeyMsg) tea.Cmd {
+	// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+	if i.eventsNavHandler.HandleKey(msg.String()) {
+		return nil
+	}
+
 	switch msg.String() {
+	case "enter":
+		// View event details
+		if len(i.skillEvents) > 0 && i.eventsSelectedIndex >= 0 && i.eventsSelectedIndex < len(i.skillEvents) {
+			i.selectedEventFromList = i.skillEvents[i.eventsSelectedIndex]
+			i.currentState = SkillsStateDetailEventDetail
+		}
+		return nil
+
+	case "e":
+		// Edit selected event - send to app router to open CaptureEvent intent
+		if len(i.skillEvents) > 0 && i.eventsSelectedIndex >= 0 && i.eventsSelectedIndex < len(i.skillEvents) {
+			selectedEvent := i.skillEvents[i.eventsSelectedIndex]
+			return func() tea.Msg {
+				return RequestEditEventMsg{Event: selectedEvent}
+			}
+		}
+		return nil
+
 	case "esc":
-		// Back to detail view
+		// Back to skill detail view
 		i.currentState = SkillsStateDetail
 		i.skillEvents = nil
 		i.eventsLoaded = false
+		i.eventsSelectedIndex = 0
 		return nil
 	}
 
@@ -1145,7 +1321,7 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 	return i.getCardStyle().Render(content)
 }
 
-// renderSkillEvents renders the events using this skill
+// renderSkillEvents renders the events using this skill as a table
 func (i *ManageSkillsIntent) renderSkillEvents() string {
 	theme := i.Theme()
 
@@ -1157,37 +1333,49 @@ func (i *ManageSkillsIntent) renderSkillEvents() string {
 	}
 
 	if len(i.skillEvents) == 0 {
-		emptyStyle := lipgloss.NewStyle().
-			Foreground(theme.MutedColor()).
-			MarginTop(2)
-		return i.getCardStyle().Render(emptyStyle.Render("No events use this skill yet."))
+		i.eventsListContainer.SetEmptyStateMessage("No events use this skill yet.")
+		return i.eventsListContainer.Render()
 	}
 
-	var lines []string
-	lines = append(lines, fmt.Sprintf("Events using '%s' (%d total):", i.selectedSkill.Name, len(i.skillEvents)))
-	lines = append(lines, "")
+	// Ensure table rows are synchronized with current state
+	i.updateEventsTableRows()
 
-	// Render each event
-	for _, event := range i.skillEvents {
-		dateStr := event.Date.Format("2006-01-02")
-		eventText := event.Text
-		if len(eventText) > 80 {
-			eventText = eventText[:77] + "..."
+	// Build pagination info with page number indicator
+	pageSize := 15
+	totalItems := len(i.skillEvents)
+	currentPage := (i.eventsSelectedIndex / pageSize) + 1
+	totalPages := (totalItems + pageSize - 1) / pageSize
+	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
+	i.eventsListContainer.SetPaginationInfo(paginationInfo)
+
+	return i.eventsListContainer.Render()
+}
+
+// renderEventDetail renders a single event's details using the reusable component
+func (i *ManageSkillsIntent) renderEventDetail() string {
+	return components.RenderEventDetailCard(i.selectedEventFromList, i.Theme())
+}
+
+// handleEventDetailKeys handles key presses in event detail view
+func (i *ManageSkillsIntent) handleEventDetailKeys(msg tea.KeyMsg) tea.Cmd {
+	switch msg.String() {
+	case "e":
+		// Edit event - send to app router to open CaptureEvent intent
+		if i.selectedEventFromList != nil {
+			return func() tea.Msg {
+				return RequestEditEventMsg{Event: i.selectedEventFromList}
+			}
 		}
+		return nil
 
-		dateStyle := lipgloss.NewStyle().Foreground(theme.SecondaryColor())
-		line := dateStyle.Render(dateStr) + " " + eventText
-
-		if event.Company != "" {
-			companyStyle := lipgloss.NewStyle().Foreground(theme.MutedColor())
-			line += " " + companyStyle.Render(fmt.Sprintf("(%s)", event.Company))
-		}
-
-		lines = append(lines, "  "+line)
+	case "esc":
+		// Back to events list
+		i.currentState = SkillsStateDetailEvents
+		i.selectedEventFromList = nil
+		return nil
 	}
 
-	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return i.getCardStyle().Render(content)
+	return nil
 }
 
 // renderFilterMenu renders the filter menu
@@ -1362,4 +1550,45 @@ func (i *ManageSkillsIntent) renderSortMenu() string {
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
 	return i.getCardStyle().Render(content)
+}
+
+// ListNavigator interface implementation
+
+// GetTotalItems returns the total number of skills.
+func (i *ManageSkillsIntent) GetTotalItems() int {
+	return len(i.skills)
+}
+
+// GetSelectedIndex returns the current selection index.
+func (i *ManageSkillsIntent) GetSelectedIndex() int {
+	return i.selectedIndex
+}
+
+// SetSelectedIndex sets the selection index and updates the display.
+func (i *ManageSkillsIntent) SetSelectedIndex(idx int) {
+	// Validate and set index
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(i.skills) {
+		idx = len(i.skills) - 1
+	}
+	if idx < 0 {
+		idx = 0 // Handle empty list
+	}
+
+	i.selectedIndex = idx
+
+	// Update selected skill
+	if idx >= 0 && idx < len(i.skills) {
+		i.selectedSkill = i.skills[idx]
+	}
+
+	// Update table display
+	i.updateTableRows()
+}
+
+// GetPageSize returns the page size for pagination.
+func (i *ManageSkillsIntent) GetPageSize() int {
+	return 15
 }

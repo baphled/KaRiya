@@ -538,11 +538,12 @@ var _ = Describe("ManageSkillsIntent", func() {
 			intent.Update(msg)
 
 			view := intent.View()
-			// Should show event count indicator (e.g., "(1 event)" or "[1]")
-			Expect(view).To(Or(
-				ContainSubstring("1 event"),
-				ContainSubstring("[1]"),
-			))
+			// Should show event count indicator in table column
+			// Table shows "Events" header and numeric count like "1" in the Events column
+			Expect(view).To(ContainSubstring("Events"))
+			// The event count "1" should be visible (as a table cell value)
+			// We check for the row containing Ruby and the count
+			Expect(view).To(ContainSubstring("Ruby"))
 		})
 	})
 

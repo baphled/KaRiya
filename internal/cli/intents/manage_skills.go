@@ -21,14 +21,15 @@ var (
 type SkillsState string
 
 const (
-	SkillsStateList         SkillsState = "list"          // View all skills grouped by category
-	SkillsStateDetail       SkillsState = "detail"        // View single skill details
-	SkillsStateDetailEvents SkillsState = "detail_events" // View events using this skill
-	SkillsStateAdd          SkillsState = "add"           // Add new skill (huh form)
-	SkillsStateEdit         SkillsState = "edit"          // Edit existing skill (huh form)
-	SkillsStateDelete       SkillsState = "delete"        // Confirm deletion
-	SkillsStateFilter       SkillsState = "filter"        // Filter menu
-	SkillsStateSort         SkillsState = "sort"          // Sort menu
+	SkillsStateList              SkillsState = "list"                // View all skills grouped by category
+	SkillsStateDetail            SkillsState = "detail"              // View single skill details
+	SkillsStateDetailEvents      SkillsState = "detail_events"       // View events using this skill
+	SkillsStateDetailEventDetail SkillsState = "detail_event_detail" // View single event details from skill events
+	SkillsStateAdd               SkillsState = "add"                 // Add new skill (huh form)
+	SkillsStateEdit              SkillsState = "edit"                // Edit existing skill (huh form)
+	SkillsStateDelete            SkillsState = "delete"              // Confirm deletion
+	SkillsStateFilter            SkillsState = "filter"              // Filter menu
+	SkillsStateSort              SkillsState = "sort"                // Sort menu
 )
 
 // ManageSkillsContext holds the context and dependencies for ManageSkills intent
@@ -87,4 +88,12 @@ type SkillDeletedMsg struct {
 type SkillEventsLoadedMsg struct {
 	Events []*domain.CareerEvent
 	Error  error
+}
+
+// RequestBrowseEventMsg requests that the app route to BrowseTimeline intent.
+// This is sent to the app router which will activate BrowseTimeline with the selected event.
+type RequestBrowseEventMsg struct {
+	Event     *domain.CareerEvent
+	AllEvents []*domain.CareerEvent
+	SkillName string // For context in breadcrumbs
 }
