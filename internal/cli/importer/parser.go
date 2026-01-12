@@ -303,7 +303,7 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 				continue
 			}
 
-			// Try to find existing skill by name (case-insensitive)
+			// Try to find existing skill by name (case-sensitive)
 			existingSkill, err := p.skillRepository.GetByName(p.ctx, skillName)
 			if err == nil && existingSkill != nil {
 				// Skill exists - use its ID
