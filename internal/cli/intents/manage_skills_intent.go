@@ -764,151 +764,174 @@ func (i *ManageSkillsIntent) handleKeyPress(msg tea.KeyMsg) tea.Cmd {
 }
 
 func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
-	// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
-	if i.navHandler.HandleKey(msg.String()) {
-		return nil
+	// Handle global keys first using MessageInterceptor
+	return NewMessageInterceptor().
+		OnQuit(StandardQuitHandler()).
+		OnHelp(StandardHelpHandler(i.BaseIntent)).
+		OnBack(func() tea.Cmd {
+			// At root state, back means cancel and return to main menu
+			i.setCancelled()
+			return nil
+		}).
+		InterceptOr(msg, func() tea.Cmd {
+			// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+			if i.navHandler.HandleKey(msg.String()) {
+				return nil
+			}
+
+			switch msg.String() {
+			case "enter":
+				// View skill detail
+				if len(i.skills) == 0 {
+					return nil
+				}
+				i.selectedSkill = i.skills[i.selectedIndex]
+				i.currentState = SkillsStateDetail
+				return i.loadDetailData()
+
+			case "n":
+				// Add new skill
+				i.currentState = SkillsStateAdd
+				i.skillForm = models.NewSkillForm()
+				return i.skillForm.Init()
+
+			case "e":
+				// Edit selected skill
+				if len(i.skills) == 0 {
+					return nil
+				}
+				i.currentState = SkillsStateEdit
+				i.skillForm = models.NewSkillFormWithData(i.skills[i.selectedIndex])
+				return i.skillForm.Init()
+
+			case "d":
+				// Delete selected skill
+				if len(i.skills) == 0 {
+					return nil
+				}
+				i.currentState = SkillsStateDelete
+				return nil
+
+			case "f":
+				// Open filter menu
+				i.currentState = SkillsStateFilter
+				i.filterMenuIndex = 0
+				i.extractAvailableCategories()
+				return nil
+
+			case "s":
+				// Open sort menu
+				i.currentState = SkillsStateSort
+				i.sortMenuIndex = 0
+				return nil
+
+			case "x":
+				// Clear all filters
+				if i.hasActiveFilters() {
+					i.filters = &SkillsFilters{}
+					return i.reloadSkills()
+				}
+				return nil
+			}
+
+			return nil
+		})
+}
+
+// setCancelled marks the intent as cancelled and returns to main menu
+func (i *ManageSkillsIntent) setCancelled() {
+	i.result = &IntentResult[*ManageSkillsResult]{
+		Status: Cancelled,
+		Data: &ManageSkillsResult{
+			Action: "cancelled",
+		},
 	}
-
-	switch msg.String() {
-	case "enter":
-		// View skill detail
-		if len(i.skills) == 0 {
-			return nil
-		}
-		i.selectedSkill = i.skills[i.selectedIndex]
-		i.currentState = SkillsStateDetail
-		return i.loadDetailData()
-
-	case "n":
-		// Add new skill
-		i.currentState = SkillsStateAdd
-		i.skillForm = models.NewSkillForm()
-		return i.skillForm.Init()
-
-	case "e":
-		// Edit selected skill
-		if len(i.skills) == 0 {
-			return nil
-		}
-		i.currentState = SkillsStateEdit
-		i.skillForm = models.NewSkillFormWithData(i.skills[i.selectedIndex])
-		return i.skillForm.Init()
-
-	case "d":
-		// Delete selected skill
-		if len(i.skills) == 0 {
-			return nil
-		}
-		i.currentState = SkillsStateDelete
-		return nil
-
-	case "f":
-		// Open filter menu
-		i.currentState = SkillsStateFilter
-		i.filterMenuIndex = 0
-		i.extractAvailableCategories()
-		return nil
-
-	case "s":
-		// Open sort menu
-		i.currentState = SkillsStateSort
-		i.sortMenuIndex = 0
-		return nil
-
-	case "x":
-		// Clear all filters
-		if i.hasActiveFilters() {
-			i.filters = &SkillsFilters{}
-			return i.reloadSkills()
-		}
-		return nil
-
-	case "esc":
-		// Complete intent
-		i.result = &IntentResult[*ManageSkillsResult]{
-			Status: Cancelled,
-			Data: &ManageSkillsResult{
-				Action: "cancelled",
-			},
-		}
-		i.active = false
-		return nil
-	}
-
-	return nil
+	i.active = false
 }
 
 // handleFilterKeys handles key presses in filter menu
 func (i *ManageSkillsIntent) handleFilterKeys(msg tea.KeyMsg) tea.Cmd {
-	switch msg.String() {
-	case "esc":
-		i.currentState = SkillsStateList
-		return nil
+	// Handle global keys first using MessageInterceptor
+	return NewMessageInterceptor().
+		OnQuit(StandardQuitHandler()).
+		OnHelp(StandardHelpHandler(i.BaseIntent)).
+		OnBack(func() tea.Cmd {
+			i.currentState = SkillsStateList
+			return nil
+		}).
+		InterceptOr(msg, func() tea.Cmd {
+			switch msg.String() {
+			case "j", "down":
+				i.filterMenuIndex++
+				// Wrap around: 0=All Categories, 1..n=categories, n+1=All Levels, n+2..m=levels, m+1=Used skills only
+				maxIndex := len(i.availableCategories) + 6 // Categories + "All" + Levels + "All" + "Used only"
+				if i.filterMenuIndex >= maxIndex {
+					i.filterMenuIndex = 0
+				}
+				return nil
 
-	case "j", "down":
-		i.filterMenuIndex++
-		// Wrap around: 0=All Categories, 1..n=categories, n+1=All Levels, n+2..m=levels, m+1=Used skills only
-		maxIndex := len(i.availableCategories) + 6 // Categories + "All" + Levels + "All" + "Used only"
-		if i.filterMenuIndex >= maxIndex {
-			i.filterMenuIndex = 0
-		}
-		return nil
+			case "k", "up":
+				i.filterMenuIndex--
+				maxIndex := len(i.availableCategories) + 6
+				if i.filterMenuIndex < 0 {
+					i.filterMenuIndex = maxIndex - 1
+				}
+				return nil
 
-	case "k", "up":
-		i.filterMenuIndex--
-		maxIndex := len(i.availableCategories) + 6
-		if i.filterMenuIndex < 0 {
-			i.filterMenuIndex = maxIndex - 1
-		}
-		return nil
+			case "enter":
+				// Apply selected filter
+				return i.applyFilterSelection()
 
-	case "enter":
-		// Apply selected filter
-		return i.applyFilterSelection()
+			case "u":
+				// Quick shortcut for "Used skills only"
+				i.filters.MinEvents = 1
+				i.currentState = SkillsStateList
+				return i.reloadSkills()
+			}
 
-	case "u":
-		// Quick shortcut for "Used skills only"
-		i.filters.MinEvents = 1
-		i.currentState = SkillsStateList
-		return i.reloadSkills()
-	}
-
-	return nil
+			return nil
+		})
 }
 
 // handleSortKeys handles key presses in sort menu
 func (i *ManageSkillsIntent) handleSortKeys(msg tea.KeyMsg) tea.Cmd {
-	switch msg.String() {
-	case "esc":
-		i.currentState = SkillsStateList
-		return nil
+	// Handle global keys first using MessageInterceptor
+	return NewMessageInterceptor().
+		OnQuit(StandardQuitHandler()).
+		OnHelp(StandardHelpHandler(i.BaseIntent)).
+		OnBack(func() tea.Cmd {
+			i.currentState = SkillsStateList
+			return nil
+		}).
+		InterceptOr(msg, func() tea.Cmd {
+			switch msg.String() {
+			case "j", "down":
+				i.sortMenuIndex++
+				if i.sortMenuIndex > 5 { // 6 sort options
+					i.sortMenuIndex = 0
+				}
+				return nil
 
-	case "j", "down":
-		i.sortMenuIndex++
-		if i.sortMenuIndex > 5 { // 6 sort options
-			i.sortMenuIndex = 0
-		}
-		return nil
+			case "k", "up":
+				i.sortMenuIndex--
+				if i.sortMenuIndex < 0 {
+					i.sortMenuIndex = 5
+				}
+				return nil
 
-	case "k", "up":
-		i.sortMenuIndex--
-		if i.sortMenuIndex < 0 {
-			i.sortMenuIndex = 5
-		}
-		return nil
+			case "enter":
+				return i.applySortSelection()
 
-	case "enter":
-		return i.applySortSelection()
+			case "e":
+				// Quick shortcut for "Most used" (events desc)
+				i.filters.SortBy = "events"
+				i.filters.SortOrder = "desc"
+				i.currentState = SkillsStateList
+				return i.reloadSkills()
+			}
 
-	case "e":
-		// Quick shortcut for "Most used" (events desc)
-		i.filters.SortBy = "events"
-		i.filters.SortOrder = "desc"
-		i.currentState = SkillsStateList
-		return i.reloadSkills()
-	}
-
-	return nil
+			return nil
+		})
 }
 
 // extractAvailableCategories extracts unique categories from loaded skills
@@ -1027,29 +1050,40 @@ func (i *ManageSkillsIntent) reloadSkills() tea.Cmd {
 }
 
 func (i *ManageSkillsIntent) handleDeleteKeys(msg tea.KeyMsg) tea.Cmd {
-	switch msg.String() {
-	case "y":
-		// Confirm delete
-		if len(i.skills) == 0 {
+	// Handle global keys first using MessageInterceptor
+	return NewMessageInterceptor().
+		OnQuit(StandardQuitHandler()).
+		OnHelp(StandardHelpHandler(i.BaseIntent)).
+		OnBack(func() tea.Cmd {
+			// Cancel delete
+			i.currentState = SkillsStateList
 			return nil
-		}
+		}).
+		InterceptOr(msg, func() tea.Cmd {
+			switch msg.String() {
+			case "y":
+				// Confirm delete
+				if len(i.skills) == 0 {
+					return nil
+				}
 
-		skillToDelete := i.skills[i.selectedIndex]
-		return func() tea.Msg {
-			err := i.context.SkillRepository.Delete(i.context.Ctx, skillToDelete.ID)
-			return SkillDeletedMsg{
-				SkillID: skillToDelete.ID,
-				Error:   err,
+				skillToDelete := i.skills[i.selectedIndex]
+				return func() tea.Msg {
+					err := i.context.SkillRepository.Delete(i.context.Ctx, skillToDelete.ID)
+					return SkillDeletedMsg{
+						SkillID: skillToDelete.ID,
+						Error:   err,
+					}
+				}
+
+			case "n":
+				// Cancel delete
+				i.currentState = SkillsStateList
+				return nil
 			}
-		}
 
-	case "n", "esc":
-		// Cancel delete
-		i.currentState = SkillsStateList
-		return nil
-	}
-
-	return nil
+			return nil
+		})
 }
 
 func (i *ManageSkillsIntent) handleFormCancel() tea.Cmd {
@@ -1186,70 +1220,82 @@ func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) t
 
 // handleDetailKeys handles key presses in detail view
 func (i *ManageSkillsIntent) handleDetailKeys(msg tea.KeyMsg) tea.Cmd {
-	switch msg.String() {
-	case "enter":
-		// View events using this skill
-		i.currentState = SkillsStateDetailEvents
-		i.eventsLoaded = false
-		return i.loadEventsForSkill()
+	// Handle global keys first using MessageInterceptor
+	return NewMessageInterceptor().
+		OnQuit(StandardQuitHandler()).
+		OnHelp(StandardHelpHandler(i.BaseIntent)).
+		OnBack(func() tea.Cmd {
+			// Go back to list
+			i.currentState = SkillsStateList
+			i.selectedSkill = nil
+			return nil
+		}).
+		InterceptOr(msg, func() tea.Cmd {
+			switch msg.String() {
+			case "enter":
+				// View events using this skill
+				i.currentState = SkillsStateDetailEvents
+				i.eventsLoaded = false
+				return i.loadEventsForSkill()
 
-	case "e":
-		// Edit this skill
-		i.currentState = SkillsStateEdit
-		i.skillForm = models.NewSkillFormWithData(i.selectedSkill)
-		return i.skillForm.Init()
+			case "e":
+				// Edit this skill
+				i.currentState = SkillsStateEdit
+				i.skillForm = models.NewSkillFormWithData(i.selectedSkill)
+				return i.skillForm.Init()
 
-	case "d":
-		// Delete this skill
-		i.currentState = SkillsStateDelete
-		return nil
+			case "d":
+				// Delete this skill
+				i.currentState = SkillsStateDelete
+				return nil
+			}
 
-	case "esc":
-		// Back to list
-		i.currentState = SkillsStateList
-		i.selectedSkill = nil
-		return nil
-	}
-
-	return nil
+			return nil
+		})
 }
 
 // handleDetailEventsKeys handles key presses in detail events view
 func (i *ManageSkillsIntent) handleDetailEventsKeys(msg tea.KeyMsg) tea.Cmd {
-	// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
-	if i.eventsNavHandler.HandleKey(msg.String()) {
-		return nil
-	}
-
-	switch msg.String() {
-	case "enter":
-		// View event details
-		if len(i.skillEvents) > 0 && i.eventsSelectedIndex >= 0 && i.eventsSelectedIndex < len(i.skillEvents) {
-			i.selectedEventFromList = i.skillEvents[i.eventsSelectedIndex]
-			i.currentState = SkillsStateDetailEventDetail
-		}
-		return nil
-
-	case "e":
-		// Edit selected event - send to app router to open CaptureEvent intent
-		if len(i.skillEvents) > 0 && i.eventsSelectedIndex >= 0 && i.eventsSelectedIndex < len(i.skillEvents) {
-			selectedEvent := i.skillEvents[i.eventsSelectedIndex]
-			return func() tea.Msg {
-				return RequestEditEventMsg{Event: selectedEvent}
+	// Handle global keys first using MessageInterceptor
+	return NewMessageInterceptor().
+		OnQuit(StandardQuitHandler()).
+		OnHelp(StandardHelpHandler(i.BaseIntent)).
+		OnBack(func() tea.Cmd {
+			// Back to skill detail view
+			i.currentState = SkillsStateDetail
+			i.skillEvents = nil
+			i.eventsLoaded = false
+			i.eventsSelectedIndex = 0
+			return nil
+		}).
+		InterceptOr(msg, func() tea.Cmd {
+			// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+			if i.eventsNavHandler.HandleKey(msg.String()) {
+				return nil
 			}
-		}
-		return nil
 
-	case "esc":
-		// Back to skill detail view
-		i.currentState = SkillsStateDetail
-		i.skillEvents = nil
-		i.eventsLoaded = false
-		i.eventsSelectedIndex = 0
-		return nil
-	}
+			switch msg.String() {
+			case "enter":
+				// View event details
+				if len(i.skillEvents) > 0 && i.eventsSelectedIndex >= 0 && i.eventsSelectedIndex < len(i.skillEvents) {
+					i.selectedEventFromList = i.skillEvents[i.eventsSelectedIndex]
+					i.currentState = SkillsStateDetailEventDetail
+				}
+				return nil
 
-	return nil
+			case "e":
+				// Edit selected event - send to app router to open CaptureEvent intent
+				if len(i.skillEvents) > 0 && i.eventsSelectedIndex >= 0 && i.eventsSelectedIndex < len(i.skillEvents) {
+					selectedEvent := i.skillEvents[i.eventsSelectedIndex]
+					return func() tea.Msg {
+						return RequestEditEventMsg{Event: selectedEvent}
+					}
+				}
+				return nil
+			}
+
+			return nil
+		})
 }
 
 // loadEventsForSkill loads events that use the selected skill
@@ -1358,24 +1404,30 @@ func (i *ManageSkillsIntent) renderEventDetail() string {
 
 // handleEventDetailKeys handles key presses in event detail view
 func (i *ManageSkillsIntent) handleEventDetailKeys(msg tea.KeyMsg) tea.Cmd {
-	switch msg.String() {
-	case "e":
-		// Edit event - send to app router to open CaptureEvent intent
-		if i.selectedEventFromList != nil {
-			return func() tea.Msg {
-				return RequestEditEventMsg{Event: i.selectedEventFromList}
+	// Handle global keys first using MessageInterceptor
+	return NewMessageInterceptor().
+		OnQuit(StandardQuitHandler()).
+		OnHelp(StandardHelpHandler(i.BaseIntent)).
+		OnBack(func() tea.Cmd {
+			// Back to events list
+			i.currentState = SkillsStateDetailEvents
+			i.selectedEventFromList = nil
+			return nil
+		}).
+		InterceptOr(msg, func() tea.Cmd {
+			switch msg.String() {
+			case "e":
+				// Edit event - send to app router to open CaptureEvent intent
+				if i.selectedEventFromList != nil {
+					return func() tea.Msg {
+						return RequestEditEventMsg{Event: i.selectedEventFromList}
+					}
+				}
+				return nil
 			}
-		}
-		return nil
 
-	case "esc":
-		// Back to events list
-		i.currentState = SkillsStateDetailEvents
-		i.selectedEventFromList = nil
-		return nil
-	}
-
-	return nil
+			return nil
+		})
 }
 
 // renderFilterMenu renders the filter menu
