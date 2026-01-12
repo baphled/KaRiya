@@ -29,8 +29,9 @@ var _ = Describe("MetadataForm", func() {
 		It("should create a form with event data", func() {
 			availableTags := []string{"go", "python", "testing"}
 			availableCategories := []string{"technical", "leadership", "mentoring"}
+			availableSkills := []*career.Skill{}
 
-			form := forms.NewMetadataEditorForm(testEvent, availableTags, availableCategories)
+			form := forms.NewMetadataEditorForm(testEvent, availableTags, availableCategories, availableSkills)
 
 			Expect(form).NotTo(BeNil())
 		})
@@ -150,8 +151,9 @@ var _ = Describe("MetadataForm", func() {
 
 			availableTags := []string{"tag1", "tag2"}
 			availableCategories := []string{"cat1", "cat2"}
+			availableSkills := []*career.Skill{}
 
-			form := forms.NewMetadataEditorFormWithData(data, availableTags, availableCategories)
+			form := forms.NewMetadataEditorFormWithData(data, availableTags, availableCategories, availableSkills)
 
 			Expect(form).NotTo(BeNil())
 		})
