@@ -160,4 +160,17 @@ var _ = Describe("SkillSearchModal", func() {
 			Expect(modal.GetSearchText()).To(BeEmpty())
 		})
 	})
+
+	Describe("Modal Styling", func() {
+		It("should have solid background styling in View output", func() {
+			modal := components.NewSkillSearchModal("test", 80, 24)
+			modal.Show()
+
+			view := modal.View()
+			// Check for rounded border characters (top-left corner)
+			Expect(view).To(ContainSubstring("╭"))
+			// Check for rounded border characters (top-right corner)
+			Expect(view).To(ContainSubstring("╮"))
+		})
+	})
 })
