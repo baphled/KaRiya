@@ -92,11 +92,14 @@ func (i *GenerateCVIntent) transitionToScreen(state GenerateCVState) {
 
 	switch state {
 	case GenerateCVStateSelectProfile:
-		// Import the cv package at the top of file to use cv.NewCVProfileSelectScreen
 		screen := NewCVProfileSelectScreenFromIntent(i.context.AvailableProfiles)
 		if screen != nil {
 			screen.SetTerminalInfo(width, height)
 			screen.SetTheme(i.Theme())
+			// Set logo if available
+			if logo := i.GetLogo(); logo != nil {
+				screen.SetLogo(logo, i.GetLogoSpacing())
+			}
 		}
 		i.activeScreen = screen
 

@@ -310,9 +310,21 @@ func (i *BrowseTimelineIntent) EnableScreens() {
 // transitionToScreen sets the active screen and updates state.
 func (i *BrowseTimelineIntent) transitionToScreen(screen screens.Screen) {
 	i.activeScreen = screen
+
+	// Set terminal dimensions
 	termInfo := i.GetTerminalInfo()
 	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		screen.SetTerminalInfo(termInfo.Width, termInfo.Height)
+	}
+
+	// Set theme if available
+	if theme := i.Theme(); theme != nil {
+		screen.SetTheme(theme)
+	}
+
+	// Set logo if available
+	if logo := i.GetLogo(); logo != nil {
+		screen.SetLogo(logo, i.GetLogoSpacing())
 	}
 }
 

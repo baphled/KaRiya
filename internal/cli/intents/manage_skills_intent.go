@@ -1828,6 +1828,25 @@ func (i *ManageSkillsIntent) handleErrorResult(result *screens.ErrorResult) tea.
 	return i.handleErrorInternal(fmt.Errorf("screen error: %v", data))
 }
 
+// applyIntentContextToScreen applies terminal info, theme, and logo to a screen.
+// This ensures consistent setup across all screen transitions.
+func (i *ManageSkillsIntent) applyIntentContextToScreen(screen screens.Screen) {
+	// Set terminal dimensions
+	if termInfo := i.GetTerminalInfo(); termInfo != nil {
+		screen.SetTerminalInfo(termInfo.Width, termInfo.Height)
+	}
+
+	// Set theme
+	if theme := i.Theme(); theme != nil {
+		screen.SetTheme(theme)
+	}
+
+	// Set logo
+	if logo := i.GetLogo(); logo != nil {
+		screen.SetLogo(logo, i.GetLogoSpacing())
+	}
+}
+
 // transitionToListScreen transitions to the skills list screen.
 func (i *ManageSkillsIntent) transitionToListScreen() tea.Cmd {
 	i.currentState = SkillsStateList
@@ -1842,10 +1861,8 @@ func (i *ManageSkillsIntent) transitionToListScreen() tea.Cmd {
 		}
 	}
 
-	// Set terminal info if available
-	if i.GetTerminalInfo() != nil {
-		listScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
-	}
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(listScreen)
 
 	i.activeScreen = listScreen
 	return nil
@@ -1857,9 +1874,8 @@ func (i *ManageSkillsIntent) transitionToDetailScreen() tea.Cmd {
 
 	detailScreen := NewSkillDetailScreenFromIntent(i.selectedSkill, i.GetThemeManager())
 
-	if i.GetTerminalInfo() != nil {
-		detailScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
-	}
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(detailScreen)
 
 	i.activeScreen = detailScreen
 	return nil
@@ -1875,9 +1891,8 @@ func (i *ManageSkillsIntent) transitionToFormScreen(skill *domain.Skill) tea.Cmd
 
 	formScreen := NewSkillFormScreenFromIntent(skill, i.GetThemeManager())
 
-	if i.GetTerminalInfo() != nil {
-		formScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
-	}
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(formScreen)
 
 	i.activeScreen = formScreen
 	return nil
@@ -1889,9 +1904,8 @@ func (i *ManageSkillsIntent) transitionToDeleteScreen(skill *domain.Skill) tea.C
 
 	deleteScreen := NewSkillDeleteConfirmScreenFromIntent(skill, i.GetThemeManager())
 
-	if i.GetTerminalInfo() != nil {
-		deleteScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
-	}
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(deleteScreen)
 
 	i.activeScreen = deleteScreen
 	return nil
