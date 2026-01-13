@@ -15,6 +15,17 @@ make check-compliance
 # 4. Commit with AI attribution (REQUIRED for AI-generated code)
 make ai-commit MSG="feat(scope): description"
 
+# OR: For multiline commit messages (use FILE parameter)
+cat > /tmp/commit-msg.txt << 'EOF'
+feat(scope): short description
+
+Detailed explanation with:
+- Multiple paragraphs
+- Bullet lists
+- Code blocks
+EOF
+make ai-commit FILE=/tmp/commit-msg.txt
+
 # OR: Manual commit (NOT recommended for AI-generated code)
 git commit
 ```
@@ -202,6 +213,50 @@ git commit -m "refactor(service): migrate to Filter interface"
 ---
 
 ## Tools
+
+### ai-commit Usage Patterns
+
+#### Simple Commit (MSG Parameter)
+```bash
+# For short, single-line commits
+make ai-commit MSG="feat(scope): description"
+make ai-commit MSG="fix(tests): resolve race condition"
+```
+
+#### Complex Commit (FILE Parameter)
+```bash
+# For commits with:
+# - Multiple paragraphs
+# - Bullet lists
+# - Code blocks
+# - Special characters
+
+# Create commit message file
+cat > /tmp/commit-msg.txt << 'EOF'
+feat(cli): add interactive event capture form
+
+Implement BubbleTea form with real-time validation:
+- Text input with 2000 character limit
+- Smart date parsing (ISO, relative, keywords)
+- Visual focus indicators
+
+Human review confirmed:
+- All 14 tests pass
+- No security issues
+- Follows project conventions
+EOF
+
+# Commit using file
+make ai-commit FILE=/tmp/commit-msg.txt
+```
+
+#### Infrastructure-Only Changes (NO_VERIFY)
+```bash
+# Use SPARINGLY for build tooling/CI scripts
+# when pre-existing test failures block commit
+make ai-commit MSG="chore(ci): update workflow" NO_VERIFY=1
+make ai-commit FILE=/tmp/msg.txt NO_VERIFY=1
+```
 
 ### Makefile Targets
 
