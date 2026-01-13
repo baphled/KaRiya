@@ -1122,6 +1122,308 @@ func (i *CaptureEventIntent) View() string {
 
 ---
 
+## Phase 4 UX Consistency & Polish (CRITICAL - Discovered During BrowseTimeline Review)
+
+**Goal**: Fix critical UX issues discovered during BrowseTimeline implementation that affect ALL intents  
+**Time Estimate**: 11 hours  
+**Priority**: 🔴 **CRITICAL** (blocks user testing, affects all intents)  
+**Status**: ⏳ **NOT STARTED**  
+**Dependencies**: BrowseTimeline complete ✅ (serves as reference implementation)
+
+### Background
+
+During BrowseTimeline review, user identified **4 critical UX issues** that need fixing before continuing with remaining intent migrations. These issues affect user experience across ALL intents and should be fixed once to establish patterns.
+
+---
+
+### Issue 1: Key Badge Discoverability ⚠️ HIGH PRIORITY
+
+**Problem**: j/k navigation (vim-style) works but isn't advertised in footers  
+**Current**: Footer shows `↑/↓: Navigate`  
+**Expected**: Footer shows `↑↓/jk: Navigate`  
+**Root Cause**: Using `NewKeyBadge("↑/↓", "Navigate")` instead of `NavigateBadge()` helper  
+**Estimate**: 1 hour  
+**Affects**: ALL intents with list navigation (10/11 intents)
+
+#### Tasks
+- [ ] Audit all intent `getContextHelp()` or footer building methods
+- [ ] Replace manual badge creation with `NavigateBadge()` helper
+- [ ] Verify `NavigateBadge()` helper returns correct format `"↑↓/jk: Navigate"`
+- [ ] Test across BrowseTimeline, ManageSkills, and other intents
+- [ ] Update pattern documentation with correct helper usage
+
+#### Files to Modify
+- `internal/cli/intents/browse_timeline_intent.go` - Update footer building
+- `internal/cli/intents/manage_skills_intent.go` - Update footer building
+- [All other intent files with navigation] - Update footer building
+- `internal/cli/components/key_badge.go` - Verify NavigateBadge() implementation
+- `docs/development/INTENT_PATTERNS_LIBRARY.md` - Document NavigateBadge() usage
+
+#### Acceptance Criteria
+- [ ] ALL list screens show `↑↓/jk: Navigate` in footer
+- [ ] j/k keys continue to work (already functional)
+- [ ] Pattern documented for future intent migrations
+- [ ] No test regressions
+
+---
+
+### Issue 2: Delete Should Use Modal Instead of Screen ⚠️ HIGH PRIORITY
+
+**Problem**: Delete confirmation uses full screen transition instead of modal overlay  
+**Current**: `BrowseStateDeleteConfirm` state with `EventDeleteConfirmScreen`  
+**Expected**: Modal overlay (like FilterModal) - user sees list behind confirmation  
+**Why**: Lighter weight, preserves context, follows Modal Overlay Pattern (#1)  
+**Estimate**: 2.5 hours
+
+#### Current Implementation (WRONG)
+```go
+case "delete":
+    // Transitions to NEW SCREEN (state change) ❌
+    i.state.currentState = BrowseStateDeleteConfirm
+    i.state.selectedEvent = event
+    i.transitionToScreen(timeline.NewEventDeleteConfirmScreen(event))
+```
+
+#### Proposed Implementation (CORRECT)
+```go
+case "delete":
+    // Show modal OVER current screen (no state change) ✅
+    i.deleteModal = components.NewDeleteConfirmModal(
+        event.Text, // Item description
+        "Delete Event",
+        fmt.Sprintf("Are you sure you want to delete '%s'?", truncate(event.Text, 50)),
+    )
+    return i.deleteModal.Init()
+```
+
+#### Tasks
+- [ ] Create `DeleteConfirmModal` component (~150 lines)
+  - Generic modal for any entity deletion
+  - Props: entity name, title, confirmation message
+  - Returns: confirmed (bool), or nil if cancelled
+  - Uses KeyBadge footer: `y: Confirm, n/Esc: Cancel`
+- [ ] Update BrowseTimeline to use modal instead of screen
+  - Replace screen transition with modal show
+  - Handle modal result (confirmed → delete → refresh)
+  - Remove state transition code
+- [ ] Remove obsolete code
+  - Delete `internal/cli/screens/timeline/event_delete_confirm.go` (81 lines)
+  - Remove `BrowseStateDeleteConfirm` state from intent
+- [ ] Write tests (~100 lines)
+  - Modal creation test
+  - Confirm action test (y/Enter)
+  - Cancel action test (n/Esc)
+  - Integration test in BrowseTimeline
+
+#### Files to Create
+- `internal/cli/components/delete_confirm_modal.go` (~150 lines)
+- `internal/cli/components/delete_confirm_modal_test.go` (~100 lines)
+
+#### Files to Modify
+- `internal/cli/intents/browse_timeline_intent.go` - Use modal
+- `internal/cli/intents/browse_timeline_intent.go` - Remove BrowseStateDeleteConfirm state
+
+#### Files to Delete
+- `internal/cli/screens/timeline/event_delete_confirm.go` (replaced by modal)
+
+#### Acceptance Criteria
+- [ ] Delete shows modal overlay (user sees list behind)
+- [ ] y/Enter confirms delete
+- [ ] n/Esc cancels without deleting
+- [ ] Modal uses KeyBadge components in footer (Pattern #2)
+- [ ] Modal uses overlay rendering (Pattern #1)
+- [ ] All BrowseTimeline tests pass
+- [ ] Component is generic (reusable for skills, bursts, facts, etc.)
+
+---
+
+### Issue 3: Action Keys Not Functioning (Add/Edit) 🔴 CRITICAL
+
+**Problem**: 'a' (add) and 'e' (edit) keys shown in footer but don't work  
+**Root Cause**: Actions return `RequestAddEventMsg`/`RequestEditEventMsg` but app doesn't handle them  
+**Current Flow**: Screen → Intent → Message → **App (no handler)** ❌  
+**Expected Flow**: Screen → Intent → **Show Modal** → Save → Refresh ✅  
+**Decision**: Use Modal Pattern (not intent routing) for better UX  
+**Estimate**: 6 hours
+
+#### Why Modals? (vs Intent Routing)
+✅ **Faster workflow** - No intent switching, instant feedback  
+✅ **User stays in context** - Sees the list behind modal  
+✅ **Consistent pattern** - Matches filter modal and delete modal  
+✅ **Lighter weight** - Quick edits without full form experience
+
+#### 3A: Quick Add Modal (2 hours)
+
+**Purpose**: Quick capture of new event with minimal fields
+
+##### Tasks
+- [ ] Create `QuickAddEventModal` component (~200 lines)
+  - Fields: Date (default: today), Text (multiline, required), Company (optional)
+  - Uses huh.Form (like FilterModal)
+  - Returns: new event data or nil (cancelled)
+  - Footer: `Tab: Next, Enter: Save, Esc: Cancel`
+- [ ] Update BrowseTimeline `handleNavigateResult()`
+  - Show modal when action="add"
+  - Save new event when modal completes
+  - Refresh event list
+  - Show success message or error
+- [ ] Write tests (~100 lines)
+  - Modal creation with default date
+  - Save creates new event
+  - Cancel doesn't create event
+  - Validation tests (required fields)
+
+##### Files to Create
+- `internal/cli/components/quick_add_event_modal.go` (~200 lines)
+- `internal/cli/components/quick_add_event_modal_test.go` (~100 lines)
+
+##### Files to Modify
+- `internal/cli/intents/browse_timeline_intent.go` - Handle "add" action with modal
+
+##### Acceptance Criteria
+- [ ] Pressing 'a' shows modal immediately (no lag)
+- [ ] Date defaults to today
+- [ ] Can create event without leaving BrowseTimeline
+- [ ] List refreshes after successful add
+- [ ] ESC cancels without saving
+- [ ] Modal uses overlay rendering (Pattern #1)
+- [ ] Modal uses KeyBadge footer (Pattern #2)
+
+#### 3B: Edit Event Modal (2 hours)
+
+**Purpose**: Edit existing event with full fields
+
+##### Tasks
+- [ ] Create `EditEventModal` component (~250 lines)
+  - Fields: Date, Text (multiline), Company, Categories (MultiSelect), Metadata
+  - Pre-populated with current event values
+  - Uses huh.Form
+  - Returns: updated event data or nil (cancelled)
+  - Footer: `Tab: Next, Enter: Save, Esc: Cancel`
+- [ ] Update BrowseTimeline `handleNavigateResult()`
+  - Show modal when action="edit"
+  - Update event when modal completes
+  - Refresh event list
+  - Preserve selection (stay on edited event)
+- [ ] Write tests (~120 lines)
+  - Modal pre-populates with current values
+  - Save updates event correctly
+  - Cancel doesn't update event
+  - All fields editable
+
+##### Files to Create
+- `internal/cli/components/edit_event_modal.go` (~250 lines)
+- `internal/cli/components/edit_event_modal_test.go` (~120 lines)
+
+##### Files to Modify
+- `internal/cli/intents/browse_timeline_intent.go` - Handle "edit" action with modal
+
+##### Acceptance Criteria
+- [ ] Pressing 'e' shows modal with current event values
+- [ ] All fields are pre-populated and editable
+- [ ] Can edit event without leaving BrowseTimeline
+- [ ] List refreshes and preserves selection after edit
+- [ ] ESC cancels without saving
+- [ ] Modal uses overlay rendering (Pattern #1)
+- [ ] Modal uses KeyBadge footer (Pattern #2)
+
+#### 3C: Remove Obsolete Routing Messages (30 min)
+
+**Tasks**:
+- [ ] Remove `RequestAddEventMsg` definition (no longer needed)
+- [ ] Remove `RequestEditEventMsg` definition (no longer needed)
+- [ ] Update documentation to reflect modal pattern
+
+---
+
+### Issue 4: Apply Modal Patterns to Other Intents
+
+**Goal**: Reuse modal components created above across ALL intents  
+**Estimate**: 1.5 hours
+
+#### Tasks
+- [ ] Update ManageSkills to use `DeleteConfirmModal` for skill deletion (30 min)
+- [ ] Create `QuickAddSkillModal` using same pattern as QuickAddEventModal (pattern copy, not code)
+- [ ] Document modal reuse pattern in `MODAL_OVERLAY_PATTERN.md` (30 min)
+- [ ] Update `INTENT_PATTERNS_LIBRARY.md` with modal examples (30 min)
+- [ ] Add modal components to Component Reusability Strategy section below (15 min)
+
+#### Reusable Modal Components
+
+**Generic (Any Entity)**:
+- `DeleteConfirmModal` - Confirmation for any delete operation
+
+**Domain-Specific (Events)**:
+- `QuickAddEventModal` - Quick event creation
+- `EditEventModal` - Full event editing
+
+**Pattern for Other Entities** (to be created per-intent):
+- `QuickAddSkillModal` - Copy pattern from QuickAddEventModal
+- `EditSkillModal` - Copy pattern from EditEventModal
+- `QuickAddBurstModal` - Copy pattern from QuickAddEventModal
+- ... (similar for facts, profiles, etc.)
+
+#### Acceptance Criteria
+- [ ] ManageSkills uses DeleteConfirmModal (no custom delete screen)
+- [ ] Modal reuse pattern documented with examples
+- [ ] Pattern library updated with modal code snippets
+- [ ] Future intents have clear guidance on modal creation
+
+---
+
+### Phase 4 UX Summary
+
+**Total Estimate**: 11 hours  
+**Critical Path**: Fix action keys first (Issue 3) - blocks user testing  
+**Quick Wins**: Key badge discoverability (Issue 1) - 1 hour, high visibility
+
+**Execution Order** (Recommended):
+1. **Issue 1** (1 hour) - Key badges - Quick win, builds confidence
+2. **Issue 2** (2.5 hours) - Delete modal - Establishes modal pattern
+3. **Issue 3** (6 hours) - Add/Edit modals - Biggest impact, uses pattern from #2
+4. **Issue 4** (1.5 hours) - Apply to other intents - Scaling the solution
+
+**Total Components Created**: 3 modals (~600 lines production + ~320 lines tests)
+
+**Components to Delete**: 1 screen (EventDeleteConfirmScreen, 81 lines)
+
+**Net Code**: +839 lines (but much better UX and reusable patterns)
+
+**Acceptance Criteria (Overall)**:
+- [ ] j/k navigation advertised in ALL list screen footers
+- [ ] ALL action keys shown in footer actually work (a, e, d, f)
+- [ ] Delete uses modal overlay (no screen transition)
+- [ ] Add/Edit use modals (quick workflow without leaving intent)
+- [ ] ESC always cancels modal and preserves state
+- [ ] All modals follow Pattern #1 (Modal Overlay Rendering)
+- [ ] All modals follow Pattern #2 (Themed Footer Building with KeyBadges)
+- [ ] All modals follow Pattern #12 (Form Modal with Immediate Init)
+- [ ] Modal components documented and reusable
+- [ ] All BrowseTimeline tests pass (32/32)
+- [ ] Pattern applied to at least one other intent (ManageSkills)
+
+**Files Summary**:
+
+**To Create** (6 files, ~920 lines):
+- `internal/cli/components/delete_confirm_modal.go` (~150 lines)
+- `internal/cli/components/delete_confirm_modal_test.go` (~100 lines)
+- `internal/cli/components/quick_add_event_modal.go` (~200 lines)
+- `internal/cli/components/quick_add_event_modal_test.go` (~100 lines)
+- `internal/cli/components/edit_event_modal.go` (~250 lines)
+- `internal/cli/components/edit_event_modal_test.go` (~120 lines)
+
+**To Modify** (5 files):
+- `internal/cli/intents/browse_timeline_intent.go` - Use all 3 modals
+- `internal/cli/intents/manage_skills_intent.go` - Use DeleteConfirmModal
+- `internal/cli/components/key_badge.go` - Verify NavigateBadge() helper
+- `docs/development/MODAL_OVERLAY_PATTERN.md` - Add reuse examples
+- `docs/development/INTENT_PATTERNS_LIBRARY.md` - Add modal patterns
+
+**To Delete** (1 file, 81 lines):
+- `internal/cli/screens/timeline/event_delete_confirm.go` (replaced by modal)
+
+---
+
 ## Component Reusability Strategy
 
 **Reference**: `docs/development/TASK_42_COMPONENT_REQUIREMENTS.md`
