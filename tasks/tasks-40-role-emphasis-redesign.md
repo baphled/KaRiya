@@ -6,19 +6,20 @@
 - **Prerequisites**: Task 39 (User-Defined Skills) must be complete
 
 ## Session Contract Acknowledgment
-- [ ] Ran `make session-start` and it passed
-- [ ] Acknowledge and commit to following all workflow rules
-- [ ] Token count: _____ (must be < 50k to start)
+- [x] Ran `make session-start` and it passed (2026-01-13)
+- [x] Acknowledge and commit to following all workflow rules
+- [x] Token count: 46,176 (< 50k ✅)
 
 ## Pre-Task Checklist (MUST COMPLETE BEFORE STARTING)
-- [ ] `make check-compliance` passes
-- [ ] Task 39 (User-Defined Skills) is complete
-- [ ] Reviewed existing patterns in:
-  - `internal/service/career/cv/variants.go` (current variant system)
-  - `internal/service/career/cv/role_emphasis.go` (current role emphasis)
+- [x] `make check-compliance` passes ✅
+- [x] Task 39 (User-Defined Skills) is complete ✅
+- [x] Reviewed existing patterns in:
+  - `internal/service/career/cv/` (no variants.go or role_emphasis.go - will create)
   - `internal/cli/intents/generate_cv_intent.go` (CV generation flow)
-- [ ] Confirmed this is ONE atomic task (CV generation redesign)
-- [ ] Identified which test files will be created/modified
+  - `internal/domain/career/skill.go` (Skill domain model with Category)
+  - `internal/repository/career/skill_repository.go` (SkillRepository interface)
+- [x] Confirmed this is ONE atomic task (CV generation redesign) ✅
+- [x] Identified which test files will be created/modified (see Phase checklists)
 
 ## Context
 
