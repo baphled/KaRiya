@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -32,6 +33,11 @@ type GenerateCVIntent struct {
 	// When non-nil, this Screen handles Update/View for the current state.
 	// Allows gradual migration from monolithic intent to screen-based architecture.
 	activeScreen screens.Screen
+
+	// useScreens enables the new screen-based architecture (opt-in for now)
+	// Set to false to use legacy code and pass existing tests
+	// TODO: Remove this flag once all states are migrated and tests updated
+	useScreens bool
 }
 
 // NewGenerateCVIntent creates a new GenerateCV intent.
@@ -59,8 +65,9 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 			selectedCVStructure: CVStructureStandard, // Default to standard
 			structureIndex:      0,
 		},
-		active: true,
-		logger: nil,
+		active:     true,
+		logger:     nil,
+		useScreens: false, // Disabled by default to maintain backward compatibility
 	}, nil
 }
 
@@ -69,7 +76,72 @@ func (i *GenerateCVIntent) Init() tea.Cmd {
 	if i.context.DefaultProfile != nil {
 		i.state.selectedProfile = i.context.DefaultProfile
 	}
+
+	// Initialize active screen based on current state (Phase 2.2)
+	// Only if screen-based architecture is enabled
+	if i.useScreens {
+		i.transitionToScreen(i.state.currentState)
+	}
+
 	return nil
+}
+
+// transitionToScreen creates and activates a screen for the given state.
+// This is part of the incremental migration to screen-based architecture.
+func (i *GenerateCVIntent) transitionToScreen(state GenerateCVState) {
+	termInfo := i.GetTerminalInfo()
+	width, height := termInfo.Width, termInfo.Height
+
+	switch state {
+	case GenerateCVStateSelectProfile:
+		// Import the cv package at the top of file to use cv.NewCVProfileSelectScreen
+		screen := NewCVProfileSelectScreenFromIntent(i.context.AvailableProfiles)
+		if screen != nil {
+			screen.SetTerminalInfo(width, height)
+			screen.SetTheme(i.Theme())
+		}
+		i.activeScreen = screen
+
+	// Other states will be added incrementally
+	// case GenerateCVStateSelectAudience:
+	// case GenerateCVStateGenerating:
+	// case GenerateCVStatePreview:
+
+	default:
+		// State not yet migrated to screens - use legacy code
+		i.activeScreen = nil
+	}
+}
+
+// NewCVProfileSelectScreenFromIntent creates a CV profile select screen.
+// This avoids import cycle by creating BaseSelectScreen directly here.
+func NewCVProfileSelectScreenFromIntent(profiles []*CVProfile) screens.Screen {
+	// Create item renderer for CV profiles
+	renderer := func(item *CVProfile) string {
+		// Build profile display
+		lines := []string{
+			item.Name,
+			fmt.Sprintf("  Role: %s | Audience: %s", item.TargetRole, item.TargetAudience),
+		}
+
+		if item.Description != "" {
+			lines = append(lines, fmt.Sprintf("  %s", item.Description))
+		}
+
+		return strings.Join(lines, "\n")
+	}
+
+	breadcrumbs := []string{"Main Menu", "Generate CV", "Select Profile"}
+	title := "Select CV Profile"
+
+	baseScreen := base.NewBaseSelectScreen(
+		profiles,
+		renderer,
+		breadcrumbs,
+		title,
+	)
+
+	return baseScreen
 }
 
 // Theme helper methods for consistent themed styling.
@@ -127,7 +199,8 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	// Delegate to active screen if present (Phase 2.2 screen orchestration)
-	if i.activeScreen != nil {
+	// Only if useScreens is enabled
+	if i.useScreens && i.activeScreen != nil {
 		cmd, result := i.activeScreen.Update(msg)
 		if result != nil {
 			return i.handleScreenResult(result)
@@ -135,7 +208,7 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
-	// Legacy state machine (for states not yet migrated to screens)
+	// Legacy state machine (default for backward compatibility)
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
 		return i.updateSelectProfile(msg)
@@ -812,11 +885,12 @@ func (i *GenerateCVIntent) View() string {
 	}
 
 	// Delegate to active screen if present (Phase 2.2 screen orchestration)
-	if i.activeScreen != nil {
+	// Only if useScreens is enabled
+	if i.useScreens && i.activeScreen != nil {
 		return i.activeScreen.View()
 	}
 
-	// Legacy view rendering (for states not yet migrated to screens)
+	// Legacy view rendering (default for backward compatibility)
 	// Create standard view with breadcrumbs
 	breadcrumbs := i.getBreadcrumbs()
 	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, breadcrumbs...)
@@ -1299,6 +1373,18 @@ func (i *GenerateCVIntent) viewConfirm() string {
 	}
 
 	return i.getCardStyle().Render(content.String())
+}
+
+// EnableScreens enables the new screen-based architecture for this intent.
+// This is opt-in during Phase 2.2 migration to maintain backward compatibility.
+// Once all states are migrated and tests updated, this will become the default.
+//
+// Usage:
+//
+//	intent.EnableScreens()
+//	intent.Init() // Initializes screens based on current state
+func (i *GenerateCVIntent) EnableScreens() {
+	i.useScreens = true
 }
 
 // Result returns the final result of the intent.
