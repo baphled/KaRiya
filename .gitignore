@@ -9,6 +9,10 @@ coverage.html
 # Test temp directories
 **/tmp/
 
+# Generated state matrix documentation
+docs/STATE_MATRIX.md
+docs/state_matrix.json
+
 .opencode
 
 # Build artifacts
