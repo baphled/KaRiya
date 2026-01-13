@@ -300,21 +300,19 @@ func (i *BrowseTimelineIntent) View() string {
 			return i.renderFilterModalOverlay(baseView)
 		}
 
-		// If quick add modal is visible, overlay it (Phase 4 UX Issue 3A)
+		// If quick add modal is visible, overlay it on the COMPLETE rendered view
 		if i.quickAddModal != nil && i.quickAddModal.IsVisible() {
-			return i.quickAddModal.View()
+			return i.renderQuickAddModalOverlay(baseView)
 		}
 
-		// If edit modal is visible, overlay it (Phase 4 UX Issue 3B)
+		// If edit modal is visible, overlay it on the COMPLETE rendered view
 		if i.editModal != nil && i.editModal.IsVisible() {
-			return i.editModal.View()
+			return i.renderEditModalOverlay(baseView)
 		}
 
-		// If delete modal is visible, overlay it (Phase 4 UX Issue 2)
-		// Delete modal is self-centering using Place(), so just render it
-		// The modal's View() method returns a centered overlay
+		// If delete modal is visible, overlay it on the COMPLETE rendered view
 		if i.deleteModal != nil && i.deleteModal.IsVisible() {
-			return i.deleteModal.View()
+			return i.renderDeleteModalOverlay(baseView)
 		}
 
 		return baseView
@@ -784,6 +782,105 @@ func (i *BrowseTimelineIntent) buildFilterModalFooter(theme themes.Theme) string
 		components.CancelBadge(), // Esc: Cancel
 	}
 	return components.RenderHelpFooter(theme, badges...)
+}
+
+// renderQuickAddModalOverlay renders the quick add event modal overlaid on the background.
+func (i *BrowseTimelineIntent) renderQuickAddModalOverlay(background string) string {
+	// Get terminal dimensions
+	info := i.GetTerminalInfo()
+	width := 80
+	height := 24
+	if info != nil {
+		width = info.Width
+		height = info.Height
+	}
+
+	// Create overlay modal with form content
+	overlay := components.NewOverlayModal(
+		"Quick Add Event",
+		i.quickAddModal.View(),
+	)
+
+	// Build footer with KeyBadge components for consistency
+	theme := i.Theme()
+	modalFooter := i.buildQuickAddModalFooter(theme)
+	overlay.SetFooter(modalFooter)
+	overlay.SetWidth(70) // Wider for event form
+
+	// Render overlay centered on the COMPLETE view
+	return overlay.RenderCentered(background, width, height)
+}
+
+// buildQuickAddModalFooter builds the quick add modal footer.
+func (i *BrowseTimelineIntent) buildQuickAddModalFooter(theme themes.Theme) string {
+	badges := []components.KeyBadge{
+		components.NewKeyBadge("Tab", "Next Field"),
+		components.NewKeyBadge("Enter", "Save"),
+		components.CancelBadge(), // Esc: Cancel
+	}
+	return components.RenderHelpFooter(theme, badges...)
+}
+
+// renderEditModalOverlay renders the edit event modal overlaid on the background.
+func (i *BrowseTimelineIntent) renderEditModalOverlay(background string) string {
+	// Get terminal dimensions
+	info := i.GetTerminalInfo()
+	width := 80
+	height := 24
+	if info != nil {
+		width = info.Width
+		height = info.Height
+	}
+
+	// Create overlay modal with form content
+	overlay := components.NewOverlayModal(
+		"Edit Event",
+		i.editModal.View(),
+	)
+
+	// Build footer with KeyBadge components for consistency
+	theme := i.Theme()
+	modalFooter := i.buildEditModalFooter(theme)
+	overlay.SetFooter(modalFooter)
+	overlay.SetWidth(80) // Wider for full event form
+
+	// Render overlay centered on the COMPLETE view
+	return overlay.RenderCentered(background, width, height)
+}
+
+// buildEditModalFooter builds the edit modal footer.
+func (i *BrowseTimelineIntent) buildEditModalFooter(theme themes.Theme) string {
+	badges := []components.KeyBadge{
+		components.NewKeyBadge("Tab/Shift+Tab", "Navigate"),
+		components.NewKeyBadge("Space", "Toggle"),
+		components.NewKeyBadge("Enter", "Save"),
+		components.CancelBadge(), // Esc: Cancel
+	}
+	return components.RenderHelpFooter(theme, badges...)
+}
+
+// renderDeleteModalOverlay renders the delete confirmation modal overlaid on the background.
+func (i *BrowseTimelineIntent) renderDeleteModalOverlay(background string) string {
+	// Get terminal dimensions
+	info := i.GetTerminalInfo()
+	width := 80
+	height := 24
+	if info != nil {
+		width = info.Width
+		height = info.Height
+	}
+
+	// Create overlay modal with delete confirmation content
+	overlay := components.NewOverlayModal(
+		"", // No title - DeleteConfirmModal has its own
+		i.deleteModal.View(),
+	)
+
+	// No footer needed - DeleteConfirmModal has its own
+	overlay.SetWidth(50) // Narrower for simple confirmation
+
+	// Render overlay centered on the COMPLETE view
+	return overlay.RenderCentered(background, width, height)
 }
 
 // getContextHelp returns themed keyboard shortcuts for the current state.
