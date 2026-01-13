@@ -57,10 +57,20 @@ func (m *SkillSearchModal) rebuildForm() {
 			Value(&m.formData.SearchText),
 	}
 
-	// Create form
-	m.form = huh.NewForm(
-		huh.NewGroup(fields...),
-	).WithWidth(m.width - 4)
+	group := huh.NewGroup(fields...)
+
+	// Calculate modal width (60% of screen, max 60 chars for simple search form)
+	modalWidth := m.width * 60 / 100
+	if modalWidth > 60 {
+		modalWidth = 60
+	}
+	if modalWidth < 40 {
+		modalWidth = 40
+	}
+
+	// Let Huh use natural height - bubbletea-overlay will handle positioning
+	m.form = huh.NewForm(group).
+		WithWidth(modalWidth)
 }
 
 // Init initializes the modal.

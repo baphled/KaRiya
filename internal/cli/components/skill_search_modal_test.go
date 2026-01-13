@@ -1,6 +1,8 @@
 package components_test
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -171,6 +173,73 @@ var _ = Describe("SkillSearchModal", func() {
 			Expect(view).To(ContainSubstring("╭"))
 			// Check for rounded border characters (top-right corner)
 			Expect(view).To(ContainSubstring("╮"))
+		})
+	})
+
+	Describe("Modal Width", func() {
+		It("should calculate width as 60% of terminal width", func() {
+			// 100 chars terminal = 60% = 60 chars modal
+			modal := components.NewSkillSearchModal("test", 100, 24)
+			modal.Show()
+			view := modal.View()
+
+			// Modal should not span full width
+			// With 100 char terminal, modal should be ~60 chars + padding/border
+			lines := strings.Split(view, "\n")
+			Expect(len(lines)).To(BeNumerically(">", 0))
+
+			// Find the widest line (should be border)
+			maxWidth := 0
+			for _, line := range lines {
+				// Use visual width (rune count)
+				width := len([]rune(line))
+				if width > maxWidth {
+					maxWidth = width
+				}
+			}
+
+			// Should be around 60 chars + border (2) + padding (4) = ~66 chars
+			// Allow some flexibility but should definitely be < 80
+			Expect(maxWidth).To(BeNumerically("<", 80))
+			Expect(maxWidth).To(BeNumerically(">", 50))
+		})
+
+		It("should enforce max width of 60 chars", func() {
+			// 200 chars terminal should still result in max 60 char modal
+			modal := components.NewSkillSearchModal("test", 200, 24)
+			modal.Show()
+			view := modal.View()
+
+			lines := strings.Split(view, "\n")
+			maxWidth := 0
+			for _, line := range lines {
+				width := len([]rune(line))
+				if width > maxWidth {
+					maxWidth = width
+				}
+			}
+
+			// Max 60 + border (2) + padding (4) = ~66 chars
+			Expect(maxWidth).To(BeNumerically("<=", 70))
+		})
+
+		It("should enforce min width of 40 chars", func() {
+			// Very small terminal should still have min 40 char modal
+			modal := components.NewSkillSearchModal("test", 50, 24)
+			modal.Show()
+			view := modal.View()
+
+			lines := strings.Split(view, "\n")
+			maxWidth := 0
+			for _, line := range lines {
+				width := len([]rune(line))
+				if width > maxWidth {
+					maxWidth = width
+				}
+			}
+
+			// Min 40 + border (2) + padding (4) = ~46 chars
+			Expect(maxWidth).To(BeNumerically(">=", 46))
 		})
 	})
 })
