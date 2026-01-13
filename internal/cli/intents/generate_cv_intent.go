@@ -220,6 +220,8 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateExtractingTechnologies(msg)
 	case GenerateCVStateSelectTechnologyFocus:
 		return i.updateSelectTechnologyFocus(msg)
+	case GenerateCVStateSelectTechnologies:
+		return i.updateSelectTechnologies(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -631,6 +633,83 @@ func (i *GenerateCVIntent) updateSelectTechnologyFocus(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+// updateSelectTechnologies handles messages while selecting technologies (multi or single select).
+func (i *GenerateCVIntent) updateSelectTechnologies(msg tea.Msg) tea.Cmd {
+	if len(i.state.extractedTechnologies) == 0 {
+		return nil
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.technologyCursor > 0 {
+				i.state.technologyCursor--
+			}
+			return nil
+		case "down", "j":
+			if i.state.technologyCursor < len(i.state.extractedTechnologies)-1 {
+				i.state.technologyCursor++
+			}
+			return nil
+		case " ": // Space to toggle
+			// Determine if multi-select or single-select
+			if i.state.selectedTechnologyFocus == cv.TechnologyFocusSpecialist {
+				// Single-select: clear all others, select current
+				i.state.technologySelected = make(map[int]bool)
+				i.state.technologySelected[i.state.technologyCursor] = true
+			} else {
+				// Multi-select: toggle current
+				i.state.technologySelected[i.state.technologyCursor] = !i.state.technologySelected[i.state.technologyCursor]
+			}
+			return nil
+		case "enter":
+			// Collect selected technology IDs
+			var selectedIDs []string
+			for idx, selected := range i.state.technologySelected {
+				if selected && idx < len(i.state.extractedTechnologies) {
+					selectedIDs = append(selectedIDs, i.state.extractedTechnologies[idx].ID)
+				}
+			}
+
+			// Validate selection count based on focus type
+			var valid bool
+			if i.state.selectedTechnologyFocus == cv.TechnologyFocusSpecialist {
+				valid = len(selectedIDs) == 1
+			} else if i.state.selectedTechnologyFocus == cv.TechnologyFocusGeneralist {
+				valid = len(selectedIDs) >= 2 && len(selectedIDs) <= 5
+			}
+
+			if !valid {
+				// Don't transition - invalid selection
+				return nil
+			}
+
+			// Store selected technologies
+			i.state.selectedTechnologies = selectedIDs
+
+			// Transition to focus area selection
+			i.state.currentState = GenerateCVStateSelectFocusArea
+			i.state.focusAreaCursor = 0
+			return nil
+		}
+
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to technology focus selection
+			i.state.currentState = GenerateCVStateSelectTechnologyFocus
+			return nil
+		}
+	}
+	return nil
+}
+
 // updateGenerating handles messages while CV is being generated.
 func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -770,6 +849,8 @@ func (i *GenerateCVIntent) getStateContent() string {
 		return i.viewSelectAudience()
 	case GenerateCVStateSelectTechnologyFocus:
 		return i.viewSelectTechnologyFocus()
+	case GenerateCVStateSelectTechnologies:
+		return i.viewSelectTechnologies()
 	case GenerateCVStateGenerating:
 		return i.viewGenerating()
 	case GenerateCVStatePreview:
@@ -815,6 +896,15 @@ func (i *GenerateCVIntent) getContextHelp() string {
 		)
 	case GenerateCVStateSelectTechnologyFocus:
 		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectTechnologies:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Space", "Toggle"),
+				components.NewKeyBadge("Enter", "Confirm"),
+			),
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
 		)
@@ -922,6 +1012,8 @@ func (i *GenerateCVIntent) getBreadcrumbs() []string {
 		crumbs = append(crumbs, "Extracting Technologies")
 	case GenerateCVStateSelectTechnologyFocus:
 		crumbs = append(crumbs, "Select Technology Focus")
+	case GenerateCVStateSelectTechnologies:
+		crumbs = append(crumbs, "Select Technologies")
 	case GenerateCVStateGenerating:
 		crumbs = append(crumbs, "Generating")
 	case GenerateCVStatePreview:
@@ -1061,6 +1153,60 @@ func (i *GenerateCVIntent) viewSelectTechnologyFocus() string {
 	if !i.state.technologiesAvailable {
 		content.WriteString("\n⚠️  Only Language Agnostic is available (requires 3+ technologies for other options)\n")
 	}
+
+	return i.getCardStyle().Render(content.String())
+}
+
+// viewSelectTechnologies renders the technology selection view (multi or single select).
+func (i *GenerateCVIntent) viewSelectTechnologies() string {
+	var content strings.Builder
+
+	// Header based on mode
+	if i.state.selectedTechnologyFocus == cv.TechnologyFocusSpecialist {
+		content.WriteString("\n🎯 Select 1 Technology\n\n")
+		content.WriteString("Choose the technology you want to specialize in:\n\n")
+	} else {
+		content.WriteString("\n🎯 Select 2-5 Technologies\n\n")
+		content.WriteString("Choose technologies to highlight (select 2-5):\n\n")
+	}
+
+	// Technology list with checkboxes
+	for idx, tech := range i.state.extractedTechnologies {
+		// Cursor indicator
+		cursor := "  "
+		if idx == i.state.technologyCursor {
+			cursor = "▶ "
+		}
+
+		// Selection checkbox
+		checkbox := "☐"
+		if i.state.technologySelected[idx] {
+			checkbox = "☑"
+		}
+
+		// Event count
+		eventInfo := fmt.Sprintf("(%d events)", tech.EventCount)
+
+		content.WriteString(fmt.Sprintf("%s%s %s %s\n", cursor, checkbox, tech.Name, eventInfo))
+	}
+
+	// Footer with count
+	selectedCount := 0
+	for _, selected := range i.state.technologySelected {
+		if selected {
+			selectedCount++
+		}
+	}
+
+	content.WriteString(fmt.Sprintf("\nSelected: %d", selectedCount))
+
+	if i.state.selectedTechnologyFocus == cv.TechnologyFocusGeneralist {
+		content.WriteString(" (need 2-5)")
+	} else {
+		content.WriteString(" (need 1)")
+	}
+
+	content.WriteString("\n\nSpace to toggle, Enter to confirm\n")
 
 	return i.getCardStyle().Render(content.String())
 }

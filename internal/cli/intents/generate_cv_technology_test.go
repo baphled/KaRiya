@@ -11,6 +11,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerRepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/service/career/technology"
 )
 
@@ -423,6 +424,173 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 
 				// Should go back to previous state
 				Expect(intent.state.currentState).To(Equal(GenerateCVStateExtractingTechnologies))
+			})
+		})
+	})
+
+	Describe("Technology Selection (Multi/Single)", func() {
+		BeforeEach(func() {
+			// Set up state with extracted technologies
+			intent.state.extractedTechnologies = []*ExtractedTechnology{
+				{ID: "skill-ruby", Name: "Ruby", Category: "backend", EventCount: 7},
+				{ID: "skill-postgres", Name: "PostgreSQL", Category: "database", EventCount: 5},
+				{ID: "skill-react", Name: "React", Category: "frontend", EventCount: 4},
+				{ID: "skill-docker", Name: "Docker", Category: "devops", EventCount: 3},
+			}
+			intent.state.technologiesAvailable = true
+			intent.state.currentState = GenerateCVStateSelectTechnologies
+			intent.state.technologyCursor = 0
+			intent.state.technologySelected = make(map[int]bool)
+			intent.state.selectedTechnologies = []string{}
+		})
+
+		Context("Generalist mode - multi-select", func() {
+			BeforeEach(func() {
+				intent.state.selectedTechnologyFocus = cv.TechnologyFocusGeneralist
+			})
+
+			It("should show technology list with event counts", func() {
+				view := intent.View()
+
+				Expect(view).To(ContainSubstring("Ruby"))
+				Expect(view).To(ContainSubstring("PostgreSQL"))
+				Expect(view).To(ContainSubstring("React"))
+				Expect(view).To(ContainSubstring("Docker"))
+				Expect(view).To(MatchRegexp("7.*event")) // Event count for Ruby
+			})
+
+			It("should show instruction to select 2-5 technologies", func() {
+				view := intent.View()
+
+				Expect(view).To(MatchRegexp("(?i)(select|choose).*2.*5"))
+			})
+
+			It("should toggle selection with space", func() {
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeySpace})
+
+				Expect(intent.state.technologySelected[0]).To(BeTrue())
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeySpace})
+
+				Expect(intent.state.technologySelected[0]).To(BeFalse())
+			})
+
+			It("should move cursor with up/down", func() {
+				intent.state.technologyCursor = 0
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+				Expect(intent.state.technologyCursor).To(Equal(1))
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyUp})
+				Expect(intent.state.technologyCursor).To(Equal(0))
+			})
+
+			It("should not allow confirmation with < 2 selections", func() {
+				intent.state.technologySelected[0] = true
+				intent.state.selectedTechnologies = []string{"skill-ruby"}
+
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should not transition (still in select technologies state)
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectTechnologies))
+				Expect(cmd).To(BeNil())
+			})
+
+			It("should not allow confirmation with > 5 selections", func() {
+				// Add more technologies to test > 5 selection
+				intent.state.extractedTechnologies = append(intent.state.extractedTechnologies,
+					&ExtractedTechnology{ID: "skill-5", Name: "Tech5", Category: "test", EventCount: 3},
+					&ExtractedTechnology{ID: "skill-6", Name: "Tech6", Category: "test", EventCount: 3},
+				)
+
+				// Select 6 technologies
+				for i := 0; i < 6; i++ {
+					intent.state.technologySelected[i] = true
+				}
+
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should not transition (too many selected)
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectTechnologies))
+				Expect(cmd).To(BeNil())
+			})
+
+			It("should transition to focus area with valid selection (2-5)", func() {
+				intent.state.technologySelected[0] = true
+				intent.state.technologySelected[1] = true
+				intent.state.selectedTechnologies = []string{"skill-ruby", "skill-postgres"}
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectFocusArea))
+				Expect(intent.state.selectedTechnologies).To(HaveLen(2))
+			})
+
+			It("should store selected technology IDs", func() {
+				// Select Ruby and React
+				intent.state.technologyCursor = 0
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeySpace}) // Select Ruby
+				intent.state.technologyCursor = 2
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeySpace}) // Select React
+
+				intent.state.selectedTechnologies = []string{"skill-ruby", "skill-react"}
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(intent.state.selectedTechnologies).To(ContainElement("skill-ruby"))
+				Expect(intent.state.selectedTechnologies).To(ContainElement("skill-react"))
+			})
+		})
+
+		Context("Specialist mode - single-select", func() {
+			BeforeEach(func() {
+				intent.state.selectedTechnologyFocus = cv.TechnologyFocusSpecialist
+			})
+
+			It("should show instruction to select 1 technology", func() {
+				view := intent.View()
+
+				Expect(view).To(MatchRegexp("(?i)(select|choose).*1.*technology"))
+			})
+
+			It("should select technology on space (replacing previous)", func() {
+				intent.state.technologyCursor = 0
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeySpace})
+
+				Expect(intent.state.technologySelected[0]).To(BeTrue())
+
+				// Select different one
+				intent.state.technologyCursor = 1
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeySpace})
+
+				// Old selection should be cleared
+				Expect(intent.state.technologySelected[0]).To(BeFalse())
+				Expect(intent.state.technologySelected[1]).To(BeTrue())
+			})
+
+			It("should not allow confirmation without selection", func() {
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectTechnologies))
+				Expect(cmd).To(BeNil())
+			})
+
+			It("should transition to focus area with exactly 1 selection", func() {
+				intent.state.technologySelected[0] = true
+				intent.state.selectedTechnologies = []string{"skill-ruby"}
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectFocusArea))
+				Expect(intent.state.selectedTechnologies).To(HaveLen(1))
+				Expect(intent.state.selectedTechnologies[0]).To(Equal("skill-ruby"))
+			})
+		})
+
+		Context("escape behavior", func() {
+			It("should go back to technology focus selection", func() {
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectTechnologyFocus))
 			})
 		})
 	})
