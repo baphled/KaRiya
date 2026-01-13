@@ -565,8 +565,7 @@ func (i *ManageSkillsIntent) handleFilterModalUpdate(msg tea.KeyMsg) tea.Cmd {
 			i.filters.Level = ""
 		}
 		i.filters.MinEvents = newFilters.MinYears // Map years to events for now
-		i.filters.SortBy = newFilters.SortBy
-		i.filters.SortOrder = newFilters.SortOrder
+		// NOTE: Sort is handled by SkillSortModal separately
 
 		// Reload skills with new filters
 		return i.reloadSkills()
@@ -619,8 +618,6 @@ func (i *ManageSkillsIntent) openFilterModal() tea.Cmd {
 			Levels:     []string{},
 			MinYears:   i.filters.MinEvents, // Map events to years for now
 			MaxYears:   0,
-			SortBy:     i.filters.SortBy,
-			SortOrder:  i.filters.SortOrder,
 		}
 		if i.filters.Category != "" {
 			currentFilters.Categories = []string{i.filters.Category}

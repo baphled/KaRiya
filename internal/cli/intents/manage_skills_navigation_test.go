@@ -95,7 +95,8 @@ var _ = Describe("ManageSkills Navigation", func() {
 		It("should show filter options", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			env.AssertViewContainsAny("Category", "Level", "All")
+			// Filter modal shows categories, levels, and years (no sort - that's in SkillSortModal)
+			env.AssertViewContainsAny("Category", "Level", "Years")
 		})
 
 		It("should navigate through filter options", func() {

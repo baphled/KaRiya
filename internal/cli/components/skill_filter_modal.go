@@ -12,25 +12,22 @@ import (
 )
 
 // SkillFilters represents the current filter state for skills.
-// NOTE: Search is handled by separate SkillSearchModal (accessed via `/` key)
+// NOTE: Search is handled by SkillSearchModal (`/` key)
+// NOTE: Sort is handled by SkillSortModal (`s` key)
 type SkillFilters struct {
 	Categories []string
 	Levels     []string
 	MinYears   int
 	MaxYears   int
-	SortBy     string
-	SortOrder  string
 }
 
 // SkillFilterFormData holds the form field values for skill filtering.
-// NOTE: Search is handled by separate SkillSearchModal
+// NOTE: Search and Sort are handled by separate modals
 type SkillFilterFormData struct {
 	Categories  []string
 	Levels      []string
 	MinYearsStr string
 	MaxYearsStr string
-	SortBy      string
-	SortOrder   string
 }
 
 // SkillFilterModal manages the filter modal form for skill filtering.
@@ -43,12 +40,9 @@ type SkillFilterModal struct {
 }
 
 // NewSkillFilterModal creates a new skill filter modal.
-// NOTE: Search is handled by separate SkillSearchModal
+// NOTE: Search and Sort are handled by separate modals
 func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, width, height int) *SkillFilterModal {
-	formData := &SkillFilterFormData{
-		SortBy:    "name",
-		SortOrder: "asc",
-	}
+	formData := &SkillFilterFormData{}
 
 	// Pre-populate from current filters
 	if currentFilter != nil {
@@ -59,12 +53,6 @@ func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, wi
 		}
 		if currentFilter.MaxYears > 0 {
 			formData.MaxYearsStr = strconv.Itoa(currentFilter.MaxYears)
-		}
-		if currentFilter.SortBy != "" {
-			formData.SortBy = currentFilter.SortBy
-		}
-		if currentFilter.SortOrder != "" {
-			formData.SortOrder = currentFilter.SortOrder
 		}
 	}
 
@@ -164,27 +152,7 @@ func (m *SkillFilterModal) buildForm(skills []*career.Skill) {
 			}),
 	)
 
-	// Add sort options
-	fields = append(fields,
-		huh.NewSelect[string]().
-			Title("Sort By").
-			Options(
-				huh.NewOption("Name", "name"),
-				huh.NewOption("Category", "category"),
-				huh.NewOption("Level", "level"),
-				huh.NewOption("Years of Experience", "years"),
-				huh.NewOption("Events Count", "events"),
-			).
-			Value(&m.formData.SortBy),
-
-		huh.NewSelect[string]().
-			Title("Sort Order").
-			Options(
-				huh.NewOption("Ascending", "asc"),
-				huh.NewOption("Descending", "desc"),
-			).
-			Value(&m.formData.SortOrder),
-	)
+	// NOTE: Sort options removed - use SkillSortModal (accessed via `s` key)
 
 	group := huh.NewGroup(fields...)
 
@@ -275,13 +243,11 @@ func (m *SkillFilterModal) Hide() {
 }
 
 // ToSkillFilters converts form data to SkillFilters
-// NOTE: Search is handled separately by SkillSearchModal
+// NOTE: Search and Sort are handled separately by other modals
 func (m *SkillFilterModal) ToSkillFilters() *SkillFilters {
 	filters := &SkillFilters{
 		Categories: m.formData.Categories,
 		Levels:     m.formData.Levels,
-		SortBy:     m.formData.SortBy,
-		SortOrder:  m.formData.SortOrder,
 	}
 
 	// Parse years (ignore errors, default to 0)

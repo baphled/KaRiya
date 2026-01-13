@@ -49,8 +49,6 @@ var _ = Describe("SkillFilterModal", func() {
 			Levels:     []string{},
 			MinYears:   0,
 			MaxYears:   0,
-			SortBy:     "name",
-			SortOrder:  "asc",
 		}
 	})
 
@@ -74,8 +72,6 @@ var _ = Describe("SkillFilterModal", func() {
 			currentFilter.Levels = []string{"Expert"}
 			currentFilter.MinYears = 2
 			currentFilter.MaxYears = 10
-			currentFilter.SortBy = "years"
-			currentFilter.SortOrder = "desc"
 
 			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
 
