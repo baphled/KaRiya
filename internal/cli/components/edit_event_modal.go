@@ -69,12 +69,23 @@ func (m *EditEventModal) buildForm() {
 		modalWidth = 50
 	}
 
-	formHeight := 24
-	if m.height < 30 {
-		formHeight = m.height - 6
+	// Calculate maximum modal height to fit within terminal
+	// Account for: logo (6 lines) + logo spacing (2) + footer (4) + modal borders (4) + margins (4)
+	const modalOverhead = 20
+	maxModalHeight := m.height - modalOverhead
+	if maxModalHeight < 15 {
+		maxModalHeight = 15 // Minimum usable height
+	}
+
+	// Edit form has more fields (text, date, company, project, tags, categories)
+	// Ideally needs ~30-35 lines, but must fit within terminal constraints
+	formHeight := 30
+	if formHeight > maxModalHeight {
+		formHeight = maxModalHeight
 	}
 
 	// Use standard form with confirm button (Submit/Cancel)
+	// The form will be scrollable if content exceeds formHeight
 	m.form = forms.NewCaptureEventForm(m.formData, "manual", modalWidth, formHeight)
 }
 

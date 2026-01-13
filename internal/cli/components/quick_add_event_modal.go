@@ -61,18 +61,23 @@ func (m *QuickAddEventModal) buildForm() {
 		modalWidth = 40
 	}
 
-	// Quick form needs more height to show all 3 fields (text, date, company) + confirm
-	// Text field: 5 lines + description
-	// Date field: 1 line + description
-	// Company field: 1 line + description
-	// Confirm button: 5 lines
-	// Total needed: ~20+ lines
+	// Calculate maximum modal height to fit within terminal
+	// Account for: logo (6 lines) + logo spacing (2) + footer (4) + modal borders (4) + margins (4)
+	const modalOverhead = 20
+	maxModalHeight := m.height - modalOverhead
+	if maxModalHeight < 15 {
+		maxModalHeight = 15 // Minimum usable height
+	}
+
+	// Quick form ideally needs ~24 lines to show all fields without scrolling
+	// But must fit within terminal constraints
 	formHeight := 24
-	if m.height < 30 {
-		formHeight = m.height - 6
+	if formHeight > maxModalHeight {
+		formHeight = maxModalHeight
 	}
 
 	// Use standard form with confirm button (Submit/Cancel)
+	// The form will be scrollable if content exceeds formHeight
 	m.form = forms.NewCaptureEventForm(m.formData, "quick", modalWidth, formHeight)
 }
 
