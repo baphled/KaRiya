@@ -2,13 +2,14 @@ package timeline
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // State constant for state matrix tracking (REQUIRED)
@@ -45,6 +46,8 @@ type TimelineEventListScreen struct {
 	*base.BaseScreen
 	events        []*career.CareerEvent
 	selectedIndex int
+	table         table.Model
+	listContainer *components.TableListContainer
 }
 
 // NewTimelineEventListScreen creates a new timeline event list screen.
@@ -58,11 +61,36 @@ type TimelineEventListScreen struct {
 // Parameters:
 //   - events: List of career events to display (can be empty)
 func NewTimelineEventListScreen(events []*career.CareerEvent) *TimelineEventListScreen {
-	return &TimelineEventListScreen{
+	// Create table columns matching legacy format
+	columns := []table.Column{
+		{Title: "Date", Width: 12},
+		{Title: "Event", Width: 50},
+		{Title: "Company", Width: 20},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithRows([]table.Row{}),
+		table.WithFocused(true),
+		table.WithHeight(15),
+		table.WithWidth(100),
+	)
+
+	// Apply default styles - theme will be applied via SetTheme
+	t.SetStyles(table.DefaultStyles())
+
+	screen := &TimelineEventListScreen{
 		BaseScreen:    base.NewBaseScreen(),
 		events:        events,
 		selectedIndex: 0,
+		table:         t,
+		listContainer: components.NewTableListContainer(t, "Career Timeline", 100),
 	}
+
+	// Update table rows with events
+	screen.updateTableRows()
+
+	return screen
 }
 
 // Update handles messages and navigation.
@@ -138,30 +166,94 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 	return nil, nil
 }
 
-// View renders the event list screen using StandardView.
-func (s *TimelineEventListScreen) View() string {
-	var b strings.Builder
+// updateTableRows updates the table rows based on events (with pagination).
+func (s *TimelineEventListScreen) updateTableRows() {
+	pageSize := 15
+	total := len(s.events)
 
-	// Header with event count
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
-	if len(s.events) == 0 {
-		b.WriteString(headerStyle.Render("Career Timeline"))
-		b.WriteString("\n\n")
-		b.WriteString("No events found. Press 'a' to add your first event.")
-	} else {
-		countText := fmt.Sprintf("Career Timeline (%d events)", len(s.events))
-		b.WriteString(headerStyle.Render(countText))
-		b.WriteString("\n\n")
-
-		// Render event list
-		for i, event := range s.events {
-			s.renderEventItem(&b, i, event)
-		}
+	// Determine which page current selection is on
+	page := 0
+	if pageSize > 0 && s.selectedIndex >= 0 {
+		page = s.selectedIndex / pageSize
 	}
 
-	content := b.String()
+	start := page * pageSize
+	end := start + pageSize
+	if end > total {
+		end = total
+	}
 
-	// Footer with actions
+	pageEvents := s.events[start:end]
+
+	rows := make([]table.Row, 0, len(pageEvents))
+	for idx, event := range pageEvents {
+		realIdx := start + idx
+
+		// Date formatting
+		dateStr := event.Date.Format("2006-01-02")
+
+		// Add selection indicator for selected row
+		if realIdx == s.selectedIndex {
+			dateStr = "▶ " + dateStr
+		} else {
+			dateStr = "  " + dateStr
+		}
+
+		// Truncate text to 50 chars (matching legacy)
+		text := event.Text
+		if len(text) > 50 {
+			text = text[:50] + "..."
+		}
+
+		// Company (or dash if empty)
+		company := event.Company
+		if company == "" {
+			company = "-"
+		}
+
+		rows = append(rows, table.Row{dateStr, text, company})
+	}
+
+	s.table.SetRows(rows)
+
+	// Calculate relative cursor position for this page
+	relativeCursor := 0
+	if s.selectedIndex >= start && s.selectedIndex < end {
+		relativeCursor = s.selectedIndex - start
+	}
+
+	// Set table cursor to relative position
+	s.table.SetCursor(relativeCursor)
+
+	// Sync container's selected index
+	s.listContainer.SetSelectedIdx(relativeCursor)
+}
+
+// View renders the event list screen using StandardView with table.
+func (s *TimelineEventListScreen) View() string {
+	// Handle empty state
+	if len(s.events) == 0 {
+		s.listContainer.SetEmptyStateMessage("No events found.")
+		content := s.listContainer.Render()
+		footer := "a: Add event  Esc/q: Back"
+		return s.CreateView([]string{"Main Menu", "Timeline"}, content, footer)
+	}
+
+	// Ensure table rows are synchronized
+	s.updateTableRows()
+
+	// Build pagination info matching legacy format
+	pageSize := 15
+	totalItems := len(s.events)
+	currentPage := (s.selectedIndex / pageSize) + 1
+	totalPages := (totalItems + pageSize - 1) / pageSize
+	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
+	s.listContainer.SetPaginationInfo(paginationInfo)
+
+	// Render table via container
+	content := s.listContainer.Render()
+
+	// Footer with actions (matching legacy)
 	footer := "↑/↓ or j/k: Navigate  Enter: View details  a: Add  e: Edit  d: Delete  Esc/q: Back"
 
 	// Use BaseScreen's CreateView helper for StandardView integration
@@ -169,43 +261,13 @@ func (s *TimelineEventListScreen) View() string {
 	return s.CreateView(breadcrumbs, content, footer)
 }
 
-// renderEventItem renders a single event in the list.
-func (s *TimelineEventListScreen) renderEventItem(b *strings.Builder, index int, event *career.CareerEvent) {
-	// Date formatting
-	dateStr := event.Date.Format("2006-01-02")
-
-	// Selected indicator
-	indicator := "  "
-	if index == s.selectedIndex {
-		indicator = "▶ "
+// SetTheme applies theme to the table (override BaseScreen).
+func (s *TimelineEventListScreen) SetTheme(theme interface{}) {
+	s.BaseScreen.SetTheme(theme)
+	// Apply themed table styles if theme is available
+	if t, ok := theme.(themes.Theme); ok && t != nil {
+		s.table.SetStyles(themes.NewThemedTableStyles(t))
 	}
-
-	// Style for selected item
-	itemStyle := lipgloss.NewStyle()
-	if index == s.selectedIndex {
-		itemStyle = itemStyle.Bold(true).Foreground(lipgloss.Color("12"))
-	}
-
-	// Company tag if present
-	companyTag := ""
-	if event.Company != "" {
-		companyTag = fmt.Sprintf(" [%s]", event.Company)
-	}
-
-	// Truncate text if too long
-	text := event.Text
-	maxTextLength := s.Width() - 20 - len(dateStr) - len(companyTag)
-	if maxTextLength < 20 {
-		maxTextLength = 20
-	}
-	if len(text) > maxTextLength {
-		text = text[:maxTextLength-3] + "..."
-	}
-
-	// Format: "▶ 2024-01-01  Event text [Company]"
-	line := fmt.Sprintf("%s%s  %s%s", indicator, dateStr, text, companyTag)
-	b.WriteString(itemStyle.Render(line))
-	b.WriteString("\n")
 }
 
 // GetEvents returns the list of events.
