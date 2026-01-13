@@ -106,17 +106,18 @@ var _ = Describe("ManageSkills Navigation", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should apply filter on Enter", func() {
+		It("should open filter modal on 'f' key", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			env.Confirm()
-			env.AssertViewContains("Skills")
+			// Modal should be visible - check for any filter-related content
+			env.AssertViewContainsAny("Category", "Level", "Sort", "Filter")
 		})
 
-		It("should show all categories option", func() {
+		It("should show filter modal with form fields", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			env.AssertViewContains("All")
+			// Modal should show filter options (huh forms show fields progressively)
+			env.AssertViewContainsAny("Category", "Level", "Sort")
 		})
 	})
 
@@ -156,11 +157,11 @@ var _ = Describe("ManageSkills Navigation", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should apply sort on Enter", func() {
+		It("should open sort modal on 's' key", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('s')
-			env.Confirm()
-			env.AssertViewContains("Skills")
+			// Modal should be visible with sort options
+			env.AssertViewContainsAny("Sort", "Name", "Category", "Level")
 		})
 
 		It("should show sort menu title", func() {
@@ -323,17 +324,23 @@ var _ = Describe("ManageSkills Navigation", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should support 'h' for back navigation from filter", func() {
+		It("should close filter modal with Esc key", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			env.PressKeyRune('h')
+			// Modal should be visible
+			env.AssertViewContainsAny("Category", "Level", "Sort")
+			env.Cancel() // Esc key
+			// Should return to skills list
 			env.AssertViewContains("Skills")
 		})
 
-		It("should support 'h' for back navigation from sort", func() {
+		It("should close sort modal with Esc key", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('s')
-			env.PressKeyRune('h')
+			// Modal should be visible
+			env.AssertViewContainsAny("Sort", "Name", "Category")
+			env.Cancel() // Esc key
+			// Should return to skills list
 			env.AssertViewContains("Skills")
 		})
 	})

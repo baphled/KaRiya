@@ -362,8 +362,17 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	// PATTERN 4: Global Key Interception - 3-tier priority
-	// 1. HIGHEST PRIORITY: Modal updates (if visible)
+	// 1. Check global keys FIRST (work everywhere, even in modals)
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch HandleGlobalKeys(keyMsg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.helpModal.Toggle()
+			return nil
+		}
+
+		// 2. SECOND PRIORITY: Modal updates (if visible)
 		if i.filterModal != nil && i.filterModal.IsVisible() {
 			return i.handleFilterModalUpdate(keyMsg)
 		}
@@ -421,16 +430,7 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSkillEventsLoaded(msg)
 
 	case tea.KeyMsg:
-		// Handle global keys FIRST (q, ?, Ctrl+C) - these work everywhere
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			// 'q' or Ctrl+C pressed - quit the application
-			return tea.Quit
-		case KeyHelp:
-			// '?' pressed - toggle help
-			i.helpModal.Toggle()
-			return nil
-		}
+		// Global keys already handled above at top of function
 
 		// If we have a form active, forward key messages to it
 		if i.skillForm != nil {
@@ -598,6 +598,83 @@ func (i *ManageSkillsIntent) handleSortModalUpdate(msg tea.KeyMsg) tea.Cmd {
 
 	// Modal was closed without completion (Esc) or still being edited
 	return cmd
+}
+
+// openFilterModal opens the filter modal with current filters pre-populated
+// PATTERN 12: Form Modal with Immediate Init
+func (i *ManageSkillsIntent) openFilterModal() tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width := 120
+	height := 40
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Build current filters for pre-population
+	var currentFilters *components.SkillFilters
+	if i.filters != nil {
+		currentFilters = &components.SkillFilters{
+			Categories: []string{},
+			Levels:     []string{},
+			MinYears:   i.filters.MinEvents, // Map events to years for now
+			MaxYears:   0,
+			SearchText: "",
+			SortBy:     i.filters.SortBy,
+			SortOrder:  i.filters.SortOrder,
+		}
+		if i.filters.Category != "" {
+			currentFilters.Categories = []string{i.filters.Category}
+		}
+		if i.filters.Level != "" {
+			currentFilters.Levels = []string{i.filters.Level}
+		}
+	}
+
+	// Create filter modal
+	i.filterModal = components.NewSkillFilterModal(
+		i.skills,
+		currentFilters,
+		width,
+		height,
+	)
+
+	// CRITICAL: Call Init() for immediate rendering
+	return i.filterModal.Init()
+}
+
+// openSortModal opens the sort modal with current sort config pre-populated
+// PATTERN 12: Form Modal with Immediate Init
+func (i *ManageSkillsIntent) openSortModal() tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width := 120
+	height := 40
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Build current sort config for pre-population
+	var currentSort *components.SkillSortConfig
+	if i.filters != nil {
+		currentSort = &components.SkillSortConfig{
+			SortBy:    i.filters.SortBy,
+			SortOrder: i.filters.SortOrder,
+		}
+	}
+
+	// Create sort modal
+	i.sortModal = components.NewSkillSortModal(
+		i.skills,
+		currentSort,
+		width,
+		height,
+	)
+
+	// CRITICAL: Call Init() for immediate rendering
+	return i.sortModal.Init()
 }
 
 // getStateContent returns the content for the current state
@@ -983,17 +1060,14 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 				return nil
 
 			case "f":
-				// Open filter menu
-				i.currentState = SkillsStateFilter
-				i.filterMenuIndex = 0
-				i.extractAvailableCategories()
-				return nil
+				// PATTERN 12: Form Modal with Immediate Init
+				// Open filter modal instead of menu state
+				return i.openFilterModal()
 
 			case "s":
-				// Open sort menu
-				i.currentState = SkillsStateSort
-				i.sortMenuIndex = 0
-				return nil
+				// PATTERN 12: Form Modal with Immediate Init
+				// Open sort modal instead of menu state
+				return i.openSortModal()
 
 			case "x":
 				// Clear all filters
