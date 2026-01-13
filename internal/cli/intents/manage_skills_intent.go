@@ -361,6 +361,17 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// PATTERN 4: Global Key Interception - 3-tier priority
+	// 1. HIGHEST PRIORITY: Modal updates (if visible)
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if i.filterModal != nil && i.filterModal.IsVisible() {
+			return i.handleFilterModalUpdate(keyMsg)
+		}
+		if i.sortModal != nil && i.sortModal.IsVisible() {
+			return i.handleSortModalUpdate(keyMsg)
+		}
+	}
+
 	// Screen orchestration: delegate to active screen if present
 	if i.useScreens && i.activeScreen != nil {
 		// Handle global keys FIRST, even in screen mode
@@ -529,6 +540,64 @@ func (i *ManageSkillsIntent) renderSortModalOverlay(baseView string) string {
 		-2,             // Y offset (move up 2 lines to avoid footer)
 	)
 	return overlayModel.View()
+}
+
+// handleFilterModalUpdate handles updates when filter modal is visible
+func (i *ManageSkillsIntent) handleFilterModalUpdate(msg tea.KeyMsg) tea.Cmd {
+	cmd, applied, filterData := i.filterModal.Update(msg)
+
+	if applied && filterData != nil {
+		// User confirmed filters - convert to SkillFilters and apply
+		newFilters := i.filterModal.ToSkillFilters()
+
+		// Update internal filter state
+		if i.filters == nil {
+			i.filters = &SkillsFilters{}
+		}
+		// Map SkillFilters to internal SkillsFilters format
+		if len(newFilters.Categories) > 0 {
+			i.filters.Category = newFilters.Categories[0] // Use first category for now
+		} else {
+			i.filters.Category = ""
+		}
+		if len(newFilters.Levels) > 0 {
+			i.filters.Level = newFilters.Levels[0] // Use first level for now
+		} else {
+			i.filters.Level = ""
+		}
+		i.filters.MinEvents = newFilters.MinYears // Map years to events for now
+		i.filters.SortBy = newFilters.SortBy
+		i.filters.SortOrder = newFilters.SortOrder
+
+		// Reload skills with new filters
+		return i.reloadSkills()
+	}
+
+	// Modal was closed without completion (Esc) or still being edited
+	return cmd
+}
+
+// handleSortModalUpdate handles updates when sort modal is visible
+func (i *ManageSkillsIntent) handleSortModalUpdate(msg tea.KeyMsg) tea.Cmd {
+	cmd, applied, sortData := i.sortModal.Update(msg)
+
+	if applied && sortData != nil {
+		// User confirmed sort - apply it
+		sortConfig := i.sortModal.ToSkillSortConfig()
+
+		// Update internal filter state
+		if i.filters == nil {
+			i.filters = &SkillsFilters{}
+		}
+		i.filters.SortBy = sortConfig.SortBy
+		i.filters.SortOrder = sortConfig.SortOrder
+
+		// Reload skills with new sort
+		return i.reloadSkills()
+	}
+
+	// Modal was closed without completion (Esc) or still being edited
+	return cmd
 }
 
 // getStateContent returns the content for the current state
