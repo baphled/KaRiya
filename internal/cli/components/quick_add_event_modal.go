@@ -67,17 +67,18 @@ func (m *QuickAddEventModal) buildForm() {
 	// - Logo spacing: 2 lines
 	// - Footer: 4 lines
 	// - Modal chrome (borders, padding, title, footer): 8 lines
-	// - Safety margins: 4 lines
-	// Total: 24 lines overhead
-	const overhead = 24
+	// - Form internal padding/margins: 4 lines
+	// - Safety margins: 6 lines
+	// Total: 30 lines overhead
+	const overhead = 30
 	maxFormHeight := m.height - overhead
-	if maxFormHeight < 12 {
-		maxFormHeight = 12 // Minimum usable height
+	if maxFormHeight < 10 {
+		maxFormHeight = 10 // Minimum usable height
 	}
 
-	// Quick form ideally needs ~20 lines to show all fields without scrolling
-	// But must fit within terminal constraints and will scroll if needed
-	formHeight := 20
+	// Quick form now has just 2 fields (text + date) + confirm button
+	// Ideally needs ~15 lines, but must fit within terminal constraints
+	formHeight := 15
 	if formHeight > maxFormHeight {
 		formHeight = maxFormHeight
 	}
@@ -133,9 +134,9 @@ func (m *QuickAddEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddEventD
 		// Only return data if user confirmed (pressed Submit, not Cancel)
 		if m.formData.SubmitConfirmed {
 			eventData := &QuickAddEventData{
-				Text:    m.formData.Text,
-				Date:    m.formData.Date,
-				Company: m.formData.Company,
+				Text: m.formData.Text,
+				Date: m.formData.Date,
+				// Quick form doesn't capture Company - user can edit later
 			}
 			return cmd, true, eventData
 		}
@@ -170,10 +171,10 @@ func (m *QuickAddEventModal) Hide() {
 }
 
 // QuickAddEventData holds the minimal data needed to create a new event.
+// Quick events only capture text and date - other metadata can be added via Edit.
 type QuickAddEventData struct {
-	Text    string
-	Date    string
-	Company string
+	Text string
+	Date string
 }
 
 // ToCareerEvent converts the form data to a CareerEvent domain object.
@@ -188,7 +189,7 @@ func (d *QuickAddEventData) ToCareerEvent() *career.CareerEvent {
 	return &career.CareerEvent{
 		Text:       d.Text,
 		Date:       eventDate,
-		Company:    d.Company,
+		Company:    "", // Quick form doesn't capture Company
 		Project:    "",
 		Tags:       []string{},
 		Categories: []string{},

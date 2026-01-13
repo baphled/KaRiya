@@ -149,16 +149,17 @@ func (m *FilterModalModel) buildForm(events []*career.CareerEvent) {
 	// - Logo spacing: 2 lines
 	// - Footer: 4 lines
 	// - Modal chrome (borders, padding, title, footer): 8 lines
-	// - Safety margins: 4 lines
-	// Total: 24 lines overhead
-	const overhead = 24
+	// - Form internal padding/margins: 4 lines
+	// - Safety margins: 6 lines
+	// Total: 30 lines overhead
+	const overhead = 30
 	maxFormHeight := m.height - overhead
-	if maxFormHeight < 8 {
-		maxFormHeight = 8 // Minimum usable height for filter form
+	if maxFormHeight < 6 {
+		maxFormHeight = 6 // Minimum usable height for filter form
 	}
 
 	// Filter form is relatively small, but should still respect terminal constraints
-	formHeight := 12
+	formHeight := 10
 	if formHeight > maxFormHeight {
 		formHeight = maxFormHeight
 	}

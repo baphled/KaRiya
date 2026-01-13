@@ -38,7 +38,8 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 	var fieldsGroup *huh.Group
 
 	if strategy == "quick" {
-		// Quick capture: essential fields (text, date, company)
+		// Quick capture: essential fields (text, date only)
+		// Company and other metadata can be added later via Edit
 		fieldsGroup = huh.NewGroup(
 			NewText(FieldConfig{
 				Key:         "text",
@@ -56,15 +57,6 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 				Placeholder: "Defaults to today",
 				Validate:    DateFormat,
 			}).Value(&data.Date),
-
-			NewInput(FieldConfig{
-				Key:         "company",
-				Title:       "Company",
-				Description: "Company name (optional)",
-				Placeholder: "Enter company name...",
-				CharLimit:   200,
-				Validate:    MaxLength(200),
-			}).Value(&data.Company),
 		)
 	} else {
 		// Manual capture: all fields
