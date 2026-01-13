@@ -18,6 +18,7 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
 // ManageSkillsIntent implements the Intent interface for managing user-defined skills.
@@ -61,6 +62,10 @@ type ManageSkillsIntent struct {
 	filterMenuIndex     int            // Selected option in filter menu
 	sortMenuIndex       int            // Selected option in sort menu
 	availableCategories []string       // Categories extracted from skills for filter menu
+
+	// modals (new architecture with bubbletea-overlay)
+	filterModal *components.SkillFilterModal
+	sortModal   *components.SkillSortModal
 
 	// screen orchestration (new architecture)
 	activeScreen screens.Screen // Currently active screen (when using screen architecture)
@@ -483,7 +488,47 @@ func (i *ManageSkillsIntent) View() string {
 	help := i.getContextHelp()
 	view.WithHelp(help).WithFooterSeparator(true)
 
-	return view.Render()
+	// PATTERN 1: Modal Overlay Rendering
+	// StandardView FIRST, modal overlay LAST (prevents misalignment)
+	baseView := view.Render()
+
+	// Overlay modals as final step
+	if i.filterModal != nil && i.filterModal.IsVisible() {
+		return i.renderFilterModalOverlay(baseView)
+	}
+	if i.sortModal != nil && i.sortModal.IsVisible() {
+		return i.renderSortModalOverlay(baseView)
+	}
+
+	return baseView
+}
+
+// renderFilterModalOverlay renders the filter modal over the base view
+func (i *ManageSkillsIntent) renderFilterModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.filterModal,  // Foreground: the filter modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderSortModalOverlay renders the sort modal over the base view
+func (i *ManageSkillsIntent) renderSortModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.sortModal,    // Foreground: the sort modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
 }
 
 // getStateContent returns the content for the current state

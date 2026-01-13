@@ -617,23 +617,23 @@ These discoveries led to creation of comprehensive pattern documentation:
 - ✅ SkillsStateAdd/Edit → SkillFormScreen (93 lines, 20 tests)
 - ✅ SkillsStateDelete → SkillDeleteConfirmScreen (70 lines, 18 tests)
 
-**Missing Components** (CRITICAL - NEW DISCOVERY):
+**Missing Components** (✅ COMPLETE):
 
-The following components are REQUIRED but don't exist yet:
-
-- [ ] **SkillFilterModal** (~200 lines) - Filter by category/level/years/search
+- [x] **SkillFilterModal** (260 lines) - Filter by category/level/years/search
   - **Fields**: Categories (MultiSelect), Level (Select), Years Range (Inputs), Search Text
   - **Template**: Use FilterModalModel from BrowseTimeline as pattern
   - **File**: `internal/cli/components/skill_filter_modal.go`
-  - **Estimated**: 1 hour to create + 30 min tests
+  - **Tests**: 11 specs, 100% passing
+  - **Commit**: `62f26d0`
   
-- [ ] **SkillSortModal** (~150 lines) - Sort by name/category/level/years/events
-  - **Fields**: SortBy (Select with radio buttons)
-  - **Options**: Name (A→Z, Z→A), Category, Level (Beginner→Expert, Expert→Beginner), Years (Most→Least, Least→Most), Events (Most→Least)
+- [x] **SkillSortModal** (180 lines) - Sort by name/category/level/years/events
+  - **Fields**: SortBy (Select), SortOrder (Select)
+  - **Options**: Name, Category, Level, Years, Events; Asc/Desc
   - **File**: `internal/cli/components/skill_sort_modal.go`
-  - **Estimated**: 1 hour to create + 30 min tests
+  - **Tests**: 17 specs, 100% passing
+  - **Commit**: `cbb1315`
 
-**Total New Components Needed**: 2 modals (~350 lines, 3 hours total with tests)
+**Total New Components**: 2 modals (440 lines production + 327 lines tests = 767 lines total)
 
 **Pattern Implementation** (0/12 COMPLETE - CRITICAL):
 
