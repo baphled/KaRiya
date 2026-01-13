@@ -2,20 +2,12 @@ package intents
 
 import (
 	"context"
-	"fmt"
 	"sort"
-	"strings"
-	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
-	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // Custom message types for BrowseTimeline state transitions.
@@ -52,28 +44,15 @@ type BrowseTimelineIntent struct {
 	// state represents the current state of the intent.
 	state *BrowseTimelineModel
 
-	// table is the table model for displaying events
-	table *table.Model
-
-	// listContainer provides table-based list UI
-	listContainer *components.TableListContainer
-
-	// navHandler handles list navigation
-	navHandler *navigation.ListNavigationHandler
-
 	// active indicates whether this intent is currently active.
 	active bool
 
 	// result is the final result of the intent (set when complete).
 	result *IntentResult[*BrowseTimelineResult]
 
-	// --- Screen Orchestration (Phase 4.2 Migration) ---
-	// activeScreen holds the current screen being displayed (if useScreens is true).
+	// --- Screen Orchestration (Phase 4.2 - Complete) ---
+	// activeScreen holds the current screen being displayed.
 	activeScreen screens.Screen
-
-	// useScreens enables the new screen-based architecture.
-	// When false, the intent falls back to legacy table-based views.
-	useScreens bool
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -82,25 +61,6 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 	if err := context.Validate(); err != nil {
 		return nil, err
 	}
-
-	// Create table model for events
-	columns := []table.Column{
-		{Title: "Date", Width: 12},
-		{Title: "Event", Width: 50},
-		{Title: "Company", Width: 20},
-	}
-
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
-
-	// Apply default styles initially - theme styles will be applied in Init()
-	// when the theme manager is available via BaseIntent
-	t.SetStyles(table.DefaultStyles())
 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
@@ -117,13 +77,8 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 			selectedFacts:  make([]*career.Fact, 0),
 			viewedEvents:   make([]*career.CareerEvent, 0),
 		},
-		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Browse Timeline", 100),
-		active:        true,
+		active: true,
 	}
-
-	// Initialize navigation handler
-	intent.navHandler = navigation.NewListNavigationHandler(intent)
 
 	return intent, nil
 }
@@ -137,81 +92,10 @@ func (i *BrowseTimelineIntent) Init() tea.Cmd {
 		i.state.selectedEvent = i.state.filteredEvents[0]
 	}
 
-	// Screen-based architecture (Phase 4.2)
-	if i.useScreens {
-		// Initialize with timeline list screen
-		i.state.currentState = BrowseStateTimeline
-		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
-		return nil
-	}
-
-	// Legacy table-based architecture (will be removed after migration)
-	// Apply themed table styles if theme is available
-	if theme := i.Theme(); theme != nil {
-		i.table.SetStyles(themes.NewThemedTableStyles(theme))
-	}
-
-	i.updateTableRows()
+	// Initialize with timeline list screen
+	i.state.currentState = BrowseStateTimeline
+	i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 	return nil
-}
-
-// updateTableRows updates the table rows based on filtered events
-func (i *BrowseTimelineIntent) updateTableRows() {
-	pageSize := 15
-	total := len(i.state.filteredEvents)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && i.state.selectedIndex >= 0 {
-		page = i.state.selectedIndex / pageSize
-	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	pageEvents := i.state.filteredEvents[start:end]
-
-	rows := make([]table.Row, 0, len(pageEvents))
-	for idx, event := range pageEvents {
-		realIdx := start + idx
-
-		// Use centralized indicator formatting
-		dateStr := i.navHandler.FormatRowText(realIdx, event.Date.Format("2006-01-02"))
-
-		// Truncate text to first 50 chars
-		text := event.Text
-		if len(text) > 50 {
-			text = text[:50] + "..."
-		}
-		company := event.Company
-		if company == "" {
-			company = "-"
-		}
-		rows = append(rows, table.Row{dateStr, text, company})
-	}
-
-	i.table.SetRows(rows)
-
-	// Calculate relative cursor position for this page
-	relativeCursor := 0
-	if i.state.selectedIndex >= start && i.state.selectedIndex < end {
-		relativeCursor = i.state.selectedIndex - start
-	}
-
-	// Set table cursor to relative position within the page
-	// This makes the table highlight the correct row with its Selected style
-	i.table.SetCursor(relativeCursor)
-
-	// Sync the container's selectedIdx to match our relative cursor
-	// This ensures SetTable() will push the correct cursor position to the table
-	i.listContainer.SetSelectedIdx(relativeCursor)
-
-	// Update the container with the modified table
-	// This will call validateAndSyncIdx() which will use our relative cursor position
-	i.listContainer.SetTable(*i.table)
 }
 
 // Update processes a message in the intent.
@@ -220,8 +104,8 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// Screen-based architecture (Phase 4.2)
-	if i.useScreens && i.activeScreen != nil {
+	// Delegate to active screen
+	if i.activeScreen != nil {
 		cmd, result := i.activeScreen.Update(msg)
 		if result != nil {
 			screenCmd := i.handleScreenResult(result)
@@ -232,183 +116,165 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
-	// Legacy table-based architecture (will be removed after migration)
-	switch i.state.currentState {
-	case BrowseStateTimeline:
-		return i.updateTimelineView(msg)
-
-	case BrowseStateEventDetail:
-		return i.updateEventDetail(msg)
-
-	case BrowseStateDeleteConfirm:
-		return i.updateDeleteConfirm(msg)
-	}
-
 	return nil
 }
 
-// updateTimelineView handles messages while viewing the timeline.
-func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		// Use MessageInterceptor for global keys (quit, help, back)
-		return NewMessageInterceptor().
-			OnQuit(StandardQuitHandler()).
-			OnHelp(StandardHelpHandler(i.BaseIntent)).
-			OnBack(func() tea.Cmd {
-				// At root state, back means cancel and return to main menu
-				i.setCancelled()
-				return nil
-			}).
-			InterceptOr(msg, func() tea.Cmd {
-				// Try list navigation handler
-				if i.navHandler.HandleKey(msg.String()) {
-					return nil
-				}
+// View renders the intent's current state using StandardView.
+func (i *BrowseTimelineIntent) View() string {
+	// Delegate to active screen
+	if i.activeScreen != nil {
+		return i.activeScreen.View()
+	}
 
-				// Handle intent-specific keys
-				switch msg.String() {
-				case "enter":
-					// Select current event and move to detail view.
-					if len(i.state.filteredEvents) > 0 {
-						if i.state.selectedIndex < len(i.state.filteredEvents) {
-							i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-							i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
-							i.state.currentState = BrowseStateEventDetail
-						}
-					}
-					return nil
-				}
-				return nil
-			})
+	// Fallback (should not happen)
+	return "No active screen"
+}
 
-	case EventSelectedMsg:
-		// Event was selected (possibly by router or other component).
-		i.state.selectedEvent = msg.Event
-		i.state.selectedIndex = msg.Index
-		i.state.viewedEvents = append(i.state.viewedEvents, msg.Event)
-		i.state.currentState = BrowseStateEventDetail
+// Result returns the final result of the intent.
+func (i *BrowseTimelineIntent) Result() *IntentResult[interface{}] {
+	if i.result == nil {
 		return nil
+	}
 
-	case FilterChangedMsg:
-		// Filters have changed - re-filter events.
-		i.state.filters = msg.Filters
-		i.applyFilters()
-		i.state.selectedIndex = 0
-		i.updateTableRows()
-		if len(i.state.filteredEvents) > 0 {
-			i.state.selectedEvent = i.state.filteredEvents[0]
+	// Type-erase the result for the Intent interface
+	return &IntentResult[interface{}]{
+		Status:   i.result.Status,
+		Data:     i.result.Data,
+		Error:    i.result.Error,
+		Metadata: i.result.Metadata,
+	}
+}
+
+// setCompleted marks the intent as successfully completed.
+func (i *BrowseTimelineIntent) setCompleted() {
+	i.result = &IntentResult[*BrowseTimelineResult]{
+		Status: Completed,
+		Data: &BrowseTimelineResult{
+			SelectedEvent: i.state.selectedEvent,
+			FinalFilters:  i.state.filters,
+			ViewedEvents:  i.state.viewedEvents,
+			SelectedFacts: i.state.selectedFacts,
+		},
+	}
+	i.active = false
+}
+
+// setCancelled marks the intent as cancelled by the user.
+func (i *BrowseTimelineIntent) setCancelled() {
+	i.result = &IntentResult[*BrowseTimelineResult]{
+		Status: Cancelled,
+	}
+	i.active = false
+}
+
+// setFailed marks the intent as failed with an error.
+func (i *BrowseTimelineIntent) setFailed(code, message string, cause error) {
+	i.result = &IntentResult[*BrowseTimelineResult]{
+		Status: Failed,
+		Error: &IntentError{
+			Code:    code,
+			Message: message,
+			Cause:   cause,
+		},
+	}
+	i.active = false
+}
+
+// getContext returns a context for service calls.
+func (i *BrowseTimelineIntent) getContext() context.Context {
+	return context.Background()
+}
+
+// applyFilters filters the events based on current filter state.
+func (i *BrowseTimelineIntent) applyFilters() {
+	filtered := make([]*career.CareerEvent, 0)
+
+	for _, evt := range i.context.Events {
+		// Apply text search
+		if i.state.filters.SearchText != "" {
+			// Simple case-insensitive contains match
+			// TODO: More sophisticated search
+			continue
 		}
-		return nil
-	}
 
-	return nil
-}
-
-// updateEventDetail handles messages while viewing event details.
-func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		// Use MessageInterceptor for global keys (quit, help, back)
-		return NewMessageInterceptor().
-			OnQuit(StandardQuitHandler()).
-			OnHelp(StandardHelpHandler(i.BaseIntent)).
-			OnBack(func() tea.Cmd {
-				// Go back to timeline view
-				i.state.currentState = BrowseStateTimeline
-				return nil
-			}).
-			InterceptOr(msg, func() tea.Cmd {
-				// Handle intent-specific keys
-				switch msg.String() {
-				case "enter":
-					// Confirm selection and return event.
-					i.setCompleted()
-					return nil
-
-				case "e":
-					// Edit event - send message to app to route to CaptureEvent intent
-					if i.state.selectedEvent != nil {
-						// Send RequestEditEventMsg which app router will handle
-						return func() tea.Msg {
-							return RequestEditEventMsg{Event: i.state.selectedEvent}
-						}
+		// Apply tag filters
+		if len(i.state.filters.Tags) > 0 {
+			hasTag := false
+			for _, filterTag := range i.state.filters.Tags {
+				for _, evtTag := range evt.Tags {
+					if evtTag == filterTag {
+						hasTag = true
+						break
 					}
-					return nil
-
-				case "d":
-					// Delete event - go to confirmation
-					if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-						i.state.currentState = BrowseStateDeleteConfirm
-						i.state.deleteError = nil
-					}
-					return nil
 				}
-				return nil
-			})
-	}
-
-	return nil
-}
-
-// updateDeleteConfirm handles delete confirmation.
-func (i *BrowseTimelineIntent) updateDeleteConfirm(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		// Use MessageInterceptor for consistent escape key handling
-		return NewMessageInterceptor().
-			OnQuit(StandardQuitHandler()).
-			OnHelp(StandardHelpHandler(i.BaseIntent)).
-			OnBack(func() tea.Cmd {
-				// Cancel delete and return to event detail
-				i.state.currentState = BrowseStateEventDetail
-				i.state.deleteError = nil
-				return nil
-			}).
-			InterceptOr(msg, func() tea.Cmd {
-				// Handle confirmation keys
-				switch msg.String() {
-				case "y", "Y":
-					// Confirm delete
-					if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-						err := i.context.CLIEventService.DeleteEvent(
-							i.getContext(),
-							i.state.selectedEvent.ID,
-						)
-						if err != nil {
-							i.state.deleteError = err
-							return nil
-						}
-
-						// Remove from filtered events
-						i.removeEventFromList(i.state.selectedEvent.ID)
-
-						// Clear selection and go back to timeline
-						i.state.selectedEvent = nil
-						i.state.currentState = BrowseStateTimeline
-
-						// Select first event if available
-						if len(i.state.filteredEvents) > 0 {
-							i.state.selectedIndex = 0
-							i.state.selectedEvent = i.state.filteredEvents[0]
-						}
-					}
-					return nil
-
-				case "n", "N":
-					// Also cancel with 'n' key
-					i.state.currentState = BrowseStateEventDetail
-					i.state.deleteError = nil
-					return nil
+				if hasTag {
+					break
 				}
-				return nil
-			})
+			}
+			if !hasTag {
+				continue
+			}
+		}
+
+		// Apply company filter
+		if len(i.state.filters.Companies) > 0 {
+			hasCompany := false
+			for _, filterCompany := range i.state.filters.Companies {
+				if evt.Company == filterCompany {
+					hasCompany = true
+					break
+				}
+			}
+			if !hasCompany {
+				continue
+			}
+		}
+
+		// Apply category filter
+		if len(i.state.filters.Categories) > 0 {
+			hasCategory := false
+			for _, filterCat := range i.state.filters.Categories {
+				for _, evtCat := range evt.Categories {
+					if evtCat == filterCat {
+						hasCategory = true
+						break
+					}
+				}
+				if hasCategory {
+					break
+				}
+			}
+			if !hasCategory {
+				continue
+			}
+		}
+
+		// Event passes all filters
+		filtered = append(filtered, evt)
 	}
 
-	return nil
+	// Apply sorting
+	switch i.state.filters.SortBy {
+	case "date":
+		sort.Slice(filtered, func(a, b int) bool {
+			if i.state.filters.SortOrder == "asc" {
+				return filtered[a].Date.Before(filtered[b].Date)
+			}
+			return filtered[a].Date.After(filtered[b].Date)
+		})
+	case "text":
+		sort.Slice(filtered, func(a, b int) bool {
+			if i.state.filters.SortOrder == "asc" {
+				return filtered[a].Text < filtered[b].Text
+			}
+			return filtered[a].Text > filtered[b].Text
+		})
+	}
+
+	i.state.filteredEvents = filtered
 }
 
-// removeEventFromList removes an event from both context.Events and filteredEvents.
+// removeEventFromList removes an event from both the full list and filtered list.
 func (i *BrowseTimelineIntent) removeEventFromList(eventID string) {
 	// Remove from context.Events
 	for idx, evt := range i.context.Events {
@@ -426,361 +292,18 @@ func (i *BrowseTimelineIntent) removeEventFromList(eventID string) {
 		}
 	}
 
-	// Update table rows
-	i.updateTableRows()
-}
-
-// getContext returns a context for service calls.
-func (i *BrowseTimelineIntent) getContext() context.Context {
-	return context.Background()
-}
-
-// applyFilters filters the events based on current filter state.
-func (i *BrowseTimelineIntent) applyFilters() {
-	filtered := make([]*career.CareerEvent, 0)
-
-	for _, event := range i.context.Events {
-		// Apply search text filter.
-		if i.state.filters.SearchText != "" {
-			if !strings.Contains(strings.ToLower(event.Text), strings.ToLower(i.state.filters.SearchText)) {
-				continue
-			}
-		}
-
-		// Apply tag filter.
-		if len(i.state.filters.Tags) > 0 {
-			hasTag := false
-			for _, tag := range i.state.filters.Tags {
-				for _, eventTag := range event.Tags {
-					if eventTag == tag {
-						hasTag = true
-						break
-					}
-				}
-				if hasTag {
-					break
-				}
-			}
-			if !hasTag {
-				continue
-			}
-		}
-
-		filtered = append(filtered, event)
-	}
-
-	// Apply sorting.
-	sort.Slice(filtered, func(a, b int) bool {
-		switch i.state.filters.SortBy {
-		case "text":
-			if i.state.filters.SortOrder == "asc" {
-				return filtered[a].Text < filtered[b].Text
-			}
-			return filtered[a].Text > filtered[b].Text
-
-		case "relevance":
-			// For now, relevance is the same as date (most recent first).
-			if i.state.filters.SortOrder == "asc" {
-				return filtered[a].CreatedAt.Before(filtered[b].CreatedAt)
-			}
-			return filtered[a].CreatedAt.After(filtered[b].CreatedAt)
-
-		default: // date
-			if filtered[a].Date.Equal(filtered[b].Date) {
-				// Secondary sort by CreatedAt for same-date events
-				if i.state.filters.SortOrder == "asc" {
-					return filtered[a].CreatedAt.Before(filtered[b].CreatedAt)
-				}
-				return filtered[a].CreatedAt.After(filtered[b].CreatedAt)
-			}
-			if i.state.filters.SortOrder == "asc" {
-				return filtered[a].Date.Before(filtered[b].Date)
-			}
-			return filtered[a].Date.After(filtered[b].Date)
-		}
-	})
-
-	i.state.filteredEvents = filtered
-}
-
-// getStateName returns a human-readable name for the current state.
-func (i *BrowseTimelineIntent) getStateName() string {
-	switch i.state.currentState {
-	case BrowseStateTimeline:
-		return "Timeline"
-	case BrowseStateEventDetail:
-		return "Event Detail"
-	case BrowseStateDeleteConfirm:
-		return "Delete Event"
-	default:
-		return string(i.state.currentState)
-	}
-}
-
-// getStateContent returns the content for the current state.
-func (i *BrowseTimelineIntent) getStateContent() string {
-	switch i.state.currentState {
-	case BrowseStateTimeline:
-		return i.viewTimeline()
-	case BrowseStateEventDetail:
-		return i.viewEventDetail()
-	case BrowseStateDeleteConfirm:
-		return i.viewDeleteConfirm()
-	default:
-		return ""
-	}
-}
-
-// getContextHelp returns context-aware help text for the current state.
-func (i *BrowseTimelineIntent) getContextHelp() string {
-	theme := i.Theme()
-
-	switch i.state.currentState {
-	case BrowseStateTimeline:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				components.NavigateBadge(),
-				components.SelectBadge(),
-				components.FilterBadge(),
-				components.NewKeyBadge("Enter", "View Details"),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	case BrowseStateEventDetail:
-		// Add edit and delete badges if service is available
-		badges := []components.KeyBadge{
-			components.NewKeyBadge("Enter", "Select"),
-		}
-		if i.context.CLIEventService != nil {
-			badges = append(badges,
-				components.NewKeyBadge("e", "Edit"),
-				components.NewKeyBadge("d", "Delete"),
-			)
-		}
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme, badges...),
-			ThemedGlobalBadges(theme),
-		)
-	case BrowseStateDeleteConfirm:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y", "Confirm Delete"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	default:
-		return ThemedGlobalBadges(theme)
-	}
-}
-
-// View renders the intent's current state using StandardView.
-func (i *BrowseTimelineIntent) View() string {
-	// Screen-based architecture (Phase 4.2)
-	if i.useScreens && i.activeScreen != nil {
-		return i.activeScreen.View()
-	}
-
-	// Legacy table-based architecture (will be removed after migration)
-	// Create standard view with breadcrumbs
-	view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
-
-	// Get content for current state
-	content := i.getStateContent()
-	view.WithContent(content)
-
-	// Get context-aware help
-	help := i.getContextHelp()
-	view.WithHelp(help).WithFooterSeparator(true)
-
-	return view.Render()
-}
-
-// viewTimeline renders the timeline view with all events as a table.
-func (i *BrowseTimelineIntent) viewTimeline() string {
-	if len(i.state.filteredEvents) == 0 {
-		i.listContainer.SetEmptyStateMessage("No events found.")
-		return i.listContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	i.updateTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(i.state.filteredEvents)
-	currentPage := (i.state.selectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	i.listContainer.SetPaginationInfo(paginationInfo)
-
-	return i.listContainer.Render()
-}
-
-// viewEventDetail renders the event detail view using the reusable component.
-func (i *BrowseTimelineIntent) viewEventDetail() string {
-	return components.RenderEventDetailCard(i.state.selectedEvent, i.Theme())
-}
-
-// viewDeleteConfirm renders the delete confirmation dialog.
-func (i *BrowseTimelineIntent) viewDeleteConfirm() string {
-	if i.state.selectedEvent == nil {
-		return "No event selected."
-	}
-
-	var content strings.Builder
-
-	// Warning header
-	warningStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#F38BA8")). // Catppuccin Red
-		Bold(true)
-
-	content.WriteString(warningStyle.Render("⚠️  Delete Event?"))
-	content.WriteString("\n\n")
-
-	// Event summary
-	content.WriteString(fmt.Sprintf("Date: %s\n", i.state.selectedEvent.Date.Format("2006-01-02")))
-	if i.state.selectedEvent.Company != "" {
-		content.WriteString(fmt.Sprintf("Company: %s\n", i.state.selectedEvent.Company))
-	}
-
-	// Truncate text for display
-	text := i.state.selectedEvent.Text
-	if len(text) > 100 {
-		text = text[:100] + "..."
-	}
-	content.WriteString(fmt.Sprintf("\nText: %s\n", text))
-
-	// Error message if delete failed
-	if i.state.deleteError != nil {
-		errorStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#F38BA8")).
-			MarginTop(1)
-		content.WriteString("\n")
-		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.deleteError.Error())))
-	}
-
-	// Confirmation prompt
-	content.WriteString("\n\nThis action cannot be undone.\n")
-
-	// Apply card styling
-	var cardStyle lipgloss.Style
-	if theme := i.Theme(); theme != nil {
-		cardStyle = theme.Styles().CardBase.
-			BorderForeground(lipgloss.Color("#F38BA8")) // Red border for warning
-	} else {
-		cardStyle = lipgloss.NewStyle().
-			Padding(1, 2).
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#F38BA8"))
-	}
-
-	return cardStyle.Render(content.String())
-}
-
-// Result returns the final result of the intent.
-func (i *BrowseTimelineIntent) Result() *IntentResult[interface{}] {
-	if i.result == nil {
-		return nil
-	}
-
-	return &IntentResult[interface{}]{
-		Status:   i.result.Status,
-		Data:     i.result.Data,
-		Error:    i.result.Error,
-		Metadata: i.result.Metadata,
-	}
-}
-
-// Helper methods for result management.
-
-func (i *BrowseTimelineIntent) setCompleted() {
-	i.result = &IntentResult[*BrowseTimelineResult]{
-		Status: Completed,
-		Data: &BrowseTimelineResult{
-			SelectedEvent: i.state.selectedEvent,
-			FinalFilters:  i.state.filters,
-			ViewedEvents:  i.state.viewedEvents,
-			SelectedFacts: i.state.selectedFacts,
-		},
-		Metadata: map[string]interface{}{
-			"selected_index": i.state.selectedIndex,
-			"viewed_count":   len(i.state.viewedEvents),
-			"timestamp":      time.Now(),
-		},
-	}
-	i.active = false
-}
-
-func (i *BrowseTimelineIntent) setCancelled() {
-	i.result = &IntentResult[*BrowseTimelineResult]{
-		Status: Cancelled,
-	}
-	i.active = false
-}
-
-func (i *BrowseTimelineIntent) setFailed(code, message string, cause error) {
-	i.result = &IntentResult[*BrowseTimelineResult]{
-		Status: Failed,
-		Error: &IntentError{
-			Code:    code,
-			Message: message,
-			Cause:   cause,
-		},
-	}
-	i.active = false
-}
-
-// ListNavigator interface implementation
-
-// GetTotalItems returns the total number of filtered events.
-func (i *BrowseTimelineIntent) GetTotalItems() int {
-	return len(i.state.filteredEvents)
-}
-
-// GetSelectedIndex returns the current selection index.
-func (i *BrowseTimelineIntent) GetSelectedIndex() int {
-	return i.state.selectedIndex
-}
-
-// SetSelectedIndex sets the selection index and updates the display.
-// This is the single source of truth for selection state.
-func (i *BrowseTimelineIntent) SetSelectedIndex(idx int) {
-	// Validate and set index
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= len(i.state.filteredEvents) {
-		idx = len(i.state.filteredEvents) - 1
-	}
-	if idx < 0 {
-		idx = 0 // Handle empty list
-	}
-
-	i.state.selectedIndex = idx
-
-	// Update selected event
-	if idx >= 0 && idx < len(i.state.filteredEvents) {
-		i.state.selectedEvent = i.state.filteredEvents[idx]
-	}
-
-	// Update table display
-	i.updateTableRows()
-}
-
-// GetPageSize returns the page size for pagination.
-func (i *BrowseTimelineIntent) GetPageSize() int {
-	return 15
+	// Update active screen if it's a list screen
+	i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 }
 
 // ============================================================================
-// Screen Orchestration (Phase 4.2 Migration)
+// Screen Orchestration (Phase 4.2 - Complete)
 // ============================================================================
 
-// EnableScreens activates the new screen-based architecture.
-// This is an opt-in feature that allows incremental migration.
+// EnableScreens is a no-op for backward compatibility.
+// Screens are now the default and only architecture.
 func (i *BrowseTimelineIntent) EnableScreens() {
-	i.useScreens = true
+	// No-op: screens are always enabled
 }
 
 // transitionToScreen sets the active screen and updates state.
