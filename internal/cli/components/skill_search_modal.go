@@ -1,8 +1,10 @@
 package components
 
 import (
+	"github.com/baphled/kariya/internal/cli/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
@@ -111,7 +113,13 @@ func (m *SkillSearchModal) View() string {
 		return ""
 	}
 
-	return m.form.View()
+	// Wrap the form in a styled box with solid background, border, and padding
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackground).
+		Padding(1, 2).
+		Render(m.form.View())
 }
 
 // IsVisible returns whether the modal is currently visible.
