@@ -1,12 +1,23 @@
 # AI Commit Attribution Rules
 
+**⚠️ MANDATORY - ZERO TOLERANCE POLICY**
+
 ---
 
 ## Overview
 
 **ALL commits created by AI assistants MUST be clearly labeled as AI-generated.**
 
-This document establishes mandatory rules for attributing commits created by AI assistants (Avante, Claude, GitHub Copilot, ChatGPT, etc.) to ensure transparency, traceability, and accountability in the project's git history.
+**This is NON-NEGOTIABLE. Commits without proper AI attribution will be rejected.**
+
+This document establishes **MANDATORY and STRICTLY ENFORCED** rules for attributing commits created by AI assistants (OpenCode, Avante, Claude, GitHub Copilot, ChatGPT, etc.) to ensure transparency, traceability, and accountability in the project's git history.
+
+### Zero Tolerance Policy
+
+- ❌ **REJECTED**: Any AI-generated commit without attribution
+- ❌ **REJECTED**: Any commit using `git commit` directly for AI code
+- ✅ **REQUIRED**: Use `make ai-commit` for ALL AI-generated commits
+- ✅ **REQUIRED**: Human review documented for every AI commit
 
 ---
 
@@ -24,23 +35,38 @@ This document establishes mandatory rules for attributing commits created by AI 
 
 ## Core Requirements
 
-### Mandatory AI Attribution
+### Mandatory AI Attribution (ZERO EXCEPTIONS)
 
 **EVERY commit created with AI assistance MUST include:**
 
-1. **AI Assistant Name**: Which AI tool generated the code (e.g., Avante, Claude, Copilot)
-2. **Model Version**: The specific model used (e.g., Claude 3.5 Sonnet, GPT-4, etc.)
-3. **Attribution Marker**: A clear marker in the commit footer
+1. **AI Assistant Name**: Which AI tool generated the code (e.g., OpenCode, Avante, Claude, Copilot)
+2. **Model Version**: The specific model used (e.g., Claude Sonnet 4.5, Claude 3.5 Sonnet, GPT-4)
+3. **Attribution Marker**: `AI-Generated-By:` in the commit footer
+4. **Human Review**: `Reviewed-By:` in the commit footer
 
-### Non-Negotiable Rules
+### Non-Negotiable Rules (STRICT ENFORCEMENT)
 
-- ✅ **DO**: Always include AI attribution in commit messages
-- ✅ **DO**: Specify the exact model used
-- ✅ **DO**: Review AI-generated code before committing
-- ✅ **DO**: Run all tests and checks before committing
-- ❌ **DON'T**: Commit AI-generated code without attribution
-- ❌ **DON'T**: Use vague attribution like "AI-assisted" without details
-- ❌ **DON'T**: Skip human review of AI-generated changes
+**MUST DO (MANDATORY):**
+- ✅ **ALWAYS** use `make ai-commit MSG="..."` for AI-generated commits
+- ✅ **ALWAYS** include AI attribution in commit messages (automatic via make ai-commit)
+- ✅ **ALWAYS** specify the exact model used
+- ✅ **ALWAYS** review AI-generated code before committing
+- ✅ **ALWAYS** run `make check-compliance` before committing
+- ✅ **ALWAYS** run all tests before committing
+- ✅ **ALWAYS** document human review with `Reviewed-By:`
+
+**NEVER DO (REJECTED):**
+- ❌ **NEVER** use `git commit` directly for AI-generated code
+- ❌ **NEVER** commit AI-generated code without attribution
+- ❌ **NEVER** use vague attribution like "AI-assisted" without details
+- ❌ **NEVER** skip human review of AI-generated changes
+- ❌ **NEVER** commit without passing `make check-compliance`
+- ❌ **NEVER** use `--no-verify` flag (except emergency situations)
+
+**Consequences of Violation:**
+- Commit will be rejected by git hooks
+- PR will be rejected by CI
+- Work must be restarted with proper attribution
 
 ---
 
@@ -263,36 +289,58 @@ Reviewed-By: Alex Rodriguez <alex@example.com>
 
 ## Automation
 
-### Recommended: `make ai-commit` Command
+### MANDATORY: `make ai-commit` Command
 
-**The easiest way to create AI-attributed commits** is using the `make ai-commit` command:
+**⚠️ THIS IS THE ONLY ACCEPTABLE METHOD FOR AI-GENERATED COMMITS**
+
+**You MUST use `make ai-commit` for ALL AI-generated commits:**
 
 ```bash
 # Stage your changes
 git add -p internal/cli/forms/validators.go
 
-# Create AI-attributed commit
+# Create AI-attributed commit (ONLY METHOD ALLOWED)
 make ai-commit MSG="feat(forms): add date validation helpers"
 ```
 
-**What it does**:
-1. Validates commit message follows conventional commit format
-2. Checks that changes are staged
-3. Automatically adds AI attribution (`AI-Generated-By: OpenCode (Claude Sonnet 4)`)
-4. Adds reviewer attribution from `git config user.name`
-5. Creates the commit
+**What it does (AUTOMATIC):**
+1. ✅ Validates commit message follows conventional commit format
+2. ✅ Checks that changes are staged
+3. ✅ Automatically adds AI attribution (`AI-Generated-By: OpenCode (Claude Sonnet 4.5)`)
+4. ✅ Automatically adds reviewer attribution from `git config user.name`
+5. ✅ Creates the commit with proper formatting
+6. ✅ Enforces all project commit standards
 
-**Environment variables** (optional):
+**Environment variables** (optional - for non-OpenCode assistants):
 ```bash
 # Override agent/model if using different AI assistant
 AI_AGENT="Cursor" AI_MODEL="Claude 3.5 Sonnet" make ai-commit MSG="feat: ..."
+AI_AGENT="Avante" AI_MODEL="Claude 3.5 Sonnet" make ai-commit MSG="fix: ..."
 ```
 
-**Advantages**:
-- ✅ No manual attribution needed
-- ✅ Automatic format validation
-- ✅ Consistent attribution format
-- ✅ Prevents common mistakes
+**Default values (OpenCode):**
+- `AI_AGENT=OpenCode`
+- `AI_MODEL=Claude Sonnet 4.5`
+
+**Advantages (WHY THIS IS MANDATORY):**
+- ✅ Zero-effort AI attribution (automatic)
+- ✅ Impossible to forget attribution
+- ✅ Automatic format validation (prevents bad commits)
+- ✅ Consistent attribution format (across entire project)
+- ✅ Prevents common mistakes (missing fields, wrong format)
+- ✅ Enforces project standards (conventional commits)
+- ✅ Integrated with git hooks (double validation)
+
+**Comparison: Manual vs. make ai-commit**
+
+| Feature | Manual `git commit` | `make ai-commit` |
+|---------|-------------------|------------------|
+| AI attribution | ❌ Manual (error-prone) | ✅ Automatic |
+| Format validation | ❌ Post-commit via hook | ✅ Pre-commit validation |
+| Consistency | ❌ Human error risk | ✅ 100% consistent |
+| Speed | ⚠️ Slower (manual typing) | ✅ Fast (one command) |
+| Compliance | ❌ Easy to forget | ✅ Always compliant |
+| **Status** | ❌ **DEPRECATED - DO NOT USE** | ✅ **REQUIRED - ONLY METHOD** |
 
 ### Alternative: Git Commit Template
 
