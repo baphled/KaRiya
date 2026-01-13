@@ -621,9 +621,48 @@ All performance targets exceeded by 100x+. See `internal/cli/components/performa
 
 ---
 
+## Modal Overlays with StandardView
+
+StandardView works seamlessly with modal overlays created using `bubbletea-overlay`.
+
+### Pattern
+
+```go
+func (i *YourIntent) View() string {
+    // 1. Render base view with StandardView
+    baseView := i.CreateViewWithBreadcrumbs("Main", "Section")
+    baseView.WithContent(content)
+    baseView.WithHelp(footer)
+    renderedBase := baseView.Render()
+    
+    // 2. Overlay modal if visible
+    if i.yourModal != nil && i.yourModal.IsVisible() {
+        return i.renderModalOverlay(renderedBase)
+    }
+    
+    return renderedBase
+}
+```
+
+### Key Points
+
+- ✅ StandardView renders the complete base layout
+- ✅ Modal overlay is applied to the fully-rendered view
+- ✅ Logo, breadcrumbs, and footer remain visible in background
+- ✅ Modal appears centered over content area
+- ✅ Y offset of -2 prevents footer overlap
+
+**See**: 
+- [MODAL_PATTERNS.md](MODAL_PATTERNS.md#modal-overlays-with-bubbletea-overlay) - Complete modal patterns
+- [BUBBLETEA_OVERLAY_GUIDE.md](BUBBLETEA_OVERLAY_GUIDE.md) - Library usage guide
+- `internal/cli/intents/browse_timeline_intent.go` - Real-world example (5 modals)
+
+---
+
 ## Related Documentation
 
 - [MODAL_PATTERNS.md](MODAL_PATTERNS.md) - Modal usage patterns
+- [BUBBLETEA_OVERLAY_GUIDE.md](BUBBLETEA_OVERLAY_GUIDE.md) - bubbletea-overlay library guide **NEW!**
 - [TUI_DEVELOPER_GUIDE.md](TUI_DEVELOPER_GUIDE.md) - General TUI development
 - [TUI_STANDARDS.md](TUI_STANDARDS.md) - TUI design standards
 - [LIPGLOSS_BUBBLES_GUIDE.md](LIPGLOSS_BUBBLES_GUIDE.md) - Styling guide

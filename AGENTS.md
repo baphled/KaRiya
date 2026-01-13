@@ -560,15 +560,42 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 #### 7. Modal Patterns
 **File**: [`docs/MODAL_PATTERNS.md`](docs/MODAL_PATTERNS.md)
 **Purpose**: Modal usage patterns and implementation guide
-**When to use**: When implementing modals for errors, loading states, or user confirmation
+**When to use**: When implementing modals for errors, loading states, user confirmation, or overlay dialogs
 **Key topics**:
 - 5 modal types (Error, Loading, Progress, Success, Warning)
-- Modal state management
-- Accessibility and user experience patterns
+- **Modal overlays with bubbletea-overlay** (NEW!)
+- Complete implementation patterns (read-only, form-based, confirmation)
+- Real-world examples (all 5 Browse Timeline modals)
+- Best practices and troubleshooting
 - Testing modal interactions
-**Related**: See [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
+**Related**: 
+- [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
+- [`docs/BUBBLETEA_OVERLAY_GUIDE.md`](docs/BUBBLETEA_OVERLAY_GUIDE.md) for overlay library usage
 
-#### 8. Forms System (Huh Library)
+#### 8. bubbletea-overlay Library Guide **NEW!**
+**File**: [`docs/BUBBLETEA_OVERLAY_GUIDE.md`](docs/BUBBLETEA_OVERLAY_GUIDE.md)
+**Purpose**: Comprehensive guide to using bubbletea-overlay library for modal compositing
+**When to use**: When creating modal overlays or understanding the overlay system
+**Key topics**:
+- Library installation and basic usage
+- KaRiya integration pattern (staticViewModel, render methods)
+- Complete examples (ViewEventDetailModal, QuickAddModal, DeleteModal)
+- API reference (overlay.New parameters)
+- Best practices and troubleshooting
+- 5 real-world Browse Timeline modal examples
+
+> **⚠️ CRITICAL**: Modal overlays MUST set solid background (`Background(styles.ColorBackground)`) to prevent transparency issues!
+
+**Real-World Examples**: All 5 Browse Timeline modals use this pattern:
+- `ViewEventDetailModal` - View event details (NEW!)
+- `QuickAddEventModal` - Add new event
+- `EditEventModal` - Edit event metadata
+- `DeleteConfirmModal` - Confirm deletion
+- `FilterModalModel` - Filter and sort
+
+**See**: `VIEW_DETAIL_MODAL_SUMMARY.md` and `MODAL_REFACTOR_VERIFICATION.md` for complete implementation details.
+
+#### 9. Forms System (Huh Library)
 **File**: [`docs/FORMS_GUIDE.md`](docs/FORMS_GUIDE.md)
 **Purpose**: Comprehensive guide to using Charm's huh library for forms
 **When to use**: When creating or modifying form inputs in the TUI
@@ -646,6 +673,7 @@ KaRiya provides comprehensive workflow guides for complex user journeys. Each gu
 
 | Guide | Purpose | States | Complexity | Documentation |
 |-------|---------|--------|------------|---------------|
+| **[Browse Timeline Workflow](docs/workflows/BROWSE_TIMELINE_WORKFLOW.md)** **NEW!** | Browse, view, edit, and manage career events | 1 state + 5 modals | ⭐⭐⭐ Medium | 800+ lines |
 | **[CV Generation Workflow](docs/workflows/CV_GENERATION_WORKFLOW.md)** | Generate role and audience-specific CVs from career events | 10 states | ⭐⭐⭐⭐⭐ High | 800+ lines |
 | **[Event Capture Workflow](docs/workflows/EVENT_CAPTURE_WORKFLOW.md)** | Capture events with optional burst/fact extraction | 4 states + 3 modals | ⭐⭐⭐⭐ High | 700+ lines |
 

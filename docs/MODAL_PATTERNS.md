@@ -19,6 +19,7 @@
 9. [Modal Timing](#modal-timing)
 10. [Accessibility](#accessibility)
 11. [Common Patterns](#common-patterns)
+12. [Modal Overlays with bubbletea-overlay](#modal-overlays-with-bubbletea-overlay) **NEW!**
 
 ---
 
@@ -651,6 +652,453 @@ time.AfterFunc(30*time.Second, func() {
 
 ---
 
+## Modal Overlays with bubbletea-overlay
+
+### Overview
+
+KaRiya uses the `bubbletea-overlay` library (v0.6.3) for compositing modal dialogs over background content. This provides reliable, flicker-free overlay rendering without manual ANSI manipulation.
+
+**Library**: https://github.com/rmhubbert/bubbletea-overlay  
+**License**: MIT  
+**Stars**: 100+
+
+### Why bubbletea-overlay?
+
+✅ **Automatic Positioning**: Centers modals automatically  
+✅ **Reliable Compositing**: No ANSI code conflicts  
+✅ **Type-Safe**: Works with any `tea.Model`  
+✅ **Tested**: Battle-tested in production applications  
+✅ **Simple API**: Only 5 parameters needed
+
+### When to Use Overlay Modals
+
+**Use overlay modals when:**
+- Showing content over the main view (timeline, list, etc.)
+- Preserving context (background remains visible)
+- Capturing user input without changing screens
+- Displaying details, confirmations, or forms
+
+**Don't use overlay modals when:**
+- Transitioning to a completely different view
+- Full-screen content is more appropriate
+- No background context needs to be preserved
+
+### Implementation Pattern
+
+#### 1. Create Modal Component
+
+Modal must implement `tea.Model` interface:
+
+```go
+type YourModal struct {
+    visible bool
+    width   int
+    height  int
+    // ... your fields
+}
+
+func (m *YourModal) Init() tea.Cmd { return nil }
+
+func (m *YourModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    if !m.visible { return m, nil }
+    
+    switch msg := msg.(type) {
+    case tea.WindowSizeMsg:
+        m.width = msg.Width
+        m.height = msg.Height
+        return m, nil
+    case tea.KeyMsg:
+        // Handle keys
+    }
+    return m, nil
+}
+
+func (m *YourModal) View() string {
+    if !m.visible { return "" }
+    
+    // CRITICAL: Wrap content with solid background
+    return lipgloss.NewStyle().
+        Border(lipgloss.RoundedBorder()).
+        BorderForeground(styles.ColorBorder).
+        Background(styles.ColorBackground). // Prevents transparency!
+        Padding(1, 2).
+        Render(content)
+}
+```
+
+**CRITICAL**: Always set `Background(styles.ColorBackground)` to prevent transparency issues!
+
+#### 2. Add Modal to Intent
+
+```go
+type YourIntent struct {
+    *BaseIntent
+    yourModal *components.YourModal
+    // ... other fields
+}
+```
+
+#### 3. Show Modal
+
+```go
+func (i *YourIntent) handleShowModal() tea.Cmd {
+    termInfo := i.GetTerminalInfo()
+    width := 120
+    height := 40
+    if termInfo != nil {
+        width = termInfo.Width
+        height = termInfo.Height
+    }
+    
+    i.yourModal = components.NewYourModal(width, height)
+    i.yourModal.Show()
+    return i.yourModal.Init()
+}
+```
+
+#### 4. Handle Modal Updates
+
+```go
+func (i *YourIntent) Update(msg tea.Msg) tea.Cmd {
+    // Handle modal BEFORE other logic
+    if i.yourModal != nil && i.yourModal.IsVisible() {
+        _, cmd := i.yourModal.Update(msg)
+        if !i.yourModal.IsVisible() {
+            // Modal closed - handle result
+            i.yourModal = nil
+        }
+        return cmd
+    }
+    
+    // ... rest of update logic
+}
+```
+
+#### 5. Create staticViewModel Helper
+
+```go
+type staticViewModel struct {
+    content string
+}
+
+func (s *staticViewModel) Init() tea.Cmd { return nil }
+func (s *staticViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { 
+    return s, nil 
+}
+func (s *staticViewModel) View() string { return s.content }
+```
+
+#### 6. Create Render Method
+
+```go
+func (i *YourIntent) renderYourModalOverlay(background string) string {
+    // Wrap background in staticViewModel
+    bgModel := &staticViewModel{content: background}
+    
+    // Use bubbletea-overlay to composite
+    overlayModel := overlay.New(
+        i.yourModal,    // Foreground (modal)
+        bgModel,        // Background (main view)
+        overlay.Center, // X position
+        overlay.Center, // Y position
+        0,              // X offset
+        -2,             // Y offset (avoid footer)
+    )
+    
+    return overlayModel.View()
+}
+```
+
+#### 7. Integrate in View()
+
+```go
+func (i *YourIntent) View() string {
+    // Render base view first
+    baseView := i.renderMainContent()
+    
+    // If modal visible, overlay it
+    if i.yourModal != nil && i.yourModal.IsVisible() {
+        return i.renderYourModalOverlay(baseView)
+    }
+    
+    return baseView
+}
+```
+
+### Real-World Examples
+
+#### Example 1: View Detail Modal (Read-Only)
+
+**Component**: `internal/cli/components/view_event_detail_modal.go`  
+**Usage**: Browse Timeline → Press Enter on event
+
+```go
+type ViewEventDetailModal struct {
+    event   *career.CareerEvent
+    theme   themes.Theme
+    visible bool
+    width   int
+    height  int
+    action  string // "", "edit", "delete"
+}
+
+// Key features:
+// - Read-only display (no forms)
+// - Action tracking (edit, delete, close)
+// - Solid background to prevent transparency
+// - Reuses existing RenderEventDetailCard component
+```
+
+**Intent Integration**:
+```go
+// Show modal on event selection
+i.viewDetailModal = components.NewViewEventDetailModal(event, theme)
+i.viewDetailModal.SetDimensions(width, height)
+i.viewDetailModal.Show()
+
+// Handle modal actions
+action := i.viewDetailModal.GetAction()
+switch action {
+case "edit":
+    i.editModal = components.NewEditEventModal(event, width, height)
+case "delete":
+    i.deleteModal = components.NewDeleteConfirmModal(...)
+}
+```
+
+#### Example 2: Quick Add Modal (Form-Based)
+
+**Component**: `internal/cli/components/quick_add_event_modal.go`  
+**Usage**: Browse Timeline → Press 'a'
+
+```go
+type QuickAddEventModal struct {
+    form      *huh.Form
+    formData  *forms.EventFormData
+    visible   bool
+    completed bool
+}
+
+// Key features:
+// - Huh form integration
+// - Natural height for scrolling
+// - Submit/cancel handling
+// - Solid background wrapper
+```
+
+**Intent Integration**:
+```go
+// Show modal
+i.quickAddModal = components.NewQuickAddEventModal(width, height)
+return i.quickAddModal.Init()
+
+// Handle completion
+cmd, completed, eventData := i.quickAddModal.Update(msg)
+if completed && eventData != nil {
+    // Save event
+    i.context.CLIEventService.CaptureEvent(...)
+}
+```
+
+#### Example 3: Delete Confirmation Modal
+
+**Component**: `internal/cli/components/delete_confirm_modal.go`  
+**Usage**: Browse Timeline → Press 'd' on event
+
+```go
+type DeleteConfirmModal struct {
+    entityName string
+    title      string
+    message    string
+    visible    bool
+    confirmed  bool
+}
+
+// Key features:
+// - Simple yes/no confirmation
+// - Red border for destructive actions
+// - Clear button indicators
+// - Solid background
+```
+
+**Intent Integration**:
+```go
+// Show modal
+i.deleteModal = components.NewDeleteConfirmModal(
+    event.Text,
+    "Delete Event",
+    fmt.Sprintf("Are you sure you want to delete '%s'?", eventText),
+)
+return i.deleteModal.Init()
+
+// Handle confirmation
+cmd, confirmed := i.deleteModal.Update(msg)
+if confirmed {
+    i.context.CLIEventService.DeleteEvent(ctx, event.ID)
+}
+```
+
+### Common Patterns
+
+#### Pattern 1: Modal with Actions
+
+Modal returns action string instead of boolean:
+
+```go
+func (m *YourModal) GetAction() string {
+    return m.action // "", "edit", "delete", "export", etc.
+}
+
+// In intent:
+action := m.yourModal.GetAction()
+switch action {
+case "edit":
+    // Handle edit
+case "delete":
+    // Handle delete
+}
+```
+
+#### Pattern 2: Modal with Form Data
+
+Modal returns structured data:
+
+```go
+func (m *YourModal) GetFormData() *YourFormData {
+    return m.formData
+}
+
+// In intent:
+if completed && eventData := m.yourModal.GetFormData(); eventData != nil {
+    // Process form data
+}
+```
+
+#### Pattern 3: Modal Chain
+
+One modal triggers another:
+
+```go
+// Detail modal → Edit modal
+if action := i.viewDetailModal.GetAction(); action == "edit" {
+    i.viewDetailModal = nil
+    i.editModal = components.NewEditEventModal(event, width, height)
+    return i.editModal.Init()
+}
+```
+
+### Best Practices
+
+#### ✅ DO
+
+1. **Always set solid background** to prevent transparency
+   ```go
+   Background(styles.ColorBackground)
+   ```
+
+2. **Handle WindowSizeMsg** for responsive modals
+   ```go
+   case tea.WindowSizeMsg:
+       m.width = msg.Width
+       m.height = msg.Height
+   ```
+
+3. **Check visibility before updating**
+   ```go
+   if !m.visible { return m, nil }
+   ```
+
+4. **Use Y offset of -2** to avoid footer overlap
+   ```go
+   overlay.New(modal, bg, overlay.Center, overlay.Center, 0, -2)
+   ```
+
+5. **Clear modal after use**
+   ```go
+   i.yourModal = nil
+   ```
+
+6. **Wrap background in staticViewModel**
+   ```go
+   bgModel := &staticViewModel{content: background}
+   ```
+
+#### ❌ DON'T
+
+1. **Don't forget solid background** - causes transparency issues
+
+2. **Don't manually center with ANSI** - use overlay.Center
+
+3. **Don't stack modals** - hide one before showing another
+
+4. **Don't constrain Huh form height** - use natural height (0)
+
+5. **Don't forget to implement tea.Model** - required for overlay
+
+6. **Don't use manual width calculations** - use MaxWidth/MaxHeight
+
+### Troubleshooting
+
+#### Issue: Background shows through modal (transparency)
+
+**Solution**: Add solid background in modal's View():
+```go
+Background(styles.ColorBackground)
+```
+
+#### Issue: Modal not centered
+
+**Solution**: Use overlay.Center for both X and Y:
+```go
+overlay.New(modal, bg, overlay.Center, overlay.Center, 0, -2)
+```
+
+#### Issue: Huh form doesn't scroll
+
+**Solution**: Use natural height (0) instead of constrained height:
+```go
+form = forms.NewYourFormWithDataAndDimensions(data, width, 0) // 0 = natural
+```
+
+#### Issue: Modal overlaps footer
+
+**Solution**: Use Y offset of -2:
+```go
+overlay.New(modal, bg, overlay.Center, overlay.Center, 0, -2)
+```
+
+#### Issue: Modal doesn't update on window resize
+
+**Solution**: Handle WindowSizeMsg in modal Update():
+```go
+case tea.WindowSizeMsg:
+    m.width = msg.Width
+    m.height = msg.Height
+```
+
+### Complete Example: Browse Timeline Modals
+
+All 5 Browse Timeline modals use this pattern:
+
+| Modal | File | Lines | Features |
+|-------|------|-------|----------|
+| ViewEventDetailModal | `view_event_detail_modal.go` | 151 | Read-only, action tracking |
+| QuickAddEventModal | `quick_add_event_modal.go` | 250 | Huh form, natural height |
+| EditEventModal | `edit_event_modal.go` | 280 | Huh form, preserve original |
+| DeleteConfirmModal | `delete_confirm_modal.go` | 200 | Yes/no, destructive style |
+| FilterModalModel | `filter_modal.go` | 350 | Multi-field form |
+
+**Intent Integration**: `internal/cli/intents/browse_timeline_intent.go`
+
+- 5 modal fields in struct
+- 5 render methods (one per modal)
+- 5 update handlers (one per modal)
+- 5 View() overlay checks
+
+**See**: `VIEW_DETAIL_MODAL_SUMMARY.md` for complete implementation details.
+
+---
+
 ## Testing
 
 Modal behavior is tested in:
@@ -672,6 +1120,8 @@ go build -o test_views ./cmd/test_all_views
 - [STANDARDVIEW_GUIDE.md](STANDARDVIEW_GUIDE.md) - StandardView usage
 - [TUI_DEVELOPER_GUIDE.md](TUI_DEVELOPER_GUIDE.md) - General TUI development
 - [TUI_STANDARDS.md](TUI_STANDARDS.md) - Design standards
+- [VIEW_DETAIL_MODAL_SUMMARY.md](../VIEW_DETAIL_MODAL_SUMMARY.md) - Complete modal overlay implementation example
+- [MODAL_REFACTOR_VERIFICATION.md](../MODAL_REFACTOR_VERIFICATION.md) - Modal refactoring verification guide
 
 ---
 
