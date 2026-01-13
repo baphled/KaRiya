@@ -274,4 +274,156 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 			})
 		})
 	})
+
+	Describe("Technology Focus Selection", func() {
+		BeforeEach(func() {
+			// Set up state with extracted technologies
+			intent.state.extractedTechnologies = []*ExtractedTechnology{
+				{ID: "skill-1", Name: "Ruby", Category: "backend", EventCount: 5},
+				{ID: "skill-2", Name: "PostgreSQL", Category: "database", EventCount: 4},
+				{ID: "skill-3", Name: "React", Category: "frontend", EventCount: 3},
+			}
+			intent.state.technologiesAvailable = true
+			intent.state.currentState = GenerateCVStateSelectTechnologyFocus
+			intent.state.technologyFocusIndex = 0
+		})
+
+		Context("view rendering", func() {
+			It("should show 3 technology focus options", func() {
+				view := intent.View()
+
+				Expect(view).To(ContainSubstring("Language Agnostic"))
+				Expect(view).To(ContainSubstring("Generalist"))
+				Expect(view).To(ContainSubstring("Specialist"))
+			})
+
+			It("should show technology count", func() {
+				view := intent.View()
+
+				// Should show how many technologies were found
+				Expect(view).To(MatchRegexp("(?i)found.*3.*technolog"))
+			})
+
+			It("should disable Generalist and Specialist if < 3 technologies", func() {
+				intent.state.extractedTechnologies = []*ExtractedTechnology{
+					{ID: "skill-1", Name: "Ruby", Category: "backend", EventCount: 5},
+				}
+				intent.state.technologiesAvailable = false
+
+				view := intent.View()
+
+				// Should indicate only Language Agnostic is available
+				Expect(view).To(MatchRegexp("(?i)(disabled|unavailable|only.*language agnostic)"))
+			})
+
+			It("should highlight current selection", func() {
+				intent.state.technologyFocusIndex = 1 // Generalist
+
+				view := intent.View()
+
+				// Should have some indicator for current selection (▶ or similar)
+				Expect(view).To(ContainSubstring("▶"))
+			})
+		})
+
+		Context("navigation", func() {
+			It("should move selection up with up/k", func() {
+				intent.state.technologyFocusIndex = 1
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyUp})
+
+				Expect(intent.state.technologyFocusIndex).To(Equal(0))
+			})
+
+			It("should move selection down with down/j", func() {
+				intent.state.technologyFocusIndex = 0
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+
+				Expect(intent.state.technologyFocusIndex).To(Equal(1))
+			})
+
+			It("should not go below 0", func() {
+				intent.state.technologyFocusIndex = 0
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyUp})
+
+				Expect(intent.state.technologyFocusIndex).To(Equal(0))
+			})
+
+			It("should not go above max index", func() {
+				intent.state.technologyFocusIndex = 2
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+
+				Expect(intent.state.technologyFocusIndex).To(Equal(2))
+			})
+		})
+
+		Context("selection - Language Agnostic", func() {
+			It("should transition to focus area selection", func() {
+				intent.state.technologyFocusIndex = 0 // Language Agnostic
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should skip technology selection and go to focus area
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectFocusArea))
+			})
+
+			It("should set technology focus to language agnostic", func() {
+				intent.state.technologyFocusIndex = 0
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(string(intent.state.selectedTechnologyFocus)).To(Equal("language_agnostic"))
+			})
+		})
+
+		Context("selection - Generalist", func() {
+			It("should transition to technology selection", func() {
+				intent.state.technologyFocusIndex = 1 // Generalist
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should go to technology multi-select
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectTechnologies))
+			})
+
+			It("should set technology focus to generalist", func() {
+				intent.state.technologyFocusIndex = 1
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(string(intent.state.selectedTechnologyFocus)).To(Equal("generalist"))
+			})
+		})
+
+		Context("selection - Specialist", func() {
+			It("should transition to technology selection", func() {
+				intent.state.technologyFocusIndex = 2 // Specialist
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should go to technology single-select
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectTechnologies))
+			})
+
+			It("should set technology focus to specialist", func() {
+				intent.state.technologyFocusIndex = 2
+
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(string(intent.state.selectedTechnologyFocus)).To(Equal("specialist"))
+			})
+		})
+
+		Context("escape behavior", func() {
+			It("should go back to extracting technologies state", func() {
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				// Should go back to previous state
+				Expect(intent.state.currentState).To(Equal(GenerateCVStateExtractingTechnologies))
+			})
+		})
+	})
 })

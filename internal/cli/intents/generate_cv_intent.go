@@ -218,6 +218,8 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSelectAudience(msg)
 	case GenerateCVStateExtractingTechnologies:
 		return i.updateExtractingTechnologies(msg)
+	case GenerateCVStateSelectTechnologyFocus:
+		return i.updateSelectTechnologyFocus(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -571,6 +573,64 @@ func (i *GenerateCVIntent) updateExtractingTechnologies(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+// updateSelectTechnologyFocus handles messages while selecting technology focus.
+func (i *GenerateCVIntent) updateSelectTechnologyFocus(msg tea.Msg) tea.Cmd {
+	// Available technology focus options
+	options := []cv.TechnologyFocus{
+		cv.TechnologyFocusLanguageAgnostic,
+		cv.TechnologyFocusGeneralist,
+		cv.TechnologyFocusSpecialist,
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.technologyFocusIndex > 0 {
+				i.state.technologyFocusIndex--
+			}
+			return nil
+		case "down", "j":
+			if i.state.technologyFocusIndex < len(options)-1 {
+				i.state.technologyFocusIndex++
+			}
+			return nil
+		case "enter":
+			// Set selected technology focus
+			i.state.selectedTechnologyFocus = options[i.state.technologyFocusIndex]
+
+			// Transition based on selection
+			switch i.state.selectedTechnologyFocus {
+			case cv.TechnologyFocusLanguageAgnostic:
+				// Skip technology selection, go to focus area
+				i.state.currentState = GenerateCVStateSelectFocusArea
+				i.state.focusAreaCursor = 0
+			case cv.TechnologyFocusGeneralist, cv.TechnologyFocusSpecialist:
+				// Go to technology selection (multi or single select)
+				i.state.currentState = GenerateCVStateSelectTechnologies
+				i.state.technologyCursor = 0
+				i.state.technologySelected = make(map[int]bool)
+				i.state.selectedTechnologies = []string{}
+			}
+			return nil
+		}
+
+		// Handle global keys (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to extracting technologies (or previous state)
+			i.state.currentState = GenerateCVStateExtractingTechnologies
+			return nil
+		}
+	}
+	return nil
+}
+
 // updateGenerating handles messages while CV is being generated.
 func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -708,6 +768,8 @@ func (i *GenerateCVIntent) getStateContent() string {
 		return i.viewSelectProfile()
 	case GenerateCVStateSelectAudience:
 		return i.viewSelectAudience()
+	case GenerateCVStateSelectTechnologyFocus:
+		return i.viewSelectTechnologyFocus()
 	case GenerateCVStateGenerating:
 		return i.viewGenerating()
 	case GenerateCVStatePreview:
@@ -740,6 +802,18 @@ func (i *GenerateCVIntent) getContextHelp() string {
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateSelectAudience:
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateExtractingTechnologies:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("...", "Please wait"),
+			),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectTechnologyFocus:
 		return CombineThemedFooters(
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -844,6 +918,10 @@ func (i *GenerateCVIntent) getBreadcrumbs() []string {
 		crumbs = append(crumbs, "Select Profile")
 	case GenerateCVStateSelectAudience:
 		crumbs = append(crumbs, "Select Audience")
+	case GenerateCVStateExtractingTechnologies:
+		crumbs = append(crumbs, "Extracting Technologies")
+	case GenerateCVStateSelectTechnologyFocus:
+		crumbs = append(crumbs, "Select Technology Focus")
 	case GenerateCVStateGenerating:
 		crumbs = append(crumbs, "Generating")
 	case GenerateCVStatePreview:
@@ -934,6 +1012,54 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 			line := fmt.Sprintf("%s%s - %s", prefix, aud.label, aud.description)
 			content.WriteString(audienceStyle.Render(line) + "\n")
 		}
+	}
+
+	return i.getCardStyle().Render(content.String())
+}
+
+// viewSelectTechnologyFocus renders the technology focus selection view.
+func (i *GenerateCVIntent) viewSelectTechnologyFocus() string {
+	var content strings.Builder
+
+	// Header
+	content.WriteString("\n🎯 Select Technology Focus\n\n")
+
+	// Show technology count
+	techCount := len(i.state.extractedTechnologies)
+	if techCount > 0 {
+		content.WriteString(fmt.Sprintf("Found %d technologies across your career events\n\n", techCount))
+	}
+
+	// Technology focus options
+	options := []struct {
+		focus       cv.TechnologyFocus
+		name        string
+		description string
+	}{
+		{cv.TechnologyFocusLanguageAgnostic, "Language Agnostic", "Technology-agnostic narrative (emphasizes adaptability)"},
+		{cv.TechnologyFocusGeneralist, "Generalist (2-5 technologies)", "Highlight 2-5 key technologies"},
+		{cv.TechnologyFocusSpecialist, "Specialist (1 technology)", "Focus deeply on a single technology"},
+	}
+
+	for idx, option := range options {
+		prefix := "  "
+		if idx == i.state.technologyFocusIndex {
+			prefix = "▶ "
+		}
+
+		// Check if option is available
+		disabled := ""
+		if !i.state.technologiesAvailable && (option.focus == cv.TechnologyFocusGeneralist || option.focus == cv.TechnologyFocusSpecialist) {
+			disabled = " (unavailable - requires 3+ technologies)"
+		}
+
+		content.WriteString(fmt.Sprintf("%s%s%s\n", prefix, option.name, disabled))
+		content.WriteString(fmt.Sprintf("   %s\n\n", option.description))
+	}
+
+	// Show warning if < 3 technologies
+	if !i.state.technologiesAvailable {
+		content.WriteString("\n⚠️  Only Language Agnostic is available (requires 3+ technologies for other options)\n")
 	}
 
 	return i.getCardStyle().Render(content.String())
