@@ -222,6 +222,8 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSelectTechnologyFocus(msg)
 	case GenerateCVStateSelectTechnologies:
 		return i.updateSelectTechnologies(msg)
+	case GenerateCVStateSelectFocusArea:
+		return i.updateSelectFocusArea(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -710,6 +712,56 @@ func (i *GenerateCVIntent) updateSelectTechnologies(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+// updateSelectFocusArea handles the focus area selection state.
+func (i *GenerateCVIntent) updateSelectFocusArea(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Determine where to go back based on where we came from
+			if i.state.selectedTechnologyFocus == cv.TechnologyFocusLanguageAgnostic {
+				// If Language Agnostic, go back to technology focus selection
+				i.state.currentState = GenerateCVStateSelectTechnologyFocus
+			} else {
+				// If Generalist/Specialist, go back to technology selection
+				i.state.currentState = GenerateCVStateSelectTechnologies
+			}
+			return nil
+		}
+
+		// Handle navigation and selection
+		switch msg.String() {
+		case "up", "k":
+			if i.state.focusAreaCursor > 0 {
+				i.state.focusAreaCursor--
+			}
+		case "down", "j":
+			// 4 focus areas: Backend, Frontend, Fullstack, DevOps
+			if i.state.focusAreaCursor < 3 {
+				i.state.focusAreaCursor++
+			}
+		case "enter":
+			// Map cursor position to focus area
+			focusAreas := []cv.FocusArea{
+				cv.FocusAreaBackend,
+				cv.FocusAreaFrontend,
+				cv.FocusAreaFullstack,
+				cv.FocusAreaDevOps,
+			}
+			i.state.selectedFocusArea = focusAreas[i.state.focusAreaCursor]
+			i.state.currentState = GenerateCVStateSelectLengthFormat
+			return nil
+		}
+	}
+	return nil
+}
+
 // updateGenerating handles messages while CV is being generated.
 func (i *GenerateCVIntent) updateGenerating(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
@@ -851,6 +903,8 @@ func (i *GenerateCVIntent) getStateContent() string {
 		return i.viewSelectTechnologyFocus()
 	case GenerateCVStateSelectTechnologies:
 		return i.viewSelectTechnologies()
+	case GenerateCVStateSelectFocusArea:
+		return i.viewSelectFocusArea()
 	case GenerateCVStateGenerating:
 		return i.viewGenerating()
 	case GenerateCVStatePreview:
@@ -905,6 +959,11 @@ func (i *GenerateCVIntent) getContextHelp() string {
 				components.NewKeyBadge("Space", "Toggle"),
 				components.NewKeyBadge("Enter", "Confirm"),
 			),
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectFocusArea:
+		return CombineThemedFooters(
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
 		)
@@ -1014,6 +1073,8 @@ func (i *GenerateCVIntent) getBreadcrumbs() []string {
 		crumbs = append(crumbs, "Select Technology Focus")
 	case GenerateCVStateSelectTechnologies:
 		crumbs = append(crumbs, "Select Technologies")
+	case GenerateCVStateSelectFocusArea:
+		crumbs = append(crumbs, "Select Focus Area")
 	case GenerateCVStateGenerating:
 		crumbs = append(crumbs, "Generating")
 	case GenerateCVStatePreview:
@@ -1207,6 +1268,60 @@ func (i *GenerateCVIntent) viewSelectTechnologies() string {
 	}
 
 	content.WriteString("\n\nSpace to toggle, Enter to confirm\n")
+
+	return i.getCardStyle().Render(content.String())
+}
+
+// viewSelectFocusArea renders the focus area selection view.
+func (i *GenerateCVIntent) viewSelectFocusArea() string {
+	var content strings.Builder
+	content.WriteString("\n🎯 Select Focus Area\n\n")
+	content.WriteString("Choose the primary focus area for your CV:\n\n")
+
+	// Focus areas with descriptions and evidence keys
+	focusAreas := []struct {
+		area         cv.FocusArea
+		name         string
+		description  string
+		evidenceKeys []string // Categories that map to this area
+	}{
+		{cv.FocusAreaBackend, "Backend", "Server-side, databases, APIs, infrastructure", []string{"backend", "database"}},
+		{cv.FocusAreaFrontend, "Frontend", "UI/UX, web apps, client-side frameworks", []string{"frontend", "ui"}},
+		{cv.FocusAreaFullstack, "Fullstack", "Both frontend and backend development", []string{"fullstack"}},
+		{cv.FocusAreaDevOps, "DevOps", "CI/CD, deployment, monitoring, cloud", []string{"devops", "cloud", "infrastructure"}},
+	}
+
+	for idx, option := range focusAreas {
+		// Cursor indicator
+		cursor := "  "
+		if idx == i.state.focusAreaCursor {
+			cursor = "▶ "
+		}
+
+		// Suggested indicator
+		suggested := ""
+		if i.state.focusAreaSuggestion != nil && option.area == cv.FocusArea(i.state.focusAreaSuggestion.Area) {
+			suggested = " ⭐ (suggested)"
+		}
+
+		content.WriteString(fmt.Sprintf("%s%s%s\n", cursor, option.name, suggested))
+		content.WriteString(fmt.Sprintf("   %s\n", option.description))
+
+		// Show individual skill category counts if we have evidence
+		if i.state.focusAreaSuggestion != nil {
+			var evidenceParts []string
+			for _, key := range option.evidenceKeys {
+				if count, ok := i.state.focusAreaSuggestion.Evidence[key]; ok && count > 0 {
+					evidenceParts = append(evidenceParts, fmt.Sprintf("%s: %d", key, count))
+				}
+			}
+			if len(evidenceParts) > 0 {
+				content.WriteString(fmt.Sprintf("   (%s)\n", strings.Join(evidenceParts, ", ")))
+			}
+		}
+
+		content.WriteString("\n")
+	}
 
 	return i.getCardStyle().Render(content.String())
 }
