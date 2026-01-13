@@ -566,7 +566,9 @@ For user-facing documentation, see:
 - `README.md` - Main project documentation
 
 For developer documentation, see:
+- `docs/development/CENTRALIZED_KEY_HANDLING.md` - Centralized key handling guide
 - `docs/development/KEYBOARD_SYSTEM_GUIDE.md` - Keyboard system implementation
+- `docs/STATE_MATRIX.md` - Complete state matrix (10 intents, 64 states)
 - `docs/rules/` - Development rules and guidelines
 - Source code comments - Inline documentation
 

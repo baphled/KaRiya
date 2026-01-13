@@ -561,12 +561,17 @@ From CV Confirm → e/x → Select Format → Enter → Select Location → Ente
 
 ## Related Documentation
 
+### User Documentation
 - **[CV Generation Workflow Guide](workflows/CV_GENERATION_WORKFLOW.md)** - Complete CV generation workflow with state diagrams
 - **[Event Capture Workflow Guide](workflows/EVENT_CAPTURE_WORKFLOW.md)** - Event capture workflow with burst/fact extraction
 - **[TUI Standards](TUI_STANDARDS.md)** - Complete TUI design standards and guidelines
-- **[Keyboard System Guide](development/KEYBOARD_SYSTEM_GUIDE.md)** - Developer guide for implementing keyboard shortcuts
 - **[CLI Guide](CLI_GUIDE.md)** - Command-line usage and options
 - **[Troubleshooting Guide](TROUBLESHOOTING.md)** - General troubleshooting for KaRiya
+
+### Developer Documentation
+- **[State Matrix](STATE_MATRIX.md)** - Complete state matrix (10 intents, 64 states, escape behavior)
+- **[Centralized Key Handling Guide](development/CENTRALIZED_KEY_HANDLING.md)** - Developer guide for key handling
+- **[Keyboard System Guide](development/KEYBOARD_SYSTEM_GUIDE.md)** - Comprehensive keyboard system implementation
 
 ---
 

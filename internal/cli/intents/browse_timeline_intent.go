@@ -322,40 +322,54 @@ func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateDeleteConfirm(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "y", "Y":
-			// Confirm delete
-			if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
-				err := i.context.CLIEventService.DeleteEvent(
-					i.getContext(),
-					i.state.selectedEvent.ID,
-				)
-				if err != nil {
-					i.state.deleteError = err
+		// Use MessageInterceptor for consistent escape key handling
+		return NewMessageInterceptor().
+			OnQuit(StandardQuitHandler()).
+			OnHelp(StandardHelpHandler(i.BaseIntent)).
+			OnBack(func() tea.Cmd {
+				// Cancel delete and return to event detail
+				i.state.currentState = BrowseStateEventDetail
+				i.state.deleteError = nil
+				return nil
+			}).
+			InterceptOr(msg, func() tea.Cmd {
+				// Handle confirmation keys
+				switch msg.String() {
+				case "y", "Y":
+					// Confirm delete
+					if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
+						err := i.context.CLIEventService.DeleteEvent(
+							i.getContext(),
+							i.state.selectedEvent.ID,
+						)
+						if err != nil {
+							i.state.deleteError = err
+							return nil
+						}
+
+						// Remove from filtered events
+						i.removeEventFromList(i.state.selectedEvent.ID)
+
+						// Clear selection and go back to timeline
+						i.state.selectedEvent = nil
+						i.state.currentState = BrowseStateTimeline
+
+						// Select first event if available
+						if len(i.state.filteredEvents) > 0 {
+							i.state.selectedIndex = 0
+							i.state.selectedEvent = i.state.filteredEvents[0]
+						}
+					}
+					return nil
+
+				case "n", "N":
+					// Also cancel with 'n' key
+					i.state.currentState = BrowseStateEventDetail
+					i.state.deleteError = nil
 					return nil
 				}
-
-				// Remove from filtered events
-				i.removeEventFromList(i.state.selectedEvent.ID)
-
-				// Clear selection and go back to timeline
-				i.state.selectedEvent = nil
-				i.state.currentState = BrowseStateTimeline
-
-				// Select first event if available
-				if len(i.state.filteredEvents) > 0 {
-					i.state.selectedIndex = 0
-					i.state.selectedEvent = i.state.filteredEvents[0]
-				}
-			}
-			return nil
-
-		case "n", "N", "esc":
-			// Cancel delete
-			i.state.currentState = BrowseStateEventDetail
-			i.state.deleteError = nil
-			return nil
-		}
+				return nil
+			})
 	}
 
 	return nil

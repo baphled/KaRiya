@@ -1,0 +1,397 @@
+{
+  "generated_at": "2026-01-12T18:00:55.932268187Z",
+  "total_intents": 10,
+  "total_states": 64,
+  "intents": [
+    {
+      "name": "BrowseTimeline",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/browse_timeline.go",
+      "states": [
+        {
+          "constant": "BrowseStateTimeline",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "BrowseStateEventDetail",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BrowseStateDeleteConfirm",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        }
+      ],
+      "state_count": 3
+    },
+    {
+      "name": "BulkOperations",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/bulk_operations.go",
+      "states": [
+        {
+          "constant": "BulkSelectOpState",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "BulkConfigureState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BulkExecuteState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BulkCompleteState",
+          "type": "Final",
+          "escape_behavior": "Deactivate intent"
+        }
+      ],
+      "state_count": 4
+    },
+    {
+      "name": "BurstManagement",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/burst_management_intent.go",
+      "states": [
+        {
+          "constant": "BurstListState",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "BurstViewState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BurstEditorState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BurstDeleteConfirmState",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        },
+        {
+          "constant": "BurstSuggestState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BurstCompletedState",
+          "type": "Final",
+          "escape_behavior": "Deactivate intent"
+        },
+        {
+          "constant": "BurstStateList",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "BurstStateDetail",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BurstStateDetailEvents",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BurstStateDetailFacts",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BurstStateEdit",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "BurstStateDeleteConfirm",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        },
+        {
+          "constant": "BurstStateConfirm",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        },
+        {
+          "constant": "BurstStateExtractingFacts",
+          "type": "Async",
+          "escape_behavior": "Varies (let complete or allow back)"
+        }
+      ],
+      "state_count": 14
+    },
+    {
+      "name": "CaptureEvent",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/capture_event.go",
+      "states": [
+        {
+          "constant": "CaptureStateChooseStrategy",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "CaptureStateForm",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "CaptureStateReview",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "CaptureStateSubmit",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        }
+      ],
+      "state_count": 4
+    },
+    {
+      "name": "ConfigureSystem",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/configure_system.go",
+      "states": [
+        {
+          "constant": "ConfigStateSelectDomain",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "ConfigStateEditSettings",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "ConfigStateReviewChanges",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "ConfigStateConfirm",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        },
+        {
+          "constant": "ConfigStateSaving",
+          "type": "Async",
+          "escape_behavior": "Varies (let complete or allow back)"
+        },
+        {
+          "constant": "ConfigStateComplete",
+          "type": "Final",
+          "escape_behavior": "Deactivate intent"
+        },
+        {
+          "constant": "ConfigStateFailed",
+          "type": "Error",
+          "escape_behavior": "Deactivate intent (retry available)"
+        }
+      ],
+      "state_count": 7
+    },
+    {
+      "name": "ExportArtifact",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/export_artifact.go",
+      "states": [
+        {
+          "constant": "ExportStateSelectType",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "ExportStateSelectFormat",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "ExportStateSelectDest",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "ExportStateConfigure",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "ExportStatePreview",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "ExportStateConfirm",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        },
+        {
+          "constant": "ExportStateInProgress",
+          "type": "Async",
+          "escape_behavior": "Varies (let complete or allow back)"
+        },
+        {
+          "constant": "ExportStateComplete",
+          "type": "Final",
+          "escape_behavior": "Deactivate intent"
+        },
+        {
+          "constant": "ExportStateFailed",
+          "type": "Error",
+          "escape_behavior": "Deactivate intent (retry available)"
+        }
+      ],
+      "state_count": 9
+    },
+    {
+      "name": "FactManagement",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/fact_management.go",
+      "states": [
+        {
+          "constant": "FactListState",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "FactViewState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "FactEditorState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "FactDeleteConfirmState",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        },
+        {
+          "constant": "FactResultsState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "FactCompletedState",
+          "type": "Final",
+          "escape_behavior": "Deactivate intent"
+        }
+      ],
+      "state_count": 6
+    },
+    {
+      "name": "GenerateCv",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/generate_cv.go",
+      "states": [
+        {
+          "constant": "GenerateCVStateSelectProfile",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "GenerateCVStateSelectAudience",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "GenerateCVStateGenerating",
+          "type": "Async",
+          "escape_behavior": "Varies (let complete or allow back)"
+        },
+        {
+          "constant": "GenerateCVStatePreview",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "GenerateCVStateReview",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "GenerateCVStateConfirm",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        },
+        {
+          "constant": "GenerateCVStateExportSelectFormat",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "GenerateCVStateExportSelectLocation",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "GenerateCVStateExporting",
+          "type": "Async",
+          "escape_behavior": "Varies (let complete or allow back)"
+        },
+        {
+          "constant": "GenerateCVStateExportComplete",
+          "type": "Final",
+          "escape_behavior": "Deactivate intent"
+        }
+      ],
+      "state_count": 10
+    },
+    {
+      "name": "ImportWizard",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/import_wizard.go",
+      "states": [
+        {
+          "constant": "ImportFileSelectState",
+          "type": "ROOT",
+          "escape_behavior": "Cancel intent → Main Menu"
+        },
+        {
+          "constant": "ImportPreviewState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "ImportProgressState",
+          "type": "Async",
+          "escape_behavior": "Varies (let complete or allow back)"
+        },
+        {
+          "constant": "ImportCompleteState",
+          "type": "Final",
+          "escape_behavior": "Deactivate intent"
+        }
+      ],
+      "state_count": 4
+    },
+    {
+      "name": "MetadataEditor",
+      "file": "/home/baphled/Projects/KaRiya/internal/cli/intents/metadata_editor.go",
+      "states": [
+        {
+          "constant": "MetadataReviewState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "MetadataEditState",
+          "type": "Intermediate",
+          "escape_behavior": "Back → Previous state"
+        },
+        {
+          "constant": "MetadataConfirmState",
+          "type": "Confirmation",
+          "escape_behavior": "Cancel → Parent state"
+        }
+      ],
+      "state_count": 3
+    }
+  ]
+}
