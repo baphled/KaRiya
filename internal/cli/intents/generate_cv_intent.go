@@ -492,18 +492,47 @@ func (i *GenerateCVIntent) generateCVAsync() tea.Cmd {
 // extractTechnologiesAsync extracts technologies from user skills asynchronously.
 func (i *GenerateCVIntent) extractTechnologiesAsync() tea.Cmd {
 	return func() tea.Msg {
-		// TODO: Wire up actual SkillRepository and EventRepository from context
-		// For now, return empty results as stub
-		// Use default backend focus area as placeholder
-		defaultArea := "backend"
+		// Check if repositories are available
+		if i.context.SkillRepository == nil || i.context.EventRepository == nil {
+			// Return empty results if repositories not configured (for testing)
+			return TechnologiesExtractedMsg{
+				Technologies: []*ExtractedTechnology{},
+				Suggestion: &FocusAreaSuggestion{
+					Area:       technology.FocusAreaBackend,
+					Confidence: 0.0,
+					Evidence:   map[string]int{},
+				},
+				Error: nil,
+			}
+		}
+
+		ctx := i.context.AppContext
+		if ctx == nil {
+			ctx = context.Background()
+		}
+
+		// Create extractor and extract technologies
+		extractor := technology.NewExtractor(i.context.SkillRepository, i.context.EventRepository)
+		techs, err := extractor.ExtractFromUser(ctx)
+		if err != nil {
+			return TechnologiesExtractedMsg{
+				Technologies: nil,
+				Suggestion:   nil,
+				Error:        err,
+			}
+		}
+
+		// Filter to skills with 3+ events
+		filtered := extractor.FilterByThreshold(techs, 3)
+
+		// Analyze skills to suggest focus area
+		analyzer := &technology.Analyzer{}
+		suggestion := analyzer.AnalyzeSkills(filtered)
+
 		return TechnologiesExtractedMsg{
-			Technologies: []*ExtractedTechnology{},
-			Suggestion: &FocusAreaSuggestion{
-				Area:       technology.FocusArea(defaultArea),
-				Confidence: 0.0,
-				Evidence:   map[string]int{},
-			},
-			Error: nil,
+			Technologies: filtered,
+			Suggestion:   suggestion,
+			Error:        nil,
 		}
 	}
 }

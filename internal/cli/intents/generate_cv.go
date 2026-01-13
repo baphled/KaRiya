@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	careerRepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/service/career/technology"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -90,6 +91,12 @@ type GenerateCVContext struct {
 
 	// ExportService exports CVs to various formats
 	ExportService *cv.ExportService
+
+	// SkillRepository provides access to user skills (for technology extraction)
+	SkillRepository careerRepo.SkillRepository
+
+	// EventRepository provides access to career events (for technology extraction)
+	EventRepository careerRepo.Repository
 
 	// AppContext is the background context for operations
 	AppContext context.Context
