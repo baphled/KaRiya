@@ -98,7 +98,8 @@ func (s *CVPreviewScreen) View() string {
 		if len(s.cv.Sections) > 0 {
 			for _, section := range s.cv.Sections {
 				b.WriteString(fmt.Sprintf("## %s\n", section.Title))
-				b.WriteString(fmt.Sprintf("  %s\n", section.Content))
+				// Content is a slice of groups, just show count for now
+				b.WriteString(fmt.Sprintf("  (%d content groups)\n", len(section.Content)))
 				b.WriteString("\n")
 			}
 		} else {
