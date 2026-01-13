@@ -1,22 +1,47 @@
 # AI Commit Attribution - Quick Checklist
 
-## Before Every AI-Generated Commit
+**⚠️ MANDATORY - ZERO TOLERANCE POLICY**
 
-### ✅ Preparation
+## ⚠️ CRITICAL: Use `make ai-commit` (REQUIRED)
 
-- [ ] AI-generated code has been reviewed by a human
-- [ ] All tests pass (`make test`)
-- [ ] Code follows project conventions
-- [ ] No security vulnerabilities introduced
+**Using `git commit` directly for AI code is PROHIBITED.**
+
+```bash
+# ✅ REQUIRED METHOD (automatic attribution)
+git add <files>
+make check-compliance          # MUST pass first
+make ai-commit MSG="type(scope): description"
+
+# ❌ NEVER DO THIS for AI code
+git commit -m "..."            # REJECTED - no attribution
+```
+
+---
+
+## Before Every AI-Generated Commit (STRICT ORDER)
+
+### ✅ Step 1: Code Quality (MANDATORY)
+
+- [ ] AI-generated code has been **thoroughly** reviewed by a human
+- [ ] **ALL** tests pass (`make test`)
+- [ ] Code follows **ALL** project conventions (SOLID, Go idioms)
+- [ ] **NO** security vulnerabilities introduced
 - [ ] Performance is acceptable
+- [ ] Code is maintainable and understandable
 
-### ✅ Commit Message
+### ✅ Step 2: Compliance Check (MANDATORY)
 
-- [ ] Includes `AI-Generated-By: <Assistant> (<Model>)`
-- [ ] Includes `Reviewed-By: <Your Name>`
-- [ ] Format is correct with parentheses around model
-- [ ] Explains WHY the change was made
-- [ ] Includes what human review confirmed
+- [ ] **Run `make check-compliance`** - MUST pass before commit
+- [ ] Fix any violations before proceeding
+- [ ] Verify commit is **atomic** (ONE logical change only)
+
+### ✅ Step 3: Commit with Attribution (REQUIRED METHOD)
+
+- [ ] **Use `make ai-commit MSG="..."`** (automatic attribution)
+- [ ] **NEVER use `git commit` directly** for AI code
+- [ ] Message follows conventional commit format
+- [ ] Message explains **WHY** the change was made
+- [ ] Commit is atomic (single logical change)
 
 ### ✅ Format Examples
 
@@ -47,25 +72,41 @@ AI-Generated-By: Avante                           # Missing model
 ## Quick Commands
 
 ```bash
-# Setup (one-time)
+# Setup (one-time - REQUIRED)
 make install-git-hooks
 
-# Recommended: Use ai-commit command (automatic attribution)
-git add -p <files>
-make check-compliance       # REQUIRED before commit
-make ai-commit MSG="feat(scope): description"
+# ✅ REQUIRED WORKFLOW (ONLY acceptable method)
+git add -p <files>                              # Stage changes
+make check-compliance                           # MUST pass before commit
+make ai-commit MSG="feat(scope): description"   # Commit with attribution
 
-# Alternative: Manual workflow (NOT recommended)
-git add <files>
-make check-compliance       # REQUIRED before commit
-make review-commit          # Review with AI check
-git commit                  # Write message with attribution
+# ❌ DEPRECATED - DO NOT USE (Manual workflow)
+# git commit                  # REJECTED - Use make ai-commit instead
 
 # Verification
 make check-ai-attribution   # Check latest commit
 make list-ai-commits        # List AI commits
 make audit-ai-commits       # Full audit
 ```
+
+## Enforcement
+
+**Git hooks will REJECT:**
+- ❌ Commits without AI attribution for AI code
+- ❌ Incorrect attribution format
+- ❌ Missing `Reviewed-By` field
+
+**CI will REJECT PRs with:**
+- ❌ AI commits without attribution
+- ❌ Inconsistent attribution format
+- ❌ Non-atomic commits (multiple changes)
+
+**Status:**
+| Method | Status | Description |
+|--------|--------|-------------|
+| `make ai-commit` | ✅ **REQUIRED** | Only acceptable method |
+| `git commit` for AI code | ❌ **PROHIBITED** | Will be rejected |
+| `git commit` for human code | ✅ **Allowed** | Hook will confirm |
 
 ---
 
