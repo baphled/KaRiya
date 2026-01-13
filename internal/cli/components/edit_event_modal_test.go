@@ -47,6 +47,7 @@ var _ = Describe("EditEventModal", func() {
 
 		It("should initialize with correct dimensions", func() {
 			modal = components.NewEditEventModal(existingEvent, width, height)
+			modal.Init()
 
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())

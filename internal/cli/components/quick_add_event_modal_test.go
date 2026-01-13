@@ -20,6 +20,8 @@ var _ = Describe("QuickAddEventModal", func() {
 		width = 100
 		height = 30
 		modal = components.NewQuickAddEventModal(width, height)
+		// Initialize the form so it's ready to render
+		_ = modal.Init()
 	})
 
 	Describe("NewQuickAddEventModal", func() {

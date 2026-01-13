@@ -58,7 +58,7 @@ func NewEditEventModal(event *career.CareerEvent, width, height int) *EditEventM
 	return modal
 }
 
-// buildForm creates the huh form using existing forms.NewCaptureEventForm
+// buildForm creates the huh form using modal-specific form (no confirm button)
 func (m *EditEventModal) buildForm() {
 	// Calculate form dimensions
 	modalWidth := m.width - 10
@@ -74,8 +74,9 @@ func (m *EditEventModal) buildForm() {
 		formHeight = m.height - 6
 	}
 
-	// Use existing CaptureEventForm with "manual" strategy (all fields)
-	m.form = forms.NewCaptureEventForm(m.formData, "manual", modalWidth, formHeight)
+	// Use modal-specific form (simple pattern - no confirm button)
+	// Press Enter on last field = save, Esc = cancel
+	m.form = forms.NewCaptureEventFormForModal(m.formData, "manual", modalWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -118,23 +119,19 @@ func (m *EditEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditEventData) {
 	form, cmd := m.form.Update(msg)
 	m.form = form.(*huh.Form)
 
-	// Check if form is complete AND user confirmed (not cancelled)
+	// Check if form is complete (modal pattern - no confirm button check)
+	// When form completes, it means user pressed Enter on last field = save
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
-		// Only return data if user confirmed submission
-		if m.formData.SubmitConfirmed {
-			eventData := &EditEventData{
-				Text:       m.formData.Text,
-				Date:       m.formData.Date,
-				Company:    m.formData.Company,
-				Project:    m.formData.Project,
-				Tags:       m.formData.Tags,
-				Categories: m.formData.Categories,
-			}
-			return cmd, true, eventData
+		eventData := &EditEventData{
+			Text:       m.formData.Text,
+			Date:       m.formData.Date,
+			Company:    m.formData.Company,
+			Project:    m.formData.Project,
+			Tags:       m.formData.Tags,
+			Categories: m.formData.Categories,
 		}
-		// User cancelled - close without returning data
-		return cmd, false, nil
+		return cmd, true, eventData
 	}
 
 	return cmd, false, nil
