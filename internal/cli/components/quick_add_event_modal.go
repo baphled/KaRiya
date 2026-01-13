@@ -61,8 +61,14 @@ func (m *QuickAddEventModal) buildForm() {
 		modalWidth = 40
 	}
 
-	formHeight := 18
-	if m.height < 24 {
+	// Quick form needs more height to show all 3 fields (text, date, company) + confirm
+	// Text field: 5 lines + description
+	// Date field: 1 line + description
+	// Company field: 1 line + description
+	// Confirm button: 5 lines
+	// Total needed: ~20+ lines
+	formHeight := 24
+	if m.height < 30 {
 		formHeight = m.height - 6
 	}
 
