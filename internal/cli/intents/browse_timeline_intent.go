@@ -72,6 +72,12 @@ type BrowseTimelineIntent struct {
 
 	// deleteModal holds the delete confirmation modal (shown over the list)
 	deleteModal *components.DeleteConfirmModal
+
+	// quickAddModal holds the quick add event modal (shown over the list) - Phase 4 UX Issue 3A
+	quickAddModal *components.QuickAddEventModal
+
+	// editModal holds the edit event modal (shown over the list) - Phase 4 UX Issue 3B
+	editModal *components.EditEventModal
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -134,6 +140,79 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			i.state.filters.SortOrder = filterData.SortOrder
 			i.applyFilters()
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		}
+		return cmd
+	}
+
+	// If quick add modal is visible, handle it next (Phase 4 UX Issue 3A)
+	if i.quickAddModal != nil && i.quickAddModal.IsVisible() {
+		cmd, completed, eventData := i.quickAddModal.Update(msg)
+		if !i.quickAddModal.IsVisible() {
+			// Modal closed
+			if completed && eventData != nil {
+				// User completed form - save the new event
+				ctx := context.Background()
+				newEvent := eventData.ToCareerEvent()
+
+				// Save using CaptureEvent API (text, date, mode, options)
+				captureErr := i.context.CLIEventService.CaptureEvent(
+					ctx,
+					newEvent.Text,
+					newEvent.Date,
+					"manual", // EventCaptureMode.Manual
+				)
+				if captureErr != nil {
+					// TODO: Show error modal (Phase 4 Issue 3)
+					return cmd
+				}
+
+				// Reload events list to get the newly created event with ID
+				refreshedEvents, listErr := i.context.CLIEventService.ListEvents(ctx, nil)
+				if listErr != nil {
+					// TODO: Show error modal
+					return cmd
+				}
+				i.context.Events = refreshedEvents
+				i.applyFilters()
+				i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+			}
+			// Clear the modal
+			i.quickAddModal = nil
+		}
+		return cmd
+	}
+
+	// If edit modal is visible, handle it next (Phase 4 UX Issue 3B)
+	if i.editModal != nil && i.editModal.IsVisible() {
+		cmd, completed, eventData := i.editModal.Update(msg)
+		if !i.editModal.IsVisible() {
+			// Modal closed
+			if completed && eventData != nil {
+				// User completed form - update the event
+				ctx := context.Background()
+				originalEvent := i.editModal.GetOriginalEvent()
+				updatedEvent := eventData.ToCareerEvent(
+					originalEvent.ID,
+					originalEvent.CreatedAt,
+					originalEvent.UpdatedAt,
+				)
+				// Use UpdateEventMetadata since we have the full event object
+				if err := i.context.CLIEventService.UpdateEventMetadata(ctx, updatedEvent); err != nil {
+					// TODO: Show error modal (Phase 4 Issue 3)
+					return cmd
+				}
+				// Update the event in the list
+				for idx, evt := range i.context.Events {
+					if evt.ID == updatedEvent.ID {
+						i.context.Events[idx] = updatedEvent
+						break
+					}
+				}
+				i.applyFilters()
+				i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+			}
+			// Clear the modal
+			i.editModal = nil
 		}
 		return cmd
 	}
@@ -219,6 +298,16 @@ func (i *BrowseTimelineIntent) View() string {
 		// If filter modal is visible, overlay it on the COMPLETE rendered view
 		if i.filterModal != nil && i.filterModal.IsVisible() {
 			return i.renderFilterModalOverlay(baseView)
+		}
+
+		// If quick add modal is visible, overlay it (Phase 4 UX Issue 3A)
+		if i.quickAddModal != nil && i.quickAddModal.IsVisible() {
+			return i.quickAddModal.View()
+		}
+
+		// If edit modal is visible, overlay it (Phase 4 UX Issue 3B)
+		if i.editModal != nil && i.editModal.IsVisible() {
+			return i.editModal.View()
 		}
 
 		// If delete modal is visible, overlay it (Phase 4 UX Issue 2)
@@ -499,17 +588,29 @@ func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResu
 		action, _ := actionData["action"].(string)
 		switch action {
 		case "add":
-			// Send message to app to route to CaptureEvent intent for new event
-			return func() tea.Msg {
-				return RequestAddEventMsg{}
+			// Show quick add modal (Phase 4 UX Issue 3A)
+			termInfo := i.GetTerminalInfo()
+			width := 120
+			height := 40
+			if termInfo != nil {
+				width = termInfo.Width
+				height = termInfo.Height
 			}
+			i.quickAddModal = components.NewQuickAddEventModal(width, height)
+			return i.quickAddModal.Init()
 		case "edit":
 			// Get the event from the action data
 			if event, ok := actionData["event"].(*career.CareerEvent); ok {
-				// Send message to app to route to CaptureEvent intent for editing
-				return func() tea.Msg {
-					return RequestEditEventMsg{Event: event}
+				// Show edit modal (Phase 4 UX Issue 3B)
+				termInfo := i.GetTerminalInfo()
+				width := 120
+				height := 40
+				if termInfo != nil {
+					width = termInfo.Width
+					height = termInfo.Height
 				}
+				i.editModal = components.NewEditEventModal(event, width, height)
+				return i.editModal.Init()
 			}
 			return nil
 		case "delete":
