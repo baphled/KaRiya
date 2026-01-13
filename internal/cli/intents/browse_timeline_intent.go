@@ -9,6 +9,8 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
+	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/table"
@@ -64,6 +66,14 @@ type BrowseTimelineIntent struct {
 
 	// result is the final result of the intent (set when complete).
 	result *IntentResult[*BrowseTimelineResult]
+
+	// --- Screen Orchestration (Phase 4.2 Migration) ---
+	// activeScreen holds the current screen being displayed (if useScreens is true).
+	activeScreen screens.Screen
+
+	// useScreens enables the new screen-based architecture.
+	// When false, the intent falls back to legacy table-based views.
+	useScreens bool
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -120,17 +130,27 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 
 // Init is called when the intent is activated.
 func (i *BrowseTimelineIntent) Init() tea.Cmd {
-	// Apply themed table styles if theme is available
-	if theme := i.Theme(); theme != nil {
-		i.table.SetStyles(themes.NewThemedTableStyles(theme))
-	}
-
 	// Apply initial filters and sorting to the provided events.
 	i.applyFilters()
 
 	if len(i.state.filteredEvents) > 0 {
 		i.state.selectedEvent = i.state.filteredEvents[0]
 	}
+
+	// Screen-based architecture (Phase 4.2)
+	if i.useScreens {
+		// Initialize with timeline list screen
+		i.state.currentState = BrowseStateTimeline
+		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		return nil
+	}
+
+	// Legacy table-based architecture (will be removed after migration)
+	// Apply themed table styles if theme is available
+	if theme := i.Theme(); theme != nil {
+		i.table.SetStyles(themes.NewThemedTableStyles(theme))
+	}
+
 	i.updateTableRows()
 	return nil
 }
@@ -200,6 +220,19 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// Screen-based architecture (Phase 4.2)
+	if i.useScreens && i.activeScreen != nil {
+		cmd, result := i.activeScreen.Update(msg)
+		if result != nil {
+			screenCmd := i.handleScreenResult(result)
+			if screenCmd != nil {
+				return tea.Batch(cmd, screenCmd)
+			}
+		}
+		return cmd
+	}
+
+	// Legacy table-based architecture (will be removed after migration)
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		return i.updateTimelineView(msg)
@@ -543,6 +576,12 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 
 // View renders the intent's current state using StandardView.
 func (i *BrowseTimelineIntent) View() string {
+	// Screen-based architecture (Phase 4.2)
+	if i.useScreens && i.activeScreen != nil {
+		return i.activeScreen.View()
+	}
+
+	// Legacy table-based architecture (will be removed after migration)
 	// Create standard view with breadcrumbs
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
 
@@ -732,4 +771,109 @@ func (i *BrowseTimelineIntent) SetSelectedIndex(idx int) {
 // GetPageSize returns the page size for pagination.
 func (i *BrowseTimelineIntent) GetPageSize() int {
 	return 15
+}
+
+// ============================================================================
+// Screen Orchestration (Phase 4.2 Migration)
+// ============================================================================
+
+// EnableScreens activates the new screen-based architecture.
+// This is an opt-in feature that allows incremental migration.
+func (i *BrowseTimelineIntent) EnableScreens() {
+	i.useScreens = true
+}
+
+// transitionToScreen sets the active screen and updates state.
+func (i *BrowseTimelineIntent) transitionToScreen(screen screens.Screen) {
+	i.activeScreen = screen
+	termInfo := i.GetTerminalInfo()
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		screen.SetTerminalInfo(termInfo.Width, termInfo.Height)
+	}
+}
+
+// handleScreenResult processes a screen result and determines next action.
+func (i *BrowseTimelineIntent) handleScreenResult(result interface{}) tea.Cmd {
+	if result == nil {
+		return nil
+	}
+
+	switch r := result.(type) {
+	case *screens.CancelResult:
+		return i.handleCancelResult()
+	case *screens.NavigateResult:
+		return i.handleNavigateResult(r)
+	case *screens.SubmitResult:
+		return i.handleSubmitResult(r)
+	case *screens.ErrorResult:
+		return i.handleErrorResult(r)
+	default:
+		return nil
+	}
+}
+
+// handleCancelResult handles screen cancellation (back/escape).
+func (i *BrowseTimelineIntent) handleCancelResult() tea.Cmd {
+	switch i.state.currentState {
+	case BrowseStateTimeline:
+		// At root state, cancel means exit intent
+		i.setCancelled()
+		return nil
+
+	case BrowseStateEventDetail:
+		// Return to timeline list
+		i.state.currentState = BrowseStateTimeline
+		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		return nil
+
+	default:
+		// Fallback: cancel intent
+		i.setCancelled()
+		return nil
+	}
+}
+
+// handleNavigateResult handles screen navigation results.
+func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResult) tea.Cmd {
+	// Check if it's an action (map) or event selection
+	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
+		action, _ := actionData["action"].(string)
+		switch action {
+		case "add":
+			// TODO: Handle add event action (route to CaptureEvent intent)
+			return nil
+		case "edit":
+			// TODO: Handle edit event action
+			return nil
+		case "delete":
+			// TODO: Handle delete event action
+			return nil
+		default:
+			return nil
+		}
+	}
+
+	// Event selection - navigate to detail view
+	if event, ok := result.ResultData.(*career.CareerEvent); ok {
+		i.state.selectedEvent = event
+		i.state.viewedEvents = append(i.state.viewedEvents, event)
+		i.state.currentState = BrowseStateEventDetail
+		i.transitionToScreen(timeline.NewTimelineEventDetailScreen(event))
+		return nil
+	}
+
+	return nil
+}
+
+// handleSubmitResult handles form submissions (not used in timeline).
+func (i *BrowseTimelineIntent) handleSubmitResult(result *screens.SubmitResult) tea.Cmd {
+	// Timeline doesn't have forms, but include for completeness
+	return nil
+}
+
+// handleErrorResult handles error results from screens.
+func (i *BrowseTimelineIntent) handleErrorResult(result *screens.ErrorResult) tea.Cmd {
+	// Store error and return to previous state
+	i.state.deleteError = result.Err
+	return nil
 }
