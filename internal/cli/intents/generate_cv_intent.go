@@ -124,6 +124,16 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// Delegate to active screen if present (Phase 2.2 screen orchestration)
+	if i.activeScreen != nil {
+		cmd, result := i.activeScreen.Update(msg)
+		if result != nil {
+			return i.handleScreenResult(result)
+		}
+		return cmd
+	}
+
+	// Legacy state machine (for states not yet migrated to screens)
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
 		return i.updateSelectProfile(msg)
@@ -145,6 +155,123 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateExporting(msg)
 	case GenerateCVStateExportComplete:
 		return i.updateExportComplete(msg)
+	}
+	return nil
+}
+
+// handleScreenResult processes a ScreenResult from the active screen.
+// This is the bridge between screen-based UI and intent-based workflow orchestration.
+func (i *GenerateCVIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	switch result.Type() {
+	case screens.ResultNavigate:
+		// User selected something and wants to proceed
+		// Extract the data and transition to the next state
+		return i.handleNavigateResult(result)
+
+	case screens.ResultCancel:
+		// User pressed Escape - go back to previous state
+		return i.handleCancelResult(result)
+
+	case screens.ResultSubmit:
+		// User submitted a form or completed an action
+		return i.handleSubmitResult(result)
+
+	case screens.ResultError:
+		// An error occurred in the screen
+		return i.handleErrorResult(result)
+	}
+
+	return nil
+}
+
+// handleNavigateResult processes a NavigateResult from a screen.
+func (i *GenerateCVIntent) handleNavigateResult(result screens.ScreenResult) tea.Cmd {
+	data := result.Data()
+
+	switch i.state.currentState {
+	case GenerateCVStateSelectProfile:
+		// User selected a profile
+		if profile, ok := data.(*CVProfile); ok {
+			i.state.selectedProfile = profile
+			i.state.currentState = GenerateCVStateSelectAudience
+			i.activeScreen = nil // Clear screen to use legacy code for now
+		}
+		return nil
+
+	case GenerateCVStateSelectAudience:
+		// User selected an audience
+		if audience, ok := data.(string); ok {
+			i.state.selectedAudience = audience
+			i.state.currentState = GenerateCVStateGenerating
+			i.state.isGenerating = true
+			i.activeScreen = nil
+			return i.generateCVAsync()
+		}
+		return nil
+
+	case GenerateCVStateGenerating:
+		// CV generation complete, move to preview
+		if cv, ok := data.(*career.CVView); ok {
+			i.state.generatedCV = cv
+			i.state.currentState = GenerateCVStatePreview
+			i.activeScreen = nil
+		}
+		return nil
+
+	case GenerateCVStatePreview:
+		// User finished previewing, move to review
+		i.state.currentState = GenerateCVStateReview
+		i.activeScreen = nil
+		return nil
+	}
+
+	return nil
+}
+
+// handleCancelResult processes a CancelResult from a screen.
+func (i *GenerateCVIntent) handleCancelResult(result screens.ScreenResult) tea.Cmd {
+	switch i.state.currentState {
+	case GenerateCVStateSelectProfile:
+		// Root state - cancel the intent
+		i.setCancelled()
+		return nil
+
+	case GenerateCVStateSelectAudience:
+		// Go back to profile selection
+		i.state.currentState = GenerateCVStateSelectProfile
+		i.activeScreen = nil
+		return nil
+
+	case GenerateCVStateGenerating:
+		// Go back to audience selection
+		i.state.currentState = GenerateCVStateSelectAudience
+		i.activeScreen = nil
+		return nil
+
+	case GenerateCVStatePreview:
+		// Go back to audience selection (regenerate)
+		i.state.currentState = GenerateCVStateSelectAudience
+		i.activeScreen = nil
+		return nil
+	}
+
+	return nil
+}
+
+// handleSubmitResult processes a SubmitResult from a screen.
+func (i *GenerateCVIntent) handleSubmitResult(result screens.ScreenResult) tea.Cmd {
+	// Most screens use Navigate instead of Submit for now
+	// This will be used more when we add form-based screens
+	return nil
+}
+
+// handleErrorResult processes an ErrorResult from a screen.
+func (i *GenerateCVIntent) handleErrorResult(result screens.ScreenResult) tea.Cmd {
+	data := result.Data()
+	if errData, ok := data.(map[string]interface{}); ok {
+		if err, ok := errData["error"].(error); ok {
+			i.state.generationError = err
+		}
 	}
 	return nil
 }
@@ -525,6 +652,12 @@ func (i *GenerateCVIntent) View() string {
 		return "GenerateCV intent is not active"
 	}
 
+	// Delegate to active screen if present (Phase 2.2 screen orchestration)
+	if i.activeScreen != nil {
+		return i.activeScreen.View()
+	}
+
+	// Legacy view rendering (for states not yet migrated to screens)
 	// Create standard view with breadcrumbs
 	breadcrumbs := i.getBreadcrumbs()
 	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, breadcrumbs...)
