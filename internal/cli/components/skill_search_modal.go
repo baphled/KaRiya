@@ -84,37 +84,41 @@ func (m *SkillSearchModal) Init() tea.Cmd {
 // - cmd: Command to execute
 // - applied: true if user confirmed search (Enter), false if cancelled (Esc)
 // - searchData: The search text if applied=true, nil otherwise
-func (m *SkillSearchModal) Update(msg tea.KeyMsg) (tea.Cmd, bool, *SkillSearchFormData) {
-	switch msg.String() {
-	case "esc":
-		// User cancelled - close modal without applying
-		m.visible = false
-		return nil, false, nil
-
-	case "enter":
-		// Check if form is complete
-		if m.form.State == huh.StateCompleted {
-			// User confirmed - close modal and apply search
-			m.visible = false
-			return nil, true, m.formData
-		}
-		// Form not complete yet, let it handle Enter
-		form, cmd := m.form.Update(msg)
-		m.form = form.(*huh.Form)
-
-		// Check again if form just completed
-		if m.form.State == huh.StateCompleted {
-			m.visible = false
-			return cmd, true, m.formData
-		}
-		return cmd, false, nil
-
-	default:
-		// Forward all other keys to form
-		form, cmd := m.form.Update(msg)
-		m.form = form.(*huh.Form)
-		return cmd, false, nil
+//
+// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to process
+// Tab and Enter keys correctly. Huh forms require full tea.Msg interface.
+func (m *SkillSearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSearchFormData) {
+	// Handle WindowSizeMsg for responsive sizing
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		m.rebuildForm()
+		return m.form.Init(), false, nil
 	}
+
+	// Handle KeyMsg
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "esc":
+			// User cancelled - close modal without applying
+			m.visible = false
+			return nil, false, nil
+		}
+	}
+
+	// Forward ALL messages to form (not just KeyMsg)
+	// This is CRITICAL for Tab/Enter to work in huh forms
+	form, cmd := m.form.Update(msg)
+	m.form = form.(*huh.Form)
+
+	// Check if form just completed
+	if m.form.State == huh.StateCompleted {
+		m.visible = false
+		return cmd, true, m.formData
+	}
+
+	return cmd, false, nil
 }
 
 // View renders the search modal.
