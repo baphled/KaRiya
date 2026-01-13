@@ -119,6 +119,11 @@ func ConfirmBadge() KeyBadge {
 	return KeyBadge{Key: "Enter", Hint: "Confirm"}
 }
 
+// AddBadge returns a badge for adding.
+func AddBadge() KeyBadge {
+	return KeyBadge{Key: "a", Hint: "Add"}
+}
+
 // EditBadge returns a badge for editing.
 func EditBadge() KeyBadge {
 	return KeyBadge{Key: "e", Hint: "Edit"}

@@ -4,8 +4,10 @@ import (
 	"context"
 	"sort"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -27,6 +29,16 @@ type FilterChangedMsg struct {
 // This is sent to the app router which will activate CaptureEvent with PreviousEvent set.
 type RequestEditEventMsg struct {
 	Event *career.CareerEvent
+}
+
+// RequestAddEventMsg requests that the app route to CaptureEvent intent for adding a new event.
+// This is sent to the app router which will activate CaptureEvent for a new event.
+type RequestAddEventMsg struct{}
+
+// EventDeletedMsg notifies that an event was successfully deleted.
+// This is sent back to the intent after a delete operation completes.
+type EventDeletedMsg struct {
+	EventID string
 }
 
 // BrowseTimelineIntent implements the Intent interface for browsing career events.
@@ -53,6 +65,9 @@ type BrowseTimelineIntent struct {
 	// --- Screen Orchestration (Phase 4.2 - Complete) ---
 	// activeScreen holds the current screen being displayed.
 	activeScreen screens.Screen
+
+	// filterModal holds the filter modal (shown over the list)
+	filterModal *components.FilterModalModel
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -104,6 +119,36 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// If filter modal is visible, handle it first
+	if i.filterModal != nil && i.filterModal.IsVisible() {
+		cmd, applied, filterData := i.filterModal.Update(msg)
+		if applied && filterData != nil {
+			// Filters were applied - update and refresh list
+			i.state.filters.Companies = filterData.Companies
+			i.state.filters.Categories = filterData.Categories
+			i.state.filters.SortBy = filterData.SortBy
+			i.state.filters.SortOrder = filterData.SortOrder
+			i.applyFilters()
+			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		}
+		return cmd
+	}
+
+	// Handle global keys BEFORE delegating to screen
+	// This ensures q (quit), ? (help), etc. are always processed first
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch HandleGlobalKeys(keyMsg) {
+		case KeyQuit:
+			// 'q' pressed - quit the application
+			return tea.Quit
+		case KeyHelp:
+			// '?' pressed - toggle help modal
+			i.helpModal.Toggle()
+			return nil
+		}
+		// KeyBack (esc) is handled by the screen as CancelResult
+	}
+
 	// Delegate to active screen
 	if i.activeScreen != nil {
 		cmd, result := i.activeScreen.Update(msg)
@@ -121,13 +166,43 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 
 // View renders the intent's current state using StandardView.
 func (i *BrowseTimelineIntent) View() string {
-	// Delegate to active screen
-	if i.activeScreen != nil {
-		return i.activeScreen.View()
+	if i.activeScreen == nil {
+		return "No active screen"
 	}
 
-	// Fallback (should not happen)
-	return "No active screen"
+	// Type-assert to screens with RenderContent method
+	switch screen := i.activeScreen.(type) {
+	case *timeline.TimelineEventListScreen:
+		// Create StandardView with table content
+		view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
+		view.WithContent(screen.RenderContent())
+		view.WithHelp(i.getContextHelp())
+
+		// Render the complete view FIRST
+		baseView := view.Render()
+
+		// If filter modal is visible, overlay it on the COMPLETE rendered view
+		if i.filterModal != nil && i.filterModal.IsVisible() {
+			return i.renderFilterModalOverlay(baseView)
+		}
+
+		return baseView
+
+	case *timeline.TimelineEventDetailScreen:
+		// Event detail: Use RenderContent and add themed footer
+		view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
+		view.WithContent(screen.RenderContent())
+		view.WithHelp(i.getContextHelp())
+		return view.Render()
+
+	case *timeline.EventDeleteConfirmScreen:
+		// Delete confirmation: Use full View() (has its own footer)
+		return screen.View()
+
+	default:
+		// Fallback: use full View() for unknown screens
+		return i.activeScreen.View()
+	}
 }
 
 // Result returns the final result of the intent.
@@ -362,6 +437,12 @@ func (i *BrowseTimelineIntent) handleCancelResult() tea.Cmd {
 		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 		return nil
 
+	case BrowseStateDeleteConfirm:
+		// Escape from delete confirmation - return to timeline list
+		i.state.currentState = BrowseStateTimeline
+		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		return nil
+
 	default:
 		// Fallback: cancel intent
 		i.setCancelled()
@@ -376,17 +457,62 @@ func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResu
 		action, _ := actionData["action"].(string)
 		switch action {
 		case "add":
-			// TODO: Handle add event action (route to CaptureEvent intent)
-			return nil
+			// Send message to app to route to CaptureEvent intent for new event
+			return func() tea.Msg {
+				return RequestAddEventMsg{}
+			}
 		case "edit":
-			// TODO: Handle edit event action
+			// Get the event from the action data
+			if event, ok := actionData["event"].(*career.CareerEvent); ok {
+				// Send message to app to route to CaptureEvent intent for editing
+				return func() tea.Msg {
+					return RequestEditEventMsg{Event: event}
+				}
+			}
 			return nil
 		case "delete":
-			// TODO: Handle delete event action
+			// Get the event from the action data
+			if event, ok := actionData["event"].(*career.CareerEvent); ok {
+				// Transition to delete confirmation screen
+				i.state.currentState = BrowseStateDeleteConfirm
+				i.state.selectedEvent = event
+				i.transitionToScreen(timeline.NewEventDeleteConfirmScreen(event))
+			}
 			return nil
+		case "filter":
+			// Show filter modal over the current list
+			termInfo := i.GetTerminalInfo()
+			width := 120
+			height := 40
+			if termInfo != nil {
+				width = termInfo.Width
+				height = termInfo.Height
+			}
+			// Convert TimelineFilters to components.TimelineFilters
+			currentFilters := &components.TimelineFilters{
+				SearchText: i.state.filters.SearchText,
+				Tags:       i.state.filters.Tags,
+				Companies:  i.state.filters.Companies,
+				Categories: i.state.filters.Categories,
+				SortBy:     i.state.filters.SortBy,
+				SortOrder:  i.state.filters.SortOrder,
+			}
+			i.filterModal = components.NewFilterModal(
+				i.context.Events,
+				currentFilters,
+				width,
+				height,
+			)
+			// Initialize the modal's form to start its lifecycle
+			return i.filterModal.Init()
 		default:
 			return nil
 		}
+	}
+
+	// Check if it's a delete confirmation (bool result)
+	if confirmed, ok := result.ResultData.(bool); ok {
+		return i.handleDeleteConfirmation(confirmed)
 	}
 
 	// Event selection - navigate to detail view
@@ -401,6 +527,45 @@ func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResu
 	return nil
 }
 
+// handleDeleteConfirmation handles the result of the delete confirmation dialog.
+func (i *BrowseTimelineIntent) handleDeleteConfirmation(confirmed bool) tea.Cmd {
+	if !confirmed {
+		// User cancelled - return to timeline list
+		i.state.currentState = BrowseStateTimeline
+		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		return nil
+	}
+
+	// User confirmed deletion - delete the event
+	if i.state.selectedEvent == nil {
+		// No event selected, return to timeline
+		i.state.currentState = BrowseStateTimeline
+		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		return nil
+	}
+
+	// Delete the event using the CLI service
+	if i.context.CLIEventService != nil {
+		eventID := i.state.selectedEvent.ID
+		err := i.context.CLIEventService.DeleteEvent(i.getContext(), eventID)
+		if err != nil {
+			// Store error and return to timeline
+			i.state.deleteError = err
+			i.state.currentState = BrowseStateTimeline
+			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+			return nil
+		}
+
+		// Remove event from lists
+		i.removeEventFromList(eventID)
+	}
+
+	// Return to timeline list
+	i.state.currentState = BrowseStateTimeline
+	i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+	return nil
+}
+
 // handleSubmitResult handles form submissions (not used in timeline).
 func (i *BrowseTimelineIntent) handleSubmitResult(result *screens.SubmitResult) tea.Cmd {
 	// Timeline doesn't have forms, but include for completeness
@@ -412,4 +577,99 @@ func (i *BrowseTimelineIntent) handleErrorResult(result *screens.ErrorResult) te
 	// Store error and return to previous state
 	i.state.deleteError = result.Err
 	return nil
+}
+
+// getStateName returns a human-readable name for the current state.
+func (i *BrowseTimelineIntent) getStateName() string {
+	switch i.state.currentState {
+	case BrowseStateTimeline:
+		return "Timeline"
+	case BrowseStateEventDetail:
+		return "Event Details"
+	default:
+		return "Unknown"
+	}
+}
+
+// renderFilterModalOverlay renders the filter modal overlay on top of the COMPLETE rendered view.
+// The background is the fully-rendered StandardView output (logo, breadcrumbs, table, footer).
+// We overlay the modal as the final rendering step, using full terminal dimensions.
+func (i *BrowseTimelineIntent) renderFilterModalOverlay(background string) string {
+	// Get terminal dimensions
+	info := i.GetTerminalInfo()
+	width := 80
+	height := 24
+	if info != nil {
+		width = info.Width
+		height = info.Height
+	}
+
+	// Create overlay modal with filter form content
+	overlay := components.NewOverlayModal(
+		"Filter Timeline Events",
+		i.filterModal.View(),
+	)
+
+	// Build footer with KeyBadge components for consistency
+	theme := i.Theme()
+	modalFooter := i.buildFilterModalFooter(theme)
+	overlay.SetFooter(modalFooter)
+	overlay.SetWidth(60) // Fixed modal width for consistency
+
+	// Render overlay centered on the COMPLETE view using FULL terminal dimensions
+	// The background is already a complete, placed view that fills the terminal
+	return overlay.RenderCentered(background, width, height)
+}
+
+// buildFilterModalFooter builds the modal footer using KeyBadge components.
+// This ensures consistency with the rest of the UI's keyboard shortcut styling.
+func (i *BrowseTimelineIntent) buildFilterModalFooter(theme themes.Theme) string {
+	badges := []components.KeyBadge{
+		components.NewKeyBadge("Tab/Shift+Tab", "Navigate"),
+		components.NewKeyBadge("Space", "Toggle"),
+		components.NewKeyBadge("Enter", "Apply"),
+		components.CancelBadge(), // Esc: Cancel
+	}
+	return components.RenderHelpFooter(theme, badges...)
+}
+
+// getContextHelp returns themed keyboard shortcuts for the current state.
+// This follows the legacy pattern of using KeyBadge components for consistent styling.
+func (i *BrowseTimelineIntent) getContextHelp() string {
+	theme := i.Theme()
+
+	switch i.state.currentState {
+	case BrowseStateTimeline:
+		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Filter, Back + Global shortcuts
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NavigateBadge(), // ↑/↓: Navigate
+				components.NewKeyBadge("Enter", "View Details"),
+				components.AddBadge(),    // a: Add
+				components.EditBadge(),   // e: Edit
+				components.DeleteBadge(), // d: Delete
+				components.FilterBadge(), // f: Filter
+				components.BackBadge(),   // Esc: Back
+			),
+			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
+		)
+	case BrowseStateEventDetail:
+		// Event detail footer: Edit, Delete, Back + Global shortcuts
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.EditBadge(),   // e: Edit
+				components.DeleteBadge(), // d: Delete
+				components.BackBadge(),   // Esc: Back
+			),
+			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
+		)
+	case BrowseStateDeleteConfirm:
+		// Delete confirmation uses BaseConfirmScreen's built-in footer
+		// y/n: Choose, Enter: Confirm, ←→/hl: Toggle, Esc: Cancel
+		// No need to override it
+		return ""
+	default:
+		// Fallback: just global shortcuts
+		return ThemedGlobalBadges(theme)
+	}
 }

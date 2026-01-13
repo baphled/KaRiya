@@ -485,9 +485,17 @@ func DimContent(content string) string {
 }
 
 // RenderOverlay renders modal content centered over a dimmed background.
-// It handles the centering calculation and compositing.
+//
+// IMPORTANT: This function expects the background to be a COMPLETE, FULLY-RENDERED view
+// that already fills the terminal (termWidth x termHeight). This is typically the output
+// of StandardView.Render() which uses lipgloss.Place to fill the terminal.
+//
+// The modal is overlaid by:
+// 1. Dimming the entire background
+// 2. Placing the modal box centered in the terminal
+// 3. Replacing the lines where the modal appears with the centered modal
 func RenderOverlay(background, modalContent string, termWidth, termHeight int) string {
-	// Dim the background
+	// Dim the entire background first
 	dimmedBg := DimContent(background)
 
 	// Create modal box with border
@@ -499,58 +507,145 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 
 	modalBox := modalStyle.Render(modalContent)
 
-	// Calculate modal dimensions
-	modalHeight := lipgloss.Height(modalBox)
-	modalWidth := lipgloss.Width(modalBox)
+	// Split both into lines
+	bgLines := strings.Split(dimmedBg, "\n")
+	modalLines := strings.Split(modalBox, "\n")
 
-	// Calculate center position
-	centerX := (termWidth - modalWidth) / 2
+	// Calculate modal position (centered)
+	modalHeight := len(modalLines)
 	centerY := (termHeight - modalHeight) / 2
-
-	// Ensure non-negative positions
-	if centerX < 0 {
-		centerX = 0
-	}
 	if centerY < 0 {
 		centerY = 0
 	}
 
-	// Split background into lines
-	bgLines := strings.Split(dimmedBg, "\n")
-
-	// Ensure we have enough background lines
+	// Ensure we have exactly termHeight background lines
 	for len(bgLines) < termHeight {
-		bgLines = append(bgLines, "")
+		bgLines = append(bgLines, strings.Repeat(" ", termWidth))
+	}
+	if len(bgLines) > termHeight {
+		bgLines = bgLines[:termHeight]
 	}
 
-	// Split modal into lines
-	modalLines := strings.Split(modalBox, "\n")
+	// Create result by copying background
+	result := make([]string, termHeight)
+	copy(result, bgLines)
 
-	// Overlay modal onto background
+	// Overlay modal lines (centered horizontally) onto the background
 	for i, modalLine := range modalLines {
-		bgLineIdx := centerY + i
-		if bgLineIdx < 0 || bgLineIdx >= len(bgLines) {
+		lineIndex := centerY + i
+		if lineIndex >= 0 && lineIndex < termHeight {
+			// Use lipgloss.PlaceHorizontal to center the modal line
+			// This creates a new line of exactly termWidth with the modal centered
+			centeredModalLine := lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, modalLine)
+			result[lineIndex] = centeredModalLine
+		}
+	}
+
+	return strings.Join(result, "\n")
+}
+
+// truncateVisualWidth truncates a string to a visual width, handling ANSI codes properly
+func truncateVisualWidth(s string, targetWidth int) string {
+	if targetWidth <= 0 {
+		return ""
+	}
+
+	// Strip ANSI codes to measure visual width
+	visualWidth := lipgloss.Width(s)
+	if visualWidth <= targetWidth {
+		// Pad to target width
+		return s + strings.Repeat(" ", targetWidth-visualWidth)
+	}
+
+	// Need to truncate - iterate through runes
+	currentWidth := 0
+	result := ""
+	inEscape := false
+	escapeSeq := ""
+
+	for _, r := range s {
+		// Handle ANSI escape sequences
+		if r == '\x1b' || inEscape {
+			inEscape = true
+			escapeSeq += string(r)
+			if r == 'm' || r == 'K' || r == 'H' || r == 'J' {
+				// End of escape sequence
+				result += escapeSeq
+				escapeSeq = ""
+				inEscape = false
+			}
 			continue
 		}
 
-		// Ensure background line is wide enough
-		bgLine := bgLines[bgLineIdx]
-		for lipgloss.Width(bgLine) < centerX {
-			bgLine += " "
+		// Regular character - check width
+		charWidth := lipgloss.Width(string(r))
+		if currentWidth+charWidth > targetWidth {
+			break
 		}
 
-		// Build the new line: prefix + modal line + suffix
-		prefix := truncateToWidth(bgLine, centerX)
-		suffix := ""
-		afterModal := centerX + lipgloss.Width(modalLine)
-		if lipgloss.Width(bgLine) > afterModal {
-			suffix = substringFromWidth(bgLine, afterModal)
-		}
-
-		bgLines[bgLineIdx] = prefix + modalLine + suffix
+		result += string(r)
+		currentWidth += charWidth
 	}
 
-	return strings.Join(bgLines[:termHeight], "\n")
+	// Pad to target width
+	if currentWidth < targetWidth {
+		result += strings.Repeat(" ", targetWidth-currentWidth)
+	}
+
+	return result
+}
+
+// extractFromVisualWidth extracts substring starting from a visual position
+func extractFromVisualWidth(s string, startWidth int) string {
+	if startWidth <= 0 {
+		return s
+	}
+
+	visualWidth := lipgloss.Width(s)
+	if startWidth >= visualWidth {
+		return ""
+	}
+
+	// Find the byte position corresponding to the visual width
+	currentWidth := 0
+	result := ""
+	inEscape := false
+	escapeSeq := ""
+	started := false
+
+	for _, r := range s {
+		// Handle ANSI escape sequences
+		if r == '\x1b' || inEscape {
+			inEscape = true
+			escapeSeq += string(r)
+			if started {
+				result += string(r)
+			}
+			if r == 'm' || r == 'K' || r == 'H' || r == 'J' {
+				inEscape = false
+				if started {
+					escapeSeq = ""
+				}
+			}
+			continue
+		}
+
+		// Regular character
+		charWidth := lipgloss.Width(string(r))
+
+		if currentWidth >= startWidth {
+			if !started {
+				// Starting extraction - include any pending escape sequences
+				result = escapeSeq + result
+				started = true
+			}
+			result += string(r)
+		}
+
+		currentWidth += charWidth
+	}
+
+	return result
 }
 
 // truncateToWidth truncates a string to fit within the specified width.

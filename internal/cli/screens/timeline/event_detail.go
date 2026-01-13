@@ -66,8 +66,9 @@ func (s *TimelineEventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.Screen
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc", "q", "backspace":
+		case "esc", "backspace":
 			// Back to event list
+			// Note: 'q' (quit) is handled by the intent before delegation
 			return nil, &screens.CancelResult{}
 
 		case "e":
@@ -93,8 +94,9 @@ func (s *TimelineEventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.Screen
 	return nil, nil
 }
 
-// View renders the event detail screen using StandardView.
-func (s *TimelineEventDetailScreen) View() string {
+// RenderContent returns just the content (event detail card) without StandardView wrapper.
+// This allows the intent to wrap it with proper breadcrumbs and themed footer.
+func (s *TimelineEventDetailScreen) RenderContent() string {
 	// Use the same component as legacy for consistency
 	var themeObj themes.Theme
 	if t := s.Theme(); t != nil {
@@ -102,10 +104,18 @@ func (s *TimelineEventDetailScreen) View() string {
 			themeObj = th
 		}
 	}
-	content := components.RenderEventDetailCard(s.event, themeObj)
+	return components.RenderEventDetailCard(s.event, themeObj)
+}
+
+// View renders the event detail screen using StandardView.
+// This is kept for backward compatibility but RenderContent() is preferred
+// when the intent manages the StandardView wrapper.
+func (s *TimelineEventDetailScreen) View() string {
+	content := s.RenderContent()
 
 	// Footer with actions (matching legacy)
-	footer := "e: Edit  d: Delete  Esc/q/Backspace: Back to timeline"
+	// Note: 'q' is a global key handled by intent (quits app)
+	footer := "e: Edit  d: Delete  Esc/Backspace: Back to timeline  q: Quit  ?: Help"
 
 	// Use BaseScreen's CreateView helper for StandardView integration
 	breadcrumbs := []string{"Main Menu", "Timeline", "Event Details"}
