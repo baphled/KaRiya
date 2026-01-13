@@ -126,66 +126,65 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 	})
 
-	Describe("Event Selection with Screens", func() {
+	Describe("Event Selection with Modal", func() {
 		BeforeEach(func() {
 			intent.Init()
 		})
 
-		// NOTE: These tests are pending because Browse Timeline was refactored to use
-		// ViewEventDetailModal (modal overlay) instead of screen-based navigation.
-		// Tests need to be rewritten to verify modal behavior instead of screen transitions.
-		// See: Task 42 - Phase 4.2 (Browse Timeline modal system complete)
-
-		XIt("should transition to detail view on enter", func() {
+		It("should show ViewEventDetailModal on enter", func() {
 			// Press enter to select event
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// View should now show event details
+			// View should show modal overlay with event details
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Event Details"))
+			// Modal should overlay the list (list content still present)
+			Expect(view).To(ContainSubstring("Timeline"))
+			// Modal should contain event data
 			Expect(view).To(ContainSubstring("Backend Developer"))
 			Expect(view).To(ContainSubstring("TechCorp"))
 		})
 
-		XIt("should show full event information in detail view", func() {
+		It("should show full event information in modal", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Date:"))
-			Expect(view).To(ContainSubstring("Company:"))
-			Expect(view).To(ContainSubstring("Text:")) // Field name in event_detail screen
+			// Modal renders event fields
+			Expect(view).To(ContainSubstring("2024-01-01"))
+			Expect(view).To(ContainSubstring("TechCorp"))
+			Expect(view).To(ContainSubstring("Backend Developer"))
 		})
 
-		XIt("should navigate back from detail to list with escape", func() {
-			// Go to detail view
+		It("should close modal and return to list with escape", func() {
+			// Show modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			detailView := intent.View()
-			Expect(detailView).To(ContainSubstring("Event Details"))
+			modalView := intent.View()
+			Expect(modalView).To(ContainSubstring("Backend Developer"))
 
-			// Press escape to go back
+			// Press escape to close modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should be back at list view with breadcrumbs
+			// Should be back at list view without modal
 			listView := intent.View()
-			Expect(listView).To(ContainSubstring("Timeline"))  // Breadcrumb text
-			Expect(listView).To(ContainSubstring("Events: 3")) // StandardView footer format
+			Expect(listView).To(ContainSubstring("Timeline")) // Breadcrumb still present
+			// List should show all events again
+			Expect(listView).To(ContainSubstring("DevOps Engineer"))
 		})
 
-		XIt("should preserve list state when returning from detail", func() {
+		It("should preserve list state after closing modal", func() {
 			// Navigate to second event
 			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
 
-			// Select it
+			// Show modal for second event
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Go back
+			// Close modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should still show list with all events and breadcrumbs
+			// List should still show all events
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Timeline")) // Breadcrumb text
-			// New format: "Events: 3 | Page 1 of 1"
-			Expect(view).To(ContainSubstring("Events: 3"))
+			Expect(view).To(ContainSubstring("Timeline"))
+			Expect(view).To(ContainSubstring("Backend Developer"))
+			Expect(view).To(ContainSubstring("DevOps Engineer"))
 		})
 	})
 
