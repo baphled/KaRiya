@@ -1076,4 +1076,44 @@ var _ = Describe("ManageSkillsIntent", func() {
 			})
 		})
 	})
+
+	Describe("Search", func() {
+		BeforeEach(func() {
+			intent = intents.NewManageSkillsIntent(intentCtx)
+			intent.Init()
+
+			// Load skills
+			cmd := intent.Init()
+			msg := cmd()
+			intent.Update(msg)
+		})
+
+		Context("Search Modal", func() {
+			It("should open search modal when pressing /", func() {
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+
+				// Press / key to open search modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+
+				// State should remain SkillsStateList (modal architecture)
+				Expect(intent.State()).To(Equal(intents.SkillsStateList))
+
+				// Modal should be visible in view
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Search Skills"))
+			})
+
+			It("should close search modal when Esc is pressed", func() {
+				// Open search modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+
+				// Press Esc to close
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				// Modal should be closed
+				view := intent.View()
+				Expect(view).NotTo(ContainSubstring("Search Skills"))
+			})
+		})
+	})
 })
