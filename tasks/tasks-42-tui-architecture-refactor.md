@@ -620,38 +620,49 @@ These discoveries led to creation of comprehensive pattern documentation:
 
 **Missing Components** (✅ COMPLETE):
 
-- [x] **SkillFilterModal** (260 lines) - Filter by category/level/years/search
-  - **Fields**: Categories (MultiSelect), Level (Select), Years Range (Inputs), Search Text
-  - **Template**: Use FilterModalModel from BrowseTimeline as pattern
+- [x] **SkillSearchModal** (170 lines) - Search by name/category/description
+  - **Key Binding**: `/` (slash key - universal search pattern)
+  - **Fields**: SearchText (single input field)
+  - **File**: `internal/cli/components/skill_search_modal.go`
+  - **Tests**: 16 specs, 100% passing
+  - **Commit**: `a8b0442`
+  
+- [x] **SkillFilterModal** (refactored - no search) - Filter by category/level/years + sort
+  - **Key Binding**: `f` (filter key)
+  - **Fields**: Categories (MultiSelect), Levels (MultiSelect), Years Range (Inputs), SortBy (Select), SortOrder (Select)
+  - **Note**: Search removed and moved to SkillSearchModal
+  - **Note**: Sort kept in filter (sort is part of filtering results)
   - **File**: `internal/cli/components/skill_filter_modal.go`
   - **Tests**: 11 specs, 100% passing
-  - **Commit**: `62f26d0`
+  - **Commit**: `62f26d0`, `a8b0442` (refactored)
   
-- [x] **SkillSortModal** (180 lines) - Sort by name/category/level/years/events
-  - **Fields**: SortBy (Select), SortOrder (Select)
-  - **Options**: Name, Category, Level, Years, Events; Asc/Desc
-  - **File**: `internal/cli/components/skill_sort_modal.go`
-  - **Tests**: 17 specs, 100% passing
-  - **Commit**: `cbb1315`
+- [x] **SkillSortModal** (DEPRECATED - sort moved to SkillFilterModal)
+  - **Status**: Sort options integrated into SkillFilterModal
+  - **Rationale**: Filter and sort are logically related operations
 
-**Total New Components**: 2 modals (440 lines production + 327 lines tests = 767 lines total)
+**Total New Components**: 2 modals (search + filter with sort)
+- SkillSearchModal: 170 lines (16 tests)
+- SkillFilterModal: ~230 lines (11 tests)
+- **Total**: 400 lines production + 27 tests
 
-**Pattern Implementation** (0/12 COMPLETE - CRITICAL):
+**Pattern Implementation** (4/12 COMPLETE - IN PROGRESS):
 
 Based on BrowseTimeline reference implementation, ManageSkills must implement ALL 12 patterns:
 
-- [ ] **Pattern 1**: Modal Overlay Rendering (StandardView FIRST, modal LAST)
+- [x] **Pattern 1**: Modal Overlay Rendering (StandardView FIRST, modal LAST) - Commit `91910ea`
 - [ ] **Pattern 2**: Themed Footer Building (ALL footers use KeyBadge components)
-- [ ] **Pattern 3**: View Rendering with Modal Overlay
-- [ ] **Pattern 4**: Global Key Interception (modal → global → screen priority)
+- [x] **Pattern 3**: View Rendering with Modal Overlay (Overlay System Integration) - Commit `91910ea`
+- [x] **Pattern 4**: Global Key Interception (global → modal → screen priority) - Commit `4162e6b`, `4f9075c` (fixed)
 - [ ] **Pattern 5**: Context-Aware Footer Generation
 - [ ] **Pattern 6**: State-to-Breadcrumb Mapping
 - [ ] **Pattern 7**: Screen Transition Helper
 - [ ] **Pattern 8**: Screen Result Handling
-- [ ] **Pattern 9**: Filter/Sort Application
+- [ ] **Pattern 9**: Filter/Sort/Search Application
 - [ ] **Pattern 10**: Action Routing
 - [ ] **Pattern 11**: Delete Confirmation Flow
-- [ ] **Pattern 12**: Form Modal with Immediate Init
+- [x] **Pattern 12**: Form Modal with Immediate Init - Commit `91910ea`
+
+**Progress**: 4/12 patterns (33%) - Filter and Sort modals created, tests passing, global keys working
 
 **Reference**: See `docs/development/INTENT_PATTERNS_LIBRARY.md` for complete implementation guide
 
@@ -745,14 +756,19 @@ func (i *ManageSkillsIntent) getListScreenFooter() string {
         components.AddBadge(),              // a: Add
         components.EditBadge(),             // e: Edit
         components.DeleteBadge(),           // d: Delete
-        components.FilterBadge(),           // f: Filter
-        components.NewKeyBadge("s", "Sort"),
+        components.NewKeyBadge("/", "Search"),  // /: Search (NEW!)
+        components.FilterBadge(),           // f: Filter (includes sort)
         components.BackBadge(),             // Esc: Back
         components.QuitBadge(),             // q: Quit
     }
     return components.RenderHelpFooter(i.theme, badges...)
 }
 ```
+
+**Keyboard Shortcuts** (updated architecture):
+- `/` - Open SkillSearchModal (search by name/category/description)
+- `f` - Open SkillFilterModal (filter by categories/levels/years + sort options)
+- `s` - REMOVED (sort integrated into filter modal)
 
 **Estimated Work Remaining**:
 - Create SkillFilterModal: 1.5 hours (code + tests)
