@@ -187,19 +187,24 @@ func (m *EditEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditEventData) {
 	form, cmd := m.form.Update(msg)
 	m.form = form.(*huh.Form)
 
-	// Check if form is complete
+	// Check if form is complete AND user confirmed (not cancelled)
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
-		// Return event data
-		eventData := &EditEventData{
-			Text:       m.formData.Text,
-			Date:       m.formData.Date,
-			Company:    m.formData.Company,
-			Project:    m.formData.Project,
-			Tags:       m.formData.Tags,
-			Categories: m.formData.Categories,
+		// Check if user confirmed submission (not cancelled)
+		if m.formData.SubmitConfirmed {
+			// Return event data
+			eventData := &EditEventData{
+				Text:       m.formData.Text,
+				Date:       m.formData.Date,
+				Company:    m.formData.Company,
+				Project:    m.formData.Project,
+				Tags:       m.formData.Tags,
+				Categories: m.formData.Categories,
+			}
+			return cmd, true, eventData
 		}
-		return cmd, true, eventData
+		// User cancelled - close modal without returning data
+		return cmd, false, nil
 	}
 
 	return cmd, false, nil
