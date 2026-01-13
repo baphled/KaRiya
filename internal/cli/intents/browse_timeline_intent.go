@@ -8,9 +8,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
-	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/rmhubbert/bubbletea-overlay"
 )
 
 // Custom message types for BrowseTimeline state transitions.
@@ -19,6 +19,24 @@ import (
 type EventSelectedMsg struct {
 	Event *career.CareerEvent
 	Index int
+}
+
+// staticViewModel is a simple tea.Model that just returns static content.
+// Used as background for bubbletea-overlay compositing.
+type staticViewModel struct {
+	content string
+}
+
+func (m *staticViewModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m *staticViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return m, nil
+}
+
+func (m *staticViewModel) View() string {
+	return m.content
 }
 
 // FilterChangedMsg indicates the filters have changed.
@@ -78,6 +96,9 @@ type BrowseTimelineIntent struct {
 
 	// editModal holds the edit event modal (shown over the list) - Phase 4 UX Issue 3B
 	editModal *components.EditEventModal
+
+	// viewDetailModal holds the event detail viewer modal (shown over the list)
+	viewDetailModal *components.ViewEventDetailModal
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -248,6 +269,16 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
+	// If view detail modal is visible, handle it next
+	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+		_, cmd := i.viewDetailModal.Update(msg)
+		if !i.viewDetailModal.IsVisible() {
+			// Modal closed - clear the modal reference
+			i.viewDetailModal = nil
+		}
+		return cmd
+	}
+
 	// Handle global keys BEFORE delegating to screen
 	// This ensures q (quit), ? (help), etc. are always processed first
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -315,9 +346,16 @@ func (i *BrowseTimelineIntent) View() string {
 			return i.renderDeleteModalOverlay(baseView)
 		}
 
+		// If view detail modal is visible, overlay it on the COMPLETE rendered view
+		if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+			return i.renderViewDetailModalOverlay(baseView)
+		}
+
 		return baseView
 
 	case *timeline.TimelineEventDetailScreen:
+		// LEGACY: Event detail is now shown as a modal, not a full screen
+		// This case is kept for backward compatibility but should not be reached
 		// Event detail: Use RenderContent and add themed footer
 		view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
 		view.WithContent(screen.RenderContent())
@@ -349,37 +387,10 @@ func (i *BrowseTimelineIntent) Result() *IntentResult[interface{}] {
 	}
 }
 
-// setCompleted marks the intent as successfully completed.
-func (i *BrowseTimelineIntent) setCompleted() {
-	i.result = &IntentResult[*BrowseTimelineResult]{
-		Status: Completed,
-		Data: &BrowseTimelineResult{
-			SelectedEvent: i.state.selectedEvent,
-			FinalFilters:  i.state.filters,
-			ViewedEvents:  i.state.viewedEvents,
-			SelectedFacts: i.state.selectedFacts,
-		},
-	}
-	i.active = false
-}
-
 // setCancelled marks the intent as cancelled by the user.
 func (i *BrowseTimelineIntent) setCancelled() {
 	i.result = &IntentResult[*BrowseTimelineResult]{
 		Status: Cancelled,
-	}
-	i.active = false
-}
-
-// setFailed marks the intent as failed with an error.
-func (i *BrowseTimelineIntent) setFailed(code, message string, cause error) {
-	i.result = &IntentResult[*BrowseTimelineResult]{
-		Status: Failed,
-		Error: &IntentError{
-			Code:    code,
-			Message: message,
-			Cause:   cause,
-		},
 	}
 	i.active = false
 }
@@ -561,6 +572,8 @@ func (i *BrowseTimelineIntent) handleCancelResult() tea.Cmd {
 		return nil
 
 	case BrowseStateEventDetail:
+		// LEGACY: Event detail is now a modal, not a separate state
+		// This case is kept for backward compatibility but should not be reached
 		// Return to timeline list
 		i.state.currentState = BrowseStateTimeline
 		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
@@ -666,12 +679,22 @@ func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResu
 		return i.handleDeleteConfirmation(confirmed)
 	}
 
-	// Event selection - navigate to detail view
+	// Event selection - show detail modal instead of transitioning to screen
 	if event, ok := result.ResultData.(*career.CareerEvent); ok {
 		i.state.selectedEvent = event
 		i.state.viewedEvents = append(i.state.viewedEvents, event)
-		i.state.currentState = BrowseStateEventDetail
-		i.transitionToScreen(timeline.NewTimelineEventDetailScreen(event))
+		// Show view detail modal (replaces full-screen detail view)
+		termInfo := i.GetTerminalInfo()
+		width := 120
+		height := 40
+		if termInfo != nil {
+			width = termInfo.Width
+			height = termInfo.Height
+		}
+		theme := i.Theme()
+		i.viewDetailModal = components.NewViewEventDetailModal(event, theme)
+		i.viewDetailModal.SetDimensions(width, height)
+		i.viewDetailModal.Show()
 		return nil
 	}
 
@@ -742,145 +765,96 @@ func (i *BrowseTimelineIntent) getStateName() string {
 	}
 }
 
-// renderFilterModalOverlay renders the filter modal overlay on top of the COMPLETE rendered view.
-// The background is the fully-rendered StandardView output (logo, breadcrumbs, table, footer).
-// We overlay the modal as the final rendering step, using full terminal dimensions.
+// renderFilterModalOverlay renders the filter modal overlay using bubbletea-overlay.
+// The modal is automatically positioned and composited onto the background.
 func (i *BrowseTimelineIntent) renderFilterModalOverlay(background string) string {
-	// Get terminal dimensions
-	info := i.GetTerminalInfo()
-	width := 80
-	height := 24
-	if info != nil {
-		width = info.Width
-		height = info.Height
-	}
+	// Create a simple background model that just returns the rendered view
+	bgModel := &staticViewModel{content: background}
 
-	// Create overlay modal with filter form content
-	overlay := components.NewOverlayModal(
-		"Filter Timeline Events",
-		i.filterModal.View(),
+	// Use bubbletea-overlay to composite the form onto the background
+	// Position at Center/Center with a small upward offset to avoid footer
+	overlayModel := overlay.New(
+		i.filterModal,  // Foreground: the form modal
+		bgModel,        // Background: the rendered timeline view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
 	)
 
-	// Build footer with KeyBadge components for consistency
-	theme := i.Theme()
-	modalFooter := i.buildFilterModalFooter(theme)
-	overlay.SetFooter(modalFooter)
-	overlay.SetWidth(60) // Fixed modal width for consistency
-
-	// Render overlay centered on the COMPLETE view using FULL terminal dimensions
-	// The background is already a complete, placed view that fills the terminal
-	return overlay.RenderCentered(background, width, height)
+	return overlayModel.View()
 }
 
-// buildFilterModalFooter builds the modal footer using KeyBadge components.
-// This ensures consistency with the rest of the UI's keyboard shortcut styling.
-func (i *BrowseTimelineIntent) buildFilterModalFooter(theme themes.Theme) string {
-	badges := []components.KeyBadge{
-		components.NewKeyBadge("Tab/Shift+Tab", "Navigate"),
-		components.NewKeyBadge("Space", "Toggle"),
-		components.NewKeyBadge("Enter", "Apply"),
-		components.CancelBadge(), // Esc: Cancel
-	}
-	return components.RenderHelpFooter(theme, badges...)
-}
-
-// renderQuickAddModalOverlay renders the quick add event modal overlaid on the background.
+// renderQuickAddModalOverlay renders the quick add event modal using bubbletea-overlay.
 func (i *BrowseTimelineIntent) renderQuickAddModalOverlay(background string) string {
-	// Get terminal dimensions
-	info := i.GetTerminalInfo()
-	width := 80
-	height := 24
-	if info != nil {
-		width = info.Width
-		height = info.Height
-	}
+	// Create a simple background model that just returns the rendered view
+	bgModel := &staticViewModel{content: background}
 
-	// Create overlay modal with form content
-	overlay := components.NewOverlayModal(
-		"Quick Add Event",
-		i.quickAddModal.View(),
+	// Use bubbletea-overlay to composite the form onto the background
+	overlayModel := overlay.New(
+		i.quickAddModal, // Foreground: the form modal
+		bgModel,         // Background: the rendered timeline view
+		overlay.Center,  // X position
+		overlay.Center,  // Y position
+		0,               // X offset
+		-2,              // Y offset (move up 2 lines to avoid footer)
 	)
 
-	// Build footer with KeyBadge components for consistency
-	theme := i.Theme()
-	modalFooter := i.buildQuickAddModalFooter(theme)
-	overlay.SetFooter(modalFooter)
-	overlay.SetWidth(70) // Wider for event form
-
-	// Render overlay centered on the COMPLETE view
-	return overlay.RenderCentered(background, width, height)
+	return overlayModel.View()
 }
 
-// buildQuickAddModalFooter builds the quick add modal footer.
-func (i *BrowseTimelineIntent) buildQuickAddModalFooter(theme themes.Theme) string {
-	badges := []components.KeyBadge{
-		components.NewKeyBadge("Tab", "Next Field"),
-		components.NewKeyBadge("Enter", "Submit/Cancel"),
-		components.CancelBadge(), // Esc: Cancel Modal
-	}
-	return components.RenderHelpFooter(theme, badges...)
-}
-
-// renderEditModalOverlay renders the edit event modal overlaid on the background.
+// renderEditModalOverlay renders the edit event modal using bubbletea-overlay.
 func (i *BrowseTimelineIntent) renderEditModalOverlay(background string) string {
-	// Get terminal dimensions
-	info := i.GetTerminalInfo()
-	width := 80
-	height := 24
-	if info != nil {
-		width = info.Width
-		height = info.Height
-	}
+	// Create a simple background model that just returns the rendered view
+	bgModel := &staticViewModel{content: background}
 
-	// Create overlay modal with form content
-	overlay := components.NewOverlayModal(
-		"Edit Event",
-		i.editModal.View(),
+	// Use bubbletea-overlay to composite the form onto the background
+	overlayModel := overlay.New(
+		i.editModal,    // Foreground: the form modal
+		bgModel,        // Background: the rendered timeline view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
 	)
 
-	// Build footer with KeyBadge components for consistency
-	theme := i.Theme()
-	modalFooter := i.buildEditModalFooter(theme)
-	overlay.SetFooter(modalFooter)
-	overlay.SetWidth(80) // Wider for full event form
-
-	// Render overlay centered on the COMPLETE view
-	return overlay.RenderCentered(background, width, height)
+	return overlayModel.View()
 }
 
-// buildEditModalFooter builds the edit modal footer.
-func (i *BrowseTimelineIntent) buildEditModalFooter(theme themes.Theme) string {
-	badges := []components.KeyBadge{
-		components.NewKeyBadge("Tab/Shift+Tab", "Navigate"),
-		components.NewKeyBadge("Space", "Toggle"),
-		components.NewKeyBadge("Enter", "Submit/Cancel"),
-		components.CancelBadge(), // Esc: Cancel Modal
-	}
-	return components.RenderHelpFooter(theme, badges...)
-}
-
-// renderDeleteModalOverlay renders the delete confirmation modal overlaid on the background.
+// renderDeleteModalOverlay renders the delete confirmation modal using bubbletea-overlay.
 func (i *BrowseTimelineIntent) renderDeleteModalOverlay(background string) string {
-	// Get terminal dimensions
-	info := i.GetTerminalInfo()
-	width := 80
-	height := 24
-	if info != nil {
-		width = info.Width
-		height = info.Height
-	}
+	// Create a simple background model that just returns the rendered view
+	bgModel := &staticViewModel{content: background}
 
-	// Create overlay modal with delete confirmation content
-	overlay := components.NewOverlayModal(
-		"", // No title - DeleteConfirmModal has its own
-		i.deleteModal.View(),
+	// Use bubbletea-overlay to composite the delete modal onto the background
+	overlayModel := overlay.New(
+		i.deleteModal,  // Foreground: the delete confirmation modal
+		bgModel,        // Background: the rendered timeline view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
 	)
 
-	// No footer needed - DeleteConfirmModal has its own
-	overlay.SetWidth(50) // Narrower for simple confirmation
+	return overlayModel.View()
+}
 
-	// Render overlay centered on the COMPLETE view
-	return overlay.RenderCentered(background, width, height)
+// renderViewDetailModalOverlay renders the event detail modal using bubbletea-overlay.
+func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) string {
+	// Create a simple background model that just returns the rendered view
+	bgModel := &staticViewModel{content: background}
+
+	// Use bubbletea-overlay to composite the detail modal onto the background
+	overlayModel := overlay.New(
+		i.viewDetailModal, // Foreground: the event detail modal
+		bgModel,           // Background: the rendered timeline view
+		overlay.Center,    // X position
+		overlay.Center,    // Y position
+		0,                 // X offset
+		-2,                // Y offset (move up 2 lines to avoid footer)
+	)
+
+	return overlayModel.View()
 }
 
 // getContextHelp returns themed keyboard shortcuts for the current state.
@@ -904,6 +878,8 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
 		)
 	case BrowseStateEventDetail:
+		// LEGACY: Event detail is now a modal with its own footer
+		// This case is kept for backward compatibility but should not be reached
 		// Event detail footer: Edit, Delete, Back + Global shortcuts
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,

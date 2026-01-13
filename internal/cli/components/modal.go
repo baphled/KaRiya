@@ -511,11 +511,44 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 	bgLines := strings.Split(dimmedBg, "\n")
 	modalLines := strings.Split(modalBox, "\n")
 
-	// Calculate modal position (centered)
+	// Calculate modal position (below logo, not vertically centered)
+	// Logo is typically ~8 lines (6 for logo + 2 spacing)
+	// Position modal to start just below the logo
 	modalHeight := len(modalLines)
-	centerY := (termHeight - modalHeight) / 2
-	if centerY < 0 {
-		centerY = 0
+	logoHeight := 8          // Logo + spacing
+	startY := logoHeight + 1 // Start 1 line below logo
+
+	// Handle very small terminals gracefully
+	if termHeight < 15 {
+		// For very small terminals, center the modal (no room for logo positioning)
+		startY = (termHeight - modalHeight) / 2
+		if startY < 0 {
+			startY = 0
+		}
+	}
+
+	// If modal is too tall to fit below logo, constrain it
+	availableHeight := termHeight - startY - 2 // Leave 2 lines at bottom for footer
+	if availableHeight <= 0 {
+		// Terminal too small - use all available space
+		availableHeight = termHeight - 2
+		if availableHeight < 1 {
+			availableHeight = termHeight
+		}
+		startY = 0
+	}
+
+	if modalHeight > availableHeight && availableHeight > 0 {
+		// Modal is too tall - truncate it and add scroll indicator
+		if availableHeight <= len(modalLines) {
+			modalLines = modalLines[:availableHeight]
+			modalHeight = availableHeight
+		}
+		// Add scroll indicator at bottom
+		if modalHeight > 0 {
+			lastLine := modalLines[modalHeight-1]
+			modalLines[modalHeight-1] = lastLine + " ↓"
+		}
 	}
 
 	// Ensure we have exactly termHeight background lines
@@ -532,7 +565,7 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 
 	// Overlay modal lines (centered horizontally) onto the background
 	for i, modalLine := range modalLines {
-		lineIndex := centerY + i
+		lineIndex := startY + i
 		if lineIndex >= 0 && lineIndex < termHeight {
 			// Use lipgloss.PlaceHorizontal to center the modal line
 			// This creates a new line of exactly termWidth with the modal centered
@@ -542,153 +575,4 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 	}
 
 	return strings.Join(result, "\n")
-}
-
-// truncateVisualWidth truncates a string to a visual width, handling ANSI codes properly
-func truncateVisualWidth(s string, targetWidth int) string {
-	if targetWidth <= 0 {
-		return ""
-	}
-
-	// Strip ANSI codes to measure visual width
-	visualWidth := lipgloss.Width(s)
-	if visualWidth <= targetWidth {
-		// Pad to target width
-		return s + strings.Repeat(" ", targetWidth-visualWidth)
-	}
-
-	// Need to truncate - iterate through runes
-	currentWidth := 0
-	result := ""
-	inEscape := false
-	escapeSeq := ""
-
-	for _, r := range s {
-		// Handle ANSI escape sequences
-		if r == '\x1b' || inEscape {
-			inEscape = true
-			escapeSeq += string(r)
-			if r == 'm' || r == 'K' || r == 'H' || r == 'J' {
-				// End of escape sequence
-				result += escapeSeq
-				escapeSeq = ""
-				inEscape = false
-			}
-			continue
-		}
-
-		// Regular character - check width
-		charWidth := lipgloss.Width(string(r))
-		if currentWidth+charWidth > targetWidth {
-			break
-		}
-
-		result += string(r)
-		currentWidth += charWidth
-	}
-
-	// Pad to target width
-	if currentWidth < targetWidth {
-		result += strings.Repeat(" ", targetWidth-currentWidth)
-	}
-
-	return result
-}
-
-// extractFromVisualWidth extracts substring starting from a visual position
-func extractFromVisualWidth(s string, startWidth int) string {
-	if startWidth <= 0 {
-		return s
-	}
-
-	visualWidth := lipgloss.Width(s)
-	if startWidth >= visualWidth {
-		return ""
-	}
-
-	// Find the byte position corresponding to the visual width
-	currentWidth := 0
-	result := ""
-	inEscape := false
-	escapeSeq := ""
-	started := false
-
-	for _, r := range s {
-		// Handle ANSI escape sequences
-		if r == '\x1b' || inEscape {
-			inEscape = true
-			escapeSeq += string(r)
-			if started {
-				result += string(r)
-			}
-			if r == 'm' || r == 'K' || r == 'H' || r == 'J' {
-				inEscape = false
-				if started {
-					escapeSeq = ""
-				}
-			}
-			continue
-		}
-
-		// Regular character
-		charWidth := lipgloss.Width(string(r))
-
-		if currentWidth >= startWidth {
-			if !started {
-				// Starting extraction - include any pending escape sequences
-				result = escapeSeq + result
-				started = true
-			}
-			result += string(r)
-		}
-
-		currentWidth += charWidth
-	}
-
-	return result
-}
-
-// truncateToWidth truncates a string to fit within the specified width.
-func truncateToWidth(s string, width int) string {
-	if width <= 0 {
-		return ""
-	}
-
-	result := ""
-	currentWidth := 0
-
-	for _, r := range s {
-		charWidth := lipgloss.Width(string(r))
-		if currentWidth+charWidth > width {
-			break
-		}
-		result += string(r)
-		currentWidth += charWidth
-	}
-
-	// Pad with spaces if needed
-	for currentWidth < width {
-		result += " "
-		currentWidth++
-	}
-
-	return result
-}
-
-// substringFromWidth returns the substring starting from the specified width position.
-func substringFromWidth(s string, startWidth int) string {
-	if startWidth <= 0 {
-		return s
-	}
-
-	currentWidth := 0
-	for i, r := range s {
-		charWidth := lipgloss.Width(string(r))
-		if currentWidth >= startWidth {
-			return s[i:]
-		}
-		currentWidth += charWidth
-	}
-
-	return ""
 }

@@ -251,7 +251,7 @@ var _ = Describe("EditEventModal", func() {
 
 			// 3. User can cancel
 			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
-			cmd, completed, eventData := modal.Update(escMsg)
+			_, completed, eventData := modal.Update(escMsg)
 			Expect(completed).To(BeFalse())
 			Expect(eventData).To(BeNil())
 			Expect(modal.IsVisible()).To(BeFalse())
