@@ -153,6 +153,7 @@ func (m *DeleteConfirmModal) View() string {
 		BorderForeground(m.theme.ErrorColor()).
 		Background(m.theme.BackgroundColor()). // Add solid background for overlay
 		Padding(1, 2).
+		MaxHeight(35). // Cap at 35 lines for readability
 		Align(lipgloss.Center)
 
 	modalBox := modalStyle.Render(content.String())
