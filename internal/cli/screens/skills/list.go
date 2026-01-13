@@ -11,6 +11,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// SkillsListState represents the state constant for this screen
+const SkillsListState = "skills_list"
+
 // SkillsListScreen displays a list of skills with actions.
 //
 // This screen provides:
