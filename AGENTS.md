@@ -296,6 +296,8 @@ The KaRiya TUI is built on a **type-safe, intent-driven architecture**:
 
 **Visual Architecture**: See [TUI_INTENT_DIAGRAM.md](docs/TUI_INTENT_DIAGRAM.md) for complete architectural diagrams and intent workflows.
 
+**State Matrix**: See [STATE_MATRIX.md](docs/STATE_MATRIX.md) for complete state documentation (10 intents, 64 states, escape behavior).
+
 ### The 5 Core Intents
 
 | Intent | Purpose | States | Tests |
