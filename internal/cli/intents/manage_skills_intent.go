@@ -185,8 +185,9 @@ func (n *skillEventsNavigator) GetPageSize() int {
 func (i *ManageSkillsIntent) Init() tea.Cmd {
 	i.active = true
 
-	// Enable screen architecture by default
-	i.useScreens = true
+	// Disable screen architecture by default (tests expect legacy mode)
+	// TODO: Fix screen orchestration bugs before re-enabling
+	i.useScreens = false
 
 	// Apply themed table styles if theme is available (for legacy fallback states)
 	if theme := i.Theme(); theme != nil {
@@ -357,6 +358,17 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 
 	// Screen orchestration: delegate to active screen if present
 	if i.useScreens && i.activeScreen != nil {
+		// Handle global keys FIRST, even in screen mode
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch HandleGlobalKeys(keyMsg) {
+			case KeyQuit:
+				return tea.Quit
+			case KeyHelp:
+				i.helpModal.Toggle()
+				return nil
+			}
+		}
+
 		// Handle window size messages for screen
 		if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
 			i.activeScreen.SetTerminalInfo(wsMsg.Width, wsMsg.Height)
@@ -393,6 +405,17 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSkillEventsLoaded(msg)
 
 	case tea.KeyMsg:
+		// Handle global keys FIRST (q, ?, Ctrl+C) - these work everywhere
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			// 'q' or Ctrl+C pressed - quit the application
+			return tea.Quit
+		case KeyHelp:
+			// '?' pressed - toggle help
+			i.helpModal.Toggle()
+			return nil
+		}
+
 		// If we have a form active, forward key messages to it
 		if i.skillForm != nil {
 			// Check for Esc key to cancel form

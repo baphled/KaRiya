@@ -60,7 +60,8 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", func() {
 
 			// Footer should show navigation help
 			Expect(view).To(Or(
-				ContainSubstring("navigate"),
+				ContainSubstring("Navigate"),
+				ContainSubstring("↑↓/jk"),
 				ContainSubstring("↑/↓"),
 				ContainSubstring("j/k"),
 			), "Should show navigation hints")
