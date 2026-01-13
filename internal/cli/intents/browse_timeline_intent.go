@@ -815,8 +815,8 @@ func (i *BrowseTimelineIntent) renderQuickAddModalOverlay(background string) str
 func (i *BrowseTimelineIntent) buildQuickAddModalFooter(theme themes.Theme) string {
 	badges := []components.KeyBadge{
 		components.NewKeyBadge("Tab", "Next Field"),
-		components.NewKeyBadge("Enter", "Save"),
-		components.CancelBadge(), // Esc: Cancel
+		components.NewKeyBadge("Enter", "Submit/Cancel"),
+		components.CancelBadge(), // Esc: Cancel Modal
 	}
 	return components.RenderHelpFooter(theme, badges...)
 }
@@ -853,8 +853,8 @@ func (i *BrowseTimelineIntent) buildEditModalFooter(theme themes.Theme) string {
 	badges := []components.KeyBadge{
 		components.NewKeyBadge("Tab/Shift+Tab", "Navigate"),
 		components.NewKeyBadge("Space", "Toggle"),
-		components.NewKeyBadge("Enter", "Save"),
-		components.CancelBadge(), // Esc: Cancel
+		components.NewKeyBadge("Enter", "Submit/Cancel"),
+		components.CancelBadge(), // Esc: Cancel Modal
 	}
 	return components.RenderHelpFooter(theme, badges...)
 }

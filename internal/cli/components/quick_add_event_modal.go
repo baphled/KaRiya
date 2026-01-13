@@ -50,7 +50,7 @@ func NewQuickAddEventModal(width, height int) *QuickAddEventModal {
 	return modal
 }
 
-// buildForm creates the huh form using modal-specific form (no confirm button)
+// buildForm creates the huh form with confirm button
 func (m *QuickAddEventModal) buildForm() {
 	// Calculate form dimensions
 	modalWidth := m.width - 10
@@ -66,9 +66,8 @@ func (m *QuickAddEventModal) buildForm() {
 		formHeight = m.height - 6
 	}
 
-	// Use modal-specific form (simple pattern - no confirm button)
-	// Press Enter on last field = save, Esc = cancel
-	m.form = forms.NewCaptureEventFormForModal(m.formData, "quick", modalWidth, formHeight)
+	// Use standard form with confirm button (Submit/Cancel)
+	m.form = forms.NewCaptureEventForm(m.formData, "quick", modalWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -111,16 +110,20 @@ func (m *QuickAddEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddEventD
 	form, cmd := m.form.Update(msg)
 	m.form = form.(*huh.Form)
 
-	// Check if form is complete (modal pattern - no confirm button check)
-	// When form completes, it means user pressed Enter on last field = save
+	// Check if form is complete AND user confirmed submission
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
-		eventData := &QuickAddEventData{
-			Text:    m.formData.Text,
-			Date:    m.formData.Date,
-			Company: m.formData.Company,
+		// Only return data if user confirmed (pressed Submit, not Cancel)
+		if m.formData.SubmitConfirmed {
+			eventData := &QuickAddEventData{
+				Text:    m.formData.Text,
+				Date:    m.formData.Date,
+				Company: m.formData.Company,
+			}
+			return cmd, true, eventData
 		}
-		return cmd, true, eventData
+		// User cancelled - close without returning data
+		return cmd, false, nil
 	}
 
 	return cmd, false, nil

@@ -58,7 +58,7 @@ func NewEditEventModal(event *career.CareerEvent, width, height int) *EditEventM
 	return modal
 }
 
-// buildForm creates the huh form using modal-specific form (no confirm button)
+// buildForm creates the huh form with confirm button
 func (m *EditEventModal) buildForm() {
 	// Calculate form dimensions
 	modalWidth := m.width - 10
@@ -74,9 +74,8 @@ func (m *EditEventModal) buildForm() {
 		formHeight = m.height - 6
 	}
 
-	// Use modal-specific form (simple pattern - no confirm button)
-	// Press Enter on last field = save, Esc = cancel
-	m.form = forms.NewCaptureEventFormForModal(m.formData, "manual", modalWidth, formHeight)
+	// Use standard form with confirm button (Submit/Cancel)
+	m.form = forms.NewCaptureEventForm(m.formData, "manual", modalWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -119,19 +118,23 @@ func (m *EditEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditEventData) {
 	form, cmd := m.form.Update(msg)
 	m.form = form.(*huh.Form)
 
-	// Check if form is complete (modal pattern - no confirm button check)
-	// When form completes, it means user pressed Enter on last field = save
+	// Check if form is complete AND user confirmed submission
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
-		eventData := &EditEventData{
-			Text:       m.formData.Text,
-			Date:       m.formData.Date,
-			Company:    m.formData.Company,
-			Project:    m.formData.Project,
-			Tags:       m.formData.Tags,
-			Categories: m.formData.Categories,
+		// Only return data if user confirmed (pressed Submit, not Cancel)
+		if m.formData.SubmitConfirmed {
+			eventData := &EditEventData{
+				Text:       m.formData.Text,
+				Date:       m.formData.Date,
+				Company:    m.formData.Company,
+				Project:    m.formData.Project,
+				Tags:       m.formData.Tags,
+				Categories: m.formData.Categories,
+			}
+			return cmd, true, eventData
 		}
-		return cmd, true, eventData
+		// User cancelled - close without returning data
+		return cmd, false, nil
 	}
 
 	return cmd, false, nil
