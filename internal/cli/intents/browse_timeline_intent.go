@@ -157,6 +157,7 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			// Filters were applied - update and refresh list
 			i.state.filters.Companies = filterData.Companies
 			i.state.filters.Categories = filterData.Categories
+			i.state.filters.Projects = filterData.Projects
 			i.state.filters.SortBy = filterData.SortBy
 			i.state.filters.SortOrder = filterData.SortOrder
 			i.applyFilters()
@@ -465,6 +466,20 @@ func (i *BrowseTimelineIntent) applyFilters() {
 			}
 		}
 
+		// Apply project filter
+		if len(i.state.filters.Projects) > 0 {
+			hasProject := false
+			for _, filterProject := range i.state.filters.Projects {
+				if evt.Project == filterProject {
+					hasProject = true
+					break
+				}
+			}
+			if !hasProject {
+				continue
+			}
+		}
+
 		// Event passes all filters
 		filtered = append(filtered, evt)
 	}
@@ -658,6 +673,7 @@ func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResu
 				Tags:       i.state.filters.Tags,
 				Companies:  i.state.filters.Companies,
 				Categories: i.state.filters.Categories,
+				Projects:   i.state.filters.Projects,
 				SortBy:     i.state.filters.SortBy,
 				SortOrder:  i.state.filters.SortOrder,
 			}

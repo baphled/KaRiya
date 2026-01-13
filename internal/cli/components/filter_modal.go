@@ -22,6 +22,7 @@ type FilterModalModel struct {
 type FilterFormData struct {
 	Companies  []string
 	Categories []string
+	Projects   []string
 	SortBy     string
 	SortOrder  string
 }
@@ -33,6 +34,7 @@ type TimelineFilters struct {
 	Tags       []string
 	Companies  []string
 	Categories []string
+	Projects   []string
 	SortBy     string
 	SortOrder  string
 }
@@ -51,6 +53,7 @@ func NewFilterModal(events []*career.CareerEvent, currentFilters *TimelineFilter
 	if currentFilters != nil {
 		formData.Companies = currentFilters.Companies
 		formData.Categories = currentFilters.Categories
+		formData.Projects = currentFilters.Projects
 		if currentFilters.SortBy != "" {
 			formData.SortBy = currentFilters.SortBy
 		}
@@ -96,6 +99,18 @@ func (m *FilterModalModel) buildForm(events []*career.CareerEvent) {
 		categoryOptions = append(categoryOptions, huh.NewOption(category, category))
 	}
 
+	// Extract unique projects from events
+	projectMap := make(map[string]bool)
+	for _, evt := range events {
+		if evt.Project != "" {
+			projectMap[evt.Project] = true
+		}
+	}
+	projectOptions := make([]huh.Option[string], 0, len(projectMap))
+	for project := range projectMap {
+		projectOptions = append(projectOptions, huh.NewOption(project, project))
+	}
+
 	// Create form fields
 	fields := []huh.Field{}
 
@@ -113,6 +128,14 @@ func (m *FilterModalModel) buildForm(events []*career.CareerEvent) {
 			Title("Filter by Category").
 			Options(categoryOptions...).
 			Value(&m.formData.Categories))
+	}
+
+	// Only add project filter if there are projects
+	if len(projectOptions) > 0 {
+		fields = append(fields, huh.NewMultiSelect[string]().
+			Title("Filter by Project").
+			Options(projectOptions...).
+			Value(&m.formData.Projects))
 	}
 
 	// Add sort options
