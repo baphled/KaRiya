@@ -227,6 +227,11 @@ func (s *TimelineEventListScreen) updateTableRows() {
 
 	// Sync container's selected index
 	s.listContainer.SetSelectedIdx(relativeCursor)
+
+	// CRITICAL: Sync updated table back to container (fixes display bug)
+	// The container stores a VALUE COPY of the table, so we must explicitly
+	// update it after modifying rows/cursor, otherwise it renders stale data
+	s.listContainer.SetTable(s.table)
 }
 
 // View renders the event list screen using StandardView with table.
