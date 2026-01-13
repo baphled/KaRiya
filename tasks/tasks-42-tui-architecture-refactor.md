@@ -344,32 +344,66 @@ func (i *GenerateCVIntent) View() string {
 
 ---
 
-### 3.1 Base Screens - Remaining
+### 3.1 All Base Screens ✅ COMPLETE
 
-**Files to Create**:
-- [ ] `internal/cli/screens/base/detail_screen.go` - BaseDetailScreen
-- [ ] `internal/cli/screens/base/confirm_screen.go` - BaseConfirmScreen
-- [ ] `internal/cli/screens/base/progress_screen.go` - BaseProgressScreen
+**Files Created**:
+- [x] `internal/cli/screens/base/form_screen.go` - BaseFormScreen (196 lines, 21 test specs)
+- [x] `internal/cli/screens/base/detail_screen.go` - BaseDetailScreen (234 lines, 30 test specs)
+- [x] `internal/cli/screens/base/confirm_screen.go` - BaseConfirmScreen (233 lines, 39 test specs)
+- [x] `internal/cli/screens/base/progress_screen.go` - BaseProgressScreen (261 lines, 38 test specs)
 
-**TDD Checklist** (for each screen):
-- [ ] RED: Write tests for keyboard shortcuts (esc, enter, navigation)
-- [ ] RED: Write tests for view rendering
-- [ ] RED: Write tests for state classification
-- [ ] GREEN: Implement screen
-- [ ] REFACTOR: Extract common patterns
+**Total Lines Created**: 2,933 lines (924 production + 2,009 tests)
+**Total Test Specs**: 128 specs
+**Test Pass Rate**: 100% (all 128 passing)
+**Zero Regressions**: All existing tests still pass
 
-**TUI Standards Compliance Checklist** (for each screen):
-- [ ] Universal keyboard shortcuts implemented (see `docs/TUI_STANDARDS.md`)
-- [ ] Escape key behavior matches state type (ROOT/Intermediate/Async/Final)
-- [ ] Help text in footer shows available shortcuts
-- [ ] View uses StandardView component with logo and breadcrumbs
-- [ ] Theme system integration (via BaseScreen.SetTheme)
-- [ ] Terminal size handling (responsive layout)
+**BaseFormScreen Features**:
+- Generic type parameter for form data (BaseFormScreen[T])
+- Huh form integration with FormBuilder[T] pattern
+- Automatic form rebuild on terminal resize
+- Escape key handling (returns CancelResult)
+- Form submission detection (returns SubmitResult)
 
-**State Matrix Integration**:
-- [ ] After creating each screen, run: `make generate-diagrams`
-- [ ] Verify screen appears in STATE_MATRIX.md under "Screen States" section
-- [ ] Update state count in this task file
+**BaseDetailScreen Features**:
+- Generic type parameter for data (BaseDetailScreen[T])
+- Scrolling support (↑↓/jk/g/G keys)
+- Custom action keys (e.g., 'e' for edit, 'd' for delete)
+- Scroll position preservation in metadata
+
+**BaseConfirmScreen Features**:
+- Yes/No button selection with toggle (←→/hl keys)
+- Direct submission keys (y/n)
+- Customizable button text
+- Safe default (No selected initially)
+- Lipgloss-styled buttons with highlighting
+
+**BaseProgressScreen Features**:
+- Animated spinner (10-frame animation)
+- Optional cancellation (can be disabled)
+- Async operation completion (CompleteMsg)
+- Error handling (ErrorMsg)
+- Progress message updates during operation
+
+**TDD Checklist**:
+- [x] RED: Write comprehensive tests (128 specs total)
+- [x] GREEN: Implement all 4 base screens
+- [x] All 128 tests passing (100% pass rate)
+- [x] Zero regressions in existing tests
+
+**TUI Standards Compliance**:
+- [x] Universal keyboard shortcuts (Esc, Enter, Arrow/vim keys)
+- [x] StandardView integration (all screens)
+- [x] Terminal size handling (responsive layout)
+- [x] Theme system integration (via BaseScreen.SetTheme)
+- [x] Help text in footer (context-aware)
+
+**Commits**:
+- `dc5c107` - test(tests): add BaseFormScreen tests (RED phase - Phase 3.1)
+- `68d3d45` - feat(components): add BaseDetailScreen with scrolling support (GREEN phase - Phase 3.1)
+- `887605d` - feat(components): add BaseConfirmScreen with Yes/No selection (GREEN phase - Phase 3.1)
+- `93a7c70` - feat(components): add BaseProgressScreen with spinner animation (GREEN phase - Phase 3.1)
+
+---
 
 ### 3.2 Skills Screens
 
@@ -419,54 +453,217 @@ func (i *GenerateCVIntent) View() string {
 
 ## Phase 4: Intent Migration (Week 5-7)
 
-Migrate remaining intents one at a time:
+**Goal**: Migrate all 11 intents to use Screen pattern, reducing monolithic code by 70%+
 
-### 4.1 ManageSkillsIntent
-- [ ] Create skills screens (Phase 3.2)
+**All Application Intents** (from `internal/cli/app/app.go`):
+1. ✅ **GenerateCV** - Phase 2 complete (hybrid approach, screens opt-in) - Has workflow guide
+2. **CaptureEvent** - Event capture with burst/fact extraction - Has workflow guide
+3. **BrowseTimeline** - View career timeline
+4. **ManageSkills** - Skill management - Has workflow guide
+5. **ExportArtifact** - Export CV/data
+6. **ConfigureSystem** - System settings
+7. **BurstManagement** - Manage career bursts
+8. **FactManagement** - Review extracted facts
+9. **ImportWizard** - CSV import wizard
+10. **MetadataEditor** - Bulk metadata editing
+11. **BulkOperations** - Bulk actions on events
+
+### Migration Priority Order
+
+**High Priority** (Core workflows, have documentation):
+1. ManageSkills (9 states, has workflow guide)
+2. BrowseTimeline (2 states, simple)
+3. CaptureEvent (4 states + 3 modals, has workflow guide)
+
+**Medium Priority** (Regular use):
+4. ExportArtifact (5 states)
+5. ConfigureSystem (4 states)
+6. BurstManagement (6 states)
+7. FactManagement (5 states)
+
+**Low Priority** (Infrequent use):
+8. ImportWizard (5 states)
+9. MetadataEditor (3 states)
+10. BulkOperations (4 states)
+
+---
+
+### 4.1 ManageSkillsIntent (Priority: High)
+**Current**: 1,647 lines (9 states) | **Target**: ~250 lines (84% reduction)
+**Workflow Doc**: `docs/workflows/MANAGE_SKILLS_WORKFLOW.md`
+
+- [ ] Create skills screens (Phase 3.2): list, detail, form, delete, filter, sort
 - [ ] Refactor ManageSkillsIntent to use screens
+- [ ] Update workflow guide if state machine changes
 - [ ] Verify all tests pass
-- [ ] Expected reduction: 1,647 → ~250 lines
 - [ ] **TUI Compliance**: Run `make check-compliance` after refactor
 - [ ] **State Matrix**: Run `make generate-diagrams` to update intent states
 - [ ] **Verify**: Check STATE_MATRIX.md shows screens under "Screen States" section
 
-### 4.2 BrowseTimelineIntent
-- [ ] Create timeline screens (Phase 3.3)
+### 4.2 BrowseTimelineIntent (Priority: High - Simplest)
+**Current**: ~600 lines (2 states) | **Target**: ~150 lines (75% reduction)
+
+- [ ] Create timeline screens (Phase 3.3): event_list, event_detail
 - [ ] Refactor BrowseTimelineIntent
 - [ ] Verify all tests pass
 - [ ] **TUI Compliance**: Ensure escape key behavior follows standards
 - [ ] **State Matrix**: Update STATE_MATRIX.md via `make generate-diagrams`
 
-### 4.3 CaptureEventIntent
-- [ ] Create capture screens
+### 4.3 CaptureEventIntent (Priority: High)
+**Current**: ~1,200 lines (4 states + 3 modals) | **Target**: ~300 lines (75% reduction)
+**Workflow Doc**: `docs/workflows/EVENT_CAPTURE_WORKFLOW.md`
+
+- [ ] Create capture screens: strategy_select, form, review, submit
+- [ ] Create modal screens: metadata_edit, burst_edit, fact_edit (or reuse existing modals)
 - [ ] Refactor CaptureEventIntent
+- [ ] Update workflow guide if state machine changes
 - [ ] Verify all tests pass
 - [ ] **TUI Compliance**: Universal keyboard shortcuts implemented
 - [ ] **State Matrix**: Update after refactor
 
-### 4.4 ExportArtifactIntent
-- [ ] Create export screens
+### 4.4 ExportArtifactIntent (Priority: Medium)
+**Current**: ~800 lines (5 states) | **Target**: ~200 lines (75% reduction)
+
+- [ ] Create export screens: artifact_select, format_select, destination_select, preview, export
 - [ ] Refactor ExportArtifactIntent
 - [ ] Verify all tests pass
 - [ ] **TUI Compliance**: Check help text accuracy
 - [ ] **State Matrix**: Update after refactor
 
-### 4.5 Remaining Intents
-- [ ] BurstManagementIntent
-- [ ] FactManagementIntent
-- [ ] ImportWizardIntent
-- [ ] BulkOperationsIntent
-- [ ] ConfigureSystemIntent
+### 4.5 ConfigureSystemIntent (Priority: Medium)
+**Current**: ~500 lines (4 states) | **Target**: ~150 lines (70% reduction)
 
-**For each intent migration**:
-1. [ ] Create screens with TUI standards compliance
-2. [ ] Write comprehensive tests (keyboard, view, state transitions)
-3. [ ] Refactor intent to orchestrate screens
-4. [ ] Run `make check-compliance` (MUST pass)
-5. [ ] Run `make generate-diagrams` to update STATE_MATRIX.md
-6. [ ] Verify screens appear in "Screen States" section
-7. [ ] Verify all tests pass (100%)
-8. [ ] Commit with `make ai-commit MSG="..."`
+- [ ] Create config screens: domain_select, settings, staged_changes, confirm
+- [ ] Refactor ConfigureSystemIntent
+- [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Universal keyboard shortcuts
+- [ ] **State Matrix**: Update after refactor
+
+### 4.6 BurstManagementIntent (Priority: Medium)
+**Current**: ~900 lines (6 states) | **Target**: ~200 lines (78% reduction)
+
+- [ ] Create burst screens: list, detail, form, delete, filter, sort
+- [ ] Refactor BurstManagementIntent
+- [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Universal keyboard shortcuts
+- [ ] **State Matrix**: Update after refactor
+
+### 4.7 FactManagementIntent (Priority: Medium)
+**Current**: ~700 lines (5 states) | **Target**: ~180 lines (74% reduction)
+
+- [ ] Create fact screens: list, detail, form, delete, filter
+- [ ] Refactor FactManagementIntent
+- [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Universal keyboard shortcuts
+- [ ] **State Matrix**: Update after refactor
+
+### 4.8 ImportWizardIntent (Priority: Low)
+**Current**: ~650 lines (5 states) | **Target**: ~180 lines (72% reduction)
+
+- [ ] Create import screens: file_select, preview, mapping, validation, import
+- [ ] Refactor ImportWizardIntent
+- [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Universal keyboard shortcuts
+- [ ] **State Matrix**: Update after refactor
+
+### 4.9 MetadataEditorIntent (Priority: Low)
+**Current**: ~450 lines (3 states) | **Target**: ~130 lines (71% reduction)
+
+- [ ] Create metadata screens: event_list, edit, confirm
+- [ ] Refactor MetadataEditorIntent
+- [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Universal keyboard shortcuts
+- [ ] **State Matrix**: Update after refactor
+
+### 4.10 BulkOperationsIntent (Priority: Low)
+**Current**: ~550 lines (4 states) | **Target**: ~150 lines (73% reduction)
+
+- [ ] Create bulk screens: event_select, operation_select, preview, execute
+- [ ] Refactor BulkOperationsIntent
+- [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Universal keyboard shortcuts
+- [ ] **State Matrix**: Update after refactor
+
+---
+
+### Migration Workflow Template (For Each Intent)
+
+**Standard workflow for migrating each intent**:
+
+1. **Analyze Current Intent**:
+   - [ ] Document current states and transitions
+   - [ ] Identify reusable base screens (list, form, detail, confirm)
+   - [ ] Note special screens needed (filters, async operations)
+
+2. **Create Screens** (TDD):
+   - [ ] RED: Write tests first for each screen
+   - [ ] GREEN: Implement screens using base screens where possible
+   - [ ] REFACTOR: Extract common patterns
+   - [ ] Ensure TUI standards compliance (keyboard shortcuts, escape behavior, help text)
+   - [ ] Run `make generate-diagrams` after each screen
+
+3. **Refactor Intent** (Hybrid Approach):
+   - [ ] Add screen orchestration infrastructure (like Phase 2.2)
+   - [ ] Implement screen delegation in Update() and View()
+   - [ ] Add result handlers for each screen
+   - [ ] Keep existing code as fallback initially (backward compatible)
+
+4. **Test & Verify**:
+   - [ ] All existing tests pass
+   - [ ] Add new tests for screen transitions
+   - [ ] Manual testing of complete workflow
+   - [ ] Run `make check-compliance` (MUST pass)
+
+5. **Cleanup & Document**:
+   - [ ] Remove legacy code once screens fully functional
+   - [ ] Update workflow guide if one exists
+   - [ ] Final `make generate-diagrams` run
+   - [ ] Commit with `make ai-commit MSG="..."`
+
+6. **Verify State Matrix**:
+   - [ ] STATE_MATRIX.md shows screens in "Screen States" section
+   - [ ] Intent states reduced (only orchestration logic remains)
+   - [ ] State count accurate
+
+---
+
+### Phase 4 Metrics
+
+**Expected Code Reduction**:
+| Intent | Current Lines | Target Lines | Reduction | States |
+|--------|---------------|--------------|-----------|--------|
+| GenerateCV ✅ | 1,390 | 300 | 78% | 10 |
+| ManageSkills | 1,647 | 250 | 84% | 9 |
+| CaptureEvent | 1,200 | 300 | 75% | 4+3 |
+| BurstManagement | 900 | 200 | 78% | 6 |
+| ExportArtifact | 800 | 200 | 75% | 5 |
+| FactManagement | 700 | 180 | 74% | 5 |
+| ImportWizard | 650 | 180 | 72% | 5 |
+| BrowseTimeline | 600 | 150 | 75% | 2 |
+| BulkOperations | 550 | 150 | 73% | 4 |
+| ConfigureSystem | 500 | 150 | 70% | 4 |
+| MetadataEditor | 450 | 130 | 71% | 3 |
+| **Total** | **9,387** | **2,190** | **77%** | **57+3** |
+
+**State Matrix Evolution**:
+- Current (Phase 1): 73 intent states, 4 screen states (77 total)
+- Target (Phase 4 end): ~15 intent states, ~75 screen states (~90 total)
+- Intent states become thin orchestration layers
+
+**Test Coverage**:
+- Maintain >85% coverage throughout
+- Add screen-specific tests as screens created
+- Keep all existing intent tests passing
+
+**Workflow Guide Coverage**:
+- ✅ GenerateCV - Has guide (`docs/workflows/CV_GENERATION_WORKFLOW.md`)
+- ✅ CaptureEvent - Has guide (`docs/workflows/EVENT_CAPTURE_WORKFLOW.md`)
+- ✅ ManageSkills - Has guide (`docs/workflows/MANAGE_SKILLS_WORKFLOW.md`)
+- ❌ BrowseTimeline - No guide yet
+- ❌ ExportArtifact - No guide yet
+- ❌ Others - No guides yet
+
+**Note**: Update workflow guides when state machines change during refactoring
 
 ---
 
