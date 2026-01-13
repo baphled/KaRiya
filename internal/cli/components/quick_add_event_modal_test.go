@@ -98,7 +98,7 @@ var _ = Describe("QuickAddEventModal", func() {
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).To(ContainSubstring("Event Description"))
 			Expect(view).To(ContainSubstring("Date"))
-			Expect(view).To(ContainSubstring("Company"))
+			// Quick form only has text and date (no company)
 		})
 
 		It("should return empty string when not visible", func() {
@@ -127,18 +127,17 @@ var _ = Describe("QuickAddEventModal", func() {
 
 	Describe("QuickAddEventData", func() {
 		Describe("ToCareerEvent", func() {
-			It("should create a valid CareerEvent with all fields", func() {
+			It("should create a valid CareerEvent with text and date only", func() {
 				data := &components.QuickAddEventData{
-					Text:    "Implemented new feature",
-					Date:    "2024-01-15",
-					Company: "Acme Corp",
+					Text: "Implemented new feature",
+					Date: "2024-01-15",
 				}
 
 				event := data.ToCareerEvent()
 
 				Expect(event.Text).To(Equal("Implemented new feature"))
 				Expect(event.Date.Format("2006-01-02")).To(Equal("2024-01-15"))
-				Expect(event.Company).To(Equal("Acme Corp"))
+				Expect(event.Company).To(BeEmpty()) // Quick form doesn't capture Company
 				Expect(event.Project).To(BeEmpty())
 				Expect(event.Tags).To(BeEmpty())
 				Expect(event.Categories).To(BeEmpty())
@@ -149,9 +148,8 @@ var _ = Describe("QuickAddEventModal", func() {
 
 			It("should handle 'today' as date", func() {
 				data := &components.QuickAddEventData{
-					Text:    "Quick event",
-					Date:    "today",
-					Company: "",
+					Text: "Quick event",
+					Date: "today",
 				}
 
 				event := data.ToCareerEvent()
@@ -162,9 +160,8 @@ var _ = Describe("QuickAddEventModal", func() {
 
 			It("should handle relative dates", func() {
 				data := &components.QuickAddEventData{
-					Text:    "Past event",
-					Date:    "1 week ago",
-					Company: "",
+					Text: "Past event",
+					Date: "1 week ago",
 				}
 
 				event := data.ToCareerEvent()
@@ -175,9 +172,8 @@ var _ = Describe("QuickAddEventModal", func() {
 
 			It("should default to today on invalid date", func() {
 				data := &components.QuickAddEventData{
-					Text:    "Event with bad date",
-					Date:    "invalid-date",
-					Company: "",
+					Text: "Event with bad date",
+					Date: "invalid-date",
 				}
 
 				event := data.ToCareerEvent()
@@ -186,11 +182,10 @@ var _ = Describe("QuickAddEventModal", func() {
 				Expect(event.Date.Format("2006-01-02")).To(Equal(today))
 			})
 
-			It("should work without company (optional field)", func() {
+			It("should create event without company (quick form doesn't capture it)", func() {
 				data := &components.QuickAddEventData{
-					Text:    "Solo project",
-					Date:    "2024-01-15",
-					Company: "",
+					Text: "Solo project",
+					Date: "2024-01-15",
 				}
 
 				event := data.ToCareerEvent()

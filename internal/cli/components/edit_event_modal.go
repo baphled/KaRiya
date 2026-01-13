@@ -75,17 +75,18 @@ func (m *EditEventModal) buildForm() {
 	// - Logo spacing: 2 lines
 	// - Footer: 4 lines
 	// - Modal chrome (borders, padding, title, footer): 8 lines
-	// - Safety margins: 4 lines
-	// Total: 24 lines overhead
-	const overhead = 24
+	// - Form internal padding/margins: 4 lines
+	// - Safety margins: 6 lines
+	// Total: 30 lines overhead
+	const overhead = 30
 	maxFormHeight := m.height - overhead
-	if maxFormHeight < 12 {
-		maxFormHeight = 12 // Minimum usable height
+	if maxFormHeight < 10 {
+		maxFormHeight = 10 // Minimum usable height
 	}
 
-	// Edit form has more fields (text, date, company, project, tags, categories)
-	// Ideally needs ~25 lines, but must fit within terminal constraints and will scroll if needed
-	formHeight := 25
+	// Edit form has 6 fields (text, date, company, project, tags, categories)
+	// Ideally needs ~20 lines, but must fit within terminal constraints and will scroll
+	formHeight := 20
 	if formHeight > maxFormHeight {
 		formHeight = maxFormHeight
 	}
