@@ -28,9 +28,11 @@ var _ = Describe("App Menu Integration Tests", func() {
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
+		skillRepo := careerrepo.NewMemorySkillRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		// Pre-populate burst/fact repositories with dummy entries to avoid nil panics
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1", "e2"}})
@@ -49,8 +51,11 @@ var _ = Describe("App Menu Integration Tests", func() {
 		})
 
 		It("should update cursor position through bubble navigation keys", func() {
-			// Navigate two steps down (to Generate CV)
+			// Navigate three steps down (to Generate CV)
+			// Menu: 0=Capture Event, 1=Browse Timeline, 2=Manage Skills, 3=Generate CV
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+			model = modelInterface.(*app.Model)
+			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
@@ -185,10 +190,18 @@ var _ = Describe("Navigation Integration", func() {
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
+		skillRepo := careerrepo.NewMemorySkillRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
+
+		// Add dummy data
+		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
+		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
+		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+
 		model = app.NewModel(cliService, svc)
 	})
 
@@ -236,6 +249,8 @@ var _ = Describe("Navigation Integration", func() {
 		model = modelInterface.(*app.Model)
 		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 		model = modelInterface.(*app.Model)
+		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
+		model = modelInterface.(*app.Model)
 		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		model = modelInterface.(*app.Model)
 		modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyEscape})
@@ -262,9 +277,11 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
+		skillRepo := careerrepo.NewMemorySkillRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 
 		// Add dummy data
@@ -320,14 +337,15 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 	Describe("Intent Selection and Navigation", func() {
 		testIntentNavigation(0, "CaptureEvent")
 		testIntentNavigation(1, "BrowseTimeline")
-		testIntentNavigation(2, "GenerateCV")
-		testIntentNavigation(3, "ExportArtifact")
-		testIntentNavigation(4, "ConfigureSystem")
-		testIntentNavigation(5, "BurstManagement")
-		testIntentNavigation(6, "FactManagement")
-		testIntentNavigation(7, "ImportWizard")
-		testIntentNavigation(8, "MetadataEditor")
-		testIntentNavigation(9, "BulkOperations")
+		testIntentNavigation(2, "ManageSkills")
+		testIntentNavigation(3, "GenerateCV")
+		testIntentNavigation(4, "ExportArtifact")
+		testIntentNavigation(5, "ConfigureSystem")
+		testIntentNavigation(6, "BurstManagement")
+		testIntentNavigation(7, "FactManagement")
+		testIntentNavigation(8, "ImportWizard")
+		testIntentNavigation(9, "MetadataEditor")
+		testIntentNavigation(10, "BulkOperations")
 	})
 })
 
@@ -343,9 +361,11 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
+		skillRepo := careerrepo.NewMemorySkillRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 
 		// Add dummy data
@@ -413,14 +433,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("GenerateCV Intent", func() {
 		It("should display CV generation view", func() {
-			selectIntent(2)
+			selectIntent(4)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(2)
+			selectIntent(4)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -430,14 +450,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("ExportArtifact Intent", func() {
 		It("should display export view", func() {
-			selectIntent(3)
+			selectIntent(5)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(3)
+			selectIntent(5)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -447,14 +467,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("ConfigureSystem Intent", func() {
 		It("should display configuration view", func() {
-			selectIntent(4)
+			selectIntent(6)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(4)
+			selectIntent(6)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -464,14 +484,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("BurstManagement Intent", func() {
 		It("should display burst management view", func() {
-			selectIntent(5)
+			selectIntent(7)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(5)
+			selectIntent(7)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -481,14 +501,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("FactManagement Intent", func() {
 		It("should display fact management view", func() {
-			selectIntent(6)
+			selectIntent(8)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(6)
+			selectIntent(8)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -498,14 +518,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("ImportWizard Intent", func() {
 		It("should display import wizard view", func() {
-			selectIntent(7)
+			selectIntent(9)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(7)
+			selectIntent(9)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -515,14 +535,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("MetadataEditor Intent", func() {
 		It("should display metadata editor view", func() {
-			selectIntent(8)
+			selectIntent(10)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(8)
+			selectIntent(10)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -532,14 +552,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("BulkOperations Intent", func() {
 		It("should display bulk operations view", func() {
-			selectIntent(9)
+			selectIntent(11)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(9)
+			selectIntent(11)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -560,9 +580,11 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
+		skillRepo := careerrepo.NewMemorySkillRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 
 		// Add multiple events for timeline
@@ -645,7 +667,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 
 	Describe("BurstManagement List Navigation", func() {
 		It("should allow navigating down the burst list with 'j'", func() {
-			selectIntent(5) // BurstManagement
+			selectIntent(7) // BurstManagement
 
 			// Navigate down
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -656,7 +678,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow navigating up the burst list with 'k'", func() {
-			selectIntent(5) // BurstManagement
+			selectIntent(7) // BurstManagement
 
 			// Navigate down first
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -671,7 +693,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow multiple consecutive down navigations in burst list", func() {
-			selectIntent(5) // BurstManagement
+			selectIntent(7) // BurstManagement
 
 			// Navigate down multiple times
 			for i := 0; i < 3; i++ {
@@ -686,7 +708,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 
 	Describe("FactManagement List Navigation", func() {
 		It("should allow navigating down the fact list with 'j'", func() {
-			selectIntent(6) // FactManagement
+			selectIntent(8) // FactManagement
 
 			// Navigate down
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -697,7 +719,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow navigating up the fact list with 'k'", func() {
-			selectIntent(6) // FactManagement
+			selectIntent(8) // FactManagement
 
 			// Navigate down first
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -712,7 +734,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow multiple consecutive down navigations in fact list", func() {
-			selectIntent(6) // FactManagement
+			selectIntent(8) // FactManagement
 
 			// Navigate down multiple times
 			for i := 0; i < 3; i++ {

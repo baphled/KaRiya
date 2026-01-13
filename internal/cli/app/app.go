@@ -79,6 +79,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	menuItems := []MenuItem{
 		{Name: "Capture Event", Intent: "capture_event", Help: "Record a new career event"},
 		{Name: "Browse Timeline", Intent: "browse_timeline", Help: "View your career events"},
+		{Name: "Manage Skills", Intent: "manage_skills", Help: "Manage your skills"},
 		{Name: "Generate CV", Intent: "generate_cv", Help: "Create a new CV"},
 		{Name: "Export Artifact", Intent: "export_artifact", Help: "Export CV or data"},
 		{Name: "Configure System", Intent: "configure_system", Help: "Manage settings"},
@@ -573,6 +574,16 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			return nil
 		}
 		return intent
+	})
+
+	// ManageSkills
+	_ = router.RegisterIntent("manage_skills", func() intents.Intent {
+		skillsCtx := &intents.ManageSkillsContext{
+			Ctx:             ctx,
+			SkillRepository: careerService.GetSkillRepository(),
+			Service:         careerService,
+		}
+		return intents.NewManageSkillsIntent(skillsCtx)
 	})
 
 	// GenerateCV

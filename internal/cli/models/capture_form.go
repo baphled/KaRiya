@@ -10,8 +10,8 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
-// HuhCaptureForm wraps a huh form for capturing career events.
-type HuhCaptureForm struct {
+// CaptureForm wraps a huh form for capturing career events.
+type CaptureForm struct {
 	*BaseStandardModel
 	cliService *service.CLIEventService
 	formData   *forms.CaptureEventFormData
@@ -21,11 +21,11 @@ type HuhCaptureForm struct {
 	height     int
 }
 
-// NewHuhCaptureForm creates a new huh-based capture form.
-func NewHuhCaptureForm(cliService *service.CLIEventService) *HuhCaptureForm {
+// NewCaptureForm creates a new capture form.
+func NewCaptureForm(cliService *service.CLIEventService) *CaptureForm {
 	formData := forms.NewCaptureEventFormData()
 
-	m := &HuhCaptureForm{
+	m := &CaptureForm{
 		BaseStandardModel: NewBaseStandardModel(),
 		cliService:        cliService,
 		formData:          formData,
@@ -39,7 +39,7 @@ func NewHuhCaptureForm(cliService *service.CLIEventService) *HuhCaptureForm {
 }
 
 // rebuildForm creates a new form with current settings.
-func (m *HuhCaptureForm) rebuildForm() {
+func (m *CaptureForm) rebuildForm() {
 	m.form = forms.NewCaptureEventForm(
 		m.formData,
 		m.strategy,
@@ -49,12 +49,12 @@ func (m *HuhCaptureForm) rebuildForm() {
 }
 
 // Init initializes the form.
-func (m *HuhCaptureForm) Init() tea.Cmd {
+func (m *CaptureForm) Init() tea.Cmd {
 	return m.form.Init()
 }
 
 // Update handles messages.
-func (m *HuhCaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *CaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -89,12 +89,12 @@ func (m *HuhCaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the form.
-func (m *HuhCaptureForm) View() string {
+func (m *CaptureForm) View() string {
 	return m.form.View()
 }
 
 // submitForm creates a SubmitMsg.
-func (m *HuhCaptureForm) submitForm() tea.Cmd {
+func (m *CaptureForm) submitForm() tea.Cmd {
 	return func() tea.Msg {
 		var eventDate time.Time
 		var err error
@@ -124,13 +124,13 @@ func (m *HuhCaptureForm) submitForm() tea.Cmd {
 }
 
 // SetStrategy updates the strategy.
-func (m *HuhCaptureForm) SetStrategy(strategy string) {
+func (m *CaptureForm) SetStrategy(strategy string) {
 	m.strategy = strategy
 	m.rebuildForm()
 }
 
 // LoadEventForEditing populates the form with existing event data.
-func (m *HuhCaptureForm) LoadEventForEditing(event *career.CareerEvent) {
+func (m *CaptureForm) LoadEventForEditing(event *career.CareerEvent) {
 	if event == nil {
 		return
 	}
@@ -153,12 +153,12 @@ func (m *HuhCaptureForm) LoadEventForEditing(event *career.CareerEvent) {
 }
 
 // GetStrategy returns the current strategy.
-func (m *HuhCaptureForm) GetStrategy() string {
+func (m *CaptureForm) GetStrategy() string {
 	return m.strategy
 }
 
 // SubmitForm triggers form submission (for compatibility).
-func (m *HuhCaptureForm) SubmitForm() tea.Cmd {
+func (m *CaptureForm) SubmitForm() tea.Cmd {
 	m.formData.SubmitConfirmed = true
 	return m.submitForm()
 }

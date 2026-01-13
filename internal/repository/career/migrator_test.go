@@ -43,7 +43,7 @@ var _ = Describe("Migrator", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify all tables exist
-				tables := []string{"career_events", "bursts", "facts", "goose_db_version"}
+				tables := []string{"career_events", "bursts", "facts", "skills", "event_skills", "goose_db_version"}
 				for _, table := range tables {
 					Expect(hasTable(db, table)).To(BeTrue(), "table %s should exist", table)
 				}
@@ -54,7 +54,7 @@ var _ = Describe("Migrator", func() {
 				// Verify migration version
 				version, err := MigrationStatus(db)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal(int64(4)))
+				Expect(version).To(Equal(int64(6)))
 			})
 
 			It("should create indexes", func() {
@@ -72,6 +72,10 @@ var _ = Describe("Migrator", func() {
 					"idx_bursts_confirmed",
 					"idx_facts_source_event_id",
 					"idx_facts_source_burst_id",
+					"idx_skills_category",
+					"idx_skills_name",
+					"idx_event_skills_event",
+					"idx_event_skills_skill",
 				}
 
 				for _, index := range indexes {
@@ -160,7 +164,7 @@ var _ = Describe("Migrator", func() {
 				// Verify migration version (should skip migration 002)
 				version, err := MigrationStatus(db)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal(int64(4)))
+				Expect(version).To(Equal(int64(6)))
 
 				// Verify all subsequent tables were created
 				Expect(hasTable(db, "bursts")).To(BeTrue())
@@ -222,10 +226,10 @@ var _ = Describe("Migrator", func() {
 				err = RunMigrations(db)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Verify baseline version is 4 (all migrations already applied)
+				// Verify baseline version is 6 (all migrations already applied)
 				version, err := MigrationStatus(db)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal(int64(4)))
+				Expect(version).To(Equal(int64(6)))
 			})
 		})
 
@@ -248,10 +252,10 @@ var _ = Describe("Migrator", func() {
 				err = RunMigrations(db)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Verify version is still 4
+				// Verify version is still 6
 				version, err := MigrationStatus(db)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(version).To(Equal(int64(4)))
+				Expect(version).To(Equal(int64(6)))
 			})
 		})
 	})
@@ -278,7 +282,7 @@ var _ = Describe("Migrator", func() {
 
 			version, err := MigrationStatus(db)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(version).To(Equal(int64(4)))
+			Expect(version).To(Equal(int64(6)))
 		})
 	})
 

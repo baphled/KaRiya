@@ -15,15 +15,16 @@ The KaRiya Career Journal CLI supports importing career events from CSV files. T
 - **Tags**: Semicolon-separated tags
 - **Project**: Project name
 - **Company**: Company name
+- **Skills**: Semicolon-separated skill names
 
 ### Example CSV
 
 ```csv
-Text,Date,Categories,Tags,Project,Company
-Directed end-to-end technical strategy and delivery for an early-stage startup,2024-07,Delivery;Strategy,leadership;technical;consulting,Platform Architecture & MVP,FullSpektrum
-Defined system architecture and technology stack to articulate product differentiation,2024-07,Architecture;Strategy,technical;architecture;consulting,Platform Architecture & MVP,FullSpektrum
-Mentored engineering contributors and established accountability-focused delivery practices,2024-10,Leadership;Delivery,mentoring;leadership;process,Engineering Enablement,FullSpektrum
-Led a major platform migration to improve system performance and reliability,2022-06,Architecture;Delivery,technical;migration;architecture,Core Platform,Mindful Chef
+Text,Date,Categories,Tags,Project,Company,Skills
+Directed end-to-end technical strategy and delivery for an early-stage startup,2024-07,Delivery;Strategy,leadership;technical;consulting,Platform Architecture & MVP,FullSpektrum,"Go;Kubernetes;PostgreSQL"
+Defined system architecture and technology stack to articulate product differentiation,2024-07,Architecture;Strategy,technical;architecture;consulting,Platform Architecture & MVP,FullSpektrum,"Go;React;Docker"
+Mentored engineering contributors and established accountability-focused delivery practices,2024-10,Leadership;Delivery,mentoring;leadership;process,Engineering Enablement,FullSpektrum,"Git;Code Review;Agile"
+Led a major platform migration to improve system performance and reliability,2022-06,Architecture;Delivery,technical;migration;architecture,Core Platform,Mindful Chef,"Ruby;Rails;PostgreSQL;Redis"
 ```
 
 ## Date Formats
@@ -117,6 +118,15 @@ technical, leadership, product, consulting, research, mentoring
 - Maximum 200 characters
 - Whitespace trimmed
 
+### Skills (Optional)
+- Semicolon-separated list of skill names
+- No limit on number of skills per event
+- Skills are matched by name (case-insensitive)
+- If a skill doesn't exist, it's **automatically created** with category `"other"`
+- You can edit skill categories later via "Manage Skills" (press 's' from main menu)
+- Whitespace trimmed from each skill name
+- Empty skill names are skipped
+
 ## Post-Import Metadata Review
 
 After successful import, you'll automatically navigate to the **Metadata Review Screen** where you can:
@@ -155,6 +165,71 @@ After successful import, you'll automatically navigate to the **Metadata Review 
 - Sort by date, company, or creation order
 - Focus on events needing the most attention
 
+## Skills Import (New!)
+
+### Skills Column Format
+
+Skills can be included in CSV imports to associate technical skills with events.
+
+**Format**: Semicolon-separated list of skill names
+
+**Example CSV with Skills**:
+```csv
+Text,Date,Categories,Tags,Project,Company,Skills
+"Architected microservices platform using Go and Kubernetes",2024-01,Technical,technical;architecture,Platform,TechCorp,"Go;Kubernetes;PostgreSQL;Docker"
+"Built React dashboard with TypeScript and Redux",2024-02,Technical,technical,Dashboard,TechCorp,"React;TypeScript;Redux;CSS"
+"Implemented CI/CD pipeline with Jenkins",2024-03,DevOps,devops;automation,Pipeline,TechCorp,"Jenkins;Docker;Kubernetes;Bash"
+```
+
+### How Skills Import Works
+
+1. **Skill Matching**: Skills are matched by name (case-insensitive)
+2. **Auto-Creation**: If a skill doesn't exist, it's automatically created with category `"other"`
+3. **Association**: Skills are linked to the imported event
+4. **Post-Import Refinement**: You can edit skill categories via "Manage Skills" menu
+
+### Managing Auto-Created Skills
+
+After importing events with skills, follow these steps to properly categorize them:
+
+1. **Complete the import** - All skills are created with category "other"
+2. **Navigate to Manage Skills** - Press 's' from main menu
+3. **Find auto-created skills** - Look for skills with category "other"
+4. **Edit categories** - Press 'e' to edit each skill's category:
+   - Backend skills → category: "backend" (Go, Ruby, Python, etc.)
+   - Frontend skills → category: "frontend" (React, TypeScript, CSS, etc.)
+   - DevOps skills → category: "devops" (Kubernetes, Docker, Jenkins, etc.)
+   - Database skills → category: "database" (PostgreSQL, MySQL, Redis, etc.)
+5. **Skills are now categorized** - Ready for CV generation
+
+### Skills Import Example
+
+**CSV File** (`events_with_skills.csv`):
+```csv
+Text,Date,Categories,Tags,Project,Company,Skills
+"Architected microservices platform",2024-01,Technical,technical;architecture,Platform,TechCorp,"Go;Kubernetes;PostgreSQL"
+"Built React dashboard",2024-02,Technical,technical,Dashboard,TechCorp,"React;TypeScript;Redux"
+"Mentored team on best practices",2024-03,Leadership,mentoring;leadership,Engineering,TechCorp,"Git;Code Review;Agile"
+```
+
+**After Import**:
+- 8 skills created: Go, Kubernetes, PostgreSQL, React, TypeScript, Redux, Git, Code Review, Agile
+- All skills have category "other"
+- All skills associated with respective events
+
+**Refine Skills** (via Manage Skills):
+1. Edit "Go" → category: "backend"
+2. Edit "Kubernetes" → category: "devops"
+3. Edit "PostgreSQL" → category: "database"
+4. Edit "React" → category: "frontend"
+5. Edit "TypeScript" → category: "frontend"
+6. Edit "Redux" → category: "frontend"
+7. Edit "Git" → category: "tooling"
+8. Edit "Code Review" → category: "other" (keep as-is)
+9. Edit "Agile" → category: "other" (keep as-is)
+
+**Result**: Skills are now properly categorized for CV generation!
+
 ## Example Workflow
 
 ### Step 1: Prepare CSV File
@@ -162,10 +237,10 @@ After successful import, you'll automatically navigate to the **Metadata Review 
 Create `career_events.csv`:
 
 ```csv
-Text,Date,Categories,Tags,Project,Company
-Led technical architecture redesign,2023-06,Architecture;Delivery,technical;architecture,Platform Redesign,TechCorp
-Mentored junior developers on Go best practices,2023-07,Leadership;Mentoring,mentoring;leadership,Engineering,TechCorp
-Consulted on cloud migration strategy,2023-08,Consulting;Architecture,consulting;technical,Cloud Migration,CloudServices Inc
+Text,Date,Categories,Tags,Project,Company,Skills
+Led technical architecture redesign,2023-06,Architecture;Delivery,technical;architecture,Platform Redesign,TechCorp,"Go;PostgreSQL;Redis"
+Mentored junior developers on Go best practices,2023-07,Leadership;Mentoring,mentoring;leadership,Engineering,TechCorp,"Go;Git;Code Review"
+Consulted on cloud migration strategy,2023-08,Consulting;Architecture,consulting;technical,Cloud Migration,CloudServices Inc,"Kubernetes;Docker;AWS"
 ```
 
 ### Step 2: Start Import from Home Screen
@@ -370,6 +445,18 @@ A: After import, you'll see the metadata review screen. Use individual editing (
 
 **Q: What's the difference between Tags and Categories?**
 A: Tags are flexible labels (up to 8 per event), while Categories are structured competency areas (max 2 per event). Use categories to classify skills/competencies.
+
+**Q: How do I import skills with events?**
+A: Add a "Skills" column to your CSV with semicolon-separated skill names (e.g., "Go;Kubernetes;PostgreSQL"). Skills that don't exist are automatically created with category "other". After import, press 's' to manage skills and update their categories.
+
+**Q: What if I import skills that already exist?**
+A: Existing skills are matched by name (case-insensitive) and reused. No duplicates are created.
+
+**Q: Can I import events without skills?**
+A: Yes! The Skills column is completely optional. Events without skills work exactly as before.
+
+**Q: How do I categorize auto-created skills?**
+A: After import, press 's' from the main menu to open "Manage Skills". Find skills with category "other", press 'e' to edit, and update the category (e.g., "backend", "frontend", "devops").
 
 ## See Also
 

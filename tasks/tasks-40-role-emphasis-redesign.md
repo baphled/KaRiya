@@ -146,6 +146,24 @@ func (e *Extractor) FilterByThreshold(techs []*ExtractedTechnology, minEvents in
 4. Sort by event count (descending)
 5. Return as ExtractedTechnology slice
 
+#### Handling Events Without Skills
+
+**Requirement from Task 39 completion**: Some events may not have associated skills (legacy events, or events where skills weren't applicable). The CV generation system must handle this gracefully.
+
+**Approach**:
+1. **Inclusion Strategy**: Events without skills are still included in CV generation
+2. **Filtering Logic**: When technology focus is selected:
+   - **Language Agnostic**: All events included (skills optional)
+   - **Generalist (2-5 techs)**: Events with ANY of the selected technologies are prioritized
+   - **Specialist (1 tech)**: Events with the selected technology are prioritized
+3. **Prioritization**: Events WITH selected technologies score higher in bullet generation
+4. **Fallback**: Events without skills can still appear if they're high-quality (strong bullets, recent dates)
+
+**Implementation Details**:
+- Bullet scoring includes skill match bonus (e.g., +0.15 if event has selected technology)
+- Events without skills have baseline score (no bonus, no penalty)
+- This ensures skills-based filtering is additive, not subtractive
+
 **TDD Checklist - Phase 1:**
 - [ ] Write failing test: ExtractFromUser loads user skills
 - [ ] Test passes
@@ -560,22 +578,54 @@ func (g *BulletGenerator) FilterByTechnologies(
     
     switch techFocus {
     case TechnologyFocusLanguageAgnostic:
-        // No filtering - show all
+        // No filtering - show all (skills optional)
         return bullets
         
     case TechnologyFocusSpecialist:
-        // Strongly filter - only bullets with selected tech
-        return filterBulletsWithTech(bullets, technologies[0])
+        // Prioritize bullets with selected tech, keep high-quality bullets without skills
+        return filterAndBoostWithTech(bullets, technologies[0])
         
     case TechnologyFocusGeneralist:
-        // Boost bullets with selected techs, keep others
+        // Boost bullets with selected techs, keep others with baseline score
         return boostBulletsWithTechs(bullets, technologies)
     }
 }
+
+// Skill Matching Bonus System
+// +0.15 bonus if event has selected technology
+// +0.00 baseline if event has no skills (not penalized)
+// This makes skills additive, not subtractive
 ```
 
+#### Handling Events Without Skills in Bullet Generation
+
+**Scoring Logic**:
+1. **Base Score**: All bullets start with base score from EnhancedBulletGenerator (0.0-1.0)
+2. **Skill Match Bonus**: +0.15 if event has selected technology
+3. **No Penalty**: Events without skills keep base score (no deduction)
+4. **High-Quality Fallback**: Events without skills can still rank high if they have:
+   - Strong action verbs (0.70+ base confidence)
+   - Recent dates (within last 2 years)
+   - Clear impact/results
+
+**Example Scoring**:
+```
+Bullet A (with selected tech): 0.85 base + 0.15 skill bonus = 1.00 (capped)
+Bullet B (no skills): 0.85 base + 0.00 = 0.85
+Bullet C (with different tech): 0.75 base + 0.00 = 0.75
+Bullet D (no skills, strong): 0.90 base + 0.00 = 0.90 (beats C!)
+```
+
+**Result**: Skills provide advantage, but quality bullets without skills still appear.
+
 **TDD Checklist - Phase 10:**
-- [ ] Write failing test: Language Agnostic shows all bullets
+- [ ] Write failing test: Language Agnostic shows all bullets (including events without skills)
+- [ ] Test passes
+- [ ] Write failing test: Events without skills are not penalized (baseline score)
+- [ ] Test passes
+- [ ] Write failing test: Events with selected technology get skill match bonus
+- [ ] Test passes
+- [ ] Write failing test: High-quality events without skills can rank higher than low-quality events with skills
 - [ ] Test passes
 - [ ] Write failing test: Specialist filters to selected tech
 - [ ] Test passes
