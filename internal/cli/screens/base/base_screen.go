@@ -57,6 +57,12 @@ type BaseScreen struct {
 	// theme holds the current theme for styling
 	// TODO: Replace interface{} with actual Theme type when theme system is defined
 	theme interface{}
+
+	// logo holds the ASCII logo to display (shared from intent)
+	logo *components.ASCIILogo
+
+	// logoSpacing is the vertical spacing before the logo
+	logoSpacing int
 }
 
 // NewBaseScreen creates a new BaseScreen with default dimensions.
@@ -85,6 +91,28 @@ func (b *BaseScreen) SetTerminalInfo(width, height int) {
 // passing the global or intent-specific theme.
 func (b *BaseScreen) SetTheme(theme interface{}) {
 	b.theme = theme
+}
+
+// SetLogo sets the logo to be displayed in views.
+//
+// This should be called when the intent sets up the screen,
+// passing the shared logo instance and optional spacing.
+func (b *BaseScreen) SetLogo(logo interface{}, spacing int) {
+	// Type assert to *components.ASCIILogo
+	if asciiLogo, ok := logo.(*components.ASCIILogo); ok {
+		b.logo = asciiLogo
+		b.logoSpacing = spacing
+	}
+}
+
+// GetLogo returns the currently set logo.
+func (b *BaseScreen) GetLogo() *components.ASCIILogo {
+	return b.logo
+}
+
+// GetLogoSpacing returns the logo spacing.
+func (b *BaseScreen) GetLogoSpacing() int {
+	return b.logoSpacing
 }
 
 // Width returns the current terminal width.
@@ -131,6 +159,11 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 		WithContent(content).
 		WithHelp(footer).
 		WithFooterSeparator(true)
+
+	// Add logo if available
+	if b.logo != nil {
+		view = view.WithLogo(b.logo, b.logoSpacing)
+	}
 
 	// TODO: Apply theme to view when theme system is fully integrated
 	// if b.theme != nil {

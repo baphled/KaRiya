@@ -51,6 +51,10 @@ type Screen interface {
 	// SetTheme updates the Screen's theme for styling.
 	// Screens should store this and pass it to StandardView for consistent theming.
 	SetTheme(theme interface{}) // TODO: Replace interface{} with actual Theme type
+
+	// SetLogo updates the Screen's logo and spacing.
+	// Screens should store this and pass it to StandardView for consistent branding.
+	SetLogo(logo interface{}, spacing int) // interface{} allows *components.ASCIILogo without circular import
 }
 
 // ScreenResultType indicates the type of result a Screen is returning.
