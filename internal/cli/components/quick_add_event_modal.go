@@ -61,19 +61,25 @@ func (m *QuickAddEventModal) buildForm() {
 		modalWidth = 40
 	}
 
-	// Calculate maximum modal height to fit within terminal
-	// Account for: logo (6 lines) + logo spacing (2) + footer (4) + modal borders (4) + margins (4)
-	const modalOverhead = 20
-	maxModalHeight := m.height - modalOverhead
-	if maxModalHeight < 15 {
-		maxModalHeight = 15 // Minimum usable height
+	// Calculate maximum form height to fit within terminal
+	// Total overhead:
+	// - Logo: 6 lines
+	// - Logo spacing: 2 lines
+	// - Footer: 4 lines
+	// - Modal chrome (borders, padding, title, footer): 8 lines
+	// - Safety margins: 4 lines
+	// Total: 24 lines overhead
+	const overhead = 24
+	maxFormHeight := m.height - overhead
+	if maxFormHeight < 12 {
+		maxFormHeight = 12 // Minimum usable height
 	}
 
-	// Quick form ideally needs ~24 lines to show all fields without scrolling
-	// But must fit within terminal constraints
-	formHeight := 24
-	if formHeight > maxModalHeight {
-		formHeight = maxModalHeight
+	// Quick form ideally needs ~20 lines to show all fields without scrolling
+	// But must fit within terminal constraints and will scroll if needed
+	formHeight := 20
+	if formHeight > maxFormHeight {
+		formHeight = maxFormHeight
 	}
 
 	// Use standard form with confirm button (Submit/Cancel)
