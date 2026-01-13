@@ -1589,12 +1589,14 @@ if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
 
 ---
 
-### Issue 5: Add Product Column to Browse Timeline ⏳ NOT STARTED
+### Issue 5: Add Product Column to Browse Timeline ✅ NOT APPLICABLE
 
 **Goal**: Add "Product" column to Browse Timeline data table for better event context  
 **Estimate**: 1-2 hours  
-**Status**: ⏳ **NOT STARTED**  
+**Status**: ✅ **NOT APPLICABLE** (Project column already exists and is displayed)  
 **Priority**: Medium (UX improvement, data visibility)
+
+**Resolution**: Upon investigation, the domain model has a `Project` field (not `Product`), and the Browse Timeline table already displays the Project column. The recent work added Project filtering to the filter modal, completing the visibility of project data.
 
 #### Background
 
