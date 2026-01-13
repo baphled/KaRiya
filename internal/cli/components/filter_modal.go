@@ -143,9 +143,23 @@ func (m *FilterModalModel) buildForm(events []*career.CareerEvent) {
 		modalWidth = 40
 	}
 
+	// Calculate maximum modal height to fit within terminal
+	// Account for: logo (6 lines) + logo spacing (2) + footer (4) + modal borders (4) + margins (4)
+	const modalOverhead = 20
+	maxModalHeight := m.height - modalOverhead
+	if maxModalHeight < 10 {
+		maxModalHeight = 10 // Minimum usable height for filter form
+	}
+
+	// Filter form is relatively small, but should still respect terminal constraints
+	formHeight := 15
+	if formHeight > maxModalHeight {
+		formHeight = maxModalHeight
+	}
+
 	m.form = huh.NewForm(group).
 		WithWidth(modalWidth).
-		WithHeight(15)
+		WithHeight(formHeight)
 }
 
 // Init initializes the filter modal and its form.
