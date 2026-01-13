@@ -1590,6 +1590,109 @@ if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
 
 ---
 
+### Issue 5: Add Product Column to Browse Timeline ⏳ NOT STARTED
+
+**Goal**: Add "Product" column to Browse Timeline data table for better event context  
+**Estimate**: 1-2 hours  
+**Status**: ⏳ **NOT STARTED**  
+**Priority**: Medium (UX improvement, data visibility)
+
+#### Background
+
+The Browse Timeline currently shows events with Date, Company, Project, and Text columns.
+Adding a Product column will help users better understand the context of each event,
+especially when working across multiple products within the same company.
+
+#### Requirements
+
+**Data Model**:
+- Career events already have a `Product` field (domain model)
+- Product data is already stored in the database
+- No schema changes needed
+
+**UI Changes**:
+- Add "Product" column to timeline table (between Company and Project)
+- Column order: Date | Company | **Product** | Project | Text
+- Handle empty/nil product values gracefully (show "-" or empty)
+- Ensure column widths are balanced (may need to adjust existing columns)
+
+**Files to Modify**:
+- `internal/cli/screens/timeline/event_list.go` - Add product column to table
+- `internal/cli/intents/browse_timeline_intent.go` - Update if needed for data passing
+- `internal/cli/intents/browse_timeline_test.go` - Update tests to verify product column
+
+#### Implementation Checklist
+
+**Phase 1: Add Product Column** (30 min)
+- [ ] Open `internal/cli/screens/timeline/event_list.go`
+- [ ] Locate table column definition (currently 4 columns)
+- [ ] Add "Product" column as 3rd column (between Company and Project)
+- [ ] Extract product field from event data: `event.Product`
+- [ ] Handle nil/empty product: display "-" or empty string
+- [ ] Adjust column widths if needed (may need to reduce other columns slightly)
+
+**Phase 2: Test Updates** (30 min)
+- [ ] Update `internal/cli/intents/browse_timeline_test.go`
+- [ ] Add test cases for product column rendering
+- [ ] Test with events that have products
+- [ ] Test with events that have empty/nil products
+- [ ] Verify table layout is not broken
+
+**Phase 3: Manual Testing** (15 min)
+- [ ] Build and run application
+- [ ] Navigate to Browse Timeline
+- [ ] Verify product column appears in correct position
+- [ ] Verify product values display correctly
+- [ ] Verify empty products show placeholder
+- [ ] Test with terminal resize (verify column adapts)
+
+**Phase 4: Documentation** (15 min)
+- [ ] Update `docs/workflows/BROWSE_TIMELINE_WORKFLOW.md` if needed
+- [ ] Add product column to any screenshots or examples
+- [ ] Update keyboard reference if column navigation changed
+
+#### Acceptance Criteria
+- [ ] Product column visible in Browse Timeline table
+- [ ] Product column positioned between Company and Project
+- [ ] Product values display correctly
+- [ ] Empty/nil products show appropriate placeholder
+- [ ] All existing tests pass
+- [ ] New tests added for product column
+- [ ] Table layout remains balanced and readable
+- [ ] No regressions in existing functionality
+
+#### Technical Notes
+
+**Current Table Structure** (event_list.go):
+```go
+// Approximate current structure (verify in actual file)
+columns := []string{"Date", "Company", "Project", "Text"}
+```
+
+**Proposed Change**:
+```go
+columns := []string{"Date", "Company", "Product", "Project", "Text"}
+// In row data extraction:
+product := event.Product
+if product == "" {
+    product = "-"
+}
+```
+
+**Column Width Considerations**:
+- Current 4 columns need to fit in terminal width
+- Adding 5th column may require reducing width of Text column
+- Consider responsive behavior for small terminals
+
+#### Rollback Plan
+If issues arise:
+1. Revert changes to `event_list.go`
+2. Remove product column tests
+3. Application returns to 4-column table
+4. No data loss (product field remains in database)
+
+---
+
 ### Modal Migration Checklist (For All Other Intents)
 
 **Purpose**: Standardized checklist for migrating any intent to use bubbletea-overlay modals  
@@ -1732,8 +1835,9 @@ See complete implementation in:
 
 **Total Estimate**: 11 hours  
 **Actual Time Spent**: 13 hours (Issues 1-4 complete for Browse Timeline + comprehensive documentation)  
-**Remaining**: 6-8 hours (Issue 4 - apply patterns to other 4 intents)  
-**Progress**: ✅ **BROWSE TIMELINE 100% COMPLETE** (All 5 modals + patterns + documentation)
+**Remaining**: 8-10 hours (Issue 5: Product column 1-2h, Issue 4 other intents: 6-8h)  
+**Progress**: ✅ **BROWSE TIMELINE MODALS 100% COMPLETE** (All 5 modals + patterns + documentation)  
+**Next**: Issue 5 (Product column) - 1-2 hours
 
 **Execution Order Completed**:
 1. ✅ **Issue 1** (30 min) - Key badges - Auto-propagated to all intents
@@ -1747,7 +1851,8 @@ See complete implementation in:
    - ViewEventDetailModal simplification (removed edit/delete for clearer UX)
    - bubbletea-overlay v0.6.3 integration for all modals
    - 2,400+ lines of documentation created
-8. ⏳ **Issue 4 Other Intents** (6-8 hours remaining) - Apply patterns to ManageSkills, CaptureEvent, GenerateCV, ConfigureSystem
+8. ⏳ **Issue 5** (1-2 hours) - Add Product column to Browse Timeline table
+9. ⏳ **Issue 4 Other Intents** (6-8 hours remaining) - Apply patterns to ManageSkills, CaptureEvent, GenerateCV, ConfigureSystem
 
 **Total Components Created**: 
 - 5 modal components (1,231 lines production code)
