@@ -1835,6 +1835,13 @@ func (i *ManageSkillsIntent) transitionToListScreen() tea.Cmd {
 	// Create list screen
 	listScreen := NewSkillsListScreenFromIntent(i.skills, i.GetThemeManager())
 
+	// Set event counts if available (CRITICAL for event count column)
+	if skillScreen, ok := listScreen.(*skills_screens.SkillsListScreen); ok {
+		if i.eventCounts != nil {
+			skillScreen.SetEventCounts(i.eventCounts)
+		}
+	}
+
 	// Set terminal info if available
 	if i.GetTerminalInfo() != nil {
 		listScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
