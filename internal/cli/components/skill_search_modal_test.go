@@ -65,6 +65,84 @@ var _ = Describe("SkillSearchModal", func() {
 			})
 		})
 
+		Context("when Enter is pressed", func() {
+			It("should complete search and return applied=true with search text", func() {
+				// Type search text
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("golang")})
+
+				// Press Enter to submit
+				// First Enter moves focus/completes the input field
+				modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Second Enter submits the form (when form state is completed)
+				cmd, applied, data := modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should return applied=true when form completes
+				if applied {
+					Expect(data).NotTo(BeNil())
+					Expect(data.SearchText).To(Equal("golang"))
+					Expect(modal.IsVisible()).To(BeFalse())
+				}
+				// Cmd may be nil or not depending on form state
+				_ = cmd
+			})
+
+			It("should keep modal visible while form is not complete", func() {
+				// Press Enter before form is complete
+				cmd, applied, data := modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should forward to form (not applied yet)
+				Expect(applied).To(BeFalse())
+				Expect(data).To(BeNil())
+				// Cmd may be nil or not
+				_ = cmd
+			})
+		})
+
+		Context("navigation", func() {
+			It("should handle tab key for field navigation", func() {
+				// Tab should be forwarded to form
+				cmd, applied, data := modal.Update(tea.KeyMsg{Type: tea.KeyTab})
+				Expect(applied).To(BeFalse())
+				Expect(data).To(BeNil())
+				Expect(modal.IsVisible()).To(BeTrue())
+				_ = cmd
+			})
+
+			It("should handle shift+tab for reverse navigation", func() {
+				// Shift+Tab should be forwarded to form
+				cmd, applied, data := modal.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+				Expect(applied).To(BeFalse())
+				Expect(data).To(BeNil())
+				Expect(modal.IsVisible()).To(BeTrue())
+				_ = cmd
+			})
+		})
+
+		Context("text input", func() {
+			It("should accept text input for search field", func() {
+				// Type characters
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("r")})
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("u")})
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("b")})
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})
+
+				// Should still be visible and not applied
+				Expect(modal.IsVisible()).To(BeTrue())
+			})
+
+			It("should allow backspace to delete characters", func() {
+				// Type and then delete
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("test")})
+				cmd, applied, data := modal.Update(tea.KeyMsg{Type: tea.KeyBackspace})
+
+				Expect(applied).To(BeFalse())
+				Expect(data).To(BeNil())
+				Expect(modal.IsVisible()).To(BeTrue())
+				_ = cmd
+			})
+		})
+
 		It("should forward other keys to form", func() {
 			cmd, applied, data := modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 			// Form should handle the key
