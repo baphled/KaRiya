@@ -2,6 +2,7 @@ package intents
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
@@ -65,6 +66,7 @@ type ManageSkillsIntent struct {
 	// modals (new architecture with bubbletea-overlay)
 	filterModal *components.SkillFilterModal
 	sortModal   *components.SkillSortModal
+	searchModal *components.SkillSearchModal
 
 	// screen orchestration (new architecture)
 	activeScreen screens.Screen // Currently active screen (when using screen architecture)
@@ -79,11 +81,12 @@ type ManageSkillsIntent struct {
 
 // SkillsFilters holds the active filter and sort state
 type SkillsFilters struct {
-	Category  string
-	Level     string
-	MinEvents int
-	SortBy    string
-	SortOrder string
+	Category   string
+	Level      string
+	MinEvents  int
+	SearchText string
+	SortBy     string
+	SortOrder  string
 }
 
 // NewManageSkillsIntent creates a new ManageSkills intent
@@ -372,6 +375,9 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		}
 
 		// 2. SECOND PRIORITY: Modal updates (if visible)
+		if i.searchModal != nil && i.searchModal.IsVisible() {
+			return i.handleSearchModalUpdate(keyMsg)
+		}
 		if i.filterModal != nil && i.filterModal.IsVisible() {
 			return i.handleFilterModalUpdate(keyMsg)
 		}
@@ -503,6 +509,9 @@ func (i *ManageSkillsIntent) View() string {
 	baseView := view.Render()
 
 	// Overlay modals as final step
+	if i.searchModal != nil && i.searchModal.IsVisible() {
+		return i.renderSearchModalOverlay(baseView)
+	}
 	if i.filterModal != nil && i.filterModal.IsVisible() {
 		return i.renderFilterModalOverlay(baseView)
 	}
@@ -532,6 +541,20 @@ func (i *ManageSkillsIntent) renderSortModalOverlay(baseView string) string {
 	bgModel := &staticViewModel{content: baseView}
 	overlayModel := overlay.New(
 		i.sortModal,    // Foreground: the sort modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderSearchModalOverlay renders the search modal over the base view
+func (i *ManageSkillsIntent) renderSearchModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.searchModal,  // Foreground: the search modal
 		bgModel,        // Background: the rendered view
 		overlay.Center, // X position
 		overlay.Center, // Y position
@@ -670,6 +693,54 @@ func (i *ManageSkillsIntent) openSortModal() tea.Cmd {
 
 	// CRITICAL: Call Init() for immediate rendering
 	return i.sortModal.Init()
+}
+
+// openSearchModal opens the search modal with current search text pre-populated
+// PATTERN 12: Form Modal with Immediate Init
+func (i *ManageSkillsIntent) openSearchModal() tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width := 120
+	height := 40
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Get current search text
+	searchText := ""
+	if i.filters != nil {
+		searchText = i.filters.SearchText
+	}
+
+	// Create search modal
+	i.searchModal = components.NewSkillSearchModal(
+		searchText,
+		width,
+		height,
+	)
+
+	// CRITICAL: Call Init() for immediate rendering
+	return i.searchModal.Init()
+}
+
+// handleSearchModalUpdate handles updates when search modal is visible
+func (i *ManageSkillsIntent) handleSearchModalUpdate(msg tea.KeyMsg) tea.Cmd {
+	cmd, applied, searchData := i.searchModal.Update(msg)
+
+	if applied && searchData != nil {
+		// User confirmed search - apply it
+		if i.filters == nil {
+			i.filters = &SkillsFilters{}
+		}
+		i.filters.SearchText = searchData.SearchText
+
+		// Reload skills with new search
+		return i.reloadSkills()
+	}
+
+	// Modal was closed without completion (Esc) or still being edited
+	return cmd
 }
 
 // getStateContent returns the content for the current state
@@ -850,6 +921,11 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 
 	i.skills = msg.Skills
 	i.selectedIndex = 0
+
+	// Apply in-memory search filtering if search text is set
+	if i.filters != nil && i.filters.SearchText != "" {
+		i.skills = i.applySearchFilter(i.skills, i.filters.SearchText)
+	}
 
 	// Load event counts for displaying in list view
 	eventCounts, err := i.context.SkillRepository.GetEventCountsForSkills(i.context.Ctx)
@@ -1064,6 +1140,11 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 				// Open sort modal instead of menu state
 				return i.openSortModal()
 
+			case "/":
+				// PATTERN 12: Form Modal with Immediate Init
+				// Open search modal
+				return i.openSearchModal()
+
 			case "x":
 				// Clear all filters
 				if i.hasActiveFilters() {
@@ -1270,6 +1351,24 @@ func (i *ManageSkillsIntent) reloadSkills() tea.Cmd {
 			Error:  err,
 		}
 	}
+}
+
+// applySearchFilter applies in-memory search filtering to skills
+func (i *ManageSkillsIntent) applySearchFilter(skills []*domain.Skill, searchText string) []*domain.Skill {
+	if searchText == "" {
+		return skills
+	}
+
+	// Case-insensitive search across name and category
+	searchLower := strings.ToLower(searchText)
+	filtered := make([]*domain.Skill, 0)
+	for _, skill := range skills {
+		if strings.Contains(strings.ToLower(skill.Name), searchLower) ||
+			strings.Contains(strings.ToLower(skill.Category), searchLower) {
+			filtered = append(filtered, skill)
+		}
+	}
+	return filtered
 }
 
 func (i *ManageSkillsIntent) handleDeleteKeys(msg tea.KeyMsg) tea.Cmd {
