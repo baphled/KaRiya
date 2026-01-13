@@ -626,23 +626,28 @@ These discoveries led to creation of comprehensive pattern documentation:
   - **Tests**: 16 specs, 100% passing
   - **Commit**: `a8b0442`
   
-- [x] **SkillFilterModal** (refactored - no search) - Filter by category/level/years + sort
+- [x] **SkillFilterModal** (refactored - filter only) - Filter by category/level/years
   - **Key Binding**: `f` (filter key)
-  - **Fields**: Categories (MultiSelect), Levels (MultiSelect), Years Range (Inputs), SortBy (Select), SortOrder (Select)
-  - **Note**: Search removed and moved to SkillSearchModal
-  - **Note**: Sort kept in filter (sort is part of filtering results)
+  - **Fields**: Categories (MultiSelect), Levels (MultiSelect), Years Range (Inputs)
+  - **Note**: Search removed → SkillSearchModal
+  - **Note**: Sort removed → SkillSortModal
   - **File**: `internal/cli/components/skill_filter_modal.go`
   - **Tests**: 11 specs, 100% passing
-  - **Commit**: `62f26d0`, `a8b0442` (refactored)
+  - **Commit**: `62f26d0`, `a8b0442`, `71de80c` (final)
   
-- [x] **SkillSortModal** (DEPRECATED - sort moved to SkillFilterModal)
-  - **Status**: Sort options integrated into SkillFilterModal
-  - **Rationale**: Filter and sort are logically related operations
+- [x] **SkillSortModal** (180 lines) - Sort by name/category/level/years/events
+  - **Key Binding**: `s` (sort key)
+  - **Fields**: SortBy (Select), SortOrder (Select)
+  - **Options**: Name, Category, Level, Years, Events; Asc/Desc
+  - **File**: `internal/cli/components/skill_sort_modal.go`
+  - **Tests**: 17 specs, 100% passing
+  - **Commit**: `cbb1315`
 
-**Total New Components**: 2 modals (search + filter with sort)
+**Total New Components**: 3 modals (search + filter + sort)
 - SkillSearchModal: 170 lines (16 tests)
-- SkillFilterModal: ~230 lines (11 tests)
-- **Total**: 400 lines production + 27 tests
+- SkillFilterModal: ~200 lines (11 tests)
+- SkillSortModal: 180 lines (17 tests)
+- **Total**: ~550 lines production + 44 tests
 
 **Pattern Implementation** (4/12 COMPLETE - IN PROGRESS):
 
@@ -764,10 +769,10 @@ func (i *ManageSkillsIntent) getListScreenFooter() string {
 }
 ```
 
-**Keyboard Shortcuts** (updated architecture):
+**Keyboard Shortcuts** (final architecture):
 - `/` - Open SkillSearchModal (search by name/category/description)
-- `f` - Open SkillFilterModal (filter by categories/levels/years + sort options)
-- `s` - REMOVED (sort integrated into filter modal)
+- `f` - Open SkillFilterModal (filter by categories/levels/years)
+- `s` - Open SkillSortModal (sort by name/category/level/years/events, asc/desc)
 
 **Estimated Work Remaining**:
 - Create SkillFilterModal: 1.5 hours (code + tests)
