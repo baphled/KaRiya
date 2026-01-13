@@ -11,7 +11,10 @@ set -e
 # 3. Adding AI attribution and human review trailers
 # 4. Creating the commit
 #
-# Usage: make ai-commit MSG="feat(scope): description"
+# Usage: 
+#   make ai-commit MSG="feat(scope): description"
+#   make ai-commit FILE=/path/to/commit-msg.txt
+#   make ai-commit MSG="..." NO_VERIFY=1  # Skip pre-commit hooks (use sparingly)
 # ============================================================================
 
 # Colors
@@ -22,23 +25,50 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Get commit message from first argument
-COMMIT_MSG="$1"
+COMMIT_MSG_ARG="$1"
+
+# Check if NO_VERIFY flag is set (passed as second argument)
+NO_VERIFY="${2:-}"
 
 # ============================================================================
-# Step 1: Validate commit message provided
+# Step 1: Validate commit message provided and read from file if needed
 # ============================================================================
 
-if [ -z "$COMMIT_MSG" ]; then
+if [ -z "$COMMIT_MSG_ARG" ]; then
     echo -e "${RED}❌ ERROR: Commit message required${NC}"
     echo ""
     echo "Usage:"
     echo "  make ai-commit MSG=\"feat(scope): description\""
+    echo "  make ai-commit FILE=/path/to/commit-msg.txt"
     echo ""
     echo "Examples:"
     echo "  make ai-commit MSG=\"feat(forms): add date validation helpers\""
     echo "  make ai-commit MSG=\"fix(tests): resolve race condition in burst tests\""
     echo "  make ai-commit MSG=\"docs(readme): update installation steps\""
     echo ""
+    echo "For multiline messages, create a file:"
+    echo "  cat > /tmp/commit-msg.txt << 'EOF'"
+    echo "  feat(scope): short description"
+    echo "  "
+    echo "  Longer explanation with details..."
+    echo "  EOF"
+    echo "  make ai-commit FILE=/tmp/commit-msg.txt"
+    echo ""
+    exit 1
+fi
+
+# Check if argument is a file path (exists and is readable)
+if [ -f "$COMMIT_MSG_ARG" ] && [ -r "$COMMIT_MSG_ARG" ]; then
+    echo -e "${BLUE}📄 Reading commit message from file: ${COMMIT_MSG_ARG}${NC}"
+    COMMIT_MSG=$(cat "$COMMIT_MSG_ARG")
+else
+    # Treat as direct message
+    COMMIT_MSG="$COMMIT_MSG_ARG"
+fi
+
+# Validate we have a message
+if [ -z "$COMMIT_MSG" ]; then
+    echo -e "${RED}❌ ERROR: Commit message is empty${NC}"
     exit 1
 fi
 
@@ -146,7 +176,15 @@ Reviewed-By: ${REVIEWER_NAME}
 EOF
 
 # Create the commit using the temp file
-if git commit -F "$COMMIT_MSG_FILE"; then
+# Add --no-verify flag if NO_VERIFY is set
+COMMIT_FLAGS="-F $COMMIT_MSG_FILE"
+if [ "$NO_VERIFY" = "1" ]; then
+    echo -e "${YELLOW}⚠️  Skipping pre-commit hooks (--no-verify)${NC}"
+    echo ""
+    COMMIT_FLAGS="$COMMIT_FLAGS --no-verify"
+fi
+
+if git commit $COMMIT_FLAGS; then
     echo ""
     echo -e "${GREEN}✅ Commit created successfully${NC}"
     echo ""

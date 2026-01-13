@@ -114,16 +114,31 @@ list-ai-commits:
 
 # Create AI-attributed commit (for AI-generated code)
 ai-commit:
-	@if [ -z "$(MSG)" ]; then \
-		echo "Usage: make ai-commit MSG=\"feat(scope): description\""; \
+	@if [ -z "$(MSG)" ] && [ -z "$(FILE)" ]; then \
+		echo "Usage:"; \
+		echo "  make ai-commit MSG=\"feat(scope): description\""; \
+		echo "  make ai-commit FILE=/path/to/commit-msg.txt"; \
+		echo "  make ai-commit MSG=\"...\" NO_VERIFY=1  # Skip pre-commit hooks"; \
 		echo ""; \
 		echo "Examples:"; \
 		echo "  make ai-commit MSG=\"feat(forms): add date validation helpers\""; \
 		echo "  make ai-commit MSG=\"fix(tests): resolve race condition\""; \
 		echo ""; \
+		echo "For multiline messages:"; \
+		echo "  cat > /tmp/commit-msg.txt << 'EOF'"; \
+		echo "  feat(scope): short description"; \
+		echo "  "; \
+		echo "  Longer explanation with details..."; \
+		echo "  EOF"; \
+		echo "  make ai-commit FILE=/tmp/commit-msg.txt"; \
+		echo ""; \
 		exit 1; \
 	fi
-	@bash scripts/ai-commit.sh "$(MSG)"
+	@if [ -n "$(FILE)" ]; then \
+		bash scripts/ai-commit.sh "$(FILE)" "$(NO_VERIFY)"; \
+	else \
+		bash scripts/ai-commit.sh "$(MSG)" "$(NO_VERIFY)"; \
+	fi
 
 # Show token efficiency reminder
 token-check:
