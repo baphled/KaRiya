@@ -2,6 +2,7 @@ package intents
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/baphled/kariya/internal/cli/components"
@@ -68,6 +69,9 @@ type BrowseTimelineIntent struct {
 
 	// filterModal holds the filter modal (shown over the list)
 	filterModal *components.FilterModalModel
+
+	// deleteModal holds the delete confirmation modal (shown over the list)
+	deleteModal *components.DeleteConfirmModal
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -134,6 +138,37 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
+	// If delete modal is visible, handle it next (Phase 4 UX Issue 2)
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		cmd, confirmed := i.deleteModal.Update(msg)
+		if !i.deleteModal.IsVisible() {
+			// Modal closed
+			if confirmed && i.state.selectedEvent != nil {
+				// User confirmed - delete the event
+				ctx := context.Background()
+				if err := i.context.CLIEventService.DeleteEvent(ctx, i.state.selectedEvent.ID); err != nil {
+					// TODO: Show error modal (Phase 4 Issue 3)
+					i.state.deleteError = err
+					return cmd
+				}
+				// Remove deleted event from the list
+				deletedID := i.state.selectedEvent.ID
+				newEvents := make([]*career.CareerEvent, 0, len(i.context.Events)-1)
+				for _, evt := range i.context.Events {
+					if evt.ID != deletedID {
+						newEvents = append(newEvents, evt)
+					}
+				}
+				i.context.Events = newEvents
+				i.applyFilters()
+				i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+			}
+			// Clear selected event
+			i.state.selectedEvent = nil
+		}
+		return cmd
+	}
+
 	// Handle global keys BEFORE delegating to screen
 	// This ensures q (quit), ? (help), etc. are always processed first
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -184,6 +219,13 @@ func (i *BrowseTimelineIntent) View() string {
 		// If filter modal is visible, overlay it on the COMPLETE rendered view
 		if i.filterModal != nil && i.filterModal.IsVisible() {
 			return i.renderFilterModalOverlay(baseView)
+		}
+
+		// If delete modal is visible, overlay it (Phase 4 UX Issue 2)
+		// Delete modal is self-centering using Place(), so just render it
+		// The modal's View() method returns a centered overlay
+		if i.deleteModal != nil && i.deleteModal.IsVisible() {
+			return i.deleteModal.View()
 		}
 
 		return baseView
@@ -473,10 +515,20 @@ func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResu
 		case "delete":
 			// Get the event from the action data
 			if event, ok := actionData["event"].(*career.CareerEvent); ok {
-				// Transition to delete confirmation screen
-				i.state.currentState = BrowseStateDeleteConfirm
+				// Show delete confirmation modal (Phase 4 UX Issue 2)
+				// Modal overlay instead of screen transition - preserves context
+				eventText := event.Text
+				if len(eventText) > 50 {
+					eventText = eventText[:47] + "..."
+				}
+				i.deleteModal = components.NewDeleteConfirmModal(
+					event.Text,
+					"Delete Event",
+					fmt.Sprintf("Are you sure you want to delete '%s'?", eventText),
+				)
+				// Store event for deletion if confirmed
 				i.state.selectedEvent = event
-				i.transitionToScreen(timeline.NewEventDeleteConfirmScreen(event))
+				return i.deleteModal.Init()
 			}
 			return nil
 		case "filter":
