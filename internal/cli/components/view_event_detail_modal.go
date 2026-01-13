@@ -101,19 +101,13 @@ func (m *ViewEventDetailModal) View() string {
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, content, "", footer)
 
 	// Wrap in styled box with solid background to prevent transparency
-	// Apply max height to ensure modal doesn't exceed terminal size
-	maxHeight := m.height - 8 // Leave margins
-	if maxHeight > 35 {
-		maxHeight = 35 // Cap at 35 lines for readability
-	}
-
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorBorder).
 		Background(styles.ColorBackground). // Solid background
 		Padding(1, 2).
-		MaxWidth(m.width - 8). // Leave margins
-		MaxHeight(maxHeight).  // Capped max height
+		MaxWidth(m.width - 8).   // Leave margins
+		MaxHeight(m.height - 8). // Leave margins
 		Render(modalContent)
 }
 
