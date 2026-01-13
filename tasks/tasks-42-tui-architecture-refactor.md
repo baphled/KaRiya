@@ -45,6 +45,7 @@ During Phase 4.2 (BrowseTimeline) implementation, we discovered and documented *
 - **`docs/development/INTENT_PATTERNS_LIBRARY.md`** (800+ lines) - Complete catalog of all 12 patterns
 - **`docs/development/BROWSE_TIMELINE_COMPONENT_ANALYSIS.md`** (400+ lines) - Reference implementation analysis
 - **`docs/development/TASK_42_COMPONENT_REQUIREMENTS.md`** (700+ lines) - Component requirements for all intents
+- **`docs/MODAL_PATTERNS.md`** (1,300+ lines) - Complete modal implementation guide with requirements checklist **NEW!**
 
 ### The 12 Standardized Patterns
 
@@ -670,6 +671,250 @@ Based on BrowseTimeline reference implementation, ManageSkills must implement AL
 **Progress**: 4/12 patterns (33%) - Filter and Sort modals created, tests passing, global keys working
 
 **Reference**: See `docs/development/INTENT_PATTERNS_LIBRARY.md` for complete implementation guide
+
+**Modal Requirements Compliance** (❌ NOT COMPLIANT - CRITICAL ISSUES FOUND):
+
+**CRITICAL**: Skills modals (Search, Filter, Sort) are NOT compliant. See `docs/MODAL_PATTERNS.md` section "Modal Requirements Checklist" for complete requirements.
+
+**Issues Identified** (2026-01-13):
+
+1. ❌ **Update Signature Issue** - ALL 3 modals affected
+   - **Problem**: Intent handlers pass `tea.KeyMsg` but huh forms need `tea.Msg`
+   - **Impact**: Tab and Enter keys DON'T WORK in any modal
+   - **Fix Required**: 
+     - Change all modal Update signatures to accept `tea.Msg`
+     - Change all intent handlers to pass `tea.Msg` (not `tea.KeyMsg`)
+   - **Files**:
+     - `internal/cli/components/skill_search_modal.go:87` - Takes `tea.KeyMsg` (WRONG)
+     - `internal/cli/components/skill_filter_modal.go:182` - Takes `tea.Msg` but intent passes `tea.KeyMsg`
+     - `internal/cli/components/skill_sort_modal.go:109` - Takes `tea.Msg` but intent passes `tea.KeyMsg`
+     - `internal/cli/intents/manage_skills_intent.go:568,602,729` - All pass `tea.KeyMsg` (WRONG)
+
+2. ❌ **Missing KeyBadge Footers** - ALL 3 modals affected
+   - **Problem**: Modals don't show keyboard shortcuts (Tab/Enter/Esc)
+   - **Impact**: Users don't know how to navigate or submit forms
+   - **Fix Required**: Add KeyBadge footer to all modal Views
+   - **Pattern**:
+     ```go
+     footer := RenderHelpFooter(m.theme,
+         NewKeyBadge("Tab", "Next field"),
+         NewKeyBadge("Enter", "Submit"),
+         NewKeyBadge("Esc", "Cancel"),
+     )
+     ```
+
+3. ❌ **Missing List Navigation Shortcuts** - List view
+   - **Problem**: List view doesn't show j/k/↑/↓ navigation shortcuts
+   - **Impact**: Users don't know vim-style navigation is available
+   - **Fix Required**: Add KeyBadge footer to list container
+   - **Pattern**:
+     ```go
+     footer := RenderHelpFooter(theme,
+         NewKeyBadge("j/k/↑/↓", "Navigate"),
+         NewKeyBadge("Enter", "View"),
+         NewKeyBadge("f", "Filter"),
+         NewKeyBadge("s", "Sort"),
+         NewKeyBadge("/", "Search"),
+         NewKeyBadge("Esc", "Back"),
+     )
+     ```
+
+4. ❌ **Missing RenderOverlay Methods** - Filter and Sort modals
+   - **Problem**: Only SearchModal has RenderOverlay method
+   - **Impact**: Inconsistent rendering pattern across modals
+   - **Fix Required**: Add RenderOverlay to FilterModal and SortModal
+
+5. ❌ **Missing E2E Tests** - Filter and Sort modals
+   - **Problem**: Only SearchModal has E2E workflow tests
+   - **Impact**: Can't prove complete workflow works end-to-end
+   - **Fix Required**: Add E2E tests for Filter and Sort modals proving:
+     - Open modal → Tab through fields → Enter to submit → See filtered/sorted results
+
+**Modal Compliance Checklist** (from `docs/MODAL_PATTERNS.md`):
+
+Use this for ALL modal implementations:
+
+- [ ] **Update signature**: `Update(msg tea.Msg)` - NOT `tea.KeyMsg` ❌ ALL 3 FAIL
+- [ ] **Solid background**: `Background(styles.ColorBackground)` ✅ ALL 3 PASS
+- [ ] **KeyBadge footer**: Shows Tab/Enter/Esc shortcuts ❌ ALL 3 FAIL
+- [ ] **E2E tests**: Proves complete workflow works ❌ 2/3 FAIL (only Search has E2E)
+- [ ] **Intent passes `tea.Msg`**: Handler doesn't cast to `tea.KeyMsg` ❌ ALL 3 FAIL
+- [ ] **RenderOverlay method**: Consistent overlay pattern ❌ 2/3 FAIL (only Search has it)
+- [ ] **WindowSizeMsg handling**: Responsive sizing ✅ 2/3 PASS (Search needs it)
+
+**Compliance Status**: **0/3 modals compliant** (0%)
+
+**Blocking Issues**: Tab and Enter keys don't work - modals are non-functional for users
+
+**Action Required**: Complete fix following TDD (see below)
+
+---
+
+### Modal Compliance Fix Plan (PRIORITY - BLOCKING)
+
+**Objective**: Fix all 3 skills modals to be fully compliant with modal standards
+
+**Estimated Time**: 4-6 hours (following strict TDD)
+
+**Phase 1: Fix Update Signatures and Intent Handlers** (2 hours)
+
+RED Phase (Write Failing Tests):
+- [ ] Test: Tab key navigates through SearchModal fields (FAILS because msg type wrong)
+- [ ] Test: Enter key submits SearchModal (FAILS because msg type wrong)
+- [ ] Test: Tab key navigates through FilterModal fields (FAILS)
+- [ ] Test: Enter key submits FilterModal (FAILS)
+- [ ] Test: Tab key navigates through SortModal fields (FAILS)
+- [ ] Test: Enter key submits SortModal (FAILS)
+
+GREEN Phase (Fix Implementation):
+- [ ] Change SkillSearchModal.Update signature: `Update(msg tea.Msg)` (not `tea.KeyMsg`)
+- [ ] Add WindowSizeMsg handling to SkillSearchModal
+- [ ] Change handleSearchModalUpdate parameter: `handleSearchModalUpdate(msg tea.Msg)`
+- [ ] Change handleFilterModalUpdate parameter: `handleFilterModalUpdate(msg tea.Msg)`
+- [ ] Change handleSortModalUpdate parameter: `handleSortModalUpdate(msg tea.Msg)`
+- [ ] Update intent Update() to pass full `msg` (not cast to `tea.KeyMsg`)
+
+Files to modify:
+- `internal/cli/components/skill_search_modal.go` (line 87)
+- `internal/cli/components/skill_filter_modal.go` (no change to signature, already tea.Msg)
+- `internal/cli/components/skill_sort_modal.go` (no change to signature, already tea.Msg)
+- `internal/cli/intents/manage_skills_intent.go` (lines 378-386, 568, 602, 729)
+
+Verification:
+- [ ] All 6 new tests pass (Tab and Enter work)
+- [ ] Existing tests still pass (no regressions)
+- [ ] Manual test: Can Tab through modal fields and submit with Enter
+
+**Phase 2: Add KeyBadge Footers** (1 hour)
+
+RED Phase:
+- [ ] Test: SearchModal View() includes footer with Tab/Enter/Esc badges
+- [ ] Test: FilterModal View() includes footer with Tab/Enter/Esc badges
+- [ ] Test: SortModal View() includes footer with Tab/Enter/Esc badges
+
+GREEN Phase:
+- [ ] Add KeyBadge footer to SkillSearchModal.View()
+- [ ] Add KeyBadge footer to SkillFilterModal.View()
+- [ ] Add KeyBadge footer to SkillSortModal.View()
+
+Pattern to use:
+```go
+footer := RenderHelpFooter(m.theme,
+    NewKeyBadge("Tab", "Next field"),
+    NewKeyBadge("Enter", "Submit"),
+    NewKeyBadge("Esc", "Cancel"),
+)
+```
+
+Files to modify:
+- `internal/cli/components/skill_search_modal.go` (View method)
+- `internal/cli/components/skill_filter_modal.go` (View method)
+- `internal/cli/components/skill_sort_modal.go` (View method)
+
+Verification:
+- [ ] All 3 footer tests pass
+- [ ] Manual test: Keyboard shortcuts visible in all modals
+
+**Phase 3: Add RenderOverlay Methods** (30 minutes)
+
+GREEN Phase (no failing tests needed - pattern already established):
+- [ ] Add RenderOverlay method to SkillFilterModal (copy from SkillSearchModal)
+- [ ] Add RenderOverlay method to SkillSortModal (copy from SkillSearchModal)
+
+Pattern to use:
+```go
+func (m *YourModal) RenderOverlay(baseView string) string {
+    if !m.visible { return baseView }
+    modalContent := staticViewModel{content: m.View()}
+    bgModel := staticViewModel{content: baseView}
+    overlayModel := overlay.New(modalContent, bgModel, overlay.Center, overlay.Center, 0, -2)
+    return overlayModel.View()
+}
+```
+
+Files to modify:
+- `internal/cli/components/skill_filter_modal.go` (add method)
+- `internal/cli/components/skill_sort_modal.go` (add method)
+
+Verification:
+- [ ] Both modals compile with RenderOverlay method
+- [ ] Pattern matches SkillSearchModal exactly
+
+**Phase 4: Add List Navigation Shortcuts** (30 minutes)
+
+RED Phase:
+- [ ] Test: ListContainer footer includes j/k/↑/↓ navigation badges
+
+GREEN Phase:
+- [ ] Add KeyBadge footer to list view in ManageSkillsIntent
+
+Pattern to use:
+```go
+footer := RenderHelpFooter(theme,
+    NewKeyBadge("j/k/↑/↓", "Navigate"),
+    NewKeyBadge("Enter", "View"),
+    NewKeyBadge("n", "New"),
+    NewKeyBadge("f", "Filter"),
+    NewKeyBadge("s", "Sort"),
+    NewKeyBadge("/", "Search"),
+    NewKeyBadge("Esc", "Back"),
+)
+```
+
+Files to modify:
+- `internal/cli/intents/manage_skills_intent.go` (list view rendering)
+
+Verification:
+- [ ] Footer test passes
+- [ ] Manual test: Shortcuts visible in list view
+
+**Phase 5: Add E2E Tests for Filter and Sort** (1-2 hours)
+
+RED Phase (tests fail because functionality is being verified):
+- [ ] E2E Test: Open FilterModal → Tab through fields → Enter → See filtered results
+- [ ] E2E Test: Open FilterModal → Esc → Cancel without applying
+- [ ] E2E Test: Open SortModal → Tab through fields → Enter → See sorted results
+- [ ] E2E Test: Open SortModal → Esc → Cancel without applying
+
+GREEN Phase (tests pass after Phase 1 fixes):
+- [ ] Run E2E tests - should pass after Phase 1 fixes
+- [ ] If any fail, debug and fix
+
+Files to modify:
+- `internal/cli/intents/manage_skills_test.go` (add E2E tests)
+
+Verification:
+- [ ] All E2E tests pass (minimum 4 new tests)
+- [ ] Manual test: Complete workflows work end-to-end
+
+**Phase 6: Final Compliance Check** (30 minutes)
+
+Run through complete Modal Compliance Checklist:
+- [ ] All 3 modals: Update signature is `Update(msg tea.Msg)` ✅
+- [ ] All 3 modals: Has solid background ✅
+- [ ] All 3 modals: Has KeyBadge footer ✅
+- [ ] All 3 modals: Has E2E tests ✅
+- [ ] All 3 modals: Intent passes `tea.Msg` ✅
+- [ ] All 3 modals: Has RenderOverlay method ✅
+- [ ] All 3 modals: Handles WindowSizeMsg ✅
+
+**Final Verification**:
+- [ ] All tests pass (2,078+ tests, 100% pass rate)
+- [ ] Manual test: Tab, Enter, Esc work in all 3 modals
+- [ ] Manual test: List navigation shortcuts visible
+- [ ] Manual test: Modal keyboard shortcuts visible
+- [ ] **Compliance Status: 3/3 modals compliant (100%)**
+
+**Success Criteria**:
+- ✅ Tab key navigates through modal fields
+- ✅ Enter key submits modal forms
+- ✅ Keyboard shortcuts visible in all modals
+- ✅ List navigation shortcuts visible
+- ✅ E2E tests prove complete workflows work
+- ✅ All modals follow identical patterns
+- ✅ Zero regressions in existing tests
+
+---
 
 **View() Method Requirements**:
 

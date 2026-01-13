@@ -987,6 +987,225 @@ if action := i.viewDetailModal.GetAction(); action == "edit" {
 }
 ```
 
+### Modal Requirements Checklist
+
+Use this checklist to ensure your modal implementation is complete and compliant with KaRiya standards.
+
+#### 1. Modal Structure Requirements
+
+- [ ] **Implements `tea.Model` interface** - Required for overlay compatibility
+  - `Init() tea.Cmd`
+  - `Update(msg tea.Msg) (tea.Model, tea.Cmd)` or custom signature
+  - `View() string`
+- [ ] **Has `visible bool` field** - Track modal visibility
+- [ ] **Has `width int` and `height int` fields** - Responsive sizing
+- [ ] **Has form/data fields** - Form model or data structure
+
+#### 2. Update Method Requirements (CRITICAL)
+
+- [ ] **Takes `tea.Msg` parameter** - NOT `tea.KeyMsg` (critical for huh forms)
+  ```go
+  func (m *YourModal) Update(msg tea.Msg) (tea.Cmd, bool, *FormData)
+  ```
+- [ ] **Handles `tea.WindowSizeMsg`** - Update width/height for responsive sizing
+  ```go
+  case tea.WindowSizeMsg:
+      m.width = msg.Width
+      m.height = msg.Height
+  ```
+- [ ] **Handles `tea.KeyMsg` for Esc** - Cancel/close modal
+  ```go
+  case tea.KeyMsg:
+      switch msg.String() {
+      case "esc":
+          m.visible = false
+          return nil, false, nil
+      }
+  ```
+- [ ] **Returns early if not visible** - Performance optimization
+  ```go
+  if !m.visible { return nil, false, nil }
+  ```
+- [ ] **Forwards ALL messages to form** - Not just KeyMsg (critical!)
+  ```go
+  form, cmd := m.form.Update(msg)  // Pass full tea.Msg
+  m.form = form.(*huh.Form)
+  ```
+- [ ] **Checks form completion** - Detect when user submits
+  ```go
+  if m.form.State == huh.StateCompleted {
+      m.visible = false
+      return cmd, true, m.formData
+  }
+  ```
+
+#### 3. View Method Requirements
+
+- [ ] **Returns empty string if not visible**
+  ```go
+  if !m.visible { return "" }
+  ```
+- [ ] **Has solid background** - CRITICAL to prevent transparency
+  ```go
+  Background(styles.ColorBackground)
+  ```
+- [ ] **Has rounded border** - Consistent styling
+  ```go
+  Border(lipgloss.RoundedBorder())
+  ```
+- [ ] **Has border color** - Theme-aware borders
+  ```go
+  BorderForeground(styles.ColorBorder)
+  ```
+- [ ] **Has padding** - Consistent spacing
+  ```go
+  Padding(1, 2)
+  ```
+- [ ] **Includes KeyBadge footer** - Show keyboard shortcuts (recommended)
+  ```go
+  footer := RenderHelpFooter(m.theme,
+      NewKeyBadge("Tab", "Next field"),
+      NewKeyBadge("Enter", "Submit"),
+      NewKeyBadge("Esc", "Cancel"),
+  )
+  ```
+
+#### 4. Form Building Requirements (for huh forms)
+
+- [ ] **Uses 60% width calculation** - Consistent modal sizing
+  ```go
+  modalWidth := m.width * 60 / 100
+  if modalWidth > 80 { modalWidth = 80 }
+  if modalWidth < 40 { modalWidth = 40 }
+  ```
+- [ ] **Uses natural height (0)** - Let huh forms manage their own height
+  ```go
+  m.form = huh.NewForm(group).WithWidth(modalWidth)  // No WithHeight
+  ```
+- [ ] **Binds fields to formData** - Two-way data binding
+  ```go
+  Value(&m.formData.FieldName)
+  ```
+- [ ] **Has SubmitConfirmed field** - Track form submission
+  ```go
+  type FormData struct {
+      Field1          string
+      SubmitConfirmed bool
+  }
+  ```
+- [ ] **Uses confirm button helper** - Consistent submission pattern
+  ```go
+  forms.NewFormWithFixedConfirm(group, &data.SubmitConfirmed, width, 0)
+  ```
+
+#### 5. Intent Integration Requirements
+
+- [ ] **Modal field in intent struct**
+  ```go
+  type YourIntent struct {
+      yourModal *components.YourModal
+  }
+  ```
+- [ ] **Modal check BEFORE other logic** - Priority chain
+  ```go
+  // 1. Global keys (q, ?, m)
+  // 2. Modal updates (if visible)
+  // 3. Screen/state logic
+  ```
+- [ ] **Handler passes `tea.Msg`** - NOT `tea.KeyMsg` (critical!)
+  ```go
+  func (i *Intent) handleModalUpdate(msg tea.Msg) tea.Cmd {  // tea.Msg!
+      cmd, applied, data := i.modal.Update(msg)
+      // ...
+  }
+  ```
+- [ ] **Creates modal with terminal dimensions**
+  ```go
+  termInfo := i.GetTerminalInfo()
+  width, height := 120, 40
+  if termInfo != nil {
+      width = termInfo.Width
+      height = termInfo.Height
+  }
+  i.modal = components.NewModal(width, height)
+  ```
+- [ ] **Calls Init() immediately** - Pattern 12: Immediate Init
+  ```go
+  return i.modal.Init()
+  ```
+- [ ] **Clears modal after use** - Prevent memory leaks
+  ```go
+  i.modal = nil
+  ```
+
+#### 6. Overlay Rendering Requirements
+
+- [ ] **Has RenderOverlay method** - Composite modal over background
+  ```go
+  func (m *YourModal) RenderOverlay(baseView string) string
+  ```
+- [ ] **Uses staticViewModel wrapper** - For overlay compatibility
+  ```go
+  modalContent := staticViewModel{content: m.View()}
+  bgModel := staticViewModel{content: baseView}
+  ```
+- [ ] **Uses overlay.New with Center positioning**
+  ```go
+  overlay.New(
+      modalContent,   // Foreground
+      bgModel,        // Background
+      overlay.Center, // X position
+      overlay.Center, // Y position
+      0,              // X offset
+      -2,             // Y offset (avoid footer)
+  )
+  ```
+- [ ] **Intent checks IsVisible before rendering**
+  ```go
+  if i.modal != nil && i.modal.IsVisible() {
+      return i.modal.RenderOverlay(baseView)
+  }
+  ```
+
+#### 7. Keyboard Shortcuts Display Requirements
+
+- [ ] **Modal footer shows shortcuts** - Tab/Enter/Esc for forms
+- [ ] **List view shows navigation** - j/k/↑/↓ for lists
+- [ ] **Uses RenderHelpFooter helper** - Consistent footer styling
+- [ ] **Uses NewKeyBadge for each key** - Themed key badges
+  ```go
+  NewKeyBadge("j/k", "Navigate"),
+  NewKeyBadge("Enter", "Select"),
+  NewKeyBadge("Esc", "Back"),
+  ```
+
+#### 8. Testing Requirements
+
+- [ ] **Component tests for toggle** - Show/Hide/IsVisible
+- [ ] **Component tests for Tab navigation** - Field-to-field movement
+- [ ] **Component tests for Enter submission** - Form completion
+- [ ] **Component tests for Esc cancellation** - Close without saving
+- [ ] **E2E tests for complete workflow** - Open → input → submit → verify
+  - User opens modal
+  - User types/navigates with Tab
+  - User submits with Enter
+  - System processes data correctly
+- [ ] **Tests for WindowSizeMsg handling** - Responsive sizing
+
+#### Compliance Quick Check
+
+Run through this quick checklist:
+
+1. ✅ **Update signature**: `Update(msg tea.Msg)` - NOT `tea.KeyMsg`
+2. ✅ **Solid background**: `Background(styles.ColorBackground)`
+3. ✅ **KeyBadge footer**: Shows Tab/Enter/Esc shortcuts
+4. ✅ **E2E tests**: Proves complete workflow works
+5. ✅ **Intent passes `tea.Msg`**: Handler doesn't cast to `tea.KeyMsg`
+
+**If ANY of these fail, the modal is NOT compliant.**
+
+---
+
 ### Best Practices
 
 #### ✅ DO
