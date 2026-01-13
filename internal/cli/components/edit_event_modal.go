@@ -153,11 +153,13 @@ func (m *EditEventModal) View() string {
 
 	// Wrap the form in a styled box with solid background, border, and padding
 	// This ensures the modal is opaque and doesn't show background through
+	// Apply max height to prevent modal from exceeding terminal size
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorBorder).
 		Background(styles.ColorBackground).
 		Padding(1, 2).
+		MaxHeight(35). // Cap at 35 lines for readability
 		Render(m.form.View())
 }
 
