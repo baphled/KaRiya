@@ -8,7 +8,38 @@ This directory contains detailed workflow guides for the two most complex workfl
 
 ## Available Workflows
 
-### 1. [CV Generation Workflow](CV_GENERATION_WORKFLOW.md)
+### 1. [Browse Timeline Workflow](BROWSE_TIMELINE_WORKFLOW.md) **NEW!**
+
+**Complexity**: ⭐⭐⭐ Medium (1 state + 5 modal overlays)  
+**Purpose**: Browse, view, edit, and manage career events  
+**Implementation**: `internal/cli/intents/browse_timeline_intent.go`  
+**Test Coverage**: 113 tests (37 intent + 76 modal), 100% passing
+
+**Key Features**:
+- Scrollable timeline list with vim-style navigation
+- **5 modal overlays** (all using bubbletea-overlay):
+  - View Event Detail Modal (read-only display) **NEW!**
+  - Quick Add Event Modal (fast event creation)
+  - Edit Event Modal (update existing events)
+  - Delete Confirmation Modal (safe deletion)
+  - Filter Modal (filter by company, category; sort by date)
+- Context preservation (timeline visible behind modals)
+- Quick actions (add, edit, delete without screen transitions)
+- Filter and sort with live updates
+
+**When to use**: Reviewing career history, finding events, quick edits, event management
+
+**Typical Duration**: 10-60 seconds (depending on action)
+
+**Quick Start**:
+```
+Main Menu → Browse Timeline (l/b) → Navigate (↑↓/jk) →
+  [View (Enter) | Add (a) | Edit (e) | Delete (d) | Filter (f)]
+```
+
+---
+
+### 2. [CV Generation Workflow](CV_GENERATION_WORKFLOW.md)
 
 **Complexity**: ⭐⭐⭐⭐⭐ High (10 states)  
 **Purpose**: Generate role and audience-specific CVs from career events  
@@ -34,7 +65,7 @@ Main Menu → Generate CV → Select Profile → Select Audience →
 
 ---
 
-### 2. [Event Capture Workflow](EVENT_CAPTURE_WORKFLOW.md)
+### 3. [Event Capture Workflow](EVENT_CAPTURE_WORKFLOW.md)
 
 **Complexity**: ⭐⭐⭐⭐ High (4 states + 3 modal sub-flows)  
 **Purpose**: Capture career events with optional burst/fact extraction  
@@ -278,13 +309,14 @@ When adding new workflow guides:
 
 | Workflow | States | Modals | Shortcuts | Tests | Avg Duration |
 |----------|--------|--------|-----------|-------|--------------|
+| Browse Timeline | 1 | 5 | 30+ | 113 | 10-60s |
 | CV Generation | 10 | 0 | 25+ | 41 | 30-60s |
 | Event Capture | 4 | 3 | 20+ | 30+ | 20-60s |
-| **Total** | **14** | **3** | **45+** | **71+** | - |
+| **Total** | **15** | **8** | **75+** | **184+** | - |
 
 ---
 
 **Document Status**: ✅ Complete and Production-Ready  
-**Last Updated**: 2026-01-12  
-**Workflows Documented**: 2/5 core intents (40%)  
-**Next Workflows**: BrowseTimeline, ExportArtifact, ConfigureSystem
+**Last Updated**: 2026-01-13  
+**Workflows Documented**: 3/5 core intents (60%)  
+**Next Workflows**: ExportArtifact, ConfigureSystem
