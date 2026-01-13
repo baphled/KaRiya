@@ -1,6 +1,8 @@
 package intents_test
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -68,6 +70,12 @@ var _ = Describe("BurstManagement Modal Escape Handling", func() {
 			env.SelectIntentByName("burst_management")
 			env.AssertViewContainsAny("Team Mentoring", "List")
 
+			// Navigate to find "Team Mentoring" burst (could be first or second depending on OS)
+			view := env.GetView()
+			if !strings.Contains(view, "▶ Team Mentoring") && !strings.Contains(view, "> Team Mentoring") {
+				env.NavigateDown() // Move to second burst
+			}
+
 			env.Confirm()
 			env.AssertViewContainsAny("Detail", "Team Mentoring", "Description")
 
@@ -82,6 +90,13 @@ var _ = Describe("BurstManagement Modal Escape Handling", func() {
 
 		It("should preserve original burst data when escape is pressed", func() {
 			env.SelectIntentByName("burst_management")
+
+			// Navigate to find "Team Mentoring" burst (could be first or second depending on OS)
+			view := env.GetView()
+			if !strings.Contains(view, "Team Mentoring") {
+				env.NavigateDown() // Move to second burst
+			}
+
 			env.Confirm()
 			env.AssertViewContainsAny("Team Mentoring", "Focused mentoring")
 

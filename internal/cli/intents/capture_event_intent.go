@@ -90,8 +90,8 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 		return nil, err
 	}
 
-	// Create the huh-based form model for capturing event details
-	formModel := models.NewHuhCaptureForm(context.CLIEventService)
+	// Create the form model for capturing event details
+	formModel := models.NewCaptureForm(context.CLIEventService)
 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
@@ -1253,7 +1253,7 @@ func (i *CaptureEventIntent) GetState() string {
 }
 
 // GetForm returns the current form model instance (for test and debug)
-func (i *CaptureEventIntent) GetForm() *models.HuhCaptureForm {
+func (i *CaptureEventIntent) GetForm() *models.CaptureForm {
 	if i == nil || i.state == nil {
 		return nil
 	}

@@ -302,4 +302,166 @@ var _ = Describe("SQLite Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
+
+	Describe("Skill Associations", func() {
+		var skillRepo *SQLiteSkillRepository
+
+		BeforeEach(func() {
+			skillRepo = NewSQLiteSkillRepositoryWithDB(repo.GetDB())
+		})
+
+		Describe("Create with skills", func() {
+			It("should save skill associations when creating event", func() {
+				// Create skills first
+				skill1 := &career.Skill{Name: "Ruby", Category: "backend"}
+				skill2 := &career.Skill{Name: "PostgreSQL", Category: "database"}
+
+				err := skillRepo.Create(ctx, skill1)
+				Expect(err).NotTo(HaveOccurred())
+				err = skillRepo.Create(ctx, skill2)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create event with skills
+				event := createSQLiteTestEvent()
+				event.Skills = []string{skill1.ID, skill2.ID}
+
+				err = repo.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Retrieve event and verify skills are loaded
+				retrieved, err := repo.GetByID(ctx, event.ID)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.Skills).To(HaveLen(2))
+				Expect(retrieved.Skills).To(ContainElement(skill1.ID))
+				Expect(retrieved.Skills).To(ContainElement(skill2.ID))
+			})
+
+			It("should create event without skills", func() {
+				event := createSQLiteTestEvent()
+				event.Skills = []string{}
+
+				err := repo.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+
+				retrieved, err := repo.GetByID(ctx, event.ID)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.Skills).To(BeEmpty())
+			})
+		})
+
+		Describe("GetByID with skills", func() {
+			It("should load skill IDs when retrieving event", func() {
+				// Create skills
+				skill := &career.Skill{Name: "Go", Category: "backend"}
+				err := skillRepo.Create(ctx, skill)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create event with skill
+				event := createSQLiteTestEvent()
+				event.Skills = []string{skill.ID}
+				err = repo.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Retrieve and verify
+				retrieved, err := repo.GetByID(ctx, event.ID)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.Skills).To(Equal([]string{skill.ID}))
+			})
+		})
+
+		Describe("Update with skills", func() {
+			It("should update skill associations", func() {
+				// Create skills
+				skill1 := &career.Skill{Name: "Ruby", Category: "backend"}
+				skill2 := &career.Skill{Name: "React", Category: "frontend"}
+				skill3 := &career.Skill{Name: "Docker", Category: "devops"}
+
+				err := skillRepo.Create(ctx, skill1)
+				Expect(err).NotTo(HaveOccurred())
+				err = skillRepo.Create(ctx, skill2)
+				Expect(err).NotTo(HaveOccurred())
+				err = skillRepo.Create(ctx, skill3)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create event with initial skills
+				event := createSQLiteTestEvent()
+				event.Skills = []string{skill1.ID, skill2.ID}
+				err = repo.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Update event skills
+				event.Skills = []string{skill2.ID, skill3.ID} // Remove skill1, add skill3
+				err = repo.Update(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify updated skills
+				retrieved, err := repo.GetByID(ctx, event.ID)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.Skills).To(HaveLen(2))
+				Expect(retrieved.Skills).To(ContainElement(skill2.ID))
+				Expect(retrieved.Skills).To(ContainElement(skill3.ID))
+				Expect(retrieved.Skills).NotTo(ContainElement(skill1.ID))
+			})
+
+			It("should allow removing all skills", func() {
+				// Create skill and event
+				skill := &career.Skill{Name: "Ruby", Category: "backend"}
+				err := skillRepo.Create(ctx, skill)
+				Expect(err).NotTo(HaveOccurred())
+
+				event := createSQLiteTestEvent()
+				event.Skills = []string{skill.ID}
+				err = repo.Create(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Remove all skills
+				event.Skills = []string{}
+				err = repo.Update(ctx, event)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify skills removed
+				retrieved, err := repo.GetByID(ctx, event.ID)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(retrieved.Skills).To(BeEmpty())
+			})
+		})
+
+		Describe("List with skills", func() {
+			It("should load skills for all events in list", func() {
+				// Create skills
+				skill1 := &career.Skill{Name: "Ruby", Category: "backend"}
+				skill2 := &career.Skill{Name: "React", Category: "frontend"}
+				err := skillRepo.Create(ctx, skill1)
+				Expect(err).NotTo(HaveOccurred())
+				err = skillRepo.Create(ctx, skill2)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create events with different skills
+				event1 := createSQLiteTestEvent()
+				event1.Skills = []string{skill1.ID}
+				err = repo.Create(ctx, event1)
+				Expect(err).NotTo(HaveOccurred())
+
+				event2 := createSQLiteTestEvent()
+				event2.Skills = []string{skill2.ID}
+				err = repo.Create(ctx, event2)
+				Expect(err).NotTo(HaveOccurred())
+
+				// List and verify skills loaded
+				filters := ListFilters{}
+				events, err := repo.List(ctx, filters)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(events).To(HaveLen(2))
+
+				// Find our events and verify skills
+				for _, event := range events {
+					if event.ID == event1.ID {
+						Expect(event.Skills).To(Equal([]string{skill1.ID}))
+					} else if event.ID == event2.ID {
+						Expect(event.Skills).To(Equal([]string{skill2.ID}))
+					}
+				}
+			})
+		})
+	})
 })

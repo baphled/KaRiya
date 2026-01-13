@@ -165,6 +165,9 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 			burstRepo := career.NewSQLiteBurstRepositoryWithDB(db)
 			svc.SetBurstRepository(burstRepo)
+
+			skillRepo := career.NewSQLiteSkillRepositoryWithDB(db)
+			svc.SetSkillRepository(skillRepo)
 		}
 	}
 

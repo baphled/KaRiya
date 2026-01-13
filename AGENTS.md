@@ -1,10 +1,11 @@
 # KaRiya Project Documentation
 
-**Last Updated**: 2026-01-08
+**Last Updated**: 2026-01-12
 **Project Status**: ✅ **PRODUCTION READY - ALL PHASES COMPLETE (100%)**
 **Test Coverage**: 240+ tests, 100% pass rate, 0 race conditions
 **Code Quality**: All linting checks passing, no technical debt
 **Forms**: Huh library integration (Phase 4/5 complete)
+**Form Wrappers**: 2 (CaptureForm, SkillForm) - Required for intent forms
 
 ---
 
@@ -566,15 +567,19 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 **Related**: See [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
 
 #### 8. Forms System (Huh Library)
-**File**: [`docs/HUH_FORMS_GUIDE.md`](docs/HUH_FORMS_GUIDE.md)
+**File**: [`docs/FORMS_GUIDE.md`](docs/FORMS_GUIDE.md)
 **Purpose**: Comprehensive guide to using Charm's huh library for forms
 **When to use**: When creating or modifying form inputs in the TUI
 **Key topics**:
-- Huh library integration and theming
-- Form configurations for burst, metadata, and fact editing
+- Complete documentation of all 5 form configurations (burst, metadata, fact, capture event, burst suggestion)
+- Huh library integration and theming (including theme generation from KaRiya themes)
 - 20+ reusable validators (date parsing, email, URL, domain-specific)
-- Migration from manual textinput arrays
-**Related**: See [`docs/HUH_MIGRATION_SUMMARY.md`](docs/HUH_MIGRATION_SUMMARY.md) for migration lessons learned
+- Modal and model integration patterns
+- **⚠️ Form Alignment & Wrapper Pattern** - CRITICAL for intent forms
+- Testing strategies and comprehensive examples
+
+> **⚠️ CRITICAL**: Forms in intents MUST use wrapper models (e.g., `CaptureForm`, `SkillForm`).
+> Direct `*huh.Form` usage causes left-alignment issues. See [Form Alignment and the Wrapper Pattern](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern).
 
 ### TUI Quick References
 
@@ -1030,8 +1035,7 @@ ParseDateString("2 weeks ago")    // ✅ Relative
 - ✅ 70% less code per form
 
 **Documentation**:
-- [`docs/HUH_FORMS_GUIDE.md`](docs/HUH_FORMS_GUIDE.md) - Complete developer guide (680 lines)
-- [`docs/HUH_MIGRATION_SUMMARY.md`](docs/HUH_MIGRATION_SUMMARY.md) - Migration summary and lessons learned
+- [`docs/FORMS_GUIDE.md`](docs/FORMS_GUIDE.md) - Complete forms implementation guide covering all 5 form configurations, validators, theming, integration patterns, and testing
 
 **Remaining Work** (Phase 5):
 - FactEditorModel (600 lines)
@@ -1420,6 +1424,139 @@ go test -bench=. -benchmem ./internal/cli/components/
        // Handle result
    })
    ```
+
+### Creating a New Form
+
+**Time**: 30-45 minutes  
+**Prerequisites**: Domain object exists, validators identified  
+**Reference**: [`docs/rules/FORMS_WORKFLOW_GUIDE.md`](docs/rules/FORMS_WORKFLOW_GUIDE.md) - Complete step-by-step guide
+
+> **⚠️ CRITICAL: Form Alignment Rule**
+> 
+> Forms used in **intents** MUST use a wrapper model (like `CaptureForm`, `SkillForm`).
+> Direct use of `*huh.Form` in intents causes **left-alignment issues** because:
+> - Form dimensions are captured at creation time and become stale
+> - `WindowSizeMsg` handling is scattered and error-prone
+> - Forms don't update properly on terminal resize
+>
+> **See**: [`docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern`](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern)
+
+#### Quick Workflow
+
+1. **Define FormData structure** (`internal/cli/forms/your_form.go`):
+   ```go
+   type YourFormData struct {
+       Field1          string
+       Field2          []string // For MultiSelect
+       SubmitConfirmed bool     // Required for confirm button
+   }
+   ```
+
+2. **Create form builder functions**:
+   ```go
+   // 3 variants for flexibility
+   func NewYourForm(obj *career.YourDomain) *huh.Form { ... }
+   func NewYourFormWithData(data *YourFormData) *huh.Form { ... }
+   func NewYourFormWithDataAndDimensions(data *YourFormData, width, height int) *huh.Form {
+       data.SubmitConfirmed = false
+       
+       fieldsGroup := huh.NewGroup(
+           forms.NewInput(forms.FieldConfig{
+               Key:         "field1",
+               Title:       "Field 1",
+               Validate:    forms.Required,
+           }).Value(&data.Field1),
+       )
+       
+       return forms.NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
+   }
+   ```
+
+3. **Create domain conversion functions**:
+   ```go
+   func GetYourFormData(obj *career.YourDomain) *YourFormData { ... }
+   func ApplyYourFormData(obj *career.YourDomain, data *YourFormData) error { ... }
+   ```
+
+4. **Write tests** (`your_form_test.go`):
+   - Test form creation
+   - Test data extraction (GetYourFormData)
+   - Test data application (ApplyYourFormData)
+   - Test roundtrip conversion
+   - Test nil slice handling
+
+5. **Document in FORMS_GUIDE.md**:
+   - Add section to "Form Configurations"
+   - Add to forms package table
+   - Add to tests section
+
+#### Integration Patterns
+
+**⚠️ Intent Integration (MUST use wrapper model)**:
+
+When adding forms to an **intent**, you MUST create a wrapper model:
+
+```go
+// 1. Create wrapper in internal/cli/models/huh_your_form.go
+type HuhYourForm struct {
+    *BaseStandardModel
+    formData *forms.YourFormData
+    form     *huh.Form
+    width    int
+    height   int
+}
+
+func NewHuhYourForm() *HuhYourForm {
+    m := &HuhYourForm{
+        BaseStandardModel: NewBaseStandardModel(),
+        formData:          &forms.YourFormData{},
+        width:             80,   // Default width
+        height:            24,   // Default height
+    }
+    m.rebuildForm()
+    return m
+}
+
+func (m *HuhYourForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.WindowSizeMsg:
+        // Handle window size internally - THIS IS KEY
+        m.width = msg.Width
+        m.height = msg.Height
+        m.form = m.form.WithHeight(forms.DefaultFormHeight(m.height)).WithWidth(m.width - 4)
+        return m, nil
+    }
+    // ... rest of update logic
+}
+
+// 2. Use wrapper in intent (NOT raw *huh.Form)
+type YourIntent struct {
+    yourForm *models.HuhYourForm  // ✅ Correct - wrapper model
+    // form *huh.Form             // ❌ Wrong - causes alignment issues
+}
+
+func (i *YourIntent) handleAddNew() tea.Cmd {
+    i.yourForm = models.NewHuhYourForm()
+    return i.yourForm.Init()
+}
+```
+
+**Existing wrapper examples**:
+- `internal/cli/models/huh_capture_form.go` - Career event capture
+- `internal/cli/models/huh_skill_form.go` - Skill management
+
+**Modal Integration** (inline editing - wrapper NOT required):
+```go
+type EditYourModal struct {
+    original  *career.YourDomain  // Preserved (never mutated)
+    modified  *career.YourDomain  // Working copy
+    result    *ModalEditResult[*career.YourDomain]
+    form      *huh.Form           // Direct use OK in modals
+    formData  *forms.YourFormData
+}
+```
+
+**See Complete Guide**: [`docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern`](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern)
 
 ### Running Tests
 

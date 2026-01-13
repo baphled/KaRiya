@@ -24,6 +24,7 @@ const (
 	ProjectField
 	TagsField
 	CategoriesField
+	SkillsField
 	SubmitButton
 )
 
@@ -42,6 +43,7 @@ type FormModel struct {
 	maxChars           int
 	tagSelector        *components.TagSelector
 	categorySelector   *components.CategorySelector
+	skillSelector      *components.SkillSelector
 	fieldErrors        map[FormField]string       // Track field-level validation errors
 	editMode           bool                       // True if editing an existing event
 	editEventID        string                     // ID of event being edited
@@ -94,6 +96,7 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		maxChars:           2000,
 		tagSelector:        components.NewTagSelector(),
 		categorySelector:   components.NewCategorySelector(),
+		skillSelector:      components.NewSkillSelector([]*career.Skill{}),
 		fieldErrors:        make(map[FormField]string),
 		helpFooter:         components.NewHelpFooter("form", 80),
 		header:             components.NewHeader("Capture Career Event", 80),
@@ -490,9 +493,10 @@ func (m *FormModel) submitForm() tea.Cmd {
 		company := strings.TrimSpace(m.inputs[2].Value())
 		project := strings.TrimSpace(m.inputs[3].Value())
 
-		// Get selected tags and categories
+		// Get selected tags, categories, and skills
 		tags := m.tagSelector.SelectedTags()
 		categories := m.categorySelector.SelectedCategories()
+		skills := m.skillSelector.SelectedSkillIDs()
 
 		// NOTE: Form does NOT save the event. The intent is responsible for saving
 		// the event after the review phase is complete.
@@ -507,6 +511,7 @@ func (m *FormModel) submitForm() tea.Cmd {
 			Project:    project,
 			Tags:       tags,
 			Categories: categories,
+			Skills:     skills,
 			CreatedAt:  time.Now(),
 			UpdatedAt:  time.Now(),
 		}
@@ -643,6 +648,11 @@ func (m *FormModel) LoadEventForEditing(event *career.CareerEvent) {
 	// Set categories in category selector
 	if len(event.Categories) > 0 {
 		_ = m.categorySelector.SetSelected(event.Categories) // Error ignored: existing event categories should be valid
+	}
+
+	// Set skills in skill selector
+	if len(event.Skills) > 0 {
+		m.skillSelector.SetSelectedSkills(event.Skills)
 	}
 
 	// Focus first input
@@ -928,4 +938,14 @@ func (m *FormModel) renderFormContentWithContainers() string {
 func (m *FormModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
 	// Note: header.SetBreadcrumbs removed - breadcrumbs now handled by StandardView
+}
+
+// LoadSkills initializes the skill selector with available skills
+func (m *FormModel) LoadSkills(skills []*career.Skill) {
+	m.skillSelector = components.NewSkillSelector(skills)
+}
+
+// SkillSelector returns the skill selector for external access
+func (m *FormModel) SkillSelector() *components.SkillSelector {
+	return m.skillSelector
 }

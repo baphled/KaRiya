@@ -33,6 +33,7 @@ type Service struct {
 	repo      repo.Repository
 	factRepo  repo.FactRepository
 	burstRepo repo.BurstRepository
+	skillRepo repo.SkillRepository
 	logger    *logger.Logger
 }
 
@@ -52,6 +53,11 @@ func (s *Service) SetFactRepository(factRepo repo.FactRepository) {
 // SetBurstRepository sets the burst repository (optional, for burst detection features)
 func (s *Service) SetBurstRepository(burstRepo repo.BurstRepository) {
 	s.burstRepo = burstRepo
+}
+
+// SetSkillRepository sets the skill repository (optional, for user-defined skills features)
+func (s *Service) SetSkillRepository(skillRepo repo.SkillRepository) {
+	s.skillRepo = skillRepo
 }
 
 // CaptureEvent adds a new career event with specified capture mode
@@ -722,4 +728,9 @@ func (s *Service) GetFactRepository() repo.FactRepository {
 // GetEventRepository returns the event repository
 func (s *Service) GetEventRepository() repo.Repository {
 	return s.repo
+}
+
+// GetSkillRepository returns the skill repository
+func (s *Service) GetSkillRepository() repo.SkillRepository {
+	return s.skillRepo
 }
