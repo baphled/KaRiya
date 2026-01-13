@@ -2,7 +2,6 @@ package intents
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
@@ -620,7 +619,6 @@ func (i *ManageSkillsIntent) openFilterModal() tea.Cmd {
 			Levels:     []string{},
 			MinYears:   i.filters.MinEvents, // Map events to years for now
 			MaxYears:   0,
-			SearchText: "",
 			SortBy:     i.filters.SortBy,
 			SortOrder:  i.filters.SortOrder,
 		}
@@ -1176,22 +1174,6 @@ func (i *ManageSkillsIntent) handleSortKeys(msg tea.KeyMsg) tea.Cmd {
 
 			return nil
 		})
-}
-
-// extractAvailableCategories extracts unique categories from loaded skills
-func (i *ManageSkillsIntent) extractAvailableCategories() {
-	categorySet := make(map[string]bool)
-	for _, skill := range i.skills {
-		if skill.Category != "" {
-			categorySet[skill.Category] = true
-		}
-	}
-
-	i.availableCategories = make([]string, 0, len(categorySet))
-	for cat := range categorySet {
-		i.availableCategories = append(i.availableCategories, cat)
-	}
-	sort.Strings(i.availableCategories)
 }
 
 // applyFilterSelection applies the currently selected filter option

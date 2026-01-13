@@ -49,7 +49,6 @@ var _ = Describe("SkillFilterModal", func() {
 			Levels:     []string{},
 			MinYears:   0,
 			MaxYears:   0,
-			SearchText: "",
 			SortBy:     "name",
 			SortOrder:  "asc",
 		}

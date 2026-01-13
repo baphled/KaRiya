@@ -12,23 +12,23 @@ import (
 )
 
 // SkillFilters represents the current filter state for skills.
+// NOTE: Search is handled by separate SkillSearchModal (accessed via `/` key)
 type SkillFilters struct {
 	Categories []string
 	Levels     []string
 	MinYears   int
 	MaxYears   int
-	SearchText string
 	SortBy     string
 	SortOrder  string
 }
 
 // SkillFilterFormData holds the form field values for skill filtering.
+// NOTE: Search is handled by separate SkillSearchModal
 type SkillFilterFormData struct {
 	Categories  []string
 	Levels      []string
 	MinYearsStr string
 	MaxYearsStr string
-	SearchText  string
 	SortBy      string
 	SortOrder   string
 }
@@ -43,6 +43,7 @@ type SkillFilterModal struct {
 }
 
 // NewSkillFilterModal creates a new skill filter modal.
+// NOTE: Search is handled by separate SkillSearchModal
 func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, width, height int) *SkillFilterModal {
 	formData := &SkillFilterFormData{
 		SortBy:    "name",
@@ -59,7 +60,6 @@ func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, wi
 		if currentFilter.MaxYears > 0 {
 			formData.MaxYearsStr = strconv.Itoa(currentFilter.MaxYears)
 		}
-		formData.SearchText = currentFilter.SearchText
 		if currentFilter.SortBy != "" {
 			formData.SortBy = currentFilter.SortBy
 		}
@@ -106,13 +106,8 @@ func (m *SkillFilterModal) buildForm(skills []*career.Skill) {
 	}
 
 	// Create form fields
+	// NOTE: Search is handled by separate SkillSearchModal (accessed via `/` key)
 	fields := []huh.Field{}
-
-	// Search text filter
-	fields = append(fields, huh.NewInput().
-		Title("Search Skills").
-		Placeholder("Enter search text...").
-		Value(&m.formData.SearchText))
 
 	// Only add category filter if there are categories
 	if len(categoryOptions) > 0 {
@@ -280,11 +275,11 @@ func (m *SkillFilterModal) Hide() {
 }
 
 // ToSkillFilters converts form data to SkillFilters
+// NOTE: Search is handled separately by SkillSearchModal
 func (m *SkillFilterModal) ToSkillFilters() *SkillFilters {
 	filters := &SkillFilters{
 		Categories: m.formData.Categories,
 		Levels:     m.formData.Levels,
-		SearchText: m.formData.SearchText,
 		SortBy:     m.formData.SortBy,
 		SortOrder:  m.formData.SortOrder,
 	}
