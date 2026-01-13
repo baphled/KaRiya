@@ -151,25 +151,15 @@ func (m *DeleteConfirmModal) View() string {
 		Width(modalWidth).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.ErrorColor()).
+		Background(m.theme.BackgroundColor()). // Add solid background for overlay
 		Padding(1, 2).
 		Align(lipgloss.Center)
 
 	modalBox := modalStyle.Render(content.String())
 
-	// Center modal on screen
-	verticalPadding := (m.height - lipgloss.Height(modalBox)) / 2
-	if verticalPadding < 0 {
-		verticalPadding = 0
-	}
-
-	// Add vertical centering
-	centeredModal := lipgloss.NewStyle().
-		Width(m.width).
-		Height(m.height).
-		Align(lipgloss.Center, lipgloss.Center).
-		Render(modalBox)
-
-	return centeredModal
+	// Return just the modal box - bubbletea-overlay will handle positioning
+	// No need to center it ourselves anymore
+	return modalBox
 }
 
 // IsVisible returns whether the modal is currently visible.
