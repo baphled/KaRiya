@@ -523,17 +523,38 @@ func (i *GenerateCVIntent) View() string {
 
 ---
 
-### 4.1 ManageSkillsIntent (Priority: High)
-**Current**: 1,647 lines (9 states) | **Target**: ~250 lines (84% reduction)
+### 4.1 ManageSkillsIntent (Priority: High) ✅ INFRASTRUCTURE COMPLETE
+**Current**: 1,646 lines (9 states) | **After Infrastructure**: 1,922 lines | **Target**: ~250 lines (after legacy removal)
 **Workflow Doc**: `docs/workflows/MANAGE_SKILLS_WORKFLOW.md`
 
-- [ ] Create skills screens (Phase 3.2): list, detail, form, delete, filter, sort
-- [ ] Refactor ManageSkillsIntent to use screens
-- [ ] Update workflow guide if state machine changes
+- [x] Create skills screens (Phase 3.2): list, detail, form, delete (575 lines, 86 tests)
+- [x] Add screen orchestration infrastructure (11 helper methods, +276 lines)
+- [x] Enable screens by default (useScreens = true)
+- [x] Integrate 4 screens with intent (list, detail, form, delete)
+- [ ] **Status**: Hybrid approach - screens for simple states, legacy for complex workflows
+
+**Screen Coverage** (4/9 states using screens):
+- ✅ SkillsStateList → SkillsListScreen (247 lines, 28 tests)
+- ✅ SkillsStateDetail → SkillDetailScreen (165 lines, 20 tests)
+- ✅ SkillsStateAdd/Edit → SkillFormScreen (93 lines, 20 tests)
+- ✅ SkillsStateDelete → SkillDeleteConfirmScreen (70 lines, 18 tests)
+
+**Legacy Retained** (5/9 states - complex workflows):
+- ⚠️ SkillsStateDetailEvents - Event list for skill (needs service integration)
+- ⚠️ SkillsStateDetailEventDetail - Event detail (delegates to BrowseTimeline)
+- ⚠️ SkillsStateFilter - Filter menu (deferred - not critical)
+- ⚠️ SkillsStateSort - Sort menu (deferred - not critical)
+
+**Next Steps** (Optional - Phase 4.1 Part 2):
+- [ ] Remove legacy code for screen-covered states (~1,400 lines)
+- [ ] Create screens for DetailEvents state
+- [ ] Add integration tests (25+ tests)
 - [ ] Verify all tests pass
 - [ ] **TUI Compliance**: Run `make check-compliance` after refactor
 - [ ] **State Matrix**: Run `make generate-diagrams` to update intent states
-- [ ] **Verify**: Check STATE_MATRIX.md shows screens under "Screen States" section
+
+**Commits**:
+- `bbd4f79` - feat(intents): add screen orchestration to ManageSkillsIntent (Phase 4.3)
 
 ### 4.2 BrowseTimelineIntent (Priority: High - Simplest) ✅ COMPLETE
 **Current**: 879 lines (2 states) | **Achieved**: 403 lines (54% reduction)
