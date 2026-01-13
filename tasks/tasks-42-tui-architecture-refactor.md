@@ -75,6 +75,7 @@
 **Commit**:
 - `38bd3e4` - test(tests): add GenerateCV baseline E2E tests
 
+<<<<<<< HEAD
 ### 1.4 Refactor State Matrix Generator ✅
 
 **Goal**: Extend `cmd/generate-state-matrix/main.go` to track both Intent states and Screen states
