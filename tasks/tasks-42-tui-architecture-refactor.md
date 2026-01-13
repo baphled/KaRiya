@@ -524,15 +524,18 @@ func (i *GenerateCVIntent) View() string {
 
 ---
 
-### 4.1 ManageSkillsIntent (Priority: High) ✅ INFRASTRUCTURE COMPLETE
+### 4.1 ManageSkillsIntent (Priority: High) ⚠️ INCOMPLETE - NEED FULL LEGACY PARITY
 **Current**: 1,646 lines (9 states) | **After Infrastructure**: 1,922 lines | **Target**: ~250 lines (after legacy removal)
 **Workflow Doc**: `docs/workflows/MANAGE_SKILLS_WORKFLOW.md`
 
+**Completed**:
 - [x] Create skills screens (Phase 3.2): list, detail, form, delete (575 lines, 86 tests)
 - [x] Add screen orchestration infrastructure (11 helper methods, +276 lines)
 - [x] Enable screens by default (useScreens = true)
 - [x] Integrate 4 screens with intent (list, detail, form, delete)
-- [ ] **Status**: Hybrid approach - screens for simple states, legacy for complex workflows
+- [x] Fix table display bug (SetTable sync) - Commit `969fbc8`
+- [x] Integrate logo and theme - Commit `6115c53`
+- [x] Add applyIntentContextToScreen() helper for consistent setup
 
 **Screen Coverage** (4/9 states using screens):
 - ✅ SkillsStateList → SkillsListScreen (247 lines, 28 tests)
@@ -540,45 +543,125 @@ func (i *GenerateCVIntent) View() string {
 - ✅ SkillsStateAdd/Edit → SkillFormScreen (93 lines, 20 tests)
 - ✅ SkillsStateDelete → SkillDeleteConfirmScreen (70 lines, 18 tests)
 
-**Legacy Retained** (5/9 states - complex workflows):
+**Missing Legacy Features** (CRITICAL):
+- [ ] **Screen Delegation**: Intents not calling screen.Update() - screens never receive input!
+  - [ ] ManageSkillsIntent.Update() must delegate to activeScreen.Update(msg)
+  - [ ] Handle ScreenResults (NavigateResult for actions, CancelResult for back navigation)
+  - [ ] Remove direct keyboard handling from intent (let screen handle it)
+  - [ ] This affects ALL 4 screens (list, detail, form, delete)
+  
+- [ ] **Look & Feel Parity**:
+  - [x] Logo display - FIXED (Commit `6115c53`)
+  - [x] Theme integration - FIXED (Commit `6115c53`)
+  - [x] Event counts in list - FIXED (SetEventCounts) - Commit `8666b9c`
+  - [ ] Footer consistency - Verify footer matches legacy:
+    - List: "Enter: View  a: Add  e: Edit  d: Delete  ↑↓/jk: Navigate  g/G: Top/Bottom  Esc: Back"
+    - Detail: Should show available actions (edit, delete, view events, back)
+    - Form: Should show form navigation help
+    - Delete: "y/Enter: Confirm  n/Esc: Cancel"
+  - [ ] Breadcrumb format - Check "Main Menu ▸ Manage Skills" consistency
+  - [ ] Table styling - 5 columns (Name, Category, Level, Years, Events), selection indicator (▶)
+  - [ ] Empty state - "No skills found. Press 'a' to add your first skill."
+  - [ ] Pagination format - "Skills: X | Page Y of Z" matches legacy
+  
+- [ ] **Keyboard Shortcuts** (from legacy - verify ALL work):
+  - [ ] List: ↑/↓, j/k, g (first), G (last), Enter (view), a (add), e (edit), d (delete), Esc (back)
+  - [ ] Detail: Esc (back), e (edit), d (delete), v (view events)
+  - [ ] Form: Tab/Shift+Tab (field navigation), Enter (submit), Esc (cancel)
+  - [ ] Delete: y/Enter (confirm), n/Esc (cancel)
+  - [ ] Universal: ? (help), q (quit), m (main menu)
+  
+- [ ] **State Preservation**:
+  - [ ] Selection index when navigating back to list
+  - [ ] Scroll position preservation
+  - [ ] Form data when canceling (don't lose user input if they want to go back)
+  - [ ] Event counts cached (don't reload on every navigation)
+
+**Legacy Retained** (5/9 states - complex workflows, deferred for now):
 - ⚠️ SkillsStateDetailEvents - Event list for skill (needs service integration)
 - ⚠️ SkillsStateDetailEventDetail - Event detail (delegates to BrowseTimeline)
 - ⚠️ SkillsStateFilter - Filter menu (deferred - not critical)
 - ⚠️ SkillsStateSort - Sort menu (deferred - not critical)
+- ⚠️ SkillsStateLoading - Loading state (may not need screen)
 
-**Next Steps** (Optional - Phase 4.1 Part 2):
-- [ ] Remove legacy code for screen-covered states (~1,400 lines)
-- [ ] Create screens for DetailEvents state
-- [ ] Add integration tests (25+ tests)
-- [ ] Verify all tests pass
+**Test Results**:
+- Intent tests: ~1,150/1,179 passing (~97.5%) - ~29 failures due to screen delegation incomplete
+- Escape tests: Multiple failures (expected - tests check intent state, but screens handle navigation now)
+- E2E tests: Status unknown (need to verify)
+
+**Next Steps** (Required for Phase 4.1 completion):
+- [ ] **CRITICAL**: Implement screen delegation (see "Screen Delegation" checklist above)
+- [ ] Verify ALL keyboard shortcuts work as in legacy
+- [ ] Verify ALL footers match legacy (context-aware help)
+- [ ] Test state preservation (selection, scroll, form data)
+- [ ] Update tests to match new architecture
+- [ ] Remove legacy code for screen-covered states (~1,400 lines - after delegation complete)
+- [ ] Create screens for DetailEvents state (optional)
 - [ ] **TUI Compliance**: Run `make check-compliance` after refactor
 - [ ] **State Matrix**: Run `make generate-diagrams` to update intent states
 
 **Commits**:
 - `bbd4f79` - feat(intents): add screen orchestration to ManageSkillsIntent (Phase 4.3)
+- `8666b9c` - fix(intents): critical data display bugs - no events/skills showing
+- `969fbc8` - fix(screens): sync table updates to container (critical display bug)
+- `6115c53` - feat(screens): integrate logo and theme across all screen transitions
 
-### 4.2 BrowseTimelineIntent (Priority: High - Simplest) ✅ COMPLETE
-**Current**: 879 lines (2 states) | **Achieved**: 403 lines (54% reduction)
+### 4.2 BrowseTimelineIntent (Priority: High - Simplest) ⚠️ INCOMPLETE - NEED FULL LEGACY PARITY
+**Current**: 879 lines (2 states) | **Achieved**: 403 lines (54% reduction) | **Status**: Missing critical features
 
+**Completed**:
 - [x] Create timeline screens (Phase 3.3): event_list, event_detail (224 + 237 lines, 51 test specs)
 - [x] Refactor BrowseTimelineIntent (removed 476 lines of legacy table-based code)
 - [x] Add screen orchestration infrastructure (7 helper methods, 25 integration tests)
 - [x] Removed legacy code (screens now default and only architecture)
-- [x] **Test Results**: 1,177/1,179 intent tests passing (99.8%), 119/119 E2E passing (100%)
-- [x] **TUI Compliance**: Universal keyboard shortcuts, escape key behavior, StandardView integration
-- [x] **State Matrix**: Updated via `make generate-diagrams`
+- [x] Fix table display bug (SetTable sync) - Commit `969fbc8`
+- [x] Integrate logo and theme - Commit `6115c53`
 
-**Known Issues** (3 non-blocking test failures - legacy behavior checks):
+**Missing Legacy Features** (CRITICAL):
+- [ ] **Screen Delegation**: Intents not calling screen.Update() - screens never receive input!
+  - [ ] BrowseTimelineIntent.Update() must delegate to activeScreen.Update(msg)
+  - [ ] Handle ScreenResults (NavigateResult, CancelResult, ErrorResult)
+  - [ ] Remove direct keyboard handling from intent (let screen handle it)
+  
+- [ ] **Look & Feel Parity**:
+  - [x] Logo display - FIXED (Commit `6115c53`)
+  - [x] Theme integration - FIXED (Commit `6115c53`)
+  - [ ] Footer consistency - Verify footer matches legacy (Context-aware help)
+  - [ ] Breadcrumb format - Check "Main Menu ▸ Timeline" vs legacy
+  - [ ] Table styling - Verify selection indicator (▶), column widths, borders
+  - [ ] Empty state message - "No events found." matches legacy
+  - [ ] Pagination format - "Events: X | Page Y of Z" matches legacy
+  
+- [ ] **Keyboard Shortcuts** (from legacy):
+  - [ ] List: ↑/↓, j/k, g/G, Enter (view), a (add), e (edit), d (delete), Esc (back), q (quit)
+  - [ ] Detail: Esc (back to list), e (edit), d (delete), q (quit)
+  - [ ] Universal: ? (help), m (main menu)
+  
+- [ ] **State Behavior** (from legacy):
+  - [ ] Selection preservation when navigating back
+  - [ ] Pagination state preservation
+  - [ ] Filter state preservation (if filters exist)
+  - [ ] Error handling and recovery
+  
+- [ ] **Test Compatibility**:
+  - [ ] Update tests to match new architecture (18 failing tests expected)
+  - [ ] Verify no regressions in behavior
+  - [ ] Add screen delegation tests
+
+**Known Issues** (3 non-blocking test failures - architectural differences):
 1. App integration test expects "Career Event Management System" title (now "Career Timeline")
 2. Global keys enforcement (quit) - screens cancel intent instead of returning tea.Cmd
 3. Global keys enforcement (help) - screens don't implement help modal (use built-in help text)
 
-**Impact**: All 3 failures are due to architectural differences between screens and legacy table-based architecture. Screens provide better UX with clearer navigation and built-in help. These are test compatibility issues, not bugs.
+**Test Results**:
+- Intent tests: 1,161/1,179 passing (98.5%) - 18 failures due to screen delegation incomplete
+- E2E tests: 119/119 passing (100%)
 
 **Commits**:
 - `11483eb` - feat(intents): add screen orchestration infrastructure to BrowseTimelineIntent
 - `eb517b0` - feat(intents): complete BrowseTimeline screen orchestration with 25 tests
-- (pending) - feat(intents): complete BrowseTimeline screen migration (Phase 4.2)
+- `969fbc8` - fix(screens): sync table updates to container (critical display bug)
+- `6115c53` - feat(screens): integrate logo and theme across all screen transitions
 
 ### 4.3 CaptureEventIntent (Priority: High)
 **Current**: ~1,200 lines (4 states + 3 modals) | **Target**: ~300 lines (75% reduction)
@@ -654,6 +737,104 @@ func (i *GenerateCVIntent) View() string {
 - [ ] Verify all tests pass
 - [ ] **TUI Compliance**: Universal keyboard shortcuts
 - [ ] **State Matrix**: Update after refactor
+
+---
+
+### ⚠️ LEGACY PARITY CHECKLIST (MANDATORY FOR ALL SCREENS)
+
+**This checklist MUST be verified for every screen migration to ensure zero regressions.**
+
+#### Visual Parity
+- [ ] **Logo**: ASCII art logo appears at top of screen (via StandardView)
+- [ ] **Breadcrumbs**: Navigation path shown (e.g., "Main Menu ▸ Timeline ▸ Detail")
+- [ ] **Footer**: Context-aware help text matches legacy exactly
+  - Compare character-by-character with legacy output
+  - Verify key bindings are correct and complete
+  - Check separator line appears ("────────")
+- [ ] **Theme**: Colors and styling match legacy (use theme system)
+- [ ] **Spacing**: Margins, padding, line breaks match legacy
+- [ ] **Table styling** (if applicable):
+  - Column widths match legacy
+  - Selection indicator (▶) appears correctly
+  - Headers styled consistently
+  - Borders/separators match
+- [ ] **Empty state**: Message text matches legacy exactly
+- [ ] **Pagination**: Format matches legacy (e.g., "Items: X | Page Y of Z")
+
+#### Keyboard Shortcut Parity
+- [ ] **Navigation keys work**:
+  - [ ] ↑/↓ (arrow keys) for list navigation
+  - [ ] j/k (vim-style) for list navigation
+  - [ ] g (jump to first item)
+  - [ ] G (jump to last item)
+  - [ ] Enter (select/confirm)
+  - [ ] Tab/Shift+Tab (form field navigation)
+- [ ] **Action keys work**:
+  - [ ] a (add)
+  - [ ] e (edit)
+  - [ ] d (delete)
+  - [ ] v (view)
+  - [ ] y/n (yes/no confirmations)
+  - [ ] f (filter - if applicable)
+  - [ ] s (sort - if applicable)
+- [ ] **Universal keys work**:
+  - [ ] Esc (back/cancel - behavior depends on state type)
+  - [ ] q (quit intent)
+  - [ ] m (main menu)
+  - [ ] ? (help modal toggle)
+- [ ] **All shortcuts documented in footer**
+
+#### State Preservation Parity
+- [ ] **Selection index**: Preserved when navigating back to list
+- [ ] **Scroll position**: Preserved when navigating back
+- [ ] **Pagination state**: Current page remembered
+- [ ] **Form data**: Not lost if user navigates away and returns
+- [ ] **Filter settings**: Preserved across navigation
+- [ ] **Sort settings**: Preserved across navigation
+- [ ] **Error messages**: Displayed until explicitly dismissed
+
+#### Functional Parity
+- [ ] **All workflows work**: Test EVERY user journey end-to-end
+- [ ] **Data loading**: Same data displayed as legacy
+- [ ] **Data updates**: Changes persist correctly
+- [ ] **Error handling**: Errors displayed clearly, recovery possible
+- [ ] **Loading states**: Shown during async operations
+- [ ] **Success feedback**: Shown after successful operations
+- [ ] **Validation**: Form validation matches legacy (same rules)
+- [ ] **Edge cases**:
+  - [ ] Empty lists handled gracefully
+  - [ ] Single item lists work correctly
+  - [ ] Large lists (100+ items) paginate correctly
+  - [ ] Very long text truncates correctly
+  - [ ] Special characters display correctly
+
+#### Architecture Parity
+- [ ] **Screen delegation**: Intent calls screen.Update(msg) (CRITICAL!)
+- [ ] **Result handling**: Intent handles ScreenResults correctly
+  - [ ] NavigateResult → transition to next state
+  - [ ] CancelResult → go back or cancel intent
+  - [ ] SubmitResult → save data and continue
+  - [ ] ErrorResult → display error and allow retry
+- [ ] **No keyboard interception**: Intent doesn't handle keys directly
+  - [ ] Let screen handle navigation keys (↑/↓/j/k/g/G/Enter)
+  - [ ] Intent only handles global keys if needed (m for menu)
+- [ ] **State transitions**: Match legacy state machine exactly
+- [ ] **View delegation**: Intent.View() calls activeScreen.View()
+
+#### Test Parity
+- [ ] **All existing tests pass** (may need updates for new architecture)
+- [ ] **No race conditions detected** (`go test -race ./...`)
+- [ ] **Coverage maintained** (>85% for modified files)
+- [ ] **Manual testing done**: Every workflow tested by hand
+- [ ] **Escape key tests pass**: All escape behaviors correct
+- [ ] **Integration tests pass**: E2E tests still green
+
+#### Documentation Parity
+- [ ] **Workflow guide updated** (if state machine changed)
+- [ ] **State matrix updated** (`make generate-diagrams`)
+- [ ] **AGENTS.md updated** (if major changes)
+- [ ] **TUI_STANDARDS.md followed** (compliance check)
+- [ ] **Comments in code explain deviations** (if any)
 
 ---
 
