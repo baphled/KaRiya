@@ -58,78 +58,8 @@ func NewEditEventModal(event *career.CareerEvent, width, height int) *EditEventM
 	return modal
 }
 
-// buildForm creates the huh form with all fields (Text, Date, Company, Project, Tags, Categories)
+// buildForm creates the huh form using existing forms.NewCaptureEventForm
 func (m *EditEventModal) buildForm() {
-	// Full edit: all fields available
-	fieldsGroup := huh.NewGroup(
-		forms.NewText(forms.FieldConfig{
-			Key:         "text",
-			Title:       "Event Description",
-			Description: "What did you accomplish? (required, 10-2000 characters)",
-			Placeholder: "Enter event description...",
-			CharLimit:   2000,
-			Validate:    forms.Compose(forms.Required, forms.MinLength(10), forms.MaxLength(2000)),
-		}).Value(&m.formData.Text).Lines(4),
-
-		forms.NewInput(forms.FieldConfig{
-			Key:         "date",
-			Title:       "Date",
-			Description: "YYYY-MM-DD or 'today'",
-			Placeholder: "2006-01-02",
-			Validate:    forms.DateFormat,
-		}).Value(&m.formData.Date),
-
-		forms.NewInput(forms.FieldConfig{
-			Key:         "company",
-			Title:       "Company",
-			Description: "Company or organization name (optional)",
-			Placeholder: "Optional",
-			Validate:    nil,
-		}).Value(&m.formData.Company),
-
-		forms.NewInput(forms.FieldConfig{
-			Key:         "project",
-			Title:       "Project",
-			Description: "Project name (optional)",
-			Placeholder: "Optional",
-			Validate:    nil,
-		}).Value(&m.formData.Project),
-
-		forms.NewMultiSelect(
-			"tags",
-			"Tags",
-			"Select applicable tags (use Space to select, Enter to confirm)",
-			[]forms.SelectOption{
-				{Key: "achievement", Value: "achievement"},
-				{Key: "learning", Value: "learning"},
-				{Key: "collaboration", Value: "collaboration"},
-				{Key: "leadership", Value: "leadership"},
-				{Key: "technical", Value: "technical"},
-				{Key: "business", Value: "business"},
-				{Key: "innovation", Value: "innovation"},
-				{Key: "problem-solving", Value: "problem-solving"},
-			},
-			0, // no limit
-		).Value(&m.formData.Tags),
-
-		forms.NewMultiSelect(
-			"categories",
-			"Categories",
-			"Select applicable categories (use Space to select, Enter to confirm)",
-			[]forms.SelectOption{
-				{Key: "development", Value: "development"},
-				{Key: "design", Value: "design"},
-				{Key: "management", Value: "management"},
-				{Key: "research", Value: "research"},
-				{Key: "testing", Value: "testing"},
-				{Key: "documentation", Value: "documentation"},
-				{Key: "deployment", Value: "deployment"},
-				{Key: "maintenance", Value: "maintenance"},
-			},
-			0, // no limit
-		).Value(&m.formData.Categories),
-	)
-
 	// Calculate form dimensions
 	modalWidth := m.width - 10
 	if modalWidth > 90 {
@@ -144,7 +74,8 @@ func (m *EditEventModal) buildForm() {
 		formHeight = m.height - 6
 	}
 
-	m.form = forms.NewFormWithFixedConfirm(fieldsGroup, &m.formData.SubmitConfirmed, modalWidth, formHeight)
+	// Use existing CaptureEventForm with "manual" strategy (all fields)
+	m.form = forms.NewCaptureEventForm(m.formData, "manual", modalWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -190,9 +121,8 @@ func (m *EditEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditEventData) {
 	// Check if form is complete AND user confirmed (not cancelled)
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
-		// Check if user confirmed submission (not cancelled)
+		// Only return data if user confirmed submission
 		if m.formData.SubmitConfirmed {
-			// Return event data
 			eventData := &EditEventData{
 				Text:       m.formData.Text,
 				Date:       m.formData.Date,
@@ -203,7 +133,7 @@ func (m *EditEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditEventData) {
 			}
 			return cmd, true, eventData
 		}
-		// User cancelled - close modal without returning data
+		// User cancelled - close without returning data
 		return cmd, false, nil
 	}
 

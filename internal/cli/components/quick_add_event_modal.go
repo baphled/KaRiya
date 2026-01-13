@@ -50,36 +50,8 @@ func NewQuickAddEventModal(width, height int) *QuickAddEventModal {
 	return modal
 }
 
-// buildForm creates the huh form with minimal fields (Text, Date, Company)
+// buildForm creates the huh form using existing forms.NewCaptureEventForm
 func (m *QuickAddEventModal) buildForm() {
-	// Quick add: just essential fields
-	fieldsGroup := huh.NewGroup(
-		forms.NewText(forms.FieldConfig{
-			Key:         "text",
-			Title:       "Event Description",
-			Description: "What did you accomplish? (required, 10-2000 characters)",
-			Placeholder: "Enter event description...",
-			CharLimit:   2000,
-			Validate:    forms.Compose(forms.Required, forms.MinLength(10), forms.MaxLength(2000)),
-		}).Value(&m.formData.Text).Lines(3),
-
-		forms.NewInput(forms.FieldConfig{
-			Key:         "date",
-			Title:       "Date",
-			Description: "YYYY-MM-DD or 'today' (defaults to today)",
-			Placeholder: "today",
-			Validate:    forms.DateFormat,
-		}).Value(&m.formData.Date),
-
-		forms.NewInput(forms.FieldConfig{
-			Key:         "company",
-			Title:       "Company (Optional)",
-			Description: "Company or organization name",
-			Placeholder: "Optional",
-			Validate:    nil, // Optional field
-		}).Value(&m.formData.Company),
-	)
-
 	// Calculate form dimensions
 	modalWidth := m.width - 10
 	if modalWidth > 80 {
@@ -94,7 +66,8 @@ func (m *QuickAddEventModal) buildForm() {
 		formHeight = m.height - 6
 	}
 
-	m.form = forms.NewFormWithFixedConfirm(fieldsGroup, &m.formData.SubmitConfirmed, modalWidth, formHeight)
+	// Use existing CaptureEventForm with "quick" strategy
+	m.form = forms.NewCaptureEventForm(m.formData, "quick", modalWidth, formHeight)
 }
 
 // Init initializes the modal and its form.
@@ -140,9 +113,8 @@ func (m *QuickAddEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddEventD
 	// Check if form is complete AND user confirmed (not cancelled)
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
-		// Check if user confirmed submission (not cancelled)
+		// Only return data if user confirmed submission
 		if m.formData.SubmitConfirmed {
-			// Return event data
 			eventData := &QuickAddEventData{
 				Text:    m.formData.Text,
 				Date:    m.formData.Date,
@@ -150,7 +122,7 @@ func (m *QuickAddEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddEventD
 			}
 			return cmd, true, eventData
 		}
-		// User cancelled - close modal without returning data
+		// User cancelled - close without returning data
 		return cmd, false, nil
 	}
 
