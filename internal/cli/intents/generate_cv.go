@@ -7,8 +7,13 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/service/career/technology"
 	"github.com/charmbracelet/bubbles/viewport"
 )
+
+// Type aliases for convenience
+type ExtractedTechnology = technology.ExtractedTechnology
+type FocusAreaSuggestion = technology.FocusAreaSuggestion
 
 // GenerateCVState represents the state of the GenerateCV intent.
 type GenerateCVState string
@@ -19,6 +24,21 @@ const (
 
 	// GenerateCVStateSelectAudience - User selects target audience(s).
 	GenerateCVStateSelectAudience GenerateCVState = "select_audience"
+
+	// GenerateCVStateExtractingTechnologies - Extracting technologies from user skills.
+	GenerateCVStateExtractingTechnologies GenerateCVState = "extracting_technologies"
+
+	// GenerateCVStateSelectTechnologyFocus - User selects technology focus (Language Agnostic/Generalist/Specialist).
+	GenerateCVStateSelectTechnologyFocus GenerateCVState = "select_technology_focus"
+
+	// GenerateCVStateSelectTechnologies - User selects specific technologies (for Generalist/Specialist).
+	GenerateCVStateSelectTechnologies GenerateCVState = "select_technologies"
+
+	// GenerateCVStateSelectFocusArea - User selects focus area (Backend/Frontend/Fullstack/DevOps).
+	GenerateCVStateSelectFocusArea GenerateCVState = "select_focus_area"
+
+	// GenerateCVStateSelectLengthFormat - User selects CV length format.
+	GenerateCVStateSelectLengthFormat GenerateCVState = "select_length_format"
 
 	// GenerateCVStateGenerating - CV is being generated.
 	GenerateCVStateGenerating GenerateCVState = "generating"
@@ -157,6 +177,28 @@ type GenerateCVModel struct {
 	// previewViewport is the viewport for scrolling CV preview
 	previewViewport viewport.Model
 
+	// Technology extraction fields (NEW)
+	extractedTechnologies []*ExtractedTechnology // Technologies extracted from user skills
+	technologiesAvailable bool                   // true if 3+ technologies found
+	focusAreaSuggestion   *FocusAreaSuggestion   // AI-suggested focus area
+
+	// Technology Focus selection fields (NEW)
+	selectedTechnologyFocus cv.TechnologyFocus // Language Agnostic / Generalist / Specialist
+	technologyFocusIndex    int                // Cursor position for technology focus selection
+
+	// Technology selection fields (NEW - for Generalist/Specialist)
+	selectedTechnologies []string     // Selected skill IDs
+	technologyCursor     int          // Cursor position for technology list
+	technologySelected   map[int]bool // Multi-select state
+
+	// Focus area selection fields (NEW)
+	selectedFocusArea cv.FocusArea // Backend / Frontend / Fullstack / DevOps
+	focusAreaCursor   int          // Cursor position for focus area selection
+
+	// Length format selection fields (NEW)
+	selectedLengthFormat cv.LengthFormat // UltraShort / Short / Standard / Full
+	lengthFormatCursor   int             // Cursor position for length selection
+
 	// Export-related fields
 	selectedExportFormat CVExportFormat
 	selectedExportOption CVExportOption
@@ -191,6 +233,35 @@ type CVGenerationStartedMsg struct{}
 type CVGenerationCompleteMsg struct {
 	CV    *career.CVView
 	Error error
+}
+
+// Technology-related message types (NEW)
+
+// TechnologiesExtractedMsg indicates technologies have been extracted from user skills.
+type TechnologiesExtractedMsg struct {
+	Technologies []*ExtractedTechnology
+	Suggestion   *FocusAreaSuggestion
+	Error        error
+}
+
+// TechnologyFocusSelectedMsg indicates the user selected a technology focus.
+type TechnologyFocusSelectedMsg struct {
+	Focus cv.TechnologyFocus
+}
+
+// TechnologiesSelectedMsg indicates the user selected specific technologies (Generalist/Specialist).
+type TechnologiesSelectedMsg struct {
+	Technologies []string // Skill IDs
+}
+
+// FocusAreaSelectedMsg indicates the user selected a focus area.
+type FocusAreaSelectedMsg struct {
+	Area cv.FocusArea
+}
+
+// LengthFormatSelectedMsg indicates the user selected a length format.
+type LengthFormatSelectedMsg struct {
+	Length cv.LengthFormat
 }
 
 // Export-related types
