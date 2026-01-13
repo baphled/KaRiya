@@ -5,6 +5,30 @@
 - **Time Estimate**: 6-8 weeks
 - **Prerequisites**: Stable main branch, all tests passing
 
+## ⚠️ CRITICAL REQUIREMENTS
+
+### State Matrix Integration (MANDATORY)
+After EVERY screen creation, modification, or deletion:
+```bash
+make generate-diagrams
+```
+Verify STATE_MATRIX.md updated correctly before committing.
+
+### TUI Standards Compliance (MANDATORY)
+All screens MUST follow: `docs/TUI_STANDARDS.md`
+- ✅ Universal keyboard shortcuts (esc, ↑/↓, j/k, enter)
+- ✅ Escape key behavior matches state type
+- ✅ StandardView component with logo and breadcrumbs
+- ✅ Help text visible in footer
+- ✅ Theme system integration
+
+**Quick Check Commands**:
+```bash
+make check-compliance    # Run before EVERY commit
+make generate-diagrams   # Update state matrix after screen changes
+make test                # Verify all tests pass
+```
+
 ## Session Contract Acknowledgment
 - [x] Ran `make session-start` and it passed (2026-01-13)
 - [x] Acknowledge and commit to following all workflow rules
@@ -190,10 +214,17 @@ States that will be removed during migration
 - [x] REFACTOR: Reused BaseSelectScreen pattern
 - [x] Other screens: Simplified implementations (tests deferred)
 
+**TUI Standards Compliance**:
+- [x] Universal keyboard shortcuts (esc, ↑/↓, j/k, enter) implemented
+- [x] Escape key behavior follows state type classification (ROOT, Intermediate, etc.)
+- [x] Help text visible in footer (context-aware)
+- [x] Consistent styling via theme system
+
 **State Matrix Integration**:
 - [x] 4 screens detected automatically
 - [x] 4 states tracked (ProfileSelect=ROOT, Audience=Intermediate, Generating=Async, Preview=Intermediate)
 - [x] Total states: 73 → 77 (+4)
+- [x] Ran `make generate-diagrams` to update STATE_MATRIX.md
 
 **Commits**:
 - `d279334` - feat(components): add CVProfileSelectScreen (TDD complete)
@@ -280,13 +311,65 @@ func (i *GenerateCVIntent) View() string {
 
 ## Phase 3: Build Screen Library (Week 3-4)
 
-### 3.1 Base Screens
+### 3.1 Base Screens - BaseFormScreen ✅ COMPLETE
+
+**Files Created**:
+- [x] `internal/cli/screens/base/form_screen.go` - BaseFormScreen (196 lines)
+- [x] `internal/cli/screens/base/form_screen_test.go` - Tests (358 lines, 21 specs)
+
+**BaseFormScreen Features**:
+- Generic type parameter for form data (BaseFormScreen[T])
+- Huh form integration with FormBuilder[T] pattern
+- Automatic form rebuild on terminal resize
+- Escape key handling (returns CancelResult)
+- Form submission detection (returns SubmitResult)
+- StandardView integration with breadcrumbs and footer
+- Window size message handling
+- Footer customization (SetFooter method)
+- Form data access (GetFormData method)
+
+**TDD Checklist (BaseFormScreen)**:
+- [x] RED: Write comprehensive tests (21 specs covering construction, terminal handling, interaction, rendering, edge cases)
+- [x] GREEN: Implement BaseFormScreen[T] with all features
+- [x] All 21 tests passing (100% pass rate)
+- [x] Zero regressions in existing tests
+
+**TUI Standards Compliance**:
+- [x] Escape key cancellation
+- [x] StandardView integration
+- [x] Terminal size handling
+
+**Commits**:
+- `dc5c107` - test(tests): add BaseFormScreen tests (RED phase - Phase 3.1)
+
+---
+
+### 3.1 Base Screens - Remaining
 
 **Files to Create**:
-- [ ] `internal/cli/screens/base/form_screen.go` - BaseFormScreen
 - [ ] `internal/cli/screens/base/detail_screen.go` - BaseDetailScreen
 - [ ] `internal/cli/screens/base/confirm_screen.go` - BaseConfirmScreen
 - [ ] `internal/cli/screens/base/progress_screen.go` - BaseProgressScreen
+
+**TDD Checklist** (for each screen):
+- [ ] RED: Write tests for keyboard shortcuts (esc, enter, navigation)
+- [ ] RED: Write tests for view rendering
+- [ ] RED: Write tests for state classification
+- [ ] GREEN: Implement screen
+- [ ] REFACTOR: Extract common patterns
+
+**TUI Standards Compliance Checklist** (for each screen):
+- [ ] Universal keyboard shortcuts implemented (see `docs/TUI_STANDARDS.md`)
+- [ ] Escape key behavior matches state type (ROOT/Intermediate/Async/Final)
+- [ ] Help text in footer shows available shortcuts
+- [ ] View uses StandardView component with logo and breadcrumbs
+- [ ] Theme system integration (via BaseScreen.SetTheme)
+- [ ] Terminal size handling (responsive layout)
+
+**State Matrix Integration**:
+- [ ] After creating each screen, run: `make generate-diagrams`
+- [ ] Verify screen appears in STATE_MATRIX.md under "Screen States" section
+- [ ] Update state count in this task file
 
 ### 3.2 Skills Screens
 
@@ -298,11 +381,39 @@ func (i *GenerateCVIntent) View() string {
 - [ ] `internal/cli/screens/skills/filter.go` - SkillFilterMenu
 - [ ] `internal/cli/screens/skills/sort.go` - SkillSortMenu
 
+**TDD Checklist** (for each screen):
+- [ ] RED: Write tests for keyboard shortcuts
+- [ ] RED: Write tests for view rendering
+- [ ] RED: Write tests for screen-specific behavior (list navigation, form submission, etc.)
+- [ ] GREEN: Implement screen
+- [ ] REFACTOR: Extract common patterns
+
+**TUI Standards Compliance Checklist**:
+- [ ] Each screen follows universal keyboard shortcuts
+- [ ] List screens: ↑/↓/j/k navigation, enter to select, d to delete, e to edit
+- [ ] Form screens: tab/shift+tab navigation, enter to submit, esc to cancel
+- [ ] Confirm screens: y/n shortcuts, esc to cancel
+- [ ] Help text visible and accurate
+- [ ] State matrix updated after each screen: `make generate-diagrams`
+
 ### 3.3 Timeline Screens
 
 **Files to Create**:
 - [ ] `internal/cli/screens/timeline/event_list.go` - TimelineEventList
 - [ ] `internal/cli/screens/timeline/event_detail.go` - TimelineEventDetail
+
+**TDD Checklist**:
+- [ ] RED: Write tests for keyboard shortcuts (list navigation, detail view)
+- [ ] RED: Write tests for view rendering
+- [ ] GREEN: Implement screens
+- [ ] REFACTOR: Extract patterns
+
+**TUI Standards Compliance Checklist**:
+- [ ] Universal keyboard shortcuts
+- [ ] List navigation: ↑/↓/j/k, enter to view detail
+- [ ] Detail view: esc to back, e to edit
+- [ ] Help text in footer
+- [ ] State matrix updated: `make generate-diagrams`
 
 ---
 
@@ -315,21 +426,30 @@ Migrate remaining intents one at a time:
 - [ ] Refactor ManageSkillsIntent to use screens
 - [ ] Verify all tests pass
 - [ ] Expected reduction: 1,647 → ~250 lines
+- [ ] **TUI Compliance**: Run `make check-compliance` after refactor
+- [ ] **State Matrix**: Run `make generate-diagrams` to update intent states
+- [ ] **Verify**: Check STATE_MATRIX.md shows screens under "Screen States" section
 
 ### 4.2 BrowseTimelineIntent
 - [ ] Create timeline screens (Phase 3.3)
 - [ ] Refactor BrowseTimelineIntent
 - [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Ensure escape key behavior follows standards
+- [ ] **State Matrix**: Update STATE_MATRIX.md via `make generate-diagrams`
 
 ### 4.3 CaptureEventIntent
 - [ ] Create capture screens
 - [ ] Refactor CaptureEventIntent
 - [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Universal keyboard shortcuts implemented
+- [ ] **State Matrix**: Update after refactor
 
 ### 4.4 ExportArtifactIntent
 - [ ] Create export screens
 - [ ] Refactor ExportArtifactIntent
 - [ ] Verify all tests pass
+- [ ] **TUI Compliance**: Check help text accuracy
+- [ ] **State Matrix**: Update after refactor
 
 ### 4.5 Remaining Intents
 - [ ] BurstManagementIntent
@@ -337,6 +457,16 @@ Migrate remaining intents one at a time:
 - [ ] ImportWizardIntent
 - [ ] BulkOperationsIntent
 - [ ] ConfigureSystemIntent
+
+**For each intent migration**:
+1. [ ] Create screens with TUI standards compliance
+2. [ ] Write comprehensive tests (keyboard, view, state transitions)
+3. [ ] Refactor intent to orchestrate screens
+4. [ ] Run `make check-compliance` (MUST pass)
+5. [ ] Run `make generate-diagrams` to update STATE_MATRIX.md
+6. [ ] Verify screens appear in "Screen States" section
+7. [ ] Verify all tests pass (100%)
+8. [ ] Commit with `make ai-commit MSG="..."`
 
 ---
 
@@ -348,20 +478,44 @@ Migrate remaining intents one at a time:
 - [ ] Update imports
 
 ### 5.2 Update Documentation
-- [ ] Update TUI_DEVELOPER_GUIDE.md
-- [ ] Update TUI_INTENT_DIAGRAM.md
-- [ ] Create screens/ package documentation
+- [ ] Update TUI_DEVELOPER_GUIDE.md (add Screen pattern documentation)
+- [ ] Update TUI_INTENT_DIAGRAM.md (show Intent→Screen architecture)
+- [ ] Create screens/ package documentation (README.md in internal/cli/screens/)
+- [ ] Update TUI_STANDARDS.md (if new patterns emerged)
+- [ ] **Final state matrix generation**: `make generate-diagrams`
+- [ ] Verify STATE_MATRIX.md shows complete migration:
+  - [ ] All states under "Screen States" section
+  - [ ] Intent States section shows only orchestration logic
+  - [ ] Legacy States section removed (all migrated)
 
 ### 5.3 Final Verification
 - [ ] All 2,000+ tests pass
 - [ ] No race conditions
 - [ ] Coverage maintained >85%
 - [ ] Staticcheck warnings: 0
+- [ ] **TUI Standards Compliance Audit**:
+  - [ ] All screens follow universal keyboard shortcuts
+  - [ ] All screens have proper escape key behavior
+  - [ ] All screens use StandardView component
+  - [ ] All screens integrate theme system
+  - [ ] Help text visible on all screens
+- [ ] **State Matrix Verification**:
+  - [ ] Run `make generate-diagrams` one final time
+  - [ ] STATE_MATRIX.md accurately reflects all screens
+  - [ ] Total state count matches actual implementation
+  - [ ] All state types correctly classified (ROOT/Intermediate/Async/Final)
 
 ---
 
 ## Pre-Commit Checklist (BEFORE EACH COMMIT)
-- [ ] `make check-compliance` passes
+- [ ] `make check-compliance` passes (MANDATORY)
+- [ ] TUI standards verified (see `docs/TUI_STANDARDS.md`):
+  - [ ] Universal keyboard shortcuts (esc, ↑/↓, j/k, enter)
+  - [ ] Escape key behavior matches state type
+  - [ ] Help text visible and accurate
+  - [ ] Theme system integration
+- [ ] State matrix updated: `make generate-diagrams`
+- [ ] Verify STATE_MATRIX.md changes (screens appear in correct section)
 - [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
 - [ ] Commit is atomic (ONE logical change)
 
@@ -390,10 +544,80 @@ Migrate remaining intents one at a time:
 
 ---
 
+## State Matrix Integration Protocol
+
+**CRITICAL**: The state matrix generator MUST be updated incrementally as screens are created.
+
+### When to Update State Matrix
+
+Run `make generate-diagrams` after EVERY:
+1. New screen file created
+2. State constant added to a screen
+3. Intent refactored to use screens
+4. Screen deleted or renamed
+
+### Verification Steps
+
+After running `make generate-diagrams`:
+1. **Check STATE_MATRIX.md changes**:
+   - New screens appear under "Screen States" section
+   - State count increases correctly
+   - State types classified correctly (ROOT/Intermediate/Async/Final)
+2. **Commit state matrix with screen changes**:
+   ```bash
+   make ai-commit MSG="feat(screens): add XYZ screen and update state matrix"
+   ```
+
+### State Matrix Evolution
+
+| Phase | Intent States | Screen States | Total |
+|-------|---------------|---------------|-------|
+| Phase 1 Complete | 73 | 4 | 77 |
+| Phase 2 Complete | 69 (-4) | 8 (+4) | 77 |
+| Phase 3 Complete | ~50 | ~30 | ~80 |
+| Phase 4 Complete | ~10 | ~70 | ~80 |
+| Phase 5 Complete | 0 | ~80 | ~80 |
+
+**Trend**: Intent states decrease as Screen states increase (total remains stable).
+
+### TUI Standards Compliance Checklist
+
+Reference: `docs/TUI_STANDARDS.md`
+
+**For EVERY screen created**, verify:
+
+#### Universal Keyboard Shortcuts
+- [ ] **esc**: Back/cancel (behavior matches state type)
+- [ ] **↑/k**: Up navigation
+- [ ] **↓/j**: Down navigation
+- [ ] **←/h**: Left navigation (if applicable)
+- [ ] **→/l**: Right navigation (if applicable)
+- [ ] **enter**: Select/confirm
+- [ ] **space**: Toggle (if applicable)
+
+#### Screen Components
+- [ ] Uses `StandardView` component (logo, breadcrumbs, footer)
+- [ ] Help text in footer (shows available shortcuts)
+- [ ] Theme integration via `BaseScreen.SetTheme()`
+- [ ] Terminal size handling via `BaseScreen.SetTerminalInfo()`
+
+#### State Classification
+- [ ] State type correctly identified:
+  - **ROOT**: First state in screen (esc = cancel)
+  - **Intermediate**: Has previous state (esc = go back)
+  - **Async**: Background operation (esc = let complete, navigate back)
+  - **Final**: Operation complete or error (esc = retry/cancel)
+
+#### Testing
+- [ ] Keyboard shortcut tests (esc, navigation, selection)
+- [ ] View rendering tests
+- [ ] State transition tests
+- [ ] Terminal size tests (responsive layout)
+
 ## Rollback Plan
 
 Each phase can be rolled back independently:
-1. **Phase 1**: Delete screens/ directory
+1. **Phase 1**: Delete screens/ directory, revert statematrix package
 2. **Phase 2-4**: Revert intent changes, screens remain
 3. **Phase 5**: No rollback needed (documentation only)
 
