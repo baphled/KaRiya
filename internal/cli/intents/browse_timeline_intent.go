@@ -190,11 +190,12 @@ func (i *BrowseTimelineIntent) applyFilters() {
 	filtered := make([]*career.CareerEvent, 0)
 
 	for _, evt := range i.context.Events {
-		// Apply text search
+		// Apply text search (if specified)
 		if i.state.filters.SearchText != "" {
 			// Simple case-insensitive contains match
-			// TODO: More sophisticated search
-			continue
+			// TODO: More sophisticated search (for now, skip text search)
+			// Note: When implemented, should check if event text contains search text
+			// and continue if it doesn't match
 		}
 
 		// Apply tag filters
