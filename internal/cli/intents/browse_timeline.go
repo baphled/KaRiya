@@ -31,6 +31,7 @@ func (c *BrowseTimelineContext) Validate() error {
 			Tags:       make([]string, 0),
 			Companies:  make([]string, 0),
 			Categories: make([]string, 0),
+			Projects:   make([]string, 0),
 			SortBy:     "date",
 			SortOrder:  "desc",
 		}
@@ -51,6 +52,9 @@ type TimelineFilters struct {
 
 	// Categories filters events by category.
 	Categories []string
+
+	// Projects filters events by project.
+	Projects []string
 
 	// DateFrom filters events from this date (optional).
 	DateFrom string
