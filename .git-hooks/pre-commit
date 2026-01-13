@@ -28,6 +28,39 @@ echo "🔍 PRE-COMMIT CHECKS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+# Check if this is documentation-only changes
+STAGED_FILES=$(git diff --cached --name-only)
+DOCS_ONLY=true
+for file in $STAGED_FILES; do
+    # Check if file is NOT documentation
+    if [[ ! "$file" =~ ^docs/ ]] && [[ ! "$file" =~ ^tasks/ ]] && [[ ! "$file" =~ \.md$ ]]; then
+        DOCS_ONLY=false
+        break
+    fi
+done
+
+if [ "$DOCS_ONLY" = true ]; then
+    echo -e "${BLUE}📝 Documentation-only commit detected${NC}"
+    echo -e "${BLUE}ℹ️  Skipping build and test checks${NC}"
+    echo ""
+    
+    # Still check for secrets in documentation
+    SECRET_PATTERNS='password["\s]*[:=]|secret["\s]*[:=]|api[_-]?key["\s]*[:=]|token["\s]*[:=]'
+    if git diff --cached | grep -iE "$SECRET_PATTERNS" | grep -v 'password_hash' > /dev/null 2>&1; then
+        echo -e "${RED}❌ ERROR: Potential secrets detected${NC}"
+        echo ""
+        echo "DO NOT commit secrets! Use environment variables."
+        exit 1
+    fi
+    
+    echo ""
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}✅ Documentation checks passed${NC}"
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    exit 0
+fi
+
 # Check for generated files
 echo "Checking for generated files..."
 GENERATED_FILES=$(git diff --cached --name-only | grep -E '\.(out|exe|dll|so|dylib|test)$' || true)
