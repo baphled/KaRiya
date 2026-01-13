@@ -65,15 +65,15 @@
 - ✅ **Test Fixes**: Post-integration fixes (commits 0ffad28, d0fdd23, 6b39da1, fdc1c85)
 - ✅ **Reusable Components**: EventDetailCard component (commit 45aaacd)
 - 🔜 **Phase 7**: CV Generation Integration (MOVED TO TASK 40 - Role Emphasis Redesign)
-- 🔄 **Phase 8**: TUI Workflow Compliance (IN PROGRESS - 2026-01-12)
+- ✅ **Phase 8**: TUI Workflow Compliance (COMPLETE - 2026-01-12)
 
 ### Metrics:
-- **Files Created**: 16/16 (100% with Phase 8) - includes HuhSkillForm wrapper + EventDetailCard component + escape/navigation tests + workflow doc
+- **Files Created**: 17/17 (100% with Phase 8) - includes HuhSkillForm wrapper + EventDetailCard component + 3 test files (escape/navigation/global keys) + workflow doc
 - **Files Modified**: 12/12 (100% with Phase 8 - Phase 7 deferred to Task 40)
-- **Test Specs**: 360+ (47 new in Phase 4, 7 CSV import tests, ~120 new in Phase 8)
-- **Code Coverage**: 80.54% overall, Repository 100%, Intent >95%
-- **Commits**: 29 total (10 feature + 1 fix + 8 form alignment/docs + 4 test fixes + 1 refactor + 5 TUI compliance, all following TDD)
-- **Documentation**: 6 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md, FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md, SKILLS_MANAGEMENT_WORKFLOW.md)
+- **Test Specs**: 156 ManageSkills tests (47 unit + 18 global key + 32 escape + 43 navigation + 16 other)
+- **Code Coverage**: 80.7% overall, Repository 100%, Intent >95%
+- **Commits**: 40 total (10 feature + 1 fix + 8 form alignment/docs + 4 test fixes + 1 refactor + 11 Phase 8 + 5 task tracking, all following TDD)
+- **Documentation**: 6 files created/updated (SKILLS_GUIDE.md, CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md, FORMS_GUIDE.md, FORMS_WORKFLOW_GUIDE.md, MANAGE_SKILLS_WORKFLOW.md)
 
 ## Context
 
@@ -881,13 +881,14 @@ This phase addresses gaps identified in TUI workflow compliance audit:
 
 #### Files to Create
 
-- [ ] `internal/cli/intents/manage_skills_escape_test.go` (~250 lines, ~36 tests)
-- [ ] `internal/cli/intents/manage_skills_navigation_test.go` (~350 lines, ~64 tests)
-- [ ] `docs/workflows/SKILLS_MANAGEMENT_WORKFLOW.md` (~500 lines)
+- [x] `internal/cli/intents/manage_skills_escape_test.go` (~250 lines, ~36 tests)
+- [x] `internal/cli/intents/manage_skills_navigation_test.go` (~350 lines, ~64 tests)
+- [x] `docs/workflows/MANAGE_SKILLS_WORKFLOW.md` (~500 lines)
+- [x] `internal/cli/intents/manage_skills_global_keys_test.go` (237 lines, 18 tests)
 
 #### Files to Modify
 
-- [ ] `internal/cli/intents/manage_skills_intent.go` (~100 lines changed)
+- [x] `internal/cli/intents/manage_skills_intent.go` (~100 lines changed)
 
 #### Phase 8A: Refactor Key Handlers (TDD)
 
@@ -1136,7 +1137,8 @@ graph TD
 
 **Phase 8E** (Final Verification):
 10. 200f5fa - `docs(docs): mark Phase 8D complete and update metrics`
-11. [next] - `docs(docs): Phase 8 TUI Workflow Compliance complete`
+11. e1b5443 - `docs(docs): Phase 8 TUI Workflow Compliance complete`
+12. [next] - `docs(docs): mark all Phase 8 checkboxes complete in task-39`
 
 #### Phase 8 Metrics (ACTUAL)
 
@@ -1147,7 +1149,7 @@ graph TD
 - **Files Created**: 4 (3 test files + 1 workflow doc)
 - **Files Modified**: 1 (intent implementation - MessageInterceptor pattern)
 - **Documentation**: 1 comprehensive workflow guide (1,043 lines)
-- **Commits**: 11 total (8 test/implementation + 3 documentation)
+- **Commits**: 12 total (8 test/implementation + 4 documentation)
 - **Test Pass Rate**: 100% (156/156 passing - includes all ManageSkills tests)
 - **Compliance**: ✅ All checks passing
 - **Coverage**: Maintained at 80.7%+
@@ -1183,10 +1185,10 @@ graph TD
 - [ ] Commit is atomic (ONE logical change)
 
 ## Post-Task Checklist (MUST COMPLETE BEFORE NEXT TASK)
-- [ ] `make check-compliance` passes (with Phase 8)
-- [ ] All checkboxes above completed (Phase 8 ⏳ IN PROGRESS)
-- [ ] Task marked complete `[x]` in task file
-- [ ] Token count: _____ (< 100k to continue)
+- [x] `make check-compliance` passes (with Phase 8)
+- [x] All checkboxes above completed (Phase 8 ✅ COMPLETE)
+- [x] Task marked complete `[x]` in task file
+- [x] Token count: 60879 (< 100k to continue)
 
 ## Acceptance Criteria
 
@@ -1227,19 +1229,19 @@ graph TD
 - [x] Zero staticcheck warnings (verified with build)
 - [x] Zero race conditions
 
-### Documentation ✅ COMPLETE (Phase 8 🔄 IN PROGRESS)
+### Documentation ✅ COMPLETE
 - [x] Documentation updated (add docs/SKILLS_GUIDE.md) - COMPLETE (commit 3d09115)
 - [x] CSV documentation updated (CSV_FORMAT_GUIDE.md, CSV_IMPORT_GUIDE.md) - COMPLETE (commit a5e54db)
 - [x] SKILLS_GUIDE includes detail view and events view usage - COMPLETE (commit 3d09115)
 - [x] SKILLS_GUIDE.md filter/sort documentation (Phase 4B features) - COMPLETE (commit e9e6028)
-- [ ] Workflow documentation (docs/workflows/SKILLS_MANAGEMENT_WORKFLOW.md) - IN PROGRESS (Phase 8D)
+- [x] Workflow documentation (docs/workflows/MANAGE_SKILLS_WORKFLOW.md) - COMPLETE (Phase 8D - commit c425781)
 
-### TUI Workflow Compliance (Phase 8) 🔄 IN PROGRESS
-- [ ] Universal key handlers (`q`, `?`, `Ctrl+C`) in all 9 states
-- [ ] MessageInterceptor pattern for consistent global key handling
-- [ ] Comprehensive escape key tests (~36 tests covering all states)
-- [ ] Navigation tests using E2E framework (~64 tests)
-- [ ] Workflow documentation with state diagrams and keyboard reference
+### TUI Workflow Compliance (Phase 8) ✅ COMPLETE
+- [x] Universal key handlers (`q`, `?`, `Ctrl+C`) in all 9 states
+- [x] MessageInterceptor pattern for consistent global key handling
+- [x] Comprehensive escape key tests (32 tests covering 8 states)
+- [x] Navigation tests using E2E framework (43 tests)
+- [x] Workflow documentation with state diagrams and keyboard reference (1,043 lines)
 
 ## Rollback Plan
 - Migrations can be rolled back via `goose down`
