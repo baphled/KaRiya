@@ -56,9 +56,6 @@ type ManageSkillsIntent struct {
 	// form for add/edit
 	skillForm *models.SkillForm
 
-	// modals
-	deleteModal *components.DeleteConfirmModal
-
 	// filter and sort state
 	filters             *SkillsFilters // Active filters
 	filterMenuIndex     int            // Selected option in filter menu
@@ -359,37 +356,7 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// PRIORITY 1: Handle delete modal if visible (highest priority)
-	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-		cmd, closed := i.deleteModal.Update(msg)
-		if !i.deleteModal.IsVisible() {
-			// Modal was closed - check if confirmed or cancelled
-			if i.deleteModal.WasConfirmed() {
-				// User confirmed deletion
-				skill := i.selectedSkill
-				i.deleteModal = nil
-				if skill != nil {
-					// Perform deletion
-					return func() tea.Msg {
-						err := i.context.SkillRepository.Delete(i.context.Ctx, skill.ID)
-						return SkillDeletedMsg{
-							SkillID: skill.ID,
-							Error:   err,
-						}
-					}
-				}
-			} else {
-				// User cancelled - just close modal
-				i.deleteModal = nil
-			}
-			return nil
-		}
-		// Modal still open - return any command from modal (e.g., WindowSizeMsg handling)
-		_ = closed // Acknowledge unused variable
-		return cmd
-	}
-
-	// PRIORITY 2: Screen orchestration: delegate to active screen if present
+	// Screen orchestration: delegate to active screen if present
 	if i.useScreens && i.activeScreen != nil {
 		// Handle global keys FIRST, even in screen mode
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -515,12 +482,6 @@ func (i *ManageSkillsIntent) View() string {
 	// Add context-aware help
 	help := i.getContextHelp()
 	view.WithHelp(help).WithFooterSeparator(true)
-
-	// MODAL OVERLAY: Render delete modal if visible (LAST - highest z-index)
-	// The modal's View() method returns a self-centered overlay
-	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-		return i.deleteModal.View()
-	}
 
 	return view.Render()
 }
@@ -1812,16 +1773,10 @@ func (i *ManageSkillsIntent) handleNavigateResult(result *screens.NavigateResult
 		return i.handleErrorInternal(fmt.Errorf("invalid data for edit screen: expected *domain.Skill, got %T", skillData))
 
 	case "delete":
-		// Show delete confirmation modal (no state change - modal overlay)
+		// Navigate to delete confirmation
 		if skill, ok := skillData.(*domain.Skill); ok {
 			i.selectedSkill = skill
-			// Create delete confirmation modal
-			i.deleteModal = components.NewDeleteConfirmModal(
-				skill.Name,
-				"Delete Skill",
-				fmt.Sprintf("Are you sure you want to delete '%s'?\n\nThis action cannot be undone.", skill.Name),
-			)
-			return i.deleteModal.Init()
+			return i.transitionToDeleteScreen(skill)
 		}
 		return i.handleErrorInternal(fmt.Errorf("invalid data for delete screen: expected *domain.Skill, got %T", skillData))
 
