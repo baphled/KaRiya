@@ -1,9 +1,12 @@
 package components
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -34,12 +37,15 @@ import (
 //	    return renderModalOverlay(modal, background)
 //	}
 type ViewEventDetailModal struct {
-	event   *career.CareerEvent
-	theme   themes.Theme
-	visible bool
-	width   int
-	height  int
-	action  string // Always empty for read-only modal (kept for API compatibility)
+	event      *career.CareerEvent
+	theme      themes.Theme
+	visible    bool
+	width      int
+	height     int
+	action     string // Always empty for read-only modal (kept for API compatibility)
+	viewport   viewport.Model
+	ready      bool
+	hasContent bool
 }
 
 // NewViewEventDetailModal creates a new event detail modal.
@@ -65,10 +71,13 @@ func (m *ViewEventDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.ready = false // Force viewport recreation on resize
 		return m, nil
 
 	case tea.KeyMsg:
@@ -78,36 +87,84 @@ func (m *ViewEventDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.action = ""
 			m.Hide()
 			return m, nil
+
+		// Scrolling keys - pass to viewport if content is scrollable
+		case "up", "k", "down", "j", "pgup", "pgdown", "ctrl+u", "ctrl+d":
+			if m.ready && m.hasContent {
+				m.viewport, cmd = m.viewport.Update(msg)
+				return m, cmd
+			}
 		}
 	}
 
 	return m, nil
 }
 
-// View renders the modal content with solid background.
+// View renders the modal content with solid background and scrolling.
 func (m *ViewEventDetailModal) View() string {
 	if !m.visible {
 		return ""
 	}
 
-	// Render event details using the existing component
+	// Calculate modal dimensions
+	// Keep modal height reasonable: max 30 lines or 70% of terminal, whichever is smaller
+	maxModalHeight := 30
+	terminalMaxHeight := int(float64(m.height) * 0.7)
+	if terminalMaxHeight < maxModalHeight {
+		maxModalHeight = terminalMaxHeight
+	}
+	if maxModalHeight < 10 {
+		maxModalHeight = 10 // Minimum usable height
+	}
+
+	modalWidth := m.width - 12 // Leave margins
+	if modalWidth > 80 {
+		modalWidth = 80 // Max width for readability
+	}
+
+	// Render event details
 	content := RenderEventDetailCard(m.event, m.theme)
+	contentLines := strings.Split(content, "\n")
+	contentHeight := len(contentLines)
 
-	// Add footer with close hint
-	footer := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		Render("Enter/Esc: Close")
+	// Calculate viewport height (modal height - borders - padding - footer)
+	viewportHeight := maxModalHeight - 6 // Account for border (2), padding (2), footer (2)
+	if viewportHeight < 5 {
+		viewportHeight = 5
+	}
 
-	modalContent := lipgloss.JoinVertical(lipgloss.Left, content, "", footer)
+	// Initialize viewport if needed
+	if !m.ready {
+		m.viewport = viewport.New(modalWidth-4, viewportHeight)
+		m.viewport.SetContent(content)
+		m.hasContent = contentHeight > viewportHeight
+		m.ready = true
+	}
 
-	// Wrap in styled box with solid background to prevent transparency
+	// Build footer with scroll indicator
+	scrollHint := "Enter/Esc: Close"
+	if m.hasContent {
+		percentScrolled := int(m.viewport.ScrollPercent() * 100)
+		scrollHint = lipgloss.NewStyle().
+			Foreground(styles.ColorTextSecondary).
+			Render("↑↓/j/k: Scroll | " + "Enter/Esc: Close " + lipgloss.NewStyle().Faint(true).Render("["+string(rune(percentScrolled/10+'0'))+string(rune(percentScrolled%10+'0'))+"%]"))
+	} else {
+		scrollHint = lipgloss.NewStyle().
+			Foreground(styles.ColorTextSecondary).
+			Render(scrollHint)
+	}
+
+	// Build modal content
+	modalContent := lipgloss.JoinVertical(lipgloss.Left, m.viewport.View(), "", scrollHint)
+
+	// Wrap in styled box with solid background
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground). // Solid background
+		Background(styles.ColorBackground).
 		Padding(1, 2).
-		MaxWidth(m.width - 8).   // Leave margins
-		MaxHeight(m.height - 8). // Leave margins
+		Width(modalWidth).
+		MaxHeight(maxModalHeight).
 		Render(modalContent)
 }
 
@@ -121,6 +178,7 @@ func (m *ViewEventDetailModal) SetDimensions(width, height int) {
 func (m *ViewEventDetailModal) Show() {
 	m.visible = true
 	m.action = ""
+	m.ready = false // Reset viewport when showing
 }
 
 // Hide hides the modal.
