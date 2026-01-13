@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -26,6 +27,11 @@ type GenerateCVIntent struct {
 	active  bool
 	result  *IntentResult[*GenerateCVResult]
 	logger  *logger.Logger
+
+	// Screen orchestration (Phase 2.2 TUI Architecture Refactoring)
+	// When non-nil, this Screen handles Update/View for the current state.
+	// Allows gradual migration from monolithic intent to screen-based architecture.
+	activeScreen screens.Screen
 }
 
 // NewGenerateCVIntent creates a new GenerateCV intent.
