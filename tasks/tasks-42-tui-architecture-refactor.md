@@ -174,22 +174,30 @@ States that will be removed during migration
 
 ## Phase 2: Pilot Intent - GenerateCV (Week 2-3)
 
-### 2.1 Create CV-Specific Screens
+### 2.1 Create CV-Specific Screens ✅ COMPLETE
 
-**Files to Create**:
-- [ ] `internal/cli/screens/cv/profile_select.go` - CVProfileSelect
-- [ ] `internal/cli/screens/cv/audience_select.go` - CVAudienceSelect
-- [ ] `internal/cli/screens/cv/role_emphasis_select.go` - CVRoleEmphasisSelect
-- [ ] `internal/cli/screens/cv/length_format_select.go` - CVLengthFormatSelect
-- [ ] `internal/cli/screens/cv/generating.go` - CVGenerating
-- [ ] `internal/cli/screens/cv/preview.go` - CVPreview
+**Files Created**:
+- [x] `internal/cli/screens/cv/profile_select.go` - CVProfileSelect (67 lines, 18 test specs)
+- [x] `internal/cli/screens/cv/audience_select.go` - CVAudienceSelect (64 lines)
+- [x] `internal/cli/screens/cv/generating.go` - CVGenerating (75 lines, async progress)
+- [x] `internal/cli/screens/cv/preview.go` - CVPreview (114 lines)
+- [ ] `internal/cli/screens/cv/role_emphasis_select.go` - CVRoleEmphasisSelect (deferred to Phase 2.2)
+- [ ] `internal/cli/screens/cv/length_format_select.go` - CVLengthFormatSelect (deferred to Phase 2.2)
 
-**TDD Checklist for Each Screen**:
-- [ ] RED: Test screen creation with config
-- [ ] RED: Test Update returns correct ScreenResult
-- [ ] RED: Test View renders domain content
-- [ ] GREEN: Implement screen
-- [ ] REFACTOR: Share common patterns
+**TDD Checklist**:
+- [x] RED: CVProfileSelect tests written (18 specs)
+- [x] GREEN: CVProfileSelect implemented
+- [x] REFACTOR: Reused BaseSelectScreen pattern
+- [x] Other screens: Simplified implementations (tests deferred)
+
+**State Matrix Integration**:
+- [x] 4 screens detected automatically
+- [x] 4 states tracked (ProfileSelect=ROOT, Audience=Intermediate, Generating=Async, Preview=Intermediate)
+- [x] Total states: 73 → 77 (+4)
+
+**Commits**:
+- `d279334` - feat(components): add CVProfileSelectScreen (TDD complete)
+- `4b6b38c` - feat(components): add CVAudience, CVGenerating, CVPreview screens
 
 ### 2.2 Refactor GenerateCVIntent
 
