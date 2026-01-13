@@ -75,13 +75,56 @@ type CVVariant struct {
 }
 
 // BuildVariantID generates a variant ID from selections.
-// TODO: Implement ID building logic (RED phase stub)
+//
+// Format examples:
+//   - Language Agnostic: "agnostic_backend_full"
+//   - Generalist: "generalist_fullstack_standard"
+//   - Specialist: "specialist_ruby_backend_full"
 func BuildVariantID(techFocus TechnologyFocus, focusArea FocusArea, length LengthFormat, technologies []string) string {
-	return ""
+	// Determine focus prefix
+	var focusPrefix string
+	switch techFocus {
+	case TechnologyFocusLanguageAgnostic:
+		focusPrefix = "agnostic"
+	case TechnologyFocusGeneralist:
+		focusPrefix = "generalist"
+	case TechnologyFocusSpecialist:
+		focusPrefix = "specialist"
+	default:
+		focusPrefix = string(techFocus)
+	}
+
+	// Build ID based on technology focus
+	if techFocus == TechnologyFocusSpecialist && len(technologies) > 0 {
+		// Specialist includes technology name
+		return focusPrefix + "_" + technologies[0] + "_" + string(focusArea) + "_" + string(length)
+	}
+
+	// Standard format for Language Agnostic and Generalist
+	return focusPrefix + "_" + string(focusArea) + "_" + string(length)
 }
 
 // DetermineStructure determines the appropriate CV structure based on technology focus and length.
-// TODO: Implement structure determination logic (RED phase stub)
+//
+// Rules:
+//   - UltraShort always uses Highlights structure
+//   - Language Agnostic uses Narrative structure (emphasizes adaptability)
+//   - Generalist and Specialist use Standard structure (traditional format)
 func DetermineStructure(techFocus TechnologyFocus, length LengthFormat) CVStructure {
-	return ""
+	// UltraShort always uses Highlights regardless of focus
+	if length == LengthUltraShort {
+		return CVStructureHighlights
+	}
+
+	// Technology focus determines structure for other lengths
+	switch techFocus {
+	case TechnologyFocusLanguageAgnostic:
+		return CVStructureNarrative
+
+	case TechnologyFocusGeneralist, TechnologyFocusSpecialist:
+		return CVStructureStandard
+
+	default:
+		return CVStructureStandard
+	}
 }
