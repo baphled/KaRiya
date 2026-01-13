@@ -4,9 +4,11 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // QuickAddEventModal provides a quick way to add a new career event.
@@ -52,7 +54,7 @@ func NewQuickAddEventModal(width, height int) *QuickAddEventModal {
 
 // buildForm creates the huh form with confirm button
 func (m *QuickAddEventModal) buildForm() {
-	// Calculate form dimensions
+	// Calculate form width
 	modalWidth := m.width - 10
 	if modalWidth > 80 {
 		modalWidth = 80
@@ -61,16 +63,13 @@ func (m *QuickAddEventModal) buildForm() {
 		modalWidth = 40
 	}
 
-	// Use a fixed, small modal height for consistency
-	// Modal should be compact and scroll internally if needed
-	// This keeps the modal positioned nicely below the logo
-	const fixedFormHeight = 18
-
-	// Form will scroll internally if content exceeds this height
-	formHeight := fixedFormHeight
+	// Let Huh use natural height - bubbletea-overlay will handle positioning
+	// No need to constrain height anymore!
+	// Huh will render at its natural height and scroll internally as designed
+	formHeight := 0 // 0 means use natural height
 
 	// Use standard form with confirm button (Submit/Cancel)
-	// The form will be scrollable if content exceeds formHeight
+	// The form will be scrollable at its natural height
 	m.form = forms.NewCaptureEventForm(m.formData, "quick", modalWidth, formHeight)
 }
 
@@ -133,12 +132,22 @@ func (m *QuickAddEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddEventD
 	return cmd, false, nil
 }
 
-// View renders the quick add event modal
+// View renders the quick add event modal with proper chrome (border, background)
+// for overlay compositing. The chrome provides a solid background so the modal
+// doesn't show the background layer through.
 func (m *QuickAddEventModal) View() string {
 	if !m.visible {
 		return ""
 	}
-	return m.form.View()
+
+	// Wrap the form in a styled box with solid background, border, and padding
+	// This ensures the modal is opaque and doesn't show background through
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackground).
+		Padding(1, 2).
+		Render(m.form.View())
 }
 
 // IsVisible returns whether the modal is currently visible

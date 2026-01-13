@@ -1,9 +1,11 @@
 package components
 
 import (
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // FilterModalModel manages the filter modal form for timeline filtering.
@@ -143,17 +145,11 @@ func (m *FilterModalModel) buildForm(events []*career.CareerEvent) {
 		modalWidth = 40
 	}
 
-	// Use a fixed, small modal height for consistency
-	// Modal should be compact and scroll internally if needed
-	// Filter form is small, so use minimal height
-	const fixedFormHeight = 12
-
-	// Form will scroll internally if content exceeds this height
-	formHeight := fixedFormHeight
-
+	// Let Huh use natural height - bubbletea-overlay will handle positioning
+	// No need to constrain height anymore!
+	// Huh will render at its natural height and scroll internally as designed
 	m.form = huh.NewForm(group).
-		WithWidth(modalWidth).
-		WithHeight(formHeight)
+		WithWidth(modalWidth)
 }
 
 // Init initializes the filter modal and its form.
@@ -199,12 +195,22 @@ func (m *FilterModalModel) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) 
 	return cmd, false, nil
 }
 
-// View renders the filter modal
+// View renders the filter modal with proper chrome (border, background)
+// for overlay compositing. The chrome provides a solid background so the modal
+// doesn't show the background layer through.
 func (m *FilterModalModel) View() string {
 	if !m.visible {
 		return ""
 	}
-	return m.form.View()
+
+	// Wrap the form in a styled box with solid background, border, and padding
+	// This ensures the modal is opaque and doesn't show background through
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackground).
+		Padding(1, 2).
+		Render(m.form.View())
 }
 
 // IsVisible returns whether the modal is currently visible
