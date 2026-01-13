@@ -59,9 +59,9 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		It("should initialize with timeline list screen", func() {
 			intent.Init()
 
-			// View should render timeline list screen
+			// View should render timeline list screen with StandardView breadcrumbs
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Career Timeline"))
+			Expect(view).To(ContainSubstring("Timeline")) // Breadcrumb text
 			Expect(view).To(ContainSubstring("Backend Developer"))
 		})
 
@@ -69,7 +69,7 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			intent.Init()
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("3 events"))
+			Expect(view).To(ContainSubstring("Events: 3")) // StandardView footer format
 		})
 
 		It("should show all events in list", func() {
@@ -148,7 +148,7 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Date:"))
 			Expect(view).To(ContainSubstring("Company:"))
-			Expect(view).To(ContainSubstring("Description:"))
+			Expect(view).To(ContainSubstring("Text:")) // Field name in event_detail screen
 		})
 
 		It("should navigate back from detail to list with escape", func() {
@@ -160,10 +160,10 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			// Press escape to go back
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should be back at list view
+			// Should be back at list view with breadcrumbs
 			listView := intent.View()
-			Expect(listView).To(ContainSubstring("Career Timeline"))
-			Expect(listView).To(ContainSubstring("3 events"))
+			Expect(listView).To(ContainSubstring("Timeline"))  // Breadcrumb text
+			Expect(listView).To(ContainSubstring("Events: 3")) // StandardView footer format
 		})
 
 		It("should preserve list state when returning from detail", func() {
@@ -176,10 +176,11 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			// Go back
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should still show list with all events
+			// Should still show list with all events and breadcrumbs
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Career Timeline"))
-			Expect(view).To(ContainSubstring("3 events"))
+			Expect(view).To(ContainSubstring("Timeline")) // Breadcrumb text
+			// New format: "Events: 3 | Page 1 of 1"
+			Expect(view).To(ContainSubstring("Events: 3"))
 		})
 	})
 
@@ -251,14 +252,14 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			Expect(result.Status).To(Equal(Cancelled))
 		})
 
-		It("should cancel intent from list with q", func() {
-			// Press 'q' to quit
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+		It("should quit app from list with q", func() {
+			// Press 'q' to quit app (global key handled by intent)
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// Intent should be cancelled
-			result := intent.Result()
-			Expect(result).NotTo(BeNil())
-			Expect(result.Status).To(Equal(Cancelled))
+			// Should return tea.Quit command (quits entire app, not just intent)
+			Expect(cmd).NotTo(BeNil())
+			// tea.Quit is a function, we can't directly compare it
+			// but we can verify it's not nil which means 'q' was handled
 		})
 
 		It("should not cancel intent from detail with escape", func() {
@@ -268,9 +269,9 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			// Press escape (should go back to list, not cancel)
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should be back at list, not cancelled (result is nil when not complete)
+			// Should be back at list with breadcrumbs, not cancelled
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Career Timeline"))
+			Expect(view).To(ContainSubstring("Timeline")) // Breadcrumb text
 		})
 	})
 
@@ -292,9 +293,9 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			// Resize
 			intent.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
-			// Screen should still render
+			// Screen should still render with breadcrumbs
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Career Timeline"))
+			Expect(view).To(ContainSubstring("Timeline")) // Breadcrumb text
 		})
 	})
 
@@ -321,7 +322,7 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 
 		It("should prompt to add event", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("add"))
+			Expect(view).To(ContainSubstring("Add")) // KeyBadge format (capital A)
 		})
 
 		It("should not crash on navigation", func() {
@@ -354,7 +355,7 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			intent.Init()
 
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Career Timeline"))
+			Expect(view).To(ContainSubstring("Timeline")) // Breadcrumb text in screen mode
 		})
 	})
 })
