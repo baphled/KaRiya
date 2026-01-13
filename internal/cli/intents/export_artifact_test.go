@@ -131,7 +131,7 @@ var _ = Describe("ExportArtifact Intent", func() {
 
 		It("should show navigation instructions", func() {
 			view := intent.View()
-			Expect(view).To(ContainSubstring("↑/↓"))
+			Expect(view).To(ContainSubstring("↑↓/jk")) // Shows both arrow and vim-style navigation
 			Expect(view).To(ContainSubstring("Enter"))
 			Expect(view).To(ContainSubstring("Esc"))
 		})
