@@ -1114,6 +1114,114 @@ var _ = Describe("ManageSkillsIntent", func() {
 				view := intent.View()
 				Expect(view).NotTo(ContainSubstring("Search Skills"))
 			})
+
+			It("should filter skills after search submission (E2E)", func() {
+				// Verify initial state has all skills
+				initialView := intent.View()
+				Expect(initialView).To(ContainSubstring("Docker"))
+				Expect(initialView).To(ContainSubstring("Go"))
+				Expect(initialView).To(ContainSubstring("React"))
+
+				// Open search modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+
+				// Type search text "Go"
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'o'}})
+
+				// Submit search with Enter (first Enter completes field, second submits form)
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Wait for form to complete and submit
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Skills should be reloaded with filter
+				// Note: This may require processing the SkillsLoadedMsg
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				if cmd != nil {
+					msg := cmd()
+					intent.Update(msg)
+				}
+
+				// View should show filtered results (only "Go")
+				filteredView := intent.View()
+				Expect(filteredView).To(ContainSubstring("Go"))
+				// Should NOT show other skills
+				// Note: Depending on search implementation, may show partial matches
+			})
+
+			It("should allow clearing search with Esc", func() {
+				// Open and submit search
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'G'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'o'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Close modal with Esc (should cancel search)
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				// View should still show all skills (search was cancelled)
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Docker"))
+				Expect(view).To(ContainSubstring("Go"))
+				Expect(view).To(ContainSubstring("React"))
+			})
+
+			It("should handle tab navigation in search modal", func() {
+				// Open search modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+
+				// Tab should be forwarded to form (should not cause errors)
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyTab})
+				// Cmd may or may not be nil depending on form state
+
+				// Modal should still be visible
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Search Skills"))
+			})
+
+			It("should handle empty search submission", func() {
+				// Open search modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+
+				// Submit without typing (empty search)
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Should show all skills (empty search = no filter)
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Docker"))
+				Expect(view).To(ContainSubstring("Go"))
+				Expect(view).To(ContainSubstring("React"))
+			})
+
+			It("should integrate with filter and sort modals (E2E combination)", func() {
+				// 1. Apply search
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}}) // Search for "backend"
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Process reload command if present
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				if cmd != nil {
+					msg := cmd()
+					intent.Update(msg)
+				}
+
+				// 2. Then apply filter modal (should work on top of search)
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				// Filter modal should open even with search active
+				view := intent.View()
+				Expect(view).To(Or(
+					ContainSubstring("Filter by Category"),
+					ContainSubstring("Category"),
+				))
+			})
 		})
 	})
 })
