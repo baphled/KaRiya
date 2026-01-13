@@ -2,7 +2,6 @@ package technology_test
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -11,11 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestTechnologyExtractor(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Technology Extractor Suite")
-}
 
 var _ = Describe("Extractor", func() {
 	var (

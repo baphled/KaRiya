@@ -1,17 +1,10 @@
 package technology_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/service/career/technology"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestFocusAreaAnalyzer(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Focus Area Analyzer Suite")
-}
 
 var _ = Describe("Analyzer", func() {
 	var analyzer *technology.Analyzer
