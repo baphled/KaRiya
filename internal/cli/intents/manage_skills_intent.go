@@ -373,17 +373,19 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 			i.helpModal.Toggle()
 			return nil
 		}
+	}
 
-		// 2. SECOND PRIORITY: Modal updates (if visible)
-		if i.searchModal != nil && i.searchModal.IsVisible() {
-			return i.handleSearchModalUpdate(keyMsg)
-		}
-		if i.filterModal != nil && i.filterModal.IsVisible() {
-			return i.handleFilterModalUpdate(keyMsg)
-		}
-		if i.sortModal != nil && i.sortModal.IsVisible() {
-			return i.handleSortModalUpdate(keyMsg)
-		}
+	// 2. SECOND PRIORITY: Modal updates (if visible)
+	// CRITICAL: Pass full tea.Msg (not tea.KeyMsg) to modals
+	// This allows huh forms to process Tab/Enter correctly
+	if i.searchModal != nil && i.searchModal.IsVisible() {
+		return i.handleSearchModalUpdate(msg)
+	}
+	if i.filterModal != nil && i.filterModal.IsVisible() {
+		return i.handleFilterModalUpdate(msg)
+	}
+	if i.sortModal != nil && i.sortModal.IsVisible() {
+		return i.handleSortModalUpdate(msg)
 	}
 
 	// Screen orchestration: delegate to active screen if present
@@ -565,7 +567,8 @@ func (i *ManageSkillsIntent) renderSearchModalOverlay(baseView string) string {
 }
 
 // handleFilterModalUpdate handles updates when filter modal is visible
-func (i *ManageSkillsIntent) handleFilterModalUpdate(msg tea.KeyMsg) tea.Cmd {
+// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to work correctly
+func (i *ManageSkillsIntent) handleFilterModalUpdate(msg tea.Msg) tea.Cmd {
 	cmd, applied, filterData := i.filterModal.Update(msg)
 
 	if applied && filterData != nil {
@@ -599,7 +602,8 @@ func (i *ManageSkillsIntent) handleFilterModalUpdate(msg tea.KeyMsg) tea.Cmd {
 }
 
 // handleSortModalUpdate handles updates when sort modal is visible
-func (i *ManageSkillsIntent) handleSortModalUpdate(msg tea.KeyMsg) tea.Cmd {
+// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to work correctly
+func (i *ManageSkillsIntent) handleSortModalUpdate(msg tea.Msg) tea.Cmd {
 	cmd, applied, sortData := i.sortModal.Update(msg)
 
 	if applied && sortData != nil {
@@ -725,7 +729,8 @@ func (i *ManageSkillsIntent) openSearchModal() tea.Cmd {
 }
 
 // handleSearchModalUpdate handles updates when search modal is visible
-func (i *ManageSkillsIntent) handleSearchModalUpdate(msg tea.KeyMsg) tea.Cmd {
+// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to work correctly
+func (i *ManageSkillsIntent) handleSearchModalUpdate(msg tea.Msg) tea.Cmd {
 	cmd, applied, searchData := i.searchModal.Update(msg)
 
 	if applied && searchData != nil {
