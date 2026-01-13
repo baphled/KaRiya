@@ -13,6 +13,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/service/career/technology"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -215,6 +216,8 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSelectProfile(msg)
 	case GenerateCVStateSelectAudience:
 		return i.updateSelectAudience(msg)
+	case GenerateCVStateExtractingTechnologies:
+		return i.updateExtractingTechnologies(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -421,9 +424,9 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		case "enter":
 			// Set selected audience based on current index
 			i.state.selectedAudience = audiences[i.state.audienceIndex]
-			i.state.currentState = GenerateCVStateGenerating
-			i.state.isGenerating = true
-			return i.generateCVAsync()
+			// Transition to technology extraction
+			i.state.currentState = GenerateCVStateExtractingTechnologies
+			return i.extractTechnologiesAsync()
 		}
 
 		// Handle global keys (q=quit, ?=help, esc=back)
@@ -484,6 +487,59 @@ func (i *GenerateCVIntent) generateCVAsync() tea.Cmd {
 		}
 		return CVGenerationCompleteMsg{CV: cvView, Error: nil}
 	}
+}
+
+// extractTechnologiesAsync extracts technologies from user skills asynchronously.
+func (i *GenerateCVIntent) extractTechnologiesAsync() tea.Cmd {
+	return func() tea.Msg {
+		// TODO: Wire up actual SkillRepository and EventRepository from context
+		// For now, return empty results as stub
+		// Use default backend focus area as placeholder
+		defaultArea := "backend"
+		return TechnologiesExtractedMsg{
+			Technologies: []*ExtractedTechnology{},
+			Suggestion: &FocusAreaSuggestion{
+				Area:       technology.FocusArea(defaultArea),
+				Confidence: 0.0,
+				Evidence:   map[string]int{},
+			},
+			Error: nil,
+		}
+	}
+}
+
+// updateExtractingTechnologies handles messages while extracting technologies.
+func (i *GenerateCVIntent) updateExtractingTechnologies(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case TechnologiesExtractedMsg:
+		if msg.Error != nil {
+			// Error extracting - go back to audience selection
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		}
+
+		// Store extracted technologies and suggestion
+		i.state.extractedTechnologies = msg.Technologies
+		i.state.focusAreaSuggestion = msg.Suggestion
+		i.state.technologiesAvailable = len(msg.Technologies) >= 3
+
+		// Transition to technology focus selection
+		i.state.currentState = GenerateCVStateSelectTechnologyFocus
+		i.state.technologyFocusIndex = 0
+		return nil
+
+	case tea.KeyMsg:
+		// Handle global keys (allow cancellation during extraction)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyBack:
+			// Let extraction complete in background, navigate back
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		}
+	}
+	return nil
 }
 
 // updateGenerating handles messages while CV is being generated.
