@@ -6,9 +6,9 @@
 - **Prerequisites**: Stable main branch, all tests passing
 
 ## Session Contract Acknowledgment
-- [x] Ran `make session-start` and it passed
+- [x] Ran `make session-start` and it passed (2026-01-13)
 - [x] Acknowledge and commit to following all workflow rules
-- [x] Token count: 33k (well under 50k threshold)
+- [x] Token count: 50k (at Phase 1.4 start)
 
 ---
 
@@ -74,6 +74,85 @@
 
 **Commit**:
 - `38bd3e4` - test(tests): add GenerateCV baseline E2E tests
+
+### 1.4 Refactor State Matrix Generator 🚧 IN PROGRESS
+
+**Goal**: Extend `cmd/generate-state-matrix/main.go` to track both Intent states and Screen states
+
+**Files to Modify**:
+- [ ] `cmd/generate-state-matrix/main.go` - Add screens/ directory scanning
+- [ ] `cmd/generate-state-matrix/main_test.go` - Add comprehensive tests (NEW FILE)
+
+**Files to Create** (package refactor):
+- [ ] `internal/cli/statematrix/scanner.go` - Extract file scanning logic
+- [ ] `internal/cli/statematrix/scanner_test.go` - Scanner tests
+- [ ] `internal/cli/statematrix/parser.go` - Extract AST parsing logic
+- [ ] `internal/cli/statematrix/parser_test.go` - Parser tests
+- [ ] `internal/cli/statematrix/types.go` - Shared types (StateInfo, IntentInfo, etc.)
+- [ ] `internal/cli/statematrix/generator.go` - Markdown/JSON generation
+- [ ] `internal/cli/statematrix/generator_test.go` - Generator tests
+
+**TDD Checklist**:
+
+#### RED Phase - Tests First
+- [ ] Write scanner tests (scan intents/, scan screens/, merge results)
+- [ ] Write parser tests (extract intent states, extract screen states)
+- [ ] Write generator tests (markdown format, JSON format)
+- [ ] Write integration tests (end-to-end state matrix generation)
+- [ ] Run tests - confirm ALL FAIL
+
+#### GREEN Phase - Implementation
+- [ ] Create `internal/cli/statematrix/` package structure
+- [ ] Implement scanner.go (scan both directories)
+- [ ] Implement parser.go (parse Intent and Screen states)
+- [ ] Implement types.go (StateInfo, IntentInfo, ScreenInfo, StateMatrix)
+- [ ] Implement generator.go (generate markdown with separate sections)
+- [ ] Refactor `cmd/generate-state-matrix/main.go` to use new package
+- [ ] Run tests - confirm ALL PASS
+
+#### REFACTOR Phase
+- [ ] Extract duplicate code patterns
+- [ ] Improve error messages
+- [ ] Add documentation comments
+- [ ] Optimize performance if needed
+
+**Documentation Updates**:
+
+Markdown format should have separate sections:
+```markdown
+## Intent States
+
+### CaptureEvent
+| State | Type | Escape Behavior |
+...
+
+## Screen States
+
+### ProfileSelectScreen
+| State | Type | Escape Behavior |
+...
+
+## Legacy States (Deprecated)
+States that will be removed during migration
+```
+
+**Acceptance Criteria**:
+- [ ] Scanner detects both `internal/cli/intents/*.go` and `internal/cli/screens/**/*.go`
+- [ ] Parser distinguishes Intent states vs Screen states
+- [ ] Markdown output has 3 sections: Intent States, Screen States, Legacy States (TBD)
+- [ ] JSON output includes `intent_states` and `screen_states` arrays
+- [ ] Tests cover: scanner, parser, generator, integration
+- [ ] Test coverage for statematrix package >90%
+- [ ] All existing tests still pass (2,078+)
+- [ ] Zero race conditions
+- [ ] Staticcheck passes
+- [ ] Generated STATE_MATRIX.md properly gitignored
+
+**Migration Strategy**:
+1. As each Intent migrates to Screens pattern (Phases 2-4), states move from Intent section to Screen section
+2. Track migration progress in documentation
+3. Legacy section shrinks over time
+4. When all intents migrated, remove Legacy section entirely
 
 **Phase 1 Summary**:
 - **Lines Written**: 1,363 lines (production + tests)
