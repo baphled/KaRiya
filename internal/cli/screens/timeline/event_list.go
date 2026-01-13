@@ -61,11 +61,12 @@ type TimelineEventListScreen struct {
 // Parameters:
 //   - events: List of career events to display (can be empty)
 func NewTimelineEventListScreen(events []*career.CareerEvent) *TimelineEventListScreen {
-	// Create table columns matching legacy format
+	// Create table columns with Product column
 	columns := []table.Column{
 		{Title: "Date", Width: 12},
-		{Title: "Event", Width: 50},
-		{Title: "Company", Width: 20},
+		{Title: "Event", Width: 40},
+		{Title: "Company", Width: 18},
+		{Title: "Project", Width: 15},
 	}
 
 	t := table.New(
@@ -118,6 +119,30 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 			// Move selection down
 			if len(s.events) > 0 && s.selectedIndex < len(s.events)-1 {
 				s.selectedIndex++
+			}
+			return nil, nil
+
+		case "ctrl+d":
+			// Page down (half page)
+			pageSize := 15
+			halfPage := pageSize / 2
+			if len(s.events) > 0 {
+				s.selectedIndex += halfPage
+				if s.selectedIndex >= len(s.events) {
+					s.selectedIndex = len(s.events) - 1
+				}
+			}
+			return nil, nil
+
+		case "ctrl+u":
+			// Page up (half page)
+			pageSize := 15
+			halfPage := pageSize / 2
+			if s.selectedIndex > 0 {
+				s.selectedIndex -= halfPage
+				if s.selectedIndex < 0 {
+					s.selectedIndex = 0
+				}
 			}
 			return nil, nil
 
@@ -208,10 +233,10 @@ func (s *TimelineEventListScreen) updateTableRows() {
 			dateStr = "  " + dateStr
 		}
 
-		// Truncate text to 50 chars (matching legacy)
+		// Truncate text to 40 chars (reduced to make room for project)
 		text := event.Text
-		if len(text) > 50 {
-			text = text[:50] + "..."
+		if len(text) > 40 {
+			text = text[:40] + "..."
 		}
 
 		// Company (or dash if empty)
@@ -220,7 +245,13 @@ func (s *TimelineEventListScreen) updateTableRows() {
 			company = "-"
 		}
 
-		rows = append(rows, table.Row{dateStr, text, company})
+		// Project (or dash if empty)
+		project := event.Project
+		if project == "" {
+			project = "-"
+		}
+
+		rows = append(rows, table.Row{dateStr, text, company, project})
 	}
 
 	s.table.SetRows(rows)
@@ -275,7 +306,7 @@ func (s *TimelineEventListScreen) View() string {
 
 	// Footer with actions (matching legacy)
 	// Note: 'q' is a global key handled by intent (quits app), '?' shows help
-	footer := "↑/↓ or j/k: Navigate  Enter: View details  a: Add  e: Edit  d: Delete  Esc: Back  q: Quit  ?: Help"
+	footer := "↑/↓/j/k: Navigate  Ctrl+D/U: Page Down/Up  Enter: View  a: Add  e: Edit  d: Delete  Esc: Back  q: Quit  ?: Help"
 
 	// Use BaseScreen's CreateView helper for StandardView integration
 	breadcrumbs := []string{"Main Menu", "Timeline"}
