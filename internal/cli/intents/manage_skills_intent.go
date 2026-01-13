@@ -9,6 +9,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/navigation"
+	"github.com/baphled/kariya/internal/cli/screens"
+	skills_screens "github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	domain "github.com/baphled/kariya/internal/domain/career"
@@ -59,6 +61,10 @@ type ManageSkillsIntent struct {
 	filterMenuIndex     int            // Selected option in filter menu
 	sortMenuIndex       int            // Selected option in sort menu
 	availableCategories []string       // Categories extracted from skills for filter menu
+
+	// screen orchestration (new architecture)
+	activeScreen screens.Screen // Currently active screen (when using screen architecture)
+	useScreens   bool           // Whether to use screen-based architecture (opt-in, default: false)
 
 	// active indicates whether this intent is currently active
 	active bool
@@ -179,7 +185,10 @@ func (n *skillEventsNavigator) GetPageSize() int {
 func (i *ManageSkillsIntent) Init() tea.Cmd {
 	i.active = true
 
-	// Apply themed table styles if theme is available
+	// Enable screen architecture by default
+	i.useScreens = true
+
+	// Apply themed table styles if theme is available (for legacy fallback states)
 	if theme := i.Theme(); theme != nil {
 		i.table.SetStyles(themes.NewThemedTableStyles(theme))
 	}
@@ -346,6 +355,20 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// Screen orchestration: delegate to active screen if present
+	if i.useScreens && i.activeScreen != nil {
+		// Handle window size messages for screen
+		if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
+			i.activeScreen.SetTerminalInfo(wsMsg.Width, wsMsg.Height)
+		}
+
+		cmd, result := i.activeScreen.Update(msg)
+		if result != nil {
+			return i.handleScreenResult(result)
+		}
+		return cmd
+	}
+
 	switch msg := msg.(type) {
 	case SkillsLoadedMsg:
 		return i.handleSkillsLoaded(msg)
@@ -412,6 +435,11 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *ManageSkillsIntent) View() string {
 	if !i.active {
 		return ""
+	}
+
+	// Screen orchestration: delegate to active screen if present
+	if i.useScreens && i.activeScreen != nil {
+		return i.activeScreen.View()
 	}
 
 	// Create standard view with breadcrumbs
@@ -623,7 +651,12 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 		i.eventCounts = make(map[string]int)
 	}
 
-	// Update table rows with new skills data
+	// If using screens, transition to list screen
+	if i.useScreens {
+		return i.transitionToListScreen()
+	}
+
+	// Legacy: Update table rows with new skills data
 	i.updateTableRows()
 
 	return nil
@@ -1643,4 +1676,255 @@ func (i *ManageSkillsIntent) SetSelectedIndex(idx int) {
 // GetPageSize returns the page size for pagination.
 func (i *ManageSkillsIntent) GetPageSize() int {
 	return 15
+}
+
+// ============================================================================
+// Screen Orchestration Methods (New Architecture)
+// ============================================================================
+
+// EnableScreens enables the screen-based architecture for this intent.
+// This is an opt-in method to maintain backward compatibility during migration.
+func (i *ManageSkillsIntent) EnableScreens() {
+	i.useScreens = true
+}
+
+// handleScreenResult processes results from screen updates.
+// This is the central hub for all screen-to-intent communication.
+func (i *ManageSkillsIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	switch r := result.(type) {
+	case *screens.NavigateResult:
+		return i.handleNavigateResult(r)
+	case *screens.CancelResult:
+		return i.handleCancelResult(r)
+	case *screens.SubmitResult:
+		return i.handleSubmitResult(r)
+	case *screens.ErrorResult:
+		return i.handleErrorResult(r)
+	default:
+		// Unknown result type - treat as error
+		i.result = &IntentResult[*ManageSkillsResult]{
+			Status: Failed,
+			Error: &IntentError{
+				Code:    "UNKNOWN_RESULT",
+				Message: fmt.Sprintf("unknown screen result type: %T", result),
+			},
+		}
+		i.active = false
+		return nil
+	}
+}
+
+// handleNavigateResult handles navigation to a new screen.
+// NavigateResult.Data() contains a map with "target" and "data" keys.
+func (i *ManageSkillsIntent) handleNavigateResult(result *screens.NavigateResult) tea.Cmd {
+	data := result.Data()
+
+	// Extract target and data from navigation result
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return i.handleErrorInternal(fmt.Errorf("invalid navigation data: expected map, got %T", data))
+	}
+
+	target, _ := dataMap["target"].(string)
+	skillData := dataMap["data"]
+
+	switch target {
+	case "detail":
+		// Navigate to skill detail screen
+		if skill, ok := skillData.(*domain.Skill); ok {
+			i.selectedSkill = skill
+			return i.transitionToDetailScreen()
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid data for detail screen: expected *domain.Skill, got %T", skillData))
+
+	case "add":
+		// Navigate to add skill form
+		return i.transitionToFormScreen(nil)
+
+	case "edit":
+		// Navigate to edit skill form
+		if skill, ok := skillData.(*domain.Skill); ok {
+			i.selectedSkill = skill
+			return i.transitionToFormScreen(skill)
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid data for edit screen: expected *domain.Skill, got %T", skillData))
+
+	case "delete":
+		// Navigate to delete confirmation
+		if skill, ok := skillData.(*domain.Skill); ok {
+			i.selectedSkill = skill
+			return i.transitionToDeleteScreen(skill)
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid data for delete screen: expected *domain.Skill, got %T", skillData))
+
+	case "list":
+		// Navigate back to list (after delete/cancel)
+		return i.transitionToListScreen()
+
+	default:
+		return i.handleErrorInternal(fmt.Errorf("unknown navigation target: %s", target))
+	}
+}
+
+// handleCancelResult handles screen cancellation.
+func (i *ManageSkillsIntent) handleCancelResult(result *screens.CancelResult) tea.Cmd {
+	// Check if we should return to previous screen or exit intent
+	if i.currentState == SkillsStateList {
+		// Root state - cancel the entire intent
+		i.result = &IntentResult[*ManageSkillsResult]{
+			Status: Cancelled,
+			Data: &ManageSkillsResult{
+				Action: "cancelled",
+			},
+		}
+		i.active = false
+		return nil
+	}
+
+	// Return to list screen
+	return i.transitionToListScreen()
+}
+
+// handleSubmitResult handles form/confirm submission.
+func (i *ManageSkillsIntent) handleSubmitResult(result *screens.SubmitResult) tea.Cmd {
+	data := result.Data()
+
+	switch i.currentState {
+	case SkillsStateAdd, SkillsStateEdit:
+		// Form submitted - save skill
+		if skill, ok := data.(*domain.Skill); ok {
+			if i.currentState == SkillsStateAdd {
+				return i.createSkill(skill)
+			}
+			return i.updateSkill(skill)
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid form data: expected *domain.Skill, got %T", data))
+
+	case SkillsStateDelete:
+		// Delete confirmed
+		if skill, ok := data.(*domain.Skill); ok {
+			return func() tea.Msg {
+				err := i.context.SkillRepository.Delete(i.context.Ctx, skill.ID)
+				return SkillDeletedMsg{
+					SkillID: skill.ID,
+					Error:   err,
+				}
+			}
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid delete data: expected *domain.Skill, got %T", data))
+
+	default:
+		return i.handleErrorInternal(fmt.Errorf("unexpected submit in state: %s", i.currentState))
+	}
+}
+
+// handleErrorResult handles screen errors.
+func (i *ManageSkillsIntent) handleErrorResult(result *screens.ErrorResult) tea.Cmd {
+	// Screen encountered an error - propagate to intent
+	data := result.Data()
+	if err, ok := data.(error); ok {
+		return i.handleErrorInternal(err)
+	}
+	return i.handleErrorInternal(fmt.Errorf("screen error: %v", data))
+}
+
+// transitionToListScreen transitions to the skills list screen.
+func (i *ManageSkillsIntent) transitionToListScreen() tea.Cmd {
+	i.currentState = SkillsStateList
+
+	// Create list screen
+	listScreen := NewSkillsListScreenFromIntent(i.skills, i.GetThemeManager())
+
+	// Set terminal info if available
+	if i.GetTerminalInfo() != nil {
+		listScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
+	}
+
+	i.activeScreen = listScreen
+	return nil
+}
+
+// transitionToDetailScreen transitions to the skill detail screen.
+func (i *ManageSkillsIntent) transitionToDetailScreen() tea.Cmd {
+	i.currentState = SkillsStateDetail
+
+	detailScreen := NewSkillDetailScreenFromIntent(i.selectedSkill, i.GetThemeManager())
+
+	if i.GetTerminalInfo() != nil {
+		detailScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
+	}
+
+	i.activeScreen = detailScreen
+	return nil
+}
+
+// transitionToFormScreen transitions to the add/edit form screen.
+func (i *ManageSkillsIntent) transitionToFormScreen(skill *domain.Skill) tea.Cmd {
+	if skill == nil {
+		i.currentState = SkillsStateAdd
+	} else {
+		i.currentState = SkillsStateEdit
+	}
+
+	formScreen := NewSkillFormScreenFromIntent(skill, i.GetThemeManager())
+
+	if i.GetTerminalInfo() != nil {
+		formScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
+	}
+
+	i.activeScreen = formScreen
+	return nil
+}
+
+// transitionToDeleteScreen transitions to the delete confirmation screen.
+func (i *ManageSkillsIntent) transitionToDeleteScreen(skill *domain.Skill) tea.Cmd {
+	i.currentState = SkillsStateDelete
+
+	deleteScreen := NewSkillDeleteConfirmScreenFromIntent(skill, i.GetThemeManager())
+
+	if i.GetTerminalInfo() != nil {
+		deleteScreen.SetTerminalInfo(i.GetTerminalInfo().Width, i.GetTerminalInfo().Height)
+	}
+
+	i.activeScreen = deleteScreen
+	return nil
+}
+
+// handleErrorInternal handles errors by transitioning to error state.
+func (i *ManageSkillsIntent) handleErrorInternal(err error) tea.Cmd {
+	i.result = &IntentResult[*ManageSkillsResult]{
+		Status: Failed,
+		Error: &IntentError{
+			Code:    "SCREEN_ERROR",
+			Message: err.Error(),
+			Cause:   err,
+		},
+	}
+	// Don't deactivate - allow retry by returning to list
+	return i.transitionToListScreen()
+}
+
+// ============================================================================
+// Screen Constructor Wrappers (Avoid Import Cycles)
+// ============================================================================
+
+// NewSkillsListScreenFromIntent creates a SkillsListScreen from intent context.
+// This wrapper avoids import cycles between intents and screens/skills packages.
+func NewSkillsListScreenFromIntent(skills []*domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillsListScreen(skills)
+}
+
+// NewSkillDetailScreenFromIntent creates a SkillDetailScreen from intent context.
+func NewSkillDetailScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillDetailScreen(skill)
+}
+
+// NewSkillFormScreenFromIntent creates a SkillFormScreen from intent context.
+func NewSkillFormScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillFormScreen(skill)
+}
+
+// NewSkillDeleteConfirmScreenFromIntent creates a SkillDeleteConfirmScreen from intent context.
+func NewSkillDeleteConfirmScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillDeleteConfirmScreen(skill)
 }
