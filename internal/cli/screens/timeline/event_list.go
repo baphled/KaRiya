@@ -102,8 +102,9 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc", "q":
+		case "esc":
 			// Cancel and return to main menu
+			// Note: 'q' (quit) is handled by the intent before delegation
 			return nil, &screens.CancelResult{}
 
 		case "up", "k":
@@ -160,6 +161,14 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 				}
 			}
 			return nil, nil
+
+		case "f":
+			// Open filter screen
+			return nil, &screens.NavigateResult{
+				ResultData: map[string]interface{}{
+					"action": "filter",
+				},
+			}
 		}
 	}
 
@@ -234,14 +243,13 @@ func (s *TimelineEventListScreen) updateTableRows() {
 	s.listContainer.SetTable(s.table)
 }
 
-// View renders the event list screen using StandardView with table.
-func (s *TimelineEventListScreen) View() string {
+// RenderContent returns just the content (table) without StandardView wrapper.
+// This allows the intent to wrap it with proper breadcrumbs and themed footer.
+func (s *TimelineEventListScreen) RenderContent() string {
 	// Handle empty state
 	if len(s.events) == 0 {
 		s.listContainer.SetEmptyStateMessage("No events found.")
-		content := s.listContainer.Render()
-		footer := "a: Add event  Esc/q: Back"
-		return s.CreateView([]string{"Main Menu", "Timeline"}, content, footer)
+		return s.listContainer.Render()
 	}
 
 	// Ensure table rows are synchronized
@@ -256,10 +264,18 @@ func (s *TimelineEventListScreen) View() string {
 	s.listContainer.SetPaginationInfo(paginationInfo)
 
 	// Render table via container
-	content := s.listContainer.Render()
+	return s.listContainer.Render()
+}
+
+// View renders the event list screen using StandardView with table.
+// This is kept for backward compatibility but RenderContent() is preferred
+// when the intent manages the StandardView wrapper.
+func (s *TimelineEventListScreen) View() string {
+	content := s.RenderContent()
 
 	// Footer with actions (matching legacy)
-	footer := "↑/↓ or j/k: Navigate  Enter: View details  a: Add  e: Edit  d: Delete  Esc/q: Back"
+	// Note: 'q' is a global key handled by intent (quits app), '?' shows help
+	footer := "↑/↓ or j/k: Navigate  Enter: View details  a: Add  e: Edit  d: Delete  Esc: Back  q: Quit  ?: Help"
 
 	// Use BaseScreen's CreateView helper for StandardView integration
 	breadcrumbs := []string{"Main Menu", "Timeline"}

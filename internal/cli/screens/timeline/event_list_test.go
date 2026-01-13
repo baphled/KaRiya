@@ -199,12 +199,13 @@ var _ = Describe("TimelineEventListScreen", func() {
 			Expect(result.Type()).To(Equal(screens.ResultCancel))
 		})
 
-		It("should return CancelResult on 'q' key", func() {
+		It("should not handle 'q' key (handled by intent)", func() {
+			// 'q' is a global key handled by the intent before delegation
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}
 			_, result := screen.Update(msg)
 
-			Expect(result).NotTo(BeNil())
-			Expect(result.Type()).To(Equal(screens.ResultCancel))
+			// Screen should not process 'q', it should return nil
+			Expect(result).To(BeNil())
 		})
 	})
 
@@ -239,7 +240,8 @@ var _ = Describe("TimelineEventListScreen", func() {
 
 		It("should show event count", func() {
 			view := screen.View()
-			Expect(view).To(ContainSubstring("3 events"))
+			// New format: "Events: 3 | Page 1 of 1"
+			Expect(view).To(ContainSubstring("Events: 3"))
 		})
 
 		It("should show help text in footer", func() {
