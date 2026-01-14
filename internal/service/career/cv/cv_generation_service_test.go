@@ -662,6 +662,6 @@ func NewEmptySectionBuilder() *EmptySectionBuilder {
 	return &EmptySectionBuilder{}
 }
 
-func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, selectedTechnologies []string) ([]*career.CVSection, error) {
+func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
 	return []*career.CVSection{}, nil
 }

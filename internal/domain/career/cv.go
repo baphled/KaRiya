@@ -370,6 +370,10 @@ type CVConfig struct {
 	FocusArea            string   `yaml:"focus_area,omitempty" json:"focus_area,omitempty"`                       // backend, frontend, fullstack, devops
 	LengthFormat         string   `yaml:"length_format,omitempty" json:"length_format,omitempty"`                 // ultra_short, short, standard, full
 
+	// Skills section format (Phase 11 enhancement)
+	SkillsFormat string `yaml:"skills_format,omitempty" json:"skills_format,omitempty"` // flat, grouped
+	SkillsLimit  int    `yaml:"skills_limit,omitempty" json:"skills_limit,omitempty"`   // max skills per section/group (0 = no limit)
+
 	CreatedAt time.Time `yaml:"created_at" json:"created_at"`
 	UpdatedAt time.Time `yaml:"updated_at" json:"updated_at"`
 }
