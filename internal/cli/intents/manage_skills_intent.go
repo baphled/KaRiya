@@ -24,6 +24,9 @@ import (
 // Ensure ManageSkillsIntent implements FilterBehavior interface
 var _ FilterBehavior = (*ManageSkillsIntent)(nil)
 
+// Ensure ManageSkillsIntent implements ScreenResultHandler interface
+var _ ScreenResultHandler = (*ManageSkillsIntent)(nil)
+
 // ManageSkillsIntent implements the Intent interface for managing user-defined skills.
 type ManageSkillsIntent struct {
 	*BaseIntent
@@ -2034,33 +2037,18 @@ func (i *ManageSkillsIntent) EnableScreens() {
 
 // handleScreenResult processes results from screen updates.
 // This is the central hub for all screen-to-intent communication.
+//
+// Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
+// ManageSkillsIntent implements ScreenResultHandler interface for compile-time safety.
 func (i *ManageSkillsIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
-	switch r := result.(type) {
-	case *screens.NavigateResult:
-		return i.handleNavigateResult(r)
-	case *screens.CancelResult:
-		return i.handleCancelResult(r)
-	case *screens.SubmitResult:
-		return i.handleSubmitResult(r)
-	case *screens.ErrorResult:
-		return i.handleErrorResult(r)
-	default:
-		// Unknown result type - treat as error
-		i.result = &IntentResult[*ManageSkillsResult]{
-			Status: Failed,
-			Error: &IntentError{
-				Code:    "UNKNOWN_RESULT",
-				Message: fmt.Sprintf("unknown screen result type: %T", result),
-			},
-		}
-		i.active = false
-		return nil
-	}
+	return NewScreenResultDispatcher(i).Dispatch(result)
 }
 
-// handleNavigateResult handles navigation to a new screen.
+// HandleNavigate handles navigation to a new screen.
 // NavigateResult.Data() contains a map with "target" and "data" keys.
-func (i *ManageSkillsIntent) handleNavigateResult(result *screens.NavigateResult) tea.Cmd {
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	data := result.Data()
 
 	// Extract target and data from navigation result
@@ -2110,8 +2098,10 @@ func (i *ManageSkillsIntent) handleNavigateResult(result *screens.NavigateResult
 	}
 }
 
-// handleCancelResult handles screen cancellation.
-func (i *ManageSkillsIntent) handleCancelResult(result *screens.CancelResult) tea.Cmd {
+// HandleCancel handles screen cancellation.
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	// Check if we should return to previous screen or exit intent
 	if i.currentState == SkillsStateList {
 		// Root state - cancel the entire intent
@@ -2129,8 +2119,10 @@ func (i *ManageSkillsIntent) handleCancelResult(result *screens.CancelResult) te
 	return i.transitionToListScreen()
 }
 
-// handleSubmitResult handles form/confirm submission.
-func (i *ManageSkillsIntent) handleSubmitResult(result *screens.SubmitResult) tea.Cmd {
+// HandleSubmit handles form/confirm submission.
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	data := result.Data()
 
 	switch i.currentState {
@@ -2162,8 +2154,10 @@ func (i *ManageSkillsIntent) handleSubmitResult(result *screens.SubmitResult) te
 	}
 }
 
-// handleErrorResult handles screen errors.
-func (i *ManageSkillsIntent) handleErrorResult(result *screens.ErrorResult) tea.Cmd {
+// HandleError handles screen errors.
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	// Screen encountered an error - propagate to intent
 	data := result.Data()
 	if err, ok := data.(error); ok {
