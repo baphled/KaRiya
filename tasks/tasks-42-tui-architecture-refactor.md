@@ -926,6 +926,199 @@ Run through complete Modal Compliance Checklist:
 
 ---
 
+## Browse Timeline Enhancement: Add Filter/Sort/Search Modals
+
+**Status**: 🟡 IN PROGRESS
+**Started**: 2026-01-14
+**Estimated Time**: 4-6 hours
+
+### Objective
+
+Add the same filter, sort, and search functionality to Browse Timeline that exists in Manage Skills, following the established modal compliance patterns.
+
+### Current State
+
+**Browse Timeline** has:
+- ✅ FilterModalModel (includes both filter and sort in one modal)
+- ❌ Separate SortModal (needed for consistency)
+- ❌ SearchModal (needed for text search)
+
+**Manage Skills** has:
+- ✅ SkillFilterModal (filter only)
+- ✅ SkillSortModal (sort only)
+- ✅ SkillSearchModal (text search)
+
+### Requirements
+
+Create 3 event-specific modals following the skills modal patterns:
+
+1. **EventSearchModal** - Search events by text
+2. **EventSortModal** - Sort events (extract from FilterModal)
+3. **EventFilterModal** - Filter events by company/category/tags (refactor existing FilterModalModel)
+
+### Implementation Plan
+
+#### Phase 1: Create EventSearchModal (1-2 hours)
+
+**Files to Create**:
+- `internal/cli/components/event_search_modal.go`
+- `internal/cli/components/event_search_modal_test.go`
+
+**Implementation**:
+```go
+type EventSearchFormData struct {
+    SearchText string
+}
+
+type EventSearchModal struct {
+    form     *huh.Form
+    formData *EventSearchFormData
+    visible  bool
+    width    int
+    height   int
+    theme    themes.Theme
+}
+```
+
+**Requirements**:
+- [ ] Update signature: `Update(msg tea.Msg)`
+- [ ] Solid background: `Background(styles.ColorBackground)`
+- [ ] KeyBadge footer with Tab/Enter/Esc
+- [ ] RenderOverlay method for bubbletea-overlay
+- [ ] WindowSizeMsg handling
+- [ ] Unit tests (modal creation, update, view)
+
+#### Phase 2: Create EventSortModal (1-2 hours)
+
+**Files to Create**:
+- `internal/cli/components/event_sort_modal.go`
+- `internal/cli/components/event_sort_modal_test.go`
+
+**Implementation**:
+```go
+type EventSortConfig struct {
+    SortBy    string // "date", "company", "category"
+    SortOrder string // "asc", "desc"
+}
+
+type EventSortFormData struct {
+    SortBy    string
+    SortOrder string
+}
+
+type EventSortModal struct {
+    form     *huh.Form
+    formData *EventSortFormData
+    visible  bool
+    width    int
+    height   int
+    theme    themes.Theme
+}
+```
+
+**Requirements**:
+- [ ] Update signature: `Update(msg tea.Msg)`
+- [ ] Solid background
+- [ ] KeyBadge footer
+- [ ] RenderOverlay method
+- [ ] WindowSizeMsg handling
+- [ ] Unit tests
+
+#### Phase 3: Refactor FilterModalModel → EventFilterModal (1 hour)
+
+**Files to Modify**:
+- `internal/cli/components/filter_modal.go` → rename to `event_filter_modal.go`
+- `internal/cli/components/filter_modal_test.go` → rename to `event_filter_modal_test.go`
+
+**Changes**:
+- Extract sort fields (move to EventSortModal)
+- Keep only filter fields (companies, categories, projects, tags)
+- Rename `FilterModalModel` → `EventFilterModal`
+- Add missing compliance requirements (if any)
+
+**Requirements**:
+- [ ] Remove sort fields (SortBy, SortOrder)
+- [ ] Update signature: `Update(msg tea.Msg)` (verify)
+- [ ] KeyBadge footer (verify)
+- [ ] RenderOverlay method (verify)
+- [ ] Update tests
+
+#### Phase 4: Integrate Modals into BrowseTimelineIntent (1-2 hours)
+
+**File to Modify**:
+- `internal/cli/intents/browse_timeline_intent.go`
+
+**Changes**:
+```go
+type BrowseTimelineIntent struct {
+    // ... existing fields
+    
+    // Replace filterModal with 3 separate modals
+    eventFilterModal *components.EventFilterModal
+    eventSortModal   *components.EventSortModal
+    eventSearchModal *components.EventSearchModal
+}
+```
+
+**Implementation Checklist**:
+- [ ] Add modal fields (filterModal, sortModal, searchModal)
+- [ ] Add keyboard shortcuts: 'f' (filter), 's' (sort), '/' (search)
+- [ ] Add modal priority handling (lines 154-165 pattern from ManageSkills)
+- [ ] Add modal render overlay methods (3 methods)
+- [ ] Add modal update handlers (3 handlers)
+- [ ] Add modal initialization methods (3 methods)
+- [ ] Update View() to overlay all 3 modals
+- [ ] Update getContextHelp() with new shortcuts
+
+#### Phase 5: Add E2E Tests (1-2 hours)
+
+**File to Create**:
+- `internal/cli/intents/browse_timeline_modals_test.go`
+
+**Test Coverage**:
+- [ ] SearchModal E2E tests (4 tests)
+  - Open search → type text → Enter → see filtered results
+  - Open search → Esc → cancel without applying
+  - Tab navigation in search modal
+  - Empty search submission
+- [ ] FilterModal E2E tests (4 tests)
+  - Apply filter → see filtered results
+  - Cancel filter with Esc
+  - Tab navigation in filter modal
+  - Submit filter with Enter
+- [ ] SortModal E2E tests (4 tests)
+  - Apply sort → see sorted results
+  - Cancel sort with Esc
+  - Tab navigation in sort modal
+  - Submit sort with Enter
+
+**Total**: 12 E2E tests minimum
+
+#### Phase 6: Update Documentation (30 minutes)
+
+**Files to Update**:
+- [ ] `docs/workflows/BROWSE_TIMELINE_WORKFLOW.md` - Add search/filter/sort steps
+- [ ] `docs/KEYBOARD_SHORTCUTS_GUIDE.md` - Add new shortcuts (f, s, /)
+- [ ] Update STATE_MATRIX.md if needed (`make generate-diagrams`)
+
+### Acceptance Criteria
+
+- [ ] All 3 new modals created and fully compliant
+- [ ] BrowseTimeline has same filter/sort/search UX as ManageSkills
+- [ ] All 12+ E2E tests passing
+- [ ] Zero regressions in existing tests
+- [ ] Keyboard shortcuts visible and functional
+- [ ] Documentation updated
+
+### Success Metrics
+
+- **Modal Compliance**: 3/3 modals (100%)
+- **Test Coverage**: 12+ E2E tests
+- **Keyboard Shortcuts**: 3 new shortcuts (f, s, /)
+- **User Impact**: Consistent UX across Browse Timeline and Manage Skills
+
+---
+
 **View() Method Requirements**:
 
 Current implementation does NOT follow pattern. Must refactor to:
