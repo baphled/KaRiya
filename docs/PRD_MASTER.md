@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # QuikCV & KoRiyah: Content-Addressable Career Journal & CV Generator — PRD
 
 ---

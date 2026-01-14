@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task 15: Migrate GenerateCV, ExportArtifact, and ConfigureSystem Intents to StandardView
 
 ## Overview

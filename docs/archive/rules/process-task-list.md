@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 ## Task Planning + Execution Guide
 
 This guide defines a deterministic, tool-driven process for planning and executing development tasks via Avante.nvim. It is designed to minimize token waste, prevent execution stalls, and ensure reliable task completion while preserving senior-engineer quality standards.

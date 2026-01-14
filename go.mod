@@ -15,7 +15,7 @@ require (
 	github.com/onsi/gomega v1.39.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/rmhubbert/bubbletea-overlay v0.6.3
-	golang.org/x/text v0.32.0
+	golang.org/x/text v0.33.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.40.1
 )

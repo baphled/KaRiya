@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task List: Career Event Capture System
 
 Based on PRD: `tasks/01-career-event-capture.md`

@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # KaRiya CLI TUI Workflow Audit Report
 
 ## 1. User Experience (UX)

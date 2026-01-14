@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Development Rules & Guidelines
 
 This directory contains all development standards, guidelines, and workflows for the KaRiya project. These documents define how we work, ensuring consistency, quality, and efficiency.

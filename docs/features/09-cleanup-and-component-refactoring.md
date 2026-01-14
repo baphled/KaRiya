@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # PRD: Cleanup Orphaned Views & Refactor Components for Intent System
 
 **Document Version**: 3.0

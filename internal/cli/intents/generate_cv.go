@@ -212,7 +212,7 @@ type GenerateCVModel struct {
 
 	// Length format selection fields (NEW)
 	selectedLengthFormat cv.LengthFormat // UltraShort / Short / Standard / Full
-	lengthFormatCursor   int             // Cursor position for length selection
+	// lengthFormatCursor reserved for future length format selection UI
 
 	// Export-related fields
 	selectedExportFormat CVExportFormat

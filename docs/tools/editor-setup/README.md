@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Editor & Tool Setup
 
 This directory contains editor-specific setup guides and configurations for development tools used in the KaRiya project.

@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Integration Action Plan - Burst & Fact CLI Integration
 
 **Status**: 🔴 **CRITICAL** - Algorithms complete, CLI integration missing

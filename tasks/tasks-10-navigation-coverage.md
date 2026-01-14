@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task List: Navigation Test Coverage Enhancement for KaRiya TUI
 
 **PRD Reference**: `docs/features/10-navigation-coverage.md`

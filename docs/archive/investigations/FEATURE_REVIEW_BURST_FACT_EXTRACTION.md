@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Feature Review: Burst and Fact Extraction
 
 **Date**: 2025-12-30

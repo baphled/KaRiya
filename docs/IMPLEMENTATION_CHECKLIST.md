@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # KaRiya TUI Intent Architecture - Implementation Checklist
 
 This document provides a detailed, phase-by-phase checklist for implementing the production-ready TUI intent architecture defined in [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md).

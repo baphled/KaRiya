@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # CV Generation Examples
 
 This document provides examples of CVs generated for different roles and audiences, showing how KaRiya transforms the same events into tailored CV bullets.

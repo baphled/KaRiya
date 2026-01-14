@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Terminal UI Styling Reference
 
 This document provides a comprehensive reference for styling terminal UIs in KaRiya using lipgloss and bubbles.

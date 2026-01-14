@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Lipgloss & Bubbles Terminal UI Guide
 
 This guide demonstrates best practices for building beautiful, interactive terminal UIs in Go using **lipgloss** for styling and **bubbles** for interactive components.

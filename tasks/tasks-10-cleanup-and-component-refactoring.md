@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task List: Cleanup Orphaned Views & Refactor Components for Intent System
 
 **PRD Reference**: `tasks/prd-cleanup-and-component-refactoring.md`

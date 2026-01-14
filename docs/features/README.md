@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Feature Specifications
 
 This directory contains detailed specifications for each feature of the KaRiya Career Journal & CV Generator application.

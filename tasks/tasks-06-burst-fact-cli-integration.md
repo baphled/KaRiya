@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task List: Burst & Fact CLI Integration
 
 **Based on**: `BURST_FACTS_INTEGRATION_REPORT.md`

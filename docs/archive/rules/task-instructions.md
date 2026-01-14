@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 Use `master-task-prompt` and the memory-loaded language rules to process the atomic tasks for: ./tasks/tasks-05-burst-fact-extraction.md
 
   - Stick strictly to `master-task-prompt` guidelines

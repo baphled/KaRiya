@@ -6,7 +6,7 @@ aliases:
   - Engineering Workflow Checklist
 created: 2025-07-28T23:39
 lead: Senior Engineer Context & Prompt Guidelines
-modified: 2026-01-13T23:45
+modified: 2026-01-14T02:45
 template-type: Note
 ---
 

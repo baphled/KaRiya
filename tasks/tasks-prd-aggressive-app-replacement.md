@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task List: Aggressive app.go Replacement with Intent-Based Architecture
 
 **PRD Reference**: `prd-aggressive-app-replacement.md`

@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # CI Local Checks Guide
 
 This guide explains how to run all CI checks locally before pushing to GitHub.

@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Phase 2 Completion Report: CaptureEvent Intent Template
 
 **Date**: 2026-01-03

@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Centralized Key Handling Developer Guide
 
 > **Last Updated**: 2026-01-12  

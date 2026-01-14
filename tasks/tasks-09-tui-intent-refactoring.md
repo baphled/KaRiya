@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task List: TUI Intent Architecture Refactoring
 
 **PRD Reference**: `docs/features/07-tui-intent-refactoring.md`

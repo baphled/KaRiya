@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # app.go Migration Plan: Screen-Based to Intent-Based Architecture
 
 **Document Version**: 1.0

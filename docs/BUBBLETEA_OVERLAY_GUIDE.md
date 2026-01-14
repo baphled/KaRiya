@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # bubbletea-overlay Library Guide
 
 **Library**: https://github.com/rmhubbert/bubbletea-overlay  

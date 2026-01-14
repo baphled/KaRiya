@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Custom CV Format Implementation Proposal
 
 **Date**: 2026-01-08  

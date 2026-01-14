@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task 25: CaptureEvent Modal & Review Fixes
 
 **Created**: 2026-01-08

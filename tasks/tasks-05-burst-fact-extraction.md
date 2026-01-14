@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Task List: Burst and Fact Extraction Feature
 
 **PRD Reference**: `docs/features/03-burst-fact-extraction.md`

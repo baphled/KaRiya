@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Setup Guides
 
 This directory contains comprehensive setup and installation guides for the KaRiya project. These guides walk you through setting up your development environment and understanding the project's automation systems.

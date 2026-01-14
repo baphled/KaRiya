@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # PRD: TUI Intent Architecture Refactoring
 
 **Document Status**: Ready for Implementation

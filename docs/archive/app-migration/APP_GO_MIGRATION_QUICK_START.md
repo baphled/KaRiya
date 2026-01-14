@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # app.go Migration Quick Start Guide
 
 **Version**: 1.0

@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Burst and Fact Extraction Guide
 
 **Purpose**: Understand how KaRiya automatically detects related events (bursts) and extracts inferred competencies and achievements (facts).

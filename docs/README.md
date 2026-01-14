@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # KaRiya Documentation
 
 Welcome to the KaRiya Career Journal & CV Generator documentation. This directory contains all project documentation organized by purpose.

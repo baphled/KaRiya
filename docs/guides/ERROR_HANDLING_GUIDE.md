@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Error Handling Guide for KaRiya Models
 
 **Document Version**: 1.0

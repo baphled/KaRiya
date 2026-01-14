@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Event Capture Workflow
 
 **Complete Guide to Capturing Career Events with Burst and Fact Extraction**

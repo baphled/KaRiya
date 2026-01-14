@@ -17,6 +17,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // GenerateCVIntent implements the Intent interface for generating CVs.
@@ -1451,8 +1453,9 @@ func (i *GenerateCVIntent) viewSelectSkillsConfig() string {
 		formatDesc = " (skills grouped by category)"
 	}
 
+	caser := cases.Title(language.English)
 	content.WriteString(fmt.Sprintf("%sFormat: %s%s%s\n", cursor1,
-		strings.Title(i.state.selectedSkillsFormat), formatCheckmark, formatDesc))
+		caser.String(i.state.selectedSkillsFormat), formatCheckmark, formatDesc))
 	content.WriteString("   Press Space to toggle between Flat / Grouped\n\n")
 
 	// Option 2: Limit selection

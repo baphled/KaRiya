@@ -1,3 +1,7 @@
+---
+created: 2026-01-14T02:45
+modified: 2026-01-14T02:45
+---
 # Browse Timeline Workflow
 
 **Complete guide for browsing, viewing, editing, and managing career events**
