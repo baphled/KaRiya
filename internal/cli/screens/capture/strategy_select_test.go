@@ -3,9 +3,9 @@ package capture_test
 import (
 	"testing"
 
-	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/capture"
+	"github.com/baphled/kariya/internal/cli/types"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -160,7 +160,7 @@ var _ = Describe("StrategySelectScreen", func() {
 
 			navResult, ok := result.(*screens.NavigateResult)
 			Expect(ok).To(BeTrue())
-			Expect(navResult.Data()).To(Equal(intents.StrategyQuick))
+			Expect(navResult.Data()).To(Equal(types.StrategyQuick))
 		})
 
 		It("should include Manual strategy in result data when selected", func() {
@@ -173,7 +173,7 @@ var _ = Describe("StrategySelectScreen", func() {
 
 			navResult, ok := result.(*screens.NavigateResult)
 			Expect(ok).To(BeTrue())
-			Expect(navResult.Data()).To(Equal(intents.StrategyManual))
+			Expect(navResult.Data()).To(Equal(types.StrategyManual))
 		})
 
 		It("should include selected index in metadata", func() {

@@ -1,10 +1,10 @@
 package capture_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,19 +33,19 @@ var _ = Describe("EventFormScreen", func() {
 		cliService = nil
 
 		breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}
-		screen = capture.NewEventFormScreen(cliService, breadcrumbs, intents.StrategyQuick)
+		screen = capture.NewEventFormScreen(cliService, breadcrumbs, types.StrategyQuick)
 	})
 
 	Describe("Creation", func() {
 		It("should create with Quick strategy", func() {
 			breadcrumbs := []string{"Main Menu", "Capture Event"}
-			screen = capture.NewEventFormScreen(cliService, breadcrumbs, intents.StrategyQuick)
+			screen = capture.NewEventFormScreen(cliService, breadcrumbs, types.StrategyQuick)
 			Expect(screen).NotTo(BeNil())
 		})
 
 		It("should create with Manual strategy", func() {
 			breadcrumbs := []string{"Main Menu", "Capture Event"}
-			screen = capture.NewEventFormScreen(cliService, breadcrumbs, intents.StrategyManual)
+			screen = capture.NewEventFormScreen(cliService, breadcrumbs, types.StrategyManual)
 			Expect(screen).NotTo(BeNil())
 		})
 
@@ -65,7 +65,7 @@ var _ = Describe("EventFormScreen", func() {
 	Describe("Strategy Configuration", func() {
 		It("should configure form with Quick strategy", func() {
 			breadcrumbs := []string{"Main Menu", "Capture Event"}
-			screen = capture.NewEventFormScreen(cliService, breadcrumbs, intents.StrategyQuick)
+			screen = capture.NewEventFormScreen(cliService, breadcrumbs, types.StrategyQuick)
 
 			// Quick strategy should show minimal fields
 			// Exact field visibility depends on form configuration
@@ -74,7 +74,7 @@ var _ = Describe("EventFormScreen", func() {
 
 		It("should configure form with Manual strategy", func() {
 			breadcrumbs := []string{"Main Menu", "Capture Event"}
-			screen = capture.NewEventFormScreen(cliService, breadcrumbs, intents.StrategyManual)
+			screen = capture.NewEventFormScreen(cliService, breadcrumbs, types.StrategyManual)
 
 			// Manual strategy should show all fields
 			Expect(screen).NotTo(BeNil())
@@ -173,7 +173,7 @@ var _ = Describe("EventFormScreen", func() {
 			screen = capture.NewEventFormScreenWithEvent(
 				cliService,
 				breadcrumbs,
-				intents.StrategyManual,
+				types.StrategyManual,
 				existingEvent,
 			)
 
@@ -187,7 +187,7 @@ var _ = Describe("EventFormScreen", func() {
 			screen = capture.NewEventFormScreenWithEvent(
 				cliService,
 				breadcrumbs,
-				intents.StrategyManual,
+				types.StrategyManual,
 				nil,
 			)
 
@@ -200,7 +200,7 @@ var _ = Describe("EventFormScreen", func() {
 	Describe("State Preservation", func() {
 		It("should preserve breadcrumbs", func() {
 			breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}
-			screen = capture.NewEventFormScreen(cliService, breadcrumbs, intents.StrategyQuick)
+			screen = capture.NewEventFormScreen(cliService, breadcrumbs, types.StrategyQuick)
 
 			view := screen.View()
 			Expect(view).To(ContainSubstring("Main Menu"))

@@ -3,19 +3,20 @@ package intents
 import (
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-// CaptureStrategy defines how the event should be captured.
-type CaptureStrategy string
+// Re-export types for backward compatibility
+type CaptureStrategy = types.CaptureStrategy
 
 const (
 	// StrategyQuick captures only required fields (event text), date defaults to today
-	StrategyQuick CaptureStrategy = "quick"
+	StrategyQuick = types.StrategyQuick
 
 	// StrategyManual shows all fields with optional field toggle
-	StrategyManual CaptureStrategy = "manual"
+	StrategyManual = types.StrategyManual
 )
 
 // CaptureEventContext is the minimal context passed to CaptureEvent intent.

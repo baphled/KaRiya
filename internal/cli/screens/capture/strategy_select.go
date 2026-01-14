@@ -3,8 +3,8 @@ package capture
 import (
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/types"
 )
 
 // StrategySelectScreen allows users to choose between Quick and Manual capture strategies.
@@ -25,12 +25,12 @@ import (
 // - internal/cli/screens/base/select_screen.go (BaseSelectScreen[T])
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration)
 type StrategySelectScreen struct {
-	*base.BaseSelectScreen[intents.CaptureStrategy]
+	*base.BaseSelectScreen[types.CaptureStrategy]
 }
 
 // strategyItem represents a strategy with its label and description for rendering.
 type strategyItem struct {
-	strategy    intents.CaptureStrategy
+	strategy    types.CaptureStrategy
 	label       string
 	description string
 }
@@ -43,19 +43,19 @@ type strategyItem struct {
 // Returns a StrategySelectScreen with Quick strategy selected by default (index 0).
 func NewStrategySelectScreen(breadcrumbs []string) *StrategySelectScreen {
 	// Define strategy options with labels and descriptions
-	strategies := []intents.CaptureStrategy{
-		intents.StrategyQuick,
-		intents.StrategyManual,
+	strategies := []types.CaptureStrategy{
+		types.StrategyQuick,
+		types.StrategyManual,
 	}
 
 	// Create item renderer that shows strategy label and description
-	renderer := func(strategy intents.CaptureStrategy) string {
+	renderer := func(strategy types.CaptureStrategy) string {
 		var label, description string
 		switch strategy {
-		case intents.StrategyQuick:
+		case types.StrategyQuick:
 			label = "Quick"
 			description = "Capture with minimal fields (event text only)"
-		case intents.StrategyManual:
+		case types.StrategyManual:
 			label = "Manual"
 			description = "Full form with optional fields (date, company, project, tags)"
 		default:

@@ -1,11 +1,11 @@
 package capture
 
 import (
-	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -39,7 +39,7 @@ type EventFormScreen struct {
 	breadcrumbs []string
 
 	// strategy is the capture strategy (quick or manual)
-	strategy intents.CaptureStrategy
+	strategy types.CaptureStrategy
 }
 
 // NewEventFormScreen creates a new EventFormScreen with the specified strategy.
@@ -53,7 +53,7 @@ type EventFormScreen struct {
 func NewEventFormScreen(
 	cliService *service.CLIEventService,
 	breadcrumbs []string,
-	strategy intents.CaptureStrategy,
+	strategy types.CaptureStrategy,
 ) *EventFormScreen {
 	captureForm := models.NewCaptureForm(cliService)
 	captureForm.SetStrategy(string(strategy))
@@ -80,7 +80,7 @@ func NewEventFormScreen(
 func NewEventFormScreenWithEvent(
 	cliService *service.CLIEventService,
 	breadcrumbs []string,
-	strategy intents.CaptureStrategy,
+	strategy types.CaptureStrategy,
 	event *career.CareerEvent,
 ) *EventFormScreen {
 	screen := NewEventFormScreen(cliService, breadcrumbs, strategy)
