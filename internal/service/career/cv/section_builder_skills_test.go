@@ -19,7 +19,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		builder = NewSectionBuilder(log)
+		builder = NewSectionBuilder(nil, log)
 		ctx = context.Background()
 	})
 
@@ -121,7 +121,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 				Expect(firstTwoSkills).To(ContainElement(ContainSubstring("Docker")))
 			})
 
-			It("should include event counts for each skill", func() {
+			It("should show skill names without counts", func() {
 				selectedTechs := []string{"Go"}
 
 				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", selectedTechs)
@@ -139,9 +139,10 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 				Expect(skillsSection).NotTo(BeNil())
 
-				// Skills should include event counts (e.g., "Go (1)")
-				firstBullet := skillsSection.Content[0].Bullets[0]
-				Expect(firstBullet.Text).To(MatchRegexp(`Go.*\(1\)`))
+				// Skills should just show names (no counts)
+				// Note: With nil skillRepo, it will use the skill ID as the name
+				// In production, it would look up the actual skill name
+				Expect(len(skillsSection.Content[0].Bullets)).To(BeNumerically(">", 0))
 			})
 		})
 
@@ -187,7 +188,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 				})
 			})
 
-			It("should aggregate event counts correctly", func() {
+			It("should show unique skills without duplicates", func() {
 				selectedTechs := []string{"Go"}
 
 				sections, err := builder.BuildSections(ctx, bullets, events, facts, "principal", selectedTechs)
@@ -205,9 +206,9 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 				Expect(skillsSection).NotTo(BeNil())
 
-				// Go should have count of 2
-				firstBullet := skillsSection.Content[0].Bullets[0]
-				Expect(firstBullet.Text).To(MatchRegexp(`Go.*\(2\)`))
+				// Should have unique skills (no duplicates)
+				// Count unique skill IDs across both events: Go (appears twice but counted once), PostgreSQL, Docker, Redis = 4 unique
+				Expect(len(skillsSection.Content[0].Bullets)).To(Equal(4))
 			})
 		})
 

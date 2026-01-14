@@ -20,7 +20,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	BeforeEach(func() {
 		log = logger.DefaultLogger()
-		builder = NewSectionBuilder(log)
+		builder = NewSectionBuilder(nil, log)
 		ctx = context.Background()
 	})
 

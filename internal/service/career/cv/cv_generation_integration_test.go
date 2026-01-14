@@ -58,7 +58,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 
 			// Create CV services
 			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
+			sectionBuilder := NewSectionBuilder(nil, log)
 			configManager := NewMemoryConfigManager()
 
 			cvGenService := NewCVGenerationService(
@@ -124,7 +124,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 
 			// Create CV services
 			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
+			sectionBuilder := NewSectionBuilder(nil, log)
 			configManager := NewMemoryConfigManager()
 
 			cvGenService := NewCVGenerationService(
@@ -181,7 +181,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 
 			// Create CV services
 			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
+			sectionBuilder := NewSectionBuilder(nil, log)
 			configManager := NewMemoryConfigManager()
 
 			cvGenService := NewCVGenerationService(
@@ -239,7 +239,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 
 			// Create CV services
 			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
+			sectionBuilder := NewSectionBuilder(nil, log)
 			configManager := NewMemoryConfigManager()
 
 			cvGenService := NewCVGenerationService(
@@ -304,7 +304,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 
 			// Create CV services
 			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
+			sectionBuilder := NewSectionBuilder(nil, log)
 			configManager := NewMemoryConfigManager()
 
 			cvGenService := NewCVGenerationService(
@@ -358,7 +358,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 
 			// Create CV services
 			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
+			sectionBuilder := NewSectionBuilder(nil, log)
 			configManager := NewMemoryConfigManager()
 
 			cvGenService := NewCVGenerationService(

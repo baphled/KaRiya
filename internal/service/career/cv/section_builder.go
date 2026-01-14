@@ -2,13 +2,13 @@ package cv
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/google/uuid"
 )
 
@@ -21,13 +21,15 @@ type SectionBuilder interface {
 
 // DefaultSectionBuilder is the default implementation of SectionBuilder
 type DefaultSectionBuilder struct {
-	logger *logger.Logger
+	skillRepo careerrepo.SkillRepository
+	logger    *logger.Logger
 }
 
 // NewSectionBuilder creates a new SectionBuilder instance
-func NewSectionBuilder(log *logger.Logger) *DefaultSectionBuilder {
+func NewSectionBuilder(skillRepo careerrepo.SkillRepository, log *logger.Logger) *DefaultSectionBuilder {
 	return &DefaultSectionBuilder{
-		logger: log,
+		skillRepo: skillRepo,
+		logger:    log,
 	}
 }
 
@@ -168,70 +170,91 @@ func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet
 }
 
 // buildSkillsSection creates the technical skills section from event skills (Phase 11 - Task 40)
-// Prioritizes selectedTechnologies if provided, aggregates event counts, sorted by relevance
+// Looks up skill names from IDs, prioritizes selectedTechnologies if provided
 func (sb *DefaultSectionBuilder) buildSkillsSection(events []*career.CareerEvent, selectedTechnologies []string, order int) *career.CVSection {
-	// Aggregate skills from all events with counts
-	skillCounts := make(map[string]int)
+	// Collect unique skill IDs from all events
+	skillIDSet := make(map[string]bool)
 	for _, event := range events {
-		for _, skill := range event.Skills {
-			if skill != "" {
-				skillCounts[skill]++
+		for _, skillID := range event.Skills {
+			if skillID != "" {
+				skillIDSet[skillID] = true
 			}
 		}
 	}
 
-	if len(skillCounts) == 0 {
+	if len(skillIDSet) == 0 {
 		return nil
 	}
 
-	// Create skill list with counts
-	type skillWithCount struct {
-		name  string
-		count int
+	// Convert to slice for lookup
+	skillIDs := make([]string, 0, len(skillIDSet))
+	for id := range skillIDSet {
+		skillIDs = append(skillIDs, id)
 	}
 
-	skills := make([]skillWithCount, 0, len(skillCounts))
-	for name, count := range skillCounts {
-		skills = append(skills, skillWithCount{name: name, count: count})
+	// Look up skill names from repository
+	// Create map of ID -> Name
+	skillNames := make(map[string]string)
+	if sb.skillRepo != nil {
+		for _, skillID := range skillIDs {
+			skill, err := sb.skillRepo.GetByID(context.Background(), skillID)
+			if err == nil && skill != nil {
+				skillNames[skillID] = skill.Name
+			} else {
+				// Fallback: use ID if lookup fails
+				skillNames[skillID] = skillID
+			}
+		}
+	} else {
+		// No repository: use IDs as names (shouldn't happen in production)
+		for _, skillID := range skillIDs {
+			skillNames[skillID] = skillID
+		}
 	}
 
-	// Sort skills: selected technologies first, then by count descending, then alphabetically
+	// Create list of skill names
+	names := make([]string, 0, len(skillNames))
+	for _, name := range skillNames {
+		names = append(names, name)
+	}
+
+	// Sort skills: selected technologies first, then alphabetically
 	selectedSet := make(map[string]bool)
-	for _, tech := range selectedTechnologies {
-		selectedSet[tech] = true
+	for _, techID := range selectedTechnologies {
+		selectedSet[techID] = true
 	}
 
-	sort.Slice(skills, func(i, j int) bool {
-		iSelected := selectedSet[skills[i].name]
-		jSelected := selectedSet[skills[j].name]
+	sort.Slice(names, func(i, j int) bool {
+		// Check if either is selected (need to check by ID, not name)
+		iID := ""
+		jID := ""
+		for id, name := range skillNames {
+			if name == names[i] {
+				iID = id
+			}
+			if name == names[j] {
+				jID = id
+			}
+		}
+
+		iSelected := selectedSet[iID]
+		jSelected := selectedSet[jID]
 
 		// Selected technologies come first
 		if iSelected != jSelected {
 			return iSelected
 		}
 
-		// Within selected or non-selected, sort by count descending
-		if skills[i].count != skills[j].count {
-			return skills[i].count > skills[j].count
-		}
-
-		// Same count, sort alphabetically
-		return skills[i].name < skills[j].name
+		// Alphabetical order
+		return names[i] < names[j]
 	})
 
-	// Create bullets with skill names and counts
-	bullets := make([]*career.CVBullet, 0, len(skills))
-	for _, skill := range skills {
-		text := skill.name
-		if skill.count > 1 {
-			text = fmt.Sprintf("%s (%d)", skill.name, skill.count)
-		} else {
-			text = fmt.Sprintf("%s (1)", skill.name)
-		}
-
+	// Create bullets with skill names (no counts)
+	bullets := make([]*career.CVBullet, 0, len(names))
+	for _, name := range names {
 		bullets = append(bullets, &career.CVBullet{
 			ID:   uuid.New().String(),
-			Text: text,
+			Text: name,
 		})
 	}
 

@@ -745,7 +745,10 @@ func initCVGenerationService(careerService *careerservice.Service, configMgr cv.
 		careerService.GetFactRepository(),
 		log,
 	)
-	sectionBuilder := cv.NewSectionBuilder(log)
+	sectionBuilder := cv.NewSectionBuilder(
+		careerService.GetSkillRepository(),
+		log,
+	)
 	return cv.NewCVGenerationService(
 		careerService.GetEventRepository(),
 		careerService.GetFactRepository(),
