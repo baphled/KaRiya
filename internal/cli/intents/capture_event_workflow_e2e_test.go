@@ -7,6 +7,25 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// CaptureEvent E2E Workflow Tests
+//
+// These tests validate the complete CaptureEvent workflow as documented in:
+// - docs/workflows/EVENT_CAPTURE_WORKFLOW.md
+// - docs/PRD_MASTER.md (Section 7: UI Canvas, Section 9a: Flow Diagram)
+//
+// Expected workflow per PRD:
+//   Choose Strategy → Form → Pre-Save Review → Submit → Save →
+//   Enrichment → Enrichment Review → Complete
+//
+// Key points:
+// - Enrichment is AUTOMATIC after save (not optional/user-triggered)
+// - User MUST see Enrichment Review state after save (not main menu)
+// - Bursts/facts shown in Enrichment Review (not Pre-Save Review)
+// - User confirms enriched data before completing workflow
+//
+// Status: Currently FAILING due to form submission issues in E2E test environment.
+// Once form submission is fixed, these tests validate the correct PRD workflow.
+
 var _ = Describe("CaptureEvent E2E Workflow", func() {
 	var env *e2e.TestEnv
 
@@ -19,7 +38,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 	})
 
 	Describe("Standard Capture Workflow (Quick Mode)", func() {
-		It("should complete the full workflow: Choose → Form → Review → Submit → Post-Save Review → Complete", func() {
+		It("should complete the full workflow: Choose → Form → Pre-Save Review → Submit → Enrichment → Enrichment Review → Complete", func() {
 			// Starting state: Main menu
 			view := env.GetView()
 			Expect(view).To(ContainSubstring("Capture Event"),
@@ -97,22 +116,24 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			// Press Enter to dismiss the modal
 			env.Confirm()
 
-			// Step 9: CRITICAL CHECK - Should return to Review state (post-save)
-			// This is the bug being tested - should NOT go back to main menu
+			// Step 9: CRITICAL CHECK - Should go to Enrichment Review state (post-save)
+			// Per PRD_MASTER.md Section 7: Submit → Enrichment → Enrichment Review
+			// This is the CORRECT expected behavior per PRD, not a bug
 			view = env.GetView()
 
-			// Expected: Review state with enriched data (bursts and facts)
-			// NOT expected: Main menu
+			// Expected: Enrichment Review state with inferred bursts and facts
+			// NOT expected: Main menu (that would be incorrect per PRD)
 			Expect(view).NotTo(ContainSubstring("Main Menu"),
-				"After save, should return to Review state, NOT main menu")
+				"After save and enrichment, should show Enrichment Review state, NOT main menu")
 
-			// Should show Review state with enriched data
+			// Should show Enrichment Review state with enriched data
 			Expect(view).To(SatisfyAny(
 				ContainSubstring("Review"),
+				ContainSubstring("Enrichment"),
 				ContainSubstring("Burst"),
 				ContainSubstring("Fact"),
 				ContainSubstring("Inferred"),
-			), "Post-save review should show enriched bursts and facts")
+			), "Enrichment Review should show inferred bursts and facts per PRD")
 
 			// Step 10: Press Enter to complete the intent
 			env.Confirm()
