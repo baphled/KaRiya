@@ -43,7 +43,7 @@
         "components",
         "ci",
         "cv",
-        "tui"
+        "tui",
         "navigation"
       ]
     ],
