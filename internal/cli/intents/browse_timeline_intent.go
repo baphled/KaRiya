@@ -126,6 +126,7 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 			filteredEvents: context.Events,
 			selectedIndex:  0,
 			filters:        context.InitialFilters,
+			filterStack:    NewFilterStack(),
 			selectedFacts:  make([]*career.Fact, 0),
 			viewedEvents:   make([]*career.CareerEvent, 0),
 		},
@@ -166,6 +167,10 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		if applied && searchData != nil {
 			// Search was applied - update filters and refresh list
 			i.state.filters.SearchText = searchData.SearchText
+			// Track search filter in stack for FIFO clearing
+			if searchData.SearchText != "" {
+				i.state.filterStack.Push(FilterLayerSearch)
+			}
 			i.applyFilters()
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 		}
@@ -182,6 +187,18 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			i.state.filters.Projects = filterData.Projects
 			i.state.filters.SortBy = filterData.SortBy
 			i.state.filters.SortOrder = filterData.SortOrder
+
+			// Track filters in stack for FIFO clearing
+			if len(filterData.Companies) > 0 {
+				i.state.filterStack.Push(FilterLayerCompany)
+			}
+			if len(filterData.Categories) > 0 {
+				i.state.filterStack.Push(FilterLayerCategory)
+			}
+			if len(filterData.Projects) > 0 {
+				i.state.filterStack.Push(FilterLayerProject)
+			}
+
 			i.applyFilters()
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 		}
@@ -195,6 +212,12 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			// Sort was applied - update filters and refresh list
 			i.state.filters.SortBy = sortData.SortBy
 			i.state.filters.SortOrder = sortData.SortOrder
+
+			// Track sort in stack if it's not default
+			if sortData.SortBy != "date" || sortData.SortOrder != "desc" {
+				i.state.filterStack.Push(FilterLayerSort)
+			}
+
 			i.applyFilters()
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 		}
@@ -329,7 +352,7 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		}
 		// KeyBack (esc) is handled by the screen as CancelResult
 
-		// Handle intent-specific shortcuts (f, s, /) on timeline list screen
+		// Handle intent-specific shortcuts (f, s, /, x) on timeline list screen
 		if i.state.currentState == BrowseStateTimeline {
 			switch keyMsg.String() {
 			case "f":
@@ -341,6 +364,14 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			case "/":
 				// Open search modal
 				return i.openSearchModal()
+			case "x":
+				// Clear filters (FIFO order - most recent first)
+				if i.HasActiveFilters() {
+					i.ClearFilters()
+					i.ApplyFilters()
+					return i.RefreshData()
+				}
+				return nil
 			}
 		}
 	}
@@ -470,11 +501,15 @@ func (i *BrowseTimelineIntent) applyFilters() {
 
 	for _, evt := range i.context.Events {
 		// Apply text search (if specified)
+		// Search across text, company, categories, and project fields
 		if i.state.filters.SearchText != "" {
-			// Simple case-insensitive contains match
-			// TODO: More sophisticated search (for now, skip text search)
-			// Note: When implemented, should check if event text contains search text
-			// and continue if it doesn't match
+			categoriesStr := ""
+			if len(evt.Categories) > 0 {
+				categoriesStr = evt.Categories[0] // Primary category for search
+			}
+			if !SearchableFields(i.state.filters.SearchText, evt.Text, evt.Company, categoriesStr, evt.Project) {
+				continue // Skip events that don't match search
+			}
 		}
 
 		// Apply tag filters
@@ -566,6 +601,105 @@ func (i *BrowseTimelineIntent) applyFilters() {
 	}
 
 	i.state.filteredEvents = filtered
+}
+
+// ============================================================================
+// FilterBehavior Implementation (Source of Truth: ManageSkills)
+// ============================================================================
+
+// HasActiveFilters returns true if any non-default filters are active.
+// Implements FilterBehavior interface.
+func (i *BrowseTimelineIntent) HasActiveFilters() bool {
+	f := i.state.filters
+	if f == nil {
+		return false
+	}
+
+	// Check all filter types
+	return f.SearchText != "" ||
+		len(f.Tags) > 0 ||
+		len(f.Companies) > 0 ||
+		len(f.Categories) > 0 ||
+		len(f.Projects) > 0 ||
+		f.DateFrom != "" ||
+		f.DateTo != "" ||
+		(f.SortBy != "" && f.SortBy != "date") || // date is default
+		(f.SortOrder != "" && f.SortOrder != "desc") // desc is default
+}
+
+// ClearFilters clears filters in FIFO order (most recent first).
+// Pressing 'x' multiple times progressively removes filters.
+// Implements FilterBehavior interface.
+func (i *BrowseTimelineIntent) ClearFilters() {
+	// If no filter stack or empty stack, clear everything
+	if i.state.filterStack == nil || i.state.filterStack.IsEmpty() {
+		i.clearAllFilters()
+		return
+	}
+
+	// Pop most recent filter layer
+	layer := i.state.filterStack.Pop()
+
+	// Clear the specific filter layer
+	switch layer {
+	case FilterLayerSearch:
+		i.state.filters.SearchText = ""
+
+	case FilterLayerCompany:
+		i.state.filters.Companies = []string{}
+
+	case FilterLayerCategory:
+		i.state.filters.Categories = []string{}
+
+	case FilterLayerProject:
+		i.state.filters.Projects = []string{}
+
+	case FilterLayerTags:
+		i.state.filters.Tags = []string{}
+
+	case FilterLayerSort:
+		// Reset to default sort
+		i.state.filters.SortBy = "date"
+		i.state.filters.SortOrder = "desc"
+	}
+
+	// If no more filters active, clear the entire stack
+	if !i.HasActiveFilters() {
+		i.state.filterStack.Clear()
+	}
+}
+
+// clearAllFilters resets all filters to default state.
+func (i *BrowseTimelineIntent) clearAllFilters() {
+	i.state.filters = &TimelineFilters{
+		SearchText: "",
+		Tags:       []string{},
+		Companies:  []string{},
+		Categories: []string{},
+		Projects:   []string{},
+		DateFrom:   "",
+		DateTo:     "",
+		SortBy:     "date", // Default sort
+		SortOrder:  "desc", // Default order (newest first)
+	}
+	if i.state.filterStack != nil {
+		i.state.filterStack.Clear()
+	}
+}
+
+// ApplyFilters applies current filter state (alias for applyFilters).
+// Implements FilterBehavior interface.
+func (i *BrowseTimelineIntent) ApplyFilters() {
+	i.applyFilters()
+}
+
+// RefreshData reloads/refreshes the filtered data.
+// For BrowseTimeline, this re-applies filters to the current event list.
+// Implements FilterBehavior interface.
+func (i *BrowseTimelineIntent) RefreshData() tea.Cmd {
+	i.applyFilters()
+	i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+	return nil
 }
 
 // removeEventFromList removes an event from both the full list and filtered list.
@@ -1020,19 +1154,27 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 
 	switch i.state.currentState {
 	case BrowseStateTimeline:
-		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Search, Filter, Sort, Back + Global shortcuts
+		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Search, Filter, Sort, Clear (conditional), Back + Global shortcuts
+		badges := []components.KeyBadge{
+			components.NavigateBadge(), // ↑/↓: Navigate
+			components.NewKeyBadge("Enter", "View Details"),
+			components.AddBadge(),    // a: Add
+			components.EditBadge(),   // e: Edit
+			components.DeleteBadge(), // d: Delete
+			components.SearchBadge(), // /: Search
+			components.FilterBadge(), // f: Filter
+			components.NewKeyBadge("s", "Sort"),
+		}
+
+		// Conditionally add "Clear filters" badge when filters are active
+		if i.HasActiveFilters() {
+			badges = append(badges, components.NewKeyBadge("x", "Clear filters"))
+		}
+
+		badges = append(badges, components.BackBadge()) // Esc: Back
+
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				components.NavigateBadge(), // ↑/↓: Navigate
-				components.NewKeyBadge("Enter", "View Details"),
-				components.AddBadge(),    // a: Add
-				components.EditBadge(),   // e: Edit
-				components.DeleteBadge(), // d: Delete
-				components.SearchBadge(), // /: Search
-				components.FilterBadge(), // f: Filter
-				components.NewKeyBadge("s", "Sort"),
-				components.BackBadge(), // Esc: Back
-			),
+			ThemedCustomFooter(theme, badges...),
 			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
 		)
 	case BrowseStateEventDetail:

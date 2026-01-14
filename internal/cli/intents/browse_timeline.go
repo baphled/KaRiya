@@ -102,6 +102,9 @@ type BrowseTimelineModel struct {
 	// filters is the current filter and sort state.
 	filters *TimelineFilters
 
+	// filterStack tracks active filters in FIFO order for progressive clearing.
+	filterStack *FilterStack
+
 	// selectedEvent is the event currently being viewed.
 	selectedEvent *career.CareerEvent
 
