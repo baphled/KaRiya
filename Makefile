@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ci-local ci-install-tools gosec session-start verify-hooks tdd-check
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start verify-hooks tdd-check generate-diagrams generate-state-matrix generate-docs diagrams
 
 # Run all tests in verbose mode
 test:
@@ -112,6 +112,19 @@ list-ai-commits:
 	@echo "AI-Generated Commits:"
 	@git log --all --grep="AI-Generated-By:" --oneline
 
+# Create AI-attributed commit (for AI-generated code)
+ai-commit:
+	@if [ -z "$(MSG)" ]; then \
+		echo "Usage: make ai-commit MSG=\"feat(scope): description\""; \
+		echo ""; \
+		echo "Examples:"; \
+		echo "  make ai-commit MSG=\"feat(forms): add date validation helpers\""; \
+		echo "  make ai-commit MSG=\"fix(tests): resolve race condition\""; \
+		echo ""; \
+		exit 1; \
+	fi
+	@bash scripts/ai-commit.sh "$(MSG)"
+
 # Show token efficiency reminder
 token-check:
 	@echo "================================================"
@@ -189,6 +202,20 @@ verify-hooks:
 tdd-check:
 	@bash scripts/tdd-check.sh
 
+# Generate workflow diagrams
+generate-diagrams:
+	@bash scripts/generate_workflow_diagrams.sh
+
+# Generate state matrix documentation
+generate-state-matrix:
+	@bash scripts/generate_state_matrix.sh
+
+# Generate all documentation (diagrams + state matrix)
+generate-docs: generate-diagrams generate-state-matrix
+
+# Alias for convenience
+diagrams: generate-diagrams
+
 # Show help for all available targets
 help:
 	@echo "================================================"
@@ -213,6 +240,7 @@ help:
 	@echo "  make gosec             - Run security scanner"
 	@echo ""
 	@echo "🤖 AI Attribution:"
+	@echo "  make ai-commit MSG=\"...\"  - Create AI-attributed commit (recommended)"
 	@echo "  make install-git-hooks    - Install AI attribution hooks"
 	@echo "  make check-ai-attribution - Check latest commit"
 	@echo "  make audit-ai-commits     - Audit all AI commits"
@@ -226,7 +254,13 @@ help:
 	@echo "🏗️  Build:"
 	@echo "  make build             - Build the application"
 	@echo ""
-	@echo "📚 Documentation:"
+	@echo "📊 Documentation:"
+	@echo "  make generate-diagrams     - Generate workflow diagrams (Mermaid)"
+	@echo "  make generate-state-matrix - Generate state matrix documentation"
+	@echo "  make generate-docs         - Generate all documentation (diagrams + state matrix)"
+	@echo "  make diagrams              - Alias for generate-diagrams"
+	@echo ""
+	@echo "📚 Reference:"
 	@echo "  docs/rules/master-task-prompt.md     - Full task guide"
 	@echo "  docs/rules/TASK_QUICK_REF.md         - Quick reference"
 	@echo "  docs/rules/AI_COMMIT_ATTRIBUTION.md  - AI attribution rules"

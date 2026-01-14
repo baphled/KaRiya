@@ -55,6 +55,7 @@ Architected and maintained custom Linux infrastructure with golden disc images f
 | **Tags** | String | ❌ No | Semicolon-separated | "php;api;deployment" |
 | **Project** | String | ❌ No | Project name | "Platform Migration" |
 | **Company** | String | ❌ No | Company name | "TechCorp Inc." |
+| **Skills** | String | ❌ No | Semicolon-separated | "Go;Kubernetes;PostgreSQL" |
 
 ---
 
@@ -157,6 +158,37 @@ Architected and maintained custom Linux infrastructure with golden disc images f
   - (empty - optional)
 
 - **Storage**: Stored as-is, no conversion applied
+
+### Skills Field
+
+- **Format**: Semicolon-separated list of skill names
+- **Maximum**: No limit on number of skills per event
+- **Examples**:
+  - `Go;Kubernetes;PostgreSQL` (3 skills)
+  - `React;TypeScript;Redux` (3 skills)
+  - `Ruby` (1 skill)
+  - (empty - optional)
+
+- **Skill Matching**:
+  - Skills are matched by name (case-insensitive)
+  - If a skill doesn't exist, it's **automatically created** with category `"other"`
+  - You can later edit skill categories via "Manage Skills" (press 's' from main menu)
+  - Skills are associated with the imported event
+
+- **Examples from your CSV**:
+  ```
+  "Architected microservices platform",2024-01,Technical,technical;architecture,Platform,TechCorp,"Go;Kubernetes;PostgreSQL;Docker"
+  "Built React dashboard with TypeScript",2024-02,Technical,technical,Dashboard,TechCorp,"React;TypeScript;Redux;CSS"
+  "Implemented CI/CD pipeline",2024-03,DevOps,devops;automation,Pipeline,TechCorp,"Jenkins;Docker;Kubernetes;Bash"
+  ```
+
+- **Storage**: Skill IDs stored in database, names matched automatically
+
+- **Managing Auto-Created Skills**:
+  1. After import, press 's' to open Manage Skills
+  2. Find auto-created skills (category: "other")
+  3. Press 'e' to edit and update category (e.g., "backend", "devops", "frontend")
+  4. Skills are now properly categorized for CV generation
 
 ---
 

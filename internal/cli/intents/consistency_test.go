@@ -3,180 +3,230 @@ package intents
 import (
 	"context"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/google/uuid"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-// TestCaptureEventUsesStandardView verifies CaptureEvent uses StandardView patterns
-func TestCaptureEventUsesStandardView(t *testing.T) {
-	ctx := &CaptureEventContext{
-		CaptureStrategy: "manual",
-		PreviousEvent:   nil,
-		Metadata:        make(map[string]string),
-	}
-
-	intent, err := NewCaptureEventIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "CaptureEvent", view)
-}
-
-// TestBrowseTimelineUsesStandardView verifies BrowseTimeline uses StandardView patterns
-func TestBrowseTimelineUsesStandardView(t *testing.T) {
-	ctx := &BrowseTimelineContext{}
-
-	intent, err := NewBrowseTimelineIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "BrowseTimeline", view)
-}
-
-// TestGenerateCVUsesStandardView verifies GenerateCV uses StandardView patterns
-func TestGenerateCVUsesStandardView(t *testing.T) {
-	ctx := &GenerateCVContext{
-		AvailableProfiles: []*CVProfile{
-			{
-				ID:             "default",
-				Name:           "Default Profile",
-				TargetRole:     "staff",
-				TargetAudience: "hiring_manager",
-			},
-		},
-		Events: []*career.CareerEvent{
-			{
-				ID:   uuid.New().String(),
-				Text: "Implemented test feature for CV generation",
-				Date: time.Now(),
-			},
-		},
-	}
-
-	intent, err := NewGenerateCVIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "GenerateCV", view)
-}
-
-// TestExportArtifactUsesStandardView verifies ExportArtifact uses StandardView patterns
-func TestExportArtifactUsesStandardView(t *testing.T) {
-	intent, err := NewExportArtifactIntent(NewTestExportArtifactContext())
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "ExportArtifact", view)
-}
-
-// TestConfigureSystemUsesStandardView verifies ConfigureSystem uses StandardView patterns
-func TestConfigureSystemUsesStandardView(t *testing.T) {
-	ctx := context.Background()
-
-	intent, err := NewConfigureSystemIntent(ctx)
-	if err != nil {
-		t.Fatalf("Failed to create intent: %v", err)
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "ConfigureSystem", view)
-}
-
 // testStandardViewConsistency checks that an intent's view follows StandardView patterns
-func testStandardViewConsistency(t *testing.T, intentName, view string) {
-	if view == "" {
-		t.Errorf("[%s] View is empty", intentName)
-		return
-	}
-
-	// Check for logo or branding
-	// The view should contain some form of branding
-	hasLogo := strings.Contains(view, "██") ||
-		strings.Contains(view, "KARIYA") ||
-		strings.Contains(view, "KaRiya") ||
-		strings.Contains(view, "Career Event Management System")
-
-	if !hasLogo {
-		t.Logf("[%s] Note: View may not show logo in current state", intentName)
-	}
-
-	// Check for some form of help text
-	// StandardView intents should provide help/navigation hints
-	hasHelp := strings.Contains(view, "Quit") ||
-		strings.Contains(view, "Help") ||
-		strings.Contains(view, "q ") ||
-		strings.Contains(view, "Esc")
-
-	if !hasHelp {
-		t.Logf("[%s] Note: View may not show help text in current state", intentName)
-	}
+func testStandardViewConsistency(intentName, view string) {
+	Expect(view).NotTo(BeEmpty(), "[%s] View is empty", intentName)
 
 	// Check view is substantial (not just whitespace)
 	trimmed := strings.TrimSpace(view)
-	if len(trimmed) < 50 {
-		t.Errorf("[%s] View seems too short (%d chars), may be incomplete", intentName, len(trimmed))
-	}
+	Expect(len(trimmed)).To(BeNumerically(">=", 50),
+		"[%s] View seems too short (%d chars), may be incomplete", intentName, len(trimmed))
 }
 
-// TestAllIntentsInitializeSuccessfully verifies all intents can be created and initialized
-func TestAllIntentsInitializeSuccessfully(t *testing.T) {
-	tests := []struct {
-		name       string
-		createFunc func() (interface{}, error)
-		initFunc   func(interface{})
-		viewFunc   func(interface{}) string
-	}{
-		{
-			name: "CaptureEvent",
-			createFunc: func() (interface{}, error) {
+var _ = Describe("StandardView Consistency", func() {
+	Describe("CaptureEvent", func() {
+		It("should use StandardView patterns", func() {
+			ctx := &CaptureEventContext{
+				CaptureStrategy: "manual",
+				PreviousEvent:   nil,
+				Metadata:        make(map[string]string),
+			}
+
+			intent, err := NewCaptureEventIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("CaptureEvent", view)
+		})
+	})
+
+	Describe("BrowseTimeline", func() {
+		It("should use StandardView patterns", func() {
+			ctx := &BrowseTimelineContext{}
+
+			intent, err := NewBrowseTimelineIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("BrowseTimeline", view)
+		})
+	})
+
+	Describe("GenerateCV", func() {
+		It("should use StandardView patterns", func() {
+			ctx := &GenerateCVContext{
+				AvailableProfiles: []*CVProfile{
+					{
+						ID:             "default",
+						Name:           "Default Profile",
+						TargetRole:     "staff",
+						TargetAudience: "hiring_manager",
+					},
+				},
+				Events: []*career.CareerEvent{
+					{
+						ID:   uuid.New().String(),
+						Text: "Implemented test feature for CV generation",
+						Date: time.Now(),
+					},
+				},
+			}
+
+			intent, err := NewGenerateCVIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("GenerateCV", view)
+		})
+	})
+
+	Describe("ExportArtifact", func() {
+		It("should use StandardView patterns", func() {
+			intent, err := NewExportArtifactIntent(NewTestExportArtifactContext())
+			Expect(err).NotTo(HaveOccurred())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("ExportArtifact", view)
+		})
+	})
+
+	Describe("ConfigureSystem", func() {
+		It("should use StandardView patterns", func() {
+			ctx := context.Background()
+
+			intent, err := NewConfigureSystemIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("ConfigureSystem", view)
+		})
+	})
+
+	Describe("ImportWizard", func() {
+		It("should use StandardView patterns", func() {
+			ctx := NewImportWizardContext(context.Background())
+			ctx.FilePath = "/test/sample.csv"
+			ctx.FileSize = 1024
+			ctx.TotalRows = 100
+
+			intent := NewImportWizardIntent(ctx)
+			Expect(intent).NotTo(BeNil())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("ImportWizard", view)
+		})
+	})
+
+	Describe("MetadataEditor", func() {
+		It("should use StandardView patterns", func() {
+			ctx := NewMetadataEditorContext(context.Background())
+			ctx.EntityType = "CareerEvent"
+			ctx.EntityID = "test-123"
+			ctx.LoadMetadata(map[string]interface{}{
+				"title":       "Test Event",
+				"description": "Test Description",
+				"tags":        []string{"test", "example"},
+			})
+
+			intent := NewMetadataEditorIntent(ctx)
+			Expect(intent).NotTo(BeNil())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("MetadataEditor", view)
+		})
+	})
+
+	Describe("BulkOperations", func() {
+		It("should use StandardView patterns", func() {
+			ctx := NewBulkOperationsContext(context.Background())
+			ctx.SelectedOp = "delete"
+			ctx.AffectedItemCount = 50
+
+			intent := NewBulkOperationsIntent(ctx)
+			Expect(intent).NotTo(BeNil())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("BulkOperations", view)
+		})
+	})
+
+	Describe("FactManagement", func() {
+		It("should use StandardView patterns", func() {
+			ctx := NewFactManagementContext(nil, context.Background())
+
+			intent := NewFactManagementIntent(ctx)
+			Expect(intent).NotTo(BeNil())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("FactManagement", view)
+		})
+	})
+
+	Describe("BurstManagement", func() {
+		It("should use StandardView patterns", func() {
+			ctx := NewBurstManagementContext(nil, nil, context.Background())
+
+			intent, err := NewBurstManagementIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intent).NotTo(BeNil())
+
+			intent.Init()
+			view := intent.View()
+
+			testStandardViewConsistency("BurstManagement", view)
+		})
+	})
+})
+
+var _ = Describe("All Intents Initialization", func() {
+	DescribeTable("should initialize successfully",
+		func(name string, createFunc func() (interface{}, error), initFunc func(interface{}), viewFunc func(interface{}) string) {
+			intent, err := createFunc()
+			Expect(err).NotTo(HaveOccurred(), "Failed to create %s intent", name)
+
+			initFunc(intent)
+			view := viewFunc(intent)
+
+			Expect(view).NotTo(BeEmpty(), "%s produced empty view", name)
+			Expect(len(strings.TrimSpace(view))).To(BeNumerically(">=", 10),
+				"%s view is too short", name)
+		},
+		Entry("CaptureEvent",
+			"CaptureEvent",
+			func() (interface{}, error) {
 				return NewCaptureEventIntent(&CaptureEventContext{
 					CaptureStrategy: "manual",
 					Metadata:        make(map[string]string),
 				})
 			},
-			initFunc: func(i interface{}) {
-				i.(*CaptureEventIntent).Init()
-			},
-			viewFunc: func(i interface{}) string {
-				return i.(*CaptureEventIntent).View()
-			},
-		},
-		{
-			name: "BrowseTimeline",
-			createFunc: func() (interface{}, error) {
-				return NewBrowseTimelineIntent(&BrowseTimelineContext{})
-			},
-			initFunc: func(i interface{}) {
-				i.(*BrowseTimelineIntent).Init()
-			},
-			viewFunc: func(i interface{}) string {
-				return i.(*BrowseTimelineIntent).View()
-			},
-		},
-		{
-			name: "GenerateCV",
-			createFunc: func() (interface{}, error) {
+			func(i interface{}) { i.(*CaptureEventIntent).Init() },
+			func(i interface{}) string { return i.(*CaptureEventIntent).View() },
+		),
+		Entry("BrowseTimeline",
+			"BrowseTimeline",
+			func() (interface{}, error) { return NewBrowseTimelineIntent(&BrowseTimelineContext{}) },
+			func(i interface{}) { i.(*BrowseTimelineIntent).Init() },
+			func(i interface{}) string { return i.(*BrowseTimelineIntent).View() },
+		),
+		Entry("GenerateCV",
+			"GenerateCV",
+			func() (interface{}, error) {
 				return NewGenerateCVIntent(&GenerateCVContext{
 					AvailableProfiles: []*CVProfile{
 						{
@@ -195,148 +245,20 @@ func TestAllIntentsInitializeSuccessfully(t *testing.T) {
 					},
 				})
 			},
-			initFunc: func(i interface{}) {
-				i.(*GenerateCVIntent).Init()
-			},
-			viewFunc: func(i interface{}) string {
-				return i.(*GenerateCVIntent).View()
-			},
-		},
-		{
-			name: "ExportArtifact",
-			createFunc: func() (interface{}, error) {
-				return NewExportArtifactIntent(NewTestExportArtifactContext())
-			},
-			initFunc: func(i interface{}) {
-				i.(*ExportArtifactIntent).Init()
-			},
-			viewFunc: func(i interface{}) string {
-				return i.(*ExportArtifactIntent).View()
-			},
-		},
-		{
-			name: "ConfigureSystem",
-			createFunc: func() (interface{}, error) {
-				return NewConfigureSystemIntent(context.Background())
-			},
-			initFunc: func(i interface{}) {
-				i.(*ConfigureSystemIntent).Init()
-			},
-			viewFunc: func(i interface{}) string {
-				return i.(*ConfigureSystemIntent).View()
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create intent
-			intent, err := tt.createFunc()
-			if err != nil {
-				t.Fatalf("Failed to create %s intent: %v", tt.name, err)
-			}
-
-			// Initialize
-			tt.initFunc(intent)
-
-			// Get view
-			view := tt.viewFunc(intent)
-
-			// Basic sanity checks
-			if view == "" {
-				t.Errorf("%s produced empty view", tt.name)
-			}
-
-			if len(strings.TrimSpace(view)) < 10 {
-				t.Errorf("%s view is too short", tt.name)
-			}
-		})
-	}
-}
-
-// TestImportWizardUsesStandardView verifies ImportWizard uses StandardView patterns
-func TestImportWizardUsesStandardView(t *testing.T) {
-	ctx := NewImportWizardContext(context.Background())
-	ctx.FilePath = "/test/sample.csv"
-	ctx.FileSize = 1024
-	ctx.TotalRows = 100
-
-	intent := NewImportWizardIntent(ctx)
-	if intent == nil {
-		t.Fatal("Failed to create ImportWizard intent")
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "ImportWizard", view)
-}
-
-// TestMetadataEditorUsesStandardView verifies MetadataEditor uses StandardView patterns
-func TestMetadataEditorUsesStandardView(t *testing.T) {
-	ctx := NewMetadataEditorContext(context.Background())
-	ctx.EntityType = "CareerEvent"
-	ctx.EntityID = "test-123"
-	ctx.LoadMetadata(map[string]interface{}{
-		"title":       "Test Event",
-		"description": "Test Description",
-		"tags":        []string{"test", "example"},
-	})
-
-	intent := NewMetadataEditorIntent(ctx)
-	if intent == nil {
-		t.Fatal("Failed to create MetadataEditor intent")
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "MetadataEditor", view)
-}
-
-// TestBulkOperationsUsesStandardView verifies BulkOperations uses StandardView patterns
-func TestBulkOperationsUsesStandardView(t *testing.T) {
-	ctx := NewBulkOperationsContext(context.Background())
-	ctx.SelectedOp = "delete"
-	ctx.AffectedItemCount = 50
-
-	intent := NewBulkOperationsIntent(ctx)
-	if intent == nil {
-		t.Fatal("Failed to create BulkOperations intent")
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "BulkOperations", view)
-}
-
-// TestFactManagementUsesStandardView verifies FactManagement uses StandardView patterns
-func TestFactManagementUsesStandardView(t *testing.T) {
-	ctx := NewFactManagementContext(nil, context.Background())
-
-	intent := NewFactManagementIntent(ctx)
-	if intent == nil {
-		t.Fatal("Failed to create FactManagement intent")
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "FactManagement", view)
-}
-
-// TestBurstManagementUsesStandardView verifies BurstManagement uses StandardView patterns
-func TestBurstManagementUsesStandardView(t *testing.T) {
-	ctx := NewBurstManagementContext(nil, nil, context.Background())
-
-	intent, err := NewBurstManagementIntent(ctx)
-	if err != nil || intent == nil {
-		t.Fatalf("Failed to create BurstManagement intent: %v", err)
-	}
-
-	intent.Init()
-	view := intent.View()
-
-	testStandardViewConsistency(t, "BurstManagement", view)
-}
+			func(i interface{}) { i.(*GenerateCVIntent).Init() },
+			func(i interface{}) string { return i.(*GenerateCVIntent).View() },
+		),
+		Entry("ExportArtifact",
+			"ExportArtifact",
+			func() (interface{}, error) { return NewExportArtifactIntent(NewTestExportArtifactContext()) },
+			func(i interface{}) { i.(*ExportArtifactIntent).Init() },
+			func(i interface{}) string { return i.(*ExportArtifactIntent).View() },
+		),
+		Entry("ConfigureSystem",
+			"ConfigureSystem",
+			func() (interface{}, error) { return NewConfigureSystemIntent(context.Background()) },
+			func(i interface{}) { i.(*ConfigureSystemIntent).Init() },
+			func(i interface{}) string { return i.(*ConfigureSystemIntent).View() },
+		),
+	)
+})

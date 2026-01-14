@@ -74,6 +74,13 @@ func (m *FactEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Handle escape BEFORE delegating to form
+		// This ensures the parent intent can navigate back
+		if msg.String() == "esc" {
+			m.cancelled = true
+			return m, nil
+		}
+
 		// Handle quit
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			return m, func() tea.Msg { return QuitMsg{} }
@@ -101,6 +108,13 @@ func (m *FactEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleFormCompletion processes the completed form and saves the fact.
 func (m *FactEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.cancelled = true
+		return m, nil
+	}
+
 	// Apply form data to fact
 	err := forms.ApplyFactFormData(m.fact, m.formData)
 	if err != nil {

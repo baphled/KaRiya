@@ -6,14 +6,21 @@
 
 This prompt helps you review staged changes and ensures you're creating atomic commits that follow project guidelines. Use this **before** finalizing any commit to catch common issues and maintain high-quality Git history.
 
+**IMPORTANT**: Run `make check-compliance` **BEFORE** using this review process. Code quality must pass before commit review.
+
 ---
 
-## Quick Review Command
-
-Run this command before each commit:
+## Required Pre-Commit Workflow
 
 ```bash
+# 1. REQUIRED: Run compliance check first
+make check-compliance
+
+# 2. THEN: Review commit (if needed for manual commits)
 bash scripts/review-commit.sh
+
+# 3. RECOMMENDED: Use ai-commit for AI-generated code
+make ai-commit MSG="type(scope): description"
 ```
 
 Or manually follow the steps below.

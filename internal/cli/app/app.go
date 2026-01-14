@@ -80,6 +80,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	menuItems := []MenuItem{
 		{Name: "Capture Event", Intent: "capture_event", Help: "Record a new career event"},
 		{Name: "Browse Timeline", Intent: "browse_timeline", Help: "View your career events"},
+		{Name: "Manage Skills", Intent: "manage_skills", Help: "Manage your skills"},
 		{Name: "Generate CV", Intent: "generate_cv", Help: "Create a new CV"},
 		{Name: "Export Artifact", Intent: "export_artifact", Help: "Export CV or data"},
 		{Name: "Configure System", Intent: "configure_system", Help: "Manage settings"},
@@ -148,14 +149,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Toggle help screen (only ? key, not 'h' which is vim-style left navigation)
 			m.showingHelp = !m.showingHelp
 			return m, nil
-		case "home", "esc", "escape":
-			if m.state == StateIntent {
-				m.state = StateMenu
-				m.selectedMenuIndex = 0
-				return m, nil
-			}
 		}
 
+		// Route messages to appropriate handler based on state
+		// Note: We don't intercept escape here - intents handle their own back navigation
+		// per TUI Standards (intermediate states go back one state, root states cancel intent)
 		if m.state == StateMenu {
 			return m.handleMenuInput(msg)
 		} else if m.state == StateIntent {
@@ -186,6 +184,37 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	default:
+		// Check for RequestEditEventMsg before routing to intent
+		if editMsg, ok := msg.(intents.RequestEditEventMsg); ok {
+			// User wants to edit an event - activate CaptureEvent intent with PreviousEvent
+			captureCtx := &intents.CaptureEventContext{
+				CaptureStrategy: "manual",
+				PreviousEvent:   editMsg.Event,
+				Metadata:        make(map[string]string),
+				CLIEventService: m.cliService,
+				CareerService:   m.careerService,
+			}
+
+			// Temporarily register the edit intent
+			_ = m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
+				intent, err := intents.NewCaptureEventIntent(captureCtx)
+				if err != nil {
+					m.logger.Error("Failed to create CaptureEvent intent for editing: %v", err)
+					return nil
+				}
+				return intent
+			})
+
+			// Activate the edit intent
+			cmd, err := m.intentRouter.ActivateIntent("capture_event_edit", make(map[string]interface{}))
+			if err != nil {
+				m.logger.Error("Failed to activate CaptureEvent for editing: %v", err)
+				return m, nil
+			}
+			m.state = StateIntent
+			return m, cmd
+		}
+
 		// Route all other messages to the active intent (e.g., SubmitMsg from form commands)
 		if m.state == StateIntent {
 			cmd, result := m.intentRouter.HandleMessage(msg)
@@ -537,7 +566,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			events = make([]*career.CareerEvent, 0)
 		}
 		browserCtx := &intents.BrowseTimelineContext{
-			Events: events,
+			Events:          events,
+			CLIEventService: cliService,
 		}
 		intent, err := intents.NewBrowseTimelineIntent(browserCtx)
 		if err != nil {
@@ -545,6 +575,16 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			return nil
 		}
 		return intent
+	})
+
+	// ManageSkills
+	_ = router.RegisterIntent("manage_skills", func() intents.Intent {
+		skillsCtx := &intents.ManageSkillsContext{
+			Ctx:             ctx,
+			SkillRepository: careerService.GetSkillRepository(),
+			Service:         careerService,
+		}
+		return intents.NewManageSkillsIntent(skillsCtx)
 	})
 
 	// GenerateCV

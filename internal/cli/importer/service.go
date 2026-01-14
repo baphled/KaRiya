@@ -47,8 +47,11 @@ func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) 
 		return nil, fmt.Errorf("failed to load existing events: %w", err)
 	}
 
-	// Create parser with existing events
-	is.parser = NewCSVParserWithMapping(existingEvents)
+	// Get skill repository for skill lookup and auto-creation
+	skillRepo := is.careerService.GetSkillRepository()
+
+	// Create parser with existing events and skill repository
+	is.parser = NewCSVParserWithMapping(existingEvents, skillRepo, ctx)
 
 	// Try to convert reader to io.Reader
 	ioReader, ok := reader.(interface{ Read([]byte) (int, error) })

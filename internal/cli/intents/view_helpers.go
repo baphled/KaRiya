@@ -443,6 +443,200 @@ func HandleGlobalKeys(msg tea.KeyMsg) GlobalKeyResult {
 	return KeyNotHandled
 }
 
+// MessageInterceptor provides a middleware layer for handling global keys before delegation.
+// This ensures escape, quit, and other global keys are always processed first,
+// preventing sub-components (forms, modals) from consuming them.
+//
+// Usage:
+//
+//	func (i *Intent) updateWithForm(msg tea.Msg) tea.Cmd {
+//	    interceptor := NewMessageInterceptor()
+//	    return interceptor.
+//	        OnBack(func() tea.Cmd {
+//	            i.state = previousState
+//	            return nil
+//	        }).
+//	        OnQuit(func() tea.Cmd {
+//	            return tea.Quit
+//	        }).
+//	        OnHelp(func() tea.Cmd {
+//	            i.ToggleHelp()
+//	            return nil
+//	        }).
+//	        InterceptOr(msg, func() tea.Cmd {
+//	            // Only called if no global keys matched
+//	            return i.formModel.Update(msg)
+//	        })
+//	}
+type MessageInterceptor struct {
+	backHandler GlobalKeyHandler
+	quitHandler GlobalKeyHandler
+	helpHandler GlobalKeyHandler
+}
+
+// GlobalKeyHandler is a function that handles a global key event.
+type GlobalKeyHandler func() tea.Cmd
+
+// NewMessageInterceptor creates a new message interceptor with no handlers.
+// Use the OnBack, OnQuit, and OnHelp methods to configure behavior.
+func NewMessageInterceptor() *MessageInterceptor {
+	return &MessageInterceptor{}
+}
+
+// OnBack sets the handler for escape key (back navigation).
+// This handler is called when the user presses Escape.
+func (m *MessageInterceptor) OnBack(handler GlobalKeyHandler) *MessageInterceptor {
+	m.backHandler = handler
+	return m
+}
+
+// OnQuit sets the handler for quit key (q or Ctrl+C).
+// This handler is called when the user wants to quit the application.
+func (m *MessageInterceptor) OnQuit(handler GlobalKeyHandler) *MessageInterceptor {
+	m.quitHandler = handler
+	return m
+}
+
+// OnHelp sets the handler for help key (?).
+// This handler is called when the user requests help.
+func (m *MessageInterceptor) OnHelp(handler GlobalKeyHandler) *MessageInterceptor {
+	m.helpHandler = handler
+	return m
+}
+
+// InterceptOr checks for global keys and calls the appropriate handler.
+// If no global key is matched, it calls the fallback function.
+// This ensures global keys are always processed before sub-component delegation.
+//
+// Returns:
+//   - tea.Cmd from the matched global key handler, OR
+//   - tea.Cmd from the fallback function if no global keys matched
+func (m *MessageInterceptor) InterceptOr(msg tea.Msg, fallback func() tea.Cmd) tea.Cmd {
+	// Check if this is a key message
+	keyMsg, ok := msg.(tea.KeyMsg)
+	if !ok {
+		// Not a key message, call fallback
+		return fallback()
+	}
+
+	// Check for global keys
+	result := HandleGlobalKeys(keyMsg)
+
+	switch result {
+	case KeyBack:
+		if m.backHandler != nil {
+			return m.backHandler()
+		}
+	case KeyQuit:
+		if m.quitHandler != nil {
+			return m.quitHandler()
+		}
+	case KeyHelp:
+		if m.helpHandler != nil {
+			return m.helpHandler()
+		}
+	}
+
+	// No global key matched or no handler set, call fallback
+	return fallback()
+}
+
+// Intercept is similar to InterceptOr but returns nil if no fallback is needed.
+// Use this when you only want to handle global keys without further processing.
+//
+// Returns:
+//   - tea.Cmd from the matched global key handler, OR
+//   - nil if no global keys matched
+func (m *MessageInterceptor) Intercept(msg tea.Msg) tea.Cmd {
+	return m.InterceptOr(msg, func() tea.Cmd { return nil })
+}
+
+// OnContextAwareBack handles the common pattern where back navigation behavior
+// depends on whether the user is editing an existing item or creating a new one.
+//
+// Pattern:
+//   - Edit mode (editing existing item): Cancel intent and return to caller
+//   - New mode (creating new item): Go back to previous state in workflow
+//
+// This is used by intents that support both create and edit operations, such as:
+//   - CaptureEvent: PreviousEvent != nil means editing
+//   - BurstManagement: IsNewBurst determines behavior
+//   - FactManagement: IsNewFact determines behavior
+//
+// Example usage:
+//
+//	interceptor.OnContextAwareBack(
+//	    func() bool { return i.context.PreviousEvent != nil }, // isEditMode
+//	    func() tea.Cmd { i.state = PreviousState; return nil }, // goBack
+//	    func() tea.Cmd { i.setCancelled(); return nil },        // cancel
+//	)
+func (m *MessageInterceptor) OnContextAwareBack(
+	isEditMode func() bool,
+	goBack func() tea.Cmd,
+	cancel func() tea.Cmd,
+) *MessageInterceptor {
+	return m.OnBack(func() tea.Cmd {
+		if isEditMode() {
+			return cancel()
+		}
+		return goBack()
+	})
+}
+
+// OnModalAwareBack handles the pattern where back navigation depends on whether
+// a modal is currently active.
+//
+// Pattern:
+//   - Modal active: Close modal and return to parent state
+//   - No modal: Go back to previous state
+//
+// This is commonly used in review/detail states that can open edit modals.
+//
+// Example usage:
+//
+//	interceptor.OnModalAwareBack(
+//	    func() bool { return i.state.editModal != nil },        // hasActiveModal
+//	    func() tea.Cmd { i.state.editModal = nil; return nil }, // closeModal
+//	    func() tea.Cmd { i.state = PreviousState; return nil }, // goBack
+//	)
+func (m *MessageInterceptor) OnModalAwareBack(
+	hasActiveModal func() bool,
+	closeModal func() tea.Cmd,
+	goBack func() tea.Cmd,
+) *MessageInterceptor {
+	return m.OnBack(func() tea.Cmd {
+		if hasActiveModal() {
+			return closeModal()
+		}
+		return goBack()
+	})
+}
+
+// StandardQuitHandler returns a GlobalKeyHandler that quits the application.
+// This is the standard behavior for the quit key (q or Ctrl+C).
+//
+// Example usage:
+//
+//	interceptor.OnQuit(StandardQuitHandler())
+func StandardQuitHandler() GlobalKeyHandler {
+	return func() tea.Cmd {
+		return tea.Quit
+	}
+}
+
+// StandardHelpHandler creates a GlobalKeyHandler that toggles the help modal
+// on a BaseIntent. This is the standard behavior for the help key (?).
+//
+// Example usage:
+//
+//	interceptor.OnHelp(StandardHelpHandler(i.BaseIntent))
+func StandardHelpHandler(intent *BaseIntent) GlobalKeyHandler {
+	return func() tea.Cmd {
+		intent.ToggleHelp()
+		return nil
+	}
+}
+
 // HandleListKeys checks if a key message matches any list navigation shortcuts.
 // Returns true if the key was handled by the ListNavigationHandler.
 // This is a convenience wrapper that ensures consistent list navigation.

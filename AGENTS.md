@@ -1,10 +1,11 @@
 # KaRiya Project Documentation
 
-**Last Updated**: 2026-01-08
+**Last Updated**: 2026-01-12
 **Project Status**: ✅ **PRODUCTION READY - ALL PHASES COMPLETE (100%)**
 **Test Coverage**: 240+ tests, 100% pass rate, 0 race conditions
 **Code Quality**: All linting checks passing, no technical debt
 **Forms**: Huh library integration (Phase 4/5 complete)
+**Form Wrappers**: 2 (CaptureForm, SkillForm) - Required for intent forms
 
 ---
 
@@ -90,10 +91,18 @@ Let me write the test first. After you confirm it fails, I'll implement.
 
 The AI assistant **MUST**:
 
-1. Run `make review-commit` (or ask user to run it)
-2. Include AI attribution in commit message if ANY code was AI-generated
+1. **Run `make check-compliance`** to verify code quality before committing
+2. **Use `make ai-commit MSG="type(scope): description"`** for all AI-generated commits (automatic attribution)
+   - This is the **required** method for AI-generated code commits
+   - Manual workflow (NOT recommended): `make review-commit` + manual attribution
 3. Verify commit is atomic (ONE logical change)
 4. If commit violates rules, **REFUSE** and explain corrections needed
+
+**Critical Order**:
+```bash
+make check-compliance          # MUST pass before commit
+make ai-commit MSG="..."       # Commit with automatic AI attribution
+```
 
 ### After Task Completion
 
@@ -111,7 +120,8 @@ The AI assistant **MUST REFUSE** to proceed if:
 - User requests implementation before test (TDD violation)
 - `make session-start` has not been run or failed
 - `make check-compliance` fails after task completion
-- User attempts to commit without `make review-commit`
+- User attempts to commit without `make check-compliance` passing
+- User attempts AI-generated commit without `make ai-commit`
 - User attempts to skip required workflow steps
 
 **Refusal template:**
@@ -182,8 +192,8 @@ All task files **MUST** follow this structure:
   ```
 
 ## Pre-Commit Checklist (BEFORE EACH COMMIT)
-- [ ] `make review-commit` passes
-- [ ] AI attribution included (if AI-generated)
+- [ ] `make check-compliance` passes (REQUIRED before commit)
+- [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
 - [ ] Commit message explains **WHY**, not just WHAT
 - [ ] Commit is atomic (ONE logical change)
 
@@ -262,6 +272,9 @@ staticcheck ./...
 # Compliance check
 make check-compliance
 
+# AI-attributed commit (recommended for AI-generated code)
+make ai-commit MSG="feat(scope): description"
+
 # Run ALL CI checks locally (mirrors GitHub Actions)
 make ci-local
 ```
@@ -282,6 +295,8 @@ The KaRiya TUI is built on a **type-safe, intent-driven architecture**:
 6. **Compile-Time Safety**: No runtime type assertions
 
 **Visual Architecture**: See [TUI_INTENT_DIAGRAM.md](docs/TUI_INTENT_DIAGRAM.md) for complete architectural diagrams and intent workflows.
+
+**State Matrix**: See [STATE_MATRIX.md](docs/STATE_MATRIX.md) for complete state documentation (10 intents, 64 states, escape behavior).
 
 ### The 5 Core Intents
 
@@ -378,8 +393,8 @@ These documents form the foundation of our development practices. Read them in t
 - Phase 5: Task Completion (summary, handoff notes)
 **Essential commands**:
 ```bash
-make check-compliance  # Before and after every task
-make review-commit     # Before every commit
+make check-compliance  # Before and after every task AND before every commit
+make ai-commit MSG="type(scope): description"  # For all AI-generated commits
 ```
 
 #### 3. Go Coding Standards
@@ -554,15 +569,19 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 **Related**: See [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
 
 #### 8. Forms System (Huh Library)
-**File**: [`docs/HUH_FORMS_GUIDE.md`](docs/HUH_FORMS_GUIDE.md)
+**File**: [`docs/FORMS_GUIDE.md`](docs/FORMS_GUIDE.md)
 **Purpose**: Comprehensive guide to using Charm's huh library for forms
 **When to use**: When creating or modifying form inputs in the TUI
 **Key topics**:
-- Huh library integration and theming
-- Form configurations for burst, metadata, and fact editing
+- Complete documentation of all 5 form configurations (burst, metadata, fact, capture event, burst suggestion)
+- Huh library integration and theming (including theme generation from KaRiya themes)
 - 20+ reusable validators (date parsing, email, URL, domain-specific)
-- Migration from manual textinput arrays
-**Related**: See [`docs/HUH_MIGRATION_SUMMARY.md`](docs/HUH_MIGRATION_SUMMARY.md) for migration lessons learned
+- Modal and model integration patterns
+- **⚠️ Form Alignment & Wrapper Pattern** - CRITICAL for intent forms
+- Testing strategies and comprehensive examples
+
+> **⚠️ CRITICAL**: Forms in intents MUST use wrapper models (e.g., `CaptureForm`, `SkillForm`).
+> Direct `*huh.Form` usage causes left-alignment issues. See [Form Alignment and the Wrapper Pattern](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern).
 
 ### TUI Quick References
 
@@ -601,6 +620,112 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 - **[`docs/QUICK_START_STANDARDVIEW.md`](docs/QUICK_START_STANDARDVIEW.md)** - StandardView quick start
   - Quick reference for StandardView usage
   - Common patterns and examples
+
+- **[`docs/development/NAVIGATION_TESTING_GUIDE.md`](docs/development/NAVIGATION_TESTING_GUIDE.md)** - Navigation testing comprehensive guide
+  - E2E test framework usage (helpers, assertions, data population)
+  - Navigation test patterns (forward, backward, multi-intent, error recovery)
+  - Escape key testing matrix (per state type)
+  - Common navigation bugs and prevention
+  - State transition testing and debugging techniques
+
+- **[`docs/development/NAVIGATION_TESTING_CHECKLIST.md`](docs/development/NAVIGATION_TESTING_CHECKLIST.md)** - Navigation testing quick reference
+  - Pre-implementation checklist (state machine definition, escape behavior)
+  - Test coverage requirements (escape, forward, back, universal shortcuts)
+  - Copy-paste test templates (escape, navigation, E2E)
+  - Pre-commit checklist and verification steps
+
+---
+
+## Workflow Documentation
+
+KaRiya provides comprehensive workflow guides for complex user journeys. Each guide includes state machines, keyboard shortcuts, navigation patterns, and troubleshooting.
+
+### Workflow-Specific Guides
+
+#### Complete Workflow Guides
+
+| Guide | Purpose | States | Complexity | Documentation |
+|-------|---------|--------|------------|---------------|
+| **[CV Generation Workflow](docs/workflows/CV_GENERATION_WORKFLOW.md)** | Generate role and audience-specific CVs from career events | 10 states | ⭐⭐⭐⭐⭐ High | 800+ lines |
+| **[Event Capture Workflow](docs/workflows/EVENT_CAPTURE_WORKFLOW.md)** | Capture events with optional burst/fact extraction | 4 states + 3 modals | ⭐⭐⭐⭐ High | 700+ lines |
+
+**See Also**: [Workflow Documentation Index](docs/workflows/README.md) for complete workflow catalog and navigation guide
+
+#### What's Included in Each Guide
+
+Each workflow guide provides:
+- **Overview**: Purpose, when to use, prerequisites
+- **State Machine Diagram**: Visual representation of all states and transitions (Mermaid)
+- **Step-by-Step Guide**: Detailed walkthrough of each state with screenshots
+- **Complete Keyboard Reference**: Comprehensive table of all shortcuts per state
+- **Navigation Patterns**: Forward navigation, back navigation, error recovery
+- **Common Workflows**: Real-world examples with timing estimates
+- **Troubleshooting**: Specific issues and solutions for that workflow
+- **Technical Details**: Implementation notes, IntentResult flow, async operations
+
+### Workflow Diagram Generation
+
+Workflow diagrams are generated programmatically from the actual implementation to ensure accuracy.
+
+#### Generate Diagrams
+
+```bash
+# Generate all workflow diagrams
+make generate-diagrams
+
+# Or run script directly
+./scripts/generate_workflow_diagrams.sh
+```
+
+**Script**: `scripts/generate_workflow_diagrams.sh`  
+**Output**: `docs/workflows/diagrams/*.mermaid`
+
+#### Generated Diagrams
+
+- `docs/workflows/diagrams/cv_generation_flow.mermaid` - CV Generation state machine (10 states)
+- `docs/workflows/diagrams/event_capture_flow.mermaid` - Event Capture state machine (4 states + 3 modals)
+
+#### Viewing Diagrams
+
+- **GitHub**: Automatic Mermaid rendering
+- **VS Code**: Install "Markdown Preview Mermaid Support" extension
+- **Online**: Copy content to https://mermaid.live
+- **Documentation**: Embedded in workflow guides
+
+### Keyboard Shortcuts
+
+All keyboard shortcuts are centralized in two comprehensive guides:
+
+| Guide | Audience | Purpose | Lines |
+|-------|----------|---------|-------|
+| **[Keyboard Shortcuts Guide](docs/KEYBOARD_SHORTCUTS_GUIDE.md)** | Users | Complete keyboard reference for using KaRiya TUI | 400+ |
+| **[Keyboard System Guide](docs/development/KEYBOARD_SYSTEM_GUIDE.md)** | Developers | Implementing and extending keyboard shortcuts | 500+ |
+
+**Key Features**:
+- Quick reference card (printable)
+- Workflow-specific shortcuts for all 5 intents
+- Vim-style navigation support
+- Common key combinations and patterns
+- Screen-specific examples
+- Accessibility features
+- Comprehensive troubleshooting
+
+### Navigation Patterns
+
+All KaRiya workflows follow consistent navigation:
+
+**Universal Shortcuts** (work everywhere):
+- **Esc**: Go back one state (or cancel if root state)
+- **m**: Return to main menu from any state
+- **q** / **Ctrl+C**: Quit application
+
+**State Types**:
+1. **Root State**: First state in workflow (Esc = cancel)
+2. **Intermediate State**: Has previous state (Esc = go back)
+3. **Async Operation**: Background work (Esc = let complete, navigate back)
+4. **Final State**: Workflow complete or error (Esc = retry/cancel)
+
+**Error Handling**: Errors are preserved when navigating back so users maintain context
 
 ---
 
@@ -920,8 +1045,7 @@ ParseDateString("2 weeks ago")    // ✅ Relative
 - ✅ 70% less code per form
 
 **Documentation**:
-- [`docs/HUH_FORMS_GUIDE.md`](docs/HUH_FORMS_GUIDE.md) - Complete developer guide (680 lines)
-- [`docs/HUH_MIGRATION_SUMMARY.md`](docs/HUH_MIGRATION_SUMMARY.md) - Migration summary and lessons learned
+- [`docs/FORMS_GUIDE.md`](docs/FORMS_GUIDE.md) - Complete forms implementation guide covering all 5 form configurations, validators, theming, integration patterns, and testing
 
 **Remaining Work** (Phase 5):
 - FactEditorModel (600 lines)
@@ -1310,6 +1434,139 @@ go test -bench=. -benchmem ./internal/cli/components/
        // Handle result
    })
    ```
+
+### Creating a New Form
+
+**Time**: 30-45 minutes  
+**Prerequisites**: Domain object exists, validators identified  
+**Reference**: [`docs/rules/FORMS_WORKFLOW_GUIDE.md`](docs/rules/FORMS_WORKFLOW_GUIDE.md) - Complete step-by-step guide
+
+> **⚠️ CRITICAL: Form Alignment Rule**
+> 
+> Forms used in **intents** MUST use a wrapper model (like `CaptureForm`, `SkillForm`).
+> Direct use of `*huh.Form` in intents causes **left-alignment issues** because:
+> - Form dimensions are captured at creation time and become stale
+> - `WindowSizeMsg` handling is scattered and error-prone
+> - Forms don't update properly on terminal resize
+>
+> **See**: [`docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern`](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern)
+
+#### Quick Workflow
+
+1. **Define FormData structure** (`internal/cli/forms/your_form.go`):
+   ```go
+   type YourFormData struct {
+       Field1          string
+       Field2          []string // For MultiSelect
+       SubmitConfirmed bool     // Required for confirm button
+   }
+   ```
+
+2. **Create form builder functions**:
+   ```go
+   // 3 variants for flexibility
+   func NewYourForm(obj *career.YourDomain) *huh.Form { ... }
+   func NewYourFormWithData(data *YourFormData) *huh.Form { ... }
+   func NewYourFormWithDataAndDimensions(data *YourFormData, width, height int) *huh.Form {
+       data.SubmitConfirmed = false
+       
+       fieldsGroup := huh.NewGroup(
+           forms.NewInput(forms.FieldConfig{
+               Key:         "field1",
+               Title:       "Field 1",
+               Validate:    forms.Required,
+           }).Value(&data.Field1),
+       )
+       
+       return forms.NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
+   }
+   ```
+
+3. **Create domain conversion functions**:
+   ```go
+   func GetYourFormData(obj *career.YourDomain) *YourFormData { ... }
+   func ApplyYourFormData(obj *career.YourDomain, data *YourFormData) error { ... }
+   ```
+
+4. **Write tests** (`your_form_test.go`):
+   - Test form creation
+   - Test data extraction (GetYourFormData)
+   - Test data application (ApplyYourFormData)
+   - Test roundtrip conversion
+   - Test nil slice handling
+
+5. **Document in FORMS_GUIDE.md**:
+   - Add section to "Form Configurations"
+   - Add to forms package table
+   - Add to tests section
+
+#### Integration Patterns
+
+**⚠️ Intent Integration (MUST use wrapper model)**:
+
+When adding forms to an **intent**, you MUST create a wrapper model:
+
+```go
+// 1. Create wrapper in internal/cli/models/huh_your_form.go
+type HuhYourForm struct {
+    *BaseStandardModel
+    formData *forms.YourFormData
+    form     *huh.Form
+    width    int
+    height   int
+}
+
+func NewHuhYourForm() *HuhYourForm {
+    m := &HuhYourForm{
+        BaseStandardModel: NewBaseStandardModel(),
+        formData:          &forms.YourFormData{},
+        width:             80,   // Default width
+        height:            24,   // Default height
+    }
+    m.rebuildForm()
+    return m
+}
+
+func (m *HuhYourForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    switch msg := msg.(type) {
+    case tea.WindowSizeMsg:
+        // Handle window size internally - THIS IS KEY
+        m.width = msg.Width
+        m.height = msg.Height
+        m.form = m.form.WithHeight(forms.DefaultFormHeight(m.height)).WithWidth(m.width - 4)
+        return m, nil
+    }
+    // ... rest of update logic
+}
+
+// 2. Use wrapper in intent (NOT raw *huh.Form)
+type YourIntent struct {
+    yourForm *models.HuhYourForm  // ✅ Correct - wrapper model
+    // form *huh.Form             // ❌ Wrong - causes alignment issues
+}
+
+func (i *YourIntent) handleAddNew() tea.Cmd {
+    i.yourForm = models.NewHuhYourForm()
+    return i.yourForm.Init()
+}
+```
+
+**Existing wrapper examples**:
+- `internal/cli/models/huh_capture_form.go` - Career event capture
+- `internal/cli/models/huh_skill_form.go` - Skill management
+
+**Modal Integration** (inline editing - wrapper NOT required):
+```go
+type EditYourModal struct {
+    original  *career.YourDomain  // Preserved (never mutated)
+    modified  *career.YourDomain  // Working copy
+    result    *ModalEditResult[*career.YourDomain]
+    form      *huh.Form           // Direct use OK in modals
+    formData  *forms.YourFormData
+}
+```
+
+**See Complete Guide**: [`docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern`](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern)
 
 ### Running Tests
 

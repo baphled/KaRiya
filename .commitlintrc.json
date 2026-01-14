@@ -44,6 +44,7 @@
         "ci",
         "cv",
         "tui"
+        "navigation"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],

@@ -24,9 +24,57 @@ make check-compliance
 
 # 2. Follow the workflow below
 
-# 3. Check compliance before finishing
+# 3. For all commits, use make ai-commit (automatic AI attribution)
+make ai-commit MSG="type(scope): description"
+
+# 4. Check compliance before finishing
 make check-compliance
 ```
+
+## ⚠️ IMPORTANT: AI Attribution Requirement
+
+**ALL commits created with AI assistance MUST use `make ai-commit`** instead of `git commit`.
+
+### Why Use `make ai-commit`?
+
+- ✅ **Automatic AI attribution** - No manual work needed
+- ✅ **Consistent format** - All commits follow the same pattern  
+- ✅ **Compliance enforcement** - Validates conventional commit format
+- ✅ **Transparency** - Clear record of AI-generated code
+- ✅ **Easier workflow** - Single command handles everything
+
+### Usage
+
+```bash
+# Stage your changes
+git add <files>
+
+# Review before committing
+make review-commit
+
+# Create AI-attributed commit (instead of git commit)
+make ai-commit MSG="feat(scope): description"
+```
+
+The command automatically adds:
+- `AI-Generated-By: OpenCode (Claude Sonnet 4)`
+- `Reviewed-By: <Your Name from git config>`
+
+### Example
+
+```bash
+git add internal/service/career/service.go
+make review-commit
+make ai-commit MSG="feat(service): add event filtering by date"
+
+# Creates commit with:
+# feat(service): add event filtering by date
+#
+# AI-Generated-By: OpenCode (Claude Sonnet 4)
+# Reviewed-By: Yomi Colledge
+```
+
+See [AI Commit Attribution Rules](./AI_COMMIT_ATTRIBUTION.md) for complete documentation.
 
 ---
 
@@ -123,10 +171,7 @@ var _ = Describe("ServiceName", func() {
 ```bash
 git add *_test.go
 make review-commit
-git commit -m "test(scope): add failing test for new feature
-
-Describes expected behavior for [feature name].
-Test currently fails as implementation doesn't exist yet."
+make ai-commit MSG="test(scope): add failing test for new feature"
 ```
 
 **Token check:** Still < 50k? ✅
@@ -168,12 +213,7 @@ sed -i '' '/- \[ \] Implement the feature/a\- [x] Implement the feature' your-ch
 ```bash
 git add *.go
 make review-commit
-git commit -m "feat(scope): implement new feature
-
-[Brief description of what was implemented and why]
-
-Implementation follows existing patterns in [relevant file].
-All tests now pass."
+make ai-commit MSG="feat(scope): implement new feature"
 ```
 
 **Token check:** Still < 50k? ✅
@@ -199,11 +239,7 @@ go test -race ./...
 ```bash
 git add *.go
 make review-commit
-git commit -m "refactor(scope): extract method for clarity
-
-[Description of what was refactored and why]
-
-No behavior changes - all tests still pass."
+make ai-commit MSG="refactor(scope): extract method for clarity"
 ```
 
 **Token check:** Still < 50k? ✅
@@ -266,9 +302,7 @@ grep -r "service\|repository" internal/domain/
 ```bash
 git add *.md
 make review-commit
-git commit -m "docs: update documentation for new feature
-
-[What was documented and why]"
+make ai-commit MSG="docs: update documentation for new feature"
 ```
 
 **Token check:** Still < 50k? ✅
@@ -291,6 +325,7 @@ git show <commit-hash>
 - [ ] Represents ONE logical change
 - [ ] Has clear commit message (type, scope, subject)
 - [ ] Message explains WHY, not just WHAT
+- [ ] Has AI attribution (created with `make ai-commit`)
 - [ ] No generated files
 - [ ] No debug code
 - [ ] Tests included
@@ -483,15 +518,17 @@ Before writing any code:
 
 ### Before Each Commit Checklist
 
-Before running `git commit`:
+Before running `make ai-commit`:
 
-- [ ] `make review-commit` passed
+- [ ] **`make check-compliance` passed** (REQUIRED before every commit)
 - [ ] One logical change only
+- [ ] Use `make ai-commit MSG="type(scope): description"` for AI-generated code
 - [ ] Commit message written (type, scope, subject)
 - [ ] Message explains WHY
 - [ ] No generated files
 - [ ] No debug code
 - [ ] Tests included (if applicable)
+- [ ] AI attribution will be added automatically
 
 ### End of Task Checklist
 
@@ -514,8 +551,8 @@ Before marking task complete:
 
 ```bash
 # Compliance and checks
-make check-compliance    # Full rules compliance check
-make review-commit       # Commit-specific review
+make check-compliance    # Full rules compliance check (REQUIRED before every commit)
+make ai-commit MSG="..." # AI-generated commit with automatic attribution
 make token-check         # Token efficiency reminder
 
 # Code quality
@@ -530,11 +567,11 @@ make build               # Build application
 make pre-commit          # Quick pre-commit checks
 
 # Git workflow
-git add <files>          # Stage specific files
-git add -p <file>        # Interactive staging
-git commit               # Commit with message
-git log --oneline -10    # Recent commits
-git show <hash>          # Review specific commit
+git add <files>                              # Stage specific files
+git add -p <file>                            # Interactive staging
+make ai-commit MSG="type(scope): subject"    # Create AI-attributed commit
+git log --oneline -10                        # Recent commits
+git show <hash>                              # Review specific commit
 ```
 
 ---
@@ -639,10 +676,7 @@ view internal/domain/career/event_test.go
 
 git add internal/domain/career/event_test.go
 make review-commit
-git commit -m "test(domain): add test for Duration field
-
-Duration should be a positive integer representing hours.
-Test validates field presence and constraints."
+make ai-commit MSG="test(domain): add test for Duration field"
 
 # GREEN: Implement
 view internal/domain/career/event.go
@@ -654,10 +688,7 @@ make test
 
 git add internal/domain/career/event.go
 make review-commit
-git commit -m "feat(domain): add Duration field to CareerEvent
-
-Adds Duration field to track time spent on events.
-Duration is validated to be non-negative integer."
+make ai-commit MSG="feat(domain): add Duration field to CareerEvent"
 
 # Phase 3: Compliance
 make check-compliance
@@ -690,10 +721,7 @@ view internal/service/career/service_test.go
 
 git add internal/service/career/service_test.go
 make review-commit
-git commit -m "test(service): add test for nil event handling
-
-Test verifies that passing nil event returns appropriate error.
-Currently fails - reproduces reported bug."
+make ai-commit MSG="test(service): add test for nil event handling"
 
 # GREEN: Fix the bug
 view internal/service/career/service.go
@@ -704,12 +732,7 @@ make test
 
 git add internal/service/career/service.go
 make review-commit
-git commit -m "fix(service): prevent nil pointer in CaptureEvent
-
-Add nil check before accessing event properties.
-Returns descriptive error when nil event provided.
-
-Fixes #87"
+make ai-commit MSG="fix(service): prevent nil pointer in CaptureEvent"
 
 # Phase 3: Compliance
 make check-compliance

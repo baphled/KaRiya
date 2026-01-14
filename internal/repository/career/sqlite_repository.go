@@ -104,6 +104,11 @@ func (r *SQLiteRepository) Create(ctx context.Context, event *domain.CareerEvent
 		return fmt.Errorf("failed to create event with ID %s: %w", event.ID, err)
 	}
 
+	// Save skill associations
+	if err := r.saveSkillAssociations(ctx, event.ID, event.Skills); err != nil {
+		return fmt.Errorf("failed to save skill associations for event %s: %w", event.ID, err)
+	}
+
 	return nil
 }
 
@@ -146,6 +151,13 @@ func (r *SQLiteRepository) GetByID(ctx context.Context, id string) (*domain.Care
 	if categoriesString.Valid && categoriesString.String != "" {
 		event.Categories = parseCategories(categoriesString.String)
 	}
+
+	// Load skill IDs
+	skillIDs, err := r.loadSkillIDs(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load skill IDs for event %s: %w", id, err)
+	}
+	event.Skills = skillIDs
 
 	return &event, nil
 }
@@ -196,6 +208,11 @@ func (r *SQLiteRepository) Update(ctx context.Context, event *domain.CareerEvent
 
 	if err != nil {
 		return fmt.Errorf("failed to update event with ID %s: %w", event.ID, err)
+	}
+
+	// Update skill associations
+	if err := r.saveSkillAssociations(ctx, event.ID, event.Skills); err != nil {
+		return fmt.Errorf("failed to update skill associations for event %s: %w", event.ID, err)
 	}
 
 	return nil
@@ -319,6 +336,13 @@ func (r *SQLiteRepository) List(ctx context.Context, filters ListFilters) ([]*do
 			event.Categories = parseCategories(categoriesString.String)
 		}
 
+		// Load skill IDs
+		skillIDs, err := r.loadSkillIDs(ctx, event.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load skill IDs for event %s: %w", event.ID, err)
+		}
+		event.Skills = skillIDs
+
 		events = append(events, &event)
 	}
 
@@ -384,4 +408,55 @@ func parseCategories(s string) []string {
 		return []string{}
 	}
 	return strings.Split(s, ",")
+}
+
+// saveSkillAssociations saves the skill associations for an event
+func (r *SQLiteRepository) saveSkillAssociations(ctx context.Context, eventID string, skillIDs []string) error {
+	// First, delete existing associations
+	_, err := r.db.ExecContext(ctx, "DELETE FROM event_skills WHERE event_id = ?", eventID)
+	if err != nil {
+		return fmt.Errorf("failed to delete existing skill associations: %w", err)
+	}
+
+	// Insert new associations
+	for _, skillID := range skillIDs {
+		_, err := r.db.ExecContext(ctx, `
+			INSERT INTO event_skills (event_id, skill_id)
+			VALUES (?, ?)
+		`, eventID, skillID)
+		if err != nil {
+			return fmt.Errorf("failed to insert skill association: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// loadSkillIDs loads the skill IDs associated with an event
+func (r *SQLiteRepository) loadSkillIDs(ctx context.Context, eventID string) ([]string, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT skill_id
+		FROM event_skills
+		WHERE event_id = ?
+		ORDER BY skill_id
+	`, eventID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load skill IDs: %w", err)
+	}
+	defer rows.Close()
+
+	var skillIDs []string
+	for rows.Next() {
+		var skillID string
+		if err := rows.Scan(&skillID); err != nil {
+			return nil, fmt.Errorf("failed to scan skill ID: %w", err)
+		}
+		skillIDs = append(skillIDs, skillID)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating skill IDs: %w", err)
+	}
+
+	return skillIDs, nil
 }

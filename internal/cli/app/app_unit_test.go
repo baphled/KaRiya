@@ -146,42 +146,71 @@ var _ = Describe("App Unit Tests", func() {
 		})
 
 		Context("home/esc/escape keys", func() {
-			It("should return to menu from intent state on escape", func() {
+			// NOTE: After removing app-level escape interceptor, escape is now
+			// handled by intents themselves. Intents return Cancelled result,
+			// which causes app to return to menu. These tests verify the intent
+			// properly handles escape and returns the appropriate result.
+
+			It("should forward escape to intent (intent returns to menu)", func() {
 				// Activate an intent
-				model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				model = newModel.(*app.Model)
 				state := model.GetState()
 				Expect(state).To(Equal(app.StateIntent))
 
-				// Press escape to return to menu
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("escape")}
-				newModel, _ := model.Update(msg)
+				// Press escape - forwarded to intent
+				msg := tea.KeyMsg{Type: tea.KeyEsc}
+				newModel, cmd := model.Update(msg)
 				model = newModel.(*app.Model)
 
+				// Intent may return command that completes and returns to menu
+				if cmd != nil {
+					resultMsg := cmd()
+					if resultMsg != nil {
+						newModel, _ = model.Update(resultMsg)
+						model = newModel.(*app.Model)
+					}
+				}
+
+				// Eventually should return to menu (via intent's Cancelled result)
 				state = model.GetState()
 				Expect(state).To(Equal(app.StateMenu))
 			})
 
-			It("should return to menu on home key", func() {
+			It("should not intercept home key (intent handles it)", func() {
 				// Activate an intent
-				model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-				// Press home to return to menu
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("home")}
-				newModel, _ := model.Update(msg)
+				newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 				model = newModel.(*app.Model)
 
+				// Press home - no longer intercepted by app
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("home")}
+				newModel, _ = model.Update(msg)
+				model = newModel.(*app.Model)
+
+				// App forwards to intent; intent may or may not handle 'home'
+				// This test just verifies app doesn't crash
 				state := model.GetState()
-				Expect(state).To(Equal(app.StateMenu))
+				Expect(state).To(Equal(app.StateIntent)) // Still in intent
 			})
 
-			It("should return to menu on esc key", func() {
+			It("should forward esc key to intent", func() {
 				// Activate an intent
-				model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-				// Press esc to return to menu
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("esc")}
-				newModel, _ := model.Update(msg)
+				newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 				model = newModel.(*app.Model)
+
+				// Press esc - forwarded to intent
+				msg := tea.KeyMsg{Type: tea.KeyEsc}
+				newModel, cmd := model.Update(msg)
+				model = newModel.(*app.Model)
+
+				// Process any command returned
+				if cmd != nil {
+					resultMsg := cmd()
+					if resultMsg != nil {
+						newModel, _ = model.Update(resultMsg)
+						model = newModel.(*app.Model)
+					}
+				}
 
 				state := model.GetState()
 				Expect(state).To(Equal(app.StateMenu))
@@ -242,20 +271,13 @@ var _ = Describe("App Unit Tests", func() {
 				}
 			})
 
-			It("should return to menu on escape", func() {
-				// Navigate down in menu first
-				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-				model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-
-				// Activate intent
-				model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-
-				// Cancel intent with escape (q now quits the app)
+			It("should forward escape to intent which returns to menu", func() {
+				// Cancel intent with escape - forwarded to intent (already activated by BeforeEach)
 				msg := tea.KeyMsg{Type: tea.KeyEsc}
 				newModel, cmdResult := model.Update(msg)
 				model = newModel.(*app.Model)
 
-				// Execute completion message
+				// Execute completion message (intent returns Cancelled result)
 				if cmdResult != nil {
 					completionMsg := cmdResult()
 					if completionMsg != nil {
@@ -264,7 +286,7 @@ var _ = Describe("App Unit Tests", func() {
 					}
 				}
 
-				// Menu index should be reset (we can verify by checking state)
+				// Should return to menu via intent's result
 				state := model.GetState()
 				Expect(state).To(Equal(app.StateMenu))
 			})
@@ -369,19 +391,31 @@ var _ = Describe("App Unit Tests", func() {
 			Expect(state).To(Equal(app.StateMenu))
 
 			// Activate intent
-			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
 			state = model.GetState()
 			Expect(state).To(Equal(app.StateIntent))
 
-			// Return to menu
-			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("escape")}
-			newModel, _ := model.Update(msg)
+			// Return to menu via intent handling escape
+			msg := tea.KeyMsg{Type: tea.KeyEsc}
+			newModel, cmd := model.Update(msg)
 			model = newModel.(*app.Model)
+
+			// Process intent's result
+			if cmd != nil {
+				resultMsg := cmd()
+				if resultMsg != nil {
+					newModel, _ = model.Update(resultMsg)
+					model = newModel.(*app.Model)
+				}
+			}
+
 			state = model.GetState()
 			Expect(state).To(Equal(app.StateMenu))
 
 			// Activate intent again
-			model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			model = newModel.(*app.Model)
 			state = model.GetState()
 			Expect(state).To(Equal(app.StateIntent))
 		})

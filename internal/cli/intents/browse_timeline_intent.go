@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -26,6 +27,12 @@ type EventSelectedMsg struct {
 // FilterChangedMsg indicates the filters have changed.
 type FilterChangedMsg struct {
 	Filters *TimelineFilters
+}
+
+// RequestEditEventMsg requests that the app route to CaptureEvent intent for editing.
+// This is sent to the app router which will activate CaptureEvent with PreviousEvent set.
+type RequestEditEventMsg struct {
+	Event *career.CareerEvent
 }
 
 // BrowseTimelineIntent implements the Intent interface for browsing career events.
@@ -199,6 +206,9 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case BrowseStateEventDetail:
 		return i.updateEventDetail(msg)
+
+	case BrowseStateDeleteConfirm:
+		return i.updateDeleteConfirm(msg)
 	}
 
 	return nil
@@ -208,37 +218,36 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Handle global keys first (q=quit, ?=help, esc=back)
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			return tea.Quit
-		case KeyHelp:
-			i.ToggleHelp()
-			return nil
-		case KeyBack:
-			// At root state, back means cancel and return to main menu
-			i.setCancelled()
-			return nil
-		}
-
-		// Try list navigation handler
-		if i.navHandler.HandleKey(msg.String()) {
-			return nil
-		}
-
-		// Handle intent-specific keys
-		switch msg.String() {
-		case "enter":
-			// Select current event and move to detail view.
-			if len(i.state.filteredEvents) > 0 {
-				if i.state.selectedIndex < len(i.state.filteredEvents) {
-					i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
-					i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
-					i.state.currentState = BrowseStateEventDetail
+		// Use MessageInterceptor for global keys (quit, help, back)
+		return NewMessageInterceptor().
+			OnQuit(StandardQuitHandler()).
+			OnHelp(StandardHelpHandler(i.BaseIntent)).
+			OnBack(func() tea.Cmd {
+				// At root state, back means cancel and return to main menu
+				i.setCancelled()
+				return nil
+			}).
+			InterceptOr(msg, func() tea.Cmd {
+				// Try list navigation handler
+				if i.navHandler.HandleKey(msg.String()) {
+					return nil
 				}
-			}
-			return nil
-		}
+
+				// Handle intent-specific keys
+				switch msg.String() {
+				case "enter":
+					// Select current event and move to detail view.
+					if len(i.state.filteredEvents) > 0 {
+						if i.state.selectedIndex < len(i.state.filteredEvents) {
+							i.state.selectedEvent = i.state.filteredEvents[i.state.selectedIndex]
+							i.state.viewedEvents = append(i.state.viewedEvents, i.state.selectedEvent)
+							i.state.currentState = BrowseStateEventDetail
+						}
+					}
+					return nil
+				}
+				return nil
+			})
 
 	case EventSelectedMsg:
 		// Event was selected (possibly by router or other component).
@@ -267,29 +276,130 @@ func (i *BrowseTimelineIntent) updateTimelineView(msg tea.Msg) tea.Cmd {
 func (i *BrowseTimelineIntent) updateEventDetail(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Handle global keys first (q=quit, ?=help, esc=back)
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			return tea.Quit
-		case KeyHelp:
-			i.ToggleHelp()
-			return nil
-		case KeyBack:
-			// Go back to timeline view
-			i.state.currentState = BrowseStateTimeline
-			return nil
-		}
+		// Use MessageInterceptor for global keys (quit, help, back)
+		return NewMessageInterceptor().
+			OnQuit(StandardQuitHandler()).
+			OnHelp(StandardHelpHandler(i.BaseIntent)).
+			OnBack(func() tea.Cmd {
+				// Go back to timeline view
+				i.state.currentState = BrowseStateTimeline
+				return nil
+			}).
+			InterceptOr(msg, func() tea.Cmd {
+				// Handle intent-specific keys
+				switch msg.String() {
+				case "enter":
+					// Confirm selection and return event.
+					i.setCompleted()
+					return nil
 
-		// Handle intent-specific keys
-		switch msg.String() {
-		case "enter":
-			// Confirm selection and return event.
-			i.setCompleted()
-			return nil
-		}
+				case "e":
+					// Edit event - send message to app to route to CaptureEvent intent
+					if i.state.selectedEvent != nil {
+						// Send RequestEditEventMsg which app router will handle
+						return func() tea.Msg {
+							return RequestEditEventMsg{Event: i.state.selectedEvent}
+						}
+					}
+					return nil
+
+				case "d":
+					// Delete event - go to confirmation
+					if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
+						i.state.currentState = BrowseStateDeleteConfirm
+						i.state.deleteError = nil
+					}
+					return nil
+				}
+				return nil
+			})
 	}
 
 	return nil
+}
+
+// updateDeleteConfirm handles delete confirmation.
+func (i *BrowseTimelineIntent) updateDeleteConfirm(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		// Use MessageInterceptor for consistent escape key handling
+		return NewMessageInterceptor().
+			OnQuit(StandardQuitHandler()).
+			OnHelp(StandardHelpHandler(i.BaseIntent)).
+			OnBack(func() tea.Cmd {
+				// Cancel delete and return to event detail
+				i.state.currentState = BrowseStateEventDetail
+				i.state.deleteError = nil
+				return nil
+			}).
+			InterceptOr(msg, func() tea.Cmd {
+				// Handle confirmation keys
+				switch msg.String() {
+				case "y", "Y":
+					// Confirm delete
+					if i.state.selectedEvent != nil && i.context.CLIEventService != nil {
+						err := i.context.CLIEventService.DeleteEvent(
+							i.getContext(),
+							i.state.selectedEvent.ID,
+						)
+						if err != nil {
+							i.state.deleteError = err
+							return nil
+						}
+
+						// Remove from filtered events
+						i.removeEventFromList(i.state.selectedEvent.ID)
+
+						// Clear selection and go back to timeline
+						i.state.selectedEvent = nil
+						i.state.currentState = BrowseStateTimeline
+
+						// Select first event if available
+						if len(i.state.filteredEvents) > 0 {
+							i.state.selectedIndex = 0
+							i.state.selectedEvent = i.state.filteredEvents[0]
+						}
+					}
+					return nil
+
+				case "n", "N":
+					// Also cancel with 'n' key
+					i.state.currentState = BrowseStateEventDetail
+					i.state.deleteError = nil
+					return nil
+				}
+				return nil
+			})
+	}
+
+	return nil
+}
+
+// removeEventFromList removes an event from both context.Events and filteredEvents.
+func (i *BrowseTimelineIntent) removeEventFromList(eventID string) {
+	// Remove from context.Events
+	for idx, evt := range i.context.Events {
+		if evt.ID == eventID {
+			i.context.Events = append(i.context.Events[:idx], i.context.Events[idx+1:]...)
+			break
+		}
+	}
+
+	// Remove from filteredEvents
+	for idx, evt := range i.state.filteredEvents {
+		if evt.ID == eventID {
+			i.state.filteredEvents = append(i.state.filteredEvents[:idx], i.state.filteredEvents[idx+1:]...)
+			break
+		}
+	}
+
+	// Update table rows
+	i.updateTableRows()
+}
+
+// getContext returns a context for service calls.
+func (i *BrowseTimelineIntent) getContext() context.Context {
+	return context.Background()
 }
 
 // applyFilters filters the events based on current filter state.
@@ -367,6 +477,8 @@ func (i *BrowseTimelineIntent) getStateName() string {
 		return "Timeline"
 	case BrowseStateEventDetail:
 		return "Event Detail"
+	case BrowseStateDeleteConfirm:
+		return "Delete Event"
 	default:
 		return string(i.state.currentState)
 	}
@@ -379,6 +491,8 @@ func (i *BrowseTimelineIntent) getStateContent() string {
 		return i.viewTimeline()
 	case BrowseStateEventDetail:
 		return i.viewEventDetail()
+	case BrowseStateDeleteConfirm:
+		return i.viewDeleteConfirm()
 	default:
 		return ""
 	}
@@ -400,8 +514,26 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 			ThemedGlobalBadges(theme),
 		)
 	case BrowseStateEventDetail:
+		// Add edit and delete badges if service is available
+		badges := []components.KeyBadge{
+			components.NewKeyBadge("Enter", "Select"),
+		}
+		if i.context.CLIEventService != nil {
+			badges = append(badges,
+				components.NewKeyBadge("e", "Edit"),
+				components.NewKeyBadge("d", "Delete"),
+			)
+		}
 		return CombineThemedFooters(
-			ThemedDetailViewFooter(theme),
+			ThemedCustomFooter(theme, badges...),
+			ThemedGlobalBadges(theme),
+		)
+	case BrowseStateDeleteConfirm:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("y", "Confirm Delete"),
+				components.NewKeyBadge("n/Esc", "Cancel"),
+			),
 			ThemedGlobalBadges(theme),
 		)
 	default:
@@ -446,50 +578,65 @@ func (i *BrowseTimelineIntent) viewTimeline() string {
 	return i.listContainer.Render()
 }
 
-// viewEventDetail renders the event detail view.
+// viewEventDetail renders the event detail view using the reusable component.
 func (i *BrowseTimelineIntent) viewEventDetail() string {
+	return components.RenderEventDetailCard(i.state.selectedEvent, i.Theme())
+}
+
+// viewDeleteConfirm renders the delete confirmation dialog.
+func (i *BrowseTimelineIntent) viewDeleteConfirm() string {
 	if i.state.selectedEvent == nil {
 		return "No event selected."
 	}
 
 	var content strings.Builder
-	content.WriteString("\nEvent Details\n\n")
 
-	// Event header.
+	// Warning header
+	warningStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#F38BA8")). // Catppuccin Red
+		Bold(true)
+
+	content.WriteString(warningStyle.Render("⚠️  Delete Event?"))
+	content.WriteString("\n\n")
+
+	// Event summary
 	content.WriteString(fmt.Sprintf("Date: %s\n", i.state.selectedEvent.Date.Format("2006-01-02")))
-
 	if i.state.selectedEvent.Company != "" {
 		content.WriteString(fmt.Sprintf("Company: %s\n", i.state.selectedEvent.Company))
 	}
-	if i.state.selectedEvent.Project != "" {
-		content.WriteString(fmt.Sprintf("Project: %s\n", i.state.selectedEvent.Project))
+
+	// Truncate text for display
+	text := i.state.selectedEvent.Text
+	if len(text) > 100 {
+		text = text[:100] + "..."
+	}
+	content.WriteString(fmt.Sprintf("\nText: %s\n", text))
+
+	// Error message if delete failed
+	if i.state.deleteError != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#F38BA8")).
+			MarginTop(1)
+		content.WriteString("\n")
+		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.deleteError.Error())))
 	}
 
-	content.WriteString(fmt.Sprintf("\nText:\n%s\n", i.state.selectedEvent.Text))
+	// Confirmation prompt
+	content.WriteString("\n\nThis action cannot be undone.\n")
 
-	// Tags and categories.
-	if len(i.state.selectedEvent.Tags) > 0 {
-		content.WriteString(fmt.Sprintf("\nTags: %s\n", strings.Join(i.state.selectedEvent.Tags, ", ")))
-	}
-	if len(i.state.selectedEvent.Categories) > 0 {
-		content.WriteString(fmt.Sprintf("Categories: %s\n", strings.Join(i.state.selectedEvent.Categories, ", ")))
-	}
-
-	// Apply themed card styling
+	// Apply card styling
 	var cardStyle lipgloss.Style
 	if theme := i.Theme(); theme != nil {
-		cardStyle = theme.Styles().CardBase
+		cardStyle = theme.Styles().CardBase.
+			BorderForeground(lipgloss.Color("#F38BA8")) // Red border for warning
 	} else {
-		// Fallback if no theme available
 		cardStyle = lipgloss.NewStyle().
 			Padding(1, 2).
-			BorderStyle(lipgloss.RoundedBorder())
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#F38BA8"))
 	}
 
-	card := cardStyle.Render(content.String())
-
-	// Footer now handled by StandardView
-	return card
+	return cardStyle.Render(content.String())
 }
 
 // Result returns the final result of the intent.

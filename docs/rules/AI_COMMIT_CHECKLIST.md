@@ -50,8 +50,14 @@ AI-Generated-By: Avante                           # Missing model
 # Setup (one-time)
 make install-git-hooks
 
-# Daily workflow
+# Recommended: Use ai-commit command (automatic attribution)
+git add -p <files>
+make check-compliance       # REQUIRED before commit
+make ai-commit MSG="feat(scope): description"
+
+# Alternative: Manual workflow (NOT recommended)
 git add <files>
+make check-compliance       # REQUIRED before commit
 make review-commit          # Review with AI check
 git commit                  # Write message with attribution
 

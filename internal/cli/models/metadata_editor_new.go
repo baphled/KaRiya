@@ -34,6 +34,7 @@ type MetadataEditorModelNew struct {
 	formData         *forms.MetadataFormData
 	tagSelector      *components.TagSelector
 	categorySelector *components.CategorySelector
+	skillSelector    *components.SkillSelector
 	err              error
 	submitted        bool
 	cancelled        bool
@@ -56,11 +57,24 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 	_ = categorySelector.SetSelected(event.Categories) // Error ignored: existing event categories should be valid
 	availableCategories := categorySelector.AvailableCategories()
 
+	// Load all available skills from repository
+	allSkills, err := service.GetSkillRepository().List(ctx, nil)
+	if err != nil {
+		allSkills = []*career.Skill{} // If error, use empty list
+	}
+
+	skillSelector := components.NewSkillSelector(allSkills)
+	// Pre-select skills from event
+	for _, skillID := range event.Skills {
+		_ = skillSelector.SelectSkill(skillID) // Error ignored: event skills should be valid
+	}
+	availableSkills := skillSelector.AvailableSkills()
+
 	// Extract form data from event
 	formData := forms.GetMetadataFormData(event)
 
-	// Create huh form with available tags and categories
-	form := forms.NewMetadataEditorFormWithData(formData, availableTags, availableCategories)
+	// Create huh form with available tags, categories, and skills
+	form := forms.NewMetadataEditorFormWithData(formData, availableTags, availableCategories, availableSkills)
 
 	return &MetadataEditorModelNew{
 		BaseStandardModel: NewBaseStandardModel(),
@@ -73,6 +87,7 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 		formData:          formData,
 		tagSelector:       tagSelector,
 		categorySelector:  categorySelector,
+		skillSelector:     skillSelector,
 		err:               nil,
 		submitted:         false,
 		cancelled:         false,
@@ -96,6 +111,13 @@ func (m *MetadataEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Handle escape BEFORE delegating to form
+		// This ensures the parent intent can navigate back
+		if msg.String() == "esc" {
+			m.cancelled = true
+			return m, nil
+		}
+
 		// Handle quit
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			return m, func() tea.Msg { return QuitMsg{} }
@@ -123,6 +145,13 @@ func (m *MetadataEditorModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleFormCompletion processes the completed form and saves the metadata.
 func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
+	// Check if user confirmed via the submit button
+	// If they selected "Cancel" on the confirm, treat as cancelled
+	if !m.formData.SubmitConfirmed {
+		m.cancelled = true
+		return m, nil
+	}
+
 	// Apply form data to event
 	err := forms.ApplyMetadataFormData(m.event, m.formData)
 	if err != nil {

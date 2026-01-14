@@ -3,13 +3,19 @@
 ## Before Every Commit
 
 ```bash
-# 1. Review what you're committing
+# 1. Stage your changes
+git add -p <file>
+
+# 2. Review what you're committing
 git diff --cached --stat
 
-# 2. Run automated review
-make review-commit
+# 3. REQUIRED: Run compliance check before commit
+make check-compliance
 
-# 3. Write clear commit message
+# 4. Commit with AI attribution (REQUIRED for AI-generated code)
+make ai-commit MSG="feat(scope): description"
+
+# OR: Manual commit (NOT recommended for AI-generated code)
 git commit
 ```
 

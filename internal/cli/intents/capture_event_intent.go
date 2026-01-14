@@ -91,7 +91,7 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 	}
 
 	// Create the form model for capturing event details
-	formModel := models.NewFormModel(context.CLIEventService)
+	formModel := models.NewCaptureForm(context.CLIEventService)
 
 	// Create BaseIntent for terminal awareness and state management
 	base := NewBaseIntent()
@@ -176,8 +176,15 @@ func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
 		i.state.captureForm.SetStrategy(string(StrategyManual))
 		i.state.showOptionalFields = true
 
+		// CRITICAL: Load the event data into the form fields
+		// This populates all input fields with the existing event data
+		i.state.captureForm.LoadEventForEditing(i.context.PreviousEvent)
+
 		// Skip strategy selection and go straight to form
 		i.state.currentState = CaptureStateForm
+
+		// CRITICAL: Initialize the form so it can accept input
+		return i.state.captureForm.Init()
 	}
 	// Return a no-op command to satisfy the intent lifecycle
 	return func() tea.Msg { return nil }
@@ -256,7 +263,9 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			}
 
 			i.state.currentState = CaptureStateForm
-			return nil
+
+			// CRITICAL: Initialize the form so it can accept input
+			return i.state.captureForm.Init()
 
 		}
 
@@ -287,13 +296,11 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 // The form model handles all text input and field navigation.
 // Users can press Ctrl+S to submit the form, or Tab+Enter to submit via the button.
 func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
-	// Delegate all messages to the form model to handle input and state
-	_, formCmd := i.state.captureForm.Update(msg)
-
 	// Check for special messages that indicate form completion or navigation
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Handle global keys first (q=quit, ?=help, esc=back)
+		// Handle global keys FIRST (before form processes them)
+		// This ensures esc, q, ?, m keys work even when form has focus
 		switch HandleGlobalKeys(msg) {
 		case KeyQuit:
 			return tea.Quit
@@ -301,7 +308,13 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 			i.ToggleHelp()
 			return nil
 		case KeyBack:
-			// Go back to strategy selection
+			// Determine where to go back based on context
+			if i.context.PreviousEvent != nil {
+				// Editing existing event - cancel and return to caller (e.g., BrowseTimeline)
+				i.setCancelled()
+				return nil
+			}
+			// New event capture - go back to strategy selection
 			i.state.currentState = CaptureStateChooseStrategy
 			return nil
 		}
@@ -359,6 +372,10 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// Delegate all messages to the form model to handle input and state
+	// This happens AFTER global keys are checked, so form doesn't consume them
+	_, formCmd := i.state.captureForm.Update(msg)
+
 	// Return the command from the form update
 	return formCmd
 
@@ -367,6 +384,31 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 // updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
 // It processes review confirmations, edits, and transitions to submit state.
 func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
+	// Check global keys BEFORE routing to modals
+	// This ensures esc, q, ?, m keys work even when modal has focus
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// If modal is active, close it
+			if i.state.reviewState.EditingMode != EditingModeNone {
+				i.state.reviewState.metadataModal = nil
+				i.state.reviewState.burstModal = nil
+				i.state.reviewState.factModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+				return nil
+			}
+			// Otherwise go back to form
+			i.state.currentState = CaptureStateForm
+			return nil
+		}
+	}
+
 	// If a modal is active, pass updates to it
 	switch i.state.reviewState.EditingMode {
 	case EditingModeMetadata:
@@ -396,11 +438,6 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 
 			// Check if modal completed
 			// TODO: Add completion check when BurstSuggestionModelNew has IsComplete/IsCancelled methods
-			// For now, allow Esc to exit
-			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
-				i.state.reviewState.burstModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
-			}
 			return cmd
 		}
 
@@ -427,19 +464,6 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	// Normal review handling (no modal active)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Handle global keys first (q=quit, ?=help, esc=back)
-		switch HandleGlobalKeys(msg) {
-		case KeyQuit:
-			return tea.Quit
-		case KeyHelp:
-			i.ToggleHelp()
-			return nil
-		case KeyBack:
-			// Go back to form
-			i.state.currentState = CaptureStateForm
-			return nil
-		}
-
 		switch msg.String() {
 		case "ctrl+s", "enter":
 			// Confirm review and submit
@@ -1229,7 +1253,7 @@ func (i *CaptureEventIntent) GetState() string {
 }
 
 // GetForm returns the current form model instance (for test and debug)
-func (i *CaptureEventIntent) GetForm() *models.FormModel {
+func (i *CaptureEventIntent) GetForm() *models.CaptureForm {
 	if i == nil || i.state == nil {
 		return nil
 	}

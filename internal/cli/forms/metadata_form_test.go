@@ -22,6 +22,7 @@ var _ = Describe("MetadataForm", func() {
 			Project:    "Test Project",
 			Tags:       []string{"go", "testing"},
 			Categories: []string{"technical", "leadership"},
+			Skills:     []string{"skill-id-1", "skill-id-2"},
 		}
 	})
 
@@ -29,8 +30,9 @@ var _ = Describe("MetadataForm", func() {
 		It("should create a form with event data", func() {
 			availableTags := []string{"go", "python", "testing"}
 			availableCategories := []string{"technical", "leadership", "mentoring"}
+			availableSkills := []*career.Skill{}
 
-			form := forms.NewMetadataEditorForm(testEvent, availableTags, availableCategories)
+			form := forms.NewMetadataEditorForm(testEvent, availableTags, availableCategories, availableSkills)
 
 			Expect(form).NotTo(BeNil())
 		})
@@ -45,6 +47,7 @@ var _ = Describe("MetadataForm", func() {
 			Expect(data.Project).To(Equal("Test Project"))
 			Expect(data.Tags).To(Equal([]string{"go", "testing"}))
 			Expect(data.Categories).To(Equal([]string{"technical", "leadership"}))
+			Expect(data.Skills).To(Equal([]string{"skill-id-1", "skill-id-2"}))
 		})
 
 		It("should apply data to event", func() {
@@ -55,6 +58,7 @@ var _ = Describe("MetadataForm", func() {
 				Project:    "New Project",
 				Tags:       []string{"rust", "performance"},
 				Categories: []string{"research"},
+				Skills:     []string{"skill-id-3", "skill-id-4"},
 			}
 
 			err := forms.ApplyMetadataFormData(newEvent, data)
@@ -65,6 +69,7 @@ var _ = Describe("MetadataForm", func() {
 			Expect(newEvent.Project).To(Equal("New Project"))
 			Expect(newEvent.Tags).To(Equal([]string{"rust", "performance"}))
 			Expect(newEvent.Categories).To(Equal([]string{"research"}))
+			Expect(newEvent.Skills).To(Equal([]string{"skill-id-3", "skill-id-4"}))
 		})
 	})
 
@@ -150,8 +155,9 @@ var _ = Describe("MetadataForm", func() {
 
 			availableTags := []string{"tag1", "tag2"}
 			availableCategories := []string{"cat1", "cat2"}
+			availableSkills := []*career.Skill{}
 
-			form := forms.NewMetadataEditorFormWithData(data, availableTags, availableCategories)
+			form := forms.NewMetadataEditorFormWithData(data, availableTags, availableCategories, availableSkills)
 
 			Expect(form).NotTo(BeNil())
 		})

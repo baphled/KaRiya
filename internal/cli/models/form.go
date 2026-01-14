@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -24,6 +26,7 @@ const (
 	ProjectField
 	TagsField
 	CategoriesField
+	SkillsField
 	SubmitButton
 )
 
@@ -42,6 +45,7 @@ type FormModel struct {
 	maxChars           int
 	tagSelector        *components.TagSelector
 	categorySelector   *components.CategorySelector
+	skillSelector      *components.SkillSelector
 	fieldErrors        map[FormField]string       // Track field-level validation errors
 	editMode           bool                       // True if editing an existing event
 	editEventID        string                     // ID of event being edited
@@ -94,6 +98,7 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		maxChars:           2000,
 		tagSelector:        components.NewTagSelector(),
 		categorySelector:   components.NewCategorySelector(),
+		skillSelector:      components.NewSkillSelector([]*career.Skill{}),
 		fieldErrors:        make(map[FormField]string),
 		helpFooter:         components.NewHelpFooter("form", 80),
 		header:             components.NewHeader("Capture Career Event", 80),
@@ -139,15 +144,24 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Use centralized keymaps for consistent behavior
+		globalKeys := navigation.DefaultGlobalKeyMap()
+		formKeys := navigation.DefaultFormKeyMap()
+		listKeys := navigation.DefaultListKeyMap()
+
+		// Handle global keys first (highest priority)
+		switch {
+		case key.Matches(msg, globalKeys.Back):
 			// Signal back navigation to parent
 			return m, func() tea.Msg { return BackMsg{} }
-		case "ctrl+c", "q":
+		case key.Matches(msg, globalKeys.Quit):
 			// Signal quit to parent
 			return m, func() tea.Msg { return QuitMsg{} }
+		}
 
-		case " ":
+		// Handle form-specific keys
+		switch {
+		case key.Matches(msg, formKeys.Toggle): // space
 			// Handle space key for tag/category selection
 			if m.focusIndex == int(TagsField) {
 				availableTags := m.tagSelector.AvailableTags()
@@ -174,44 +188,48 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-		case "j", "k":
-			// Handle j/k navigation for tags, categories, and modes
+		case key.Matches(msg, listKeys.Down): // j, down
+			// Handle down/j navigation for tags and categories
 			// Only when focused on these fields, not in text input
 			if m.focusIndex == int(TagsField) {
 				availableTags := m.tagSelector.AvailableTags()
-				if msg.String() == "j" {
-					m.tagIndex++
-					if m.tagIndex >= len(availableTags) {
-						m.tagIndex = 0
-					}
-				} else if msg.String() == "k" {
-					m.tagIndex--
-					if m.tagIndex < 0 {
-						m.tagIndex = len(availableTags) - 1
-					}
+				m.tagIndex++
+				if m.tagIndex >= len(availableTags) {
+					m.tagIndex = 0
 				}
 				return m, nil
 			}
-
 			if m.focusIndex == int(CategoriesField) {
 				availableCategories := m.categorySelector.AvailableCategories()
-				if msg.String() == "j" {
-					m.categoryIndex++
-					if m.categoryIndex >= len(availableCategories) {
-						m.categoryIndex = 0
-					}
-				} else if msg.String() == "k" {
-					m.categoryIndex--
-					if m.categoryIndex < 0 {
-						m.categoryIndex = len(availableCategories) - 1
-					}
+				m.categoryIndex++
+				if m.categoryIndex >= len(availableCategories) {
+					m.categoryIndex = 0
 				}
 				return m, nil
 			}
+			// If not in a navigation field, fall through to handle below
 
-			// If not in a navigation field, fall through to text input
+		case key.Matches(msg, listKeys.Up): // k, up
+			// Handle up/k navigation for tags and categories
+			if m.focusIndex == int(TagsField) {
+				availableTags := m.tagSelector.AvailableTags()
+				m.tagIndex--
+				if m.tagIndex < 0 {
+					m.tagIndex = len(availableTags) - 1
+				}
+				return m, nil
+			}
+			if m.focusIndex == int(CategoriesField) {
+				availableCategories := m.categorySelector.AvailableCategories()
+				m.categoryIndex--
+				if m.categoryIndex < 0 {
+					m.categoryIndex = len(availableCategories) - 1
+				}
+				return m, nil
+			}
+			// If not in a navigation field, fall through to handle below
 
-		case "ctrl+o":
+		case key.Matches(msg, formKeys.ToggleOptional): // ctrl+o
 			// Toggle optional fields visibility (Ctrl+O works in any mode, any field)
 			// Note: This replaces the old 't' key toggle to avoid conflicts with text input
 			if m.strategy == "manual" {
@@ -225,60 +243,19 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
-		case "tab", "shift+tab", "enter", "up", "down":
-			s := msg.String()
-
+		case key.Matches(msg, formKeys.NextField), key.Matches(msg, formKeys.PrevField),
+			key.Matches(msg, formKeys.Submit):
 			// Validate current field before moving away
-			if s == "tab" || s == "shift+tab" || s == "enter" {
-				m.validateCurrentField()
-			}
+			m.validateCurrentField()
 
-			// Handle tag selection when on tags field
-			if m.focusIndex == int(TagsField) {
-				availableTags := m.tagSelector.AvailableTags()
-				if s == "up" {
-					m.tagIndex--
-					if m.tagIndex < 0 {
-						m.tagIndex = len(availableTags) - 1
-					}
-					return m, nil
-				}
-				if s == "down" {
-					m.tagIndex++
-					if m.tagIndex >= len(availableTags) {
-						m.tagIndex = 0
-					}
-					return m, nil
-				}
-			}
-
-			// Handle category selection when on categories field
-			if m.focusIndex == int(CategoriesField) {
-				availableCategories := m.categorySelector.AvailableCategories()
-				if s == "up" {
-					m.categoryIndex--
-					if m.categoryIndex < 0 {
-						m.categoryIndex = len(availableCategories) - 1
-					}
-					return m, nil
-				}
-				if s == "down" {
-					m.categoryIndex++
-					if m.categoryIndex >= len(availableCategories) {
-						m.categoryIndex = 0
-					}
-					return m, nil
-				}
-			}
-
-			// Handle navigation
-			if s == "enter" && m.focusIndex == int(SubmitButton) {
+			// Handle submit if on submit button
+			if key.Matches(msg, formKeys.Submit) && m.focusIndex == int(SubmitButton) {
 				return m, m.submitForm()
 			}
 
 			// Navigate to next/previous field, skipping hidden fields
 			direction := 1
-			if s == "up" || s == "shift+tab" {
+			if key.Matches(msg, formKeys.PrevField) {
 				direction = -1
 			}
 
@@ -490,9 +467,10 @@ func (m *FormModel) submitForm() tea.Cmd {
 		company := strings.TrimSpace(m.inputs[2].Value())
 		project := strings.TrimSpace(m.inputs[3].Value())
 
-		// Get selected tags and categories
+		// Get selected tags, categories, and skills
 		tags := m.tagSelector.SelectedTags()
 		categories := m.categorySelector.SelectedCategories()
+		skills := m.skillSelector.SelectedSkillIDs()
 
 		// NOTE: Form does NOT save the event. The intent is responsible for saving
 		// the event after the review phase is complete.
@@ -507,6 +485,7 @@ func (m *FormModel) submitForm() tea.Cmd {
 			Project:    project,
 			Tags:       tags,
 			Categories: categories,
+			Skills:     skills,
 			CreatedAt:  time.Now(),
 			UpdatedAt:  time.Now(),
 		}
@@ -643,6 +622,11 @@ func (m *FormModel) LoadEventForEditing(event *career.CareerEvent) {
 	// Set categories in category selector
 	if len(event.Categories) > 0 {
 		_ = m.categorySelector.SetSelected(event.Categories) // Error ignored: existing event categories should be valid
+	}
+
+	// Set skills in skill selector
+	if len(event.Skills) > 0 {
+		m.skillSelector.SetSelectedSkills(event.Skills)
 	}
 
 	// Focus first input
@@ -928,4 +912,14 @@ func (m *FormModel) renderFormContentWithContainers() string {
 func (m *FormModel) SetBreadcrumbs(crumbs []string) {
 	m.breadcrumbs = crumbs
 	// Note: header.SetBreadcrumbs removed - breadcrumbs now handled by StandardView
+}
+
+// LoadSkills initializes the skill selector with available skills
+func (m *FormModel) LoadSkills(skills []*career.Skill) {
+	m.skillSelector = components.NewSkillSelector(skills)
+}
+
+// SkillSelector returns the skill selector for external access
+func (m *FormModel) SkillSelector() *components.SkillSelector {
+	return m.skillSelector
 }

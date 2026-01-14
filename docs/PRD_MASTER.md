@@ -654,3 +654,304 @@ CVView:
 
 - Dashboard for reporting metrics
 
+
+---
+
+## 16. User Journeys
+
+This section documents the primary user journeys through KaRiya, from first use to CV generation.
+
+---
+
+### 16.1 Primary Journey: Career Data to Professional CV
+
+The core value proposition of KaRiya is transforming raw career data into audience-specific, professional CVs. This journey has three simplified phases:
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     PHASE 1: ONBOARDING / IMPORT                         │
+│                                                                          │
+│  User starts with existing career data or fresh start:                   │
+│                                                                          │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                │
+│  │ Import CSV  │ OR  │ Start Fresh │ OR  │ Quick Entry │                │
+│  │ (existing   │     │ (new user,  │     │ (capture    │                │
+│  │  data)      │     │  empty)     │     │  one event) │                │
+│  └──────┬──────┘     └──────┬──────┘     └──────┬──────┘                │
+│         └──────────────────┬┴────────────────────┘                       │
+│                            ▼                                             │
+│                    Events in Timeline                                    │
+└──────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     PHASE 2: CAPTURE & ENRICH                            │
+│                                                                          │
+│  User iteratively adds and enriches career data:                         │
+│                                                                          │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                │
+│  │ Add Event   │ ──▶ │ Add Skills  │ ──▶ │ Burst       │                │
+│  │ (describe   │     │ (tech used) │     │ Suggestion  │                │
+│  │  what       │     │             │     │ (group      │                │
+│  │  happened)  │     │             │     │  related)   │                │
+│  └─────────────┘     └─────────────┘     └─────────────┘                │
+│         │                   │                   │                        │
+│         │                   │                   ▼                        │
+│         │                   │            ┌─────────────┐                 │
+│         │                   └──────────▶ │ Fact        │                 │
+│         │                                │ Extraction  │                 │
+│         │                                │ (competency,│                 │
+│         │                                │  role fit)  │                 │
+│         │                                └─────────────┘                 │
+│         │                                       │                        │
+│         └───────────── Iterate ─────────────────┘                        │
+│                                                                          │
+│  Key Enhancements:                                                       │
+│  • Date, Company, Project metadata                                       │
+│  • Skills automatically tracked and suggested                            │
+│  • Related events grouped into Bursts                                    │
+│  • Competencies and role fit extracted as Facts                          │
+└──────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     PHASE 3: GENERATE CV                                 │
+│                                                                          │
+│  User generates audience-specific CVs:                                   │
+│                                                                          │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                │
+│  │ Select      │ ──▶ │ Select      │ ──▶ │ Select      │                │
+│  │ Profile     │     │ Audience    │     │ Variant     │                │
+│  │ (Principal, │     │ (Hiring Mgr,│     │ (Length +   │                │
+│  │  Staff...)  │     │  Recruiter) │     │  Emphasis)  │                │
+│  └─────────────┘     └─────────────┘     └─────────────┘                │
+│         │                                        │                       │
+│         └────────────────┬───────────────────────┘                       │
+│                          ▼                                               │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                │
+│  │ Generate CV │ ──▶ │ Preview &   │ ──▶ │ Export      │                │
+│  │ (auto-      │     │ Review      │     │ (Markdown,  │                │
+│  │  bullets)   │     │             │     │  Text, YAML)│                │
+│  └─────────────┘     └─────────────┘     └─────────────┘                │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 16.2 How Skills Integrate
+
+Skills are central to career data enrichment and CV generation:
+
+#### During Event Capture (Phase 2)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     Capture Event Form                              │
+│                                                                     │
+│  What happened?                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ Led migration from Ruby 2.7 to 3.1, improving performance  │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  Date: 2024-03-15    Company: Acme Corp    Project: Platform       │
+│                                                                     │
+│  Skills used: (Select or type to create new)                       │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │ ☑ Ruby           ☑ Rails         ☑ Docker                  │   │
+│  │ ☐ Go             ☐ Kubernetes    + Add new skill...         │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  [Submit]  [Cancel]                                                │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**What Happens**:
+1. User selects existing skills or creates new ones
+2. Skills are associated with the event (`event_skills` junction table)
+3. If new skill created:
+   - Name and category captured
+   - Optional: Level (beginner/intermediate/advanced/expert)
+   - Optional: Years of experience
+4. Skills influence fact extraction (competencies derived from skills)
+
+#### Skills Management (Anytime)
+
+Users can manage their skill catalog:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     Manage Skills                                   │
+│                                                                     │
+│  Backend (12 skills)                                                │
+│  ▶ Ruby (15 events, last used: 2024-03-15)          [Edit][Delete] │
+│    Go (8 events, last used: 2024-01-10)             [Edit][Delete] │
+│    Python (3 events, last used: 2023-09-20)         [Edit][Delete] │
+│                                                                     │
+│  Frontend (5 skills)                                                │
+│    React (7 events, last used: 2024-02-14)          [Edit][Delete] │
+│    TypeScript (7 events, last used: 2024-02-14)     [Edit][Delete] │
+│                                                                     │
+│  DevOps (8 skills)                                                  │
+│    Kubernetes (10 events, last used: 2024-03-10)    [Edit][Delete] │
+│                                                                     │
+│  [n] New   [f] Filter   [s] Sort   [Esc] Back                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Skills are used for**:
+- Tracking technology experience across events
+- Generating technical skills sections in CVs
+- Filtering events by technology
+- Demonstrating breadth and depth of expertise
+
+---
+
+### 16.3 CV Variant Example: "Short All Experience"
+
+One of the most useful CV variants combines **short length** with **comprehensive history**:
+
+**Variant**: `senior_backend_short`
+
+**Configuration**:
+- **Role Emphasis**: Senior Backend
+- **Length Format**: Short (1-2 pages, 5 years max history by default)
+- **BUT**: User can override to "all experience" if needed
+
+**Example Workflow**:
+
+```
+1. Select Profile: "Senior Backend Engineer"
+2. Select Audience: "Hiring Manager"
+3. Select Role Emphasis: "Senior Backend"
+4. Select Length Format: "Short"
+   
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Short CV (1-2 pages)                                        │
+   │                                                             │
+   │ ☑ Last 5 years only                                         │
+   │ ☐ All experience (override)                                 │
+   │                                                             │
+   │ Max bullets per role: 4-5                                   │
+   │ Confidence threshold: 0.75 (high confidence only)           │
+   │                                                             │
+   │ [Generate]  [Back]                                          │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+**Generated CV Structure**:
+
+```
+Senior Backend Engineer
+
+EXPERIENCE
+
+Acme Corp - Senior Backend Engineer (2022-Present)
+• Led Ruby 3.1 migration improving performance by 40%
+• Architected microservices platform serving 10M+ requests/day
+• Mentored 5 engineers on Rails best practices
+• Implemented CI/CD pipeline reducing deployment time by 70%
+
+TechCo - Backend Engineer (2019-2022)
+• Built REST API handling 5M+ daily transactions
+• Optimized database queries reducing latency by 60%
+• Introduced Docker containerization across team
+
+[If "All experience" override selected, continues with earlier roles]
+
+StartupX - Software Engineer (2016-2019)
+• Developed core platform features in Ruby on Rails
+• Maintained 99.9% uptime for production services
+
+SKILLS
+
+Languages: Ruby, Go, Python, SQL
+Frameworks: Rails, Sinatra, Fiber
+Infrastructure: Docker, Kubernetes, AWS
+Databases: PostgreSQL, Redis, Elasticsearch
+```
+
+**Key Features**:
+- **Configurable history**: Default 5 years, override to show all
+- **High confidence bullets**: Only strongest achievements (0.75+ confidence)
+- **Skills section**: Auto-generated from skill associations
+- **Concise format**: Perfect for initial screens or recruiter reviews
+
+---
+
+### 16.4 User Journey Workflows
+
+#### Journey 1: New User with Existing CV
+
+**Goal**: Import existing career history and generate updated CV
+
+**Steps**:
+1. **Import** → Select CSV file with career events
+2. **Preview** → Review parsed events, fix mapping issues
+3. **Confirm** → Import events into timeline
+4. **Enrich Skills** → Go through events, add skill associations
+5. **Generate** → Select profile/audience/variant, generate CV
+6. **Export** → Download as Markdown or Text
+
+**Duration**: 45-90 minutes for first CV (includes skill setup)
+
+#### Journey 2: Regular User Adding New Experience
+
+**Goal**: Capture recent project and update CV
+
+**Steps**:
+1. **Capture** → Describe what happened
+2. **Add Skills** → Select technologies used (or create new)
+3. **Metadata** → Confirm date, company, project
+4. **Review** → Accept/reject burst suggestion
+5. **Generate** → Regenerate CV with new content
+
+**Duration**: 5-10 minutes per event
+
+#### Journey 3: Job Application Preparation
+
+**Goal**: Generate tailored CV for specific opportunity
+
+**Steps**:
+1. **Review Skills** → Ensure relevant skills are in catalog
+2. **Configure** → Select role profile matching job
+3. **Audience** → Select Hiring Manager for senior roles
+4. **Variant** → Choose "Short All Experience" for comprehensive 1-pager
+5. **Preview** → Review generated bullets
+6. **Export** → Download in required format
+
+**Duration**: 10-15 minutes per application
+
+---
+
+### 16.5 Navigation Patterns
+
+All KaRiya workflows follow consistent navigation:
+
+| Key | Action | Context |
+|-----|--------|---------|
+| `Esc` | Go back / Cancel | Works everywhere |
+| `m` | Return to main menu | From any screen |
+| `q` / `Ctrl+C` | Quit application | From any screen |
+| `?` | Show help | From any screen |
+| `↑/k` | Move up | Lists, menus |
+| `↓/j` | Move down | Lists, menus |
+| `Enter` | Select / Submit | Lists, forms |
+| `Tab` | Next field | Forms |
+| `g/G` | Top / Bottom | Lists |
+
+---
+
+### 16.6 Error Recovery
+
+KaRiya provides graceful error recovery throughout:
+
+| Scenario | Behavior |
+|----------|----------|
+| Form validation error | Field highlighted, error message shown |
+| Save failure | Error modal, data preserved, retry available |
+| Import parse error | Shows problematic rows, allows skip or fix |
+| CV generation failure | Error modal, can adjust filters and retry |
+| Network timeout | Graceful fallback to local data |
+
+All errors preserve user work - no data loss on failure.
+

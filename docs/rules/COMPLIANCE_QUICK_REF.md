@@ -80,7 +80,8 @@ git reset coverage.out *.exe
 make check-compliance
 
 # Before each commit
-make review-commit
+make check-compliance   # REQUIRED before every commit
+make ai-commit MSG="type(scope): description"
 
 # After significant work
 make check-compliance

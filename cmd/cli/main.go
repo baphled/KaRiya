@@ -165,6 +165,9 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 
 			burstRepo := career.NewSQLiteBurstRepositoryWithDB(db)
 			svc.SetBurstRepository(burstRepo)
+
+			skillRepo := career.NewSQLiteSkillRepositoryWithDB(db)
+			svc.SetSkillRepository(skillRepo)
 		}
 	}
 
@@ -203,7 +206,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		model.SetInitialScreen(app.ListScreen)
 	}
 
-	p := tea.NewProgram(model, tea.WithMouseCellMotion())
+	p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(errOut, "Error running program: %v\n", err)
 		return 1

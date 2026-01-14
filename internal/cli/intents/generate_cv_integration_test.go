@@ -1,7 +1,6 @@
 package intents_test
 
 import (
-	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -13,11 +12,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestGenerateCVIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "GenerateCV Intent Integration Suite")
-}
 
 var _ = Describe("GenerateCV Intent Integration", func() {
 	var (

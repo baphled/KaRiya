@@ -37,6 +37,7 @@ type CareerEvent struct {
 	Project    string    `json:"project,omitempty"`
 	Tags       []string  `json:"tags"`
 	Categories []string  `json:"categories,omitempty"`
+	Skills     []string  `json:"skills,omitempty"` // Skill IDs associated with this event
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }

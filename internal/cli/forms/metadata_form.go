@@ -7,17 +7,21 @@ import (
 
 // MetadataFormData holds the form data for event metadata editing.
 type MetadataFormData struct {
-	Date       string
-	Company    string
-	Project    string
-	Tags       []string
-	Categories []string
+	Date            string
+	Company         string
+	Project         string
+	Tags            []string
+	Categories      []string
+	Skills          []string
+	SubmitConfirmed bool
 }
 
 // NewMetadataEditorForm creates a form for editing event metadata.
-// The form has 5 fields: Date, Company, Project, Tags, Categories.
-func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCategories []string) *huh.Form {
+// The form has 6 fields: Date, Company, Project, Tags, Categories, Skills,
+// plus a Submit confirmation button.
+func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCategories []string, availableSkills []*career.Skill) *huh.Form {
 	data := GetMetadataFormData(event)
+	data.SubmitConfirmed = false
 
 	// Convert tags and categories to options
 	tagOptions := make([]huh.Option[string], len(availableTags))
@@ -28,6 +32,12 @@ func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCa
 	categoryOptions := make([]huh.Option[string], len(availableCategories))
 	for i, cat := range availableCategories {
 		categoryOptions[i] = huh.NewOption(cat, cat)
+	}
+
+	// Convert skills to options (skill ID as value, skill name as label)
+	skillOptions := make([]huh.Option[string], len(availableSkills))
+	for i, skill := range availableSkills {
+		skillOptions[i] = huh.NewOption(skill.Name, skill.ID)
 	}
 
 	return NewForm(
@@ -72,12 +82,31 @@ func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCa
 				Options(categoryOptions...).
 				Value(&data.Categories).
 				Limit(5),
+
+			huh.NewMultiSelect[string]().
+				Key("skills").
+				Title("Skills").
+				Description("Select relevant skills (optional)").
+				Options(skillOptions...).
+				Value(&data.Skills).
+				Limit(10),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }
 
 // NewMetadataEditorFormWithData creates a form for editing event metadata with initial form data.
-func NewMetadataEditorFormWithData(data *MetadataFormData, availableTags, availableCategories []string) *huh.Form {
+func NewMetadataEditorFormWithData(data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill) *huh.Form {
+	// Initialize submit confirmation to false
+	data.SubmitConfirmed = false
+
 	// Convert tags and categories to options
 	tagOptions := make([]huh.Option[string], len(availableTags))
 	for i, tag := range availableTags {
@@ -87,6 +116,12 @@ func NewMetadataEditorFormWithData(data *MetadataFormData, availableTags, availa
 	categoryOptions := make([]huh.Option[string], len(availableCategories))
 	for i, cat := range availableCategories {
 		categoryOptions[i] = huh.NewOption(cat, cat)
+	}
+
+	// Convert skills to options (skill ID as value, skill name as label)
+	skillOptions := make([]huh.Option[string], len(availableSkills))
+	for i, skill := range availableSkills {
+		skillOptions[i] = huh.NewOption(skill.Name, skill.ID)
 	}
 
 	return NewForm(
@@ -131,6 +166,22 @@ func NewMetadataEditorFormWithData(data *MetadataFormData, availableTags, availa
 				Options(categoryOptions...).
 				Value(&data.Categories).
 				Limit(5),
+
+			huh.NewMultiSelect[string]().
+				Key("skills").
+				Title("Skills").
+				Description("Select relevant skills (optional)").
+				Options(skillOptions...).
+				Value(&data.Skills).
+				Limit(10),
+
+			huh.NewConfirm().
+				Key("submit").
+				Title("Save Changes").
+				Description("Submit the form to save your changes").
+				Affirmative("Submit").
+				Negative("Cancel").
+				Value(&data.SubmitConfirmed),
 		),
 	)
 }
@@ -148,6 +199,7 @@ func ApplyMetadataFormData(event *career.CareerEvent, data *MetadataFormData) er
 	event.Project = data.Project
 	event.Tags = data.Tags
 	event.Categories = data.Categories
+	event.Skills = data.Skills
 
 	return nil
 }
@@ -160,5 +212,6 @@ func GetMetadataFormData(event *career.CareerEvent) *MetadataFormData {
 		Project:    event.Project,
 		Tags:       event.Tags,
 		Categories: event.Categories,
+		Skills:     event.Skills,
 	}
 }
