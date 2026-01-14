@@ -1,7 +1,10 @@
 package components
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -27,6 +30,7 @@ type SkillSearchModal struct {
 	visible  bool
 	width    int
 	height   int
+	theme    themes.Theme
 }
 
 // NewSkillSearchModal creates a new skill search modal.
@@ -40,6 +44,7 @@ func NewSkillSearchModal(currentSearch string, width, height int) *SkillSearchMo
 		visible:  false,
 		width:    width,
 		height:   height,
+		theme:    themes.NewDefaultTheme(),
 	}
 
 	m.rebuildForm()
@@ -127,13 +132,26 @@ func (m *SkillSearchModal) View() string {
 		return ""
 	}
 
+	// Build footer with KeyBadge components showing keyboard shortcuts
+	footer := RenderHelpFooter(m.theme,
+		NewKeyBadge("Tab", "Next field"),
+		NewKeyBadge("Enter", "Submit"),
+		NewKeyBadge("Esc", "Cancel"),
+	)
+
+	// Build modal content with form and footer
+	var content strings.Builder
+	content.WriteString(m.form.View())
+	content.WriteString("\n\n")
+	content.WriteString(footer)
+
 	// Wrap the form in a styled box with solid background, border, and padding
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorBorder).
 		Background(styles.ColorBackground).
 		Padding(1, 2).
-		Render(m.form.View())
+		Render(content.String())
 }
 
 // IsVisible returns whether the modal is currently visible.
