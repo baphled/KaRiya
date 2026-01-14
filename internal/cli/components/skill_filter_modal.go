@@ -3,8 +3,10 @@ package components
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -37,6 +39,7 @@ type SkillFilterModal struct {
 	visible  bool
 	width    int
 	height   int
+	theme    themes.Theme
 }
 
 // NewSkillFilterModal creates a new skill filter modal.
@@ -61,6 +64,7 @@ func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, wi
 		visible:  true,
 		width:    width,
 		height:   height,
+		theme:    themes.NewDefaultTheme(),
 	}
 
 	modal.buildForm(skills)
@@ -218,13 +222,26 @@ func (m *SkillFilterModal) View() string {
 		return ""
 	}
 
+	// Build footer with KeyBadge components showing keyboard shortcuts
+	footer := RenderHelpFooter(m.theme,
+		NewKeyBadge("Tab", "Next field"),
+		NewKeyBadge("Enter", "Apply"),
+		NewKeyBadge("Esc", "Cancel"),
+	)
+
+	// Build modal content with form and footer
+	var content strings.Builder
+	content.WriteString(m.form.View())
+	content.WriteString("\n\n")
+	content.WriteString(footer)
+
 	// Wrap the form in a styled box with solid background, border, and padding
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.ColorBorder).
 		Background(styles.ColorBackground).
 		Padding(1, 2).
-		Render(m.form.View())
+		Render(content.String())
 }
 
 // IsVisible returns whether the modal is currently visible.

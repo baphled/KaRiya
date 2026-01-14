@@ -142,5 +142,31 @@ var _ = Describe("SkillFilterModal", func() {
 			// Should have huh form controls
 			Expect(view).To(ContainSubstring("enter"))
 		})
+
+		It("should display keyboard shortcuts in footer (KeyBadge pattern)", func() {
+			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+
+			view := modal.View()
+			// Modal should show keyboard shortcuts for user guidance
+			// Pattern: Tab (next field), Enter (submit), Esc (cancel)
+			Expect(view).To(ContainSubstring("Tab"))
+			Expect(view).To(ContainSubstring("Enter"))
+			Expect(view).To(ContainSubstring("Esc"))
+			// Should indicate what each key does
+			Expect(view).To(Or(
+				ContainSubstring("Next"),
+				ContainSubstring("field"),
+				ContainSubstring("Navigate"),
+			))
+			Expect(view).To(Or(
+				ContainSubstring("Submit"),
+				ContainSubstring("Confirm"),
+				ContainSubstring("Apply"),
+			))
+			Expect(view).To(Or(
+				ContainSubstring("Cancel"),
+				ContainSubstring("Back"),
+			))
+		})
 	})
 })

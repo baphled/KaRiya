@@ -252,6 +252,32 @@ var _ = Describe("SkillSearchModal", func() {
 			// Check for rounded border characters (top-right corner)
 			Expect(view).To(ContainSubstring("╮"))
 		})
+
+		It("should display keyboard shortcuts in footer (KeyBadge pattern)", func() {
+			modal := components.NewSkillSearchModal("test", 80, 24)
+			modal.Show()
+
+			view := modal.View()
+			// Modal should show keyboard shortcuts for user guidance
+			// Pattern: Tab (next field), Enter (submit), Esc (cancel)
+			Expect(view).To(ContainSubstring("Tab"))
+			Expect(view).To(ContainSubstring("Enter"))
+			Expect(view).To(ContainSubstring("Esc"))
+			// Should indicate what each key does
+			Expect(view).To(Or(
+				ContainSubstring("Next"),
+				ContainSubstring("field"),
+				ContainSubstring("Navigate"),
+			))
+			Expect(view).To(Or(
+				ContainSubstring("Submit"),
+				ContainSubstring("Confirm"),
+			))
+			Expect(view).To(Or(
+				ContainSubstring("Cancel"),
+				ContainSubstring("Back"),
+			))
+		})
 	})
 
 	Describe("Modal Width", func() {
