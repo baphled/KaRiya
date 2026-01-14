@@ -258,6 +258,30 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 			// This allows user to review inferred bursts/facts after save
 			i.state.postSaveReview = true // Mark as post-save review
 			i.state.currentState = CaptureStateReview
+
+			// CRITICAL: If using screens architecture, create EventReviewScreen
+			if i.useScreens {
+				breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
+				i.activeScreen = captureScreens.NewEventReviewScreen(
+					breadcrumbs,
+					i.state.reviewState.Event,
+					i.state.reviewState.InferredBursts,
+					i.state.reviewState.InferredFacts,
+				)
+
+				// Get terminal info
+				termInfo := i.GetTerminalInfo()
+				width, height := 120, 40 // defaults
+				if termInfo != nil {
+					width = termInfo.Width
+					height = termInfo.Height
+				}
+
+				// Pass terminal info, theme, and logo to screen
+				i.activeScreen.SetTerminalInfo(width, height)
+				i.activeScreen.SetTheme(i.Theme())
+				i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+			}
 		}
 		return nil
 	}
@@ -756,14 +780,20 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// Always use ManualEntry mode (mode selector has been removed from UI)
 		mode := careerservice.ManualEntry
 
+		// CRITICAL: Use CareerService directly (not CLIEventService wrapper)
+		// CareerService.CaptureEvent modifies the event in-place, setting its ID
+		// CLIEventService.CaptureEvent creates a new event internally, leaving our event without an ID
+		if i.state.context.CareerService == nil {
+			return SubmitErrorMsg{
+				Code:    "SERVICE_ERROR",
+				Message: "Career service not initialized",
+				Cause:   nil,
+			}
+		}
+
 		// Call the service to capture the event
-		// The service handles persistence and any enrichment logic
-		err := i.eventService.CaptureEvent(
-			ctx,
-			event.Text,
-			event.Date,
-			mode,
-		)
+		// The service handles persistence and populates event.ID
+		err := i.state.context.CareerService.CaptureEvent(ctx, event, mode)
 
 		if err != nil {
 			// Map service errors to intent errors
@@ -776,7 +806,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 
 		// Perform enrichment for all strategies (if CareerService is available)
 		// This extracts bursts and facts from the saved event
-		if i.context.CareerService != nil {
+		if i.state.context.CareerService != nil {
 			if err := i.performEnrichment(ctx, event); err != nil {
 				// Log enrichment error but don't fail the submission
 				// The event is already saved successfully
@@ -787,7 +817,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// Save any accepted facts from review that might have been manually edited/added
 		// Note: Facts from enrichment are already saved in performEnrichment()
 		// This is a safety check for any facts that might have been added during review
-		if i.context.CareerService != nil && len(i.state.reviewState.AcceptedFacts) > 0 {
+		if i.state.context.CareerService != nil && len(i.state.reviewState.AcceptedFacts) > 0 {
 			for _, fact := range i.state.reviewState.AcceptedFacts {
 				// Only save facts that don't have an ID yet (haven't been saved)
 				// Facts from enrichment already have IDs
@@ -798,7 +828,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 					}
 
 					// Save the fact
-					if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
+					if err := i.state.context.CareerService.SaveFact(ctx, fact); err != nil {
 						// Log error but don't fail the entire submission
 						// Event is already saved successfully
 						continue
@@ -814,24 +844,23 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 
 // performEnrichment performs AI-powered enrichment of the captured event.
 // It suggests bursts and extracts facts from the event.
-// Logs: Enrichment start, burst suggestion results, fact extraction results, and completion status.
 func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *career.CareerEvent) error {
-	if i.context.CareerService == nil {
+	if i.state.context.CareerService == nil {
 		return fmt.Errorf("career service not available for enrichment")
 	}
 
 	// Suggest bursts for the event
-	burstSuggestions, err := i.context.CareerService.SuggestBursts(ctx, []string{event.ID})
+	burstSuggestions, err := i.state.context.CareerService.SuggestBursts(ctx, []string{event.ID})
 	if err == nil && len(burstSuggestions) > 0 {
 		// Save burst suggestions and store them for review
-		bursts, err := i.context.CareerService.SaveBurstSuggestions(ctx, burstSuggestions)
+		bursts, err := i.state.context.CareerService.SaveBurstSuggestions(ctx, burstSuggestions)
 		if err == nil && len(bursts) > 0 {
 			i.state.reviewState.InferredBursts = bursts
 		}
 	}
 
 	// Extract facts from the event
-	facts, err := i.context.CareerService.ExtractFactsFromEvent(ctx, event)
+	facts, err := i.state.context.CareerService.ExtractFactsFromEvent(ctx, event)
 	if err == nil && len(facts) > 0 {
 		// Persist each extracted fact to the database
 		for j := range facts {
@@ -841,7 +870,7 @@ func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *caree
 			fact.SourceEventID = event.ID
 
 			// Save fact to repository
-			if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
+			if err := i.state.context.CareerService.SaveFact(ctx, fact); err != nil {
 				// Log warning but continue with other facts
 				// Fact extraction is an enhancement, not critical to event capture
 				continue
