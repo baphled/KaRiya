@@ -24,6 +24,24 @@ type SubmitErrorMsg struct {
 
 // EventSubmitScreen handles async submission of captured event to database.
 //
+// TODO(TECHNICAL DEBT): This should be a modal overlay, not a full screen.
+// Currently this renders as a full screen replacement, but the correct
+// architecture is to:
+// 1. Keep the form screen visible in the background
+// 2. Show a loading modal overlay during submission
+// 3. Show success/error modal when complete
+// 4. Return to previous screen (or complete intent) on modal dismiss
+//
+// See BrowseTimeline intent for the correct modal overlay pattern.
+// This refactor requires:
+// - Moving submission logic to intent level
+// - Using components.NewLoadingModal() during submission
+// - Using components.NewSuccessModal() / NewErrorModal() for results
+// - Removing this full screen entirely
+//
+// Priority: MEDIUM (works but not ideal UX)
+// Effort: ~2 hours
+//
 // This screen:
 // - Shows progress indicator while submitting
 // - Executes async submission command on Init
