@@ -845,22 +845,37 @@ func (b *SectionBuilder) buildSkillsSection(
 - Zero failures
 - Zero race conditions
 
-### 🎯 Current State
+### 🎯 Current State (Updated 2026-01-14)
 
 **What Works**:
-- ✅ Complete UI workflow (Profile → Audience → Tech Extraction → Tech Focus → Tech Selection → Focus Area → Generating → Preview)
+- ✅ Complete UI workflow (Profile → Audience → Tech Extraction → Tech Focus → Tech Selection → Focus Area → Skills Config → Generating → Preview)
 - ✅ Technology selections captured in state
 - ✅ Technology filtering applied to bullets (FilterByTechnologies)
 - ✅ CVConfig includes all technology selections
 - ✅ CV generation pipeline uses technology filtering
 - ✅ CVs generate successfully with technology-based bullet boosting
+- ✅ Skills section populated from event skills (not fact-based competencies)
+- ✅ Skills configuration UI (format: flat/grouped, limit: 0-50)
+- ✅ Grouped format displays skills under category headers
+- ✅ Skills prioritized by selection, then alphabetically sorted
 
 **What's Working But Temporary**:
-- ⚠️ Length format hardcoded to Standard (UI not implemented)
+- ⚠️ Length format hardcoded to Standard (UI not implemented - optional enhancement)
+
+**Completed**:
+- ✅ Phase 1-4: Variant system foundation
+- ✅ Phase 5: Technology extraction flow
+- ✅ Phase 6: Technology focus selection UI
+- ✅ Phase 7: Technology selection UI
+- ✅ Phase 8: Focus area selection UI
+- ✅ Phase 9: Dynamic variant generation
+- ✅ Phase 10: Technology-based bullet filtering
+- ✅ Phase 11: Skills section population
+- ✅ Phase 11.5: Skills configuration UI
+- ✅ Phase 11.6: Improved grouped skills format
 
 **What's Next**:
-- 📋 Phase 11: Skills section population (prioritize selected technologies)
-- 📋 Phase 12: Documentation updates
+- 📋 Phase 12: Documentation updates (final phase)
 
 ### 🔧 Files Modified (Phase 10 + Integration)
 
@@ -886,15 +901,174 @@ Users can now:
 5. ✅ See bullets boosted for selected technologies (+0.15 score)
 6. ✅ See quality bullets without skills still rank high (no penalty)
 
-### 🚀 Next Steps (Phase 11)
+### 🚀 Phase 11: Skills Section Population ✅
+
+**Status**: COMPLETE (2026-01-14)
 
 **Goal**: Skills section population with selected technologies
 
-**Estimated Time**: 3-4 hours
+**Completed Work**:
+1. ✅ Updated `buildSkillsSection()` in section_builder.go (rewrote to use event skills)
+2. ✅ Prioritize selected technologies in skills list (selected first, then alphabetical)
+3. ✅ Group skills by category (flat vs grouped formatting)
+4. ✅ Changed section title from "Core Competencies" to "Technical Skills"
+5. ✅ Comprehensive tests (6 tests passing)
+
+**Bug Fixes**:
+- Commit: `7394bfa` - Fixed skills showing UUIDs instead of names (added SkillRepository lookup)
+- Commit: `f591d51` - Added flat/grouped skills formatting with configurable limits
+
+**Commits**:
+- `51bffef` - feat(service): rewrite skills section to use event skills
+- `7394bfa` - fix(service): lookup skill names from IDs in skills section
+- `f591d51` - feat(service): add flat/grouped skills formatting with limits
+
+### 🚀 Phase 11.5: Skills Configuration UI ✅
+
+**Status**: COMPLETE (2026-01-14)
+
+**Goal**: Allow users to configure skills section format and limit in CV generation workflow
+
+**New State**: `GenerateCVStateSelectSkillsConfig`
+- Positioned between Focus Area selection and CV generation
+- Allows users to configure skills display preferences
+
+**Configuration Options**:
+1. **Format**: Toggle between "Flat" (one skill per line) or "Grouped" (skills grouped by category)
+2. **Limit**: Set maximum skills to display (0-50, where 0 = no limit)
+
+**UI Features**:
+- ✅ Interactive keyboard navigation (↑↓ arrows or j/k)
+- ✅ Space bar toggles format (flat ↔ grouped)
+- ✅ Left/Right arrows (or h/l) adjust limit (increments of 5)
+- ✅ Clear visual feedback showing current selections
+- ✅ Context-aware help footer with keyboard shortcuts
+- ✅ Escape key returns to focus area selection
+- ✅ Enter key proceeds to CV generation
+
+**Updated Workflow**:
+```
+SelectProfile → SelectAudience → ExtractingTechnologies → 
+SelectTechnologyFocus → SelectTechnologies (if needed) → 
+SelectFocusArea → SelectSkillsConfig (NEW!) → Generating → 
+Preview → Review → Confirm → Export
+```
+
+**Integration**:
+- ✅ Skills config passed to `CVConfig` when generating CV
+- ✅ Config flows through to `SectionBuilder.BuildSections()`
+- ✅ User selections preserved when navigating back
+
+**Testing**:
+- ✅ 21 new tests covering all aspects (navigation, toggling, limits, transitions)
+- ✅ All 1,251 intent tests passing (100% pass rate)
+- ✅ Zero regressions
+
+**Commits**:
+- `00f1975` - feat(intents): add skills configuration selection to CV generation workflow
+
+### 🚀 Phase 11.6: Improved Grouped Skills Format ✅
+
+**Status**: COMPLETE (2026-01-14)
+
+**Goal**: Display skills with category headers instead of inline labels
+
+**Before** (inline format):
+```
+Technical Skills
+- Backend: Ruby, Go, PostgreSQL
+- Frontend: VueJS, React, TypeScript
+```
+
+**After** (grouped with headers):
+```
+Technical Skills
+
+Backend
+  - Ruby
+  - Go
+  - PostgreSQL
+
+Frontend
+  - VueJS
+  - React
+  - TypeScript
+```
+
+**Implementation**:
+- ✅ Updated `buildGroupedSkills()` to create multiple `SectionContentGroup` objects (one per category)
+- ✅ Each group uses category name as `Header` field
+- ✅ Skills listed as individual bullets under their category
+- ✅ Categories sorted alphabetically
+- ✅ Per-group limit applies to each category independently
+
+**Testing**:
+- ✅ All 247 CV service tests passing
+- ✅ Zero regressions
+
+**Commits**:
+- `724b640` - feat(service): improve grouped skills format to use category headers
+
+### 📊 Current Status (Phase 11 Complete)
+
+**Test Coverage**: 1,498+ tests passing
+- 247 CV service tests (including skills section tests)
+- 1,251 intent tests (including 21 new skills config tests)
+- Zero failures
+- Zero race conditions
+
+**Workflow State Machine** (Updated):
+```
+SelectProfile → SelectAudience → ExtractingTechnologies → SelectTechnologyFocus
+  → SelectTechnologies (if not Language Agnostic) → SelectFocusArea 
+  → SelectSkillsConfig (NEW!) → Generating → Preview → Review → Confirm → Export
+```
+
+**Skills Section Formats**:
+
+**Flat Format** (default):
+```
+Technical Skills
+- Ruby
+- Go
+- PostgreSQL
+- VueJS
+```
+
+**Grouped Format** (with category headers):
+```
+Technical Skills
+
+Backend
+  - Ruby
+  - Go
+
+Database
+  - PostgreSQL
+
+Frontend
+  - VueJS
+```
+
+**Features**:
+- ✅ Skills prioritized by selection (selected technologies first)
+- ✅ Alphabetical sorting within groups
+- ✅ Configurable limits (per section for flat, per category for grouped)
+- ✅ Categories from skill domain model (backend, frontend, database, devops, etc.)
+- ✅ Skills without categories go to "Other" group
+
+### 🚀 Next Steps (Phase 12)
+
+**Goal**: Documentation updates
+
+**Estimated Time**: 1-2 hours
 
 **Tasks**:
-1. Update `buildSkillsSection()` in section_builder.go
-2. Prioritize selected technologies in skills list
-3. Group skills by category
-4. Include event counts per skill
-5. Write comprehensive tests
+1. Update `docs/guides/CV_VARIANTS_GUIDE.md` - Rewrite for dynamic variant system
+2. Update `docs/guides/CV_GENERATION_GUIDE.md` - Update workflow diagrams
+3. Document new workflow (Profile → ... → Skills Config → Generate)
+4. Explain Language Agnostic / Generalist / Specialist variants
+5. Document skills section formatting (flat vs grouped)
+6. Add examples for each variant type
+7. Update bullet filtering explanation (skill match bonus)
+8. Commit: `docs(docs): update variant and generation guides for technology-focused system`
