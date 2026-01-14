@@ -17,6 +17,10 @@ type BulletGenerator interface {
 	// GenerateBullets generates a list of ranked CV bullets from events and facts
 	// Applies inclusion criteria, ranking algorithm, and role/audience-specific filtering
 	GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) ([]*career.CVBullet, error)
+
+	// FilterByTechnologies filters and boosts bullets based on selected technologies (Phase 10 - Task 40)
+	// Applies technology-based scoring adjustments and sorts by final rank
+	FilterByTechnologies(bullets []*career.CVBullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*career.CVBullet
 }
 
 // DefaultBulletGenerator is the default implementation of BulletGenerator

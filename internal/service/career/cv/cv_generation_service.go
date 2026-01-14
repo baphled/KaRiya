@@ -121,6 +121,14 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 
 	svc.logger.Info("Generated %d bullets from %d events and %d facts", len(bullets), len(events), len(facts))
 
+	// Apply technology-based filtering if not Language Agnostic (Phase 10 - Task 40)
+	if config.TechnologyFocus != "" && config.TechnologyFocus != string(TechnologyFocusLanguageAgnostic) {
+		techFocus := TechnologyFocus(config.TechnologyFocus)
+		bullets = svc.bulletGenerator.FilterByTechnologies(bullets, events, techFocus, config.SelectedTechnologies)
+		svc.logger.Info("Applied technology filtering (%s) with %d technologies, %d bullets after filtering",
+			config.TechnologyFocus, len(config.SelectedTechnologies), len(bullets))
+	}
+
 	// Build sections using SectionBuilder
 	sections, err := svc.sectionBuilder.BuildSections(ctx, bullets, events, facts, config.TargetRole)
 	if err != nil {

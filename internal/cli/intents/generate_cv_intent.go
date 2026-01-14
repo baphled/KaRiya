@@ -478,6 +478,12 @@ func (i *GenerateCVIntent) generateCVAsync() tea.Cmd {
 			Name:           i.state.selectedProfile.Name,
 			TargetRole:     i.state.selectedProfile.TargetRole,
 			TargetAudience: i.state.selectedAudience,
+
+			// Technology selections (Phase 10 - Task 40)
+			TechnologyFocus:      string(i.state.selectedTechnologyFocus),
+			SelectedTechnologies: i.state.selectedTechnologies,
+			FocusArea:            string(i.state.selectedFocusArea),
+			LengthFormat:         string(i.state.selectedLengthFormat),
 		}
 
 		cvView, err := i.context.CVGenerationService.GenerateCVFromConfig(ctx, config)

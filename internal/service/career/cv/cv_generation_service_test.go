@@ -652,6 +652,10 @@ func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*ca
 	return []*career.CVBullet{}, nil
 }
 
+func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*career.CVBullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*career.CVBullet {
+	return bullets // No-op for tests
+}
+
 type EmptySectionBuilder struct{}
 
 func NewEmptySectionBuilder() *EmptySectionBuilder {
