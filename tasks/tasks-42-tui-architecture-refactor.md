@@ -3265,3 +3265,705 @@ Git tags at each phase completion:
 - 🎯 **Component discovery is critical**: ManageSkills started without identifying missing modals → had to stop and create infrastructure
 - 🎯 **Reference implementation first**: BrowseTimeline patterns now documented → remaining intents can follow established patterns
 - 🎯 **Time tracking matters**: Actual times inform better estimates for remaining work
+
+---
+
+## Phase 4.5: ConfigureSystem Intent Migration (2026-01-14)
+
+**Status**: 🔄 **IN PROGRESS - Full Screen Migration**  
+**Estimated Time**: 6-8 hours  
+**Current Progress**: 0% - Analysis complete, ready to implement
+
+### Overview
+
+ConfigureSystem is a complex intent with 1,132 lines and inline form management. Unlike simpler intents, this one requires careful handling of:
+- 7 states (4 interactive + 3 terminal/async)
+- Inline textinput management for multiple settings
+- Domain-specific configuration (system/profile/export/ui)
+- Change tracking and review workflow
+- Async save operations
+
+**Decision**: Full migration (not hybrid) to establish patterns for complex form-heavy intents.
+
+### Current Implementation Analysis
+
+**File**: `internal/cli/intents/configure_system.go` (1,132 lines)
+
+**States** (7 total):
+1. **ConfigStateSelectDomain** - Choose domain (system/profile/export/ui)
+2. **ConfigStateEditSettings** - Edit settings for domain (complex: has inline form management)
+3. **ConfigStateReviewChanges** - Review what changed
+4. **ConfigStateConfirm** - Confirm changes
+5. **ConfigStateSaving** - Async save operation (shows loading)
+6. **ConfigStateComplete** - Success (shows completion message)
+7. **ConfigStateFailed** - Error (shows error + retry option)
+
+**Complexity Factors**:
+- **EditSettings** has sub-state: `editingValue` (bool) - navigating vs editing
+- **Inline form management**: `settingsInputs map[string]textinput.Model`
+- **Focus management**: `focusedSetting int`, `updateInputFocus()`, `updateFocusedInput()`
+- **Value conversion**: String → int/bool/select based on setting type
+- **Change tracking**: `ConfigurationChanges` with Original/Modified maps
+- **Domain-specific settings**: Different settings per domain
+
+### Migration Strategy
+
+**Approach**: Create 7 screens (1 per state), with EditSettings being the most complex.
+
+**Screens to Create**:
+1. **DomainSelectScreen** - Simple list selection (BaseSelectScreen[ConfigurationDomain])
+2. **EditSettingsScreen** - Complex form screen (reuse huh forms or keep textinput)
+3. **ReviewChangesScreen** - Display-only (shows changed values)
+4. **ConfirmScreen** - Simple confirmation (BaseConfirmScreen pattern)
+5. **SavingScreen** - Async operation (loading modal overlay)
+6. **CompleteScreen** - Success message (simple display)
+7. **FailedScreen** - Error message + retry (simple display)
+
+**Key Decisions**:
+- **EditSettings**: Use huh forms for cleaner implementation (similar to BurstEditorModel pattern)
+- **Saving/Complete/Failed**: Use modal overlay pattern (don't hide previous screen)
+- **Change tracking**: Move to screen state, pass via context
+
+### Phase 1: Create Screens (4-5 hours)
+
+#### 1.1: DomainSelectScreen (30 min)
+
+**Complexity**: Low - Standard list selection
+
+**Files**:
+- `internal/cli/screens/configure/domain_select.go` (~120 lines)
+- `internal/cli/screens/configure/domain_select_test.go` (~100 lines, 10 specs)
+
+**Pattern**: Inherits from `BaseSelectScreen[ConfigurationDomain]`
+
+**Features**:
+- List of 4 domains: System, Profile, Export, UI
+- Arrow/vim navigation
+- Enter to select → EditSettings
+- Esc to cancel → Main menu
+
+**TDD Checklist**:
+- [ ] RED: Test domain list rendering
+- [ ] RED: Test navigation (up/down/j/k)
+- [ ] RED: Test selection (enter returns NavigateResult)
+- [ ] RED: Test cancel (esc returns CancelResult)
+- [ ] GREEN: Implement DomainSelectScreen
+- [ ] GREEN: All tests pass
+- [ ] REFACTOR: Extract common patterns if needed
+
+#### 1.2: EditSettingsScreen (2-3 hours)
+
+**Complexity**: HIGH - Most complex screen in ConfigureSystem
+
+**Files**:
+- `internal/cli/screens/configure/edit_settings.go` (~400 lines - complex form logic)
+- `internal/cli/screens/configure/edit_settings_test.go` (~200 lines, 20+ specs)
+
+**Pattern**: Custom screen with huh form integration OR keep textinput (decision point)
+
+**Two Implementation Options**:
+
+**Option A: Huh Forms** (RECOMMENDED - more maintainable)
+- Use `forms` package for setting inputs
+- Similar to BurstEditorModel pattern
+- Automatic focus management
+- Type-safe validation
+- Less code (~200 lines vs ~400)
+
+**Option B: Keep textinput** (More work, but matches current behavior exactly)
+- Port existing textinput logic
+- Manual focus management
+- Manual validation
+- More code but no behavioral changes
+
+**Decision**: Use Huh Forms (Option A) for long-term maintainability.
+
+**Features**:
+- Form with fields for all settings in selected domain
+- Field types: string, int, bool, select
+- Real-time validation
+- Tab/Shift+Tab navigation
+- Ctrl+S or Enter to save → ReviewChanges
+- Esc to cancel → SelectDomain
+
+**TDD Checklist**:
+- [ ] RED: Test form creation with domain settings
+- [ ] RED: Test field type rendering (string/int/bool/select)
+- [ ] RED: Test validation (int fields only accept numbers)
+- [ ] RED: Test navigation (tab between fields)
+- [ ] RED: Test save (captures changes correctly)
+- [ ] RED: Test cancel (no changes saved)
+- [ ] GREEN: Implement EditSettingsScreen with huh forms
+- [ ] GREEN: All tests pass
+- [ ] REFACTOR: Extract form builder to forms package
+
+#### 1.3: ReviewChangesScreen (45 min)
+
+**Complexity**: Medium - Display-only with formatting
+
+**Files**:
+- `internal/cli/screens/configure/review_changes.go` (~150 lines)
+- `internal/cli/screens/configure/review_changes_test.go` (~80 lines, 8 specs)
+
+**Pattern**: Custom display screen (no interaction beyond nav)
+
+**Features**:
+- Shows table of changes: Setting | Before | After
+- Highlights changed values
+- Count of changes at top
+- Enter or 'c' to confirm → Confirm
+- Esc to go back → EditSettings (preserves changes)
+
+**TDD Checklist**:
+- [ ] RED: Test change list rendering
+- [ ] RED: Test formatting (before/after columns)
+- [ ] RED: Test empty changes (shows "No changes")
+- [ ] RED: Test navigation (enter/esc)
+- [ ] GREEN: Implement ReviewChangesScreen
+- [ ] GREEN: All tests pass
+- [ ] REFACTOR: Extract table rendering helper
+
+#### 1.4: ConfirmScreen (30 min)
+
+**Complexity**: Low - Simple confirmation
+
+**Files**:
+- `internal/cli/screens/configure/confirm.go` (~80 lines)
+- `internal/cli/screens/configure/confirm_test.go` (~60 lines, 6 specs)
+
+**Pattern**: Inherits from `BaseConfirmScreen` OR simple custom
+
+**Features**:
+- Shows confirmation message: "Save these changes?"
+- Summary: X settings will be updated
+- y/Enter to confirm → Saving
+- n/Esc to cancel → ReviewChanges
+
+**TDD Checklist**:
+- [ ] RED: Test confirmation message rendering
+- [ ] RED: Test accept (y/enter returns NavigateResult "save")
+- [ ] RED: Test reject (n/esc returns CancelResult)
+- [ ] GREEN: Implement ConfirmScreen
+- [ ] GREEN: All tests pass
+
+#### 1.5: SavingScreen (45 min)
+
+**Complexity**: Medium - Async operation handling
+
+**Files**:
+- `internal/cli/screens/configure/saving.go` (~100 lines)
+- `internal/cli/screens/configure/saving_test.go` (~80 lines, 8 specs)
+
+**Pattern**: Modal overlay with loading indicator
+
+**Features**:
+- Shows loading modal: "Saving configuration..."
+- Spinner animation
+- Cannot be cancelled (save in progress)
+- Automatically transitions to Complete or Failed based on result
+- Uses PerformSaveMsg command pattern
+
+**TDD Checklist**:
+- [ ] RED: Test loading modal display
+- [ ] RED: Test async message handling (PerformSaveMsg)
+- [ ] RED: Test success transition (SaveCompleteMsg → Complete)
+- [ ] RED: Test failure transition (SaveFailedMsg → Failed)
+- [ ] GREEN: Implement SavingScreen with modal overlay
+- [ ] GREEN: All tests pass
+- [ ] REFACTOR: Extract async pattern if reusable
+
+#### 1.6: CompleteScreen (30 min)
+
+**Complexity**: Low - Simple success message
+
+**Files**:
+- `internal/cli/screens/configure/complete.go` (~80 lines)
+- `internal/cli/screens/configure/complete_test.go` (~60 lines, 6 specs)
+
+**Pattern**: Simple display screen with success icon
+
+**Features**:
+- Shows success message: "✓ Configuration saved successfully"
+- Summary of what was saved (domain + count)
+- Enter or any key to complete → Exit intent
+- Returns SubmitResult with success data
+
+**TDD Checklist**:
+- [ ] RED: Test success message rendering
+- [ ] RED: Test completion (enter returns SubmitResult)
+- [ ] GREEN: Implement CompleteScreen
+- [ ] GREEN: All tests pass
+
+#### 1.7: FailedScreen (45 min)
+
+**Complexity**: Medium - Error handling + retry
+
+**Files**:
+- `internal/cli/screens/configure/failed.go` (~120 lines)
+- `internal/cli/screens/configure/failed_test.go` (~100 lines, 10 specs)
+
+**Pattern**: Error display with retry/cancel options
+
+**Features**:
+- Shows error message: "✗ Failed to save configuration"
+- Displays error details (if available)
+- 'r' to retry → ReviewChanges (allows edit before retry)
+- Esc to cancel → Exit intent with error
+- Returns ErrorResult with error details
+
+**TDD Checklist**:
+- [ ] RED: Test error message rendering
+- [ ] RED: Test error details display
+- [ ] RED: Test retry (returns NavigateResult "review")
+- [ ] RED: Test cancel (returns ErrorResult)
+- [ ] GREEN: Implement FailedScreen
+- [ ] GREEN: All tests pass
+- [ ] REFACTOR: Extract error display component
+
+### Phase 2: Intent Integration (2-3 hours)
+
+#### 2.1: Add Screen Fields (15 min)
+
+**File**: `internal/cli/intents/configure_system.go`
+
+**Changes**:
+```go
+type ConfigureSystemModel struct {
+    // ... existing fields ...
+    
+    // Screens
+    domainSelectScreen  *configure.DomainSelectScreen
+    editSettingsScreen  *configure.EditSettingsScreen
+    reviewChangesScreen *configure.ReviewChangesScreen
+    confirmScreen       *configure.ConfirmScreen
+    savingScreen        *configure.SavingScreen
+    completeScreen      *configure.CompleteScreen
+    failedScreen        *configure.FailedScreen
+    
+    // Modals for async states
+    savingModal   *components.LoadingModal
+    completeModal *components.SuccessModal
+    failedModal   *components.ErrorModal
+}
+```
+
+#### 2.2: Implement Screen Transition Helper (30 min)
+
+**Pattern 7**: Screen Transition Helper
+
+**Implementation**:
+```go
+func (m *ConfigureSystemModel) transitionToScreen(
+    state ConfigurationState,
+    screen screens.Screen,
+) tea.Cmd {
+    m.state = state
+    screen.SetTerminalInfo(m.terminalInfo)
+    screen.SetTheme(m.theme)
+    return screen.Init()  // CRITICAL: Always call Init()
+}
+
+// Specific transition methods
+func (m *ConfigureSystemModel) transitionToDomainSelect() tea.Cmd {
+    m.domainSelectScreen = configure.NewDomainSelectScreen(m.context.Domains)
+    return m.transitionToScreen(ConfigStateSelectDomain, m.domainSelectScreen)
+}
+
+func (m *ConfigureSystemModel) transitionToEditSettings(domain ConfigurationDomain) tea.Cmd {
+    m.domain = domain
+    m.editSettingsScreen = configure.NewEditSettingsScreen(domain, m.context.Settings[domain])
+    return m.transitionToScreen(ConfigStateEditSettings, m.editSettingsScreen)
+}
+
+// ... similar for other screens
+```
+
+**TDD**:
+- [ ] RED: Test transitionToScreen calls Init()
+- [ ] RED: Test transitionToScreen sets terminal info
+- [ ] RED: Test transitionToScreen sets theme
+- [ ] GREEN: Implement transition helpers
+- [ ] GREEN: All tests pass
+
+#### 2.3: Implement Screen Result Handling (45 min)
+
+**Pattern 8**: Screen Result Handling
+
+**Implementation**:
+```go
+func (m *ConfigureSystemModel) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+    switch r := result.(type) {
+    case screens.NavigateResult:
+        return m.handleNavigate(r)
+    case screens.CancelResult:
+        return m.handleCancel()
+    case screens.SubmitResult:
+        return m.handleSubmit(r)
+    case screens.ErrorResult:
+        return m.handleError(r)
+    }
+    return nil
+}
+
+func (m *ConfigureSystemModel) handleNavigate(r screens.NavigateResult) tea.Cmd {
+    switch r.Action {
+    case "edit_settings":
+        domain := r.Data.(ConfigurationDomain)
+        return m.transitionToEditSettings(domain)
+    case "review_changes":
+        changes := r.Data.(*ConfigurationChanges)
+        m.changes = changes
+        return m.transitionToReviewChanges()
+    case "confirm":
+        return m.transitionToConfirm()
+    case "save":
+        return m.transitionToSaving()
+    case "retry":
+        return m.transitionToReviewChanges()  // Allow edit before retry
+    }
+    return nil
+}
+
+func (m *ConfigureSystemModel) handleCancel() tea.Cmd {
+    m.result = &ConfigureSystemResult{
+        Success: false,
+        Error: &IntentError{
+            Code:    "config_cancelled",
+            Message: "Configuration cancelled",
+        },
+    }
+    return nil
+}
+
+func (m *ConfigureSystemModel) handleSubmit(r screens.SubmitResult) tea.Cmd {
+    // Complete screen submitted
+    m.result = r.Data.(*ConfigureSystemResult)
+    return nil
+}
+
+func (m *ConfigureSystemModel) handleError(r screens.ErrorResult) tea.Cmd {
+    m.result = &ConfigureSystemResult{
+        Success: false,
+        Error: &IntentError{
+            Code:    r.Code,
+            Message: r.Message,
+        },
+    }
+    return nil
+}
+```
+
+**TDD**:
+- [ ] RED: Test handleNavigate for each action
+- [ ] RED: Test handleCancel sets result
+- [ ] RED: Test handleSubmit sets result
+- [ ] RED: Test handleError sets result
+- [ ] GREEN: Implement result handling
+- [ ] GREEN: All tests pass
+
+#### 2.4: Update State Machine (1 hour)
+
+**Pattern 4**: Global Key Interception + Screen Delegation
+
+**Update Method**:
+```go
+func (m *ConfigureSystemModel) Update(msg tea.Msg) tea.Cmd {
+    if !m.active {
+        return nil
+    }
+    
+    // Pattern 4: Global key interception (BEFORE state delegation)
+    if key, ok := msg.(tea.KeyMsg); ok {
+        switch key.String() {
+        case "q", "ctrl+c":
+            return m.handleQuit()
+        case "?":
+            return m.handleHelp()
+        }
+    }
+    
+    // Delegate to current screen
+    var cmd tea.Cmd
+    switch m.state {
+    case ConfigStateSelectDomain:
+        m.domainSelectScreen, cmd = m.domainSelectScreen.Update(msg)
+        if result := m.domainSelectScreen.Result(); result != nil {
+            return m.handleScreenResult(result)
+        }
+        
+    case ConfigStateEditSettings:
+        m.editSettingsScreen, cmd = m.editSettingsScreen.Update(msg)
+        if result := m.editSettingsScreen.Result(); result != nil {
+            return m.handleScreenResult(result)
+        }
+        
+    case ConfigStateReviewChanges:
+        m.reviewChangesScreen, cmd = m.reviewChangesScreen.Update(msg)
+        if result := m.reviewChangesScreen.Result(); result != nil {
+            return m.handleScreenResult(result)
+        }
+        
+    case ConfigStateConfirm:
+        m.confirmScreen, cmd = m.confirmScreen.Update(msg)
+        if result := m.confirmScreen.Result(); result != nil {
+            return m.handleScreenResult(result)
+        }
+        
+    case ConfigStateSaving:
+        m.savingScreen, cmd = m.savingScreen.Update(msg)
+        if result := m.savingScreen.Result(); result != nil {
+            return m.handleScreenResult(result)
+        }
+        
+    case ConfigStateComplete:
+        m.completeScreen, cmd = m.completeScreen.Update(msg)
+        if result := m.completeScreen.Result(); result != nil {
+            return m.handleScreenResult(result)
+        }
+        
+    case ConfigStateFailed:
+        m.failedScreen, cmd = m.failedScreen.Update(msg)
+        if result := m.failedScreen.Result(); result != nil {
+            return m.handleScreenResult(result)
+        }
+    }
+    
+    return cmd
+}
+```
+
+**TDD**:
+- [ ] RED: Test global keys work in all states
+- [ ] RED: Test screen delegation for each state
+- [ ] RED: Test result handling triggers correct transitions
+- [ ] GREEN: Implement update delegation
+- [ ] GREEN: All tests pass
+
+#### 2.5: Update View Rendering (30 min)
+
+**Pattern 3**: View Rendering with Modal Overlay
+
+**Implementation**:
+```go
+func (m *ConfigureSystemModel) View() string {
+    if !m.active {
+        return ""
+    }
+    
+    // Get base view from current screen
+    var baseView string
+    switch m.state {
+    case ConfigStateSelectDomain:
+        baseView = m.domainSelectScreen.View()
+    case ConfigStateEditSettings:
+        baseView = m.editSettingsScreen.View()
+    case ConfigStateReviewChanges:
+        baseView = m.reviewChangesScreen.View()
+    case ConfigStateConfirm:
+        baseView = m.confirmScreen.View()
+    case ConfigStateSaving:
+        // Show edit settings in background with loading modal
+        baseView = m.editSettingsScreen.View()
+    case ConfigStateComplete:
+        // Show review changes in background with success modal
+        baseView = m.reviewChangesScreen.View()
+    case ConfigStateFailed:
+        // Show review changes in background with error modal
+        baseView = m.reviewChangesScreen.View()
+    default:
+        baseView = "Unknown state"
+    }
+    
+    // Pattern 1: Modal overlay rendering (modals overlay LAST)
+    if m.savingModal != nil {
+        return overlay.PlaceOverlay(
+            m.terminalInfo.Width,
+            m.terminalInfo.Height,
+            baseView,
+            m.savingModal.View(),
+            false,
+        )
+    }
+    
+    if m.completeModal != nil {
+        return overlay.PlaceOverlay(
+            m.terminalInfo.Width,
+            m.terminalInfo.Height,
+            baseView,
+            m.completeModal.View(),
+            false,
+        )
+    }
+    
+    if m.failedModal != nil {
+        return overlay.PlaceOverlay(
+            m.terminalInfo.Width,
+            m.terminalInfo.Height,
+            baseView,
+            m.failedModal.View(),
+            false,
+        )
+    }
+    
+    return baseView
+}
+```
+
+**TDD**:
+- [ ] RED: Test view delegation for each state
+- [ ] RED: Test modal overlay for saving/complete/failed
+- [ ] RED: Test base view preserved during modal overlay
+- [ ] GREEN: Implement view rendering
+- [ ] GREEN: All tests pass
+
+### Phase 3: Testing and Verification (1 hour)
+
+#### 3.1: Run All Tests
+
+```bash
+# Screen tests
+go test -v ./internal/cli/screens/configure/...
+
+# Intent tests
+go test -v ./internal/cli/intents/configure_system_test.go
+go test -v ./internal/cli/intents/configure_system_escape_test.go
+
+# Full suite with race detector
+go test -race ./...
+
+# Check compliance
+make check-compliance
+```
+
+#### 3.2: Verification Checklist
+
+**All 12 Patterns Implemented**:
+- [ ] Pattern 1: Modal Overlay Rendering ✅
+- [ ] Pattern 2: Themed Footer Building ✅
+- [ ] Pattern 3: View Rendering with Modal Overlay ✅
+- [ ] Pattern 4: Global Key Interception ✅
+- [ ] Pattern 5: Context-Aware Footer Generation ✅
+- [ ] Pattern 6: State-to-Breadcrumb Mapping ✅
+- [ ] Pattern 7: Screen Transition Helper ✅
+- [ ] Pattern 8: Screen Result Handling ✅
+- [ ] Pattern 9: Filter/Sort Application (N/A - no filtering)
+- [ ] Pattern 10: Action Routing ✅
+- [ ] Pattern 11: Delete Confirmation Flow (N/A - no deletion)
+- [ ] Pattern 12: Form Modal with Immediate Init ✅
+
+**Code Quality**:
+- [ ] All tests passing (no regressions)
+- [ ] No race conditions detected
+- [ ] Code coverage maintained (≥80%)
+- [ ] No staticcheck warnings
+- [ ] Clean build
+
+**User Experience**:
+- [ ] All keyboard shortcuts work
+- [ ] Escape behavior correct for each state
+- [ ] Breadcrumbs show navigation path
+- [ ] Modal overlays preserve context
+- [ ] Error messages are clear
+- [ ] Success feedback is immediate
+
+**Legacy Parity**:
+- [ ] All workflows function identically to before
+- [ ] Change tracking works correctly
+- [ ] Domain-specific settings load properly
+- [ ] Save operation works
+- [ ] Error recovery works
+
+### Phase 4: Documentation (30 min)
+
+#### 4.1: Create Completion Report
+
+**File**: `docs/development/CONFIGURE_SYSTEM_SCREENS_COMPLETE.md`
+
+**Contents**:
+- Migration summary
+- Screen list with files and line counts
+- Pattern compliance checklist
+- Test results
+- Lessons learned
+- Known issues (if any)
+
+#### 4.2: Update Task File
+
+**Changes**:
+- Mark ConfigureSystem as ✅ complete
+- Update progress: 4/11 → 5/11 (45%)
+- Update intent list
+- Add ConfigureSystem metrics
+
+#### 4.3: Commit Strategy
+
+**Commits** (4-5 total):
+
+1. **Create configure screens** - All 7 screen files + tests
+   ```bash
+   git add internal/cli/screens/configure/
+   make ai-commit MSG="feat(screens): add ConfigureSystem screens (7 screens)"
+   ```
+
+2. **Integrate screens with intent** - Intent integration
+   ```bash
+   git add internal/cli/intents/configure_system.go
+   make ai-commit MSG="refactor(intents): integrate ConfigureSystem screens"
+   ```
+
+3. **Update tests** - Test updates
+   ```bash
+   git add internal/cli/intents/configure_system_*test.go
+   make ai-commit MSG="test(intents): update ConfigureSystem tests for screens"
+   ```
+
+4. **Documentation** - Task file + completion report
+   ```bash
+   git add tasks/ docs/development/
+   make ai-commit MSG="docs(docs): mark ConfigureSystem migration complete"
+   ```
+
+### Success Criteria
+
+- [ ] **All 7 screens created** with tests
+- [ ] **All 12 applicable patterns implemented**
+- [ ] **All tests passing** (no regressions)
+- [ ] **No race conditions** detected
+- [ ] **Code coverage maintained** (≥80%)
+- [ ] **Documentation updated** (task file + completion report)
+- [ ] **Commits made** with AI attribution
+- [ ] **Legacy parity verified** (behaves same as before)
+
+### Estimated Timeline
+
+| Phase | Duration | Cumulative |
+|-------|----------|------------|
+| Analysis | 30 min | 0.5h |
+| DomainSelectScreen | 30 min | 1.0h |
+| EditSettingsScreen | 2.5h | 3.5h |
+| ReviewChangesScreen | 45 min | 4.25h |
+| ConfirmScreen | 30 min | 4.75h |
+| SavingScreen | 45 min | 5.5h |
+| CompleteScreen | 30 min | 6.0h |
+| FailedScreen | 45 min | 6.75h |
+| Intent Integration | 2.5h | 9.25h |
+| Testing | 1h | 10.25h |
+| Documentation | 30 min | 10.75h |
+| **TOTAL** | **10.75h** | |
+
+**Adjusted Estimate**: 10-11 hours (more than initial 6-8h estimate due to complexity)
+
+**Buffer**: Add 1-2h for unexpected issues, refactoring, or breaks.
+
+**Recommendation**: Split into 2 sessions:
+- **Session 1** (5-6h): Phases 1-2 (create screens + basic integration)
+- **Session 2** (5-6h): Phase 2 completion + testing + docs
+
+### Current Status
+
+- [x] Analysis complete
+- [x] Implementation plan documented
+- [ ] Ready to start Phase 1.1: DomainSelectScreen
+
+**Next Step**: Create `internal/cli/screens/configure/` directory and begin TDD for DomainSelectScreen.
+
