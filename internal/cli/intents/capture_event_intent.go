@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -56,6 +57,9 @@ type SubmitErrorMsg struct {
 	Cause   error
 }
 
+// Ensure CaptureEventIntent implements ScreenResultHandler interface
+var _ ScreenResultHandler = (*CaptureEventIntent)(nil)
+
 // CaptureEventIntent implements the Intent interface for capturing career events.
 // It owns the complete lifecycle of event capture, including:
 // - Choosing capture strategy (manual, quick, enriched)
@@ -81,6 +85,10 @@ type CaptureEventIntent struct {
 	// eventService is the CLI service for interacting with career events.
 	// Injected via context for dependency management.
 	eventService *service.CLIEventService
+
+	// Screen orchestration (NEW - screens architecture)
+	activeScreen screens.Screen // Currently active screen
+	useScreens   bool           // Toggle between screens and legacy code
 }
 
 // NewCaptureEventIntent creates a new CaptureEvent intent.
@@ -1271,4 +1279,218 @@ func (i *CaptureEventIntent) Result() *IntentResult[interface{}] {
 		Error:    i.result.Error,
 		Metadata: i.result.Metadata,
 	}
+}
+
+// ============================================================================
+// ScreenResultHandler Interface Implementation (NEW - screens architecture)
+// ============================================================================
+
+// handleScreenResult processes results from screen updates.
+// This is the central hub for all screen-to-intent communication.
+//
+// Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
+// CaptureEventIntent implements ScreenResultHandler interface for compile-time safety.
+func (i *CaptureEventIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	return NewScreenResultDispatcher(i).Dispatch(result)
+}
+
+// HandleNavigate handles navigation actions from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
+	data := result.Data()
+
+	// Check if data is a string (simple action)
+	if action, ok := data.(string); ok {
+		switch action {
+		case "edit_metadata":
+			// User wants to edit event metadata
+			// Transition to metadata editing modal (handled by intent)
+			i.state.reviewState.EditingMode = EditingModeMetadata
+			return nil
+
+		case "edit_bursts":
+			// User wants to edit bursts
+			i.state.reviewState.EditingMode = EditingModeBursts
+			return nil
+
+		case "edit_facts":
+			// User wants to edit facts
+			i.state.reviewState.EditingMode = EditingModeFacts
+			return nil
+
+		default:
+			return i.setFailedCmd("INVALID_NAVIGATION", fmt.Sprintf("Unknown navigation action: %s", action), nil)
+		}
+	}
+
+	// Check if data is CaptureStrategy (from strategy selection)
+	if strategy, ok := data.(CaptureStrategy); ok {
+		// User selected a strategy - transition to form screen
+		i.state.strategy = strategy
+		return i.transitionToFormScreen(strategy)
+	}
+
+	return i.setFailedCmd("INVALID_NAVIGATION_DATA", fmt.Sprintf("Invalid navigation data type: %T", data), nil)
+}
+
+// HandleCancel handles cancellation from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+	// Determine which screen we're cancelling from based on current state
+	switch i.state.currentState {
+	case CaptureStateChooseStrategy:
+		// Root state - cancel the entire intent
+		i.setCancelled()
+		return nil
+
+	case CaptureStateForm:
+		// Cancel form - go back to strategy selection
+		return i.transitionToStrategyScreen()
+
+	case CaptureStateReview:
+		// Cancel review - go back to form
+		return i.transitionToFormScreen(i.state.strategy)
+
+	case CaptureStateSubmit:
+		// Cannot cancel during submission
+		return nil
+
+	default:
+		return i.setFailedCmd("INVALID_CANCEL_STATE", fmt.Sprintf("Cannot cancel from state: %s", i.state.currentState), nil)
+	}
+}
+
+// HandleSubmit handles form/data submission from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
+	data := result.Data()
+
+	switch i.state.currentState {
+	case CaptureStateForm:
+		// Form submitted with event data
+		if event, ok := data.(*career.CareerEvent); ok {
+			// Validate event
+			if err := event.Validate(); err != nil {
+				return i.setFailedCmd("VALIDATION_ERROR", fmt.Sprintf("Event validation failed: %v", err), err)
+			}
+
+			// Store event and transition to review (if enrichment enabled)
+			// For now, go directly to submit
+			i.state.reviewState = &ReviewInferredEventState{
+				Event:          event,
+				InferredBursts: make([]*career.Burst, 0),
+				InferredFacts:  make([]*career.Fact, 0),
+				AcceptedBursts: make([]*career.Burst, 0),
+				AcceptedFacts:  make([]*career.Fact, 0),
+				RejectedItems:  make(map[string]string),
+			}
+
+			// TODO: Add burst/fact enrichment here if enabled
+			// For now, go directly to submit
+			return i.transitionToSubmitScreen()
+		}
+		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
+
+	case CaptureStateReview:
+		// Review confirmed - extract event, bursts, facts from result
+		if reviewData, ok := data.(map[string]interface{}); ok {
+			event, _ := reviewData["event"].(*career.CareerEvent)
+			bursts, _ := reviewData["bursts"].([]*career.Burst)
+			facts, _ := reviewData["facts"].([]*career.Fact)
+
+			// Update review state
+			i.state.reviewState.Event = event
+			i.state.reviewState.AcceptedBursts = bursts
+			i.state.reviewState.AcceptedFacts = facts
+
+			// Transition to submit
+			return i.transitionToSubmitScreen()
+		}
+		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
+
+	case CaptureStateSubmit:
+		// Submission complete - extract results
+		if submitData, ok := data.(map[string]interface{}); ok {
+			event, _ := submitData["event"].(*career.CareerEvent)
+			bursts, _ := submitData["bursts"].([]*career.Burst)
+			facts, _ := submitData["facts"].([]*career.Fact)
+
+			// Create successful result
+			i.result = &IntentResult[*CaptureEventResult]{
+				Status: Completed,
+				Data: &CaptureEventResult{
+					Event:  event,
+					Bursts: bursts,
+					Facts:  facts,
+				},
+			}
+			i.active = false
+			return nil
+		}
+		return i.setFailedCmd("INVALID_SUBMIT_DATA", fmt.Sprintf("Invalid submit data type: %T", data), nil)
+
+	default:
+		return i.setFailedCmd("INVALID_SUBMIT_STATE", fmt.Sprintf("Cannot submit from state: %s", i.state.currentState), nil)
+	}
+}
+
+// HandleError handles errors from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	// Screen encountered an error - propagate to intent
+	data := result.Data()
+	if errorData, ok := data.(map[string]interface{}); ok {
+		err, _ := errorData["error"].(error)
+		msg, _ := errorData["message"].(string)
+		return i.setFailedCmd("SCREEN_ERROR", msg, err)
+	}
+	return i.setFailedCmd("SCREEN_ERROR", "Unknown screen error", fmt.Errorf("%v", data))
+}
+
+// setFailedCmd is a helper to set failed result and return nil command.
+func (i *CaptureEventIntent) setFailedCmd(code, message string, cause error) tea.Cmd {
+	i.setFailed(code, message, cause)
+	return nil
+}
+
+// ============================================================================
+// Screen Transition Helpers (NEW - screens architecture)
+// ============================================================================
+
+// transitionToStrategyScreen transitions to the strategy selection screen.
+func (i *CaptureEventIntent) transitionToStrategyScreen() tea.Cmd {
+	// This will be implemented when we wire up the actual screen
+	// For now, just update state
+	i.state.currentState = CaptureStateChooseStrategy
+	return nil
+}
+
+// transitionToFormScreen transitions to the event form screen.
+func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
+	// This will be implemented when we wire up the actual screen
+	// For now, just update state
+	i.state.currentState = CaptureStateForm
+	i.state.strategy = strategy
+	i.state.captureForm.SetStrategy(string(strategy))
+	return i.state.captureForm.Init()
+}
+
+// transitionToReviewScreen transitions to the review screen.
+func (i *CaptureEventIntent) transitionToReviewScreen() tea.Cmd {
+	// This will be implemented when we wire up the actual screen
+	// For now, just update state
+	i.state.currentState = CaptureStateReview
+	return nil
+}
+
+// transitionToSubmitScreen transitions to the submit screen.
+func (i *CaptureEventIntent) transitionToSubmitScreen() tea.Cmd {
+	// This will be implemented when we wire up the actual screen
+	// For now, just update state
+	i.state.currentState = CaptureStateSubmit
+	return i.performSubmit()
 }
