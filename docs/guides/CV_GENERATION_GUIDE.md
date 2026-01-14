@@ -61,6 +61,248 @@ After generation, you can export your CV in multiple formats:
 
 Exports are saved to `$HOME/.kariya/cv_exports/` by default.
 
+## CV Generation Workflow
+
+KaRiya uses a **technology-focused workflow** to generate CVs tailored to your career profile and target role. The workflow guides you through selecting your technology focus, specific technologies, focus area, and skills display preferences.
+
+### Complete Workflow
+
+```
+1. Select Profile
+   ↓
+2. Select Audience (Hiring Manager, Recruiter, or Peer)
+   ↓
+3. Extracting Technologies (automatic - analyzes your skills from events)
+   ↓
+4. Select Technology Focus
+   ├─ Language Agnostic → Skip to step 6
+   ├─ Generalist (2-5 technologies) → Continue to step 5
+   └─ Specialist (1 technology) → Continue to step 5
+   ↓
+5. Select Technologies (if not Language Agnostic)
+   - Generalist: Select 2-5 technologies you want to highlight
+   - Specialist: Select 1 technology for deep expertise demonstration
+   ↓
+6. Select Focus Area
+   - Backend, Frontend, Fullstack, or DevOps
+   - KaRiya suggests based on your skill categories
+   ↓
+7. Configure Skills Section
+   - Format: Flat (one per line) or Grouped (by category)
+   - Limit: 0-50 skills (0 = no limit)
+   ↓
+8. Generating CV (automatic processing)
+   ↓
+9. Preview CV
+   ↓
+10. Review & Export
+```
+
+### Step-by-Step Guide
+
+#### Step 1: Select Profile
+
+Choose a CV profile that contains your target role (Principal, Staff, EM, Senior IC) and identifies who you are.
+
+**Keyboard shortcuts**:
+- `↑`/`↓` or `j`/`k` - Navigate profiles
+- `Enter` - Select profile
+- `Esc` - Cancel
+
+#### Step 2: Select Audience
+
+Choose who will read this CV. This affects bullet selection and emphasis.
+
+**Audiences**:
+- **Hiring Manager**: Decision-maker focused on outcomes and fit
+- **Recruiter**: Talent acquisition focused on keywords and qualifications
+- **Peer**: Technical colleague focused on depth and expertise
+
+**Keyboard shortcuts**:
+- `↑`/`↓` or `j`/`k` - Navigate audiences
+- `Enter` - Select audience
+- `Esc` - Go back to profile selection
+
+#### Step 3: Extracting Technologies
+
+KaRiya automatically analyzes your career events to extract technologies you've used. Skills appearing in 3+ events are considered for selection.
+
+**What happens**:
+- Aggregates skills from all your career events
+- Counts event associations per skill
+- Analyzes skill categories (backend, frontend, database, devops, etc.)
+- Suggests a focus area based on your skill distribution
+
+**No action required** - this step is automatic.
+
+#### Step 4: Select Technology Focus
+
+Choose how you want to present your technical expertise.
+
+**Options**:
+- **Language Agnostic**: Emphasize adaptability and leadership (no technology filtering)
+- **Generalist (2-5 technologies)**: Showcase expertise in complementary technologies
+- **Specialist (1 technology)**: Demonstrate deep expertise in a specific technology
+
+**When to choose each**:
+- **Language Agnostic**: Leadership roles, consulting, technology-agnostic positions
+- **Generalist**: Full-stack, polyglot developers, modern development roles
+- **Specialist**: Deep technical IC roles, technology-specific positions
+
+**Keyboard shortcuts**:
+- `↑`/`↓` or `j`/`k` - Navigate options
+- `Enter` - Select focus type
+- `Esc` - Go back to audience selection
+
+See [CV_VARIANTS_GUIDE.md](CV_VARIANTS_GUIDE.md) for detailed guidance on choosing technology focus.
+
+#### Step 5: Select Technologies (Conditional)
+
+If you chose **Generalist** or **Specialist**, select specific technologies to highlight in your CV.
+
+**Generalist (2-5 technologies)**:
+- Select 2-5 complementary technologies you regularly use together
+- Example: Ruby, PostgreSQL, Docker, React, Redis
+
+**Specialist (1 technology)**:
+- Select exactly 1 technology for deep expertise demonstration
+- Example: Ruby (Ruby specialist)
+
+**How it affects your CV**:
+- Selected technologies prioritized in skills section
+- Bullets from events using selected technologies get +0.15 score boost
+- High-quality bullets without selected technologies still included (not penalized)
+
+**Keyboard shortcuts**:
+- `↑`/`↓` or `j`/`k` - Navigate technologies
+- `Space` - Toggle selection (Generalist only)
+- `Enter` - Confirm selection
+- `Esc` - Go back to technology focus
+
+**Display**:
+- Shows technology name and event count (e.g., "Ruby (12 events)")
+- Selected technologies marked with checkmarks
+
+#### Step 6: Select Focus Area
+
+Choose your primary technical domain. KaRiya suggests a focus area based on your skill categories.
+
+**Focus Areas**:
+- **Backend**: Server-side applications, APIs, databases, system architecture
+- **Frontend**: User interfaces, web applications, client-side frameworks
+- **Fullstack**: End-to-end application development (client + server)
+- **DevOps**: Infrastructure, deployment, CI/CD, cloud platforms
+
+**Suggestion logic**:
+- Backend: 70%+ backend/database category skills
+- Frontend: 70%+ frontend category skills
+- DevOps: 70%+ devops/cloud category skills
+- Fullstack: Mixed backend + frontend skills
+
+**You can override the suggestion** - final choice is always yours.
+
+**Keyboard shortcuts**:
+- `↑`/`↓` or `j`/`k` - Navigate focus areas
+- `Enter` - Select focus area
+- `Esc` - Go back to technology selection (or technology focus if Language Agnostic)
+
+**Display**:
+- Suggested focus area marked with ⭐
+- Evidence counts shown (e.g., "backend: 12 skills, frontend: 3 skills")
+
+#### Step 7: Configure Skills Section
+
+Customize how skills appear in your CV.
+
+**Format Options**:
+- **Flat**: One skill per bullet (clean, minimal)
+  ```
+  Technical Skills
+  - Ruby
+  - Go
+  - PostgreSQL
+  ```
+
+- **Grouped**: Skills grouped by category with headers (organized, comprehensive)
+  ```
+  Technical Skills
+  
+  Backend
+    - Ruby
+    - Go
+  
+  Database
+    - PostgreSQL
+    - Redis
+  ```
+
+**Limit Options**:
+- **Range**: 0-50 skills
+- **0 = no limit**: Show all skills
+- **Flat format**: Limit applies to total skills
+- **Grouped format**: Limit applies per category
+
+**When to use each**:
+- **Flat**: < 10 skills, recruiter-friendly, minimal CVs
+- **Grouped**: 10+ skills, technical audience, showcasing breadth
+- **Limit 10-15**: Flat format recommended
+- **Limit 5-8 per category**: Grouped format recommended
+
+**Keyboard shortcuts**:
+- `↑`/`↓` or `j`/`k` - Move cursor between format and limit
+- `Space` - Toggle format (flat ↔ grouped)
+- `←`/`→` or `h`/`l` - Adjust limit (±5 increments)
+- `Enter` - Confirm and proceed to generation
+- `Esc` - Go back to focus area selection
+
+**Display**:
+- Current format shown with checkmark (e.g., "Flat ✓")
+- Current limit value shown (e.g., "Limit: 10 (10 max per section/group)")
+
+#### Step 8: Generating CV
+
+KaRiya processes your selections and generates your CV.
+
+**What happens**:
+1. Creates CV configuration from your selections
+2. Filters and ranks bullets based on technology focus
+3. Builds CV sections (Summary, Experience, Skills, Projects)
+4. Applies selected technologies prioritization
+5. Formats skills section according to your preferences
+
+**No action required** - this step is automatic (usually < 1 second).
+
+#### Step 9: Preview CV
+
+Review your generated CV before finalizing.
+
+**Preview shows**:
+- CV metadata (role, audience, generation date)
+- Source statistics (events used, facts used)
+- Full CV content
+
+**Keyboard shortcuts**:
+- `↑`/`↓` or `j`/`k` - Scroll preview
+- `e` - Edit CV (review mode)
+- `c` - Continue to confirmation
+- `Esc` - Go back to skills configuration
+
+#### Step 10: Review & Export
+
+Confirm your CV and optionally export it.
+
+**Options**:
+- **Confirm** (`y` or `Enter`): Accept CV and complete generation
+- **Export** (`e` or `x`): Export to file or clipboard
+  - Text format (.txt)
+  - Markdown format (.md)
+  - YAML format (.yaml)
+- **Go Back** (`n` or `Esc`): Return to preview
+
+**Export destinations**:
+- Save to file: `$HOME/.kariya/cv_exports/`
+- Copy to clipboard: Immediate paste-ready
+
 ## CV Configuration Format
 
 CV configurations are stored as YAML files in `$HOME/.kariya/cv_configs/`. You can also edit these files directly in a text editor.
