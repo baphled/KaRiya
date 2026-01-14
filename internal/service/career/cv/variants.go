@@ -128,3 +128,68 @@ func DetermineStructure(techFocus TechnologyFocus, length LengthFormat) CVStruct
 		return CVStructureStandard
 	}
 }
+
+// GetVariantBySelections creates a CV variant dynamically from user selections.
+//
+// This replaces the old static variant system with a dynamic generator that
+// creates variants on-demand based on user choices.
+//
+// Validation rules:
+//   - Language Agnostic: No technologies required (empty slice is fine)
+//   - Generalist: Requires 2-5 technologies
+//   - Specialist: Requires exactly 1 technology
+//
+// Returns an error if validation fails, otherwise returns a configured CVVariant.
+func GetVariantBySelections(
+	techFocus TechnologyFocus,
+	focusArea FocusArea,
+	length LengthFormat,
+	technologies []string,
+) (*CVVariant, error) {
+	// Validate technology count based on focus
+	switch techFocus {
+	case TechnologyFocusSpecialist:
+		if len(technologies) != 1 {
+			return nil, &VariantError{
+				TechnologyFocus: techFocus,
+				Message:         "Specialist requires exactly 1 technology",
+			}
+		}
+	case TechnologyFocusGeneralist:
+		if len(technologies) < 2 || len(technologies) > 5 {
+			return nil, &VariantError{
+				TechnologyFocus: techFocus,
+				Message:         "Generalist requires 2-5 technologies",
+			}
+		}
+	case TechnologyFocusLanguageAgnostic:
+		// No validation needed - technologies can be empty or ignored
+	}
+
+	// Generate variant ID
+	variantID := BuildVariantID(techFocus, focusArea, length, technologies)
+
+	// Determine structure
+	structure := DetermineStructure(techFocus, length)
+
+	// Create and return variant
+	return &CVVariant{
+		ID:              variantID,
+		TechnologyFocus: techFocus,
+		FocusArea:       focusArea,
+		LengthFormat:    length,
+		Technologies:    technologies,
+		BaseStructure:   structure,
+	}, nil
+}
+
+// VariantError represents an error in variant creation.
+type VariantError struct {
+	TechnologyFocus TechnologyFocus
+	Message         string
+}
+
+// Error implements the error interface.
+func (e *VariantError) Error() string {
+	return e.Message
+}

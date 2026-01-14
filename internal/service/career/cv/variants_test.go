@@ -194,4 +194,158 @@ var _ = Describe("CV Variants", func() {
 			Expect(structure).To(Equal(CVStructureStandard))
 		})
 	})
+
+	Describe("GetVariantBySelections", func() {
+		Context("Language Agnostic", func() {
+			It("should create variant with Narrative structure", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusLanguageAgnostic,
+					FocusAreaBackend,
+					LengthFull,
+					[]string{}, // No technologies for Language Agnostic
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(variant).NotTo(BeNil())
+				Expect(variant.ID).To(Equal("agnostic_backend_full"))
+				Expect(variant.TechnologyFocus).To(Equal(TechnologyFocusLanguageAgnostic))
+				Expect(variant.FocusArea).To(Equal(FocusAreaBackend))
+				Expect(variant.LengthFormat).To(Equal(LengthFull))
+				Expect(variant.Technologies).To(BeEmpty())
+				Expect(variant.BaseStructure).To(Equal(CVStructureNarrative))
+			})
+
+			It("should create variant with Highlights structure for UltraShort", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusLanguageAgnostic,
+					FocusAreaFrontend,
+					LengthUltraShort,
+					[]string{},
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(variant.BaseStructure).To(Equal(CVStructureHighlights))
+			})
+		})
+
+		Context("Generalist", func() {
+			It("should create variant with Standard structure", func() {
+				technologies := []string{"ruby", "python", "go"}
+				variant, err := GetVariantBySelections(
+					TechnologyFocusGeneralist,
+					FocusAreaFullstack,
+					LengthStandard,
+					technologies,
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(variant).NotTo(BeNil())
+				Expect(variant.ID).To(Equal("generalist_fullstack_standard"))
+				Expect(variant.TechnologyFocus).To(Equal(TechnologyFocusGeneralist))
+				Expect(variant.FocusArea).To(Equal(FocusAreaFullstack))
+				Expect(variant.LengthFormat).To(Equal(LengthStandard))
+				Expect(variant.Technologies).To(Equal(technologies))
+				Expect(variant.BaseStructure).To(Equal(CVStructureStandard))
+			})
+
+			It("should create variant with Highlights structure for UltraShort", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusGeneralist,
+					FocusAreaBackend,
+					LengthUltraShort,
+					[]string{"ruby", "go"},
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(variant.BaseStructure).To(Equal(CVStructureHighlights))
+			})
+		})
+
+		Context("Specialist", func() {
+			It("should create variant with Standard structure", func() {
+				technologies := []string{"ruby"}
+				variant, err := GetVariantBySelections(
+					TechnologyFocusSpecialist,
+					FocusAreaBackend,
+					LengthFull,
+					technologies,
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(variant).NotTo(BeNil())
+				Expect(variant.ID).To(Equal("specialist_ruby_backend_full"))
+				Expect(variant.TechnologyFocus).To(Equal(TechnologyFocusSpecialist))
+				Expect(variant.FocusArea).To(Equal(FocusAreaBackend))
+				Expect(variant.LengthFormat).To(Equal(LengthFull))
+				Expect(variant.Technologies).To(Equal(technologies))
+				Expect(variant.BaseStructure).To(Equal(CVStructureStandard))
+			})
+
+			It("should include technology in variant ID", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusSpecialist,
+					FocusAreaDevOps,
+					LengthShort,
+					[]string{"kubernetes"},
+				)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(variant.ID).To(Equal("specialist_kubernetes_devops_short"))
+			})
+		})
+
+		Context("Validation", func() {
+			It("should return error when Specialist has no technologies", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusSpecialist,
+					FocusAreaBackend,
+					LengthFull,
+					[]string{},
+				)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Specialist requires exactly 1 technology"))
+				Expect(variant).To(BeNil())
+			})
+
+			It("should return error when Specialist has multiple technologies", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusSpecialist,
+					FocusAreaBackend,
+					LengthFull,
+					[]string{"ruby", "python"},
+				)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Specialist requires exactly 1 technology"))
+				Expect(variant).To(BeNil())
+			})
+
+			It("should return error when Generalist has < 2 technologies", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusGeneralist,
+					FocusAreaBackend,
+					LengthFull,
+					[]string{"ruby"},
+				)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Generalist requires 2-5 technologies"))
+				Expect(variant).To(BeNil())
+			})
+
+			It("should return error when Generalist has > 5 technologies", func() {
+				variant, err := GetVariantBySelections(
+					TechnologyFocusGeneralist,
+					FocusAreaBackend,
+					LengthFull,
+					[]string{"ruby", "python", "go", "java", "rust", "c++"},
+				)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Generalist requires 2-5 technologies"))
+				Expect(variant).To(BeNil())
+			})
+		})
+	})
 })
