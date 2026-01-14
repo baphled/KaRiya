@@ -304,7 +304,7 @@ The KaRiya TUI is built on a **type-safe, intent-driven architecture**:
 |--------|---------|--------|-------|
 | CaptureEvent | Capture new career events | Choose Strategy → Form → Review → Confirm | 30+ |
 | BrowseTimeline | View career timeline | Timeline → Event Detail | 37 |
-| GenerateCV | Generate CVs | Profile → Audience → Preview → Review → Confirm | 41 |
+| GenerateCV | Generate CVs | Profile → Audience → Role Emphasis → Length → Preview → Review → Confirm | 82+ |
 | ExportArtifact | Export artifacts | Select → Configure → Preview → Export | 400+ |
 | ConfigureSystem | System configuration | Domain → Settings → Staged Changes → Confirm | 400+ |
 
@@ -769,9 +769,12 @@ User-facing documentation for features and workflows.
 **File**: [`docs/guides/CV_GENERATION_GUIDE.md`](docs/guides/CV_GENERATION_GUIDE.md)
 **Purpose**: Generating CVs from career events
 **Audience**: Users creating CVs for job applications
-**Topics**: Profile and audience selection, CV preview, export options
+**Topics**: Profile and audience selection, variant selection (role emphasis + length), 4 CV structures, preview, export options
 
 **Related**:
+- [`docs/guides/CV_VARIANTS_GUIDE.md`](docs/guides/CV_VARIANTS_GUIDE.md) - Complete guide to 16 CV variants
+- [`docs/guides/NARRATIVE_CV_GUIDE.md`](docs/guides/NARRATIVE_CV_GUIDE.md) - Narrative CV structure guide
+- [`docs/guides/CONSULTING_CV_GUIDE.md`](docs/guides/CONSULTING_CV_GUIDE.md) - Consulting CV structure guide
 - [`docs/guides/CV_EXAMPLES.md`](docs/guides/CV_EXAMPLES.md) - CV generation examples
 - [`docs/guides/CV_TROUBLESHOOTING.md`](docs/guides/CV_TROUBLESHOOTING.md) - Common CV issues and solutions
 
@@ -984,8 +987,13 @@ Completed tasks remain in `tasks/` directory for reference:
 
 | File | Purpose |
 |------|---------|
+| `internal/service/career/cv/variants.go` | CV variant types, 16 built-in variants, VariantService |
+| `internal/service/career/cv/role_emphasis.go` | Role emphasis configuration and scoring |
+| `internal/service/career/cv/length_format.go` | Length format configuration and filtering |
+| `internal/service/career/cv/export_service.go` | Export for all 4 structures (standard, narrative, consulting, highlights) |
+| `internal/service/career/cv/cv_helpers.go` | Export helpers, ProfileOverride functions |
 | `internal/service/career/cv/enhanced_bullet_generator.go` | Enhanced CV bullet generation with scoring |
-| `internal/service/career/cv/enhanced_bullet_generator_test.go` | Tests for bullet generation (203 specs) |
+| `internal/service/career/cv/bullet_generator.go` | Base bullet generation with audience filtering |
 
 ---
 
@@ -2033,7 +2041,7 @@ sqlite3 ~/.kariya/events.db "SELECT MAX(version_id) FROM goose_db_version"
 | **Test Framework** | Ginkgo v2 + Gomega |
 | **Database** | SQLite (modernc.org/sqlite) |
 | **Status** | ✅ Production Ready |
-| **Last Updated** | 2026-01-06 |
+| **Last Updated** | 2026-01-09 |
 
 ---
 

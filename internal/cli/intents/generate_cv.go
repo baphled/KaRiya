@@ -5,9 +5,45 @@ import (
 	"errors"
 	"time"
 
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/charmbracelet/bubbles/viewport"
+)
+
+// CV variant types - reexport from cv package for convenience
+type (
+	// RoleEmphasis defines what aspect of experience to emphasize
+	RoleEmphasis = cv.RoleEmphasis
+	// LengthFormat defines CV density/length
+	LengthFormat = cv.LengthFormat
+)
+
+// Role emphasis constants
+const (
+	RoleEmphasisSeniorBackend    = cv.RoleEmphasisSeniorBackend
+	RoleEmphasisStaffPrincipal   = cv.RoleEmphasisStaffPrincipal
+	RoleEmphasisConsulting       = cv.RoleEmphasisConsulting
+	RoleEmphasisLanguageAgnostic = cv.RoleEmphasisLanguageAgnostic
+)
+
+// Length format constants
+const (
+	LengthFull       = cv.LengthFull
+	LengthStandard   = cv.LengthStandard
+	LengthShort      = cv.LengthShort
+	LengthUltraShort = cv.LengthUltraShort
+)
+
+// CVStructure represents the structure/format of a CV.
+type CVStructure string
+
+const (
+	// CVStructureStandard is the traditional CV structure with Experience, Projects, Skills sections.
+	CVStructureStandard CVStructure = "standard"
+
+	// CVStructureNarrative is a language-agnostic professional format with Core Strengths, Technologies, What I Bring sections.
+	CVStructureNarrative CVStructure = "narrative"
 )
 
 // GenerateCVState represents the state of the GenerateCV intent.
@@ -19,6 +55,16 @@ const (
 
 	// GenerateCVStateSelectAudience - User selects target audience(s).
 	GenerateCVStateSelectAudience GenerateCVState = "select_audience"
+
+	// GenerateCVStateSelectStructure - User selects CV structure (Standard or Narrative).
+	// DEPRECATED: Use SelectRoleEmphasis + SelectLengthFormat for variant-based selection.
+	GenerateCVStateSelectStructure GenerateCVState = "select_structure"
+
+	// GenerateCVStateSelectRoleEmphasis - User selects role emphasis (senior_backend, staff_principal, etc.)
+	GenerateCVStateSelectRoleEmphasis GenerateCVState = "select_role_emphasis"
+
+	// GenerateCVStateSelectLengthFormat - User selects length format (full, standard, short, ultra_short)
+	GenerateCVStateSelectLengthFormat GenerateCVState = "select_length_format"
 
 	// GenerateCVStateGenerating - CV is being generated.
 	GenerateCVStateGenerating GenerateCVState = "generating"
@@ -71,6 +117,9 @@ type GenerateCVContext struct {
 	// ExportService exports CVs to various formats
 	ExportService *cv.ExportService
 
+	// ProfileConfig is the user's profile configuration for narrative CVs
+	ProfileConfig *config.ProfileConfig
+
 	// AppContext is the background context for operations
 	AppContext context.Context
 }
@@ -112,6 +161,12 @@ type GenerateCVResult struct {
 	// SelectedProfile is the profile that was used.
 	SelectedProfile *CVProfile
 
+	// SelectedStructure is the CV structure that was selected.
+	SelectedStructure CVStructure
+
+	// SelectedVariant is the CV variant that was selected (if variant-based generation was used).
+	SelectedVariant *cv.CVVariant
+
 	// AcceptedFields tracks which fields were accepted.
 	AcceptedFields map[string]bool
 
@@ -141,6 +196,27 @@ type GenerateCVModel struct {
 
 	// audienceIndex is the index for audience selection UI
 	audienceIndex int
+
+	// selectedCVStructure is the selected CV structure (Standard or Narrative).
+	selectedCVStructure CVStructure
+
+	// structureIndex is the index for structure selection UI
+	structureIndex int
+
+	// selectedRoleEmphasis is the selected role emphasis for variant-based generation
+	selectedRoleEmphasis RoleEmphasis
+
+	// roleEmphasisIndex is the index for role emphasis selection UI
+	roleEmphasisIndex int
+
+	// selectedLengthFormat is the selected length format for variant-based generation
+	selectedLengthFormat LengthFormat
+
+	// lengthFormatIndex is the index for length format selection UI
+	lengthFormatIndex int
+
+	// selectedVariant is the selected CV variant (combination of role emphasis and length)
+	selectedVariant *cv.CVVariant
 
 	// generatedCV is the generated CV.
 	generatedCV *career.CVView

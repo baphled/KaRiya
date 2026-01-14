@@ -41,8 +41,8 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []
 		return nil, ctx.Err()
 	}
 
-	if len(events) == 0 {
-		bg.logger.Info("No events provided for bullet generation")
+	if len(events) == 0 && len(facts) == 0 {
+		bg.logger.Info("No events or facts provided for bullet generation")
 		return []*career.CVBullet{}, nil
 	}
 
@@ -58,7 +58,7 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []
 	// Apply role-specific compression
 	compressedBullets := bg.compressByRole(rankedBullets, targetRole)
 
-	bg.logger.Info("Generated %d bullets from %d events for role %s", len(compressedBullets), len(events), targetRole)
+	bg.logger.Info("Generated %d bullets from %d events and %d facts for role %s", len(compressedBullets), len(events), len(facts), targetRole)
 	return compressedBullets, nil
 }
 
@@ -302,13 +302,20 @@ func (bg *DefaultBulletGenerator) isFactRelevantToRole(fact *career.Fact, target
 }
 
 // isFactRelevantToAudience checks if a fact is relevant to an audience
+// Uses the Fact.AudienceRelevance field to filter facts based on target audience
 func (bg *DefaultBulletGenerator) isFactRelevantToAudience(fact *career.Fact, audience string) bool {
 	if audience == "" {
-		return true
+		return true // All audiences relevant if not specified
 	}
 
-	// For now, accept all facts for all audiences
-	return true
+	// Check if the requested audience is in the fact's relevance list
+	for _, relevantAudience := range fact.AudienceRelevance {
+		if relevantAudience == audience {
+			return true
+		}
+	}
+
+	return false
 }
 
 // getCategoriesForRole returns the preferred categories for a role

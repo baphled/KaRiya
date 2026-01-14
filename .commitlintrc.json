@@ -42,6 +42,8 @@
         "models",
         "components",
         "ci",
+        "cv",
+        "tui",
         "navigation"
       ]
     ],

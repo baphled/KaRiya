@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
@@ -596,6 +597,12 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 		if err != nil || len(facts) == 0 {
 			facts = []*career.Fact{{ID: "fact-stub", Text: "Test fact for navigation integration", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "ev-stub"}}
 		}
+		// Load user's profile config for narrative CV exports
+		var profileCfg *config.ProfileConfig
+		if cfg, err := config.LoadConfig(); err == nil {
+			profileCfg = &cfg.Profile
+		}
+
 		cvCtx := &intents.GenerateCVContext{
 			Events:                  events,
 			Facts:                   facts,
@@ -605,6 +612,7 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			DataProcessingService:   cv.NewDataProcessingService(log),
 			EnhancedBulletGenerator: cv.NewEnhancedBulletGenerator(log),
 			ExportService:           cvExportService,
+			ProfileConfig:           profileCfg,
 			AppContext:              ctx,
 		}
 		intent, err := intents.NewGenerateCVIntent(cvCtx)

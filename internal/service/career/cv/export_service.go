@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"gopkg.in/yaml.v3"
@@ -328,4 +329,514 @@ func (es *ExportService) CopyToClipboard(ctx context.Context, content string) er
 
 	es.logger.Info("CV content copied to clipboard")
 	return nil
+}
+
+// Export exports a CV using the specified structure and format.
+// For YAML format, always uses standard structure (it's a data format).
+// Uses default profile for narrative structure.
+func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure CVStructure, format ExportFormat) (string, error) {
+	return es.ExportWithProfile(ctx, cv, sections, bullets, structure, format, nil)
+}
+
+// ExportWithProfile exports a CV using the specified structure, format, and profile config.
+// For YAML format, always uses standard structure (it's a data format).
+// If profileCfg is nil, uses default profile.
+func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure CVStructure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
+	if cv == nil {
+		return "", fmt.Errorf("CV view is nil")
+	}
+
+	// YAML always uses standard structure (it's data, not presentation)
+	if format == ExportFormatYAML {
+		return es.ExportToYAML(ctx, cv, sections, bullets)
+	}
+
+	// Route to structure-specific renderer
+	switch structure {
+	case CVStructureNarrative:
+		return es.exportNarrativeWithProfile(ctx, cv, sections, format, profileCfg)
+	case CVStructureConsulting:
+		return es.exportConsultingWithProfile(ctx, cv, sections, bullets, format, profileCfg)
+	case CVStructureHighlights:
+		return es.exportHighlightsWithProfile(ctx, cv, sections, bullets, format, profileCfg)
+	case CVStructureStandard:
+		return es.exportStandard(ctx, cv, sections, bullets, format)
+	default:
+		return es.exportStandard(ctx, cv, sections, bullets, format)
+	}
+}
+
+// exportStandard exports using the standard CV structure.
+func (es *ExportService) exportStandard(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, format ExportFormat) (string, error) {
+	switch format {
+	case ExportFormatText:
+		return es.ExportToText(ctx, cv, sections, bullets)
+	case ExportFormatMarkdown:
+		return es.ExportToMarkdown(ctx, cv, sections, bullets)
+	default:
+		return "", fmt.Errorf("unknown export format: %s", format)
+	}
+}
+
+// exportConsultingWithProfile exports using the consulting CV structure with optional profile config.
+func (es *ExportService) exportConsultingWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
+	switch format {
+	case ExportFormatText:
+		return es.exportConsultingText(ctx, cv, sections, bullets, profileCfg)
+	case ExportFormatMarkdown:
+		return es.exportConsultingMarkdown(ctx, cv, sections, bullets, profileCfg)
+	default:
+		return "", fmt.Errorf("unknown export format: %s", format)
+	}
+}
+
+// exportConsultingText exports consulting CV to plain text format.
+func (es *ExportService) exportConsultingText(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, profileCfg *config.ProfileConfig) (string, error) {
+	var buf bytes.Buffer
+	profile := NarrativeProfileFromConfig(profileCfg)
+
+	// Profile header
+	buf.WriteString(strings.ToUpper(cv.Name) + "\n")
+	buf.WriteString(strings.Repeat("=", len(cv.Name)) + "\n\n")
+	buf.WriteString(profile.Role + "\n")
+	buf.WriteString(profile.Location + "\n")
+	buf.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
+	buf.WriteString(fmt.Sprintf("GitHub: %s\n\n", profile.GitHub))
+
+	buf.WriteString(strings.Repeat("-", 80) + "\n\n")
+
+	// Summary section
+	buf.WriteString("SUMMARY\n")
+	buf.WriteString(strings.Repeat("-", 7) + "\n\n")
+	summary := getSummaryFromSections(sections)
+	if summary != "" {
+		buf.WriteString(summary + "\n\n")
+	}
+
+	// Client Engagements section (experience sections with "Client Engagements" title)
+	buf.WriteString("CLIENT ENGAGEMENTS\n")
+	buf.WriteString(strings.Repeat("-", 18) + "\n\n")
+
+	for _, section := range sections {
+		if section.SectionType == "experience" {
+			for _, group := range section.Content {
+				// Company header with dates
+				if group.Header != "" {
+					if group.StartDate != "" && group.EndDate != "" {
+						buf.WriteString(fmt.Sprintf("%s | %s - %s\n", group.Header, group.StartDate, group.EndDate))
+					} else {
+						buf.WriteString(fmt.Sprintf("%s\n", group.Header))
+					}
+				}
+
+				// Bullets from the bullets map
+				sectionBullets := bullets[section.ID]
+				for _, bullet := range sectionBullets {
+					buf.WriteString(fmt.Sprintf("  * %s\n", bullet.Text))
+				}
+				buf.WriteString("\n")
+			}
+		}
+	}
+
+	// What I Bring section
+	if len(profile.ValuePropositions) > 0 {
+		buf.WriteString("WHAT I BRING\n")
+		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
+		for _, prop := range profile.ValuePropositions {
+			buf.WriteString(fmt.Sprintf("  * %s\n", prop))
+		}
+		buf.WriteString("\n")
+	}
+
+	return buf.String(), nil
+}
+
+// exportConsultingMarkdown exports consulting CV to markdown format.
+func (es *ExportService) exportConsultingMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, profileCfg *config.ProfileConfig) (string, error) {
+	var buf bytes.Buffer
+	profile := NarrativeProfileFromConfig(profileCfg)
+
+	// Profile header
+	buf.WriteString(fmt.Sprintf("# %s\n\n", cv.Name))
+	buf.WriteString(fmt.Sprintf("**%s** | %s\n\n", profile.Role, profile.Location))
+	buf.WriteString(fmt.Sprintf("Email: %s | GitHub: %s\n\n", profile.Email, profile.GitHub))
+	buf.WriteString("---\n\n")
+
+	// Summary section
+	buf.WriteString("## Summary\n\n")
+	summary := getSummaryFromSections(sections)
+	if summary != "" {
+		buf.WriteString(summary + "\n\n")
+	}
+
+	// Client Engagements section
+	buf.WriteString("## Client Engagements\n\n")
+
+	for _, section := range sections {
+		if section.SectionType == "experience" {
+			for _, group := range section.Content {
+				// Company header with dates
+				if group.Header != "" {
+					if group.StartDate != "" && group.EndDate != "" {
+						buf.WriteString(fmt.Sprintf("### %s\n*%s - %s*\n\n", group.Header, group.StartDate, group.EndDate))
+					} else {
+						buf.WriteString(fmt.Sprintf("### %s\n\n", group.Header))
+					}
+				}
+
+				// Bullets from the bullets map
+				sectionBullets := bullets[section.ID]
+				for _, bullet := range sectionBullets {
+					buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+				}
+				buf.WriteString("\n")
+			}
+		}
+	}
+
+	// What I Bring section
+	if len(profile.ValuePropositions) > 0 {
+		buf.WriteString("## What I Bring\n\n")
+		for _, prop := range profile.ValuePropositions {
+			buf.WriteString(fmt.Sprintf("- %s\n", prop))
+		}
+		buf.WriteString("\n")
+	}
+
+	return buf.String(), nil
+}
+
+// exportHighlightsWithProfile exports using the highlights CV structure with optional profile config.
+func (es *ExportService) exportHighlightsWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
+	switch format {
+	case ExportFormatText:
+		return es.exportHighlightsText(ctx, cv, sections, bullets, profileCfg)
+	case ExportFormatMarkdown:
+		return es.exportHighlightsMarkdown(ctx, cv, sections, bullets, profileCfg)
+	default:
+		return "", fmt.Errorf("unknown export format: %s", format)
+	}
+}
+
+// exportHighlightsText exports highlights CV to plain text format.
+func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, profileCfg *config.ProfileConfig) (string, error) {
+	var buf bytes.Buffer
+	profile := NarrativeProfileFromConfig(profileCfg)
+
+	// Condensed profile header
+	buf.WriteString(strings.ToUpper(cv.Name) + "\n")
+	buf.WriteString(strings.Repeat("=", len(cv.Name)) + "\n")
+	buf.WriteString(fmt.Sprintf("%s | %s | %s\n\n", profile.Role, profile.Location, profile.Email))
+
+	// Short summary
+	summary := getSummaryFromSections(sections)
+	if summary != "" {
+		buf.WriteString(summary + "\n\n")
+	}
+
+	buf.WriteString(strings.Repeat("-", 60) + "\n\n")
+
+	// Key Capabilities (from core strengths or derive from facts)
+	buf.WriteString("KEY CAPABILITIES\n")
+	buf.WriteString(strings.Repeat("-", 16) + "\n\n")
+	if len(profile.CoreStrengths) > 0 {
+		// Use first 4-6 core strengths
+		maxStrengths := 6
+		if len(profile.CoreStrengths) < maxStrengths {
+			maxStrengths = len(profile.CoreStrengths)
+		}
+		for i := 0; i < maxStrengths; i++ {
+			buf.WriteString(fmt.Sprintf("  * %s\n", profile.CoreStrengths[i]))
+		}
+	} else {
+		buf.WriteString("  * Technical leadership and architecture\n")
+		buf.WriteString("  * System design and optimization\n")
+		buf.WriteString("  * Cross-functional collaboration\n")
+	}
+	buf.WriteString("\n")
+
+	// Selected Highlights (top 5 bullets by confidence)
+	buf.WriteString("SELECTED HIGHLIGHTS\n")
+	buf.WriteString(strings.Repeat("-", 19) + "\n\n")
+
+	topBullets := es.getTopBulletsByConfidence(bullets, 5)
+	for _, bullet := range topBullets {
+		buf.WriteString(fmt.Sprintf("  * %s\n", bullet.Text))
+	}
+	buf.WriteString("\n")
+
+	// Technologies section
+	if profile.Languages != "" || profile.Systems != "" {
+		buf.WriteString("TECHNOLOGIES\n")
+		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
+		if profile.Languages != "" {
+			buf.WriteString(fmt.Sprintf("Languages: %s\n", profile.Languages))
+		}
+		if profile.Systems != "" {
+			buf.WriteString(fmt.Sprintf("Systems: %s\n", profile.Systems))
+		}
+		buf.WriteString("\n")
+	}
+
+	return buf.String(), nil
+}
+
+// exportHighlightsMarkdown exports highlights CV to markdown format.
+func (es *ExportService) exportHighlightsMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, profileCfg *config.ProfileConfig) (string, error) {
+	var buf bytes.Buffer
+	profile := NarrativeProfileFromConfig(profileCfg)
+
+	// Condensed profile header
+	buf.WriteString(fmt.Sprintf("# %s\n\n", cv.Name))
+	buf.WriteString(fmt.Sprintf("**%s** | %s | %s\n\n", profile.Role, profile.Location, profile.Email))
+
+	// Short summary
+	summary := getSummaryFromSections(sections)
+	if summary != "" {
+		buf.WriteString(summary + "\n\n")
+	}
+
+	buf.WriteString("---\n\n")
+
+	// Key Capabilities
+	buf.WriteString("## Key Capabilities\n\n")
+	if len(profile.CoreStrengths) > 0 {
+		maxStrengths := 6
+		if len(profile.CoreStrengths) < maxStrengths {
+			maxStrengths = len(profile.CoreStrengths)
+		}
+		for i := 0; i < maxStrengths; i++ {
+			buf.WriteString(fmt.Sprintf("- %s\n", profile.CoreStrengths[i]))
+		}
+	} else {
+		buf.WriteString("- Technical leadership and architecture\n")
+		buf.WriteString("- System design and optimization\n")
+		buf.WriteString("- Cross-functional collaboration\n")
+	}
+	buf.WriteString("\n")
+
+	// Selected Highlights
+	buf.WriteString("## Selected Highlights\n\n")
+	topBullets := es.getTopBulletsByConfidence(bullets, 5)
+	for _, bullet := range topBullets {
+		buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+	}
+	buf.WriteString("\n")
+
+	// Technologies
+	if profile.Languages != "" || profile.Systems != "" {
+		buf.WriteString("## Technologies\n\n")
+		if profile.Languages != "" {
+			buf.WriteString(fmt.Sprintf("**Languages:** %s\n\n", profile.Languages))
+		}
+		if profile.Systems != "" {
+			buf.WriteString(fmt.Sprintf("**Systems:** %s\n", profile.Systems))
+		}
+		buf.WriteString("\n")
+	}
+
+	return buf.String(), nil
+}
+
+// getTopBulletsByConfidence returns the top N bullets sorted by confidence descending.
+func (es *ExportService) getTopBulletsByConfidence(bullets map[string][]*career.CVBullet, n int) []*career.CVBullet {
+	// Collect all bullets
+	var allBullets []*career.CVBullet
+	for _, sectionBullets := range bullets {
+		allBullets = append(allBullets, sectionBullets...)
+	}
+
+	// Sort by confidence descending
+	for i := 0; i < len(allBullets)-1; i++ {
+		for j := i + 1; j < len(allBullets); j++ {
+			if allBullets[j].Confidence > allBullets[i].Confidence {
+				allBullets[i], allBullets[j] = allBullets[j], allBullets[i]
+			}
+		}
+	}
+
+	// Return top N
+	if len(allBullets) > n {
+		return allBullets[:n]
+	}
+	return allBullets
+}
+
+// exportNarrativeWithProfile exports using the narrative CV structure with optional profile config.
+func (es *ExportService) exportNarrativeWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
+	switch format {
+	case ExportFormatText:
+		return es.exportNarrativeTextWithProfile(ctx, cv, sections, profileCfg)
+	case ExportFormatMarkdown:
+		return es.exportNarrativeMarkdownWithProfile(ctx, cv, sections, profileCfg)
+	default:
+		return "", fmt.Errorf("unknown export format: %s", format)
+	}
+}
+
+// exportNarrativeTextWithProfile exports narrative CV to plain text format with optional profile config.
+func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, profileCfg *config.ProfileConfig) (string, error) {
+	var buf bytes.Buffer
+	profile := NarrativeProfileFromConfig(profileCfg)
+
+	// Profile header
+	buf.WriteString(strings.ToUpper(profile.Name) + "\n")
+	buf.WriteString(strings.Repeat("=", len(profile.Name)) + "\n\n")
+	buf.WriteString(profile.Role + "\n")
+	buf.WriteString(profile.Location + "\n")
+	buf.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
+	buf.WriteString(fmt.Sprintf("GitHub: %s\n", profile.GitHub))
+	buf.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
+
+	buf.WriteString(strings.Repeat("-", 80) + "\n\n")
+
+	// Summary section
+	buf.WriteString("SUMMARY\n")
+	buf.WriteString(strings.Repeat("-", 7) + "\n\n")
+	summary := getSummaryFromSections(sections)
+	if summary != "" {
+		buf.WriteString(summary + "\n\n")
+	} else {
+		buf.WriteString("Experienced software engineer with strong technical leadership skills.\n\n")
+	}
+
+	// Core Strengths section
+	buf.WriteString("CORE STRENGTHS\n")
+	buf.WriteString(strings.Repeat("-", 14) + "\n\n")
+	for _, strength := range profile.CoreStrengths {
+		buf.WriteString(fmt.Sprintf("• %s\n", strength))
+	}
+	buf.WriteString("\n")
+
+	// Languages & Technologies section
+	buf.WriteString("LANGUAGES & TECHNOLOGIES\n")
+	buf.WriteString(strings.Repeat("-", 24) + "\n\n")
+	buf.WriteString(fmt.Sprintf("Languages: %s\n", profile.Languages))
+	buf.WriteString(fmt.Sprintf("Frontend: %s\n", profile.Frontend))
+	buf.WriteString(fmt.Sprintf("Systems: %s\n\n", profile.Systems))
+
+	// Selected Experience section (filtered by confidence)
+	buf.WriteString("SELECTED EXPERIENCE\n")
+	buf.WriteString(strings.Repeat("-", 19) + "\n\n")
+
+	experienceSections := getExperienceSections(sections)
+	for _, section := range experienceSections {
+		for _, group := range section.Content {
+			// Filter bullets by confidence
+			highConfidenceBullets := filterBulletsByConfidence(group.Bullets, MinConfidenceForNarrative)
+			if len(highConfidenceBullets) == 0 {
+				continue
+			}
+
+			// Group header with dates
+			if group.Header != "" {
+				if group.StartDate != "" && group.EndDate != "" {
+					buf.WriteString(fmt.Sprintf("%s\n", group.Header))
+					buf.WriteString(fmt.Sprintf("%s - %s\n\n", group.StartDate, group.EndDate))
+				} else {
+					buf.WriteString(fmt.Sprintf("%s\n\n", group.Header))
+				}
+			}
+
+			// High-confidence bullets only
+			for _, bullet := range highConfidenceBullets {
+				buf.WriteString(fmt.Sprintf("• %s\n", bullet.Text))
+			}
+			buf.WriteString("\n")
+		}
+	}
+
+	// What I Bring section
+	buf.WriteString("WHAT I BRING\n")
+	buf.WriteString(strings.Repeat("-", 12) + "\n\n")
+	for _, prop := range profile.ValuePropositions {
+		buf.WriteString(fmt.Sprintf("• %s\n", prop))
+	}
+	buf.WriteString("\n")
+
+	buf.WriteString(strings.Repeat("-", 80) + "\n")
+	buf.WriteString("References available on request.\n")
+
+	return buf.String(), nil
+}
+
+// exportNarrativeMarkdownWithProfile exports narrative CV to markdown format with optional profile config.
+func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, profileCfg *config.ProfileConfig) (string, error) {
+	var buf bytes.Buffer
+	profile := NarrativeProfileFromConfig(profileCfg)
+
+	// Profile header
+	buf.WriteString(fmt.Sprintf("# %s\n\n", profile.Name))
+	buf.WriteString(fmt.Sprintf("**%s**\n", profile.Role))
+	buf.WriteString(fmt.Sprintf("%s\n", profile.Location))
+	buf.WriteString(fmt.Sprintf("Email: [%s](mailto:%s)\n", profile.Email, profile.Email))
+	buf.WriteString(fmt.Sprintf("GitHub: %s\n", profile.GitHub))
+	buf.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
+
+	buf.WriteString("---\n\n")
+
+	// Summary section
+	buf.WriteString("## Summary\n\n")
+	summary := getSummaryFromSections(sections)
+	if summary != "" {
+		buf.WriteString(summary + "\n\n")
+	} else {
+		buf.WriteString("Experienced software engineer with strong technical leadership skills.\n\n")
+	}
+
+	// Core Strengths section
+	buf.WriteString("## Core Strengths\n\n")
+	for _, strength := range profile.CoreStrengths {
+		buf.WriteString(fmt.Sprintf("- %s\n", strength))
+	}
+	buf.WriteString("\n")
+
+	// Languages & Technologies section
+	buf.WriteString("## Languages & Technologies\n\n")
+	buf.WriteString(fmt.Sprintf("**Languages:** %s\n", profile.Languages))
+	buf.WriteString(fmt.Sprintf("**Frontend:** %s\n", profile.Frontend))
+	buf.WriteString(fmt.Sprintf("**Systems:** %s\n\n", profile.Systems))
+
+	// Selected Experience section (filtered by confidence)
+	buf.WriteString("## Selected Experience\n\n")
+
+	experienceSections := getExperienceSections(sections)
+	for _, section := range experienceSections {
+		for _, group := range section.Content {
+			// Filter bullets by confidence
+			highConfidenceBullets := filterBulletsByConfidence(group.Bullets, MinConfidenceForNarrative)
+			if len(highConfidenceBullets) == 0 {
+				continue
+			}
+
+			// Group header with dates
+			if group.Header != "" {
+				if group.StartDate != "" && group.EndDate != "" {
+					buf.WriteString(fmt.Sprintf("### %s\n", group.Header))
+					buf.WriteString(fmt.Sprintf("*%s - %s*\n\n", group.StartDate, group.EndDate))
+				} else {
+					buf.WriteString(fmt.Sprintf("### %s\n\n", group.Header))
+				}
+			}
+
+			// High-confidence bullets only
+			for _, bullet := range highConfidenceBullets {
+				buf.WriteString(fmt.Sprintf("- %s\n", bullet.Text))
+			}
+			buf.WriteString("\n")
+		}
+	}
+
+	// What I Bring section
+	buf.WriteString("## What I Bring\n\n")
+	for _, prop := range profile.ValuePropositions {
+		buf.WriteString(fmt.Sprintf("- %s\n", prop))
+	}
+	buf.WriteString("\n")
+
+	buf.WriteString("---\n\n")
+	buf.WriteString("**References available on request.**\n")
+
+	return buf.String(), nil
 }
