@@ -46,10 +46,12 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 		BaseIntent: base,
 		context:    context,
 		state: &GenerateCVModel{
-			context:         context,
-			currentState:    GenerateCVStateSelectProfile,
-			selectedProfile: selectedProfile,
-			selectedIndex:   0,
+			context:             context,
+			currentState:        GenerateCVStateSelectProfile,
+			selectedProfile:     selectedProfile,
+			selectedIndex:       0,
+			selectedCVStructure: CVStructureStandard, // Default to standard
+			structureIndex:      0,
 		},
 		active: true,
 		logger: nil,
@@ -123,6 +125,12 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSelectProfile(msg)
 	case GenerateCVStateSelectAudience:
 		return i.updateSelectAudience(msg)
+	case GenerateCVStateSelectStructure:
+		return i.updateSelectStructure(msg)
+	case GenerateCVStateSelectRoleEmphasis:
+		return i.updateSelectRoleEmphasis(msg)
+	case GenerateCVStateSelectLengthFormat:
+		return i.updateSelectLengthFormat(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -212,9 +220,10 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		case "enter":
 			// Set selected audience based on current index
 			i.state.selectedAudience = audiences[i.state.audienceIndex]
-			i.state.currentState = GenerateCVStateGenerating
-			i.state.isGenerating = true
-			return i.generateCVAsync()
+			// Go to variant-based selection (role emphasis first)
+			i.state.currentState = GenerateCVStateSelectRoleEmphasis
+			i.state.roleEmphasisIndex = 0
+			return nil
 		}
 
 		// Handle global keys (q=quit, ?=help, esc=back)
@@ -230,9 +239,138 @@ func (i *GenerateCVIntent) updateSelectAudience(msg tea.Msg) tea.Cmd {
 		}
 	case AudienceSelectedMsg:
 		i.state.selectedAudience = msg.Audience
-		i.state.currentState = GenerateCVStateGenerating
-		i.state.isGenerating = true
-		return i.generateCVAsync()
+		i.state.currentState = GenerateCVStateSelectRoleEmphasis
+		i.state.roleEmphasisIndex = 0
+	}
+	return nil
+}
+
+// updateSelectStructure handles messages while selecting CV structure.
+func (i *GenerateCVIntent) updateSelectStructure(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.structureIndex > 0 {
+				i.state.structureIndex--
+			}
+			return nil
+		case "down", "j":
+			if i.state.structureIndex < 1 { // Only 2 options: Standard (0) and Narrative (1)
+				i.state.structureIndex++
+			}
+			return nil
+		case "enter":
+			// Set selected structure based on current index
+			structures := []CVStructure{CVStructureStandard, CVStructureNarrative}
+			i.state.selectedCVStructure = structures[i.state.structureIndex]
+			i.state.currentState = GenerateCVStateGenerating
+			i.state.isGenerating = true
+			return i.generateCVAsync()
+		case "esc":
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		case "m":
+			// Return to main menu
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
+	}
+	return nil
+}
+
+// updateSelectRoleEmphasis handles messages while selecting role emphasis.
+func (i *GenerateCVIntent) updateSelectRoleEmphasis(msg tea.Msg) tea.Cmd {
+	roleEmphases := []RoleEmphasis{
+		RoleEmphasisSeniorBackend,
+		RoleEmphasisStaffPrincipal,
+		RoleEmphasisConsulting,
+		RoleEmphasisLanguageAgnostic,
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.roleEmphasisIndex > 0 {
+				i.state.roleEmphasisIndex--
+			}
+			return nil
+		case "down", "j":
+			if i.state.roleEmphasisIndex < len(roleEmphases)-1 {
+				i.state.roleEmphasisIndex++
+			}
+			return nil
+		case "enter":
+			i.state.selectedRoleEmphasis = roleEmphases[i.state.roleEmphasisIndex]
+			i.state.currentState = GenerateCVStateSelectLengthFormat
+			i.state.lengthFormatIndex = 1 // Default to "standard"
+			return nil
+		case "esc":
+			i.state.currentState = GenerateCVStateSelectAudience
+			return nil
+		case "m":
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
+	}
+	return nil
+}
+
+// updateSelectLengthFormat handles messages while selecting length format.
+func (i *GenerateCVIntent) updateSelectLengthFormat(msg tea.Msg) tea.Cmd {
+	lengthFormats := []LengthFormat{
+		LengthFull,
+		LengthStandard,
+		LengthShort,
+		LengthUltraShort,
+	}
+
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if i.state.lengthFormatIndex > 0 {
+				i.state.lengthFormatIndex--
+			}
+			return nil
+		case "down", "j":
+			if i.state.lengthFormatIndex < len(lengthFormats)-1 {
+				i.state.lengthFormatIndex++
+			}
+			return nil
+		case "enter":
+			i.state.selectedLengthFormat = lengthFormats[i.state.lengthFormatIndex]
+			// Look up the variant
+			variantService := cv.NewVariantService()
+			variant, err := variantService.GetVariantByDimensions(i.state.selectedRoleEmphasis, i.state.selectedLengthFormat)
+			if err != nil {
+				// Fallback to standard structure if variant not found
+				i.state.selectedCVStructure = CVStructureStandard
+			} else {
+				i.state.selectedVariant = variant
+				// Set the structure from the variant's base structure
+				i.state.selectedCVStructure = CVStructure(variant.BaseStructure)
+			}
+			i.state.currentState = GenerateCVStateGenerating
+			i.state.isGenerating = true
+			return i.generateCVAsync()
+		case "esc":
+			i.state.currentState = GenerateCVStateSelectRoleEmphasis
+			return nil
+		case "m":
+			i.setCancelled()
+			return nil
+		case "q", "ctrl+c":
+			i.setCancelled()
+			return nil
+		}
 	}
 	return nil
 }
@@ -414,6 +552,12 @@ func (i *GenerateCVIntent) getStateContent() string {
 		return i.viewSelectProfile()
 	case GenerateCVStateSelectAudience:
 		return i.viewSelectAudience()
+	case GenerateCVStateSelectStructure:
+		return i.viewSelectStructure()
+	case GenerateCVStateSelectRoleEmphasis:
+		return i.viewSelectRoleEmphasis()
+	case GenerateCVStateSelectLengthFormat:
+		return i.viewSelectLengthFormat()
 	case GenerateCVStateGenerating:
 		return i.viewGenerating()
 	case GenerateCVStatePreview:
@@ -446,6 +590,21 @@ func (i *GenerateCVIntent) getContextHelp() string {
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateSelectAudience:
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectStructure:
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectRoleEmphasis:
+		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectLengthFormat:
 		return CombineThemedFooters(
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -543,6 +702,12 @@ func (i *GenerateCVIntent) getBreadcrumbs() []string {
 		crumbs = append(crumbs, "Select Profile")
 	case GenerateCVStateSelectAudience:
 		crumbs = append(crumbs, "Select Audience")
+	case GenerateCVStateSelectStructure:
+		crumbs = append(crumbs, "Select Structure")
+	case GenerateCVStateSelectRoleEmphasis:
+		crumbs = append(crumbs, "Select Role Emphasis")
+	case GenerateCVStateSelectLengthFormat:
+		crumbs = append(crumbs, "Select Length")
 	case GenerateCVStateGenerating:
 		crumbs = append(crumbs, "Generating")
 	case GenerateCVStatePreview:
@@ -638,6 +803,140 @@ func (i *GenerateCVIntent) viewSelectAudience() string {
 	return i.getCardStyle().Render(content.String())
 }
 
+// viewSelectStructure renders the CV structure selection view.
+func (i *GenerateCVIntent) viewSelectStructure() string {
+	var content strings.Builder
+	content.WriteString("\n📐 Select CV Structure\n\n")
+
+	if i.state.selectedProfile != nil {
+		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
+		content.WriteString(fmt.Sprintf("Role: %s\n", i.state.selectedProfile.TargetRole))
+		content.WriteString(fmt.Sprintf("Audience: %s\n\n", i.state.selectedAudience))
+	}
+
+	// Define available structures with descriptions
+	structures := []struct {
+		value       string
+		label       string
+		description string
+	}{
+		{"standard", "Standard", "Traditional CV with Experience, Projects, Skills, Summary sections"},
+		{"narrative", "Narrative", "Language-agnostic professional format with Core Strengths, Technologies, What I Bring sections"},
+	}
+
+	content.WriteString("Select CV structure:\n\n")
+	for idx, structure := range structures {
+		prefix := "  "
+		if idx == i.state.structureIndex {
+			prefix = "▶ "
+		}
+
+		structureStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		if idx == i.state.structureIndex {
+			structureStyle = structureStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+		}
+
+		line := fmt.Sprintf("%s%s\n   %s", prefix, structure.label, structure.description)
+		content.WriteString(structureStyle.Render(line) + "\n\n")
+	}
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	card := cardStyle.Render(content.String())
+
+	return card
+}
+
+// viewSelectRoleEmphasis renders the role emphasis selection view.
+func (i *GenerateCVIntent) viewSelectRoleEmphasis() string {
+	var content strings.Builder
+	content.WriteString("\n🎯 Select Role Emphasis\n\n")
+
+	if i.state.selectedProfile != nil {
+		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
+		content.WriteString(fmt.Sprintf("Role: %s\n", i.state.selectedProfile.TargetRole))
+		content.WriteString(fmt.Sprintf("Audience: %s\n\n", i.state.selectedAudience))
+	}
+
+	// Get role emphasis configs for display
+	roleConfigs := cv.ListRoleEmphasisConfigs()
+
+	content.WriteString("Select role emphasis:\n\n")
+	for idx, config := range roleConfigs {
+		prefix := "  "
+		if idx == i.state.roleEmphasisIndex {
+			prefix = "▶ "
+		}
+
+		emphasisStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		if idx == i.state.roleEmphasisIndex {
+			emphasisStyle = emphasisStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+		}
+
+		line := fmt.Sprintf("%s%s\n   %s", prefix, config.Name, config.Description)
+		content.WriteString(emphasisStyle.Render(line) + "\n\n")
+	}
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
+}
+
+// viewSelectLengthFormat renders the length format selection view.
+func (i *GenerateCVIntent) viewSelectLengthFormat() string {
+	var content strings.Builder
+	content.WriteString("\n📏 Select CV Length\n\n")
+
+	if i.state.selectedProfile != nil {
+		content.WriteString(fmt.Sprintf("Profile: %s\n", i.state.selectedProfile.Name))
+		content.WriteString(fmt.Sprintf("Role: %s\n", i.state.selectedProfile.TargetRole))
+		content.WriteString(fmt.Sprintf("Audience: %s\n", i.state.selectedAudience))
+	}
+
+	// Show selected role emphasis
+	roleConfig := cv.GetRoleEmphasisConfig(i.state.selectedRoleEmphasis)
+	content.WriteString(fmt.Sprintf("Emphasis: %s\n\n", roleConfig.Name))
+
+	// Get length format configs for display
+	lengthConfigs := cv.ListLengthFormatConfigs()
+
+	content.WriteString("Select CV length:\n\n")
+	for idx, config := range lengthConfigs {
+		prefix := "  "
+		if idx == i.state.lengthFormatIndex {
+			prefix = "▶ "
+		}
+
+		lengthStyle := lipgloss.NewStyle().Foreground(styles.ColorTextPrimary)
+		if idx == i.state.lengthFormatIndex {
+			lengthStyle = lengthStyle.Foreground(styles.ColorAccentTeal).Bold(true)
+		}
+
+		// Include target pages in description
+		line := fmt.Sprintf("%s%s (%s pages)\n   %s", prefix, config.Name, config.TargetPages, config.Description)
+		content.WriteString(lengthStyle.Render(line) + "\n\n")
+	}
+
+	cardStyle := lipgloss.NewStyle().
+		Padding(1, 2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(styles.ColorBorder).
+		Background(styles.ColorBackgroundCard).
+		Foreground(styles.ColorTextPrimary)
+
+	return cardStyle.Render(content.String())
+}
+
 // viewGenerating renders the CV generation progress view.
 func (i *GenerateCVIntent) viewGenerating() string {
 	var content strings.Builder
@@ -657,11 +956,29 @@ func (i *GenerateCVIntent) viewGenerating() string {
 }
 
 // viewPreview renders the CV preview view with scrollable content.
+// Routes to structure-specific preview based on selectedCVStructure.
 func (i *GenerateCVIntent) viewPreview() string {
 	if i.state.generatedCV == nil {
 		return "No CV generated yet"
 	}
 
+	var content string
+	switch i.state.selectedCVStructure {
+	case CVStructureNarrative:
+		content = i.viewPreviewNarrative()
+	default:
+		content = i.viewPreviewStandard()
+	}
+
+	// Set viewport content
+	i.state.previewViewport.SetContent(content)
+
+	// Render viewport
+	return i.state.previewViewport.View()
+}
+
+// viewPreviewStandard renders the standard CV preview (traditional format).
+func (i *GenerateCVIntent) viewPreviewStandard() string {
 	var content strings.Builder
 
 	// Header with metadata
@@ -719,13 +1036,99 @@ func (i *GenerateCVIntent) viewPreview() string {
 		}
 	}
 
-	// Set viewport content
-	i.state.previewViewport.SetContent(content.String())
+	return content.String()
+}
 
-	// Render viewport
-	viewportContent := i.state.previewViewport.View()
+// viewPreviewNarrative renders the narrative CV preview (professional format).
+func (i *GenerateCVIntent) viewPreviewNarrative() string {
+	var content strings.Builder
+	profile := DefaultNarrativeProfile()
 
-	return viewportContent
+	// Profile header
+	content.WriteString(fmt.Sprintf("# %s\n\n", profile.Name))
+	content.WriteString(fmt.Sprintf("**%s**\n", profile.Role))
+	content.WriteString(fmt.Sprintf("%s\n", profile.Location))
+	content.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
+	content.WriteString(fmt.Sprintf("GitHub: %s\n", profile.GitHub))
+	content.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
+
+	content.WriteString(strings.Repeat("─", 80) + "\n\n")
+
+	// Summary section
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorAccentTeal)
+
+	summary := getSummaryFromSections(i.state.generatedCV.Sections)
+	content.WriteString(titleStyle.Render("SUMMARY") + "\n")
+	content.WriteString(strings.Repeat("─", 7) + "\n")
+	if summary != "" {
+		content.WriteString(summary + "\n\n")
+	} else {
+		content.WriteString("Experienced software engineer with strong technical leadership skills.\n\n")
+	}
+
+	// Core Strengths section
+	content.WriteString(titleStyle.Render("CORE STRENGTHS") + "\n")
+	content.WriteString(strings.Repeat("─", 14) + "\n")
+	strengths := extractStrengthsFromSections(i.state.generatedCV.Sections)
+	for _, strength := range strengths {
+		content.WriteString(fmt.Sprintf("  • %s\n", strength))
+	}
+	content.WriteString("\n")
+
+	// Languages & Technologies section
+	content.WriteString(titleStyle.Render("LANGUAGES & TECHNOLOGIES") + "\n")
+	content.WriteString(strings.Repeat("─", 24) + "\n")
+	languages, frontend, systems := extractTechnologiesFromSections(i.state.generatedCV.Sections)
+	content.WriteString(fmt.Sprintf("**Languages:** %s\n", languages))
+	content.WriteString(fmt.Sprintf("**Frontend:** %s\n", frontend))
+	content.WriteString(fmt.Sprintf("**Systems:** %s\n\n", systems))
+
+	// Selected Experience section (filtered by confidence)
+	content.WriteString(titleStyle.Render("SELECTED EXPERIENCE") + "\n")
+	content.WriteString(strings.Repeat("─", 19) + "\n")
+
+	experienceSections := getExperienceSections(i.state.generatedCV.Sections)
+	for _, section := range experienceSections {
+		for _, group := range section.Content {
+			// Filter bullets by confidence
+			highConfidenceBullets := filterBulletsByConfidence(group.Bullets, MinConfidenceForNarrative)
+			if len(highConfidenceBullets) == 0 {
+				continue
+			}
+
+			// Group header with dates
+			if group.Header != "" {
+				if group.StartDate != "" && group.EndDate != "" {
+					content.WriteString(fmt.Sprintf("\n### %s\n", group.Header))
+					content.WriteString(fmt.Sprintf("*%s - %s*\n\n", group.StartDate, group.EndDate))
+				} else {
+					content.WriteString(fmt.Sprintf("\n### %s\n\n", group.Header))
+				}
+			}
+
+			// High-confidence bullets only
+			for _, bullet := range highConfidenceBullets {
+				content.WriteString(fmt.Sprintf("  • %s\n", bullet.Text))
+			}
+		}
+	}
+	content.WriteString("\n")
+
+	// What I Bring section
+	content.WriteString(titleStyle.Render("WHAT I BRING") + "\n")
+	content.WriteString(strings.Repeat("─", 12) + "\n")
+	valueProps := extractValuePropositions(i.state.generatedCV.Sections)
+	for _, prop := range valueProps {
+		content.WriteString(fmt.Sprintf("  • %s\n", prop))
+	}
+	content.WriteString("\n")
+
+	content.WriteString(strings.Repeat("─", 80) + "\n")
+	content.WriteString("**References available on request.**\n")
+
+	return content.String()
 }
 
 // viewReview renders the CV review/edit view.
@@ -778,19 +1181,33 @@ func (i *GenerateCVIntent) setCompleted() {
 	i.result = &IntentResult[*GenerateCVResult]{
 		Status: Completed,
 		Data: &GenerateCVResult{
-			GeneratedCV:     i.state.generatedCV,
-			SelectedProfile: i.state.selectedProfile,
-			AcceptedFields:  make(map[string]bool),
+			GeneratedCV:       i.state.generatedCV,
+			SelectedProfile:   i.state.selectedProfile,
+			SelectedStructure: i.state.selectedCVStructure,
+			SelectedVariant:   i.state.selectedVariant,
+			AcceptedFields:    make(map[string]bool),
 		},
 		Metadata: map[string]interface{}{
-			"profile":     i.state.selectedProfile.ID,
-			"audience":    i.state.selectedAudience,
-			"timestamp":   time.Now(),
-			"event_count": len(i.context.Events),
-			"fact_count":  len(i.context.Facts),
+			"profile":       i.state.selectedProfile.ID,
+			"audience":      i.state.selectedAudience,
+			"structure":     i.state.selectedCVStructure,
+			"role_emphasis": i.state.selectedRoleEmphasis,
+			"length_format": i.state.selectedLengthFormat,
+			"variant_id":    getVariantID(i.state.selectedVariant),
+			"timestamp":     time.Now(),
+			"event_count":   len(i.context.Events),
+			"fact_count":    len(i.context.Facts),
 		},
 	}
 	i.active = false
+}
+
+// getVariantID safely returns the variant ID or empty string
+func getVariantID(v *cv.CVVariant) string {
+	if v == nil {
+		return ""
+	}
+	return v.ID
 }
 
 // setCancelled marks the intent as cancelled by the user.
@@ -986,25 +1403,31 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 		// Build empty bullets map (kept for backward compatibility with export interface)
 		bulletsMap := make(map[string][]*career.CVBullet)
 
-		// Get export content based on format
-		var content string
-		var err error
+		// Map intent export format to service export format
 		var exportFormat cv.ExportFormat
-
 		switch i.state.selectedExportFormat {
 		case CVExportFormatText:
-			content, err = i.context.ExportService.ExportToText(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatText
 		case CVExportFormatMarkdown:
-			content, err = i.context.ExportService.ExportToMarkdown(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatMarkdown
 		case CVExportFormatYAML:
-			content, err = i.context.ExportService.ExportToYAML(ctx, i.state.generatedCV, sections, bulletsMap)
 			exportFormat = cv.ExportFormatYAML
 		default:
 			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("unknown export format")}
 		}
 
+		// Convert intent CVStructure to service CVStructure
+		structure := cv.CVStructure(i.state.selectedCVStructure)
+
+		// Apply ProfileOverride from the selected variant (if any)
+		profileCfg := i.context.ProfileConfig
+		if i.state.selectedVariant != nil && i.state.selectedVariant.ProfileOverride != nil {
+			profileCfg = cv.ApplyProfileOverride(profileCfg, i.state.selectedVariant.ProfileOverride)
+		}
+
+		// Export using structure-aware ExportWithProfile() method
+		// Pass the profile config (with variant overrides applied) for narrative CVs
+		content, err := i.context.ExportService.ExportWithProfile(ctx, i.state.generatedCV, sections, bulletsMap, structure, exportFormat, profileCfg)
 		if err != nil {
 			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to export: %v", err)}
 		}

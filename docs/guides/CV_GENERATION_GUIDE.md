@@ -52,14 +52,45 @@ Press `Enter` on any bullet to see which events and facts contributed to it. Thi
 - How confident KaRiya is in the bullet (confidence score)
 - Why the bullet was included (inclusion reason)
 
-### 6. Export Your CV
+### 6. Select CV Variant
+
+Before generation, you select your CV variant through a two-step process:
+
+#### Step 1: Select Role Emphasis
+
+Choose what aspect of your experience to highlight:
+
+- **Senior Backend**: Technical depth, architecture, product impact
+- **Staff/Principal**: Leadership, strategy, cross-team influence
+- **Consulting**: Client engagements, delivery, rapid assessment
+- **Language-Agnostic**: Adaptability, multi-language expertise
+
+#### Step 2: Select Length Format
+
+Choose how detailed your CV should be:
+
+- **Full (3+ pages)**: Complete history, all qualifying bullets
+- **Standard (2-3 pages)**: Last 10 years, higher-confidence bullets
+- **Short (1-2 pages)**: Last 5 years, top companies only
+- **Ultra-Short (1 page)**: Highlights format, top 3 companies
+
+Use arrow keys or `j`/`k` to navigate, then press `Enter` to select.
+
+The combination of role emphasis and length format automatically determines the CV structure (Standard, Narrative, Consulting, or Highlights).
+
+For complete details on all 16 variants, see the [CV Variants Guide](CV_VARIANTS_GUIDE.md).
+
+### 7. Export Your CV
 
 After generation, you can export your CV in multiple formats:
 - **Text Export**: Plain text format, suitable for pasting
 - **Markdown Export**: Markdown format with formatting
+- **YAML Export**: Machine-readable data format
 - **Copy to Clipboard**: Quick copy for pasting elsewhere
 
 Exports are saved to `$HOME/.kariya/cv_exports/` by default.
+
+**Note**: YAML export always uses Standard structure since it's a data format, not a presentation format.
 
 ## CV Configuration Format
 
@@ -406,12 +437,136 @@ Format:
 
 **File Location**: `$HOME/.kariya/cv_exports/cv_name_YYYY-MM-DD_HH-MM-SS.md`
 
+### YAML Export
+
+Format:
+```yaml
+name: "Staff Engineer CV"
+targetRole: "staff"
+targetAudience: "hiring_manager"
+generatedAt: "2024-12-01T10:30:00Z"
+sections:
+  - type: "experience"
+    title: "Experience"
+    bullets:
+      - text: "Led team of 5 engineers..."
+        confidence: 0.95
+```
+
+**Use Cases**:
+- Machine processing and integration
+- Data interchange between tools
+- Programmatic CV manipulation
+
+**File Location**: `$HOME/.kariya/cv_exports/cv_name_YYYY-MM-DD_HH-MM-SS.yaml`
+
+**Note**: YAML always uses Standard structure regardless of selection.
+
 ### Copy to Clipboard
 
 - Copies the generated CV text to your system clipboard
 - Same format as plain text export
 - No file saved
 - Quick sharing or pasting
+
+## CV Structures
+
+KaRiya supports four CV structures, automatically selected based on your variant choice.
+
+### Standard Structure
+
+The traditional CV format, used by Senior Backend and Staff/Principal variants.
+
+| Section | Content |
+|---------|---------|
+| **Summary** | Professional summary statement |
+| **Experience** | Work history with company, dates, and achievements |
+| **Projects** | Notable projects and contributions |
+| **Skills** | Technical skills and competencies |
+
+**Best for**:
+- Most job applications
+- Traditional company cultures
+- When specific role experience matters
+
+### Narrative Structure
+
+A language-agnostic format for professionals emphasizing pragmatic expertise, used by Language-Agnostic variants.
+
+| Section | Content |
+|---------|---------|
+| **Profile Header** | Name, title, location, contact info |
+| **Positioning Statement** | Career positioning (optional) |
+| **Summary** | Professional summary with language-agnostic emphasis |
+| **Core Strengths** | Key competencies (6 bullet points) |
+| **Languages & Technologies** | Languages, Frontend, Systems |
+| **Selected Experience** | High-confidence achievements (>= 0.75) |
+| **What I Bring** | Value propositions (4 bullet points) |
+
+**Best for**:
+- Senior engineers with cross-domain experience
+- Emphasizing "languages as tools, not identity"
+- Pragmatic, outcome-focused professionals
+- Roles requiring broad technical expertise
+
+### Consulting Structure
+
+A client-focused format for consulting professionals, used by Consulting variants.
+
+| Section | Content |
+|---------|---------|
+| **Profile Header** | Name, title, location, contact info |
+| **Summary** | Professional summary |
+| **Client Engagements** | Experience grouped by company with dates |
+| **Technical Capabilities** | Skills and tools (optional) |
+| **What I Bring** | Value propositions |
+
+**Best for**:
+- Consulting firm applications
+- Client-facing technical roles
+- Positions requiring diverse project experience
+
+### Highlights Structure
+
+A one-page executive summary format, used by all Ultra-Short variants.
+
+| Section | Content |
+|---------|---------|
+| **Condensed Header** | Single-line profile |
+| **Summary** | Brief professional summary |
+| **Key Capabilities** | 4-6 core competencies |
+| **Selected Highlights** | Top 5 bullets by confidence |
+| **Technologies** | Languages and systems |
+
+**Best for**:
+- One-page requirements
+- Executive summaries
+- Quick introductions and networking
+- Initial recruiter screenings
+
+For complete details on how variants map to structures, see the [CV Variants Guide](CV_VARIANTS_GUIDE.md).
+
+### Configuring Your Profile for Narrative CVs
+
+For narrative CVs, you can customize your profile:
+
+1. Go to **Configure System** from main menu
+2. Select **Profile** domain
+3. Edit these fields:
+   - **Name**: Your full name
+   - **Email**: Your email address
+   - **Title**: Professional title (e.g., "Senior Software Engineer")
+   - **Location**: Your location (e.g., "Remote (UK)")
+   - **GitHub**: Your GitHub profile URL
+   - **Portfolio**: Your portfolio/website URL
+   - **Languages**: Programming languages (comma-separated)
+   - **Frontend**: Frontend technologies (comma-separated)
+   - **Systems**: Systems/infrastructure expertise (comma-separated)
+4. Save changes
+
+These values are used when exporting narrative CVs. Empty fields use sensible defaults.
+
+For more details, see the [Narrative CV Guide](NARRATIVE_CV_GUIDE.md).
 
 ## Keyboard Shortcuts
 
@@ -668,13 +823,20 @@ To export all your CVs:
 ## Next Steps
 
 1. **Create Your First Config**: Start with one target role and audience
-2. **Generate and Review**: See how your events become bullets
-3. **Explore Sources**: Click bullets to understand traceability
-4. **Iterate on Events**: Improve events to improve CV quality
-5. **Export and Customize**: Export and tailor for specific roles
+2. **Select a Variant**: Choose role emphasis and length format for your target job
+3. **Generate and Review**: See how your events become bullets
+4. **Explore Sources**: Click bullets to understand traceability
+5. **Iterate on Events**: Improve events to improve CV quality
+6. **Export and Customize**: Export and tailor for specific roles
+
+## Related Documentation
+
+- [CV Variants Guide](CV_VARIANTS_GUIDE.md) - Complete guide to the 16 built-in variants
+- [Narrative CV Guide](NARRATIVE_CV_GUIDE.md) - Details on narrative structure configuration
+- [CV Troubleshooting](CV_TROUBLESHOOTING.md) - Common issues and solutions
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-02
+**Document Version**: 1.2
+**Last Updated**: 2026-01-09
 

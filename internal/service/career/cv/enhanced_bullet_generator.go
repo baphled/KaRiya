@@ -36,22 +36,23 @@ type EnhancedBulletGenerator interface {
 
 // EnhancedBullet represents a CV bullet with scoring metadata
 type EnhancedBullet struct {
-	ID              string
-	Text            string
-	EnhancedText    string
-	SourceEventIDs  []string
-	SourceFactIDs   []string
-	Metrics         []*Metric
-	Confidence      float64
-	RoleScore       float64 // 0.0-1.0
-	AudienceScore   float64 // 0.0-1.0
-	MetricScore     float64 // 0.0-1.0
-	ImpactScore     float64 // 0.0-1.0
-	FinalScore      float64 // Weighted combination
-	ImpactLevel     string  // "low", "medium", "high"
-	KeywordMatches  []string
-	InclusionReason string
-	Rank            float64
+	ID                string
+	Text              string
+	EnhancedText      string
+	SourceEventIDs    []string
+	SourceFactIDs     []string
+	AudienceRelevance []string // Audience types this bullet is relevant to
+	Metrics           []*Metric
+	Confidence        float64
+	RoleScore         float64 // 0.0-1.0
+	AudienceScore     float64 // 0.0-1.0
+	MetricScore       float64 // 0.0-1.0
+	ImpactScore       float64 // 0.0-1.0
+	FinalScore        float64 // Weighted combination
+	ImpactLevel       string  // "low", "medium", "high"
+	KeywordMatches    []string
+	InclusionReason   string
+	Rank              float64
 }
 
 // DefaultEnhancedBulletGenerator implements EnhancedBulletGenerator
@@ -102,8 +103,8 @@ func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 	// Create initial bullets from achievements (highest quality)
 	bullets := ebg.createBulletsFromAchievements(achievements)
 
-	// Add bullets from facts
-	bullets = append(bullets, ebg.createBulletsFromFacts(facts)...)
+	// Add bullets from facts (filter by audience during creation)
+	bullets = append(bullets, ebg.createBulletsFromFacts(facts, targetAudience)...)
 
 	// Add bullets from events
 	bullets = append(bullets, ebg.createBulletsFromEvents(events)...)
@@ -165,9 +166,24 @@ func (ebg *DefaultEnhancedBulletGenerator) FilterByAudience(bullets []*EnhancedB
 		return bullets
 	}
 
-	// For now, accept all bullets for all audiences
-	// Future: implement audience-specific filtering
-	return bullets
+	var filtered []*EnhancedBullet
+	for _, bullet := range bullets {
+		// Bullets without audience relevance (from events) pass through
+		if len(bullet.AudienceRelevance) == 0 {
+			filtered = append(filtered, bullet)
+			continue
+		}
+
+		// Check if bullet is relevant to target audience
+		for _, relevantAudience := range bullet.AudienceRelevance {
+			if relevantAudience == audience {
+				filtered = append(filtered, bullet)
+				break
+			}
+		}
+	}
+
+	return filtered
 }
 
 // RankByRelevance ranks bullets using multi-factor scoring
@@ -248,11 +264,16 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromAchievements(achieve
 	return bullets
 }
 
-// createBulletsFromFacts creates bullets from facts
-func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromFacts(facts []*career.Fact) []*EnhancedBullet {
+// createBulletsFromFacts creates bullets from facts, filtering by audience if specified
+func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromFacts(facts []*career.Fact, targetAudience string) []*EnhancedBullet {
 	var bullets []*EnhancedBullet
 
 	for _, fact := range facts {
+		// Filter by audience relevance
+		if !ebg.isFactRelevantToAudience(fact, targetAudience) {
+			continue
+		}
+
 		// Populate SourceEventIDs from fact's source event
 		sourceEventIDs := []string{}
 		if fact.SourceEventID != "" {
@@ -260,19 +281,37 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromFacts(facts []*caree
 		}
 
 		bullet := &EnhancedBullet{
-			ID:              fact.ID,
-			Text:            fact.Text,
-			EnhancedText:    fact.Text,
-			SourceFactIDs:   []string{fact.ID},
-			SourceEventIDs:  sourceEventIDs,
-			Confidence:      0.85,
-			InclusionReason: "fact_extraction",
-			ImpactLevel:     "medium",
+			ID:                fact.ID,
+			Text:              fact.Text,
+			EnhancedText:      fact.Text,
+			SourceFactIDs:     []string{fact.ID},
+			SourceEventIDs:    sourceEventIDs,
+			AudienceRelevance: fact.AudienceRelevance,
+			Confidence:        0.85,
+			InclusionReason:   "fact_extraction",
+			ImpactLevel:       "medium",
 		}
 		bullets = append(bullets, bullet)
 	}
 
 	return bullets
+}
+
+// isFactRelevantToAudience checks if a fact is relevant to an audience
+// Uses the Fact.AudienceRelevance field to filter facts based on target audience
+func (ebg *DefaultEnhancedBulletGenerator) isFactRelevantToAudience(fact *career.Fact, audience string) bool {
+	if audience == "" {
+		return true // All audiences relevant if not specified
+	}
+
+	// Check if the requested audience is in the fact's relevance list
+	for _, relevantAudience := range fact.AudienceRelevance {
+		if relevantAudience == audience {
+			return true
+		}
+	}
+
+	return false
 }
 
 // createBulletsFromEvents creates bullets from events
@@ -343,12 +382,22 @@ func (ebg *DefaultEnhancedBulletGenerator) calculateAudienceScore(bullet *Enhanc
 		return 1.0
 	}
 
-	// Base score for relevant impact level
+	// Base score
 	score := 0.5
+
+	// Bonus for matching audience relevance
+	for _, relevantAudience := range bullet.AudienceRelevance {
+		if relevantAudience == audience {
+			score += 0.3 // Strong match
+			break
+		}
+	}
+
+	// Additional bonus for relevant impact level
 	if bullet.ImpactLevel == "high" {
-		score += 0.3
+		score += 0.15
 	} else if bullet.ImpactLevel == "medium" {
-		score += 0.2
+		score += 0.05
 	}
 
 	return math.Min(score, 1.0)

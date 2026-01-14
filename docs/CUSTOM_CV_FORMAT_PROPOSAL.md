@@ -1,333 +1,199 @@
-# Custom CV Format Implementation Proposal
+# CV Variant System - Implementation Complete
 
-**Date**: 2026-01-08  
-**Status**: Proposal  
-**Related**: CV Generation System, Export Service
+**Date**: 2026-01-09  
+**Status**: ✅ IMPLEMENTED (Task 24)  
+**Related**: CV Generation System, Export Service, Variant Service
 
 ---
 
 ## Executive Summary
 
-This document proposes adding a **language-agnostic custom CV format** to KaRiya's CV generation system. The format is based on a real-world CV showcasing a senior engineer's experience across multiple languages and technologies, emphasizing **pragmatic tool selection** over language identity.
+KaRiya now supports a **CV Variant System** with 16 built-in variants combining two dimensions: **Role Emphasis** (what to highlight) and **Length Format** (how much detail). This replaces the simple structure selection with a more powerful two-step process that automatically determines the appropriate CV structure.
 
 ---
 
-## Problem Statement
+## Implementation Overview
 
-Currently, KaRiya supports three export formats:
-- **Text** (`.txt`) - Plain text with bullet points
-- **Markdown** (`.md`) - Structured markdown
-- **YAML** (`.yaml`) - Machine-readable data format
+### Key Concepts
 
-These formats are **data-centric** but don't provide a **narrative-focused, human-readable** CV template suitable for language-agnostic professionals who want to emphasize:
+| Concept | Description | When Selected |
+|---------|-------------|---------------|
+| **Role Emphasis** | What aspect of experience to highlight (4 options) | Step 1 of variant selection |
+| **Length Format** | CV density and detail level (4 options) | Step 2 of variant selection |
+| **CV Structure** | Output format (4 structures) | Automatically determined |
+| **Export Format** | File output format (text, markdown, yaml) | After preview |
 
-1. **Languages as tools, not identity**
-2. **Cross-domain experience** (hardware, backend, frontend)
-3. **Pragmatic problem-solving** over technology evangelism
-4. **Long-term career narrative** over recent achievements only
+### Role Emphases
 
----
+| Role Emphasis | Primary Categories | Best For |
+|---------------|-------------------|----------|
+| `senior_backend` | technical, architecture | Backend-focused engineering roles |
+| `staff_principal` | leadership, strategy, architecture | Senior IC and technical leadership |
+| `consulting` | strategy, delivery, consulting | Consulting and client-facing roles |
+| `language_agnostic` | technical, architecture | Polyglot developers, adaptability focus |
 
-## Proposed Solution
+### Length Formats
 
-### Add "Custom" Export Format
+| Length | Max Years | Max Companies | Target Pages |
+|--------|-----------|---------------|--------------|
+| `full` | Unlimited | Unlimited | 3+ |
+| `standard` | 10 | Unlimited | 2-3 |
+| `short` | 5 | 5 | 1-2 |
+| `ultra_short` | 3 | 3 | 1 |
 
-Introduce a **fourth export format**: `ExportFormatCustom` that generates a markdown CV following this structure:
+### CV Structures (4 Total)
 
-```markdown
-# [Name]
+| Structure | Description | Used By Variants |
+|-----------|-------------|------------------|
+| `standard` | Traditional CV with Experience, Projects, Skills | senior_backend, staff_principal |
+| `narrative` | Language-agnostic with Core Strengths, Technologies, What I Bring | language_agnostic |
+| `consulting` | Client-focused with Client Engagements, Technical Capabilities | consulting |
+| `highlights` | One-page executive summary with Key Capabilities | All ultra_short variants |
 
-**[Primary Role / Title]**  
-[Location]  
-Email: [email]  
-GitHub: [github_url]  
-Portfolio: [portfolio_url]
+### State Flow
 
----
-
-## Summary
-
-[2-3 sentence professional summary emphasizing language-agnostic approach,
-systems thinking, and years of experience]
-
----
-
-## Core Strengths
-
-- [Strength 1]
-- [Strength 2]
-- ...
-- [Strength N]
-
----
-
-## Languages & Technologies
-
-**Languages:** [Ruby, Go, PHP, etc.]  
-**Frontend:** [Vue.js, React, etc.]  
-**Systems:** [Linux, SQL, APIs, etc.]  
-
----
-
-## Selected Experience
-
-### [Role Title] — [Company/Project]  
-*[Time Period or "Independent Project"]*
-
-- [Bullet point 1]
-- [Bullet point 2]
-- ...
-
----
-
-### [Role Title] — [Company/Project]  
-*[Time Period]*
-
-- [Bullet point 1]
-- ...
-
----
-
-## What I Bring
-
-- [Value proposition 1]
-- [Value proposition 2]
-- [Value proposition 3]
-- [Value proposition 4]
-
----
-
-**References available on request.**
+```
+Select Profile → Select Audience → Select Role Emphasis → Select Length → Generate → Preview → Export
+                                          ↑                    ↑                          ↑
+                                   4 role options        4 length options          Text | MD | YAML
 ```
 
 ---
 
-## Technical Design
+## Architecture
 
-### 1. Update Export Format Enum
+### Variant Types
 
-**File**: `internal/service/career/cv/export_service.go`
+**File**: `internal/service/career/cv/variants.go`
 
 ```go
+type RoleEmphasis string
 const (
-    ExportFormatText     ExportFormat = "text"
-    ExportFormatMarkdown ExportFormat = "markdown"
-    ExportFormatYAML     ExportFormat = "yaml"
-    ExportFormatCustom   ExportFormat = "custom"  // NEW
+    RoleEmphasisSeniorBackend    RoleEmphasis = "senior_backend"
+    RoleEmphasisStaffPrincipal   RoleEmphasis = "staff_principal"
+    RoleEmphasisConsulting       RoleEmphasis = "consulting"
+    RoleEmphasisLanguageAgnostic RoleEmphasis = "language_agnostic"
 )
-```
 
-### 2. Add Custom Export Method
+type LengthFormat string
+const (
+    LengthFull       LengthFormat = "full"
+    LengthStandard   LengthFormat = "standard"
+    LengthShort      LengthFormat = "short"
+    LengthUltraShort LengthFormat = "ultra_short"
+)
 
-**File**: `internal/service/career/cv/export_service.go`
-
-```go
-// ExportToCustom exports a CV to custom narrative format
-func (es *ExportService) ExportToCustom(
-    ctx context.Context, 
-    cv *career.CVView, 
-    sections []*career.CVSection, 
-    bullets map[string][]*career.CVBullet,
-    profile *CustomProfile,  // User profile data
-) (string, error)
-```
-
-### 3. Add Custom Profile Data Structure
-
-**File**: `internal/domain/career/profile.go` (new file)
-
-```go
-// CustomProfile contains user profile data for custom CV format
-type CustomProfile struct {
-    Name             string   // "Yomi Colledge"
-    PrimaryRole      string   // "Senior Software Engineer / Technical Consultant"
-    Location         string   // "Remote (UK)"
-    Email            string   // "yomi@boodah.net"
-    GitHubURL        string   // "https://github.com/baphled"
-    PortfolioURL     string   // "http://boodah.net"
-    
-    // Derived from facts/events
-    Languages        []string // ["Ruby", "Go", "PHP", ...]
-    FrontendTech     []string // ["Vue.js"]
-    SystemsTech      []string // ["Linux", "SQL", "APIs", ...]
-    
-    // Manual fields
-    CoreStrengths    []string // ["Language-agnostic backend...", ...]
-    WhatIBring       []string // ["Languages as tools...", ...]
+type CVVariant struct {
+    ID              string
+    Name            string
+    Description     string
+    RoleEmphasis    RoleEmphasis
+    LengthFormat    LengthFormat
+    BaseStructure   CVStructure
+    BulletConfig    BulletConfig
+    ProfileOverride *ProfileOverride
+    IsBuiltIn       bool
 }
 ```
 
-### 4. Add Profile Management Intent
+### Variant Service
 
-**File**: `internal/cli/intents/manage_profile.go` (new file)
+**File**: `internal/service/career/cv/variants.go`
 
-New intent for creating and editing user profiles:
-- `ManageProfileIntent` - CRUD operations for profiles
-- Stores profiles in `$HOME/.kariya/profiles/` as YAML
-- Referenced during CV generation for "Custom" format
-
-### 5. Update GenerateCV Intent
-
-**File**: `internal/cli/intents/generate_cv_intent.go`
-
-When user selects "Custom" export format:
-1. Check if profile exists
-2. If not, prompt to create profile (transition to `ManageProfileIntent`)
-3. If exists, load profile and pass to `ExportToCustom()`
-
-### 6. Section Mapping Strategy
-
-The custom format requires **narrative grouping** vs. current **chronological grouping**:
-
-| Custom Section | Source Data | Mapping Strategy |
-|----------------|-------------|------------------|
-| Summary | `CVSection[type=summary]` | Use existing summary prose, customize for language-agnostic angle |
-| Core Strengths | `Fact[competency_categories]` + `CVBullet[inclusion_reason]` | Extract top 6 competencies by frequency |
-| Languages & Technologies | `Fact[competency_categories]` where category matches "language", "frontend", "systems" | Group by category, list as comma-separated |
-| Selected Experience | `CVSection[type=experience]` + `CVSection[type=projects]` | Merge experience and projects, sort by impact/recency |
-| What I Bring | `CVBullet` with highest `confidence` + `rank` | Extract top 4 value propositions from bullet analysis |
-
----
-
-## Implementation Plan
-
-### Phase 1: Core Export Functionality (Week 1)
-
-**Goal**: Implement basic custom format export without profile management
-
-**Tasks**:
-1. Add `ExportFormatCustom` constant
-2. Implement `ExportToCustom()` method with hardcoded profile
-3. Add custom format to export selection UI
-4. Write unit tests for custom export
-5. Update export service tests
-
-**Acceptance Criteria**:
-- Custom format appears in export selection
-- Custom export generates valid markdown
-- All sections render correctly
-- Tests pass
-
-### Phase 2: Profile Management (Week 2)
-
-**Goal**: Add profile CRUD functionality
-
-**Tasks**:
-1. Create `internal/domain/career/profile.go` with `CustomProfile` struct
-2. Create `ProfileManager` service for YAML persistence
-3. Create `ManageProfileIntent` for profile CRUD
-4. Add profile selection to CV generation workflow
-5. Write integration tests for profile workflow
-
-**Acceptance Criteria**:
-- Users can create/edit/delete profiles
-- Profiles persist across sessions
-- CV generation uses profile data
-- Tests pass
-
-### Phase 3: Data Extraction & Enrichment (Week 3)
-
-**Goal**: Automatically derive profile fields from facts/events
-
-**Tasks**:
-1. Implement `ProfileEnricher` service
-2. Extract languages/technologies from facts
-3. Extract core strengths from competencies
-4. Extract "What I Bring" from top bullets
-5. Write tests for extraction logic
-
-**Acceptance Criteria**:
-- Profile fields auto-populate from data
-- User can override auto-generated fields
-- Extraction accuracy >80% on sample data
-- Tests pass
-
-### Phase 4: Polish & Documentation (Week 4)
-
-**Goal**: Production-ready feature with docs
-
-**Tasks**:
-1. Add error handling and validation
-2. Add help text and keyboard shortcuts
-3. Write user guide for custom format
-4. Add examples to documentation
-5. Performance testing
-6. Security review (email/URL validation)
-
-**Acceptance Criteria**:
-- All error cases handled gracefully
-- User guide complete with examples
-- Performance benchmarks pass
-- Security checks pass
-- Zero regressions
-
----
-
-## Data Flow Diagram
-
+```go
+type VariantService interface {
+    ListVariants() []*CVVariant
+    GetVariant(id string) (*CVVariant, error)
+    GetVariantByDimensions(role RoleEmphasis, length LengthFormat) (*CVVariant, error)
+    ListRoleEmphases() []RoleEmphasisInfo
+    ListLengthFormats() []LengthFormatInfo
+}
 ```
-┌─────────────────────────────────────────────────────────┐
-│ 1. User initiates CV generation                        │
-│    (GenerateCVIntent)                                   │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     v
-┌─────────────────────────────────────────────────────────┐
-│ 2. Select Profile (if format=custom)                   │
-│    - Load existing profile OR                           │
-│    - Create new profile (ManageProfileIntent)           │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     v
-┌─────────────────────────────────────────────────────────┐
-│ 3. Generate CV (CVGenerationService)                    │
-│    - Retrieve events/facts                              │
-│    - Generate bullets (EnhancedBulletGenerator)         │
-│    - Build sections (SectionBuilder)                    │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     v
-┌─────────────────────────────────────────────────────────┐
-│ 4. User selects "Custom" export format                 │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     v
-┌─────────────────────────────────────────────────────────┐
-│ 5. ExportService.ExportToCustom()                       │
-│    - Load profile                                       │
-│    - Map sections to custom format                      │
-│    - Generate narrative markdown                        │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     v
-┌─────────────────────────────────────────────────────────┐
-│ 6. Save to file OR copy to clipboard                   │
-└─────────────────────────────────────────────────────────┘
+
+### Export Service
+
+**File**: `internal/service/career/cv/export_service.go`
+
+```go
+// ExportWithProfile exports using a custom profile configuration
+// Supports all 4 structures: standard, narrative, consulting, highlights
+func (es *ExportService) ExportWithProfile(
+    ctx context.Context,
+    cv *career.CVView,
+    sections []*career.CVSection,
+    bullets map[string][]*career.CVBullet,
+    structure CVStructure,
+    format ExportFormat,
+    profileCfg *config.ProfileConfig,
+) (string, error)
+```
+
+### Profile Configuration
+
+**File**: `internal/config/config.go`
+
+```go
+type ProfileConfig struct {
+    Name            string   `yaml:"name"`
+    Email           string   `yaml:"email"`
+    Title           string   `yaml:"title"`
+    Location        string   `yaml:"location"`
+    GitHub          string   `yaml:"github"`
+    Portfolio       string   `yaml:"portfolio"`
+    Languages       string   `yaml:"languages"`
+    Frontend        string   `yaml:"frontend"`
+    Systems         string   `yaml:"systems"`
+    CoreStrengths   []string `yaml:"core_strengths"`
+    WhatIBring      []string `yaml:"what_i_bring"`
+    DefaultRole     string   `yaml:"default_role"`
+    DefaultAudience string   `yaml:"default_audience"`
+}
 ```
 
 ---
 
-## Example Output
+## User Workflow
 
-### Input Data
+### 1. Generate CV with Variant Selection
 
-**Events**:
-- 20 career events spanning 20+ years
-- Companies: Grand Union, RWDMag, Interface Radio
-- Projects: n-vyro.io (solo project)
-- Technologies: Ruby, Go, PHP, C/C++, JavaScript, Vue.js
+1. Navigate to **Generate CV** from main menu
+2. Select target profile (e.g., Senior IC, Staff)
+3. Select target audience (e.g., Hiring Manager, Recruiter, Peer)
+4. **Select Role Emphasis**:
+   - **Senior Backend** - Technical depth, architecture focus
+   - **Staff/Principal** - Leadership, strategy, cross-team impact
+   - **Consulting** - Client engagements, delivery focus
+   - **Language-Agnostic** - Adaptability, multi-language expertise
+5. **Select Length Format**:
+   - **Full (3+ pages)** - Complete history
+   - **Standard (2-3 pages)** - Last 10 years
+   - **Short (1-2 pages)** - Last 5 years
+   - **Ultra-Short (1 page)** - Highlights only
+6. Review generated CV preview
+7. Export to Text, Markdown, or YAML
 
-**Facts**:
-- 15 competency categories: "Backend Engineering", "Systems Design", "Linux Administration", etc.
-- 8 languages: Ruby, Go, PHP, C/C++, JavaScript, Shell, etc.
+### 2. Configure Profile for Custom CVs
 
-**Profile**:
-- Name: Yomi Colledge
-- Role: Senior Software Engineer / Technical Consultant
-- Email: yomi@boodah.net
-- GitHub: https://github.com/baphled
+1. Navigate to **Configure System** from main menu
+2. Select **Profile** domain
+3. Edit fields:
+   - Name, Email, Title, Location
+   - GitHub URL, Portfolio URL
+   - Languages (comma-separated)
+   - Frontend technologies (comma-separated)
+   - Systems/Infrastructure (comma-separated)
+   - Core Strengths (for narrative/consulting)
+   - What I Bring (value propositions)
+4. Save changes
+5. Profile is used when exporting CVs (with variant ProfileOverride applied)
 
-### Generated Custom CV (Markdown)
+---
+
+## CV Structure Formats
+
+### Narrative CV Format
+
+The narrative structure (used by language_agnostic variants) produces content emphasizing language-agnostic expertise:
 
 ```markdown
 # Yomi Colledge
@@ -342,7 +208,7 @@ Portfolio: http://boodah.net
 
 ## Summary
 
-Senior, language-agnostic software engineer with 20+ years of experience delivering production systems across diverse stacks and domains. Strong systems thinker with a proven ability to select and adopt the right language or tooling to solve complex problems pragmatically. Comfortable operating across backend services, infrastructure-adjacent components, and product-facing systems.
+Senior, language-agnostic software engineer with 20+ years of experience...
 
 ---
 
@@ -367,39 +233,11 @@ Senior, language-agnostic software engineer with 20+ years of experience deliver
 
 ## Selected Experience
 
-### Founder / Solo Engineer — n-vyro.io  
-*Independent Product Project*
+### Company Name
+*Jan 2020 - Present*
 
-- Designed and built a modular environmental control and monitoring product end-to-end.  
-- Architected systems spanning hardware-facing components, backend services, and a web frontend.  
-- Selected languages per subsystem responsibility across Ruby, Go, C/C++, and Node/Vue.  
-- Demonstrates strong system design, autonomy, and language-agnostic delivery.
-
----
-
-### Senior Software Engineer / Consultant  
-*Multiple Clients & Agencies*
-
-- Delivered backend and full-stack systems for media, broadcast, and consumer platforms.  
-- Trusted with senior ownership across unfamiliar or legacy codebases.  
-- Regularly engaged to stabilise, extend, or modernise production systems.
-
----
-
-### Senior PHP Engineer — Grand Union  
-*2008 – 2010*
-
-- Built backend services for broadcaster-facing platforms used by national TV networks.  
-- Delivered reliable, production-grade systems in fast-paced agency environments.
-
----
-
-### Early Career — Systems & Web Engineering  
-*RWDMag, Interface Radio, KeyOne, others*
-
-- Linux systems administration and automation.  
-- Web and backend development across PHP and early dynamic stacks.  
-- Foundation of strong operational and systems thinking.
+- Achievement with high confidence (>= 0.75)
+- Another significant accomplishment
 
 ---
 
@@ -415,107 +253,189 @@ Senior, language-agnostic software engineer with 20+ years of experience deliver
 **References available on request.**
 ```
 
+### Consulting CV Format
+
+The consulting structure (used by consulting variants) emphasizes client engagements:
+
+```markdown
+# Jane Smith
+
+**Senior Consulting Engineer**  
+Remote (UK)  
+Email: jane@example.com
+
 ---
 
-## Testing Strategy
+## Summary
 
-### Unit Tests
+Consulting engineer with 10+ years delivering technical solutions across diverse client environments...
 
-**File**: `internal/service/career/cv/export_service_test.go`
+---
 
-```go
-Describe("ExportToCustom", func() {
-    Context("with complete profile and data", func() {
-        It("generates valid markdown", func() { ... })
-        It("includes all required sections", func() { ... })
-        It("formats experience chronologically", func() { ... })
-        It("groups technologies correctly", func() { ... })
-    })
-    
-    Context("with minimal data", func() {
-        It("handles missing profile gracefully", func() { ... })
-        It("handles missing sections gracefully", func() { ... })
-    })
-    
-    Context("edge cases", func() {
-        It("sanitizes email addresses", func() { ... })
-        It("validates URLs", func() { ... })
-        It("handles special characters in name", func() { ... })
-    })
-})
+## Client Engagements
+
+### Acme Corp
+*Jan 2022 - Present*
+
+- Led technical assessment and modernization roadmap
+- Delivered microservices architecture reducing deployment time by 80%
+
+### TechStartup Inc
+*Jun 2021 - Dec 2021*
+
+- Rapid assessment of legacy codebase
+- Implemented CI/CD pipeline and automated testing
+
+---
+
+## What I Bring
+
+- Rapid technical assessment and roadmapping
+- Clear communication with technical and non-technical stakeholders
+- Pragmatic solutions within budget constraints
+- Knowledge transfer and team enablement
 ```
 
-### Integration Tests
+### Highlights CV Format
 
-**File**: `internal/cli/intents/generate_cv_custom_test.go`
+The highlights structure (used by all ultra_short variants) is a one-page executive summary:
 
-```go
-Describe("GenerateCVIntent - Custom Format", func() {
-    It("prompts for profile if missing", func() { ... })
-    It("loads existing profile", func() { ... })
-    It("exports custom format successfully", func() { ... })
-})
+```markdown
+# Jane Smith | Senior Software Engineer | Remote (UK) | jane@example.com
+
+---
+
+## Summary
+
+Senior engineer with 15+ years delivering production systems across diverse stacks.
+
+---
+
+## Key Capabilities
+
+- Distributed systems architecture
+- Technical leadership and mentorship
+- Legacy modernization
+- Cross-functional collaboration
+
+---
+
+## Selected Highlights
+
+- Designed distributed caching layer reducing response times by 60%
+- Led microservices migration for 50-engineer organization
+- Mentored 12 engineers to senior level over 3 years
+
+---
+
+## Technologies
+
+**Languages:** Go, Python, Ruby | **Systems:** Kubernetes, AWS, Terraform
 ```
 
-### Manual Testing Scenarios
+---
 
-1. **Happy Path**: Generate CV with complete profile → Export custom format → Verify output
-2. **Profile Creation**: Generate CV without profile → Create profile → Export custom format
-3. **Profile Update**: Edit existing profile → Regenerate CV → Verify changes
-4. **Edge Cases**: Test with minimal data, special characters, long names, etc.
+## Files Implemented
+
+### Core Variant Files
+
+| File | Purpose |
+|------|---------|
+| `internal/service/career/cv/variants.go` | Variant types, 16 built-in variants, VariantService |
+| `internal/service/career/cv/variants_test.go` | Variant tests (31 specs) |
+| `internal/service/career/cv/role_emphasis.go` | Role emphasis configuration |
+| `internal/service/career/cv/role_emphasis_test.go` | Role emphasis tests (11 specs) |
+| `internal/service/career/cv/length_format.go` | Length format configuration |
+| `internal/service/career/cv/length_format_test.go` | Length format tests (31 specs) |
+| `internal/service/career/cv/structure_test.go` | Consulting/Highlights structure tests (24 specs) |
+| `internal/service/career/cv/cv_helpers.go` | Export helpers, ProfileOverride functions |
+| `internal/service/career/cv/cv_helpers_test.go` | Helper tests (13 specs) |
+
+### Modified Files
+
+| File | Changes |
+|------|---------|
+| `internal/cli/intents/generate_cv.go` | Variant types, states, model fields |
+| `internal/cli/intents/generate_cv_intent.go` | Variant selection handlers and views |
+| `internal/service/career/cv/export_service.go` | 4 structures: standard, narrative, consulting, highlights |
+| `internal/service/career/cv/bullet_generator.go` | Audience filtering |
+| `internal/service/career/cv/enhanced_bullet_generator.go` | Audience filtering, role emphasis scoring |
 
 ---
 
-## Extensibility Considerations
+## Test Coverage
 
-This implementation is designed to support **future custom formats**:
-
-1. **Template Engine**: Consider using `text/template` for custom format rendering
-2. **User-Defined Templates**: Allow users to define their own markdown templates
-3. **Format Registry**: Register formats dynamically (plugin architecture)
-4. **Profile Presets**: Provide pre-built profiles for common roles (e.g., "Language-Agnostic Engineer", "Frontend Specialist", etc.)
-
-**Future Enhancement**: `ExportFormatCustomTemplate` with user-provided Go templates
-
----
-
-## Migration Path
-
-This change is **additive** and **non-breaking**:
-
-- Existing export formats (Text, Markdown, YAML) remain unchanged
-- Users opt-in to custom format
-- No database migrations required (profiles are file-based)
-- Backward compatible with existing workflows
+| Category | Tests |
+|----------|-------|
+| Variant system | 31 |
+| Role emphasis | 11 |
+| Length format | 31 |
+| Consulting/Highlights structures | 24 |
+| ProfileOverride helpers | 13 |
+| Audience filtering | 15 |
+| UI variant selection | ~40 |
+| **Total new tests (Task 24)** | ~125 |
 
 ---
 
-## Success Metrics
+## YAML Export Note
 
-1. **Adoption**: >30% of users try custom format within first month
-2. **Usage**: >10% of users create a profile
-3. **Quality**: Generated CVs require <20% manual editing
-4. **Performance**: Export completes in <500ms
-5. **Satisfaction**: User feedback >4/5 stars
+YAML format always uses the **standard** structure regardless of variant selection. This is intentional because YAML is a data interchange format, not a presentation format. The other structures are designed for human-readable output (Text, Markdown).
 
 ---
 
-## Open Questions
+## The 16 Built-In Variants
 
-1. **Profile Storage**: File-based (YAML) vs. database? → **Decision: File-based for Phase 1**
-2. **Multiple Profiles**: Support multiple profiles per user? → **Decision: Yes, allow multiple**
-3. **Template Engine**: Use Go templates or custom renderer? → **Decision: Custom renderer for Phase 1**
-4. **Profile Enrichment**: Auto-generate vs. manual entry? → **Decision: Auto-generate with manual override**
+| Variant ID | Role Emphasis | Length | Structure |
+|------------|---------------|--------|-----------|
+| `senior_backend_full` | senior_backend | full | standard |
+| `senior_backend_standard` | senior_backend | standard | standard |
+| `senior_backend_short` | senior_backend | short | standard |
+| `senior_backend_ultra_short` | senior_backend | ultra_short | highlights |
+| `staff_principal_full` | staff_principal | full | standard |
+| `staff_principal_standard` | staff_principal | standard | standard |
+| `staff_principal_short` | staff_principal | short | standard |
+| `staff_principal_ultra_short` | staff_principal | ultra_short | highlights |
+| `consulting_full` | consulting | full | consulting |
+| `consulting_standard` | consulting | standard | consulting |
+| `consulting_short` | consulting | short | consulting |
+| `consulting_ultra_short` | consulting | ultra_short | highlights |
+| `language_agnostic_full` | language_agnostic | full | narrative |
+| `language_agnostic_standard` | language_agnostic | standard | narrative |
+| `language_agnostic_short` | language_agnostic | short | narrative |
+| `language_agnostic_ultra_short` | language_agnostic | ultra_short | highlights |
 
 ---
 
-## References
+## Related Documentation
 
-- [CV Generation Service](../internal/service/career/cv/cv_generation_service.go)
-- [Export Service](../internal/service/career/cv/export_service.go)
-- [CV Domain Models](../internal/domain/career/cv.go)
-- [GenerateCV Intent](../internal/cli/intents/generate_cv_intent.go)
+- [CV Variants Guide](docs/guides/CV_VARIANTS_GUIDE.md) - Complete guide to variant selection
+- [Narrative CV Guide](docs/guides/NARRATIVE_CV_GUIDE.md) - Detailed guide for narrative CVs
+- [Consulting CV Guide](docs/guides/CONSULTING_CV_GUIDE.md) - Guide for consulting structure
+- [CV Generation Guide](docs/guides/CV_GENERATION_GUIDE.md) - Complete CV generation workflow
+- [CV Troubleshooting](docs/guides/CV_TROUBLESHOOTING.md) - Common issues and solutions
 
 ---
 
-*Last Updated: 2026-01-08*
+## Implementation History
+
+| Task | Description | Key Commits |
+|------|-------------|-------------|
+| Task 23 | CV Structure Selection (Standard, Narrative) | Phase 1-5 |
+| Task 24 | CV Variant System (16 variants, 4 structures) | 8 commits |
+
+### Task 24 Key Commits
+
+- `c2b21e7` - Audience filtering in bullet generator
+- `eed48a8` - Audience filtering in EnhancedBulletGenerator
+- `f2c0ffa` - CV variant types and 16 built-in variants
+- `b8074e4` - Consulting and Highlights export structures
+- `c5dea6b` - Role emphasis configuration and scoring
+- `729d265` - Length format configuration and filtering
+- `d43b7ca` - TUI variant-based CV generation workflow
+- `b518e33` - ProfileOverride wiring to export
+
+---
+
+*Implemented: 2026-01-09*  
+*Task References: tasks/tasks-23-custom-cv-format.md, tasks/tasks-24-flexible-cv-variants.md*

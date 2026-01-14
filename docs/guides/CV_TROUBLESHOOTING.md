@@ -526,6 +526,93 @@ export LC_ALL=en_US.UTF-8
 - Export CV to text/markdown format
 - View exported file in text editor
 
+## Narrative CV Structure Issues
+
+### Issue 11: "Narrative CV Shows Default Profile"
+
+**Symptoms**: Narrative CV export shows "Yomi Colledge" and default contact info instead of your details
+
+**Root Causes**:
+1. Profile not configured in Configure System
+2. Profile fields are empty
+3. Config not saved
+
+**Solutions**:
+
+**Solution A: Configure Your Profile**
+1. Go to **Configure System** from main menu
+2. Select **Profile** domain
+3. Edit these fields:
+   - Name, Email, Title, Location
+   - GitHub URL, Portfolio URL
+   - Languages, Frontend, Systems
+4. Save changes
+5. Re-export your CV
+
+**Solution B: Verify Config Saved**
+```bash
+cat ~/.kariya/config.yaml | grep -A 15 "profile:"
+```
+Check that your values are present.
+
+### Issue 12: "Narrative CV Missing Sections"
+
+**Symptoms**: Exported narrative CV is missing Core Strengths, Technologies, or What I Bring sections
+
+**Root Causes**:
+1. Using Standard structure instead of Narrative
+2. No high-confidence bullets in generated CV
+3. Profile fields empty (uses defaults)
+
+**Solutions**:
+
+**Solution A: Verify Structure Selection**
+- During CV generation, make sure you select "Narrative" structure
+- Standard structure produces different sections
+
+**Solution B: Check Bullet Confidence**
+- Narrative "Selected Experience" requires bullets with confidence >= 0.75
+- Improve event quality to increase bullet confidence
+- Add more supporting facts to events
+
+**Solution C: Configure Profile Fields**
+- Core Strengths and What I Bring use profile config when set
+- Empty fields fall back to defaults
+- Configure in **Configure System → Profile**
+
+### Issue 13: "YAML Export Ignores Structure"
+
+**Symptoms**: YAML export produces Standard structure even when Narrative was selected
+
+**Expected Behavior**: This is intentional. YAML is a data interchange format, not a presentation format. YAML exports always use Standard structure regardless of your selection. Use Text or Markdown export for Narrative format.
+
+### Issue 14: "Profile Changes Not Reflected in Export"
+
+**Symptoms**: Changed profile settings but export still shows old values
+
+**Root Causes**:
+1. Changes not saved
+2. Using cached CV generation
+3. Config file not updated
+
+**Solutions**:
+
+**Solution A: Save Changes**
+- After editing profile, press Enter to save
+- Watch for confirmation message
+- Navigate away and back to verify
+
+**Solution B: Regenerate CV**
+- Profile changes require regenerating the CV
+- Go back to CV generation flow
+- Generate a fresh CV with the same settings
+
+**Solution C: Verify Config File**
+```bash
+cat ~/.kariya/config.yaml
+```
+Check that your profile values are present in the file.
+
 ## Performance Issues
 
 ### Issue: "CV Generation is Slow"
@@ -615,6 +702,6 @@ If you encounter an issue not listed here:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-01-02
+**Document Version**: 1.1
+**Last Updated**: 2026-01-09
 
