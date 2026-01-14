@@ -620,19 +620,21 @@ Bullet D (no skills, strong): 0.90 base + 0.00 = 0.90 (beats C!)
 **Result**: Skills provide advantage, but quality bullets without skills still appear.
 
 **TDD Checklist - Phase 10:**
-- [ ] Write failing test: Language Agnostic shows all bullets (including events without skills)
-- [ ] Test passes
-- [ ] Write failing test: Events without skills are not penalized (baseline score)
-- [ ] Test passes
-- [ ] Write failing test: Events with selected technology get skill match bonus
-- [ ] Test passes
-- [ ] Write failing test: High-quality events without skills can rank higher than low-quality events with skills
-- [ ] Test passes
-- [ ] Write failing test: Specialist filters to selected tech
-- [ ] Test passes
-- [ ] Write failing test: Generalist boosts selected techs
-- [ ] Test passes
-- [ ] Commit: `feat(cv): add technology-based bullet filtering`
+- [x] Write failing test: Language Agnostic shows all bullets (including events without skills)
+- [x] Test passes
+- [x] Write failing test: Events without skills are not penalized (baseline score)
+- [x] Test passes
+- [x] Write failing test: Events with selected technology get skill match bonus
+- [x] Test passes
+- [x] Write failing test: High-quality events without skills can rank higher than low-quality events with skills
+- [x] Test passes
+- [x] Write failing test: Specialist filters to selected tech
+- [x] Test passes
+- [x] Write failing test: Generalist boosts selected techs
+- [x] Test passes
+- [x] Write failing test: Edge cases (orphan bullets, invalid event IDs)
+- [x] Test passes
+- [x] Commit: `feat(service): add technology-based bullet filtering (Phase 10)` (cdbe6b2)
 
 ### Phase 11: Skills Section Population
 
@@ -776,3 +778,123 @@ func (b *SectionBuilder) buildSkillsSection(
 - Generalist → Standard (traditional format)
 - Specialist → Standard (traditional format)
 - Ultra-Short → Highlights (always, regardless of focus)
+
+---
+
+## Progress Summary (2026-01-14)
+
+### ✅ Completed Phases (1-10)
+
+**Phase 1-4**: Variant system foundation
+- ✅ Created variants.go with dynamic variant generation
+- ✅ 10 tests passing
+- ✅ Commit: 6911512
+
+**Phase 5**: Technology extraction flow
+- ✅ ExtractingTechnologies state with async extraction
+- ✅ 8 tests passing
+- ✅ Commit: 7a1fcb8
+
+**Phase 6**: Technology focus selection UI
+- ✅ SelectTechnologyFocus state (Language Agnostic/Generalist/Specialist)
+- ✅ 15 tests passing
+- ✅ Commit: f3d1e6b
+
+**Phase 7**: Technology selection UI
+- ✅ SelectTechnologies state (multi-select for Generalist, single for Specialist)
+- ✅ 13 tests passing
+- ✅ Commit: 335923d
+
+**Phase 8**: Focus area selection UI
+- ✅ SelectFocusArea state with suggested area
+- ✅ 16 tests passing
+- ✅ Commit: 93cf5ac
+
+**Phase 9**: Dynamic variant generation system
+- ✅ GetVariantBySelections() function
+- ✅ 10 tests passing
+- ✅ Commit: 6911512 (same as Phase 1-4)
+
+**Phase 10**: Technology-based bullet filtering
+- ✅ FilterByTechnologies() method implemented
+- ✅ 12 comprehensive tests passing (including edge cases)
+- ✅ Skill match bonus system (+0.15 for matching techs)
+- ✅ No penalty for events without skills
+- ✅ Quality-based ranking preserved
+- ✅ Commit: cdbe6b2
+
+**Bug Fix**: Workflow blocking issue
+- ✅ Fixed missing length format UI handler (bypassed with default)
+- ✅ CV generation now works end-to-end
+- ✅ Commit: 08cd573
+
+**Data Flow Connection**: Phase 10 integration
+- ✅ Updated CVConfig to include technology selections (4 fields)
+- ✅ Intent now passes selections to CVConfig
+- ✅ CV generation service calls FilterByTechnologies()
+- ✅ Technology filtering now active in CV generation
+- ✅ All 241 CV service tests passing
+- ✅ All 1230 intent tests passing
+- ✅ Commit: 17379f1
+
+### 📊 Test Coverage
+
+**Total Tests**: 1,471+ passing
+- CV Service: 241 tests (including 12 technology filtering tests)
+- Intents: 1,230 tests (including Phase 5-8 tests)
+- Zero failures
+- Zero race conditions
+
+### 🎯 Current State
+
+**What Works**:
+- ✅ Complete UI workflow (Profile → Audience → Tech Extraction → Tech Focus → Tech Selection → Focus Area → Generating → Preview)
+- ✅ Technology selections captured in state
+- ✅ Technology filtering applied to bullets (FilterByTechnologies)
+- ✅ CVConfig includes all technology selections
+- ✅ CV generation pipeline uses technology filtering
+- ✅ CVs generate successfully with technology-based bullet boosting
+
+**What's Working But Temporary**:
+- ⚠️ Length format hardcoded to Standard (UI not implemented)
+
+**What's Next**:
+- 📋 Phase 11: Skills section population (prioritize selected technologies)
+- 📋 Phase 12: Documentation updates
+
+### 🔧 Files Modified (Phase 10 + Integration)
+
+**Core Implementation**:
+- `internal/service/career/cv/bullet_generator.go` (+68 lines) - FilterByTechnologies method
+- `internal/service/career/cv/bullet_generator_technology_test.go` (+368 lines, NEW) - 12 tests
+- `internal/domain/career/cv.go` (+4 fields) - CVConfig with technology selections
+- `internal/cli/intents/generate_cv_intent.go` (+7 lines) - Pass selections to CVConfig
+- `internal/service/career/cv/cv_generation_service.go` (+7 lines) - Call FilterByTechnologies
+- `internal/service/career/cv/cv_generation_service_test.go` (+4 lines) - Mock implementation
+
+**Bug Fixes**:
+- `internal/cli/intents/generate_cv_intent.go` - Bypass unimplemented length format state
+- `internal/cli/intents/generate_cv_focus_area_test.go` - Update test expectations
+
+### 📈 Impact
+
+Users can now:
+1. ✅ Select technology focus (Language Agnostic/Generalist/Specialist)
+2. ✅ Select specific technologies (if not Language Agnostic)
+3. ✅ Select focus area (Backend/Frontend/Fullstack/DevOps)
+4. ✅ Generate CVs with technology-based bullet filtering
+5. ✅ See bullets boosted for selected technologies (+0.15 score)
+6. ✅ See quality bullets without skills still rank high (no penalty)
+
+### 🚀 Next Steps (Phase 11)
+
+**Goal**: Skills section population with selected technologies
+
+**Estimated Time**: 3-4 hours
+
+**Tasks**:
+1. Update `buildSkillsSection()` in section_builder.go
+2. Prioritize selected technologies in skills list
+3. Group skills by category
+4. Include event counts per skill
+5. Write comprehensive tests
