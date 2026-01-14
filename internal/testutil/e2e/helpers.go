@@ -327,6 +327,13 @@ func (e *TestEnv) Tab() *TestEnv {
 	return e.PressKey(tea.KeyTab)
 }
 
+// SubmitHuhForm submits a huh form by pressing Enter.
+// Huh forms are submitted with Enter when the form is complete.
+// This is equivalent to Confirm() but with a more descriptive name for form contexts.
+func (e *TestEnv) SubmitHuhForm() *TestEnv {
+	return e.Confirm()
+}
+
 // executeCmd does NOT execute commands returned by Update.
 // In Bubble Tea testing, most commands are for async operations (cursor blink,
 // window resize, etc.) that don't affect the state we're testing. Executing
