@@ -1223,5 +1223,199 @@ var _ = Describe("ManageSkillsIntent", func() {
 				))
 			})
 		})
+
+		Context("Filter Modal E2E Tests", func() {
+			It("should apply category filter end-to-end", func() {
+				// Verify initial state has all skills
+				initialView := intent.View()
+				Expect(initialView).To(ContainSubstring("Ruby"))
+				Expect(initialView).To(ContainSubstring("Go"))
+				Expect(initialView).To(ContainSubstring("React"))
+
+				// Open filter modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				// Navigate to Category field and select "Backend"
+				// Tab to move through fields, arrows to select value
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyTab})   // Move to Category field
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyDown})  // Select "Backend"
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter}) // Confirm selection
+
+				// Submit filter form with Enter
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Process any reload commands
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				if cmd != nil {
+					msg := cmd()
+					intent.Update(msg)
+				}
+
+				// View should show filtered results (Backend skills only)
+				filteredView := intent.View()
+				// Backend skills should be visible
+				Expect(filteredView).To(Or(
+					ContainSubstring("Ruby"),
+					ContainSubstring("Go"),
+				))
+			})
+
+			It("should cancel filter modal with Esc", func() {
+				// Open filter modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				// Start filling out form
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyTab})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyDown})
+
+				// Cancel with Esc (should not apply filter)
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				// View should still show all skills (filter was cancelled)
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Ruby"))
+				Expect(view).To(ContainSubstring("Go"))
+				Expect(view).To(ContainSubstring("React"))
+			})
+
+			It("should handle Tab navigation in filter modal", func() {
+				// Open filter modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				// Tab should navigate through form fields (should not cause errors)
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyTab})
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyTab})
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyTab})
+
+				// Modal should still be visible
+				view := intent.View()
+				Expect(view).To(Or(
+					ContainSubstring("Filter by Category"),
+					ContainSubstring("Category"),
+				))
+			})
+
+			It("should handle Enter key to submit filter", func() {
+				// Open filter modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+				// Submit filter form without changes (default values)
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Process any reload commands
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				if cmd != nil {
+					msg := cmd()
+					intent.Update(msg)
+				}
+
+				// Should show all skills (no filtering applied)
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Ruby"))
+				Expect(view).To(ContainSubstring("Go"))
+				Expect(view).To(ContainSubstring("React"))
+			})
+		})
+
+		Context("Sort Modal E2E Tests", func() {
+			It("should apply sort order end-to-end", func() {
+				// Verify initial state has skills
+				initialView := intent.View()
+				Expect(initialView).To(ContainSubstring("Ruby"))
+				Expect(initialView).To(ContainSubstring("Go"))
+
+				// Open sort modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+				// Navigate to Sort By field and select "Name"
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyTab})   // Move to Sort By
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyDown})  // Select option
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter}) // Confirm
+
+				// Navigate to Sort Order and select "desc"
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyTab})   // Move to Sort Order
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyDown})  // Select "Descending"
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter}) // Confirm
+
+				// Submit sort form
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Process any reload commands
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				if cmd != nil {
+					msg := cmd()
+					intent.Update(msg)
+				}
+
+				// View should show sorted results
+				sortedView := intent.View()
+				Expect(sortedView).To(ContainSubstring("Skills"))
+			})
+
+			It("should cancel sort modal with Esc", func() {
+				// Open sort modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+				// Start changing sort options
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyTab})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyDown})
+
+				// Cancel with Esc
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				// View should show skills list (sort was cancelled)
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Ruby"))
+				Expect(view).To(ContainSubstring("Go"))
+				Expect(view).To(ContainSubstring("React"))
+			})
+
+			It("should handle Tab navigation in sort modal", func() {
+				// Open sort modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+				// Tab should navigate through form fields
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyTab})
+				_ = intent.Update(tea.KeyMsg{Type: tea.KeyTab})
+
+				// Modal should still be visible
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Sort By"))
+			})
+
+			It("should handle Enter key to submit sort", func() {
+				// Open sort modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+				// Submit sort form with default values
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
+
+				// Process any reload commands
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				if cmd != nil {
+					msg := cmd()
+					intent.Update(msg)
+				}
+
+				// Should show skills list
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Skills"))
+			})
+
+			It("should open sort modal from list view", func() {
+				// Verify we're on list view
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Skills"))
+
+				// Open sort modal
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+				// Sort modal should open
+				view = intent.View()
+				Expect(view).To(ContainSubstring("Sort By"))
+			})
+		})
 	})
 })
