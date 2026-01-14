@@ -2,6 +2,7 @@ package cv
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -14,7 +15,8 @@ import (
 // SectionBuilder organizes CV bullets into logical sections
 type SectionBuilder interface {
 	// BuildSections organizes bullets into CV sections
-	BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string) ([]*career.CVSection, error)
+	// selectedTechnologies: optional list of skill IDs to prioritize in skills section (Phase 11 - Task 40)
+	BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, selectedTechnologies []string) ([]*career.CVSection, error)
 }
 
 // DefaultSectionBuilder is the default implementation of SectionBuilder
@@ -30,7 +32,7 @@ func NewSectionBuilder(log *logger.Logger) *DefaultSectionBuilder {
 }
 
 // BuildSections organizes bullets into CV sections
-func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string) ([]*career.CVSection, error) {
+func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, selectedTechnologies []string) ([]*career.CVSection, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -61,8 +63,8 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 		order++
 	}
 
-	// 4. Core Competencies LAST (skill categories from facts)
-	skillsSection := sb.buildSkillsSection(facts, order)
+	// 4. Technical Skills LAST (from event skills, prioritizing selected technologies)
+	skillsSection := sb.buildSkillsSection(events, selectedTechnologies, order)
 	if skillsSection != nil {
 		sections = append(sections, skillsSection)
 	}
@@ -165,39 +167,71 @@ func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet
 	}
 }
 
-// buildSkillsSection creates the skills/competencies section
-func (sb *DefaultSectionBuilder) buildSkillsSection(facts []*career.Fact, order int) *career.CVSection {
-	if len(facts) == 0 {
-		return nil
-	}
-
-	// Extract unique competency categories
-	categories := make(map[string]bool)
-	for _, fact := range facts {
-		for _, category := range fact.CompetencyCategories {
-			if category != "" {
-				categories[category] = true
+// buildSkillsSection creates the technical skills section from event skills (Phase 11 - Task 40)
+// Prioritizes selectedTechnologies if provided, aggregates event counts, sorted by relevance
+func (sb *DefaultSectionBuilder) buildSkillsSection(events []*career.CareerEvent, selectedTechnologies []string, order int) *career.CVSection {
+	// Aggregate skills from all events with counts
+	skillCounts := make(map[string]int)
+	for _, event := range events {
+		for _, skill := range event.Skills {
+			if skill != "" {
+				skillCounts[skill]++
 			}
 		}
 	}
 
-	if len(categories) == 0 {
+	if len(skillCounts) == 0 {
 		return nil
 	}
 
-	// Sort categories alphabetically
-	sortedCategories := make([]string, 0, len(categories))
-	for cat := range categories {
-		sortedCategories = append(sortedCategories, cat)
+	// Create skill list with counts
+	type skillWithCount struct {
+		name  string
+		count int
 	}
-	sort.Strings(sortedCategories)
 
-	// Create bullets for each category
-	bullets := make([]*career.CVBullet, 0, len(sortedCategories))
-	for _, cat := range sortedCategories {
+	skills := make([]skillWithCount, 0, len(skillCounts))
+	for name, count := range skillCounts {
+		skills = append(skills, skillWithCount{name: name, count: count})
+	}
+
+	// Sort skills: selected technologies first, then by count descending, then alphabetically
+	selectedSet := make(map[string]bool)
+	for _, tech := range selectedTechnologies {
+		selectedSet[tech] = true
+	}
+
+	sort.Slice(skills, func(i, j int) bool {
+		iSelected := selectedSet[skills[i].name]
+		jSelected := selectedSet[skills[j].name]
+
+		// Selected technologies come first
+		if iSelected != jSelected {
+			return iSelected
+		}
+
+		// Within selected or non-selected, sort by count descending
+		if skills[i].count != skills[j].count {
+			return skills[i].count > skills[j].count
+		}
+
+		// Same count, sort alphabetically
+		return skills[i].name < skills[j].name
+	})
+
+	// Create bullets with skill names and counts
+	bullets := make([]*career.CVBullet, 0, len(skills))
+	for _, skill := range skills {
+		text := skill.name
+		if skill.count > 1 {
+			text = fmt.Sprintf("%s (%d)", skill.name, skill.count)
+		} else {
+			text = fmt.Sprintf("%s (1)", skill.name)
+		}
+
 		bullets = append(bullets, &career.CVBullet{
 			ID:   uuid.New().String(),
-			Text: cat,
+			Text: text,
 		})
 	}
 
@@ -212,7 +246,7 @@ func (sb *DefaultSectionBuilder) buildSkillsSection(facts []*career.Fact, order 
 	return &career.CVSection{
 		ID:          uuid.New().String(),
 		SectionType: "skills",
-		Title:       "Core Competencies",
+		Title:       "Technical Skills",
 		Order:       order,
 		Content:     content,
 	}

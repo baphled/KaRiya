@@ -129,8 +129,8 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 			config.TechnologyFocus, len(config.SelectedTechnologies), len(bullets))
 	}
 
-	// Build sections using SectionBuilder
-	sections, err := svc.sectionBuilder.BuildSections(ctx, bullets, events, facts, config.TargetRole)
+	// Build sections using SectionBuilder (Phase 11 - Task 40: pass selected technologies)
+	sections, err := svc.sectionBuilder.BuildSections(ctx, bullets, events, facts, config.TargetRole, config.SelectedTechnologies)
 	if err != nil {
 		svc.logger.Error("Failed to build sections: %v", err)
 		return nil, fmt.Errorf("failed to build sections: %w", err)
