@@ -159,255 +159,248 @@ func (i *YourIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 
 ---
 
-## Candidate Patterns for Extraction
+### 3. Screen Result Handling ✅
 
-### 3. Screen Result Handling 🔄
-
-**Status**: Pattern Identified, Not Yet Extracted
+**Status**: Implemented
+**File**: `internal/cli/intents/screen_result_behavior.go`
 **Used By**: GenerateCV, ManageSkills, BrowseTimeline
 
-#### Current Pattern
-
-Every screen-based intent has similar code:
-
-```go
-func (i *Intent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
-    switch r := result.(type) {
-    case *screens.NavigateResult:
-        return i.handleNavigateResult(r)
-    case *screens.CancelResult:
-        return i.handleCancelResult(r)
-    case *screens.SubmitResult:
-        return i.handleSubmitResult(r)
-    case *screens.ErrorResult:
-        return i.handleErrorResult(r)
-    default:
-        return nil
-    }
-}
-```
-
-#### Proposed Interface
+#### Interface Definition
 
 ```go
 // ScreenResultHandler defines how an intent handles screen results
 type ScreenResultHandler interface {
-    HandleNavigate(result *screens.NavigateResult) tea.Cmd
-    HandleCancel(result *screens.CancelResult) tea.Cmd
-    HandleSubmit(result *screens.SubmitResult) tea.Cmd
-    HandleError(result *screens.ErrorResult) tea.Cmd
-}
-
-// DefaultScreenResultDispatcher provides default routing
-type DefaultScreenResultDispatcher struct {
-    handler ScreenResultHandler
-}
-
-func (d *DefaultScreenResultDispatcher) Dispatch(result screens.ScreenResult) tea.Cmd {
-    // Type switch with automatic routing
+	HandleNavigate(result *screens.NavigateResult) tea.Cmd
+	HandleCancel(result *screens.CancelResult) tea.Cmd
+	HandleSubmit(result *screens.SubmitResult) tea.Cmd
+	HandleError(result *screens.ErrorResult) tea.Cmd
 }
 ```
 
+#### When to Use
+
+Implement ScreenResultHandler when your intent uses screen-based architecture and needs to:
+- Handle navigation results (user selected something)
+- Handle cancel results (user pressed Escape)
+- Handle submit results (user submitted a form)
+- Handle error results (screen encountered an error)
+
 #### Benefits
 
-- ✅ Eliminates repetitive type switching
-- ✅ Forces implementation of all result handlers
-- ✅ Compile-time safety
+- ✅ Eliminates repetitive type switching (20+ lines → 1 line)
+- ✅ Forces implementation of all result handlers (compile-time safety)
+- ✅ Clear contract for screen result handling
 - ✅ Easy to test (mock interface)
 
-#### Estimated Impact
+#### Dispatcher
+
+```go
+// ScreenResultDispatcher routes screen results to appropriate handler methods
+type ScreenResultDispatcher struct {
+	handler ScreenResultHandler
+}
+
+func (d *ScreenResultDispatcher) Dispatch(result screens.ScreenResult) tea.Cmd {
+	// Automatically routes to correct handler based on result type
+}
+```
+
+#### Implementation Example
+
+```go
+// 1. Add interface compliance check
+var _ ScreenResultHandler = (*YourIntent)(nil)
+
+// 2. Implement all handler methods
+func (i *YourIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd { ... }
+func (i *YourIntent) HandleCancel(result *screens.CancelResult) tea.Cmd { ... }
+func (i *YourIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd { ... }
+func (i *YourIntent) HandleError(result *screens.ErrorResult) tea.Cmd { ... }
+
+// 3. Replace handleScreenResult with dispatcher
+func (i *YourIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	return NewScreenResultDispatcher(i).Dispatch(result)
+}
+```
+
+#### Actual Impact
 
 - **Lines saved per intent**: ~30 lines
-- **Intents affected**: 3 (GenerateCV, ManageSkills, BrowseTimeline)
+- **Intents migrated**: 3 (GenerateCV, ManageSkills, BrowseTimeline)
 - **Total savings**: ~90 lines
+- **Tests added**: 17 comprehensive tests
 
 ---
 
-### 4. Modal Lifecycle Management 🔄
+---
 
-**Status**: Pattern Identified, Not Yet Extracted
+## Documented Patterns (Convention-Based)
+
+These patterns have been analyzed and determined to be better suited for documentation and convention rather than code extraction. The patterns are already consistent across the codebase and extraction would add more complexity than value.
+
+### 4. State Transition Helpers 📖
+
+**Status**: Documented as Best Practice
+**Documentation**: `docs/development/STATE_TRANSITION_PATTERNS.md`
+**Used By**: ManageSkills (4 helpers), others use inline transitions
+
+#### Pattern Description
+
+State transition helpers encapsulate the logic for moving between intent states, including:
+- Setting the new state
+- Initializing resources for the new state
+- Cleaning up old state resources
+- Returning initialization commands
+
+#### When to Use
+
+**Extract helpers when**:
+- Intent has **4+ states**
+- Transitions require initialization or cleanup
+- Same transition is used from multiple places
+- Transition logic is **>15 lines**
+
+**Use inline when**:
+- Intent has **≤3 states**
+- Transitions are simple (**<10 lines**)
+- Each transition is unique
+
+#### Reference Implementation
+
+See `ManageSkillsIntent` (`manage_skills_intent.go` lines 2189-2264):
+```go
+func (i *ManageSkillsIntent) transitionToListScreen() tea.Cmd
+func (i *ManageSkillsIntent) transitionToDetailScreen() tea.Cmd
+func (i *ManageSkillsIntent) transitionToFormScreen(skill *domain.Skill) tea.Cmd
+func (i *ManageSkillsIntent) transitionToDeleteScreen(skill *domain.Skill) tea.Cmd
+```
+
+#### Why Not Extracted to Code
+
+✅ Already consistent across intents that need it  
+✅ Highly specific to each intent's state machine  
+✅ Extraction would add abstraction overhead  
+✅ Value is in convention and documentation, not reusable code
+
+**Action**: Follow documented pattern when creating complex intents
+
+---
+
+### 5. Modal Lifecycle Management 📖
+
+**Status**: Documented in Existing Guides
+**Documentation**: `docs/MODAL_PATTERNS.md`
 **Used By**: ManageSkills (3 modals), BrowseTimeline (5 modals)
 
-#### Current Pattern
+#### Pattern Description
 
-Every modal has similar update logic:
+Modal lifecycle follows a consistent pattern:
+1. Check if modal is visible
+2. Update modal with message
+3. Check if modal closed
+4. If completed, process data
+5. Clean up modal reference
+
+#### Current Pattern (Already Consistent)
 
 ```go
-func (i *Intent) handleXModalUpdate(msg tea.Msg) tea.Cmd {
-    var cmd tea.Cmd
-    i.xModal, cmd = i.xModal.Update(msg)
-    
-    if i.xModal.WasAccepted() {
-        data := i.xModal.GetData()
+if i.xModal != nil && i.xModal.IsVisible() {
+    cmd, completed, data := i.xModal.Update(msg)
+    if !i.xModal.IsVisible() {
+        // Modal closed
+        if completed && data != nil {
+            // Process data
+            i.processModalData(data)
+        }
+        // Cleanup
         i.xModal = nil
-        return i.applyModalData(data)
     }
-    
-    if i.xModal.WasCancelled() {
-        i.xModal = nil
-        return nil
-    }
-    
     return cmd
 }
 ```
 
-#### Proposed Interface
+#### Reference Implementations
 
-```go
-// ModalHandler defines the lifecycle of a modal
-type ModalHandler interface {
-    Update(msg tea.Msg) tea.Cmd
-    WasAccepted() bool
-    WasCancelled() bool
-    GetData() interface{}
-}
+**ManageSkills**: 3 modals (filter, sort, search) - lines 577-755  
+**BrowseTimeline**: 5 modals (quickAdd, edit, delete, filter, viewDetail) - lines 184-342
 
-// ModalLifecycleManager handles common modal update logic
-type ModalLifecycleManager struct {
-    onAccept func(data interface{}) tea.Cmd
-    onCancel func() tea.Cmd
-}
+#### Why Not Extracted to Code
 
-func (m *ModalLifecycleManager) HandleUpdate(
-    modal ModalHandler, 
-    msg tea.Msg,
-) (ModalHandler, tea.Cmd)
-```
+✅ Already documented in `MODAL_PATTERNS.md`  
+✅ Pattern is consistent across all 8 modals  
+✅ Only ~8-12 common lines per modal (visibility check + cleanup)  
+✅ Data processing logic varies significantly per modal  
+✅ Extraction would obscure rather than clarify
 
-#### Benefits
-
-- ✅ Reduces modal boilerplate (15 lines → 3 lines)
-- ✅ Consistent modal lifecycle
-- ✅ Handles cleanup automatically
-- ✅ Easy to test
-
-#### Estimated Impact
-
-- **Lines saved per modal**: ~12 lines
-- **Modals affected**: 8 (3 ManageSkills + 5 BrowseTimeline)
-- **Total savings**: ~96 lines
+**Action**: Follow documented pattern in `MODAL_PATTERNS.md`
 
 ---
 
-### 5. State Transition Helpers 🔄
+### 6. Error Handling Pattern 📖
 
-**Status**: Pattern Identified, Not Yet Extracted
-**Used By**: ManageSkills, potentially others
-
-#### Current Pattern
-
-```go
-func (i *ManageSkillsIntent) transitionToListScreen() tea.Cmd {
-    i.currentState = SkillsStateList
-    i.selectedSkill = nil
-    i.eventDetail = nil
-    // ... more cleanup
-    return i.reloadSkills()
-}
-
-func (i *ManageSkillsIntent) transitionToDetailScreen() tea.Cmd {
-    i.currentState = SkillsStateDetail
-    return i.loadSkillEvents(i.selectedSkill.ID)
-}
-```
-
-#### Proposed Pattern
-
-```go
-// StateTransition encapsulates a state change with cleanup
-type StateTransition struct {
-    targetState interface{}
-    cleanup     []func()
-    initCmd     tea.Cmd
-}
-
-func (i *Intent) Transition(transition StateTransition) tea.Cmd {
-    // Run cleanup functions
-    for _, fn := range transition.cleanup {
-        fn()
-    }
-    
-    // Set new state
-    i.currentState = transition.targetState
-    
-    // Return initialization command
-    return transition.initCmd
-}
-```
-
-#### Benefits
-
-- ✅ Declarative state transitions
-- ✅ Consistent cleanup patterns
-- ✅ Easier to track state changes
-- ✅ Testable state machine
-
-#### Estimated Impact
-
-- **Lines saved per intent**: ~20-40 lines
-- **Intents affected**: All intents with multiple states
-- **Total savings**: ~200+ lines across project
-
----
-
-### 6. Error Handling Pattern 🔄
-
-**Status**: Pattern Identified, Not Yet Extracted
+**Status**: Simple Pattern, No Extraction Needed
 **Used By**: All intents
 
-#### Current Pattern
+---
 
+#### Pattern Description
+
+Error handling in intents typically involves:
+1. Creating an `IntentError` with code, message, and cause
+2. Setting the error on the intent result or state
+3. Optionally transitioning to error state or recovery state
+
+#### Current Patterns (Already Simple)
+
+**Pattern A: Simple setFailed helper** (1 line)
 ```go
-func (i *Intent) handleErrorInternal(err error) tea.Cmd {
-    i.state = StateError
-    i.error = err
-    return nil
+func (i *Intent) setFailed(code, message string, cause error) {
+    i.result = NewFailedResult[*IntentResult](code, message, cause)
+    i.active = false
 }
 
-func (i *Intent) handleErrorResult(result *screens.ErrorResult) tea.Cmd {
-    i.state = StateError
-    i.error = result.Err
-    return nil
+// Usage
+i.setFailed("VALIDATION_ERROR", "Invalid input", err)
+```
+
+**Pattern B: Direct error assignment**
+```go
+i.state.error = &IntentError{
+    Code:    "FORM_ERROR",
+    Message: err.Error(),
+    Cause:   err,
 }
 ```
 
-#### Proposed Interface
-
+**Pattern C: Error with recovery** (ManageSkills)
 ```go
-// ErrorHandler defines how an intent handles errors
-type ErrorHandler interface {
-    SetError(err error)
-    GetError() error
-    ClearError()
-    IsErrorState() bool
-}
-
-// StandardErrorBehavior provides default error handling
-type StandardErrorBehavior struct {
-    currentError error
-    setState     func(state interface{})
-}
-
-func (s *StandardErrorBehavior) HandleError(err error) tea.Cmd {
-    s.currentError = err
-    s.setState(StateError)
-    return nil
+func (i *ManageSkillsIntent) handleErrorInternal(err error) tea.Cmd {
+    i.result = &IntentResult[*ManageSkillsResult]{
+        Status: Failed,
+        Error: &IntentError{
+            Code:    "SCREEN_ERROR",
+            Message: err.Error(),
+            Cause:   err,
+        },
+    }
+    return i.transitionToListScreen()  // Recovery
 }
 ```
 
-#### Benefits
+#### Why Not Extracted to Code
 
-- ✅ Consistent error handling
-- ✅ Error state management
-- ✅ Recovery patterns
-- ✅ Error logging/tracking
+✅ Already concise (1-10 lines per intent)  
+✅ `NewFailedResult` helper already exists  
+✅ Recovery strategy varies significantly per intent  
+✅ Pattern is straightforward and well-understood
 
-#### Estimated Impact
+**Action**: Use `NewFailedResult` helper or direct assignment as appropriate
 
-- **Lines saved per intent**: ~10-15 lines
-- **Intents affected**: All (11 intents)
-- **Total savings**: ~130 lines
+---
+
+## Candidate Patterns for Future Extraction
+
+No patterns currently identified for extraction. New patterns should be added here as they emerge and meet the Rule of Three (used in 3+ places).
 
 ---
 
@@ -417,7 +410,7 @@ func (s *StandardErrorBehavior) HandleError(err error) tea.Cmd {
 |---------|-----------------|---------------|-------------|---------------|--------|
 | **FilterBehavior** | ✅ Implemented | ✅ Implemented | ❌ N/A | ❌ N/A | ❌ N/A |
 | **MessageInterceptor** | ⚠️ Partial | ✅ Full (7 handlers) | ⚠️ Partial | ⚠️ Partial | ⚠️ Partial |
-| **Screen Result** | ✅ Has pattern | ✅ Has pattern | ✅ Has pattern | ❌ N/A | ⚠️ Some |
+| **Screen Result** | ✅ Implemented | ✅ Implemented | ✅ Implemented | ❌ N/A | ⚠️ Some |
 | **Modal Lifecycle** | ✅ 5 modals | ✅ 3 modals | ❌ N/A | ⚠️ 3 modals | ⚠️ Some |
 | **State Transition** | ⚠️ Simple | ✅ Complex (4 helpers) | ⚠️ Simple | ⚠️ Medium | ⚠️ Varies |
 | **Error Handling** | ✅ Has pattern | ✅ Has pattern | ✅ Has pattern | ✅ Has pattern | ✅ All |
@@ -609,30 +602,59 @@ type ContextualHelp interface {
 |---------|---------------|-------------|------------------|
 | FilterBehavior | 2 | ~50 per intent | High |
 | MessageInterceptor | ~5 (partial) | ~10 per handler | High |
-| **Total** | - | **~150 lines** | - |
+| **Screen Result Handling** | **3** | **~30 per intent** | **High** |
+| **Total** | - | **~240 lines** | - |
 
-### Projected Savings (After All Extractions)
+### Analysis Results: Documented vs Extracted
 
-| Pattern | Intents Affected | Lines per Intent | Total Savings |
-|---------|------------------|------------------|---------------|
-| Screen Result Handling | 3 | 30 | 90 |
-| Modal Lifecycle | 2 | 96 | 192 |
-| State Transitions | 8 | 25 | 200 |
-| Error Handling | 11 | 12 | 132 |
-| **Total Projected** | - | - | **~614 lines** |
+After thorough analysis of remaining candidate patterns, we determined that:
+
+| Pattern | Initial Estimate | Actual Analysis | Decision |
+|---------|------------------|-----------------|----------|
+| Modal Lifecycle | 192 lines (8 modals) | ~8-12 lines common code per modal | ✅ Document (already consistent) |
+| State Transitions | 200 lines (8 intents) | Highly intent-specific | ✅ Document (best practice guide) |
+| Error Handling | 132 lines (11 intents) | Already concise (1-10 lines) | ✅ Document (use existing helpers) |
+
+**Key Insight**: Not all duplication requires code extraction. Sometimes **consistency through documentation and convention** provides more value than abstraction.
+
+### Final Extraction Summary
+
+| Category | Patterns | Lines Saved | Approach |
+|----------|----------|-------------|----------|
+| **Extracted to Code** | 3 (FilterBehavior, MessageInterceptor, ScreenResultHandler) | ~240 lines | Reusable interfaces + helpers |
+| **Documented as Convention** | 3 (State Transitions, Modal Lifecycle, Error Handling) | N/A | Best practice guides + references |
+| **Total Patterns Addressed** | **6** | **~240 lines** | **Mixed approach (optimal)** |
 
 ---
 
 ## References
 
+### Extracted Patterns (Code)
+
 - **FilterBehavior Interface**: `internal/cli/intents/filter_behavior.go`
 - **MessageInterceptor**: `internal/cli/intents/view_helpers.go` lines 446-632
+- **ScreenResultHandler Interface**: `internal/cli/intents/screen_result_behavior.go`
+
+### Documented Patterns (Convention)
+
+- **State Transition Helpers**: `docs/development/STATE_TRANSITION_PATTERNS.md`
+- **Modal Lifecycle**: `docs/MODAL_PATTERNS.md`
+- **Error Handling**: Use `NewFailedResult` helper (see intents for examples)
+
+### Reference Implementations
+
+- **BrowseTimeline**: `internal/cli/intents/browse_timeline_intent.go` (all 12 patterns)
+- **ManageSkills**: `internal/cli/intents/manage_skills_intent.go` (10/12 patterns + transition helpers)
+- **GenerateCV**: `internal/cli/intents/generate_cv_intent.go` (screen result handling)
+
+### Related Documentation
+
 - **Intent Patterns Library**: `docs/development/INTENT_PATTERNS_LIBRARY.md`
-- **BrowseTimeline (Reference)**: `internal/cli/intents/browse_timeline_intent.go`
-- **ManageSkills (Example)**: `internal/cli/intents/manage_skills_intent.go`
+- **Pattern Extraction Summary**: `docs/development/PATTERN_EXTRACTION_SUMMARY.md`
+- **TUI Developer Guide**: `docs/TUI_DEVELOPER_GUIDE.md`
 
 ---
 
-**Last Updated**: 2026-01-14
-**Next Review**: After next intent refactoring
+**Last Updated**: 2026-01-14  
+**Next Review**: After new pattern emergence (3+ uses)  
 **Owner**: KaRiya TUI Architecture Team
