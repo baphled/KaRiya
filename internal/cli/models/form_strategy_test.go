@@ -104,8 +104,8 @@ var _ = Describe("FormModel - Strategy System", func() {
 				form.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
 			}
 
-			// Navigate to submit (6 tabs)
-			for i := 0; i < 6; i++ {
+			// Navigate to submit (7 tabs)
+			for i := 0; i < 7; i++ {
 				form.Update(tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -144,9 +144,10 @@ var _ = Describe("FormModel - Strategy System", func() {
 				form.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
 			}
 
-			// Navigate to submit (skip tags and categories)
+			// Navigate to submit (skip tags, categories, and skills)
 			form.Update(tea.KeyMsg{Type: tea.KeyTab}) // Tags
 			form.Update(tea.KeyMsg{Type: tea.KeyTab}) // Categories
+			form.Update(tea.KeyMsg{Type: tea.KeyTab}) // Skills
 			form.Update(tea.KeyMsg{Type: tea.KeyTab}) // Submit
 
 			// Submit
@@ -179,7 +180,7 @@ var _ = Describe("FormModel - Strategy System", func() {
 			}
 
 			// Navigate to submit
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 6; i++ {
 				form.Update(tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -208,7 +209,7 @@ var _ = Describe("FormModel - Strategy System", func() {
 			}
 
 			// Navigate to submit
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 6; i++ {
 				form.Update(tea.KeyMsg{Type: tea.KeyTab})
 			}
 

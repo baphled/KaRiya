@@ -111,7 +111,7 @@ var _ = Describe("FormModel", func() {
 			testForm.Init()
 
 			// Navigate to mode field (5 tabs)
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -128,7 +128,7 @@ var _ = Describe("FormModel", func() {
 			testForm.Init()
 
 			// Navigate to mode field (5 tabs)
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -147,7 +147,7 @@ var _ = Describe("FormModel", func() {
 			testForm.Init()
 
 			// Navigate to mode field
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -169,7 +169,7 @@ var _ = Describe("FormModel", func() {
 			testForm = typeText(testForm, "Test event")
 
 			// Navigate to submit button (7 tabs)
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -213,7 +213,7 @@ var _ = Describe("FormModel", func() {
 			testForm.Init()
 
 			// Navigate to submit button (7 tabs)
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 7; i++ {
 				testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -311,7 +311,7 @@ var _ = Describe("FormModel", func() {
 				Expect(form.GetInputValue(0)).To(Equal("Led a team to deliver critical project"))
 
 				// Navigate to submit button (7 tabs total: Date, Company, Project, Tags, Categories, Submit)
-				for i := 0; i < 6; i++ {
+				for i := 0; i < 7; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -335,7 +335,7 @@ var _ = Describe("FormModel", func() {
 				Expect(form.GetInputValue(0)).To(Equal("Completed important task"))
 
 				// Navigate to submit (7 tabs total: Date, Company, Project, Tags, Categories, Submit)
-				for i := 0; i < 6; i++ {
+				for i := 0; i < 7; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -355,7 +355,7 @@ var _ = Describe("FormModel", func() {
 		Context("with invalid input", func() {
 			It("should fail with empty text field", func() {
 				// Navigate to submit without filling text
-				for i := 0; i < 6; i++ {
+				for i := 0; i < 7; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -378,7 +378,7 @@ var _ = Describe("FormModel", func() {
 				}
 
 				// Navigate to submit
-				for i := 0; i < 6; i++ {
+				for i := 0; i < 7; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -402,7 +402,7 @@ var _ = Describe("FormModel", func() {
 				form = typeText(form, "2099-12-31")
 
 				// Navigate to submit (5 tabs: Date→Company→Project→Tags→Categories→Submit)
-				for i := 0; i < 5; i++ {
+				for i := 0; i < 6; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -425,7 +425,7 @@ var _ = Describe("FormModel", func() {
 				form = typeText(form, "invalid-date")
 
 				// Navigate to submit (5 more tabs from date field)
-				for i := 0; i < 5; i++ {
+				for i := 0; i < 6; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -452,7 +452,7 @@ var _ = Describe("FormModel", func() {
 				form = typeText(form, oldDate)
 
 				// Navigate to submit (mode is already Timeline by default, 4 tabs from date field)
-				for i := 0; i < 6; i++ {
+				for i := 0; i < 7; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -477,7 +477,7 @@ var _ = Describe("FormModel", func() {
 				form = typeText(form, recentDate)
 
 				// Navigate to submit (4 more tabs from date field)
-				for i := 0; i < 6; i++ {
+				for i := 0; i < 7; i++ {
 					form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -542,7 +542,7 @@ var _ = Describe("FormModel", func() {
 			form = typeText(form, "Integration test event")
 
 			// Navigate to submit
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 7; i++ {
 				_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -567,7 +567,7 @@ var _ = Describe("FormModel", func() {
 			form = typeText(form, "Mode test event")
 
 			// Navigate to mode field (6 tabs: TextField→DateField→CompanyField→ProjectField→TagsField→CategoriesField→ModeField)
-			for i := 0; i < 6; i++ {
+			for i := 0; i < 7; i++ {
 				_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			}
 
@@ -616,7 +616,7 @@ var _ = Describe("FormModel", func() {
 				form = typeText(form, "Led technical implementation")
 
 				// Navigate to submit (skip through all fields including tags)
-				for i := 0; i < 6; i++ {
+				for i := 0; i < 7; i++ {
 					_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 				}
 
@@ -761,7 +761,7 @@ var _ = Describe("FormModel", func() {
 						}
 
 						// Navigate to submit
-						for i := 0; i < 6; i++ {
+						for i := 0; i < 7; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
@@ -835,7 +835,7 @@ var _ = Describe("FormModel", func() {
 						testForm = typeText(testForm, "Manual entry event")
 
 						// Navigate to mode field (6 tabs from text)
-						for i := 0; i < 6; i++ {
+						for i := 0; i < 7; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
@@ -871,7 +871,7 @@ var _ = Describe("FormModel", func() {
 						testForm = typeText(testForm, "   ")
 
 						// Navigate to submit button (7 tabs)
-						for i := 0; i < 6; i++ {
+						for i := 0; i < 7; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
@@ -885,7 +885,7 @@ var _ = Describe("FormModel", func() {
 						Expect(testForm.Error()).To(HaveOccurred())
 
 						// Navigate back to text field (7 shift+tabs)
-						for i := 0; i < 6; i++ {
+						for i := 0; i < 7; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyShiftTab})
 						}
 
@@ -897,7 +897,7 @@ var _ = Describe("FormModel", func() {
 						testForm = typeText(testForm, "Corrected event text")
 
 						// Navigate to submit button (7 tabs)
-						for i := 0; i < 6; i++ {
+						for i := 0; i < 7; i++ {
 							testForm, _ = updateForm(testForm, tea.KeyMsg{Type: tea.KeyTab})
 						}
 
