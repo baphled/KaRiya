@@ -1573,37 +1573,9 @@ func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) te
 	return nil
 }
 
-// transitionToReviewScreen transitions to the review screen.
-func (i *CaptureEventIntent) transitionToReviewScreen() tea.Cmd {
-	// Update intent state
-	i.state.currentState = CaptureStateReview
-
-	// Create breadcrumbs
-	breadcrumbs := []string{"Main Menu", "Capture Event", "Review"}
-
-	// Create review screen with captured event and inferred data
-	i.activeScreen = captureScreens.NewEventReviewScreen(
-		breadcrumbs,
-		i.state.reviewState.Event,
-		i.state.reviewState.InferredBursts,
-		i.state.reviewState.InferredFacts,
-	)
-
-	// Get terminal info
-	termInfo := i.GetTerminalInfo()
-	width, height := 120, 40 // defaults
-	if termInfo != nil {
-		width = termInfo.Width
-		height = termInfo.Height
-	}
-
-	// Pass context to screen
-	i.activeScreen.SetTerminalInfo(width, height)
-	i.activeScreen.SetTheme(i.Theme())
-	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
-
-	return nil
-}
+// TODO: Implement transitionToReviewScreen when review step is enabled.
+// Currently form goes directly to submit (see HandleSubmit line 1444).
+// Will use captureScreens.NewEventReviewScreen() when implemented.
 
 // transitionToSubmitScreen transitions to the submit screen.
 func (i *CaptureEventIntent) transitionToSubmitScreen() tea.Cmd {

@@ -28,13 +28,6 @@ type StrategySelectScreen struct {
 	*base.BaseSelectScreen[types.CaptureStrategy]
 }
 
-// strategyItem represents a strategy with its label and description for rendering.
-type strategyItem struct {
-	strategy    types.CaptureStrategy
-	label       string
-	description string
-}
-
 // NewStrategySelectScreen creates a new StrategySelectScreen.
 //
 // Parameters:
