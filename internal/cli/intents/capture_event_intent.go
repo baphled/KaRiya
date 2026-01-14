@@ -152,14 +152,12 @@ func (i *CaptureEventIntent) Init() tea.Cmd {
 		i.activeScreen.SetTheme(i.Theme())
 		i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
 
-		// No Init() method for screens - they're ready immediately
-		return nil
-	}
-
-	// LEGACY: Fall back to old initialization
-	// If this is an edit operation, initialize the form with the previous event's data.
-	if i.context.PreviousEvent != nil {
-		i.initializeFormForEdit()
+		// Initialize the screen if it has an Init method (needed for forms)
+		// This is critical for screens that wrap forms - without Init(),
+		// the underlying form won't be able to accept input
+		if initable, ok := i.activeScreen.(interface{ Init() tea.Cmd }); ok {
+			return initable.Init()
+		}
 		return nil
 	}
 
@@ -1568,8 +1566,11 @@ func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) te
 	i.activeScreen.SetTheme(i.Theme())
 	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
 
-	// Return command to initialize the form (EventFormScreen wraps CaptureForm)
-	// The screen will call Init() on the underlying form
+	// Initialize the screen if it has an Init method (critical for forms!)
+	// Without this, the underlying huh form won't accept input
+	if initable, ok := i.activeScreen.(interface{ Init() tea.Cmd }); ok {
+		return initable.Init()
+	}
 	return nil
 }
 
