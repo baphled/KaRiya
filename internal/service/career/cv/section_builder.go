@@ -320,8 +320,8 @@ func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPer
 	}
 	sort.Strings(categories)
 
-	// Create bullets (one per category)
-	bullets := make([]*career.CVBullet, 0, len(categories))
+	// Create one group per category, with category as header
+	groups := make([]*career.SectionContentGroup, 0, len(categories))
 	for _, category := range categories {
 		skillNames := categoryMap[category]
 
@@ -330,21 +330,23 @@ func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPer
 			skillNames = skillNames[:limitPerGroup]
 		}
 
-		// Format: "Backend: Go, PostgreSQL, Docker"
-		text := category + ": " + strings.Join(skillNames, ", ")
+		// Create bullets for each skill in this category
+		bullets := make([]*career.CVBullet, 0, len(skillNames))
+		for _, skillName := range skillNames {
+			bullets = append(bullets, &career.CVBullet{
+				ID:   uuid.New().String(),
+				Text: skillName,
+			})
+		}
 
-		bullets = append(bullets, &career.CVBullet{
-			ID:   uuid.New().String(),
-			Text: text,
+		// Add group with category as header
+		groups = append(groups, &career.SectionContentGroup{
+			Header:  category,
+			Bullets: bullets,
 		})
 	}
 
-	return []*career.SectionContentGroup{
-		{
-			Header:  "",
-			Bullets: bullets,
-		},
-	}
+	return groups
 }
 
 // buildSummarySection creates a brief professional summary
