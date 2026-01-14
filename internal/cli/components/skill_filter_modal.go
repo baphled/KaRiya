@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
+	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
 // SkillFilters represents the current filter state for skills.
@@ -280,4 +281,28 @@ func (m *SkillFilterModal) ToSkillFilters() *SkillFilters {
 	}
 
 	return filters
+}
+
+// RenderOverlay renders the filter modal as an overlay on top of the base view.
+// This follows the bubbletea-overlay pattern used in BrowseTimeline modals.
+func (m *SkillFilterModal) RenderOverlay(baseView string) string {
+	if !m.visible {
+		return baseView
+	}
+
+	// Create static view model for modal content
+	modalContent := staticViewModel{content: m.View()}
+	bgModel := staticViewModel{content: baseView}
+
+	// Use bubbletea-overlay to composite the modal on top of base view
+	overlayModel := overlay.New(
+		modalContent,   // Foreground: the filter form
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (avoid footer overlap)
+	)
+
+	return overlayModel.View()
 }
