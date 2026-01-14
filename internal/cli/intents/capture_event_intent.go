@@ -256,6 +256,7 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 			i.state.submitModal = nil
 			// Instead of completing, return to Review state
 			// This allows user to review inferred bursts/facts after save
+			i.state.postSaveReview = true // Mark as post-save review
 			i.state.currentState = CaptureStateReview
 		}
 		return nil
@@ -558,7 +559,20 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+s", "enter":
-			// Confirm review and submit
+			// Check if this is post-save review or pre-save review
+			if i.state.postSaveReview {
+				// Post-save review: user is done reviewing enriched data, complete intent
+				result := &CaptureEventResult{
+					Event:          i.state.reviewState.Event,
+					Bursts:         i.state.reviewState.InferredBursts,
+					Facts:          i.state.reviewState.InferredFacts,
+					AcceptedFields: make(map[string]bool),
+					RejectedFields: i.state.reviewState.RejectedItems,
+				}
+				i.setCompleted(result)
+				return nil
+			}
+			// Pre-save review: proceed to submit
 			i.state.currentState = CaptureStateSubmit
 			return i.performSubmit()
 
@@ -1079,10 +1093,14 @@ func (i *CaptureEventIntent) buildReviewBaseView() string {
 		sb.WriteString("│                                                │\n")
 	}
 
-	// Inferred bursts
+	// Inferred bursts - show both inferred and accepted
 	sb.WriteString("│ Inferred Bursts:                               │\n")
-	if len(i.state.reviewState.AcceptedBursts) > 0 {
-		for idx, burst := range i.state.reviewState.AcceptedBursts {
+	bursts := i.state.reviewState.InferredBursts
+	if len(bursts) == 0 {
+		bursts = i.state.reviewState.AcceptedBursts
+	}
+	if len(bursts) > 0 {
+		for idx, burst := range bursts {
 			burstTitle := burst.Name
 			if len(burstTitle) > 35 {
 				burstTitle = burstTitle[:32] + "..."
@@ -1094,10 +1112,14 @@ func (i *CaptureEventIntent) buildReviewBaseView() string {
 	}
 	sb.WriteString("│                                                │\n")
 
-	// Inferred facts
+	// Inferred facts - show both inferred and accepted
 	sb.WriteString("│ Inferred Facts:                                │\n")
-	if len(i.state.reviewState.AcceptedFacts) > 0 {
-		for idx, fact := range i.state.reviewState.AcceptedFacts {
+	facts := i.state.reviewState.InferredFacts
+	if len(facts) == 0 {
+		facts = i.state.reviewState.AcceptedFacts
+	}
+	if len(facts) > 0 {
+		for idx, fact := range facts {
 			desc := fact.Text
 			if len(desc) > 35 {
 				desc = desc[:32] + "..."

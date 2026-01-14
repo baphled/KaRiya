@@ -152,6 +152,9 @@ type CaptureEventModel struct {
 	metadataModal *models.MetadataEditorModelNew
 	burstModal    *models.BurstSuggestionModelNew
 	factModal     *models.FactEditorModelNew
+
+	// postSaveReview indicates we're reviewing enriched data after save (not pre-save review)
+	postSaveReview bool
 }
 
 // CaptureEventStates for navigation.
