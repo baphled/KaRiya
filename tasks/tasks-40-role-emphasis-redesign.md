@@ -1057,18 +1057,147 @@ Frontend
 - ✅ Categories from skill domain model (backend, frontend, database, devops, etc.)
 - ✅ Skills without categories go to "Other" group
 
-### 🚀 Next Steps (Phase 12)
+### 🚀 Phase 12: Documentation Updates ✅
 
-**Goal**: Documentation updates
+**Status**: COMPLETE (2026-01-14)
 
-**Estimated Time**: 1-2 hours
+**Goal**: Documentation updates for technology-focused system
 
-**Tasks**:
-1. Update `docs/guides/CV_VARIANTS_GUIDE.md` - Rewrite for dynamic variant system
-2. Update `docs/guides/CV_GENERATION_GUIDE.md` - Update workflow diagrams
-3. Document new workflow (Profile → ... → Skills Config → Generate)
-4. Explain Language Agnostic / Generalist / Specialist variants
-5. Document skills section formatting (flat vs grouped)
-6. Add examples for each variant type
-7. Update bullet filtering explanation (skill match bonus)
-8. Commit: `docs(docs): update variant and generation guides for technology-focused system`
+**Completed Work**:
+1. ✅ Created new `docs/guides/CV_VARIANTS_GUIDE.md` (360 lines)
+   - Complete guide to technology-focused variant system
+   - Explains Language Agnostic, Generalist, Specialist variants
+   - Focus area selection guide (Backend, Frontend, Fullstack, DevOps)
+   - Skills section formatting (flat vs grouped)
+   - Variant naming convention
+   - Length formats (Ultra Short, Short, Standard, Full)
+   - Decision tree for choosing the right variant
+   - Example scenarios for each variant type
+   - Best practices and anti-patterns
+
+2. ✅ Updated `docs/guides/CV_GENERATION_GUIDE.md` (+242 lines)
+   - Added comprehensive "CV Generation Workflow" section
+   - Step-by-step guide for all 10 workflow states
+   - Keyboard shortcuts for each state
+   - Detailed explanations of technology extraction
+   - Technology focus selection guidance
+   - Skills configuration UI documentation
+   - Preview and export workflow
+
+**Documentation Created** (602 new lines):
+- CV_VARIANTS_GUIDE.md: Complete guide to variant system
+- CV_GENERATION_GUIDE.md: Updated with new workflow section
+
+**Key Topics Documented**:
+- Technology-focused variants (Language Agnostic, Generalist, Specialist)
+- Focus area selection and suggestions
+- Skills section configuration (format + limit)
+- Bullet filtering with skill match bonus (+0.15)
+- Complete workflow from profile to export
+- Keyboard navigation for all states
+- Variant naming convention (e.g., `specialist_ruby_backend_full`)
+
+**Commits**:
+- `30a9955` - docs(docs): add CV variants guide and update generation workflow
+
+---
+
+## 🎉 Task 40: COMPLETE
+
+**Status**: ✅ **ALL PHASES COMPLETE**
+
+**Summary**: Successfully replaced role emphasis system with technology-focused CV generation workflow.
+
+### What Was Delivered
+
+**12 Phases Completed**:
+1. ✅ Variant system foundation (dynamic variant generation)
+2. ✅ Technology extraction flow (automatic skill analysis)
+3. ✅ Technology focus selection UI (Language Agnostic/Generalist/Specialist)
+4. ✅ Technology selection UI (multi-select for Generalist, single for Specialist)
+5. ✅ Focus area selection UI (Backend/Frontend/Fullstack/DevOps with suggestions)
+6. ✅ Dynamic variant generation (replaces static variant IDs)
+7. ✅ Technology-based bullet filtering (+0.15 skill match bonus)
+8. ✅ Skills section population (event skills with prioritization)
+9. ✅ Skills configuration UI (format: flat/grouped, limit: 0-50)
+10. ✅ Improved grouped skills format (category headers)
+11. ✅ Bug fixes and integration (3 bug fixes, full data flow)
+12. ✅ Documentation updates (602 lines of comprehensive guides)
+
+### Test Coverage
+
+**1,498+ tests passing** (100% pass rate):
+- 247 CV service tests
+- 1,251 intent tests (including 21 new skills config tests)
+- Zero failures
+- Zero race conditions
+
+### Files Created/Modified
+
+**Created** (3 files):
+- `internal/cli/intents/generate_cv_skills_config_test.go` (21 tests)
+- `docs/guides/CV_VARIANTS_GUIDE.md` (360 lines)
+- `internal/service/career/cv/bullet_generator_technology_test.go` (12 tests)
+
+**Modified** (12 files):
+- `internal/cli/intents/generate_cv.go` - New state and model fields
+- `internal/cli/intents/generate_cv_intent.go` - UI handlers and views
+- `internal/cli/intents/generate_cv_focus_area_test.go` - Updated tests
+- `internal/service/career/cv/section_builder.go` - Improved grouped format
+- `internal/service/career/cv/bullet_generator.go` - Technology filtering
+- `internal/service/career/cv/cv_generation_service.go` - Integration
+- `internal/domain/career/cv.go` - CVConfig with technology fields
+- `docs/guides/CV_GENERATION_GUIDE.md` (+242 lines)
+- `tasks/tasks-40-role-emphasis-redesign.md` (this file)
+- And 3 more service/test files
+
+### Commits (12 total)
+
+1. `6911512` - feat(service): implement dynamic variant generation system
+2. `7a1fcb8` - feat(intents): add technology extraction flow
+3. `f3d1e6b` - feat(intents): add technology focus selection UI
+4. `335923d` - feat(intents): add technology selection UI
+5. `93cf5ac` - feat(intents): add focus area selection UI
+6. `cdbe6b2` - feat(service): add technology-based bullet filtering
+7. `17379f1` - feat(intents): connect technology filtering to CV generation
+8. `51bffef` - feat(service): rewrite skills section to use event skills
+9. `7394bfa` - fix(service): lookup skill names from IDs in skills section
+10. `f591d51` - feat(service): add flat/grouped skills formatting with limits
+11. `00f1975` - feat(intents): add skills configuration selection to CV generation workflow
+12. `724b640` - feat(service): improve grouped skills format to use category headers
+13. `dbdbfa8` - docs(docs): update task 40 with Phase 11 completion status
+14. `30a9955` - docs(docs): add CV variants guide and update generation workflow
+
+### User Benefits
+
+Users can now:
+1. ✅ Choose presentation style (Language Agnostic, Generalist, Specialist)
+2. ✅ Select specific technologies to highlight (or none)
+3. ✅ Get AI-suggested focus areas based on skill distribution
+4. ✅ Configure skills section format (flat or grouped)
+5. ✅ Control skills display limit (0-50)
+6. ✅ See technology-boosted bullets (+0.15 for selected techs)
+7. ✅ View skills organized under category headers
+8. ✅ Generate role and audience-specific CVs dynamically
+9. ✅ Export in multiple formats (text, markdown, YAML)
+10. ✅ Access comprehensive documentation with examples
+
+### Breaking Changes
+
+**For Users**:
+- Old CV configs referencing role emphasis variants will not work
+- Must regenerate CVs using new workflow
+
+**For Developers**:
+- `RoleEmphasis` type removed
+- All 16 old static variants removed
+- New `TechnologyFocus` and `FocusArea` types added
+- Dynamic variant generation replaces static variant lookup
+
+### Production Ready
+
+✅ All phases complete  
+✅ All tests passing  
+✅ Zero regressions  
+✅ Comprehensive documentation  
+✅ Ready for merge to `next` branch
