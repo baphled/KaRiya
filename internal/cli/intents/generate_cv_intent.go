@@ -755,8 +755,13 @@ func (i *GenerateCVIntent) updateSelectFocusArea(msg tea.Msg) tea.Cmd {
 				cv.FocusAreaDevOps,
 			}
 			i.state.selectedFocusArea = focusAreas[i.state.focusAreaCursor]
-			i.state.currentState = GenerateCVStateSelectLengthFormat
-			return nil
+
+			// TODO: Implement length format selection UI
+			// For now, default to Standard and proceed to generation
+			i.state.selectedLengthFormat = cv.LengthStandard
+			i.state.currentState = GenerateCVStateGenerating
+			i.state.isGenerating = true
+			return i.generateCVAsync()
 		}
 	}
 	return nil
