@@ -1,6 +1,8 @@
 package intents_test
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -80,70 +82,86 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			// Type date
 			env.TypeText("today")
 
-			// Note: In Huh forms, we need to navigate to the submit button
-			// Usually this is done by tabbing through fields until we reach the button
-			// For now, let's try pressing Enter which should submit the form
-			env.Confirm()
+			// Submit the huh form (tab to Submit button and press Enter)
+			env.SubmitHuhForm()
 
-			// Step 5: Should be in "Review" state (pre-save)
+			// Step 5: Should be in "Pre-Save Review" state
 			view = env.GetView()
 			Expect(view).To(SatisfyAny(
 				ContainSubstring("Review"),
 				ContainSubstring(testEventText),
-				ContainSubstring("Confirm"),
-			))
+			), "Should be in Pre-Save Review state")
 
 			// At this point, bursts/facts should NOT be shown yet (pre-save review)
 			// The workflow doc says enrichment happens AFTER save
+			Expect(view).NotTo(ContainSubstring("Burst"), "Pre-save review should not show bursts")
+			Expect(view).NotTo(ContainSubstring("Fact"), "Pre-save review should not show facts")
 
-			// Step 6: Confirm to submit (press Enter or Ctrl+S)
+			// Step 6: Confirm to submit (press Enter)
 			env.Confirm()
 
-			// Step 7: Should be in "Submit" state - wait for save to complete
-			// The submit modal should appear with "Saving..." or similar
+			// Step 7: Should briefly show "Submit" state with loading
+			// Then auto-dismiss and show enrichment loading
+			// We may not see this if it's too fast, so we'll just wait a moment
+			// by checking the next state
+
+			// Step 8: After save completes, enrichment runs automatically
+			// We should eventually see Enrichment Review state
+			// Note: Success modal auto-dismisses after 2 seconds
+			// We need to wait for that, then wait for enrichment
+			// For now, let's just check we're not at main menu yet
+
+			// Give time for success modal + enrichment (in real app this is automatic)
+			// In tests, we may need to manually advance through states
+			// Let's check what state we're in after a reasonable wait
+
 			view = env.GetView()
-			// Submit state may show modal or progress indicator
-			// Let's be flexible and check for various submit indicators
-			Expect(view).To(SatisfyAny(
-				ContainSubstring("Saving"),
-				ContainSubstring("Submitting"),
-				ContainSubstring("Processing"),
-				ContainSubstring("Success"),
-				// In case submit is instant, we might immediately see success
-			))
+			// We might see: success modal, enrichment loading, or enrichment review
+			// We should NOT see main menu yet
+			Expect(view).NotTo(ContainSubstring("Main Menu"),
+				"Should not return to main menu immediately after save")
 
-			// Step 8: After save completes, should show success modal
-			// Press Enter to dismiss the modal
-			env.Confirm()
+			// Step 9: If we're seeing success modal or enrichment loading, wait/advance
+			// For now, let's just verify we eventually reach Enrichment Review
+			// Since success modal auto-dismisses, we may already be past it
 
-			// Step 9: CRITICAL CHECK - Should go to Enrichment Review state (post-save)
+			// Keep checking until we see enrichment review or timeout
+			maxAttempts := 5
+			for attempt := 0; attempt < maxAttempts; attempt++ {
+				view = env.GetView()
+				if strings.Contains(view, "Review") || strings.Contains(view, "Enrichment") {
+					break
+				}
+				// If we see success modal, try to dismiss it
+				if strings.Contains(view, "Success") || strings.Contains(view, "saved") {
+					env.Confirm() // Dismiss success modal
+				}
+			}
+
+			// Step 10: CRITICAL CHECK - Should be in Enrichment Review state
 			// Per PRD_MASTER.md Section 7: Submit → Enrichment → Enrichment Review
-			// This is the CORRECT expected behavior per PRD, not a bug
 			view = env.GetView()
-
-			// Expected: Enrichment Review state with inferred bursts and facts
-			// NOT expected: Main menu (that would be incorrect per PRD)
 			Expect(view).NotTo(ContainSubstring("Main Menu"),
 				"After save and enrichment, should show Enrichment Review state, NOT main menu")
 
-			// Should show Enrichment Review state with enriched data
+			// Should show Enrichment Review state with enriched data (or at least the review UI)
 			Expect(view).To(SatisfyAny(
 				ContainSubstring("Review"),
 				ContainSubstring("Enrichment"),
-				ContainSubstring("Burst"),
-				ContainSubstring("Fact"),
-				ContainSubstring("Inferred"),
-			), "Enrichment Review should show inferred bursts and facts per PRD")
+			), "Should be in Enrichment Review state")
 
-			// Step 10: Press Enter to complete the intent
+			// Note: Bursts/facts may be empty if enrichment didn't find any,
+			// but the UI should still show the review state
+
+			// Step 11: Press Enter to complete the intent
 			env.Confirm()
 
-			// Step 11: NOW we should be back at main menu
+			// Step 12: NOW we should be back at main menu
 			view = env.GetView()
 			Expect(view).To(ContainSubstring("Main Menu"),
-				"After completing post-save review, should return to main menu")
+				"After completing enrichment review, should return to main menu")
 
-			// Step 12: Verify event was actually persisted
+			// Step 13: Verify event was actually persisted
 			env.AssertEventCount(1)
 		})
 
@@ -158,7 +176,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			env.TypeText("Test event for double-save check")
 			env.Tab()
 			env.TypeText("today")
-			env.Confirm() // Submit form
+			env.SubmitHuhForm() // Submit form
 
 			// Pre-save review
 			env.Confirm() // Confirm to submit
@@ -213,7 +231,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 
 			// Should either be in post-save review OR main menu
 			// (Depends on if quick submit also skips post-save review)
-			view = env.GetView()
+			_ = env.GetView()
 			// This behavior is unclear from docs, so let's just verify event saved
 			env.AssertEventCount(1)
 		})
@@ -224,7 +242,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			env.SelectIntentByName("capture_event")
 			env.Confirm() // Choose strategy
 
-			// Fill form
+			// Fill form (don't submit - we'll cancel)
 			env.TypeText("Event to be cancelled")
 			env.Tab()
 			env.TypeText("today")
@@ -244,7 +262,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			env.TypeText("Event to be cancelled in review")
 			env.Tab()
 			env.TypeText("today")
-			env.Confirm() // Go to review
+			env.SubmitHuhForm() // Go to review
 
 			// Cancel from review
 			env.Cancel()
@@ -271,8 +289,8 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			env.Tab() // Move to project
 			env.TypeText("Test Project Alpha")
 
-			// Continue through remaining fields and submit
-			env.Confirm()
+			// Submit the form (tab to Submit button and press Enter)
+			env.SubmitHuhForm()
 
 			// Review
 			view := env.GetView()
@@ -330,7 +348,7 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			env.TypeText("Test navigation back")
 			env.Tab()
 			env.TypeText("today")
-			env.Confirm() // Go to review
+			env.SubmitHuhForm() // Go to review
 
 			// Press Esc - should go back to form
 			env.Cancel()

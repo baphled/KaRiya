@@ -148,11 +148,6 @@ type CaptureEventModel struct {
 	// submitModal is shown during async submission (modal overlay pattern)
 	submitModal *components.ModalContent
 
-	// Modals for editing enriched data in Review state
-	metadataModal *models.MetadataEditorModelNew
-	burstModal    *models.BurstSuggestionModelNew
-	factModal     *models.FactEditorModelNew
-
 	// postSaveReview indicates we're reviewing enriched data after save (not pre-save review)
 	postSaveReview bool
 }

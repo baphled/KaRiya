@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // EventReviewScreen displays captured event details with inferred bursts and facts.
@@ -141,8 +142,19 @@ func (s *EventReviewScreen) renderContent() string {
 	var b strings.Builder
 
 	b.WriteString("\n")
-	b.WriteString("Review Captured Event\n")
-	b.WriteString("═════════════════════\n\n")
+
+	// Title with themed styling
+	title := "Review Enrichment Results"
+	theme := s.Theme()
+	if theme != nil {
+		// Use card style for consistent theming
+		cardStyle := s.getCardStyle()
+		b.WriteString(cardStyle.Render(title) + "\n\n")
+	} else {
+		// Fallback: plain text
+		b.WriteString(title + "\n")
+		b.WriteString("═════════════════════\n\n")
+	}
 
 	// Event details
 	s.renderEventDetails(&b)
@@ -158,10 +170,30 @@ func (s *EventReviewScreen) renderContent() string {
 	return b.String()
 }
 
+// getCardStyle returns a themed card style for content sections.
+func (s *EventReviewScreen) getCardStyle() lipgloss.Style {
+	theme := s.Theme()
+	if theme != nil {
+		// Try to cast to Theme interface
+		if t, ok := theme.(interface {
+			PrimaryColor() lipgloss.Color
+			BorderColor() lipgloss.Color
+		}); ok {
+			return lipgloss.NewStyle().
+				Foreground(t.PrimaryColor()).
+				Bold(true)
+		}
+	}
+	return lipgloss.NewStyle()
+}
+
 // renderEventDetails renders the event metadata.
 func (s *EventReviewScreen) renderEventDetails(b *strings.Builder) {
-	b.WriteString("Event Details:\n")
-	b.WriteString("─────────────\n")
+	sectionStyle := s.getSectionHeaderStyle()
+	dimStyle := s.getDimStyle()
+
+	b.WriteString(sectionStyle.Render("Event Details:") + "\n")
+	b.WriteString(dimStyle.Render("─────────────") + "\n")
 
 	if s.event == nil {
 		b.WriteString("  No event data\n")
@@ -179,13 +211,41 @@ func (s *EventReviewScreen) renderEventDetails(b *strings.Builder) {
 	}
 }
 
+// getSectionHeaderStyle returns a themed style for section headers.
+func (s *EventReviewScreen) getSectionHeaderStyle() lipgloss.Style {
+	theme := s.Theme()
+	if theme != nil {
+		if t, ok := theme.(interface{ SecondaryColor() lipgloss.Color }); ok {
+			return lipgloss.NewStyle().
+				Foreground(t.SecondaryColor()).
+				Bold(true)
+		}
+	}
+	return lipgloss.NewStyle()
+}
+
+// getDimStyle returns a themed style for dimmed text.
+func (s *EventReviewScreen) getDimStyle() lipgloss.Style {
+	theme := s.Theme()
+	if theme != nil {
+		if t, ok := theme.(interface{ MutedColor() lipgloss.Color }); ok {
+			return lipgloss.NewStyle().
+				Foreground(t.MutedColor())
+		}
+	}
+	return lipgloss.NewStyle()
+}
+
 // renderBursts renders the inferred bursts list.
 func (s *EventReviewScreen) renderBursts(b *strings.Builder) {
-	b.WriteString("Inferred Bursts:\n")
-	b.WriteString("────────────────\n")
+	sectionStyle := s.getSectionHeaderStyle()
+	dimStyle := s.getDimStyle()
+
+	b.WriteString(sectionStyle.Render("Inferred Bursts:") + "\n")
+	b.WriteString(dimStyle.Render("────────────────") + "\n")
 
 	if len(s.bursts) == 0 {
-		b.WriteString("  No bursts detected\n")
+		b.WriteString(dimStyle.Render("  No bursts detected") + "\n")
 		return
 	}
 
@@ -199,11 +259,14 @@ func (s *EventReviewScreen) renderBursts(b *strings.Builder) {
 
 // renderFacts renders the inferred facts list.
 func (s *EventReviewScreen) renderFacts(b *strings.Builder) {
-	b.WriteString("Inferred Facts:\n")
-	b.WriteString("───────────────\n")
+	sectionStyle := s.getSectionHeaderStyle()
+	dimStyle := s.getDimStyle()
+
+	b.WriteString(sectionStyle.Render("Inferred Facts:") + "\n")
+	b.WriteString(dimStyle.Render("───────────────") + "\n")
 
 	if len(s.facts) == 0 {
-		b.WriteString("  No facts detected\n")
+		b.WriteString(dimStyle.Render("  No facts detected") + "\n")
 		return
 	}
 
@@ -213,6 +276,21 @@ func (s *EventReviewScreen) renderFacts(b *strings.Builder) {
 }
 
 // renderFooter renders footer with action shortcuts.
+// Only shows applicable actions based on available data.
 func (s *EventReviewScreen) renderFooter() string {
-	return "Enter: Confirm  e: Edit metadata  b: Edit bursts  f: Edit facts  Esc: Back  q: Quit"
+	actions := []string{"Enter: Confirm", "e: Edit metadata"}
+
+	// Only show burst editing if bursts exist
+	if len(s.bursts) > 0 {
+		actions = append(actions, "b: Edit bursts")
+	}
+
+	// Only show fact editing if facts exist
+	if len(s.facts) > 0 {
+		actions = append(actions, "f: Edit facts")
+	}
+
+	actions = append(actions, "Esc: Back", "q: Quit")
+
+	return strings.Join(actions, "  ")
 }
