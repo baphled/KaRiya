@@ -224,6 +224,8 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSelectTechnologies(msg)
 	case GenerateCVStateSelectFocusArea:
 		return i.updateSelectFocusArea(msg)
+	case GenerateCVStateSelectSkillsConfig:
+		return i.updateSelectSkillsConfig(msg)
 	case GenerateCVStateGenerating:
 		return i.updateGenerating(msg)
 	case GenerateCVStatePreview:
@@ -484,6 +486,10 @@ func (i *GenerateCVIntent) generateCVAsync() tea.Cmd {
 			SelectedTechnologies: i.state.selectedTechnologies,
 			FocusArea:            string(i.state.selectedFocusArea),
 			LengthFormat:         string(i.state.selectedLengthFormat),
+
+			// Skills section configuration (Phase 11 - Task 40)
+			SkillsFormat: i.state.selectedSkillsFormat,
+			SkillsLimit:  i.state.selectedSkillsLimit,
 		}
 
 		cvView, err := i.context.CVGenerationService.GenerateCVFromConfig(ctx, config)
@@ -762,9 +768,83 @@ func (i *GenerateCVIntent) updateSelectFocusArea(msg tea.Msg) tea.Cmd {
 			}
 			i.state.selectedFocusArea = focusAreas[i.state.focusAreaCursor]
 
-			// TODO: Implement length format selection UI
-			// For now, default to Standard and proceed to generation
-			i.state.selectedLengthFormat = cv.LengthStandard
+			// Transition to skills configuration
+			i.state.currentState = GenerateCVStateSelectSkillsConfig
+			i.state.skillsConfigCursor = 0
+
+			// Set defaults for skills config if not already set
+			if i.state.selectedSkillsFormat == "" {
+				i.state.selectedSkillsFormat = "flat"
+			}
+			if i.state.selectedSkillsLimit == 0 {
+				i.state.selectedSkillsLimit = 0 // 0 = no limit (show all)
+			}
+
+			return nil
+		}
+	}
+	return nil
+}
+
+// updateSelectSkillsConfig handles the skills configuration selection state.
+func (i *GenerateCVIntent) updateSelectSkillsConfig(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		// Handle global keys first (q=quit, ?=help, esc=back)
+		switch HandleGlobalKeys(msg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.ToggleHelp()
+			return nil
+		case KeyBack:
+			// Go back to focus area selection
+			i.state.currentState = GenerateCVStateSelectFocusArea
+			return nil
+		}
+
+		// Handle navigation and selection
+		switch msg.String() {
+		case "up", "k":
+			if i.state.skillsConfigCursor > 0 {
+				i.state.skillsConfigCursor--
+			}
+		case "down", "j":
+			// 2 options: format (0) and limit (1)
+			if i.state.skillsConfigCursor < 1 {
+				i.state.skillsConfigCursor++
+			}
+		case " ":
+			// Toggle format when cursor is on format row (0)
+			if i.state.skillsConfigCursor == 0 {
+				if i.state.selectedSkillsFormat == "flat" {
+					i.state.selectedSkillsFormat = "grouped"
+				} else {
+					i.state.selectedSkillsFormat = "flat"
+				}
+			}
+		case "left", "h":
+			// Decrease limit when cursor is on limit row (1)
+			if i.state.skillsConfigCursor == 1 {
+				if i.state.selectedSkillsLimit > 0 {
+					i.state.selectedSkillsLimit -= 5
+					if i.state.selectedSkillsLimit < 0 {
+						i.state.selectedSkillsLimit = 0
+					}
+				}
+			}
+		case "right", "l":
+			// Increase limit when cursor is on limit row (1)
+			if i.state.skillsConfigCursor == 1 {
+				if i.state.selectedSkillsLimit < 50 {
+					i.state.selectedSkillsLimit += 5
+					if i.state.selectedSkillsLimit > 50 {
+						i.state.selectedSkillsLimit = 50
+					}
+				}
+			}
+		case "enter":
+			// Proceed to CV generation
 			i.state.currentState = GenerateCVStateGenerating
 			i.state.isGenerating = true
 			return i.generateCVAsync()
@@ -916,6 +996,8 @@ func (i *GenerateCVIntent) getStateContent() string {
 		return i.viewSelectTechnologies()
 	case GenerateCVStateSelectFocusArea:
 		return i.viewSelectFocusArea()
+	case GenerateCVStateSelectSkillsConfig:
+		return i.viewSelectSkillsConfig()
 	case GenerateCVStateGenerating:
 		return i.viewGenerating()
 	case GenerateCVStatePreview:
@@ -975,6 +1057,16 @@ func (i *GenerateCVIntent) getContextHelp() string {
 		)
 	case GenerateCVStateSelectFocusArea:
 		return CombineThemedFooters(
+			ThemedNavigationFooter(theme),
+			ThemedGlobalBadges(theme),
+		)
+	case GenerateCVStateSelectSkillsConfig:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				components.NewKeyBadge("Space", "Toggle Format"),
+				components.NewKeyBadge("←→", "Adjust Limit"),
+				components.NewKeyBadge("Enter", "Continue"),
+			),
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
 		)
@@ -1333,6 +1425,54 @@ func (i *GenerateCVIntent) viewSelectFocusArea() string {
 
 		content.WriteString("\n")
 	}
+
+	return i.getCardStyle().Render(content.String())
+}
+
+// viewSelectSkillsConfig renders the skills configuration selection view.
+func (i *GenerateCVIntent) viewSelectSkillsConfig() string {
+	var content strings.Builder
+	content.WriteString("\n⚙️  Configure Skills Section\n\n")
+	content.WriteString("Customize how skills appear in your CV:\n\n")
+
+	// Option 1: Format selection
+	cursor1 := "  "
+	if i.state.skillsConfigCursor == 0 {
+		cursor1 = "▶ "
+	}
+
+	formatCheckmark := ""
+	formatDesc := ""
+	if i.state.selectedSkillsFormat == "flat" {
+		formatCheckmark = " ✓"
+		formatDesc = " (one skill per line)"
+	} else {
+		formatCheckmark = " ✓"
+		formatDesc = " (skills grouped by category)"
+	}
+
+	content.WriteString(fmt.Sprintf("%sFormat: %s%s%s\n", cursor1,
+		strings.Title(i.state.selectedSkillsFormat), formatCheckmark, formatDesc))
+	content.WriteString("   Press Space to toggle between Flat / Grouped\n\n")
+
+	// Option 2: Limit selection
+	cursor2 := "  "
+	if i.state.skillsConfigCursor == 1 {
+		cursor2 = "▶ "
+	}
+
+	limitDesc := ""
+	if i.state.selectedSkillsLimit == 0 {
+		limitDesc = " (no limit - show all skills)"
+	} else {
+		limitDesc = fmt.Sprintf(" (%d max per section/group)", i.state.selectedSkillsLimit)
+	}
+
+	content.WriteString(fmt.Sprintf("%sLimit: %d%s\n", cursor2,
+		i.state.selectedSkillsLimit, limitDesc))
+	content.WriteString("   Use ← → to adjust (0 = no limit, max 50)\n\n")
+
+	content.WriteString("\nPress Enter to continue\n")
 
 	return i.getCardStyle().Render(content.String())
 }

@@ -155,14 +155,14 @@ var _ = Describe("GenerateCV Focus Area Selection", func() {
 			Expect(string(intent.state.selectedFocusArea)).To(Equal("backend"))
 		})
 
-		It("should transition to generating (skipping length format for now)", func() {
+		It("should transition to skills configuration selection", func() {
 			intent.state.focusAreaCursor = 1 // Frontend
 
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// TODO: Change to GenerateCVStateSelectLengthFormat once UI is implemented
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateGenerating))
-			Expect(intent.state.selectedLengthFormat).To(Equal(cv.LengthStandard)) // Default
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectSkillsConfig))
+			Expect(intent.state.selectedSkillsFormat).To(Equal("flat")) // Default
+			Expect(intent.state.selectedSkillsLimit).To(Equal(0))       // Default (no limit)
 		})
 
 		It("should select Backend", func() {

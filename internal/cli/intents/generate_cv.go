@@ -38,6 +38,9 @@ const (
 	// GenerateCVStateSelectFocusArea - User selects focus area (Backend/Frontend/Fullstack/DevOps).
 	GenerateCVStateSelectFocusArea GenerateCVState = "select_focus_area"
 
+	// GenerateCVStateSelectSkillsConfig - User configures skills section format and limit.
+	GenerateCVStateSelectSkillsConfig GenerateCVState = "select_skills_config"
+
 	// GenerateCVStateSelectLengthFormat - User selects CV length format.
 	GenerateCVStateSelectLengthFormat GenerateCVState = "select_length_format"
 
@@ -201,6 +204,11 @@ type GenerateCVModel struct {
 	// Focus area selection fields (NEW)
 	selectedFocusArea cv.FocusArea // Backend / Frontend / Fullstack / DevOps
 	focusAreaCursor   int          // Cursor position for focus area selection
+
+	// Skills configuration fields (NEW - Phase 11 UI)
+	selectedSkillsFormat string // "flat" or "grouped"
+	selectedSkillsLimit  int    // max skills to show (0 = no limit)
+	skillsConfigCursor   int    // cursor position: 0=format, 1=limit
 
 	// Length format selection fields (NEW)
 	selectedLengthFormat cv.LengthFormat // UltraShort / Short / Standard / Full
