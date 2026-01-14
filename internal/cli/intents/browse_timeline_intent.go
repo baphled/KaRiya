@@ -368,10 +368,8 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 				// Clear filters (FIFO order - most recent first)
 				if i.HasActiveFilters() {
 					i.ClearFilters()
-					i.ApplyFilters()
 					return i.RefreshData()
 				}
-				return nil
 			}
 		}
 	}
