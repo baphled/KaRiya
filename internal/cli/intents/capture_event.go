@@ -147,6 +147,11 @@ type CaptureEventModel struct {
 
 	// submitModal is shown during async submission (modal overlay pattern)
 	submitModal *components.ModalContent
+
+	// Modals for editing enriched data in Review state
+	metadataModal *models.MetadataEditorModelNew
+	burstModal    *models.BurstSuggestionModelNew
+	factModal     *models.FactEditorModelNew
 }
 
 // CaptureEventStates for navigation.

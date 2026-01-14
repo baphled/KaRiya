@@ -58,6 +58,19 @@ type SubmitErrorMsg struct {
 	Cause   error
 }
 
+// EnrichmentCompleteMsg indicates enrichment (burst/fact extraction) completed.
+type EnrichmentCompleteMsg struct {
+	Bursts []*career.Burst
+	Facts  []*career.Fact
+}
+
+// EnrichmentErrorMsg indicates enrichment failed (non-fatal).
+type EnrichmentErrorMsg struct {
+	Code    string
+	Message string
+	Cause   error
+}
+
 // DismissModalMsg indicates the submit modal should be dismissed (after success).
 type DismissModalMsg struct{}
 
@@ -238,18 +251,12 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case DismissModalMsg:
-		// Modal auto-dismissed after success - complete the intent
+		// Modal auto-dismissed after success - return to Review for enrichment review
 		if i.state.submitModal != nil {
 			i.state.submitModal = nil
-			// Set result and complete intent
-			result := &CaptureEventResult{
-				Event:          i.state.reviewState.Event,
-				Bursts:         i.state.reviewState.AcceptedBursts,
-				Facts:          i.state.reviewState.AcceptedFacts,
-				AcceptedFields: make(map[string]bool),
-				RejectedFields: i.state.reviewState.RejectedItems,
-			}
-			i.setCompleted(result)
+			// Instead of completing, return to Review state
+			// This allows user to review inferred bursts/facts after save
+			i.state.currentState = CaptureStateReview
 		}
 		return nil
 	}
@@ -753,12 +760,13 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 			}
 		}
 
-		// For enriched strategy, perform enrichment
-		if i.context.CaptureStrategy == "enriched" && i.context.CareerService != nil {
+		// Perform enrichment for all strategies (if CareerService is available)
+		// This extracts bursts and facts from the saved event
+		if i.context.CareerService != nil {
 			if err := i.performEnrichment(ctx, event); err != nil {
 				// Log enrichment error but don't fail the submission
 				// The event is already saved successfully
-				return SubmitCompleteMsg{}
+				// Continue to success - enrichment is optional
 			}
 		}
 
