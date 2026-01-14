@@ -21,6 +21,9 @@ import (
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
+// Ensure ManageSkillsIntent implements FilterBehavior interface
+var _ FilterBehavior = (*ManageSkillsIntent)(nil)
+
 // ManageSkillsIntent implements the Intent interface for managing user-defined skills.
 type ManageSkillsIntent struct {
 	*BaseIntent
@@ -810,7 +813,7 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 			components.NewKeyBadge("f", "Filter"),
 			components.NewKeyBadge("s", "Sort"),
 		}
-		if i.hasActiveFilters() {
+		if i.HasActiveFilters() {
 			badges = append(badges, components.NewKeyBadge("x", "Clear filters"))
 		}
 		return CombineThemedFooters(
@@ -1151,10 +1154,10 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 				return i.openSearchModal()
 
 			case "x":
-				// Clear all filters
-				if i.hasActiveFilters() {
-					i.filters = &SkillsFilters{}
-					return i.reloadSkills()
+				// Clear filters in FIFO order
+				if i.HasActiveFilters() {
+					i.ClearFilters()
+					return i.RefreshData()
 				}
 				return nil
 			}
@@ -1330,9 +1333,56 @@ func (i *ManageSkillsIntent) applySortSelection() tea.Cmd {
 	return i.reloadSkills()
 }
 
-// hasActiveFilters returns true if any filters are active
+// hasActiveFilters returns true if any filters are active (private implementation)
 func (i *ManageSkillsIntent) hasActiveFilters() bool {
-	return i.filters != nil && (i.filters.Category != "" || i.filters.Level != "" || i.filters.MinEvents > 0 || i.filters.SortBy != "")
+	return i.filters != nil && (i.filters.Category != "" || i.filters.Level != "" || i.filters.MinEvents > 0 || i.filters.SortBy != "" || i.filters.SearchText != "")
+}
+
+// HasActiveFilters returns true if any non-default filters are active.
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) HasActiveFilters() bool {
+	return i.hasActiveFilters()
+}
+
+// ClearFilters resets filters in FIFO order (most recent filter first).
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) ClearFilters() {
+	if i.filters == nil {
+		return
+	}
+
+	// Clear in FIFO order: search → filter → sort
+	// Search is most recent (most specific), sort is least recent (most general)
+	if i.filters.SearchText != "" {
+		i.filters.SearchText = ""
+		return
+	}
+
+	if i.filters.Category != "" || i.filters.Level != "" || i.filters.MinEvents > 0 {
+		i.filters.Category = ""
+		i.filters.Level = ""
+		i.filters.MinEvents = 0
+		return
+	}
+
+	// Clear sort (least specific)
+	i.filters.SortBy = ""
+	i.filters.SortOrder = ""
+}
+
+// ApplyFilters applies current filter state to the data.
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) ApplyFilters() {
+	// Apply search filter to current skills list
+	if i.filters != nil && i.filters.SearchText != "" {
+		i.skills = i.applySearchFilter(i.skills, i.filters.SearchText)
+	}
+}
+
+// RefreshData reloads/refreshes the filtered data.
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) RefreshData() tea.Cmd {
+	return i.reloadSkills()
 }
 
 // reloadSkills reloads skills with current filters

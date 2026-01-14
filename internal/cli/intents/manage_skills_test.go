@@ -1418,4 +1418,260 @@ var _ = Describe("ManageSkillsIntent", func() {
 			})
 		})
 	})
+
+	Describe("FilterBehavior Interface", func() {
+		BeforeEach(func() {
+			// Initialize intent for FilterBehavior tests
+			intent = intents.NewManageSkillsIntent(intentCtx)
+			updateWithCmd(intent, intent.Init())
+		})
+
+		Context("HasActiveFilters", func() {
+			It("should return false when no filters are active", func() {
+				Expect(intent.HasActiveFilters()).To(BeFalse())
+			})
+
+			It("should return true when search text is active", func() {
+				// Simulate search filter being applied
+				filters := intent.ActiveFilters()
+				filters.SearchText = "Go"
+
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+			})
+
+			It("should return true when category filter is active", func() {
+				filters := intent.ActiveFilters()
+				filters.Category = "Backend"
+
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+			})
+
+			It("should return true when level filter is active", func() {
+				filters := intent.ActiveFilters()
+				filters.Level = "Expert"
+
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+			})
+
+			It("should return true when min events filter is active", func() {
+				filters := intent.ActiveFilters()
+				filters.MinEvents = 5
+
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+			})
+
+			It("should return true when sort is active", func() {
+				filters := intent.ActiveFilters()
+				filters.SortBy = "name"
+
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+			})
+		})
+
+		Context("ClearFilters", func() {
+			It("should clear search text first (FIFO order)", func() {
+				filters := intent.ActiveFilters()
+				filters.SearchText = "Go"
+				filters.Category = "Backend"
+				filters.SortBy = "name"
+
+				// First clear should remove search text only
+				intent.ClearFilters()
+				Expect(filters.SearchText).To(Equal(""))
+				Expect(filters.Category).To(Equal("Backend"))
+				Expect(filters.SortBy).To(Equal("name"))
+			})
+
+			It("should clear category/level/minEvents second (FIFO order)", func() {
+				filters := intent.ActiveFilters()
+				filters.Category = "Backend"
+				filters.Level = "Expert"
+				filters.MinEvents = 5
+				filters.SortBy = "name"
+
+				// Clear should remove all filter fields
+				intent.ClearFilters()
+				Expect(filters.Category).To(Equal(""))
+				Expect(filters.Level).To(Equal(""))
+				Expect(filters.MinEvents).To(Equal(0))
+				Expect(filters.SortBy).To(Equal("name")) // Sort remains
+			})
+
+			It("should clear sort last (FIFO order)", func() {
+				filters := intent.ActiveFilters()
+				filters.SortBy = "name"
+				filters.SortOrder = "asc"
+
+				// Clear should remove sort
+				intent.ClearFilters()
+				Expect(filters.SortBy).To(Equal(""))
+				Expect(filters.SortOrder).To(Equal(""))
+			})
+
+			It("should handle nil filters gracefully", func() {
+				// ActiveFilters() always returns non-nil, but test ClearFilters robustness
+				// Should not crash even if filters are empty
+				Expect(func() { intent.ClearFilters() }).NotTo(Panic())
+			})
+		})
+
+		Context("ApplyFilters", func() {
+			It("should apply search filter to skills list", func() {
+				// Load initial skills
+				updateWithCmd(intent, intents.SkillsLoadedMsg{
+					Skills: testSkills,
+				})
+
+				// Apply search filter
+				filters := intent.ActiveFilters()
+				filters.SearchText = "Go"
+				intent.ApplyFilters()
+
+				// Should filter skills by search text
+				// Note: This tests the in-memory filtering logic
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Go"))
+			})
+
+			It("should handle empty search text gracefully", func() {
+				// Load initial skills
+				updateWithCmd(intent, intents.SkillsLoadedMsg{
+					Skills: testSkills,
+				})
+
+				// Apply empty search filter
+				filters := intent.ActiveFilters()
+				filters.SearchText = ""
+				intent.ApplyFilters()
+
+				// Should show all skills
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Skills"))
+			})
+		})
+
+		Context("RefreshData", func() {
+			It("should reload skills with current filters", func() {
+				// Set a filter
+				filters := intent.ActiveFilters()
+				filters.Category = "Backend"
+
+				// Refresh data
+				cmd := intent.RefreshData()
+				Expect(cmd).NotTo(BeNil())
+
+				// Execute command to trigger reload
+				msg := cmd()
+				Expect(msg).To(BeAssignableToTypeOf(intents.SkillsLoadedMsg{}))
+			})
+
+			It("should work with no filters", func() {
+				// Refresh data with no filters
+				cmd := intent.RefreshData()
+				Expect(cmd).NotTo(BeNil())
+
+				// Execute command
+				msg := cmd()
+				Expect(msg).To(BeAssignableToTypeOf(intents.SkillsLoadedMsg{}))
+			})
+		})
+
+		Context("'x' key integration", func() {
+			It("should show 'Clear filters' badge when filters are active", func() {
+				// No filters initially
+				initialView := intent.View()
+				Expect(initialView).NotTo(ContainSubstring("Clear filters"))
+
+				// Apply a filter
+				filters := intent.ActiveFilters()
+				filters.SearchText = "Go"
+
+				// Should show clear badge
+				filteredView := intent.View()
+				Expect(filteredView).To(ContainSubstring("Clear filters"))
+			})
+
+			It("should not show 'Clear filters' badge when no filters are active", func() {
+				view := intent.View()
+				Expect(view).NotTo(ContainSubstring("Clear filters"))
+			})
+
+			It("should clear filters when 'x' is pressed", func() {
+				// Apply a filter
+				filters := intent.ActiveFilters()
+				filters.SearchText = "Go"
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+
+				// Press 'x' to clear
+				updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+
+				// Filters should be cleared
+				// Note: Due to FIFO order, search text is cleared first
+				Expect(filters.SearchText).To(Equal(""))
+			})
+
+			It("should do nothing when 'x' is pressed with no active filters", func() {
+				// No filters active
+				Expect(intent.HasActiveFilters()).To(BeFalse())
+
+				// Press 'x'
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+
+				// Should return nil (no action)
+				Expect(cmd).To(BeNil())
+			})
+		})
+
+		Context("E2E Filter Workflow", func() {
+			It("should support complete filter → clear → filter cycle", func() {
+				// 1. Start with no filters
+				Expect(intent.HasActiveFilters()).To(BeFalse())
+
+				// 2. Apply search filter
+				filters := intent.ActiveFilters()
+				filters.SearchText = "Backend"
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+
+				// 3. Clear filter
+				intent.ClearFilters()
+				Expect(filters.SearchText).To(Equal(""))
+
+				// 4. Apply different filter
+				filters.Category = "Frontend"
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+
+				// 5. Clear again
+				intent.ClearFilters()
+				Expect(filters.Category).To(Equal(""))
+				Expect(intent.HasActiveFilters()).To(BeFalse())
+			})
+
+			It("should support layered filters with FIFO clearing", func() {
+				filters := intent.ActiveFilters()
+
+				// Apply multiple filter layers
+				filters.SearchText = "Go"
+				filters.Category = "Backend"
+				filters.SortBy = "name"
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+
+				// Clear layer 1: search
+				intent.ClearFilters()
+				Expect(filters.SearchText).To(Equal(""))
+				Expect(filters.Category).To(Equal("Backend"))
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+
+				// Clear layer 2: category
+				intent.ClearFilters()
+				Expect(filters.Category).To(Equal(""))
+				Expect(filters.SortBy).To(Equal("name"))
+				Expect(intent.HasActiveFilters()).To(BeTrue())
+
+				// Clear layer 3: sort
+				intent.ClearFilters()
+				Expect(filters.SortBy).To(Equal(""))
+				Expect(intent.HasActiveFilters()).To(BeFalse())
+			})
+		})
+	})
 })
