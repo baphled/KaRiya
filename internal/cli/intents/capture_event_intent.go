@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
+	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -129,6 +130,32 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 
 // Init is called when the intent is activated.
 func (i *CaptureEventIntent) Init() tea.Cmd {
+	// NEW: Check if screens architecture is enabled
+	if i.useScreens {
+		// Create breadcrumbs for navigation
+		breadcrumbs := []string{"Main Menu", "Capture Event"}
+
+		// Create the initial screen (StrategySelectScreen)
+		i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
+
+		// Get terminal info
+		termInfo := i.GetTerminalInfo()
+		width, height := 120, 40 // defaults
+		if termInfo != nil {
+			width = termInfo.Width
+			height = termInfo.Height
+		}
+
+		// Pass terminal info, theme, and logo to screen
+		i.activeScreen.SetTerminalInfo(width, height)
+		i.activeScreen.SetTheme(i.Theme())
+		i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+		// No Init() method for screens - they're ready immediately
+		return nil
+	}
+
+	// LEGACY: Fall back to old initialization
 	// If this is an edit operation, initialize the form with the previous event's data.
 	if i.context.PreviousEvent != nil {
 		i.initializeFormForEdit()
@@ -219,6 +246,22 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// NEW: Check if screens architecture is enabled
+	if i.useScreens && i.activeScreen != nil {
+		// Delegate to active screen
+		cmd, result := i.activeScreen.Update(msg)
+
+		// If screen returned a result, handle it
+		if result != nil {
+			// Delegate result handling to ScreenResultHandler methods
+			return i.handleScreenResult(result)
+		}
+
+		// Otherwise return the command from screen
+		return cmd
+	}
+
+	// LEGACY: Fall back to old state machine
 	switch i.state.currentState {
 	case CaptureStateChooseStrategy:
 		return i.updateChooseStrategy(msg)
@@ -860,6 +903,13 @@ func (i *CaptureEventIntent) View() string {
 		return "CaptureEvent intent is not active"
 	}
 
+	// NEW: Check if screens architecture is enabled
+	if i.useScreens && i.activeScreen != nil {
+		// Delegate rendering to active screen
+		return i.activeScreen.View()
+	}
+
+	// LEGACY: Fall back to old view rendering
 	// Create standard view with breadcrumbs
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Capture Event", i.getStateName())
 
@@ -1463,34 +1513,127 @@ func (i *CaptureEventIntent) setFailedCmd(code, message string, cause error) tea
 
 // transitionToStrategyScreen transitions to the strategy selection screen.
 func (i *CaptureEventIntent) transitionToStrategyScreen() tea.Cmd {
-	// This will be implemented when we wire up the actual screen
-	// For now, just update state
+	// Update intent state
 	i.state.currentState = CaptureStateChooseStrategy
+
+	// Create breadcrumbs
+	breadcrumbs := []string{"Main Menu", "Capture Event"}
+
+	// Create strategy selection screen
+	i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
+
+	// Get terminal info
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40 // defaults
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Pass context to screen
+	i.activeScreen.SetTerminalInfo(width, height)
+	i.activeScreen.SetTheme(i.Theme())
+	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
 	return nil
 }
 
 // transitionToFormScreen transitions to the event form screen.
 func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
-	// This will be implemented when we wire up the actual screen
-	// For now, just update state
+	// Update intent state
 	i.state.currentState = CaptureStateForm
 	i.state.strategy = strategy
-	i.state.captureForm.SetStrategy(string(strategy))
-	return i.state.captureForm.Init()
+
+	// Create breadcrumbs
+	breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}
+
+	// Create event form screen
+	i.activeScreen = captureScreens.NewEventFormScreen(
+		i.eventService,
+		breadcrumbs,
+		strategy,
+	)
+
+	// Get terminal info
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40 // defaults
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Pass context to screen
+	i.activeScreen.SetTerminalInfo(width, height)
+	i.activeScreen.SetTheme(i.Theme())
+	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+	// Return command to initialize the form (EventFormScreen wraps CaptureForm)
+	// The screen will call Init() on the underlying form
+	return nil
 }
 
 // transitionToReviewScreen transitions to the review screen.
 func (i *CaptureEventIntent) transitionToReviewScreen() tea.Cmd {
-	// This will be implemented when we wire up the actual screen
-	// For now, just update state
+	// Update intent state
 	i.state.currentState = CaptureStateReview
+
+	// Create breadcrumbs
+	breadcrumbs := []string{"Main Menu", "Capture Event", "Review"}
+
+	// Create review screen with captured event and inferred data
+	i.activeScreen = captureScreens.NewEventReviewScreen(
+		breadcrumbs,
+		i.state.reviewState.Event,
+		i.state.reviewState.InferredBursts,
+		i.state.reviewState.InferredFacts,
+	)
+
+	// Get terminal info
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40 // defaults
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Pass context to screen
+	i.activeScreen.SetTerminalInfo(width, height)
+	i.activeScreen.SetTheme(i.Theme())
+	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
 	return nil
 }
 
 // transitionToSubmitScreen transitions to the submit screen.
 func (i *CaptureEventIntent) transitionToSubmitScreen() tea.Cmd {
-	// This will be implemented when we wire up the actual screen
-	// For now, just update state
+	// Update intent state
 	i.state.currentState = CaptureStateSubmit
-	return i.performSubmit()
+
+	// Create breadcrumbs
+	breadcrumbs := []string{"Main Menu", "Capture Event", "Submit"}
+
+	// Create submit screen with event and accepted bursts/facts
+	i.activeScreen = captureScreens.NewEventSubmitScreen(
+		breadcrumbs,
+		i.state.reviewState.Event,
+		i.state.reviewState.AcceptedBursts,
+		i.state.reviewState.AcceptedFacts,
+	)
+
+	// Get terminal info
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40 // defaults
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Pass context to screen
+	i.activeScreen.SetTerminalInfo(width, height)
+	i.activeScreen.SetTheme(i.Theme())
+	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+	// Trigger async submission
+	// The screen will handle the submission and progress display
+	return nil
 }
