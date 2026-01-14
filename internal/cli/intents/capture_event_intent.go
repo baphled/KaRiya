@@ -124,7 +124,8 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 				RejectedFields: make(map[string]string),
 			},
 		},
-		active: true,
+		active:     true,
+		useScreens: true, // Enable screens architecture
 	}, nil
 }
 
