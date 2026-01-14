@@ -88,6 +88,12 @@ type BrowseTimelineIntent struct {
 	// filterModal holds the filter modal (shown over the list)
 	filterModal *components.FilterModalModel
 
+	// searchModal holds the search modal for text search
+	searchModal *components.EventSearchModal
+
+	// sortModal holds the sort modal for sorting events
+	sortModal *components.EventSortModal
+
 	// deleteModal holds the delete confirmation modal (shown over the list)
 	deleteModal *components.DeleteConfirmModal
 
@@ -150,7 +156,23 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// If filter modal is visible, handle it first
+	// PATTERN 4: Modal Priority Handling
+	// Modals are checked in priority order: search → filter → sort → other modals
+	// Only ONE modal can be active at a time
+
+	// If search modal is visible, handle it first
+	if i.searchModal != nil && i.searchModal.IsVisible() {
+		cmd, applied, searchData := i.searchModal.Update(msg)
+		if applied && searchData != nil {
+			// Search was applied - update filters and refresh list
+			i.state.filters.SearchText = searchData.SearchText
+			i.applyFilters()
+			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		}
+		return cmd
+	}
+
+	// If filter modal is visible, handle it next
 	if i.filterModal != nil && i.filterModal.IsVisible() {
 		cmd, applied, filterData := i.filterModal.Update(msg)
 		if applied && filterData != nil {
@@ -160,6 +182,19 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			i.state.filters.Projects = filterData.Projects
 			i.state.filters.SortBy = filterData.SortBy
 			i.state.filters.SortOrder = filterData.SortOrder
+			i.applyFilters()
+			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
+		}
+		return cmd
+	}
+
+	// If sort modal is visible, handle it next
+	if i.sortModal != nil && i.sortModal.IsVisible() {
+		cmd, applied, sortData := i.sortModal.Update(msg)
+		if applied && sortData != nil {
+			// Sort was applied - update filters and refresh list
+			i.state.filters.SortBy = sortData.SortBy
+			i.state.filters.SortOrder = sortData.SortOrder
 			i.applyFilters()
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 		}
@@ -293,6 +328,21 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		// KeyBack (esc) is handled by the screen as CancelResult
+
+		// Handle intent-specific shortcuts (f, s, /) on timeline list screen
+		if i.state.currentState == BrowseStateTimeline {
+			switch keyMsg.String() {
+			case "f":
+				// Open filter modal
+				return i.openFilterModal()
+			case "s":
+				// Open sort modal
+				return i.openSortModal()
+			case "/":
+				// Open search modal
+				return i.openSearchModal()
+			}
+		}
 	}
 
 	// Delegate to active screen
@@ -327,9 +377,22 @@ func (i *BrowseTimelineIntent) View() string {
 		// Render the complete view FIRST
 		baseView := view.Render()
 
+		// PATTERN 1: Modal Overlay Rendering
+		// Check modals in priority order (only ONE can be active at a time)
+
+		// If search modal is visible, overlay it on the COMPLETE rendered view
+		if i.searchModal != nil && i.searchModal.IsVisible() {
+			return i.renderSearchModalOverlay(baseView)
+		}
+
 		// If filter modal is visible, overlay it on the COMPLETE rendered view
 		if i.filterModal != nil && i.filterModal.IsVisible() {
 			return i.renderFilterModalOverlay(baseView)
+		}
+
+		// If sort modal is visible, overlay it on the COMPLETE rendered view
+		if i.sortModal != nil && i.sortModal.IsVisible() {
+			return i.renderSortModalOverlay(baseView)
 		}
 
 		// If quick add modal is visible, overlay it on the COMPLETE rendered view
@@ -855,6 +918,18 @@ func (i *BrowseTimelineIntent) renderDeleteModalOverlay(background string) strin
 	return overlayModel.View()
 }
 
+// renderSearchModalOverlay renders the search modal using bubbletea-overlay.
+func (i *BrowseTimelineIntent) renderSearchModalOverlay(background string) string {
+	// Use the modal's RenderOverlay method for consistent rendering
+	return i.searchModal.RenderOverlay(background)
+}
+
+// renderSortModalOverlay renders the sort modal using bubbletea-overlay.
+func (i *BrowseTimelineIntent) renderSortModalOverlay(background string) string {
+	// Use the modal's RenderOverlay method for consistent rendering
+	return i.sortModal.RenderOverlay(background)
+}
+
 // renderViewDetailModalOverlay renders the event detail modal using bubbletea-overlay.
 func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) string {
 	// Create a simple background model that just returns the rendered view
@@ -873,6 +948,71 @@ func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) s
 	return overlayModel.View()
 }
 
+// openSearchModal creates and initializes the search modal.
+func (i *BrowseTimelineIntent) openSearchModal() tea.Cmd {
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.searchModal = components.NewEventSearchModal(
+		i.state.filters.SearchText,
+		width,
+		height,
+	)
+	return i.searchModal.Init()
+}
+
+// openSortModal creates and initializes the sort modal.
+func (i *BrowseTimelineIntent) openSortModal() tea.Cmd {
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	current := &components.EventSortConfig{
+		SortBy:    i.state.filters.SortBy,
+		SortOrder: i.state.filters.SortOrder,
+	}
+
+	i.sortModal = components.NewEventSortModal(
+		i.context.Events,
+		current,
+		width,
+		height,
+	)
+	return i.sortModal.Init()
+}
+
+// openFilterModal creates and initializes the filter modal.
+func (i *BrowseTimelineIntent) openFilterModal() tea.Cmd {
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	currentFilters := &components.TimelineFilters{
+		SearchText: i.state.filters.SearchText,
+		Tags:       i.state.filters.Tags,
+		Companies:  i.state.filters.Companies,
+		Categories: i.state.filters.Categories,
+		Projects:   i.state.filters.Projects,
+		SortBy:     i.state.filters.SortBy,
+		SortOrder:  i.state.filters.SortOrder,
+	}
+
+	i.filterModal = components.NewFilterModal(
+		i.context.Events,
+		currentFilters,
+		width,
+		height,
+	)
+	return i.filterModal.Init()
+}
+
 // getContextHelp returns themed keyboard shortcuts for the current state.
 // This follows the legacy pattern of using KeyBadge components for consistent styling.
 func (i *BrowseTimelineIntent) getContextHelp() string {
@@ -880,7 +1020,7 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 
 	switch i.state.currentState {
 	case BrowseStateTimeline:
-		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Filter, Back + Global shortcuts
+		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Search, Filter, Sort, Back + Global shortcuts
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
 				components.NavigateBadge(), // ↑/↓: Navigate
@@ -888,8 +1028,10 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 				components.AddBadge(),    // a: Add
 				components.EditBadge(),   // e: Edit
 				components.DeleteBadge(), // d: Delete
+				components.SearchBadge(), // /: Search
 				components.FilterBadge(), // f: Filter
-				components.BackBadge(),   // Esc: Back
+				components.NewKeyBadge("s", "Sort"),
+				components.BackBadge(), // Esc: Back
 			),
 			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
 		)
