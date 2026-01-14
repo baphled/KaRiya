@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/types"
@@ -144,8 +145,8 @@ type CaptureEventModel struct {
 	// strategy is the chosen capture strategy
 	strategy CaptureStrategy
 
-	// showOptionalFields tracks whether optional fields are visible (for manual mode toggle persistence)
-	showOptionalFields bool
+	// submitModal is shown during async submission (modal overlay pattern)
+	submitModal *components.ModalContent
 }
 
 // CaptureEventStates for navigation.

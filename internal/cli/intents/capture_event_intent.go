@@ -58,6 +58,9 @@ type SubmitErrorMsg struct {
 	Cause   error
 }
 
+// DismissModalMsg indicates the submit modal should be dismissed (after success).
+type DismissModalMsg struct{}
+
 // Ensure CaptureEventIntent implements ScreenResultHandler interface
 var _ ScreenResultHandler = (*CaptureEventIntent)(nil)
 
@@ -198,32 +201,6 @@ func (i *CaptureEventIntent) getAccentColor() lipgloss.Color {
 	return styles.ColorAccentTeal
 }
 
-// initializeFormForEdit initializes the form for editing an existing event.
-func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
-	// Initialize the review state with the previous event data.
-	// The form will be pre-populated with existing event details.
-	if i.context.PreviousEvent != nil {
-		i.state.reviewState.Event = i.context.PreviousEvent
-
-		// Edit mode always uses Manual strategy with all fields shown
-		i.state.strategy = StrategyManual
-		i.state.captureForm.SetStrategy(string(StrategyManual))
-		i.state.showOptionalFields = true
-
-		// CRITICAL: Load the event data into the form fields
-		// This populates all input fields with the existing event data
-		i.state.captureForm.LoadEventForEditing(i.context.PreviousEvent)
-
-		// Skip strategy selection and go straight to form
-		i.state.currentState = CaptureStateForm
-
-		// CRITICAL: Initialize the form so it can accept input
-		return i.state.captureForm.Init()
-	}
-	// Return a no-op command to satisfy the intent lifecycle
-	return func() tea.Msg { return nil }
-}
-
 // initializeFormForNew initializes the form for capturing a new event.
 func (i *CaptureEventIntent) initializeFormForNew() tea.Cmd {
 	// Create a fresh event with current timestamp.
@@ -243,6 +220,64 @@ func (i *CaptureEventIntent) initializeFormForNew() tea.Cmd {
 func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
+	}
+
+	// Handle async submission messages (modal overlay pattern)
+	switch msg := msg.(type) {
+	case SubmitCompleteMsg:
+		// Submission succeeded - show success modal briefly, then complete intent
+		i.state.submitModal = components.NewSuccessModal("Event saved!")
+		// Auto-dismiss after 2 seconds
+		return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+			return DismissModalMsg{}
+		})
+
+	case SubmitErrorMsg:
+		// Submission failed - show error modal (user can press Esc to dismiss)
+		i.state.submitModal = components.NewErrorModal("Save Failed", msg.Message)
+		return nil
+
+	case DismissModalMsg:
+		// Modal auto-dismissed after success - complete the intent
+		if i.state.submitModal != nil {
+			i.state.submitModal = nil
+			// Set result and complete intent
+			result := &CaptureEventResult{
+				Event:          i.state.reviewState.Event,
+				Bursts:         i.state.reviewState.AcceptedBursts,
+				Facts:          i.state.reviewState.AcceptedFacts,
+				AcceptedFields: make(map[string]bool),
+				RejectedFields: i.state.reviewState.RejectedItems,
+			}
+			i.setCompleted(result)
+		}
+		return nil
+	}
+
+	// Handle Esc key when error modal is showing (allows dismissing error and returning to form)
+	if i.state.submitModal != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			if keyMsg.String() == "esc" {
+				// Dismiss error modal and stay in current state
+				i.state.submitModal = nil
+				return nil
+			}
+		}
+	}
+
+	// Handle global keys BEFORE delegating to screen
+	// This ensures q (quit), ? (help) are always processed first
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch HandleGlobalKeys(keyMsg) {
+		case KeyQuit:
+			// 'q' pressed - quit the application
+			return tea.Quit
+		case KeyHelp:
+			// '?' pressed - toggle help modal
+			i.helpModal.Toggle()
+			return nil
+		}
+		// KeyBack (esc) is handled by the screen as CancelResult or modal dismissal above
 	}
 
 	// NEW: Check if screens architecture is enabled
@@ -904,8 +939,27 @@ func (i *CaptureEventIntent) View() string {
 
 	// NEW: Check if screens architecture is enabled
 	if i.useScreens && i.activeScreen != nil {
-		// Delegate rendering to active screen
-		return i.activeScreen.View()
+		// Get base view from active screen
+		baseView := i.activeScreen.View()
+
+		// If submit modal is visible, overlay it on the base view
+		if i.state.submitModal != nil {
+			termInfo := i.GetTerminalInfo()
+			width, height := 80, 24 // defaults
+			if termInfo != nil {
+				width = termInfo.Width
+				height = termInfo.Height
+			}
+
+			// Render modal content
+			modalContent := i.state.submitModal.Render(width, height)
+
+			// Overlay modal on background (centered)
+			return i.overlayModal(baseView, modalContent, width, height)
+		}
+
+		// No modal - return base view
+		return baseView
 	}
 
 	// LEGACY: Fall back to old view rendering
@@ -1395,7 +1449,13 @@ func (i *CaptureEventIntent) HandleCancel(result *screens.CancelResult) tea.Cmd 
 		return nil
 
 	case CaptureStateForm:
-		// Cancel form - go back to strategy selection
+		// Check if we're in edit mode (editing existing event from another intent like BrowseTimeline)
+		if i.state.context.PreviousEvent != nil {
+			// Edit mode - cancel the entire intent and return to caller
+			i.setCancelled()
+			return nil
+		}
+		// New event mode - go back to strategy selection
 		return i.transitionToStrategyScreen()
 
 	case CaptureStateReview:
@@ -1427,7 +1487,7 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 			}
 
 			// Store event and transition to review (if enrichment enabled)
-			// For now, go directly to submit
+			// For now, go directly to submit with modal overlay
 			i.state.reviewState = &ReviewInferredEventState{
 				Event:          event,
 				InferredBursts: make([]*career.Burst, 0),
@@ -1437,9 +1497,9 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 				RejectedItems:  make(map[string]string),
 			}
 
-			// TODO: Add burst/fact enrichment here if enabled
-			// For now, go directly to submit
-			return i.transitionToSubmitScreen()
+			// Show loading modal and perform async submit
+			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			return i.performSubmit()
 		}
 		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
 
@@ -1455,8 +1515,9 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 			i.state.reviewState.AcceptedBursts = bursts
 			i.state.reviewState.AcceptedFacts = facts
 
-			// Transition to submit
-			return i.transitionToSubmitScreen()
+			// Show loading modal and perform async submit
+			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			return i.performSubmit()
 		}
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
 
@@ -1578,36 +1639,36 @@ func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) te
 // Currently form goes directly to submit (see HandleSubmit line 1444).
 // Will use captureScreens.NewEventReviewScreen() when implemented.
 
-// transitionToSubmitScreen transitions to the submit screen.
-func (i *CaptureEventIntent) transitionToSubmitScreen() tea.Cmd {
-	// Update intent state
-	i.state.currentState = CaptureStateSubmit
+// ============================================================================
+// Modal Overlay Rendering
+// ============================================================================
 
-	// Create breadcrumbs
-	breadcrumbs := []string{"Main Menu", "Capture Event", "Submit"}
+// overlayModal overlays modal content on top of background content (centered).
+// This follows the StandardView modal overlay pattern for consistent modal rendering.
+func (i *CaptureEventIntent) overlayModal(background, modal string, width, height int) string {
+	bgLines := strings.Split(background, "\n")
+	modalLines := strings.Split(modal, "\n")
 
-	// Create submit screen with event and accepted bursts/facts
-	i.activeScreen = captureScreens.NewEventSubmitScreen(
-		breadcrumbs,
-		i.state.reviewState.Event,
-		i.state.reviewState.AcceptedBursts,
-		i.state.reviewState.AcceptedFacts,
-	)
-
-	// Get terminal info
-	termInfo := i.GetTerminalInfo()
-	width, height := 120, 40 // defaults
-	if termInfo != nil {
-		width = termInfo.Width
-		height = termInfo.Height
+	// Calculate vertical position to center modal
+	bgHeight := len(bgLines)
+	modalHeight := len(modalLines)
+	startLine := (bgHeight - modalHeight) / 2
+	if startLine < 0 {
+		startLine = 0
 	}
 
-	// Pass context to screen
-	i.activeScreen.SetTerminalInfo(width, height)
-	i.activeScreen.SetTheme(i.Theme())
-	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+	// Overlay modal lines onto background
+	result := make([]string, len(bgLines))
+	copy(result, bgLines)
 
-	// Trigger async submission
-	// The screen will handle the submission and progress display
-	return nil
+	for i, modalLine := range modalLines {
+		lineIndex := startLine + i
+		if lineIndex >= 0 && lineIndex < len(result) {
+			// Center modal line horizontally
+			centeredModalLine := lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
+			result[lineIndex] = centeredModalLine
+		}
+	}
+
+	return strings.Join(result, "\n")
 }
