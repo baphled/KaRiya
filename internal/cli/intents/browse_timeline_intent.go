@@ -60,6 +60,9 @@ type EventDeletedMsg struct {
 	EventID string
 }
 
+// Ensure BrowseTimelineIntent implements ScreenResultHandler interface
+var _ ScreenResultHandler = (*BrowseTimelineIntent)(nil)
+
 // BrowseTimelineIntent implements the Intent interface for browsing career events.
 // It owns the complete lifecycle of timeline browsing, including:
 // - Displaying a filtered and sorted timeline of events
@@ -754,27 +757,28 @@ func (i *BrowseTimelineIntent) transitionToScreen(screen screens.Screen) {
 }
 
 // handleScreenResult processes a screen result and determines next action.
+//
+// Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
+// BrowseTimelineIntent implements ScreenResultHandler interface for compile-time safety.
 func (i *BrowseTimelineIntent) handleScreenResult(result interface{}) tea.Cmd {
+	// Handle nil result
 	if result == nil {
 		return nil
 	}
 
-	switch r := result.(type) {
-	case *screens.CancelResult:
-		return i.handleCancelResult()
-	case *screens.NavigateResult:
-		return i.handleNavigateResult(r)
-	case *screens.SubmitResult:
-		return i.handleSubmitResult(r)
-	case *screens.ErrorResult:
-		return i.handleErrorResult(r)
-	default:
+	// Cast to ScreenResult (BrowseTimeline accepts interface{} for backward compatibility)
+	screenResult, ok := result.(screens.ScreenResult)
+	if !ok {
 		return nil
 	}
+
+	return NewScreenResultDispatcher(i).Dispatch(screenResult)
 }
 
-// handleCancelResult handles screen cancellation (back/escape).
-func (i *BrowseTimelineIntent) handleCancelResult() tea.Cmd {
+// HandleCancel handles screen cancellation (back/escape).
+//
+// Implements ScreenResultHandler interface.
+func (i *BrowseTimelineIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		// At root state, cancel means exit intent
@@ -802,8 +806,10 @@ func (i *BrowseTimelineIntent) handleCancelResult() tea.Cmd {
 	}
 }
 
-// handleNavigateResult handles screen navigation results.
-func (i *BrowseTimelineIntent) handleNavigateResult(result *screens.NavigateResult) tea.Cmd {
+// HandleNavigate handles screen navigation results.
+//
+// Implements ScreenResultHandler interface.
+func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	// Check if it's an action (map) or event selection
 	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
 		action, _ := actionData["action"].(string)
@@ -952,13 +958,18 @@ func (i *BrowseTimelineIntent) handleDeleteConfirmation(confirmed bool) tea.Cmd 
 }
 
 // handleSubmitResult handles form submissions (not used in timeline).
-func (i *BrowseTimelineIntent) handleSubmitResult(result *screens.SubmitResult) tea.Cmd {
+// HandleSubmit handles form submission results.
+//
+// Implements ScreenResultHandler interface.
+func (i *BrowseTimelineIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	// Timeline doesn't have forms, but include for completeness
 	return nil
 }
 
-// handleErrorResult handles error results from screens.
-func (i *BrowseTimelineIntent) handleErrorResult(result *screens.ErrorResult) tea.Cmd {
+// HandleError handles error results from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *BrowseTimelineIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	// Store error and return to previous state
 	i.state.deleteError = result.Err
 	return nil
