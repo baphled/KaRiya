@@ -18,6 +18,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Ensure GenerateCVIntent implements ScreenResultHandler interface
+var _ ScreenResultHandler = (*GenerateCVIntent)(nil)
+
 // GenerateCVIntent implements the Intent interface for generating CVs.
 type GenerateCVIntent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management
@@ -245,31 +248,17 @@ func (i *GenerateCVIntent) Update(msg tea.Msg) tea.Cmd {
 
 // handleScreenResult processes a ScreenResult from the active screen.
 // This is the bridge between screen-based UI and intent-based workflow orchestration.
+//
+// Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
+// GenerateCVIntent implements ScreenResultHandler interface for compile-time safety.
 func (i *GenerateCVIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
-	switch result.Type() {
-	case screens.ResultNavigate:
-		// User selected something and wants to proceed
-		// Extract the data and transition to the next state
-		return i.handleNavigateResult(result)
-
-	case screens.ResultCancel:
-		// User pressed Escape - go back to previous state
-		return i.handleCancelResult(result)
-
-	case screens.ResultSubmit:
-		// User submitted a form or completed an action
-		return i.handleSubmitResult(result)
-
-	case screens.ResultError:
-		// An error occurred in the screen
-		return i.handleErrorResult(result)
-	}
-
-	return nil
+	return NewScreenResultDispatcher(i).Dispatch(result)
 }
 
-// handleNavigateResult processes a NavigateResult from a screen.
-func (i *GenerateCVIntent) handleNavigateResult(result screens.ScreenResult) tea.Cmd {
+// HandleNavigate processes a NavigateResult from a screen.
+//
+// Implements ScreenResultHandler interface.
+func (i *GenerateCVIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	data := result.Data()
 
 	switch i.state.currentState {
@@ -312,8 +301,10 @@ func (i *GenerateCVIntent) handleNavigateResult(result screens.ScreenResult) tea
 	return nil
 }
 
-// handleCancelResult processes a CancelResult from a screen.
-func (i *GenerateCVIntent) handleCancelResult(result screens.ScreenResult) tea.Cmd {
+// HandleCancel processes a CancelResult from a screen.
+//
+// Implements ScreenResultHandler interface.
+func (i *GenerateCVIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
 		// Root state - cancel the intent
@@ -342,15 +333,19 @@ func (i *GenerateCVIntent) handleCancelResult(result screens.ScreenResult) tea.C
 	return nil
 }
 
-// handleSubmitResult processes a SubmitResult from a screen.
-func (i *GenerateCVIntent) handleSubmitResult(result screens.ScreenResult) tea.Cmd {
+// HandleSubmit processes a SubmitResult from a screen.
+//
+// Implements ScreenResultHandler interface.
+func (i *GenerateCVIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	// Most screens use Navigate instead of Submit for now
 	// This will be used more when we add form-based screens
 	return nil
 }
 
-// handleErrorResult processes an ErrorResult from a screen.
-func (i *GenerateCVIntent) handleErrorResult(result screens.ScreenResult) tea.Cmd {
+// HandleError processes an ErrorResult from a screen.
+//
+// Implements ScreenResultHandler interface.
+func (i *GenerateCVIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	data := result.Data()
 	if errData, ok := data.(map[string]interface{}); ok {
 		if err, ok := errData["error"].(error); ok {
