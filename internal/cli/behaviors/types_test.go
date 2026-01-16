@@ -111,10 +111,9 @@ var _ = Describe("Behaviors Types", func() {
 		Describe("RowFormatter", func() {
 			It("should compile with correct signature", func() {
 				// Compile-time check: this should compile if the type is defined correctly
-				var formatter behaviors.RowFormatter[string]
-				formatter = func(item string, index int) []string {
+				formatter := behaviors.RowFormatter[string](func(item string, index int) []string {
 					return []string{item}
-				}
+				})
 
 				result := formatter("test", 0)
 				Expect(result).To(Equal([]string{"test"}))
@@ -126,10 +125,9 @@ var _ = Describe("Behaviors Types", func() {
 					Count int
 				}
 
-				var formatter behaviors.RowFormatter[*TestItem]
-				formatter = func(item *TestItem, index int) []string {
+				formatter := behaviors.RowFormatter[*TestItem](func(item *TestItem, index int) []string {
 					return []string{item.Name, string(rune(item.Count))}
-				}
+				})
 
 				item := &TestItem{Name: "Test", Count: 42}
 				result := formatter(item, 0)
@@ -140,10 +138,9 @@ var _ = Describe("Behaviors Types", func() {
 
 		Describe("FilterPredicate", func() {
 			It("should compile with correct signature", func() {
-				var predicate behaviors.FilterPredicate[int]
-				predicate = func(item int) bool {
+				predicate := behaviors.FilterPredicate[int](func(item int) bool {
 					return item > 5
-				}
+				})
 
 				Expect(predicate(10)).To(BeTrue())
 				Expect(predicate(3)).To(BeFalse())
@@ -154,10 +151,9 @@ var _ = Describe("Behaviors Types", func() {
 					Active bool
 				}
 
-				var predicate behaviors.FilterPredicate[*TestItem]
-				predicate = func(item *TestItem) bool {
+				predicate := behaviors.FilterPredicate[*TestItem](func(item *TestItem) bool {
 					return item.Active
-				}
+				})
 
 				active := &TestItem{Active: true}
 				inactive := &TestItem{Active: false}
@@ -169,10 +165,9 @@ var _ = Describe("Behaviors Types", func() {
 
 		Describe("SortComparator", func() {
 			It("should compile with correct signature", func() {
-				var comparator behaviors.SortComparator[int]
-				comparator = func(a, b int) int {
+				comparator := behaviors.SortComparator[int](func(a, b int) int {
 					return a - b
-				}
+				})
 
 				Expect(comparator(5, 10)).To(BeNumerically("<", 0))
 				Expect(comparator(10, 5)).To(BeNumerically(">", 0))
@@ -180,8 +175,7 @@ var _ = Describe("Behaviors Types", func() {
 			})
 
 			It("should work with string comparison", func() {
-				var comparator behaviors.SortComparator[string]
-				comparator = func(a, b string) int {
+				comparator := behaviors.SortComparator[string](func(a, b string) int {
 					if a < b {
 						return -1
 					}
@@ -189,7 +183,7 @@ var _ = Describe("Behaviors Types", func() {
 						return 1
 					}
 					return 0
-				}
+				})
 
 				Expect(comparator("apple", "banana")).To(BeNumerically("<", 0))
 				Expect(comparator("banana", "apple")).To(BeNumerically(">", 0))
