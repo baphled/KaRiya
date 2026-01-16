@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -282,7 +283,6 @@ var _ = Describe("SkillSearchModal", func() {
 
 	Describe("Modal Width", func() {
 		It("should calculate width as 60% of terminal width", func() {
-			// 100 chars terminal = 60% = 60 chars modal
 			modal := components.NewSkillSearchModal("test", 100, 24)
 			modal.Show()
 			view := modal.View()
@@ -293,10 +293,10 @@ var _ = Describe("SkillSearchModal", func() {
 			Expect(len(lines)).To(BeNumerically(">", 0))
 
 			// Find the widest line (should be border)
+			// Use lipgloss.Width for ANSI-safe width calculation
 			maxWidth := 0
 			for _, line := range lines {
-				// Use visual width (rune count)
-				width := len([]rune(line))
+				width := lipgloss.Width(line)
 				if width > maxWidth {
 					maxWidth = width
 				}
@@ -315,9 +315,10 @@ var _ = Describe("SkillSearchModal", func() {
 			view := modal.View()
 
 			lines := strings.Split(view, "\n")
+			// Use lipgloss.Width for ANSI-safe width calculation
 			maxWidth := 0
 			for _, line := range lines {
-				width := len([]rune(line))
+				width := lipgloss.Width(line)
 				if width > maxWidth {
 					maxWidth = width
 				}
