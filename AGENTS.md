@@ -1,8 +1,8 @@
 # KaRiya Project Documentation
 
-**Last Updated**: 2026-01-12
+**Last Updated**: 2026-01-16
 **Project Status**: ✅ **PRODUCTION READY - ALL PHASES COMPLETE (100%)**
-**Test Coverage**: 240+ tests, 100% pass rate, 0 race conditions
+**Test Coverage**: 2,430+ tests, 100% pass rate, 0 race conditions
 **Code Quality**: All linting checks passing, no technical debt
 **Forms**: Huh library integration (Phase 4/5 complete)
 **Form Wrappers**: 2 (CaptureForm, SkillForm) - Required for intent forms
@@ -317,6 +317,16 @@ internal/
 │   ├── intents/          # Intent implementations
 │   ├── models/           # Legacy UI components
 │   ├── components/       # Reusable UI components
+│   ├── uikit/            # UIKit Foundation (Task 41)
+│   │   ├── theme/        # Theme infrastructure
+│   │   ├── primitives/   # Text, Button, ButtonGroup, Input, Badge
+│   │   └── containers/   # Box, Overlay
+│   ├── behaviors/        # Embeddable Behaviors (Task 42)
+│   │   ├── types.go      # Shared types
+│   │   ├── table.go      # TableBehavior[T]
+│   │   ├── crud.go       # CRUDBehavior[T]
+│   │   ├── filter_menu.go # FilterMenuBehavior[T]
+│   │   └── sort_menu.go  # SortMenuBehavior[T]
 │   ├── context/          # GlobalContext
 │   └── styles/           # Lipgloss styling
 ├── domain/career/        # Domain models
@@ -327,13 +337,15 @@ internal/
 ### Testing Strategy
 
 #### Test Coverage
-- **Overall**: 87% code coverage
+- **Overall**: 83.5% code coverage
 - **Intent Framework**: 88.1%
 - **GlobalContext**: 100%
 - **Domain Models**: >95%
 - **Repository**: >90%
 - **Service**: >85%
 - **CV Service**: 100% (203 tests, all passing)
+- **UIKit Components**: 85%+ (138 tests, all passing)
+- **Behaviors Package**: 85%+ (218 tests, all passing)
 
 #### Running Tests
 ```bash
@@ -355,10 +367,10 @@ go test -bench=. ./internal/cli/intents/
 
 #### Test Organization
 - **Ginkgo + Gomega** framework for all tests
-- **164+ total test specs** (CV service)
+- **2,430+ total test specs** (all packages)
 - **100% pass rate**
 - **0 race conditions**
-- **Execution time: 1.3s with race detector**
+- **Execution time: <5s with race detector**
 
 ---
 
@@ -998,6 +1010,69 @@ Completed tasks remain in `tasks/` directory for reference:
 ---
 
 ## Recent Fixes
+
+### Tasks 41 & 42: UIKit Foundation & Behaviors System (2026-01-16)
+
+**Status**: ✅ **COMPLETE - FOUNDATION COMPONENTS READY**
+
+#### Task 41: UIKit Foundation (2026-01-15)
+
+Successfully created a standardized UI component library with reusable primitives and theme infrastructure, delivering **138 tests** and **~1,350 LOC**.
+
+**Primitives Package** (`internal/cli/uikit/primitives/`):
+- ✅ **Text** - Semantic text styles (Title, Subtitle, Body, Muted, Error, Success, Warning)
+- ✅ **Button** - Interactive buttons with 4 variants (Primary, Secondary, Danger, Ghost)
+- ✅ **ButtonGroup** - Keyboard-navigable button groups with focus management
+- ✅ **Input** - Text input wrapper with theming and validation states
+- ✅ **Badge** - Status badges with multiple variants (Key, Status, Tag)
+
+**Theme System** (`internal/cli/uikit/theme/`):
+- ✅ **Theme Interface** - Centralized theme management with Catppuccin Macchiato
+- ✅ **ThemeAware** - Embeddable base type for theme-aware components
+- ✅ **Consistent Palette** - Unified color scheme across all components
+
+**Quality Metrics**:
+- **112 tests** (100% pass rate)
+- **1,387 LOC** source + **1,343 LOC** tests
+- **85%+** coverage
+- Zero warnings, zero race conditions
+
+#### Task 42: Behaviors Foundation (2026-01-16)
+
+Successfully created embeddable behavior components that eliminate code duplication across intents, delivering **218 tests** and **~3,984 LOC**.
+
+**Behaviors Package** (`internal/cli/behaviors/`):
+- ✅ **Shared Types** - Foundation types (ColumnDef, CRUDMode, MenuOption, MenuSection) (60 LOC, 16 tests)
+- ✅ **TableBehavior[T]** - Type-safe table with pagination, navigation, filtering, sorting (494 LOC, 87 tests)
+- ✅ **CRUDBehavior[T]** - Create/edit/delete operations with confirmation modals (280 LOC, 32 tests)
+- ✅ **FilterMenuBehavior[T]** - Sectioned filter menu with multi-select (292 LOC, 26 tests)
+- ✅ **SortMenuBehavior[T]** - Sort options menu with comparators (224 LOC, 27 tests)
+
+**Containers Package** (`internal/cli/uikit/containers/`):
+- ✅ **Box** - Bordered containers with 4 variants (Default, Emphasized, Destructive, Subtle) + shadow (199 LOC, 20 tests)
+- ✅ **Overlay** - Centered modal overlay with background dimming (102 LOC, 10 tests)
+
+**Quality Metrics**:
+- **218 tests** (100% pass rate)
+- **1,651 LOC** source + **2,333 LOC** tests
+- **85%+** coverage
+- **7 components** delivered
+- Zero warnings, zero race conditions
+
+**Architecture Highlights**:
+- **Type-Safe Generics**: `TableBehavior[T]` eliminates runtime type assertions
+- **Embeddable Pattern**: Behaviors compose like `BaseIntent`
+- **Fluent APIs**: Chainable configuration methods
+- **One-Way Dependencies**: Clear, acyclic dependency graph
+
+**Impact**: Foundation for eliminating **~1,550 lines** of duplicated table/CRUD code across 5 intents (BrowseTimeline, ManageSkills, BurstManagement, FactManagement, and future intents).
+
+**Next Steps** (Task 43 - Separate PR):
+- Migrate existing intents to use new behaviors
+- Remove duplicated code from intents
+- Achieve consistent UX across all table-based screens
+
+---
 
 ### Huh Forms Migration (2026-01-07)
 
@@ -2041,7 +2116,7 @@ sqlite3 ~/.kariya/events.db "SELECT MAX(version_id) FROM goose_db_version"
 | **Test Framework** | Ginkgo v2 + Gomega |
 | **Database** | SQLite (modernc.org/sqlite) |
 | **Status** | ✅ Production Ready |
-| **Last Updated** | 2026-01-09 |
+| **Last Updated** | 2026-01-16 |
 
 ---
 

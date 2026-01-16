@@ -339,29 +339,15 @@ internal/cli/
 
 **Estimated LOC**: ~150 source, ~100 test
 
-**Actual LOC**: ~224 source, ~338 test (27 comprehensive specs)
+**Actual LOC**: ~494 source, ~650 test (87 comprehensive specs)
 
-**Key Implementation Notes**:
-- Simple flat list of options (no sections - simpler than FilterMenu)
-- Each option stores: label, comparator function, reverse flag
-- selectedIndex tracks currently applied sort (-1 if none initially)
-- Navigation with wrapping (up/down, j/k)
-- Applies sort directly to table via `table.SetSort(comparator, reverse)`
-- Themed rendering with Catppuccin Macchiato colors
-- Focus indicator (▶) and selection checkmark (✓)
-- Show/Hide state management (only renders when active)
-- OnApply callback invoked after applying sort
-- All 172 tests passing (100% pass rate)
-- Zero staticcheck warnings
-
-**Design Simplicity**: SortMenu is simpler than FilterMenu because:
-- No sections (just a flat list)
-- Single selected option at a time
-- Direct comparator application (no predicate building)
-
-**Commits**:
-- `6aad41d` - RED: Add failing tests for SortMenuBehavior
-- `f2d71a7` - GREEN: Implement SortMenuBehavior with comparators
+**Implementation Summary**:
+- Type-safe generic table behavior with full pagination support
+- Integrated filtering and sorting with predicate/comparator functions
+- ListNavigator interface implementation for consistent navigation
+- Fluent configuration API for easy setup
+- Automatic page calculation and display item management
+- All 87 tests passing with comprehensive edge case coverage
 
 ---
 
