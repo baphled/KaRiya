@@ -1,0 +1,98 @@
+package containers
+
+import (
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+)
+
+// Overlay provides centered modal overlay with optional background dimming.
+//
+// Usage:
+//
+//	overlay := containers.NewOverlay(80, 24).
+//	    Content("Modal content here").
+//	    Dimmed()
+//	rendered := overlay.Render()
+type Overlay struct {
+	width   int
+	height  int
+	content string
+	dimmed  bool
+	dimChar rune
+}
+
+// NewOverlay creates a new overlay with the given dimensions.
+func NewOverlay(width, height int) *Overlay {
+	return &Overlay{
+		width:   width,
+		height:  height,
+		dimmed:  false,
+		dimChar: '·', // Default dim character
+	}
+}
+
+// Content sets the content to display in the center.
+func (o *Overlay) Content(content string) *Overlay {
+	o.content = content
+	return o
+}
+
+// Dimmed enables background dimming.
+func (o *Overlay) Dimmed() *Overlay {
+	o.dimmed = true
+	return o
+}
+
+// DimmedWith sets a custom dim character.
+func (o *Overlay) DimmedWith(char rune) *Overlay {
+	o.dimChar = char
+	o.dimmed = true // Automatically enable dimming when custom char is set
+	return o
+}
+
+// Render returns the rendered overlay as a string.
+func (o *Overlay) Render() string {
+	// Create background if dimmed
+	var background string
+	if o.dimmed {
+		// Fill with dim characters
+		dimLine := strings.Repeat(string(o.dimChar), o.width)
+		dimLines := make([]string, o.height)
+		for i := range dimLines {
+			dimLines[i] = dimLine
+		}
+		background = strings.Join(dimLines, "\n")
+
+		// Style the background with muted color
+		backgroundStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#6C7086")) // Catppuccin Overlay0
+		background = backgroundStyle.Render(background)
+	} else {
+		// Empty background
+		emptyLine := strings.Repeat(" ", o.width)
+		emptyLines := make([]string, o.height)
+		for i := range emptyLines {
+			emptyLines[i] = emptyLine
+		}
+		background = strings.Join(emptyLines, "\n")
+	}
+
+	// If no content, just return background
+	if o.content == "" {
+		return background
+	}
+
+	// Place content in center using lipgloss.Place
+	centered := lipgloss.Place(
+		o.width,
+		o.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		o.content,
+		lipgloss.WithWhitespaceChars(string(o.dimChar)),
+		lipgloss.WithWhitespaceForeground(lipgloss.Color("#6C7086")),
+	)
+
+	return centered
+}
