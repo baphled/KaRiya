@@ -84,6 +84,7 @@ internal/cli/
 
 **Phase 2.5.1**: Shared Types - ✅ COMPLETE (16 tests passing)
 **Phase 2.5.2**: TableBehavior[T] - ✅ COMPLETE (87 tests passing)
+**Phase 2.5.3**: CRUDBehavior[T] - ✅ COMPLETE (32 tests passing, 119 total in suite)
 
 ---
 
@@ -396,14 +397,14 @@ internal/cli/
     - [ ] `RenderHelpKeys()` includes "e Edit" when edit enabled
     - [ ] `RenderHelpKeys()` includes "d Delete" when delete enabled
     - [ ] `RenderHelpKeys()` excludes disabled operations
-- [ ] Tests **FAIL**
-- [ ] Test committed:
+- [x] Tests **FAIL**
+- [x] Test committed:
   ```bash
   make ai-commit MSG="test(behaviors): add failing tests for CRUDBehavior"
   ```
 
 #### GREEN Phase
-- [ ] `crud.go` implemented with:
+- [x] `crud.go` implemented with:
   ```go
   type CRUDBehavior[T any] struct {
       theme.Aware
@@ -429,34 +430,52 @@ internal/cli/
       enableDelete bool
   }
   ```
-- [ ] Constructor validates table is non-nil
-- [ ] Configuration methods set callbacks and enable flags
-- [ ] HandleKey processes n/e/d keys appropriately
-- [ ] Delete confirmation modal created on 'd' key
-- [ ] Update delegates to modal and handles result
-- [ ] RenderHelpKeys builds dynamic help text
-- [ ] Tests now **PASS**
-- [ ] Implementation committed:
+- [x] Constructor validates table is non-nil
+- [x] Configuration methods set callbacks and enable flags
+- [x] HandleKey processes n/e/d keys appropriately
+- [x] Delete confirmation modal created on 'd' key
+- [x] Update delegates to modal and handles result
+- [x] RenderHelpKeys builds dynamic help text
+- [x] Tests now **PASS**
+- [x] Implementation committed:
   ```bash
   make ai-commit MSG="feat(behaviors): implement CRUDBehavior with delete confirmation"
   ```
 
 #### REFACTOR Phase
-- [ ] Extract modal creation to helper method
-- [ ] Simplify key handling with map lookup
-- [ ] Add inline documentation
+- [x] Extract modal creation to helper method
+- [x] Simplify key handling with map lookup
+- [x] Add inline documentation
 - [ ] Refactoring committed (if changes made)
 
 **Acceptance Criteria**:
-- [ ] Create/Edit/Delete can be independently enabled/disabled
-- [ ] Delete confirmation shows correct item name
-- [ ] Delete confirmation is destructive-styled
-- [ ] Callbacks receive correct data
-- [ ] Mode transitions work correctly
-- [ ] Tests pass with race detector
+- [x] Create/Edit/Delete can be independently enabled/disabled
+- [x] Delete confirmation shows correct item name
+- [x] Delete confirmation is destructive-styled
+- [x] Callbacks receive correct data
+- [x] Mode transitions work correctly
+- [x] Tests pass with race detector
 - [ ] Coverage ≥ 85%
 
 **Estimated LOC**: ~200 source, ~150 test
+
+**Actual LOC**: ~280 source, ~429 test (32 comprehensive specs)
+
+**Key Implementation Notes**:
+- Used `components.NewWarningModal` for delete confirmation (integrates with existing modal system)
+- Fluent API for configuration (ItemNamer, OnCreate, OnEdit, OnDelete)
+- Generic type T ensures type-safe callbacks
+- Mode management (List/Create/Edit/Delete) with IsInListMode() helper
+- HandleKey() returns (cmd, handled) for easy integration
+- Update() processes delete confirmation (y/n/esc keys)
+- RenderHelpKeys() dynamically shows enabled operations (e.g., "n New • e Edit • d Delete")
+- SetDimensions() for responsive modal rendering
+- All 119 tests passing (87 table + 16 types + 32 CRUD)
+- Zero staticcheck warnings
+
+**Commits**:
+- `49bd1fa` - RED: Add failing tests for CRUDBehavior
+- `6021b52` - GREEN: Implement CRUDBehavior with delete confirmation
 
 ---
 
