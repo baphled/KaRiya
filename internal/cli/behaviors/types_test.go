@@ -1,17 +1,10 @@
 package behaviors_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestBehaviors(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Behaviors Types Suite")
-}
 
 var _ = Describe("Behaviors Types", func() {
 	Describe("ColumnDef", func() {

@@ -1,18 +1,11 @@
 package behaviors_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/themes"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestTableBehavior(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "TableBehavior Suite")
-}
 
 // Test item type
 type TestItem struct {
