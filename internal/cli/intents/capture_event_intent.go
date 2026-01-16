@@ -243,7 +243,37 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	// Handle async submission messages (modal overlay pattern)
+	// These messages must be handled BEFORE delegating to screens
 	switch msg := msg.(type) {
+	case FormSubmittedMsg:
+		// Handle form submission - works with both screens and legacy mode
+		if msg.Event == nil {
+			i.setFailed("INVALID_FORM", "Form submission with nil event", nil)
+			return nil
+		}
+
+		// Validate the event data
+		if err := msg.Event.Validate(); err != nil {
+			i.setFailed("VALIDATION_ERROR", fmt.Sprintf("Form validation failed: %v", err), err)
+			return nil
+		}
+
+		// Initialize review state with the event
+		i.state.reviewState = &ReviewInferredEventState{
+			Event:          msg.Event,
+			InferredBursts: make([]*career.Burst, 0),
+			InferredFacts:  make([]*career.Fact, 0),
+			AcceptedBursts: make([]*career.Burst, 0),
+			AcceptedFacts:  make([]*career.Fact, 0),
+			RejectedItems:  make(map[string]string),
+		}
+		i.state.currentState = CaptureStateReview
+
+		// Clear activeScreen so legacy review View() is used for pre-save review
+		// Post-save review will create EventReviewScreen in DismissModalMsg handler
+		i.activeScreen = nil
+		return nil
+
 	case SubmitCompleteMsg:
 		// Submission succeeded - show success modal briefly, then complete intent
 		i.state.submitModal = components.NewSuccessModal("Event saved!")

@@ -64,7 +64,8 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			view = intent.View()
 
 			// Should be in pre-save review
-			Expect(view).To(ContainSubstring(testEvent.Text), "Pre-save review should show event")
+			// Note: View may truncate long text with "..." so we check for a prefix that will be visible
+			Expect(view).To(ContainSubstring("Built REST API with Go and PostgreSQL"), "Pre-save review should show event")
 
 			// Step 4: User presses Enter to confirm and submit
 			// This triggers performSubmit() which:
