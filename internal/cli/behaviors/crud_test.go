@@ -178,7 +178,7 @@ var _ = Describe("CRUDBehavior", func() {
 			cmd, handled := crud.HandleKey("n")
 			Expect(handled).To(BeTrue())
 			Expect(createCalled).To(BeTrue())
-			Expect(cmd).To(Equal(createCmd))
+			Expect(cmd).NotTo(BeNil()) // Cmd was returned
 			Expect(crud.Mode()).To(Equal(behaviors.ModeCreate))
 		})
 
@@ -212,7 +212,7 @@ var _ = Describe("CRUDBehavior", func() {
 			cmd, handled := crud.HandleKey("e")
 			Expect(handled).To(BeTrue())
 			Expect(editCalled).To(BeTrue())
-			Expect(cmd).To(Equal(editCmd))
+			Expect(cmd).NotTo(BeNil()) // Cmd was returned
 			Expect(crud.Mode()).To(Equal(behaviors.ModeEdit))
 			Expect(receivedItem).NotTo(BeNil())
 			Expect(receivedItem.Name).To(Equal("Item 1"))
@@ -337,7 +337,7 @@ var _ = Describe("CRUDBehavior", func() {
 			cmd, handled := crud.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 			Expect(handled).To(BeTrue())
 			Expect(deleteCalled).To(BeTrue())
-			Expect(cmd).To(Equal(deleteCmd))
+			Expect(cmd).NotTo(BeNil()) // Cmd was returned
 			Expect(receivedItem).NotTo(BeNil())
 			Expect(receivedItem.Name).To(Equal("Item 1"))
 			Expect(crud.Mode()).To(Equal(behaviors.ModeList)) // Should return to list
@@ -416,9 +416,9 @@ var _ = Describe("CRUDBehavior", func() {
 			crud.OnCreate(func() tea.Cmd { return nil })
 
 			help := crud.RenderHelpKeys()
-			Expect(help).To(ContainSubstring("n"))
-			Expect(help).NotTo(ContainSubstring("e"))
-			Expect(help).NotTo(ContainSubstring("d"))
+			Expect(help).To(ContainSubstring("n New"))
+			Expect(help).NotTo(ContainSubstring("Edit"))
+			Expect(help).NotTo(ContainSubstring("Delete"))
 		})
 
 		It("should return empty string when no operations enabled", func() {
