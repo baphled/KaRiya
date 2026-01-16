@@ -358,7 +358,12 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 
 	// Only process messages that are essential for state transitions
 	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
-	switch msg.(type) {
+	switch m := msg.(type) {
+	case tea.BatchMsg:
+		// BatchMsg contains multiple commands - process each one
+		for _, batchCmd := range m {
+			e.executeCmd(batchCmd)
+		}
 	case models.SubmitMsg:
 		// Form submission - essential for form → review state transition
 		modelInterface, _ := e.Model.Update(msg)
