@@ -94,10 +94,8 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			// Should transition to Enrichment state
 			view = intent.View()
 			// Should show "Enriching" or "Extracting"
-			if !strings.Contains(view, "Enriching") && !strings.Contains(view, "Extracting") {
-				// Might already be past enrichment if it was fast
-				// That's ok, check if we're in enrichment review
-			}
+			// Note: Might already be past enrichment if it was fast - that's ok
+			_ = strings.Contains(view, "Enriching") || strings.Contains(view, "Extracting")
 
 			// Step 6: Enrichment completes → EnrichmentCompleteMsg
 			// Simulate enrichment returning results (could be empty)

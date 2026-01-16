@@ -258,14 +258,6 @@ func (m *ModalContent) Render(terminalWidth, terminalHeight int) string {
 		modalWidth = 80
 	}
 
-	modalHeight := len(contentLines) + 4 // Add padding
-	if modalHeight < 8 {
-		modalHeight = 8
-	}
-	if modalHeight > 20 {
-		modalHeight = 20
-	}
-
 	// Create modal box style
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

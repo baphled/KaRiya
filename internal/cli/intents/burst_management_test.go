@@ -604,7 +604,7 @@ var _ = Describe("BurstManagement Intent", func() {
 				UpdatedAt:   time.Now(),
 			}
 			mockRepo.bursts = append(mockRepo.bursts, anotherBurst)
-			intent.context.LoadBursts()
+			_ = intent.context.LoadBursts()
 			intent.state.filteredBursts = intent.context.Bursts
 
 			intent.state.currentState = BurstStateDeleteConfirm
@@ -1138,7 +1138,7 @@ var _ = Describe("BurstManagement Intent", func() {
 					UpdatedAt:   time.Now(),
 				}
 				mockRepo.bursts = append(mockRepo.bursts, anotherBurst)
-				intent.context.LoadBursts()
+				_ = intent.context.LoadBursts()
 				intent.state.filteredBursts = intent.context.Bursts
 
 				// Start in detail view with first burst

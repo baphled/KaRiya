@@ -609,8 +609,8 @@ var _ = Describe("FormModel", func() {
 			It("should include selected tags in form data", func() {
 				// Select tags
 				tagSelector := form.TagSelector()
-				tagSelector.SelectTag("technical")
-				tagSelector.SelectTag("leadership")
+				Expect(tagSelector.SelectTag("technical")).To(Succeed())
+				Expect(tagSelector.SelectTag("leadership")).To(Succeed())
 
 				// Fill form
 				form = typeText(form, "Led technical implementation")

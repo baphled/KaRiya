@@ -347,9 +347,8 @@ func TestLoadingMessageRotator_EmptyMessageList(t *testing.T) {
 
 	// Should handle empty list gracefully
 	current := rotator.GetCurrent()
-	if current == "" {
-		// Expected - no messages to show
-	}
+	// Expected - no messages to show for empty list
+	_ = current
 
 	// Rotation should not panic
 	rotator.Rotate()
@@ -425,9 +424,8 @@ func TestLoadingMessageRotator_ResetDuringRotation(t *testing.T) {
 		t.Errorf("Expected first message after reset, got '%s'", currentAfter)
 	}
 
-	if currentBefore == currentAfter {
-		// This is acceptable if we were already on first message
-	}
+	// Note: currentBefore == currentAfter is acceptable if we were already on first message
+	_ = currentBefore
 }
 
 func TestLoadingMessageRotator_ConcurrentAccess(t *testing.T) {
@@ -504,7 +502,6 @@ func TestSimpleSpinner_VeryLongInterval(t *testing.T) {
 	spinner.Advance()
 	frame2 := spinner.GetFrame()
 	// With 1 hour interval and no time passing, frame shouldn't advance
-	if frame2 != frame {
-		// This is acceptable if it advanced anyway
-	}
+	// Note: frame2 != frame is acceptable if it advanced anyway
+	_ = frame2
 }

@@ -386,10 +386,7 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			// Configure form based on selected strategy
 			i.state.captureForm.SetStrategy(string(i.state.strategy))
 
-			// For quick mode, pre-fill date with today
-			if i.state.strategy == StrategyQuick {
-				// Date will be set to today automatically in the submit handler
-			}
+			// Note: For quick mode, date will be set to today automatically in the submit handler
 
 			i.state.currentState = CaptureStateForm
 
@@ -850,11 +847,9 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// Perform enrichment for all strategies (if CareerService is available)
 		// This extracts bursts and facts from the saved event
 		if i.state.context.CareerService != nil {
-			if err := i.performEnrichment(ctx, event); err != nil {
-				// Log enrichment error but don't fail the submission
-				// The event is already saved successfully
-				// Continue to success - enrichment is optional
-			}
+			// Enrichment error is logged but doesn't fail submission
+			// The event is already saved successfully - enrichment is optional
+			_ = i.performEnrichment(ctx, event)
 		}
 
 		// Save any accepted facts from review that might have been manually edited/added
