@@ -14,6 +14,7 @@
 6. [Debugging TUI Issues](#debugging-tui-issues)
 7. [Performance Optimization](#performance-optimization)
 8. [Advanced Patterns](#advanced-patterns)
+   - [Modal Overlays](#modal-overlays) **NEW!**
 9. [Common Pitfalls](#common-pitfalls)
 
 ---
@@ -755,6 +756,142 @@ func (m AsyncComponent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     return m, nil
 }
 ```
+
+### Modal Overlays
+
+Modal overlays are dialogs that appear over the main content. KaRiya uses the `bubbletea-overlay` library for reliable modal compositing.
+
+#### When to Use Modals
+
+✅ **Use modals for:**
+- Showing content over main view (preserves context)
+- Quick user input without screen transition
+- Details, confirmations, or forms
+- Error messages and loading states
+
+❌ **Don't use modals for:**
+- Full-screen content transitions
+- Primary navigation
+- Complex multi-page workflows
+
+#### Creating a Modal Component
+
+**Step 1**: Implement `tea.Model` interface
+
+```go
+type YourModal struct {
+    visible bool
+    width   int
+    height  int
+}
+
+func (m *YourModal) Init() tea.Cmd { return nil }
+
+func (m *YourModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    if !m.visible { return m, nil }
+    
+    switch msg := msg.(type) {
+    case tea.WindowSizeMsg:
+        m.width = msg.Width
+        m.height = msg.Height
+    case tea.KeyMsg:
+        switch msg.String() {
+        case "esc", "q":
+            m.Hide()
+        }
+    }
+    return m, nil
+}
+
+func (m *YourModal) View() string {
+    if !m.visible { return "" }
+    
+    // CRITICAL: Always set solid background!
+    return lipgloss.NewStyle().
+        Border(lipgloss.RoundedBorder()).
+        BorderForeground(styles.ColorBorder).
+        Background(styles.ColorBackground). // Prevents transparency
+        Padding(1, 2).
+        Render(content)
+}
+```
+
+**Step 2**: Create staticViewModel helper
+
+```go
+type staticViewModel struct {
+    content string
+}
+
+func (s *staticViewModel) Init() tea.Cmd { return nil }
+func (s *staticViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { 
+    return s, nil 
+}
+func (s *staticViewModel) View() string { return s.content }
+```
+
+**Step 3**: Create render method in intent
+
+```go
+import "github.com/rmhubbert/bubbletea-overlay"
+
+func (i *YourIntent) renderModalOverlay(background string) string {
+    bgModel := &staticViewModel{content: background}
+    
+    overlayModel := overlay.New(
+        i.yourModal,    // Foreground (modal)
+        bgModel,        // Background (main view)
+        overlay.Center, // X position
+        overlay.Center, // Y position
+        0,              // X offset
+        -2,             // Y offset (avoids footer)
+    )
+    
+    return overlayModel.View()
+}
+```
+
+**Step 4**: Integrate in View()
+
+```go
+func (i *YourIntent) View() string {
+    baseView := i.renderMainContent()
+    
+    // Check if modal is visible and overlay it
+    if i.yourModal != nil && i.yourModal.IsVisible() {
+        return i.renderModalOverlay(baseView)
+    }
+    
+    return baseView
+}
+```
+
+#### Modal Best Practices
+
+**✅ DO:**
+1. Always set `Background(styles.ColorBackground)` to prevent transparency
+2. Handle `tea.WindowSizeMsg` for responsive sizing
+3. Check `visible` before updating or rendering
+4. Use Y offset of -2 to avoid footer overlap
+5. Clear modal reference after use (`i.yourModal = nil`)
+6. Return empty string from View() when not visible
+
+**❌ DON'T:**
+1. Stack multiple modals (close one before showing another)
+2. Forget solid background (causes transparency issues)
+3. Manually center with ANSI codes (use `overlay.Center`)
+4. Constrain Huh form heights (use natural height)
+5. Skip WindowSizeMsg handling (breaks responsiveness)
+
+#### Real-World Example
+
+See `internal/cli/components/view_event_detail_modal.go` for a complete implementation:
+- 151 lines, fully functional
+- Read-only display with action tracking
+- Solid background, responsive sizing
+- Integrates with Browse Timeline intent
+
+**More details**: See [MODAL_PATTERNS.md](./MODAL_PATTERNS.md#modal-overlays-with-bubbletea-overlay) for comprehensive patterns and examples.
 
 ---
 

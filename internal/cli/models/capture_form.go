@@ -81,7 +81,8 @@ func (m *CaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.form = f
 	}
 
-	if m.form.State == huh.StateCompleted && m.formData.SubmitConfirmed {
+	// When form is completed (user pressed Submit button), trigger submission
+	if m.form.State == huh.StateCompleted {
 		return m, m.submitForm()
 	}
 

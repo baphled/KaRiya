@@ -74,9 +74,9 @@ func RenderHelpFooter(theme themes.Theme, badges ...KeyBadge) string {
 
 // Common badge constructors for consistency across the application
 
-// NavigateBadge returns a badge for navigation keys.
+// NavigateBadge returns a badge for navigation keys (arrows and vim-style j/k).
 func NavigateBadge() KeyBadge {
-	return KeyBadge{Key: "↑/↓", Hint: "Navigate"}
+	return KeyBadge{Key: "↑↓/jk", Hint: "Navigate"}
 }
 
 // NavigateHorizontalBadge returns a badge for horizontal navigation.
@@ -117,6 +117,11 @@ func BackBadge() KeyBadge {
 // ConfirmBadge returns a badge for confirming.
 func ConfirmBadge() KeyBadge {
 	return KeyBadge{Key: "Enter", Hint: "Confirm"}
+}
+
+// AddBadge returns a badge for adding.
+func AddBadge() KeyBadge {
+	return KeyBadge{Key: "a", Hint: "Add"}
 }
 
 // EditBadge returns a badge for editing.

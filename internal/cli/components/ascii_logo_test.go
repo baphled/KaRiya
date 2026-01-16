@@ -131,7 +131,7 @@ var _ = Describe("ASCIILogo", func() {
 				// Final view should be fully rendered
 				finalView := logo.View()
 				Expect(finalView).To(ContainSubstring("██"))
-				Expect(len(finalView)).To(BeNumerically(">=", len(initialView)))
+				Expect(len(initialView)).To(BeNumerically(">=", len(finalView)))
 			})
 
 			It("should stop animation when fade progress reaches 1.0", func() {

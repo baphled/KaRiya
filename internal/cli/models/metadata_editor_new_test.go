@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/models"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -27,7 +28,10 @@ var _ = Describe("MetadataEditorModelNew", func() {
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		service = &careerservice.Service{}
+		repo := careerrepo.NewMemoryRepository()
+		skillRepo := careerrepo.NewMemorySkillRepository()
+		service = careerservice.NewService(repo)
+		service.SetSkillRepository(skillRepo)
 		cliService = nil // Can be nil for these tests
 
 		// Create a test event

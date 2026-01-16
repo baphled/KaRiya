@@ -3,6 +3,7 @@ package intents
 import (
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -81,29 +82,43 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		})
 	})
 
-	Describe("Submit State", func() {
+	Describe("Error Modal (after submission failure)", func() {
 		BeforeEach(func() {
-			intent.state.currentState = CaptureStateSubmit
-			intent.state.error = &IntentError{
-				Code:    "TEST_ERROR",
-				Message: "Submission failed",
+			// Set up a realistic scenario: form submitted, error occurred, modal showing
+			intent.state.currentState = CaptureStateForm
+			intent.state.reviewState = &ReviewInferredEventState{
+				Event: &career.CareerEvent{
+					Text: "Test event",
+					Date: time.Now(),
+				},
 			}
+			// Simulate error modal being shown after failed submission
+			intent.Update(SubmitErrorMsg{Message: "Submission failed"})
 		})
 
-		It("should go back to Review when esc is pressed", func() {
+		It("should dismiss error modal when esc is pressed", func() {
+			// Verify modal is showing
+			Expect(intent.state.submitModal).NotTo(BeNil())
+
+			// Press Esc to dismiss modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			Expect(intent.state.currentState).To(Equal(CaptureStateReview))
+			// Modal should be dismissed
+			Expect(intent.state.submitModal).To(BeNil())
+			// Should stay in Form state (not transition back)
+			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
 			Expect(intent.active).To(BeTrue())
 		})
 
-		It("should keep error visible when going back", func() {
-			originalError := intent.state.error
-
+		It("should allow retry after dismissing error modal", func() {
+			// Dismiss the error modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.state.submitModal).To(BeNil())
 
-			Expect(intent.state.error).To(Equal(originalError))
-			Expect(intent.state.error.Code).To(Equal("TEST_ERROR"))
+			// User should be able to retry submission
+			// (In real workflow, they would modify form and resubmit)
+			Expect(intent.state.reviewState).NotTo(BeNil())
+			Expect(intent.active).To(BeTrue())
 		})
 	})
 
@@ -136,19 +151,17 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 			Expect(view).To(ContainSubstring("Main Menu"))
 		})
 
-		It("should show 'esc', 'm', and 'r' in Submit footer", func() {
-			intent.state.currentState = CaptureStateSubmit
-			intent.state.result = &CaptureEventResult{
-				Event: &career.CareerEvent{
-					Text: "Test",
-					Date: time.Now(),
-				},
-			}
+		It("should show error modal overlay when submission fails", func() {
+			// Set up error modal scenario
+			intent.state.currentState = CaptureStateForm
+			intent.state.submitModal = components.NewErrorModal("Save Failed", "Submission failed")
+
 			view := intent.View()
 
-			Expect(view).To(ContainSubstring("Esc"))
-			Expect(view).To(ContainSubstring("Main Menu"))
-			Expect(view).To(ContainSubstring("Back"))
+			// Should show error modal content
+			Expect(view).To(ContainSubstring("Save Failed"))
+			Expect(view).To(ContainSubstring("Submission failed"))
+			Expect(view).To(ContainSubstring("Esc")) // Esc to dismiss modal
 		})
 	})
 })

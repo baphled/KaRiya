@@ -90,9 +90,9 @@ var _ = Describe("KeyBadge", func() {
 	})
 
 	Describe("CommonBadges", func() {
-		It("should provide a Navigate badge", func() {
+		It("should provide a Navigate badge with both arrow and vim-style keys", func() {
 			badge := components.NavigateBadge()
-			Expect(badge.Key).To(ContainSubstring("↑"))
+			Expect(badge.Key).To(Equal("↑↓/jk")) // Shows both arrow and vim-style navigation
 			Expect(badge.Hint).To(Equal("Navigate"))
 		})
 

@@ -485,9 +485,17 @@ func DimContent(content string) string {
 }
 
 // RenderOverlay renders modal content centered over a dimmed background.
-// It handles the centering calculation and compositing.
+//
+// IMPORTANT: This function expects the background to be a COMPLETE, FULLY-RENDERED view
+// that already fills the terminal (termWidth x termHeight). This is typically the output
+// of StandardView.Render() which uses lipgloss.Place to fill the terminal.
+//
+// The modal is overlaid by:
+// 1. Dimming the entire background
+// 2. Placing the modal box centered in the terminal
+// 3. Replacing the lines where the modal appears with the centered modal
 func RenderOverlay(background, modalContent string, termWidth, termHeight int) string {
-	// Dim the background
+	// Dim the entire background first
 	dimmedBg := DimContent(background)
 
 	// Create modal box with border
@@ -499,101 +507,72 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 
 	modalBox := modalStyle.Render(modalContent)
 
-	// Calculate modal dimensions
-	modalHeight := lipgloss.Height(modalBox)
-	modalWidth := lipgloss.Width(modalBox)
-
-	// Calculate center position
-	centerX := (termWidth - modalWidth) / 2
-	centerY := (termHeight - modalHeight) / 2
-
-	// Ensure non-negative positions
-	if centerX < 0 {
-		centerX = 0
-	}
-	if centerY < 0 {
-		centerY = 0
-	}
-
-	// Split background into lines
+	// Split both into lines
 	bgLines := strings.Split(dimmedBg, "\n")
-
-	// Ensure we have enough background lines
-	for len(bgLines) < termHeight {
-		bgLines = append(bgLines, "")
-	}
-
-	// Split modal into lines
 	modalLines := strings.Split(modalBox, "\n")
 
-	// Overlay modal onto background
+	// Calculate modal position (below logo, not vertically centered)
+	// Logo is typically ~8 lines (6 for logo + 2 spacing)
+	// Position modal to start just below the logo
+	modalHeight := len(modalLines)
+	logoHeight := 8          // Logo + spacing
+	startY := logoHeight + 1 // Start 1 line below logo
+
+	// Handle very small terminals gracefully
+	if termHeight < 15 {
+		// For very small terminals, center the modal (no room for logo positioning)
+		startY = (termHeight - modalHeight) / 2
+		if startY < 0 {
+			startY = 0
+		}
+	}
+
+	// If modal is too tall to fit below logo, constrain it
+	availableHeight := termHeight - startY - 2 // Leave 2 lines at bottom for footer
+	if availableHeight <= 0 {
+		// Terminal too small - use all available space
+		availableHeight = termHeight - 2
+		if availableHeight < 1 {
+			availableHeight = termHeight
+		}
+		startY = 0
+	}
+
+	if modalHeight > availableHeight && availableHeight > 0 {
+		// Modal is too tall - truncate it and add scroll indicator
+		if availableHeight <= len(modalLines) {
+			modalLines = modalLines[:availableHeight]
+			modalHeight = availableHeight
+		}
+		// Add scroll indicator at bottom
+		if modalHeight > 0 {
+			lastLine := modalLines[modalHeight-1]
+			modalLines[modalHeight-1] = lastLine + " ↓"
+		}
+	}
+
+	// Ensure we have exactly termHeight background lines
+	for len(bgLines) < termHeight {
+		bgLines = append(bgLines, strings.Repeat(" ", termWidth))
+	}
+	if len(bgLines) > termHeight {
+		bgLines = bgLines[:termHeight]
+	}
+
+	// Create result by copying background
+	result := make([]string, termHeight)
+	copy(result, bgLines)
+
+	// Overlay modal lines (centered horizontally) onto the background
 	for i, modalLine := range modalLines {
-		bgLineIdx := centerY + i
-		if bgLineIdx < 0 || bgLineIdx >= len(bgLines) {
-			continue
+		lineIndex := startY + i
+		if lineIndex >= 0 && lineIndex < termHeight {
+			// Use lipgloss.PlaceHorizontal to center the modal line
+			// This creates a new line of exactly termWidth with the modal centered
+			centeredModalLine := lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, modalLine)
+			result[lineIndex] = centeredModalLine
 		}
-
-		// Ensure background line is wide enough
-		bgLine := bgLines[bgLineIdx]
-		for lipgloss.Width(bgLine) < centerX {
-			bgLine += " "
-		}
-
-		// Build the new line: prefix + modal line + suffix
-		prefix := truncateToWidth(bgLine, centerX)
-		suffix := ""
-		afterModal := centerX + lipgloss.Width(modalLine)
-		if lipgloss.Width(bgLine) > afterModal {
-			suffix = substringFromWidth(bgLine, afterModal)
-		}
-
-		bgLines[bgLineIdx] = prefix + modalLine + suffix
 	}
 
-	return strings.Join(bgLines[:termHeight], "\n")
-}
-
-// truncateToWidth truncates a string to fit within the specified width.
-func truncateToWidth(s string, width int) string {
-	if width <= 0 {
-		return ""
-	}
-
-	result := ""
-	currentWidth := 0
-
-	for _, r := range s {
-		charWidth := lipgloss.Width(string(r))
-		if currentWidth+charWidth > width {
-			break
-		}
-		result += string(r)
-		currentWidth += charWidth
-	}
-
-	// Pad with spaces if needed
-	for currentWidth < width {
-		result += " "
-		currentWidth++
-	}
-
-	return result
-}
-
-// substringFromWidth returns the substring starting from the specified width position.
-func substringFromWidth(s string, startWidth int) string {
-	if startWidth <= 0 {
-		return s
-	}
-
-	currentWidth := 0
-	for i, r := range s {
-		charWidth := lipgloss.Width(string(r))
-		if currentWidth >= startWidth {
-			return s[i:]
-		}
-		currentWidth += charWidth
-	}
-
-	return ""
+	return strings.Join(result, "\n")
 }
