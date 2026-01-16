@@ -39,9 +39,9 @@
 
 ## Session Contract Acknowledgment
 
-- [ ] Ran `make session-start` and it passed
-- [ ] Acknowledge and commit to following all workflow rules
-- [ ] Token count: 112,593 (started well above 50k - continuing from planning session)
+- [x] Ran `make session-start` and it passed
+- [x] Acknowledge and commit to following all workflow rules
+- [x] Token count: 112,593 (started well above 50k - continuing from planning session)
 
 ---
 
@@ -212,7 +212,7 @@ internal/cli/
 
 #### RED Phase
 - [x] Test file created: `internal/cli/behaviors/table_test.go`
-- [ ] Tests written for:
+- [x] Tests written for:
   - [ ] **Construction**:
     - [ ] `NewTableBehavior()` creates valid instance
     - [ ] Default page size is 15
