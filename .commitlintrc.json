@@ -44,7 +44,9 @@
         "ci",
         "cv",
         "tui",
-        "navigation"
+        "navigation",
+        "uikit",
+        "behaviors"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],
