@@ -209,6 +209,13 @@ func (i *ManageSkillsIntent) Init() tea.Cmd {
 
 	// Load skills asynchronously
 	return func() tea.Msg {
+		// Guard against nil repository (e.g., in tests without full context setup)
+		if i.context == nil || i.context.SkillRepository == nil {
+			return SkillsLoadedMsg{
+				Skills: nil,
+				Error:  nil,
+			}
+		}
 		skills, err := i.context.SkillRepository.List(i.context.Ctx, nil)
 		return SkillsLoadedMsg{
 			Skills: skills,
