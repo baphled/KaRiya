@@ -80,8 +80,33 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", func() {
 				ContainSubstring("Peer"),      // "Technical Peer"
 			), "Should show at least one audience option")
 
-			// ====== STATE 3: Generating (Async State) ======
+			// ====== STATE 3: Select Role Emphasis ======
 			env.Confirm() // Select first audience
+
+			// View snapshot: Verify we're in role emphasis selection
+			view = env.GetView()
+			Expect(view).To(ContainSubstring("Role Emphasis"), "Should show 'Role Emphasis' indicator")
+			Expect(view).To(Or(
+				ContainSubstring("Backend"),
+				ContainSubstring("Principal"),
+				ContainSubstring("Consulting"),
+			), "Should show at least one role emphasis option")
+
+			// ====== STATE 4: Select Length Format ======
+			env.Confirm() // Select first role emphasis
+
+			// View snapshot: Verify we're in length format selection
+			view = env.GetView()
+			Expect(view).To(Or(
+				ContainSubstring("Length"),
+				ContainSubstring("Format"),
+				ContainSubstring("Full"),
+				ContainSubstring("Standard"),
+				ContainSubstring("Short"),
+			), "Should show length format options")
+
+			// ====== STATE 5: Generating (Async State) ======
+			env.Confirm() // Select first length format
 
 			// View snapshot: Verify we see generation progress OR reached preview
 			// Note: Generation might be instant in tests or take time
@@ -215,12 +240,15 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", func() {
 			env.SelectIntentByName("generate_cv")
 			env.Confirm() // Select profile
 			env.Confirm() // Select audience
+			env.Confirm() // Select role emphasis
+			env.Confirm() // Select length format
 
-			// Should reach preview state without errors
+			// Should reach generating/preview state without errors
 			view := env.GetView()
 			Expect(view).NotTo(ContainSubstring("panic"))
 			Expect(view).NotTo(ContainSubstring("fatal"))
 			Expect(view).To(Or(
+				ContainSubstring("Generating"),
 				ContainSubstring("Preview"),
 				ContainSubstring("CV"),
 			))
