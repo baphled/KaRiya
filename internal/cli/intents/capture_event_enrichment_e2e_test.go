@@ -2,7 +2,10 @@ package intents_test
 
 import (
 	"strings"
+	"time"
 
+	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -29,6 +32,24 @@ import (
 // - Sad path (enrichment fails, workflow continues)
 // - Edge cases (empty results, service errors, nil event)
 
+// isShowingMainMenuOptions checks if the view is showing the main menu (not just breadcrumb containing "Main Menu")
+func isShowingMainMenuOptions(view string) bool {
+	// Main menu shows the menu items like "Capture Event", "Browse Timeline", etc.
+	// AND doesn't show form elements or review elements
+	return strings.Contains(view, "Capture Event") &&
+		strings.Contains(view, "Browse Timeline") &&
+		!strings.Contains(view, "Event Description") &&
+		!strings.Contains(view, "Review Enrichment") &&
+		!strings.Contains(view, "Inferred")
+}
+
+// isShowingEnrichmentReview checks if the view is showing the enrichment review
+func isShowingEnrichmentReview(view string) bool {
+	return strings.Contains(view, "Review Enrichment") ||
+		strings.Contains(view, "Inferred Bursts") ||
+		strings.Contains(view, "Inferred Facts")
+}
+
 var _ = Describe("CaptureEvent Post-Save Enrichment E2E", func() {
 	var env *e2e.TestEnv
 
@@ -41,6 +62,8 @@ var _ = Describe("CaptureEvent Post-Save Enrichment E2E", func() {
 	})
 
 	// Helper to navigate to enrichment review state
+	// Uses SubmitEvent() to bypass huh form keystroke simulation issues.
+	// The huh library requires command chaining that doesn't work well in E2E tests.
 	navigateToEnrichmentReview := func() string {
 		// Select Capture Event intent
 		env.SelectIntentByName("capture_event")
@@ -48,30 +71,20 @@ var _ = Describe("CaptureEvent Post-Save Enrichment E2E", func() {
 		// Choose Quick strategy
 		env.Confirm()
 
-		// Fill form
+		// Submit event directly using helper (bypasses huh form keystroke issues)
 		testEventText := "Built REST API with Go and PostgreSQL for high-throughput data processing"
-		env.TypeText(testEventText)
-		env.Tab()
-		env.TypeText("today")
-		env.SubmitHuhForm()
-
-		// Pre-save review - confirm to submit
-		env.Confirm()
-
-		// Wait for save to complete and enrichment to start
-		// Success modal auto-dismisses after 2s
-		// In test environment, we may need to manually advance
-		for i := 0; i < 10; i++ {
-			view := env.GetView()
-			// If we see enrichment loading or review, we're there
-			if strings.Contains(view, "Enriching") ||
-				strings.Contains(view, "Extracting") ||
-				strings.Contains(view, "Review") {
-				break
-			}
-			// Try to advance through any intermediate states
-			env.PressKeyRune(' ')
+		testEvent := &career.CareerEvent{
+			Text:      testEventText,
+			Date:      time.Now(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
+		env.SubmitEvent(testEvent)
+
+		// After SubmitEvent, the intent shows a success modal and returns a tea.Tick command
+		// that would send DismissModalMsg after 2 seconds. In tests, we need to send this
+		// message directly to advance to the enrichment review state.
+		env.SendMessage(intents.DismissModalMsg{})
 
 		return testEventText
 	}
@@ -83,24 +96,31 @@ var _ = Describe("CaptureEvent Post-Save Enrichment E2E", func() {
 
 				// Verify we reach enrichment review state
 				view := env.GetView()
-				Expect(view).To(SatisfyAny(
-					ContainSubstring("Review"),
-					ContainSubstring(testEventText),
-				), "Should show enrichment review state")
+				Expect(isShowingEnrichmentReview(view)).To(BeTrue(),
+					"Should show enrichment review state, got: "+view[:min(200, len(view))])
 
-				// Verify we're not at main menu yet
-				Expect(view).NotTo(ContainSubstring("Main Menu"),
+				// Verify we're not at main menu yet (showing actual menu options, not breadcrumb)
+				Expect(isShowingMainMenuOptions(view)).To(BeFalse(),
 					"Should not return to main menu until user completes enrichment review")
+
+				// Verify event text is visible
+				Expect(view).To(ContainSubstring(testEventText[:40]),
+					"Should display the event text in review")
 
 				// Verify event was saved
 				env.AssertEventCount(1)
 
-				// Complete the workflow
-				env.Confirm()
+				// Complete the workflow - may need multiple confirms to process batched commands
+				for i := 0; i < 5; i++ {
+					env.Confirm()
+					view = env.GetView()
+					if isShowingMainMenuOptions(view) {
+						break
+					}
+				}
 
 				// NOW we should be at main menu
-				view = env.GetView()
-				Expect(view).To(ContainSubstring("Main Menu"),
+				Expect(isShowingMainMenuOptions(view)).To(BeTrue(),
 					"After completing enrichment review, should return to main menu")
 			})
 
@@ -119,7 +139,8 @@ var _ = Describe("CaptureEvent Post-Save Enrichment E2E", func() {
 
 				// Should be at main menu
 				view := env.GetView()
-				Expect(view).To(ContainSubstring("Main Menu"))
+				Expect(isShowingMainMenuOptions(view)).To(BeTrue(),
+					"Should return to main menu after accepting all")
 			})
 
 			It("should allow user to reject all inferred bursts and facts", func() {
@@ -136,7 +157,8 @@ var _ = Describe("CaptureEvent Post-Save Enrichment E2E", func() {
 
 				// Should be at main menu
 				view := env.GetView()
-				Expect(view).To(ContainSubstring("Main Menu"))
+				Expect(isShowingMainMenuOptions(view)).To(BeTrue(),
+					"Should return to main menu after rejecting all")
 			})
 
 			It("should allow user to edit bursts before accepting", func() {

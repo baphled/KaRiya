@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -362,6 +363,22 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 		// Form submission - essential for form → review state transition
 		modelInterface, _ := e.Model.Update(msg)
 		e.Model = modelInterface.(*app.Model)
+	case intents.SubmitCompleteMsg, intents.SubmitErrorMsg:
+		// Async save completion - essential for submit → review/complete state transition
+		modelInterface, cmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		// Recursively process any follow-up commands (e.g., DismissModalMsg)
+		e.executeCmd(cmd)
+	case intents.DismissModalMsg:
+		// Modal dismissed - essential for modal → next state transition
+		modelInterface, cmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		e.executeCmd(cmd)
+	case app.IntentCompletedMsg:
+		// Intent completed - essential for intent → menu state transition
+		modelInterface, cmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		e.executeCmd(cmd)
 	// Add other essential message types here as needed
 	default:
 		// Ignore all other messages (cursor blink, window resize, etc.)
