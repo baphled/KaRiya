@@ -226,51 +226,5 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 		})
 	})
 
-	Describe("Debug: What's Actually Happening", func() {
-		It("should print view output at each state for debugging", func() {
-			Skip("This is a debug test - unskip to see actual view output")
-
-			event := &career.CareerEvent{
-				Text: "Debug test event",
-				Date: time.Now(),
-			}
-			err := env.Service.CaptureEvent(context.Background(), event, careerservice.ManualEntry)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Start
-			view := intent.View()
-			GinkgoWriter.Printf("\n=== CHOOSE STRATEGY ===\n%s\n", view)
-
-			// Select strategy
-			intent.Update(intents.StrategySelectedMsg{Strategy: "quick"})
-			view = intent.View()
-			GinkgoWriter.Printf("\n=== FORM ===\n%s\n", view)
-
-			// Submit form
-			intent.Update(intents.FormSubmittedMsg{Event: event})
-			view = intent.View()
-			GinkgoWriter.Printf("\n=== PRE-SAVE REVIEW ===\n%s\n", view)
-
-			// Submit
-			intent.Update(intents.SubmitCompleteMsg{})
-			view = intent.View()
-			GinkgoWriter.Printf("\n=== AFTER SUBMIT (SUCCESS MODAL?) ===\n%s\n", view)
-
-			// Dismiss modal
-			intent.Update(intents.DismissModalMsg{})
-			view = intent.View()
-			GinkgoWriter.Printf("\n=== ENRICHMENT STATE ===\n%s\n", view)
-
-			// Complete enrichment
-			intent.Update(intents.EnrichmentCompleteMsg{
-				Bursts: []*career.Burst{},
-				Facts:  []*career.Fact{},
-			})
-			view = intent.View()
-			GinkgoWriter.Printf("\n=== ENRICHMENT REVIEW (THE BUG) ===\n%s\n", view)
-
-			// This will show us EXACTLY what's being rendered
-			// and help identify where the content disappears
-		})
-	})
+	// NOTE: Debug tests removed - use GinkgoWriter in individual tests for debugging
 })

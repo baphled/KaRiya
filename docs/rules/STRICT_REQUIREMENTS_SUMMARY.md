@@ -174,6 +174,35 @@ No exceptions to this rule.
 - ✅ **Regression protection**: Tests catch future breakage
 - ✅ **Design feedback**: Test difficulty reveals design issues
 
+### MANDATORY: No Skipped or Pending Tests
+
+**Skipped and pending tests are PROHIBITED before commits.**
+
+#### Requirements (ZERO EXCEPTIONS)
+
+**MUST:**
+1. ✅ **All tests must PASS** - no skipped tests allowed
+2. ✅ **No `Skip()` calls** in unit tests
+3. ✅ **No `Pending` markers** in tests
+4. ✅ **Minimum 80% coverage** per module
+
+**ALLOWED EXCEPTIONS (Environment-Conditional Only):**
+- ✅ Integration tests that check for environment (clipboard, display, database)
+- ✅ E2E tests with explicit environment detection
+
+**NEVER:**
+1. ❌ **NEVER commit with `Skip("Pending...")` or `Skip("TODO...")`**
+2. ❌ **NEVER commit tests marked as pending implementation**
+3. ❌ **NEVER commit placeholder tests that skip**
+4. ❌ **NEVER use Skip() to defer writing tests**
+
+#### Why This is Non-Negotiable
+
+- ✅ **Skipped tests are technical debt** - they accumulate and never get fixed
+- ✅ **Pending tests provide false confidence** - coverage looks higher than actual
+- ✅ **Either write the test or don't commit it** - no middle ground
+- ✅ **Tests must be complete and passing** - or they don't exist
+
 #### References
 
 - [Senior Engineer Guidelines - Workflow](./senior-engineer-guidelines.md#2-workflow-redgreenrefactor)

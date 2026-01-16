@@ -95,9 +95,7 @@ var _ = Describe("E2E Browse Workflow", func() {
 			env.Cleanup()
 		})
 
-		// Legacy workflow test - BrowseTimeline now uses screen architecture (Phase 4.2)
-		XIt("should complete workflow and return to main menu (Legacy)", func() {
-			Skip("BrowseTimeline workflow changed - now uses screen architecture")
-		})
+		// NOTE: Legacy workflow test removed - BrowseTimeline now uses screen architecture (Phase 4.2)
+		// See internal/cli/screens/timeline/ for current tests
 	})
 })

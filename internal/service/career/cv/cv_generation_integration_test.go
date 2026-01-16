@@ -16,59 +16,89 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 )
 
-var _ = Describe("CV Generation Integration Tests with Real Database", func() {
+var _ = Describe("CV Generation Integration Tests", func() {
 	var (
-		log     *logger.Logger
-		ctx     context.Context
-		homeDir string
-		dbPath  string
+		log          *logger.Logger
+		ctx          context.Context
+		tempDir      string
+		dbPath       string
+		eventRepo    *careerrepo.SQLiteRepository
+		factRepo     *careerrepo.SQLiteFactRepository
+		db           *sql.DB
+		cvGenService CVGenerationService
 	)
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
 		ctx = context.Background()
 
-		// Get the home directory
+		// Create a temporary directory for the test database
 		var err error
-		homeDir, err = os.UserHomeDir()
+		tempDir, err = os.MkdirTemp("", "kariya-cv-integration-test-")
 		Expect(err).NotTo(HaveOccurred())
 
-		dbPath = filepath.Join(homeDir, ".kariya", "events.db")
+		dbPath = filepath.Join(tempDir, "test_events.db")
+
+		// Create the repositories
+		eventRepo, err = careerrepo.NewSQLiteRepository(dbPath)
+		Expect(err).NotTo(HaveOccurred())
+
+		db, err = sql.Open("sqlite", dbPath)
+		Expect(err).NotTo(HaveOccurred())
+
+		factRepo, err = careerrepo.NewSQLiteFactRepository(db)
+		Expect(err).NotTo(HaveOccurred())
+
+		// Create CV services
+		bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
+		sectionBuilder := NewSectionBuilder(log)
+		configManager := NewMemoryConfigManager()
+
+		cvGenService = NewCVGenerationService(
+			eventRepo,
+			factRepo,
+			configManager,
+			bulletGenerator,
+			sectionBuilder,
+			log,
+		)
 	})
 
-	Describe("CV Generation from Real Database", func() {
-		It("should generate CV from production database at ~/.kariya/events.db", func() {
-			// Check if the database exists
-			if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-				Skip("Database not found at " + dbPath)
+	AfterEach(func() {
+		if eventRepo != nil {
+			eventRepo.Close()
+		}
+		if db != nil {
+			db.Close()
+		}
+		if tempDir != "" {
+			os.RemoveAll(tempDir)
+		}
+	})
+
+	// Helper function to seed test events
+	seedTestEvents := func(count int, category string) []*career.CareerEvent {
+		events := make([]*career.CareerEvent, count)
+		for i := 0; i < count; i++ {
+			event := &career.CareerEvent{
+				Text:       "Test event for " + category,
+				Date:       time.Now().AddDate(0, 0, -i),
+				Tags:       []string{category, "project"},
+				Company:    "Test Company",
+				Categories: []string{category},
 			}
-
-			// Open the real database
-			eventRepo, err := careerrepo.NewSQLiteRepository(dbPath)
+			err := eventRepo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
-			defer eventRepo.Close()
+			events[i] = event
+		}
+		return events
+	}
 
-			// Open the database directly for fact repository
-			db, err := sql.Open("sqlite", dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
-
-			factRepo, err := careerrepo.NewSQLiteFactRepository(db)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create CV services
-			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
-			configManager := NewMemoryConfigManager()
-
-			cvGenService := NewCVGenerationService(
-				eventRepo,
-				factRepo,
-				configManager,
-				bulletGenerator,
-				sectionBuilder,
-				log,
-			)
+	Describe("CV Generation from Database", func() {
+		It("should generate CV from events in the database", func() {
+			// Seed test data
+			seedTestEvents(5, "technical")
+			seedTestEvents(3, "product")
 
 			// Create a test CV configuration
 			config := &career.CVConfig{
@@ -76,7 +106,7 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 				TargetRole:     "senior_ic",
 				TargetAudience: "recruiter",
 				EventFilters: map[string]interface{}{
-					"categories": []string{"technical", "achievement"},
+					"categories": []string{"technical", "product"},
 				},
 			}
 
@@ -93,48 +123,12 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			// Verify CV has content
 			Expect(cv.ID).NotTo(BeEmpty())
 			Expect(cv.GeneratedAt).NotTo(BeZero())
-
-			// Log CV statistics
-			GinkgoWriter.Printf("CV Generated Successfully:\n")
-			GinkgoWriter.Printf("  Name: %s\n", cv.Name)
-			GinkgoWriter.Printf("  Target Role: %s\n", cv.TargetRole)
-			GinkgoWriter.Printf("  Target Audience: %v\n", cv.TargetAudience)
-			GinkgoWriter.Printf("  Source Event Count: %d\n", cv.SourceEventCount)
-			GinkgoWriter.Printf("  Source Fact Count: %d\n", cv.SourceFactCount)
 		})
 
 		It("should handle CV generation with single target audience", func() {
-			// Check if the database exists
-			if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-				Skip("Database not found at " + dbPath)
-			}
-
-			// Open the real database
-			eventRepo, err := careerrepo.NewSQLiteRepository(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer eventRepo.Close()
-
-			// Open the database directly for fact repository
-			db, err := sql.Open("sqlite", dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
-
-			factRepo, err := careerrepo.NewSQLiteFactRepository(db)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create CV services
-			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
-			configManager := NewMemoryConfigManager()
-
-			cvGenService := NewCVGenerationService(
-				eventRepo,
-				factRepo,
-				configManager,
-				bulletGenerator,
-				sectionBuilder,
-				log,
-			)
+			// Seed test data
+			seedTestEvents(5, "technical")
+			seedTestEvents(3, "leadership")
 
 			// Create a test CV configuration with single audience
 			config := &career.CVConfig{
@@ -153,51 +147,18 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 
 			// Verify single audience is preserved
 			Expect(cv.TargetAudience).To(Equal("hiring_manager"))
-
-			GinkgoWriter.Printf("CV with Single Audience Generated:\n")
-			GinkgoWriter.Printf("  Audience: %v\n", cv.TargetAudience)
-			GinkgoWriter.Printf("  Source Event Count: %d\n", cv.SourceEventCount)
-			GinkgoWriter.Printf("  Source Fact Count: %d\n", cv.SourceFactCount)
 		})
 
 		It("should generate CV with all available events when no filters applied", func() {
-			// Check if the database exists
-			if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-				Skip("Database not found at " + dbPath)
-			}
-
-			// Open the real database
-			eventRepo, err := careerrepo.NewSQLiteRepository(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer eventRepo.Close()
-
-			// Open the database directly for fact repository
-			db, err := sql.Open("sqlite", dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
-
-			factRepo, err := careerrepo.NewSQLiteFactRepository(db)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create CV services
-			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
-			configManager := NewMemoryConfigManager()
-
-			cvGenService := NewCVGenerationService(
-				eventRepo,
-				factRepo,
-				configManager,
-				bulletGenerator,
-				sectionBuilder,
-				log,
-			)
+			// Seed test data with multiple categories
+			seedTestEvents(3, "technical")
+			seedTestEvents(2, "product")
+			seedTestEvents(2, "leadership")
 
 			// Retrieve all events first
 			allEvents, err := eventRepo.List(ctx, careerrepo.ListFilters{})
 			Expect(err).NotTo(HaveOccurred())
-
-			GinkgoWriter.Printf("Total Events in Database: %d\n", len(allEvents))
+			Expect(len(allEvents)).To(Equal(7))
 
 			// Create a test CV configuration with no filters
 			config := &career.CVConfig{
@@ -211,45 +172,11 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cv).NotTo(BeNil())
-
-			GinkgoWriter.Printf("CV with No Filters Generated:\n")
-			GinkgoWriter.Printf("  Total Events Available: %d\n", len(allEvents))
-			GinkgoWriter.Printf("  Events Used in CV: %d\n", cv.SourceEventCount)
-			GinkgoWriter.Printf("  Facts Used in CV: %d\n", cv.SourceFactCount)
 		})
 
 		It("should preserve CV metadata during generation", func() {
-			// Check if the database exists
-			if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-				Skip("Database not found at " + dbPath)
-			}
-
-			// Open the real database
-			eventRepo, err := careerrepo.NewSQLiteRepository(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer eventRepo.Close()
-
-			// Open the database directly for fact repository
-			db, err := sql.Open("sqlite", dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
-
-			factRepo, err := careerrepo.NewSQLiteFactRepository(db)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create CV services
-			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
-			configManager := NewMemoryConfigManager()
-
-			cvGenService := NewCVGenerationService(
-				eventRepo,
-				factRepo,
-				configManager,
-				bulletGenerator,
-				sectionBuilder,
-				log,
-			)
+			// Seed test data
+			seedTestEvents(3, "leadership")
 
 			// Create a test CV configuration
 			config := &career.CVConfig{
@@ -276,45 +203,13 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			Expect(cv.TargetRole).To(Equal("principal"))
 			Expect(cv.GeneratedAt).To(BeTemporally(">=", beforeTime))
 			Expect(cv.GeneratedAt).To(BeTemporally("<=", afterTime))
-
-			GinkgoWriter.Printf("CV Metadata Preserved:\n")
-			GinkgoWriter.Printf("  ID: %s\n", cv.ID)
-			GinkgoWriter.Printf("  Name: %s\n", cv.Name)
-			GinkgoWriter.Printf("  Generated At: %v\n", cv.GeneratedAt)
 		})
 
 		It("should handle CV generation with category filters", func() {
-			// Check if the database exists
-			if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-				Skip("Database not found at " + dbPath)
-			}
-
-			// Open the real database
-			eventRepo, err := careerrepo.NewSQLiteRepository(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer eventRepo.Close()
-
-			// Open the database directly for fact repository
-			db, err := sql.Open("sqlite", dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
-
-			factRepo, err := careerrepo.NewSQLiteFactRepository(db)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create CV services
-			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
-			configManager := NewMemoryConfigManager()
-
-			cvGenService := NewCVGenerationService(
-				eventRepo,
-				factRepo,
-				configManager,
-				bulletGenerator,
-				sectionBuilder,
-				log,
-			)
+			// Seed test data
+			seedTestEvents(5, "technical")
+			seedTestEvents(3, "product")
+			seedTestEvents(2, "leadership")
 
 			// Create a test CV configuration with category filters
 			config := &career.CVConfig{
@@ -330,45 +225,11 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cv).NotTo(BeNil())
-
-			GinkgoWriter.Printf("CV with Technical Category Filter:\n")
-			GinkgoWriter.Printf("  Events Used: %d\n", cv.SourceEventCount)
-			GinkgoWriter.Printf("  Facts Used: %d\n", cv.SourceFactCount)
-			GinkgoWriter.Printf("  Filters Applied: %v\n", cv.EventFilters)
 		})
 
 		It("should validate CV configuration before generation", func() {
-			// Check if the database exists
-			if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-				Skip("Database not found at " + dbPath)
-			}
-
-			// Open the real database
-			eventRepo, err := careerrepo.NewSQLiteRepository(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer eventRepo.Close()
-
-			// Open the database directly for fact repository
-			db, err := sql.Open("sqlite", dbPath)
-			Expect(err).NotTo(HaveOccurred())
-			defer db.Close()
-
-			factRepo, err := careerrepo.NewSQLiteFactRepository(db)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create CV services
-			bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-			sectionBuilder := NewSectionBuilder(log)
-			configManager := NewMemoryConfigManager()
-
-			cvGenService := NewCVGenerationService(
-				eventRepo,
-				factRepo,
-				configManager,
-				bulletGenerator,
-				sectionBuilder,
-				log,
-			)
+			// Seed some test data (needed for valid case comparison)
+			seedTestEvents(2, "technical")
 
 			// Create an invalid configuration (missing target role)
 			invalidConfig := &career.CVConfig{
@@ -379,10 +240,47 @@ var _ = Describe("CV Generation Integration Tests with Real Database", func() {
 			}
 
 			// Generation should fail
-			_, err = cvGenService.GenerateCVFromConfig(ctx, invalidConfig)
+			_, err := cvGenService.GenerateCVFromConfig(ctx, invalidConfig)
 			Expect(err).To(HaveOccurred())
+		})
 
-			GinkgoWriter.Printf("Invalid configuration correctly rejected\n")
+		It("should handle empty database gracefully", func() {
+			// Don't seed any data - database is empty
+
+			config := &career.CVConfig{
+				Name:           "test-empty-db",
+				TargetRole:     "senior_ic",
+				TargetAudience: "recruiter",
+				EventFilters:   make(map[string]interface{}),
+			}
+
+			// Generate CV - should still work but with empty content
+			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cv).NotTo(BeNil())
+			Expect(cv.SourceEventCount).To(Equal(0))
+		})
+
+		It("should handle CV generation with multiple audience types", func() {
+			// Seed test data
+			seedTestEvents(4, "technical")
+
+			// Test with different audience types
+			audiences := []string{"recruiter", "hiring_manager", "peer"}
+
+			for _, audience := range audiences {
+				config := &career.CVConfig{
+					Name:           "test-" + audience,
+					TargetRole:     "senior_ic",
+					TargetAudience: audience,
+					EventFilters:   make(map[string]interface{}),
+				}
+
+				cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cv).NotTo(BeNil())
+				Expect(cv.TargetAudience).To(Equal(audience))
+			}
 		})
 	})
 })

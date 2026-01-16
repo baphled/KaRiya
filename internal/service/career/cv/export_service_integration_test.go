@@ -2,77 +2,59 @@ package cv
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
-	"os"
 
-	"github.com/atotto/clipboard"
 	"github.com/baphled/kariya/internal/logger"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ExportService Integration Tests", func() {
+// Note: MockClipboard is defined in export_service_test.go
+// This file uses that shared mock for clipboard testing
+
+var _ = Describe("ExportService Clipboard Tests", func() {
 	var (
-		service *ExportService
-		log     *logger.Logger
-		ctx     context.Context
+		service       *ExportService
+		mockClipboard *MockClipboard
+		log           *logger.Logger
+		ctx           context.Context
 	)
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		service = NewExportService(log)
+		mockClipboard = &MockClipboard{}
+		service = NewExportServiceWithClipboard(log, mockClipboard)
 		ctx = context.Background()
 	})
 
-	Describe("CopyToClipboard Integration", func() {
+	Describe("CopyToClipboard", func() {
 		Context("when clipboard is supported", func() {
 			BeforeEach(func() {
-				// Skip if clipboard is unsupported or in CI/headless environment
-				if clipboard.Unsupported {
-					Skip("Skipping integration test - clipboard not supported in this environment")
-				}
-				if os.Getenv("CI") != "" {
-					Skip("Skipping integration test on CI - no clipboard utilities available")
-				}
-				if os.Getenv("DISPLAY") == "" && os.Getenv("WAYLAND_DISPLAY") == "" && os.Getenv("TERM_PROGRAM") != "Apple_Terminal" {
-					Skip("Skipping integration test - no display available (headless environment)")
-				}
+				mockClipboard.Unsupported = false
 			})
 
-			It("should copy content to system clipboard and verify with ReadAll", func() {
-				testContent := fmt.Sprintf("Integration Test: KaRiya Clipboard Content %d", GinkgoRandomSeed())
+			It("should copy content to clipboard successfully", func() {
+				testContent := "Test CV content for clipboard"
 
-				// Copy to clipboard using our service
 				err := service.CopyToClipboard(ctx, testContent)
-				Expect(err).NotTo(HaveOccurred(), "CopyToClipboard should succeed on supported platforms")
-
-				// Verify by reading directly from clipboard
-				clipboardContent, err := clipboard.ReadAll()
-				Expect(err).NotTo(HaveOccurred(), "Reading from clipboard should succeed")
-				Expect(clipboardContent).To(Equal(testContent), "Clipboard content should match what was written")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mockClipboard.Content).To(Equal(testContent))
 			})
 
 			It("should handle multiple sequential clipboard operations", func() {
-				seed := GinkgoRandomSeed()
-				firstContent := fmt.Sprintf("First content %d", seed)
-				secondContent := fmt.Sprintf("Second content %d", seed+1)
+				firstContent := "First content"
+				secondContent := "Second content"
 
 				// First copy
 				err := service.CopyToClipboard(ctx, firstContent)
 				Expect(err).NotTo(HaveOccurred())
-
-				content, err := clipboard.ReadAll()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(content).To(Equal(firstContent))
+				Expect(mockClipboard.Content).To(Equal(firstContent))
 
 				// Second copy (should overwrite)
 				err = service.CopyToClipboard(ctx, secondContent)
 				Expect(err).NotTo(HaveOccurred())
-
-				content, err = clipboard.ReadAll()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(content).To(Equal(secondContent))
+				Expect(mockClipboard.Content).To(Equal(secondContent))
 			})
 
 			It("should handle large content", func() {
@@ -83,27 +65,42 @@ var _ = Describe("ExportService Integration Tests", func() {
 				}
 
 				err := service.CopyToClipboard(ctx, string(largeContent))
-				Expect(err).NotTo(HaveOccurred(), "Should handle large clipboard content")
-
-				content, err := clipboard.ReadAll()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(len(content)).To(Equal(len(largeContent)), "Large content should be preserved")
+				Expect(len(mockClipboard.Content)).To(Equal(len(largeContent)))
+			})
+
+			It("should return error for empty content", func() {
+				err := service.CopyToClipboard(ctx, "")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("empty"))
+			})
+
+			It("should propagate clipboard write errors", func() {
+				mockClipboard.WriteError = errors.New("clipboard write failed")
+
+				err := service.CopyToClipboard(ctx, "test content")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("clipboard"))
 			})
 		})
 
 		Context("when clipboard is unsupported", func() {
-			It("should return ErrClipboardUnsupported on Linux without utilities", func() {
-				// This test documents expected behavior
-				// On Linux without clipboard utilities, clipboard.Unsupported will be true
-				// and CopyToClipboard should return ErrClipboardUnsupported
+			BeforeEach(func() {
+				mockClipboard.Unsupported = true
+			})
 
-				if !clipboard.Unsupported {
-					Skip("This test only runs on systems without clipboard support")
-				}
-
+			It("should return ErrClipboardUnsupported", func() {
 				err := service.CopyToClipboard(ctx, "test content")
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(Equal(ErrClipboardUnsupported))
+			})
+
+			It("should not attempt to write when unsupported", func() {
+				mockClipboard.WriteError = errors.New("should not be called")
+
+				err := service.CopyToClipboard(ctx, "test content")
+				Expect(err).To(Equal(ErrClipboardUnsupported))
+				Expect(mockClipboard.Content).To(BeEmpty())
 			})
 		})
 	})

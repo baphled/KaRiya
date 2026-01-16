@@ -129,10 +129,8 @@ var _ = Describe("CaptureEvent Burst Extraction", func() {
 	})
 
 	Describe("Burst Characteristics", func() {
-		Context("when burst is detected", func() {
-			var burstSuggestion burst_fact.BurstSuggestion
-
-			BeforeEach(func() {
+		Context("when burst is detected from similar events", func() {
+			It("should have valid burst properties when detection succeeds", func() {
 				baseDate := time.Now().Add(-45 * 24 * time.Hour)
 				events := []career.CareerEvent{
 					{
@@ -160,34 +158,29 @@ var _ = Describe("CaptureEvent Burst Extraction", func() {
 
 				suggestions, err := detector.DetectBursts(ctx, events, opts)
 				Expect(err).To(BeNil())
+
+				// Detection is algorithmic and may or may not trigger based on similarity
+				// If bursts are detected, verify they have valid properties
 				if len(suggestions) > 0 {
-					burstSuggestion = suggestions[0]
+					burstSuggestion := suggestions[0]
+
+					// Burst should have a descriptive name
+					Expect(burstSuggestion.Name).NotTo(BeEmpty(),
+						"Burst should have a descriptive name")
+
+					// Burst should have a description explaining the pattern
+					Expect(burstSuggestion.Description).NotTo(BeEmpty(),
+						"Burst should explain what pattern was detected")
+
+					// Burst should have a valid confidence score
+					Expect(burstSuggestion.ConfidenceScore).To(BeNumerically(">=", 0.0))
+					Expect(burstSuggestion.ConfidenceScore).To(BeNumerically("<=", 1.0),
+						"Confidence should be between 0 and 1")
+
+					// Burst should reference the events that form it
+					Expect(burstSuggestion.EventIDs).NotTo(BeEmpty(),
+						"Burst should reference the events that form it")
 				}
-			})
-
-			It("should have a descriptive name", func() {
-				Skip("Depends on detection - may not always trigger")
-				Expect(burstSuggestion.Name).NotTo(BeEmpty(),
-					"Burst should have a descriptive name")
-			})
-
-			It("should have a description explaining the pattern", func() {
-				Skip("Depends on detection - may not always trigger")
-				Expect(burstSuggestion.Description).NotTo(BeEmpty(),
-					"Burst should explain what pattern was detected")
-			})
-
-			It("should have a confidence score", func() {
-				Skip("Depends on detection - may not always trigger")
-				Expect(burstSuggestion.ConfidenceScore).To(BeNumerically(">=", 0.0))
-				Expect(burstSuggestion.ConfidenceScore).To(BeNumerically("<=", 1.0),
-					"Confidence should be between 0 and 1")
-			})
-
-			It("should reference the events that form the burst", func() {
-				Skip("Depends on detection - may not always trigger")
-				Expect(burstSuggestion.EventIDs).NotTo(BeEmpty(),
-					"Burst should reference the events that form it")
 			})
 		})
 	})

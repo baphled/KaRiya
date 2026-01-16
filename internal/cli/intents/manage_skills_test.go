@@ -1015,12 +1015,7 @@ var _ = Describe("ManageSkillsIntent", func() {
 				// which is complex to simulate in unit tests.
 				// This test verifies the 'x' key handler works when filters are present.
 
-				// Manually set a filter to test clear behavior
-				if intent.ActiveFilters() == nil {
-					Skip("ActiveFilters() returned nil - needs investigation")
-				}
-
-				// For now, just verify 'x' key is handled without crashing
+				// Verify 'x' key is handled without crashing regardless of filter state
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 
 				// Should not crash and should remain in list state
