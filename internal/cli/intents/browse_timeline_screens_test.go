@@ -926,4 +926,240 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			Expect(intent.HasActiveFilters()).To(BeFalse())
 		})
 	})
+
+	Describe("Escape Key Behavior (Screens Mode)", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
+		It("should cancel intent when escape pressed from timeline list", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			result := intent.Result()
+			Expect(result).NotTo(BeNil())
+			Expect(result.Status).To(Equal(Cancelled))
+		})
+
+		It("should return to list when escape pressed from event detail modal", func() {
+			// Open event detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			modalView := intent.View()
+			Expect(modalView).To(ContainSubstring("Backend Developer"))
+
+			// Press escape to close modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Should be back at list, not cancelled
+			result := intent.Result()
+			Expect(result).To(BeNil())
+
+			listView := intent.View()
+			Expect(listView).To(ContainSubstring("Timeline"))
+		})
+
+		It("should quit app when 'q' pressed from timeline list", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+
+			// Should return tea.Quit command
+			Expect(cmd).NotTo(BeNil())
+			// Intent result should be nil (app is quitting, not cancelled)
+			result := intent.Result()
+			Expect(result).To(BeNil())
+		})
+
+		It("should handle ctrl+c to quit app", func() {
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+
+			// Should return tea.Quit command
+			Expect(cmd).NotTo(BeNil())
+			result := intent.Result()
+			Expect(result).To(BeNil())
+		})
+	})
+
+	Describe("Filtering and Sorting (Internal State)", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
+		It("should sort by date ascending", func() {
+			intent.state.filters.SortBy = "date"
+			intent.state.filters.SortOrder = "asc"
+			intent.applyFilters()
+
+			// Oldest event (2022) should be first
+			Expect(intent.state.filteredEvents[0].ID).To(Equal("event-3"))
+			Expect(intent.state.filteredEvents[2].ID).To(Equal("event-1"))
+		})
+
+		It("should sort by date descending", func() {
+			intent.state.filters.SortBy = "date"
+			intent.state.filters.SortOrder = "desc"
+			intent.applyFilters()
+
+			// Newest event (2024) should be first
+			Expect(intent.state.filteredEvents[0].ID).To(Equal("event-1"))
+			Expect(intent.state.filteredEvents[2].ID).To(Equal("event-3"))
+		})
+
+		It("should sort by text content", func() {
+			intent.state.filters.SortBy = "text"
+			intent.state.filters.SortOrder = "asc"
+			intent.applyFilters()
+
+			// Alphabetical order by text
+			Expect(intent.state.filteredEvents[0].Text).To(ContainSubstring("Backend Developer"))
+			Expect(intent.state.filteredEvents[1].Text).To(ContainSubstring("DevOps Engineer"))
+			Expect(intent.state.filteredEvents[2].Text).To(ContainSubstring("Frontend Developer"))
+		})
+	})
+
+	Describe("Navigation Robustness", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
+		It("should not move selection below first item with up arrow", func() {
+			intent.state.selectedIndex = 0
+			intent.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(intent.state.selectedIndex).To(Equal(0))
+		})
+
+		It("should not move selection above last item with down arrow", func() {
+			lastIndex := len(intent.state.filteredEvents) - 1
+			intent.state.selectedIndex = lastIndex
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(intent.state.selectedIndex).To(Equal(lastIndex))
+		})
+	})
+
+	Describe("Edge Cases and Robustness", func() {
+		It("should handle inactive intent gracefully", func() {
+			intent.Init()
+			intent.active = false
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle multiple modal open/close cycles", func() {
+			intent.Init()
+
+			// Open and close modal multiple times
+			for i := 0; i < 3; i++ {
+				intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+
+				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+				view = intent.View()
+				Expect(view).To(ContainSubstring("Timeline"))
+			}
+		})
+
+		It("should not crash when pressing action keys multiple times", func() {
+			intent.Init()
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Press 'e' (edit) multiple times
+			for i := 0; i < 3; i++ {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+				Expect(view).NotTo(ContainSubstring("panic"))
+			}
+		})
+
+		It("should maintain consistent layout after multiple operations", func() {
+			intent.Init()
+
+			// Perform multiple operations
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			intent.Update(tea.KeyMsg{Type: tea.KeyUp})
+
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+			// View should not have excessive line breaks
+			Expect(view).NotTo(ContainSubstring("\n\n\n\n\n"))
+		})
+
+		It("should render without panics after various state changes", func() {
+			intent.Init()
+
+			// Navigate and view events
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			view := intent.View()
+			Expect(view).NotTo(ContainSubstring("panic"))
+
+			// Open detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			view = intent.View()
+			Expect(view).NotTo(ContainSubstring("panic"))
+
+			// Close detail
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			view = intent.View()
+			Expect(view).NotTo(ContainSubstring("panic"))
+		})
+	})
+
+	Describe("Workflow Patterns", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
+		It("should allow browsing multiple events sequentially", func() {
+			// View first event
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Move to second event
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+
+			// View second event
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Should be back at list with all events visible
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Timeline"))
+		})
+
+		It("should handle search, browse, and clear workflow", func() {
+			// Helper to process commands
+			updateWithCmd := func(msg tea.Msg) {
+				cmd := intent.Update(msg)
+				for i := 0; i < 3 && cmd != nil; i++ {
+					resultMsg := cmd()
+					if resultMsg == nil {
+						break
+					}
+					cmd = intent.Update(resultMsg)
+				}
+			}
+
+			// Apply search
+			updateWithCmd(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+			updateWithCmd(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'D'}})
+			updateWithCmd(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			updateWithCmd(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+			updateWithCmd(tea.KeyMsg{Type: tea.KeyEnter})
+			updateWithCmd(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Browse filtered results
+			intent.Update(tea.KeyMsg{Type: tea.KeyDown})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Clear filters
+			intent.ClearFilters()
+			intent.RefreshData()
+
+			// Should see all events again
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Backend Developer"))
+		})
+	})
 })

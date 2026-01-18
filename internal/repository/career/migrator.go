@@ -164,3 +164,24 @@ func MigrationStatus(db *sql.DB) (int64, error) {
 	}
 	return goose.GetDBVersion(db)
 }
+
+// RunMigrationsForTests is a fast-path migration function for tests that skips
+// all baseline detection checks. Use this only for fresh test databases.
+// This is significantly faster than RunMigrations() because it:
+// - Skips checking for pre-goose databases
+// - Skips detecting existing tables/columns
+// - Just runs the migrations directly on a known-fresh database
+func RunMigrationsForTests(db *sql.DB) error {
+	goose.SetBaseFS(migrations)
+
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		return fmt.Errorf("failed to set dialect: %w", err)
+	}
+
+	// For test databases, just run migrations directly without baseline checks
+	if err := goose.Up(db, "migrations"); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	return nil
+}

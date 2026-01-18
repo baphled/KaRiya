@@ -118,17 +118,18 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 		})
 
 		It("should return to List when escape is pressed", func() {
-			// Verify we're in detail state (breadcrumb shows "Skills ▸ [SkillName]")
+			// Verify we're in detail state (shows detail card content)
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Skills  ▸"))
+			Expect(view).To(ContainSubstring("Go Programming"))
+			Expect(view).To(ContainSubstring("backend"))
 
 			// Press escape to go back
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should be back in list view (no breadcrumb arrow)
+			// Should be back in list view (shows Skills title, no detail card)
 			view = intent.View()
 			Expect(view).To(ContainSubstring("Skills"))
-			Expect(view).ToNot(ContainSubstring("▸"))
+			Expect(view).ToNot(ContainSubstring("Event Count:")) // Detail card field
 			// Should not be cancelled
 			result := intent.Result()
 			Expect(result).To(BeNil())
@@ -142,8 +143,9 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 		It("should toggle help when '?' is pressed", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 			viewWithHelp := intent.View()
-			// Verify view still renders after help toggle
-			Expect(viewWithHelp).To(ContainSubstring("Skills  ▸"))
+			// Verify view still renders after help toggle (check for detail view content)
+			Expect(viewWithHelp).To(ContainSubstring("Go Programming"))
+			Expect(viewWithHelp).To(ContainSubstring("backend"))
 		})
 
 		It("should show correct footer keys", func() {
@@ -167,9 +169,10 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should be back in detail view (breadcrumb has one ▸)
+			// Should be back in detail view (shows skill detail card)
 			view = intent.View()
-			Expect(view).To(ContainSubstring("Skills  ▸"))
+			Expect(view).To(ContainSubstring("Go Programming"))
+			Expect(view).To(ContainSubstring("Event Count:"))
 		})
 
 		It("should return tea.Quit command when 'q' is pressed", func() {

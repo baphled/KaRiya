@@ -424,18 +424,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 
 	// =========================================================================
 	// PART 4: FUTURE ENFORCEMENT
-	// =========================================================================
-	//
-	// As more intents are migrated to MessageInterceptor, add them here.
-	// The test structure should remain the same - only add new entries to
-	// the DescribeTables above.
-	// =========================================================================
-
-	Describe("Future Intent Migrations", func() {
-		PIt("ExportArtifact - to be added after migration")
-		PIt("ConfigureSystem - to be added after migration")
-		PIt("ImportWizard - to be added after migration")
-		PIt("MetadataEditor - to be added after migration")
-		PIt("BulkOperations - to be added after migration")
-	})
+	// NOTE: Additional intents (ExportArtifact, ConfigureSystem, ImportWizard,
+	// MetadataEditor, BulkOperations) will be added to the DescribeTable when
+	// their migration to the new architecture is complete.
 })
