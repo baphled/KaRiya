@@ -112,9 +112,6 @@ var _ = Describe("ASCIILogo", func() {
 			})
 
 			It("should update fade progress on TickMsg", func() {
-				// Get initial view
-				initialView := logo.View()
-
 				// Send multiple tick messages to progress animation
 				// Animation increments by 0.1 each tick: 0.0, 0.1, 0.2... 0.9, 1.0
 				// So it needs 10 ticks to reach 1.0, and on the 11th update it returns nil
@@ -128,10 +125,20 @@ var _ = Describe("ASCIILogo", func() {
 					}
 				}
 
-				// Final view should be fully rendered
+				// Final view should be fully rendered with actual ASCII art logo
 				finalView := logo.View()
-				Expect(finalView).To(ContainSubstring("██"))
-				Expect(len(finalView)).To(BeNumerically(">=", len(initialView)))
+
+				// Check for the actual ASCII art characters (verbatim from logoArt constant)
+				Expect(finalView).To(ContainSubstring("██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗"))
+				Expect(finalView).To(ContainSubstring("██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗"))
+				Expect(finalView).To(ContainSubstring("█████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║"))
+				Expect(finalView).To(ContainSubstring("██╔═██╗ ██╔══██║██╔══██╗██║  ╚██╔╝  ██╔══██║"))
+				Expect(finalView).To(ContainSubstring("██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║"))
+				Expect(finalView).To(ContainSubstring("╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝"))
+
+				// Check for tagline and version
+				Expect(finalView).To(ContainSubstring("Career Event Management System"))
+				Expect(finalView).To(ContainSubstring("v1.0.0"))
 			})
 
 			It("should stop animation when fade progress reaches 1.0", func() {

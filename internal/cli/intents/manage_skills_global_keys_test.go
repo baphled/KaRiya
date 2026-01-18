@@ -160,9 +160,9 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 		})
 	})
 
-	Describe("Filter State", func() {
+	Describe("Filter Modal Visible", func() {
 		BeforeEach(func() {
-			// Navigate to filter state
+			// Open filter modal (state stays SkillsStateList)
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
 		})
 
@@ -185,9 +185,9 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 		})
 	})
 
-	Describe("Sort State", func() {
+	Describe("Sort Modal Visible", func() {
 		BeforeEach(func() {
-			// Navigate to sort state
+			// Open sort modal (state stays SkillsStateList)
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 		})
 

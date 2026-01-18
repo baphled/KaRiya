@@ -201,7 +201,7 @@ var _ = Describe("YAMLConfigManager", func() {
 				TargetAudience: "hiring_manager",
 			}
 
-			manager.SaveConfig(context.Background(), config)
+			Expect(manager.SaveConfig(context.Background(), config)).To(Succeed())
 
 			cancelCtx, cancel := context.WithCancel(context.Background())
 			cancel()
@@ -219,7 +219,7 @@ var _ = Describe("YAMLConfigManager", func() {
 				TargetAudience: "hiring_manager",
 			}
 
-			manager.SaveConfig(ctx, config)
+			Expect(manager.SaveConfig(ctx, config)).To(Succeed())
 			filePath := manager.GetConfigPath("test-config")
 
 			// Verify file exists
@@ -326,11 +326,11 @@ var _ = Describe("YAMLConfigManager", func() {
 				TargetRole:     "principal",
 				TargetAudience: "hiring_manager",
 			}
-			manager.SaveConfig(ctx, config1)
+			Expect(manager.SaveConfig(ctx, config1)).To(Succeed())
 
 			// Manually create an invalid YAML file
 			invalidPath := filepath.Join(tempDir, "invalid.yaml")
-			os.WriteFile(invalidPath, []byte("invalid: yaml: [[["), 0644)
+			Expect(os.WriteFile(invalidPath, []byte("invalid: yaml: [[["), 0644)).To(Succeed())
 
 			// List should return valid configs and skip invalid ones
 			loaded, err := manager.ListConfigs(ctx)
@@ -380,7 +380,7 @@ var _ = Describe("YAMLConfigManager", func() {
 				TargetAudience: "hiring_manager",
 			}
 
-			manager.SaveConfig(ctx, config)
+			Expect(manager.SaveConfig(ctx, config)).To(Succeed())
 
 			exists, err := manager.ConfigExists(ctx, "test-config")
 			Expect(err).NotTo(HaveOccurred())

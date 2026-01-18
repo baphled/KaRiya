@@ -2,8 +2,8 @@
 
 **Complete Guide to Capturing Career Events with Burst and Fact Extraction**
 
-**Last Updated**: 2026-01-12
-**Workflow Complexity**: High (4 states + 3 modal sub-flows)
+**Last Updated**: 2026-01-14
+**Workflow Complexity**: High (6 states + 3 modal sub-flows)
 **Implementation**: `internal/cli/intents/capture_event_intent.go`
 
 ---
@@ -29,7 +29,7 @@
 Capture career events (achievements, projects, responsibilities) with:
 - **Two capture modes**: Quick (minimal fields) or Manual (all fields)
 - **Huh forms integration**: Professional form handling with validation
-- **Optional enrichment**: Metadata, burst, and fact editing during review
+- **Automatic enrichment**: Burst suggestion and fact extraction after save
 - **Flexible date parsing**: Natural language ("today", "7 days ago") or ISO format
 - **Async submission**: Background processing with progress indication
 
@@ -58,14 +58,16 @@ graph TD
     
     ChooseStrategy[1. Choose Strategy<br/>Quick or Manual]
     Form[2. Event Form<br/>Huh-based input]
-    Review[3. Review Inferred Event]
-    Submit[4. Submit Event]
+    PreSaveReview[3. Pre-Save Review<br/>Verify event details]
+    Submit[4. Submit Event<br/>Save to database]
+    Enrichment[5. Enrichment<br/>Burst & Fact Extraction]
+    EnrichmentReview[6. Enrichment Review<br/>Confirm enriched data]
     
     EditMetadata[Edit Metadata Modal]
     EditBursts[Edit Bursts Modal]
     EditFacts[Edit Facts Modal]
     
-    Success([Event Saved])
+    Complete([Complete])
     Cancel([Cancel])
     
     Start --> ChooseStrategy
@@ -74,34 +76,43 @@ graph TD
     ChooseStrategy -->|Enter: Select Manual| Form
     ChooseStrategy -->|Esc/m: Cancel| Cancel
     
-    Form -->|Ctrl+S/Submit: Quick path| Submit
-    Form -->|Enter: Review first| Review
+    Form -->|Enter: Review first| PreSaveReview
+    Form -->|Ctrl+S: Quick submit| Submit
     Form -->|Esc: Back| ChooseStrategy
     Form -->|Ctrl+O: Toggle fields<br/>Manual mode only| Form
     
-    Review -->|Ctrl+S/Enter: Confirm| Submit
-    Review -->|e: Edit metadata| EditMetadata
-    Review -->|b: Edit bursts| EditBursts
-    Review -->|f: Edit facts| EditFacts
-    Review -->|Esc: Back| Form
+    PreSaveReview -->|Enter: Confirm| Submit
+    PreSaveReview -->|e: Edit metadata| EditMetadata
+    PreSaveReview -->|Esc: Back| Form
     
-    EditMetadata -->|Enter: Save| Review
-    EditMetadata -->|Esc: Cancel| Review
+    EditMetadata -->|Enter: Save| PreSaveReview
+    EditMetadata -->|Esc: Cancel| PreSaveReview
     
-    EditBursts -->|Enter: Save| Review
-    EditBursts -->|Esc: Cancel| Review
-    
-    EditFacts -->|Enter: Save| Review
-    EditFacts -->|Esc: Cancel| Review
-    
-    Submit -->|Success| Success
+    Submit -->|Success| Enrichment
     Submit -->|Error| Submit
     Submit -->|r: Retry| Submit
-    Submit -->|Esc: Back with error| Review
+    Submit -->|Esc: Back with error| PreSaveReview
+    
+    Enrichment -->|Complete| EnrichmentReview
+    Enrichment -->|Error| EnrichmentReview
+    
+    EnrichmentReview -->|Enter: Complete| Complete
+    EnrichmentReview -->|b: Edit bursts| EditBursts
+    EnrichmentReview -->|f: Edit facts| EditFacts
+    EnrichmentReview -->|r: Retry enrichment| Enrichment
+    EnrichmentReview -->|Esc: Back| Submit
+    
+    EditBursts -->|Enter: Save| EnrichmentReview
+    EditBursts -->|Esc: Cancel| EnrichmentReview
+    
+    EditFacts -->|Enter: Save| EnrichmentReview
+    EditFacts -->|Esc: Cancel| EnrichmentReview
     
     style Form fill:#87CEEB,stroke:#333,stroke-width:2px
     style Submit fill:#ffd700,stroke:#333,stroke-width:2px
-    style Success fill:#90EE90,stroke:#333,stroke-width:2px
+    style Enrichment fill:#98FB98,stroke:#333,stroke-width:2px
+    style EnrichmentReview fill:#DDA0DD,stroke:#333,stroke-width:2px
+    style Complete fill:#90EE90,stroke:#333,stroke-width:2px
     style Cancel fill:#FFB6C1,stroke:#333,stroke-width:2px
     style EditMetadata fill:#DDA0DD,stroke:#333,stroke-width:2px
     style EditBursts fill:#DDA0DD,stroke:#333,stroke-width:2px
@@ -116,8 +127,10 @@ graph TD
 |---|-------|------|-------------|--------|
 | 1 | ChooseStrategy | Root | No (cancels) | No |
 | 2 | Form | Intermediate | Yes | No |
-| 3 | Review | Intermediate | Yes | Yes (3) |
-| 4 | Submit | Final | Yes (with error) | No |
+| 3 | Pre-Save Review | Intermediate | Yes | Yes (1 - metadata only) |
+| 4 | Submit | Async | Yes (with error) | No |
+| 5 | Enrichment | Async | No (wait for completion) | No |
+| 6 | Enrichment Review | Intermediate | Yes | Yes (2 - bursts & facts) |
 
 ---
 
@@ -275,14 +288,14 @@ graph TD
 
 ---
 
-### Step 3: Review
+### Step 3: Pre-Save Review
 
-**What it shows**: Event preview with optional burst/fact editing
+**What it shows**: Event preview before submission (metadata verification)
 
 **Screen**:
 ```
 ┌────────────────────────────────────────────────────────────┐
-│ KaRiya > Main Menu > Capture Event > Review                │
+│ KaRiya > Main Menu > Capture Event > Pre-Save Review      │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │  Review Career Event                                       │
@@ -293,49 +306,33 @@ graph TD
 │  Project: Platform Migration                              │
 │  Tags: [Technical] [Achievement]                          │
 │                                                            │
-│  ─────────────────────────────────────────────────────    │
+│  Verify your event details before submitting.             │
+│  Enrichment (burst & fact extraction) will happen after   │
+│  the event is saved.                                      │
 │                                                            │
-│  Suggested Bursts (2)                                     │
-│  ☑ Platform Modernization (3 events)                     │
-│  ☐ Ruby 3.x Adoption (5 events)                           │
-│                                                            │
-│  Inferred Facts (3)                                       │
-│  • Migration expertise (High confidence)                  │
-│  • Performance optimization (Medium confidence)           │
-│  • Technical leadership (Medium confidence)               │
-│                                                            │
-│  [ Confirm ]  [ Edit Metadata ]  [ Edit Bursts ]          │
-│               [ Edit Facts ]     [ Cancel ]               │
+│  [ Confirm ]  [ Edit Metadata ]  [ Cancel ]               │
 │                                                            │
 ├────────────────────────────────────────────────────────────┤
-│ Ctrl+S/Enter Confirm  e Edit Metadata  b Edit Bursts      │
-│ f Edit Facts  a Accept  r Reject  Esc Back  m Main  q Quit│
+│ Enter Confirm  e Edit Metadata  Esc Back  m Main  q Quit  │
 └────────────────────────────────────────────────────────────┘
 ```
 
 **Keyboard Shortcuts**:
 | Key | Action | Result |
 |-----|--------|--------|
-| `Ctrl+S` or `Enter` | Confirm | Submit event |
+| `Enter` | Confirm | Submit event to database |
 | `e` | Edit metadata | Open metadata editor modal |
-| `b` | Edit bursts | Open burst suggestion modal |
-| `f` | Edit facts | Open fact editor modal |
-| `a` | Accept | Accept currently selected burst/fact |
-| `r` | Reject | Reject currently selected burst/fact |
-| `↑` or `k` | Navigate up | Move through bursts/facts |
-| `↓` or `j` | Navigate down | Move through bursts/facts |
 | `Esc` | Back | Return to form |
 | `m` | Main menu | Return to main menu |
 | `q` | Quit | Exit application |
 
-**What Happens in Review**:
-1. Event data displayed for verification
-2. Burst suggestions shown (if similar events exist)
-3. Facts inferred from event text (competencies, role fit, audience relevance)
-4. User can edit any aspect via modals
-5. User can accept/reject burst and fact suggestions
+**What Happens in Pre-Save Review**:
+1. Event data displayed for final verification
+2. User can edit metadata (date, company, project, tags)
+3. No bursts or facts shown yet (enrichment happens after save)
+4. User confirms to proceed to submission
 
-**Note**: Burst and fact extraction are **OPTIONAL**. You can skip directly to submit with `Ctrl+S` or `Enter`.
+**Note**: This is for verifying event **metadata** only. Bursts and facts will be extracted after the event is saved, in the Enrichment Review step.
 
 ---
 
@@ -410,54 +407,219 @@ graph TD
 **What Happens**:
 1. Event validated
 2. Saved to database via CLIEventService
-3. Optional enrichment (burst/fact extraction) if configured
-4. Success/error result displayed
+3. Success modal displayed (auto-dismiss after 3s)
+4. Proceeds to Enrichment step
 
 ---
 
-## Actual vs Ideal Workflow
+### Step 5: Enrichment
 
-### Actual Implementation (As-Built)
+**What it shows**: Automatic burst and fact extraction progress
 
-**Minimal Path** (Quick mode, skip review):
+**Screen (Enriching)**:
 ```
-Choose Strategy (Quick) → Form → Ctrl+S → Submit → Success
-```
-
-**Standard Path** (with review):
-```
-Choose Strategy → Form → Review → Submit → Success
-```
-
-**Full Path** (with metadata/burst/fact editing):
-```
-Choose Strategy → Form → Review → Edit Metadata → Review →
-    Edit Bursts → Review → Edit Facts → Review → Submit → Success
-```
-
-**Key Points**:
-- Bursts and facts are **OPTIONAL** and **USER-TRIGGERED** during Review
-- User can skip Review entirely with `Ctrl+S` from Form
-- Metadata editing happens in modal overlays, not during initial capture
-- Enrichment (burst/fact extraction) happens **AFTER** event save, not before
-
-### Ideal Workflow (PRD Vision)
-
-The PRD_MASTER.md describes this ideal flow:
-```
-Capture → Burst Suggestion → Fact Enrichment → CV Generation
+┌────────────────────────────────────────────────────────────┐
+│ KaRiya > Main Menu > Capture Event > Enrichment            │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│                                                            │
+│                  ⏳ Enriching Event...                     │
+│                                                            │
+│         Extracting bursts and facts from your event        │
+│                                                            │
+│                                                            │
+├────────────────────────────────────────────────────────────┤
+│ Please wait...                                             │
+└────────────────────────────────────────────────────────────┘
 ```
 
-However, the **actual implementation** differs:
-- Burst suggestion is **optional** (triggered by 'b' key in Review)
-- Fact enrichment is **optional** (triggered by 'f' key in Review)
-- Both happen **during review**, not automatically
-- User can bypass both and go straight to Submit
+**Screen (Enrichment Error)**:
+```
+┌────────────────────────────────────────────────────────────┐
+│ KaRiya > Main Menu > Capture Event > Enrichment            │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│  ⚠️  Enrichment Warning                                    │
+│                                                            │
+│  Unable to extract bursts/facts automatically.            │
+│  You can still complete the workflow.                     │
+│                                                            │
+│  Error: Service temporarily unavailable                   │
+│                                                            │
+├────────────────────────────────────────────────────────────┤
+│ Enter Continue  r Retry Enrichment                         │
+└────────────────────────────────────────────────────────────┘
+```
 
-**Why the difference?**
-- User control: Users can capture events quickly without waiting for AI processing
-- Performance: Enrichment can be done later in bulk
-- Flexibility: Not all events need bursts/facts immediately
+**Keyboard Shortcuts**:
+| Key | Action | Result |
+|-----|--------|--------|
+| N/A | Wait | Enrichment runs automatically |
+
+**What Happens**:
+1. System groups related events → Suggests bursts
+2. System infers competencies, role fit, audience → Extracts facts
+3. Results passed to Enrichment Review state
+4. If enrichment fails, proceeds with empty results (user can retry later)
+
+**Note**: This is an **automatic** step based on **PRD_MASTER.md Section 7**. User waits for completion.
+
+---
+
+### Step 6: Enrichment Review
+
+**What it shows**: Enriched data for user confirmation
+
+**Screen (With Enriched Data)**:
+```
+┌────────────────────────────────────────────────────────────┐
+│ KaRiya > Main Menu > Capture Event > Enrichment Review    │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│  ✅ Event Saved - Review Enriched Data                     │
+│                                                            │
+│  Event: Led platform migration to Ruby 3.1...             │
+│  Date: 2024-01-07                                         │
+│  Company: Acme Corp                                       │
+│                                                            │
+│  ─────────────────────────────────────────────────────    │
+│                                                            │
+│  Inferred Bursts (2)                                       │
+│  ☑ Platform Modernization (3 events)                     │
+│  ☑ Ruby 3.x Adoption (5 events)                           │
+│                                                            │
+│  Inferred Facts (3)                                        │
+│  • Migration expertise (High confidence)                  │
+│  • Performance optimization (Medium confidence)           │
+│  • Technical leadership (Medium confidence)               │
+│                                                            │
+│  [ Complete ]  [ Edit Bursts ]  [ Edit Facts ]            │
+│                                                            │
+├────────────────────────────────────────────────────────────┤
+│ Enter Complete  b Edit Bursts  f Edit Facts  r Retry      │
+│ Esc Back  m Main  q Quit                                   │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Screen (No Enrichment Results)**:
+```
+┌────────────────────────────────────────────────────────────┐
+│ KaRiya > Main Menu > Capture Event > Enrichment Review    │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│  ✅ Event Saved                                            │
+│                                                            │
+│  Event: Led platform migration to Ruby 3.1...             │
+│  Date: 2024-01-07                                         │
+│                                                            │
+│  ─────────────────────────────────────────────────────    │
+│                                                            │
+│  No bursts or facts extracted.                            │
+│  This may be your first event, or enrichment is not      │
+│  available. You can add bursts/facts later via Browse.   │
+│                                                            │
+│  [ Complete ]  [ Retry Enrichment ]                        │
+│                                                            │
+├────────────────────────────────────────────────────────────┤
+│ Enter Complete  r Retry Enrichment  Esc Back  m Main      │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Keyboard Shortcuts**:
+| Key | Action | Result |
+|-----|--------|--------|
+| `Enter` | Complete | Finish workflow, return to main menu |
+| `b` | Edit bursts | Open burst editor modal |
+| `f` | Edit facts | Open fact editor modal |
+| `r` | Retry enrichment | Go back to Enrichment step |
+| `↑` or `k` | Navigate up | Move through bursts/facts |
+| `↓` or `j` | Navigate down | Move through bursts/facts |
+| `Esc` | Back | Return to Submit (show success modal) |
+| `m` | Main menu | Return to main menu |
+| `q` | Quit | Exit application |
+
+**What Happens in Enrichment Review**:
+1. Event summary displayed with enriched data
+2. Inferred bursts shown (groups of related events)
+3. Inferred facts shown (competencies, role fit, audience relevance)
+4. User can edit bursts/facts via modals ('b' and 'f' keys)
+5. User confirms to complete workflow
+
+**Note**: This is where burst and fact editing happens. The 'b' and 'f' keys work **only in this state**, not in Pre-Save Review.
+
+---
+
+## Workflow Paths
+
+Based on **PRD_MASTER.md Section 7 & 9a**, the CaptureEvent workflow follows these paths:
+
+### Standard Path (Recommended)
+
+```
+Choose Strategy → Form → Pre-Save Review → Submit → Save → 
+    Enrichment → Enrichment Review → Complete
+```
+
+**Duration**: ~2-3 minutes per event  
+**Use case**: Normal event capture with full verification
+
+### Quick Submit Path (Skip Pre-Save Review)
+
+```
+Choose Strategy → Form → Ctrl+S → Submit → Save → 
+    Enrichment → Enrichment Review → Complete
+```
+
+**Duration**: ~1-2 minutes per event  
+**Use case**: Rapid event capture when metadata is already correct
+
+### Full Path (With Pre-Save Metadata Editing)
+
+```
+Choose Strategy → Form → Pre-Save Review → Edit Metadata → 
+    Pre-Save Review → Submit → Save → Enrichment → 
+    Enrichment Review → Complete
+```
+
+**Duration**: ~3-4 minutes per event  
+**Use case**: Detailed event capture with metadata corrections
+
+### Full Path (With Post-Save Burst/Fact Editing)
+
+```
+Choose Strategy → Form → Pre-Save Review → Submit → Save → 
+    Enrichment → Enrichment Review → Edit Bursts → 
+    Enrichment Review → Edit Facts → Enrichment Review → Complete
+```
+
+**Duration**: ~3-5 minutes per event  
+**Use case**: Event capture with manual burst/fact refinement
+
+---
+
+## Key Workflow Principles
+
+1. **Pre-Save Review** (Step 3) is for verifying **event metadata** BEFORE save
+   - Shows: Event text, date, company, project, tags
+   - Does NOT show: Bursts or facts (not extracted yet)
+   - Keys: `e` for metadata editing, `Enter` to submit
+
+2. **Enrichment** (Step 5) is **AUTOMATIC** after successful save
+   - System suggests bursts (groups of related events)
+   - System extracts facts (competencies, role fit, audience)
+   - User cannot skip this step (but it proceeds even on error)
+
+3. **Enrichment Review** (Step 6) is for confirming **enriched data** AFTER save
+   - Shows: Inferred bursts and facts
+   - Keys: `b` for burst editing, `f` for fact editing
+   - User reviews and optionally edits before completing
+
+4. **Ctrl+S from Form** skips pre-save review but NOT enrichment or enrichment review
+
+5. **Enrichment errors** are non-fatal:
+   - User sees warning but can proceed
+   - Empty bursts/facts shown in Enrichment Review
+   - User can retry enrichment with 'r' key
 
 ---
 

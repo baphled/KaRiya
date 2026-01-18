@@ -2,8 +2,9 @@
 
 **Complete Guide to Managing User-Defined Skills**
 
-**Last Updated**: 2026-01-12
+**Last Updated**: 2026-01-14
 **Workflow Complexity**: Medium (9 states)
+**Pattern Compliance**: 83% (10/12 patterns implemented)
 **Implementation**: `internal/cli/intents/manage_skills_intent.go`
 
 ---
@@ -928,6 +929,76 @@ j/k (select "Most Used") → Enter
 1. Ensure you're in a state that supports vim keys (List, Detail, menus)
 2. In forms, vim keys don't override normal text input
 3. Use standard arrow keys if vim keys not responding
+
+---
+
+## Filter & Search Behavior
+
+### FilterBehavior Interface ✅
+
+**Status**: Fully Implemented (2026-01-14)
+
+ManageSkills implements the `FilterBehavior` interface for consistent filter/search/sort operations:
+
+```go
+type FilterBehavior interface {
+    HasActiveFilters() bool  // Check if filters active
+    ClearFilters()           // Clear in FIFO order
+    ApplyFilters()           // Apply current filters
+    RefreshData() tea.Cmd    // Reload filtered data
+}
+```
+
+### FIFO Clearing Order
+
+Filters clear in **First-In-First-Out** order (most recent first):
+
+1. **Search Text** → Clears first (most specific)
+2. **Filter Options** → Clears second (category, level, min events)
+3. **Sort Options** → Clears last (least specific)
+
+**Example Flow**:
+```
+Initial State: All skills visible
+↓ (Press '/' and search "Go")
+Filtered: Only "Go" skills
+↓ (Press 'x')
+Cleared: All skills visible again
+↓ (Press 'f' and filter by "backend")
+Filtered: Only backend skills
+↓ (Press 'x')
+Cleared: All skills visible again
+```
+
+### Clear Filters ('x' Key)
+
+**Behavior**:
+- 'x' key only appears when filters are active
+- Each press clears ONE filter layer (FIFO)
+- Press multiple times to clear all layers
+- Automatically refreshes data after clearing
+
+**Visual Indicator**:
+```
+Footer (no filters):
+  ↑↓/jk: Navigate | Enter: View | n: Add | f: Filter | s: Sort
+
+Footer (filters active):
+  ↑↓/jk: Navigate | Enter: View | x: Clear filters | f: Filter
+```
+
+### Search Functionality
+
+**How It Works**:
+- Case-insensitive search across skill name and category
+- In-memory filtering (instant results)
+- Integrates with FilterBehavior interface
+
+**Search Modal** ('/' key):
+- Text input for search query
+- Tab to navigate fields
+- Enter to apply search
+- Esc to cancel
 
 ---
 
