@@ -75,8 +75,8 @@ var _ = Describe("TagSelector", func() {
 
 	Describe("Tag Deselection", func() {
 		BeforeEach(func() {
-			selector.SelectTag("technical")
-			selector.SelectTag("leadership")
+			Expect(selector.SelectTag("technical")).To(Succeed())
+			Expect(selector.SelectTag("leadership")).To(Succeed())
 		})
 
 		It("should allow deselecting a selected tag", func() {
@@ -124,7 +124,7 @@ var _ = Describe("TagSelector", func() {
 		})
 
 		It("should deselect tag if already selected", func() {
-			selector.SelectTag("technical")
+			Expect(selector.SelectTag("technical")).To(Succeed())
 			err := selector.ToggleTag("technical")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(selector.SelectedTags()).NotTo(ContainElement("technical"))
@@ -133,7 +133,7 @@ var _ = Describe("TagSelector", func() {
 
 	Describe("IsSelected", func() {
 		BeforeEach(func() {
-			selector.SelectTag("technical")
+			Expect(selector.SelectTag("technical")).To(Succeed())
 		})
 
 		It("should return true for selected tag", func() {
@@ -147,8 +147,8 @@ var _ = Describe("TagSelector", func() {
 
 	Describe("Reset", func() {
 		BeforeEach(func() {
-			selector.SelectTag("technical")
-			selector.SelectTag("leadership")
+			Expect(selector.SelectTag("technical")).To(Succeed())
+			Expect(selector.SelectTag("leadership")).To(Succeed())
 		})
 
 		It("should clear all selected tags", func() {
@@ -174,20 +174,20 @@ var _ = Describe("TagSelector", func() {
 
 		It("should return selected tags in alphabetical order", func() {
 			// Select tags in non-alphabetical order
-			selector.SelectTag("technical")
-			selector.SelectTag("achievement")
-			selector.SelectTag("leadership")
+			Expect(selector.SelectTag("technical")).To(Succeed())
+			Expect(selector.SelectTag("achievement")).To(Succeed())
+			Expect(selector.SelectTag("leadership")).To(Succeed())
 
 			selected := selector.SelectedTags()
 			Expect(selected).To(Equal([]string{"achievement", "leadership", "technical"}))
 		})
 
 		It("should maintain alphabetical order after adding and removing tags", func() {
-			selector.SelectTag("technical")
-			selector.SelectTag("achievement")
-			selector.SelectTag("leadership")
-			selector.DeselectTag("achievement")
-			selector.SelectTag("mentoring")
+			Expect(selector.SelectTag("technical")).To(Succeed())
+			Expect(selector.SelectTag("achievement")).To(Succeed())
+			Expect(selector.SelectTag("leadership")).To(Succeed())
+			Expect(selector.DeselectTag("achievement")).To(Succeed())
+			Expect(selector.SelectTag("mentoring")).To(Succeed())
 
 			selected := selector.SelectedTags()
 			Expect(selected).To(Equal([]string{"leadership", "mentoring", "technical"}))
@@ -209,15 +209,15 @@ var _ = Describe("TagSelector", func() {
 			originalOrder := selector.AvailableTags()
 
 			// Select some tags
-			selector.SelectTag("technical")
-			selector.SelectTag("leadership")
+			Expect(selector.SelectTag("technical")).To(Succeed())
+			Expect(selector.SelectTag("leadership")).To(Succeed())
 
 			// Verify available tags order hasn't changed
 			afterSelection := selector.AvailableTags()
 			Expect(afterSelection).To(Equal(originalOrder))
 
 			// Deselect a tag
-			selector.DeselectTag("technical")
+			Expect(selector.DeselectTag("technical")).To(Succeed())
 
 			// Verify order is still the same
 			afterDeselection := selector.AvailableTags()

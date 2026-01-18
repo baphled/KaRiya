@@ -163,8 +163,8 @@ func (f FooterModel) renderStatusAndMode() string {
 
 	line := status + separator + mode
 
-	// Truncate if too long
-	if len(line) > f.width {
+	// Truncate if too long (use lipgloss.Width for ANSI-safe width calculation)
+	if lipgloss.Width(line) > f.width {
 		// Just show status if combined is too long
 		return status
 	}

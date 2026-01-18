@@ -161,7 +161,7 @@ func BenchmarkConfigureSystemView(b *testing.B) {
 // BenchmarkIntentRouterActivation benchmarks IntentRouter intent activation
 func BenchmarkIntentRouterActivation(b *testing.B) {
 	router := NewDefaultIntentRouter()
-	router.RegisterIntent("test", func() Intent {
+	_ = router.RegisterIntent("test", func() Intent {
 		ctx := &CaptureEventContext{
 			CaptureStrategy: "manual",
 			PreviousEvent:   nil,

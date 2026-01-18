@@ -30,12 +30,13 @@ func SetupTestDB(t testing.TB) (*sql.DB, func()) {
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
-	if err := career.RunMigrations(db); err != nil {
+	// Use RunMigrationsForTests which skips baseline detection for fresh test databases
+	if err := career.RunMigrationsForTests(db); err != nil {
 		closeErr := db.Close()
 		if closeErr != nil {
-			t.Fatalf("failed to run migrations: %v (also failed to close db: %v)", err, closeErr)
+			t.Fatalf("failed to run test migrations: %v (also failed to close db: %v)", err, closeErr)
 		}
-		t.Fatalf("failed to run migrations: %v", err)
+		t.Fatalf("failed to run test migrations: %v", err)
 	}
 
 	cleanup := func() {
@@ -69,12 +70,13 @@ func SetupTestDBWithPath(t testing.TB) (string, *sql.DB, func()) {
 		t.Fatalf("failed to open test db at %s: %v", dbPath, err)
 	}
 
-	if err := career.RunMigrations(db); err != nil {
+	// Use RunMigrationsForTests which skips baseline detection for fresh test databases
+	if err := career.RunMigrationsForTests(db); err != nil {
 		closeErr := db.Close()
 		if closeErr != nil {
-			t.Fatalf("failed to run migrations: %v (also failed to close db: %v)", err, closeErr)
+			t.Fatalf("failed to run test migrations: %v (also failed to close db: %v)", err, closeErr)
 		}
-		t.Fatalf("failed to run migrations: %v", err)
+		t.Fatalf("failed to run test migrations: %v", err)
 	}
 
 	cleanup := func() {

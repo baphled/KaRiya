@@ -741,15 +741,8 @@ var _ = Describe("Career Service", func() {
 		})
 	})
 
-	// NOTE: InferCompetencyForBurst integration tests are skipped because they require
-	// a mock fact repository which is not yet implemented. The core logic is thoroughly
-	// tested in the InferCompetencyFromFacts unit tests.
-	//
-	// TODO: Implement mock fact repository to enable these integration tests
-	XDescribe("InferCompetencyForBurst (weighted from facts)", func() {
-		It("should work with facts - integration test pending", func() {
-			// Pending: Need to implement mock fact repository
-			Skip("Requires fact repository mock - core logic tested in unit tests")
-		})
-	})
+	// NOTE: Competency classification is handled by:
+	// - internal/service/career/classification/classifier.go (with comprehensive tests)
+	// - internal/service/career/burst_fact/extractor.go (with comprehensive tests)
+	// See those packages for competency-related tests.
 })

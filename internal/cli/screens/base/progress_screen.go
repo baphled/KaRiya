@@ -1,0 +1,260 @@
+package base
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/baphled/kariya/internal/cli/screens"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+// TickMsg is sent periodically to animate the spinner.
+type TickMsg struct{}
+
+// CompleteMsg is sent when the async operation completes successfully.
+type CompleteMsg struct {
+	Data interface{}
+}
+
+// ErrorMsg is sent when the async operation fails.
+type ErrorMsg struct {
+	Error string
+}
+
+// TickCmd returns a command that sends TickMsg after a delay.
+func TickCmd() tea.Cmd {
+	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
+		return TickMsg{}
+	})
+}
+
+// BaseProgressScreen provides a reusable progress/loading screen.
+//
+// This screen handles:
+// - Animated spinner for visual feedback
+// - Optional cancellation (escape key)
+// - Async operation completion (CompleteMsg)
+// - Error handling (ErrorMsg)
+// - Progress message updates
+// - StandardView integration
+//
+// Example usage:
+//
+//	// Create progress screen
+//	screen := base.NewBaseProgressScreen(
+//	    []string{"Main Menu", "Generate CV"},
+//	    "Generating CV",
+//	    "Analyzing career events and extracting insights...",
+//	)
+//	screen.SetAllowCancel(false) // Disable cancellation during critical operation
+//
+//	// In intent, start async operation:
+//	cmd := func() tea.Msg {
+//	    result, err := performLongOperation()
+//	    if err != nil {
+//	        return base.ErrorMsg{Error: err.Error()}
+//	    }
+//	    return base.CompleteMsg{Data: result}
+//	}
+//
+//	// Update progress message mid-operation (optional):
+//	screen.SetMessage("Processing facts...")
+//
+//	// Handle completion:
+//	if result.Type() == screens.ResultNavigate {
+//	    data := result.Data() // Access completed data
+//	}
+//
+// Related:
+// - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - internal/cli/screens/cv/generating.go (Example progress screen)
+type BaseProgressScreen struct {
+	*BaseScreen
+
+	// breadcrumbs for navigation context
+	breadcrumbs []string
+
+	// title is the operation title
+	title string
+
+	// message is the progress message
+	message string
+
+	// spinnerFrame tracks the current spinner animation frame
+	spinnerFrame int
+
+	// allowCancel determines whether escape key cancels the operation
+	allowCancel bool
+
+	// footer is the help text shown at the bottom
+	footer string
+
+	// spinnerChars are the characters used for the spinner animation
+	spinnerChars []string
+}
+
+// NewBaseProgressScreen creates a new progress screen.
+//
+// Parameters:
+//   - breadcrumbs: Navigation breadcrumb trail
+//   - title: The operation title (e.g., "Generating CV")
+//   - message: The progress message (e.g., "Analyzing career events...")
+//
+// Default behavior:
+//   - Spinner animates automatically
+//   - Escape key allows cancellation (can be disabled via SetAllowCancel)
+//   - Waits for CompleteMsg or ErrorMsg to finish
+func NewBaseProgressScreen(
+	breadcrumbs []string,
+	title, message string,
+) *BaseProgressScreen {
+	return &BaseProgressScreen{
+		BaseScreen:   NewBaseScreen(),
+		breadcrumbs:  breadcrumbs,
+		title:        title,
+		message:      message,
+		spinnerFrame: 0,
+		allowCancel:  true, // Allow cancellation by default
+		footer:       "Esc: Cancel (operation will complete in background)",
+		spinnerChars: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+	}
+}
+
+// Update handles messages and returns result when operation completes or is cancelled.
+func (s *BaseProgressScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		// Handle window resize
+		s.SetTerminalInfo(msg.Width, msg.Height)
+		return nil, nil
+
+	case TickMsg:
+		// Advance spinner animation
+		s.spinnerFrame++
+		return TickCmd(), nil
+
+	case CompleteMsg:
+		// Operation completed successfully
+		return nil, &screens.NavigateResult{
+			ResultData: msg.Data,
+		}
+
+	case ErrorMsg:
+		// Operation failed
+		return nil, &screens.ErrorResult{
+			Message: msg.Error,
+		}
+
+	case tea.KeyMsg:
+		if s.allowCancel && msg.String() == "esc" {
+			// Cancel operation
+			return nil, &screens.CancelResult{}
+		}
+		// Ignore other keys during progress
+	}
+
+	return nil, nil
+}
+
+// Init initializes the screen and starts the spinner animation.
+func (s *BaseProgressScreen) Init() tea.Cmd {
+	return TickCmd()
+}
+
+// View renders the progress screen using StandardView.
+func (s *BaseProgressScreen) View() string {
+	var b strings.Builder
+
+	// Title (bold and colored)
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
+	b.WriteString(titleStyle.Render(s.title))
+	b.WriteString("\n\n")
+
+	// Spinner + Message
+	spinner := s.spinnerChars[s.spinnerFrame%len(s.spinnerChars)]
+	spinnerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
+	b.WriteString(spinnerStyle.Render(fmt.Sprintf("%s ", spinner)))
+	b.WriteString(s.message)
+	b.WriteString("\n\n")
+
+	// Additional info
+	infoStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	b.WriteString(infoStyle.Render("This may take a few moments..."))
+	b.WriteString("\n")
+
+	content := b.String()
+
+	// Update footer based on cancellation setting
+	footer := s.footer
+	if !s.allowCancel {
+		footer = "Please wait... (cancellation disabled)"
+	}
+
+	// Use BaseScreen's CreateView helper for StandardView integration
+	return s.CreateView(s.breadcrumbs, content, footer)
+}
+
+// SetFooter updates the footer help text.
+func (s *BaseProgressScreen) SetFooter(footer string) {
+	s.footer = footer
+}
+
+// GetTitle returns the operation title.
+func (s *BaseProgressScreen) GetTitle() string {
+	return s.title
+}
+
+// SetTitle updates the operation title.
+//
+// This is useful for updating the title mid-operation.
+func (s *BaseProgressScreen) SetTitle(title string) {
+	s.title = title
+}
+
+// GetMessage returns the progress message.
+func (s *BaseProgressScreen) GetMessage() string {
+	return s.message
+}
+
+// SetMessage updates the progress message.
+//
+// This is useful for providing step-by-step feedback during a long operation.
+//
+// Example:
+//
+//	screen.SetMessage("Step 1: Loading events...")
+//	// ... do work
+//	screen.SetMessage("Step 2: Analyzing facts...")
+//	// ... do work
+//	screen.SetMessage("Step 3: Generating output...")
+func (s *BaseProgressScreen) SetMessage(message string) {
+	s.message = message
+}
+
+// GetSpinnerFrame returns the current spinner frame.
+func (s *BaseProgressScreen) GetSpinnerFrame() int {
+	return s.spinnerFrame
+}
+
+// SetSpinnerFrame sets the spinner frame.
+//
+// This is rarely needed in normal usage, but can be useful for testing
+// or for synchronizing spinner state.
+func (s *BaseProgressScreen) SetSpinnerFrame(frame int) {
+	s.spinnerFrame = frame
+}
+
+// SetAllowCancel sets whether the escape key cancels the operation.
+//
+// Set to false for critical operations that should not be interrupted.
+//
+// Example:
+//
+//	screen := NewBaseProgressScreen(...)
+//	screen.SetAllowCancel(false) // Disable cancellation
+func (s *BaseProgressScreen) SetAllowCancel(allow bool) {
+	s.allowCancel = allow
+}

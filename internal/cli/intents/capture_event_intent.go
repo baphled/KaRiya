@@ -8,6 +8,8 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
+	"github.com/baphled/kariya/internal/cli/screens"
+	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -56,6 +58,25 @@ type SubmitErrorMsg struct {
 	Cause   error
 }
 
+// EnrichmentCompleteMsg indicates enrichment (burst/fact extraction) completed.
+type EnrichmentCompleteMsg struct {
+	Bursts []*career.Burst
+	Facts  []*career.Fact
+}
+
+// EnrichmentErrorMsg indicates enrichment failed (non-fatal).
+type EnrichmentErrorMsg struct {
+	Code    string
+	Message string
+	Cause   error
+}
+
+// DismissModalMsg indicates the submit modal should be dismissed (after success).
+type DismissModalMsg struct{}
+
+// Ensure CaptureEventIntent implements ScreenResultHandler interface
+var _ ScreenResultHandler = (*CaptureEventIntent)(nil)
+
 // CaptureEventIntent implements the Intent interface for capturing career events.
 // It owns the complete lifecycle of event capture, including:
 // - Choosing capture strategy (manual, quick, enriched)
@@ -81,6 +102,10 @@ type CaptureEventIntent struct {
 	// eventService is the CLI service for interacting with career events.
 	// Injected via context for dependency management.
 	eventService *service.CLIEventService
+
+	// Screen orchestration (NEW - screens architecture)
+	activeScreen screens.Screen // Currently active screen
+	useScreens   bool           // Toggle between screens and legacy code
 }
 
 // NewCaptureEventIntent creates a new CaptureEvent intent.
@@ -115,15 +140,47 @@ func NewCaptureEventIntent(context *CaptureEventContext) (*CaptureEventIntent, e
 				RejectedFields: make(map[string]string),
 			},
 		},
-		active: true,
+		active:     true,
+		useScreens: true, // Enable screens architecture
 	}, nil
+}
+
+// DisableScreens disables the screens architecture for testing legacy flows.
+// This is primarily used in tests that need to test legacy message handling.
+func (i *CaptureEventIntent) DisableScreens() {
+	i.useScreens = false
+	i.activeScreen = nil
 }
 
 // Init is called when the intent is activated.
 func (i *CaptureEventIntent) Init() tea.Cmd {
-	// If this is an edit operation, initialize the form with the previous event's data.
-	if i.context.PreviousEvent != nil {
-		i.initializeFormForEdit()
+	// NEW: Check if screens architecture is enabled
+	if i.useScreens {
+		// Create breadcrumbs for navigation
+		breadcrumbs := []string{"Main Menu", "Capture Event"}
+
+		// Create the initial screen (StrategySelectScreen)
+		i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
+
+		// Get terminal info
+		termInfo := i.GetTerminalInfo()
+		width, height := 120, 40 // defaults
+		if termInfo != nil {
+			width = termInfo.Width
+			height = termInfo.Height
+		}
+
+		// Pass terminal info, theme, and logo to screen
+		i.activeScreen.SetTerminalInfo(width, height)
+		i.activeScreen.SetTheme(i.Theme())
+		i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+		// Initialize the screen if it has an Init method (needed for forms)
+		// This is critical for screens that wrap forms - without Init(),
+		// the underlying form won't be able to accept input
+		if initable, ok := i.activeScreen.(interface{ Init() tea.Cmd }); ok {
+			return initable.Init()
+		}
 		return nil
 	}
 
@@ -164,32 +221,6 @@ func (i *CaptureEventIntent) getAccentColor() lipgloss.Color {
 	return styles.ColorAccentTeal
 }
 
-// initializeFormForEdit initializes the form for editing an existing event.
-func (i *CaptureEventIntent) initializeFormForEdit() tea.Cmd {
-	// Initialize the review state with the previous event data.
-	// The form will be pre-populated with existing event details.
-	if i.context.PreviousEvent != nil {
-		i.state.reviewState.Event = i.context.PreviousEvent
-
-		// Edit mode always uses Manual strategy with all fields shown
-		i.state.strategy = StrategyManual
-		i.state.captureForm.SetStrategy(string(StrategyManual))
-		i.state.showOptionalFields = true
-
-		// CRITICAL: Load the event data into the form fields
-		// This populates all input fields with the existing event data
-		i.state.captureForm.LoadEventForEditing(i.context.PreviousEvent)
-
-		// Skip strategy selection and go straight to form
-		i.state.currentState = CaptureStateForm
-
-		// CRITICAL: Initialize the form so it can accept input
-		return i.state.captureForm.Init()
-	}
-	// Return a no-op command to satisfy the intent lifecycle
-	return func() tea.Msg { return nil }
-}
-
 // initializeFormForNew initializes the form for capturing a new event.
 func (i *CaptureEventIntent) initializeFormForNew() tea.Cmd {
 	// Create a fresh event with current timestamp.
@@ -211,6 +242,134 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// Handle async submission messages (modal overlay pattern)
+	// These messages must be handled BEFORE delegating to screens
+	switch msg := msg.(type) {
+	case FormSubmittedMsg:
+		// Handle form submission - works with both screens and legacy mode
+		if msg.Event == nil {
+			i.setFailed("INVALID_FORM", "Form submission with nil event", nil)
+			return nil
+		}
+
+		// Validate the event data
+		if err := msg.Event.Validate(); err != nil {
+			i.setFailed("VALIDATION_ERROR", fmt.Sprintf("Form validation failed: %v", err), err)
+			return nil
+		}
+
+		// Initialize review state with the event
+		i.state.reviewState = &ReviewInferredEventState{
+			Event:          msg.Event,
+			InferredBursts: make([]*career.Burst, 0),
+			InferredFacts:  make([]*career.Fact, 0),
+			AcceptedBursts: make([]*career.Burst, 0),
+			AcceptedFacts:  make([]*career.Fact, 0),
+			RejectedItems:  make(map[string]string),
+		}
+		i.state.currentState = CaptureStateReview
+
+		// Clear activeScreen so legacy review View() is used for pre-save review
+		// Post-save review will create EventReviewScreen in DismissModalMsg handler
+		i.activeScreen = nil
+		return nil
+
+	case SubmitCompleteMsg:
+		// Submission succeeded - show success modal briefly, then complete intent
+		i.state.submitModal = components.NewSuccessModal("Event saved!")
+		// Auto-dismiss after 2 seconds
+		return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+			return DismissModalMsg{}
+		})
+
+	case SubmitErrorMsg:
+		// Submission failed - show error modal (user can press Esc to dismiss)
+		i.state.submitModal = components.NewErrorModal("Save Failed", msg.Message)
+		return nil
+
+	case DismissModalMsg:
+		// Modal auto-dismissed after success - return to Review for enrichment review
+		if i.state.submitModal != nil {
+			i.state.submitModal = nil
+			// Instead of completing, return to Review state
+			// This allows user to review inferred bursts/facts after save
+			i.state.postSaveReview = true // Mark as post-save review
+			i.state.currentState = CaptureStateReview
+
+			// CRITICAL: If using screens architecture, create EventReviewScreen
+			if i.useScreens {
+				breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
+				i.activeScreen = captureScreens.NewEventReviewScreen(
+					breadcrumbs,
+					i.state.reviewState.Event,
+					i.state.reviewState.InferredBursts,
+					i.state.reviewState.InferredFacts,
+				)
+
+				// Get terminal info
+				termInfo := i.GetTerminalInfo()
+				width, height := 120, 40 // defaults
+				if termInfo != nil {
+					width = termInfo.Width
+					height = termInfo.Height
+				}
+
+				// Pass terminal info, theme, and logo to screen
+				i.activeScreen.SetTerminalInfo(width, height)
+				i.activeScreen.SetTheme(i.Theme())
+				i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+			}
+		}
+		return nil
+	}
+
+	// Handle Esc key when error modal is showing (allows dismissing error and returning to form)
+	if i.state.submitModal != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			if keyMsg.String() == "esc" {
+				// Dismiss error modal and stay in current state
+				i.state.submitModal = nil
+				return nil
+			}
+		}
+	}
+
+	// Handle global keys BEFORE delegating to screen
+	// This ensures q (quit), ? (help) are always processed first
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch HandleGlobalKeys(keyMsg) {
+		case KeyQuit:
+			// 'q' pressed - quit the application
+			return tea.Quit
+		case KeyHelp:
+			// '?' pressed - toggle help modal
+			i.helpModal.Toggle()
+			return nil
+		}
+		// KeyBack (esc) is handled by the screen as CancelResult or modal dismissal above
+	}
+
+	// NEW: Check if screens architecture is enabled
+	if i.useScreens && i.activeScreen != nil {
+		// Check if editing modal is active - delegate to modal first
+		if i.state.reviewState != nil && i.state.reviewState.EditingMode != EditingModeNone {
+			return i.updateEditingModal(msg)
+		}
+
+		// Delegate to active screen
+		cmd, result := i.activeScreen.Update(msg)
+
+		// If screen returned a result, handle it
+		if result != nil {
+			// Delegate result handling to ScreenResultHandler methods
+			return i.handleScreenResult(result)
+		}
+
+		// Otherwise return the command from screen
+		return cmd
+	}
+
+	// LEGACY: Fall back to old state machine
 	switch i.state.currentState {
 	case CaptureStateChooseStrategy:
 		return i.updateChooseStrategy(msg)
@@ -257,10 +416,7 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 			// Configure form based on selected strategy
 			i.state.captureForm.SetStrategy(string(i.state.strategy))
 
-			// For quick mode, pre-fill date with today
-			if i.state.strategy == StrategyQuick {
-				// Date will be set to today automatically in the submit handler
-			}
+			// Note: For quick mode, date will be set to today automatically in the submit handler
 
 			i.state.currentState = CaptureStateForm
 
@@ -466,23 +622,67 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+s", "enter":
-			// Confirm review and submit
+			// Check if this is post-save review or pre-save review
+			if i.state.postSaveReview {
+				// Post-save review: user is done reviewing enriched data, complete intent
+				result := &CaptureEventResult{
+					Event:          i.state.reviewState.Event,
+					Bursts:         i.state.reviewState.InferredBursts,
+					Facts:          i.state.reviewState.InferredFacts,
+					AcceptedFields: make(map[string]bool),
+					RejectedFields: i.state.reviewState.RejectedItems,
+				}
+				i.setCompleted(result)
+				return nil
+			}
+			// Pre-save review: proceed to submit
 			i.state.currentState = CaptureStateSubmit
 			return i.performSubmit()
 
 		case "e":
 			// Edit metadata (modal sub-flow)
 			i.state.reviewState.EditingMode = EditingModeMetadata
+			// Initialize modal if not already created
+			if i.state.reviewState.metadataModal == nil && i.state.reviewState.Event != nil {
+				i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+					i.state.reviewState.Event,
+					i.context.CareerService,
+					i.context.CLIEventService,
+					context.Background(),
+				)
+				return i.state.reviewState.metadataModal.Init()
+			}
 			return nil
 
 		case "b":
 			// Edit bursts (modal sub-flow)
 			i.state.reviewState.EditingMode = EditingModeBursts
+			// Initialize modal if not already created
+			if i.state.reviewState.burstModal == nil {
+				var suggestions []burstfact.BurstSuggestion
+				i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+					i.context.CareerService,
+					suggestions,
+					context.Background(),
+				)
+				return i.state.reviewState.burstModal.Init()
+			}
 			return nil
 
 		case "f":
 			// Edit facts (modal sub-flow)
 			i.state.reviewState.EditingMode = EditingModeFacts
+			// Initialize modal if not already created
+			if i.state.reviewState.factModal == nil {
+				// Create with an empty fact for now - in a real implementation,
+				// we'd pass the selected fact for editing
+				i.state.reviewState.factModal = models.NewFactEditorModelNew(
+					&career.Fact{},
+					i.context.CareerService,
+					context.Background(),
+				)
+				return i.state.reviewState.factModal.Init()
+			}
 			return nil
 
 		case "a":
@@ -650,14 +850,20 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// Always use ManualEntry mode (mode selector has been removed from UI)
 		mode := careerservice.ManualEntry
 
+		// CRITICAL: Use CareerService directly (not CLIEventService wrapper)
+		// CareerService.CaptureEvent modifies the event in-place, setting its ID
+		// CLIEventService.CaptureEvent creates a new event internally, leaving our event without an ID
+		if i.state.context.CareerService == nil {
+			return SubmitErrorMsg{
+				Code:    "SERVICE_ERROR",
+				Message: "Career service not initialized",
+				Cause:   nil,
+			}
+		}
+
 		// Call the service to capture the event
-		// The service handles persistence and any enrichment logic
-		err := i.eventService.CaptureEvent(
-			ctx,
-			event.Text,
-			event.Date,
-			mode,
-		)
+		// The service handles persistence and populates event.ID
+		err := i.state.context.CareerService.CaptureEvent(ctx, event, mode)
 
 		if err != nil {
 			// Map service errors to intent errors
@@ -668,19 +874,18 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 			}
 		}
 
-		// For enriched strategy, perform enrichment
-		if i.context.CaptureStrategy == "enriched" && i.context.CareerService != nil {
-			if err := i.performEnrichment(ctx, event); err != nil {
-				// Log enrichment error but don't fail the submission
-				// The event is already saved successfully
-				return SubmitCompleteMsg{}
-			}
+		// Perform enrichment for all strategies (if CareerService is available)
+		// This extracts bursts and facts from the saved event
+		if i.state.context.CareerService != nil {
+			// Enrichment error is logged but doesn't fail submission
+			// The event is already saved successfully - enrichment is optional
+			_ = i.performEnrichment(ctx, event)
 		}
 
 		// Save any accepted facts from review that might have been manually edited/added
 		// Note: Facts from enrichment are already saved in performEnrichment()
 		// This is a safety check for any facts that might have been added during review
-		if i.context.CareerService != nil && len(i.state.reviewState.AcceptedFacts) > 0 {
+		if i.state.context.CareerService != nil && len(i.state.reviewState.AcceptedFacts) > 0 {
 			for _, fact := range i.state.reviewState.AcceptedFacts {
 				// Only save facts that don't have an ID yet (haven't been saved)
 				// Facts from enrichment already have IDs
@@ -691,7 +896,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 					}
 
 					// Save the fact
-					if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
+					if err := i.state.context.CareerService.SaveFact(ctx, fact); err != nil {
 						// Log error but don't fail the entire submission
 						// Event is already saved successfully
 						continue
@@ -707,24 +912,23 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 
 // performEnrichment performs AI-powered enrichment of the captured event.
 // It suggests bursts and extracts facts from the event.
-// Logs: Enrichment start, burst suggestion results, fact extraction results, and completion status.
 func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *career.CareerEvent) error {
-	if i.context.CareerService == nil {
+	if i.state.context.CareerService == nil {
 		return fmt.Errorf("career service not available for enrichment")
 	}
 
 	// Suggest bursts for the event
-	burstSuggestions, err := i.context.CareerService.SuggestBursts(ctx, []string{event.ID})
+	burstSuggestions, err := i.state.context.CareerService.SuggestBursts(ctx, []string{event.ID})
 	if err == nil && len(burstSuggestions) > 0 {
 		// Save burst suggestions and store them for review
-		bursts, err := i.context.CareerService.SaveBurstSuggestions(ctx, burstSuggestions)
+		bursts, err := i.state.context.CareerService.SaveBurstSuggestions(ctx, burstSuggestions)
 		if err == nil && len(bursts) > 0 {
 			i.state.reviewState.InferredBursts = bursts
 		}
 	}
 
 	// Extract facts from the event
-	facts, err := i.context.CareerService.ExtractFactsFromEvent(ctx, event)
+	facts, err := i.state.context.CareerService.ExtractFactsFromEvent(ctx, event)
 	if err == nil && len(facts) > 0 {
 		// Persist each extracted fact to the database
 		for j := range facts {
@@ -734,7 +938,7 @@ func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *caree
 			fact.SourceEventID = event.ID
 
 			// Save fact to repository
-			if err := i.context.CareerService.SaveFact(ctx, fact); err != nil {
+			if err := i.state.context.CareerService.SaveFact(ctx, fact); err != nil {
 				// Log warning but continue with other facts
 				// Fact extraction is an enhancement, not critical to event capture
 				continue
@@ -852,6 +1056,41 @@ func (i *CaptureEventIntent) View() string {
 		return "CaptureEvent intent is not active"
 	}
 
+	// NEW: Check if screens architecture is enabled
+	if i.useScreens && i.activeScreen != nil {
+		// Get base view from active screen
+		baseView := i.activeScreen.View()
+
+		// Get terminal dimensions
+		termInfo := i.GetTerminalInfo()
+		width, height := 80, 24 // defaults
+		if termInfo != nil {
+			width = termInfo.Width
+			height = termInfo.Height
+		}
+
+		// If submit modal is visible, overlay it on the base view
+		if i.state.submitModal != nil {
+			// Render modal content
+			modalContent := i.state.submitModal.Render(width, height)
+
+			// Overlay modal on background (centered)
+			return i.overlayModal(baseView, modalContent, width, height)
+		}
+
+		// Check if editing modal is active (for review state)
+		if i.state.reviewState != nil && i.state.reviewState.EditingMode != EditingModeNone {
+			modalContent := i.getEditingModalContent()
+			if modalContent != nil {
+				return i.renderModalOverlay(baseView, modalContent)
+			}
+		}
+
+		// No modal - return base view
+		return baseView
+	}
+
+	// LEGACY: Fall back to old view rendering
 	// Create standard view with breadcrumbs
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Capture Event", i.getStateName())
 
@@ -960,10 +1199,14 @@ func (i *CaptureEventIntent) buildReviewBaseView() string {
 		sb.WriteString("│                                                │\n")
 	}
 
-	// Inferred bursts
+	// Inferred bursts - show both inferred and accepted
 	sb.WriteString("│ Inferred Bursts:                               │\n")
-	if len(i.state.reviewState.AcceptedBursts) > 0 {
-		for idx, burst := range i.state.reviewState.AcceptedBursts {
+	bursts := i.state.reviewState.InferredBursts
+	if len(bursts) == 0 {
+		bursts = i.state.reviewState.AcceptedBursts
+	}
+	if len(bursts) > 0 {
+		for idx, burst := range bursts {
 			burstTitle := burst.Name
 			if len(burstTitle) > 35 {
 				burstTitle = burstTitle[:32] + "..."
@@ -975,10 +1218,14 @@ func (i *CaptureEventIntent) buildReviewBaseView() string {
 	}
 	sb.WriteString("│                                                │\n")
 
-	// Inferred facts
+	// Inferred facts - show both inferred and accepted
 	sb.WriteString("│ Inferred Facts:                                │\n")
-	if len(i.state.reviewState.AcceptedFacts) > 0 {
-		for idx, fact := range i.state.reviewState.AcceptedFacts {
+	facts := i.state.reviewState.InferredFacts
+	if len(facts) == 0 {
+		facts = i.state.reviewState.AcceptedFacts
+	}
+	if len(facts) > 0 {
+		for idx, fact := range facts {
 			desc := fact.Text
 			if len(desc) > 35 {
 				desc = desc[:32] + "..."
@@ -1081,6 +1328,91 @@ func (i *CaptureEventIntent) getFactModalContent() *modalContentData {
 		content: i.state.reviewState.factModal.GetContent(),
 		footer:  i.state.reviewState.factModal.GetFooter(),
 	}
+}
+
+// getEditingModalContent returns the modal content based on current editing mode.
+// Used by screens architecture to render editing modals as overlays.
+func (i *CaptureEventIntent) getEditingModalContent() *modalContentData {
+	if i.state.reviewState == nil {
+		return nil
+	}
+	switch i.state.reviewState.EditingMode {
+	case EditingModeMetadata:
+		return i.getMetadataModalContent()
+	case EditingModeBursts:
+		return i.getBurstModalContent()
+	case EditingModeFacts:
+		return i.getFactModalContent()
+	default:
+		return nil
+	}
+}
+
+// updateEditingModal handles modal updates when using screens architecture.
+// This is called when an editing modal (metadata, bursts, facts) is active.
+func (i *CaptureEventIntent) updateEditingModal(msg tea.Msg) tea.Cmd {
+	// Handle escape key to close modal
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.String() == "esc" {
+			// Close modal and return to review
+			i.state.reviewState.metadataModal = nil
+			i.state.reviewState.burstModal = nil
+			i.state.reviewState.factModal = nil
+			i.state.reviewState.EditingMode = EditingModeNone
+			return nil
+		}
+	}
+
+	// Delegate to the active modal
+	switch i.state.reviewState.EditingMode {
+	case EditingModeMetadata:
+		if i.state.reviewState.metadataModal != nil {
+			modal, cmd := i.state.reviewState.metadataModal.Update(msg)
+			i.state.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
+
+			// Check if modal completed
+			if i.state.reviewState.metadataModal.IsSubmitted() {
+				// Apply changes to event
+				i.state.reviewState.Event = i.state.reviewState.metadataModal.GetEvent()
+				// Clear modal and editing mode
+				i.state.reviewState.metadataModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			} else if i.state.reviewState.metadataModal.IsCancelled() {
+				// Clear modal without applying changes
+				i.state.reviewState.metadataModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+
+	case EditingModeBursts:
+		if i.state.reviewState.burstModal != nil {
+			modal, cmd := i.state.reviewState.burstModal.Update(msg)
+			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
+			// TODO: Add completion check when BurstSuggestionModelNew supports it
+			return cmd
+		}
+
+	case EditingModeFacts:
+		if i.state.reviewState.factModal != nil {
+			modal, cmd := i.state.reviewState.factModal.Update(msg)
+			i.state.reviewState.factModal = modal.(*models.FactEditorModelNew)
+
+			// Check if modal completed
+			if i.state.reviewState.factModal.IsSubmitted() {
+				// Apply changes to fact
+				i.state.reviewState.factModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			} else if i.state.reviewState.factModal.IsCancelled() {
+				// Clear modal without applying changes
+				i.state.reviewState.factModal = nil
+				i.state.reviewState.EditingMode = EditingModeNone
+			}
+			return cmd
+		}
+	}
+
+	return nil
 }
 
 // viewSubmit renders the submit confirmation.
@@ -1271,4 +1603,329 @@ func (i *CaptureEventIntent) Result() *IntentResult[interface{}] {
 		Error:    i.result.Error,
 		Metadata: i.result.Metadata,
 	}
+}
+
+// ============================================================================
+// ScreenResultHandler Interface Implementation (NEW - screens architecture)
+// ============================================================================
+
+// handleScreenResult processes results from screen updates.
+// This is the central hub for all screen-to-intent communication.
+//
+// Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
+// CaptureEventIntent implements ScreenResultHandler interface for compile-time safety.
+func (i *CaptureEventIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	return NewScreenResultDispatcher(i).Dispatch(result)
+}
+
+// HandleNavigate handles navigation actions from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
+	data := result.Data()
+
+	// Check if data is a string (simple action)
+	if action, ok := data.(string); ok {
+		switch action {
+		case "edit_metadata":
+			// User wants to edit event metadata
+			// Check if we have an event to edit
+			if i.state.reviewState == nil || i.state.reviewState.Event == nil {
+				return i.setFailedCmd("NO_EVENT", "No event to edit", nil)
+			}
+			// Create metadata modal and set editing mode
+			i.state.reviewState.EditingMode = EditingModeMetadata
+			i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+				i.state.reviewState.Event,
+				i.context.CareerService,
+				i.context.CLIEventService,
+				context.Background(),
+			)
+			// Initialize the modal form
+			return i.state.reviewState.metadataModal.Init()
+
+		case "edit_bursts":
+			// User wants to edit bursts
+			i.state.reviewState.EditingMode = EditingModeBursts
+			// Create burst suggestion modal with inferred bursts
+			var suggestions []burstfact.BurstSuggestion
+			for _, b := range i.state.reviewState.InferredBursts {
+				suggestions = append(suggestions, burstfact.BurstSuggestion{
+					Name:        b.Name,
+					Description: b.Description,
+				})
+			}
+			i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+				i.context.CareerService,
+				suggestions,
+				context.Background(),
+			)
+			return i.state.reviewState.burstModal.Init()
+
+		case "edit_facts":
+			// User wants to edit facts
+			i.state.reviewState.EditingMode = EditingModeFacts
+			// Create fact editor modal with first inferred fact (or new)
+			var fact *career.Fact
+			if len(i.state.reviewState.InferredFacts) > 0 {
+				fact = i.state.reviewState.InferredFacts[0]
+			} else {
+				fact = &career.Fact{Text: ""}
+			}
+			i.state.reviewState.factModal = models.NewFactEditorModelNew(
+				fact,
+				i.context.CareerService,
+				context.Background(),
+			)
+			return i.state.reviewState.factModal.Init()
+
+		default:
+			return i.setFailedCmd("INVALID_NAVIGATION", fmt.Sprintf("Unknown navigation action: %s", action), nil)
+		}
+	}
+
+	// Check if data is CaptureStrategy (from strategy selection)
+	if strategy, ok := data.(CaptureStrategy); ok {
+		// User selected a strategy - transition to form screen
+		i.state.strategy = strategy
+		return i.transitionToFormScreen(strategy)
+	}
+
+	return i.setFailedCmd("INVALID_NAVIGATION_DATA", fmt.Sprintf("Invalid navigation data type: %T", data), nil)
+}
+
+// HandleCancel handles cancellation from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+	// Determine which screen we're cancelling from based on current state
+	switch i.state.currentState {
+	case CaptureStateChooseStrategy:
+		// Root state - cancel the entire intent
+		i.setCancelled()
+		return nil
+
+	case CaptureStateForm:
+		// Check if we're in edit mode (editing existing event from another intent like BrowseTimeline)
+		if i.state.context.PreviousEvent != nil {
+			// Edit mode - cancel the entire intent and return to caller
+			i.setCancelled()
+			return nil
+		}
+		// New event mode - go back to strategy selection
+		return i.transitionToStrategyScreen()
+
+	case CaptureStateReview:
+		// Cancel review - go back to form
+		return i.transitionToFormScreen(i.state.strategy)
+
+	case CaptureStateSubmit:
+		// Cannot cancel during submission
+		return nil
+
+	default:
+		return i.setFailedCmd("INVALID_CANCEL_STATE", fmt.Sprintf("Cannot cancel from state: %s", i.state.currentState), nil)
+	}
+}
+
+// HandleSubmit handles form/data submission from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
+	data := result.Data()
+
+	switch i.state.currentState {
+	case CaptureStateForm:
+		// Form submitted with event data
+		if event, ok := data.(*career.CareerEvent); ok {
+			// Validate event
+			if err := event.Validate(); err != nil {
+				return i.setFailedCmd("VALIDATION_ERROR", fmt.Sprintf("Event validation failed: %v", err), err)
+			}
+
+			// Store event and transition to review (if enrichment enabled)
+			// For now, go directly to submit with modal overlay
+			i.state.reviewState = &ReviewInferredEventState{
+				Event:          event,
+				InferredBursts: make([]*career.Burst, 0),
+				InferredFacts:  make([]*career.Fact, 0),
+				AcceptedBursts: make([]*career.Burst, 0),
+				AcceptedFacts:  make([]*career.Fact, 0),
+				RejectedItems:  make(map[string]string),
+			}
+
+			// Show loading modal and perform async submit
+			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			return i.performSubmit()
+		}
+		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
+
+	case CaptureStateReview:
+		// Review confirmed - extract event, bursts, facts from result
+		if reviewData, ok := data.(map[string]interface{}); ok {
+			event, _ := reviewData["event"].(*career.CareerEvent)
+			bursts, _ := reviewData["bursts"].([]*career.Burst)
+			facts, _ := reviewData["facts"].([]*career.Fact)
+
+			// Update review state
+			i.state.reviewState.Event = event
+			i.state.reviewState.AcceptedBursts = bursts
+			i.state.reviewState.AcceptedFacts = facts
+
+			// Show loading modal and perform async submit
+			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			return i.performSubmit()
+		}
+		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
+
+	case CaptureStateSubmit:
+		// Submission complete - extract results
+		if submitData, ok := data.(map[string]interface{}); ok {
+			event, _ := submitData["event"].(*career.CareerEvent)
+			bursts, _ := submitData["bursts"].([]*career.Burst)
+			facts, _ := submitData["facts"].([]*career.Fact)
+
+			// Create successful result
+			i.result = &IntentResult[*CaptureEventResult]{
+				Status: Completed,
+				Data: &CaptureEventResult{
+					Event:  event,
+					Bursts: bursts,
+					Facts:  facts,
+				},
+			}
+			i.active = false
+			return nil
+		}
+		return i.setFailedCmd("INVALID_SUBMIT_DATA", fmt.Sprintf("Invalid submit data type: %T", data), nil)
+
+	default:
+		return i.setFailedCmd("INVALID_SUBMIT_STATE", fmt.Sprintf("Cannot submit from state: %s", i.state.currentState), nil)
+	}
+}
+
+// HandleError handles errors from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *CaptureEventIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	// Screen encountered an error - propagate to intent
+	data := result.Data()
+	if errorData, ok := data.(map[string]interface{}); ok {
+		err, _ := errorData["error"].(error)
+		msg, _ := errorData["message"].(string)
+		return i.setFailedCmd("SCREEN_ERROR", msg, err)
+	}
+	return i.setFailedCmd("SCREEN_ERROR", "Unknown screen error", fmt.Errorf("%v", data))
+}
+
+// setFailedCmd is a helper to set failed result and return nil command.
+func (i *CaptureEventIntent) setFailedCmd(code, message string, cause error) tea.Cmd {
+	i.setFailed(code, message, cause)
+	return nil
+}
+
+// ============================================================================
+// Screen Transition Helpers (NEW - screens architecture)
+// ============================================================================
+
+// transitionToStrategyScreen transitions to the strategy selection screen.
+func (i *CaptureEventIntent) transitionToStrategyScreen() tea.Cmd {
+	// Update intent state
+	i.state.currentState = CaptureStateChooseStrategy
+
+	// Create breadcrumbs
+	breadcrumbs := []string{"Main Menu", "Capture Event"}
+
+	// Create strategy selection screen
+	i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
+
+	// Get terminal info
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40 // defaults
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Pass context to screen
+	i.activeScreen.SetTerminalInfo(width, height)
+	i.activeScreen.SetTheme(i.Theme())
+	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+	return nil
+}
+
+// transitionToFormScreen transitions to the event form screen.
+func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
+	// Update intent state
+	i.state.currentState = CaptureStateForm
+	i.state.strategy = strategy
+
+	// Create breadcrumbs
+	breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}
+
+	// Create event form screen
+	i.activeScreen = captureScreens.NewEventFormScreen(
+		i.eventService,
+		breadcrumbs,
+		strategy,
+	)
+
+	// Get terminal info
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40 // defaults
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Pass context to screen
+	i.activeScreen.SetTerminalInfo(width, height)
+	i.activeScreen.SetTheme(i.Theme())
+	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+	// Initialize the screen if it has an Init method (critical for forms!)
+	// Without this, the underlying huh form won't accept input
+	if initable, ok := i.activeScreen.(interface{ Init() tea.Cmd }); ok {
+		return initable.Init()
+	}
+	return nil
+}
+
+// TODO: Implement transitionToReviewScreen when review step is enabled.
+// Currently form goes directly to submit (see HandleSubmit line 1444).
+// Will use captureScreens.NewEventReviewScreen() when implemented.
+
+// ============================================================================
+// Modal Overlay Rendering
+// ============================================================================
+
+// overlayModal overlays modal content on top of background content (centered).
+// This follows the StandardView modal overlay pattern for consistent modal rendering.
+func (i *CaptureEventIntent) overlayModal(background, modal string, width, height int) string {
+	bgLines := strings.Split(background, "\n")
+	modalLines := strings.Split(modal, "\n")
+
+	// Calculate vertical position to center modal
+	bgHeight := len(bgLines)
+	modalHeight := len(modalLines)
+	startLine := (bgHeight - modalHeight) / 2
+	if startLine < 0 {
+		startLine = 0
+	}
+
+	// Overlay modal lines onto background
+	result := make([]string, len(bgLines))
+	copy(result, bgLines)
+
+	for i, modalLine := range modalLines {
+		lineIndex := startLine + i
+		if lineIndex >= 0 && lineIndex < len(result) {
+			// Center modal line horizontally
+			centeredModalLine := lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
+			result[lineIndex] = centeredModalLine
+		}
+	}
+
+	return strings.Join(result, "\n")
 }

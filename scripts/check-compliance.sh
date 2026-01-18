@@ -117,13 +117,38 @@ if command -v ginkgo &> /dev/null; then
         COVERAGE_INT=$(printf "%.0f" "$COVERAGE")
 
         if [ "$COVERAGE_INT" -ge 80 ]; then
-            echo -e "Coverage: ${GREEN}${COVERAGE}% ✅${NC}"
+            echo -e "Average Coverage: ${GREEN}${COVERAGE}% ✅${NC}"
         elif [ "$COVERAGE_INT" -ge 70 ]; then
-            echo -e "Coverage: ${YELLOW}${COVERAGE}% ⚠️${NC} (Target: 80%)"
+            echo -e "Average Coverage: ${YELLOW}${COVERAGE}% ⚠️${NC} (Target: 80%)"
             check_warn "Coverage below 80%"
         else
-            echo -e "Coverage: ${RED}${COVERAGE}% ❌${NC} (Target: 80%)"
+            echo -e "Average Coverage: ${RED}${COVERAGE}% ❌${NC} (Target: 80%)"
             check_fail "Coverage significantly below 80%"
+        fi
+        
+        # Check for modules below 80% threshold
+        echo ""
+        echo "Modules below 80% coverage:"
+        LOW_COVERAGE_MODULES=$(echo "$COVERAGE_OUTPUT" | \
+            grep -v '/mocks' | \
+            grep -v 'testutil[^/]' | \
+            grep -v 'test_all_views' | \
+            grep -v '\[no test' | \
+            grep 'coverage:' | \
+            awk '{
+                match($0, /coverage: ([0-9.]+)%/, arr);
+                if (arr[1]+0 < 80 && arr[1]+0 > 0) {
+                    # Extract package name (first field after "ok")
+                    gsub(/^ok[[:space:]]+/, "");
+                    split($0, parts, /[[:space:]]/);
+                    printf "  %s: %s%%\n", parts[1], arr[1]
+                }
+            }')
+        
+        if [ -n "$LOW_COVERAGE_MODULES" ]; then
+            echo -e "${YELLOW}$LOW_COVERAGE_MODULES${NC}"
+        else
+            echo -e "  ${GREEN}All modules meet 80% threshold ✅${NC}"
         fi
     else
         check_warn "Could not calculate coverage"
@@ -281,6 +306,34 @@ if [ "$SUITE_COUNT" -gt 0 ]; then
     check_pass
 else
     check_warn "No Ginkgo suite files found"
+fi
+
+# Check for skipped/pending tests (PROHIBITED)
+echo -n "No Skipped/Pending Tests: "
+# Find Skip() calls that are NOT environment-conditional (integration tests)
+# Environment-conditional skips are allowed (clipboard, display, database path checks)
+SKIPPED_TESTS=$(grep -rn "Skip(" --include="*_test.go" . 2>/dev/null | \
+    grep -v "integration_test.go" | \
+    grep -v "e2e_test.go" | \
+    grep -v "Skipping integration test" | \
+    grep -v "Database not found" | \
+    grep -v "clipboard not supported" | \
+    grep -v "no display available" | \
+    grep -v "no clipboard utilities" || true)
+
+if [ -z "$SKIPPED_TESTS" ]; then
+    check_pass
+else
+    SKIP_COUNT=$(echo "$SKIPPED_TESTS" | wc -l)
+    check_fail "Found $SKIP_COUNT skipped/pending tests (PROHIBITED)"
+    echo ""
+    echo -e "${RED}  Skipped/pending tests are NOT allowed before commits.${NC}"
+    echo -e "${RED}  Either implement the tests or remove them.${NC}"
+    echo ""
+    echo "  Files with skipped tests:"
+    echo "$SKIPPED_TESTS" | cut -d: -f1 | sort -u | sed 's/^/    /'
+    echo ""
+    echo "  To see all skipped tests: grep -rn 'Skip(' --include='*_test.go' ."
 fi
 
 echo ""

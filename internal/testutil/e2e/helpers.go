@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
@@ -47,6 +49,7 @@ type TestEnv struct {
 	EventRepo *careerrepo.SQLiteRepository
 	BurstRepo *careerrepo.SQLiteBurstRepository
 	FactRepo  *careerrepo.SQLiteFactRepository
+	SkillRepo *careerrepo.SQLiteSkillRepository
 
 	// Memory repositories (for fast tests)
 	MemEventRepo *careerrepo.MemoryRepository
@@ -97,11 +100,13 @@ func Setup(t TestingT) *TestEnv {
 	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(db)
 	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(db)
 	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(db)
+	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(db)
 
 	// Create service
 	svc := careerservice.NewService(eventRepo)
 	svc.SetBurstRepository(burstRepo)
 	svc.SetFactRepository(factRepo)
+	svc.SetSkillRepository(skillRepo)
 
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
@@ -122,6 +127,7 @@ func Setup(t TestingT) *TestEnv {
 		EventRepo:  eventRepo,
 		BurstRepo:  burstRepo,
 		FactRepo:   factRepo,
+		SkillRepo:  skillRepo,
 		Service:    svc,
 		CLIService: cliService,
 		Ctx:        ctx,
@@ -327,14 +333,84 @@ func (e *TestEnv) Tab() *TestEnv {
 	return e.PressKey(tea.KeyTab)
 }
 
-// executeCmd does NOT execute commands returned by Update.
-// In Bubble Tea testing, most commands are for async operations (cursor blink,
-// window resize, etc.) that don't affect the state we're testing. Executing
-// them causes issues like stuck goroutines and infinite recursion.
-// We only care about the model state after Update, not the side effects.
-func (e *TestEnv) executeCmd(_ tea.Cmd) {
-	// Intentionally do nothing - commands are for async side effects
-	// that don't matter for testing model state.
+// SubmitHuhForm submits a huh form by pressing Enter.
+// Huh forms are submitted with Enter when the form is complete.
+// This is equivalent to Confirm() but with a more descriptive name for form contexts.
+func (e *TestEnv) SubmitHuhForm() *TestEnv {
+	return e.Confirm()
+}
+
+// executeCmd executes commands returned by Update, but only for specific message types
+// that are essential for state transitions (like form submission).
+//
+// Most Bubble Tea commands (cursor blink, window resize) are ignored because they
+// cause infinite loops or stuck goroutines in tests. We only care about messages
+// that actually change application state.
+func (e *TestEnv) executeCmd(cmd tea.Cmd) {
+	if cmd == nil {
+		return
+	}
+
+	msg := cmd()
+	if msg == nil {
+		return
+	}
+
+	// Only process messages that are essential for state transitions
+	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
+	switch m := msg.(type) {
+	case tea.BatchMsg:
+		// BatchMsg contains multiple commands - process each one
+		for _, batchCmd := range m {
+			e.executeCmd(batchCmd)
+		}
+	case models.SubmitMsg:
+		// Form submission - essential for form → review state transition
+		modelInterface, _ := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+	case intents.SubmitCompleteMsg, intents.SubmitErrorMsg:
+		// Async save completion - essential for submit → review/complete state transition
+		modelInterface, cmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		// Recursively process any follow-up commands (e.g., DismissModalMsg)
+		e.executeCmd(cmd)
+	case intents.DismissModalMsg:
+		// Modal dismissed - essential for modal → next state transition
+		modelInterface, cmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		e.executeCmd(cmd)
+	case app.IntentCompletedMsg:
+		// Intent completed - essential for intent → menu state transition
+		modelInterface, cmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		e.executeCmd(cmd)
+	// Add other essential message types here as needed
+	default:
+		// Ignore all other messages (cursor blink, window resize, etc.)
+		return
+	}
+}
+
+// SendMessage sends a message directly to the model.
+// This is useful for testing state transitions without simulating keystrokes.
+// Returns the environment for method chaining.
+func (e *TestEnv) SendMessage(msg tea.Msg) *TestEnv {
+	e.T.Helper()
+
+	modelInterface, cmd := e.Model.Update(msg)
+	e.Model = modelInterface.(*app.Model)
+	e.executeCmd(cmd)
+
+	return e
+}
+
+// SubmitEvent sends a SubmitMsg directly to the model with the given event.
+// This bypasses huh form navigation issues in E2E tests.
+// Use this when you need to test the workflow after form submission.
+func (e *TestEnv) SubmitEvent(event *career.CareerEvent) *TestEnv {
+	e.T.Helper()
+
+	return e.SendMessage(models.SubmitMsg{Event: event, Err: nil})
 }
 
 // ============================================================================
@@ -512,11 +588,13 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(e.DB)
 	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(e.DB)
 	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(e.DB)
+	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(e.DB)
 
 	// Create new service
 	svc := careerservice.NewService(eventRepo)
 	svc.SetBurstRepository(burstRepo)
 	svc.SetFactRepository(factRepo)
+	svc.SetSkillRepository(skillRepo)
 
 	// Create new CLI service
 	cliService := service.NewCLIEventService(svc)
@@ -528,6 +606,7 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 	e.EventRepo = eventRepo
 	e.BurstRepo = burstRepo
 	e.FactRepo = factRepo
+	e.SkillRepo = skillRepo
 	e.Service = svc
 	e.CLIService = cliService
 	e.Model = model

@@ -46,7 +46,12 @@
         "tui",
         "navigation",
         "uikit",
-        "behaviors"
+        "behaviors",
+        "screens",
+        "tasks",
+        "workflows",
+        "summary",
+        "testing"
       ]
     ],
     "scope-case": [2, "always", "lower-case"],

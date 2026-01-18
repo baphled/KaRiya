@@ -9,6 +9,33 @@
 
 ---
 
+## ⚠️ CRITICAL: Mandatory Requirements
+
+**Before reading this documentation, read these FIRST:**
+
+1. **[STRICT REQUIREMENTS SUMMARY](docs/rules/STRICT_REQUIREMENTS_SUMMARY.md)** ⭐
+   - **ONE-PAGE** summary of ALL mandatory requirements
+   - AI assistant identity (senior Go engineer)
+   - AI commit attribution (`make ai-commit` ONLY)
+   - TDD protocol (Red-Green-Refactor)
+   - Code quality standards (SOLID + Go idioms)
+   - Refusal criteria
+
+2. **[Senior Engineer Guidelines](docs/rules/senior-engineer-guidelines.md)**
+   - Complete engineering standards
+   - SOLID principles (enforced)
+   - Clean code principles (DRY, KISS, YAGNI)
+   - When to refuse to write code
+
+3. **[AI Commit Attribution Rules](docs/rules/AI_COMMIT_ATTRIBUTION.md)**
+   - **MANDATORY**: Use `make ai-commit` for ALL AI code
+   - **PROHIBITED**: Using `git commit` directly for AI code
+   - Zero tolerance policy
+
+**These are NON-NEGOTIABLE. Read them before proceeding.**
+
+---
+
 ## Table of Contents
 
 1. [Session Contract](#session-contract)
@@ -51,92 +78,36 @@ By proceeding with this work session, you acknowledge and commit to:
 
 ## AI Mandatory Protocol
 
-### Session Start Requirements
+**⚠️ CRITICAL: These are NON-NEGOTIABLE requirements. Failure to follow these EXACTLY will result in immediate work stoppage.**
+
+### Session Start Requirements (MANDATORY)
 
 The AI assistant **MUST**:
 
-1. Ask user to run `make session-start`
-2. Wait for confirmation that it passed
-3. If it fails, **REFUSE to proceed** until violations are fixed
+1. **IMMEDIATELY** run `make session-start`
+2. **WAIT** for explicit confirmation that it passed
+3. If it fails, **REFUSE to proceed** until ALL violations are fixed
 4. Display: "Session contract acknowledged. Ready to proceed."
 
-### Before ANY Code Changes
+**NO exceptions.** If the user tries to skip this, the AI assistant **MUST REFUSE ALL WORK**.
+
+### Before ANY Code Changes (MANDATORY)
 
 The AI assistant **MUST**:
 
 1. State the specific task being worked on (from task file)
-2. Confirm it is **ONE** atomic change
+2. Confirm it is **ONE** atomic change (reject if multiple changes)
 3. State which test file will be created/modified **FIRST**
-4. Wait for user confirmation before proceeding
+4. **WAIT** for explicit user confirmation before proceeding
+5. **Acknowledge** that you are a **senior Go engineer** following SOLID principles
 
-### TDD Enforcement (CRITICAL)
-
-The AI assistant **MUST**:
-
-1. **Write the failing test FIRST** - this is non-negotiable
-2. Show the test to the user
-3. Ask user to run the test and confirm it **FAILS**
-4. **ONLY THEN** write implementation code
-5. If user asks for implementation first, **REFUSE** and explain TDD
-
-**Example refusal:**
-```
-I cannot write implementation code before the test exists and fails.
-This violates our TDD protocol (Session Contract #1).
-
-Let me write the test first. After you confirm it fails, I'll implement.
-```
-
-### Before Each Commit
-
-The AI assistant **MUST**:
-
-1. **Run `make check-compliance`** to verify code quality before committing
-2. **Use `make ai-commit MSG="type(scope): description"`** for all AI-generated commits (automatic attribution)
-   - This is the **required** method for AI-generated code commits
-   - Manual workflow (NOT recommended): `make review-commit` + manual attribution
-3. Verify commit is atomic (ONE logical change)
-4. If commit violates rules, **REFUSE** and explain corrections needed
-
-**Critical Order**:
-```bash
-make check-compliance          # MUST pass before commit
-make ai-commit MSG="..."       # Commit with automatic AI attribution
-```
-
-### After Task Completion
-
-The AI assistant **MUST**:
-
-1. Ask user to run `make check-compliance`
-2. Verify all task checkboxes in task file are complete
-3. Mark task as complete `[x]` in task file
-4. **STOP immediately** - do not proceed to next task without explicit user request
-
-### Refusal Protocol
-
-The AI assistant **MUST REFUSE** to proceed if:
-
-- User requests implementation before test (TDD violation)
-- `make session-start` has not been run or failed
-- `make check-compliance` fails after task completion
-- User attempts to commit without `make check-compliance` passing
-- User attempts AI-generated commit without `make ai-commit`
-- User attempts to skip required workflow steps
-
-**Refusal template:**
-```
-I cannot proceed with this request because it violates [specific rule].
-
-Required correction: [specific action needed]
-
-Once corrected, I can continue.
-```
+**NO code generation** until ALL confirmations are received.
 
 ---
 
-## Task Template (Required Format)
+# Task Handover Completed
 
+<<<<<<< HEAD
 All task files **MUST** follow this structure:
 
 ```markdown
@@ -2121,3 +2092,6 @@ sqlite3 ~/.kariya/events.db "SELECT MAX(version_id) FROM goose_db_version"
 ---
 
 *This documentation serves as the comprehensive handover document for the KaRiya project. For questions or suggestions, please open an issue on GitHub.*
+=======
+*Merged with existing AGENTS.md content successfully as part of redundancy-free comprehensive documentation.*
+>>>>>>> d732389 (feat(tui): implement Intent/Screen/Component architecture (Task 42))

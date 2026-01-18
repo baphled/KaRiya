@@ -2,13 +2,15 @@ package intents
 
 import (
 	"fmt"
-	"sort"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/navigation"
+	"github.com/baphled/kariya/internal/cli/screens"
+	skills_screens "github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	domain "github.com/baphled/kariya/internal/domain/career"
@@ -16,7 +18,14 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
+
+// Ensure ManageSkillsIntent implements FilterBehavior interface
+var _ FilterBehavior = (*ManageSkillsIntent)(nil)
+
+// Ensure ManageSkillsIntent implements ScreenResultHandler interface
+var _ ScreenResultHandler = (*ManageSkillsIntent)(nil)
 
 // ManageSkillsIntent implements the Intent interface for managing user-defined skills.
 type ManageSkillsIntent struct {
@@ -60,6 +69,15 @@ type ManageSkillsIntent struct {
 	sortMenuIndex       int            // Selected option in sort menu
 	availableCategories []string       // Categories extracted from skills for filter menu
 
+	// modals (new architecture with bubbletea-overlay)
+	filterModal *components.SkillFilterModal
+	sortModal   *components.SkillSortModal
+	searchModal *components.SkillSearchModal
+
+	// screen orchestration (new architecture)
+	activeScreen screens.Screen // Currently active screen (when using screen architecture)
+	useScreens   bool           // Whether to use screen-based architecture (opt-in, default: false)
+
 	// active indicates whether this intent is currently active
 	active bool
 
@@ -69,11 +87,12 @@ type ManageSkillsIntent struct {
 
 // SkillsFilters holds the active filter and sort state
 type SkillsFilters struct {
-	Category  string
-	Level     string
-	MinEvents int
-	SortBy    string
-	SortOrder string
+	Category   string
+	Level      string
+	MinEvents  int
+	SearchText string
+	SortBy     string
+	SortOrder  string
 }
 
 // NewManageSkillsIntent creates a new ManageSkills intent
@@ -179,13 +198,24 @@ func (n *skillEventsNavigator) GetPageSize() int {
 func (i *ManageSkillsIntent) Init() tea.Cmd {
 	i.active = true
 
-	// Apply themed table styles if theme is available
+	// Disable screen architecture by default (tests expect legacy mode)
+	// TODO: Fix screen orchestration bugs before re-enabling
+	i.useScreens = false
+
+	// Apply themed table styles if theme is available (for legacy fallback states)
 	if theme := i.Theme(); theme != nil {
 		i.table.SetStyles(themes.NewThemedTableStyles(theme))
 	}
 
 	// Load skills asynchronously
 	return func() tea.Msg {
+		// Guard against nil repository (e.g., in tests without full context setup)
+		if i.context == nil || i.context.SkillRepository == nil {
+			return SkillsLoadedMsg{
+				Skills: nil,
+				Error:  nil,
+			}
+		}
 		skills, err := i.context.SkillRepository.List(i.context.Ctx, nil)
 		return SkillsLoadedMsg{
 			Skills: skills,
@@ -346,6 +376,56 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
+	// PATTERN 4: Global Key Interception - 3-tier priority
+	// 1. Check global keys FIRST (work everywhere, even in modals)
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch HandleGlobalKeys(keyMsg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.helpModal.Toggle()
+			return nil
+		}
+	}
+
+	// 2. SECOND PRIORITY: Modal updates (if visible)
+	// CRITICAL: Pass full tea.Msg (not tea.KeyMsg) to modals
+	// This allows huh forms to process Tab/Enter correctly
+	if i.searchModal != nil && i.searchModal.IsVisible() {
+		return i.handleSearchModalUpdate(msg)
+	}
+	if i.filterModal != nil && i.filterModal.IsVisible() {
+		return i.handleFilterModalUpdate(msg)
+	}
+	if i.sortModal != nil && i.sortModal.IsVisible() {
+		return i.handleSortModalUpdate(msg)
+	}
+
+	// Screen orchestration: delegate to active screen if present
+	if i.useScreens && i.activeScreen != nil {
+		// Handle global keys FIRST, even in screen mode
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch HandleGlobalKeys(keyMsg) {
+			case KeyQuit:
+				return tea.Quit
+			case KeyHelp:
+				i.helpModal.Toggle()
+				return nil
+			}
+		}
+
+		// Handle window size messages for screen
+		if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
+			i.activeScreen.SetTerminalInfo(wsMsg.Width, wsMsg.Height)
+		}
+
+		cmd, result := i.activeScreen.Update(msg)
+		if result != nil {
+			return i.handleScreenResult(result)
+		}
+		return cmd
+	}
+
 	switch msg := msg.(type) {
 	case SkillsLoadedMsg:
 		return i.handleSkillsLoaded(msg)
@@ -370,6 +450,8 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSkillEventsLoaded(msg)
 
 	case tea.KeyMsg:
+		// Global keys already handled above at top of function
+
 		// If we have a form active, forward key messages to it
 		if i.skillForm != nil {
 			// Check for Esc key to cancel form
@@ -414,6 +496,11 @@ func (i *ManageSkillsIntent) View() string {
 		return ""
 	}
 
+	// Screen orchestration: delegate to active screen if present
+	if i.useScreens && i.activeScreen != nil {
+		return i.activeScreen.View()
+	}
+
 	// Create standard view with breadcrumbs
 	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, i.getBreadcrumbs()...)
 
@@ -432,7 +519,246 @@ func (i *ManageSkillsIntent) View() string {
 	help := i.getContextHelp()
 	view.WithHelp(help).WithFooterSeparator(true)
 
-	return view.Render()
+	// PATTERN 1: Modal Overlay Rendering
+	// StandardView FIRST, modal overlay LAST (prevents misalignment)
+	baseView := view.Render()
+
+	// Overlay modals as final step
+	if i.searchModal != nil && i.searchModal.IsVisible() {
+		return i.renderSearchModalOverlay(baseView)
+	}
+	if i.filterModal != nil && i.filterModal.IsVisible() {
+		return i.renderFilterModalOverlay(baseView)
+	}
+	if i.sortModal != nil && i.sortModal.IsVisible() {
+		return i.renderSortModalOverlay(baseView)
+	}
+
+	return baseView
+}
+
+// renderFilterModalOverlay renders the filter modal over the base view
+func (i *ManageSkillsIntent) renderFilterModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.filterModal,  // Foreground: the filter modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderSortModalOverlay renders the sort modal over the base view
+func (i *ManageSkillsIntent) renderSortModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.sortModal,    // Foreground: the sort modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderSearchModalOverlay renders the search modal over the base view
+func (i *ManageSkillsIntent) renderSearchModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.searchModal,  // Foreground: the search modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// handleFilterModalUpdate handles updates when filter modal is visible
+// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to work correctly
+func (i *ManageSkillsIntent) handleFilterModalUpdate(msg tea.Msg) tea.Cmd {
+	cmd, applied, filterData := i.filterModal.Update(msg)
+
+	if applied && filterData != nil {
+		// User confirmed filters - convert to SkillFilters and apply
+		newFilters := i.filterModal.ToSkillFilters()
+
+		// Update internal filter state
+		if i.filters == nil {
+			i.filters = &SkillsFilters{}
+		}
+		// Map SkillFilters to internal SkillsFilters format
+		if len(newFilters.Categories) > 0 {
+			i.filters.Category = newFilters.Categories[0] // Use first category for now
+		} else {
+			i.filters.Category = ""
+		}
+		if len(newFilters.Levels) > 0 {
+			i.filters.Level = newFilters.Levels[0] // Use first level for now
+		} else {
+			i.filters.Level = ""
+		}
+		i.filters.MinEvents = newFilters.MinYears // Map years to events for now
+		// NOTE: Sort is handled by SkillSortModal separately
+
+		// Reload skills with new filters
+		return i.reloadSkills()
+	}
+
+	// Modal was closed without completion (Esc) or still being edited
+	return cmd
+}
+
+// handleSortModalUpdate handles updates when sort modal is visible
+// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to work correctly
+func (i *ManageSkillsIntent) handleSortModalUpdate(msg tea.Msg) tea.Cmd {
+	cmd, applied, sortData := i.sortModal.Update(msg)
+
+	if applied && sortData != nil {
+		// User confirmed sort - apply it
+		sortConfig := i.sortModal.ToSkillSortConfig()
+
+		// Update internal filter state
+		if i.filters == nil {
+			i.filters = &SkillsFilters{}
+		}
+		i.filters.SortBy = sortConfig.SortBy
+		i.filters.SortOrder = sortConfig.SortOrder
+
+		// Reload skills with new sort
+		return i.reloadSkills()
+	}
+
+	// Modal was closed without completion (Esc) or still being edited
+	return cmd
+}
+
+// openFilterModal opens the filter modal with current filters pre-populated
+// PATTERN 12: Form Modal with Immediate Init
+func (i *ManageSkillsIntent) openFilterModal() tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width := 120
+	height := 40
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Build current filters for pre-population
+	var currentFilters *components.SkillFilters
+	if i.filters != nil {
+		currentFilters = &components.SkillFilters{
+			Categories: []string{},
+			Levels:     []string{},
+			MinYears:   i.filters.MinEvents, // Map events to years for now
+			MaxYears:   0,
+		}
+		if i.filters.Category != "" {
+			currentFilters.Categories = []string{i.filters.Category}
+		}
+		if i.filters.Level != "" {
+			currentFilters.Levels = []string{i.filters.Level}
+		}
+	}
+
+	// Create filter modal
+	i.filterModal = components.NewSkillFilterModal(
+		i.skills,
+		currentFilters,
+		width,
+		height,
+	)
+
+	// CRITICAL: Call Init() for immediate rendering
+	return i.filterModal.Init()
+}
+
+// openSortModal opens the sort modal with current sort config pre-populated
+// PATTERN 12: Form Modal with Immediate Init
+func (i *ManageSkillsIntent) openSortModal() tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width := 120
+	height := 40
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Build current sort config for pre-population
+	var currentSort *components.SkillSortConfig
+	if i.filters != nil {
+		currentSort = &components.SkillSortConfig{
+			SortBy:    i.filters.SortBy,
+			SortOrder: i.filters.SortOrder,
+		}
+	}
+
+	// Create sort modal
+	i.sortModal = components.NewSkillSortModal(
+		i.skills,
+		currentSort,
+		width,
+		height,
+	)
+
+	// CRITICAL: Call Init() for immediate rendering
+	return i.sortModal.Init()
+}
+
+// openSearchModal opens the search modal with current search text pre-populated
+// PATTERN 12: Form Modal with Immediate Init
+func (i *ManageSkillsIntent) openSearchModal() tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width := 120
+	height := 40
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Get current search text
+	searchText := ""
+	if i.filters != nil {
+		searchText = i.filters.SearchText
+	}
+
+	// Create search modal
+	i.searchModal = components.NewSkillSearchModal(
+		searchText,
+		width,
+		height,
+	)
+
+	// CRITICAL: Call Init() for immediate rendering
+	return i.searchModal.Init()
+}
+
+// handleSearchModalUpdate handles updates when search modal is visible
+// CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to work correctly
+func (i *ManageSkillsIntent) handleSearchModalUpdate(msg tea.Msg) tea.Cmd {
+	cmd, applied, searchData := i.searchModal.Update(msg)
+
+	if applied && searchData != nil {
+		// User confirmed search - apply it
+		if i.filters == nil {
+			i.filters = &SkillsFilters{}
+		}
+		i.filters.SearchText = searchData.SearchText
+
+		// Reload skills with new search
+		return i.reloadSkills()
+	}
+
+	// Modal was closed without completion (Esc) or still being edited
+	return cmd
 }
 
 // getStateContent returns the content for the current state
@@ -497,7 +823,7 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 			components.NewKeyBadge("f", "Filter"),
 			components.NewKeyBadge("s", "Sort"),
 		}
-		if i.hasActiveFilters() {
+		if i.HasActiveFilters() {
 			badges = append(badges, components.NewKeyBadge("x", "Clear filters"))
 		}
 		return CombineThemedFooters(
@@ -614,6 +940,11 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 	i.skills = msg.Skills
 	i.selectedIndex = 0
 
+	// Apply in-memory search filtering if search text is set
+	if i.filters != nil && i.filters.SearchText != "" {
+		i.skills = i.applySearchFilter(i.skills, i.filters.SearchText)
+	}
+
 	// Load event counts for displaying in list view
 	eventCounts, err := i.context.SkillRepository.GetEventCountsForSkills(i.context.Ctx)
 	if err == nil {
@@ -623,7 +954,12 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 		i.eventCounts = make(map[string]int)
 	}
 
-	// Update table rows with new skills data
+	// If using screens, transition to list screen
+	if i.useScreens {
+		return i.transitionToListScreen()
+	}
+
+	// Legacy: Update table rows with new skills data
 	i.updateTableRows()
 
 	return nil
@@ -813,23 +1149,25 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 				return nil
 
 			case "f":
-				// Open filter menu
-				i.currentState = SkillsStateFilter
-				i.filterMenuIndex = 0
-				i.extractAvailableCategories()
-				return nil
+				// PATTERN 12: Form Modal with Immediate Init
+				// Open filter modal instead of menu state
+				return i.openFilterModal()
 
 			case "s":
-				// Open sort menu
-				i.currentState = SkillsStateSort
-				i.sortMenuIndex = 0
-				return nil
+				// PATTERN 12: Form Modal with Immediate Init
+				// Open sort modal instead of menu state
+				return i.openSortModal()
+
+			case "/":
+				// PATTERN 12: Form Modal with Immediate Init
+				// Open search modal
+				return i.openSearchModal()
 
 			case "x":
-				// Clear all filters
-				if i.hasActiveFilters() {
-					i.filters = &SkillsFilters{}
-					return i.reloadSkills()
+				// Clear filters in FIFO order
+				if i.HasActiveFilters() {
+					i.ClearFilters()
+					return i.RefreshData()
 				}
 				return nil
 			}
@@ -934,22 +1272,6 @@ func (i *ManageSkillsIntent) handleSortKeys(msg tea.KeyMsg) tea.Cmd {
 		})
 }
 
-// extractAvailableCategories extracts unique categories from loaded skills
-func (i *ManageSkillsIntent) extractAvailableCategories() {
-	categorySet := make(map[string]bool)
-	for _, skill := range i.skills {
-		if skill.Category != "" {
-			categorySet[skill.Category] = true
-		}
-	}
-
-	i.availableCategories = make([]string, 0, len(categorySet))
-	for cat := range categorySet {
-		i.availableCategories = append(i.availableCategories, cat)
-	}
-	sort.Strings(i.availableCategories)
-}
-
 // applyFilterSelection applies the currently selected filter option
 func (i *ManageSkillsIntent) applyFilterSelection() tea.Cmd {
 	// Menu structure:
@@ -1021,9 +1343,56 @@ func (i *ManageSkillsIntent) applySortSelection() tea.Cmd {
 	return i.reloadSkills()
 }
 
-// hasActiveFilters returns true if any filters are active
+// hasActiveFilters returns true if any filters are active (private implementation)
 func (i *ManageSkillsIntent) hasActiveFilters() bool {
-	return i.filters != nil && (i.filters.Category != "" || i.filters.Level != "" || i.filters.MinEvents > 0 || i.filters.SortBy != "")
+	return i.filters != nil && (i.filters.Category != "" || i.filters.Level != "" || i.filters.MinEvents > 0 || i.filters.SortBy != "" || i.filters.SearchText != "")
+}
+
+// HasActiveFilters returns true if any non-default filters are active.
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) HasActiveFilters() bool {
+	return i.hasActiveFilters()
+}
+
+// ClearFilters resets filters in FIFO order (most recent filter first).
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) ClearFilters() {
+	if i.filters == nil {
+		return
+	}
+
+	// Clear in FIFO order: search → filter → sort
+	// Search is most recent (most specific), sort is least recent (most general)
+	if i.filters.SearchText != "" {
+		i.filters.SearchText = ""
+		return
+	}
+
+	if i.filters.Category != "" || i.filters.Level != "" || i.filters.MinEvents > 0 {
+		i.filters.Category = ""
+		i.filters.Level = ""
+		i.filters.MinEvents = 0
+		return
+	}
+
+	// Clear sort (least specific)
+	i.filters.SortBy = ""
+	i.filters.SortOrder = ""
+}
+
+// ApplyFilters applies current filter state to the data.
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) ApplyFilters() {
+	// Apply search filter to current skills list
+	if i.filters != nil && i.filters.SearchText != "" {
+		i.skills = i.applySearchFilter(i.skills, i.filters.SearchText)
+	}
+}
+
+// RefreshData reloads/refreshes the filtered data.
+// Implements FilterBehavior interface.
+func (i *ManageSkillsIntent) RefreshData() tea.Cmd {
+	return i.reloadSkills()
 }
 
 // reloadSkills reloads skills with current filters
@@ -1047,6 +1416,24 @@ func (i *ManageSkillsIntent) reloadSkills() tea.Cmd {
 			Error:  err,
 		}
 	}
+}
+
+// applySearchFilter applies in-memory search filtering to skills
+func (i *ManageSkillsIntent) applySearchFilter(skills []*domain.Skill, searchText string) []*domain.Skill {
+	if searchText == "" {
+		return skills
+	}
+
+	// Case-insensitive search across name and category
+	searchLower := strings.ToLower(searchText)
+	filtered := make([]*domain.Skill, 0)
+	for _, skill := range skills {
+		if strings.Contains(strings.ToLower(skill.Name), searchLower) ||
+			strings.Contains(strings.ToLower(skill.Category), searchLower) {
+			filtered = append(filtered, skill)
+		}
+	}
+	return filtered
 }
 
 func (i *ManageSkillsIntent) handleDeleteKeys(msg tea.KeyMsg) tea.Cmd {
@@ -1643,4 +2030,267 @@ func (i *ManageSkillsIntent) SetSelectedIndex(idx int) {
 // GetPageSize returns the page size for pagination.
 func (i *ManageSkillsIntent) GetPageSize() int {
 	return 15
+}
+
+// ============================================================================
+// Screen Orchestration Methods (New Architecture)
+// ============================================================================
+
+// EnableScreens enables the screen-based architecture for this intent.
+// This is an opt-in method to maintain backward compatibility during migration.
+func (i *ManageSkillsIntent) EnableScreens() {
+	i.useScreens = true
+}
+
+// handleScreenResult processes results from screen updates.
+// This is the central hub for all screen-to-intent communication.
+//
+// Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
+// ManageSkillsIntent implements ScreenResultHandler interface for compile-time safety.
+func (i *ManageSkillsIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	return NewScreenResultDispatcher(i).Dispatch(result)
+}
+
+// HandleNavigate handles navigation to a new screen.
+// NavigateResult.Data() contains a map with "target" and "data" keys.
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
+	data := result.Data()
+
+	// Extract target and data from navigation result
+	dataMap, ok := data.(map[string]interface{})
+	if !ok {
+		return i.handleErrorInternal(fmt.Errorf("invalid navigation data: expected map, got %T", data))
+	}
+
+	target, _ := dataMap["target"].(string)
+	skillData := dataMap["data"]
+
+	switch target {
+	case "detail":
+		// Navigate to skill detail screen
+		if skill, ok := skillData.(*domain.Skill); ok {
+			i.selectedSkill = skill
+			return i.transitionToDetailScreen()
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid data for detail screen: expected *domain.Skill, got %T", skillData))
+
+	case "add":
+		// Navigate to add skill form
+		return i.transitionToFormScreen(nil)
+
+	case "edit":
+		// Navigate to edit skill form
+		if skill, ok := skillData.(*domain.Skill); ok {
+			i.selectedSkill = skill
+			return i.transitionToFormScreen(skill)
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid data for edit screen: expected *domain.Skill, got %T", skillData))
+
+	case "delete":
+		// Navigate to delete confirmation
+		if skill, ok := skillData.(*domain.Skill); ok {
+			i.selectedSkill = skill
+			return i.transitionToDeleteScreen(skill)
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid data for delete screen: expected *domain.Skill, got %T", skillData))
+
+	case "list":
+		// Navigate back to list (after delete/cancel)
+		return i.transitionToListScreen()
+
+	default:
+		return i.handleErrorInternal(fmt.Errorf("unknown navigation target: %s", target))
+	}
+}
+
+// HandleCancel handles screen cancellation.
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+	// Check if we should return to previous screen or exit intent
+	if i.currentState == SkillsStateList {
+		// Root state - cancel the entire intent
+		i.result = &IntentResult[*ManageSkillsResult]{
+			Status: Cancelled,
+			Data: &ManageSkillsResult{
+				Action: "cancelled",
+			},
+		}
+		i.active = false
+		return nil
+	}
+
+	// Return to list screen
+	return i.transitionToListScreen()
+}
+
+// HandleSubmit handles form/confirm submission.
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
+	data := result.Data()
+
+	switch i.currentState {
+	case SkillsStateAdd, SkillsStateEdit:
+		// Form submitted - save skill
+		if skill, ok := data.(*domain.Skill); ok {
+			if i.currentState == SkillsStateAdd {
+				return i.createSkill(skill)
+			}
+			return i.updateSkill(skill)
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid form data: expected *domain.Skill, got %T", data))
+
+	case SkillsStateDelete:
+		// Delete confirmed
+		if skill, ok := data.(*domain.Skill); ok {
+			return func() tea.Msg {
+				err := i.context.SkillRepository.Delete(i.context.Ctx, skill.ID)
+				return SkillDeletedMsg{
+					SkillID: skill.ID,
+					Error:   err,
+				}
+			}
+		}
+		return i.handleErrorInternal(fmt.Errorf("invalid delete data: expected *domain.Skill, got %T", data))
+
+	default:
+		return i.handleErrorInternal(fmt.Errorf("unexpected submit in state: %s", i.currentState))
+	}
+}
+
+// HandleError handles screen errors.
+//
+// Implements ScreenResultHandler interface.
+func (i *ManageSkillsIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	// Screen encountered an error - propagate to intent
+	data := result.Data()
+	if err, ok := data.(error); ok {
+		return i.handleErrorInternal(err)
+	}
+	return i.handleErrorInternal(fmt.Errorf("screen error: %v", data))
+}
+
+// applyIntentContextToScreen applies terminal info, theme, and logo to a screen.
+// This ensures consistent setup across all screen transitions.
+func (i *ManageSkillsIntent) applyIntentContextToScreen(screen screens.Screen) {
+	// Set terminal dimensions
+	if termInfo := i.GetTerminalInfo(); termInfo != nil {
+		screen.SetTerminalInfo(termInfo.Width, termInfo.Height)
+	}
+
+	// Set theme
+	if theme := i.Theme(); theme != nil {
+		screen.SetTheme(theme)
+	}
+
+	// Set logo
+	if logo := i.GetLogo(); logo != nil {
+		screen.SetLogo(logo, i.GetLogoSpacing())
+	}
+}
+
+// transitionToListScreen transitions to the skills list screen.
+func (i *ManageSkillsIntent) transitionToListScreen() tea.Cmd {
+	i.currentState = SkillsStateList
+
+	// Create list screen
+	listScreen := NewSkillsListScreenFromIntent(i.skills, i.GetThemeManager())
+
+	// Set event counts if available (CRITICAL for event count column)
+	if skillScreen, ok := listScreen.(*skills_screens.SkillsListScreen); ok {
+		if i.eventCounts != nil {
+			skillScreen.SetEventCounts(i.eventCounts)
+		}
+	}
+
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(listScreen)
+
+	i.activeScreen = listScreen
+	return nil
+}
+
+// transitionToDetailScreen transitions to the skill detail screen.
+func (i *ManageSkillsIntent) transitionToDetailScreen() tea.Cmd {
+	i.currentState = SkillsStateDetail
+
+	detailScreen := NewSkillDetailScreenFromIntent(i.selectedSkill, i.GetThemeManager())
+
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(detailScreen)
+
+	i.activeScreen = detailScreen
+	return nil
+}
+
+// transitionToFormScreen transitions to the add/edit form screen.
+func (i *ManageSkillsIntent) transitionToFormScreen(skill *domain.Skill) tea.Cmd {
+	if skill == nil {
+		i.currentState = SkillsStateAdd
+	} else {
+		i.currentState = SkillsStateEdit
+	}
+
+	formScreen := NewSkillFormScreenFromIntent(skill, i.GetThemeManager())
+
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(formScreen)
+
+	i.activeScreen = formScreen
+	return nil
+}
+
+// transitionToDeleteScreen transitions to the delete confirmation screen.
+func (i *ManageSkillsIntent) transitionToDeleteScreen(skill *domain.Skill) tea.Cmd {
+	i.currentState = SkillsStateDelete
+
+	deleteScreen := NewSkillDeleteConfirmScreenFromIntent(skill, i.GetThemeManager())
+
+	// Apply intent context (terminal, theme, logo)
+	i.applyIntentContextToScreen(deleteScreen)
+
+	i.activeScreen = deleteScreen
+	return nil
+}
+
+// handleErrorInternal handles errors by transitioning to error state.
+func (i *ManageSkillsIntent) handleErrorInternal(err error) tea.Cmd {
+	i.result = &IntentResult[*ManageSkillsResult]{
+		Status: Failed,
+		Error: &IntentError{
+			Code:    "SCREEN_ERROR",
+			Message: err.Error(),
+			Cause:   err,
+		},
+	}
+	// Don't deactivate - allow retry by returning to list
+	return i.transitionToListScreen()
+}
+
+// ============================================================================
+// Screen Constructor Wrappers (Avoid Import Cycles)
+// ============================================================================
+
+// NewSkillsListScreenFromIntent creates a SkillsListScreen from intent context.
+// This wrapper avoids import cycles between intents and screens/skills packages.
+func NewSkillsListScreenFromIntent(skills []*domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillsListScreen(skills)
+}
+
+// NewSkillDetailScreenFromIntent creates a SkillDetailScreen from intent context.
+func NewSkillDetailScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillDetailScreen(skill)
+}
+
+// NewSkillFormScreenFromIntent creates a SkillFormScreen from intent context.
+func NewSkillFormScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillFormScreen(skill)
+}
+
+// NewSkillDeleteConfirmScreenFromIntent creates a SkillDeleteConfirmScreen from intent context.
+func NewSkillDeleteConfirmScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+	return skills_screens.NewSkillDeleteConfirmScreen(skill)
 }

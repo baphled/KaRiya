@@ -68,7 +68,7 @@ var _ = Describe("CategorySelector", func() {
 
 	Describe("DeselectCategory", func() {
 		It("should deselect a selected category", func() {
-			selector.SelectCategory("technical")
+			Expect(selector.SelectCategory("technical")).To(Succeed())
 			err := selector.DeselectCategory("technical")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(selector.IsSelected("technical")).To(BeFalse())
@@ -81,7 +81,7 @@ var _ = Describe("CategorySelector", func() {
 		})
 
 		It("should handle case-insensitive deselection", func() {
-			selector.SelectCategory("technical")
+			Expect(selector.SelectCategory("technical")).To(Succeed())
 			err := selector.DeselectCategory("Technical")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(selector.IsSelected("technical")).To(BeFalse())
@@ -96,7 +96,7 @@ var _ = Describe("CategorySelector", func() {
 		})
 
 		It("should deselect selected category", func() {
-			selector.SelectCategory("technical")
+			Expect(selector.SelectCategory("technical")).To(Succeed())
 			err := selector.ToggleCategory("technical")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(selector.IsSelected("technical")).To(BeFalse())
@@ -172,9 +172,9 @@ var _ = Describe("CategorySelector", func() {
 		})
 
 		It("should return selected categories in sorted order", func() {
-			selector.SelectCategory("product")
-			selector.SelectCategory("technical")
-			selector.SelectCategory("mentoring")
+			Expect(selector.SelectCategory("product")).To(Succeed())
+			Expect(selector.SelectCategory("technical")).To(Succeed())
+			Expect(selector.SelectCategory("mentoring")).To(Succeed())
 
 			categories := selector.SelectedCategories()
 			Expect(categories).To(HaveLen(3))
@@ -187,9 +187,9 @@ var _ = Describe("CategorySelector", func() {
 
 	Describe("Clear", func() {
 		It("should remove all selected categories", func() {
-			selector.SelectCategory("technical")
-			selector.SelectCategory("leadership")
-			selector.SelectCategory("product")
+			Expect(selector.SelectCategory("technical")).To(Succeed())
+			Expect(selector.SelectCategory("leadership")).To(Succeed())
+			Expect(selector.SelectCategory("product")).To(Succeed())
 
 			selector.Clear()
 
@@ -215,7 +215,7 @@ var _ = Describe("CategorySelector", func() {
 		})
 
 		It("should clear previous selections", func() {
-			selector.SelectCategory("product")
+			Expect(selector.SelectCategory("product")).To(Succeed())
 			err := selector.SetSelected([]string{"technical", "leadership"})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -230,7 +230,7 @@ var _ = Describe("CategorySelector", func() {
 		})
 
 		It("should work with empty list", func() {
-			selector.SelectCategory("technical")
+			Expect(selector.SelectCategory("technical")).To(Succeed())
 			err := selector.SetSelected([]string{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(selector.SelectedCategories()).To(HaveLen(0))
@@ -281,7 +281,7 @@ var _ = Describe("CategorySelector", func() {
 
 	Describe("IsSelected", func() {
 		It("should return true for selected category", func() {
-			selector.SelectCategory("technical")
+			Expect(selector.SelectCategory("technical")).To(Succeed())
 			Expect(selector.IsSelected("technical")).To(BeTrue())
 		})
 
@@ -290,7 +290,7 @@ var _ = Describe("CategorySelector", func() {
 		})
 
 		It("should handle case-insensitive check", func() {
-			selector.SelectCategory("technical")
+			Expect(selector.SelectCategory("technical")).To(Succeed())
 			Expect(selector.IsSelected("Technical")).To(BeTrue())
 			Expect(selector.IsSelected("TECHNICAL")).To(BeTrue())
 		})
