@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -46,17 +47,15 @@ type FormModel struct {
 	tagSelector        *components.TagSelector
 	categorySelector   *components.CategorySelector
 	skillSelector      *components.SkillSelector
-	fieldErrors        map[FormField]string       // Track field-level validation errors
-	editMode           bool                       // True if editing an existing event
-	editEventID        string                     // ID of event being edited
-	helpFooter         components.HelpFooterModel // Help footer for keyboard shortcuts
-	header             components.HeaderModel     // Header component
-	footer             components.FooterModel     // Footer component
-	breadcrumbs        []string                   // Navigation breadcrumb trail
-	width              int                        // Available terminal width
-	height             int                        // Available terminal height
-	strategy           string                     // Capture strategy: "quick" or "manual"
-	showOptionalFields bool                       // Toggle for optional field visibility (manual mode only)
+	fieldErrors        map[FormField]string // Track field-level validation errors
+	editMode           bool                 // True if editing an existing event
+	editEventID        string               // ID of event being edited
+	breadcrumbs        []string             // Navigation breadcrumb trail
+	width              int                  // Available terminal width
+	height             int                  // Available terminal height
+	strategy           string               // Capture strategy: "quick" or "manual"
+	showOptionalFields bool                 // Toggle for optional field visibility (manual mode only)
+	theme              themes.Theme         // Theme for styling
 }
 
 // NewFormModel creates a new form model with the required fields
@@ -100,11 +99,9 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		categorySelector:   components.NewCategorySelector(),
 		skillSelector:      components.NewSkillSelector([]*career.Skill{}),
 		fieldErrors:        make(map[FormField]string),
-		helpFooter:         components.NewHelpFooter("form", 80),
-		header:             components.NewHeader("Capture Career Event", 80),
-		footer:             components.NewFooter(80),
 		strategy:           "manual", // Default to manual mode
 		showOptionalFields: true,     // Show all fields by default in manual mode
+		theme:              themes.NewDefaultTheme(),
 	}
 }
 
@@ -117,11 +114,8 @@ func (m *FormModel) Init() tea.Cmd {
 func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.header.SetWidth(msg.Width)
-		m.footer.SetWidth(msg.Width)
 		m.width = msg.Width
 		m.height = msg.Height
-		m.helpFooter.SetWidth(msg.Width)
 
 		// Update input field widths adaptively
 		adaptiveWidth := m.getAdaptiveFieldWidth()

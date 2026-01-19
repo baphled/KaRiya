@@ -7,8 +7,10 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/navigation"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -40,7 +42,7 @@ type MetadataEditorModelNew struct {
 	cancelled        bool
 	width            int
 	height           int
-	helpFooter       components.HelpFooterModel
+	theme            themes.Theme
 }
 
 // NewMetadataEditorModelNew creates a new metadata editor model using huh forms.
@@ -93,7 +95,7 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 		cancelled:         false,
 		width:             80,
 		height:            24,
-		helpFooter:        components.NewHelpFooter("metadata_editor", 80),
+		theme:             themes.NewDefaultTheme(),
 	}
 }
 
@@ -219,10 +221,11 @@ func (m *MetadataEditorModelNew) GetContent() string {
 
 	// Add error if present
 	if m.err != nil {
+		errorColor := m.theme.ErrorColor()
 		errorStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorError).
+			Foreground(errorColor).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(styles.ColorError).
+			BorderForeground(errorColor).
 			Padding(1, 2).
 			MarginTop(1)
 
@@ -244,23 +247,25 @@ func (m *MetadataEditorModelNew) View() string {
 
 	// Add error if present
 	if m.err != nil {
+		errorColor := m.theme.ErrorColor()
 		errorStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#F38BA8")). // Catppuccin Red
+			Foreground(errorColor).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#F38BA8")).
+			BorderForeground(errorColor).
 			Padding(1, 2).
 			MarginTop(1)
 
 		formView += "\n\n" + errorStyle.Render(m.err.Error())
 	}
 
-	// Use header and footer components
-	headerView := components.NewHeader("Edit Event Metadata", m.width).View()
-	footerView := components.NewFooter(m.width).View()
-
-	// Render help footer
-	m.helpFooter.SetWidth(m.width)
-	helpFooterContent := m.helpFooter.View()
+	// Use UIKit layout components
+	headerView := layout.NewHeader("Edit Event Metadata", m.width).
+		WithTheme(m.theme).
+		View()
+	footerView := layout.NewFooter(m.width).
+		WithTheme(m.theme).
+		WithHelp(navigation.GetContextualHelp("metadata_editor")).
+		View()
 
 	// Combine all sections
 	contentStyle := lipgloss.NewStyle().
@@ -274,8 +279,6 @@ func (m *MetadataEditorModelNew) View() string {
 		contentStyle.Render(formView),
 		"",
 		footerView,
-		"",
-		helpFooterContent,
 	)
 
 	return fullContent
