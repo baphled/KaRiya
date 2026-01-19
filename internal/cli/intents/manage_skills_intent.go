@@ -1959,11 +1959,6 @@ func (i *ManageSkillsIntent) handleEventDetailKeys(msg tea.KeyMsg) tea.Cmd {
 func (i *ManageSkillsIntent) renderFilterMenu() string {
 	theme := i.Theme()
 
-	titleStyle := lipgloss.NewStyle().
-		Foreground(theme.PrimaryColor()).
-		Bold(true).
-		MarginBottom(1)
-
 	selectedStyle := lipgloss.NewStyle().
 		Foreground(theme.SuccessColor()).
 		Bold(true)
@@ -1975,7 +1970,7 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 		Foreground(theme.MutedColor())
 
 	var lines []string
-	lines = append(lines, titleStyle.Render("Filter Skills"))
+	lines = append(lines, primitives.Title("Filter Skills", theme).MarginBottom(1).Render())
 	lines = append(lines, "")
 
 	// Category section
@@ -2081,11 +2076,6 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 func (i *ManageSkillsIntent) renderSortMenu() string {
 	theme := i.Theme()
 
-	titleStyle := lipgloss.NewStyle().
-		Foreground(theme.PrimaryColor()).
-		Bold(true).
-		MarginBottom(1)
-
 	selectedStyle := lipgloss.NewStyle().
 		Foreground(theme.SuccessColor()).
 		Bold(true)
@@ -2094,7 +2084,7 @@ func (i *ManageSkillsIntent) renderSortMenu() string {
 		Foreground(theme.ForegroundColor())
 
 	var lines []string
-	lines = append(lines, titleStyle.Render("Sort Skills"))
+	lines = append(lines, primitives.Title("Sort Skills", theme).MarginBottom(1).Render())
 	lines = append(lines, "")
 
 	sortOptions := []struct {

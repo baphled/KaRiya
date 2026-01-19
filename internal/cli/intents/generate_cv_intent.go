@@ -2237,11 +2237,11 @@ func (i *GenerateCVIntent) viewPreview() string {
 		}
 
 		// Section title with themed color
-		titleStyle := lipgloss.NewStyle().
-			Bold(true).
+		sectionTitle := primitives.NewText(strings.ToUpper(section.Title), i.Theme()).
+			Bold().
 			Foreground(i.getAccentColor()).
 			MarginTop(1)
-		content.WriteString(titleStyle.Render(strings.ToUpper(section.Title)) + "\n")
+		content.WriteString(sectionTitle.Render() + "\n")
 		content.WriteString(strings.Repeat("─", len(section.Title)) + "\n")
 
 		// Handle summary section (prose)

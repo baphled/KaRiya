@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -994,18 +995,12 @@ func (i *BurstManagementIntent) viewDetail() string {
 	var content strings.Builder
 
 	// Title with confirmation status indicator
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor())
-
 	title := "Burst Details"
 	if i.state.selectedBurst.Confirmed {
-		confirmedStyle := lipgloss.NewStyle().
-			Foreground(i.getSuccessColor()).
-			Bold(true)
-		title = "Burst Details " + confirmedStyle.Render("✓ Confirmed")
+		confirmedBadge := primitives.SuccessText("✓ Confirmed", i.Theme()).Bold().Render()
+		title = "Burst Details " + confirmedBadge
 	}
-	content.WriteString("\n" + titleStyle.Render(title) + "\n\n")
+	content.WriteString("\n" + primitives.NewText(title, i.Theme()).Bold().Foreground(i.getPrimaryColor()).Render() + "\n\n")
 
 	// Burst header.
 	content.WriteString(fmt.Sprintf("Name: %s\n", i.state.selectedBurst.Name))
@@ -1044,14 +1039,11 @@ func (i *BurstManagementIntent) viewDetailEvents() string {
 	}
 
 	var content strings.Builder
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render(
+	header := primitives.NewText(
 		fmt.Sprintf("Events in Burst: %s", i.state.selectedBurst.Name),
-	))
+		i.Theme(),
+	).Bold().Foreground(i.getPrimaryColor()).MarginBottom(1)
+	content.WriteString(header.Render())
 	content.WriteString("\n\n")
 
 	for idx, event := range i.state.burstEvents {
@@ -1083,14 +1075,11 @@ func (i *BurstManagementIntent) viewDetailFacts() string {
 	}
 
 	var content strings.Builder
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render(
+	header := primitives.NewText(
 		fmt.Sprintf("Facts from Burst: %s", i.state.selectedBurst.Name),
-	))
+		i.Theme(),
+	).Bold().Foreground(i.getPrimaryColor()).MarginBottom(1)
+	content.WriteString(header.Render())
 	content.WriteString("\n\n")
 
 	for idx, fact := range i.state.burstFacts {
@@ -1130,20 +1119,12 @@ func (i *BurstManagementIntent) viewEdit() string {
 	var content strings.Builder
 
 	// Header
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render("Edit Burst"))
+	content.WriteString(primitives.NewText("Edit Burst", i.Theme()).Bold().Foreground(i.getPrimaryColor()).MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Show error if any
 	if i.state.editError != nil {
-		errorStyle := lipgloss.NewStyle().
-			Foreground(i.getErrorColor()).
-			MarginBottom(1)
-		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.editError)))
+		content.WriteString(primitives.ErrorText(fmt.Sprintf("Error: %s", i.state.editError), i.Theme()).MarginBottom(1).Render())
 		content.WriteString("\n\n")
 	}
 
@@ -1236,54 +1217,35 @@ func (i *BurstManagementIntent) viewConfirm() string {
 	var content strings.Builder
 
 	// Header
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getSuccessColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render("Confirm Burst"))
+	content.WriteString(primitives.SuccessText("Confirm Burst", i.Theme()).Bold().MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Show error if any
 	if i.state.confirmError != nil {
-		errorStyle := lipgloss.NewStyle().
-			Foreground(i.getErrorColor()).
-			MarginBottom(1)
-		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.confirmError)))
+		content.WriteString(primitives.ErrorText(fmt.Sprintf("Error: %s", i.state.confirmError), i.Theme()).MarginBottom(1).Render())
 		content.WriteString("\n\n")
 	}
 
 	// Burst details
-	infoStyle := lipgloss.NewStyle().
-		Foreground(i.getPrimaryColor())
-
-	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
+	content.WriteString(primitives.NewText(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n\n")
 
 	// Show different messages based on state
 	if i.state.showReextractPrompt {
 		// Facts already exist
-		warningStyle := lipgloss.NewStyle().
-			Foreground(i.getWarningColor()).
-			Bold(true)
-
-		content.WriteString(warningStyle.Render(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount)))
+		content.WriteString(primitives.WarningText(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount), i.Theme()).Bold().Render())
 		content.WriteString("\n\n")
-		content.WriteString(infoStyle.Render("Do you want to extract more facts? New facts will be added to existing ones."))
+		content.WriteString(primitives.NewText("Do you want to extract more facts? New facts will be added to existing ones.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 		content.WriteString("\n")
 	} else if i.state.extractionComplete {
 		// Extraction completed successfully
-		successStyle := lipgloss.NewStyle().
-			Foreground(i.getSuccessColor()).
-			Bold(true)
-
-		content.WriteString(successStyle.Render(fmt.Sprintf("✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount)))
+		content.WriteString(primitives.SuccessText(fmt.Sprintf("✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount), i.Theme()).Bold().Render())
 		content.WriteString("\n\n")
-		content.WriteString(infoStyle.Render("Burst has been confirmed."))
+		content.WriteString(primitives.NewText("Burst has been confirmed.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 		content.WriteString("\n")
 	} else {
 		// About to start extraction
-		content.WriteString(infoStyle.Render("No facts found for this burst. Starting fact extraction..."))
+		content.WriteString(primitives.NewText("No facts found for this burst. Starting fact extraction...", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 		content.WriteString("\n")
 	}
 
@@ -1303,30 +1265,18 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 	var content strings.Builder
 
 	// Header
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getInfoColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render("Extracting Facts"))
+	content.WriteString(primitives.NewText("Extracting Facts", i.Theme()).Bold().Foreground(i.getInfoColor()).MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Progress indicator
-	infoStyle := lipgloss.NewStyle().
-		Foreground(i.getPrimaryColor())
-
-	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
+	content.WriteString(primitives.NewText(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n\n")
 
-	progressStyle := lipgloss.NewStyle().
-		Foreground(i.getInfoColor()).
-		Bold(true)
-
-	content.WriteString(progressStyle.Render("⏳ Extracting and saving facts..."))
+	content.WriteString(primitives.NewText("⏳ Extracting and saving facts...", i.Theme()).Bold().Foreground(i.getInfoColor()).Render())
 	content.WriteString("\n\n")
-	content.WriteString(infoStyle.Render("Analyzing events and persisting facts to database."))
+	content.WriteString(primitives.NewText("Analyzing events and persisting facts to database.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n\n")
-	content.WriteString(infoStyle.Render("This may take a few moments."))
+	content.WriteString(primitives.NewText("This may take a few moments.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n")
 
 	// Apply themed card styling
