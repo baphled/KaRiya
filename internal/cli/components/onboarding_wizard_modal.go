@@ -23,29 +23,18 @@ import (
 // Navigation:
 //   - Tab/Enter: Move to next field
 //   - Shift+Tab: Move to previous field
-//   - Enter on last field: Complete step
-//   - Esc: Cancel wizard (step 1) or go back (steps 2-3)
+//   - Enter on last field of group: Advance to next step
 //
-// Usage:
-//
-//	modal := components.NewOnboardingWizardModal(width, height)
-//	cmd := modal.Init()
-//	// In Update:
-//	cmd := modal.Update(msg)
-//	if modal.IsCompleted() {
-//	    cfg := modal.GetProfileConfig()
-//	    // Save config
-//	}
+// Note: Onboarding is MANDATORY - Esc key is blocked. Users must complete
+// the required fields (Name and Email) to proceed with the application.
 type OnboardingWizardModal struct {
-	form        *huh.Form
-	data        *OnboardingData
-	currentStep int
-	totalSteps  int
-	visible     bool
-	completed   bool
-	cancelled   bool
-	width       int
-	height      int
+	form      *huh.Form
+	data      *OnboardingData
+	visible   bool
+	completed bool
+	cancelled bool
+	width     int
+	height    int
 }
 
 // OnboardingData holds the data collected from the onboarding wizard.
@@ -83,28 +72,22 @@ func NewOnboardingWizardModalWithConfig(width, height int, cfg *config.ProfileCo
 	}
 
 	modal := &OnboardingWizardModal{
-		data:        data,
-		currentStep: 0,
-		totalSteps:  3,
-		visible:     true,
-		width:       width,
-		height:      height,
+		data:    data,
+		visible: true,
+		width:   width,
+		height:  height,
 	}
 
+	// Build form ONCE - don't rebuild on resize
 	modal.buildForm()
 	return modal
 }
 
 // buildForm creates the huh form with 3 steps (groups).
+// This is called ONCE during construction. On resize, we update dimensions only.
 func (m *OnboardingWizardModal) buildForm() {
 	// Calculate modal dimensions
-	modalWidth := m.width - 20
-	if modalWidth > 70 {
-		modalWidth = 70
-	}
-	if modalWidth < 50 {
-		modalWidth = 50
-	}
+	modalWidth := m.calcModalWidth()
 
 	// Get theme for consistent styling
 	huhTheme := forms.Theme()
@@ -163,9 +146,10 @@ func (m *OnboardingWizardModal) buildForm() {
 			Value(&m.data.Title),
 		huh.NewInput().
 			Key("github").
-			Title("GitHub Profile").
-			Description("Optional - link to your GitHub").
-			Placeholder("e.g., https://github.com/username").
+			Title("GitHub Username").
+			Description("Optional - your GitHub username (not full URL)").
+			Placeholder("e.g., baphled").
+			Validate(forms.GitHubUsername).
 			Value(&m.data.GitHub),
 		huh.NewInput().
 			Key("portfolio").
@@ -178,8 +162,21 @@ func (m *OnboardingWizardModal) buildForm() {
 	m.form = huh.NewForm(step1, step2, step3).
 		WithTheme(huhTheme).
 		WithWidth(modalWidth).
+		WithHeight(forms.DefaultFormHeight(m.height)).
 		WithShowHelp(true).
 		WithShowErrors(true)
+}
+
+// calcModalWidth calculates the modal width based on terminal width.
+func (m *OnboardingWizardModal) calcModalWidth() int {
+	modalWidth := m.width - 20
+	if modalWidth > 80 {
+		modalWidth = 80
+	}
+	if modalWidth < 50 {
+		modalWidth = 50
+	}
+	return modalWidth
 }
 
 // Init initializes the wizard modal and its form.
@@ -191,6 +188,7 @@ func (m *OnboardingWizardModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the wizard modal.
+// Note: Onboarding is mandatory - users cannot cancel/escape from this wizard.
 func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 	if !m.visible {
 		return nil
@@ -200,47 +198,33 @@ func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
-			// If at first step, cancel wizard
-			if m.currentStep == 0 {
-				m.cancelled = true
-				m.visible = false
-				return nil
-			}
-			// Go back a step
-			if m.currentStep > 0 {
-				m.currentStep--
-			}
-			// Let form handle the back navigation
+			// Block Esc key - onboarding is mandatory, cannot be cancelled
+			// huh forms use Shift+Tab for back navigation between fields
+			return nil
 		}
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.buildForm()
-		return m.form.Init()
+		// Update form dimensions WITHOUT rebuilding (prevents flickering)
+		// This preserves form state (cursor position, entered values)
+		if m.form != nil {
+			m.form = m.form.
+				WithWidth(m.calcModalWidth()).
+				WithHeight(forms.DefaultFormHeight(m.height))
+		}
+		return nil
 	}
 
-	// Update form
+	// Update form - let huh handle all navigation naturally
+	// huh automatically advances between groups when Enter is pressed on last field
 	if m.form != nil {
-		// Track form state before update
-		prevState := m.form.State
-
 		form, cmd := m.form.Update(msg)
 		if f, ok := form.(*huh.Form); ok {
 			m.form = f
 		}
 
-		// Track step progression based on state changes
-		if prevState == huh.StateNormal && m.form.State == huh.StateNormal {
-			// Check if Enter was pressed to advance
-			if keyMsg, ok := msg.(tea.KeyMsg); ok {
-				if keyMsg.String() == "enter" && m.currentStep < m.totalSteps-1 {
-					m.currentStep++
-				}
-			}
-		}
-
-		// Check if form completed
+		// Check if form completed (all 3 steps done)
 		if m.form.State == huh.StateCompleted {
 			m.completed = true
 			m.visible = false
@@ -263,13 +247,7 @@ func (m *OnboardingWizardModal) View() string {
 	}
 
 	// Calculate modal dimensions
-	modalWidth := m.width - 10
-	if modalWidth > 80 {
-		modalWidth = 80
-	}
-	if modalWidth < 50 {
-		modalWidth = 50
-	}
+	modalWidth := m.calcModalWidth()
 
 	modalHeight := m.height - 10
 	if modalHeight < 20 {
@@ -288,13 +266,13 @@ func (m *OnboardingWizardModal) View() string {
 	// Render form
 	formView := m.form.View()
 
-	// Create footer with keyboard shortcuts
+	// Create footer with keyboard shortcuts using UIKit
 	footer := m.buildFooter()
 
 	// Combine title, form and footer
 	content := lipgloss.JoinVertical(lipgloss.Left, title, "", formView, "", footer)
 
-	// Wrap in styled container with solid background
+	// Wrap in styled container with SOLID BACKGROUND (critical - prevents transparency)
 	styledContent := lipgloss.NewStyle().
 		Width(modalWidth).
 		MaxHeight(modalHeight).
@@ -304,12 +282,7 @@ func (m *OnboardingWizardModal) View() string {
 		Padding(1).
 		Render(content)
 
-	// Center the modal
-	centeredStyle := lipgloss.NewStyle().
-		Width(m.width).
-		Align(lipgloss.Center)
-
-	return centeredStyle.Render(styledContent)
+	return styledContent
 }
 
 // buildFooter creates the keyboard shortcuts footer using UIKit primitives.
@@ -317,14 +290,9 @@ func (m *OnboardingWizardModal) buildFooter() string {
 	th := theme.Default()
 
 	badges := []*primitives.Badge{
-		primitives.NavigateBadge(th),
-		primitives.SelectBadge(th),
-	}
-
-	if m.currentStep > 0 {
-		badges = append(badges, primitives.BackBadge(th))
-	} else {
-		badges = append(badges, primitives.CancelBadge(th))
+		primitives.KeyBadge("tab", "next field", th),
+		primitives.KeyBadge("shift+tab", "prev field", th),
+		primitives.KeyBadge("enter", "continue", th),
 	}
 
 	return primitives.RenderHelpFooter(th, badges...)
@@ -341,18 +309,21 @@ func (m *OnboardingWizardModal) IsCompleted() bool {
 }
 
 // WasCancelled returns whether the wizard was cancelled by the user.
+// Note: For onboarding, this always returns false since cancellation is blocked.
 func (m *OnboardingWizardModal) WasCancelled() bool {
 	return m.cancelled
 }
 
 // CurrentStep returns the current step index (0-based).
+// Note: huh forms handle step navigation internally via groups.
 func (m *OnboardingWizardModal) CurrentStep() int {
-	return m.currentStep
+	// huh doesn't expose current group index, return 0 for compatibility
+	return 0
 }
 
 // TotalSteps returns the total number of steps in the wizard.
 func (m *OnboardingWizardModal) TotalSteps() int {
-	return m.totalSteps
+	return 3
 }
 
 // Hide hides the modal.
