@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/styles"
-	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -189,12 +190,12 @@ func (m *CVProgressModal) View() string {
 	return styledContent
 }
 
-// buildFooter creates the keyboard shortcuts footer.
+// buildFooter creates the keyboard shortcuts footer using UIKit primitives.
 func (m *CVProgressModal) buildFooter() string {
-	theme := themes.NewDefaultTheme()
+	th := theme.Default()
 
 	if m.cancellable {
-		return NewKeyBadge("Esc", "Cancel").Render(theme)
+		return primitives.CancelBadge(th).Render()
 	}
 
 	// Non-cancellable operations show no footer
