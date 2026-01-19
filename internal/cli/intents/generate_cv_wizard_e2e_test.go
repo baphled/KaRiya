@@ -81,8 +81,13 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 			},
 		}
 
+		// Create review screen factory
+		reviewFactory := func(cv *career.CVView) screens.Screen {
+			return &mockWizardReviewScreen{cv: cv}
+		}
+
 		// Create preview screen factory
-		previewFactory := func(cv *career.CVView, width, height int) screens.Screen {
+		previewFactory := func(cv *career.CVView) screens.Screen {
 			return &mockWizardPreviewScreen{cv: cv}
 		}
 
@@ -93,6 +98,7 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 			Facts:                testFacts,
 			DefaultProfile:       testProfiles[0],
 			AppContext:           context.Background(),
+			ReviewScreenFactory:  reviewFactory,
 			PreviewScreenFactory: previewFactory,
 		}
 
@@ -281,21 +287,21 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 			}
 			cmd := intent.Update(cvMsg)
 
-			// Should transition to preview state
-			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+			// Should transition to review state first (not preview)
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
 
 			// Progress modal should be hidden
 			Expect(intent.progressModal.IsVisible()).To(BeFalse())
 
-			// Preview screen should be created
-			Expect(intent.wizardPreviewScreen).NotTo(BeNil())
+			// Review screen should be created
+			Expect(intent.wizardReviewScreen).NotTo(BeNil())
 
 			// Command may be nil or an init command
 			_ = cmd
 		})
 
 		It("should allow user to complete workflow from preview screen", func() {
-			// Complete full workflow to preview
+			// Complete full workflow to review
 			intent.Init()
 			intent.Update(WizardCompleteMsg{
 				ProfileID: "profile_1",
@@ -306,12 +312,18 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 				CV: &career.CVView{ID: "cv_1"},
 			})
 
+			// Now in review state
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+
+			// Navigate from review to preview by pressing Enter
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+			intent.Update(enterMsg)
+
 			// Now in preview state
 			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// Simulate user pressing Enter to complete (via preview screen)
 			// The preview screen would normally send a SubmitResult
-			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
 			cmd := intent.Update(enterMsg)
 
 			// Intent should be completed
@@ -376,8 +388,8 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 			}
 		})
 
-		It("should allow going back from preview to wizard", func() {
-			// Complete to preview
+		It("should allow going back from review to wizard", func() {
+			// Complete to review
 			intent.Init()
 			intent.Update(WizardCompleteMsg{
 				ProfileID: "profile_1",
@@ -388,10 +400,10 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 				CV: &career.CVView{ID: "cv_1"},
 			})
 
-			// In preview state
-			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+			// In review state
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
 
-			// Press Esc to go back
+			// Press Esc to go back to wizard
 			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
 			intent.Update(escMsg)
 
@@ -399,6 +411,31 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 			Expect(intent.wizardModal).NotTo(BeNil())
 			Expect(intent.wizardModal.IsVisible()).To(BeTrue())
 			Expect(intent.state.currentState).To(Equal(CVStateConfiguring))
+		})
+
+		It("should allow going back from preview to review", func() {
+			// Complete to review, then navigate to preview
+			intent.Init()
+			intent.Update(WizardCompleteMsg{
+				ProfileID: "profile_1",
+				Audience:  "hiring_manager",
+			})
+			intent.Update(TechnologiesExtractedMsg{})
+			intent.Update(CVGenerationCompleteMsg{
+				CV: &career.CVView{ID: "cv_1"},
+			})
+
+			// Navigate from review to preview
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+			intent.Update(enterMsg)
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+
+			// Press Esc to go back to review
+			escMsg := tea.KeyMsg{Type: tea.KeyEsc}
+			intent.Update(escMsg)
+
+			// Should return to review screen
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
 		})
 	})
 
@@ -559,7 +596,11 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 				CV: &career.CVView{ID: "cv_1"},
 			})
 
-			// Complete workflow
+			// Now in review state, navigate to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+
+			// Complete workflow from preview
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Result should contain correct profile
@@ -631,6 +672,45 @@ func (m *mockWizardPreviewScreen) SetTerminalInfo(width, height int) {
 func (m *mockWizardPreviewScreen) SetLogo(logo interface{}, spacing int) {
 }
 
+// mockWizardReviewScreen is a mock screen for testing wizard review flow
+type mockWizardReviewScreen struct {
+	cv *career.CVView
+}
+
+func (m *mockWizardReviewScreen) Init() tea.Cmd {
+	return nil
+}
+
+func (m *mockWizardReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter", "p":
+			return nil, &screens.NavigateResult{ResultData: "preview"}
+		case "x":
+			return nil, &screens.NavigateResult{ResultData: "export"}
+		case "e":
+			return nil, &screens.NavigateResult{ResultData: "edit"}
+		case "esc":
+			return nil, &screens.CancelResult{}
+		}
+	}
+	return nil, nil
+}
+
+func (m *mockWizardReviewScreen) View() string {
+	return "Mock Review Screen"
+}
+
+func (m *mockWizardReviewScreen) SetTheme(theme interface{}) {
+}
+
+func (m *mockWizardReviewScreen) SetTerminalInfo(width, height int) {
+}
+
+func (m *mockWizardReviewScreen) SetLogo(logo interface{}, spacing int) {
+}
+
 var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 	var (
 		intent       *GenerateCVIntent
@@ -678,7 +758,10 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			Facts:             testFacts,
 			DefaultProfile:    testProfiles[0],
 			AppContext:        context.Background(),
-			PreviewScreenFactory: func(cv *career.CVView, width, height int) screens.Screen {
+			ReviewScreenFactory: func(cv *career.CVView) screens.Screen {
+				return &mockWizardReviewScreen{cv: cv}
+			},
+			PreviewScreenFactory: func(cv *career.CVView) screens.Screen {
 				return &mockWizardPreviewScreen{cv: cv}
 			},
 		}
@@ -693,7 +776,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		termInfo.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	})
 
-	Describe("Complete Workflow: Wizard -> Tech Extraction -> CV Generation -> Preview -> Complete", func() {
+	Describe("Complete Workflow: Wizard -> Tech Extraction -> CV Generation -> Review -> Preview -> Complete", func() {
 		It("should complete the entire workflow from wizard to completion", func() {
 			// STEP 1: Initialize - wizard modal should appear
 			intent.Init()
@@ -733,13 +816,18 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			}
 			intent.Update(CVGenerationCompleteMsg{CV: testCV})
 
-			// Verify transitioned to preview state
-			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+			// Verify transitioned to review state first
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
 			Expect(intent.progressModal.IsVisible()).To(BeFalse())
-			Expect(intent.wizardPreviewScreen).NotTo(BeNil())
+			Expect(intent.wizardReviewScreen).NotTo(BeNil())
 			Expect(intent.state.generatedCV).To(Equal(testCV))
 
-			// STEP 5: Complete from preview (Enter key)
+			// STEP 5: Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+			Expect(intent.wizardPreviewScreen).NotTo(BeNil())
+
+			// STEP 6: Complete from preview (Enter key)
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Verify intent is completed
@@ -794,6 +882,8 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			view := intent.View()
 
@@ -809,11 +899,13 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 
 	Describe("Export Workflow: Preview -> Export Modal -> Export Complete", func() {
 		BeforeEach(func() {
-			// Get to preview state
+			// Get to preview state (through review)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		})
 
 		It("should show export modal when x is pressed on preview", func() {
@@ -850,20 +942,22 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			Expect(result.Status).To(Equal(Cancelled))
 		})
 
-		It("should return to wizard when Esc pressed on preview", func() {
-			// Get to preview
+		It("should return to review when Esc pressed on preview", func() {
+			// Get to preview (through review)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+			// Navigate to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// Press Esc
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should return to wizard
-			Expect(intent.state.currentState).To(Equal(CVStateConfiguring))
-			Expect(intent.wizardModal.IsVisible()).To(BeTrue())
+			// Should return to review (not wizard)
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
 		})
 	})
 
@@ -921,6 +1015,8 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		})
 	})
 
@@ -938,8 +1034,12 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intent.Update(TechnologiesExtractedMsg{})
 			Expect(intent.state.currentState).To(Equal(CVStateGenerating))
 
-			// CVGenerated -> Preview
+			// CVGenerated -> Review
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+
+			// Enter -> Preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// Enter -> Completed
@@ -967,8 +1067,9 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			Expect(intent.state.selectedProfile.ID).To(Equal("profile_2"))
 			Expect(intent.state.selectedAudience).To(Equal("recruiter"))
 
-			// Complete
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			// Navigate through review to preview to complete
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Review -> Preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // Preview -> Complete
 
 			// In result
 			result := intent.Result()
@@ -1016,6 +1117,13 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			testCV := &career.CVView{ID: "cv_from_factory"}
 			intent.Update(CVGenerationCompleteMsg{CV: testCV})
 
+			// After CV generation, we're in Review state first
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+			Expect(intent.wizardReviewScreen).NotTo(BeNil())
+
+			// Navigate to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 			Expect(intent.wizardPreviewScreen).NotTo(BeNil())
 
 			// Verify it's our mock with the CV
@@ -1024,15 +1132,15 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			Expect(mockScreen.cv).To(Equal(testCV))
 		})
 
-		It("should handle nil PreviewScreenFactory gracefully", func() {
-			// Create intent without factory
+		It("should handle nil factories gracefully", func() {
+			// Create intent without factories
 			ctxNoFactory := &GenerateCVContext{
 				AvailableProfiles: testProfiles,
 				Events:            testEvents,
 				Facts:             testFacts,
 				DefaultProfile:    testProfiles[0],
 				AppContext:        context.Background(),
-				// PreviewScreenFactory is nil
+				// Both factories are nil
 			}
 			intentNoFactory, err := NewGenerateCVIntent(ctxNoFactory)
 			Expect(err).NotTo(HaveOccurred())
@@ -1045,13 +1153,12 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intentNoFactory.Update(TechnologiesExtractedMsg{})
 			intentNoFactory.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
 
-			// Preview screen should be nil but state should still transition
-			Expect(intentNoFactory.wizardPreviewScreen).To(BeNil())
-			Expect(intentNoFactory.state.currentState).To(Equal(CVStatePreview))
+			// Should transition to review state (screen may be nil without factory)
+			Expect(intentNoFactory.state.currentState).To(Equal(CVStateReview))
 
-			// View should show loading message
+			// View should render without crashing
 			view := intentNoFactory.View()
-			Expect(view).To(ContainSubstring("Loading preview"))
+			Expect(view).NotTo(BeEmpty())
 		})
 	})
 
@@ -1102,6 +1209,8 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			cmd := intent.Update(tea.WindowSizeMsg{Width: 200, Height: 60})
 			Expect(cmd).To(BeNil()) // No error
@@ -1111,9 +1220,9 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		})
 	})
 
-	Describe("Complete Export Workflow: Preview -> Format -> Location -> Exporting -> Complete", func() {
+	Describe("Complete Export Workflow: Review -> Preview -> Format -> Location -> Exporting -> Complete", func() {
 		BeforeEach(func() {
-			// Get to preview state
+			// Get to review state first
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
@@ -1121,6 +1230,9 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 				ID:   "cv_1",
 				Name: "Test CV",
 			}})
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 		})
 
@@ -1257,8 +1369,8 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 	})
 
 	Describe("Preview to Export to Complete: Full user journey", func() {
-		It("should complete full journey: Preview -> Export -> Complete", func() {
-			// Setup: Get to preview
+		It("should complete full journey: Review -> Preview -> Complete", func() {
+			// Setup: Get to review, then preview
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
@@ -1269,11 +1381,15 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 					{ID: "sec_1", SectionType: "summary", Title: "Summary"},
 				},
 			}})
-			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
 
 			// Verify CV data available
 			Expect(intent.state.generatedCV).NotTo(BeNil())
 			Expect(intent.state.generatedCV.ID).To(Equal("cv_1"))
+
+			// Navigate to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// User can either:
 			// 1. Press Enter to complete without exporting
@@ -1293,11 +1409,14 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		})
 
 		It("should allow export then completion", func() {
-			// Setup: Get to preview
+			// Setup: Get to review, then preview
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// Step 1: Open export modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
@@ -1369,16 +1488,17 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		// (ready to receive CVExportCompleteMsg)
 		//
 		// Note: In wizard flow, the state transitions are:
-		// 1. CVStatePreview - user presses 'x'
-		// 2. CVStateExporting - export modal shown, user completes form
-		// 3. GenerateCVStateExporting - async export in progress
-		// 4. GenerateCVStateExportComplete - export finished
+		// 1. CVStateReview - user sees review, presses Enter to go to preview
+		// 2. CVStatePreview - user presses 'x'
+		// 3. CVStateExporting - export modal shown, user completes form
+		// 4. GenerateCVStateExporting - async export in progress
+		// 5. GenerateCVStateExportComplete - export finished
 		//
 		// For testing, we bypass the modal form interaction and directly
 		// transition to GenerateCVStateExporting by simulating what
 		// handleExportComplete() does.
 		getToExportingState := func() {
-			// Get to preview state with a generated CV
+			// Get to preview state with a generated CV (through review)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
@@ -1389,6 +1509,9 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 					{ID: "sec_1", SectionType: "summary", Title: "Summary"},
 				},
 			}})
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// Directly set up the export state as if the user had completed the export modal
@@ -1496,11 +1619,13 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 
 	Describe("Export Complete: Global Keys Work Correctly", func() {
 		BeforeEach(func() {
-			// Get to export complete state
+			// Get to export complete state (through review -> preview -> export)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 			intent.Update(CVExportCompleteMsg{Path: "/tmp/cv.txt", Error: nil})
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
@@ -1517,9 +1642,9 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		})
 	})
 
-	Describe("Full Export Journey: Preview -> Export Modal -> Exporting -> Complete -> Done", func() {
+	Describe("Full Export Journey: Review -> Preview -> Export Modal -> Exporting -> Complete -> Done", func() {
 		It("should complete entire export journey with file export", func() {
-			// Setup: Initialize and get to preview
+			// Setup: Initialize and get to preview (through review)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
@@ -1527,6 +1652,9 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 				ID:   "cv_1",
 				Name: "Full Journey CV",
 			}})
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// Step 1: Open export modal
@@ -1564,11 +1692,13 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		})
 
 		It("should handle export failure and allow retry", func() {
-			// Setup
+			// Setup (through review -> preview)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Open export
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
@@ -1592,11 +1722,14 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		})
 
 		It("should allow completing without export after opening export modal", func() {
-			// Setup
+			// Setup (through review -> preview)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "profile_1", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
 			// Open export modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
@@ -1704,7 +1837,10 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			Facts:             testFacts,
 			DefaultProfile:    testProfiles[0],
 			AppContext:        context.Background(),
-			PreviewScreenFactory: func(cv *career.CVView, width, height int) screens.Screen {
+			ReviewScreenFactory: func(cv *career.CVView) screens.Screen {
+				return &mockWizardReviewScreen{cv: cv}
+			},
+			PreviewScreenFactory: func(cv *career.CVView) screens.Screen {
 				return &mockWizardPreviewScreen{cv: cv}
 			},
 		}
@@ -1752,7 +1888,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			Expect(intent.state.currentState).To(Equal(CVStateGenerating))
 
 			// ============================================================
-			// STEP 4: CV Generation completes
+			// STEP 4: CV Generation completes (goes to Review first)
 			// ============================================================
 			testCV := &career.CVView{
 				ID:   "cv_generated_1",
@@ -1764,12 +1900,18 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 				},
 			}
 			intent.Update(CVGenerationCompleteMsg{CV: testCV})
-			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
 			Expect(intent.state.generatedCV).NotTo(BeNil())
 			Expect(intent.state.generatedCV.ID).To(Equal("cv_generated_1"))
 
 			// ============================================================
-			// STEP 5: User presses 'x' to export
+			// STEP 5: Navigate from Review to Preview
+			// ============================================================
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			Expect(intent.state.currentState).To(Equal(CVStatePreview))
+
+			// ============================================================
+			// STEP 6: User presses 'x' to export
 			// ============================================================
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 			Expect(intent.state.currentState).To(Equal(CVStateExporting))
@@ -1777,7 +1919,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			Expect(intent.exportModal.IsVisible()).To(BeTrue())
 
 			// ============================================================
-			// STEP 6: Simulate export (file save)
+			// STEP 7: Simulate export (file save)
 			// ============================================================
 			intent.Update(CVExportCompleteMsg{
 				Path:  "/home/user/.kariya/exports/staff_engineer_cv_2026.md",
@@ -1787,13 +1929,13 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			Expect(intent.exportModal.IsVisible()).To(BeFalse())
 
 			// ============================================================
-			// STEP 7: Verify export complete view shows file path
+			// STEP 8: Verify export complete view shows file path
 			// ============================================================
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Export Complete"))
 
 			// ============================================================
-			// STEP 8: User presses Enter to finish
+			// STEP 9: User presses Enter to finish
 			// ============================================================
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
@@ -1818,6 +1960,8 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			intent.Update(WizardCompleteMsg{ProfileID: "senior_engineer", Audience: "peer"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_clipboard"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Export to clipboard
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
@@ -2017,11 +2161,13 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 	// ========================================================================
 	Describe("Export Options: Format and Location", func() {
 		BeforeEach(func() {
-			// Get to export state
+			// Get to export state (through review -> preview)
 			intent.Init()
 			intent.Update(WizardCompleteMsg{ProfileID: "staff_engineer", Audience: "hiring_manager"})
 			intent.Update(TechnologiesExtractedMsg{})
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			// Navigate from review to preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 			Expect(intent.exportModal).NotTo(BeNil())
 		})
@@ -2061,7 +2207,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 	// WORKFLOW STATE VERIFICATION - All States Are Reachable
 	// ========================================================================
 	Describe("Workflow State Verification", func() {
-		It("should reach all 7 wizard workflow states in sequence", func() {
+		It("should reach all 8 wizard workflow states in sequence", func() {
 			// State 1: Configuring (Wizard Modal)
 			intent.Init()
 			Expect(intent.state.currentState).To(Equal(CVStateConfiguring))
@@ -2074,22 +2220,26 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			intent.Update(TechnologiesExtractedMsg{})
 			Expect(intent.state.currentState).To(Equal(CVStateGenerating))
 
-			// State 4: Preview
+			// State 4: Review (new!)
 			intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
+			Expect(intent.state.currentState).To(Equal(CVStateReview))
+
+			// State 5: Preview
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(intent.state.currentState).To(Equal(CVStatePreview))
 
-			// State 5: Exporting (Export Modal)
+			// State 6: Exporting (Export Modal)
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 			Expect(intent.state.currentState).To(Equal(CVStateExporting))
 
-			// State 6: GenerateCVStateExporting (actual export in progress)
+			// State 7: GenerateCVStateExporting (actual export in progress)
 			// This happens when export modal is completed and async export starts
 			// We simulate this by directly setting state + sending completion msg
 			intent.state.selectedExportFormat = CVExportFormatMarkdown
 			intent.state.selectedExportOption = CVExportOptionSaveToFile
 			intent.state.currentState = GenerateCVStateExporting
 
-			// State 7: Export Complete
+			// State 8: Export Complete
 			intent.Update(CVExportCompleteMsg{Path: "/tmp/cv.md", Error: nil})
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateExportComplete))
 
@@ -2233,9 +2383,9 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 				Expect(intent.state.selectedSkillsFormat).To(Equal("grouped"))
 				Expect(intent.state.selectedCVLength).To(Equal("2_page"))
 
-				// Complete CV generation
+				// Complete CV generation (goes to review first)
 				intent.Update(CVGenerationCompleteMsg{CV: &career.CVView{ID: "cv_1"}})
-				Expect(intent.state.currentState).To(Equal(CVStatePreview))
+				Expect(intent.state.currentState).To(Equal(CVStateReview))
 
 				// Data should still be preserved
 				Expect(string(intent.state.selectedTechnologyFocus)).To(Equal("specialist"))

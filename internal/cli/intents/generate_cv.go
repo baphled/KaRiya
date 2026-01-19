@@ -86,8 +86,12 @@ const (
 	// Replaces: Generating
 	CVStateGenerating GenerateCVState = "generating"
 
-	// CVStatePreview - User previews generated CV via CVPreviewScreen
-	// Replaces: Preview, Review, Confirm
+	// CVStateReview - User reviews CV metadata and statistics via CVReviewScreen
+	// Shows metadata, section summary, and bullet counts before full preview
+	CVStateReview GenerateCVState = "review"
+
+	// CVStatePreview - User previews full CV content via CVPreviewScreen
+	// Shows scrollable full CV content with all bullets
 	CVStatePreview GenerateCVState = "preview"
 
 	// CVStateExporting - User exports CV via export modal
@@ -133,9 +137,13 @@ type GenerateCVContext struct {
 	// AppContext is the background context for operations
 	AppContext context.Context
 
+	// ReviewScreenFactory creates a CVReviewScreen (avoids import cycle)
+	// Signature: func(cv *career.CVView) screens.Screen
+	ReviewScreenFactory func(cv *career.CVView) screens.Screen
+
 	// PreviewScreenFactory creates a CVPreviewScreen (avoids import cycle)
-	// Signature: func(cv *career.CVView, width, height int) screens.Screen
-	PreviewScreenFactory func(cv *career.CVView, width, height int) screens.Screen
+	// Signature: func(cv *career.CVView) screens.Screen
+	PreviewScreenFactory func(cv *career.CVView) screens.Screen
 }
 
 // Validate checks if the context is valid.

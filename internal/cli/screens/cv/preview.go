@@ -5,30 +5,41 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/domain/career"
+	cvservice "github.com/baphled/kariya/internal/service/career/cv"
 )
 
 // CVPreviewState represents the internal state constant for this screen
 const CVPreviewState = "preview"
 
-// CVPreviewScreen displays a preview of the generated CV.
+// CVPreviewScreen displays the full CV content in a scrollable viewport.
+// This screen shows the actual CV content with bullet points and allows
+// the user to scroll through the entire document.
 type CVPreviewScreen struct {
 	*base.BaseScreen
 
-	cv           *career.CVView
-	scrollOffset int
+	cv       *career.CVView
+	viewport viewport.Model
+	ready    bool
+	width    int
+	height   int
 }
 
 // NewCVPreviewScreen creates a new CV preview screen.
 func NewCVPreviewScreen(cv *career.CVView) *CVPreviewScreen {
 	return &CVPreviewScreen{
-		BaseScreen:   base.NewBaseScreen(),
-		cv:           cv,
-		scrollOffset: 0,
+		BaseScreen: base.NewBaseScreen(),
+		cv:         cv,
+		width:      80,
+		height:     24,
+		ready:      false,
 	}
 }
 
@@ -39,15 +50,20 @@ func (s *CVPreviewScreen) Init() tea.Cmd {
 
 // Update handles messages.
 func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		s.BaseScreen.HandleWindowSizeMsg(msg)
+		s.width = msg.Width
+		s.height = msg.Height
+		s.ready = false // Force viewport recreation on resize
 		return nil, nil
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
-			// Go back
+			// Go back to review
 			return nil, &screens.CancelResult{}
 
 		case "enter", "y":
@@ -68,92 +84,304 @@ func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 				ResultData: "export",
 			}
 
-		case "down", "j":
-			s.scrollOffset++
+		// Vim-style navigation
+		case "g":
+			// Go to top
+			s.viewport.GotoTop()
 			return nil, nil
 
-		case "up", "k":
-			if s.scrollOffset > 0 {
-				s.scrollOffset--
-			}
+		case "G":
+			// Go to bottom
+			s.viewport.GotoBottom()
 			return nil, nil
+
+		// Scrolling keys - pass to viewport
+		case "up", "k", "down", "j", "pgup", "pgdown", "ctrl+u", "ctrl+d":
+			if s.ready {
+				s.viewport, cmd = s.viewport.Update(msg)
+				return cmd, nil
+			}
 		}
 	}
 
 	return nil, nil
 }
 
-// View renders the screen with full CV content.
+// View renders the screen with full CV content in a scrollable viewport.
 func (s *CVPreviewScreen) View() string {
 	var b strings.Builder
 
-	b.WriteString("📄 CV Preview\n")
-	b.WriteString(strings.Repeat("═", 80))
+	// Title
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorAccentTeal)
+
+	b.WriteString(titleStyle.Render("📄 CV Preview"))
+	b.WriteString("\n")
+	b.WriteString(strings.Repeat("═", min(60, s.width-4)))
 	b.WriteString("\n\n")
 
-	if s.cv != nil {
-		// Display CV metadata
-		b.WriteString(fmt.Sprintf("Name: %s\n", s.cv.Name))
-		b.WriteString(fmt.Sprintf("Target Role: %s | Audience: %s\n",
-			s.cv.TargetRole, s.cv.TargetAudience))
-		b.WriteString(fmt.Sprintf("Events: %d | Facts: %d\n",
-			s.cv.SourceEventCount, s.cv.SourceFactCount))
+	if s.cv == nil {
+		b.WriteString("No CV data available\n")
 		b.WriteString("\n")
-		b.WriteString(strings.Repeat("─", 80))
-		b.WriteString("\n\n")
+		b.WriteString(s.renderFooter())
+		return b.String()
+	}
 
-		// Display full CV sections with content
-		if len(s.cv.Sections) > 0 {
-			for idx, section := range s.cv.Sections {
-				if idx > 0 {
-					b.WriteString("\n")
-				}
+	// Build CV content for viewport
+	content := s.renderCVContent()
 
-				// Section title
-				b.WriteString(fmt.Sprintf("## %s\n", section.Title))
-				b.WriteString(strings.Repeat("─", len(section.Title)+3))
-				b.WriteString("\n")
+	// Initialize viewport if needed
+	if !s.ready {
+		// Calculate viewport dimensions
+		// Account for title (2 lines), separator (1 line), spacing (2 lines), footer (2 lines)
+		viewportHeight := s.height - 7
+		if viewportHeight < 5 {
+			viewportHeight = 5
+		}
+		viewportWidth := s.width - 4
+		if viewportWidth < 40 {
+			viewportWidth = 40
+		}
 
-				// Handle summary section (prose)
-				if section.SectionType == "summary" && section.Summary != "" {
-					b.WriteString(section.Summary)
-					b.WriteString("\n")
-					continue
-				}
+		s.viewport = viewport.New(viewportWidth, viewportHeight)
+		s.viewport.SetContent(content)
+		s.ready = true
+	}
 
-				// Handle content groups (experience, projects, skills)
-				for _, group := range section.Content {
-					// Group header with dates
-					if group.Header != "" {
-						if group.StartDate != "" && group.EndDate != "" {
-							if group.StartDate == group.EndDate {
-								b.WriteString(fmt.Sprintf("  %s - %s\n", group.Header, group.StartDate))
-							} else {
-								b.WriteString(fmt.Sprintf("  %s - %s to %s\n", group.Header, group.StartDate, group.EndDate))
-							}
-						} else {
-							b.WriteString(fmt.Sprintf("  %s\n", group.Header))
-						}
+	// Render viewport
+	b.WriteString(s.viewport.View())
+	b.WriteString("\n")
+
+	// Footer with scroll indicator
+	b.WriteString(s.renderFooter())
+
+	return b.String()
+}
+
+// renderCVContent renders the full CV content for the viewport.
+func (s *CVPreviewScreen) renderCVContent() string {
+	if s.cv == nil {
+		return "No CV data available"
+	}
+
+	var b strings.Builder
+
+	// Calculate content width for word wrapping (leave margin)
+	contentWidth := s.width - 8
+	if contentWidth < 40 {
+		contentWidth = 40
+	}
+
+	// Section styles
+	sectionTitleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorAccentTeal)
+
+	headerStyle := lipgloss.NewStyle().
+		Bold(true)
+
+	mutedStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary)
+
+	bulletStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextPrimary)
+
+	// Render personal details header
+	b.WriteString(s.renderPersonalDetails(contentWidth))
+	b.WriteString("\n")
+
+	if len(s.cv.Sections) == 0 {
+		b.WriteString("No sections generated yet\n")
+		return b.String()
+	}
+
+	for idx, section := range s.cv.Sections {
+		if idx > 0 {
+			b.WriteString("\n")
+		}
+
+		// Section title
+		b.WriteString(sectionTitleStyle.Render("## " + section.Title))
+		b.WriteString("\n")
+		b.WriteString(strings.Repeat("─", len(section.Title)+3))
+		b.WriteString("\n")
+
+		// Handle summary section (prose) with word wrap
+		if section.SectionType == "summary" && section.Summary != "" {
+			wrapped := wordWrap(section.Summary, contentWidth)
+			b.WriteString(wrapped)
+			b.WriteString("\n")
+			continue
+		}
+
+		// Handle content groups (experience, projects, skills)
+		for _, group := range section.Content {
+			// Group header with dates
+			if group.Header != "" {
+				headerText := group.Header
+				if group.StartDate != "" && group.EndDate != "" {
+					if group.StartDate == group.EndDate {
+						headerText = fmt.Sprintf("%s (%s)", group.Header, group.StartDate)
+					} else {
+						headerText = fmt.Sprintf("%s (%s - %s)", group.Header, group.StartDate, group.EndDate)
 					}
+				}
+				b.WriteString(headerStyle.Render("  " + headerText))
+				b.WriteString("\n")
+			}
 
-					// Bullets with full content
-					for _, bullet := range group.Bullets {
-						b.WriteString(fmt.Sprintf("    • %s\n", bullet.Text))
+			// Bullets with word wrapping
+			bulletWidth := contentWidth - 6 // Account for "    • " prefix
+			for _, bullet := range group.Bullets {
+				wrapped := wordWrap(bullet.Text, bulletWidth)
+				lines := strings.Split(wrapped, "\n")
+				for i, line := range lines {
+					if i == 0 {
+						b.WriteString(bulletStyle.Render("    • " + line))
+					} else {
+						b.WriteString(bulletStyle.Render("      " + line)) // Indent continuation
 					}
 					b.WriteString("\n")
 				}
 			}
-		} else {
-			b.WriteString("No sections generated yet\n")
+
+			// Group separator
+			if len(group.Bullets) > 0 {
+				b.WriteString("\n")
+			}
 		}
-	} else {
-		b.WriteString("No CV data available\n")
 	}
 
-	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 80))
-	b.WriteString("\n")
-	b.WriteString("↑/k: scroll up  ↓/j: scroll down  enter/y: confirm  e: edit  x: export  esc: back")
+	// Add scroll position indicator at bottom if content is long
+	contentLines := strings.Count(b.String(), "\n")
+	if contentLines > s.height-7 {
+		b.WriteString("\n")
+		b.WriteString(mutedStyle.Render(fmt.Sprintf("(%d lines)", contentLines)))
+	}
 
 	return b.String()
+}
+
+// renderPersonalDetails renders the personal details header.
+func (s *CVPreviewScreen) renderPersonalDetails(width int) string {
+	profile := cvservice.DefaultNarrativeProfile()
+
+	var b strings.Builder
+
+	// Name (large, bold) - using warning color for warm appearance
+	nameStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.ColorWarning)
+
+	roleStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextPrimary)
+
+	contactStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary)
+
+	// Name
+	b.WriteString(nameStyle.Render(profile.Name))
+	b.WriteString("\n")
+
+	// Role
+	b.WriteString(roleStyle.Render(profile.Role))
+	b.WriteString("\n")
+
+	// Contact line
+	contactLine := fmt.Sprintf("%s  |  %s  |  %s",
+		profile.Location,
+		profile.Email,
+		profile.GitHub,
+	)
+	b.WriteString(contactStyle.Render(contactLine))
+	b.WriteString("\n")
+
+	// Separator
+	b.WriteString(strings.Repeat("═", min(width, 60)))
+	b.WriteString("\n")
+
+	return b.String()
+}
+
+// wordWrap wraps text to the specified width, breaking at word boundaries.
+func wordWrap(text string, width int) string {
+	if width <= 0 {
+		return text
+	}
+
+	var result strings.Builder
+	var currentLine strings.Builder
+	currentLen := 0
+
+	words := strings.Fields(text)
+	for i, word := range words {
+		wordLen := len(word)
+
+		// If adding this word exceeds width, start a new line
+		if currentLen > 0 && currentLen+1+wordLen > width {
+			result.WriteString(currentLine.String())
+			result.WriteString("\n")
+			currentLine.Reset()
+			currentLen = 0
+		}
+
+		// Add space before word (except at start of line)
+		if currentLen > 0 {
+			currentLine.WriteString(" ")
+			currentLen++
+		}
+
+		currentLine.WriteString(word)
+		currentLen += wordLen
+
+		// Handle very long words that exceed width
+		if wordLen > width && i < len(words)-1 {
+			result.WriteString(currentLine.String())
+			result.WriteString("\n")
+			currentLine.Reset()
+			currentLen = 0
+		}
+	}
+
+	// Write remaining content
+	if currentLine.Len() > 0 {
+		result.WriteString(currentLine.String())
+	}
+
+	return result.String()
+}
+
+// renderFooter renders the footer with help text and scroll indicator.
+func (s *CVPreviewScreen) renderFooter() string {
+	footerStyle := lipgloss.NewStyle().
+		Foreground(styles.ColorTextSecondary)
+
+	var footer strings.Builder
+	footer.WriteString(strings.Repeat("─", min(60, s.width-4)))
+	footer.WriteString("\n")
+
+	// Show scroll percentage if viewport is ready and has scrollable content
+	if s.ready && s.viewport.TotalLineCount() > s.viewport.Height {
+		pct := int(s.viewport.ScrollPercent() * 100)
+		footer.WriteString(footerStyle.Render(
+			fmt.Sprintf("↑↓/jk: scroll  g/G: top/bottom  [%d%%]  enter/y: confirm  x: export  esc: back", pct)))
+	} else {
+		footer.WriteString(footerStyle.Render("↑↓/jk: scroll  enter/y: confirm  x: export  e: edit  esc: back"))
+	}
+
+	return footer.String()
+}
+
+// GetCV returns the CV data.
+func (s *CVPreviewScreen) GetCV() *career.CVView {
+	return s.cv
+}
+
+// min returns the minimum of two integers.
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

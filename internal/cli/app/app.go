@@ -616,7 +616,10 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			ExportService:           cvExportService,
 			ProfileConfig:           profileCfg,
 			AppContext:              ctx,
-			PreviewScreenFactory: func(cvView *career.CVView, width, height int) screens.Screen {
+			ReviewScreenFactory: func(cvView *career.CVView) screens.Screen {
+				return cvscreens.NewCVReviewScreen(cvView)
+			},
+			PreviewScreenFactory: func(cvView *career.CVView) screens.Screen {
 				return cvscreens.NewCVPreviewScreen(cvView)
 			},
 		}

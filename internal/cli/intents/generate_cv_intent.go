@@ -54,8 +54,9 @@ type GenerateCVIntent struct {
 	progressModal *components.CVProgressModal
 	exportModal   *components.ExportOptionsModal
 
-	// Screen for wizard workflow (using base Screen interface to avoid import cycle)
-	// Will be *cvscreens.CVPreviewScreen at runtime
+	// Screens for wizard workflow (using base Screen interface to avoid import cycle)
+	// Will be *cvscreens.CVReviewScreen and *cvscreens.CVPreviewScreen at runtime
+	wizardReviewScreen  screens.Screen
 	wizardPreviewScreen screens.Screen
 }
 
@@ -331,6 +332,9 @@ func (i *GenerateCVIntent) updateWizardFlow(msg tea.Msg) tea.Cmd {
 		// Modals handle their own window size internally via their Update methods
 
 		// Update screen terminal info
+		if i.wizardReviewScreen != nil {
+			i.wizardReviewScreen.SetTerminalInfo(msg.Width, msg.Height)
+		}
 		if i.wizardPreviewScreen != nil {
 			i.wizardPreviewScreen.SetTerminalInfo(msg.Width, msg.Height)
 		}
@@ -452,7 +456,16 @@ func (i *GenerateCVIntent) updateWizardFlow(msg tea.Msg) tea.Cmd {
 			// Progress modal doesn't handle other keys
 		}
 
-		// Tier 3: Screen delegation
+		// Tier 3: Screen delegation - Review screen (metadata/stats view)
+		if i.wizardReviewScreen != nil && i.state.currentState == CVStateReview {
+			cmd, result := i.wizardReviewScreen.Update(msg)
+			if result != nil {
+				return i.handleReviewScreenResult(result)
+			}
+			return cmd
+		}
+
+		// Tier 4: Screen delegation - Preview screen (full scrollable content)
 		if i.wizardPreviewScreen != nil && i.state.currentState == CVStatePreview {
 			cmd, result := i.wizardPreviewScreen.Update(msg)
 			if result != nil {
@@ -559,7 +572,7 @@ func (i *GenerateCVIntent) handleTechExtracted(msg TechnologiesExtractedMsg) tea
 	return i.generateCVAsync()
 }
 
-// handleCVGenerated processes CV generation completion by showing preview screen.
+// handleCVGenerated processes CV generation completion by showing review screen.
 func (i *GenerateCVIntent) handleCVGenerated(msg CVGenerationCompleteMsg) tea.Cmd {
 	// Hide progress modal
 	if i.progressModal != nil {
@@ -569,15 +582,50 @@ func (i *GenerateCVIntent) handleCVGenerated(msg CVGenerationCompleteMsg) tea.Cm
 	// Store generated CV
 	i.state.generatedCV = msg.CV
 
-	// Create preview screen using the PreviewScreenFactory if available
-	// This avoids import cycle with screens/cv package
-	if i.context.PreviewScreenFactory != nil {
-		termInfo := i.BaseIntent.GetTerminalInfo()
-		i.wizardPreviewScreen = i.context.PreviewScreenFactory(msg.CV, termInfo.Width, termInfo.Height)
+	// Always go to review first, then preview
+	if i.context.ReviewScreenFactory != nil {
+		i.wizardReviewScreen = i.context.ReviewScreenFactory(msg.CV)
 	}
+	i.state.currentState = CVStateReview
+	return nil
+}
 
-	// Set state
-	i.state.currentState = CVStatePreview
+// handleReviewScreenResult processes review screen results.
+func (i *GenerateCVIntent) handleReviewScreenResult(result screens.ScreenResult) tea.Cmd {
+	switch result.Type() {
+	case screens.ResultNavigate:
+		switch result.Data() {
+		case "preview":
+			// User wants to see full preview
+			// Create preview screen using the PreviewScreenFactory if available
+			if i.context.PreviewScreenFactory != nil {
+				i.wizardPreviewScreen = i.context.PreviewScreenFactory(i.state.generatedCV)
+			}
+			i.state.currentState = CVStatePreview
+			return nil
+
+		case "export":
+			// User wants to export directly from review
+			termInfo := i.BaseIntent.GetTerminalInfo()
+			width, height := termInfo.Width, termInfo.Height
+			i.exportModal = components.NewExportOptionsModal(width, height)
+			i.exportModal.Show()
+			i.state.currentState = CVStateExporting
+			return i.exportModal.Init()
+
+		case "edit":
+			// User wants to edit - go back to wizard
+			i.state.currentState = CVStateConfiguring
+			i.wizardModal.Reset()
+			return i.wizardModal.Init()
+		}
+
+	case screens.ResultCancel:
+		// User cancelled - go back to wizard with preserved data
+		i.state.currentState = CVStateConfiguring
+		i.wizardModal.Reset()
+		return i.wizardModal.Init()
+	}
 	return nil
 }
 
@@ -590,22 +638,27 @@ func (i *GenerateCVIntent) handlePreviewScreenResult(result screens.ScreenResult
 		return nil
 
 	case screens.ResultNavigate:
-		// User wants to export
-		if result.Data() == "export" {
-			// Show export modal
+		switch result.Data() {
+		case "export":
+			// User wants to export
 			termInfo := i.BaseIntent.GetTerminalInfo()
 			width, height := termInfo.Width, termInfo.Height
 			i.exportModal = components.NewExportOptionsModal(width, height)
 			i.exportModal.Show()
 			i.state.currentState = CVStateExporting
 			return i.exportModal.Init()
+
+		case "edit":
+			// User wants to edit - go back to wizard
+			i.state.currentState = CVStateConfiguring
+			i.wizardModal.Reset()
+			return i.wizardModal.Init()
 		}
 
 	case screens.ResultCancel:
-		// User cancelled - go back to wizard with preserved data
-		i.state.currentState = CVStateConfiguring
-		i.wizardModal.Reset() // Reset form state but preserve entered data
-		return i.wizardModal.Init()
+		// User cancelled from preview - go back to review
+		i.state.currentState = CVStateReview
+		return nil
 	}
 	return nil
 }
@@ -1616,6 +1669,12 @@ func (i *GenerateCVIntent) wizardView() string {
 	// Render content based on current state
 	var content string
 	switch i.state.currentState {
+	case CVStateReview:
+		// For review state, let the review screen render itself
+		if i.wizardReviewScreen != nil {
+			return i.renderReviewScreenWithModalOverlay(width, height)
+		}
+		content = "Loading review..."
 	case CVStatePreview:
 		// For preview state, let the screen render itself fully
 		if i.wizardPreviewScreen != nil {
@@ -1669,6 +1728,8 @@ func (i *GenerateCVIntent) getWizardBreadcrumbs() []string {
 		crumbs = append(crumbs, "Extracting Technologies")
 	case CVStateGenerating:
 		crumbs = append(crumbs, "Generating CV")
+	case CVStateReview:
+		crumbs = append(crumbs, "Review")
 	case CVStatePreview:
 		crumbs = append(crumbs, "Preview")
 	case CVStateExporting:
@@ -1693,6 +1754,8 @@ func (i *GenerateCVIntent) getWizardContextHelp() string {
 
 	// State-specific help
 	switch i.state.currentState {
+	case CVStateReview:
+		return "Enter/p Preview   x Export   e Edit   Esc Back   q Quit"
 	case CVStatePreview:
 		return "↑↓ Scroll   Enter/y Confirm   x Export   Esc Back   q Quit"
 	default:
@@ -1731,6 +1794,31 @@ func (i *GenerateCVIntent) renderExportModalOverlay(baseView string, width, heig
 	// Use UIKit containers.Overlay for proper modal compositing
 	modalView := i.exportModal.View()
 	return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
+}
+
+// renderReviewScreenWithModalOverlay renders the review screen and overlays export modal if visible.
+func (i *GenerateCVIntent) renderReviewScreenWithModalOverlay(width, height int) string {
+	// Create StandardView with breadcrumbs
+	breadcrumbs := i.getWizardBreadcrumbs()
+	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, breadcrumbs...)
+
+	// Get content from review screen
+	content := i.wizardReviewScreen.View()
+	view.WithContent(content)
+
+	// Get context-aware help
+	help := "Enter/p Preview   x Export   e Edit   Esc Back   q Quit"
+	view.WithHelp(help).WithFooterSeparator(true)
+
+	// Render base view with StandardView
+	baseView := view.Render()
+
+	// Overlay export modal if visible
+	if i.exportModal != nil && i.exportModal.IsVisible() {
+		return i.renderExportModalOverlay(baseView, width, height)
+	}
+
+	return baseView
 }
 
 // renderPreviewScreenWithModalOverlay renders the preview screen and overlays export modal if visible.
