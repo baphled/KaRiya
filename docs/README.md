@@ -37,6 +37,18 @@ Welcome to the KaRiya Career Journal & CV Generator documentation. This director
   - Metadata validation
   - Export & integration
 
+### TUI Development (MANDATORY)
+- **[UIKIT_GUIDE.md](UIKIT_GUIDE.md)** - **UIKit component library** (REQUIRED for all new code)
+  - Primitives: Text, Button, Badge, Input
+  - Containers: Box, Overlay
+  - Nil theme guard patterns
+  - Migration guide from lipgloss
+- **[TUI_DEVELOPER_GUIDE.md](TUI_DEVELOPER_GUIDE.md)** - Comprehensive TUI development guide
+- **[TUI_STANDARDS.md](TUI_STANDARDS.md)** - Design principles and accessibility
+- **[THEME_CUSTOMIZATION_GUIDE.md](THEME_CUSTOMIZATION_GUIDE.md)** - Theme system documentation
+- **[MODAL_PATTERNS.md](MODAL_PATTERNS.md)** - Modal implementation patterns
+- **[STANDARDVIEW_GUIDE.md](STANDARDVIEW_GUIDE.md)** - StandardView system
+
 ### User & Developer Guides
 - **[guides/](guides/)** - User and developer guides (8 documents)
   - CV generation guide and examples

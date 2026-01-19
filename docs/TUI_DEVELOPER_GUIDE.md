@@ -28,7 +28,7 @@
 
 - Go 1.24.0 or later
 - Understanding of BubbleTea framework
-- Familiarity with Lipgloss for styling
+- **UIKit component library** (see [UIKit Guide](./UIKIT_GUIDE.md))
 - Basic understanding of TUI concepts
 
 ### Key Dependencies
@@ -36,23 +36,30 @@
 ```go
 import (
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/charmbracelet/lipgloss"
     "github.com/charmbracelet/bubbles/textinput"
 
+    // UIKit components (PREFERRED for all new code)
+    "github.com/baphled/kariya/internal/cli/uikit/primitives"
+    "github.com/baphled/kariya/internal/cli/uikit/containers"
+    "github.com/baphled/kariya/internal/cli/themes"
+
+    // Other internal packages
     "github.com/baphled/kariya/internal/cli/navigation"
-    "github.com/baphled/kariya/internal/cli/styles"
     "github.com/baphled/kariya/internal/cli/components"
 )
 ```
 
+> **Note**: Direct `lipgloss` usage should be avoided. Use UIKit primitives and containers instead.
+> See [UIKit Guide](./UIKIT_GUIDE.md) for migration patterns.
+
 ### Recommended Reading
 
-1. [TUI Standards](./TUI_STANDARDS.md) - Design principles and guidelines
-2. [Keyboard Shortcuts Guide](./KEYBOARD_SHORTCUTS_GUIDE.md) - All keyboard shortcuts (user-facing)
-3. [Keyboard System Guide](./development/KEYBOARD_SYSTEM_GUIDE.md) - Keyboard implementation (developer)
-4. [Theme Customization Guide](./THEME_CUSTOMIZATION_GUIDE.md) - Theme system documentation
-4. [BubbleTea Docs](https://github.com/charmbracelet/bubbletea/tree/master/examples) - Framework examples
-5. [Lipgloss Styling](https://github.com/charmbracelet/lipgloss/examples) - Styling examples
+1. **[UIKit Guide](./UIKIT_GUIDE.md)** - Component library (REQUIRED for new code)
+2. [TUI Standards](./TUI_STANDARDS.md) - Design principles and guidelines
+3. [Keyboard Shortcuts Guide](./KEYBOARD_SHORTCUTS_GUIDE.md) - All keyboard shortcuts (user-facing)
+4. [Keyboard System Guide](./development/KEYBOARD_SYSTEM_GUIDE.md) - Keyboard implementation (developer)
+5. [Theme Customization Guide](./THEME_CUSTOMIZATION_GUIDE.md) - Theme system documentation
+6. [BubbleTea Docs](https://github.com/charmbracelet/bubbletea/tree/master/examples) - Framework examples
 
 ---
 
@@ -62,13 +69,20 @@ import (
 
 ```
 internal/cli/
+├── uikit/                   # UIKit component library (USE THIS)
+│   ├── primitives/         # Text, Button, Badge, Input
+│   ├── containers/         # Box, Overlay
+│   └── theme/              # Theme infrastructure
+├── themes/                  # Theme definitions
+│   ├── theme.go            # Theme interface
+│   └── default.go          # Default Catppuccin theme
 ├── navigation/              # Keyboard shortcuts system
 │   ├── constants.go        # Standardized keys
 │   └── help.go            # Help text generation
-├── components/            # Reusable UI components
+├── components/            # Reusable UI components (modals, etc.)
 │   ├── help_footer.go     # Help text footer
 │   ├── tag_selector.go    # Tag selection
-│   └── [future components]
+│   └── [modal components]
 ├── models/                # Screen models
 │   ├── form.go           # Event capture form
 │   ├── list.go           # Event list view
@@ -104,6 +118,9 @@ App.View() renders screen
 
 ## Creating Components
 
+> **IMPORTANT**: All new components MUST use UIKit primitives and containers.
+> See [UIKit Guide](./UIKIT_GUIDE.md) for complete documentation.
+
 ### Step 1: Define the Component Structure
 
 ```go
@@ -111,23 +128,33 @@ package components
 
 import (
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/charmbracelet/lipgloss"
+
+    // UIKit components (REQUIRED)
+    "github.com/baphled/kariya/internal/cli/themes"
+    "github.com/baphled/kariya/internal/cli/uikit/containers"
+    "github.com/baphled/kariya/internal/cli/uikit/primitives"
 )
 
 // MyComponentModel represents your component
 type MyComponentModel struct {
+    theme       themes.Theme  // REQUIRED: Store theme for View()
     width       int
     height      int
     state       string
+    visible     bool
     data        interface{}
-    // Add your fields
 }
 
 // NewMyComponent creates a new component instance
-func NewMyComponent(width int) MyComponentModel {
-    return MyComponentModel{
+func NewMyComponent(theme themes.Theme, width int) *MyComponentModel {
+    // REQUIRED: Handle nil theme
+    if theme == nil {
+        theme = themes.NewDefaultTheme()
+    }
+    return &MyComponentModel{
+        theme:  theme,
         width:  width,
-        height: 10, // Default height
+        height: 10,
         state:  "idle",
     }
 }
@@ -204,12 +231,22 @@ func (m MyComponentModel) handleKeyPress(
 }
 ```
 
-### Step 4: Implement Rendering
+### Step 4: Implement Rendering with UIKit
 
 ```go
-func (m MyComponentModel) render() string {
-    // Create content
-    content := m.renderContent()
+func (m *MyComponentModel) View() string {
+    if !m.visible {
+        return ""
+    }
+
+    // REQUIRED: Nil theme guard in View()
+    theme := m.theme
+    if theme == nil {
+        theme = themes.NewDefaultTheme()
+    }
+
+    // Render content using UIKit primitives
+    content := m.renderContent(theme)
 
     // Add help footer
     helpFooter := components.NewHelpFooter("context_name", m.width)
@@ -224,20 +261,57 @@ func (m MyComponentModel) render() string {
 
     // Handle responsive sizing
     if m.width < 40 {
-        return m.renderCompact()
+        return m.renderCompact(theme)
     }
 
     return view
 }
 
-func (m MyComponentModel) renderContent() string {
-    // Use styles from styles package
-    return styles.CardContent.Render("Your content")
+func (m *MyComponentModel) renderContent(theme themes.Theme) string {
+    // Use UIKit primitives for text
+    title := primitives.Title("My Component", theme).Render()
+    body := primitives.Body("Your content here", theme).Render()
+    hint := primitives.Muted("Press Enter to continue", theme).Italic().Render()
+
+    return lipgloss.JoinVertical(lipgloss.Left, title, "", body, "", hint)
 }
 
-func (m MyComponentModel) renderCompact() string {
+func (m *MyComponentModel) renderCompact(theme themes.Theme) string {
     // Simplified layout for narrow terminals
-    return "Compact view for " + m.state
+    return primitives.Muted("Compact: "+m.state, theme).Render()
+}
+```
+
+### Step 4b: Modal Components with UIKit Box
+
+For modal components, use UIKit containers with solid backgrounds:
+
+```go
+func (m *MyModalModel) View() string {
+    if !m.visible {
+        return ""
+    }
+
+    // REQUIRED: Nil theme guard
+    theme := m.theme
+    if theme == nil {
+        theme = themes.NewDefaultTheme()
+    }
+
+    // Build content
+    title := primitives.Title("Confirmation", theme).Render()
+    message := primitives.Body("Are you sure?", theme).Render()
+    hint := primitives.Muted("y: Yes | n: No | Esc: Cancel", theme).Render()
+
+    content := lipgloss.JoinVertical(lipgloss.Left, title, "", message, "", hint)
+
+    // REQUIRED: Use UIKit Box with solid background for modals
+    return containers.NewBox(theme).
+        Content(content).
+        Width(50).
+        Padding(2).
+        Background(theme.BackgroundColor()).  // REQUIRED for modal overlays
+        Render()
 }
 ```
 
