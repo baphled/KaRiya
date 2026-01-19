@@ -5,46 +5,18 @@ import (
 	"errors"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerRepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/cv"
+	"github.com/baphled/kariya/internal/service/career/technology"
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
-// CV variant types - reexport from cv package for convenience
-type (
-	// RoleEmphasis defines what aspect of experience to emphasize
-	RoleEmphasis = cv.RoleEmphasis
-	// LengthFormat defines CV density/length
-	LengthFormat = cv.LengthFormat
-)
-
-// Role emphasis constants
-const (
-	RoleEmphasisSeniorBackend    = cv.RoleEmphasisSeniorBackend
-	RoleEmphasisStaffPrincipal   = cv.RoleEmphasisStaffPrincipal
-	RoleEmphasisConsulting       = cv.RoleEmphasisConsulting
-	RoleEmphasisLanguageAgnostic = cv.RoleEmphasisLanguageAgnostic
-)
-
-// Length format constants
-const (
-	LengthFull       = cv.LengthFull
-	LengthStandard   = cv.LengthStandard
-	LengthShort      = cv.LengthShort
-	LengthUltraShort = cv.LengthUltraShort
-)
-
-// CVStructure represents the structure/format of a CV.
-type CVStructure string
-
-const (
-	// CVStructureStandard is the traditional CV structure with Experience, Projects, Skills sections.
-	CVStructureStandard CVStructure = "standard"
-
-	// CVStructureNarrative is a language-agnostic professional format with Core Strengths, Technologies, What I Bring sections.
-	CVStructureNarrative CVStructure = "narrative"
-)
+// Type aliases for convenience
+type ExtractedTechnology = technology.ExtractedTechnology
+type FocusAreaSuggestion = technology.FocusAreaSuggestion
 
 // GenerateCVState represents the state of the GenerateCV intent.
 type GenerateCVState string
@@ -56,14 +28,22 @@ const (
 	// GenerateCVStateSelectAudience - User selects target audience(s).
 	GenerateCVStateSelectAudience GenerateCVState = "select_audience"
 
-	// GenerateCVStateSelectStructure - User selects CV structure (Standard or Narrative).
-	// DEPRECATED: Use SelectRoleEmphasis + SelectLengthFormat for variant-based selection.
-	GenerateCVStateSelectStructure GenerateCVState = "select_structure"
+	// GenerateCVStateExtractingTechnologies - Extracting technologies from user skills.
+	GenerateCVStateExtractingTechnologies GenerateCVState = "extracting_technologies"
 
-	// GenerateCVStateSelectRoleEmphasis - User selects role emphasis (senior_backend, staff_principal, etc.)
-	GenerateCVStateSelectRoleEmphasis GenerateCVState = "select_role_emphasis"
+	// GenerateCVStateSelectTechnologyFocus - User selects technology focus (Language Agnostic/Generalist/Specialist).
+	GenerateCVStateSelectTechnologyFocus GenerateCVState = "select_technology_focus"
 
-	// GenerateCVStateSelectLengthFormat - User selects length format (full, standard, short, ultra_short)
+	// GenerateCVStateSelectTechnologies - User selects specific technologies (for Generalist/Specialist).
+	GenerateCVStateSelectTechnologies GenerateCVState = "select_technologies"
+
+	// GenerateCVStateSelectFocusArea - User selects focus area (Backend/Frontend/Fullstack/DevOps).
+	GenerateCVStateSelectFocusArea GenerateCVState = "select_focus_area"
+
+	// GenerateCVStateSelectSkillsConfig - User configures skills section format and limit.
+	GenerateCVStateSelectSkillsConfig GenerateCVState = "select_skills_config"
+
+	// GenerateCVStateSelectLengthFormat - User selects CV length format.
 	GenerateCVStateSelectLengthFormat GenerateCVState = "select_length_format"
 
 	// GenerateCVStateGenerating - CV is being generated.
@@ -89,6 +69,30 @@ const (
 
 	// GenerateCVStateExportComplete - Export is complete.
 	GenerateCVStateExportComplete GenerateCVState = "export_complete"
+
+	// NEW: Wizard-based workflow states (Phase 5 - Task 43)
+	// These 5 states replace the 17 states above when useWizardFlow=true
+
+	// CVStateConfiguring - User configures CV via wizard modal
+	// Replaces: SelectProfile, SelectAudience, SelectTechnologyFocus,
+	//           SelectTechnologies, SelectFocusArea, SelectSkillsConfig
+	CVStateConfiguring GenerateCVState = "configuring"
+
+	// CVStateExtracting - Extracting technologies from user skills
+	// Replaces: ExtractingTechnologies
+	CVStateExtracting GenerateCVState = "extracting"
+
+	// CVStateGenerating - CV is being generated
+	// Replaces: Generating
+	CVStateGenerating GenerateCVState = "generating"
+
+	// CVStatePreview - User previews generated CV via CVPreviewScreen
+	// Replaces: Preview, Review, Confirm
+	CVStatePreview GenerateCVState = "preview"
+
+	// CVStateExporting - User exports CV via export modal
+	// Replaces: ExportSelectFormat, ExportSelectLocation, Exporting, ExportComplete
+	CVStateExporting GenerateCVState = "exporting"
 )
 
 // GenerateCVContext is the input context passed to the GenerateCV intent.
@@ -117,11 +121,21 @@ type GenerateCVContext struct {
 	// ExportService exports CVs to various formats
 	ExportService *cv.ExportService
 
+	// SkillRepository provides access to user skills (for technology extraction)
+	SkillRepository careerRepo.SkillRepository
+
+	// EventRepository provides access to career events (for technology extraction)
+	EventRepository careerRepo.Repository
+
 	// ProfileConfig is the user's profile configuration for narrative CVs
 	ProfileConfig *config.ProfileConfig
 
 	// AppContext is the background context for operations
 	AppContext context.Context
+
+	// PreviewScreenFactory creates a CVPreviewScreen (avoids import cycle)
+	// Signature: func(cv *career.CVView, width, height int) screens.Screen
+	PreviewScreenFactory func(cv *career.CVView, width, height int) screens.Screen
 }
 
 // Validate checks if the context is valid.
@@ -161,12 +175,6 @@ type GenerateCVResult struct {
 	// SelectedProfile is the profile that was used.
 	SelectedProfile *CVProfile
 
-	// SelectedStructure is the CV structure that was selected.
-	SelectedStructure CVStructure
-
-	// SelectedVariant is the CV variant that was selected (if variant-based generation was used).
-	SelectedVariant *cv.CVVariant
-
 	// AcceptedFields tracks which fields were accepted.
 	AcceptedFields map[string]bool
 
@@ -197,27 +205,6 @@ type GenerateCVModel struct {
 	// audienceIndex is the index for audience selection UI
 	audienceIndex int
 
-	// selectedCVStructure is the selected CV structure (Standard or Narrative).
-	selectedCVStructure CVStructure
-
-	// structureIndex is the index for structure selection UI
-	structureIndex int
-
-	// selectedRoleEmphasis is the selected role emphasis for variant-based generation
-	selectedRoleEmphasis RoleEmphasis
-
-	// roleEmphasisIndex is the index for role emphasis selection UI
-	roleEmphasisIndex int
-
-	// selectedLengthFormat is the selected length format for variant-based generation
-	selectedLengthFormat LengthFormat
-
-	// lengthFormatIndex is the index for length format selection UI
-	lengthFormatIndex int
-
-	// selectedVariant is the selected CV variant (combination of role emphasis and length)
-	selectedVariant *cv.CVVariant
-
 	// generatedCV is the generated CV.
 	generatedCV *career.CVView
 
@@ -232,6 +219,32 @@ type GenerateCVModel struct {
 
 	// previewViewport is the viewport for scrolling CV preview
 	previewViewport viewport.Model
+
+	// Technology extraction fields (NEW)
+	extractedTechnologies []*ExtractedTechnology // Technologies extracted from user skills
+	technologiesAvailable bool                   // true if 3+ technologies found
+	focusAreaSuggestion   *FocusAreaSuggestion   // AI-suggested focus area
+
+	// Technology Focus selection fields (NEW)
+	selectedTechnologyFocus cv.TechnologyFocus // Language Agnostic / Generalist / Specialist
+	technologyFocusIndex    int                // Cursor position for technology focus selection
+
+	// Technology selection fields (NEW - for Generalist/Specialist)
+	selectedTechnologies []string     // Selected skill IDs
+	technologyCursor     int          // Cursor position for technology list
+	technologySelected   map[int]bool // Multi-select state
+
+	// Focus area selection fields (NEW)
+	selectedFocusArea cv.FocusArea // Backend / Frontend / Fullstack / DevOps
+	focusAreaCursor   int          // Cursor position for focus area selection
+
+	// Skills configuration fields (NEW - Phase 11 UI)
+	selectedSkillsFormat string // "flat" or "grouped"
+	selectedSkillsLimit  int    // max skills to show (0 = no limit)
+	skillsConfigCursor   int    // cursor position: 0=format, 1=limit
+
+	// CV Length selection (Phase 8 - Task 43 wizard integration)
+	selectedCVLength string // "1_page" | "2_page" | "detailed"
 
 	// Export-related fields
 	selectedExportFormat CVExportFormat
@@ -267,6 +280,58 @@ type CVGenerationStartedMsg struct{}
 type CVGenerationCompleteMsg struct {
 	CV    *career.CVView
 	Error error
+}
+
+// Technology-related message types (NEW)
+
+// TechnologiesExtractedMsg indicates technologies have been extracted from user skills.
+type TechnologiesExtractedMsg struct {
+	Technologies []*ExtractedTechnology
+	Suggestion   *FocusAreaSuggestion
+	Error        error
+}
+
+// TechnologyFocusSelectedMsg indicates the user selected a technology focus.
+type TechnologyFocusSelectedMsg struct {
+	Focus cv.TechnologyFocus
+}
+
+// TechnologiesSelectedMsg indicates the user selected specific technologies (Generalist/Specialist).
+type TechnologiesSelectedMsg struct {
+	Technologies []string // Skill IDs
+}
+
+// FocusAreaSelectedMsg indicates the user selected a focus area.
+type FocusAreaSelectedMsg struct {
+	Area cv.FocusArea
+}
+
+// LengthFormatSelectedMsg indicates the user selected a length format.
+type LengthFormatSelectedMsg struct {
+	Length cv.LengthFormat
+}
+
+// Wizard-based workflow messages (Phase 5 - Task 43)
+
+// WizardCompleteMsg indicates the configuration wizard was completed.
+// Contains all configuration data from the 3-step wizard (WHO → TECH → FORMAT).
+type WizardCompleteMsg struct {
+	// Step 1: WHO
+	ProfileID string // Selected profile ID
+	Audience  string // "hiring_manager" | "recruiter" | "peer"
+
+	// Step 2: TECH
+	TechFocus    string   // "language_agnostic" | "generalist" | "specialist"
+	Technologies []string // Selected technology names (for generalist/specialist)
+	FocusArea    string   // "backend" | "frontend" | "fullstack" | "devops"
+
+	// Step 3: FORMAT
+	SkillsFormat string // "grouped" | "flat"
+	SkillsLimit  int    // max skills per category/total (0 = no limit, default 5)
+	CVLength     string // "1_page" | "2_page" | "detailed"
+
+	// Pre-extracted data (optional, from async extraction)
+	TechnologiesExtracted []*ExtractedTechnology
 }
 
 // Export-related types

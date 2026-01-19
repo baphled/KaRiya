@@ -1,6 +1,6 @@
 # KaRiya Project Documentation
 
-**Last Updated**: 2026-01-16
+**Last Updated**: 2026-01-18
 **Project Status**: ✅ **PRODUCTION READY - ALL PHASES COMPLETE (100%)**
 **Test Coverage**: 2,430+ tests, 100% pass rate, 0 race conditions
 **Code Quality**: All linting checks passing, no technical debt
@@ -103,11 +103,142 @@ The AI assistant **MUST**:
 
 **NO code generation** until ALL confirmations are received.
 
+### Senior Engineer Identity (MANDATORY)
+
+The AI assistant **MUST**:
+
+1. **ALWAYS** identify as a **senior Go engineer** with deep expertise
+2. **ALWAYS** apply SOLID principles, DRY, KISS, and YAGNI
+3. **ALWAYS** follow Go idioms and best practices from Effective Go
+4. **ALWAYS** prioritize code quality, maintainability, and testability
+5. **ALWAYS** think critically about design decisions and architecture
+6. **REFUSE** to write code that violates best practices (explain why)
+
+**Reference**: See `docs/rules/senior-engineer-guidelines.md` and `docs/rules/go-guidelines.md` for complete standards.
+
+### TDD Enforcement (CRITICAL - NON-NEGOTIABLE)
+
+The AI assistant **MUST**:
+
+1. **Write the failing test FIRST** - this is **absolutely non-negotiable**
+2. Show the test to the user
+3. Ask user to run the test and confirm it **FAILS** (red phase)
+4. **ONLY THEN** write minimal implementation code (green phase)
+5. If user asks for implementation first, **REFUSE FIRMLY** and explain TDD
+
+**Example refusal (REQUIRED response):**
+```
+❌ I CANNOT proceed with this request.
+
+Reason: You are asking me to write implementation code before the test exists and fails.
+This violates our TDD protocol (Session Contract #1) and is non-negotiable.
+
+Required workflow (Red-Green-Refactor):
+1. ❌ Write failing test FIRST (Red)
+2. ✅ Write minimal implementation (Green)
+3. ✅ Refactor if needed
+
+Let me write the test first. After you confirm it fails, I'll implement.
+
+No exceptions to this rule.
+```
+
+### Before Each Commit (MANDATORY - STRICT ORDER)
+
+The AI assistant **MUST** follow this **EXACT order**:
+
+1. **FIRST**: Run `make check-compliance` and **WAIT** for it to pass
+   - If it fails, **STOP** and fix issues before proceeding
+   - **NO commits** until this passes
+
+2. **SECOND**: Verify commit is atomic (ONE logical change only)
+   - If multiple changes, **REFUSE** and request separate commits
+
+3. **THIRD**: Use **ONLY** `make ai-commit MSG="type(scope): description"`
+   - This is the **ONLY ACCEPTABLE** method for AI-generated commits
+   - Manual workflow (`make review-commit` + manual attribution) is **DEPRECATED**
+   - **REFUSE** any request to use `git commit` directly
+
+**Critical Order (STRICT ENFORCEMENT):**
+```bash
+# STEP 1 (MANDATORY - MUST PASS)
+make check-compliance
+
+# STEP 2 (MANDATORY - ATOMIC CHECK)
+# Verify: ONE logical change only
+
+# STEP 3 (MANDATORY - ONLY METHOD)
+make ai-commit MSG="type(scope): description"
+
+# NEVER use git commit directly for AI-generated code
+```
+
+**AI Commit Attribution (MANDATORY)**:
+- **EVERY** commit with AI-generated code **MUST** use `make ai-commit`
+- **NO EXCEPTIONS** - this is project policy
+- Format: `AI-Generated-By: OpenCode (Claude Sonnet 4.5)`
+- Format: `Reviewed-By: <git config user.name>`
+- See `docs/rules/AI_COMMIT_ATTRIBUTION.md` for complete rules
+
+### After Task Completion (MANDATORY)
+
+The AI assistant **MUST**:
+
+1. Ask user to run `make check-compliance` (again)
+2. **WAIT** for confirmation it passed
+3. Verify **ALL** task checkboxes in task file are complete
+4. Mark task as complete `[x]` in task file
+5. **STOP IMMEDIATELY** - do not proceed to next task without **EXPLICIT** user request
+
+**NO automatic continuation to next task.**
+
+### Refusal Protocol (STRICT ENFORCEMENT)
+
+The AI assistant **MUST REFUSE FIRMLY** to proceed if:
+
+- ❌ User requests implementation before test (TDD violation)
+- ❌ `make session-start` has not been run or failed
+- ❌ `make check-compliance` fails after task completion
+- ❌ User attempts to commit without `make check-compliance` passing
+- ❌ User attempts AI-generated commit without `make ai-commit`
+- ❌ User attempts to skip required workflow steps
+- ❌ User requests code that violates SOLID principles
+- ❌ User requests code that violates Go best practices
+- ❌ User requests multiple changes in one commit (not atomic)
+
+**Refusal template (REQUIRED response):**
+```
+❌ I CANNOT proceed with this request.
+
+Reason: [Specific rule violation]
+Violated rule: [Rule number and description]
+
+Required correction:
+1. [Specific action needed]
+2. [Any additional steps]
+
+Once corrected, I can continue.
+
+This is non-negotiable and required for project compliance.
+```
+
+**Additional Senior Engineer Refusal Template:**
+```
+❌ As a senior Go engineer, I cannot write this code.
+
+Reason: [Specific best practice violation]
+Violates: [SOLID principle / Go idiom / Best practice]
+
+Better approach:
+[Explanation of correct approach]
+
+Would you like me to implement the correct approach instead?
+```
+
 ---
 
 # Task Handover Completed
 
-<<<<<<< HEAD
 All task files **MUST** follow this structure:
 
 ```markdown
@@ -543,15 +674,42 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 #### 7. Modal Patterns
 **File**: [`docs/MODAL_PATTERNS.md`](docs/MODAL_PATTERNS.md)
 **Purpose**: Modal usage patterns and implementation guide
-**When to use**: When implementing modals for errors, loading states, or user confirmation
+**When to use**: When implementing modals for errors, loading states, user confirmation, or overlay dialogs
 **Key topics**:
 - 5 modal types (Error, Loading, Progress, Success, Warning)
-- Modal state management
-- Accessibility and user experience patterns
+- **Modal overlays with bubbletea-overlay** (NEW!)
+- Complete implementation patterns (read-only, form-based, confirmation)
+- Real-world examples (all 5 Browse Timeline modals)
+- Best practices and troubleshooting
 - Testing modal interactions
-**Related**: See [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
+**Related**: 
+- [`docs/STANDARDVIEW_GUIDE.md`](docs/STANDARDVIEW_GUIDE.md) for StandardView integration
+- [`docs/BUBBLETEA_OVERLAY_GUIDE.md`](docs/BUBBLETEA_OVERLAY_GUIDE.md) for overlay library usage
 
-#### 8. Forms System (Huh Library)
+#### 8. bubbletea-overlay Library Guide **NEW!**
+**File**: [`docs/BUBBLETEA_OVERLAY_GUIDE.md`](docs/BUBBLETEA_OVERLAY_GUIDE.md)
+**Purpose**: Comprehensive guide to using bubbletea-overlay library for modal compositing
+**When to use**: When creating modal overlays or understanding the overlay system
+**Key topics**:
+- Library installation and basic usage
+- KaRiya integration pattern (staticViewModel, render methods)
+- Complete examples (ViewEventDetailModal, QuickAddModal, DeleteModal)
+- API reference (overlay.New parameters)
+- Best practices and troubleshooting
+- 5 real-world Browse Timeline modal examples
+
+> **⚠️ CRITICAL**: Modal overlays MUST set solid background (`Background(styles.ColorBackground)`) to prevent transparency issues!
+
+**Real-World Examples**: All 5 Browse Timeline modals use this pattern:
+- `ViewEventDetailModal` - View event details (NEW!)
+- `QuickAddEventModal` - Add new event
+- `EditEventModal` - Edit event metadata
+- `DeleteConfirmModal` - Confirm deletion
+- `FilterModalModel` - Filter and sort
+
+**See**: `VIEW_DETAIL_MODAL_SUMMARY.md` and `MODAL_REFACTOR_VERIFICATION.md` for complete implementation details.
+
+#### 9. Forms System (Huh Library)
 **File**: [`docs/FORMS_GUIDE.md`](docs/FORMS_GUIDE.md)
 **Purpose**: Comprehensive guide to using Charm's huh library for forms
 **When to use**: When creating or modifying form inputs in the TUI
@@ -565,6 +723,30 @@ The KaRiya TUI follows strict standards for consistency, accessibility, and prof
 
 > **⚠️ CRITICAL**: Forms in intents MUST use wrapper models (e.g., `CaptureForm`, `SkillForm`).
 > Direct `*huh.Form` usage causes left-alignment issues. See [Form Alignment and the Wrapper Pattern](docs/FORMS_GUIDE.md#form-alignment-and-the-wrapper-pattern).
+
+#### 10. Wizard Modals **NEW!**
+**File**: [`docs/WIZARD_MODAL_GUIDE.md`](docs/WIZARD_MODAL_GUIDE.md)
+**Purpose**: Complete guide to building multi-step wizard modals
+**When to use**: When implementing guided, multi-step configuration workflows
+**Key topics**:
+- Wizard modal architecture and lifecycle
+- Multi-step form design with huh library
+- Navigation patterns (Tab, Enter, Esc, Ctrl+S skip)
+- Best practices for 3-7 step wizards
+- Testing wizard modals
+- Complete reference implementation (CVConfigWizardModal)
+
+**Reference Implementation**: `CVConfigWizardModal` (Task 43)
+- **Location**: `internal/cli/components/cv_config_wizard_modal.go`
+- **Stats**: 300 lines, 3 steps, 39 tests (100% passing)
+- **Features**: Conditional steps, dynamic fields, theme integration, smart defaults
+
+**When to Use Wizards**:
+- ✅ Multi-step configuration (3-7 steps)
+- ✅ Guided user experiences with sequential flow
+- ✅ Complex forms benefiting from logical grouping
+- ❌ Single-step processes (use regular modal)
+- ❌ Non-sequential workflows (use separate screens)
 
 ### TUI Quick References
 
@@ -629,7 +811,7 @@ KaRiya provides comprehensive workflow guides for complex user journeys. Each gu
 
 | Guide | Purpose | States | Complexity | Documentation |
 |-------|---------|--------|------------|---------------|
-| **[CV Generation Workflow](docs/workflows/CV_GENERATION_WORKFLOW.md)** | Generate role and audience-specific CVs from career events | 10 states | ⭐⭐⭐⭐⭐ High | 800+ lines |
+| **[CV Generation Workflow](docs/workflows/CV_GENERATION_WORKFLOW.md)** **UPDATED!** | Generate role and audience-specific CVs from career events. **Now includes wizard modal flow** (5 states) alongside traditional flow (10 states) | 5-10 states | ⭐⭐⭐⭐⭐ High | 800+ lines |
 | **[Event Capture Workflow](docs/workflows/EVENT_CAPTURE_WORKFLOW.md)** | Capture events with optional burst/fact extraction | 4 states + 3 modals | ⭐⭐⭐⭐ High | 700+ lines |
 
 **See Also**: [Workflow Documentation Index](docs/workflows/README.md) for complete workflow catalog and navigation guide
@@ -922,7 +1104,18 @@ Each task file MUST include:
 Completed tasks remain in `tasks/` directory for reference:
 - `tasks-09-tui-intent-refactoring.md` - Intent framework implementation
 - `tasks-10-navigation-coverage.md` - Navigation and test coverage
+- `tasks-43-cv-generation-wizard-modal.md` - CV Generation wizard modal architecture (hybrid approach)
 - See individual files for implementation details and lessons learned
+
+**Task 43 Summary** (January 2026):
+- ✅ Created CVConfigWizardModal (3-step wizard with Catppuccin theming)
+- ✅ Created CVProgressModal and ExportOptionsModal
+- ✅ Implemented wizard flow handlers and view rendering
+- ✅ Fixed 2 CVConfigWizardModal test failures + staticcheck issues
+- 📝 Wizard flow complete but opt-in (disabled by default for backward compatibility)
+- 🔧 To enable: `intent.EnableWizardFlow()` in app layer
+- 📊 Tests: 207/207 GenerateCV tests, 39/39 wizard modal tests passing
+- 💾 Commits: 5 commits with proper AI attribution
 
 ---
 
@@ -2092,6 +2285,3 @@ sqlite3 ~/.kariya/events.db "SELECT MAX(version_id) FROM goose_db_version"
 ---
 
 *This documentation serves as the comprehensive handover document for the KaRiya project. For questions or suggestions, please open an issue on GitHub.*
-=======
-*Merged with existing AGENTS.md content successfully as part of redundancy-free comprehensive documentation.*
->>>>>>> d732389 (feat(tui): implement Intent/Screen/Component architecture (Task 42))

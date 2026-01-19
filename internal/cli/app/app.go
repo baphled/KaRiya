@@ -6,6 +6,8 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/screens"
+	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/config"
@@ -614,12 +616,17 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			ExportService:           cvExportService,
 			ProfileConfig:           profileCfg,
 			AppContext:              ctx,
+			PreviewScreenFactory: func(cvView *career.CVView, width, height int) screens.Screen {
+				return cvscreens.NewCVPreviewScreen(cvView)
+			},
 		}
 		intent, err := intents.NewGenerateCVIntent(cvCtx)
 		if err != nil {
 			log.Error("Failed to create GenerateCV intent: %v", err)
 			return nil
 		}
+		// Enable wizard flow by default (Phase 7 - Full Integration)
+		intent.EnableWizardFlow()
 		return intent
 	})
 
@@ -753,7 +760,10 @@ func initCVGenerationService(careerService *careerservice.Service, configMgr cv.
 		careerService.GetFactRepository(),
 		log,
 	)
-	sectionBuilder := cv.NewSectionBuilder(log)
+	sectionBuilder := cv.NewSectionBuilder(
+		careerService.GetSkillRepository(),
+		log,
+	)
 	return cv.NewCVGenerationService(
 		careerService.GetEventRepository(),
 		careerService.GetFactRepository(),
