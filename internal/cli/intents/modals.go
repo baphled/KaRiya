@@ -2,13 +2,24 @@ package intents
 
 import (
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
+
+// getModalTitleStyle returns a styled modal title.
+func getModalTitleStyle(theme themes.Theme) lipgloss.Style {
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+	return lipgloss.NewStyle().
+		Bold(true).
+		Foreground(theme.ForegroundColor()).
+		MarginBottom(1)
+}
 
 // EditMetadataModal handles inline editing of event metadata (Company, Project, Tags, Categories).
 // This is a sub-flow of CaptureEventIntent used in the ReviewInferredEvent state.
@@ -196,8 +207,7 @@ func (m *EditMetadataModal) View() string {
 	formView := m.form.View()
 
 	// Wrap in modal container
-	title := styles.ModalTitle.
-		Foreground(styles.ColorTextPrimary).
+	title := getModalTitleStyle(nil).
 		Render("Edit Event Metadata")
 
 	content := lipgloss.JoinVertical(
@@ -404,8 +414,7 @@ func (m *EditBurstModal) View() string {
 	formView := m.form.View()
 
 	// Wrap in modal container
-	title := styles.ModalTitle.
-		Foreground(styles.ColorTextPrimary).
+	title := getModalTitleStyle(nil).
 		Render("Edit Burst")
 
 	content := lipgloss.JoinVertical(
@@ -615,8 +624,7 @@ func (m *EditFactModal) View() string {
 	formView := m.form.View()
 
 	// Wrap in modal container
-	title := styles.ModalTitle.
-		Foreground(styles.ColorTextPrimary).
+	title := getModalTitleStyle(nil).
 		Render("Edit Fact")
 
 	content := lipgloss.JoinVertical(

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/navigation"
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -108,78 +107,52 @@ func (m *ConfigureSystemModel) SetTheme(theme themes.Theme) {
 // Theme helper methods for consistent themed styling.
 
 // getCardStyle returns a themed card style, with fallback to default styling.
-func (m *ConfigureSystemModel) getCardStyle() lipgloss.Style {
+func (m *ConfigureSystemModel) getTheme() themes.Theme {
 	if m.theme != nil {
-		return m.theme.Styles().CardBase
+		return m.theme
 	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	return themes.NewDefaultTheme()
+}
+
+func (m *ConfigureSystemModel) getCardStyle() lipgloss.Style {
+	theme := m.getTheme()
+	return theme.Styles().CardBase
 }
 
 // getCardStyleWithBorder returns a card style with custom border color.
 func (m *ConfigureSystemModel) getCardStyleWithBorder(borderColor lipgloss.Color) lipgloss.Style {
-	if m.theme != nil {
-		return m.theme.Styles().CardBase.BorderForeground(borderColor)
-	}
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(borderColor).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	theme := m.getTheme()
+	return theme.Styles().CardBase.BorderForeground(borderColor)
 }
 
-// getPrimaryColor returns the primary text color from theme or fallback.
+// getPrimaryColor returns the primary text color from theme.
 func (m *ConfigureSystemModel) getPrimaryColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.ForegroundColor()
-	}
-	return styles.ColorTextPrimary
+	return m.getTheme().ForegroundColor()
 }
 
-// getAccentColor returns the accent color from theme or fallback.
+// getAccentColor returns the accent color from theme.
 func (m *ConfigureSystemModel) getAccentColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.PrimaryColor()
-	}
-	return styles.ColorAccentTeal
+	return m.getTheme().PrimaryColor()
 }
 
-// getMutedColor returns the muted text color from theme or fallback.
+// getMutedColor returns the muted text color from theme.
 func (m *ConfigureSystemModel) getMutedColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.MutedColor()
-	}
-	return styles.ColorTextMuted
+	return m.getTheme().MutedColor()
 }
 
-// getSuccessColor returns the success color from theme or fallback.
+// getSuccessColor returns the success color from theme.
 func (m *ConfigureSystemModel) getSuccessColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.SuccessColor()
-	}
-	return styles.ColorSuccess
+	return m.getTheme().SuccessColor()
 }
 
-// getErrorColor returns the error color from theme or fallback.
+// getErrorColor returns the error color from theme.
 func (m *ConfigureSystemModel) getErrorColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.ErrorColor()
-	}
-	return styles.ColorError
+	return m.getTheme().ErrorColor()
 }
 
-// getInfoColor returns the info color from theme or fallback.
+// getInfoColor returns the info color from theme.
 func (m *ConfigureSystemModel) getInfoColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.InfoColor()
-	}
-	return styles.ColorInfo
+	return m.getTheme().InfoColor()
 }
 
 // NewConfigureSystemContext creates a new ConfigureSystemContext with values loaded from config file

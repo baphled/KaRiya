@@ -9,7 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
@@ -213,49 +213,36 @@ func NewCVProfileSelectScreenFromIntent(profiles []*CVProfile) screens.Screen {
 // Theme helper methods for consistent themed styling.
 
 // getCardStyle returns a themed card style, with fallback to default styling.
+// getTheme returns the theme or a default.
+func (i *GenerateCVIntent) getTheme() themes.Theme {
+	if theme := i.Theme(); theme != nil {
+		return theme
+	}
+	return themes.NewDefaultTheme()
+}
+
 func (i *GenerateCVIntent) getCardStyle() lipgloss.Style {
-	if theme := i.Theme(); theme != nil {
-		return theme.Styles().CardBase
-	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	return i.getTheme().Styles().CardBase
 }
 
-// getPrimaryColor returns the primary text color from theme or fallback.
+// getPrimaryColor returns the primary text color from theme.
 func (i *GenerateCVIntent) getPrimaryColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ForegroundColor()
-	}
-	return styles.ColorTextPrimary
+	return i.getTheme().ForegroundColor()
 }
 
-// getAccentColor returns the accent color from theme or fallback.
+// getAccentColor returns the accent color from theme.
 func (i *GenerateCVIntent) getAccentColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.PrimaryColor()
-	}
-	return styles.ColorAccentTeal
+	return i.getTheme().PrimaryColor()
 }
 
-// getErrorColor returns the error color from theme or fallback.
+// getErrorColor returns the error color from theme.
 func (i *GenerateCVIntent) getErrorColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ErrorColor()
-	}
-	return styles.ColorError
+	return i.getTheme().ErrorColor()
 }
 
-// getBorderColor returns the border color from theme or fallback.
+// getBorderColor returns the border color from theme.
 func (i *GenerateCVIntent) getBorderColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.BorderColor()
-	}
-	return styles.ColorBorder
+	return i.getTheme().BorderColor()
 }
 
 // Update processes a message in the intent.

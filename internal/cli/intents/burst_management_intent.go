@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -249,58 +249,42 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 	return nil
 }
 
-// getCardStyle returns a themed card style, with fallback to default styling.
+// getTheme returns the theme or a default.
+func (i *BurstManagementIntent) getTheme() themes.Theme {
+	if theme := i.Theme(); theme != nil {
+		return theme
+	}
+	return themes.NewDefaultTheme()
+}
+
+// getCardStyle returns a themed card style.
 func (i *BurstManagementIntent) getCardStyle() lipgloss.Style {
-	if theme := i.Theme(); theme != nil {
-		return theme.Styles().CardBase
-	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	return i.getTheme().Styles().CardBase
 }
 
-// getInfoColor returns the info color from theme or fallback.
+// getInfoColor returns the info color from theme.
 func (i *BurstManagementIntent) getInfoColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.InfoColor()
-	}
-	return styles.ColorInfo
+	return i.getTheme().InfoColor()
 }
 
-// getWarningColor returns the warning color from theme or fallback.
+// getWarningColor returns the warning color from theme.
 func (i *BurstManagementIntent) getWarningColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.WarningColor()
-	}
-	return styles.ColorWarning
+	return i.getTheme().WarningColor()
 }
 
-// getErrorColor returns the error color from theme or fallback.
+// getErrorColor returns the error color from theme.
 func (i *BurstManagementIntent) getErrorColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ErrorColor()
-	}
-	return styles.ColorError
+	return i.getTheme().ErrorColor()
 }
 
-// getPrimaryColor returns the primary text color from theme or fallback.
+// getPrimaryColor returns the primary text color from theme.
 func (i *BurstManagementIntent) getPrimaryColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ForegroundColor()
-	}
-	return styles.ColorTextPrimary
+	return i.getTheme().ForegroundColor()
 }
 
-// getBackgroundCardColor returns the card background color from theme or fallback.
+// getBackgroundCardColor returns the card background color from theme.
 func (i *BurstManagementIntent) getBackgroundCardColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.Palette().BackgroundCard
-	}
-	return styles.ColorBackgroundCard
+	return i.getTheme().Palette().BackgroundCard
 }
 
 // Update processes a message in the intent.
