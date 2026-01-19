@@ -48,11 +48,11 @@ var _ = Describe("ImportWizard Navigation", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should quit application when pressing 'q'", func() {
-			// Note: q now quits the entire app
-			// This test verifies the quit command is handled without panic
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
+			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// After quit, the app terminates - we can't assert view content
+			// Intent should still be active
 		})
 	})
 

@@ -303,14 +303,12 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			Expect(result.Status).To(Equal(Cancelled))
 		})
 
-		It("should quit app from list with q", func() {
-			// Press 'q' to quit app (global key handled by intent)
+		It("should ignore 'q' key from list (quit only from main menu)", func() {
+			// Press 'q' - no longer quits from within intents
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// Should return tea.Quit command (quits entire app, not just intent)
-			Expect(cmd).NotTo(BeNil())
-			// tea.Quit is a function, we can't directly compare it
-			// but we can verify it's not nil which means 'q' was handled
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should not cancel intent from detail with escape", func() {
@@ -1010,24 +1008,16 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			Expect(listView).To(ContainSubstring("Timeline"))
 		})
 
-		It("should quit app when 'q' pressed from timeline list", func() {
+		It("should ignore 'q' key from timeline list (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// Should return tea.Quit command
-			Expect(cmd).NotTo(BeNil())
-			// Intent result should be nil (app is quitting, not cancelled)
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
+			// Intent result should be nil (intent still active)
 			result := intent.Result()
 			Expect(result).To(BeNil())
 		})
 
-		It("should handle ctrl+c to quit app", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-
-			// Should return tea.Quit command
-			Expect(cmd).NotTo(BeNil())
-			result := intent.Result()
-			Expect(result).To(BeNil())
-		})
 	})
 
 	Describe("Filtering and Sorting (Internal State)", func() {

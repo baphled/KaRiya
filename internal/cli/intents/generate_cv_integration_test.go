@@ -230,18 +230,11 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
-		It("should quit application on Ctrl+C", func() {
-			// Press Ctrl+C
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			// ctrl+c now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
-		})
-
-		It("should quit application on 'q' key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			// Press 'q'
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 	})
 

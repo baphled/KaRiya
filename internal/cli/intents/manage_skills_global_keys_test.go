@@ -65,15 +65,15 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 	})
 
 	Describe("List State (Root)", func() {
-		It("should return tea.Quit when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// q should return tea.Quit command
-			Expect(cmd).NotTo(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 
-			// Intent should NOT be cancelled (app is quitting)
+			// Intent should still be active (q does nothing)
 			result := intent.Result()
-			Expect(result).To(BeNil(), "Intent should not be cancelled when quitting app")
+			Expect(result).To(BeNil(), "Intent should remain active when 'q' is pressed")
 		})
 
 		It("should toggle help when '?' is pressed", func() {
@@ -86,17 +86,6 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			// Help state should be toggled
 			Expect(intent.IsHelpVisible()).To(Equal(!initialHelpState))
 		})
-
-		It("should return tea.Quit when Ctrl+C is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-
-			// Ctrl+C should return tea.Quit command
-			Expect(cmd).NotTo(BeNil())
-
-			// Intent should NOT be cancelled
-			result := intent.Result()
-			Expect(result).To(BeNil())
-		})
 	})
 
 	Describe("Detail State", func() {
@@ -105,13 +94,13 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		})
 
-		It("should return tea.Quit when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// q should return tea.Quit command
-			Expect(cmd).NotTo(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 
-			// Intent should NOT be cancelled
+			// Intent should remain active
 			result := intent.Result()
 			Expect(result).To(BeNil())
 		})
@@ -120,13 +109,6 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			initialHelpState := intent.IsHelpVisible()
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 			Expect(intent.IsHelpVisible()).To(Equal(!initialHelpState))
-		})
-
-		It("should return tea.Quit when Ctrl+C is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(cmd).NotTo(BeNil())
-			result := intent.Result()
-			Expect(result).To(BeNil())
 		})
 	})
 
@@ -141,9 +123,10 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			}
 		})
 
-		It("should return tea.Quit when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).NotTo(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 			result := intent.Result()
 			Expect(result).To(BeNil())
 		})
@@ -152,11 +135,6 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			initialHelpState := intent.IsHelpVisible()
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 			Expect(intent.IsHelpVisible()).To(Equal(!initialHelpState))
-		})
-
-		It("should return tea.Quit when Ctrl+C is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(cmd).NotTo(BeNil())
 		})
 	})
 
@@ -166,9 +144,10 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
 		})
 
-		It("should return tea.Quit when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).NotTo(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 			result := intent.Result()
 			Expect(result).To(BeNil())
 		})
@@ -177,11 +156,6 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			initialHelpState := intent.IsHelpVisible()
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 			Expect(intent.IsHelpVisible()).To(Equal(!initialHelpState))
-		})
-
-		It("should return tea.Quit when Ctrl+C is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(cmd).NotTo(BeNil())
 		})
 	})
 
@@ -191,9 +165,10 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 		})
 
-		It("should return tea.Quit when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).NotTo(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 			result := intent.Result()
 			Expect(result).To(BeNil())
 		})
@@ -202,11 +177,6 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			initialHelpState := intent.IsHelpVisible()
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 			Expect(intent.IsHelpVisible()).To(Equal(!initialHelpState))
-		})
-
-		It("should return tea.Quit when Ctrl+C is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(cmd).NotTo(BeNil())
 		})
 	})
 
@@ -216,9 +186,10 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
 		})
 
-		It("should return tea.Quit when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).NotTo(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 			result := intent.Result()
 			Expect(result).To(BeNil())
 		})
@@ -227,11 +198,6 @@ var _ = Describe("ManageSkills - Global Key Handlers", func() {
 			initialHelpState := intent.IsHelpVisible()
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 			Expect(intent.IsHelpVisible()).To(Equal(!initialHelpState))
-		})
-
-		It("should return tea.Quit when Ctrl+C is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			Expect(cmd).NotTo(BeNil())
 		})
 	})
 })

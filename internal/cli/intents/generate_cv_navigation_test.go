@@ -78,11 +78,11 @@ var _ = Describe("GenerateCV Navigation", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should quit application when pressing 'q'", func() {
-			// Note: q now quits the entire app
-			// This test verifies the quit command is handled without panic
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
+			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// After quit, the app terminates - we can't assert view content
+			// Intent should still be active (q is ignored within intents)
 		})
 	})
 
@@ -113,11 +113,11 @@ var _ = Describe("GenerateCV Navigation", func() {
 			env.AssertViewContainsAny("Profile", "Select", "Senior", "Staff")
 		})
 
-		It("should quit application when pressing 'q'", func() {
-			// Note: q now quits the entire app
-			// This test verifies the quit command is handled without panic
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
+			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// After quit, the app terminates - we can't assert view content
+			// Intent should still be active (q is ignored within intents)
 		})
 	})
 
@@ -137,13 +137,13 @@ var _ = Describe("GenerateCV Navigation", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should quit application from audience selection with 'q'", func() {
+		It("should ignore 'q' key from audience selection (quit only from main menu)", func() {
 			env.SelectIntentByName("generate_cv")
 			env.Confirm() // Go to audience selection
-			// Note: q now quits the entire app
-			// This test verifies the quit command is handled without panic
+			// q no longer quits from within intents - only from main menu
+			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// After quit, the app terminates - we can't assert view content
+			// Intent should still be active (q is ignored within intents)
 		})
 
 		It("should go back from audience to profile with Escape", func() {

@@ -176,10 +176,10 @@ var _ = Describe("FactManagement Intent", func() {
 			Expect(result).To(BeNil())
 		})
 
-		It("should quit application on 'q' key", func() {
-			// q now returns tea.Quit to quit the application
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
 			cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
-			Expect(cmd).ToNot(BeNil())
+			Expect(cmd).To(BeNil())
 		})
 	})
 })

@@ -432,8 +432,8 @@ func HandleGlobalKeys(msg tea.KeyMsg) GlobalKeyResult {
 	globalKeys := navigation.DefaultGlobalKeyMap()
 
 	switch {
-	case key.Matches(msg, globalKeys.Quit):
-		return KeyQuit
+	// Note: Quit (q) is intentionally NOT handled here.
+	// Users should only be able to quit from the main menu to prevent accidental exits.
 	case key.Matches(msg, globalKeys.Help):
 		return KeyHelp
 	case key.Matches(msg, globalKeys.Back):

@@ -74,11 +74,11 @@ var _ = Describe("Capture Navigation", func() {
 			env.AssertViewNotContains("Select Capture Strategy")
 		})
 
-		It("should quit application when pressing 'q' at strategy selection", func() {
-			// Note: q now quits the entire app, not just cancel to main menu
-			// This test verifies the quit command is handled without panic
+		It("should ignore 'q' key at strategy selection (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
+			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// After quit, the app terminates - we can't assert view content
+			// Intent should still be active
 		})
 	})
 
@@ -171,12 +171,12 @@ var _ = Describe("Capture Navigation", func() {
 			env.AssertViewNotContains("Enter Details")
 		})
 
-		It("should quit application with 'q' from strategy selection", func() {
+		It("should ignore 'q' key from strategy selection (quit only from main menu)", func() {
 			env.SelectIntentByName("capture_event")
-			// Note: q now quits the entire app
-			// This test verifies the quit command is handled without panic
+			// q no longer quits from within intents - only from main menu
+			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// After quit, the app terminates - we can't assert view content
+			// Intent should still be active
 		})
 	})
 

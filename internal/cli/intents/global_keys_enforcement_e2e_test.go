@@ -80,11 +80,12 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 				Expect(result.Status).To(Equal(Cancelled))
 			})
 
-			It("should quit on 'q' from root state", func() {
+			It("should ignore 'q' key from root state (quit only from main menu)", func() {
 				intent.state.currentState = GenerateCVStateSelectProfile
 				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-				Expect(cmd).NotTo(BeNil())
+				// q no longer quits from within intents - only from main menu
+				Expect(cmd).To(BeNil())
 			})
 
 			It("should toggle help on '?' from root state", func() {
@@ -139,7 +140,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 		})
 
 		Context("Universal Keys Work in All States", func() {
-			DescribeTable("quit key works in all states",
+			DescribeTable("'q' key is ignored in all states (quit only from main menu)",
 				func(state GenerateCVState) {
 					intent.state.currentState = state
 					if state != GenerateCVStateSelectProfile {
@@ -147,7 +148,8 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					}
 
 					cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-					Expect(cmd).NotTo(BeNil(), "Quit should return command in state %s", state)
+					// q no longer quits from within intents - only from main menu
+					Expect(cmd).To(BeNil(), "'q' should be ignored in state %s (quit only from main menu)", state)
 				},
 				Entry("SelectProfile", GenerateCVStateSelectProfile),
 				Entry("SelectAudience", GenerateCVStateSelectAudience),
@@ -186,7 +188,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 	// All intents must:
 	// 1. Cancel on escape from root state
 	// 2. Go back on escape from intermediate states
-	// 3. Respond to quit key (q) in all states
+	// 3. Ignore quit key (q) - quit only works from main menu
 	// 4. Respond to help key (?) in all states
 	// =========================================================================
 
@@ -235,7 +237,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 		})
 
 		Context("Quit Key Behavior", func() {
-			DescribeTable("should respond to quit key in root state",
+			DescribeTable("should ignore 'q' key in root state (quit only from main menu)",
 				func(name string, setupFunc func() (Intent, error)) {
 					intent, err := setupFunc()
 					Expect(err).NotTo(HaveOccurred())
@@ -243,8 +245,9 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					intent.Init()
 					cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-					Expect(cmd).NotTo(BeNil(),
-						"%s: Quit key should return command", name)
+					// q no longer quits from within intents - only from main menu
+					Expect(cmd).To(BeNil(),
+						"%s: 'q' key should be ignored within intent (quit only from main menu)", name)
 				},
 				Entry("GenerateCV", "GenerateCV", func() (Intent, error) {
 					return NewGenerateCVIntent(&GenerateCVContext{

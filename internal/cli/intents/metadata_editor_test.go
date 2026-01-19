@@ -124,11 +124,11 @@ var _ = Describe("MetadataEditor Intent", func() {
 			Expect(editModel.data.CurrentState).To(Equal(MetadataEditState))
 		})
 
-		It("should quit application on 'q' from review", func() {
+		It("should ignore 'q' key from review (quit only from main menu)", func() {
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}
 			cmd := editModel.Update(msg)
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should quit/cancel on 'esc' from review", func() {
@@ -185,10 +185,10 @@ var _ = Describe("MetadataEditor Intent", func() {
 			Expect(result).To(BeNil())
 		})
 
-		It("should quit application on 'q' key", func() {
-			// q now returns tea.Quit to quit the application
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
 			cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
-			Expect(cmd).ToNot(BeNil())
+			Expect(cmd).To(BeNil())
 		})
 	})
 })

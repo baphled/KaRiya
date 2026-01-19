@@ -73,10 +73,10 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should quit application on q key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 	})
 
@@ -213,12 +213,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should quit application on q key from events view", func() {
+		It("should ignore 'q' key from events view (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateDetailEvents
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should handle no burst selected error when loading events", func() {
@@ -333,12 +333,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should quit application on q key from facts view", func() {
+		It("should ignore 'q' key from facts view (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateDetailFacts
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should handle no burst selected error when loading facts", func() {
@@ -656,12 +656,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(view).To(ContainSubstring("No burst selected"))
 		})
 
-		It("should quit application on 'q' key from delete confirm", func() {
+		It("should ignore 'q' key from delete confirm (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateDeleteConfirm
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should show warning styling in delete confirm view", func() {
@@ -951,12 +951,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.confirmError).To(BeNil())
 		})
 
-		It("should quit application from extracting state on 'q' key", func() {
+		It("should ignore 'q' key from extracting state (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateExtractingFacts
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should return to detail view on any key after extraction completes", func() {

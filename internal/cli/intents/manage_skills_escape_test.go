@@ -81,12 +81,11 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
-		It("should return tea.Quit command when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// q should return tea.Quit, not cancel the intent
-			Expect(cmd).ToNot(BeNil())
-			// Cannot directly test tea.Quit, but we can verify it's not nil
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should toggle help when '?' is pressed", func() {
@@ -133,9 +132,10 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 			Expect(view).ToNot(ContainSubstring("Filter by"))
 		})
 
-		It("should return tea.Quit command when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should toggle help when '?' is pressed", func() {
@@ -167,12 +167,6 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 			// Modal should be closed, showing list view
 			view = intent.View()
 			Expect(view).To(ContainSubstring("Skills"))
-		})
-
-		It("should return tea.Quit command when 'q' is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// Global 'q' key should work even when modal is visible
-			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should toggle help when '?' is pressed", func() {
