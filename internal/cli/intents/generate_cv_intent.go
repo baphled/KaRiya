@@ -11,6 +11,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/service/career/cv"
@@ -2626,16 +2628,21 @@ func (i *GenerateCVIntent) viewExporting() string {
 	return i.getCardStyle().Render(content.String())
 }
 
-// viewExportComplete renders the export completion view
+// viewExportComplete renders the export completion view using UIKit primitives.
 func (i *GenerateCVIntent) viewExportComplete() string {
+	th := theme.Default()
 	var content strings.Builder
 
 	if i.state.exportError != nil {
-		content.WriteString("\n❌ Export Failed\n\n")
+		// Use UIKit ErrorText for error header
+		errorHeader := primitives.ErrorText("Export Failed", th).Bold().Render()
+		content.WriteString("\n" + errorHeader + "\n\n")
 		content.WriteString(fmt.Sprintf("Error: %v\n\n", i.state.exportError))
 		content.WriteString("Try a different location or format.\n")
 	} else {
-		content.WriteString("\n✅ Export Complete!\n\n")
+		// Use UIKit SuccessText for success header
+		successHeader := primitives.SuccessText("Export Complete!", th).Bold().Render()
+		content.WriteString("\n" + successHeader + "\n\n")
 
 		formatName := "Text"
 		switch i.state.selectedExportFormat {
