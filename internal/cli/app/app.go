@@ -111,10 +111,11 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	// Share logo with intent router so all intents can use it
 	router.SetLogo(logo)
 
-	// Determine initial state - show onboarding if profile not configured
+	// Determine initial state - show onboarding if required profile fields are missing
+	// Both Name and Email are required for CV generation
 	initialState := StateMenu
 	var onboardingWizard *components.OnboardingWizardModal
-	if appCfg.Profile.Name == "" {
+	if appCfg.Profile.Name == "" || appCfg.Profile.Email == "" {
 		initialState = StateOnboarding
 		onboardingWizard = components.NewOnboardingWizardModalWithConfig(80, 24, &appCfg.Profile)
 	}
@@ -206,12 +207,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update logo width for centering
 		m.logo.SetWidth(msg.Width)
 
-		// Update onboarding wizard if active
+		// Update onboarding wizard dimensions if active
+		// IMPORTANT: Execute returned cmd - wizard rebuilds form and returns form.Init()
+		var wizardCmd tea.Cmd
 		if m.onboardingWizard != nil {
-			m.onboardingWizard.Update(msg)
+			wizardCmd = m.onboardingWizard.Update(msg)
 		}
 
 		// Clear screen to prevent artifacts on resize
+		// Batch with wizard cmd if present
+		if wizardCmd != nil {
+			return m, tea.Batch(tea.ClearScreen, wizardCmd)
+		}
 		return m, tea.ClearScreen
 
 	case IntentCompletedMsg:
@@ -249,6 +256,36 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			m.state = StateIntent
+			return m, cmd
+		}
+
+		// Route all other messages to the onboarding wizard (e.g., huh internal messages like nextGroupMsg)
+		// This is essential for huh forms to advance between groups
+		if m.state == StateOnboarding && m.onboardingWizard != nil {
+			cmd := m.onboardingWizard.Update(msg)
+
+			// Check if wizard completed
+			if m.onboardingWizard.IsCompleted() {
+				// Get the profile config from the wizard
+				profileCfg := m.onboardingWizard.GetProfileConfig()
+				if profileCfg != nil {
+					// Update the app config with the new profile
+					m.appConfig.Profile = *profileCfg
+
+					// Save the config
+					if err := config.SaveConfig(m.appConfig); err != nil {
+						m.logger.Error("Failed to save config: %v", err)
+					} else {
+						m.logger.Info("Profile saved successfully")
+					}
+				}
+
+				// Transition to main menu
+				m.state = StateMenu
+				m.onboardingWizard = nil
+				return m, nil
+			}
+
 			return m, cmd
 		}
 
@@ -421,7 +458,9 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// handleOnboardingInput handles input during the onboarding wizard
+// handleOnboardingInput handles input during the onboarding wizard.
+// Note: Onboarding is mandatory - users cannot skip or cancel this wizard.
+// They must provide Name and Email to proceed with the application.
 func (m *Model) handleOnboardingInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.onboardingWizard == nil {
 		m.state = StateMenu
@@ -452,13 +491,8 @@ func (m *Model) handleOnboardingInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Check if wizard was cancelled
-	if m.onboardingWizard.WasCancelled() {
-		// Allow app to continue without profile (user can configure later)
-		m.state = StateMenu
-		m.onboardingWizard = nil
-		return m, nil
-	}
+	// Note: Onboarding cannot be cancelled - users must complete it
+	// The wizard ignores Esc key presses
 
 	return m, cmd
 }
@@ -907,4 +941,12 @@ func (m *Model) SkipOnboarding() {
 		m.state = StateMenu
 		m.onboardingWizard = nil
 	}
+}
+
+// ForceOnboarding forces the onboarding wizard to appear, regardless of config.
+// This is primarily used by tests to verify the onboarding flow.
+// It creates a fresh wizard with empty data (not the user's existing config).
+func (m *Model) ForceOnboarding() {
+	m.state = StateOnboarding
+	m.onboardingWizard = components.NewOnboardingWizardModal(m.width, m.height)
 }
