@@ -5,8 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -126,6 +127,12 @@ func (m *ViewSkillDetailModal) View() string {
 		return ""
 	}
 
+	// Nil theme guard
+	theme := m.theme
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
 	// Calculate modal dimensions
 	modalWidth := m.width - 12
 	if modalWidth > 80 {
@@ -136,38 +143,35 @@ func (m *ViewSkillDetailModal) View() string {
 	}
 
 	// Render skill details directly (no viewport needed for simple content)
-	content := m.renderSkillDetails()
+	content := m.renderSkillDetails(theme)
 
-	// Build footer with actions
+	// Build footer with actions using UIKit
 	footerParts := []string{"e: Edit", "ctrl+e: Events", "d: Delete", "Enter/Esc: Close"}
-
-	footer := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		Render(strings.Join(footerParts, " | "))
+	footer := primitives.Muted(strings.Join(footerParts, " | "), theme).Render()
 
 	// Build modal content
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, content, "", footer)
 
-	// Wrap in styled box with solid background
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
+	// Wrap in styled box with solid background using UIKit
+	return containers.NewBox(theme).
+		Content(modalContent).
 		Width(modalWidth).
-		Render(modalContent)
+		Padding(2).
+		Background(theme.BackgroundColor()).
+		Render()
 }
 
 // renderSkillDetails renders the skill information as a card.
-func (m *ViewSkillDetailModal) renderSkillDetails() string {
+func (m *ViewSkillDetailModal) renderSkillDetails(theme themes.Theme) string {
 	skill := m.skill
 
+	// Use lipgloss for label/value layout (UIKit doesn't have width constraints yet)
 	labelStyle := lipgloss.NewStyle().
-		Foreground(m.theme.MutedColor()).
+		Foreground(theme.MutedColor()).
 		Width(15)
 
 	valueStyle := lipgloss.NewStyle().
-		Foreground(m.theme.PrimaryColor()).
+		Foreground(theme.PrimaryColor()).
 		Bold(true)
 
 	var lines []string
@@ -208,12 +212,8 @@ func (m *ViewSkillDetailModal) renderSkillDetails() string {
 
 	// Timestamps
 	lines = append(lines, "")
-	lines = append(lines, labelStyle.Render("Created:")+lipgloss.NewStyle().
-		Foreground(m.theme.MutedColor()).
-		Render(skill.CreatedAt.Format("2006-01-02 15:04")))
-	lines = append(lines, labelStyle.Render("Updated:")+lipgloss.NewStyle().
-		Foreground(m.theme.MutedColor()).
-		Render(skill.UpdatedAt.Format("2006-01-02 15:04")))
+	lines = append(lines, labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render())
+	lines = append(lines, labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render())
 
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }

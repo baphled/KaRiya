@@ -3,8 +3,9 @@ package components
 import (
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -76,6 +77,12 @@ func NewViewSkillEventsModal(skillID, skillName string, events []*career.CareerE
 
 // initTable initializes the bubbles/table with columns, rows, and styling
 func (m *ViewSkillEventsModal) initTable() {
+	// Nil theme guard
+	theme := m.theme
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
 	columns := []table.Column{
 		{Title: "Date", Width: 12},
 		{Title: "Event", Width: 45},
@@ -104,16 +111,16 @@ func (m *ViewSkillEventsModal) initTable() {
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(styles.ColorBorder).
+		BorderForeground(theme.BorderColor()).
 		BorderBottom(true).
 		Bold(true).
-		Foreground(styles.ColorTextPrimary)
+		Foreground(theme.PrimaryColor())
 	s.Selected = s.Selected.
-		Foreground(styles.ColorTextPrimary).
-		Background(styles.ColorAccentPurple).
+		Foreground(theme.PrimaryColor()).
+		Background(theme.AccentColor()).
 		Bold(true)
 	s.Cell = s.Cell.
-		Foreground(styles.ColorTextSecondary)
+		Foreground(theme.SecondaryColor())
 
 	t.SetStyles(s)
 	m.table = t
@@ -202,6 +209,12 @@ func (m *ViewSkillEventsModal) View() string {
 		return ""
 	}
 
+	// Nil theme guard
+	theme := m.theme
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
 	// Calculate modal dimensions
 	// We need space for: border(2) + padding(2) + title(1) + blank(1) + table + blank(1) + footer(1)
 	// Minimum chrome = 8 lines
@@ -222,17 +235,15 @@ func (m *ViewSkillEventsModal) View() string {
 		modalWidth = 60 // Minimum usable width
 	}
 
-	// Build title
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorTextPrimary)
-	title := titleStyle.Render(fmt.Sprintf("Events using \"%s\" (%d)", m.skillName, len(m.events)))
+	// Build title using UIKit
+	title := primitives.Title(fmt.Sprintf("Events using \"%s\" (%d)", m.skillName, len(m.events)), theme).Render()
 
 	// Build content - either table or empty message
 	var content string
 	if len(m.events) == 0 {
+		// Use lipgloss for padding since UIKit Text doesn't have Padding method
 		emptyStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
+			Foreground(theme.MutedColor()).
 			Italic(true).
 			Padding(2, 0)
 		content = emptyStyle.Render("No events use this skill.")
@@ -240,10 +251,7 @@ func (m *ViewSkillEventsModal) View() string {
 		content = m.table.View()
 	}
 
-	// Build footer with pagination info
-	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
-
+	// Build footer with pagination info using UIKit
 	var footerText string
 	if len(m.events) > 0 {
 		footerText = fmt.Sprintf("Enter: View Details | ↑↓/j/k: Navigate | Esc: Close  [%d/%d]",
@@ -251,20 +259,21 @@ func (m *ViewSkillEventsModal) View() string {
 	} else {
 		footerText = "Esc: Close"
 	}
-	footer := footerStyle.Render(footerText)
+	footer := primitives.Muted(footerText, theme).Render()
 
 	// Build modal content
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, title, "", content, "", footer)
 
-	// Wrap in styled box with solid background
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
+	// Wrap in styled box with solid background using UIKit
+	boxContent := containers.NewBox(theme).
+		Content(modalContent).
 		Width(modalWidth).
-		MaxHeight(maxModalHeight).
-		Render(modalContent)
+		Padding(2).
+		Background(theme.BackgroundColor()).
+		Render()
+
+	// Apply max height constraint via lipgloss (UIKit Box doesn't have MaxHeight)
+	return lipgloss.NewStyle().MaxHeight(maxModalHeight).Render(boxContent)
 }
 
 // SetDimensions updates the modal's available dimensions.

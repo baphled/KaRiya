@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -103,6 +104,11 @@ func (m *ViewEventSkillsModal) View() string {
 		return ""
 	}
 
+	// Ensure theme is not nil (use default if needed)
+	if m.theme == nil {
+		m.theme = themes.NewDefaultTheme()
+	}
+
 	// Calculate modal dimensions
 	maxModalHeight := 30
 	terminalMaxHeight := int(float64(m.height) * 0.7)
@@ -140,81 +146,60 @@ func (m *ViewEventSkillsModal) View() string {
 		m.ready = true
 	}
 
-	// Build title
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorTextPrimary)
-	title := titleStyle.Render(fmt.Sprintf("Skills (%d)", len(m.skills)))
+	// Build title using UIKit
+	title := primitives.Title(fmt.Sprintf("Skills (%d)", len(m.skills)), m.theme).Render()
 
-	// Build footer with scroll indicator
-	scrollHint := "Enter/Esc: Close"
+	// Build footer with scroll indicator using UIKit
+	var scrollHint string
 	if m.hasContent {
 		percentScrolled := int(m.viewport.ScrollPercent() * 100)
-		scrollHint = lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Render(fmt.Sprintf("↑↓/j/k: Scroll | Enter/Esc: Close [%d%%]", percentScrolled))
+		scrollHint = primitives.Muted(fmt.Sprintf("↑↓/j/k: Scroll | Enter/Esc: Close [%d%%]", percentScrolled), m.theme).Render()
 	} else {
-		scrollHint = lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Render(scrollHint)
+		scrollHint = primitives.Muted("Enter/Esc: Close", m.theme).Render()
 	}
 
 	// Build modal content
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, title, "", m.viewport.View(), "", scrollHint)
 
-	// Wrap in styled box with solid background
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
+	// Wrap in styled box with solid background using UIKit
+	return containers.NewBox(m.theme).
+		Content(modalContent).
 		Width(modalWidth).
-		MaxHeight(maxModalHeight).
-		Render(modalContent)
+		Height(maxModalHeight).
+		Padding(2).
+		Background(m.theme.BackgroundColor()).
+		Render()
 }
 
 // renderSkillsContent formats the skills list for display.
 func (m *ViewEventSkillsModal) renderSkillsContent(width int) string {
 	if len(m.skills) == 0 {
-		return lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Italic(true).
-			Render("No skills associated with this event.")
+		return primitives.Muted("No skills associated with this event.", m.theme).Italic().Render()
 	}
 
 	var content strings.Builder
 
-	// Style definitions
-	nameStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(styles.ColorTextPrimary)
-	categoryStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
-	levelStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorSuccess)
-	yearsStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorInfo)
-	separatorStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorBorder)
+	// Separator style (using theme border color)
+	separatorStyle := lipgloss.NewStyle().Foreground(m.theme.BorderColor())
 
 	for i, skill := range m.skills {
 		if skill == nil {
 			continue
 		}
 
-		// Skill name with bullet
-		content.WriteString(nameStyle.Render(fmt.Sprintf("• %s", skill.Name)))
+		// Skill name with bullet (bold primary text)
+		content.WriteString(primitives.NewText(fmt.Sprintf("• %s", skill.Name), m.theme).Bold().Render())
 		content.WriteString("\n")
 
 		// Details line: category | level | years
 		var details []string
 
 		if skill.Category != "" {
-			details = append(details, categoryStyle.Render(skill.Category))
+			details = append(details, primitives.Muted(skill.Category, m.theme).Render())
 		}
 
 		if skill.Level != "" {
-			details = append(details, levelStyle.Render(skill.Level))
+			details = append(details, primitives.SuccessText(skill.Level, m.theme).Render())
 		}
 
 		if skill.YearsUsed != nil && *skill.YearsUsed > 0 {
@@ -222,7 +207,7 @@ func (m *ViewEventSkillsModal) renderSkillsContent(width int) string {
 			if *skill.YearsUsed > 1 {
 				yearText = "years"
 			}
-			details = append(details, yearsStyle.Render(fmt.Sprintf("%d %s", *skill.YearsUsed, yearText)))
+			details = append(details, primitives.InfoText(fmt.Sprintf("%d %s", *skill.YearsUsed, yearText), m.theme).Render())
 		}
 
 		if len(details) > 0 {

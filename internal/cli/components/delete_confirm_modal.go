@@ -4,8 +4,9 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // DeleteConfirmModal is a reusable confirmation modal for delete operations.
@@ -120,25 +121,18 @@ func (m *DeleteConfirmModal) View() string {
 	// Build modal content
 	var content strings.Builder
 
-	// Title (styled as heading)
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(m.theme.ErrorColor()). // Red for delete warning
-		MarginBottom(1)
-	content.WriteString(titleStyle.Render(m.title))
+	// Title using UIKit ErrorText (red for delete warning)
+	content.WriteString(primitives.ErrorText(m.title, m.theme).Bold().MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Message (wrapped to modal width)
-	messageStyle := lipgloss.NewStyle().
-		Width(50).
-		MarginBottom(1)
-	content.WriteString(messageStyle.Render(m.message))
+	content.WriteString(primitives.Body(m.message, m.theme).Width(50).MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Footer
 	content.WriteString(footer)
 
-	// Create modal box (centered, with border)
+	// Create modal box using UIKit
 	modalWidth := 60
 	if modalWidth > m.width-4 {
 		modalWidth = m.width - 4
@@ -147,19 +141,14 @@ func (m *DeleteConfirmModal) View() string {
 		modalWidth = 40
 	}
 
-	modalStyle := lipgloss.NewStyle().
+	// Use UIKit Box with destructive variant (error-colored border)
+	return containers.NewBox(m.theme).
+		Content(content.String()).
+		Variant(containers.BoxDestructive).
 		Width(modalWidth).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.theme.ErrorColor()).
-		Background(m.theme.BackgroundColor()). // Add solid background for overlay
-		Padding(1, 2).
-		Align(lipgloss.Center)
-
-	modalBox := modalStyle.Render(content.String())
-
-	// Return just the modal box - bubbletea-overlay will handle positioning
-	// No need to center it ourselves anymore
-	return modalBox
+		Padding(2).
+		Background(m.theme.BackgroundColor()).
+		Render()
 }
 
 // IsVisible returns whether the modal is currently visible.

@@ -1,10 +1,12 @@
 package components
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -118,6 +120,12 @@ func (m *ViewEventDetailModal) View() string {
 		return ""
 	}
 
+	// Ensure theme is not nil (use default if needed)
+	theme := m.theme
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
 	// Calculate modal dimensions
 	// Keep modal height reasonable: max 30 lines or 70% of terminal, whichever is smaller
 	maxModalHeight := 30
@@ -138,7 +146,7 @@ func (m *ViewEventDetailModal) View() string {
 	}
 
 	// Render event details
-	content := RenderEventDetailCard(m.event, m.theme)
+	content := RenderEventDetailCard(m.event, theme)
 	contentLines := strings.Split(content, "\n")
 	contentHeight := len(contentLines)
 
@@ -178,27 +186,22 @@ func (m *ViewEventDetailModal) View() string {
 		if m.showSkillsOption {
 			scrollPrefix += "s: Skills | "
 		}
-		scrollHint = lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Render(scrollPrefix + "Enter/Esc: Close " + lipgloss.NewStyle().Faint(true).Render("["+string(rune(percentScrolled/10+'0'))+string(rune(percentScrolled%10+'0'))+"%]"))
+		scrollHint = primitives.Muted(fmt.Sprintf("%sEnter/Esc: Close [%d%%]", scrollPrefix, percentScrolled), theme).Render()
 	} else {
-		scrollHint = lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Render(footerText)
+		scrollHint = primitives.Muted(footerText, theme).Render()
 	}
 
 	// Build modal content
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, m.viewport.View(), "", scrollHint)
 
-	// Wrap in styled box with solid background
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
+	// Wrap in styled box with solid background using UIKit
+	return containers.NewBox(theme).
+		Content(modalContent).
 		Width(modalWidth).
-		MaxHeight(maxModalHeight).
-		Render(modalContent)
+		Height(maxModalHeight).
+		Padding(2).
+		Background(theme.BackgroundColor()).
+		Render()
 }
 
 // SetDimensions updates the modal's available dimensions.

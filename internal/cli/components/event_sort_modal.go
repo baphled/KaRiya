@@ -3,12 +3,11 @@ package components
 import (
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
@@ -162,13 +161,12 @@ func (m *EventSortModal) View() string {
 	content.WriteString("\n\n")
 	content.WriteString(footer)
 
-	// Wrap the form in a styled box with solid background, border, and padding
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
-		Render(content.String())
+	// Wrap the form in a styled box with solid background using UIKit
+	return containers.NewBox(m.theme).
+		Content(content.String()).
+		Padding(2).
+		Background(m.theme.BackgroundColor()).
+		Render()
 }
 
 // IsVisible returns whether the modal is currently visible.

@@ -3,12 +3,12 @@ package components
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-
-	"github.com/baphled/kariya/internal/cli/styles"
 )
 
 // HelpModal displays context-sensitive keyboard shortcuts in a modal overlay.
@@ -142,6 +142,9 @@ func (m *HelpModal) View() string {
 		return ""
 	}
 
+	// Use default theme (HelpModal doesn't have a theme field)
+	theme := themes.NewDefaultTheme()
+
 	var content string
 	if m.showingAll {
 		content = m.help.FullHelpView(m.keyMap.FullHelp())
@@ -152,10 +155,10 @@ func (m *HelpModal) View() string {
 	// Build the modal content
 	var sb strings.Builder
 
-	// Title
+	// Title using theme colors
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.GetColorAccentTeal()).
+		Foreground(theme.AccentColor()).
 		MarginBottom(1)
 
 	sb.WriteString(titleStyle.Render("Keyboard Shortcuts"))
@@ -165,9 +168,9 @@ func (m *HelpModal) View() string {
 	sb.WriteString(content)
 	sb.WriteString("\n\n")
 
-	// Footer with toggle hint
+	// Footer with toggle hint using theme colors
 	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.GetColorTextSecondary()).
+		Foreground(theme.SecondaryColor()).
 		Italic(true)
 
 	if m.showingAll {
@@ -176,15 +179,18 @@ func (m *HelpModal) View() string {
 		sb.WriteString(footerStyle.Render("Press ? or esc to close • f for full help"))
 	}
 
-	// Modal container style
-	modalStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.GetColorAccentTeal()).
-		Padding(1, 2).
-		Width(m.width - 10).
-		MaxWidth(m.width - 10)
+	// Modal container using UIKit Box with solid background
+	modalWidth := m.width - 10
+	if modalWidth < 40 {
+		modalWidth = 40
+	}
 
-	return modalStyle.Render(sb.String())
+	return containers.NewBox(theme).
+		Content(sb.String()).
+		Width(modalWidth).
+		Padding(1).
+		Background(theme.BackgroundColor()).
+		Render()
 }
 
 // ShortHelp returns a short help string for display in footer

@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // SkillAddEditModal provides a way to add or edit a skill.
@@ -153,13 +153,13 @@ func (m *SkillAddEditModal) View() string {
 		return ""
 	}
 
-	// Wrap the form in a styled box with solid background, border, and padding
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
-		Render(m.form.View())
+	// Wrap the form in a styled box with solid background using UIKit
+	theme := themes.NewDefaultTheme()
+	return containers.NewBox(theme).
+		Content(m.form.View()).
+		Padding(2).
+		Background(theme.BackgroundColor()).
+		Render()
 }
 
 // IsVisible returns whether the modal is currently visible.
