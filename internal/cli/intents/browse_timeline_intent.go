@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -1140,30 +1141,30 @@ func (i *BrowseTimelineIntent) openFilterModal() tea.Cmd {
 }
 
 // getContextHelp returns themed keyboard shortcuts for the current state.
-// This follows the legacy pattern of using KeyBadge components for consistent styling.
+// Uses UIKit primitives for consistent badge styling.
 func (i *BrowseTimelineIntent) getContextHelp() string {
 	theme := i.Theme()
 
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Search, Filter, Sort, Clear (conditional), Back + Global shortcuts
-		badges := []components.KeyBadge{
-			components.NavigateBadge(),                      // ↑/↓: Navigate
-			components.NewKeyBadge("Enter", "View Details"), // Enter: View Details
-			components.AddBadge(),                           // a: Add
-			components.EditBadge(),                          // e: Edit
-			components.DeleteBadge(),                        // d: Delete
-			components.SearchBadge(),                        // /: Search
-			components.FilterBadge(),                        // f: Filter
-			components.NewKeyBadge("s", "Sort"),             // s: Sort
+		badges := []*primitives.Badge{
+			primitives.NavigateBadge(theme), // ↑/↓: Navigate
+			primitives.HelpKeyBadge("Enter", "View Details", theme),
+			primitives.AddBadge(theme),    // a: Add
+			primitives.EditBadge(theme),   // e: Edit
+			primitives.DeleteBadge(theme), // d: Delete
+			primitives.SearchBadge(theme), // /: Search
+			primitives.FilterBadge(theme), // f: Filter
+			primitives.HelpKeyBadge("s", "Sort", theme),
 		}
 
 		// Conditionally add "Clear filters" badge when filters are active
 		if i.HasActiveFilters() {
-			badges = append(badges, components.NewKeyBadge("x", "Clear filters"))
+			badges = append(badges, primitives.HelpKeyBadge("x", "Clear filters", theme))
 		}
 
-		badges = append(badges, components.BackBadge()) // Esc: Back
+		badges = append(badges, primitives.BackBadge(theme)) // Esc: Back
 
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme, badges...),
@@ -1175,9 +1176,9 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 		// Event detail footer: Edit, Delete, Back + Global shortcuts
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.EditBadge(),   // e: Edit
-				components.DeleteBadge(), // d: Delete
-				components.BackBadge(),   // Esc: Back
+				primitives.EditBadge(theme),   // e: Edit
+				primitives.DeleteBadge(theme), // d: Delete
+				primitives.BackBadge(theme),   // Esc: Back
 			),
 			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
 		)

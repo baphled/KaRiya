@@ -1525,7 +1525,7 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateExtractingTechnologies:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1537,8 +1537,8 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateSelectTechnologies:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Space", "Toggle"),
-				components.NewKeyBadge("Enter", "Confirm"),
+				primitives.HelpKeyBadge("Space", "Toggle", theme),
+				primitives.HelpKeyBadge("Enter", "Confirm", theme),
 			),
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -1551,9 +1551,9 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateSelectSkillsConfig:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Space", "Toggle Format"),
-				components.NewKeyBadge("←→", "Adjust Limit"),
-				components.NewKeyBadge("Enter", "Continue"),
+				primitives.HelpKeyBadge("Space", "Toggle Format", theme),
+				primitives.HelpKeyBadge("←→", "Adjust Limit", theme),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
 			),
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -1561,7 +1561,7 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateGenerating:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1569,8 +1569,8 @@ func (i *GenerateCVIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
-				components.NewKeyBadge("c", "Continue"),
+				primitives.EditBadge(theme),
+				primitives.HelpKeyBadge("c", "Continue", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1578,16 +1578,16 @@ func (i *GenerateCVIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateConfirm:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm"),
-				components.NewKeyBadge("e/x", "Export"),
-				components.NewKeyBadge("n/Esc", "Back"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
+				primitives.HelpKeyBadge("e/x", "Export", theme),
+				primitives.HelpKeyBadge("n/Esc", "Back", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1604,15 +1604,15 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateExporting:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateExportComplete:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
-				components.BackBadge(),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)

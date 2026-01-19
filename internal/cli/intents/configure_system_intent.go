@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -96,57 +96,57 @@ func (c *ConfigureSystemIntent) getContextHelp() string {
 		if c.model.editingValue {
 			return CombineThemedFooters(
 				ThemedCustomFooter(theme,
-					components.NewKeyBadge("Type", "Edit"),
-					components.ConfirmBadge(),
-					components.CancelBadge(),
+					primitives.HelpKeyBadge("Type", "Edit", theme),
+					primitives.ConfirmBadge(theme),
+					primitives.CancelBadge(theme),
 				),
 				ThemedGlobalBadges(theme),
 			)
 		}
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NavigateBadge(),
-				components.SelectBadge(),
-				components.NewKeyBadge("Enter", "Edit"),
-				components.SaveBadge(),
+				primitives.NavigateBadge(theme),
+				primitives.SelectBadge(theme),
+				primitives.HelpKeyBadge("Enter", "Edit", theme),
+				primitives.SaveBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ConfigStateReviewChanges:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.ConfirmBadge(),
-				components.BackBadge(),
+				primitives.ConfirmBadge(theme),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ConfigStateConfirm:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ConfigStateSaving:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ConfigStateComplete:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Done"),
+				primitives.HelpKeyBadge("Enter", "Done", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ConfigStateFailed:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("r", "Retry"),
-				components.CancelBadge(),
+				primitives.HelpKeyBadge("r", "Retry", theme),
+				primitives.CancelBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)

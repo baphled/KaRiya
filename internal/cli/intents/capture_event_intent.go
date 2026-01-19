@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
@@ -1008,7 +1008,7 @@ func (i *CaptureEventIntent) getContextHelp() string {
 			return CombineThemedFooters(
 				ThemedFormFooter(theme),
 				ThemedCustomFooter(theme,
-					components.NewKeyBadge("Ctrl+O", "Toggle fields"),
+					primitives.HelpKeyBadge("Ctrl+O", "Toggle fields", theme),
 				),
 				ThemedGlobalBadges(theme),
 			)
@@ -1021,28 +1021,28 @@ func (i *CaptureEventIntent) getContextHelp() string {
 		// Show different help when modal is active
 		if i.state.reviewState.EditingMode != EditingModeNone {
 			return ThemedCustomFooter(theme,
-				components.NewKeyBadge("Editing", "..."),
-				components.CancelBadge(),
-				components.SaveBadge(),
+				primitives.HelpKeyBadge("Editing", "...", theme),
+				primitives.CancelBadge(theme),
+				primitives.SaveBadge(theme),
 			)
 		}
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NavigateBadge(),
-				components.EditBadge(),
-				components.NewKeyBadge("b", "Bursts"),
-				components.NewKeyBadge("f", "Facts"),
-				components.NewKeyBadge("a", "Accept"),
-				components.NewKeyBadge("r", "Reject"),
-				components.BackBadge(),
+				primitives.NavigateBadge(theme),
+				primitives.EditBadge(theme),
+				primitives.HelpKeyBadge("b", "Bursts", theme),
+				primitives.HelpKeyBadge("f", "Facts", theme),
+				primitives.HelpKeyBadge("a", "Accept", theme),
+				primitives.HelpKeyBadge("r", "Reject", theme),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case CaptureStateSubmit:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
-				components.BackBadge(),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)

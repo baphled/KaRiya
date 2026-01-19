@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
@@ -908,8 +907,8 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "View details"),
-				components.NewKeyBadge("n", "New burst"),
+				primitives.HelpKeyBadge("Enter", "View details", theme),
+				primitives.HelpKeyBadge("n", "New burst", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -917,11 +916,11 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("v", "View events"),
-				components.NewKeyBadge("f", "View facts"),
-				components.EditBadge(),
-				components.DeleteBadge(),
-				components.NewKeyBadge("c", "Confirm"),
+				primitives.HelpKeyBadge("v", "View events", theme),
+				primitives.HelpKeyBadge("f", "View facts", theme),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
+				primitives.HelpKeyBadge("c", "Confirm", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -934,15 +933,15 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedFormFooter(theme),
 			ThemedCustomFooter(theme,
-				components.SaveBadge(),
+				primitives.SaveBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case BurstStateDeleteConfirm:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm deletion"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm deletion", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -950,23 +949,23 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		if i.state.extractionComplete {
 			return CombineThemedFooters(
 				ThemedCustomFooter(theme,
-					components.NewKeyBadge("Enter", "Continue"),
-					components.BackBadge(),
+					primitives.HelpKeyBadge("Enter", "Continue", theme),
+					primitives.BackBadge(theme),
 				),
 				ThemedGlobalBadges(theme),
 			)
 		}
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm burst"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm burst", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case BurstStateExtractingFacts:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)

@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/layout"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 )
 
 // CreateStandardView creates a standardized view with logo and automatic state modals.
@@ -271,101 +272,101 @@ func TickEvery(d time.Duration) func() time.Duration {
 // =============================================================================
 // Theme-Aware KeyBadge Footer Functions
 // =============================================================================
-// These functions use the KeyBadge component for styled, consistent help footers.
+// These functions use UIKit primitives for styled, consistent help footers.
 // They accept a theme parameter and return professionally styled keyboard shortcuts.
 
-// ThemedNavigationFooter returns styled navigation shortcuts using KeyBadge.
+// ThemedNavigationFooter returns styled navigation shortcuts.
 // Used for list views, menu selections, and browsing.
 func ThemedNavigationFooter(theme themes.Theme) string {
-	return components.RenderHelpFooter(theme,
-		components.NavigateBadge(),
-		components.SelectBadge(),
-		components.BackBadge(),
+	return primitives.RenderHelpFooter(theme,
+		primitives.NavigateBadge(theme),
+		primitives.SelectBadge(theme),
+		primitives.BackBadge(theme),
 	)
 }
 
-// ThemedFormFooter returns styled form navigation shortcuts using KeyBadge.
+// ThemedFormFooter returns styled form navigation shortcuts.
 // Used for form inputs and field navigation.
 func ThemedFormFooter(theme themes.Theme) string {
-	return components.RenderHelpFooter(theme,
-		components.NextBadge(),
-		components.PrevBadge(),
-		components.SubmitBadge(),
-		components.CancelBadge(),
+	return primitives.RenderHelpFooter(theme,
+		primitives.NextBadge(theme),
+		primitives.PrevBadge(theme),
+		primitives.SubmitBadge(theme),
+		primitives.CancelBadge(theme),
 	)
 }
 
-// ThemedListFooter returns styled list view shortcuts including search using KeyBadge.
+// ThemedListFooter returns styled list view shortcuts including search.
 // Used for lists with search and scroll capabilities.
 func ThemedListFooter(theme themes.Theme) string {
-	return components.RenderHelpFooter(theme,
-		components.NavigateBadge(),
-		components.SelectBadge(),
-		components.SearchBadge(),
-		components.BackBadge(),
+	return primitives.RenderHelpFooter(theme,
+		primitives.NavigateBadge(theme),
+		primitives.SelectBadge(theme),
+		primitives.SearchBadge(theme),
+		primitives.BackBadge(theme),
 	)
 }
 
-// ThemedDetailViewFooter returns styled detail view shortcuts using KeyBadge.
+// ThemedDetailViewFooter returns styled detail view shortcuts.
 // Used for viewing detailed content with scrolling.
 func ThemedDetailViewFooter(theme themes.Theme) string {
-	return components.RenderHelpFooter(theme,
-		components.NewKeyBadge("↑/↓", "Scroll"),
-		components.BackBadge(),
+	return primitives.RenderHelpFooter(theme,
+		primitives.HelpKeyBadge("↑/↓", "Scroll", theme),
+		primitives.BackBadge(theme),
 	)
 }
 
-// ThemedBrowseFooter returns styled browse view shortcuts using KeyBadge.
+// ThemedBrowseFooter returns styled browse view shortcuts.
 // Used for browsing lists with edit and delete capabilities.
 func ThemedBrowseFooter(theme themes.Theme) string {
-	return components.RenderBrowseFooter(theme)
+	return primitives.RenderBrowseFooter(theme)
 }
 
-// ThemedConfirmFooter returns styled confirmation shortcuts using KeyBadge.
+// ThemedConfirmFooter returns styled confirmation shortcuts.
 // Used for confirmation dialogs.
 func ThemedConfirmFooter(theme themes.Theme) string {
-	return components.RenderConfirmFooter(theme)
+	return primitives.RenderConfirmFooter(theme)
 }
 
-// ThemedEditFooter returns styled edit shortcuts using KeyBadge.
+// ThemedEditFooter returns styled edit shortcuts.
 // Used for edit views.
 func ThemedEditFooter(theme themes.Theme) string {
-	return components.RenderEditFooter(theme)
+	return primitives.RenderEditFooter(theme)
 }
 
-// ThemedExportFooter returns styled export shortcuts using KeyBadge.
+// ThemedExportFooter returns styled export shortcuts.
 // Used for export views.
 func ThemedExportFooter(theme themes.Theme) string {
-	return components.RenderExportFooter(theme)
+	return primitives.RenderExportFooter(theme)
 }
 
-// ThemedMenuFooter returns styled menu shortcuts using KeyBadge.
+// ThemedMenuFooter returns styled menu shortcuts.
 // Used for main menus.
 func ThemedMenuFooter(theme themes.Theme) string {
-	return components.RenderMenuFooter(theme)
+	return primitives.RenderMenuFooter(theme)
 }
 
-// ThemedCustomFooter creates a custom themed footer from KeyBadges.
+// ThemedCustomFooter creates a custom themed footer from badges.
 // Use this when standard footers don't match the required shortcuts.
 //
 // Example:
 //
 //	footer := ThemedCustomFooter(theme,
-//	    components.NavigateBadge(),
-//	    components.NewKeyBadge("f", "Filter"),
-//	    components.NewKeyBadge("Enter", "View Details"),
-//	    components.QuitBadge(),
+//	    primitives.NavigateBadge(theme),
+//	    primitives.HelpKeyBadge("f", "Filter", theme),
+//	    primitives.HelpKeyBadge("Enter", "View Details", theme),
+//	    primitives.QuitBadge(theme),
 //	)
-func ThemedCustomFooter(theme themes.Theme, badges ...components.KeyBadge) string {
-	return components.RenderHelpFooter(theme, badges...)
+func ThemedCustomFooter(theme themes.Theme, badges ...*primitives.Badge) string {
+	return primitives.RenderHelpFooter(theme, badges...)
 }
 
 // ThemedGlobalBadges returns the standard global badges (Quit, Main Menu).
 // Can be appended to other footers for consistency.
 func ThemedGlobalBadges(theme themes.Theme) string {
-	return components.RenderHelpFooter(theme,
-		components.QuitBadge(),
-		components.NewKeyBadge("m", "Main Menu"),
+	return primitives.RenderHelpFooter(theme,
+		primitives.QuitBadge(theme),
+		primitives.HelpKeyBadge("m", "Main Menu", theme),
 	)
 }
 

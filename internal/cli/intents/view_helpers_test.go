@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/layout"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -467,8 +468,8 @@ var _ = Describe("View Helpers", func() {
 		Describe("ThemedCustomFooter", func() {
 			It("should contain custom badges", func() {
 				footer := intents.ThemedCustomFooter(theme,
-					components.NewKeyBadge("x", "Custom1"),
-					components.NewKeyBadge("y", "Custom2"),
+					primitives.HelpKeyBadge("x", "Custom1", theme),
+					primitives.HelpKeyBadge("y", "Custom2", theme),
 				)
 
 				Expect(footer).NotTo(BeEmpty())

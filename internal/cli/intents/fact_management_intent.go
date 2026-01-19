@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -192,10 +192,10 @@ func (m *FactManagementModel) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
-				components.DeleteBadge(),
-				components.NewKeyBadge("n", "New"),
-				components.NewKeyBadge("r", "Refresh"),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
+				primitives.HelpKeyBadge("n", "New", theme),
+				primitives.HelpKeyBadge("r", "Refresh", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -203,8 +203,8 @@ func (m *FactManagementModel) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
-				components.DeleteBadge(),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -212,22 +212,22 @@ func (m *FactManagementModel) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedFormFooter(theme),
 			ThemedCustomFooter(theme,
-				components.SaveBadge(),
+				primitives.SaveBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case FactDeleteConfirmState:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case FactResultsState:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.BackBadge(),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)

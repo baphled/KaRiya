@@ -974,14 +974,14 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 
 	switch i.currentState {
 	case SkillsStateList:
-		badges := []components.KeyBadge{
-			components.NewKeyBadge("Enter", "View details"),
-			components.NewKeyBadge("n", "New skill"),
-			components.NewKeyBadge("f", "Filter"),
-			components.NewKeyBadge("s", "Sort"),
+		badges := []*primitives.Badge{
+			primitives.HelpKeyBadge("Enter", "View details", theme),
+			primitives.HelpKeyBadge("n", "New skill", theme),
+			primitives.HelpKeyBadge("f", "Filter", theme),
+			primitives.HelpKeyBadge("s", "Sort", theme),
 		}
 		if i.HasActiveFilters() {
-			badges = append(badges, components.NewKeyBadge("x", "Clear filters"))
+			badges = append(badges, primitives.HelpKeyBadge("x", "Clear filters", theme))
 		}
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
@@ -992,9 +992,9 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "View events"),
-				components.EditBadge(),
-				components.DeleteBadge(),
+				primitives.HelpKeyBadge("Enter", "View events", theme),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1002,8 +1002,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "View details"),
-				components.EditBadge(),
+				primitives.HelpKeyBadge("Enter", "View details", theme),
+				primitives.EditBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1011,7 +1011,7 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
+				primitives.EditBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1023,8 +1023,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 	case SkillsStateDelete:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y", "Confirm"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y", "Confirm", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1032,8 +1032,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Apply"),
-				components.NewKeyBadge("u", "Used skills only"),
+				primitives.HelpKeyBadge("Enter", "Apply", theme),
+				primitives.HelpKeyBadge("u", "Used skills only", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1041,8 +1041,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Apply"),
-				components.NewKeyBadge("e", "Most used"),
+				primitives.HelpKeyBadge("Enter", "Apply", theme),
+				primitives.HelpKeyBadge("e", "Most used", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)

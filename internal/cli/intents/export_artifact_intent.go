@@ -3,7 +3,7 @@ package intents
 import (
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -104,37 +104,37 @@ func (e *ExportArtifactIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ExportStateConfirm:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ExportStateInProgress:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ExportStateComplete:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case ExportStateFailed:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Retry"),
-				components.CancelBadge(),
+				primitives.HelpKeyBadge("Enter", "Retry", theme),
+				primitives.CancelBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
