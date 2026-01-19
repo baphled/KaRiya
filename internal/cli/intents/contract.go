@@ -253,6 +253,16 @@ func (b *BaseIntent) GetMinimumSize() (width, height int) {
 	return b.terminalConfig.MinWidth, b.terminalConfig.MinHeight
 }
 
+// GetModalDimensions returns terminal dimensions for modal sizing.
+// If terminal info is not available, returns sensible defaults (120x40).
+// This eliminates the repeated dimension extraction pattern in modal opening methods.
+func (b *BaseIntent) GetModalDimensions() (width, height int) {
+	if b.terminalInfo != nil && b.terminalInfo.Width > 0 && b.terminalInfo.Height > 0 {
+		return b.terminalInfo.Width, b.terminalInfo.Height
+	}
+	return 120, 40 // Default dimensions
+}
+
 // Logo Management Methods
 
 // SetLogo sets the shared logo instance

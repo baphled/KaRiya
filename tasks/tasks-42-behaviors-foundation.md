@@ -1,28 +1,33 @@
-# Task 42: Behaviors Foundation - Table & CRUD Components
+# Task 42: Behaviors Foundation - Table Components
 
-## STATUS: ✅ COMPLETE
+## STATUS: ✅ COMPLETE (Updated 2026-01-19)
 
 **Started**: 2026-01-16
 **Completed**: 2026-01-16
+**Updated**: 2026-01-19 - Removed unused behaviors (CRUDBehavior, FilterMenuBehavior, SortMenuBehavior - dead code cleanup)
 **Prerequisites**: Phase 1 (UIKit Foundation) complete ✓
 **Duration**: 1 day
 **Approach**: Incremental migration, TDD Red-Green-Refactor
 
-### Phase Summary (All 7 Phases Complete)
+### Phase Summary
 
-| Phase | Component | Status | LOC (src/test) | Tests | Commits |
-|-------|-----------|--------|----------------|-------|---------|
-| 2.5.1 | Shared Types | ✅ | 60 / 200 | 16 | 4 |
-| 2.5.2 | TableBehavior[T] | ✅ | 494 / 650 | 87 | 2 |
-| 2.5.3 | CRUDBehavior[T] | ✅ | 280 / 429 | 32 | 3 |
-| 2.5.4 | FilterMenuBehavior[T] | ✅ | 292 / 362 | 26 | 3 |
-| 2.5.5 | SortMenuBehavior[T] | ✅ | 224 / 338 | 27 | 3 |
-| 2.5.6 | Box Container | ✅ | 199 / 197 | 20 | 2 |
-| 2.5.7 | Overlay Container | ✅ | 102 / 157 | 10 | 2 |
-| **Total** | **7 Components** | **✅** | **1,651 / 2,333** | **218** | **19** |
+| Phase | Component | Status | Tests |
+|-------|-----------|--------|-------|
+| 2.5.1 | Shared Types | ✅ | 12 |
+| 2.5.2 | TableBehavior[T] | ✅ | 87 |
+| 2.5.3 | ~~CRUDBehavior[T]~~ | ❌ Removed | - |
+| 2.5.4 | ~~FilterMenuBehavior[T]~~ | ❌ Removed | - |
+| 2.5.5 | ~~SortMenuBehavior[T]~~ | ❌ Removed | - |
+| 2.5.6 | Box Container | ✅ | 20 |
+| 2.5.7 | Overlay Container | ✅ | 10 |
+| **Total** | **4 Components** | **✅** | **83 + containers** |
 
-**Total Code Delivered**: 3,984 lines (1,651 source + 2,333 test)
-**Test Pass Rate**: 218/218 (100%)
+**Note**: CRUDBehavior, FilterMenuBehavior, and SortMenuBehavior were removed on 2026-01-19
+as they were never used in production code. The app uses:
+- Screen architecture (Screen returns ScreenResult → Intent handles actions) for CRUD
+- `huh` library forms/modals for filter/sort UI (`FilterModalModel`, `EventSortModal`, etc.)
+
+**Test Pass Rate**: 83/83 behaviors tests (100%)
 **Coverage**: 85%+
 **Quality**: Zero warnings, zero race conditions
 
@@ -63,25 +68,22 @@
 
 ```
 internal/cli/
-├── behaviors/                    # NEW PACKAGE
-│   ├── types.go                  # Shared types (ColumnDef, CRUDMode, MenuOption, etc.)
+├── behaviors/                    # Embeddable behaviors for table UIs
+│   ├── types.go                  # Shared types (ColumnDef, MenuOption, MenuSection)
 │   ├── types_test.go
 │   ├── table.go                  # TableBehavior[T] - core table functionality
 │   ├── table_test.go
-│   ├── crud.go                   # CRUDBehavior[T] - create/edit/delete handling
-│   ├── crud_test.go
-│   ├── filter_menu.go            # FilterMenuBehavior[T] - filter UI
-│   ├── filter_menu_test.go
-│   ├── sort_menu.go              # SortMenuBehavior[T] - sort UI
-│   ├── sort_menu_test.go
 │   └── doc.go                    # Package documentation
-└── uikit/containers/             # Updated in parallel
-    ├── box.go                    # For modal frames (Phase 3 prep)
+└── uikit/containers/
+    ├── box.go                    # Bordered containers with variants
     ├── box_test.go
-    ├── overlay.go                # For modal centering (Phase 3 prep)
+    ├── overlay.go                # Centered modal overlay
     ├── overlay_test.go
     └── doc.go
 ```
+
+**Note**: CRUDBehavior was originally planned but removed - the Screen/Intent architecture
+already handles CRUD operations cleanly without needing a callback abstraction.
 
 ---
 
@@ -101,11 +103,11 @@ internal/cli/
 
 ## Current Progress
 
-**Phase 2.5.1**: Shared Types - ✅ COMPLETE (16 tests passing)
-**Phase 2.5.2**: TableBehavior[T] - ✅ COMPLETE (87 tests passing)
-**Phase 2.5.3**: CRUDBehavior[T] - ✅ COMPLETE (32 tests passing, 119 total in suite)
-**Phase 2.5.4**: FilterMenuBehavior[T] - ✅ COMPLETE (26 tests passing, 145 total in suite)
-**Phase 2.5.5**: SortMenuBehavior[T] - ✅ COMPLETE (27 tests passing, 172 total in suite)
+**Phase 2.5.1**: Shared Types - ✅ COMPLETE (12 tests)
+**Phase 2.5.2**: TableBehavior[T] - ✅ COMPLETE (87 tests)
+**Phase 2.5.3**: ~~CRUDBehavior[T]~~ - ❌ REMOVED (unused dead code)
+**Phase 2.5.4**: ~~FilterMenuBehavior[T]~~ - ❌ REMOVED (unused - app uses huh modals)
+**Phase 2.5.5**: ~~SortMenuBehavior[T]~~ - ❌ REMOVED (unused - app uses huh modals)
 
 ---
 
@@ -479,11 +481,11 @@ internal/cli/
 
 ### Behaviors
 - [x] `TableBehavior[T]` handles data, pagination, navigation, filter, sort
-- [x] `CRUDBehavior[T]` handles create/edit/delete with confirmation
-- [x] `FilterMenuBehavior[T]` provides sectioned filter menu
-- [x] `SortMenuBehavior[T]` provides sort options menu
-- [x] All behaviors embeddable in intents
+- [x] All behaviors embeddable in screens
 - [x] One-way references (behaviors → table)
+- ~~`CRUDBehavior[T]`~~ - Removed (Screen/Intent architecture handles CRUD directly)
+- ~~`FilterMenuBehavior[T]`~~ - Removed (app uses huh library modals for filter UI)
+- ~~`SortMenuBehavior[T]`~~ - Removed (app uses huh library modals for sort UI)
 
 ### Containers (Phase 3 Prep)
 - [x] `Box` provides themed bordered containers

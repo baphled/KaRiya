@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/rmhubbert/bubbletea-overlay"
 )
 
 // Custom message types for BrowseTimeline state transitions.
@@ -19,24 +19,6 @@ import (
 type EventSelectedMsg struct {
 	Event *career.CareerEvent
 	Index int
-}
-
-// staticViewModel is a simple tea.Model that just returns static content.
-// Used as background for bubbletea-overlay compositing.
-type staticViewModel struct {
-	content string
-}
-
-func (m *staticViewModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m *staticViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
-}
-
-func (m *staticViewModel) View() string {
-	return m.content
 }
 
 // FilterChangedMsg indicates the filters have changed.
@@ -1016,78 +998,24 @@ func (i *BrowseTimelineIntent) getStateName() string {
 	}
 }
 
-// renderFilterModalOverlay renders the filter modal overlay using bubbletea-overlay.
-// The modal is automatically positioned and composited onto the background.
+// renderFilterModalOverlay renders the filter modal centered on the background.
 func (i *BrowseTimelineIntent) renderFilterModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the form onto the background
-	// Position at Center/Center with a small upward offset to avoid footer
-	overlayModel := overlay.New(
-		i.filterModal,  // Foreground: the form modal
-		bgModel,        // Background: the rendered timeline view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.filterModal, background)
 }
 
-// renderQuickAddModalOverlay renders the quick add event modal using bubbletea-overlay.
+// renderQuickAddModalOverlay renders the quick add event modal centered on the background.
 func (i *BrowseTimelineIntent) renderQuickAddModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the form onto the background
-	overlayModel := overlay.New(
-		i.quickAddModal, // Foreground: the form modal
-		bgModel,         // Background: the rendered timeline view
-		overlay.Center,  // X position
-		overlay.Center,  // Y position
-		0,               // X offset
-		-2,              // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.quickAddModal, background)
 }
 
-// renderEditModalOverlay renders the edit event modal using bubbletea-overlay.
+// renderEditModalOverlay renders the edit event modal centered on the background.
 func (i *BrowseTimelineIntent) renderEditModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the form onto the background
-	overlayModel := overlay.New(
-		i.editModal,    // Foreground: the form modal
-		bgModel,        // Background: the rendered timeline view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.editModal, background)
 }
 
-// renderDeleteModalOverlay renders the delete confirmation modal using bubbletea-overlay.
+// renderDeleteModalOverlay renders the delete confirmation modal centered on the background.
 func (i *BrowseTimelineIntent) renderDeleteModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the delete modal onto the background
-	overlayModel := overlay.New(
-		i.deleteModal,  // Foreground: the delete confirmation modal
-		bgModel,        // Background: the rendered timeline view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.deleteModal, background)
 }
 
 // renderSearchModalOverlay renders the search modal using bubbletea-overlay.
@@ -1102,24 +1030,9 @@ func (i *BrowseTimelineIntent) renderSortModalOverlay(background string) string 
 	return i.sortModal.RenderOverlay(background)
 }
 
-// renderViewDetailModalOverlay renders the event detail modal using bubbletea-overlay.
+// renderViewDetailModalOverlay renders the event detail modal centered on the background.
 func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) string {
-	// Pre-render the modal content to a static string
-	// This follows the same pattern as EventSearchModal.RenderOverlay
-	modalContent := &staticViewModel{content: i.viewDetailModal.View()}
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the detail modal onto the background
-	overlayModel := overlay.New(
-		modalContent,   // Foreground: pre-rendered modal content
-		bgModel,        // Background: the rendered timeline view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.viewDetailModal, background)
 }
 
 // showSkillsForCurrentEvent loads and displays skills for the currently selected event.
@@ -1156,22 +1069,9 @@ func (i *BrowseTimelineIntent) showSkillsForCurrentEvent() tea.Cmd {
 	return nil
 }
 
-// renderViewSkillsModalOverlay renders the skills modal using bubbletea-overlay.
+// renderViewSkillsModalOverlay renders the skills modal centered on the background.
 func (i *BrowseTimelineIntent) renderViewSkillsModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the skills modal onto the background
-	overlayModel := overlay.New(
-		i.viewSkillsModal, // Foreground: the skills modal
-		bgModel,           // Background: the event detail view
-		overlay.Center,    // X position
-		overlay.Center,    // Y position
-		0,                 // X offset
-		-2,                // Y offset (move up 2 lines)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.viewSkillsModal, background)
 }
 
 // openSearchModal creates and initializes the search modal.

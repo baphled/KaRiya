@@ -19,7 +19,6 @@ import (
 	career "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
 // Ensure ManageSkillsIntent implements FilterBehavior interface
@@ -470,116 +469,44 @@ func (i *ManageSkillsIntent) View() string {
 	return baseView
 }
 
-// renderFilterModalOverlay renders the filter modal over the base view
+// renderFilterModalOverlay renders the filter modal centered on the background.
 func (i *ManageSkillsIntent) renderFilterModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.filterModal,  // Foreground: the filter modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.filterModal, baseView)
 }
 
-// renderSortModalOverlay renders the sort modal over the base view
+// renderSortModalOverlay renders the sort modal centered on the background.
 func (i *ManageSkillsIntent) renderSortModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.sortModal,    // Foreground: the sort modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.sortModal, baseView)
 }
 
-// renderSearchModalOverlay renders the search modal over the base view
+// renderSearchModalOverlay renders the search modal centered on the background.
 func (i *ManageSkillsIntent) renderSearchModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.searchModal,  // Foreground: the search modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.searchModal, baseView)
 }
 
-// renderViewDetailModalOverlay renders the view detail modal over the base view
+// renderViewDetailModalOverlay renders the view detail modal centered on the background.
 func (i *ManageSkillsIntent) renderViewDetailModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.viewDetailModal, // Foreground: the view detail modal
-		bgModel,           // Background: the rendered view
-		overlay.Center,    // X position
-		overlay.Center,    // Y position
-		0,                 // X offset
-		-2,                // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.viewDetailModal, baseView)
 }
 
-// renderAddEditModalOverlay renders the add/edit modal over the base view
+// renderAddEditModalOverlay renders the add/edit modal centered on the background.
 func (i *ManageSkillsIntent) renderAddEditModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.addEditModal, // Foreground: the add/edit modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.addEditModal, baseView)
 }
 
-// renderDeleteModalOverlay renders the delete confirmation modal over the base view
+// renderDeleteModalOverlay renders the delete confirmation modal centered on the background.
 func (i *ManageSkillsIntent) renderDeleteModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.deleteModal,  // Foreground: the delete modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.deleteModal, baseView)
 }
 
-// renderSkillEventsModalOverlay renders the skill events modal over the base view
+// renderSkillEventsModalOverlay renders the skill events modal centered on the background.
 func (i *ManageSkillsIntent) renderSkillEventsModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.skillEventsModal, // Foreground: the skill events modal
-		bgModel,            // Background: the rendered view
-		overlay.Center,     // X position
-		overlay.Center,     // Y position
-		0,                  // X offset
-		-2,                 // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.skillEventsModal, baseView)
 }
 
-// renderEventDetailModalOverlay renders the event detail modal over the base view
+// renderEventDetailModalOverlay renders the event detail modal centered on the background.
 func (i *ManageSkillsIntent) renderEventDetailModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.eventDetailModal, // Foreground: the event detail modal
-		bgModel,            // Background: the rendered view
-		overlay.Center,     // X position
-		overlay.Center,     // Y position
-		0,                  // X offset
-		-2,                 // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.eventDetailModal, baseView)
 }
 
 // handleFilterModalUpdate handles updates when filter modal is visible
