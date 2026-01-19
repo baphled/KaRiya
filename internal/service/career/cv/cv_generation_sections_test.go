@@ -66,7 +66,7 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		// Create services with REAL implementations (not empty mocks)
 		configManager := NewMemoryConfigManager()
 		bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-		sectionBuilder := NewSectionBuilder(log) // Use REAL section builder, not empty
+		sectionBuilder := NewSectionBuilder(nil, log) // Use REAL section builder, not empty
 
 		service := NewCVGenerationService(
 			eventRepo,

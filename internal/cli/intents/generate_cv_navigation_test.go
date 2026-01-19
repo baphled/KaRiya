@@ -181,7 +181,9 @@ var _ = Describe("GenerateCV Navigation", func() {
 
 		It("should show footer with navigation hints", func() {
 			env.SelectIntentByName("generate_cv")
-			env.AssertViewContainsAny("q", "Esc", "Enter", "Quit")
+			// With wizard flow enabled, we see huh form footer
+			// The footer shows navigation: "↑ up • ↓ down • / filter • enter select"
+			env.AssertViewContainsAny("up", "down", "enter", "select", "filter")
 		})
 	})
 

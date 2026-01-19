@@ -8,29 +8,47 @@ import (
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/google/uuid"
 )
+
+// SkillsFormatConfig configures how the skills section is formatted
+type SkillsFormatConfig struct {
+	Format               string   // "flat" or "grouped"
+	Limit                int      // max skills per section/group (0 = no limit)
+	SelectedTechnologies []string // skill IDs to prioritize
+}
+
+// skillInfo holds skill data for formatting
+type skillInfo struct {
+	ID       string
+	Name     string
+	Category string
+}
 
 // SectionBuilder organizes CV bullets into logical sections
 type SectionBuilder interface {
 	// BuildSections organizes bullets into CV sections
-	BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string) ([]*career.CVSection, error)
+	// skillsConfig: optional configuration for skills section formatting (Phase 11 - Task 40)
+	BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error)
 }
 
 // DefaultSectionBuilder is the default implementation of SectionBuilder
 type DefaultSectionBuilder struct {
-	logger *logger.Logger
+	skillRepo careerrepo.SkillRepository
+	logger    *logger.Logger
 }
 
 // NewSectionBuilder creates a new SectionBuilder instance
-func NewSectionBuilder(log *logger.Logger) *DefaultSectionBuilder {
+func NewSectionBuilder(skillRepo careerrepo.SkillRepository, log *logger.Logger) *DefaultSectionBuilder {
 	return &DefaultSectionBuilder{
-		logger: log,
+		skillRepo: skillRepo,
+		logger:    log,
 	}
 }
 
 // BuildSections organizes bullets into CV sections
-func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string) ([]*career.CVSection, error) {
+func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -61,8 +79,11 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 		order++
 	}
 
-	// 4. Core Competencies LAST (skill categories from facts)
-	skillsSection := sb.buildSkillsSection(facts, order)
+	// 4. Technical Skills LAST (from event skills, prioritizing selected technologies)
+	if skillsConfig == nil {
+		skillsConfig = &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: []string{}}
+	}
+	skillsSection := sb.buildSkillsSection(events, skillsConfig, order)
 	if skillsSection != nil {
 		sections = append(sections, skillsSection)
 	}
@@ -165,57 +186,166 @@ func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet
 	}
 }
 
-// buildSkillsSection creates the skills/competencies section
-func (sb *DefaultSectionBuilder) buildSkillsSection(facts []*career.Fact, order int) *career.CVSection {
-	if len(facts) == 0 {
-		return nil
-	}
-
-	// Extract unique competency categories
-	categories := make(map[string]bool)
-	for _, fact := range facts {
-		for _, category := range fact.CompetencyCategories {
-			if category != "" {
-				categories[category] = true
+// buildSkillsSection creates the technical skills section from event skills (Phase 11 - Task 40)
+// Looks up skill names from IDs, supports flat/grouped formatting with limits
+func (sb *DefaultSectionBuilder) buildSkillsSection(events []*career.CareerEvent, config *SkillsFormatConfig, order int) *career.CVSection {
+	// Collect unique skill IDs from all events
+	skillIDSet := make(map[string]bool)
+	for _, event := range events {
+		for _, skillID := range event.Skills {
+			if skillID != "" {
+				skillIDSet[skillID] = true
 			}
 		}
 	}
 
-	if len(categories) == 0 {
+	if len(skillIDSet) == 0 {
 		return nil
 	}
 
-	// Sort categories alphabetically
-	sortedCategories := make([]string, 0, len(categories))
-	for cat := range categories {
-		sortedCategories = append(sortedCategories, cat)
-	}
-	sort.Strings(sortedCategories)
-
-	// Create bullets for each category
-	bullets := make([]*career.CVBullet, 0, len(sortedCategories))
-	for _, cat := range sortedCategories {
-		bullets = append(bullets, &career.CVBullet{
-			ID:   uuid.New().String(),
-			Text: cat,
-		})
+	// Convert to slice for lookup
+	skillIDs := make([]string, 0, len(skillIDSet))
+	for id := range skillIDSet {
+		skillIDs = append(skillIDs, id)
 	}
 
-	// Single content group with no header/dates
-	content := []*career.SectionContentGroup{
-		{
-			Header:  "",
-			Bullets: bullets,
-		},
+	// Look up skills from repository (get full Skill objects for category info)
+	skills := make([]skillInfo, 0, len(skillIDs))
+	if sb.skillRepo != nil {
+		for _, skillID := range skillIDs {
+			skill, err := sb.skillRepo.GetByID(context.Background(), skillID)
+			if err == nil && skill != nil {
+				skills = append(skills, skillInfo{
+					ID:       skill.ID,
+					Name:     skill.Name,
+					Category: skill.Category,
+				})
+			} else {
+				// Fallback: use ID if lookup fails
+				skills = append(skills, skillInfo{
+					ID:       skillID,
+					Name:     skillID,
+					Category: "",
+				})
+			}
+		}
+	} else {
+		// No repository: use IDs as names (shouldn't happen in production)
+		for _, skillID := range skillIDs {
+			skills = append(skills, skillInfo{
+				ID:       skillID,
+				Name:     skillID,
+				Category: "",
+			})
+		}
+	}
+
+	// Sort skills: selected technologies first, then alphabetically
+	selectedSet := make(map[string]bool)
+	for _, techID := range config.SelectedTechnologies {
+		selectedSet[techID] = true
+	}
+
+	sort.Slice(skills, func(i, j int) bool {
+		iSelected := selectedSet[skills[i].ID]
+		jSelected := selectedSet[skills[j].ID]
+
+		// Selected technologies come first
+		if iSelected != jSelected {
+			return iSelected
+		}
+
+		// Alphabetical order by name
+		return skills[i].Name < skills[j].Name
+	})
+
+	// Format based on config
+	var content []*career.SectionContentGroup
+
+	if config.Format == "grouped" {
+		// Grouped format: limit is per-category
+		content = sb.buildGroupedSkills(skills, config.Limit)
+	} else {
+		// Flat format: limit is total across all skills
+		if config.Limit > 0 && len(skills) > config.Limit {
+			skills = skills[:config.Limit]
+		}
+		content = sb.buildFlatSkills(skills)
 	}
 
 	return &career.CVSection{
 		ID:          uuid.New().String(),
 		SectionType: "skills",
-		Title:       "Core Competencies",
+		Title:       "Technical Skills",
 		Order:       order,
 		Content:     content,
 	}
+}
+
+// buildFlatSkills creates a flat list of skills (one bullet per skill)
+func (sb *DefaultSectionBuilder) buildFlatSkills(skills []skillInfo) []*career.SectionContentGroup {
+	bullets := make([]*career.CVBullet, 0, len(skills))
+	for _, skill := range skills {
+		bullets = append(bullets, &career.CVBullet{
+			ID:   uuid.New().String(),
+			Text: skill.Name,
+		})
+	}
+
+	return []*career.SectionContentGroup{
+		{
+			Header:  "",
+			Bullets: bullets,
+		},
+	}
+}
+
+// buildGroupedSkills creates grouped skills by category (comma-separated per group)
+func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPerGroup int) []*career.SectionContentGroup {
+	// Group skills by category
+	categoryMap := make(map[string][]string)
+	for _, skill := range skills {
+		category := skill.Category
+		if category == "" {
+			category = "Other"
+		}
+		categoryMap[category] = append(categoryMap[category], skill.Name)
+	}
+
+	// Sort categories alphabetically
+	categories := make([]string, 0, len(categoryMap))
+	for cat := range categoryMap {
+		categories = append(categories, cat)
+	}
+	sort.Strings(categories)
+
+	// Create one group per category, with category as header
+	groups := make([]*career.SectionContentGroup, 0, len(categories))
+	for _, category := range categories {
+		skillNames := categoryMap[category]
+
+		// Apply per-group limit if specified
+		if limitPerGroup > 0 && len(skillNames) > limitPerGroup {
+			skillNames = skillNames[:limitPerGroup]
+		}
+
+		// Create bullets for each skill in this category
+		bullets := make([]*career.CVBullet, 0, len(skillNames))
+		for _, skillName := range skillNames {
+			bullets = append(bullets, &career.CVBullet{
+				ID:   uuid.New().String(),
+				Text: skillName,
+			})
+		}
+
+		// Add group with category as header
+		groups = append(groups, &career.SectionContentGroup{
+			Header:  category,
+			Bullets: bullets,
+		})
+	}
+
+	return groups
 }
 
 // buildSummarySection creates a brief professional summary

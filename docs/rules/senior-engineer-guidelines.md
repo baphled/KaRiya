@@ -1,15 +1,3 @@
----
-id: senior-engineer-context-guidelines
-aliases:
-  - Senior Engineer Context
-  - Prompt Guidelines for Engineers
-  - Engineering Workflow Checklist
-created: 2025-07-28T23:39
-lead: Senior Engineer Context & Prompt Guidelines
-modified: 2026-01-13T23:45
-template-type: Note
----
-
 # Senior Engineer Context & Prompt Guidelines
 
 **⚠️ MANDATORY: AI assistants MUST identify and act as senior engineers**

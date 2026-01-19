@@ -19,6 +19,38 @@ const (
 	RoleEmphasisLanguageAgnostic RoleEmphasis = "language_agnostic"
 )
 
+// TechnologyFocus represents the technology presentation style for a CV.
+// Used by the wizard modal for technology-specific filtering.
+type TechnologyFocus string
+
+const (
+	// TechnologyFocusLanguageAgnostic - Technology-agnostic narrative style
+	TechnologyFocusLanguageAgnostic TechnologyFocus = "language_agnostic"
+
+	// TechnologyFocusGeneralist - Generalist style highlighting 2-5 technologies
+	TechnologyFocusGeneralist TechnologyFocus = "generalist"
+
+	// TechnologyFocusSpecialist - Specialist style focused on 1 technology
+	TechnologyFocusSpecialist TechnologyFocus = "specialist"
+)
+
+// FocusArea represents a career focus area for the wizard modal.
+type FocusArea string
+
+const (
+	// FocusAreaBackend - Backend development focus
+	FocusAreaBackend FocusArea = "backend"
+
+	// FocusAreaFrontend - Frontend development focus
+	FocusAreaFrontend FocusArea = "frontend"
+
+	// FocusAreaFullstack - Fullstack development focus
+	FocusAreaFullstack FocusArea = "fullstack"
+
+	// FocusAreaDevOps - DevOps/infrastructure focus
+	FocusAreaDevOps FocusArea = "devops"
+)
+
 // LengthFormat defines CV density/length
 type LengthFormat string
 

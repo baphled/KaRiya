@@ -2,8 +2,8 @@
 
 **Complete Guide to Generating Role and Audience-Specific CVs**
 
-**Last Updated**: 2026-01-12
-**Workflow Complexity**: High (10 states)
+**Last Updated**: 2026-01-14
+**Workflow Complexity**: High (10 states traditional / 5 states wizard)
 **Implementation**: `internal/cli/intents/generate_cv_intent.go`
 
 ---
@@ -11,13 +11,14 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Workflow States & Navigation](#workflow-states--navigation)
-3. [Step-by-Step Guide](#step-by-step-guide)
-4. [Complete Keyboard Reference](#complete-keyboard-reference)
-5. [Navigation Patterns](#navigation-patterns)
-6. [Common Workflows](#common-workflows)
-7. [Troubleshooting](#troubleshooting)
-8. [Technical Details](#technical-details)
+2. [Workflow Variants](#workflow-variants)
+3. [Wizard Modal Flow (Recommended)](#wizard-modal-flow-recommended)
+4. [Traditional Screen Flow](#traditional-screen-flow)
+5. [Complete Keyboard Reference](#complete-keyboard-reference)
+6. [Navigation Patterns](#navigation-patterns)
+7. [Common Workflows](#common-workflows)
+8. [Troubleshooting](#troubleshooting)
+9. [Technical Details](#technical-details)
 
 ---
 
@@ -48,7 +49,191 @@ Generate professional, role-specific CVs from your career events with:
 
 ---
 
-## Workflow States & Navigation
+## Workflow Variants
+
+KaRiya offers **two approaches** for CV generation, both producing identical results:
+
+| Variant | States | UX | Status | Recommended |
+|---------|--------|----|---------|----|
+| **Wizard Modal** | 5 states | Single modal, guided flow | Opt-in (v2.1+) | ✅ Yes (faster, simpler) |
+| **Traditional Screen** | 10 states | Multi-screen navigation | Default | Legacy (backward compatible) |
+
+### Choosing a Workflow
+
+- **Wizard Modal** (Recommended): 
+  - ✅ Faster: All configuration in one modal
+  - ✅ Guided: Clear 3-step wizard (WHO → TECH → FORMAT)
+  - ✅ Skippable: Press Ctrl+S to use defaults
+  - ✅ Modern UX: Single modal prevents context switching
+  - ⚠️ **Opt-in**: Disabled by default for backward compatibility
+  
+- **Traditional Screen**:
+  - ✅ Familiar: Same workflow as previous versions
+  - ✅ Granular: Each choice on separate screen
+  - ✅ Default: Enabled by default (v2.0)
+  - ⚠️ Verbose: 10 states vs 5 states
+
+**Enabling Wizard Flow** (for administrators):
+```go
+// In internal/cli/app/app.go line 610:
+intent.EnableWizardFlow() // Add this line after intent creation
+```
+
+---
+
+## Wizard Modal Flow (Recommended)
+
+### Overview
+
+The wizard modal provides a streamlined 3-step configuration experience:
+
+**Step 1 (WHO)**: Select profile and target audience  
+**Step 2 (TECH)**: Technology focus and skill emphasis  
+**Step 3 (FORMAT)**: Skills presentation and CV length
+
+### State Machine Diagram
+
+```mermaid
+graph TD
+    Start([Start: Generate CV])
+    
+    ConfigWizard[1. Configuration Wizard<br/>3 steps: WHO → TECH → FORMAT]
+    TechExtraction[2. Extracting Technologies...]
+    Generating[3. Generating CV...]
+    Preview[4. Preview CV]
+    
+    ExportModal[5. Export Options<br/>Format + Location]
+    Exporting[6. Exporting...]
+    ExportComplete[7. Export Complete]
+    
+    Complete([Complete])
+    Cancel([Cancel])
+    
+    Start --> ConfigWizard
+    
+    ConfigWizard -->|Enter: Complete wizard| TechExtraction
+    ConfigWizard -->|Ctrl+S: Skip with defaults| TechExtraction
+    ConfigWizard -->|Esc on Step 1: Cancel| Cancel
+    ConfigWizard -->|Esc on Step 2/3: Previous step| ConfigWizard
+    ConfigWizard -->|m: Main Menu| Cancel
+    
+    TechExtraction -->|Success| Generating
+    TechExtraction -->|Esc: Let complete| Generating
+    
+    Generating -->|Success| Preview
+    Generating -->|Error| ConfigWizard
+    Generating -->|Esc: Let complete| Preview
+    
+    Preview -->|Enter/e: Edit| Preview
+    Preview -->|x: Export| ExportModal
+    Preview -->|Esc: Back| ConfigWizard
+    Preview -->|m: Main Menu| Cancel
+    
+    ExportModal -->|Enter: Export| Exporting
+    ExportModal -->|Esc: Cancel export| Preview
+    
+    Exporting -->|Success| ExportComplete
+    Exporting -->|Error| ExportComplete
+    
+    ExportComplete -->|Enter: Done| Complete
+    ExportComplete -->|Esc: Retry| ExportModal
+    
+    style TechExtraction fill:#ffd700,stroke:#333,stroke-width:2px
+    style Generating fill:#ffd700,stroke:#333,stroke-width:2px
+    style Exporting fill:#ffd700,stroke:#333,stroke-width:2px
+    style Complete fill:#90EE90,stroke:#333,stroke-width:2px
+    style Cancel fill:#FFB6C1,stroke:#333,stroke-width:2px
+```
+
+### Wizard Modal Steps
+
+#### Step 1: WHO (Profile & Audience)
+
+**Purpose**: Define who you are and who will read the CV
+
+**Fields**:
+- **CV Profile**: Select from your configured professional profiles
+- **Target Audience**: Choose between:
+  - Hiring Manager (technical depth, business impact)
+  - Recruiter (keywords, ATS-friendly, clear structure)
+  - Peer/Colleague (technical details, shared context)
+
+**Navigation**:
+- `Tab` / `Shift+Tab`: Move between fields
+- `↑`/`↓` or `j`/`k`: Navigate options
+- `Enter`: Select and proceed to next step
+- `Esc`: Cancel wizard (returns to main menu)
+
+#### Step 2: TECH (Technology Focus)
+
+**Purpose**: Define how to present technical expertise
+
+**Fields**:
+- **Technology Focus**: Choose presentation style:
+  - Language Agnostic: Concepts over specific technologies
+  - Generalist: Show broad tech range
+  - Specialist: Highlight specific technologies
+- **Technologies** (if Generalist/Specialist): Multi-select from extracted technologies
+- **Focus Area**: Backend, Frontend, Full Stack, or DevOps
+
+**Navigation**:
+- `Tab` / `Shift+Tab`: Move between fields
+- `Space`: Toggle technology selection (multi-select)
+- `Enter`: Proceed to next step
+- `Esc`: Go back to Step 1
+
+**Note**: This step is automatically skipped if no technologies are detected in your career events.
+
+#### Step 3: FORMAT (Skills & Length)
+
+**Purpose**: Define CV presentation format
+
+**Fields**:
+- **Skills Presentation**: Choose organization style:
+  - Grouped by Category
+  - Flat List
+  - Categorized with Descriptions
+- **CV Length**: Select target length:
+  - 1 Page (concise)
+  - 2 Pages (standard)
+  - Detailed (3+ pages)
+
+**Navigation**:
+- `Tab` / `Shift+Tab`: Move between fields
+- `Enter`: Complete wizard and generate CV
+- `Esc`: Go back to Step 2
+
+### Wizard Keyboard Shortcuts
+
+| Key | Action | Available |
+|-----|--------|-----------|
+| `Tab` | Next field | All steps |
+| `Shift+Tab` | Previous field | All steps |
+| `Enter` | Select / Next step / Submit | All steps |
+| `Esc` | Previous step or Cancel | All steps |
+| `↑`/`↓` | Navigate options | Select fields |
+| `j`/`k` | Navigate options (vim-style) | Select fields |
+| `Space` | Toggle selection | Multi-select fields |
+| `Ctrl+S` | Skip wizard with defaults | Any step |
+| `m` | Return to main menu | Any step |
+| `q` / `Ctrl+C` | Quit application | Any step |
+
+### Quick Start with Defaults
+
+Press `Ctrl+S` at any step to skip the wizard and use default values:
+- First profile (alphabetically)
+- Audience: Hiring Manager
+- Tech Focus: Generalist
+- Skills: Grouped by Category
+- Length: 2 Pages
+
+---
+
+## Traditional Screen Flow
+
+### Overview
+
+The traditional workflow uses multiple screens for each configuration choice. This section documents the legacy 10-state flow.
 
 ### State Machine Diagram
 
