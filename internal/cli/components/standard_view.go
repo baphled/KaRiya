@@ -10,6 +10,13 @@ import (
 	"github.com/baphled/kariya/internal/cli/themes"
 )
 
+// LogoRenderer defines the interface for logo components.
+// Both ASCIILogo and uikit/display.Logo satisfy this interface.
+type LogoRenderer interface {
+	ViewStatic() string
+	SetWidth(width int)
+}
+
 // StandardView provides a standardized view layout with logo, content, and help footer
 //
 // Example usage:
@@ -24,7 +31,7 @@ import (
 //	output := view.Render()
 type StandardView struct {
 	ShowLogo            bool
-	Logo                *ASCIILogo
+	Logo                LogoRenderer
 	LogoSpacing         int
 	ShowHeader          bool
 	Breadcrumbs         []string
@@ -62,8 +69,9 @@ func NewStandardView(info *terminal.Info) *StandardView {
 	}
 }
 
-// WithLogo sets the logo to display at the top with optional spacing before it
-func (sv *StandardView) WithLogo(logo *ASCIILogo, spacing int) *StandardView {
+// WithLogo sets the logo to display at the top with optional spacing before it.
+// Accepts any LogoRenderer implementation (ASCIILogo, uikit/display.Logo, etc.)
+func (sv *StandardView) WithLogo(logo LogoRenderer, spacing int) *StandardView {
 	sv.ShowLogo = true
 	sv.Logo = logo
 	sv.LogoSpacing = spacing

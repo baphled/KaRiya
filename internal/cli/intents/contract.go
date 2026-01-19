@@ -10,6 +10,16 @@ import (
 	"github.com/baphled/kariya/internal/cli/themes"
 )
 
+// LogoModel defines the interface for logo components.
+// Both components.ASCIILogo and display.Logo satisfy this interface.
+type LogoModel interface {
+	Init() tea.Cmd
+	Update(msg tea.Msg) (tea.Model, tea.Cmd)
+	View() string
+	ViewStatic() string
+	SetWidth(width int)
+}
+
 // Intent defines the contract for all intent implementations.
 // Each intent MUST:
 // - Own local navigation state
@@ -204,8 +214,8 @@ type BaseIntent struct {
 	terminalInfo   *terminal.Info
 	terminalConfig terminal.Config
 
-	// Logo management (shared instance)
-	logo        *components.ASCIILogo
+	// Logo management (shared instance via interface)
+	logo        LogoModel
 	logoSpacing int
 
 	// Theme management
@@ -265,13 +275,13 @@ func (b *BaseIntent) GetModalDimensions() (width, height int) {
 
 // Logo Management Methods
 
-// SetLogo sets the shared logo instance
-func (b *BaseIntent) SetLogo(logo *components.ASCIILogo) {
+// SetLogo sets the shared logo instance (accepts any LogoModel implementation)
+func (b *BaseIntent) SetLogo(logo LogoModel) {
 	b.logo = logo
 }
 
 // GetLogo returns the logo instance
-func (b *BaseIntent) GetLogo() *components.ASCIILogo {
+func (b *BaseIntent) GetLogo() LogoModel {
 	return b.logo
 }
 
