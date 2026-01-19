@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/service/career/cv"
@@ -1703,17 +1704,9 @@ func (i *GenerateCVIntent) renderWizardModalOverlay(baseView string, width, heig
 		return baseView
 	}
 
-	// Use bubbletea-overlay library for proper modal compositing
+	// Use UIKit containers.Overlay for proper modal compositing
 	modalView := i.wizardModal.View()
-	return lipgloss.Place(
-		width,
-		height,
-		lipgloss.Center,
-		lipgloss.Center,
-		modalView,
-		lipgloss.WithWhitespaceChars(" "),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("240")),
-	)
+	return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
 }
 
 // renderProgressModalOverlay renders the progress modal over the base view.
@@ -1722,16 +1715,9 @@ func (i *GenerateCVIntent) renderProgressModalOverlay(baseView string, width, he
 		return baseView
 	}
 
+	// Use UIKit containers.Overlay for proper modal compositing
 	modalView := i.progressModal.View()
-	return lipgloss.Place(
-		width,
-		height,
-		lipgloss.Center,
-		lipgloss.Center,
-		modalView,
-		lipgloss.WithWhitespaceChars(" "),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("240")),
-	)
+	return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
 }
 
 // renderExportModalOverlay renders the export modal over the base view.
@@ -1740,16 +1726,9 @@ func (i *GenerateCVIntent) renderExportModalOverlay(baseView string, width, heig
 		return baseView
 	}
 
+	// Use UIKit containers.Overlay for proper modal compositing
 	modalView := i.exportModal.View()
-	return lipgloss.Place(
-		width,
-		height,
-		lipgloss.Center,
-		lipgloss.Center,
-		modalView,
-		lipgloss.WithWhitespaceChars(" "),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("240")),
-	)
+	return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
 }
 
 // renderPreviewScreenWithModalOverlay renders the preview screen and overlays export modal if visible.
