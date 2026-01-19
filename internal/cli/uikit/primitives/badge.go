@@ -140,3 +140,70 @@ func StatusBadge(status string, th theme.Theme) *Badge {
 func TagBadge(tag string, th theme.Theme) *Badge {
 	return NewBadge(tag, th).Variant(BadgeTag)
 }
+
+// Preset badge constructors for common keyboard shortcuts
+
+// NavigateBadge creates a badge for navigation keys (arrows and vim-style j/k).
+func NavigateBadge(th theme.Theme) *Badge {
+	return KeyBadge("↑↓", "Navigate", th)
+}
+
+// SelectBadge creates a badge for selecting items.
+func SelectBadge(th theme.Theme) *Badge {
+	return KeyBadge("Enter", "Select", th)
+}
+
+// CancelBadge creates a badge for canceling.
+func CancelBadge(th theme.Theme) *Badge {
+	return KeyBadge("Esc", "Cancel", th)
+}
+
+// BackBadge creates a badge for going back.
+func BackBadge(th theme.Theme) *Badge {
+	return KeyBadge("Esc", "Back", th)
+}
+
+// ConfirmBadge creates a badge for confirming.
+func ConfirmBadge(th theme.Theme) *Badge {
+	return KeyBadge("Enter", "Confirm", th)
+}
+
+// QuitBadge creates a badge for quitting.
+func QuitBadge(th theme.Theme) *Badge {
+	return KeyBadge("q", "Quit", th)
+}
+
+// HelpBadge creates a badge for showing help.
+func HelpBadge(th theme.Theme) *Badge {
+	return KeyBadge("?", "Help", th)
+}
+
+// SkipBadge creates a badge for skipping.
+func SkipBadge(th theme.Theme) *Badge {
+	return KeyBadge("Ctrl+S", "Skip", th)
+}
+
+// RenderHelpFooter renders multiple badges as a help footer.
+// Badges are separated by spaces for readability.
+func RenderHelpFooter(th theme.Theme, badges ...*Badge) string {
+	if len(badges) == 0 {
+		return ""
+	}
+
+	var parts []string
+	for _, badge := range badges {
+		parts = append(parts, badge.Render())
+	}
+
+	// Join with spacing between badges
+	separator := "  "
+	result := ""
+	for i, part := range parts {
+		if i > 0 {
+			result += separator
+		}
+		result += part
+	}
+
+	return result
+}
