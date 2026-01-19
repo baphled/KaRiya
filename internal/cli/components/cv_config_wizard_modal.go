@@ -3,7 +3,8 @@ package components
 import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/styles"
-	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -298,25 +299,24 @@ func (m *CVConfigWizardModal) View() string {
 	return styledContent
 }
 
-// buildFooter creates the keyboard shortcuts footer using KeyBadge components.
+// buildFooter creates the keyboard shortcuts footer using UIKit primitives.
 func (m *CVConfigWizardModal) buildFooter() string {
-	// Get default theme
-	theme := themes.NewDefaultTheme()
+	th := theme.Default()
 
-	badges := []string{
-		NewKeyBadge("↑/↓", "Navigate").Render(theme),
-		NewKeyBadge("Enter", "Select").Render(theme),
+	badges := []*primitives.Badge{
+		primitives.NavigateBadge(th),
+		primitives.SelectBadge(th),
 	}
 
 	if m.currentStep > 0 {
-		badges = append(badges, NewKeyBadge("Esc", "Back").Render(theme))
+		badges = append(badges, primitives.BackBadge(th))
 	} else {
-		badges = append(badges, NewKeyBadge("Esc", "Cancel").Render(theme))
+		badges = append(badges, primitives.CancelBadge(th))
 	}
 
-	badges = append(badges, NewKeyBadge("Ctrl+S", "Skip").Render(theme))
+	badges = append(badges, primitives.SkipBadge(th))
 
-	return lipgloss.JoinHorizontal(lipgloss.Left, badges...)
+	return primitives.RenderHelpFooter(th, badges...)
 }
 
 // Show makes the modal visible.
