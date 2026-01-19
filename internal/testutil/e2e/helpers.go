@@ -114,6 +114,75 @@ func Setup(t TestingT) *TestEnv {
 	// Create application model
 	model := app.NewModel(cliService, svc)
 
+	// Skip onboarding by default for E2E tests
+	// Tests that need to test onboarding should use SetupWithOnboarding
+	model.SkipOnboarding()
+
+	cleanup := func() {
+		_ = db.Close()
+		_ = db.Close() // Error ignored as this is test cleanup
+	}
+
+	return &TestEnv{
+		T:          t,
+		Model:      model,
+		DB:         db,
+		DBPath:     dbPath,
+		EventRepo:  eventRepo,
+		BurstRepo:  burstRepo,
+		FactRepo:   factRepo,
+		SkillRepo:  skillRepo,
+		Service:    svc,
+		CLIService: cliService,
+		Ctx:        ctx,
+		cleanup:    cleanup,
+	}
+}
+
+// SetupWithOnboarding creates an E2E test environment with the onboarding wizard active.
+// Use this to test the onboarding workflow specifically.
+// This forces onboarding to appear regardless of the user's config file.
+//
+// Works with both *testing.T and GinkgoT().
+func SetupWithOnboarding(t TestingT) *TestEnv {
+	t.Helper()
+
+	ctx := context.Background()
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "e2e_test.db")
+
+	// Open database connection
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+
+	// Run migrations
+	if err := careerrepo.RunMigrations(db); err != nil {
+		_ = db.Close() // Ignore error as we're already in failure path
+		t.Fatalf("failed to run migrations: %v", err)
+	}
+
+	// Create repositories with SQLite
+	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(db)
+	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(db)
+	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(db)
+	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(db)
+
+	// Create service
+	svc := careerservice.NewService(eventRepo)
+	svc.SetBurstRepository(burstRepo)
+	svc.SetFactRepository(factRepo)
+	svc.SetSkillRepository(skillRepo)
+
+	// Create CLI service
+	cliService := service.NewCLIEventService(svc)
+
+	// Create application model and FORCE onboarding
+	// This ensures onboarding appears regardless of user's config file
+	model := app.NewModel(cliService, svc)
+	model.ForceOnboarding()
+
 	cleanup := func() {
 		_ = db.Close()
 		_ = db.Close() // Error ignored as this is test cleanup
@@ -159,6 +228,9 @@ func SetupWithMemory(t TestingT) *TestEnv {
 
 	// Create application model
 	model := app.NewModel(cliService, svc)
+
+	// Skip onboarding by default for E2E tests
+	model.SkipOnboarding()
 
 	return &TestEnv{
 		T:            t,
@@ -686,4 +758,131 @@ func (e *TestEnv) IsInMenuState() bool {
 	// Menu shows the tagline and menu items
 	return strings.Contains(view, "Career Event Management System") &&
 		strings.Contains(view, "Capture Event")
+}
+
+// ============================================================================
+// Onboarding Helpers
+// ============================================================================
+
+// IsInOnboardingState checks if the application is currently showing the onboarding wizard.
+func (e *TestEnv) IsInOnboardingState() bool {
+	return e.Model.GetState() == app.StateOnboarding
+}
+
+// SkipOnboarding skips the onboarding wizard.
+// Use Setup() instead of SetupWithOnboarding() to automatically skip onboarding.
+func (e *TestEnv) SkipOnboarding() *TestEnv {
+	e.Model.SkipOnboarding()
+	return e
+}
+
+// InitModel initializes the model by calling Init() and sending a WindowSizeMsg.
+// This is required for huh forms to render their content properly.
+// Returns the environment for method chaining.
+func (e *TestEnv) InitModel() *TestEnv {
+	e.T.Helper()
+
+	// Call Init() to set up the model
+	cmd := e.Model.Init()
+
+	// Process the init commands - this triggers huh form setup
+	e.processFormCmds(cmd, 20)
+
+	// Send a WindowSizeMsg to trigger form layout
+	e.SendMessage(tea.WindowSizeMsg{Width: 120, Height: 40})
+
+	// Type and delete a character to force the form to render its fields
+	// This workaround activates huh's internal rendering state
+	e.PressKeyRune('x')
+	e.PressKey(tea.KeyBackspace)
+
+	return e
+}
+
+// PressEnterWithFormProcessing presses Enter and processes any internal form messages.
+// This is needed because huh forms use internal messages (nextGroupMsg) to transition
+// between groups. These messages must be processed for the form to advance.
+//
+// Note: This method loops to process messages but has a safety limit to prevent infinite loops.
+func (e *TestEnv) PressEnterWithFormProcessing() *TestEnv {
+	e.T.Helper()
+
+	// Send Enter key
+	modelInterface, cmd := e.Model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	e.Model = modelInterface.(*app.Model)
+
+	// Process all resulting messages (including internal form messages)
+	// This allows huh's group transitions to complete
+	e.processFormCmds(cmd, 10) // max 10 iterations for safety
+
+	return e
+}
+
+// processFormCmds processes commands from form interactions.
+// Unlike executeCmd, this processes ALL messages (including huh internals)
+// but has a depth limit to prevent infinite loops.
+func (e *TestEnv) processFormCmds(cmd tea.Cmd, maxDepth int) {
+	if cmd == nil || maxDepth <= 0 {
+		return
+	}
+
+	msg := cmd()
+	if msg == nil {
+		return
+	}
+
+	switch m := msg.(type) {
+	case tea.BatchMsg:
+		// BatchMsg contains multiple commands - process each one
+		for _, batchCmd := range m {
+			e.processFormCmds(batchCmd, maxDepth-1)
+		}
+	case nil:
+		return
+	default:
+		// Process the message and any follow-up commands
+		// This includes internal huh messages like nextGroupMsg
+		modelInterface, nextCmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		e.processFormCmds(nextCmd, maxDepth-1)
+	}
+}
+
+// CompleteOnboarding simulates completing the onboarding wizard.
+// This types name and email, then presses Enter to advance through steps.
+// name: Required field (e.g., "Test User")
+// email: Required field (e.g., "test@example.com")
+//
+// Returns the environment for method chaining.
+func (e *TestEnv) CompleteOnboarding(name, email string) *TestEnv {
+	e.T.Helper()
+
+	if !e.IsInOnboardingState() {
+		return e
+	}
+
+	// Initialize the model first (required for huh forms to work)
+	e.InitModel()
+
+	// Step 1: Welcome + Name
+	// Type the name
+	e.TypeText(name)
+	// Press Enter to advance to next step (uses form processing to handle internal huh messages)
+	e.PressEnterWithFormProcessing()
+
+	// Step 2: Contact - Email + Location
+	// Type the email
+	e.TypeText(email)
+	// Press Enter to accept email and move to Location field
+	e.PressEnterWithFormProcessing()
+	// Press Enter again to accept empty Location and advance to Step 3
+	e.PressEnterWithFormProcessing()
+
+	// Step 3: Professional Details - 3 optional fields (Title, GitHub, Portfolio)
+	// Press Enter 3 times to accept all empty fields and complete
+	e.PressEnterWithFormProcessing() // Title (optional)
+	e.PressEnterWithFormProcessing() // GitHub (optional)
+	e.PressEnterWithFormProcessing() // Portfolio (optional) - completes form
+
+	return e
 }
