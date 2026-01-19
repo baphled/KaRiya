@@ -51,7 +51,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 
 		// Create CV services
 		bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-		sectionBuilder := NewSectionBuilder(log)
+		sectionBuilder := NewSectionBuilder(nil, log)
 		configManager := NewMemoryConfigManager()
 
 		cvGenService = NewCVGenerationService(

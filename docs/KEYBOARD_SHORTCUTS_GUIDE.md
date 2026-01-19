@@ -2,8 +2,8 @@
 
 **Complete Keyboard Reference for KaRiya TUI**
 
-**Last Updated**: 2026-01-12
-**Version**: 2.0 (Consolidated from KEYBOARD_REFERENCE.md and shortcuts/README.md)
+**Last Updated**: 2026-01-14
+**Version**: 2.1 (Added wizard modal shortcuts for CV Generation)
 **Audience**: End users, new team members
 
 ---
@@ -51,11 +51,12 @@
 ║ f      Filter                s       Sort                         ║
 ║ /      Search                b       Bulk operations              ║
 ║                                                                    ║
-║ FORMS                                                              ║
+║ FORMS & WIZARD MODALS                                              ║
 ║ ─────────────────────────────────────────────────────────────────  ║
 ║ Tab         Next field       Shift+Tab   Previous field           ║
 ║ Ctrl+O      Toggle optional fields (Manual mode)                  ║
-║ Ctrl+S      Submit form                                           ║
+║ Ctrl+S      Submit / Skip wizard with defaults                    ║
+║ Space       Toggle selection (multi-select)                       ║
 ╚════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -142,6 +143,42 @@ These shortcuts work everywhere in KaRiya, regardless of which screen you're on:
 ### Generate CV Workflow
 
 **See**: [CV Generation Workflow Guide](workflows/CV_GENERATION_WORKFLOW.md) for complete workflow documentation
+
+KaRiya offers two CV generation workflows: **Wizard Modal** (recommended) and **Traditional Screen**.
+
+#### Wizard Modal Flow (Recommended)
+
+| Screen/Modal | Key | Action | Description |
+|--------------|-----|--------|-------------|
+| **Configuration Wizard** | `Tab` | Next field | Move to next form field |
+| | `Shift+Tab` | Previous field | Move to previous form field |
+| | `↑/↓` or `k/j` | Navigate options | Navigate dropdown options |
+| | `Space` | Toggle selection | Toggle multi-select items |
+| | `Enter` | Select / Next step | Select option OR proceed to next step |
+| | `Esc` (Step 1) | Cancel | Return to main menu |
+| | `Esc` (Step 2/3) | Previous step | Go back one step |
+| | `Ctrl+S` | Skip with defaults | Complete wizard with default values |
+| | `m` | Main menu | Return to main menu |
+| **Tech Extraction** | `Esc` | Background | Let extraction complete in background |
+| **Generating** | `Esc` | Background | Let generation complete in background |
+| **Preview** | `↑/↓` or `k/j` | Scroll | Scroll through CV preview |
+| | `PgUp/PgDn` | Page scroll | Scroll by page |
+| | `Enter` or `e` | Edit | Open CV for editing |
+| | `x` | Export | Proceed to export workflow |
+| | `Esc` | Back | Return to configuration wizard |
+| **Export Modal** | `↑/↓` or `k/j` | Navigate | Select format and location |
+| | `Enter` | Export | Start export process |
+| | `Esc` | Cancel | Return to preview |
+| **Exporting** | `Esc` | Background | Let export complete |
+| **Export Complete** | `Enter` | Done | Complete workflow |
+| | `Esc` | Retry | Retry export |
+
+**Wizard Steps**:
+- **Step 1 (WHO)**: Profile + Audience
+- **Step 2 (TECH)**: Technology focus (auto-skipped if no techs)
+- **Step 3 (FORMAT)**: Skills format + CV length
+
+#### Traditional Screen Flow (Legacy)
 
 | Screen | Key | Action | Description |
 |--------|-----|--------|-------------|

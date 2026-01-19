@@ -83,8 +83,8 @@ var _ = Describe("GenerateCV Clipboard Export Error Handling", func() {
 			// Get the view
 			view := intent.viewExportComplete()
 
-			// Verify: Error should be displayed
-			Expect(view).To(ContainSubstring("❌ Export Failed"))
+			// Verify: Error should be displayed (UIKit uses styled text without emoji)
+			Expect(view).To(ContainSubstring("Export Failed"))
 			Expect(view).To(ContainSubstring("Error:"))
 			Expect(view).To(ContainSubstring("clipboard"))
 			Expect(view).To(ContainSubstring("Try a different location or format"))
@@ -100,9 +100,9 @@ var _ = Describe("GenerateCV Clipboard Export Error Handling", func() {
 			// Get the view
 			view := intent.viewExportComplete()
 
-			// Verify: Success message, no error
-			Expect(view).To(ContainSubstring("✅ Export Complete"))
-			Expect(view).NotTo(ContainSubstring("❌ Error"))
+			// Verify: Success message, no error (UIKit uses styled text without emoji)
+			Expect(view).To(ContainSubstring("Export Complete"))
+			Expect(view).NotTo(ContainSubstring("Export Failed"))
 			Expect(view).To(ContainSubstring("Location: Clipboard"))
 			Expect(view).To(ContainSubstring("paste the CV anywhere"))
 		})

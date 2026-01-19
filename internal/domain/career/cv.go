@@ -363,8 +363,19 @@ type CVConfig struct {
 	TargetRole     string                 `yaml:"target_role" json:"target_role"`
 	TargetAudience string                 `yaml:"target_audience" json:"target_audience"`
 	EventFilters   map[string]interface{} `yaml:"event_filters,omitempty" json:"event_filters,omitempty"`
-	CreatedAt      time.Time              `yaml:"created_at" json:"created_at"`
-	UpdatedAt      time.Time              `yaml:"updated_at" json:"updated_at"`
+
+	// Technology selections (Phase 10 - Task 40)
+	TechnologyFocus      string   `yaml:"technology_focus,omitempty" json:"technology_focus,omitempty"`           // language_agnostic, generalist, specialist
+	SelectedTechnologies []string `yaml:"selected_technologies,omitempty" json:"selected_technologies,omitempty"` // Skill IDs
+	FocusArea            string   `yaml:"focus_area,omitempty" json:"focus_area,omitempty"`                       // backend, frontend, fullstack, devops
+	LengthFormat         string   `yaml:"length_format,omitempty" json:"length_format,omitempty"`                 // ultra_short, short, standard, full
+
+	// Skills section format (Phase 11 enhancement)
+	SkillsFormat string `yaml:"skills_format,omitempty" json:"skills_format,omitempty"` // flat, grouped
+	SkillsLimit  int    `yaml:"skills_limit,omitempty" json:"skills_limit,omitempty"`   // max skills per section/group (0 = no limit)
+
+	CreatedAt time.Time `yaml:"created_at" json:"created_at"`
+	UpdatedAt time.Time `yaml:"updated_at" json:"updated_at"`
 }
 
 // Validate checks if the CVConfig meets all defined criteria

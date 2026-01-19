@@ -17,6 +17,10 @@ type BulletGenerator interface {
 	// GenerateBullets generates a list of ranked CV bullets from events and facts
 	// Applies inclusion criteria, ranking algorithm, and role/audience-specific filtering
 	GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) ([]*career.CVBullet, error)
+
+	// FilterByTechnologies filters and boosts bullets based on selected technologies (Phase 10 - Task 40)
+	// Applies technology-based scoring adjustments and sorts by final rank
+	FilterByTechnologies(bullets []*career.CVBullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*career.CVBullet
 }
 
 // DefaultBulletGenerator is the default implementation of BulletGenerator
@@ -340,4 +344,66 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// FilterByTechnologies filters and boosts bullets based on selected technologies
+// Applies technology-based scoring adjustments and sorts by final rank
+func (bg *DefaultBulletGenerator) FilterByTechnologies(
+	bullets []*career.CVBullet,
+	events []*career.CareerEvent,
+	techFocus TechnologyFocus,
+	technologies []string,
+) []*career.CVBullet {
+	// Language Agnostic: No filtering or boosting
+	if techFocus == TechnologyFocusLanguageAgnostic {
+		return bullets
+	}
+
+	// Build event map for skill lookup
+	eventMap := make(map[string]*career.CareerEvent)
+	for _, event := range events {
+		eventMap[event.ID] = event
+	}
+
+	// Build technology set for fast lookup
+	techSet := make(map[string]bool)
+	for _, tech := range technologies {
+		techSet[tech] = true
+	}
+
+	// Apply skill match bonus to bullets
+	for _, bullet := range bullets {
+		// Skip bullets without source events
+		if len(bullet.SourceEventIDs) == 0 {
+			continue
+		}
+
+		// Get source event
+		event, exists := eventMap[bullet.SourceEventIDs[0]]
+		if !exists {
+			continue
+		}
+
+		// Check if event has any selected technology
+		hasSelectedTech := false
+		for _, skill := range event.Skills {
+			if techSet[skill] {
+				hasSelectedTech = true
+				break
+			}
+		}
+
+		// Apply skill match bonus (+0.15)
+		if hasSelectedTech {
+			bullet.Rank = math.Min(bullet.Rank+0.15, 1.0)
+		}
+		// No penalty for events without skills (keep baseline score)
+	}
+
+	// Sort bullets by rank descending (highest first)
+	sort.Slice(bullets, func(i, j int) bool {
+		return bullets[i].Rank > bullets[j].Rank
+	})
+
+	return bullets
 }

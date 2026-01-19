@@ -161,33 +161,26 @@ var _ = Describe("GenerateCVIntent", func() {
 			intent.state.currentState = GenerateCVStateSelectAudience
 		})
 
-		It("should transition to role emphasis selection on enter", func() {
+		It("should transition to extracting technologies on enter", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateExtractingTechnologies))
 		})
 
-		It("should generate CV when variant selected and async generation completes", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // audience -> role emphasis
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectRoleEmphasis))
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // role emphasis -> length format
-			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectLengthFormat))
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter}) // length format -> generating
-			// Simulate async generation completion
-			intent.Update(CVGenerationCompleteMsg{
-				CV: &career.CVView{
-					ID:               "test-cv",
-					Name:             intent.state.selectedProfile.Name,
-					TargetRole:       intent.state.selectedProfile.TargetRole,
-					TargetAudience:   intent.state.selectedAudience,
-					GeneratedAt:      time.Now(),
-					SourceEventCount: 0,
-					SourceFactCount:  0,
+		It("should transition to technology focus selection when extraction completes", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			// Simulate technology extraction completion
+			intent.Update(TechnologiesExtractedMsg{
+				Technologies: []*ExtractedTechnology{},
+				Suggestion: &FocusAreaSuggestion{
+					Area:       "backend",
+					Confidence: 0.0,
+					Evidence:   map[string]int{},
 				},
 				Error: nil,
 			})
-			Expect(intent.state.currentState).To(Equal(GenerateCVStatePreview))
-			Expect(intent.state.generatedCV).NotTo(BeNil())
-			Expect(intent.state.generatedCV.Name).To(Equal(intent.state.selectedProfile.Name))
+			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectTechnologyFocus))
+			Expect(intent.state.extractedTechnologies).NotTo(BeNil())
+			Expect(intent.state.focusAreaSuggestion).NotTo(BeNil())
 		})
 
 		It("should go back to profile selection on esc", func() {

@@ -63,16 +63,16 @@ var _ = Describe("App Menu Integration Tests", func() {
 			model = modelInterface.(*app.Model)
 			// Generate view
 			output := model.View()
-			// After selecting Generate CV intent, we should see the CV profile selection screen
-			// which shows "Select CV Profile" title
+			// After selecting Generate CV intent, we should see the CV Configuration wizard modal
+			// (wizard flow is now enabled by default in production)
+			// The wizard shows "CV Configuration" title and profile selection
 			Expect(output).To(ContainSubstring("Select CV Profile"))
-			// After StandardView migration with breadcrumbs, breadcrumbs should be visible
-			// Breadcrumbs may be truncated ("Main Menu ▸ ... ▸ Select Profile") if terminal is narrow
-			// or full ("Main Menu ▸ Generate CV ▸ Select Profile") if wide enough
-			// Check for either the full breadcrumb or the truncated version with ellipsis
+			// Wizard modal should show step information
 			Expect(output).To(Or(
-				ContainSubstring("Generate CV"),
-				ContainSubstring("..."), // Truncated breadcrumb
+				ContainSubstring("CV Configuration"),
+				ContainSubstring("Step 1: WHO"), // Wizard step title
+				ContainSubstring("Generate CV"), // Breadcrumb
+				ContainSubstring("..."),         // Truncated breadcrumb
 			))
 		})
 	})

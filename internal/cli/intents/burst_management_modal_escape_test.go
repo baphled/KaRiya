@@ -92,8 +92,9 @@ var _ = Describe("BurstManagement Modal Escape Handling", func() {
 			env.SelectIntentByName("burst_management")
 
 			// Navigate to find "Team Mentoring" burst (could be first or second depending on OS)
+			// Use cursor marker detection to ensure we're checking the selected item, not just any text in view
 			view := env.GetView()
-			if !strings.Contains(view, "Team Mentoring") {
+			if !strings.Contains(view, "▶ Team Mentoring") && !strings.Contains(view, "> Team Mentoring") {
 				env.NavigateDown() // Move to second burst
 			}
 

@@ -28,7 +28,7 @@ func NewOverlay(width, height int) *Overlay {
 		width:   width,
 		height:  height,
 		dimmed:  false,
-		dimChar: '·', // Default dim character
+		dimChar: ' ', // Default to space for clean modal backgrounds
 	}
 }
 
@@ -66,7 +66,7 @@ func (o *Overlay) Render() string {
 
 		// Style the background with muted color
 		backgroundStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6C7086")) // Catppuccin Overlay0
+			Foreground(lipgloss.Color("240")) // Gray for dimmed background
 		background = backgroundStyle.Render(background)
 	} else {
 		// Empty background
@@ -91,7 +91,7 @@ func (o *Overlay) Render() string {
 		lipgloss.Center,
 		o.content,
 		lipgloss.WithWhitespaceChars(string(o.dimChar)),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("#6C7086")),
+		lipgloss.WithWhitespaceForeground(lipgloss.Color("240")), // Gray background
 	)
 
 	return centered
