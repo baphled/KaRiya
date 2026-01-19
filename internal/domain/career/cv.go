@@ -33,12 +33,25 @@ var AllowedSectionTypes = map[string]bool{
 
 // InclusionReasons defines the set of valid reasons for including a bullet
 var InclusionReasons = map[string]bool{
+	// Semantic reasons (manual categorization)
 	"ownership":    true,
 	"contribution": true,
 	"strategy":     true,
 	"execution":    true,
 	"outcome":      true,
 	"activity":     true,
+	// Source-based reasons (used by BulletGenerator and EnhancedBulletGenerator)
+	"fact_extraction":        true,
+	"event_direct":           true,
+	"achievement_extraction": true,
+}
+
+// ImpactLevels defines the set of valid impact level values for CVBullet
+var ImpactLevels = map[string]bool{
+	"":       true, // Empty is valid (not set)
+	"low":    true,
+	"medium": true,
+	"high":   true,
 }
 
 // CVView represents an in-memory, ephemeral CV generated from career events and facts
@@ -247,6 +260,15 @@ type CVBullet struct {
 	Rank            float64  `json:"rank"`             // 0.0 - 1.0
 	InclusionReason string   `json:"inclusion_reason"` // why this bullet was included
 	Confidence      float64  `json:"confidence"`       // 0.0 - 1.0
+
+	// Enhanced fields from EnhancedBulletGenerator (Task 44)
+	EnhancedText   string   `json:"enhanced_text,omitempty"`   // Professionally improved text
+	RoleScore      float64  `json:"role_score,omitempty"`      // 0.0-1.0 role relevance
+	AudienceScore  float64  `json:"audience_score,omitempty"`  // 0.0-1.0 audience fit
+	MetricScore    float64  `json:"metric_score,omitempty"`    // 0.0-1.0 metric quality
+	ImpactScore    float64  `json:"impact_score,omitempty"`    // 0.0-1.0 impact level
+	ImpactLevel    string   `json:"impact_level,omitempty"`    // "low", "medium", "high"
+	KeywordMatches []string `json:"keyword_matches,omitempty"` // Matched role/audience keywords
 }
 
 // Validate checks if the CVBullet meets all defined criteria
@@ -278,6 +300,16 @@ func (cb *CVBullet) Validate() error {
 
 	// Validate inclusion reason
 	if err := cb.validateInclusionReason(); err != nil {
+		return err
+	}
+
+	// Validate enhanced scores (optional fields, Task 44)
+	if err := cb.validateEnhancedScores(); err != nil {
+		return err
+	}
+
+	// Validate impact level (optional field, Task 44)
+	if err := cb.validateImpactLevel(); err != nil {
 		return err
 	}
 
@@ -351,6 +383,32 @@ func (cb *CVBullet) validateInclusionReason() error {
 	}
 	if !InclusionReasons[trimmedReason] {
 		return fmt.Errorf("invalid inclusion reason: %s", cb.InclusionReason)
+	}
+	return nil
+}
+
+// validateEnhancedScores ensures enhanced score fields are in valid range (0.0-1.0)
+// These fields are optional, so 0.0 is valid (not set)
+func (cb *CVBullet) validateEnhancedScores() error {
+	if cb.RoleScore < 0.0 || cb.RoleScore > 1.0 {
+		return fmt.Errorf("role score must be between 0.0 and 1.0, got %f", cb.RoleScore)
+	}
+	if cb.AudienceScore < 0.0 || cb.AudienceScore > 1.0 {
+		return fmt.Errorf("audience score must be between 0.0 and 1.0, got %f", cb.AudienceScore)
+	}
+	if cb.MetricScore < 0.0 || cb.MetricScore > 1.0 {
+		return fmt.Errorf("metric score must be between 0.0 and 1.0, got %f", cb.MetricScore)
+	}
+	if cb.ImpactScore < 0.0 || cb.ImpactScore > 1.0 {
+		return fmt.Errorf("impact score must be between 0.0 and 1.0, got %f", cb.ImpactScore)
+	}
+	return nil
+}
+
+// validateImpactLevel ensures impact level is valid
+func (cb *CVBullet) validateImpactLevel() error {
+	if !ImpactLevels[cb.ImpactLevel] {
+		return fmt.Errorf("invalid impact level: %s (must be low, medium, high, or empty)", cb.ImpactLevel)
 	}
 	return nil
 }
