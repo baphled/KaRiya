@@ -2,7 +2,8 @@ package components
 
 import (
 	"github.com/baphled/kariya/internal/cli/styles"
-	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -208,16 +209,14 @@ func (m *ExportOptionsModal) View() string {
 	return styledContent
 }
 
-// buildFooter creates the keyboard shortcuts footer using KeyBadge components.
+// buildFooter creates the keyboard shortcuts footer using UIKit primitives.
 func (m *ExportOptionsModal) buildFooter() string {
-	theme := themes.NewDefaultTheme()
+	th := theme.Default()
 
-	badges := []string{
-		NewKeyBadge("Enter", "Export").Render(theme),
-		NewKeyBadge("Esc", "Cancel").Render(theme),
-	}
-
-	return lipgloss.JoinHorizontal(lipgloss.Left, badges...)
+	return primitives.RenderHelpFooter(th,
+		primitives.KeyBadge("Enter", "Export", th),
+		primitives.CancelBadge(th),
+	)
 }
 
 // Show makes the modal visible.
