@@ -62,6 +62,12 @@ func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 				ResultData: "edit",
 			}
 
+		case "x":
+			// Export CV
+			return nil, &screens.NavigateResult{
+				ResultData: "export",
+			}
+
 		case "down", "j":
 			s.scrollOffset++
 			return nil, nil
@@ -77,30 +83,65 @@ func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return nil, nil
 }
 
-// View renders the screen.
+// View renders the screen with full CV content.
 func (s *CVPreviewScreen) View() string {
 	var b strings.Builder
 
-	b.WriteString("CV Preview\n")
-	b.WriteString(strings.Repeat("═", 50))
+	b.WriteString("📄 CV Preview\n")
+	b.WriteString(strings.Repeat("═", 80))
 	b.WriteString("\n\n")
 
 	if s.cv != nil {
 		// Display CV metadata
 		b.WriteString(fmt.Sprintf("Name: %s\n", s.cv.Name))
-		b.WriteString(fmt.Sprintf("Role: %s\n", s.cv.TargetRole))
-		b.WriteString(fmt.Sprintf("Audience: %s\n", s.cv.TargetAudience))
+		b.WriteString(fmt.Sprintf("Target Role: %s | Audience: %s\n",
+			s.cv.TargetRole, s.cv.TargetAudience))
 		b.WriteString(fmt.Sprintf("Events: %d | Facts: %d\n",
 			s.cv.SourceEventCount, s.cv.SourceFactCount))
 		b.WriteString("\n")
+		b.WriteString(strings.Repeat("─", 80))
+		b.WriteString("\n\n")
 
-		// Display CV sections (simplified)
+		// Display full CV sections with content
 		if len(s.cv.Sections) > 0 {
-			for _, section := range s.cv.Sections {
+			for idx, section := range s.cv.Sections {
+				if idx > 0 {
+					b.WriteString("\n")
+				}
+
+				// Section title
 				b.WriteString(fmt.Sprintf("## %s\n", section.Title))
-				// Content is a slice of groups, just show count for now
-				b.WriteString(fmt.Sprintf("  (%d content groups)\n", len(section.Content)))
+				b.WriteString(strings.Repeat("─", len(section.Title)+3))
 				b.WriteString("\n")
+
+				// Handle summary section (prose)
+				if section.SectionType == "summary" && section.Summary != "" {
+					b.WriteString(section.Summary)
+					b.WriteString("\n")
+					continue
+				}
+
+				// Handle content groups (experience, projects, skills)
+				for _, group := range section.Content {
+					// Group header with dates
+					if group.Header != "" {
+						if group.StartDate != "" && group.EndDate != "" {
+							if group.StartDate == group.EndDate {
+								b.WriteString(fmt.Sprintf("  %s - %s\n", group.Header, group.StartDate))
+							} else {
+								b.WriteString(fmt.Sprintf("  %s - %s to %s\n", group.Header, group.StartDate, group.EndDate))
+							}
+						} else {
+							b.WriteString(fmt.Sprintf("  %s\n", group.Header))
+						}
+					}
+
+					// Bullets with full content
+					for _, bullet := range group.Bullets {
+						b.WriteString(fmt.Sprintf("    • %s\n", bullet.Text))
+					}
+					b.WriteString("\n")
+				}
 			}
 		} else {
 			b.WriteString("No sections generated yet\n")
@@ -110,9 +151,9 @@ func (s *CVPreviewScreen) View() string {
 	}
 
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("─", 50))
+	b.WriteString(strings.Repeat("─", 80))
 	b.WriteString("\n")
-	b.WriteString("↑/k: scroll up  ↓/j: scroll down  enter/y: confirm  e: edit  esc: back")
+	b.WriteString("↑/k: scroll up  ↓/j: scroll down  enter/y: confirm  e: edit  x: export  esc: back")
 
 	return b.String()
 }
