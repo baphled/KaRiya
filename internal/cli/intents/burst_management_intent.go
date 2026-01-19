@@ -264,14 +264,6 @@ func (i *BurstManagementIntent) getCardStyle() lipgloss.Style {
 		Foreground(styles.ColorTextPrimary)
 }
 
-// getSuccessColor returns the success color from theme or fallback.
-func (i *BurstManagementIntent) getSuccessColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.SuccessColor()
-	}
-	return styles.ColorSuccess
-}
-
 // getInfoColor returns the info color from theme or fallback.
 func (i *BurstManagementIntent) getInfoColor() lipgloss.Color {
 	if theme := i.Theme(); theme != nil {

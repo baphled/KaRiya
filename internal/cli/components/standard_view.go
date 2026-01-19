@@ -17,6 +17,12 @@ type LogoRenderer interface {
 	SetWidth(width int)
 }
 
+// ModalRenderer defines the interface for modal components.
+// Both ModalContent and uikit/feedback.Modal satisfy this interface.
+type ModalRenderer interface {
+	Render(terminalWidth, terminalHeight int) string
+}
+
 // StandardView provides a standardized view layout with logo, content, and help footer
 //
 // Example usage:
@@ -40,7 +46,7 @@ type StandardView struct {
 	Content             string
 	ContentStyle        lipgloss.Style
 	ShowModal           bool
-	Modal               *ModalContent
+	Modal               ModalRenderer
 	HelpText            string
 	ShowFooter          bool
 	ShowFooterSeparator bool
@@ -118,8 +124,9 @@ func (sv *StandardView) WithFooterSeparator(show bool) *StandardView {
 	return sv
 }
 
-// ShowModalOverlay displays a modal overlay on top of the content
-func (sv *StandardView) ShowModalOverlay(modal *ModalContent) *StandardView {
+// ShowModalOverlay displays a modal overlay on top of the content.
+// Accepts any ModalRenderer implementation (ModalContent, uikit/feedback.Modal, etc.)
+func (sv *StandardView) ShowModalOverlay(modal ModalRenderer) *StandardView {
 	sv.ShowModal = true
 	sv.Modal = modal
 	return sv

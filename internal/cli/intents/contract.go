@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/layout"
 )
 
 // LogoModel defines the interface for logo components.
@@ -479,12 +480,12 @@ func (b *BaseIntent) SetHelpKeyMap(keyMap interface{}) {
 
 // CreateView creates a standardized view with logo and automatic state modals.
 // This is a convenience wrapper around CreateStandardView.
-func (b *BaseIntent) CreateView() *components.StandardView {
+func (b *BaseIntent) CreateView() *layout.ScreenLayout {
 	return CreateStandardView(b)
 }
 
 // CreateViewWithBreadcrumbs creates a standardized view with breadcrumb navigation.
 // This is a convenience wrapper around CreateStandardViewWithBreadcrumbs.
-func (b *BaseIntent) CreateViewWithBreadcrumbs(crumbs ...string) *components.StandardView {
+func (b *BaseIntent) CreateViewWithBreadcrumbs(crumbs ...string) *layout.ScreenLayout {
 	return CreateStandardViewWithBreadcrumbs(b, crumbs...)
 }

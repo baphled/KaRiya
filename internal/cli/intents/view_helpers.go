@@ -12,6 +12,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/layout"
 )
 
 // CreateStandardView creates a standardized view with logo and automatic state modals.
@@ -29,8 +31,8 @@ import (
 //	    view.WithHelp("↑/k Up  ↓/j Down  Enter Select  Esc Back")
 //	    return view.Render()
 //	}
-func CreateStandardView(b *BaseIntent) *components.StandardView {
-	view := components.NewStandardView(b.GetTerminalInfo())
+func CreateStandardView(b *BaseIntent) *layout.ScreenLayout {
+	view := layout.NewScreenLayout(b.GetTerminalInfo())
 
 	// Configure logo if available
 	if logo := b.GetLogo(); logo != nil {
@@ -50,7 +52,7 @@ func CreateStandardView(b *BaseIntent) *components.StandardView {
 // Example usage:
 //
 //	view := CreateStandardViewWithBreadcrumbs(i.BaseIntent, "Main Menu", "Settings", "Display")
-func CreateStandardViewWithBreadcrumbs(b *BaseIntent, crumbs ...string) *components.StandardView {
+func CreateStandardViewWithBreadcrumbs(b *BaseIntent, crumbs ...string) *layout.ScreenLayout {
 	view := CreateStandardView(b)
 	view.WithBreadcrumbs(crumbs...)
 	return view
@@ -62,21 +64,21 @@ func CreateStandardViewWithBreadcrumbs(b *BaseIntent, crumbs ...string) *compone
 // 2. Loading (ongoing operation)
 // 3. Progress (specific progress tracking)
 // 4. Success (least critical, auto-dismiss)
-func applyStateModals(view *components.StandardView, base *BaseIntent) {
+func applyStateModals(view *layout.ScreenLayout, base *BaseIntent) {
 	// Only show the highest priority modal
 	if base.HasError() {
 		title := extractErrorTitle(base.GetError())
-		modal := components.NewErrorModal(title, base.GetError().Error())
+		modal := feedback.NewErrorModal(title, base.GetError().Error())
 		view.ShowModalOverlay(modal)
 	} else if base.IsLoading() {
-		modal := components.NewLoadingModal(base.GetLoadingMessage(), true)
+		modal := feedback.NewLoadingModal(base.GetLoadingMessage(), true)
 		view.ShowModalOverlay(modal)
 	} else if base.IsProgressEnabled() {
 		title, message, value := base.GetProgress()
-		modal := components.NewProgressModal(title, message, value)
+		modal := feedback.NewProgressModal(title, message, value)
 		view.ShowModalOverlay(modal)
 	} else if base.ShouldShowSuccess() {
-		modal := components.NewSuccessModal(base.GetSuccessMessage())
+		modal := feedback.NewSuccessModal(base.GetSuccessMessage())
 		view.ShowModalOverlay(modal)
 	}
 }
@@ -137,36 +139,36 @@ func extractErrorTitle(err error) string {
 
 // ShowErrorModal creates and attaches an error modal to the view.
 // The modal is configured with a bell alert and is cancellable.
-func ShowErrorModal(view *components.StandardView, err error) *components.StandardView {
+func ShowErrorModal(view *layout.ScreenLayout, err error) *layout.ScreenLayout {
 	if err == nil {
 		return view
 	}
 	title := extractErrorTitle(err)
-	modal := components.NewErrorModal(title, err.Error())
+	modal := feedback.NewErrorModal(title, err.Error())
 	view.ShowModalOverlay(modal)
 	return view
 }
 
 // ShowLoadingModal creates and attaches a loading modal to the view.
 // The modal displays a spinner and optional loading message.
-func ShowLoadingModal(view *components.StandardView, message string, cancellable bool) *components.StandardView {
-	modal := components.NewLoadingModal(message, cancellable)
+func ShowLoadingModal(view *layout.ScreenLayout, message string, cancellable bool) *layout.ScreenLayout {
+	modal := feedback.NewLoadingModal(message, cancellable)
 	view.ShowModalOverlay(modal)
 	return view
 }
 
 // ShowProgressModal creates and attaches a progress modal to the view.
 // The progress value should be between 0.0 and 1.0.
-func ShowProgressModal(view *components.StandardView, title, message string, progress float64) *components.StandardView {
-	modal := components.NewProgressModal(title, message, progress)
+func ShowProgressModal(view *layout.ScreenLayout, title, message string, progress float64) *layout.ScreenLayout {
+	modal := feedback.NewProgressModal(title, message, progress)
 	view.ShowModalOverlay(modal)
 	return view
 }
 
 // ShowSuccessModal creates and attaches a success modal to the view.
 // The modal auto-dismisses after 3 seconds.
-func ShowSuccessModal(view *components.StandardView, message string) *components.StandardView {
-	modal := components.NewSuccessModal(message)
+func ShowSuccessModal(view *layout.ScreenLayout, message string) *layout.ScreenLayout {
+	modal := feedback.NewSuccessModal(message)
 	view.ShowModalOverlay(modal)
 	return view
 }

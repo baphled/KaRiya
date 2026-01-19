@@ -12,6 +12,7 @@ import (
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
@@ -276,7 +277,7 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case SubmitCompleteMsg:
 		// Submission succeeded - show success modal briefly, then complete intent
-		i.state.submitModal = components.NewSuccessModal("Event saved!")
+		i.state.submitModal = feedback.NewSuccessModal("Event saved!")
 		// Auto-dismiss after 2 seconds
 		return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
 			return DismissModalMsg{}
@@ -284,7 +285,7 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case SubmitErrorMsg:
 		// Submission failed - show error modal (user can press Esc to dismiss)
-		i.state.submitModal = components.NewErrorModal("Save Failed", msg.Message)
+		i.state.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
 		return nil
 
 	case DismissModalMsg:
@@ -1257,7 +1258,7 @@ func (i *CaptureEventIntent) renderModalOverlay(background string, modalContent 
 	}
 
 	// Create overlay modal
-	overlay := components.NewOverlayModal(modalContent.title, modalContent.content)
+	overlay := feedback.NewOverlayModal(modalContent.title, modalContent.content)
 	overlay.SetFooter(modalContent.footer)
 	overlay.SetWidth(80) // Use a standard modal width
 
@@ -1755,7 +1756,7 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 			}
 
 			// Show loading modal and perform async submit
-			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
 			return i.performSubmit()
 		}
 		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
@@ -1773,7 +1774,7 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 			i.state.reviewState.AcceptedFacts = facts
 
 			// Show loading modal and perform async submit
-			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
 			return i.performSubmit()
 		}
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)

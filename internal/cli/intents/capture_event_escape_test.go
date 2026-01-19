@@ -3,8 +3,8 @@ package intents
 import (
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -154,7 +154,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		It("should show error modal overlay when submission fails", func() {
 			// Set up error modal scenario
 			intent.state.currentState = CaptureStateForm
-			intent.state.submitModal = components.NewErrorModal("Save Failed", "Submission failed")
+			intent.state.submitModal = feedback.NewErrorModal("Save Failed", "Submission failed")
 
 			view := intent.View()
 
