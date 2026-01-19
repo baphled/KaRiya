@@ -819,7 +819,7 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 			termInfo := i.GetTerminalInfo()
 			width := 120
 			height := 40
-			if termInfo != nil {
+			if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 				width = termInfo.Width
 				height = termInfo.Height
 			}
@@ -832,7 +832,7 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 				termInfo := i.GetTerminalInfo()
 				width := 120
 				height := 40
-				if termInfo != nil {
+				if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 					width = termInfo.Width
 					height = termInfo.Height
 				}
@@ -864,7 +864,7 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 			termInfo := i.GetTerminalInfo()
 			width := 120
 			height := 40
-			if termInfo != nil {
+			if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 				width = termInfo.Width
 				height = termInfo.Height
 			}
@@ -904,7 +904,8 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 		termInfo := i.GetTerminalInfo()
 		width := 120
 		height := 40
-		if termInfo != nil {
+		// Only use terminal dimensions if they are valid (non-zero)
+		if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 			width = termInfo.Width
 			height = termInfo.Height
 		}
@@ -1097,7 +1098,7 @@ func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) s
 func (i *BrowseTimelineIntent) openSearchModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
@@ -1113,7 +1114,7 @@ func (i *BrowseTimelineIntent) openSearchModal() tea.Cmd {
 func (i *BrowseTimelineIntent) openSortModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
@@ -1135,7 +1136,7 @@ func (i *BrowseTimelineIntent) openSortModal() tea.Cmd {
 func (i *BrowseTimelineIntent) openFilterModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
