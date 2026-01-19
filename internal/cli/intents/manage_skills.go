@@ -84,8 +84,14 @@ type SkillDeletedMsg struct {
 	Error   error
 }
 
-// SkillEventsLoadedMsg is sent when events for a skill are loaded
+// SkillEventsLoadedMsg is sent when events for a skill are loaded (state-based flow)
 type SkillEventsLoadedMsg struct {
+	Events []*domain.CareerEvent
+	Error  error
+}
+
+// SkillEventsForModalLoadedMsg is sent when events for a skill are loaded (modal flow)
+type SkillEventsForModalLoadedMsg struct {
 	Events []*domain.CareerEvent
 	Error  error
 }

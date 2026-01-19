@@ -37,27 +37,39 @@ import (
 //	    return renderModalOverlay(modal, background)
 //	}
 type ViewEventDetailModal struct {
-	event      *career.CareerEvent
-	theme      themes.Theme
-	visible    bool
-	width      int
-	height     int
-	action     string // Always empty for read-only modal (kept for API compatibility)
-	viewport   viewport.Model
-	ready      bool
-	hasContent bool
+	event            *career.CareerEvent
+	theme            themes.Theme
+	visible          bool
+	width            int
+	height           int
+	action           string // Always empty for read-only modal (kept for API compatibility)
+	viewport         viewport.Model
+	ready            bool
+	hasContent       bool
+	showSkillsOption bool // Whether to show "s: Skills" in footer (default: true)
 }
 
 // NewViewEventDetailModal creates a new event detail modal.
+// By default, shows the "s: Skills" option in the footer.
+// Use WithShowSkillsOption(false) to hide this option.
 func NewViewEventDetailModal(event *career.CareerEvent, theme themes.Theme) *ViewEventDetailModal {
 	return &ViewEventDetailModal{
-		event:   event,
-		theme:   theme,
-		visible: false,
-		width:   80,
-		height:  24,
-		action:  "",
+		event:            event,
+		theme:            theme,
+		visible:          false,
+		width:            80,
+		height:           24,
+		action:           "",
+		showSkillsOption: true, // Default: show skills option
 	}
+}
+
+// WithShowSkillsOption sets whether to show the "s: Skills" option in the footer.
+// This should be set to false when viewing events from the ManageSkills workflow,
+// since the user is already in a skills context.
+func (m *ViewEventDetailModal) WithShowSkillsOption(show bool) *ViewEventDetailModal {
+	m.showSkillsOption = show
+	return m
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
@@ -151,17 +163,28 @@ func (m *ViewEventDetailModal) View() string {
 		m.ready = true
 	}
 
-	// Build footer with scroll indicator
-	scrollHint := "Enter/Esc: Close"
+	// Build footer with scroll indicator and optional skills hint
+	var footerText string
+	if m.showSkillsOption {
+		footerText = "s: Skills | Enter/Esc: Close"
+	} else {
+		footerText = "Enter/Esc: Close"
+	}
+
+	var scrollHint string
 	if m.hasContent {
 		percentScrolled := int(m.viewport.ScrollPercent() * 100)
+		scrollPrefix := "↑↓/j/k: Scroll | "
+		if m.showSkillsOption {
+			scrollPrefix += "s: Skills | "
+		}
 		scrollHint = lipgloss.NewStyle().
 			Foreground(styles.ColorTextSecondary).
-			Render("↑↓/j/k: Scroll | " + "Enter/Esc: Close " + lipgloss.NewStyle().Faint(true).Render("["+string(rune(percentScrolled/10+'0'))+string(rune(percentScrolled%10+'0'))+"%]"))
+			Render(scrollPrefix + "Enter/Esc: Close " + lipgloss.NewStyle().Faint(true).Render("["+string(rune(percentScrolled/10+'0'))+string(rune(percentScrolled%10+'0'))+"%]"))
 	} else {
 		scrollHint = lipgloss.NewStyle().
 			Foreground(styles.ColorTextSecondary).
-			Render(scrollHint)
+			Render(footerText)
 	}
 
 	// Build modal content

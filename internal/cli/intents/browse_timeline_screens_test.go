@@ -188,6 +188,53 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 	})
 
+	Describe("View Event Skills Modal", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
+		It("should show skills hint in event detail modal footer", func() {
+			// Show event detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Footer should show 's: Skills' hint
+			view := intent.View()
+			Expect(view).To(ContainSubstring("s: Skills"))
+		})
+
+		It("should create skills modal when pressing 's' from event detail", func() {
+			// First show the event detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Press 's' to show skills
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+			// Skills modal should be visible (internal check)
+			// Since the overlay compositing might not work in unit tests,
+			// we verify the modal was created and is visible
+			Expect(intent.HasVisibleSkillsModal()).To(BeTrue())
+		})
+
+		It("should close skills modal with escape", func() {
+			// Show event detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Show skills modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(intent.HasVisibleSkillsModal()).To(BeTrue())
+
+			// Close skills modal with escape
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Skills modal should be closed
+			Expect(intent.HasVisibleSkillsModal()).To(BeFalse())
+
+			// Event detail modal should still be visible
+			detailView := intent.View()
+			Expect(detailView).To(ContainSubstring("Backend Developer"))
+		})
+	})
+
 	Describe("Actions with Screens", func() {
 		BeforeEach(func() {
 			intent.Init()

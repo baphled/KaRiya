@@ -108,6 +108,9 @@ type BrowseTimelineIntent struct {
 
 	// viewDetailModal holds the event detail viewer modal (shown over the list)
 	viewDetailModal *components.ViewEventDetailModal
+
+	// viewSkillsModal holds the skills viewer modal (shown over event detail)
+	viewSkillsModal *components.ViewEventSkillsModal
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -331,8 +334,22 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
+	// If view skills modal is visible, handle it first (it overlays event detail)
+	if i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() {
+		_, cmd := i.viewSkillsModal.Update(msg)
+		if !i.viewSkillsModal.IsVisible() {
+			// Modal closed - clear the modal reference
+			i.viewSkillsModal = nil
+		}
+		return cmd
+	}
+
 	// If view detail modal is visible, handle it next
 	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+		// Check for 's' key to show skills before passing to modal
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "s" {
+			return i.showSkillsForCurrentEvent()
+		}
 		_, cmd := i.viewDetailModal.Update(msg)
 		if !i.viewDetailModal.IsVisible() {
 			// Modal closed - clear the modal reference
@@ -444,7 +461,12 @@ func (i *BrowseTimelineIntent) View() string {
 
 		// If view detail modal is visible, overlay it on the COMPLETE rendered view
 		if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
-			return i.renderViewDetailModalOverlay(baseView)
+			detailView := i.renderViewDetailModalOverlay(baseView)
+			// If skills modal is also visible, overlay it on top of the detail modal
+			if i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() {
+				return i.renderViewSkillsModalOverlay(detailView)
+			}
+			return detailView
 		}
 
 		return baseView
@@ -626,6 +648,12 @@ func (i *BrowseTimelineIntent) HasActiveFilters() bool {
 		f.DateTo != "" ||
 		(f.SortBy != "" && f.SortBy != "date") || // date is default
 		(f.SortOrder != "" && f.SortOrder != "desc") // desc is default
+}
+
+// HasVisibleSkillsModal returns true if the skills modal is currently visible.
+// Used for testing purposes.
+func (i *BrowseTimelineIntent) HasVisibleSkillsModal() bool {
+	return i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible()
 }
 
 // ClearFilters clears filters in FIFO order (most recent first).
@@ -1089,6 +1117,58 @@ func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) s
 		overlay.Center, // Y position
 		0,              // X offset
 		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+
+	return overlayModel.View()
+}
+
+// showSkillsForCurrentEvent loads and displays skills for the currently selected event.
+func (i *BrowseTimelineIntent) showSkillsForCurrentEvent() tea.Cmd {
+	if i.state.selectedEvent == nil {
+		return nil
+	}
+
+	// Get skills for the event using the CLI service
+	var skills []*career.Skill
+	if i.context.CLIEventService != nil {
+		ctx := i.getContext()
+		var err error
+		skills, err = i.context.CLIEventService.GetSkillsForEvent(ctx, i.state.selectedEvent.ID)
+		if err != nil {
+			// Log error but show empty skills modal
+			skills = []*career.Skill{}
+		}
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	// Create and show the skills modal
+	theme := i.Theme()
+	i.viewSkillsModal = components.NewViewEventSkillsModal(i.state.selectedEvent.ID, skills, theme)
+	i.viewSkillsModal.SetDimensions(width, height)
+	i.viewSkillsModal.Show()
+
+	return nil
+}
+
+// renderViewSkillsModalOverlay renders the skills modal using bubbletea-overlay.
+func (i *BrowseTimelineIntent) renderViewSkillsModalOverlay(background string) string {
+	// Create a simple background model that just returns the rendered view
+	bgModel := &staticViewModel{content: background}
+
+	// Use bubbletea-overlay to composite the skills modal onto the background
+	overlayModel := overlay.New(
+		i.viewSkillsModal, // Foreground: the skills modal
+		bgModel,           // Background: the event detail view
+		overlay.Center,    // X position
+		overlay.Center,    // Y position
+		0,                 // X offset
+		-2,                // Y offset (move up 2 lines)
 	)
 
 	return overlayModel.View()

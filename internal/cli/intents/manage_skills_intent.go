@@ -71,6 +71,13 @@ type ManageSkillsIntent struct {
 	sortModal   *components.SkillSortModal
 	searchModal *components.SkillSearchModal
 
+	// view/edit modals (modal overlay architecture like BrowseTimelineIntent)
+	viewDetailModal  *components.ViewSkillDetailModal
+	addEditModal     *components.SkillAddEditModal
+	deleteModal      *components.DeleteConfirmModal
+	skillEventsModal *components.ViewSkillEventsModal // Modal to show events using a skill
+	eventDetailModal *components.ViewEventDetailModal // Modal to show event details from events list
+
 	// screen orchestration (new architecture)
 	activeScreen screens.Screen // Currently active screen (when using screen architecture)
 	useScreens   bool           // Whether to use screen-based architecture (opt-in, default: false)
@@ -284,6 +291,31 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSortModalUpdate(msg)
 	}
 
+	// Handle view detail modal
+	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+		return i.handleViewDetailModalUpdate(msg)
+	}
+
+	// Handle add/edit modal
+	if i.addEditModal != nil && i.addEditModal.IsVisible() {
+		return i.handleAddEditModalUpdate(msg)
+	}
+
+	// Handle delete confirmation modal
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		return i.handleDeleteModalUpdate(msg)
+	}
+
+	// Handle skill events modal (shows events using a skill)
+	if i.skillEventsModal != nil && i.skillEventsModal.IsVisible() {
+		return i.handleSkillEventsModalUpdate(msg)
+	}
+
+	// Handle event detail modal (shows details of an event from events list)
+	if i.eventDetailModal != nil && i.eventDetailModal.IsVisible() {
+		return i.handleEventDetailModalUpdate(msg)
+	}
+
 	// Screen orchestration: delegate to active screen if present
 	if i.useScreens && i.activeScreen != nil {
 		// Handle global keys FIRST, even in screen mode
@@ -331,6 +363,9 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case SkillEventsLoadedMsg:
 		return i.handleSkillEventsLoaded(msg)
+
+	case SkillEventsForModalLoadedMsg:
+		return i.handleSkillEventsForModalLoaded(msg)
 
 	case tea.KeyMsg:
 		// Global keys already handled above at top of function
@@ -416,6 +451,21 @@ func (i *ManageSkillsIntent) View() string {
 	if i.sortModal != nil && i.sortModal.IsVisible() {
 		return i.renderSortModalOverlay(baseView)
 	}
+	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+		return i.renderViewDetailModalOverlay(baseView)
+	}
+	if i.addEditModal != nil && i.addEditModal.IsVisible() {
+		return i.renderAddEditModalOverlay(baseView)
+	}
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		return i.renderDeleteModalOverlay(baseView)
+	}
+	if i.skillEventsModal != nil && i.skillEventsModal.IsVisible() {
+		return i.renderSkillEventsModalOverlay(baseView)
+	}
+	if i.eventDetailModal != nil && i.eventDetailModal.IsVisible() {
+		return i.renderEventDetailModalOverlay(baseView)
+	}
 
 	return baseView
 }
@@ -458,6 +508,76 @@ func (i *ManageSkillsIntent) renderSearchModalOverlay(baseView string) string {
 		overlay.Center, // Y position
 		0,              // X offset
 		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderViewDetailModalOverlay renders the view detail modal over the base view
+func (i *ManageSkillsIntent) renderViewDetailModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.viewDetailModal, // Foreground: the view detail modal
+		bgModel,           // Background: the rendered view
+		overlay.Center,    // X position
+		overlay.Center,    // Y position
+		0,                 // X offset
+		-2,                // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderAddEditModalOverlay renders the add/edit modal over the base view
+func (i *ManageSkillsIntent) renderAddEditModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.addEditModal, // Foreground: the add/edit modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderDeleteModalOverlay renders the delete confirmation modal over the base view
+func (i *ManageSkillsIntent) renderDeleteModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.deleteModal,  // Foreground: the delete modal
+		bgModel,        // Background: the rendered view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderSkillEventsModalOverlay renders the skill events modal over the base view
+func (i *ManageSkillsIntent) renderSkillEventsModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.skillEventsModal, // Foreground: the skill events modal
+		bgModel,            // Background: the rendered view
+		overlay.Center,     // X position
+		overlay.Center,     // Y position
+		0,                  // X offset
+		-2,                 // Y offset (move up 2 lines to avoid footer)
+	)
+	return overlayModel.View()
+}
+
+// renderEventDetailModalOverlay renders the event detail modal over the base view
+func (i *ManageSkillsIntent) renderEventDetailModalOverlay(baseView string) string {
+	bgModel := &staticViewModel{content: baseView}
+	overlayModel := overlay.New(
+		i.eventDetailModal, // Foreground: the event detail modal
+		bgModel,            // Background: the rendered view
+		overlay.Center,     // X position
+		overlay.Center,     // Y position
+		0,                  // X offset
+		-2,                 // Y offset (move up 2 lines to avoid footer)
 	)
 	return overlayModel.View()
 }
@@ -644,6 +764,233 @@ func (i *ManageSkillsIntent) handleSearchModalUpdate(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
+// handleViewDetailModalUpdate handles updates when view detail modal is visible
+func (i *ManageSkillsIntent) handleViewDetailModalUpdate(msg tea.Msg) tea.Cmd {
+	_, cmd := i.viewDetailModal.Update(msg)
+
+	if !i.viewDetailModal.IsVisible() {
+		// Modal was closed - check for action
+		action := i.viewDetailModal.GetAction()
+		switch action {
+		case "events":
+			// Load events for this skill and show modal
+			i.viewDetailModal = nil
+			return i.loadEventsForSkillModal()
+		case "edit":
+			// Open add/edit modal for this skill
+			return i.openAddEditModal(i.selectedSkill)
+		case "delete":
+			// Open delete confirmation modal
+			return i.openDeleteModal(i.selectedSkill)
+		}
+		// Simple close - clear the modal
+		i.viewDetailModal = nil
+	}
+
+	return cmd
+}
+
+// handleAddEditModalUpdate handles updates when add/edit modal is visible
+func (i *ManageSkillsIntent) handleAddEditModalUpdate(msg tea.Msg) tea.Cmd {
+	cmd, completed, skillData := i.addEditModal.Update(msg)
+
+	if !i.addEditModal.IsVisible() {
+		if completed && skillData != nil {
+			// User completed form - save skill
+			originalSkill := i.addEditModal.GetOriginalSkill()
+			if originalSkill != nil {
+				// Editing existing skill
+				skill := skillData.ToSkill(originalSkill.ID)
+				i.addEditModal = nil
+				return i.updateSkill(skill)
+			} else {
+				// Creating new skill
+				skill := skillData.ToSkill("")
+				i.addEditModal = nil
+				return i.createSkill(skill)
+			}
+		}
+		// User cancelled - close modal
+		i.addEditModal = nil
+	}
+
+	return cmd
+}
+
+// handleDeleteModalUpdate handles updates when delete confirmation modal is visible
+func (i *ManageSkillsIntent) handleDeleteModalUpdate(msg tea.Msg) tea.Cmd {
+	cmd, confirmed := i.deleteModal.Update(msg)
+
+	if !i.deleteModal.IsVisible() {
+		if confirmed && i.selectedSkill != nil {
+			// User confirmed deletion
+			skillID := i.selectedSkill.ID
+			i.deleteModal = nil
+			return func() tea.Msg {
+				err := i.context.SkillRepository.Delete(i.context.Ctx, skillID)
+				return SkillDeletedMsg{
+					SkillID: skillID,
+					Error:   err,
+				}
+			}
+		}
+		// User cancelled
+		i.deleteModal = nil
+	}
+
+	return cmd
+}
+
+// handleSkillEventsModalUpdate handles updates when skill events modal is visible
+func (i *ManageSkillsIntent) handleSkillEventsModalUpdate(msg tea.Msg) tea.Cmd {
+	_, cmd := i.skillEventsModal.Update(msg)
+
+	if !i.skillEventsModal.IsVisible() {
+		// Check if user selected an event
+		if i.skillEventsModal.HasSelection() {
+			selectedEvent := i.skillEventsModal.GetSelectedEvent()
+			i.skillEventsModal.ClearSelection()
+			// Open event detail modal
+			return i.openEventDetailModal(selectedEvent)
+		}
+		// Simple close - clear the modal
+		i.skillEventsModal = nil
+	}
+
+	return cmd
+}
+
+// handleEventDetailModalUpdate handles updates when event detail modal is visible
+func (i *ManageSkillsIntent) handleEventDetailModalUpdate(msg tea.Msg) tea.Cmd {
+	_, cmd := i.eventDetailModal.Update(msg)
+
+	if !i.eventDetailModal.IsVisible() {
+		// Event detail modal was closed
+		i.eventDetailModal = nil
+		// Re-show the skill events modal if it exists
+		if i.skillEventsModal != nil {
+			i.skillEventsModal.Show()
+		}
+	}
+
+	return cmd
+}
+
+// openSkillEventsModal opens the skill events modal for the selected skill
+func (i *ManageSkillsIntent) openSkillEventsModal(events []*domain.CareerEvent) tea.Cmd {
+	if i.selectedSkill == nil {
+		return nil
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.skillEventsModal = components.NewViewSkillEventsModal(
+		i.selectedSkill.ID,
+		i.selectedSkill.Name,
+		events,
+		i.Theme(),
+	)
+	i.skillEventsModal.SetDimensions(width, height)
+	i.skillEventsModal.Show()
+
+	return nil
+}
+
+// openEventDetailModal opens the event detail modal for a selected event
+func (i *ManageSkillsIntent) openEventDetailModal(event *domain.CareerEvent) tea.Cmd {
+	if event == nil {
+		return nil
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.eventDetailModal = components.NewViewEventDetailModal(event, i.Theme()).
+		WithShowSkillsOption(false) // Hide "s: Skills" - we're already in skills context
+	i.eventDetailModal.SetDimensions(width, height)
+	i.eventDetailModal.Show()
+
+	return nil
+}
+
+// openViewDetailModal opens the view detail modal for the selected skill
+func (i *ManageSkillsIntent) openViewDetailModal() tea.Cmd {
+	if len(i.skills) == 0 || i.selectedIndex >= len(i.skills) {
+		return nil
+	}
+
+	skill := i.skills[i.selectedIndex]
+	i.selectedSkill = skill
+
+	// Get event count and last used for this skill
+	eventCount := 0
+	if i.eventCounts != nil {
+		eventCount = i.eventCounts[skill.ID]
+	}
+
+	var lastUsed *time.Time
+	if i.lastUsedMap != nil {
+		if lu, ok := i.lastUsedMap[skill.ID]; ok {
+			lastUsed = &lu
+		}
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.viewDetailModal = components.NewViewSkillDetailModal(skill, i.Theme(), eventCount, lastUsed)
+	i.viewDetailModal.SetDimensions(width, height)
+	i.viewDetailModal.Show()
+
+	return nil
+}
+
+// openAddEditModal opens the add/edit modal for a skill
+func (i *ManageSkillsIntent) openAddEditModal(skill *domain.Skill) tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.addEditModal = components.NewSkillAddEditModal(skill, width, height)
+	return i.addEditModal.Init()
+}
+
+// openDeleteModal opens the delete confirmation modal for a skill
+func (i *ManageSkillsIntent) openDeleteModal(skill *domain.Skill) tea.Cmd {
+	if skill == nil {
+		return nil
+	}
+
+	i.selectedSkill = skill
+	skillName := skill.Name
+	if len(skillName) > 50 {
+		skillName = skillName[:47] + "..."
+	}
+
+	i.deleteModal = components.NewDeleteConfirmModal(
+		skill.Name,
+		"Delete Skill",
+		fmt.Sprintf("Are you sure you want to delete '%s'?", skillName),
+	)
+	return i.deleteModal.Init()
+}
+
 // getStateContent returns the content for the current state
 func (i *ManageSkillsIntent) getStateContent() string {
 	switch i.currentState {
@@ -806,6 +1153,31 @@ func (i *ManageSkillsIntent) ActiveFilters() *SkillsFilters {
 		i.filters = &SkillsFilters{}
 	}
 	return i.filters
+}
+
+// HasVisibleDetailModal returns true if the detail modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleDetailModal() bool {
+	return i.viewDetailModal != nil && i.viewDetailModal.IsVisible()
+}
+
+// HasVisibleAddEditModal returns true if the add/edit modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleAddEditModal() bool {
+	return i.addEditModal != nil && i.addEditModal.IsVisible()
+}
+
+// HasVisibleDeleteModal returns true if the delete modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleDeleteModal() bool {
+	return i.deleteModal != nil && i.deleteModal.IsVisible()
+}
+
+// HasVisibleSkillEventsModal returns true if the skill events modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleSkillEventsModal() bool {
+	return i.skillEventsModal != nil && i.skillEventsModal.IsVisible()
+}
+
+// HasVisibleEventDetailModal returns true if the event detail modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleEventDetailModal() bool {
+	return i.eventDetailModal != nil && i.eventDetailModal.IsVisible()
 }
 
 // Message handlers
@@ -1002,36 +1374,30 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 
 			switch msg.String() {
 			case "enter":
-				// View skill detail
+				// View skill detail - use modal overlay
+				if len(i.skills) == 0 {
+					return nil
+				}
+				return i.openViewDetailModal()
+
+			case "n":
+				// Add new skill - use modal overlay
+				return i.openAddEditModal(nil)
+
+			case "e":
+				// Edit selected skill - use modal overlay
 				if len(i.skills) == 0 {
 					return nil
 				}
 				i.selectedSkill = i.skills[i.selectedIndex]
-				i.currentState = SkillsStateDetail
-				return i.loadDetailData()
-
-			case "n":
-				// Add new skill
-				i.currentState = SkillsStateAdd
-				i.skillForm = models.NewSkillForm()
-				return i.skillForm.Init()
-
-			case "e":
-				// Edit selected skill
-				if len(i.skills) == 0 {
-					return nil
-				}
-				i.currentState = SkillsStateEdit
-				i.skillForm = models.NewSkillFormWithData(i.skills[i.selectedIndex])
-				return i.skillForm.Init()
+				return i.openAddEditModal(i.selectedSkill)
 
 			case "d":
-				// Delete selected skill
+				// Delete selected skill - use modal overlay
 				if len(i.skills) == 0 {
 					return nil
 				}
-				i.currentState = SkillsStateDelete
-				return nil
+				return i.openDeleteModal(i.skills[i.selectedIndex])
 
 			case "f":
 				// PATTERN 12: Form Modal with Immediate Init
@@ -1419,29 +1785,7 @@ func (i *ManageSkillsIntent) renderSkillsList() string {
 	return i.tableBehavior.Render()
 }
 
-// loadDetailData loads event counts and last used dates for detail view
-func (i *ManageSkillsIntent) loadDetailData() tea.Cmd {
-	// Load synchronously since we need this data immediately
-	eventCounts, err := i.context.SkillRepository.GetEventCountsForSkills(i.context.Ctx)
-	if err != nil {
-		// If loading fails, use empty maps
-		i.eventCounts = make(map[string]int)
-	} else {
-		i.eventCounts = eventCounts
-	}
-
-	lastUsedMap, err := i.context.SkillRepository.GetLastUsedForSkills(i.context.Ctx)
-	if err != nil {
-		// If loading fails, use empty map
-		i.lastUsedMap = make(map[string]time.Time)
-	} else {
-		i.lastUsedMap = lastUsedMap
-	}
-
-	return nil
-}
-
-// handleSkillEventsLoaded handles the SkillEventsLoadedMsg
+// handleSkillEventsLoaded handles the SkillEventsLoadedMsg (state-based flow)
 func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) tea.Cmd {
 	if msg.Error != nil {
 		// Show error but stay in detail view
@@ -1462,6 +1806,17 @@ func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) t
 	i.syncEventsTableSelection()
 
 	return nil
+}
+
+// handleSkillEventsForModalLoaded handles the SkillEventsForModalLoadedMsg (modal flow)
+func (i *ManageSkillsIntent) handleSkillEventsForModalLoaded(msg SkillEventsForModalLoadedMsg) tea.Cmd {
+	if msg.Error != nil {
+		// Show error - could display error modal here
+		return nil
+	}
+
+	// Open the skill events modal with the loaded events
+	return i.openSkillEventsModal(msg.Events)
 }
 
 // handleDetailKeys handles key presses in detail view
@@ -1545,11 +1900,22 @@ func (i *ManageSkillsIntent) handleDetailEventsKeys(msg tea.KeyMsg) tea.Cmd {
 		})
 }
 
-// loadEventsForSkill loads events that use the selected skill
+// loadEventsForSkill loads events that use the selected skill (for state-based flow)
 func (i *ManageSkillsIntent) loadEventsForSkill() tea.Cmd {
 	return func() tea.Msg {
 		events, err := i.context.SkillRepository.GetEventsUsingSkill(i.context.Ctx, i.selectedSkill.ID)
 		return SkillEventsLoadedMsg{
+			Events: events,
+			Error:  err,
+		}
+	}
+}
+
+// loadEventsForSkillModal loads events and opens the skill events modal
+func (i *ManageSkillsIntent) loadEventsForSkillModal() tea.Cmd {
+	return func() tea.Msg {
+		events, err := i.context.SkillRepository.GetEventsUsingSkill(i.context.Ctx, i.selectedSkill.ID)
+		return SkillEventsForModalLoadedMsg{
 			Events: events,
 			Error:  err,
 		}
