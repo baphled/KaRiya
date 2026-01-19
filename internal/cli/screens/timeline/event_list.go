@@ -1,19 +1,42 @@
 package timeline
 
 import (
-	"fmt"
-
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // State constant for state matrix tracking (REQUIRED)
 const TimelineEventListState = "timeline_event_list"
+
+// eventRowFormatter formats a career event for table display
+func eventRowFormatter(event *career.CareerEvent, index int) []string {
+	// Date formatting
+	dateStr := event.Date.Format("2006-01-02")
+
+	// Truncate text to 40 chars (reduced to make room for project)
+	text := event.Text
+	if len(text) > 40 {
+		text = text[:40] + "..."
+	}
+
+	// Company (or dash if empty)
+	company := event.Company
+	if company == "" {
+		company = "-"
+	}
+
+	// Project (or dash if empty)
+	project := event.Project
+	if project == "" {
+		project = "-"
+	}
+
+	return []string{dateStr, text, company, project}
+}
 
 // TimelineEventListScreen displays a list of career events in chronological order.
 //
@@ -45,9 +68,7 @@ const TimelineEventListState = "timeline_event_list"
 type TimelineEventListScreen struct {
 	*base.BaseScreen
 	events        []*career.CareerEvent
-	selectedIndex int
-	table         table.Model
-	listContainer *components.TableListContainer
+	tableBehavior *behaviors.TableBehavior[*career.CareerEvent]
 }
 
 // NewTimelineEventListScreen creates a new timeline event list screen.
@@ -61,35 +82,28 @@ type TimelineEventListScreen struct {
 // Parameters:
 //   - events: List of career events to display (can be empty)
 func NewTimelineEventListScreen(events []*career.CareerEvent) *TimelineEventListScreen {
-	// Create table columns with Product column
-	columns := []table.Column{
+	// Create table columns
+	columns := []behaviors.ColumnDef{
 		{Title: "Date", Width: 12},
 		{Title: "Event", Width: 40},
 		{Title: "Company", Width: 18},
 		{Title: "Project", Width: 15},
 	}
 
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
+	// Create TableBehavior for events list (theme set later via SetTheme)
+	tableBehavior := behaviors.NewTableBehavior[*career.CareerEvent](nil, columns, eventRowFormatter).
+		PageSize(15).
+		PaginationPrefix("Events").
+		EmptyMessage("No events found.")
 
-	// Apply default styles - theme will be applied via SetTheme
-	t.SetStyles(table.DefaultStyles())
+	// Set items after creation
+	tableBehavior.SetItems(events)
 
 	screen := &TimelineEventListScreen{
 		BaseScreen:    base.NewBaseScreen(),
 		events:        events,
-		selectedIndex: 0,
-		table:         t,
-		listContainer: components.NewTableListContainer(t, "Career Timeline", 100),
+		tableBehavior: tableBehavior,
 	}
-
-	// Update table rows with events
-	screen.updateTableRows()
 
 	return screen
 }
@@ -108,49 +122,16 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 			// Note: 'q' (quit) is handled by the intent before delegation
 			return nil, &screens.CancelResult{}
 
-		case "up", "k":
-			// Move selection up
-			if s.selectedIndex > 0 {
-				s.selectedIndex--
-			}
-			return nil, nil
-
-		case "down", "j":
-			// Move selection down
-			if len(s.events) > 0 && s.selectedIndex < len(s.events)-1 {
-				s.selectedIndex++
-			}
-			return nil, nil
-
-		case "ctrl+d":
-			// Page down (half page)
-			pageSize := 15
-			halfPage := pageSize / 2
-			if len(s.events) > 0 {
-				s.selectedIndex += halfPage
-				if s.selectedIndex >= len(s.events) {
-					s.selectedIndex = len(s.events) - 1
-				}
-			}
-			return nil, nil
-
-		case "ctrl+u":
-			// Page up (half page)
-			pageSize := 15
-			halfPage := pageSize / 2
-			if s.selectedIndex > 0 {
-				s.selectedIndex -= halfPage
-				if s.selectedIndex < 0 {
-					s.selectedIndex = 0
-				}
-			}
+		case "up", "k", "down", "j", "ctrl+d", "ctrl+u", "pgup", "pgdown", "home", "end", "g", "G":
+			// Delegate navigation to TableBehavior
+			s.tableBehavior.HandleNavigation(msg.String())
 			return nil, nil
 
 		case "enter":
 			// View event details
-			if len(s.events) > 0 && s.selectedIndex < len(s.events) {
+			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
-					ResultData: s.events[s.selectedIndex],
+					ResultData: *selected, // Dereference **T to get *T
 				}
 			}
 			return nil, nil
@@ -165,11 +146,11 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 
 		case "e":
 			// Edit selected event
-			if len(s.events) > 0 && s.selectedIndex < len(s.events) {
+			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
 					ResultData: map[string]interface{}{
 						"action": "edit",
-						"event":  s.events[s.selectedIndex],
+						"event":  *selected, // Dereference **T to get *T
 					},
 				}
 			}
@@ -177,11 +158,11 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 
 		case "d":
 			// Delete selected event
-			if len(s.events) > 0 && s.selectedIndex < len(s.events) {
+			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
 					ResultData: map[string]interface{}{
 						"action": "delete",
-						"event":  s.events[s.selectedIndex],
+						"event":  *selected, // Dereference **T to get *T
 					},
 				}
 			}
@@ -200,102 +181,11 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 	return nil, nil
 }
 
-// updateTableRows updates the table rows based on events (with pagination).
-func (s *TimelineEventListScreen) updateTableRows() {
-	pageSize := 15
-	total := len(s.events)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && s.selectedIndex >= 0 {
-		page = s.selectedIndex / pageSize
-	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	pageEvents := s.events[start:end]
-
-	rows := make([]table.Row, 0, len(pageEvents))
-	for idx, event := range pageEvents {
-		realIdx := start + idx
-
-		// Date formatting
-		dateStr := event.Date.Format("2006-01-02")
-
-		// Add selection indicator for selected row
-		if realIdx == s.selectedIndex {
-			dateStr = "▶ " + dateStr
-		} else {
-			dateStr = "  " + dateStr
-		}
-
-		// Truncate text to 40 chars (reduced to make room for project)
-		text := event.Text
-		if len(text) > 40 {
-			text = text[:40] + "..."
-		}
-
-		// Company (or dash if empty)
-		company := event.Company
-		if company == "" {
-			company = "-"
-		}
-
-		// Project (or dash if empty)
-		project := event.Project
-		if project == "" {
-			project = "-"
-		}
-
-		rows = append(rows, table.Row{dateStr, text, company, project})
-	}
-
-	s.table.SetRows(rows)
-
-	// Calculate relative cursor position for this page
-	relativeCursor := 0
-	if s.selectedIndex >= start && s.selectedIndex < end {
-		relativeCursor = s.selectedIndex - start
-	}
-
-	// Set table cursor to relative position
-	s.table.SetCursor(relativeCursor)
-
-	// Sync container's selected index
-	s.listContainer.SetSelectedIdx(relativeCursor)
-
-	// CRITICAL: Sync updated table back to container (fixes display bug)
-	// The container stores a VALUE COPY of the table, so we must explicitly
-	// update it after modifying rows/cursor, otherwise it renders stale data
-	s.listContainer.SetTable(s.table)
-}
-
 // RenderContent returns just the content (table) without StandardView wrapper.
 // This allows the intent to wrap it with proper breadcrumbs and themed footer.
 func (s *TimelineEventListScreen) RenderContent() string {
-	// Handle empty state
-	if len(s.events) == 0 {
-		s.listContainer.SetEmptyStateMessage("No events found.")
-		return s.listContainer.Render()
-	}
-
-	// Ensure table rows are synchronized
-	s.updateTableRows()
-
-	// Build pagination info matching legacy format
-	pageSize := 15
-	totalItems := len(s.events)
-	currentPage := (s.selectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	s.listContainer.SetPaginationInfo(paginationInfo)
-
-	// Render table via container
-	return s.listContainer.Render()
+	// TableBehavior handles empty state and pagination internally
+	return s.tableBehavior.Render()
 }
 
 // View renders the event list screen using StandardView with table.
@@ -318,7 +208,7 @@ func (s *TimelineEventListScreen) SetTheme(theme interface{}) {
 	s.BaseScreen.SetTheme(theme)
 	// Apply themed table styles if theme is available
 	if t, ok := theme.(themes.Theme); ok && t != nil {
-		s.table.SetStyles(themes.NewThemedTableStyles(t))
+		s.tableBehavior.SetTheme(t)
 	}
 }
 
@@ -329,5 +219,5 @@ func (s *TimelineEventListScreen) GetEvents() []*career.CareerEvent {
 
 // GetSelectedIndex returns the currently selected index.
 func (s *TimelineEventListScreen) GetSelectedIndex() int {
-	return s.selectedIndex
+	return s.tableBehavior.GetSelectedIndex()
 }

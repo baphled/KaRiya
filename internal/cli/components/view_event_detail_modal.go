@@ -118,6 +118,9 @@ func (m *ViewEventDetailModal) View() string {
 	}
 
 	modalWidth := m.width - 12 // Leave margins
+	if modalWidth < 60 {
+		modalWidth = 60 // Ensure minimum readable width
+	}
 	if modalWidth > 80 {
 		modalWidth = 80 // Max width for readability
 	}
@@ -128,14 +131,21 @@ func (m *ViewEventDetailModal) View() string {
 	contentHeight := len(contentLines)
 
 	// Calculate viewport height (modal height - borders - padding - footer)
-	viewportHeight := maxModalHeight - 6 // Account for border (2), padding (2), footer (2)
-	if viewportHeight < 5 {
-		viewportHeight = 5
+	viewportHeight := maxModalHeight - 4 // Account for border (2), footer (2)
+	if viewportHeight < 10 {
+		viewportHeight = 10 // Ensure minimum usable height
 	}
 
 	// Initialize viewport if needed
 	if !m.ready {
-		m.viewport = viewport.New(modalWidth-4, viewportHeight)
+		vpWidth := modalWidth - 4
+		if vpWidth < 10 {
+			vpWidth = 10 // Minimum viewport width
+		}
+		if viewportHeight < 5 {
+			viewportHeight = 5 // Minimum viewport height
+		}
+		m.viewport = viewport.New(vpWidth, viewportHeight)
 		m.viewport.SetContent(content)
 		m.hasContent = contentHeight > viewportHeight
 		m.ready = true

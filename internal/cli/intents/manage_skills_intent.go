@@ -5,17 +5,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/models"
-	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/screens"
 	skills_screens "github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	career "github.com/baphled/kariya/internal/repository/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
@@ -42,10 +43,8 @@ type ManageSkillsIntent struct {
 	selectedIndex int
 	selectedSkill *domain.Skill // Selected skill for detail view
 
-	// table components for skills list view
-	table         *table.Model
-	listContainer *components.TableListContainer
-	navHandler    *navigation.ListNavigationHandler
+	// tableBehavior provides type-safe table operations for skills
+	tableBehavior *behaviors.TableBehavior[*domain.Skill]
 
 	// detail view data
 	eventCounts  map[string]int        // Skill ID -> event count
@@ -53,10 +52,8 @@ type ManageSkillsIntent struct {
 	skillEvents  []*domain.CareerEvent // Events for selected skill
 	eventsLoaded bool                  // Whether events have been loaded
 
-	// events table components for skill events view
-	eventsTable           *table.Model
-	eventsListContainer   *components.TableListContainer
-	eventsNavHandler      *navigation.ListNavigationHandler
+	// eventsTableBehavior provides type-safe table operations for skill events
+	eventsTableBehavior   *behaviors.TableBehavior[*domain.CareerEvent]
 	eventsSelectedIndex   int                 // Selection index for events list
 	selectedEventFromList *domain.CareerEvent // Selected event for detail view from events list
 
@@ -96,166 +93,15 @@ type SkillsFilters struct {
 }
 
 // NewManageSkillsIntent creates a new ManageSkills intent
-func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
-	baseIntent := NewBaseIntent()
-	baseIntent.SetThemeManager(themes.NewThemeManager())
 
-	// Create table model for skills list
-	skillsColumns := []table.Column{
-		{Title: "Name", Width: 25},
-		{Title: "Category", Width: 15},
-		{Title: "Level", Width: 12},
-		{Title: "Years", Width: 8},
-		{Title: "Events", Width: 8},
-	}
-
-	skillsTable := table.New(
-		table.WithColumns(skillsColumns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
-
-	// Apply default styles initially - theme styles will be applied in Init()
-	skillsTable.SetStyles(table.DefaultStyles())
-
-	// Create table model for skill events list
-	eventsColumns := []table.Column{
-		{Title: "Date", Width: 12},
-		{Title: "Event", Width: 50},
-		{Title: "Company", Width: 20},
-	}
-
-	eventsTable := table.New(
-		table.WithColumns(eventsColumns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
-	eventsTable.SetStyles(table.DefaultStyles())
-
-	intent := &ManageSkillsIntent{
-		BaseIntent:          baseIntent,
-		context:             ctx,
-		currentState:        SkillsStateList,
-		skills:              []*domain.Skill{},
-		selectedIndex:       0,
-		filters:             &SkillsFilters{},
-		active:              true,
-		table:               &skillsTable,
-		listContainer:       components.NewTableListContainer(skillsTable, "Manage Skills", 100),
-		eventsTable:         &eventsTable,
-		eventsListContainer: components.NewTableListContainer(eventsTable, "Skill Events", 100),
-	}
-
-	// Initialize navigation handler for skills list
-	intent.navHandler = navigation.NewListNavigationHandler(intent)
-
-	// Initialize navigation handler for events list using wrapper
-	intent.eventsNavHandler = navigation.NewListNavigationHandler(&skillEventsNavigator{intent: intent})
-
-	return intent
-}
-
-// skillEventsNavigator wraps ManageSkillsIntent to implement ListNavigator for the events list
-type skillEventsNavigator struct {
-	intent *ManageSkillsIntent
-}
-
-func (n *skillEventsNavigator) GetTotalItems() int {
-	return len(n.intent.skillEvents)
-}
-
-func (n *skillEventsNavigator) GetSelectedIndex() int {
-	return n.intent.eventsSelectedIndex
-}
-
-func (n *skillEventsNavigator) SetSelectedIndex(idx int) {
-	// Validate and set index
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= len(n.intent.skillEvents) {
-		idx = len(n.intent.skillEvents) - 1
-	}
-	if idx < 0 {
-		idx = 0 // Handle empty list
-	}
-
-	n.intent.eventsSelectedIndex = idx
-
-	// Update table display
-	n.intent.updateEventsTableRows()
-}
-
-func (n *skillEventsNavigator) GetPageSize() int {
-	return 15
-}
-
-// Init initializes the intent and loads skills
-func (i *ManageSkillsIntent) Init() tea.Cmd {
-	i.active = true
-
-	// Disable screen architecture by default (tests expect legacy mode)
-	// TODO: Fix screen orchestration bugs before re-enabling
-	i.useScreens = false
-
-	// Apply themed table styles if theme is available (for legacy fallback states)
-	if theme := i.Theme(); theme != nil {
-		i.table.SetStyles(themes.NewThemedTableStyles(theme))
-	}
-
-	// Load skills asynchronously
-	return func() tea.Msg {
-		// Guard against nil repository (e.g., in tests without full context setup)
-		if i.context == nil || i.context.SkillRepository == nil {
-			return SkillsLoadedMsg{
-				Skills: nil,
-				Error:  nil,
-			}
+// skillRowFormatterWithCounts creates a row formatter that includes event counts
+func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormatter[*domain.Skill] {
+	return func(skill *domain.Skill, index int) []string {
+		// Name
+		name := skill.Name
+		if len(name) > 22 {
+			name = name[:22] + "..."
 		}
-		skills, err := i.context.SkillRepository.List(i.context.Ctx, nil)
-		return SkillsLoadedMsg{
-			Skills: skills,
-			Error:  err,
-		}
-	}
-}
-
-// updateTableRows updates the table rows based on skills
-func (i *ManageSkillsIntent) updateTableRows() {
-	pageSize := 15
-	total := len(i.skills)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && i.selectedIndex >= 0 {
-		page = i.selectedIndex / pageSize
-	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	// Handle empty list
-	if total == 0 {
-		i.table.SetRows([]table.Row{})
-		i.listContainer.SetTable(*i.table)
-		return
-	}
-
-	pageSkills := i.skills[start:end]
-
-	rows := make([]table.Row, 0, len(pageSkills))
-	for idx, skill := range pageSkills {
-		realIdx := start + idx
-
-		// Use centralized indicator formatting
-		name := i.navHandler.FormatRowText(realIdx, skill.Name)
 
 		// Category
 		category := skill.Category
@@ -277,97 +123,134 @@ func (i *ManageSkillsIntent) updateTableRows() {
 
 		// Event count
 		eventCount := "-"
-		if i.eventCounts != nil {
-			if count, ok := i.eventCounts[skill.ID]; ok {
+		if eventCounts != nil {
+			if count, ok := eventCounts[skill.ID]; ok {
 				eventCount = fmt.Sprintf("%d", count)
 			}
 		}
 
-		rows = append(rows, table.Row{name, category, level, years, eventCount})
+		return []string{name, category, level, years, eventCount}
 	}
-
-	i.table.SetRows(rows)
-
-	// Calculate relative cursor position for this page
-	relativeCursor := 0
-	if i.selectedIndex >= start && i.selectedIndex < end {
-		relativeCursor = i.selectedIndex - start
-	}
-
-	// Set table cursor to relative position within the page
-	i.table.SetCursor(relativeCursor)
-
-	// Sync the container's selectedIdx to match our relative cursor
-	i.listContainer.SetSelectedIdx(relativeCursor)
-
-	// Update the container with the modified table
-	i.listContainer.SetTable(*i.table)
 }
 
-// updateEventsTableRows updates the events table rows based on skillEvents
-func (i *ManageSkillsIntent) updateEventsTableRows() {
-	pageSize := 15
-	total := len(i.skillEvents)
+// eventRowFormatter formats a career event for table display
+func eventRowFormatter(event *domain.CareerEvent, index int) []string {
+	// Date
+	dateStr := event.Date.Format("2006-01-02")
 
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && i.eventsSelectedIndex >= 0 {
-		page = i.eventsSelectedIndex / pageSize
+	// Truncate text to first 47 chars (50 - 3 for "...")
+	text := event.Text
+	if len(text) > 47 {
+		text = text[:47] + "..."
 	}
 
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
+	// Company
+	company := event.Company
+	if company == "" {
+		company = "-"
 	}
 
-	// Handle empty list
-	if total == 0 {
-		i.eventsTable.SetRows([]table.Row{})
-		i.eventsListContainer.SetTable(*i.eventsTable)
-		return
+	return []string{dateStr, text, company}
+}
+
+// NewManageSkillsIntent creates a new ManageSkills intent
+func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
+	baseIntent := NewBaseIntent()
+	baseIntent.SetThemeManager(themes.NewThemeManager())
+
+	// Create TableBehavior for skills list
+	skillsColumns := []behaviors.ColumnDef{
+		{Title: "Name", Width: 25},
+		{Title: "Category", Width: 15},
+		{Title: "Level", Width: 12},
+		{Title: "Years", Width: 8},
+		{Title: "Events", Width: 8},
 	}
 
-	pageEvents := i.skillEvents[start:end]
+	// Create TableBehavior for skill events list
+	eventsColumns := []behaviors.ColumnDef{
+		{Title: "Date", Width: 12},
+		{Title: "Event", Width: 50},
+		{Title: "Company", Width: 20},
+	}
 
-	rows := make([]table.Row, 0, len(pageEvents))
-	for idx, event := range pageEvents {
-		realIdx := start + idx
+	intent := &ManageSkillsIntent{
+		BaseIntent:   baseIntent,
+		context:      ctx,
+		currentState: SkillsStateList,
+		skills:       []*domain.Skill{},
+		filters:      &SkillsFilters{},
+		active:       true,
+	}
 
-		// Use centralized indicator formatting
-		dateStr := i.eventsNavHandler.FormatRowText(realIdx, event.Date.Format("2006-01-02"))
+	// Initialize TableBehaviors - use closure to capture eventCounts reference
+	intent.tableBehavior = behaviors.NewTableBehavior[*domain.Skill](nil, skillsColumns, skillRowFormatterWithCounts(intent.eventCounts)).
+		PageSize(15).
+		PaginationPrefix("Skills").
+		EmptyMessage("No skills found. Press 'n' to add a new skill.")
 
-		// Truncate text to first 50 chars
-		text := event.Text
-		if len(text) > 50 {
-			text = text[:50] + "..."
+	intent.eventsTableBehavior = behaviors.NewTableBehavior[*domain.CareerEvent](nil, eventsColumns, eventRowFormatter).
+		PageSize(15).
+		PaginationPrefix("Events").
+		EmptyMessage("No events found for this skill.")
+
+	return intent
+}
+
+// Init initializes the intent and loads skills
+func (i *ManageSkillsIntent) Init() tea.Cmd {
+	i.active = true
+
+	// Disable screen architecture by default (tests expect legacy mode)
+	// TODO: Fix screen orchestration bugs before re-enabling
+	i.useScreens = false
+
+	// Apply theme to TableBehaviors if available
+	if theme := i.Theme(); theme != nil {
+		i.tableBehavior.SetTheme(theme)
+		i.eventsTableBehavior.SetTheme(theme)
+	}
+
+	// Load skills asynchronously
+	return func() tea.Msg {
+		// Guard against nil repository (e.g., in tests without full context setup)
+		if i.context == nil || i.context.SkillRepository == nil {
+			return SkillsLoadedMsg{
+				Skills: nil,
+				Error:  nil,
+			}
 		}
-
-		// Company
-		company := event.Company
-		if company == "" {
-			company = "-"
+		skills, err := i.context.SkillRepository.List(i.context.Ctx, nil)
+		return SkillsLoadedMsg{
+			Skills: skills,
+			Error:  err,
 		}
-
-		rows = append(rows, table.Row{dateStr, text, company})
 	}
+}
 
-	i.eventsTable.SetRows(rows)
-
-	// Calculate relative cursor position for this page
-	relativeCursor := 0
-	if i.eventsSelectedIndex >= start && i.eventsSelectedIndex < end {
-		relativeCursor = i.eventsSelectedIndex - start
+// syncTableSelection syncs the TableBehavior selection with the intent's data
+func (i *ManageSkillsIntent) syncTableSelection() {
+	i.selectedIndex = i.tableBehavior.GetSelectedIndex()
+	if selected := i.tableBehavior.GetSelectedItem(); selected != nil {
+		i.selectedSkill = *selected
+	} else {
+		i.selectedSkill = nil
 	}
+}
 
-	// Set table cursor to relative position within the page
-	i.eventsTable.SetCursor(relativeCursor)
+// syncEventsTableSelection syncs the events TableBehavior selection with the intent's data
+func (i *ManageSkillsIntent) syncEventsTableSelection() {
+	i.eventsSelectedIndex = i.eventsTableBehavior.GetSelectedIndex()
+	if selected := i.eventsTableBehavior.GetSelectedItem(); selected != nil {
+		i.selectedEventFromList = *selected
+	} else {
+		i.selectedEventFromList = nil
+	}
+}
 
-	// Sync the container's selectedIdx to match our relative cursor
-	i.eventsListContainer.SetSelectedIdx(relativeCursor)
-
-	// Update the container with the modified table
-	i.eventsListContainer.SetTable(*i.eventsTable)
+// refreshSkillsTable updates the TableBehavior with current skills
+func (i *ManageSkillsIntent) refreshSkillsTable() {
+	i.tableBehavior.SetItems(i.skills)
 }
 
 // Update handles messages and state transitions
@@ -959,8 +842,9 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 		return i.transitionToListScreen()
 	}
 
-	// Legacy: Update table rows with new skills data
-	i.updateTableRows()
+	// Update TableBehavior with new skills data
+	i.refreshSkillsTable()
+	i.syncTableSelection()
 
 	return nil
 }
@@ -1110,8 +994,9 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 			return nil
 		}).
 		InterceptOr(msg, func() tea.Cmd {
-			// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
-			if i.navHandler.HandleKey(msg.String()) {
+			// Try TableBehavior navigation first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+			if i.tableBehavior.HandleNavigation(msg.String()) {
+				i.syncTableSelection()
 				return nil
 			}
 
@@ -1529,36 +1414,9 @@ func (i *ManageSkillsIntent) renderDeleteConfirm() string {
 	return modal.Render(width, height)
 }
 
-// getCardStyle returns a themed card style for consistent content presentation.
-func (i *ManageSkillsIntent) getCardStyle() lipgloss.Style {
-	if theme := i.Theme(); theme != nil {
-		return theme.Styles().CardBase
-	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#585B70"))
-}
-
 func (i *ManageSkillsIntent) renderSkillsList() string {
-	if len(i.skills) == 0 {
-		i.listContainer.SetEmptyStateMessage("No skills defined yet.\n\nPress 'n' to add your first skill.")
-		return i.listContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	i.updateTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(i.skills)
-	currentPage := (i.selectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Skills: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	i.listContainer.SetPaginationInfo(paginationInfo)
-
-	return i.listContainer.Render()
+	// TableBehavior handles empty state and pagination internally
+	return i.tableBehavior.Render()
 }
 
 // loadDetailData loads event counts and last used dates for detail view
@@ -1594,13 +1452,14 @@ func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) t
 	i.eventsLoaded = true
 	i.eventsSelectedIndex = 0
 
-	// Apply themed table styles for events table
+	// Apply theme to events TableBehavior
 	if theme := i.Theme(); theme != nil {
-		i.eventsTable.SetStyles(themes.NewThemedTableStyles(theme))
+		i.eventsTableBehavior.SetTheme(theme)
 	}
 
-	// Update table rows with new events data
-	i.updateEventsTableRows()
+	// Update TableBehavior with events data
+	i.eventsTableBehavior.SetItems(i.skillEvents)
+	i.syncEventsTableSelection()
 
 	return nil
 }
@@ -1656,8 +1515,9 @@ func (i *ManageSkillsIntent) handleDetailEventsKeys(msg tea.KeyMsg) tea.Cmd {
 			return nil
 		}).
 		InterceptOr(msg, func() tea.Cmd {
-			// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
-			if i.eventsNavHandler.HandleKey(msg.String()) {
+			// Try TableBehavior navigation first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+			if i.eventsTableBehavior.HandleNavigation(msg.String()) {
+				i.syncEventsTableSelection()
 				return nil
 			}
 
@@ -1696,7 +1556,7 @@ func (i *ManageSkillsIntent) loadEventsForSkill() tea.Cmd {
 	}
 }
 
-// renderSkillDetail renders the skill detail content
+// renderSkillDetail renders the skill detail content using UIKit components
 func (i *ManageSkillsIntent) renderSkillDetail() string {
 	skill := i.selectedSkill
 	theme := i.Theme()
@@ -1745,13 +1605,14 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 		}
 	}
 
-	// Timestamps
+	// Timestamps using UIKit primitives
 	lines = append(lines, "")
-	lines = append(lines, labelStyle.Render("Created:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.CreatedAt.Format("2006-01-02 15:04")))
-	lines = append(lines, labelStyle.Render("Updated:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.UpdatedAt.Format("2006-01-02 15:04")))
+	lines = append(lines, labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render())
+	lines = append(lines, labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render())
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return i.getCardStyle().Render(content)
+	// Use UIKit Box container for consistent card styling
+	return containers.NewBox(theme).Content(content).Render()
 }
 
 // renderSkillEvents renders the events using this skill as a table
@@ -1759,29 +1620,13 @@ func (i *ManageSkillsIntent) renderSkillEvents() string {
 	theme := i.Theme()
 
 	if !i.eventsLoaded {
-		loadingStyle := lipgloss.NewStyle().
-			Foreground(theme.SecondaryColor()).
-			MarginTop(2)
-		return i.getCardStyle().Render(loadingStyle.Render("Loading events..."))
+		// Use UIKit Box container with muted loading text
+		loadingContent := primitives.Muted("Loading events...", theme).Render()
+		return containers.NewBox(theme).Content(loadingContent).Render()
 	}
 
-	if len(i.skillEvents) == 0 {
-		i.eventsListContainer.SetEmptyStateMessage("No events use this skill yet.")
-		return i.eventsListContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	i.updateEventsTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(i.skillEvents)
-	currentPage := (i.eventsSelectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	i.eventsListContainer.SetPaginationInfo(paginationInfo)
-
-	return i.eventsListContainer.Render()
+	// TableBehavior handles empty state and pagination internally
+	return i.eventsTableBehavior.Render()
 }
 
 // renderEventDetail renders a single event's details using the reusable component
@@ -1935,7 +1780,8 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return i.getCardStyle().Render(content)
+	// Use UIKit Box container for consistent card styling
+	return containers.NewBox(i.Theme()).Content(content).Render()
 }
 
 // renderSortMenu renders the sort menu
@@ -1988,43 +1834,26 @@ func (i *ManageSkillsIntent) renderSortMenu() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return i.getCardStyle().Render(content)
+	// Use UIKit Box container for consistent card styling
+	return containers.NewBox(i.Theme()).Content(content).Render()
 }
 
-// ListNavigator interface implementation
+// ListNavigator interface implementation (delegates to TableBehavior)
 
 // GetTotalItems returns the total number of skills.
 func (i *ManageSkillsIntent) GetTotalItems() int {
-	return len(i.skills)
+	return i.tableBehavior.Count()
 }
 
 // GetSelectedIndex returns the current selection index.
 func (i *ManageSkillsIntent) GetSelectedIndex() int {
-	return i.selectedIndex
+	return i.tableBehavior.GetSelectedIndex()
 }
 
 // SetSelectedIndex sets the selection index and updates the display.
 func (i *ManageSkillsIntent) SetSelectedIndex(idx int) {
-	// Validate and set index
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= len(i.skills) {
-		idx = len(i.skills) - 1
-	}
-	if idx < 0 {
-		idx = 0 // Handle empty list
-	}
-
-	i.selectedIndex = idx
-
-	// Update selected skill
-	if idx >= 0 && idx < len(i.skills) {
-		i.selectedSkill = i.skills[idx]
-	}
-
-	// Update table display
-	i.updateTableRows()
+	i.tableBehavior.SetSelectedIndex(idx)
+	i.syncTableSelection()
 }
 
 // GetPageSize returns the page size for pagination.

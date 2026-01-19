@@ -1075,17 +1075,19 @@ func (i *BrowseTimelineIntent) renderSortModalOverlay(background string) string 
 
 // renderViewDetailModalOverlay renders the event detail modal using bubbletea-overlay.
 func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
+	// Pre-render the modal content to a static string
+	// This follows the same pattern as EventSearchModal.RenderOverlay
+	modalContent := &staticViewModel{content: i.viewDetailModal.View()}
 	bgModel := &staticViewModel{content: background}
 
 	// Use bubbletea-overlay to composite the detail modal onto the background
 	overlayModel := overlay.New(
-		i.viewDetailModal, // Foreground: the event detail modal
-		bgModel,           // Background: the rendered timeline view
-		overlay.Center,    // X position
-		overlay.Center,    // Y position
-		0,                 // X offset
-		-2,                // Y offset (move up 2 lines to avoid footer)
+		modalContent,   // Foreground: pre-rendered modal content
+		bgModel,        // Background: the rendered timeline view
+		overlay.Center, // X position
+		overlay.Center, // Y position
+		0,              // X offset
+		-2,             // Y offset (move up 2 lines to avoid footer)
 	)
 
 	return overlayModel.View()
@@ -1165,14 +1167,14 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 	case BrowseStateTimeline:
 		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Search, Filter, Sort, Clear (conditional), Back + Global shortcuts
 		badges := []components.KeyBadge{
-			components.NavigateBadge(), // ↑/↓: Navigate
-			components.NewKeyBadge("Enter", "View Details"),
-			components.AddBadge(),    // a: Add
-			components.EditBadge(),   // e: Edit
-			components.DeleteBadge(), // d: Delete
-			components.SearchBadge(), // /: Search
-			components.FilterBadge(), // f: Filter
-			components.NewKeyBadge("s", "Sort"),
+			components.NavigateBadge(),                      // ↑/↓: Navigate
+			components.NewKeyBadge("Enter", "View Details"), // Enter: View Details
+			components.AddBadge(),                           // a: Add
+			components.EditBadge(),                          // e: Edit
+			components.DeleteBadge(),                        // d: Delete
+			components.SearchBadge(),                        // /: Search
+			components.FilterBadge(),                        // f: Filter
+			components.NewKeyBadge("s", "Sort"),             // s: Sort
 		}
 
 		// Conditionally add "Clear filters" badge when filters are active

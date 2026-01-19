@@ -797,7 +797,7 @@ var _ = Describe("ManageSkillsIntent", func() {
 			view := intent.View()
 			Expect(view).To(Or(
 				ContainSubstring("Implemented Ruby feature"),
-				ContainSubstring("No events use this skill"),
+				ContainSubstring("No events found for this skill"),
 				ContainSubstring("Loading events"),
 			))
 		})

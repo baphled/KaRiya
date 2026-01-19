@@ -39,6 +39,49 @@ var _ = Describe("Classifier", func() {
 		})
 	})
 
+	Context("when classifying role fit with categories", func() {
+		It("should use technical category for senior_ic", func() {
+			text := "Architected the backend infrastructure" // Would be principal by keywords alone
+			categories := []string{"technical"}
+			roleFit := classifier.ClassifyRoleFitWithCategories(text, categories)
+			Expect(roleFit).To(Equal(career.RoleFitSeniorIC))
+		})
+
+		It("should use leadership category for EM", func() {
+			text := "Delivered new feature" // Would be senior_ic by keywords alone
+			categories := []string{"leadership"}
+			roleFit := classifier.ClassifyRoleFitWithCategories(text, categories)
+			Expect(roleFit).To(Equal(career.RoleFitEM))
+		})
+
+		It("should use leadership+technical categories for staff", func() {
+			text := "Delivered new feature"
+			categories := []string{"leadership", "technical"}
+			roleFit := classifier.ClassifyRoleFitWithCategories(text, categories)
+			Expect(roleFit).To(Equal(career.RoleFitStaff))
+		})
+
+		It("should elevate to principal with strong principal keywords", func() {
+			text := "Set company-wide technical direction as founding engineer"
+			categories := []string{"technical"}
+			roleFit := classifier.ClassifyRoleFitWithCategories(text, categories)
+			Expect(roleFit).To(Equal(career.RoleFitPrincipal))
+		})
+
+		It("should fall back to keyword matching when no categories", func() {
+			text := "Managed team of engineers"
+			roleFit := classifier.ClassifyRoleFitWithCategories(text, nil)
+			Expect(roleFit).To(Equal(career.RoleFitEM))
+		})
+
+		It("should use architecture category same as technical for senior_ic", func() {
+			text := "Designed the system"
+			categories := []string{"architecture"}
+			roleFit := classifier.ClassifyRoleFitWithCategories(text, categories)
+			Expect(roleFit).To(Equal(career.RoleFitSeniorIC))
+		})
+	})
+
 	Context("when classifying audience relevance", func() {
 		It("should include peer for all facts", func() {
 			text := "Delivered project"

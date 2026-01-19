@@ -5,12 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/styles"
-	"github.com/baphled/kariya/internal/cli/themes"
 	domain "github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -74,14 +72,8 @@ type BurstManagementIntent struct {
 	// state represents the current state of the intent.
 	state *BurstManagementIntentModel
 
-	// table is the table model for displaying bursts
-	table *table.Model
-
-	// listContainer provides table-based list UI
-	listContainer *components.TableListContainer
-
-	// navHandler centralizes navigation logic
-	navHandler *navigation.ListNavigationHandler
+	// tableBehavior provides type-safe table operations for bursts
+	tableBehavior *behaviors.TableBehavior[*domain.Burst]
 
 	// active indicates whether this intent is currently active.
 	active bool
@@ -150,6 +142,39 @@ const (
 	BurstStateExtractingFacts = "extracting_facts"
 )
 
+// burstRowFormatter formats a burst for table display
+func burstRowFormatter(burst *domain.Burst, index int) []string {
+	// Column 1: Name (truncate to 27 chars)
+	nameStr := burst.Name
+	if len(nameStr) > 27 {
+		nameStr = nameStr[:27] + "..."
+	}
+
+	// Column 2: Description (truncated preview, max 32 chars)
+	descStr := strings.TrimSpace(burst.Description)
+	descStr = strings.ReplaceAll(descStr, "\n", " ")
+	descStr = strings.ReplaceAll(descStr, "\r", " ")
+	if descStr == "" {
+		descStr = "-"
+	} else if len(descStr) > 32 {
+		descStr = descStr[:32] + "..."
+	}
+
+	// Column 3: Confirmed Status
+	confirmedStr := "✗ No"
+	if burst.Confirmed {
+		confirmedStr = "✓ Yes"
+	}
+
+	// Column 4: Event Count
+	eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
+
+	// Column 5: Created Date (YYYY-MM-DD)
+	createdStr := burst.CreatedAt.Format("2006-01-02")
+
+	return []string{nameStr, descStr, confirmedStr, eventCount, createdStr}
+}
+
 // NewBurstManagementIntent creates a new BurstManagement intent.
 func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagementIntent, error) {
 	// Validate the context.
@@ -157,9 +182,8 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		return nil, err
 	}
 
-	// Create table model for bursts with enhanced columns
-	// Total column width: 30 + 35 + 10 + 8 + 12 = 95 chars
-	columns := []table.Column{
+	// Define columns for TableBehavior
+	columns := []behaviors.ColumnDef{
 		{Title: "Name", Width: 30},
 		{Title: "Description", Width: 35},
 		{Title: "Confirmed", Width: 10},
@@ -167,17 +191,11 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		{Title: "Created", Width: 12},
 	}
 
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(105), // Adjusted for 5 columns
-	)
-
-	// Apply default styles initially - theme styles will be applied in Init()
-	// when the theme manager is available via BaseIntent
-	t.SetStyles(table.DefaultStyles())
+	// Create TableBehavior with type-safe generics
+	tableBehavior := behaviors.NewTableBehavior[*domain.Burst](nil, columns, burstRowFormatter).
+		PageSize(15).
+		PaginationPrefix("Bursts").
+		EmptyMessage("No bursts found.")
 
 	intent := &BurstManagementIntent{
 		BaseIntent: NewBaseIntent(),
@@ -193,55 +211,28 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 			sortBy:         "name",
 			sortOrder:      "asc",
 		},
-		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Manage Bursts", 105),
+		tableBehavior: tableBehavior,
 		active:        true,
 	}
-	intent.navHandler = navigation.NewListNavigationHandler(intent)
 
 	return intent, nil
 }
 
-// formatConfirmedStatus returns a plain text confirmed status string.
-// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
-func (i *BurstManagementIntent) formatConfirmedStatus(confirmed bool) string {
-	if confirmed {
-		return "✓ Yes"
+// syncTableSelection syncs the TableBehavior selection with the intent's data context
+func (i *BurstManagementIntent) syncTableSelection() {
+	i.state.selectedIndex = i.tableBehavior.GetSelectedIndex()
+	if selected := i.tableBehavior.GetSelectedItem(); selected != nil {
+		i.state.selectedBurst = *selected
+	} else {
+		i.state.selectedBurst = nil
 	}
-	return "✗ No"
-}
-
-// formatDescription returns a truncated description preview (max 35 chars).
-// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
-func (i *BurstManagementIntent) formatDescription(description string) string {
-	desc := strings.TrimSpace(description)
-	// Remove newlines and carriage returns
-	desc = strings.ReplaceAll(desc, "\n", " ")
-	desc = strings.ReplaceAll(desc, "\r", " ")
-
-	if desc == "" {
-		return "-"
-	}
-
-	maxLen := 32 // 35 - 3 for "..."
-	if len(desc) > maxLen {
-		return desc[:maxLen] + "..."
-	}
-
-	return desc
-}
-
-// formatCreatedDate returns a formatted date string (YYYY-MM-DD).
-// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
-func (i *BurstManagementIntent) formatCreatedDate(createdAt time.Time) string {
-	return createdAt.Format("2006-01-02")
 }
 
 // Init is called when the intent is activated.
 func (i *BurstManagementIntent) Init() tea.Cmd {
-	// Apply themed table styles if theme is available
+	// Apply theme to TableBehavior if available
 	if theme := i.Theme(); theme != nil {
-		i.table.SetStyles(themes.NewThemedTableStyles(theme))
+		i.tableBehavior.SetTheme(theme)
 	}
 
 	// Load bursts from repository
@@ -252,7 +243,9 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 	if len(i.state.filteredBursts) > 0 {
 		i.state.selectedBurst = i.state.filteredBursts[0]
 	}
-	i.updateTableRows()
+
+	// Set items on TableBehavior
+	i.tableBehavior.SetItems(i.state.filteredBursts)
 	return nil
 }
 
@@ -318,73 +311,6 @@ func (i *BurstManagementIntent) getBackgroundCardColor() lipgloss.Color {
 	return styles.ColorBackgroundCard
 }
 
-// updateTableRows updates the table rows based on filtered bursts, paginated
-func (i *BurstManagementIntent) updateTableRows() {
-	pageSize := 15
-	total := len(i.state.filteredBursts)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && i.state.selectedIndex >= 0 {
-		page = i.state.selectedIndex / pageSize
-	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	pageBursts := i.state.filteredBursts[start:end]
-
-	rows := make([]table.Row, 0, len(pageBursts))
-	for idx, burst := range pageBursts {
-		realIdx := start + idx
-
-		// Column 1: Name (truncate to 27 chars for focus indicator, total width 30)
-		nameStr := burst.Name
-		if len(nameStr) > 27 {
-			nameStr = nameStr[:27] + "..."
-		}
-		// Add focus indicator via navigation handler
-		nameStr = i.navHandler.FormatRowText(realIdx, nameStr)
-
-		// Column 2: Description (truncated preview, max 35 chars)
-		descStr := i.formatDescription(burst.Description)
-
-		// Column 3: Confirmed Status (icon + colored text)
-		confirmedStr := i.formatConfirmedStatus(burst.Confirmed)
-
-		// Column 4: Event Count
-		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
-
-		// Column 5: Created Date (YYYY-MM-DD)
-		createdStr := i.formatCreatedDate(burst.CreatedAt)
-
-		rows = append(rows, table.Row{
-			nameStr,
-			descStr,
-			confirmedStr,
-			eventCount,
-			createdStr,
-		})
-	}
-
-	i.table.SetRows(rows)
-
-	// Calculate relative cursor for current page
-	relativeCursor := i.state.selectedIndex - start
-
-	// Set table cursor (for visual highlighting)
-	i.table.SetCursor(relativeCursor)
-
-	// Sync container's index to match (critical for rendering)
-	i.listContainer.SetSelectedIdx(relativeCursor)
-
-	// Update container with modified table
-	i.listContainer.SetTable(*i.table)
-}
-
 // Update processes a message in the intent.
 func (i *BurstManagementIntent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
@@ -437,8 +363,9 @@ func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-		// Try navigation handler
-		if i.navHandler.HandleKey(msg.String()) {
+		// Try TableBehavior navigation
+		if i.tableBehavior.HandleNavigation(msg.String()) {
+			i.syncTableSelection()
 			return nil
 		}
 
@@ -1056,25 +983,8 @@ func (i *BurstManagementIntent) getContextHelp() string {
 }
 
 // viewList renders the burst list view with all bursts as a table.
-// viewList renders the burst list view with all bursts as a table.
 func (i *BurstManagementIntent) viewList() string {
-	if len(i.state.filteredBursts) == 0 {
-		i.listContainer.SetEmptyStateMessage("No bursts found.")
-		return i.listContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	i.updateTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(i.state.filteredBursts)
-	currentPage := (i.state.selectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Bursts: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	i.listContainer.SetPaginationInfo(paginationInfo)
-
-	return i.listContainer.Render()
+	return i.tableBehavior.Render()
 }
 func (i *BurstManagementIntent) viewDetail() string {
 	if i.state.selectedBurst == nil {
@@ -1440,21 +1350,18 @@ func (i *BurstManagementIntent) Result() *IntentResult[interface{}] {
 	}
 }
 
-// ListNavigator interface implementation
+// ListNavigator interface implementation (delegates to TableBehavior)
 func (i *BurstManagementIntent) GetTotalItems() int {
-	return len(i.state.filteredBursts)
+	return i.tableBehavior.Count()
 }
 
 func (i *BurstManagementIntent) GetSelectedIndex() int {
-	return i.state.selectedIndex
+	return i.tableBehavior.GetSelectedIndex()
 }
 
 func (i *BurstManagementIntent) SetSelectedIndex(idx int) {
-	i.state.selectedIndex = idx
-	if idx >= 0 && idx < len(i.state.filteredBursts) {
-		i.state.selectedBurst = i.state.filteredBursts[idx]
-	}
-	i.updateTableRows()
+	i.tableBehavior.SetSelectedIndex(idx)
+	i.syncTableSelection()
 }
 
 func (i *BurstManagementIntent) GetPageSize() int {
