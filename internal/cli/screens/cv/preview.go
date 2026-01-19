@@ -12,6 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	cvservice "github.com/baphled/kariya/internal/service/career/cv"
 )
@@ -25,21 +26,29 @@ const CVPreviewState = "preview"
 type CVPreviewScreen struct {
 	*base.BaseScreen
 
-	cv       *career.CVView
-	viewport viewport.Model
-	ready    bool
-	width    int
-	height   int
+	cv            *career.CVView
+	profileConfig *config.ProfileConfig
+	viewport      viewport.Model
+	ready         bool
+	width         int
+	height        int
 }
 
-// NewCVPreviewScreen creates a new CV preview screen.
+// NewCVPreviewScreen creates a new CV preview screen with default profile.
 func NewCVPreviewScreen(cv *career.CVView) *CVPreviewScreen {
+	return NewCVPreviewScreenWithProfile(cv, nil)
+}
+
+// NewCVPreviewScreenWithProfile creates a new CV preview screen with custom profile config.
+// If profileConfig is nil, falls back to default narrative profile.
+func NewCVPreviewScreenWithProfile(cv *career.CVView, profileConfig *config.ProfileConfig) *CVPreviewScreen {
 	return &CVPreviewScreen{
-		BaseScreen: base.NewBaseScreen(),
-		cv:         cv,
-		width:      80,
-		height:     24,
-		ready:      false,
+		BaseScreen:    base.NewBaseScreen(),
+		cv:            cv,
+		profileConfig: profileConfig,
+		width:         80,
+		height:        24,
+		ready:         false,
 	}
 }
 
@@ -265,7 +274,8 @@ func (s *CVPreviewScreen) renderCVContent() string {
 
 // renderPersonalDetails renders the personal details header.
 func (s *CVPreviewScreen) renderPersonalDetails(width int) string {
-	profile := cvservice.DefaultNarrativeProfile()
+	// Use profile config if provided, otherwise fall back to defaults
+	profile := cvservice.NarrativeProfileFromConfig(s.profileConfig)
 
 	var b strings.Builder
 

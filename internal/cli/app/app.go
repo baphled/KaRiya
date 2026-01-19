@@ -620,7 +620,7 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 				return cvscreens.NewCVReviewScreen(cvView)
 			},
 			PreviewScreenFactory: func(cvView *career.CVView) screens.Screen {
-				return cvscreens.NewCVPreviewScreen(cvView)
+				return cvscreens.NewCVPreviewScreenWithProfile(cvView, profileCfg)
 			},
 		}
 		intent, err := intents.NewGenerateCVIntent(cvCtx)

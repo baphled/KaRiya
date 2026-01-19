@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/cv"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -413,6 +414,89 @@ var _ = Describe("CVPreviewScreen", func() {
 			nilScreen := cv.NewCVPreviewScreen(nil)
 			cvData := nilScreen.GetCV()
 			Expect(cvData).To(BeNil())
+		})
+	})
+
+	Describe("Profile Configuration", func() {
+		Context("with custom profile config", func() {
+			It("should display custom name from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:     "Jane Doe",
+					Email:    "jane@example.com",
+					Title:    "Staff Engineer",
+					Location: "London, UK",
+					GitHub:   "https://github.com/janedoe",
+				}
+				screenWithProfile := cv.NewCVPreviewScreenWithProfile(testCV, customProfile)
+				screenWithProfile.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("Jane Doe"))
+			})
+
+			It("should display custom email from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:  "Jane Doe",
+					Email: "jane@example.com",
+				}
+				screenWithProfile := cv.NewCVPreviewScreenWithProfile(testCV, customProfile)
+				screenWithProfile.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("jane@example.com"))
+			})
+
+			It("should display custom title from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:  "Jane Doe",
+					Title: "Principal Engineer / Architect",
+				}
+				screenWithProfile := cv.NewCVPreviewScreenWithProfile(testCV, customProfile)
+				screenWithProfile.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("Principal Engineer / Architect"))
+			})
+
+			It("should display custom location from profile config", func() {
+				customProfile := &config.ProfileConfig{
+					Name:     "Jane Doe",
+					Location: "Berlin, Germany",
+				}
+				screenWithProfile := cv.NewCVPreviewScreenWithProfile(testCV, customProfile)
+				screenWithProfile.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+				view := screenWithProfile.View()
+				Expect(view).To(ContainSubstring("Berlin, Germany"))
+			})
+		})
+
+		Context("with nil profile config", func() {
+			It("should use defaults when profile config is nil", func() {
+				screenWithNilProfile := cv.NewCVPreviewScreenWithProfile(testCV, nil)
+				screenWithNilProfile.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+				view := screenWithNilProfile.View()
+				// Should fall back to DefaultNarrativeProfile
+				Expect(view).To(ContainSubstring("Yomi Colledge"))
+			})
+		})
+
+		Context("with partial profile config", func() {
+			It("should use defaults for empty fields", func() {
+				partialProfile := &config.ProfileConfig{
+					Name: "Custom Name",
+					// Email, Title, Location left empty
+				}
+				screenWithPartial := cv.NewCVPreviewScreenWithProfile(testCV, partialProfile)
+				screenWithPartial.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
+
+				view := screenWithPartial.View()
+				// Name should be custom
+				Expect(view).To(ContainSubstring("Custom Name"))
+				// Email should fall back to default (yomi@boodah.net)
+				Expect(view).To(ContainSubstring("yomi@boodah.net"))
+			})
 		})
 	})
 })
