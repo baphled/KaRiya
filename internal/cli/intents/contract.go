@@ -5,14 +5,14 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/layout"
 )
 
 // LogoModel defines the interface for logo components.
-// Both components.ASCIILogo and display.Logo satisfy this interface.
+// The uikit/display.Logo package provides the standard implementation.
 type LogoModel interface {
 	Init() tea.Cmd
 	Update(msg tea.Msg) (tea.Model, tea.Cmd)
@@ -236,7 +236,7 @@ type BaseIntent struct {
 	progressMessage string
 
 	// Help modal
-	helpModal *components.HelpModal
+	helpModal *feedback.HelpModal
 }
 
 // NewBaseIntent creates a new BaseIntent with default terminal configuration
@@ -245,7 +245,7 @@ func NewBaseIntent() *BaseIntent {
 		terminalInfo:   terminal.NewInfo(),
 		terminalConfig: terminal.DefaultConfig,
 		logoSpacing:    2, // Default spacing
-		helpModal:      components.NewHelpModal(nil),
+		helpModal:      feedback.NewHelpModal(nil),
 	}
 }
 
@@ -458,7 +458,7 @@ func (b *BaseIntent) IsHelpVisible() bool {
 }
 
 // GetHelpModal returns the help modal instance
-func (b *BaseIntent) GetHelpModal() *components.HelpModal {
+func (b *BaseIntent) GetHelpModal() *feedback.HelpModal {
 	return b.helpModal
 }
 

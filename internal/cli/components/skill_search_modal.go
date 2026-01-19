@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
@@ -131,11 +132,11 @@ func (m *SkillSearchModal) View() string {
 		return ""
 	}
 
-	// Build footer with KeyBadge components showing keyboard shortcuts
-	footer := RenderHelpFooter(m.theme,
-		NewKeyBadge("Tab", "Next field"),
-		NewKeyBadge("Enter", "Submit"),
-		NewKeyBadge("Esc", "Cancel"),
+	// Build footer with primitives showing keyboard shortcuts
+	footer := primitives.RenderHelpFooter(m.theme,
+		primitives.NextFieldBadge(m.theme),
+		primitives.SubmitBadge(m.theme),
+		primitives.CancelBadge(m.theme),
 	)
 
 	// Build modal content with form and footer

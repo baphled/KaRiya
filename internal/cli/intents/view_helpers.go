@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
@@ -255,7 +254,7 @@ func CombineFooters(footers ...string) string {
 
 // UpdateLoadingRotator updates a loading message rotator and returns a tick command.
 // This is a convenience function for intents that use LoadingMessageRotator.
-func UpdateLoadingRotator(rotator *components.LoadingMessageRotator) {
+func UpdateLoadingRotator(rotator *feedback.LoadingMessageRotator) {
 	if rotator != nil {
 		rotator.Rotate()
 	}

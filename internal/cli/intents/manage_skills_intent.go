@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	career "github.com/baphled/kariya/internal/repository/career"
@@ -1695,7 +1696,7 @@ func (i *ManageSkillsIntent) renderDeleteConfirm() string {
 	skill := i.skills[i.selectedIndex]
 
 	modalContent := fmt.Sprintf("Are you sure you want to delete '%s'?\n\nThis action cannot be undone.", skill.Name)
-	modal := components.NewWarningModal("Delete Skill", modalContent)
+	modal := feedback.NewWarningModal("Delete Skill", modalContent)
 
 	// Get terminal dimensions
 	width, height := 80, 24

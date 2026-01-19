@@ -1,10 +1,20 @@
 package base
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// LogoModel defines the interface for logo components.
+// The uikit/display.Logo package provides the standard implementation.
+type LogoModel interface {
+	Init() tea.Cmd
+	Update(msg tea.Msg) (tea.Model, tea.Cmd)
+	View() string
+	ViewStatic() string
+	SetWidth(width int)
+}
 
 // BaseScreen provides common functionality for all Screen implementations.
 //
@@ -58,8 +68,8 @@ type BaseScreen struct {
 	// TODO: Replace interface{} with actual Theme type when theme system is defined
 	theme interface{}
 
-	// logo holds the ASCII logo to display (shared from intent)
-	logo *components.ASCIILogo
+	// logo holds the logo to display (shared from intent)
+	logo LogoModel
 
 	// logoSpacing is the vertical spacing before the logo
 	logoSpacing int
@@ -97,16 +107,17 @@ func (b *BaseScreen) SetTheme(theme interface{}) {
 //
 // This should be called when the intent sets up the screen,
 // passing the shared logo instance and optional spacing.
+// Accepts any LogoModel implementation (typically display.Logo).
 func (b *BaseScreen) SetLogo(logo interface{}, spacing int) {
-	// Type assert to *components.ASCIILogo
-	if asciiLogo, ok := logo.(*components.ASCIILogo); ok {
-		b.logo = asciiLogo
+	// Type assert to LogoModel interface
+	if logoModel, ok := logo.(LogoModel); ok {
+		b.logo = logoModel
 		b.logoSpacing = spacing
 	}
 }
 
 // GetLogo returns the currently set logo.
-func (b *BaseScreen) GetLogo() *components.ASCIILogo {
+func (b *BaseScreen) GetLogo() LogoModel {
 	return b.logo
 }
 
@@ -153,8 +164,8 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 		Height: b.terminalHeight,
 	}
 
-	// Build StandardView using builder pattern
-	view := components.NewStandardView(termInfo).
+	// Build ScreenLayout using builder pattern
+	view := layout.NewScreenLayout(termInfo).
 		WithBreadcrumbs(breadcrumbs...).
 		WithContent(content).
 		WithHelp(footer).

@@ -112,10 +112,10 @@ func (m *DeleteConfirmModal) View() string {
 		return ""
 	}
 
-	// Build footer with KeyBadge components (Pattern #2 - Themed Footer Building)
-	footer := RenderHelpFooter(m.theme,
-		NewKeyBadge("y/Enter", "Confirm"),
-		NewKeyBadge("n/Esc", "Cancel"),
+	// Build footer with primitives showing keyboard shortcuts
+	footer := primitives.RenderHelpFooter(m.theme,
+		primitives.HelpKeyBadge("y/Enter", "Confirm", m.theme),
+		primitives.HelpKeyBadge("n/Esc", "Cancel", m.theme),
 	)
 
 	// Build modal content

@@ -54,7 +54,7 @@ type Screen interface {
 
 	// SetLogo updates the Screen's logo and spacing.
 	// Screens should store this and pass it to StandardView for consistent branding.
-	SetLogo(logo interface{}, spacing int) // interface{} allows *components.ASCIILogo without circular import
+	SetLogo(logo interface{}, spacing int) // interface{} allows LogoModel implementations (display.Logo, etc.)
 }
 
 // ScreenResultType indicates the type of result a Screen is returning.

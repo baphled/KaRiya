@@ -1,9 +1,9 @@
 package intents
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -207,7 +207,7 @@ func (m *EditMetadataModal) View() string {
 		formView,
 	)
 
-	modal := components.NewModalContainer().
+	modal := feedback.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
 		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
@@ -415,7 +415,7 @@ func (m *EditBurstModal) View() string {
 		formView,
 	)
 
-	modal := components.NewModalContainer().
+	modal := feedback.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
 		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
@@ -626,7 +626,7 @@ func (m *EditFactModal) View() string {
 		formView,
 	)
 
-	modal := components.NewModalContainer().
+	modal := feedback.NewModalContainer().
 		SetTitle("").
 		SetMessage(content).
 		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").

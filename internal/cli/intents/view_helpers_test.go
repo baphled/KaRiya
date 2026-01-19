@@ -4,10 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
@@ -46,7 +46,7 @@ var _ = Describe("View Helpers", func() {
 
 		Context("with logo", func() {
 			It("should include logo from BaseIntent", func() {
-				logo := components.NewASCIILogo(false, 100)
+				logo := display.NewLogo(false, 100)
 				base.SetLogo(logo)
 				base.SetLogoSpacing(3)
 

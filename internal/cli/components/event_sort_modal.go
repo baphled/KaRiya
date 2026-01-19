@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -148,11 +149,11 @@ func (m *EventSortModal) View() string {
 		return ""
 	}
 
-	// Build footer with KeyBadge components showing keyboard shortcuts
-	footer := RenderHelpFooter(m.theme,
-		NewKeyBadge("Tab", "Next field"),
-		NewKeyBadge("Enter", "Apply"),
-		NewKeyBadge("Esc", "Cancel"),
+	// Build footer with primitives showing keyboard shortcuts
+	footer := primitives.RenderHelpFooter(m.theme,
+		primitives.NextFieldBadge(m.theme),
+		primitives.ApplyBadge(m.theme),
+		primitives.CancelBadge(m.theme),
 	)
 
 	// Build modal content with form and footer

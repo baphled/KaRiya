@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -112,7 +112,7 @@ var _ = Describe("BaseIntent", func() {
 		})
 
 		It("should set and get logo", func() {
-			logo := components.NewASCIILogo(false, 80)
+			logo := display.NewLogo(false, 80)
 			base.SetLogo(logo)
 			Expect(base.GetLogo()).To(Equal(logo))
 		})
@@ -247,7 +247,7 @@ var _ = Describe("BaseIntent", func() {
 
 		Context("with logo", func() {
 			It("should include logo in view", func() {
-				logo := components.NewASCIILogo(false, 100)
+				logo := display.NewLogo(false, 100)
 				base.SetLogo(logo)
 
 				view := base.CreateView()

@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 )
 
 func TestNewErrorModal(t *testing.T) {
@@ -100,7 +102,8 @@ func TestNewWarningModal(t *testing.T) {
 
 func TestModalContent_SetMessageRotator(t *testing.T) {
 	modal := NewLoadingModal("Loading...", false)
-	rotator := NewLoadingMessageRotator(LoadingMessagesCV, 2*time.Second)
+	messages := []string{"Analyzing...", "Processing...", "Finishing..."}
+	rotator := feedback.NewLoadingMessageRotator(messages)
 
 	modal.SetMessageRotator(rotator)
 
@@ -262,22 +265,25 @@ func TestModalContent_AdvanceSpinner(t *testing.T) {
 
 func TestModalContent_RotateMessage(t *testing.T) {
 	modal := NewLoadingModal("Initial message", false)
-	rotator := NewLoadingMessageRotator([]string{"Msg1", "Msg2", "Msg3"}, 1*time.Millisecond)
+	rotator := feedback.NewLoadingMessageRotator([]string{"Msg1", "Msg2", "Msg3"})
 	modal.SetMessageRotator(rotator)
 
-	// First call should return first message
+	// First call should advance and return second message (index 0 -> 1)
 	msg1 := modal.RotateMessage()
-	if msg1 != "Msg1" {
-		t.Errorf("Expected first message to be 'Msg1', got '%s'", msg1)
+	if msg1 != "Msg2" {
+		t.Errorf("Expected first rotation to return 'Msg2', got '%s'", msg1)
 	}
 
-	// Wait for interval to elapse
-	time.Sleep(10 * time.Millisecond)
-
-	// Rotate should advance
+	// Second call should advance and return third message
 	msg2 := modal.RotateMessage()
-	if msg2 != "Msg2" {
-		t.Errorf("Expected second message to be 'Msg2', got '%s'", msg2)
+	if msg2 != "Msg3" {
+		t.Errorf("Expected second rotation to return 'Msg3', got '%s'", msg2)
+	}
+
+	// Third call should wrap around to first message
+	msg3 := modal.RotateMessage()
+	if msg3 != "Msg1" {
+		t.Errorf("Expected third rotation to return 'Msg1', got '%s'", msg3)
 	}
 }
 
