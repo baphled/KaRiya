@@ -74,6 +74,7 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
 
 		model = app.NewModel(cliService, svc)
+		model.SkipOnboarding() // Skip onboarding for tests
 		Expect(model).NotTo(BeNil())
 	})
 

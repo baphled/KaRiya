@@ -49,6 +49,7 @@ var _ = Describe("App Unit Tests", func() {
 		})
 
 		model = app.NewModel(cliService, svc)
+		model.SkipOnboarding() // Skip onboarding for tests
 	})
 
 	Describe("Init", func() {
