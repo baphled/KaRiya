@@ -98,14 +98,15 @@ var _ = Describe("OnboardingWizardModal", func() {
 		})
 
 		Context("escape key", func() {
-			It("should close modal on Esc at step 0", func() {
+			// Onboarding is mandatory - Esc key is ignored
+			It("should NOT close modal on Esc at step 0 (mandatory onboarding)", func() {
 				modal.Update(tea.KeyMsg{Type: tea.KeyEsc})
-				Expect(modal.IsVisible()).To(BeFalse())
+				Expect(modal.IsVisible()).To(BeTrue())
 			})
 
-			It("should mark as cancelled on Esc at step 0", func() {
+			It("should NOT mark as cancelled on Esc (mandatory onboarding)", func() {
 				modal.Update(tea.KeyMsg{Type: tea.KeyEsc})
-				Expect(modal.WasCancelled()).To(BeTrue())
+				Expect(modal.WasCancelled()).To(BeFalse())
 			})
 		})
 	})
