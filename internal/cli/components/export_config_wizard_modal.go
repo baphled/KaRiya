@@ -108,8 +108,9 @@ func (m *ExportConfigWizardModal) Update(msg tea.Msg) tea.Cmd {
 			// Go back a step in the wizard
 			if m.currentStep > 0 {
 				m.currentStep--
+				m.form.PrevGroup() // Navigate huh form to previous group
+				return nil         // Don't let Esc propagate (would cancel form)
 			}
-			// Let form handle Esc to navigate between groups
 		}
 
 	case tea.WindowSizeMsg:
@@ -299,6 +300,10 @@ func (m *ExportConfigWizardModal) GoToStep(step int) {
 	if step >= 0 && step < m.GetStepCount() {
 		m.currentStep = step
 		m.buildForm()
+		// Navigate huh form to the correct group (form starts at group 0)
+		for i := 0; i < step; i++ {
+			m.form.NextGroup()
+		}
 	}
 }
 
