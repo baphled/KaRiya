@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
-	"github.com/baphled/kariya/internal/cli/screens/base"
 	exportscreens "github.com/baphled/kariya/internal/cli/screens/export"
 	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
@@ -17,7 +18,13 @@ import (
 )
 
 // ExportArtifactIntent implements the Intent interface for artifact export.
-// It orchestrates screens and handles the export workflow.
+// It orchestrates screens and modal overlays for the export workflow.
+//
+// The workflow uses:
+// - Screens for: TypeSelect, FormatSelect, DestSelect, Preview (scrollable content)
+// - Modal overlays for: Confirm, Progress, Success, Error (dialog overlays)
+//
+// This matches the visual pattern used in other workflows like BrowseTimeline and GenerateCV.
 type ExportArtifactIntent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management
 	*BaseIntent
@@ -46,6 +53,12 @@ type ExportArtifactIntent struct {
 	// activeScreen holds the current screen being displayed
 	activeScreen screens.Screen
 
+	// Modal overlays for confirm, progress, success, and error states
+	confirmModal  *components.ExportConfirmModal
+	progressModal *components.ExportProgressModal
+	successModal  *components.ExportSuccessModal
+	errorModal    *components.ExportErrorModal
+
 	// active indicates whether this intent is currently active
 	active bool
 }
@@ -73,7 +86,7 @@ func (e *ExportArtifactIntent) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages and delegates to the active screen.
+// Update handles messages and delegates to the active screen or modal.
 func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
 	if !e.active {
 		return nil
@@ -90,26 +103,73 @@ func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 
-	// Handle progress screen messages
-	if e.currentState == ExportStateInProgress {
+	// Handle modal interactions first (modals take priority over screens)
+	if e.confirmModal != nil && e.confirmModal.IsVisible() {
+		cmd, confirmed := e.confirmModal.Update(msg)
+		if confirmed {
+			// User confirmed - start export with progress modal
+			e.confirmModal = nil
+			e.showProgressModal()
+			return tea.Batch(e.progressModal.Init(), e.startExport())
+		} else if !e.confirmModal.IsVisible() {
+			// User cancelled - go back to preview
+			e.confirmModal = nil
+			e.currentState = ExportStatePreview
+		}
+		return cmd
+	}
+
+	if e.progressModal != nil && e.progressModal.IsVisible() {
+		// Handle spinner tick
+		if _, ok := msg.(components.SpinnerTickMsg); ok {
+			return e.progressModal.Update(msg)
+		}
+		// Handle export completion messages
 		switch msg := msg.(type) {
-		case base.TickMsg:
-			// Forward tick to progress screen for spinner animation
-			if e.activeScreen != nil {
-				cmd, _ := e.activeScreen.Update(msg)
-				return tea.Batch(cmd, base.TickCmd())
-			}
 		case ExportCompleteMsg:
+			e.progressModal.Complete()
+			e.progressModal = nil
 			e.exportResult = msg.Result
 			e.currentState = ExportStateComplete
-			e.transitionToScreen(e.newCompleteScreen())
+			e.showSuccessModal()
 			return nil
 		case ExportErrorMsg:
+			e.progressModal.SetError(nil)
+			e.progressModal = nil
 			e.exportError = msg.Error
 			e.currentState = ExportStateFailed
-			e.transitionToScreen(e.newFailedScreen())
+			e.showErrorModal()
 			return nil
 		}
+		// Handle cancellation
+		cmd := e.progressModal.Update(msg)
+		if e.progressModal.IsCancelled() {
+			e.progressModal = nil
+			e.currentState = ExportStatePreview
+		}
+		return cmd
+	}
+
+	if e.successModal != nil && e.successModal.IsVisible() {
+		cmd, done := e.successModal.Update(msg)
+		if done {
+			e.successModal = nil
+			e.setCompleted()
+		}
+		return cmd
+	}
+
+	if e.errorModal != nil && e.errorModal.IsVisible() {
+		cmd, result := e.errorModal.Update(msg)
+		if result == components.ErrorResultRetry {
+			e.errorModal = nil
+			e.showProgressModal()
+			return tea.Batch(e.progressModal.Init(), e.startExport())
+		} else if result == components.ErrorResultCancel {
+			e.errorModal = nil
+			e.setCancelled()
+		}
+		return cmd
 	}
 
 	// Delegate to active screen
@@ -172,37 +232,12 @@ func (e *ExportArtifactIntent) handleNavigateResult(result screens.ScreenResult)
 		}
 
 	case ExportStatePreview:
-		// User confirmed preview, show confirmation
+		// User confirmed preview, show confirmation modal
 		e.currentState = ExportStateConfirm
-		e.transitionToScreen(e.newConfirmScreen())
+		e.showConfirmModal()
 
-	case ExportStateConfirm:
-		// User made confirmation choice
-		if confirmed, ok := result.Data().(bool); ok {
-			if confirmed {
-				// Start export
-				e.currentState = ExportStateInProgress
-				e.transitionToScreen(e.newProgressScreen())
-				return tea.Batch(base.TickCmd(), e.startExport())
-			}
-			// User declined - go back to preview
-			e.currentState = ExportStatePreview
-			e.transitionToScreen(e.newPreviewScreen())
-		}
-
-	case ExportStateComplete:
-		// User acknowledged completion
-		e.setCompleted()
-
-	case ExportStateFailed:
-		// User chose action
-		if action, ok := result.Data().(string); ok && action == "retry" {
-			// Retry export
-			e.currentState = ExportStateInProgress
-			e.transitionToScreen(e.newProgressScreen())
-			return tea.Batch(base.TickCmd(), e.startExport())
-		}
-		e.setCancelled()
+		// Note: ExportStateConfirm, ExportStateComplete, ExportStateFailed are now handled by modals
+		// in the Update() method, not by screen results
 	}
 
 	return nil
@@ -230,14 +265,7 @@ func (e *ExportArtifactIntent) handleCancelResult() tea.Cmd {
 		e.currentState = ExportStateSelectDest
 		e.transitionToScreen(e.newDestSelectScreen())
 
-	case ExportStateConfirm:
-		// Go back to preview
-		e.currentState = ExportStatePreview
-		e.transitionToScreen(e.newPreviewScreen())
-
-	case ExportStateComplete, ExportStateFailed:
-		// Exit intent
-		e.setCancelled()
+		// Note: ExportStateConfirm, ExportStateComplete, ExportStateFailed are now handled by modals
 	}
 
 	return nil
@@ -260,7 +288,7 @@ func (e *ExportArtifactIntent) handleErrorResult(result screens.ScreenResult) te
 		}
 	}
 	e.currentState = ExportStateFailed
-	e.transitionToScreen(e.newFailedScreen())
+	e.showErrorModal()
 	return nil
 }
 
@@ -277,7 +305,7 @@ func (e *ExportArtifactIntent) transitionToScreen(screen screens.Screen) {
 	e.activeScreen = screen
 }
 
-// View renders the current state using StandardView.
+// View renders the current state using StandardView with modal overlays.
 func (e *ExportArtifactIntent) View() string {
 	if e.activeScreen == nil {
 		return "No active screen"
@@ -293,7 +321,23 @@ func (e *ExportArtifactIntent) View() string {
 	help := e.getContextHelp()
 	view.WithHelp(help).WithFooterSeparator(true)
 
-	return view.Render()
+	baseView := view.Render()
+
+	// Render modal overlays on top of the base view
+	if e.confirmModal != nil && e.confirmModal.IsVisible() {
+		return behaviors.RenderModalOverlay(e.confirmModal, baseView)
+	}
+	if e.progressModal != nil && e.progressModal.IsVisible() {
+		return behaviors.RenderModalOverlay(e.progressModal, baseView)
+	}
+	if e.successModal != nil && e.successModal.IsVisible() {
+		return behaviors.RenderModalOverlay(e.successModal, baseView)
+	}
+	if e.errorModal != nil && e.errorModal.IsVisible() {
+		return behaviors.RenderModalOverlay(e.errorModal, baseView)
+	}
+
+	return baseView
 }
 
 // getStateName returns a human-readable name for the current state.
@@ -411,6 +455,116 @@ func (e *ExportArtifactIntent) setCancelled() {
 	e.active = false
 }
 
+// --- Modal Helper Methods ---
+
+// showConfirmModal creates and displays the export confirmation modal.
+func (e *ExportArtifactIntent) showConfirmModal() {
+	artifactName := getArtifactTypeName(e.config.ArtifactType)
+	formatName := getFormatName(e.config.Format)
+	destName := getDestinationName(e.config.Destination)
+
+	e.confirmModal = components.NewExportConfirmModal(artifactName, formatName, destName)
+	e.confirmModal.SetTheme(e.Theme())
+
+	termInfo := e.GetTerminalInfo()
+	if termInfo != nil {
+		e.confirmModal.SetDimensions(termInfo.Width, termInfo.Height)
+	}
+}
+
+// showProgressModal creates and displays the export progress modal.
+func (e *ExportArtifactIntent) showProgressModal() {
+	artifactName := getArtifactTypeName(e.config.ArtifactType)
+	formatName := getFormatName(e.config.Format)
+	destName := getDestinationName(e.config.Destination)
+
+	width, height := 100, 40
+	termInfo := e.GetTerminalInfo()
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	e.progressModal = components.NewExportProgressModal(artifactName, formatName, destName, width, height)
+	e.progressModal.SetTheme(e.Theme())
+	e.currentState = ExportStateInProgress
+}
+
+// showSuccessModal creates and displays the export success modal.
+func (e *ExportArtifactIntent) showSuccessModal() {
+	artifactName := getArtifactTypeName(e.exportResult.ArtifactType)
+	formatName := getFormatName(e.exportResult.Format)
+	destName := getDestinationName(e.exportResult.Destination)
+
+	e.successModal = components.NewExportSuccessModal(
+		artifactName,
+		formatName,
+		destName,
+		e.exportResult.FilePath,
+		e.exportResult.Size,
+	)
+	e.successModal.SetTheme(e.Theme())
+
+	termInfo := e.GetTerminalInfo()
+	if termInfo != nil {
+		e.successModal.SetDimensions(termInfo.Width, termInfo.Height)
+	}
+}
+
+// showErrorModal creates and displays the export error modal.
+func (e *ExportArtifactIntent) showErrorModal() {
+	e.errorModal = components.NewExportErrorModal(
+		e.exportError.Code,
+		e.exportError.Message,
+	)
+	e.errorModal.SetTheme(e.Theme())
+
+	termInfo := e.GetTerminalInfo()
+	if termInfo != nil {
+		e.errorModal.SetDimensions(termInfo.Width, termInfo.Height)
+	}
+}
+
+// Helper functions for display names
+func getArtifactTypeName(t ExportArtifactType) string {
+	switch t {
+	case ExportTypeEvents:
+		return "Career Events"
+	case ExportTypeFacts:
+		return "Facts"
+	case ExportTypeBursts:
+		return "Bursts"
+	default:
+		return string(t)
+	}
+}
+
+func getFormatName(f ExportFormat) string {
+	switch f {
+	case ExportFormatJSON:
+		return "JSON"
+	case ExportFormatCSV:
+		return "CSV"
+	case ExportFormatYAML:
+		return "YAML"
+	case ExportFormatTXT:
+		return "Text"
+	default:
+		return string(f)
+	}
+}
+
+func getDestinationName(d ExportDestination) string {
+	switch d {
+	case ExportDestinationFile:
+		return "File"
+	case ExportDestinationClipboard:
+		return "Clipboard"
+	default:
+		return string(d)
+	}
+}
+
 // --- Screen Factory Methods ---
 
 // newTypeSelectScreen creates the artifact type selection screen.
@@ -467,52 +621,8 @@ func (e *ExportArtifactIntent) newPreviewScreen() screens.Screen {
 	)
 }
 
-// newConfirmScreen creates the confirmation screen.
-func (e *ExportArtifactIntent) newConfirmScreen() screens.Screen {
-	return exportscreens.NewConfirm(
-		types.ExportArtifactType(e.config.ArtifactType),
-		types.ExportFormat(e.config.Format),
-		types.ExportDestination(e.config.Destination),
-		[]string{"Main Menu", "Export Artifact", "Confirm"},
-	)
-}
-
-// newProgressScreen creates the progress screen.
-func (e *ExportArtifactIntent) newProgressScreen() screens.Screen {
-	return exportscreens.NewProgress(
-		types.ExportArtifactType(e.config.ArtifactType),
-		[]string{"Main Menu", "Export Artifact", "Exporting"},
-	)
-}
-
-// newCompleteScreen creates the completion screen.
-func (e *ExportArtifactIntent) newCompleteScreen() screens.Screen {
-	result := &exportscreens.CompleteResult{
-		ArtifactType: types.ExportArtifactType(e.exportResult.ArtifactType),
-		Format:       types.ExportFormat(e.exportResult.Format),
-		Destination:  types.ExportDestination(e.exportResult.Destination),
-		FilePath:     e.exportResult.FilePath,
-		Size:         e.exportResult.Size,
-	}
-
-	return exportscreens.NewComplete(
-		result,
-		[]string{"Main Menu", "Export Artifact", "Complete"},
-	)
-}
-
-// newFailedScreen creates the failed screen.
-func (e *ExportArtifactIntent) newFailedScreen() screens.Screen {
-	err := &exportscreens.FailedError{
-		Code:    e.exportError.Code,
-		Message: e.exportError.Message,
-	}
-
-	return exportscreens.NewFailed(
-		err,
-		[]string{"Main Menu", "Export Artifact", "Failed"},
-	)
-}
+// Note: Confirm, Progress, Complete, and Failed states now use modal overlays
+// instead of full screens for visual consistency with other workflows.
 
 // --- Export Business Logic ---
 
