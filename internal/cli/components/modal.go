@@ -9,6 +9,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 )
 
 // ModalType defines the type of modal
@@ -512,10 +513,10 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 	modalLines := strings.Split(modalBox, "\n")
 
 	// Calculate modal position (below logo, not vertically centered)
-	// Logo is typically ~8 lines (6 for logo + 2 spacing)
-	// Position modal to start just below the logo
+	// Use display.DefaultLogoHeight as the single source of truth for logo dimensions.
+	// Position modal to start just below the logo.
 	modalHeight := len(modalLines)
-	logoHeight := 8          // Logo + spacing
+	logoHeight := display.DefaultLogoHeight
 	startY := logoHeight + 1 // Start 1 line below logo
 
 	// Handle very small terminals gracefully

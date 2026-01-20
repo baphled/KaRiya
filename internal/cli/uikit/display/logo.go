@@ -43,6 +43,16 @@ const (
 
 	// Animation settings
 	frameInterval = 30 * time.Millisecond
+
+	// LogoArtHeight is the number of lines in the ASCII logo art.
+	LogoArtHeight = 6
+
+	// DefaultLogoHeight is the typical rendered height of the logo
+	// including tagline and version (6 art + 1 blank + 1 tagline + 1 version).
+	// Use this constant for modal positioning calculations when the logo
+	// configuration is unknown. This avoids magic numbers scattered across
+	// the codebase and provides a single source of truth.
+	DefaultLogoHeight = 9
 )
 
 // TickMsg is sent periodically to update the animation.
@@ -208,7 +218,7 @@ func (l *Logo) applyFadeStyle(text string, theme themes.Theme) string {
 
 // GetHeight returns the height of the logo in lines.
 func (l *Logo) GetHeight() int {
-	height := 6 // Logo art is 6 lines
+	height := LogoArtHeight
 
 	if l.showTagline {
 		height += 2 // Empty line + tagline
