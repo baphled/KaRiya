@@ -9,6 +9,7 @@ import (
 	career "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,47 +32,35 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 		svc.SetFactRepository(factRepo)
 		cliService = service.NewCLIEventService(svc)
 
-		// Pre-populate repository with test events
-		testEvents := []*career.CareerEvent{
-			{
-				ID:         "event1",
-				Text:       "First event - Learned Go",
-				Date:       time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				Company:    "Company A",
-				CreatedAt:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				Tags:       []string{"technical", "project"},
-				Categories: []string{"technical"},
-			},
-			{
-				ID:         "event2",
-				Text:       "Second event - Led team meeting",
-				Date:       time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-				Company:    "Company B",
-				CreatedAt:  time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:  time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC),
-				Tags:       []string{"leadership"},
-				Categories: []string{"leadership"},
-			},
-			{
-				ID:         "event3",
-				Text:       "Third event - Deployed to production",
-				Date:       time.Date(2025, 1, 3, 0, 0, 0, 0, time.UTC),
-				Company:    "Company C",
-				CreatedAt:  time.Date(2025, 1, 3, 0, 0, 0, 0, time.UTC),
-				UpdatedAt:  time.Date(2025, 1, 3, 0, 0, 0, 0, time.UTC),
-				Tags:       []string{"product", "technical"},
-				Categories: []string{"technical"},
-			},
-		}
+		// Pre-populate repository with test events using fixtures
+		event1 := fixtures.Event("event1")
+		event1.Text = "First event - Learned Go"
+		event1.Date = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+		event1.Company = "Company A"
+		event1.Tags = []string{"technical", "project"}
+		event1.Categories = []string{"technical"}
 
-		for _, event := range testEvents {
+		event2 := fixtures.Event("event2")
+		event2.Text = "Second event - Led team meeting"
+		event2.Date = time.Date(2025, 1, 2, 0, 0, 0, 0, time.UTC)
+		event2.Company = "Company B"
+		event2.Tags = []string{"leadership"}
+		event2.Categories = []string{"leadership"}
+
+		event3 := fixtures.Event("event3")
+		event3.Text = "Third event - Deployed to production"
+		event3.Date = time.Date(2025, 1, 3, 0, 0, 0, 0, time.UTC)
+		event3.Company = "Company C"
+		event3.Tags = []string{"product", "technical"}
+		event3.Categories = []string{"technical"}
+
+		for _, event := range []*career.CareerEvent{event1, event2, event3} {
 			_ = repo.Create(context.Background(), event)
 		}
 
-		// Pre-populate burst/fact repositories
-		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1", "e2"}})
-		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		// Pre-populate burst/fact repositories using fixtures
+		_ = burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1", "e2"))
+		_ = factRepo.Create(context.Background(), fixtures.Fact("f1", "e1"))
 
 		model = app.NewModel(cliService, svc)
 		model.SkipOnboarding() // Skip onboarding for tests

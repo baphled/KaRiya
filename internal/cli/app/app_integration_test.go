@@ -10,6 +10,7 @@ import (
 	career "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,8 +36,8 @@ var _ = Describe("App Menu Integration Tests", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		// Pre-populate burst/fact repositories with dummy entries to avoid nil panics
-		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1", "e2"}})
-		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
+		_ = burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1", "e2"))
+		_ = factRepo.Create(context.Background(), fixtures.Fact("f1", "e1"))
 		model = app.NewModel(cliService, svc)
 		model.SkipOnboarding() // Skip onboarding for tests
 
