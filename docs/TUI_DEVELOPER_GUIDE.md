@@ -893,6 +893,124 @@ See `internal/cli/components/view_event_detail_modal.go` for a complete implemen
 
 **More details**: See [MODAL_PATTERNS.md](./MODAL_PATTERNS.md#modal-overlays-with-bubbletea-overlay) for comprehensive patterns and examples.
 
+### Detail Views with DetailView Widget
+
+The `DetailView` widget (`uikit/widgets/`) provides consistent, theme-aware rendering for detail screens that display key-value information.
+
+#### When to Use DetailView
+
+✅ **Use DetailView for:**
+- Event detail screens (date, company, tags, etc.)
+- Skill detail screens (name, level, category, etc.)
+- Burst/Fact detail views
+- Any screen showing structured key-value data
+- Screens that need text wrapping for long content
+
+❌ **Don't use DetailView for:**
+- List/table views (use `TableBehavior` or `TableList`)
+- Forms with input fields (use `huh` forms)
+- Simple text content (use `primitives.Text`)
+
+#### Basic Usage
+
+```go
+import "github.com/baphled/kariya/internal/cli/uikit/widgets"
+
+// Create a detail view
+dv := widgets.NewDetailView(theme).
+    Title("Event Details").
+    Width(60).  // Enable text wrapping
+    Field("Date", event.Date.Format("2006-01-02")).
+    FieldIf("Company", event.Company).  // Only shows if non-empty
+    FieldIf("Project", event.Project).
+    Field("Text", event.Text).
+    List("Tags", event.Tags)  // Renders as "tag1, tag2, tag3"
+
+rendered := dv.Render()
+```
+
+#### Sections for Grouping
+
+```go
+dv := widgets.NewDetailView(theme).
+    Title("User Profile").
+    Section("Personal Info").
+    Field("Name", user.Name).
+    Field("Email", user.Email).
+    Section("Work Info").
+    Field("Company", user.Company).
+    Field("Role", user.Role).
+    Section("Metadata").
+    Field("Created", user.CreatedAt.Format("2006-01-02"))
+```
+
+#### List Rendering Options
+
+```go
+// Comma-separated (default)
+dv.List("Tags", []string{"go", "tui", "cli"})
+// Output: Tags: go, tui, cli
+
+// Custom separator
+dv.ListWithSeparator("Skills", skills, " | ")
+// Output: Skills: go | python | rust
+
+// Bulleted list
+dv.BulletList("Steps", []string{"Step 1", "Step 2", "Step 3"})
+// Output:
+// Steps:
+//   • Step 1
+//   • Step 2
+//   • Step 3
+
+// Conditional (only if non-empty)
+dv.ListIf("Categories", categories)
+```
+
+#### Text Wrapping
+
+When `Width()` is set, long text values are automatically wrapped:
+
+```go
+dv := widgets.NewDetailView(theme).
+    Width(50).  // Wrap text at 50 characters
+    Field("Description", veryLongDescription)
+```
+
+#### Theme Integration
+
+DetailView is theme-aware via `theme.Aware` embedding:
+
+```go
+// Uses theme colors automatically
+dv := widgets.NewDetailView(theme)
+
+// Change theme if needed
+dv.SetTheme(newTheme)
+
+// Access theme for custom styling
+color := dv.PrimaryColor()
+```
+
+#### Migration from Manual Rendering
+
+**Before (inconsistent):**
+```go
+// ❌ Manual rendering - inconsistent, no wrapping
+content := fmt.Sprintf("Name: %s\n", name)
+content += fmt.Sprintf("Tags: %v\n", tags)  // Prints [a b c]
+```
+
+**After (consistent):**
+```go
+// ✅ DetailView - consistent, themed, proper list rendering
+dv := widgets.NewDetailView(theme).
+    Field("Name", name).
+    List("Tags", tags)  // Prints "a, b, c"
+```
+
+**See also**: Package documentation in `internal/cli/uikit/widgets/doc.go`
+
 ---
 
 ## Common Pitfalls

@@ -1,7 +1,7 @@
 # Supporting Components Reference
 
-**Last Updated**: 2026-01-03
-**Total Components**: 48 files, 34 model types + 14 utility/support files
+**Last Updated**: 2026-01-20
+**Total Components**: 49 files, 35 model types + 14 utility/support files
 **Purpose**: Document all reusable UI components and supporting infrastructure
 
 ---
@@ -40,6 +40,14 @@ Supporting components are reusable UI building blocks, utilities, and infrastruc
    - Burst suggestion, details, editing
    - Fact display and editing
    - Used in timeline and CV generation
+
+8. **Other Components** (6 files)
+   - Event viewing, details display, metadata review
+   - Bulk operations, import, shortcut help
+
+9. **UIKit Widgets** (1 file)
+   - High-level composite components
+   - DetailView for consistent detail screen rendering
 
 ---
 
@@ -461,6 +469,50 @@ Supporting components are reusable UI building blocks, utilities, and infrastruc
 - **Key Methods**: GetHelp(), ListShortcuts(), GetContextHelp()
 - **Dependencies**: shortcut_handler.go, styles
 - **Test Coverage**: 84%+
+
+---
+
+### 9. UIKit Widgets (1 file)
+
+UIKit widgets are higher-level composite components in `internal/cli/uikit/widgets/` that combine primitives for common UI patterns.
+
+#### `detail_view.go`
+- **Type**: `DetailView`
+- **Purpose**: Consistent, theme-aware rendering of key-value detail screens
+- **Location**: `internal/cli/uikit/widgets/detail_view.go`
+- **Usage Count**: New - recommended for all detail screens
+- **Key Methods**:
+  - `NewDetailView(theme)` - Create new detail view
+  - `Title(string)` - Set header title
+  - `Width(int)` - Set width for text wrapping
+  - `Section(string)` - Start a new section
+  - `Field(label, value)` - Add key-value field
+  - `FieldIf(label, value)` - Add field only if value non-empty
+  - `List(label, []string)` - Add comma-separated list
+  - `ListIf(label, []string)` - Add list only if non-empty
+  - `ListWithSeparator(label, []string, sep)` - Add list with custom separator
+  - `BulletList(label, []string)` - Add bulleted list
+  - `Render()` - Generate styled output
+- **Dependencies**: `theme.Aware`, lipgloss
+- **Test Coverage**: 100% (29 tests)
+
+**When to Use**:
+- Event/skill/burst/fact detail screens
+- Any screen displaying structured key-value data
+- When you need consistent text wrapping
+- When arrays should render as "a, b, c" not "[a b c]"
+
+**Example**:
+```go
+dv := widgets.NewDetailView(theme).
+    Title("Event Details").
+    Width(60).
+    Section("Basic Info").
+    Field("Date", event.Date.Format("2006-01-02")).
+    FieldIf("Company", event.Company).
+    List("Tags", event.Tags)
+rendered := dv.Render()
+```
 
 ---
 
