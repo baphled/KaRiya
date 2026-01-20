@@ -676,6 +676,11 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 	// Create new application model
 	model := app.NewModel(cliService, svc)
 
+	// Skip onboarding by default for E2E tests (same as Setup)
+	// Without this, tests that use SimulateRestart would show the onboarding wizard
+	// instead of the expected main menu
+	model.SkipOnboarding()
+
 	// Update environment
 	e.EventRepo = eventRepo
 	e.BurstRepo = burstRepo
