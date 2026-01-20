@@ -22,6 +22,7 @@ func NewSyntaxHighlighter(theme themes.Theme) *SyntaxHighlighter {
 }
 
 // HighlightJSON adds syntax highlighting to JSON content.
+// It processes each line token by token to avoid regex interference.
 func (h *SyntaxHighlighter) HighlightJSON(content string) string {
 	// Define styles
 	keyStyle := lipgloss.NewStyle().Foreground(h.theme.AccentColor())
@@ -30,71 +31,79 @@ func (h *SyntaxHighlighter) HighlightJSON(content string) string {
 	boolStyle := lipgloss.NewStyle().Foreground(h.theme.InfoColor())
 	nullStyle := lipgloss.NewStyle().Foreground(h.theme.SecondaryColor())
 	bracketStyle := lipgloss.NewStyle().Foreground(h.theme.PrimaryColor())
+	punctStyle := lipgloss.NewStyle().Foreground(h.theme.SecondaryColor())
 
 	lines := strings.Split(content, "\n")
 	highlighted := make([]string, 0, len(lines))
 
-	// Regex patterns
-	keyPattern := regexp.MustCompile(`"([^"]+)"(\s*):`)
-	stringPattern := regexp.MustCompile(`:\s*"([^"]*)"`)
-	numberPattern := regexp.MustCompile(`:\s*(-?\d+\.?\d*)`)
-	boolPattern := regexp.MustCompile(`:\s*(true|false)`)
-	nullPattern := regexp.MustCompile(`:\s*(null)`)
+	// Single comprehensive pattern that captures JSON tokens
+	// Groups: 1=key, 2=string value, 3=number, 4=bool, 5=null, 6=bracket/punct
+	tokenPattern := regexp.MustCompile(
+		`("([^"\\]|\\.)*")\s*:` + // Key followed by colon
+			`|:\s*("([^"\\]|\\.)*")` + // String value after colon
+			`|:\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)` + // Number after colon
+			`|:\s*(true|false)` + // Boolean after colon
+			`|:\s*(null)` + // Null after colon
+			`|([{}\[\],])`, // Brackets and punctuation
+	)
 
 	for _, line := range lines {
-		// Highlight keys
-		line = keyPattern.ReplaceAllStringFunc(line, func(match string) string {
-			// Extract key name and colon
-			parts := keyPattern.FindStringSubmatch(match)
-			if len(parts) >= 3 {
-				return keyStyle.Render("\""+parts[1]+"\"") + parts[2] + ":"
+		result := tokenPattern.ReplaceAllStringFunc(line, func(match string) string {
+			// Determine what type of token this is
+			trimmed := strings.TrimSpace(match)
+
+			// Key: "something":
+			if strings.HasSuffix(trimmed, ":") && strings.HasPrefix(trimmed, "\"") {
+				// Extract key and preserve spacing
+				keyEnd := strings.LastIndex(match, "\":")
+				if keyEnd > 0 {
+					key := match[:keyEnd+1]
+					rest := match[keyEnd+1:]
+					return keyStyle.Render(key) + rest
+				}
+				return keyStyle.Render(strings.TrimSuffix(trimmed, ":")) + ":"
 			}
+
+			// String value: : "something"
+			if strings.HasPrefix(trimmed, ":") {
+				valueStart := strings.Index(match, ":")
+				prefix := match[:valueStart+1]
+				value := strings.TrimSpace(match[valueStart+1:])
+
+				if strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"") {
+					return prefix + " " + stringStyle.Render(value)
+				}
+
+				// Number
+				if numMatch := regexp.MustCompile(`^-?\d+\.?\d*(?:[eE][+-]?\d+)?$`).MatchString(value); numMatch {
+					return prefix + " " + numberStyle.Render(value)
+				}
+
+				// Boolean
+				if value == "true" || value == "false" {
+					return prefix + " " + boolStyle.Render(value)
+				}
+
+				// Null
+				if value == "null" {
+					return prefix + " " + nullStyle.Render(value)
+				}
+			}
+
+			// Brackets and punctuation
+			switch trimmed {
+			case "{", "}":
+				return bracketStyle.Render(trimmed)
+			case "[", "]":
+				return bracketStyle.Render(trimmed)
+			case ",":
+				return punctStyle.Render(trimmed)
+			}
+
 			return match
 		})
 
-		// Highlight string values (after colon)
-		line = stringPattern.ReplaceAllStringFunc(line, func(match string) string {
-			parts := stringPattern.FindStringSubmatch(match)
-			if len(parts) >= 2 {
-				return ": " + stringStyle.Render("\""+parts[1]+"\"")
-			}
-			return match
-		})
-
-		// Highlight numbers
-		line = numberPattern.ReplaceAllStringFunc(line, func(match string) string {
-			parts := numberPattern.FindStringSubmatch(match)
-			if len(parts) >= 2 {
-				return ": " + numberStyle.Render(parts[1])
-			}
-			return match
-		})
-
-		// Highlight booleans
-		line = boolPattern.ReplaceAllStringFunc(line, func(match string) string {
-			parts := boolPattern.FindStringSubmatch(match)
-			if len(parts) >= 2 {
-				return ": " + boolStyle.Render(parts[1])
-			}
-			return match
-		})
-
-		// Highlight null
-		line = nullPattern.ReplaceAllStringFunc(line, func(match string) string {
-			parts := nullPattern.FindStringSubmatch(match)
-			if len(parts) >= 2 {
-				return ": " + nullStyle.Render(parts[1])
-			}
-			return match
-		})
-
-		// Highlight brackets
-		line = strings.ReplaceAll(line, "{", bracketStyle.Render("{"))
-		line = strings.ReplaceAll(line, "}", bracketStyle.Render("}"))
-		line = strings.ReplaceAll(line, "[", bracketStyle.Render("["))
-		line = strings.ReplaceAll(line, "]", bracketStyle.Render("]"))
-
-		highlighted = append(highlighted, line)
+		highlighted = append(highlighted, result)
 	}
 
 	return strings.Join(highlighted, "\n")

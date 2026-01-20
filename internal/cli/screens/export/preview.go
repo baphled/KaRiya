@@ -147,11 +147,14 @@ func (s *Preview) View() string {
 	}
 
 	// Wrap viewport in a code block style box
+	// Calculate box width: viewport width + padding (2 sides * 1) + border (2 sides * 1)
+	boxWidth := s.viewport.Width + 4
 	codeBlockTitle := s.getCodeBlockTitle()
 	codeBlock := containers.NewBox(uikitTheme).
 		Title(codeBlockTitle).
 		Content(s.viewport.View()).
 		Variant(containers.BoxSubtle).
+		Width(boxWidth).
 		Padding(1).
 		Render()
 
@@ -241,12 +244,18 @@ func (s *Preview) initializeViewport(th themes.Theme) {
 	highlightedContent := s.highlighter.Highlight(s.content, string(s.format))
 
 	// Calculate viewport dimensions
-	// Account for header (4 lines), footer (2 lines)
-	viewportHeight := s.height - 8
+	// Account for:
+	// - Header: ~5 lines (title, stats, separator, blank line)
+	// - Footer: 2 lines (separator, help badges)
+	// - Box wrapper: 2 (border) + 2 (padding) = 4 lines vertical, 6 chars horizontal
+	//   (border=1 each side, padding=1 each side, plus padding internal spacing)
+	viewportHeight := s.height - 11 // 5 header + 2 footer + 4 box
 	if viewportHeight < 5 {
 		viewportHeight = 5
 	}
-	viewportWidth := s.width - 4
+
+	// Width: screen width minus margins (2) minus box border (2) minus box padding (2) minus content padding (2)
+	viewportWidth := s.width - 8
 	if viewportWidth < 40 {
 		viewportWidth = 40
 	}
