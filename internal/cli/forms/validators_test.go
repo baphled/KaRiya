@@ -416,6 +416,10 @@ var _ = Describe("Validators", func() {
 	})
 
 	Describe("GitHubURL", func() {
+		// CONTRACT: The GitHub field in config stores USERNAME ONLY (e.g., "baphled"),
+		// not the full URL. GitHubURL() decorates it for display in CV exports.
+		// This is validated by GitHubUsername() which rejects full URLs.
+
 		It("should format username as full URL", func() {
 			url := forms.GitHubURL("baphled")
 			Expect(url).To(Equal("https://github.com/baphled"))

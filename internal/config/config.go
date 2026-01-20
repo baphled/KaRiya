@@ -35,7 +35,7 @@ type ProfileConfig struct {
 	// Narrative CV profile fields
 	Title         string   `yaml:"title"`          // e.g., "Senior Software Engineer / Technical Consultant"
 	Location      string   `yaml:"location"`       // e.g., "Remote (UK)"
-	GitHub        string   `yaml:"github"`         // e.g., "https://github.com/username"
+	GitHub        string   `yaml:"github"`         // GitHub username only, e.g., "baphled" (not full URL)
 	Portfolio     string   `yaml:"portfolio"`      // e.g., "http://portfolio.example.com"
 	CoreStrengths []string `yaml:"core_strengths"` // List of core strengths
 	Languages     []string `yaml:"languages"`      // e.g., "Ruby, Go, PHP, C/C++, JavaScript, Shell"
