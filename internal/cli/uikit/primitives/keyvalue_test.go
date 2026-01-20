@@ -1,6 +1,8 @@
 package primitives_test
 
 import (
+	"strings"
+
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	. "github.com/onsi/ginkgo/v2"
@@ -142,18 +144,5 @@ var _ = Describe("KeyValue", func() {
 
 // Helper to split rendered output into lines
 func splitKeyValueLines(s string) []string {
-	lines := []string{}
-	current := ""
-	for _, r := range s {
-		if r == '\n' {
-			lines = append(lines, current)
-			current = ""
-		} else {
-			current += string(r)
-		}
-	}
-	if current != "" {
-		lines = append(lines, current)
-	}
-	return lines
+	return strings.Split(s, "\n")
 }
