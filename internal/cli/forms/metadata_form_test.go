@@ -15,11 +15,8 @@ var _ = Describe("MetadataForm", func() {
 	var testEvent *career.CareerEvent
 
 	BeforeEach(func() {
-		testEvent = fixtures.Event("event-123")
-		testEvent.Text = "Test event"
+		testEvent = fixtures.EventWith("event-123", "Test event", "Test Company", "Test Project")
 		testEvent.Date = time.Date(2024, 1, 7, 0, 0, 0, 0, time.UTC)
-		testEvent.Company = "Test Company"
-		testEvent.Project = "Test Project"
 		testEvent.Tags = []string{"go", "testing"}
 		testEvent.Categories = []string{"technical", "leadership"}
 		testEvent.Skills = []string{"skill-id-1", "skill-id-2"}

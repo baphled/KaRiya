@@ -60,8 +60,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should return empty list for event with empty text", func() {
-			event := fixtures.Event(uuid.New().String())
-			event.Text = "" // Override to empty text
+			event := fixtures.EventWith(uuid.New().String(), "", "", "") // Empty text
 
 			facts, err := service.ExtractFactsFromEvent(ctx, event)
 
@@ -78,8 +77,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should return error for event with empty ID", func() {
-			event := fixtures.Event("")
-			event.Text = "Some event"
+			event := fixtures.EventWith("", "Some event", "", "") // Empty ID
 
 			facts, err := service.ExtractFactsFromEvent(ctx, event)
 

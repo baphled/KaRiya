@@ -66,9 +66,7 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should handle events with no company", func() {
-			event := fixtures.Event("1")
-			event.Text = "Personal project"
-			event.Company = "" // No company
+			event := fixtures.EventWith("1", "Personal project", "", "") // No company
 
 			events := []*career.CareerEvent{event}
 
