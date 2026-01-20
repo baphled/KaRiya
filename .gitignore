@@ -82,3 +82,7 @@ VERSION
 # Data files
 *.csv
 PLAN.md
+
+# Session state (AI workflow)
+.session-active
+.tdd-state

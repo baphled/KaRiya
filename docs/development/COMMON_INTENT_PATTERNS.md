@@ -1,8 +1,11 @@
 # Common Intent Patterns & Refactoring Guide
 
-**Last Updated**: 2026-01-14
+**Last Updated**: 2026-01-20
 **Status**: Living Document - Updated as patterns emerge
 **Purpose**: Identify and extract reusable patterns across all intents
+
+> **UIKit Migration Note**: New implementations should use UIKit components.
+> See [UIKIT_GUIDE.md](../UIKIT_GUIDE.md) for the standardized component library.
 
 ---
 

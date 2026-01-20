@@ -1,8 +1,11 @@
 # KaRiya Naming Conventions
 
-**Version**: 1.0
-**Last Updated**: 2026-01-13
+**Version**: 1.1
+**Last Updated**: 2026-01-20
 **Status**: Official Standard
+
+> **UIKit Components**: For UIKit component naming, see [UIKIT_GUIDE.md](../UIKIT_GUIDE.md).
+> New components should go in `uikit/` not `components/` (legacy).
 
 This document defines naming conventions for all code in the KaRiya TUI application. Consistent naming improves readability, discoverability, and maintainability.
 

@@ -1,8 +1,11 @@
 # Modal Patterns Guide
 
-**Last Updated**: 2026-01-07  
+**Last Updated**: 2026-01-20  
 **Purpose**: Common modal usage patterns for KaRiya TUI  
 **Status**: Production Ready
+
+> **UIKit Migration**: Use `feedback.NewErrorModal()`, `feedback.NewLoadingModal()`, etc.
+> from `internal/cli/uikit/feedback/`. See [UIKIT_GUIDE.md](./UIKIT_GUIDE.md) for details.
 
 ---
 

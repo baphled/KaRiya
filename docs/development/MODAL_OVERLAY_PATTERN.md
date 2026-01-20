@@ -1,7 +1,10 @@
 # Modal Overlay Pattern
 
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-20
 **Status**: ✅ **PRODUCTION STANDARD - REQUIRED PATTERN**
+
+> **UIKit Migration**: Use `behaviors.RenderModalOverlay()` for modal rendering.
+> See [UIKIT_GUIDE.md](../UIKIT_GUIDE.md) for the current component library.
 
 ---
 

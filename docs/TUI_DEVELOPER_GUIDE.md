@@ -2,6 +2,9 @@
 
 **A comprehensive guide for developers creating and maintaining TUI components**
 
+> **UIKit Integration**: This guide covers general TUI development. For component usage,
+> see [UIKIT_GUIDE.md](./UIKIT_GUIDE.md) which documents the standardized component library.
+
 ---
 
 ## Table of Contents
