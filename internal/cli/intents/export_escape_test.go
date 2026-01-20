@@ -132,11 +132,15 @@ var _ = Describe("ExportArtifact - Escape Key Behavior", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 			Expect(intent.GetState()).To(Equal(ExportStatePreview))
 
-			// Back to wizard
+			// Back to wizard (returns to last step, step 2)
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 			Expect(intent.GetState()).To(Equal(ExportStateConfigure))
 
-			// Cancel from wizard (need to press Esc to exit from step 1)
+			// Back to step 1 in wizard
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(intent.GetState()).To(Equal(ExportStateConfigure))
+
+			// Cancel from wizard step 1
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 			result := intent.Result()
 			Expect(result).NotTo(BeNil())

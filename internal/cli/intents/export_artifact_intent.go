@@ -284,7 +284,7 @@ func (e *ExportArtifactIntent) handleCancelResult() tea.Cmd {
 		e.setCancelled()
 
 	case ExportStatePreview:
-		// Go back to configuration wizard
+		// Go back to configuration wizard at the last step
 		e.currentState = ExportStateConfigure
 
 		// Get terminal dimensions
@@ -295,13 +295,15 @@ func (e *ExportArtifactIntent) handleCancelResult() tea.Cmd {
 			height = termInfo.Height
 		}
 
-		// Re-create wizard with previous configuration
+		// Re-create wizard with previous configuration and go to last step
 		e.wizardModal = components.NewExportConfigWizardModal(width, height)
 		if e.config != nil {
 			e.wizardModal.SetArtifactType(string(e.config.ArtifactType))
 			e.wizardModal.SetFormat(string(e.config.Format))
 			e.wizardModal.SetDestination(string(e.config.Destination))
 		}
+		// Go to last step so user can step back through wizard incrementally
+		e.wizardModal.GoToLastStep()
 		e.activeScreen = nil
 
 		// Note: ExportStateConfirm, ExportStateComplete, ExportStateFailed are now handled by modals

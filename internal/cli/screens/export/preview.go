@@ -169,22 +169,23 @@ func (s *Preview) View() string {
 
 // renderSummaryHeader renders the summary/statistics header.
 func (s *Preview) renderSummaryHeader(th themes.Theme) string {
-	uikitTheme := theme.Default()
 	var b strings.Builder
 
-	// Title with icon
-	title := primitives.Title(fmt.Sprintf("📄 Export Preview: %s → %s",
+	// Title
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(th.PrimaryColor())
+	b.WriteString(titleStyle.Render(fmt.Sprintf("Export Preview: %s → %s",
 		getArtifactTypeLabel(s.artifactType),
-		getFormatLabel(s.format)), uikitTheme).
-		Width(s.width - 4).
-		Render()
-	b.WriteString(title)
+		getFormatLabel(s.format))))
 	b.WriteString("\n")
 
-	// Stats line with badges
-	statsLine := s.renderStatsBadges(th)
-	b.WriteString(statsLine)
-	b.WriteString("\n")
+	// Stats line - simple key: value format
+	statsLine := s.renderStatsLine(th)
+	if statsLine != "" {
+		b.WriteString(statsLine)
+		b.WriteString("\n")
+	}
 
 	// Separator
 	sepStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
@@ -194,45 +195,41 @@ func (s *Preview) renderSummaryHeader(th themes.Theme) string {
 	return b.String()
 }
 
-// renderStatsBadges renders the statistics as badges.
-func (s *Preview) renderStatsBadges(_ themes.Theme) string {
-	uikitTheme := theme.Default()
-	badges := make([]*primitives.Badge, 0)
+// renderStatsLine renders the statistics as a simple formatted line.
+func (s *Preview) renderStatsLine(th themes.Theme) string {
+	labelStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
+	valueStyle := lipgloss.NewStyle().Foreground(th.PrimaryColor())
 
-	// Artifact type badge - use KeyBadge for [key → value] format
-	badges = append(badges, primitives.KeyBadge("Type", getArtifactTypeLabel(s.artifactType), uikitTheme))
+	var parts []string
 
-	// Format badge - use StatusBadge for format display
-	badges = append(badges, primitives.StatusBadge(getFormatLabel(s.format), uikitTheme))
-
-	// Destination badge
+	// Destination
 	destLabel := "File"
 	if s.destination == types.ExportDestinationClipboard {
 		destLabel = "Clipboard"
 	}
-	badges = append(badges, primitives.TagBadge("To: "+destLabel, uikitTheme))
+	parts = append(parts, labelStyle.Render("To: ")+valueStyle.Render(destLabel))
 
-	// Stats badges if available
+	// Stats if available
 	if s.stats != nil {
 		if s.stats.ItemCount > 0 {
 			itemsLabel := fmt.Sprintf("%d items", s.stats.ItemCount)
 			if s.stats.TotalCount > s.stats.ItemCount {
 				itemsLabel = fmt.Sprintf("%d of %d items", s.stats.ItemCount, s.stats.TotalCount)
 			}
-			badges = append(badges, primitives.KeyBadge("Items", itemsLabel, uikitTheme))
+			parts = append(parts, labelStyle.Render("Items: ")+valueStyle.Render(itemsLabel))
 		}
 
 		if s.stats.EstimatedSize > 0 {
-			sizeLabel := formatFileSize(s.stats.EstimatedSize)
-			badges = append(badges, primitives.StatusBadge("~"+sizeLabel, uikitTheme))
+			parts = append(parts, labelStyle.Render("Size: ")+valueStyle.Render("~"+formatFileSize(s.stats.EstimatedSize)))
 		}
 
 		if s.stats.IsTruncated {
-			badges = append(badges, primitives.TagBadge("Preview truncated", uikitTheme))
+			warnStyle := lipgloss.NewStyle().Foreground(th.WarningColor())
+			parts = append(parts, warnStyle.Render("(preview truncated)"))
 		}
 	}
 
-	return primitives.RenderHelpFooter(uikitTheme, badges...)
+	return strings.Join(parts, "  │  ")
 }
 
 // initializeViewport sets up the viewport with highlighted content.

@@ -294,6 +294,19 @@ func (m *ExportConfigWizardModal) GetStepCount() int {
 	return 2 // WHAT, HOW
 }
 
+// GoToStep sets the current step (0-based). Useful when going back from preview.
+func (m *ExportConfigWizardModal) GoToStep(step int) {
+	if step >= 0 && step < m.GetStepCount() {
+		m.currentStep = step
+		m.buildForm()
+	}
+}
+
+// GoToLastStep goes to the last step of the wizard.
+func (m *ExportConfigWizardModal) GoToLastStep() {
+	m.GoToStep(m.GetStepCount() - 1)
+}
+
 // SetArtifactType sets the artifact type.
 func (m *ExportConfigWizardModal) SetArtifactType(artifactType string) {
 	m.data.ArtifactType = artifactType
