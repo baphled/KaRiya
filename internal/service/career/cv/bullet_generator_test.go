@@ -2,6 +2,7 @@ package cv
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
@@ -314,8 +315,12 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 	})
 
-	Describe("Role-Specific Compression", func() {
-		It("should cap principal role at 3-4 bullets", func() {
+	// BUG-003 fix: BulletGenerator no longer applies total bullet caps.
+	// Per-company caps are correctly applied by SectionBuilder.getBulletsPerCompanyForRole().
+	// These tests now verify that ALL events passing inclusion criteria are returned,
+	// and that bullets are properly ranked for SectionBuilder to use.
+	Describe("Bullet Generation Without Total Cap (BUG-003 Fix)", func() {
+		It("should return all principal events that pass inclusion criteria", func() {
 			events := fixtures.Events(10)
 			for _, e := range events {
 				e.Categories = []string{"technical"}
@@ -323,10 +328,11 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumerically("<=", 50))
+			// All events should be returned (no total cap)
+			Expect(len(bullets)).To(Equal(10))
 		})
 
-		It("should cap staff role at 4-5 bullets", func() {
+		It("should return all staff events that pass inclusion criteria", func() {
 			events := fixtures.Events(10)
 			for _, e := range events {
 				e.Categories = []string{"technical"}
@@ -334,10 +340,11 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "staff", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumerically("<=", 40))
+			// All events should be returned (no total cap)
+			Expect(len(bullets)).To(Equal(10))
 		})
 
-		It("should cap EM role at 3-4 bullets", func() {
+		It("should return all EM events that pass inclusion criteria", func() {
 			events := fixtures.Events(10)
 			for _, e := range events {
 				e.Categories = []string{"leadership"}
@@ -345,10 +352,11 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "em", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumerically("<=", 40))
+			// All events should be returned (no total cap)
+			Expect(len(bullets)).To(Equal(10))
 		})
 
-		It("should cap senior_ic role at 4-5 bullets", func() {
+		It("should return all senior_ic events that pass inclusion criteria", func() {
 			events := fixtures.Events(10)
 			for _, e := range events {
 				e.Categories = []string{"technical"}
@@ -356,10 +364,11 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "senior_ic", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(bullets)).To(BeNumerically("<=", 40))
+			// All events should be returned (no total cap)
+			Expect(len(bullets)).To(Equal(10))
 		})
 
-		It("should remove lower-ranked bullets first when compressing", func() {
+		It("should rank bullets by score for SectionBuilder to use", func() {
 			events := fixtures.Events(5)
 			for _, e := range events {
 				e.Categories = []string{"technical"}
@@ -368,12 +377,51 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
-			// Bullets should be ordered by rank (descending)
+			// Bullets should be ordered by rank (descending) for SectionBuilder
 			if len(bullets) > 1 {
 				for i := 0; i < len(bullets)-1; i++ {
 					Expect(bullets[i].Rank).To(BeNumerically(">=", bullets[i+1].Rank))
 				}
 			}
+		})
+
+		It("should preserve bullets from all companies when many events exist", func() {
+			// Create events from multiple different companies (simulating the BUG-003 scenario)
+			// The bug was that a total cap of 40 bullets would exclude later companies entirely
+			companies := []string{"CompanyA", "CompanyB", "CompanyC", "CompanyD", "CompanyE"}
+			eventToCompany := make(map[string]string)
+			var events []*career.CareerEvent
+			for _, company := range companies {
+				for i := 0; i < 10; i++ {
+					eventID := fmt.Sprintf("%s-event-%d", company, i)
+					event := fixtures.EventWith(
+						eventID,
+						fmt.Sprintf("Implemented feature %d at %s", i, company),
+						company,
+						"",
+					)
+					event.Categories = []string{"technical"}
+					events = append(events, event)
+					eventToCompany[eventID] = company
+				}
+			}
+
+			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "staff", "hiring_manager")
+			Expect(err).NotTo(HaveOccurred())
+
+			// All 50 events should generate bullets (no total cap)
+			Expect(len(bullets)).To(Equal(50))
+
+			// Verify all companies are represented in the bullets by checking source event IDs
+			companiesInBullets := make(map[string]bool)
+			for _, bullet := range bullets {
+				for _, eventID := range bullet.SourceEventIDs {
+					if company, ok := eventToCompany[eventID]; ok {
+						companiesInBullets[company] = true
+					}
+				}
+			}
+			Expect(len(companiesInBullets)).To(Equal(5), "All 5 companies should be represented")
 		})
 	})
 
@@ -509,8 +557,11 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
-			// Should still respect role-specific caps
-			Expect(len(bullets)).To(BeNumerically("<=", 50))
+			// BUG-003 fix: BulletGenerator no longer applies total bullet cap.
+			// Per-company caps are applied by SectionBuilder instead.
+			// All events that pass inclusion criteria should be returned.
+			Expect(len(bullets)).To(BeNumerically(">", 0))
+			Expect(len(bullets)).To(BeNumerically("<=", 1000))
 		})
 	})
 })
