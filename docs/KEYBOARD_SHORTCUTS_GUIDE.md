@@ -71,8 +71,14 @@ These shortcuts work everywhere in KaRiya, regardless of which screen you're on:
 | **`q`** | Quit application | Exit KaRiya completely |
 | **`Ctrl+C`** | Force quit | Interrupt and quit immediately |
 | **`?`** | Show help | Display context-sensitive help |
-| **`m`** | Main menu | Return to main menu from any screen |
+| **`m`** | Main menu | Return to main menu from any workflow |
 | **`Esc`** | Go back / Cancel | Navigate to previous screen or cancel current operation |
+
+> **Important Notes**:
+> - **`q`** and **`Ctrl+C`**: Work globally from any screen to quit the application
+> - **`m`**: Returns to main menu from within any workflow (not from main menu itself)
+> - **`Esc`**: Context-sensitive - goes back one step within a workflow, or cancels if at root state
+> - **`c`** (Capture) and **`l`** (List): Only work from the **main menu screen**, not globally
 
 ### Global Navigation
 
@@ -606,7 +612,7 @@ From CV Confirm → e/x → Select Format → Enter → Select Location → Ente
 - **[Troubleshooting Guide](TROUBLESHOOTING.md)** - General troubleshooting for KaRiya
 
 ### Developer Documentation
-- **[State Matrix](STATE_MATRIX.md)** - Complete state matrix (10 intents, 64 states, escape behavior)
+- **[State Matrix](STATE_MATRIX.md)** - Complete state matrix (11 intents, escape behavior)
 - **[Centralized Key Handling Guide](development/CENTRALIZED_KEY_HANDLING.md)** - Developer guide for key handling
 - **[Keyboard System Guide](development/KEYBOARD_SYSTEM_GUIDE.md)** - Comprehensive keyboard system implementation
 

@@ -17,6 +17,12 @@ stateDiagram-v2
         MainMenu --> GenerateCV
         MainMenu --> ExportArtifact
         MainMenu --> ConfigureSystem
+        MainMenu --> BurstManagement
+        MainMenu --> FactManagement
+        MainMenu --> MetadataEditor
+        MainMenu --> ImportWizard
+        MainMenu --> ManageSkills
+        MainMenu --> BulkOperations
     }
 ```
 
@@ -446,8 +452,121 @@ metadata := result.GetMetadata("scroll_position")
 8. Add property-based invariant tests
 9. Performance optimization and profiling
 
+### 6. Burst Management Intent Flow
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> BurstList
+    BurstList --> SelectBurst
+    SelectBurst --> ViewBurst
+    ViewBurst --> EditBurst
+    EditBurst --> ConfirmBurst
+    ConfirmBurst --> [*]
+
+    note right of BurstList
+        List and manage burst entries
+        Filter, sort, search
+        Bulk operations available
+    end note
+```
+
+### 7. Fact Management Intent Flow
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> FactList
+    FactList --> SelectFact
+    SelectFact --> ViewFact
+    ViewFact --> EditFact
+    EditFact --> ConfirmFact
+    ConfirmFact --> [*]
+
+    note right of FactList
+        List and manage extracted facts
+        Filter by source event/burst
+        Link facts to events
+    end note
+```
+
+### 8. Metadata Editor Intent Flow
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> SelectEvent
+    SelectEvent --> EditMetadata
+    EditMetadata --> ReviewChanges
+    ReviewChanges --> SaveMetadata
+    SaveMetadata --> [*]
+
+    note right of EditMetadata
+        Edit event metadata fields
+        Inline validation
+        Preview changes before save
+    end note
+```
+
+### 9. Import Wizard Intent Flow
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> SelectSource
+    SelectSource --> ConfigureMapping
+    ConfigureMapping --> PreviewImport
+    PreviewImport --> ConfirmImport
+    ConfirmImport --> ImportInProgress
+    ImportInProgress --> [*]
+
+    note right of SelectSource
+        Import from CSV, JSON, etc.
+        Field mapping configuration
+        Preview before committing
+    end note
+```
+
+### 10. Manage Skills Intent Flow
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> SkillList
+    SkillList --> AddSkill
+    SkillList --> EditSkill
+    AddSkill --> ConfirmSkill
+    EditSkill --> ConfirmSkill
+    ConfirmSkill --> [*]
+
+    note right of SkillList
+        Manage skills and proficiencies
+        Link skills to events
+        Track skill progression
+    end note
+```
+
+### 11. Bulk Operations Intent Flow
+
+```mermaid
+stateDiagram-v2
+    direction TB
+    [*] --> SelectItems
+    SelectItems --> ChooseOperation
+    ChooseOperation --> ConfigureOperation
+    ConfigureOperation --> PreviewChanges
+    PreviewChanges --> ConfirmBulk
+    ConfirmBulk --> BulkInProgress
+    BulkInProgress --> [*]
+
+    note right of SelectItems
+        Multi-select events/bursts/facts
+        Bulk tag, delete, export
+        Preview all changes before apply
+    end note
+```
+
 ## Future Expansion Considerations
-- Skill Tracking (as secondary/contextual intent)
 - Career Goal Setting (as secondary/contextual intent)
 - Mentor Matching (as secondary/contextual intent)
 - Continuous Learning Tracking (as secondary/contextual intent)
@@ -455,6 +574,24 @@ metadata := result.GetMetadata("scroll_position")
 **Key Principle**: Treat all new workflows as secondary/contextual intents first. Promote to top-level only when UX is confirmed and demand is clear.
 
 ---
+
+## Intent Summary
+
+**Total Intents**: 11
+
+| Intent | Status | Description |
+|--------|--------|-------------|
+| CaptureEvent | ✅ Production | Capture career events with burst/fact extraction |
+| BrowseTimeline | ✅ Production | Browse and filter career timeline |
+| GenerateCV | ✅ Production | Generate role-specific CVs |
+| ExportArtifact | ✅ Production | Export data to various formats |
+| ConfigureSystem | ✅ Production | System configuration |
+| BurstManagement | ✅ Production | Manage burst entries |
+| FactManagement | ✅ Production | Manage extracted facts |
+| MetadataEditor | ✅ Production | Edit event metadata |
+| ImportWizard | ✅ Production | Import from CSV/JSON |
+| ManageSkills | ✅ Production | Skill management |
+| BulkOperations | ✅ Production | Bulk operations on items |
 
 ## Audit Summary
 
@@ -478,6 +615,7 @@ metadata := result.GetMetadata("scroll_position")
 - ✅ Clarified back navigation semantics
 - ✅ Enhanced project structure with clear boundaries
 - ✅ Added detailed implementation guidelines
+- ✅ Documented all 11 intents (January 2026)
 
 **No Blockers**: Architecture is ready for implementation immediately.
 

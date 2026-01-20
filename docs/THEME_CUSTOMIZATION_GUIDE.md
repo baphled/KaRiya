@@ -31,8 +31,9 @@ KaRiya's theme system provides:
 - **Backwards compatibility** - Default theme matches original colors
 - **Pre-composed styles** - Ready-to-use Lipgloss styles
 
-### Package Location
+### Package Locations
 
+**Primary Theme Package** (`internal/cli/themes/`):
 ```
 internal/cli/themes/
 ├── theme.go       # Theme interface and ColorPalette
@@ -44,6 +45,19 @@ internal/cli/themes/
 ├── glamour.go     # Markdown rendering with themes
 └── loading.go     # Themed loading views
 ```
+
+**UIKit Theme Package** (`internal/cli/uikit/theme/`):
+```
+internal/cli/uikit/theme/
+├── theme.go       # Re-exports themes.Theme + Default() helper
+├── aware.go       # ThemeAware embeddable struct
+└── theme_test.go  # Theme package tests
+```
+
+The UIKit theme package provides a convenience layer for UIKit components:
+- Re-exports `themes.Theme` interface for easy imports
+- Provides `Default()` function to get the default theme
+- Provides `Aware` embeddable struct for theme-aware components
 
 ---
 
@@ -177,6 +191,48 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, ...) (tea.Cmd, error) 
 ---
 
 ## Using Themes in Intents
+
+### Pattern 0: ThemeAware Embedding (UIKit Components)
+
+For UIKit components, use the `theme.Aware` embeddable struct for automatic theme access:
+
+```go
+import "github.com/baphled/kariya/internal/cli/uikit/theme"
+
+type MyButton struct {
+    theme.Aware  // Embed for theme access
+    label string
+}
+
+func NewMyButton(label string) *MyButton {
+    btn := &MyButton{label: label}
+    // Theme defaults to Default() if not set
+    return btn
+}
+
+func (b *MyButton) Render() string {
+    // Use inherited color getters (nil-safe, auto-fallback)
+    style := lipgloss.NewStyle().
+        Foreground(b.PrimaryColor()).
+        Background(b.BackgroundColor())
+    return style.Render(b.label)
+}
+
+// Optionally override theme
+btn := NewMyButton("Click Me")
+btn.SetTheme(customTheme)
+```
+
+**Available Color Getters via `theme.Aware`**:
+- `PrimaryColor()`, `SecondaryColor()`, `AccentColor()`
+- `ErrorColor()`, `SuccessColor()`, `WarningColor()`, `InfoColor()`
+- `BorderColor()`, `BackgroundColor()`, `MutedColor()`
+
+**Benefits**:
+- ✅ Automatic nil-safety (falls back to default theme)
+- ✅ Consistent color access across all UIKit components
+- ✅ No need for manual nil checks
+- ✅ Theme propagation via `SetTheme()`
 
 ### Pattern 1: Helper Methods (Recommended)
 
@@ -700,8 +756,73 @@ isDark := themes.DetectDarkMode()
 
 ---
 
+## UIKit Theme Integration
+
+The UIKit package provides theme-aware components through the `uikit/theme` package.
+
+### Importing UIKit Theme
+
+```go
+import (
+    "github.com/baphled/kariya/internal/cli/uikit/theme"
+    "github.com/baphled/kariya/internal/cli/uikit/primitives"
+)
+```
+
+### Using ThemeAware in Custom Components
+
+```go
+type MyComponent struct {
+    theme.Aware  // Embed for automatic theme access
+    // ... other fields
+}
+
+func (c *MyComponent) View() string {
+    // Color getters are nil-safe and auto-fallback to default
+    return lipgloss.NewStyle().
+        Foreground(c.PrimaryColor()).
+        Render("My content")
+}
+```
+
+### Theme Propagation
+
+```go
+// Set theme on component
+component.SetTheme(myTheme)
+
+// Get current theme (never nil - returns default if unset)
+currentTheme := component.Theme()
+```
+
+### UIKit Primitives with Themes
+
+All UIKit primitives accept a theme parameter:
+
+```go
+// Text with theme
+text := primitives.NewText(theme).
+    Title("Header").
+    Render()
+
+// Button with theme
+btn := primitives.NewButton(theme).
+    Label("Submit").
+    Variant(primitives.ButtonPrimary).
+    Render()
+
+// Badge with theme
+badge := primitives.NewBadge(theme).
+    Text("NEW").
+    Variant(primitives.BadgeStatus).
+    Render()
+```
+
+---
+
 ## See Also
 
+- [UIKit Guide](UIKIT_GUIDE.md) - Complete UIKit component documentation
 - [TUI Standards](TUI_STANDARDS.md) - Overall TUI design guidelines
 - [TUI Developer Guide](TUI_DEVELOPER_GUIDE.md) - Creating TUI components
 - [TUI Visual Overhaul Spec](TUI_VISUAL_OVERHAUL_SPEC.md) - Original design specification
