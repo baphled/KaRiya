@@ -79,3 +79,8 @@ func (a *Aware) BackgroundColor() lipgloss.Color {
 func (a *Aware) MutedColor() lipgloss.Color {
 	return a.Theme().MutedColor()
 }
+
+// InfoColor returns the info status color from the theme.
+func (a *Aware) InfoColor() lipgloss.Color {
+	return a.Theme().InfoColor()
+}

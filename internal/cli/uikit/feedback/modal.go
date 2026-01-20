@@ -1,4 +1,4 @@
-package components
+package feedback
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 )
@@ -28,8 +27,61 @@ const (
 	ModalWarning
 )
 
-// ModalContent represents the content and configuration of a modal
-type ModalContent struct {
+// SimpleSpinner provides a simple text-based spinner animation
+type SimpleSpinner struct {
+	frames []string
+	index  int
+}
+
+// NewSimpleSpinner creates a new simple spinner
+func NewSimpleSpinner() *SimpleSpinner {
+	return &SimpleSpinner{
+		frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+		index:  0,
+	}
+}
+
+// GetFrame returns the current spinner frame
+func (s *SimpleSpinner) GetFrame() string {
+	return s.frames[s.index]
+}
+
+// Advance advances the spinner to the next frame
+func (s *SimpleSpinner) Advance() {
+	s.index = (s.index + 1) % len(s.frames)
+}
+
+// LoadingMessageRotator rotates through a list of loading messages
+type LoadingMessageRotator struct {
+	messages []string
+	index    int
+}
+
+// NewLoadingMessageRotator creates a new message rotator
+func NewLoadingMessageRotator(messages []string) *LoadingMessageRotator {
+	if len(messages) == 0 {
+		messages = []string{"Loading..."}
+	}
+	return &LoadingMessageRotator{
+		messages: messages,
+		index:    0,
+	}
+}
+
+// GetCurrent returns the current message
+func (r *LoadingMessageRotator) GetCurrent() string {
+	return r.messages[r.index]
+}
+
+// Rotate advances to the next message and returns it
+func (r *LoadingMessageRotator) Rotate() string {
+	r.index = (r.index + 1) % len(r.messages)
+	return r.messages[r.index]
+}
+
+// Modal represents the content and configuration of a modal
+// This is the UIKit version that uses theme-based styling exclusively.
+type Modal struct {
 	Type           ModalType
 	Title          string
 	Message        string
@@ -45,9 +97,17 @@ type ModalContent struct {
 	theme          themes.Theme
 }
 
+// getTheme returns the theme or default if nil
+func (m *Modal) getTheme() themes.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return themes.NewDefaultTheme()
+}
+
 // NewErrorModal creates a new error modal
-func NewErrorModal(title, message string) *ModalContent {
-	return &ModalContent{
+func NewErrorModal(title, message string) *Modal {
+	return &Modal{
 		Type:           ModalError,
 		Title:          title,
 		Message:        message,
@@ -55,12 +115,13 @@ func NewErrorModal(title, message string) *ModalContent {
 		Bell:           true,
 		Cancellable:    true,
 		fadeStartTime:  time.Now(),
+		theme:          themes.NewDefaultTheme(),
 	}
 }
 
 // NewLoadingModal creates a new loading modal with optional spinner
-func NewLoadingModal(message string, cancellable bool) *ModalContent {
-	return &ModalContent{
+func NewLoadingModal(message string, cancellable bool) *Modal {
+	return &Modal{
 		Type:           ModalLoading,
 		Title:          "Loading",
 		Message:        message,
@@ -68,36 +129,39 @@ func NewLoadingModal(message string, cancellable bool) *ModalContent {
 		Cancellable:    cancellable,
 		fadeStartTime:  time.Now(),
 		spinner:        NewSimpleSpinner(),
+		theme:          themes.NewDefaultTheme(),
 	}
 }
 
 // NewProgressModal creates a new progress modal
-func NewProgressModal(title, message string, progress float64) *ModalContent {
-	return &ModalContent{
+func NewProgressModal(title, message string, progress float64) *Modal {
+	return &Modal{
 		Type:           ModalProgress,
 		Title:          title,
 		Message:        message,
 		Progress:       progress,
 		FadeInDuration: 150 * time.Millisecond,
 		fadeStartTime:  time.Now(),
+		theme:          themes.NewDefaultTheme(),
 	}
 }
 
 // NewSuccessModal creates a new success modal with auto-dismiss
-func NewSuccessModal(message string) *ModalContent {
-	return &ModalContent{
+func NewSuccessModal(message string) *Modal {
+	return &Modal{
 		Type:           ModalSuccess,
 		Title:          "Success",
 		Message:        message,
 		FadeInDuration: 150 * time.Millisecond,
 		AutoDismiss:    3 * time.Second,
 		fadeStartTime:  time.Now(),
+		theme:          themes.NewDefaultTheme(),
 	}
 }
 
 // NewWarningModal creates a new warning modal
-func NewWarningModal(title, message string) *ModalContent {
-	return &ModalContent{
+func NewWarningModal(title, message string) *Modal {
+	return &Modal{
 		Type:           ModalWarning,
 		Title:          title,
 		Message:        message,
@@ -105,65 +169,26 @@ func NewWarningModal(title, message string) *ModalContent {
 		Bell:           true,
 		Cancellable:    true,
 		fadeStartTime:  time.Now(),
+		theme:          themes.NewDefaultTheme(),
 	}
 }
 
 // SetMessageRotator sets a loading message rotator for dynamic messages
-func (m *ModalContent) SetMessageRotator(rotator *LoadingMessageRotator) *ModalContent {
+func (m *Modal) SetMessageRotator(rotator *LoadingMessageRotator) *Modal {
 	m.messageRotator = rotator
 	return m
 }
 
 // WithTheme sets the theme for the modal
-func (m *ModalContent) WithTheme(theme themes.Theme) *ModalContent {
+func (m *Modal) WithTheme(theme themes.Theme) *Modal {
 	m.theme = theme
 	return m
 }
 
-// Theme helper methods for consistent themed styling.
-
-// getErrorColor returns the error color from theme or fallback.
-func (m *ModalContent) getErrorColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.ErrorColor()
-	}
-	return styles.ColorError
-}
-
-// getInfoColor returns the info color from theme or fallback.
-func (m *ModalContent) getInfoColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.InfoColor()
-	}
-	return styles.ColorInfo
-}
-
-// getSuccessColor returns the success color from theme or fallback.
-func (m *ModalContent) getSuccessColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.SuccessColor()
-	}
-	return styles.ColorSuccess
-}
-
-// getWarningColor returns the warning color from theme or fallback.
-func (m *ModalContent) getWarningColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.WarningColor()
-	}
-	return styles.ColorWarning
-}
-
-// getBorderColor returns the border color from theme or fallback.
-func (m *ModalContent) getBorderColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.BorderColor()
-	}
-	return styles.ColorBorder
-}
-
 // Render renders the modal centered in the given terminal dimensions
-func (m *ModalContent) Render(terminalWidth, terminalHeight int) string {
+func (m *Modal) Render(terminalWidth, terminalHeight int) string {
+	theme := m.getTheme()
+
 	// Calculate fade-in opacity
 	opacity := m.calculateOpacity()
 
@@ -205,7 +230,7 @@ func (m *ModalContent) Render(terminalWidth, terminalHeight int) string {
 	// Add progress bar if progress modal
 	if m.Type == ModalProgress {
 		contentParts = append(contentParts, "")
-		progressBar := m.renderProgressBar(maxWidth)
+		progressBar := m.renderProgressBar(maxWidth, theme)
 		contentParts = append(contentParts, progressBar)
 	}
 
@@ -259,14 +284,6 @@ func (m *ModalContent) Render(terminalWidth, terminalHeight int) string {
 		modalWidth = 80
 	}
 
-	modalHeight := len(contentLines) + 4 // Add padding
-	if modalHeight < 8 {
-		modalHeight = 8
-	}
-	if modalHeight > 20 {
-		modalHeight = 20
-	}
-
 	// Create modal box style
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -284,7 +301,7 @@ func (m *ModalContent) Render(terminalWidth, terminalHeight int) string {
 }
 
 // calculateOpacity calculates the current opacity based on fade-in duration
-func (m *ModalContent) calculateOpacity() float64 {
+func (m *Modal) calculateOpacity() float64 {
 	if m.FadeInDuration == 0 {
 		return 1.0
 	}
@@ -298,25 +315,27 @@ func (m *ModalContent) calculateOpacity() float64 {
 }
 
 // getStyleForType returns border color and icon for the modal type
-func (m *ModalContent) getStyleForType() (lipgloss.Color, string) {
+func (m *Modal) getStyleForType() (lipgloss.Color, string) {
+	theme := m.getTheme()
+
 	switch m.Type {
 	case ModalError:
-		return m.getErrorColor(), "⚠️"
+		return theme.ErrorColor(), "⚠️"
 	case ModalLoading:
-		return m.getInfoColor(), "⏳"
+		return theme.InfoColor(), "⏳"
 	case ModalProgress:
-		return m.getInfoColor(), "📊"
+		return theme.InfoColor(), "📊"
 	case ModalSuccess:
-		return m.getSuccessColor(), "✅"
+		return theme.SuccessColor(), "✅"
 	case ModalWarning:
-		return m.getWarningColor(), "⚠️"
+		return theme.WarningColor(), "⚠️"
 	default:
-		return m.getBorderColor(), "ℹ️"
+		return theme.BorderColor(), "ℹ️"
 	}
 }
 
 // renderProgressBar renders a progress bar for the given width
-func (m *ModalContent) renderProgressBar(width int) string {
+func (m *Modal) renderProgressBar(width int, theme themes.Theme) string {
 	percentage := int(m.Progress * 100)
 	barWidth := width - 8 // Leave space for percentage and brackets
 
@@ -366,7 +385,7 @@ func wrapText(text string, width int) string {
 }
 
 // UpdateProgress updates the progress value (0.0 to 1.0)
-func (m *ModalContent) UpdateProgress(progress float64) {
+func (m *Modal) UpdateProgress(progress float64) {
 	if progress < 0.0 {
 		progress = 0.0
 	}
@@ -377,14 +396,14 @@ func (m *ModalContent) UpdateProgress(progress float64) {
 }
 
 // AdvanceSpinner advances the spinner to the next frame
-func (m *ModalContent) AdvanceSpinner() {
+func (m *Modal) AdvanceSpinner() {
 	if m.spinner != nil {
 		m.spinner.Advance()
 	}
 }
 
 // RotateMessage advances to the next message if a rotator is set
-func (m *ModalContent) RotateMessage() string {
+func (m *Modal) RotateMessage() string {
 	if m.messageRotator != nil {
 		return m.messageRotator.Rotate()
 	}
@@ -411,6 +430,7 @@ type OverlayModal struct {
 	Content string
 	Footer  string
 	Width   int
+	theme   themes.Theme
 }
 
 // NewOverlayModal creates a new overlay modal with the given title and content.
@@ -419,7 +439,22 @@ func NewOverlayModal(title, content string) *OverlayModal {
 		Title:   title,
 		Content: content,
 		Width:   DefaultOverlayWidth,
+		theme:   themes.NewDefaultTheme(),
 	}
+}
+
+// getTheme returns the theme or default if nil
+func (o *OverlayModal) getTheme() themes.Theme {
+	if o.theme != nil {
+		return o.theme
+	}
+	return themes.NewDefaultTheme()
+}
+
+// WithTheme sets the theme for the overlay modal
+func (o *OverlayModal) WithTheme(theme themes.Theme) *OverlayModal {
+	o.theme = theme
+	return o
 }
 
 // SetWidth sets the modal width, clamping to min/max bounds.
@@ -442,18 +477,19 @@ func (o *OverlayModal) SetFooter(footer string) *OverlayModal {
 
 // RenderCentered renders the modal centered over the dimmed background.
 func (o *OverlayModal) RenderCentered(background string, termWidth, termHeight int) string {
-	return RenderOverlay(background, o.buildContent(), termWidth, termHeight)
+	return RenderOverlay(background, o.buildContent(), termWidth, termHeight, o.getTheme())
 }
 
 // buildContent assembles the modal content with title, body, and footer.
 func (o *OverlayModal) buildContent() string {
+	theme := o.getTheme()
 	var parts []string
 
 	// Add title with styling
 	if o.Title != "" {
 		titleStyle := lipgloss.NewStyle().
 			Bold(true).
-			Foreground(styles.ColorTextPrimary).
+			Foreground(theme.PrimaryColor()).
 			MarginBottom(1)
 		parts = append(parts, titleStyle.Render(o.Title))
 	}
@@ -466,7 +502,7 @@ func (o *OverlayModal) buildContent() string {
 	// Add footer with muted styling
 	if o.Footer != "" {
 		footerStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
+			Foreground(theme.MutedColor()).
 			MarginTop(1)
 		parts = append(parts, footerStyle.Render(o.Footer))
 	}
@@ -495,14 +531,18 @@ func DimContent(content string) string {
 // 1. Dimming the entire background
 // 2. Placing the modal box centered in the terminal
 // 3. Replacing the lines where the modal appears with the centered modal
-func RenderOverlay(background, modalContent string, termWidth, termHeight int) string {
+func RenderOverlay(background, modalContent string, termWidth, termHeight int, theme themes.Theme) string {
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
 	// Dim the entire background first
 	dimmedBg := DimContent(background)
 
 	// Create modal box with border
 	modalStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
+		BorderForeground(theme.BorderColor()).
 		Padding(1, 2).
 		MaxWidth(MaxOverlayWidth)
 
@@ -576,4 +616,10 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 	}
 
 	return strings.Join(result, "\n")
+}
+
+// RenderOverlayWithDefaultTheme renders modal content using the default theme.
+// This is a convenience function for callers that don't have a theme.
+func RenderOverlayWithDefaultTheme(background, modalContent string, termWidth, termHeight int) string {
+	return RenderOverlay(background, modalContent, termWidth, termHeight, themes.NewDefaultTheme())
 }
