@@ -283,4 +283,160 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			}
 		})
 	})
+
+	// BUG-003: Regression test to ensure all companies are included in generated CVs
+	// Previously, BulletGenerator applied a total cap (e.g., 40 bullets) before grouping
+	// by company, causing later companies to be completely excluded from the CV.
+	Describe("BUG-003: Multi-Company CV Generation", func() {
+		// Helper to seed events for multiple companies
+		seedMultiCompanyEvents := func(companies []string, eventsPerCompany int) map[string][]*career.CareerEvent {
+			result := make(map[string][]*career.CareerEvent)
+			for _, company := range companies {
+				events := make([]*career.CareerEvent, eventsPerCompany)
+				for i := 0; i < eventsPerCompany; i++ {
+					event := &career.CareerEvent{
+						Text:       "Implemented feature " + string(rune('A'+i)) + " at " + company,
+						Date:       time.Now().AddDate(0, 0, -i),
+						Tags:       []string{"technical", "project"},
+						Company:    company,
+						Categories: []string{"technical"},
+					}
+					err := eventRepo.Create(ctx, event)
+					Expect(err).NotTo(HaveOccurred())
+					events[i] = event
+				}
+				result[company] = events
+			}
+			return result
+		}
+
+		// Helper to extract company names from generated CV
+		extractCompaniesFromCV := func(cv *career.CVView) map[string]bool {
+			companies := make(map[string]bool)
+			for _, section := range cv.Sections {
+				if section.SectionType == "experience" {
+					for _, group := range section.Content {
+						if group.Header != "" {
+							companies[group.Header] = true
+						}
+					}
+				}
+			}
+			return companies
+		}
+
+		It("should include ALL companies in generated CV when many events exist (BUG-003 fix)", func() {
+			// This test reproduces the BUG-003 scenario:
+			// - Multiple companies with events
+			// - Previously, a total bullet cap would exclude later companies
+
+			companies := []string{
+				"Company Alpha",
+				"Company Beta",
+				"Company Gamma",
+				"Company Delta",
+				"Company Epsilon",
+			}
+
+			// Seed 10 events per company (50 total events)
+			// Before the fix, a cap of 40 bullets would exclude some companies
+			seedMultiCompanyEvents(companies, 10)
+
+			// Verify all events were created
+			allEvents, err := eventRepo.List(ctx, careerrepo.ListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(allEvents)).To(Equal(50))
+
+			// Generate CV with staff role (was previously capped at 40 bullets)
+			config := &career.CVConfig{
+				Name:           "bug-003-test",
+				TargetRole:     "staff",
+				TargetAudience: "hiring_manager",
+				EventFilters:   make(map[string]interface{}),
+			}
+
+			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cv).NotTo(BeNil())
+
+			// CRITICAL ASSERTION: All 5 companies must be represented
+			companiesInCV := extractCompaniesFromCV(cv)
+			Expect(len(companiesInCV)).To(Equal(5),
+				"BUG-003 regression: All 5 companies should appear in CV, got %d: %v",
+				len(companiesInCV), companiesInCV)
+
+			// Verify each specific company is present
+			for _, company := range companies {
+				Expect(companiesInCV).To(HaveKey(company),
+					"BUG-003 regression: Company '%s' should appear in CV", company)
+			}
+		})
+
+		It("should include all companies even with large event counts (stress test)", func() {
+			// Stress test with more companies and events
+			// Use unique company names to avoid interference with other tests
+			companies := []string{
+				"Stress Corp A", "Stress Corp B", "Stress Corp C",
+				"Stress Corp D", "Stress Corp E", "Stress Corp F",
+				"Stress Corp G", "Stress Corp H", "Stress Corp I",
+				"Stress Corp J",
+			}
+
+			// Seed 15 events per company
+			seedMultiCompanyEvents(companies, 15)
+
+			// Generate CV
+			config := &career.CVConfig{
+				Name:           "bug-003-stress-test",
+				TargetRole:     "principal",
+				TargetAudience: "recruiter",
+				EventFilters:   make(map[string]interface{}),
+			}
+
+			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cv).NotTo(BeNil())
+
+			// CRITICAL: All 10 stress companies must be represented
+			companiesInCV := extractCompaniesFromCV(cv)
+			for _, company := range companies {
+				Expect(companiesInCV).To(HaveKey(company),
+					"BUG-003 regression: Company '%s' should appear in CV", company)
+			}
+		})
+
+		It("should maintain per-company bullet caps while including all companies", func() {
+			// Verify that while all companies are included, per-company caps still apply
+			companies := []string{"Alpha Inc", "Beta Inc", "Gamma Inc"}
+
+			// Seed 20 events per company
+			seedMultiCompanyEvents(companies, 20)
+
+			config := &career.CVConfig{
+				Name:           "bug-003-caps-test",
+				TargetRole:     "senior_ic",
+				TargetAudience: "peer",
+				EventFilters:   make(map[string]interface{}),
+			}
+
+			cv, err := cvGenService.GenerateCVFromConfig(ctx, config)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cv).NotTo(BeNil())
+
+			// All 3 companies must be represented
+			companiesInCV := extractCompaniesFromCV(cv)
+			Expect(len(companiesInCV)).To(Equal(3))
+
+			// Verify per-company bullet caps are reasonable (not all 20 events per company)
+			for _, section := range cv.Sections {
+				if section.SectionType == "experience" {
+					for _, group := range section.Content {
+						// Per-company cap should limit bullets (typically 4-5 per company)
+						Expect(len(group.Bullets)).To(BeNumerically("<=", 10),
+							"Per-company bullet cap should limit bullets for %s", group.Header)
+					}
+				}
+			}
+		})
+	})
 })

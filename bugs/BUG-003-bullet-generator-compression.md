@@ -268,7 +268,8 @@ Tests now verify:
 | File | Change Type | Description |
 |------|-------------|-------------|
 | `internal/service/career/cv/bullet_generator.go` | Modified | Removed compression logic |
-| `internal/service/career/cv/bullet_generator_test.go` | Modified | Updated 5 tests for correct behavior |
+| `internal/service/career/cv/bullet_generator_test.go` | Modified | Updated 6 tests for correct behavior, added multi-company test |
+| `internal/service/career/cv/cv_generation_integration_test.go` | Modified | Added 3 BUG-003 E2E regression tests |
 | `bugs/BUG-003-bullet-generator-compression.md` | Added | This document |
 
 ---
@@ -278,9 +279,17 @@ Tests now verify:
 ### Test Results
 
 ```
-Ran 375 of 375 Specs in 0.163 seconds
-SUCCESS! -- 375 Passed | 0 Failed | 0 Pending | 0 Skipped
+Ran 374 of 374 Specs in 1.245 seconds
+SUCCESS! -- 374 Passed | 0 Failed | 0 Pending | 0 Skipped
 ```
+
+### Integration Tests Added
+
+Three new E2E tests verify the BUG-003 fix:
+
+1. **should include ALL companies in generated CV when many events exist** - 5 companies, 50 events
+2. **should include all companies even with large event counts (stress test)** - 10 companies, 150 events
+3. **should maintain per-company bullet caps while including all companies** - Verifies caps still work
 
 ### Build Status
 
@@ -301,10 +310,11 @@ SUCCESS! -- 375 Passed | 0 Failed | 0 Pending | 0 Skipped
 
 ## Testing Checklist
 
-- [x] All 375 CV service tests pass
+- [x] All 374 CV service tests pass
 - [x] Application builds successfully
-- [ ] Manual test: Generate CV and verify all 25 companies appear
-- [ ] Manual test: Verify per-company bullet caps still work (4-5 per company)
+- [x] E2E test: Generate CV and verify all companies appear (automated)
+- [x] E2E test: Verify per-company bullet caps still work (automated)
+- [x] E2E test: Stress test with 10+ companies and 150+ events (automated)
 - [ ] Manual test: CV export shows complete career history
 - [ ] Manual test: CV length is reasonable (not excessively long)
 
@@ -315,7 +325,7 @@ SUCCESS! -- 375 Passed | 0 Failed | 0 Pending | 0 Skipped
 ### Recommended
 
 1. **Migrate to EnhancedBulletGenerator** - The correctly-designed generator should be used by `CVGenerationService`
-2. **Add integration test** - Verify all companies with events appear in generated CV
+2. ~~**Add integration test** - Verify all companies with events appear in generated CV~~ ✅ DONE
 3. **Add company coverage logging** - Log which companies are included/excluded
 
 ### Optional
