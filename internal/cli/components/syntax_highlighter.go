@@ -8,6 +8,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Pre-compiled regex patterns for syntax highlighting (avoids recompilation in loops)
+var (
+	jsonNumberPattern = regexp.MustCompile(`^-?\d+\.?\d*(?:[eE][+-]?\d+)?$`)
+)
+
 // SyntaxHighlighter provides format-aware syntax highlighting for export content.
 type SyntaxHighlighter struct {
 	theme themes.Theme
@@ -75,7 +80,7 @@ func (h *SyntaxHighlighter) HighlightJSON(content string) string {
 				}
 
 				// Number
-				if numMatch := regexp.MustCompile(`^-?\d+\.?\d*(?:[eE][+-]?\d+)?$`).MatchString(value); numMatch {
+				if jsonNumberPattern.MatchString(value) {
 					return prefix + " " + numberStyle.Render(value)
 				}
 

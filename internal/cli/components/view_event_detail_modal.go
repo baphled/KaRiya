@@ -55,6 +55,10 @@ type ViewEventDetailModal struct {
 // By default, shows the "s: Skills" option in the footer.
 // Use WithShowSkillsOption(false) to hide this option.
 func NewViewEventDetailModal(event *career.CareerEvent, theme themes.Theme) *ViewEventDetailModal {
+	// Ensure theme is not nil at initialization (UIKit pattern)
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
 	return &ViewEventDetailModal{
 		event:            event,
 		theme:            theme,
@@ -120,11 +124,7 @@ func (m *ViewEventDetailModal) View() string {
 		return ""
 	}
 
-	// Ensure theme is not nil (use default if needed)
 	theme := m.theme
-	if theme == nil {
-		theme = themes.NewDefaultTheme()
-	}
 
 	// Calculate modal dimensions
 	// Keep modal height reasonable: max 30 lines or 70% of terminal, whichever is smaller

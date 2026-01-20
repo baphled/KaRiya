@@ -47,6 +47,7 @@ type ConfigureSystemIntent struct {
 	selectedDomain configtypes.ConfigurationDomain
 	pendingChanges map[string]interface{}
 	active         bool
+	saving         bool // Prevents concurrent save operations
 	result         *ConfigureSystemResult
 }
 
@@ -135,21 +136,25 @@ func (c *ConfigureSystemIntent) Update(msg tea.Msg) tea.Cmd {
 	// These messages should clear all other modals and show the result
 	switch msg := msg.(type) {
 	case ConfigCompleteMsg:
-		// Clear all modals
+		// Clear all modals and reset saving state
 		c.editModal = nil
 		c.reviewModal = nil
 		c.confirmModal = nil
 		c.savingModal = nil
+		c.saving = false
+		// Update settings from the saved config
+		c.settings = settingsFromConfig(c.cfg)
 		// Set result
 		c.result = msg.Result
 		c.resultModal = feedback.NewSuccessModal("Configuration saved!")
 		return nil
 	case ConfigErrorMsg:
-		// Clear all modals
+		// Clear all modals and reset saving state
 		c.editModal = nil
 		c.reviewModal = nil
 		c.confirmModal = nil
 		c.savingModal = nil
+		c.saving = false
 		// Set error result
 		c.resultModal = feedback.NewErrorModal("Save Failed", msg.Error.Message)
 		return nil
@@ -339,13 +344,27 @@ func (c *ConfigureSystemIntent) openConfirmModal() {
 }
 
 // startSaving starts the configuration save process.
+// Uses a saving flag to prevent concurrent save operations.
 func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
+	// Prevent concurrent save operations
+	if c.saving {
+		return nil
+	}
+	c.saving = true
 	c.savingModal = feedback.NewLoadingModal("Saving configuration...", false)
+
+	// Capture values to avoid race conditions with the goroutine
+	cfg := c.cfg
+	selectedDomain := c.selectedDomain
+	pendingChanges := make(map[string]interface{}, len(c.pendingChanges))
+	for k, v := range c.pendingChanges {
+		pendingChanges[k] = v
+	}
 
 	return func() tea.Msg {
 		// Apply changes to config
-		for key, value := range c.pendingChanges {
-			if err := applyConfigChange(c.cfg, c.selectedDomain, key, value); err != nil {
+		for key, value := range pendingChanges {
+			if err := applyConfigChange(cfg, selectedDomain, key, value); err != nil {
 				return ConfigErrorMsg{
 					Error: &IntentError{
 						Code:    "apply_failed",
@@ -356,7 +375,7 @@ func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
 		}
 
 		// Save config to file
-		if err := config.SaveConfig(c.cfg); err != nil {
+		if err := config.SaveConfig(cfg); err != nil {
 			return ConfigErrorMsg{
 				Error: &IntentError{
 					Code:    "save_failed",
@@ -365,16 +384,13 @@ func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
 			}
 		}
 
-		// Update settings from the saved config
-		c.settings = settingsFromConfig(c.cfg)
-
 		return ConfigCompleteMsg{
 			Result: &ConfigureSystemResult{
 				Success: true,
-				Domain:  c.selectedDomain,
+				Domain:  selectedDomain,
 				Changes: &ConfigurationChanges{
-					Domain:   c.selectedDomain,
-					Modified: c.pendingChanges,
+					Domain:   selectedDomain,
+					Modified: pendingChanges,
 				},
 			},
 		}

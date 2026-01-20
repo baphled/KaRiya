@@ -12,6 +12,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// maxEventTextLength defines the maximum length for event text before truncation.
+// This ensures event descriptions fit within the table column width.
+const maxEventTextLength = 42
+
 // ViewSkillEventsModal displays events that use a skill in a modal overlay with a data table.
 // This modal uses bubbles/table for consistent table display and navigation.
 //
@@ -145,8 +149,8 @@ func (m *ViewSkillEventsModal) buildRows() []table.Row {
 		if text == "" {
 			text = "(No description)"
 		}
-		if len(text) > 42 {
-			text = text[:42] + "..."
+		if len(text) > maxEventTextLength {
+			text = text[:maxEventTextLength] + "..."
 		}
 
 		// Company
