@@ -1,8 +1,11 @@
 # KaRiya TUI Architecture
 
 **Version**: 2.0
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-20
 **Status**: Proposed
+
+> **UIKit Components**: For UI component usage, see [UIKIT_GUIDE.md](../UIKIT_GUIDE.md).
+> Use `uikit/` components instead of `components/` (legacy).
 
 ---
 

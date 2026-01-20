@@ -6,15 +6,15 @@ set -e
 # AI Commit Helper
 # ============================================================================
 # Automates AI-attributed commits by:
-# 1. Validating commit message format
-# 2. Checking for staged changes
-# 3. Adding AI attribution and human review trailers
-# 4. Creating the commit
+# 1. Reading commit message from a file
+# 2. Validating commit message format
+# 3. Checking for staged changes
+# 4. Adding AI attribution and human review trailers
+# 5. Creating the commit
 #
 # Usage: 
-#   make ai-commit MSG="feat(scope): description"
 #   make ai-commit FILE=/path/to/commit-msg.txt
-#   make ai-commit MSG="..." NO_VERIFY=1  # Skip pre-commit hooks (use sparingly)
+#   make ai-commit FILE=/path/to/commit-msg.txt NO_VERIFY=1
 # ============================================================================
 
 # Colors
@@ -24,51 +24,80 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Get commit message from first argument
-COMMIT_MSG_ARG="$1"
+# Get file path from first argument
+COMMIT_FILE="$1"
 
 # Check if NO_VERIFY flag is set (passed as second argument)
 NO_VERIFY="${2:-}"
 
 # ============================================================================
-# Step 1: Validate commit message provided and read from file if needed
+# Step 1: Validate file provided and read commit message
 # ============================================================================
 
-if [ -z "$COMMIT_MSG_ARG" ]; then
-    echo -e "${RED}❌ ERROR: Commit message required${NC}"
+if [ -z "$COMMIT_FILE" ]; then
+    echo -e "${RED}❌ ERROR: Commit message file required${NC}"
     echo ""
     echo "Usage:"
-    echo "  make ai-commit MSG=\"feat(scope): description\""
     echo "  make ai-commit FILE=/path/to/commit-msg.txt"
     echo ""
-    echo "Examples:"
-    echo "  make ai-commit MSG=\"feat(forms): add date validation helpers\""
-    echo "  make ai-commit MSG=\"fix(tests): resolve race condition in burst tests\""
-    echo "  make ai-commit MSG=\"docs(readme): update installation steps\""
+    echo "Create your commit message file first:"
     echo ""
-    echo "For multiline messages, create a file:"
-    echo "  cat > /tmp/commit-msg.txt << 'EOF'"
+    echo "  cat > /tmp/commit.txt << 'EOF'"
     echo "  feat(scope): short description"
-    echo "  "
-    echo "  Longer explanation with details..."
+    echo ""
+    echo "  Optional longer explanation..."
     echo "  EOF"
-    echo "  make ai-commit FILE=/tmp/commit-msg.txt"
+    echo ""
+    echo "  make ai-commit FILE=/tmp/commit.txt"
     echo ""
     exit 1
 fi
 
-# Check if argument is a file path (exists and is readable)
-if [ -f "$COMMIT_MSG_ARG" ] && [ -r "$COMMIT_MSG_ARG" ]; then
-    echo -e "${BLUE}📄 Reading commit message from file: ${COMMIT_MSG_ARG}${NC}"
-    COMMIT_MSG=$(cat "$COMMIT_MSG_ARG")
-else
-    # Treat as direct message
-    COMMIT_MSG="$COMMIT_MSG_ARG"
+# Check if file exists and is readable
+if [ ! -f "$COMMIT_FILE" ]; then
+    echo -e "${RED}❌ ERROR: File not found: ${COMMIT_FILE}${NC}"
+    echo ""
+    echo "Create the file first:"
+    echo "  cat > ${COMMIT_FILE} << 'EOF'"
+    echo "  feat(scope): description"
+    echo "  EOF"
+    echo ""
+    exit 1
 fi
+
+if [ ! -r "$COMMIT_FILE" ]; then
+    echo -e "${RED}❌ ERROR: Cannot read file: ${COMMIT_FILE}${NC}"
+    exit 1
+fi
+
+echo -e "${BLUE}📄 Reading commit message from: ${COMMIT_FILE}${NC}"
+COMMIT_MSG=$(cat "$COMMIT_FILE")
 
 # Validate we have a message
 if [ -z "$COMMIT_MSG" ]; then
-    echo -e "${RED}❌ ERROR: Commit message is empty${NC}"
+    echo -e "${RED}❌ ERROR: Commit message file is empty${NC}"
+    exit 1
+fi
+
+# Validate message is not a placeholder
+if [[ "$COMMIT_MSG" =~ ^\.\.\.$ ]] || [[ "$COMMIT_MSG" =~ ^\.\.\.\s*$ ]] || [[ "$COMMIT_MSG" == "..." ]]; then
+    echo -e "${RED}❌ ERROR: Commit message cannot be '...' placeholder${NC}"
+    echo ""
+    echo "Edit your file with an actual commit message:"
+    echo "  ${COMMIT_FILE}"
+    echo ""
+    exit 1
+fi
+
+# Validate message has actual content (not just type prefix)
+# Get first line and strip whitespace
+FIRST_LINE=$(echo "$COMMIT_MSG" | head -n1 | sed 's/[[:space:]]*$//')
+if [[ "$FIRST_LINE" =~ ^[a-z]+\([a-zA-Z0-9_-]+\):$ ]] || [[ "$FIRST_LINE" =~ ^[a-z]+:$ ]]; then
+    echo -e "${RED}❌ ERROR: Commit message has no description${NC}"
+    echo ""
+    echo "Edit your file to add a description after the colon:"
+    echo "  ${COMMIT_FILE}"
+    echo ""
     exit 1
 fi
 
@@ -87,7 +116,7 @@ if git diff --cached --quiet; then
     echo "  git add <file>             # Stage entire file"
     echo ""
     echo "Then try again:"
-    echo "  make ai-commit MSG=\"${COMMIT_MSG}\""
+    echo "  make ai-commit FILE=${COMMIT_FILE}"
     echo ""
     exit 1
 fi
@@ -122,7 +151,7 @@ if command -v npx &> /dev/null; then
         echo ""
         echo "Allowed types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
         echo ""
-        echo "See: docs/rules/COMMIT_QUICK_REFERENCE.md"
+        echo "Edit your file: ${COMMIT_FILE}"
         exit 1
     fi
     echo -e "${GREEN}✅ Commit message format valid${NC}"
@@ -137,9 +166,79 @@ rm -f "$TEMP_MSG_FILE"
 # Step 4: Get AI agent and model information
 # ============================================================================
 
-# Use environment variables with sensible defaults
-AGENT_NAME="${AI_AGENT:-OpenCode}"
-MODEL_NAME="${AI_MODEL:-Claude Sonnet 4.5}"
+# Auto-detect AI agent from environment
+detect_ai_agent() {
+    # Check for explicit environment variable first
+    if [ -n "$AI_AGENT" ]; then
+        echo "$AI_AGENT"
+        return
+    fi
+    
+    # Detect Claude Code (sets CLAUDE_CODE env var or runs in specific context)
+    if [ -n "$CLAUDE_CODE" ] || [ -n "$ANTHROPIC_API_KEY" ] && [ -z "$OPENCODE_API_KEY" ]; then
+        echo "Claude Code"
+        return
+    fi
+    
+    # Detect OpenCode
+    if [ -n "$OPENCODE_API_KEY" ] || [ -n "$OPENCODE" ]; then
+        echo "OpenCode"
+        return
+    fi
+    
+    # Detect Cursor
+    if [ -n "$CURSOR_SESSION" ] || [ -n "$CURSOR" ]; then
+        echo "Cursor"
+        return
+    fi
+    
+    # Detect GitHub Copilot
+    if [ -n "$GITHUB_COPILOT" ]; then
+        echo "GitHub Copilot"
+        return
+    fi
+    
+    # Default based on common patterns - check parent process
+    if ps -o command= $PPID 2>/dev/null | grep -qi "claude"; then
+        echo "Claude Code"
+        return
+    fi
+    
+    # Fallback to environment variable or default
+    echo "${AI_AGENT:-Claude Code}"
+}
+
+detect_ai_model() {
+    # Check for explicit environment variable first
+    if [ -n "$AI_MODEL" ]; then
+        echo "$AI_MODEL"
+        return
+    fi
+    
+    # Default models per agent
+    local agent="$1"
+    case "$agent" in
+        "Claude Code")
+            echo "Claude Sonnet 4"
+            ;;
+        "OpenCode")
+            echo "Claude Sonnet 4"
+            ;;
+        "Cursor")
+            echo "GPT-4"
+            ;;
+        "GitHub Copilot")
+            echo "GPT-4"
+            ;;
+        *)
+            echo "Claude Sonnet 4"
+            ;;
+    esac
+}
+
+# Detect agent and model
+AGENT_NAME=$(detect_ai_agent)
+MODEL_NAME=$(detect_ai_model "$AGENT_NAME")
 
 # Get reviewer name from git config
 REVIEWER_NAME=$(git config user.name)
@@ -164,11 +263,11 @@ echo ""
 
 # Build full commit message with attribution
 # Use temporary file to handle multi-line messages properly
-COMMIT_MSG_FILE=$(mktemp)
+FINAL_MSG_FILE=$(mktemp)
 
 # Write commit message to temp file
 # This preserves newlines and formatting
-cat > "$COMMIT_MSG_FILE" << EOF
+cat > "$FINAL_MSG_FILE" << EOF
 ${COMMIT_MSG}
 
 AI-Generated-By: ${AGENT_NAME} (${MODEL_NAME})
@@ -177,7 +276,7 @@ EOF
 
 # Create the commit using the temp file
 # Add --no-verify flag if NO_VERIFY is set
-COMMIT_FLAGS="-F $COMMIT_MSG_FILE"
+COMMIT_FLAGS="-F $FINAL_MSG_FILE"
 if [ "$NO_VERIFY" = "1" ]; then
     echo -e "${YELLOW}⚠️  Skipping pre-commit hooks (--no-verify)${NC}"
     echo ""
@@ -195,11 +294,11 @@ if git commit $COMMIT_FLAGS; then
     echo ""
     
     # Clean up temp file
-    rm -f "$COMMIT_MSG_FILE"
+    rm -f "$FINAL_MSG_FILE"
 else
     echo ""
     echo -e "${RED}❌ Commit failed${NC}"
-    rm -f "$COMMIT_MSG_FILE"
+    rm -f "$FINAL_MSG_FILE"
     exit 1
 fi
 

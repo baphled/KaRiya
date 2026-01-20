@@ -1,8 +1,11 @@
 # KaRiya Screen Interface Specification
 
 **Version**: 1.0
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-20
 **Status**: Proposed
+
+> **UIKit Components**: Use `layout.NewScreenLayout()` for screen layouts.
+> See [UIKIT_GUIDE.md](../UIKIT_GUIDE.md) for component details.
 
 ---
 
