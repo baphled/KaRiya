@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -115,45 +115,45 @@ func (m *MetadataEditorModel) getStateContent() string {
 	}
 }
 
-// getContextHelp returns context-aware help text
+// getContextHelp returns context-aware help text using UIKit badges.
 func (m *MetadataEditorModel) getContextHelp() string {
 	theme := m.Theme()
 
 	switch m.data.CurrentState {
 	case MetadataReviewState:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				components.NewKeyBadge("e", "Edit metadata"),
-				components.BackBadge(),
+			UIKitCustomFooter(theme,
+				primitives.HelpKeyBadge("e", "Edit metadata", theme),
+				primitives.BackBadge(theme),
 			),
-			ThemedCustomFooter(theme, components.QuitBadge()),
+			UIKitCustomFooter(theme, primitives.QuitBadge(theme)),
 		)
 	case MetadataEditState:
 		if m.data.HasChanges() {
 			return CombineThemedFooters(
-				ThemedFormFooter(theme),
-				ThemedCustomFooter(theme,
-					components.NewKeyBadge("Ctrl+S", "Save changes"),
-					components.CancelBadge(),
+				UIKitFormFooter(theme),
+				UIKitCustomFooter(theme,
+					primitives.HelpKeyBadge("Ctrl+S", "Save changes", theme),
+					primitives.CancelBadge(theme),
 				),
-				ThemedCustomFooter(theme, components.QuitBadge()),
+				UIKitCustomFooter(theme, primitives.QuitBadge(theme)),
 			)
 		}
 		return CombineThemedFooters(
-			ThemedFormFooter(theme),
-			ThemedCustomFooter(theme, components.BackBadge()),
-			ThemedCustomFooter(theme, components.QuitBadge()),
+			UIKitFormFooter(theme),
+			UIKitCustomFooter(theme, primitives.BackBadge(theme)),
+			UIKitCustomFooter(theme, primitives.QuitBadge(theme)),
 		)
 	case MetadataConfirmState:
 		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm"),
-				components.NewKeyBadge("n/Esc", "Back"),
+			UIKitCustomFooter(theme,
+				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
+				primitives.HelpKeyBadge("n/Esc", "Back", theme),
 			),
-			ThemedCustomFooter(theme, components.QuitBadge()),
+			UIKitCustomFooter(theme, primitives.QuitBadge(theme)),
 		)
 	default:
-		return ThemedCustomFooter(theme, components.QuitBadge())
+		return UIKitCustomFooter(theme, primitives.QuitBadge(theme))
 	}
 }
 

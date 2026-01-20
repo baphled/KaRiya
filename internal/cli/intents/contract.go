@@ -10,6 +10,26 @@ import (
 	"github.com/baphled/kariya/internal/cli/themes"
 )
 
+// LogoModel defines the interface for logo components.
+// Both legacy *components.ASCIILogo and UIKit *display.Logo satisfy this interface,
+// enabling a hybrid architecture where intents can be migrated incrementally.
+type LogoModel interface {
+	// Init initializes the logo and returns any startup commands.
+	Init() tea.Cmd
+
+	// Update handles messages for logo animation.
+	Update(msg tea.Msg) (tea.Model, tea.Cmd)
+
+	// View renders the animated logo.
+	View() string
+
+	// ViewStatic renders the logo without animation.
+	ViewStatic() string
+
+	// SetWidth sets the width for centering calculations.
+	SetWidth(width int)
+}
+
 // Intent defines the contract for all intent implementations.
 // Each intent MUST:
 // - Own local navigation state
@@ -205,7 +225,8 @@ type BaseIntent struct {
 	terminalConfig terminal.Config
 
 	// Logo management (shared instance)
-	logo        *components.ASCIILogo
+	// Uses LogoModel interface to support both legacy and UIKit logos
+	logo        LogoModel
 	logoSpacing int
 
 	// Theme management
@@ -255,13 +276,15 @@ func (b *BaseIntent) GetMinimumSize() (width, height int) {
 
 // Logo Management Methods
 
-// SetLogo sets the shared logo instance
-func (b *BaseIntent) SetLogo(logo *components.ASCIILogo) {
+// SetLogo sets the shared logo instance.
+// Accepts any LogoModel implementation (legacy *components.ASCIILogo or UIKit *display.Logo).
+func (b *BaseIntent) SetLogo(logo LogoModel) {
 	b.logo = logo
 }
 
-// GetLogo returns the logo instance
-func (b *BaseIntent) GetLogo() *components.ASCIILogo {
+// GetLogo returns the logo instance.
+// Returns a LogoModel that can be either legacy or UIKit logo.
+func (b *BaseIntent) GetLogo() LogoModel {
 	return b.logo
 }
 
