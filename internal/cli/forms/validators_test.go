@@ -332,4 +332,112 @@ var _ = Describe("Validators", func() {
 			Expect(err.Error()).To(Equal("must be exactly 6 characters"))
 		})
 	})
+
+	Describe("GitHubUsername", func() {
+		It("should pass for valid usernames", func() {
+			err := forms.GitHubUsername("baphled")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass for usernames with hyphens", func() {
+			err := forms.GitHubUsername("john-doe")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass for usernames with numbers", func() {
+			err := forms.GitHubUsername("user123")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass for single character usernames", func() {
+			err := forms.GitHubUsername("a")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should pass for empty strings (optional field)", func() {
+			err := forms.GitHubUsername("")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should fail for full GitHub URLs", func() {
+			err := forms.GitHubUsername("https://github.com/baphled")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("username only"))
+		})
+
+		It("should fail for URLs with github.com", func() {
+			err := forms.GitHubUsername("github.com/baphled")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("username only"))
+		})
+
+		It("should fail for usernames starting with hyphen", func() {
+			err := forms.GitHubUsername("-baphled")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("cannot start or end with a hyphen"))
+		})
+
+		It("should fail for usernames ending with hyphen", func() {
+			err := forms.GitHubUsername("baphled-")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("cannot start or end with a hyphen"))
+		})
+
+		It("should fail for usernames with consecutive hyphens", func() {
+			err := forms.GitHubUsername("baph--led")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("consecutive hyphens"))
+		})
+
+		It("should fail for usernames with special characters", func() {
+			err := forms.GitHubUsername("baph_led")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("alphanumeric"))
+		})
+
+		It("should fail for usernames with spaces", func() {
+			err := forms.GitHubUsername("baph led")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("alphanumeric"))
+		})
+
+		It("should fail for usernames longer than 39 characters", func() {
+			longUsername := "abcdefghijklmnopqrstuvwxyz1234567890abcd" // 40 chars
+			err := forms.GitHubUsername(longUsername)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("39 characters"))
+		})
+
+		It("should pass for exactly 39 character usernames", func() {
+			username39 := "abcdefghijklmnopqrstuvwxyz1234567890abc" // 39 chars
+			err := forms.GitHubUsername(username39)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Describe("GitHubURL", func() {
+		// CONTRACT: The GitHub field in config stores USERNAME ONLY (e.g., "baphled"),
+		// not the full URL. GitHubURL() decorates it for display in CV exports.
+		// This is validated by GitHubUsername() which rejects full URLs.
+
+		It("should format username as full URL", func() {
+			url := forms.GitHubURL("baphled")
+			Expect(url).To(Equal("https://github.com/baphled"))
+		})
+
+		It("should handle usernames with hyphens", func() {
+			url := forms.GitHubURL("john-doe")
+			Expect(url).To(Equal("https://github.com/john-doe"))
+		})
+
+		It("should return empty string for empty username", func() {
+			url := forms.GitHubURL("")
+			Expect(url).To(Equal(""))
+		})
+
+		It("should trim whitespace from username", func() {
+			url := forms.GitHubURL("  baphled  ")
+			Expect(url).To(Equal("https://github.com/baphled"))
+		})
+	})
 })
