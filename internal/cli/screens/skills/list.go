@@ -2,20 +2,50 @@
 package skills
 
 import (
-	"fmt"
 	"strconv"
 
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // SkillsListState represents the state constant for this screen
 const SkillsListState = "skills_list"
+
+// skillRowFormatter formats a skill for table display.
+func skillRowFormatter(skill *career.Skill, index int, eventCounts map[string]int) []string {
+	// Name with selection indicator (handled by TableBehavior)
+	name := skill.Name
+
+	// Category
+	category := skill.Category
+	if category == "" {
+		category = "-"
+	}
+
+	// Level
+	level := skill.Level
+	if level == "" {
+		level = "-"
+	}
+
+	// Years of experience
+	years := "-"
+	if skill.YearsUsed != nil && *skill.YearsUsed > 0 {
+		years = strconv.Itoa(*skill.YearsUsed)
+	}
+
+	// Event count (from eventCounts map)
+	eventCount := "-"
+	if count, ok := eventCounts[skill.ID]; ok && count > 0 {
+		eventCount = strconv.Itoa(count)
+	}
+
+	return []string{name, category, level, years, eventCount}
+}
 
 // SkillsListScreen displays a list of skills with actions.
 //
@@ -57,16 +87,14 @@ type SkillsListScreen struct {
 	*base.BaseScreen
 
 	skills        []*career.Skill
-	selectedIndex int
-	table         table.Model
-	listContainer *components.TableListContainer
+	tableBehavior *behaviors.TableBehavior[*career.Skill]
 	eventCounts   map[string]int // Skill ID -> event count
 }
 
 // NewSkillsListScreen creates a new skills list screen.
 func NewSkillsListScreen(skills []*career.Skill) *SkillsListScreen {
 	// Create table columns matching legacy format
-	columns := []table.Column{
+	columns := []behaviors.ColumnDef{
 		{Title: "Name", Width: 25},
 		{Title: "Category", Width: 15},
 		{Title: "Level", Width: 12},
@@ -74,28 +102,29 @@ func NewSkillsListScreen(skills []*career.Skill) *SkillsListScreen {
 		{Title: "Events", Width: 8},
 	}
 
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
+	// Initialize event counts (empty, will be populated via SetEventCounts)
+	eventCounts := make(map[string]int)
 
-	// Apply default styles - theme will be applied via SetTheme
-	t.SetStyles(table.DefaultStyles())
+	// Create row formatter that uses the eventCounts
+	rowFormatter := func(skill *career.Skill, index int) []string {
+		return skillRowFormatter(skill, index, eventCounts)
+	}
+
+	// Create table behavior (nil theme, will be set via SetTheme)
+	tableBehavior := behaviors.NewTableBehavior[*career.Skill](nil, columns, rowFormatter).
+		PageSize(15).
+		PaginationPrefix("Skills").
+		EmptyMessage("No skills found. Press 'a' to add your first skill.")
+
+	// Set initial items
+	tableBehavior.SetItems(skills)
 
 	screen := &SkillsListScreen{
 		BaseScreen:    base.NewBaseScreen(),
 		skills:        skills,
-		selectedIndex: 0,
-		table:         t,
-		listContainer: components.NewTableListContainer(t, "Skills Management", 100),
-		eventCounts:   make(map[string]int), // Will be populated later
+		tableBehavior: tableBehavior,
+		eventCounts:   eventCounts,
 	}
-
-	// Update table rows with skills
-	screen.updateTableRows()
 
 	return screen
 }
@@ -108,38 +137,29 @@ func (s *SkillsListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return nil, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		key := msg.String()
+
+		// Handle escape
+		if key == "esc" {
 			return nil, &screens.CancelResult{}
+		}
 
-		case "down", "j":
-			if len(s.skills) > 0 && s.selectedIndex < len(s.skills)-1 {
-				s.selectedIndex++
-			}
+		// Handle navigation keys - delegate to TableBehavior
+		if key == "down" || key == "j" || key == "up" || key == "k" ||
+			key == "g" || key == "G" || key == "pgup" || key == "pgdown" ||
+			key == "home" || key == "end" {
+			s.tableBehavior.HandleNavigation(key)
 			return nil, nil
+		}
 
-		case "up", "k":
-			if s.selectedIndex > 0 {
-				s.selectedIndex--
-			}
-			return nil, nil
-
-		case "g":
-			s.selectedIndex = 0
-			return nil, nil
-
-		case "G":
-			if len(s.skills) > 0 {
-				s.selectedIndex = len(s.skills) - 1
-			}
-			return nil, nil
-
+		// Handle action keys
+		switch key {
 		case "enter":
-			if len(s.skills) > 0 {
+			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
 					ResultData: map[string]interface{}{
 						"action": "view",
-						"skill":  s.skills[s.selectedIndex],
+						"skill":  *selected,
 					},
 				}
 			}
@@ -153,22 +173,22 @@ func (s *SkillsListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 			}
 
 		case "e":
-			if len(s.skills) > 0 {
+			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
 					ResultData: map[string]interface{}{
 						"action": "edit",
-						"skill":  s.skills[s.selectedIndex],
+						"skill":  *selected,
 					},
 				}
 			}
 			return nil, nil
 
 		case "d":
-			if len(s.skills) > 0 {
+			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
 					ResultData: map[string]interface{}{
 						"action": "delete",
-						"skill":  s.skills[s.selectedIndex],
+						"skill":  *selected,
 					},
 				}
 			}
@@ -179,138 +199,66 @@ func (s *SkillsListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return nil, nil
 }
 
-// updateTableRows updates the table rows based on skills (with pagination).
-func (s *SkillsListScreen) updateTableRows() {
-	pageSize := 15
-	total := len(s.skills)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && s.selectedIndex >= 0 {
-		page = s.selectedIndex / pageSize
-	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	pageSkills := s.skills[start:end]
-
-	rows := make([]table.Row, 0, len(pageSkills))
-	for idx, skill := range pageSkills {
-		realIdx := start + idx
-
-		// Name with selection indicator
-		name := skill.Name
-		if realIdx == s.selectedIndex {
-			name = "▶ " + name
-		} else {
-			name = "  " + name
-		}
-
-		// Category
-		category := skill.Category
-		if category == "" {
-			category = "-"
-		}
-
-		// Level
-		level := skill.Level
-		if level == "" {
-			level = "-"
-		}
-
-		// Years of experience
-		years := "-"
-		if skill.YearsUsed != nil && *skill.YearsUsed > 0 {
-			years = strconv.Itoa(*skill.YearsUsed)
-		}
-
-		// Event count (from eventCounts map)
-		eventCount := "-"
-		if count, ok := s.eventCounts[skill.ID]; ok && count > 0 {
-			eventCount = strconv.Itoa(count)
-		}
-
-		rows = append(rows, table.Row{name, category, level, years, eventCount})
-	}
-
-	s.table.SetRows(rows)
-
-	// Calculate relative cursor position for this page
-	relativeCursor := 0
-	if s.selectedIndex >= start && s.selectedIndex < end {
-		relativeCursor = s.selectedIndex - start
-	}
-
-	// Set table cursor to relative position
-	s.table.SetCursor(relativeCursor)
-
-	// Sync container's selected index
-	s.listContainer.SetSelectedIdx(relativeCursor)
-
-	// CRITICAL: Sync updated table back to container (fixes display bug)
-	// The container stores a VALUE COPY of the table, so we must explicitly
-	// update it after modifying rows/cursor, otherwise it renders stale data
-	s.listContainer.SetTable(s.table)
-}
-
 // View renders the skills list screen.
 func (s *SkillsListScreen) View() string {
-	// Handle empty state
-	if len(s.skills) == 0 {
-		s.listContainer.SetEmptyStateMessage("No skills found. Press 'a' to add your first skill.")
-		content := s.listContainer.Render()
-		footer := "a: Add skill  Esc: Back"
-		return s.CreateView([]string{"Main Menu", "Manage Skills"}, content, footer)
-	}
-
-	// Ensure table rows are synchronized
-	s.updateTableRows()
-
-	// Build pagination info matching legacy format
-	pageSize := 15
-	totalItems := len(s.skills)
-	currentPage := (s.selectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Skills: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	s.listContainer.SetPaginationInfo(paginationInfo)
-
-	// Render table via container
-	content := s.listContainer.Render()
+	// Render table via behavior
+	content := s.tableBehavior.Render()
 
 	// Footer with actions (matching legacy)
 	footer := "Enter: View  a: Add  e: Edit  d: Delete  ↑↓/jk: Navigate  g/G: Top/Bottom  Esc: Back"
 
+	// Handle empty state footer
+	if len(s.skills) == 0 {
+		footer = "a: Add skill  Esc: Back"
+	}
+
 	return s.CreateView([]string{"Main Menu", "Manage Skills"}, content, footer)
 }
 
-// SetTheme applies theme to the table (override BaseScreen).
+// SetTheme applies theme to the table behavior.
 func (s *SkillsListScreen) SetTheme(theme interface{}) {
 	s.BaseScreen.SetTheme(theme)
-	// Apply themed table styles if theme is available
+	// Apply theme to table behavior if available
 	if t, ok := theme.(themes.Theme); ok && t != nil {
-		s.table.SetStyles(themes.NewThemedTableStyles(t))
+		s.tableBehavior.SetTheme(t)
 	}
 }
 
 // SetEventCounts sets the event counts for skills (used for displaying event count column).
 func (s *SkillsListScreen) SetEventCounts(counts map[string]int) {
-	s.eventCounts = counts
-	// Refresh table rows with new counts
-	s.updateTableRows()
+	// Update the shared eventCounts map
+	for k, v := range counts {
+		s.eventCounts[k] = v
+	}
+
+	// Create new row formatter with updated counts
+	rowFormatter := func(skill *career.Skill, index int) []string {
+		return skillRowFormatter(skill, index, s.eventCounts)
+	}
+
+	// Rebuild table behavior with new formatter
+	columns := []behaviors.ColumnDef{
+		{Title: "Name", Width: 25},
+		{Title: "Category", Width: 15},
+		{Title: "Level", Width: 12},
+		{Title: "Years", Width: 8},
+		{Title: "Events", Width: 8},
+	}
+
+	s.tableBehavior = behaviors.NewTableBehavior[*career.Skill](nil, columns, rowFormatter).
+		PageSize(15).
+		PaginationPrefix("Skills").
+		EmptyMessage("No skills found. Press 'a' to add your first skill.")
+
+	s.tableBehavior.SetItems(s.skills)
 }
 
 // GetSelectedIndex returns the currently selected index.
 func (s *SkillsListScreen) GetSelectedIndex() int {
-	return s.selectedIndex
+	return s.tableBehavior.GetSelectedIndex()
 }
 
 // SetSelectedIndex sets the currently selected index.
 func (s *SkillsListScreen) SetSelectedIndex(index int) {
-	if index >= 0 && index < len(s.skills) {
-		s.selectedIndex = index
-	}
+	s.tableBehavior.SetSelectedIndex(index)
 }

@@ -15,6 +15,77 @@ Screens are reusable, composable view components that sit between Intents and Co
 
 ---
 
+## File Organization
+
+**CRITICAL**: Screens MUST be organized into separate files by their purpose, NOT combined into a single file.
+
+### Directory Structure
+
+```
+internal/cli/screens/
+├── base/                    # Generic reusable types
+│   ├── select.go            # BaseSelect[T]
+│   ├── form.go              # BaseForm
+│   ├── detail.go            # BaseDetail
+│   ├── confirm.go           # BaseConfirm
+│   └── progress.go          # BaseProgress
+├── capture/                 # CaptureEvent intent
+│   ├── strategy_select.go   # Strategy selection
+│   ├── event_form.go        # Event form entry
+│   ├── event_review.go
+│   └── event_submit.go
+├── configure/               # ConfigureSystem intent
+│   ├── domain_select.go
+│   ├── edit_settings.go
+│   ├── review_changes.go
+│   └── confirm.go
+├── export/                  # ExportArtifact intent
+│   ├── type_select.go       # Artifact type selection
+│   ├── format_select.go     # Export format selection
+│   ├── dest_select.go       # Destination selection
+│   ├── preview.go           # Export preview
+│   ├── confirm.go           # Export confirmation
+│   ├── progress.go          # Export progress
+│   └── complete.go          # Export completion
+└── types.go                 # Shared types (ScreenResult, etc.)
+```
+
+### Naming Conventions
+
+1. **One action per file**: Each action gets its own `.go` file
+2. **Test companion files**: Each file has a `_test.go` companion
+3. **Action-based names**: File names describe the action (e.g., `strategy_select.go`, `preview.go`)
+4. **Intent subdirectories**: Domain-specific files go in intent-named directories
+
+### Why This Matters
+
+- **Discoverability**: Easy to find screens by intent and purpose
+- **Testability**: Isolated test files for each screen
+- **Maintainability**: Changes to one screen don't risk affecting others
+- **Code review**: Smaller, focused files are easier to review
+
+### Anti-Pattern: Monolithic Files
+
+❌ **DON'T** put all actions in a single file:
+```go
+// BAD: internal/cli/intents/export_artifact_intent.go
+func (e *ExportArtifactIntent) newTypeSelect() { ... }
+func (e *ExportArtifactIntent) newFormatSelect() { ... }
+func (e *ExportArtifactIntent) newDestSelect() { ... }
+// ... all 8 actions in one file
+```
+
+✅ **DO** create separate files:
+```go
+// GOOD: internal/cli/screens/export/type_select.go
+type TypeSelect struct { ... }
+
+// GOOD: internal/cli/screens/export/format_select.go
+type FormatSelect struct { ... }
+```
+
+---
+
 ## Core Interface
 
 ```go

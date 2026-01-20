@@ -28,28 +28,6 @@ var _ = Describe("Behaviors Types", func() {
 		})
 	})
 
-	Describe("CRUDMode", func() {
-		It("should have List mode", func() {
-			mode := behaviors.ModeList
-			Expect(string(mode)).To(Equal("list"))
-		})
-
-		It("should have Create mode", func() {
-			mode := behaviors.ModeCreate
-			Expect(string(mode)).To(Equal("create"))
-		})
-
-		It("should have Edit mode", func() {
-			mode := behaviors.ModeEdit
-			Expect(string(mode)).To(Equal("edit"))
-		})
-
-		It("should have Delete mode", func() {
-			mode := behaviors.ModeDelete
-			Expect(string(mode)).To(Equal("delete"))
-		})
-	})
-
 	Describe("MenuOption", func() {
 		It("should create a menu option", func() {
 			option := behaviors.MenuOption{

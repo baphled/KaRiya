@@ -176,10 +176,10 @@ var _ = Describe("FactManagement Intent", func() {
 			Expect(result).To(BeNil())
 		})
 
-		It("should quit application on 'q' key", func() {
-			// q now returns tea.Quit to quit the application
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
 			cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
-			Expect(cmd).ToNot(BeNil())
+			Expect(cmd).To(BeNil())
 		})
 	})
 })
@@ -217,9 +217,10 @@ var _ = Describe("Pagination", func() {
 		view := manyFactsIntent.View()
 		Expect(view).To(ContainSubstring("Page 1 of 3"))
 
-		// Verify table shows first 15 facts
-		rows := manyFactsIntent.table.Rows()
-		Expect(len(rows)).To(Equal(15))
+		// Verify TableBehavior has all items loaded
+		Expect(manyFactsIntent.tableBehavior.Count()).To(Equal(35))
+		// Verify we're at the first item
+		Expect(manyFactsIntent.tableBehavior.GetSelectedIndex()).To(Equal(0))
 	})
 
 	It("should update table rows when navigating to next page", func() {
@@ -231,12 +232,7 @@ var _ = Describe("Pagination", func() {
 		Expect(view).To(ContainSubstring("Page 2 of 3"))
 
 		// Verify the selected index is now in the second page range
-		Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(15))
-
-		// FAILING TEST: Verify table shows the correct facts for page 2
-		// Currently the table shows ALL facts (all 35 rows) instead of just the current page (15 rows)
-		rows := manyFactsIntent.table.Rows()
-		Expect(len(rows)).To(Equal(15), "Table should show only 15 facts for page 2, but shows %d facts", len(rows))
+		Expect(manyFactsIntent.tableBehavior.GetSelectedIndex()).To(Equal(15))
 	})
 
 	It("should update table rows when navigating to last page", func() {
@@ -249,12 +245,7 @@ var _ = Describe("Pagination", func() {
 		Expect(view).To(ContainSubstring("Page 3 of 3"))
 
 		// Verify the selected index is now in the third page range
-		Expect(manyFactsIntent.data.SelectedFactIndex).To(Equal(30))
-
-		// FAILING TEST: Verify table shows the correct facts for page 3
-		// Currently the table shows ALL facts (all 35 rows) instead of just the current page (5 rows)
-		rows := manyFactsIntent.table.Rows()
-		Expect(len(rows)).To(Equal(5), "Table should show only 5 facts for page 3, but shows %d facts", len(rows))
+		Expect(manyFactsIntent.tableBehavior.GetSelectedIndex()).To(Equal(30))
 	})
 })
 

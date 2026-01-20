@@ -5,10 +5,21 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/layout"
 )
+
+// LogoModel defines the interface for logo components.
+// The uikit/display.Logo package provides the standard implementation.
+type LogoModel interface {
+	Init() tea.Cmd
+	Update(msg tea.Msg) (tea.Model, tea.Cmd)
+	View() string
+	ViewStatic() string
+	SetWidth(width int)
+}
 
 // Intent defines the contract for all intent implementations.
 // Each intent MUST:
@@ -204,8 +215,8 @@ type BaseIntent struct {
 	terminalInfo   *terminal.Info
 	terminalConfig terminal.Config
 
-	// Logo management (shared instance)
-	logo        *components.ASCIILogo
+	// Logo management (shared instance via interface)
+	logo        LogoModel
 	logoSpacing int
 
 	// Theme management
@@ -225,7 +236,7 @@ type BaseIntent struct {
 	progressMessage string
 
 	// Help modal
-	helpModal *components.HelpModal
+	helpModal *feedback.HelpModal
 }
 
 // NewBaseIntent creates a new BaseIntent with default terminal configuration
@@ -234,7 +245,7 @@ func NewBaseIntent() *BaseIntent {
 		terminalInfo:   terminal.NewInfo(),
 		terminalConfig: terminal.DefaultConfig,
 		logoSpacing:    2, // Default spacing
-		helpModal:      components.NewHelpModal(nil),
+		helpModal:      feedback.NewHelpModal(nil),
 	}
 }
 
@@ -253,15 +264,25 @@ func (b *BaseIntent) GetMinimumSize() (width, height int) {
 	return b.terminalConfig.MinWidth, b.terminalConfig.MinHeight
 }
 
+// GetModalDimensions returns terminal dimensions for modal sizing.
+// If terminal info is not available, returns sensible defaults (120x40).
+// This eliminates the repeated dimension extraction pattern in modal opening methods.
+func (b *BaseIntent) GetModalDimensions() (width, height int) {
+	if b.terminalInfo != nil && b.terminalInfo.Width > 0 && b.terminalInfo.Height > 0 {
+		return b.terminalInfo.Width, b.terminalInfo.Height
+	}
+	return 120, 40 // Default dimensions
+}
+
 // Logo Management Methods
 
-// SetLogo sets the shared logo instance
-func (b *BaseIntent) SetLogo(logo *components.ASCIILogo) {
+// SetLogo sets the shared logo instance (accepts any LogoModel implementation)
+func (b *BaseIntent) SetLogo(logo LogoModel) {
 	b.logo = logo
 }
 
 // GetLogo returns the logo instance
-func (b *BaseIntent) GetLogo() *components.ASCIILogo {
+func (b *BaseIntent) GetLogo() LogoModel {
 	return b.logo
 }
 
@@ -437,7 +458,7 @@ func (b *BaseIntent) IsHelpVisible() bool {
 }
 
 // GetHelpModal returns the help modal instance
-func (b *BaseIntent) GetHelpModal() *components.HelpModal {
+func (b *BaseIntent) GetHelpModal() *feedback.HelpModal {
 	return b.helpModal
 }
 
@@ -459,12 +480,12 @@ func (b *BaseIntent) SetHelpKeyMap(keyMap interface{}) {
 
 // CreateView creates a standardized view with logo and automatic state modals.
 // This is a convenience wrapper around CreateStandardView.
-func (b *BaseIntent) CreateView() *components.StandardView {
+func (b *BaseIntent) CreateView() *layout.ScreenLayout {
 	return CreateStandardView(b)
 }
 
 // CreateViewWithBreadcrumbs creates a standardized view with breadcrumb navigation.
 // This is a convenience wrapper around CreateStandardViewWithBreadcrumbs.
-func (b *BaseIntent) CreateViewWithBreadcrumbs(crumbs ...string) *components.StandardView {
+func (b *BaseIntent) CreateViewWithBreadcrumbs(crumbs ...string) *layout.ScreenLayout {
 	return CreateStandardViewWithBreadcrumbs(b, crumbs...)
 }

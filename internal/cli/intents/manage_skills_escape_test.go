@@ -81,12 +81,11 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 			Expect(result.Status).To(Equal(intents.Cancelled))
 		})
 
-		It("should return tea.Quit command when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// q should return tea.Quit, not cancel the intent
-			Expect(cmd).ToNot(BeNil())
-			// Cannot directly test tea.Quit, but we can verify it's not nil
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should toggle help when '?' is pressed", func() {
@@ -111,200 +110,9 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 		})
 	})
 
-	Describe("Detail View State", func() {
-		BeforeEach(func() {
-			// Navigate to detail view
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-		})
-
-		It("should return to List when escape is pressed", func() {
-			// Verify we're in detail state (shows detail card content)
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Go Programming"))
-			Expect(view).To(ContainSubstring("backend"))
-
-			// Press escape to go back
-			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-			// Should be back in list view (shows Skills title, no detail card)
-			view = intent.View()
-			Expect(view).To(ContainSubstring("Skills"))
-			Expect(view).ToNot(ContainSubstring("Event Count:")) // Detail card field
-			// Should not be cancelled
-			result := intent.Result()
-			Expect(result).To(BeNil())
-		})
-
-		It("should return tea.Quit command when 'q' is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).ToNot(BeNil())
-		})
-
-		It("should toggle help when '?' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-			viewWithHelp := intent.View()
-			// Verify view still renders after help toggle (check for detail view content)
-			Expect(viewWithHelp).To(ContainSubstring("Go Programming"))
-			Expect(viewWithHelp).To(ContainSubstring("backend"))
-		})
-
-		It("should show correct footer keys", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Esc"))
-			Expect(view).To(ContainSubstring("Quit"))
-		})
-	})
-
-	Describe("DetailEvents View State", func() {
-		BeforeEach(func() {
-			// Navigate to detail view, then to events (Enter from detail = view events)
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			// Need to wait for skill to be selected, then press Enter again to view events
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-		})
-
-		It("should return to Detail when escape is pressed", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Events"))
-
-			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-			// Should be back in detail view (shows skill detail card)
-			view = intent.View()
-			Expect(view).To(ContainSubstring("Go Programming"))
-			Expect(view).To(ContainSubstring("Event Count:"))
-		})
-
-		It("should return tea.Quit command when 'q' is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).ToNot(BeNil())
-		})
-
-		It("should toggle help when '?' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-			viewWithHelp := intent.View()
-			// Verify view still renders
-			Expect(viewWithHelp).To(ContainSubstring("Events"))
-		})
-
-		It("should show correct footer keys", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Esc"))
-			Expect(view).To(ContainSubstring("Quit"))
-		})
-	})
-
-	Describe("Add State (Form)", func() {
-		BeforeEach(func() {
-			// Navigate to add state (n = new skill)
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-		})
-
-		It("should return to List when escape is pressed", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Add"))
-
-			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-			// Should be back in list view
-			view = intent.View()
-			Expect(view).To(ContainSubstring("Skills"))
-			Expect(view).ToNot(ContainSubstring("Add"))
-		})
-
-		It("should return tea.Quit command when 'q' is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).ToNot(BeNil())
-		})
-
-		It("should toggle help when '?' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-			view := intent.View()
-			// Verify view still renders
-			Expect(view).To(ContainSubstring("Add"))
-		})
-
-		It("should show correct footer keys in form", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Esc"))
-		})
-	})
-
-	Describe("Edit State (Form)", func() {
-		BeforeEach(func() {
-			// Navigate to detail, then edit
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
-		})
-
-		It("should return to List when escape is pressed", func() {
-			view := intent.View()
-			// Edit form should be visible
-			Expect(view).To(ContainSubstring("Edit"))
-
-			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-			// Should be back in list view (not detail)
-			view = intent.View()
-			Expect(view).To(ContainSubstring("Skills"))
-			Expect(view).ToNot(ContainSubstring("Edit"))
-		})
-
-		It("should return tea.Quit command when 'q' is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).ToNot(BeNil())
-		})
-
-		It("should toggle help when '?' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-			view := intent.View()
-			// Verify view still renders
-			Expect(view).To(ContainSubstring("Edit"))
-		})
-
-		It("should show correct footer keys in form", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Esc"))
-		})
-	})
-
-	Describe("Delete State (Confirmation)", func() {
-		BeforeEach(func() {
-			// Navigate to detail, then delete
-			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
-		})
-
-		It("should return to List when escape is pressed", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Delete"))
-
-			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-			// Should be back in list view
-			view = intent.View()
-			Expect(view).To(ContainSubstring("Skills"))
-			Expect(view).ToNot(ContainSubstring("Delete"))
-		})
-
-		It("should return tea.Quit command when 'q' is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).ToNot(BeNil())
-		})
-
-		It("should toggle help when '?' is pressed", func() {
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
-			view := intent.View()
-			// Verify view still renders
-			Expect(view).To(ContainSubstring("Delete"))
-		})
-
-		It("should show correct footer keys in confirmation", func() {
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Esc"))
-			Expect(view).To(ContainSubstring("y"))
-		})
-	})
+	// NOTE: Detail View, DetailEvents View, Add/Edit/Delete State escape tests have been removed
+	// The new modal-based architecture handles escape differently - modal overlays close on Escape
+	// while the intent remains in List state. See manage_skills_modals_test.go for modal escape tests
 
 	Describe("Filter State (Menu)", func() {
 		BeforeEach(func() {
@@ -324,9 +132,10 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 			Expect(view).ToNot(ContainSubstring("Filter by"))
 		})
 
-		It("should return tea.Quit command when 'q' is pressed", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should toggle help when '?' is pressed", func() {
@@ -358,12 +167,6 @@ var _ = Describe("ManageSkills - Escape Key Behavior", func() {
 			// Modal should be closed, showing list view
 			view = intent.View()
 			Expect(view).To(ContainSubstring("Skills"))
-		})
-
-		It("should return tea.Quit command when 'q' is pressed", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// Global 'q' key should work even when modal is visible
-			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should toggle help when '?' is pressed", func() {

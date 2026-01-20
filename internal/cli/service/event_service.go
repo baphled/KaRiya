@@ -325,3 +325,17 @@ func (c *CLIEventService) BulkUpdateMetadata(ctx context.Context, eventIDs []str
 
 	return summary, nil
 }
+
+// GetSkillsForEvent retrieves all skills associated with an event
+func (c *CLIEventService) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
+	if c.service == nil {
+		// No service configured, return empty slice
+		return []*career.Skill{}, nil
+	}
+	skillRepo := c.service.GetSkillRepository()
+	if skillRepo == nil {
+		// No skill repository configured, return empty slice
+		return []*career.Skill{}, nil
+	}
+	return skillRepo.GetSkillsForEvent(ctx, eventID)
+}

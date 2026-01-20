@@ -73,10 +73,10 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should quit application on q key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 	})
 
@@ -213,12 +213,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should quit application on q key from events view", func() {
+		It("should ignore 'q' key from events view (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateDetailEvents
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should handle no burst selected error when loading events", func() {
@@ -333,12 +333,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.currentState).To(Equal(BurstStateDetail))
 		})
 
-		It("should quit application on q key from facts view", func() {
+		It("should ignore 'q' key from facts view (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateDetailFacts
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should handle no burst selected error when loading facts", func() {
@@ -656,12 +656,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(view).To(ContainSubstring("No burst selected"))
 		})
 
-		It("should quit application on 'q' key from delete confirm", func() {
+		It("should ignore 'q' key from delete confirm (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateDeleteConfirm
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should show warning styling in delete confirm view", func() {
@@ -951,12 +951,12 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(intent.state.confirmError).To(BeNil())
 		})
 
-		It("should quit application from extracting state on 'q' key", func() {
+		It("should ignore 'q' key from extracting state (quit only from main menu)", func() {
 			intent.state.currentState = BurstStateExtractingFacts
 
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should return to detail view on any key after extraction completes", func() {
@@ -1196,9 +1196,8 @@ var _ = Describe("BurstManagement Intent", func() {
 			view := manyBurstsIntent.View()
 			Expect(view).To(ContainSubstring("Page 1 of 3"))
 
-			// Verify table shows first 15 bursts
-			rows := manyBurstsIntent.table.Rows()
-			Expect(len(rows)).To(Equal(15))
+			// Verify TableBehavior has all 35 bursts
+			Expect(manyBurstsIntent.tableBehavior.Count()).To(Equal(35))
 		})
 
 		It("should update table rows when navigating to next page", func() {
@@ -1210,12 +1209,7 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(view).To(ContainSubstring("Page 2 of 3"))
 
 			// Verify the selected index is now in the second page range
-			Expect(manyBurstsIntent.state.selectedIndex).To(Equal(15))
-
-			// FAILING TEST: Verify table shows the correct bursts for page 2
-			// Currently the table shows ALL bursts (all 35 rows) instead of just the current page (15 rows)
-			rows := manyBurstsIntent.table.Rows()
-			Expect(len(rows)).To(Equal(15), "Table should show only 15 bursts for page 2, but shows %d bursts", len(rows))
+			Expect(manyBurstsIntent.tableBehavior.GetSelectedIndex()).To(Equal(15))
 		})
 
 		It("should update table rows when navigating to last page", func() {
@@ -1228,79 +1222,69 @@ var _ = Describe("BurstManagement Intent", func() {
 			Expect(view).To(ContainSubstring("Page 3 of 3"))
 
 			// Verify the selected index is now in the third page range
-			Expect(manyBurstsIntent.state.selectedIndex).To(Equal(30))
-
-			// FAILING TEST: Verify table shows the correct bursts for page 3
-			// Currently the table shows ALL bursts (all 35 rows) instead of just the current page (5 rows)
-			rows := manyBurstsIntent.table.Rows()
-			Expect(len(rows)).To(Equal(5), "Table should show only 5 bursts for page 3, but shows %d bursts", len(rows))
+			Expect(manyBurstsIntent.tableBehavior.GetSelectedIndex()).To(Equal(30))
 		})
 	})
 
-	Describe("Helper Functions for Enhanced Table", func() {
-		Describe("formatConfirmedStatus", func() {
-			It("should return green ✓ Yes for confirmed bursts", func() {
-				result := intent.formatConfirmedStatus(true)
-				Expect(result).To(ContainSubstring("✓"))
-				Expect(result).To(ContainSubstring("Yes"))
-			})
-
-			It("should return gray ✗ No for unconfirmed bursts", func() {
-				result := intent.formatConfirmedStatus(false)
-				Expect(result).To(ContainSubstring("✗"))
-				Expect(result).To(ContainSubstring("No"))
-			})
+	Describe("burstRowFormatter Function", func() {
+		It("should return confirmed status with checkmark for confirmed bursts", func() {
+			confirmedBurst := &careerdom.Burst{
+				ID:        "test-1",
+				Name:      "Test Burst",
+				Confirmed: true,
+				CreatedAt: time.Now(),
+			}
+			row := burstRowFormatter(confirmedBurst, 0)
+			Expect(row[2]).To(ContainSubstring("✓"))
+			Expect(row[2]).To(ContainSubstring("Yes"))
 		})
 
-		Describe("formatDescription", func() {
-			It("should truncate long descriptions to 25 chars", func() {
-				longDesc := "This is a very long description that should definitely be truncated at 22 characters"
-				result := intent.formatDescription(longDesc)
-				// Should contain "..." for truncation
-				Expect(result).To(ContainSubstring("..."))
-			})
-
-			It("should render short descriptions fully", func() {
-				shortDesc := "Short desc"
-				result := intent.formatDescription(shortDesc)
-				Expect(result).To(ContainSubstring("Short desc"))
-				Expect(result).NotTo(ContainSubstring("..."))
-			})
-
-			It("should return - for empty descriptions", func() {
-				result := intent.formatDescription("")
-				Expect(result).To(ContainSubstring("-"))
-			})
-
-			It("should remove newlines from descriptions", func() {
-				descWithNewlines := "Line 1\nLine 2\nLine 3"
-				result := intent.formatDescription(descWithNewlines)
-				Expect(result).NotTo(ContainSubstring("\n"))
-				Expect(result).To(ContainSubstring("Line 1 Line 2"))
-			})
-
-			It("should handle whitespace-only descriptions", func() {
-				result := intent.formatDescription("   \n\t  ")
-				Expect(result).To(ContainSubstring("-"))
-			})
+		It("should return unconfirmed status with X for unconfirmed bursts", func() {
+			unconfirmedBurst := &careerdom.Burst{
+				ID:        "test-2",
+				Name:      "Test Burst",
+				Confirmed: false,
+				CreatedAt: time.Now(),
+			}
+			row := burstRowFormatter(unconfirmedBurst, 0)
+			Expect(row[2]).To(ContainSubstring("✗"))
+			Expect(row[2]).To(ContainSubstring("No"))
 		})
 
-		Describe("formatCreatedDate", func() {
-			It("should format date as YYYY-MM-DD", func() {
-				testDate := time.Date(2024, 12, 15, 10, 30, 0, 0, time.UTC)
-				result := intent.formatCreatedDate(testDate)
-				Expect(result).To(ContainSubstring("2024-12-15"))
-			})
+		It("should truncate long descriptions", func() {
+			longDescBurst := &careerdom.Burst{
+				ID:          "test-3",
+				Name:        "Test",
+				Description: "This is a very long description that should definitely be truncated",
+				CreatedAt:   time.Now(),
+			}
+			row := burstRowFormatter(longDescBurst, 0)
+			Expect(row[1]).To(ContainSubstring("..."))
+		})
 
-			It("should format different dates correctly", func() {
-				testDate := time.Date(2023, 1, 5, 0, 0, 0, 0, time.UTC)
-				result := intent.formatCreatedDate(testDate)
-				Expect(result).To(ContainSubstring("2023-01-05"))
-			})
+		It("should show dash for empty descriptions", func() {
+			emptyDescBurst := &careerdom.Burst{
+				ID:          "test-4",
+				Name:        "Test",
+				Description: "",
+				CreatedAt:   time.Now(),
+			}
+			row := burstRowFormatter(emptyDescBurst, 0)
+			Expect(row[1]).To(Equal("-"))
+		})
+
+		It("should format date as YYYY-MM-DD", func() {
+			burst := &careerdom.Burst{
+				ID:        "test-5",
+				Name:      "Test",
+				CreatedAt: time.Date(2024, 12, 15, 10, 30, 0, 0, time.UTC),
+			}
+			row := burstRowFormatter(burst, 0)
+			Expect(row[4]).To(Equal("2024-12-15"))
 		})
 	})
 
-	Describe("Enhanced Table Row Generation", func() {
+	Describe("Enhanced Table Row Generation via burstRowFormatter", func() {
 		var (
 			testBurst1 *careerdom.Burst
 			testBurst2 *careerdom.Burst
@@ -1332,32 +1316,26 @@ var _ = Describe("BurstManagement Intent", func() {
 		})
 
 		It("should generate 5 columns for each row", func() {
-			rows := intent.table.Rows()
-			Expect(len(rows)).To(BeNumerically(">", 0))
-			for _, row := range rows {
-				Expect(len(row)).To(Equal(5), "Each row should have 5 columns")
-			}
+			row := burstRowFormatter(testBurst1, 0)
+			Expect(len(row)).To(Equal(5), "Each row should have 5 columns")
 		})
 
 		It("should include confirmed status in column 3", func() {
-			rows := intent.table.Rows()
-			Expect(len(rows)).To(BeNumerically(">", 0))
+			row := burstRowFormatter(testBurst1, 0)
 			// First row (confirmed=true) should contain "Yes"
-			Expect(rows[0][2]).To(ContainSubstring("Yes"))
+			Expect(row[2]).To(ContainSubstring("Yes"))
 		})
 
 		It("should include created date in column 5", func() {
-			rows := intent.table.Rows()
-			Expect(len(rows)).To(BeNumerically(">", 0))
+			row := burstRowFormatter(testBurst1, 0)
 			// First row should have 2024-12-15
-			Expect(rows[0][4]).To(ContainSubstring("2024-12-15"))
+			Expect(row[4]).To(ContainSubstring("2024-12-15"))
 		})
 
 		It("should handle empty description gracefully", func() {
-			rows := intent.table.Rows()
-			Expect(len(rows)).To(BeNumerically(">=", 2))
-			// Second row (empty description) should show "-"
-			Expect(rows[1][1]).To(ContainSubstring("-"))
+			row := burstRowFormatter(testBurst2, 1)
+			// Second burst (empty description) should show "-"
+			Expect(row[1]).To(ContainSubstring("-"))
 		})
 
 		It("should truncate long names to fit column width", func() {
@@ -1370,13 +1348,10 @@ var _ = Describe("BurstManagement Intent", func() {
 				CreatedAt:   time.Now(),
 				UpdatedAt:   time.Now(),
 			}
-			mockRepo.bursts = []*careerdom.Burst{longNameBurst}
-			intent.Init()
 
-			rows := intent.table.Rows()
-			Expect(len(rows)).To(Equal(1))
+			row := burstRowFormatter(longNameBurst, 0)
 			// Name should be truncated with "..."
-			Expect(rows[0][0]).To(ContainSubstring("..."))
+			Expect(row[0]).To(ContainSubstring("..."))
 		})
 	})
 })

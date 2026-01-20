@@ -295,10 +295,10 @@ var _ = Describe("BulkOperationsIntent", func() {
 		})
 
 		Describe("BulkSelectOpState", func() {
-			It("should handle quit key by returning tea.Quit", func() {
+			It("should ignore 'q' key within intent (quit only from main menu)", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-				// q now returns tea.Quit to quit the application
-				Expect(cmd).ToNot(BeNil())
+				// q no longer quits from within intents - only from main menu
+				Expect(cmd).To(BeNil())
 			})
 
 			It("should handle escape key", func() {
@@ -365,10 +365,10 @@ var _ = Describe("BulkOperationsIntent", func() {
 				Expect(data.CurrentState).To(Equal(intents.BulkSelectOpState))
 			})
 
-			It("should quit application on 'q' key", func() {
+			It("should ignore 'q' key within intent (quit only from main menu)", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-				// q now returns tea.Quit to quit the application
-				Expect(cmd).ToNot(BeNil())
+				// q no longer quits from within intents - only from main menu
+				Expect(cmd).To(BeNil())
 			})
 		})
 
@@ -418,11 +418,11 @@ var _ = Describe("BulkOperationsIntent", func() {
 				Expect(result.Data).ToNot(BeNil())
 			})
 
-			It("should cancel on quit", func() {
+			It("should ignore 'q' key during execution (quit only from main menu)", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-				Expect(cmd).ToNot(BeNil())
-				result := model.Result()
-				Expect(result.Status).To(Equal(intents.Cancelled))
+				// q no longer quits from within intents - only from main menu
+				Expect(cmd).To(BeNil())
+				// Operation continues (not cancelled)
 			})
 
 			It("should show paused state in view", func() {
@@ -656,12 +656,6 @@ var _ = Describe("BulkOperationsIntent", func() {
 			data.SelectedOp = "export"
 			model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
 			Expect(data.SelectedOp).To(Equal("export"))
-		})
-
-		It("should handle ctrl+c like quit", func() {
-			cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			// ctrl+c now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should handle empty operation display name", func() {

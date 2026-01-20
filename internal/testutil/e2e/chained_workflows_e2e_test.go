@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"github.com/baphled/kariya/internal/testutil/e2e"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -232,10 +233,14 @@ var _ = Describe("E2E Chained Workflows", func() {
 			env.AssertViewContainsAny("Events", "Timeline")
 			env.Cancel()
 
-			// Export events
+			// Export events - wizard-based flow
 			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Select events type
-			env.AssertViewContainsAny("Format", "JSON", "CSV")
+			// Wizard Step 1: Type selection (events is default)
+			env.AssertViewContainsAny("Career Events", "Events", "Export")
+			// Use Ctrl+S to skip wizard and go to preview with defaults
+			env.PressKey(tea.KeyCtrlS)
+			// Preview screen shows export content
+			env.AssertViewContainsAny("Preview", "Export", "Confirm", "[", "{")
 		})
 
 		It("should allow browsing then exporting facts", func() {
@@ -243,11 +248,14 @@ var _ = Describe("E2E Chained Workflows", func() {
 			env.SelectIntentByName("browse_timeline")
 			env.Cancel()
 
-			// Export - navigate to facts
+			// Export - wizard-based flow
 			env.SelectIntentByName("export_artifact")
+			// Wizard Step 1: Navigate to facts
 			env.PressKeyRune('j') // Navigate to facts
-			env.Confirm()
-			env.AssertViewContainsAny("Format", "JSON", "CSV")
+			// Use Ctrl+S to skip wizard and go to preview
+			env.PressKey(tea.KeyCtrlS)
+			// Preview screen shows export content (facts this time)
+			env.AssertViewContainsAny("Preview", "Export", "Confirm", "[", "{")
 		})
 	})
 

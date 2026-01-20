@@ -1,9 +1,10 @@
 # KaRiya Forms Guide
 
-**Last Updated**: 2026-01-12  
-**Status**: Complete - All form implementations documented  
+**Last Updated**: 2026-01-20  
+**Status**: Complete - All 7 form configurations documented  
 **Library**: [github.com/charmbracelet/huh](https://github.com/charmbracelet/huh) v0.8.0  
-**Form Wrappers**: 2 (CaptureForm, SkillForm)
+**Form Wrappers**: 2 (CaptureForm, SkillForm)  
+**Form Configurations**: 7 (Burst, Metadata, Fact, CaptureEvent, BurstSuggestion, Skill, CVConfig)
 
 ---
 
@@ -47,11 +48,11 @@ KaRiya uses Charm's **`huh`** library for all form handling in the TUI. This pro
 - **Total**: ~3,800 lines across 8 form implementations
 
 **After (Huh)**:
-- ~50-200 lines per form configuration
+- ~50-250 lines per form configuration
 - Automatic focus management
 - Built-in validation
 - Automatic rendering
-- **Total**: ~750 lines for all 7 forms (**75% reduction**)
+- **Total**: ~1,600 lines for all 9 forms (**60% reduction**)
 
 ### Benefits
 
@@ -260,14 +261,16 @@ The forms package is located in `internal/cli/forms/` with the following files:
 | File | Lines | Purpose |
 |------|-------|---------|
 | `forms.go` | 340 | Core utilities, theme, helpers, field builders |
-| `validators.go` | 307 | 20+ validators + date parsing utilities |
-| `burst_form.go` | 113 | Burst editor form configuration |
-| `metadata_form.go` | 218 | Event metadata form (6 fields) |
-| `fact_form.go` | 163 | Fact editor form (4 fields + dropdown) |
-| `capture_event_form.go` | 142 | Career event capture (strategy-aware) |
-| `burst_suggestion_form.go` | 78 | Burst suggestion editing form |
+| `validators.go` | 306 | 25+ validators + date parsing utilities |
+| `burst_form.go` | 112 | Burst editor form configuration |
+| `metadata_form.go` | 217 | Event metadata form (6 fields) |
+| `fact_form.go` | 162 | Fact editor form (4 fields + dropdown) |
+| `capture_event_form.go` | 272 | Career event capture (strategy-aware) |
+| `burst_suggestion_form.go` | 77 | Burst suggestion editing form |
+| `skill_form.go` | 245 | Skill management form (4 fields) |
+| `cv_config_form.go` | 185 | CV configuration wizard (3 steps, 8 fields) |
 
-**Total**: ~1,361 lines of source code + 729 lines of tests = **2,090 lines**
+**Total**: ~1,916 lines of source code + ~1,556 lines of tests = **~3,472 lines**
 
 ### Theme Integration
 
@@ -655,9 +658,163 @@ forms.ApplyBurstSuggestionFormData(&suggestion, data)
 
 ---
 
+### 6. SkillForm
+
+**Purpose**: Add or edit skill information  
+**File**: [`internal/cli/forms/skill_form.go`](../internal/cli/forms/skill_form.go)  
+**Fields**: 4 (Name, Category, Level, YearsUsed)
+
+#### Data Structure
+
+```go
+type SkillFormData struct {
+    Name            string
+    Category        string
+    Level           string
+    YearsUsed       string
+    SubmitConfirmed bool
+}
+```
+
+#### Usage
+
+```go
+// From domain object
+skill := &career.Skill{
+    Name:     "Kubernetes",
+    Category: "devops",
+    Level:    "advanced",
+}
+form := forms.NewSkillForm(skill)
+
+// With custom data
+data := &forms.SkillFormData{
+    Name:     "React",
+    Category: "frontend",
+    Level:    "intermediate",
+}
+form := forms.NewSkillFormWithData(data)
+
+// With dimensions for modal
+form := forms.NewSkillFormWithDataAndDimensions(data, 80, 40)
+```
+
+#### Domain Conversion
+
+```go
+// Extract form data
+data := forms.GetSkillFormData(skill)
+
+// Apply form data
+forms.ApplySkillFormData(skill, data)
+```
+
+#### Constants
+
+```go
+// Common skill categories
+var CommonSkillCategories = []string{
+    "backend", "frontend", "devops", "database", "cloud", "tooling", "other",
+}
+
+// Valid skill levels
+var ValidSkillLevels = []string{
+    "beginner", "intermediate", "advanced", "expert",
+}
+```
+
+#### Validators
+
+- **Name**: `SkillName` - Required, 1-100 characters
+- **Category**: `SkillCategory` - Required, 1-50 characters  
+- **Level**: `SkillLevel` - Optional, must be valid level if provided
+- **YearsUsed**: `SkillYearsUsed` - Optional, 0-50 if provided
+
+---
+
+### 7. CVConfigForm
+
+**Purpose**: Configure CV generation with multi-step wizard  
+**File**: [`internal/cli/forms/cv_config_form.go`](../internal/cli/forms/cv_config_form.go)  
+**Fields**: 8 (ProfileID, Audience, TechFocus, Technologies, FocusArea, SkillsFormat, SkillsLimit, CVLength)  
+**Steps**: 3 (WHO, TECH, FORMAT)
+
+#### Data Structure
+
+```go
+type CVConfigFormData struct {
+    ProfileID       string
+    Audience        string
+    TechFocus       string
+    Technologies    []string
+    FocusArea       string
+    SkillsFormat    string
+    SkillsLimit     int    // max skills per category/total (0 = no limit)
+    CVLength        string
+    SubmitConfirmed bool
+}
+```
+
+#### Usage
+
+```go
+// Create with profile options and extracted technologies
+profileOpts := []forms.ProfileOption{
+    {ID: "1", Name: "Software Engineer"},
+    {ID: "2", Name: "Tech Lead"},
+}
+extractedTechs := []forms.ExtractedTechnology{
+    {Name: "Go"}, {Name: "Python"}, {Name: "React"},
+}
+
+data := &forms.CVConfigFormData{}
+form := forms.NewCVConfigForm(data, profileOpts, extractedTechs, 80, 40)
+```
+
+#### Wizard Steps
+
+**Step 1 - WHO**: Profile and Audience selection
+- Select CV Profile (required)
+- Target Audience (Hiring Manager, Recruiter, Peer)
+
+**Step 2 - TECH**: Technology focus
+- Technology Focus (Highlight specific tech, Balanced)
+- Technologies to highlight (MultiSelect from extracted technologies)
+- Focus Area (Backend, Frontend, Full Stack, Infrastructure, Leadership)
+
+**Step 3 - FORMAT**: Output formatting
+- Skills Format (Flat list, Grouped by category)
+- Skills Limit (5/10/15/20 per category, or no limit)
+- CV Length (Concise, Standard, Comprehensive)
+
+#### Supporting Types
+
+```go
+// Skills limit presets
+type SkillsLimitOption struct {
+    Value int
+    Label string
+}
+
+func SkillsLimitOptions() []SkillsLimitOption // Returns preset options
+
+// Profile option for select field
+type ProfileOption struct {
+    ID   string
+    Name string
+}
+
+// Technology extracted from events
+type ExtractedTechnology struct {
+    Name string
+}
+```
+
+---
+
 ## Validators
 
-The forms package provides 20+ validators in [`internal/cli/forms/validators.go`](../internal/cli/forms/validators.go).
+The forms package provides 25 validators in [`internal/cli/forms/validators.go`](../internal/cli/forms/validators.go) and [`internal/cli/forms/skill_form.go`](../internal/cli/forms/skill_form.go).
 
 ### Generic Validators
 
@@ -1082,7 +1239,7 @@ Models embed huh forms for full-screen editing. See examples in [`internal/cli/m
 
 #### Strategy-Aware Forms (CaptureForm)
 
-**File**: `internal/cli/models/huh_capture_form.go`
+**File**: `internal/cli/models/capture_form.go`
 
 ```go
 type CaptureForm struct {
@@ -1893,8 +2050,8 @@ modal.SetTestResult(&ModalEditResult[*career.Burst]{
   - `EditFactModal` (161 lines)
 
 - **Model Integration**: [`internal/cli/models/`](../internal/cli/models/)
-  - [`huh_capture_form.go`](../internal/cli/models/huh_capture_form.go) (158 lines) - Career event capture wrapper
-  - [`huh_skill_form.go`](../internal/cli/models/huh_skill_form.go) (124 lines) - Skill management wrapper
+  - [`capture_form.go`](../internal/cli/models/capture_form.go) (165 lines) - Career event capture wrapper
+  - [`skill_form.go`](../internal/cli/models/skill_form.go) (123 lines) - Skill management wrapper
   - [`burst_suggestion_new.go`](../internal/cli/models/burst_suggestion_new.go) (544 lines)
   - [`metadata_editor_new.go`](../internal/cli/models/metadata_editor_new.go) (276 lines)
   - [`fact_editor_new.go`](../internal/cli/models/fact_editor_new.go) (243 lines)

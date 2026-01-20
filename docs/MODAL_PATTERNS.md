@@ -690,10 +690,20 @@ KaRiya uses the `bubbletea-overlay` library (v0.6.3) for compositing modal dialo
 
 #### 1. Create Modal Component
 
-Modal must implement `tea.Model` interface:
+Modal must implement `tea.Model` interface and use UIKit components:
 
 ```go
+import (
+    tea "github.com/charmbracelet/bubbletea"
+    
+    // UIKit components (REQUIRED)
+    "github.com/baphled/kariya/internal/cli/themes"
+    "github.com/baphled/kariya/internal/cli/uikit/containers"
+    "github.com/baphled/kariya/internal/cli/uikit/primitives"
+)
+
 type YourModal struct {
+    theme   themes.Theme  // REQUIRED: Store theme for View()
     visible bool
     width   int
     height  int
@@ -719,17 +729,28 @@ func (m *YourModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *YourModal) View() string {
     if !m.visible { return "" }
     
-    // CRITICAL: Wrap content with solid background
-    return lipgloss.NewStyle().
-        Border(lipgloss.RoundedBorder()).
-        BorderForeground(styles.ColorBorder).
-        Background(styles.ColorBackground). // Prevents transparency!
-        Padding(1, 2).
-        Render(content)
+    // REQUIRED: Nil theme guard
+    theme := m.theme
+    if theme == nil {
+        theme = themes.NewDefaultTheme()
+    }
+    
+    // REQUIRED: Use UIKit Box with solid background
+    return containers.NewBox(theme).
+        Content(content).
+        Padding(2).
+        Background(theme.BackgroundColor()). // REQUIRED: Prevents transparency!
+        Render()
 }
 ```
 
-**CRITICAL**: Always set `Background(styles.ColorBackground)` to prevent transparency issues!
+> **CRITICAL: UIKit Requirements for Modal View()**
+>
+> 1. **Nil theme guard**: Always check for nil theme and use default
+> 2. **Use UIKit containers.Box**: Not direct lipgloss styling
+> 3. **Solid background**: Always call `.Background(theme.BackgroundColor())`
+>
+> See [UIKit Guide](./UIKIT_GUIDE.md) for complete patterns.
 
 #### 2. Add Modal to Intent
 

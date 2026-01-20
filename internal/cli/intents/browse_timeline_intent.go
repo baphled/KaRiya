@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/rmhubbert/bubbletea-overlay"
 )
 
 // Custom message types for BrowseTimeline state transitions.
@@ -19,24 +20,6 @@ import (
 type EventSelectedMsg struct {
 	Event *career.CareerEvent
 	Index int
-}
-
-// staticViewModel is a simple tea.Model that just returns static content.
-// Used as background for bubbletea-overlay compositing.
-type staticViewModel struct {
-	content string
-}
-
-func (m *staticViewModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m *staticViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
-}
-
-func (m *staticViewModel) View() string {
-	return m.content
 }
 
 // FilterChangedMsg indicates the filters have changed.
@@ -108,6 +91,9 @@ type BrowseTimelineIntent struct {
 
 	// viewDetailModal holds the event detail viewer modal (shown over the list)
 	viewDetailModal *components.ViewEventDetailModal
+
+	// viewSkillsModal holds the skills viewer modal (shown over event detail)
+	viewSkillsModal *components.ViewEventSkillsModal
 }
 
 // NewBrowseTimelineIntent creates a new BrowseTimeline intent.
@@ -331,8 +317,22 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
+	// If view skills modal is visible, handle it first (it overlays event detail)
+	if i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() {
+		_, cmd := i.viewSkillsModal.Update(msg)
+		if !i.viewSkillsModal.IsVisible() {
+			// Modal closed - clear the modal reference
+			i.viewSkillsModal = nil
+		}
+		return cmd
+	}
+
 	// If view detail modal is visible, handle it next
 	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+		// Check for 's' key to show skills before passing to modal
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "s" {
+			return i.showSkillsForCurrentEvent()
+		}
 		_, cmd := i.viewDetailModal.Update(msg)
 		if !i.viewDetailModal.IsVisible() {
 			// Modal closed - clear the modal reference
@@ -444,7 +444,12 @@ func (i *BrowseTimelineIntent) View() string {
 
 		// If view detail modal is visible, overlay it on the COMPLETE rendered view
 		if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
-			return i.renderViewDetailModalOverlay(baseView)
+			detailView := i.renderViewDetailModalOverlay(baseView)
+			// If skills modal is also visible, overlay it on top of the detail modal
+			if i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() {
+				return i.renderViewSkillsModalOverlay(detailView)
+			}
+			return detailView
 		}
 
 		return baseView
@@ -626,6 +631,12 @@ func (i *BrowseTimelineIntent) HasActiveFilters() bool {
 		f.DateTo != "" ||
 		(f.SortBy != "" && f.SortBy != "date") || // date is default
 		(f.SortOrder != "" && f.SortOrder != "desc") // desc is default
+}
+
+// HasVisibleSkillsModal returns true if the skills modal is currently visible.
+// Used for testing purposes.
+func (i *BrowseTimelineIntent) HasVisibleSkillsModal() bool {
+	return i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible()
 }
 
 // ClearFilters clears filters in FIFO order (most recent first).
@@ -819,7 +830,7 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 			termInfo := i.GetTerminalInfo()
 			width := 120
 			height := 40
-			if termInfo != nil {
+			if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 				width = termInfo.Width
 				height = termInfo.Height
 			}
@@ -832,7 +843,7 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 				termInfo := i.GetTerminalInfo()
 				width := 120
 				height := 40
-				if termInfo != nil {
+				if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 					width = termInfo.Width
 					height = termInfo.Height
 				}
@@ -864,7 +875,7 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 			termInfo := i.GetTerminalInfo()
 			width := 120
 			height := 40
-			if termInfo != nil {
+			if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 				width = termInfo.Width
 				height = termInfo.Height
 			}
@@ -904,7 +915,8 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 		termInfo := i.GetTerminalInfo()
 		width := 120
 		height := 40
-		if termInfo != nil {
+		// Only use terminal dimensions if they are valid (non-zero)
+		if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 			width = termInfo.Width
 			height = termInfo.Height
 		}
@@ -987,78 +999,24 @@ func (i *BrowseTimelineIntent) getStateName() string {
 	}
 }
 
-// renderFilterModalOverlay renders the filter modal overlay using bubbletea-overlay.
-// The modal is automatically positioned and composited onto the background.
+// renderFilterModalOverlay renders the filter modal centered on the background.
 func (i *BrowseTimelineIntent) renderFilterModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the form onto the background
-	// Position at Center/Center with a small upward offset to avoid footer
-	overlayModel := overlay.New(
-		i.filterModal,  // Foreground: the form modal
-		bgModel,        // Background: the rendered timeline view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.filterModal, background)
 }
 
-// renderQuickAddModalOverlay renders the quick add event modal using bubbletea-overlay.
+// renderQuickAddModalOverlay renders the quick add event modal centered on the background.
 func (i *BrowseTimelineIntent) renderQuickAddModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the form onto the background
-	overlayModel := overlay.New(
-		i.quickAddModal, // Foreground: the form modal
-		bgModel,         // Background: the rendered timeline view
-		overlay.Center,  // X position
-		overlay.Center,  // Y position
-		0,               // X offset
-		-2,              // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.quickAddModal, background)
 }
 
-// renderEditModalOverlay renders the edit event modal using bubbletea-overlay.
+// renderEditModalOverlay renders the edit event modal centered on the background.
 func (i *BrowseTimelineIntent) renderEditModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the form onto the background
-	overlayModel := overlay.New(
-		i.editModal,    // Foreground: the form modal
-		bgModel,        // Background: the rendered timeline view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.editModal, background)
 }
 
-// renderDeleteModalOverlay renders the delete confirmation modal using bubbletea-overlay.
+// renderDeleteModalOverlay renders the delete confirmation modal centered on the background.
 func (i *BrowseTimelineIntent) renderDeleteModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
-
-	// Use bubbletea-overlay to composite the delete modal onto the background
-	overlayModel := overlay.New(
-		i.deleteModal,  // Foreground: the delete confirmation modal
-		bgModel,        // Background: the rendered timeline view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.deleteModal, background)
 }
 
 // renderSearchModalOverlay renders the search modal using bubbletea-overlay.
@@ -1073,29 +1031,55 @@ func (i *BrowseTimelineIntent) renderSortModalOverlay(background string) string 
 	return i.sortModal.RenderOverlay(background)
 }
 
-// renderViewDetailModalOverlay renders the event detail modal using bubbletea-overlay.
+// renderViewDetailModalOverlay renders the event detail modal centered on the background.
 func (i *BrowseTimelineIntent) renderViewDetailModalOverlay(background string) string {
-	// Create a simple background model that just returns the rendered view
-	bgModel := &staticViewModel{content: background}
+	return behaviors.RenderModalOverlay(i.viewDetailModal, background)
+}
 
-	// Use bubbletea-overlay to composite the detail modal onto the background
-	overlayModel := overlay.New(
-		i.viewDetailModal, // Foreground: the event detail modal
-		bgModel,           // Background: the rendered timeline view
-		overlay.Center,    // X position
-		overlay.Center,    // Y position
-		0,                 // X offset
-		-2,                // Y offset (move up 2 lines to avoid footer)
-	)
+// showSkillsForCurrentEvent loads and displays skills for the currently selected event.
+func (i *BrowseTimelineIntent) showSkillsForCurrentEvent() tea.Cmd {
+	if i.state.selectedEvent == nil {
+		return nil
+	}
 
-	return overlayModel.View()
+	// Get skills for the event using the CLI service
+	var skills []*career.Skill
+	if i.context.CLIEventService != nil {
+		ctx := i.getContext()
+		var err error
+		skills, err = i.context.CLIEventService.GetSkillsForEvent(ctx, i.state.selectedEvent.ID)
+		if err != nil {
+			// Log error but show empty skills modal
+			skills = []*career.Skill{}
+		}
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	// Create and show the skills modal
+	theme := i.Theme()
+	i.viewSkillsModal = components.NewViewEventSkillsModal(i.state.selectedEvent.ID, skills, theme)
+	i.viewSkillsModal.SetDimensions(width, height)
+	i.viewSkillsModal.Show()
+
+	return nil
+}
+
+// renderViewSkillsModalOverlay renders the skills modal centered on the background.
+func (i *BrowseTimelineIntent) renderViewSkillsModalOverlay(background string) string {
+	return behaviors.RenderModalOverlay(i.viewSkillsModal, background)
 }
 
 // openSearchModal creates and initializes the search modal.
 func (i *BrowseTimelineIntent) openSearchModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
@@ -1111,7 +1095,7 @@ func (i *BrowseTimelineIntent) openSearchModal() tea.Cmd {
 func (i *BrowseTimelineIntent) openSortModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
@@ -1133,7 +1117,7 @@ func (i *BrowseTimelineIntent) openSortModal() tea.Cmd {
 func (i *BrowseTimelineIntent) openFilterModal() tea.Cmd {
 	termInfo := i.GetTerminalInfo()
 	width, height := 120, 40
-	if termInfo != nil {
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
@@ -1157,30 +1141,30 @@ func (i *BrowseTimelineIntent) openFilterModal() tea.Cmd {
 }
 
 // getContextHelp returns themed keyboard shortcuts for the current state.
-// This follows the legacy pattern of using KeyBadge components for consistent styling.
+// Uses UIKit primitives for consistent badge styling.
 func (i *BrowseTimelineIntent) getContextHelp() string {
 	theme := i.Theme()
 
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Search, Filter, Sort, Clear (conditional), Back + Global shortcuts
-		badges := []components.KeyBadge{
-			components.NavigateBadge(), // ↑/↓: Navigate
-			components.NewKeyBadge("Enter", "View Details"),
-			components.AddBadge(),    // a: Add
-			components.EditBadge(),   // e: Edit
-			components.DeleteBadge(), // d: Delete
-			components.SearchBadge(), // /: Search
-			components.FilterBadge(), // f: Filter
-			components.NewKeyBadge("s", "Sort"),
+		badges := []*primitives.Badge{
+			primitives.NavigateBadge(theme), // ↑/↓: Navigate
+			primitives.HelpKeyBadge("Enter", "View Details", theme),
+			primitives.AddBadge(theme),    // a: Add
+			primitives.EditBadge(theme),   // e: Edit
+			primitives.DeleteBadge(theme), // d: Delete
+			primitives.SearchBadge(theme), // /: Search
+			primitives.FilterBadge(theme), // f: Filter
+			primitives.HelpKeyBadge("s", "Sort", theme),
 		}
 
 		// Conditionally add "Clear filters" badge when filters are active
 		if i.HasActiveFilters() {
-			badges = append(badges, components.NewKeyBadge("x", "Clear filters"))
+			badges = append(badges, primitives.HelpKeyBadge("x", "Clear filters", theme))
 		}
 
-		badges = append(badges, components.BackBadge()) // Esc: Back
+		badges = append(badges, primitives.BackBadge(theme)) // Esc: Back
 
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme, badges...),
@@ -1192,9 +1176,9 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 		// Event detail footer: Edit, Delete, Back + Global shortcuts
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.EditBadge(),   // e: Edit
-				components.DeleteBadge(), // d: Delete
-				components.BackBadge(),   // Esc: Back
+				primitives.EditBadge(theme),   // e: Edit
+				primitives.DeleteBadge(theme), // d: Delete
+				primitives.BackBadge(theme),   // Esc: Back
 			),
 			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
 		)

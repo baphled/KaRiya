@@ -11,7 +11,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	cvservice "github.com/baphled/kariya/internal/service/career/cv"
@@ -118,12 +118,13 @@ func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 // View renders the screen with full CV content in a scrollable viewport.
 func (s *CVPreviewScreen) View() string {
+	theme := s.getTheme()
 	var b strings.Builder
 
 	// Title
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorAccentTeal)
+		Foreground(theme.AccentColor())
 
 	b.WriteString(titleStyle.Render("📄 CV Preview"))
 	b.WriteString("\n")
@@ -183,18 +184,19 @@ func (s *CVPreviewScreen) renderCVContent() string {
 	}
 
 	// Section styles
+	theme := s.getTheme()
 	sectionTitleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorAccentTeal)
+		Foreground(theme.AccentColor())
 
 	headerStyle := lipgloss.NewStyle().
 		Bold(true)
 
 	mutedStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
+		Foreground(theme.SecondaryColor())
 
 	bulletStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary)
+		Foreground(theme.ForegroundColor())
 
 	// Render personal details header
 	b.WriteString(s.renderPersonalDetails(contentWidth))
@@ -278,17 +280,18 @@ func (s *CVPreviewScreen) renderPersonalDetails(width int) string {
 	profile := cvservice.NarrativeProfileFromConfig(s.profileConfig)
 
 	var b strings.Builder
+	theme := s.getTheme()
 
 	// Name (large, bold) - using warning color for warm appearance
 	nameStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(styles.ColorWarning)
+		Foreground(theme.WarningColor())
 
 	roleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextPrimary)
+		Foreground(theme.ForegroundColor())
 
 	contactStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
+		Foreground(theme.SecondaryColor())
 
 	// Name
 	b.WriteString(nameStyle.Render(profile.Name))
@@ -364,8 +367,9 @@ func wordWrap(text string, width int) string {
 
 // renderFooter renders the footer with help text and scroll indicator.
 func (s *CVPreviewScreen) renderFooter() string {
+	theme := s.getTheme()
 	footerStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary)
+		Foreground(theme.SecondaryColor())
 
 	var footer strings.Builder
 	footer.WriteString(strings.Repeat("─", min(60, s.width-4)))
@@ -386,6 +390,16 @@ func (s *CVPreviewScreen) renderFooter() string {
 // GetCV returns the CV data.
 func (s *CVPreviewScreen) GetCV() *career.CVView {
 	return s.cv
+}
+
+// getTheme returns the theme from BaseScreen or a default theme.
+func (s *CVPreviewScreen) getTheme() themes.Theme {
+	if t := s.BaseScreen.Theme(); t != nil {
+		if theme, ok := t.(themes.Theme); ok {
+			return theme
+		}
+	}
+	return themes.NewDefaultTheme()
 }
 
 // min returns the minimum of two integers.

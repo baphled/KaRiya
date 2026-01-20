@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
@@ -223,11 +223,11 @@ func (m *SkillFilterModal) View() string {
 		return ""
 	}
 
-	// Build footer with KeyBadge components showing keyboard shortcuts
-	footer := RenderHelpFooter(m.theme,
-		NewKeyBadge("Tab", "Next field"),
-		NewKeyBadge("Enter", "Apply"),
-		NewKeyBadge("Esc", "Cancel"),
+	// Build footer with primitives showing keyboard shortcuts
+	footer := primitives.RenderHelpFooter(m.theme,
+		primitives.NextFieldBadge(m.theme),
+		primitives.ApplyBadge(m.theme),
+		primitives.CancelBadge(m.theme),
 	)
 
 	// Build modal content with form and footer
@@ -236,13 +236,16 @@ func (m *SkillFilterModal) View() string {
 	content.WriteString("\n\n")
 	content.WriteString(footer)
 
-	// Wrap the form in a styled box with solid background, border, and padding
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
-		Render(content.String())
+	// Wrap the form in a styled box with solid background using UIKit
+	theme := m.theme
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+	return containers.NewBox(theme).
+		Content(content.String()).
+		Padding(1).
+		Background(theme.BackgroundColor()).
+		Render()
 }
 
 // IsVisible returns whether the modal is currently visible.

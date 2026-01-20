@@ -142,17 +142,12 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.selectedAudience).To(Equal("hiring_manager"))
 		})
 
-		It("should quit application on q key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
-		It("should quit application on ctrl+c", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			// ctrl+c now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
-		})
 	})
 
 	Describe("Update - Audience Selection", func() {
@@ -188,10 +183,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectProfile))
 		})
 
-		It("should quit application on q key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 	})
 
@@ -225,10 +220,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateSelectAudience))
 		})
 
-		It("should quit application on q key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 	})
 
@@ -257,10 +252,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStatePreview))
 		})
 
-		It("should quit application on q key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 	})
 
@@ -299,10 +294,10 @@ var _ = Describe("GenerateCVIntent", func() {
 			Expect(intent.state.currentState).To(Equal(GenerateCVStateReview))
 		})
 
-		It("should quit application on q key", func() {
+		It("should ignore 'q' key within intent (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			// q now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 	})
 

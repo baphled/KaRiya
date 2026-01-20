@@ -1,10 +1,12 @@
 package components
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -37,27 +39,43 @@ import (
 //	    return renderModalOverlay(modal, background)
 //	}
 type ViewEventDetailModal struct {
-	event      *career.CareerEvent
-	theme      themes.Theme
-	visible    bool
-	width      int
-	height     int
-	action     string // Always empty for read-only modal (kept for API compatibility)
-	viewport   viewport.Model
-	ready      bool
-	hasContent bool
+	event            *career.CareerEvent
+	theme            themes.Theme
+	visible          bool
+	width            int
+	height           int
+	action           string // Always empty for read-only modal (kept for API compatibility)
+	viewport         viewport.Model
+	ready            bool
+	hasContent       bool
+	showSkillsOption bool // Whether to show "s: Skills" in footer (default: true)
 }
 
 // NewViewEventDetailModal creates a new event detail modal.
+// By default, shows the "s: Skills" option in the footer.
+// Use WithShowSkillsOption(false) to hide this option.
 func NewViewEventDetailModal(event *career.CareerEvent, theme themes.Theme) *ViewEventDetailModal {
-	return &ViewEventDetailModal{
-		event:   event,
-		theme:   theme,
-		visible: false,
-		width:   80,
-		height:  24,
-		action:  "",
+	// Ensure theme is not nil at initialization (UIKit pattern)
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
 	}
+	return &ViewEventDetailModal{
+		event:            event,
+		theme:            theme,
+		visible:          false,
+		width:            80,
+		height:           24,
+		action:           "",
+		showSkillsOption: true, // Default: show skills option
+	}
+}
+
+// WithShowSkillsOption sets whether to show the "s: Skills" option in the footer.
+// This should be set to false when viewing events from the ManageSkills workflow,
+// since the user is already in a skills context.
+func (m *ViewEventDetailModal) WithShowSkillsOption(show bool) *ViewEventDetailModal {
+	m.showSkillsOption = show
+	return m
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
@@ -106,6 +124,8 @@ func (m *ViewEventDetailModal) View() string {
 		return ""
 	}
 
+	theme := m.theme
+
 	// Calculate modal dimensions
 	// Keep modal height reasonable: max 30 lines or 70% of terminal, whichever is smaller
 	maxModalHeight := 30
@@ -118,54 +138,67 @@ func (m *ViewEventDetailModal) View() string {
 	}
 
 	modalWidth := m.width - 12 // Leave margins
+	if modalWidth < 60 {
+		modalWidth = 60 // Ensure minimum readable width
+	}
 	if modalWidth > 80 {
 		modalWidth = 80 // Max width for readability
 	}
 
 	// Render event details
-	content := RenderEventDetailCard(m.event, m.theme)
+	content := RenderEventDetailCard(m.event, theme)
 	contentLines := strings.Split(content, "\n")
 	contentHeight := len(contentLines)
 
 	// Calculate viewport height (modal height - borders - padding - footer)
-	viewportHeight := maxModalHeight - 6 // Account for border (2), padding (2), footer (2)
-	if viewportHeight < 5 {
-		viewportHeight = 5
+	viewportHeight := maxModalHeight - 4 // Account for border (2), footer (2)
+	if viewportHeight < 10 {
+		viewportHeight = 10 // Ensure minimum usable height
 	}
 
 	// Initialize viewport if needed
 	if !m.ready {
-		m.viewport = viewport.New(modalWidth-4, viewportHeight)
+		vpWidth := modalWidth - 4
+		if vpWidth < 10 {
+			vpWidth = 10 // Minimum viewport width
+		}
+		if viewportHeight < 5 {
+			viewportHeight = 5 // Minimum viewport height
+		}
+		m.viewport = viewport.New(vpWidth, viewportHeight)
 		m.viewport.SetContent(content)
 		m.hasContent = contentHeight > viewportHeight
 		m.ready = true
 	}
 
-	// Build footer with scroll indicator
-	scrollHint := "Enter/Esc: Close"
+	// Build footer with UIKit primitives
+	badges := []*primitives.Badge{
+		primitives.HelpKeyBadge("↑↓/jk", "Scroll", theme),
+	}
+	if m.showSkillsOption {
+		badges = append(badges, primitives.HelpKeyBadge("s", "Skills", theme))
+	}
+	badges = append(badges, primitives.HelpKeyBadge("Enter/Esc", "Close", theme))
+
+	// Add scroll percentage if scrollable
+	var scrollHint string
 	if m.hasContent {
 		percentScrolled := int(m.viewport.ScrollPercent() * 100)
-		scrollHint = lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Render("↑↓/j/k: Scroll | " + "Enter/Esc: Close " + lipgloss.NewStyle().Faint(true).Render("["+string(rune(percentScrolled/10+'0'))+string(rune(percentScrolled%10+'0'))+"%]"))
-	} else {
-		scrollHint = lipgloss.NewStyle().
-			Foreground(styles.ColorTextSecondary).
-			Render(scrollHint)
+		badges = append(badges, primitives.HelpKeyBadge(fmt.Sprintf("[%d%%]", percentScrolled), "", theme))
 	}
+	scrollHint = primitives.RenderHelpFooter(theme, badges...)
 
 	// Build modal content
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, m.viewport.View(), "", scrollHint)
 
-	// Wrap in styled box with solid background
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
+	// Wrap in styled box with solid background using UIKit
+	return containers.NewBox(theme).
+		Content(modalContent).
 		Width(modalWidth).
-		MaxHeight(maxModalHeight).
-		Render(modalContent)
+		Height(maxModalHeight).
+		Padding(2).
+		Background(theme.BackgroundColor()).
+		Render()
 }
 
 // SetDimensions updates the modal's available dimensions.

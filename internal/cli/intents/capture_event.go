@@ -1,10 +1,10 @@
 package intents
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/types"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
@@ -146,7 +146,7 @@ type CaptureEventModel struct {
 	strategy CaptureStrategy
 
 	// submitModal is shown during async submission (modal overlay pattern)
-	submitModal *components.ModalContent
+	submitModal *feedback.Modal
 
 	// postSaveReview indicates we're reviewing enriched data after save (not pre-save review)
 	postSaveReview bool

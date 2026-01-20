@@ -254,10 +254,10 @@ var _ = Describe("ImportWizardIntent", func() {
 		})
 
 		Describe("ImportFileSelectState", func() {
-			It("should handle quit key by returning tea.Quit", func() {
+			It("should ignore 'q' key within intent (quit only from main menu)", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-				// q now returns tea.Quit to quit the application
-				Expect(cmd).ToNot(BeNil())
+				// q no longer quits from within intents - only from main menu
+				Expect(cmd).To(BeNil())
 			})
 
 			It("should handle escape key", func() {
@@ -304,10 +304,10 @@ var _ = Describe("ImportWizardIntent", func() {
 				Expect(data.CurrentState).To(Equal(intents.ImportFileSelectState))
 			})
 
-			It("should quit application on 'q' key", func() {
+			It("should ignore 'q' key within intent (quit only from main menu)", func() {
 				cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-				// q now returns tea.Quit to quit the application
-				Expect(cmd).ToNot(BeNil())
+				// q no longer quits from within intents - only from main menu
+				Expect(cmd).To(BeNil())
 			})
 		})
 
@@ -430,12 +430,6 @@ var _ = Describe("ImportWizardIntent", func() {
 	Describe("Edge Cases", func() {
 		BeforeEach(func() {
 			model.Init()
-		})
-
-		It("should handle ctrl+c like quit", func() {
-			cmd := model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-			// ctrl+c now returns tea.Quit to quit the application
-			Expect(cmd).ToNot(BeNil())
 		})
 
 		It("should handle progress with zero rows", func() {

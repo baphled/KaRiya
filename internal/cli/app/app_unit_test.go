@@ -2,10 +2,11 @@ package app_test
 
 import (
 	"context"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 	career "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -233,7 +234,7 @@ var _ = Describe("App Unit Tests", func() {
 		Context("logo animation tick", func() {
 			It("should update logo animation when in menu state", func() {
 				// Send a tick message to update logo animation
-				msg := components.TickMsg{}
+				msg := display.TickMsg(time.Now())
 				newModel, _ := model.Update(msg)
 				Expect(newModel).NotTo(BeNil())
 			})
@@ -255,24 +256,7 @@ var _ = Describe("App Unit Tests", func() {
 		})
 
 		Context("when intent returns result", func() {
-			It("should return to menu state", func() {
-				// Send quit key to intent to complete it
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
-				newModel, cmdResult := model.Update(msg)
-				Expect(newModel).NotTo(BeNil())
-				Expect(cmdResult).NotTo(BeNil())
-
-				// Execute the command to trigger state change
-				if cmdResult != nil {
-					msg := cmdResult()
-					if msg != nil {
-						newModel, _ = model.Update(msg)
-						model = newModel.(*app.Model)
-					}
-				}
-			})
-
-			It("should forward escape to intent which returns to menu", func() {
+			It("should return to menu state via escape", func() {
 				// Cancel intent with escape - forwarded to intent (already activated by BeforeEach)
 				msg := tea.KeyMsg{Type: tea.KeyEsc}
 				newModel, cmdResult := model.Update(msg)
@@ -292,12 +276,18 @@ var _ = Describe("App Unit Tests", func() {
 				Expect(state).To(Equal(app.StateMenu))
 			})
 
-			It("should return tea.Quit on 'q' key", func() {
+			It("should ignore 'q' key within intent to prevent accidental exits", func() {
+				// 'q' key is no longer handled at intent level to prevent accidental exits
+				// See: fix(navigation): remove global quit key to prevent accidental exits
 				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
 				newModel, cmdResult := model.Update(msg)
 				Expect(newModel).NotTo(BeNil())
-				// q now returns tea.Quit
-				Expect(cmdResult).NotTo(BeNil())
+				// 'q' no longer quits from within intents - returns nil command
+				Expect(cmdResult).To(BeNil())
+
+				// Should still be in intent state
+				state := model.GetState()
+				Expect(state).To(Equal(app.StateIntent))
 			})
 		})
 

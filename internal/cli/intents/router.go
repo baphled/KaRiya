@@ -6,7 +6,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 )
@@ -34,7 +33,7 @@ type DefaultIntentRouter struct {
 	terminalInfo *terminal.Info
 
 	// logo is the shared logo instance passed to all intents
-	logo *components.ASCIILogo
+	logo LogoModel
 
 	// themeManager manages the application's theme system
 	themeManager *themes.ThemeManager
@@ -99,7 +98,7 @@ func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]int
 
 	// Propagate logo to the new intent if it has BaseIntent
 	if r.logo != nil {
-		if setter, ok := intent.(interface{ SetLogo(*components.ASCIILogo) }); ok {
+		if setter, ok := intent.(interface{ SetLogo(LogoModel) }); ok {
 			setter.SetLogo(r.logo)
 		}
 	}
@@ -244,7 +243,7 @@ func (r *DefaultIntentRouter) GetTerminalInfo() *terminal.Info {
 }
 
 // SetLogo sets the shared logo instance for all intents
-func (r *DefaultIntentRouter) SetLogo(logo *components.ASCIILogo) {
+func (r *DefaultIntentRouter) SetLogo(logo LogoModel) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -252,14 +251,14 @@ func (r *DefaultIntentRouter) SetLogo(logo *components.ASCIILogo) {
 
 	// Propagate to active intent if it has BaseIntent
 	if r.activeIntent != nil {
-		if setter, ok := r.activeIntent.(interface{ SetLogo(*components.ASCIILogo) }); ok {
+		if setter, ok := r.activeIntent.(interface{ SetLogo(LogoModel) }); ok {
 			setter.SetLogo(logo)
 		}
 	}
 }
 
 // GetLogo returns the shared logo instance
-func (r *DefaultIntentRouter) GetLogo() *components.ASCIILogo {
+func (r *DefaultIntentRouter) GetLogo() LogoModel {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

@@ -48,12 +48,12 @@ var _ = Describe("FactManagement Navigation", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should quit application when pressing 'q' from list", func() {
+		It("should ignore 'q' key from list (quit only from main menu)", func() {
 			env.SelectIntentByName("fact_management")
-			// Note: q now quits the entire app
-			// This test verifies the quit command is handled without panic
+			// q no longer quits from within intents - only from main menu
+			// This test verifies 'q' is handled gracefully (does nothing)
 			env.Quit()
-			// After quit, the app terminates - we can't assert view content
+			// Intent should still be active
 		})
 	})
 
