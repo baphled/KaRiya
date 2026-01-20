@@ -18,13 +18,14 @@ import (
 )
 
 // ExportArtifactIntent implements the Intent interface for artifact export.
-// It orchestrates screens and modal overlays for the export workflow.
+// It uses a wizard modal for configuration followed by preview and export modals.
 //
 // The workflow uses:
-// - Screens for: TypeSelect, FormatSelect, DestSelect, Preview (scrollable content)
+// - Wizard modal for: Configuration (type, format, destination selection in 2 steps)
+// - Screen for: Preview (scrollable content)
 // - Modal overlays for: Confirm, Progress, Success, Error (dialog overlays)
 //
-// This matches the visual pattern used in other workflows like BrowseTimeline and GenerateCV.
+// This matches the fluid pattern used in GenerateCV with its wizard modal.
 type ExportArtifactIntent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management
 	*BaseIntent
@@ -53,6 +54,9 @@ type ExportArtifactIntent struct {
 	// activeScreen holds the current screen being displayed
 	activeScreen screens.Screen
 
+	// Wizard modal for configuration (replaces type/format/dest screens)
+	wizardModal *components.ExportConfigWizardModal
+
 	// Modal overlays for confirm, progress, success, and error states
 	confirmModal  *components.ExportConfirmModal
 	progressModal *components.ExportProgressModal
@@ -79,17 +83,35 @@ func NewExportArtifactIntent(ctx *ExportArtifactContext) (*ExportArtifactIntent,
 	}, nil
 }
 
-// Init initializes the intent and shows the first screen.
+// Init initializes the intent and shows the configuration wizard.
 func (e *ExportArtifactIntent) Init() tea.Cmd {
 	e.active = true
-	e.transitionToScreen(e.newTypeSelectScreen())
-	return nil
+	e.currentState = ExportStateConfigure
+
+	// Get terminal dimensions
+	width, height := 100, 40
+	termInfo := e.GetTerminalInfo()
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	// Create and show the configuration wizard modal
+	e.wizardModal = components.NewExportConfigWizardModal(width, height)
+	return e.wizardModal.Init()
 }
 
-// Update handles messages and delegates to the active screen or modal.
+// Update handles messages and delegates to the wizard, screen, or modal.
 func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
 	if !e.active {
 		return nil
+	}
+
+	// Handle window resize for wizard
+	if _, ok := msg.(tea.WindowSizeMsg); ok {
+		if e.wizardModal != nil && e.wizardModal.IsVisible() {
+			return e.wizardModal.Update(msg)
+		}
 	}
 
 	// Handle global keys first
@@ -103,7 +125,37 @@ func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 
-	// Handle modal interactions first (modals take priority over screens)
+	// Handle wizard modal first (highest priority when visible)
+	if e.wizardModal != nil && e.wizardModal.IsVisible() {
+		cmd := e.wizardModal.Update(msg)
+
+		// Check if wizard completed or cancelled
+		if e.wizardModal.IsCompleted() {
+			// Get configuration from wizard
+			e.config = &ExportConfiguration{
+				ArtifactType: ExportArtifactType(e.wizardModal.GetArtifactType()),
+				Format:       ExportFormat(e.wizardModal.GetFormat()),
+				Destination:  ExportDestination(e.wizardModal.GetDestination()),
+			}
+			e.wizardModal = nil
+
+			// Generate preview and show preview screen
+			e.preview = e.generatePreview()
+			e.currentState = ExportStatePreview
+			e.transitionToScreen(e.newPreviewScreen())
+			return nil
+		}
+
+		if e.wizardModal.IsCancelled() {
+			e.wizardModal = nil
+			e.setCancelled()
+			return nil
+		}
+
+		return cmd
+	}
+
+	// Handle modal interactions (modals take priority over screens)
 	if e.confirmModal != nil && e.confirmModal.IsVisible() {
 		cmd, confirmed := e.confirmModal.Update(msg)
 		if confirmed {
@@ -203,33 +255,10 @@ func (e *ExportArtifactIntent) handleScreenResult(result screens.ScreenResult) t
 }
 
 // handleNavigateResult processes navigation results from screens.
-func (e *ExportArtifactIntent) handleNavigateResult(result screens.ScreenResult) tea.Cmd {
+func (e *ExportArtifactIntent) handleNavigateResult(_ screens.ScreenResult) tea.Cmd {
 	switch e.currentState {
-	case ExportStateSelectType:
-		// User selected artifact type
-		if artifactType, ok := result.Data().(ExportArtifactType); ok {
-			e.config = NewExportConfiguration(artifactType, e.context)
-			e.currentState = ExportStateSelectFormat
-			e.transitionToScreen(e.newFormatSelectScreen())
-		}
-
-	case ExportStateSelectFormat:
-		// User selected format
-		if format, ok := result.Data().(ExportFormat); ok {
-			e.config.Format = format
-			e.currentState = ExportStateSelectDest
-			e.transitionToScreen(e.newDestSelectScreen())
-		}
-
-	case ExportStateSelectDest:
-		// User selected destination
-		if dest, ok := result.Data().(ExportDestination); ok {
-			e.config.Destination = dest
-			// Generate preview and show it
-			e.preview = e.generatePreview()
-			e.currentState = ExportStatePreview
-			e.transitionToScreen(e.newPreviewScreen())
-		}
+	// Note: ExportStateConfigure (type/format/dest selection) is now handled by the wizard modal
+	// in Update(), not by screen navigation results
 
 	case ExportStatePreview:
 		// User confirmed preview, show confirmation modal
@@ -246,24 +275,30 @@ func (e *ExportArtifactIntent) handleNavigateResult(result screens.ScreenResult)
 // handleCancelResult processes cancel results (Esc key).
 func (e *ExportArtifactIntent) handleCancelResult() tea.Cmd {
 	switch e.currentState {
-	case ExportStateSelectType:
-		// Cancel from first screen - exit intent
+	case ExportStateConfigure:
+		// Cancel from wizard - handled by wizard itself
 		e.setCancelled()
 
-	case ExportStateSelectFormat:
-		// Go back to type selection
-		e.currentState = ExportStateSelectType
-		e.transitionToScreen(e.newTypeSelectScreen())
-
-	case ExportStateSelectDest:
-		// Go back to format selection
-		e.currentState = ExportStateSelectFormat
-		e.transitionToScreen(e.newFormatSelectScreen())
-
 	case ExportStatePreview:
-		// Go back to destination selection
-		e.currentState = ExportStateSelectDest
-		e.transitionToScreen(e.newDestSelectScreen())
+		// Go back to configuration wizard
+		e.currentState = ExportStateConfigure
+
+		// Get terminal dimensions
+		width, height := 100, 40
+		termInfo := e.GetTerminalInfo()
+		if termInfo != nil {
+			width = termInfo.Width
+			height = termInfo.Height
+		}
+
+		// Re-create wizard with previous configuration
+		e.wizardModal = components.NewExportConfigWizardModal(width, height)
+		if e.config != nil {
+			e.wizardModal.SetArtifactType(string(e.config.ArtifactType))
+			e.wizardModal.SetFormat(string(e.config.Format))
+			e.wizardModal.SetDestination(string(e.config.Destination))
+		}
+		e.activeScreen = nil
 
 		// Note: ExportStateConfirm, ExportStateComplete, ExportStateFailed are now handled by modals
 	}
@@ -307,6 +342,15 @@ func (e *ExportArtifactIntent) transitionToScreen(screen screens.Screen) {
 
 // View renders the current state using StandardView with modal overlays.
 func (e *ExportArtifactIntent) View() string {
+	// If wizard is visible, render it as the main content
+	if e.wizardModal != nil && e.wizardModal.IsVisible() {
+		// Create standard view with breadcrumbs showing we're in configuration
+		view := e.CreateViewWithBreadcrumbs("Main Menu", "Export Artifact", "Configure")
+		view.WithContent(e.wizardModal.View())
+		view.WithHelp(e.getContextHelp()).WithFooterSeparator(true)
+		return view.Render()
+	}
+
 	if e.activeScreen == nil {
 		return "No active screen"
 	}
@@ -372,14 +416,13 @@ func (e *ExportArtifactIntent) getContextHelp() string {
 	theme := e.Theme()
 
 	switch e.currentState {
+	case ExportStateConfigure:
+		// Wizard handles its own footer, so we just provide global badges
+		return ThemedGlobalBadges(theme)
 	case ExportStateSelectType, ExportStateSelectFormat, ExportStateSelectDest:
+		// Legacy states - kept for backward compatibility but no longer used
 		return CombineThemedFooters(
 			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
-		)
-	case ExportStateConfigure:
-		return CombineThemedFooters(
-			ThemedFormFooter(theme),
 			ThemedGlobalBadges(theme),
 		)
 	case ExportStatePreview:

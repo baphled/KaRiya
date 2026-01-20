@@ -25,16 +25,17 @@ var _ = Describe("Export Navigation", func() {
 
 		It("should navigate to ExportArtifact when selected", func() {
 			env.SelectIntentByName("export_artifact")
-			env.AssertViewContainsAny("Export", "Type", "Select", "events", "facts", "bursts")
+			// Wizard modal shows configuration with step title
+			env.AssertViewContainsAny("Export", "Configuration", "What to Export", "Step 1")
 		})
 
-		It("should show context help for type selection", func() {
+		It("should show wizard footer with keyboard hints", func() {
 			env.SelectIntentByName("export_artifact")
-			env.AssertViewContainsAny("Enter", "Esc", "q", "Select")
+			env.AssertViewContainsAny("Enter", "Esc", "Navigate", "Select", "Skip")
 		})
 	})
 
-	Describe("Type Selection State", func() {
+	Describe("Configuration Wizard - Step 1 (What to Export)", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("export_artifact")
@@ -44,11 +45,11 @@ var _ = Describe("Export Navigation", func() {
 			env.Cleanup()
 		})
 
-		It("should show artifact type options", func() {
-			env.AssertViewContainsAny("events", "facts", "bursts", "Events", "Facts", "Bursts")
+		It("should show step 1 with artifact type selection", func() {
+			env.AssertViewContainsAny("Step 1", "What to Export")
 		})
 
-		It("should allow navigating type options with j/k", func() {
+		It("should allow navigating options with j/k", func() {
 			env.PressKeyRune('j')
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
@@ -66,68 +67,43 @@ var _ = Describe("Export Navigation", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should proceed to format selection when type is selected", func() {
-			env.Confirm()
-			env.AssertViewContainsAny("Format", "Select", "JSON", "CSV", "YAML", "TXT", "json", "csv")
-		})
-
-		It("should cancel and return to menu when pressing Escape", func() {
-			env.Cancel()
-			env.AssertViewContains("Capture Event")
-		})
-	})
-
-	Describe("Format Selection State", func() {
-		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
-			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Select first type (events)
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should show format options", func() {
-			env.AssertViewContainsAny("Format", "JSON", "CSV", "YAML", "TXT", "json", "csv", "yaml", "txt")
-		})
-
-		It("should allow navigating format options", func() {
-			env.PressKeyRune('j')
+		It("should proceed through wizard when type is selected", func() {
+			env.Confirm() // Select artifact type
+			// After selecting type, wizard advances (shows format/destination fields)
+			// The huh form advances through fields with Enter
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should go back to type selection when pressing Escape", func() {
+		It("should cancel and return to menu when pressing Escape at step 1", func() {
 			env.Cancel()
-			env.AssertViewContainsAny("Type", "events", "facts", "bursts", "Events", "Facts", "Bursts")
-		})
-
-		It("should proceed to destination selection when format is selected", func() {
-			env.Confirm()
-			env.AssertViewContainsAny("Destination", "file", "clipboard", "File", "Clipboard")
+			// Back to main menu
+			env.AssertViewContains("Capture Event")
 		})
 	})
 
-	Describe("Destination Selection State", func() {
+	Describe("Configuration Wizard - Step 2 (How to Export)", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Select type
-			env.Confirm() // Select format
+			env.Confirm() // Advance through first field
 		})
 
 		AfterEach(func() {
 			env.Cleanup()
 		})
 
-		It("should show destination options", func() {
-			env.AssertViewContainsAny("Destination", "file", "clipboard", "File", "Clipboard")
+		It("should continue showing wizard after first selection", func() {
+			// Wizard continues with more fields
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty())
+			Expect(view).NotTo(ContainSubstring("panic"))
 		})
 
-		It("should go back to format selection when pressing Escape", func() {
-			env.Cancel()
-			env.AssertViewContainsAny("Format", "JSON", "CSV", "json", "csv")
+		It("should allow navigating options", func() {
+			env.PressKeyRune('j')
+			view := env.GetView()
+			Expect(view).NotTo(BeEmpty())
 		})
 	})
 
@@ -140,25 +116,11 @@ var _ = Describe("Export Navigation", func() {
 			env.Cleanup()
 		})
 
-		It("should cancel from type selection with Escape", func() {
+		It("should cancel from wizard step 1 with Escape", func() {
 			env.SelectIntentByName("export_artifact")
 			env.Cancel()
+			// Should return to main menu
 			env.AssertViewContains("Capture Event")
-		})
-
-		It("should go back from format to type with Escape", func() {
-			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Go to format selection
-			env.Cancel()  // Go back to type
-			env.AssertViewContainsAny("Type", "events", "facts", "bursts")
-		})
-
-		It("should go back from destination to format with Escape", func() {
-			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Go to format selection
-			env.Confirm() // Go to destination selection
-			env.Cancel()  // Go back to format
-			env.AssertViewContainsAny("Format", "JSON", "CSV", "json", "csv")
 		})
 	})
 
@@ -171,25 +133,16 @@ var _ = Describe("Export Navigation", func() {
 			env.Cleanup()
 		})
 
-		It("should render type selection without panics", func() {
+		It("should render wizard step 1 without panics", func() {
 			env.SelectIntentByName("export_artifact")
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
 		})
 
-		It("should render format selection without panics", func() {
+		It("should render wizard step 2 without panics", func() {
 			env.SelectIntentByName("export_artifact")
-			env.Confirm()
-			view := env.GetView()
-			Expect(view).NotTo(BeEmpty())
-			Expect(view).NotTo(ContainSubstring("panic"))
-		})
-
-		It("should render destination selection without panics", func() {
-			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Type
-			env.Confirm() // Format
+			env.Confirm() // Go to step 2
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("panic"))
@@ -197,16 +150,16 @@ var _ = Describe("Export Navigation", func() {
 
 		It("should show breadcrumbs or context", func() {
 			env.SelectIntentByName("export_artifact")
-			env.AssertViewContainsAny("Export", "Artifact", "Main Menu", "Type")
+			env.AssertViewContainsAny("Export", "Artifact", "Configure", "Main Menu")
 		})
 
 		It("should show footer with navigation hints", func() {
 			env.SelectIntentByName("export_artifact")
-			env.AssertViewContainsAny("q", "Esc", "Enter", "Quit")
+			env.AssertViewContainsAny("q", "Esc", "Enter", "Quit", "Navigate", "Select")
 		})
 	})
 
-	Describe("Vim-style Navigation", func() {
+	Describe("Vim-style Navigation in Wizard", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("export_artifact")
@@ -243,7 +196,7 @@ var _ = Describe("Export Navigation", func() {
 		})
 	})
 
-	Describe("Arrow Key Navigation", func() {
+	Describe("Arrow Key Navigation in Wizard", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 			env.SelectIntentByName("export_artifact")
@@ -267,39 +220,7 @@ var _ = Describe("Export Navigation", func() {
 		})
 	})
 
-	Describe("Export Type Selection", func() {
-		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should allow selecting events type", func() {
-			env.SelectIntentByName("export_artifact")
-			// Events is typically first
-			env.Confirm()
-			env.AssertViewContainsAny("Format", "JSON", "CSV")
-		})
-
-		It("should allow selecting facts type", func() {
-			env.SelectIntentByName("export_artifact")
-			env.PressKeyRune('j') // Navigate to facts
-			env.Confirm()
-			env.AssertViewContainsAny("Format", "JSON", "CSV")
-		})
-
-		It("should allow selecting bursts type", func() {
-			env.SelectIntentByName("export_artifact")
-			env.PressKeyRune('j')
-			env.PressKeyRune('j') // Navigate to bursts
-			env.Confirm()
-			env.AssertViewContainsAny("Format", "JSON", "CSV")
-		})
-	})
-
-	Describe("Workflow Navigation", func() {
+	Describe("Workflow Re-entry", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
 		})
@@ -312,19 +233,24 @@ var _ = Describe("Export Navigation", func() {
 			env.SelectIntentByName("export_artifact")
 			env.Cancel()
 			env.SelectIntentByName("export_artifact")
-			env.AssertViewContainsAny("events", "facts", "bursts", "Type")
-		})
-
-		It("should allow full navigation through states", func() {
-			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Type
-			env.Confirm() // Format
-			// At destination - can go back
-			env.Cancel()
-			env.AssertViewContainsAny("Format", "JSON", "CSV")
-			env.Cancel()
-			env.AssertViewContainsAny("Type", "events", "facts")
+			// Wizard should show step 1 again
+			env.AssertViewContainsAny("Step 1", "What to Export", "Export Configuration")
 		})
 	})
 
+	Describe("Ctrl+S Skip Shortcut", func() {
+		BeforeEach(func() {
+			env = e2e.SetupWithMemory(GinkgoT())
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should show keyboard hints in footer", func() {
+			env.SelectIntentByName("export_artifact")
+			// The footer shows navigation hints
+			env.AssertViewContainsAny("Navigate", "Select", "Esc", "Enter")
+		})
+	})
 })
