@@ -8,8 +8,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -379,15 +379,35 @@ func (m *FormModel) validateDateField() {
 
 // View renders the form
 func (m *FormModel) View() string {
+	theme := m.getTheme()
+
 	// Render form content using FormFieldContainers
 	formContent := m.renderFormContentWithContainers()
 
 	// Wrap in a card (no title, no navigation helper)
-	formCard := styles.CardBase.
-		Width(styles.MaxWidth(80) - 4).
-		Render(formContent)
+	formCard := containers.NewBox(theme).
+		Width(m.maxContentWidth(80) - 4).
+		Content(formContent).
+		Render()
 
 	return formCard
+}
+
+// getTheme returns the theme or a default theme if none is set.
+func (m *FormModel) getTheme() themes.Theme {
+	return themes.NewDefaultTheme()
+}
+
+// maxContentWidth returns the maximum content width for forms.
+func (m *FormModel) maxContentWidth(baseWidth int) int {
+	// Standard max width calculation
+	if baseWidth > 120 {
+		return 120
+	}
+	if baseWidth < 40 {
+		return 40
+	}
+	return baseWidth
 }
 
 // getCharCountIndicator returns a visual indicator for character count
@@ -723,6 +743,21 @@ func (m *FormModel) renderFormContentWithContainers() string {
 		spacing = "\n"
 	}
 
+	// Theme-based local styles
+	theme := m.getTheme()
+	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.ForegroundColor())
+	errorTextStyle := lipgloss.NewStyle().Foreground(theme.ErrorColor())
+	inputHintStyle := lipgloss.NewStyle().Foreground(theme.MutedColor()).Italic(true)
+	tagStyle := lipgloss.NewStyle().Foreground(theme.AccentColor()).Padding(0, 1)
+	infoTextStyle := lipgloss.NewStyle().Foreground(theme.MutedColor())
+	buttonPrimaryStyle := lipgloss.NewStyle().
+		Padding(0, 3).
+		MarginRight(2).
+		BorderStyle(lipgloss.RoundedBorder()).
+		Foreground(theme.ForegroundColor()).
+		BorderForeground(theme.AccentColor()).
+		Background(theme.BackgroundColor())
+
 	// Render each field/section manually for full control over layout
 
 	// 1. Event Text (required, full width)
@@ -733,14 +768,14 @@ func (m *FormModel) renderFormContentWithContainers() string {
 	charInfo := fmt.Sprintf("Characters: %d/%d %s",
 		m.charCount, m.maxChars, m.getCharCountIndicator())
 
-	textLabel := styles.Label.Render("Event Text (required):")
+	textLabel := labelStyle.Render("Event Text (required):")
 	textInput := m.inputs[0].View()
 	textField := textLabel + "\n" + textInput
 	if textFieldErr != "" {
-		textField += "\n" + styles.ErrorText.Render(textFieldErr)
+		textField += "\n" + errorTextStyle.Render(textFieldErr)
 	}
 	if charInfo != "" {
-		textField += "\n" + styles.InputHint.Render(charInfo)
+		textField += "\n" + inputHintStyle.Render(charInfo)
 	}
 	formParts = append(formParts, textField)
 
@@ -750,11 +785,11 @@ func (m *FormModel) renderFormContentWithContainers() string {
 		if err, ok := m.fieldErrors[DateField]; ok {
 			dateFieldErr = err
 		}
-		dateLabel := styles.Label.Render("Date (optional):")
+		dateLabel := labelStyle.Render("Date (optional):")
 		dateInput := m.inputs[1].View()
 		dateField := dateLabel + "\n" + dateInput
 		if dateFieldErr != "" {
-			dateField += "\n" + styles.ErrorText.Render(dateFieldErr)
+			dateField += "\n" + errorTextStyle.Render(dateFieldErr)
 		}
 		formParts = append(formParts, dateField)
 	}
@@ -775,11 +810,11 @@ func (m *FormModel) renderFormContentWithContainers() string {
 			if err, ok := m.fieldErrors[CompanyField]; ok {
 				companyFieldErr = err
 			}
-			companyLabel := styles.Label.Render("Company (optional):")
+			companyLabel := labelStyle.Render("Company (optional):")
 			companyInput := m.inputs[2].View()
 			companyPart = companyLabel + "\n" + companyInput
 			if companyFieldErr != "" {
-				companyPart += "\n" + styles.ErrorText.Render(companyFieldErr)
+				companyPart += "\n" + errorTextStyle.Render(companyFieldErr)
 			}
 			// Apply fixed width to the entire column
 			companyPart = lipgloss.NewStyle().Width(columnWidth).Render(companyPart)
@@ -790,11 +825,11 @@ func (m *FormModel) renderFormContentWithContainers() string {
 			if err, ok := m.fieldErrors[ProjectField]; ok {
 				projectFieldErr = err
 			}
-			projectLabel := styles.Label.Render("Project (optional):")
+			projectLabel := labelStyle.Render("Project (optional):")
 			projectInput := m.inputs[3].View()
 			projectPart = projectLabel + "\n" + projectInput
 			if projectFieldErr != "" {
-				projectPart += "\n" + styles.ErrorText.Render(projectFieldErr)
+				projectPart += "\n" + errorTextStyle.Render(projectFieldErr)
 			}
 			// Apply fixed width to the entire column
 			projectPart = lipgloss.NewStyle().Width(columnWidth).Render(projectPart)
@@ -829,13 +864,13 @@ func (m *FormModel) renderFormContentWithContainers() string {
 				selectedTags := m.tagSelector.SelectedTags()
 				if len(selectedTags) > 0 {
 					for _, tag := range selectedTags {
-						tagsDisplay += styles.TagBase.Render(tag) + " "
+						tagsDisplay += tagStyle.Render(tag) + " "
 					}
 				} else {
-					tagsDisplay = styles.InfoText.Render("(none selected)")
+					tagsDisplay = infoTextStyle.Render("(none selected)")
 				}
 			}
-			tagsLabel := styles.Label.Render("Tags:")
+			tagsLabel := labelStyle.Render("Tags:")
 			tagsPart = tagsLabel + "\n" + tagsDisplay
 			// Apply fixed width to the entire column
 			tagsPart = lipgloss.NewStyle().Width(columnWidth).Render(tagsPart)
@@ -849,13 +884,13 @@ func (m *FormModel) renderFormContentWithContainers() string {
 				selectedCategories := m.categorySelector.SelectedCategories()
 				if len(selectedCategories) > 0 {
 					for _, category := range selectedCategories {
-						categoriesDisplay += styles.TagBase.Render(category) + " "
+						categoriesDisplay += tagStyle.Render(category) + " "
 					}
 				} else {
-					categoriesDisplay = styles.InfoText.Render("(none selected)")
+					categoriesDisplay = infoTextStyle.Render("(none selected)")
 				}
 			}
-			categoriesLabel := styles.Label.Render("Categories:")
+			categoriesLabel := labelStyle.Render("Categories:")
 			categoriesPart = categoriesLabel + "\n" + categoriesDisplay
 			// Apply fixed width to the entire column
 			categoriesPart = lipgloss.NewStyle().Width(columnWidth).Render(categoriesPart)
@@ -875,9 +910,9 @@ func (m *FormModel) renderFormContentWithContainers() string {
 	// 5. Submit button
 	var submitBtn string
 	if m.focusIndex == int(SubmitButton) {
-		submitBtn = styles.ButtonPrimary.Render("[ > Submit < ]")
+		submitBtn = buttonPrimaryStyle.Bold(true).Render("[ > Submit < ]")
 	} else {
-		submitBtn = styles.ButtonPrimary.Render("[ Submit ]")
+		submitBtn = buttonPrimaryStyle.Render("[ Submit ]")
 	}
 	formParts = append(formParts, submitBtn)
 
@@ -888,16 +923,20 @@ func (m *FormModel) renderFormContentWithContainers() string {
 	if m.strategy == "manual" {
 		var toggleHint string
 		if m.showOptionalFields {
-			toggleHint = styles.InfoHint.Render("Ctrl+O to hide optional fields")
+			toggleHint = inputHintStyle.Render("Ctrl+O to hide optional fields")
 		} else {
-			toggleHint = styles.InfoHint.Render("Ctrl+O to show optional fields")
+			toggleHint = inputHintStyle.Render("Ctrl+O to show optional fields")
 		}
 		formContent += "\n\n" + toggleHint
 	}
 
 	// Add model-level error if present
 	if m.err != nil {
-		formContent += "\n\n" + styles.ErrorBox.Render(m.err.Error())
+		errorBox := containers.NewBox(theme).
+			Variant(containers.BoxDestructive).
+			Content(m.err.Error()).
+			Render()
+		formContent += "\n\n" + errorBox
 	}
 
 	return formContent
