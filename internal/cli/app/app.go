@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 
+	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"

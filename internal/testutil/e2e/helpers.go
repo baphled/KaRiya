@@ -458,7 +458,12 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 		// Recursively execute any returned command
 		e.executeCmd(nextCmd)
 
-	// Add other essential message types here as needed
+	case intents.ConfigCompleteMsg:
+		// Configuration save completion - essential for saving → complete state transition
+		modelInterface, nextCmd := e.Model.Update(msg)
+		e.Model = modelInterface.(*app.Model)
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
 	default:
 		// Ignore all other messages (cursor blink, window resize, etc.)
 		return
