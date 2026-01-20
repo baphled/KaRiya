@@ -474,6 +474,146 @@ var _ = Describe("CVBullet", func() {
 				})
 			}
 		})
+
+		Context("with generator-based inclusion reasons", func() {
+			// These reasons are used by BulletGenerator and EnhancedBulletGenerator
+			// to indicate the source of the bullet (Task 44)
+			generatorReasons := []string{"fact_extraction", "event_direct", "achievement_extraction"}
+
+			for _, reason := range generatorReasons {
+				reason := reason // capture for closure
+				It("should pass for "+reason, func() {
+					cvBullet.InclusionReason = reason
+					err := cvBullet.Validate()
+					Expect(err).NotTo(HaveOccurred())
+				})
+			}
+		})
+
+		// Task 44: Enhanced fields from EnhancedBulletGenerator
+		Context("with enhanced fields", func() {
+			It("should pass validation with EnhancedText set", func() {
+				cvBullet.EnhancedText = "Architected and led implementation of distributed system serving 10M users"
+				err := cvBullet.Validate()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should pass validation with all score fields set", func() {
+				cvBullet.RoleScore = 0.9
+				cvBullet.AudienceScore = 0.85
+				cvBullet.MetricScore = 0.75
+				cvBullet.ImpactScore = 0.95
+				err := cvBullet.Validate()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should pass validation with ImpactLevel set", func() {
+				cvBullet.ImpactLevel = "high"
+				err := cvBullet.Validate()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should pass validation with KeywordMatches set", func() {
+				cvBullet.KeywordMatches = []string{"distributed", "architecture", "leadership"}
+				err := cvBullet.Validate()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should pass validation with all enhanced fields set", func() {
+				cvBullet.EnhancedText = "Architected distributed system at scale"
+				cvBullet.RoleScore = 0.9
+				cvBullet.AudienceScore = 0.85
+				cvBullet.MetricScore = 0.75
+				cvBullet.ImpactScore = 0.95
+				cvBullet.ImpactLevel = "high"
+				cvBullet.KeywordMatches = []string{"architecture", "scale"}
+				err := cvBullet.Validate()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		// Task 44: Enhanced field validation
+		Context("with invalid enhanced score fields", func() {
+			It("should fail validation when RoleScore is negative", func() {
+				cvBullet.RoleScore = -0.1
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("role score"))
+			})
+
+			It("should fail validation when RoleScore exceeds 1.0", func() {
+				cvBullet.RoleScore = 1.1
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("role score"))
+			})
+
+			It("should fail validation when AudienceScore is negative", func() {
+				cvBullet.AudienceScore = -0.5
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("audience score"))
+			})
+
+			It("should fail validation when AudienceScore exceeds 1.0", func() {
+				cvBullet.AudienceScore = 2.0
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("audience score"))
+			})
+
+			It("should fail validation when MetricScore is negative", func() {
+				cvBullet.MetricScore = -0.01
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("metric score"))
+			})
+
+			It("should fail validation when MetricScore exceeds 1.0", func() {
+				cvBullet.MetricScore = 1.5
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("metric score"))
+			})
+
+			It("should fail validation when ImpactScore is negative", func() {
+				cvBullet.ImpactScore = -1.0
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("impact score"))
+			})
+
+			It("should fail validation when ImpactScore exceeds 1.0", func() {
+				cvBullet.ImpactScore = 100.0
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("impact score"))
+			})
+		})
+
+		Context("with invalid ImpactLevel", func() {
+			It("should fail validation with invalid impact level", func() {
+				cvBullet.ImpactLevel = "invalid"
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("impact level"))
+			})
+
+			It("should fail validation with uppercase impact level", func() {
+				cvBullet.ImpactLevel = "HIGH"
+				err := cvBullet.Validate()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("impact level"))
+			})
+
+			It("should pass validation with valid impact levels", func() {
+				for _, level := range []string{"", "low", "medium", "high"} {
+					cvBullet.ImpactLevel = level
+					err := cvBullet.Validate()
+					Expect(err).NotTo(HaveOccurred())
+				}
+			})
+		})
 	})
 })
 

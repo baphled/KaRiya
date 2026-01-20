@@ -358,32 +358,34 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 
 	// Only process messages that are essential for state transitions
 	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
-	switch m := msg.(type) {
-	case tea.BatchMsg:
-		// BatchMsg contains multiple commands - process each one
-		for _, batchCmd := range m {
-			e.executeCmd(batchCmd)
-		}
+	switch msg.(type) {
 	case models.SubmitMsg:
 		// Form submission - essential for form → review state transition
-		modelInterface, _ := e.Model.Update(msg)
+		modelInterface, nextCmd := e.Model.Update(msg)
 		e.Model = modelInterface.(*app.Model)
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
+
 	case intents.SubmitCompleteMsg, intents.SubmitErrorMsg:
-		// Async save completion - essential for submit → review/complete state transition
-		modelInterface, cmd := e.Model.Update(msg)
+		// Submit completion - essential for submit → complete state transition
+		modelInterface, nextCmd := e.Model.Update(msg)
 		e.Model = modelInterface.(*app.Model)
-		// Recursively process any follow-up commands (e.g., DismissModalMsg)
-		e.executeCmd(cmd)
+		// For SubmitCompleteMsg, immediately send DismissModalMsg to skip the 2s timer
+		if _, ok := msg.(intents.SubmitCompleteMsg); ok {
+			// Skip the tea.Tick timer by directly sending DismissModalMsg
+			modelInterface, nextCmd = e.Model.Update(intents.DismissModalMsg{})
+			e.Model = modelInterface.(*app.Model)
+		}
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
+
 	case intents.DismissModalMsg:
-		// Modal dismissed - essential for modal → next state transition
-		modelInterface, cmd := e.Model.Update(msg)
+		// Modal dismissal - essential for success modal → enrichment review transition
+		modelInterface, nextCmd := e.Model.Update(msg)
 		e.Model = modelInterface.(*app.Model)
-		e.executeCmd(cmd)
-	case app.IntentCompletedMsg:
-		// Intent completed - essential for intent → menu state transition
-		modelInterface, cmd := e.Model.Update(msg)
-		e.Model = modelInterface.(*app.Model)
-		e.executeCmd(cmd)
+		// Recursively execute any returned command
+		e.executeCmd(nextCmd)
+
 	// Add other essential message types here as needed
 	default:
 		// Ignore all other messages (cursor blink, window resize, etc.)

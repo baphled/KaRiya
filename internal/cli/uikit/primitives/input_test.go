@@ -1,12 +1,22 @@
 package primitives_test
 
 import (
+	"regexp"
+
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+// stripAnsi removes ANSI escape codes from a string for reliable test comparisons.
+// This is needed because lipgloss styling adds color codes that can break substring matching.
+var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+func stripAnsi(s string) string {
+	return ansiRegex.ReplaceAllString(s, "")
+}
 
 var _ = Describe("Input", func() {
 	var th theme.Theme
@@ -32,7 +42,7 @@ var _ = Describe("Input", func() {
 		Describe("Label", func() {
 			It("should set label", func() {
 				input.Label("Username")
-				view := input.View()
+				view := stripAnsi(input.View())
 				Expect(view).To(ContainSubstring("Username"))
 			})
 
@@ -45,7 +55,7 @@ var _ = Describe("Input", func() {
 		Describe("Placeholder", func() {
 			It("should set placeholder", func() {
 				input.Placeholder("Name").Width(50)
-				view := input.View()
+				view := stripAnsi(input.View())
 				Expect(view).To(ContainSubstring("Name"))
 			})
 
@@ -70,7 +80,7 @@ var _ = Describe("Input", func() {
 		Describe("Error", func() {
 			It("should set error message", func() {
 				input.Error("Invalid email")
-				view := input.View()
+				view := stripAnsi(input.View())
 				Expect(view).To(ContainSubstring("Invalid email"))
 			})
 
@@ -81,7 +91,7 @@ var _ = Describe("Input", func() {
 
 			It("should clear error with empty string", func() {
 				input.Error("Error").Error("")
-				view := input.View()
+				view := stripAnsi(input.View())
 				Expect(view).NotTo(ContainSubstring("Error"))
 			})
 		})
@@ -104,7 +114,7 @@ var _ = Describe("Input", func() {
 				Placeholder("user@example.com").
 				Value("test@test.com").
 				Width(60)
-			view := input.View()
+			view := stripAnsi(input.View())
 			Expect(view).To(ContainSubstring("Email"))
 			Expect(input.GetValue()).To(Equal("test@test.com"))
 		})
@@ -192,25 +202,25 @@ var _ = Describe("Input", func() {
 
 		It("should render label above input", func() {
 			input.Label("Name")
-			view := input.View()
+			view := stripAnsi(input.View())
 			Expect(view).To(ContainSubstring("Name"))
 		})
 
 		It("should render placeholder when empty", func() {
 			input.Placeholder("Type").Width(50)
-			view := input.View()
+			view := stripAnsi(input.View())
 			Expect(view).To(ContainSubstring("Type"))
 		})
 
 		It("should render value", func() {
 			input.Value("some text")
-			view := input.View()
+			view := stripAnsi(input.View())
 			Expect(view).To(ContainSubstring("some text"))
 		})
 
 		It("should render error below input", func() {
 			input.Error("Invalid input")
-			view := input.View()
+			view := stripAnsi(input.View())
 			Expect(view).To(ContainSubstring("Invalid input"))
 		})
 
@@ -220,7 +230,7 @@ var _ = Describe("Input", func() {
 				Value("test@test.com").
 				Error("Invalid format")
 
-			view := input.View()
+			view := stripAnsi(input.View())
 			Expect(view).To(ContainSubstring("Email"))
 			Expect(view).To(ContainSubstring("test@test.com"))
 			Expect(view).To(ContainSubstring("Invalid format"))
