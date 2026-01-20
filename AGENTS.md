@@ -32,8 +32,11 @@ make session-start   # MUST run first - validates environment
 |------|-----|-----|
 | Table | `behaviors.TableBehavior[T]` | `table.New()` |
 | Form in intent | `models.*Form` wrapper | `*huh.Form` directly |
+| Text/titles | `primitives.Title()`, `primitives.Body()` | Raw lipgloss |
+| Badges | `primitives.HelpKeyBadge()` | `components.KeyBadge` |
 | Colors | `theme.Primary()` etc | `lipgloss.Color("#xxx")` |
-| Layout | `CreateStandardView()` | Manual composition |
+| Layout | `layout.ScreenLayout` | Manual composition |
+| Modals | `feedback.Modal`, `behaviors.RenderModalOverlay()` | Custom modal code |
 | Intent | Embed `*BaseIntent` | Custom base |
 
 Run `make what-to-use NEED="keyword"` for detailed usage and examples.
@@ -101,8 +104,13 @@ See `examples/` directory:
 internal/cli/
 ├── intents/     # Workflows (state machines)
 ├── behaviors/   # Reusable behaviors (TableBehavior, CRUD)
-├── components/  # UI components (StandardView, modals)
-├── uikit/       # Primitives (Text, Button, Badge)
+├── components/  # Modal components (domain-specific)
+├── uikit/       # UIKit component library
+│   ├── primitives/  # Text, Button, Badge, Input
+│   ├── containers/  # Box, Overlay
+│   ├── feedback/    # Modal, ModalContainer, HelpModal
+│   ├── layout/      # ScreenLayout, Header, Footer
+│   └── theme/       # Theme integration
 ├── models/      # Form wrappers
 └── forms/       # Form configs
 ```
