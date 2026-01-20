@@ -13,6 +13,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("Navigation to GenerateCV Intent", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 		})
 
 		AfterEach(func() {
@@ -37,6 +38,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("Profile Selection State", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 			env.SelectIntentByName("generate_cv")
 		})
 
@@ -87,6 +89,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("Audience Selection State", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 			env.SelectIntentByName("generate_cv")
 			env.Confirm() // Select first profile
 		})
@@ -121,6 +124,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("Cancel at Each State", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 		})
 
 		AfterEach(func() {
@@ -153,6 +157,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 		})
 
 		AfterEach(func() {
@@ -190,6 +195,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("Vim-style Navigation", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 			env.SelectIntentByName("generate_cv")
 		})
 
@@ -229,6 +235,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("Arrow Key Navigation", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 			env.SelectIntentByName("generate_cv")
 		})
 
@@ -260,6 +267,7 @@ var _ = Describe("GenerateCV Navigation", func() {
 	Describe("Workflow Navigation", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
+			env.PopulateTestData(3, 0, 0) // Add events to prevent empty state modal (BUG-004)
 		})
 
 		AfterEach(func() {
