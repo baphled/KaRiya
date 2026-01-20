@@ -454,9 +454,9 @@ var _ = Describe("ManageSkillsIntent Modal Integration", func() {
 
 	Describe("ViewEventDetailModal from ManageSkills", func() {
 		Context("when viewing event details from skill events modal", func() {
-			It("should NOT show 's: Skills' hint in the footer", func() {
+			It("should NOT show skills shortcut hint in the footer", func() {
 				// The event detail modal shown from ManageSkills should not
-				// have the "s: Skills" option since we're already in a skills context
+				// have the skills shortcut option since we're already in a skills context
 
 				// Get all skills first
 				skills, err := skillRepo.List(ctx, nil)
@@ -512,11 +512,22 @@ var _ = Describe("ManageSkillsIntent Modal Integration", func() {
 				// Event detail modal should be visible
 				Expect(intent.HasVisibleEventDetailModal()).To(BeTrue())
 
-				// The view should NOT contain "s: Skills" - we're already in skills context
+				// The view should NOT show skills shortcut - we're already in skills context
+				// UIKit badge format: key badge followed by hint (e.g., "s" + "Skills")
+				// When showSkillsOption is false, that badge is not added to footer
 				view := intent.View()
-				Expect(view).NotTo(ContainSubstring("s: Skills"))
-				// But should still have close hint
-				Expect(view).To(ContainSubstring("Esc: Close"))
+				// Footer should have close hint (UIKit badge format)
+				Expect(view).To(ContainSubstring("Close"))
+				// The "Skills" word may appear in content (e.g., "Skills: 1 associated")
+				// but the footer should NOT have the "s" key badge for skills shortcut
+				// We verify by checking that "Scroll" and "Close" hints are present
+				// but NOT the key-hint combination where "s" precedes "Skills"
+				// Since content has "Skills:" with colon and badge has "Skills" without,
+				// we check that the badge pattern (key separate from hint) isn't there
+				Expect(view).To(ContainSubstring("Scroll"))
+				// Verify the footer doesn't have skills shortcut by checking it's not
+				// in the pattern "s" followed shortly by "Skills" (without colon)
+				Expect(view).NotTo(MatchRegexp(`\bs\s+Skills[^:]`))
 			})
 		})
 	})

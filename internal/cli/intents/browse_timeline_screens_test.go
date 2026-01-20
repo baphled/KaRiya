@@ -197,9 +197,10 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			// Show event detail modal
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Footer should show 's: Skills' hint
+			// Footer should show skills hint using UIKit badge format
+			// HelpKeyBadge renders as styled "[key] hint" parts
 			view := intent.View()
-			Expect(view).To(ContainSubstring("s: Skills"))
+			Expect(view).To(ContainSubstring("Skills"))
 		})
 
 		It("should create skills modal when pressing 's' from event detail", func() {

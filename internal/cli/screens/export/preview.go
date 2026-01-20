@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/types"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -133,6 +134,7 @@ func (s *Preview) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 // View renders the screen.
 func (s *Preview) View() string {
 	th := s.getTheme()
+	uikitTheme := theme.Default()
 	var b strings.Builder
 
 	// Render summary header
@@ -144,8 +146,16 @@ func (s *Preview) View() string {
 		s.initializeViewport(th)
 	}
 
-	// Render viewport
-	b.WriteString(s.viewport.View())
+	// Wrap viewport in a code block style box
+	codeBlockTitle := s.getCodeBlockTitle()
+	codeBlock := containers.NewBox(uikitTheme).
+		Title(codeBlockTitle).
+		Content(s.viewport.View()).
+		Variant(containers.BoxSubtle).
+		Padding(1).
+		Render()
+
+	b.WriteString(codeBlock)
 	b.WriteString("\n")
 
 	// Footer with scroll indicator
@@ -251,24 +261,33 @@ func (s *Preview) RenderContent() string {
 	return s.View()
 }
 
-// renderFooter renders the footer with help text and scroll indicator.
+// renderFooter renders the footer with help text and scroll indicator using UIKit primitives.
 func (s *Preview) renderFooter(th themes.Theme) string {
-	footerStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
+	// Convert themes.Theme to uikit theme.Theme for primitives
+	uikitTheme := theme.Default()
 
-	var footer strings.Builder
-	footer.WriteString(footerStyle.Render(strings.Repeat("─", min(70, s.width-4))))
-	footer.WriteString("\n")
-
-	// Show scroll percentage if viewport is ready and has scrollable content
-	if s.ready && s.viewport.TotalLineCount() > s.viewport.Height {
-		pct := int(s.viewport.ScrollPercent() * 100)
-		footer.WriteString(footerStyle.Render(
-			fmt.Sprintf("↑↓/jk: scroll  g/G: top/bottom  [%d%%]  Enter: export  Esc: back", pct)))
-	} else {
-		footer.WriteString(footerStyle.Render("↑↓/jk: scroll  Enter: export  Esc: back"))
+	// Build badges for footer
+	badges := []*primitives.Badge{
+		primitives.HelpKeyBadge("↑↓/jk", "Scroll", uikitTheme),
+		primitives.HelpKeyBadge("g/G", "Top/Bottom", uikitTheme),
 	}
 
-	return footer.String()
+	// Add scroll percentage if scrollable
+	if s.ready && s.viewport.TotalLineCount() > s.viewport.Height {
+		pct := int(s.viewport.ScrollPercent() * 100)
+		badges = append(badges, primitives.HelpKeyBadge(fmt.Sprintf("[%d%%]", pct), "", uikitTheme))
+	}
+
+	badges = append(badges,
+		primitives.HelpKeyBadge("Enter", "Export", uikitTheme),
+		primitives.BackBadge(uikitTheme),
+	)
+
+	// Render separator line and badges
+	footerStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
+	separator := footerStyle.Render(strings.Repeat("─", min(70, s.width-4)))
+
+	return separator + "\n" + primitives.RenderHelpFooter(uikitTheme, badges...)
 }
 
 // getTheme returns the theme from BaseScreen or a default theme.
@@ -290,6 +309,24 @@ func (s *Preview) SetStats(stats *PreviewStats) {
 // SetDestination sets the export destination.
 func (s *Preview) SetDestination(dest types.ExportDestination) {
 	s.destination = dest
+}
+
+// getCodeBlockTitle returns a code block title indicating the format (like markdown code fences).
+func (s *Preview) getCodeBlockTitle() string {
+	switch s.format {
+	case types.ExportFormatJSON:
+		return "json"
+	case types.ExportFormatYAML:
+		return "yaml"
+	case types.ExportFormatCSV:
+		return "csv"
+	case types.ExportFormatMD:
+		return "markdown"
+	case types.ExportFormatTXT:
+		return "text"
+	default:
+		return string(s.format)
+	}
 }
 
 // Helper functions

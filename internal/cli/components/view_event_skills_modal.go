@@ -149,14 +149,16 @@ func (m *ViewEventSkillsModal) View() string {
 	// Build title using UIKit
 	title := primitives.Title(fmt.Sprintf("Skills (%d)", len(m.skills)), m.theme).Render()
 
-	// Build footer with scroll indicator using UIKit
-	var scrollHint string
+	// Build footer with UIKit primitives
+	badges := []*primitives.Badge{
+		primitives.HelpKeyBadge("↑↓/jk", "Scroll", m.theme),
+		primitives.HelpKeyBadge("Enter/Esc", "Close", m.theme),
+	}
 	if m.hasContent {
 		percentScrolled := int(m.viewport.ScrollPercent() * 100)
-		scrollHint = primitives.Muted(fmt.Sprintf("↑↓/j/k: Scroll | Enter/Esc: Close [%d%%]", percentScrolled), m.theme).Render()
-	} else {
-		scrollHint = primitives.Muted("Enter/Esc: Close", m.theme).Render()
+		badges = append(badges, primitives.HelpKeyBadge(fmt.Sprintf("[%d%%]", percentScrolled), "", m.theme))
 	}
+	scrollHint := primitives.RenderHelpFooter(m.theme, badges...)
 
 	// Build modal content
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, title, "", m.viewport.View(), "", scrollHint)
