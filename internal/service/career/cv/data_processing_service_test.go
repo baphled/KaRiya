@@ -9,6 +9,7 @@ import (
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("DataProcessingService", func() {
@@ -30,26 +31,15 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should group single company events", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Led team standup",
-					Date:      time.Now().AddDate(0, -1, 0),
-					Company:   "Acme Corp",
-					Tags:      []string{"leadership"},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-				{
-					ID:        "2",
-					Text:      "Implemented feature",
-					Date:      time.Now().AddDate(0, -2, 0),
-					Company:   "Acme Corp",
-					Tags:      []string{"technical"},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event1 := fixtures.EventWith("1", "Led team standup", "Acme Corp", "")
+			event1.Date = time.Now().AddDate(0, -1, 0)
+			event1.Tags = []string{"leadership"}
+
+			event2 := fixtures.EventWith("2", "Implemented feature", "Acme Corp", "")
+			event2.Date = time.Now().AddDate(0, -2, 0)
+			event2.Tags = []string{"technical"}
+
+			events := []*career.CareerEvent{event1, event2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -60,26 +50,13 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should group multiple companies", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Worked at Acme",
-					Date:      time.Now().AddDate(0, -1, 0),
-					Company:   "Acme Corp",
-					Tags:      []string{},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-				{
-					ID:        "2",
-					Text:      "Worked at TechCo",
-					Date:      time.Now().AddDate(0, -6, 0),
-					Company:   "TechCo",
-					Tags:      []string{},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event1 := fixtures.EventWith("1", "Worked at Acme", "Acme Corp", "")
+			event1.Date = time.Now().AddDate(0, -1, 0)
+
+			event2 := fixtures.EventWith("2", "Worked at TechCo", "TechCo", "")
+			event2.Date = time.Now().AddDate(0, -6, 0)
+
+			events := []*career.CareerEvent{event1, event2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -89,17 +66,11 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should handle events with no company", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Personal project",
-					Date:      time.Now(),
-					Company:   "",
-					Tags:      []string{},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event := fixtures.Event("1")
+			event.Text = "Personal project"
+			event.Company = "" // No company
+
+			events := []*career.CareerEvent{event}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -108,26 +79,14 @@ var _ = Describe("DataProcessingService", func() {
 
 		It("should set correct date ranges", func() {
 			now := time.Now()
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Recent event",
-					Date:      now,
-					Company:   "Acme",
-					Tags:      []string{},
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Old event",
-					Date:      now.AddDate(-1, 0, 0),
-					Company:   "Acme",
-					Tags:      []string{},
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-			}
+
+			event1 := fixtures.EventWith("1", "Recent event", "Acme", "")
+			event1.Date = now
+
+			event2 := fixtures.EventWith("2", "Old event", "Acme", "")
+			event2.Date = now.AddDate(-1, 0, 0)
+
+			events := []*career.CareerEvent{event1, event2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -140,15 +99,8 @@ var _ = Describe("DataProcessingService", func() {
 
 	Describe("ExtractAchievements", func() {
 		It("should extract achievement from event", func() {
-			event := &career.CareerEvent{
-				ID:        "1",
-				Text:      "Led team of 12 engineers",
-				Date:      time.Now(),
-				Company:   "Acme",
-				Tags:      []string{"leadership"},
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
+			event := fixtures.EventWith("1", "Led team of 12 engineers", "Acme", "")
+			event.Tags = []string{"leadership"}
 
 			achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
 			Expect(err).NotTo(HaveOccurred())
@@ -158,15 +110,7 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should extract metrics from achievement", func() {
-			event := &career.CareerEvent{
-				ID:        "1",
-				Text:      "Increased performance by 25% with team of 12 people",
-				Date:      time.Now(),
-				Company:   "Acme",
-				Tags:      []string{},
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
+			event := fixtures.EventWith("1", "Increased performance by 25% with team of 12 people", "Acme", "")
 
 			achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
 			Expect(err).NotTo(HaveOccurred())
@@ -174,22 +118,9 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should extract facts as achievements", func() {
-			event := &career.CareerEvent{
-				ID:        "1",
-				Text:      "Event text",
-				Date:      time.Now(),
-				Company:   "Acme",
-				Tags:      []string{},
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
-			fact := &career.Fact{
-				ID:            "f1",
-				Text:          "Strong leadership capability",
-				SourceEventID: "1",
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-			}
+			event := fixtures.EventWith("1", "Event text", "Acme", "")
+			fact := fixtures.Fact("f1", "1")
+			fact.Text = "Strong leadership capability"
 
 			achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
 			Expect(err).NotTo(HaveOccurred())
@@ -206,17 +137,10 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should extract skills from event tags", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Event",
-					Date:      time.Now(),
-					Company:   "Acme",
-					Tags:      []string{"technical", "leadership"},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("1", "Event", "Acme", "")
+			event.Tags = []string{"technical", "leadership"}
+
+			events := []*career.CareerEvent{event}
 
 			result, err := dps.ExtractSkills(svc, events, []*career.Fact{})
 			Expect(err).NotTo(HaveOccurred())
@@ -224,26 +148,13 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should aggregate skill categories", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Event",
-					Date:      time.Now(),
-					Company:   "Acme",
-					Tags:      []string{"technical"},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-				{
-					ID:        "2",
-					Text:      "Event",
-					Date:      time.Now(),
-					Company:   "Acme",
-					Tags:      []string{"technical"},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event1 := fixtures.EventWith("1", "Event", "Acme", "")
+			event1.Tags = []string{"technical"}
+
+			event2 := fixtures.EventWith("2", "Event", "Acme", "")
+			event2.Tags = []string{"technical"}
+
+			events := []*career.CareerEvent{event1, event2}
 
 			result, err := dps.ExtractSkills(svc, events, []*career.Fact{})
 			Expect(err).NotTo(HaveOccurred())
@@ -340,18 +251,9 @@ var _ = Describe("DataProcessingService", func() {
 
 	Describe("ExtractProjectsFromEvents", func() {
 		It("should extract no projects from events without projects", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Event",
-					Date:      time.Now(),
-					Company:   "Acme",
-					Project:   "",
-					Tags:      []string{},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("1", "Event", "Acme", "")
+
+			events := []*career.CareerEvent{event}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -359,18 +261,9 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should extract single project", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Event",
-					Date:      time.Now(),
-					Company:   "Acme",
-					Project:   "ProjectX",
-					Tags:      []string{},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("1", "Event", "Acme", "ProjectX")
+
+			events := []*career.CareerEvent{event}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -387,28 +280,10 @@ var _ = Describe("DataProcessingService", func() {
 		})
 
 		It("should extract multiple projects", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Event",
-					Date:      time.Now(),
-					Company:   "Acme",
-					Project:   "ProjectX",
-					Tags:      []string{},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-				{
-					ID:        "2",
-					Text:      "Event",
-					Date:      time.Now(),
-					Company:   "Acme",
-					Project:   "ProjectY",
-					Tags:      []string{},
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+			event1 := fixtures.EventWith("1", "Event", "Acme", "ProjectX")
+			event2 := fixtures.EventWith("2", "Event", "Acme", "ProjectY")
+
+			events := []*career.CareerEvent{event1, event2}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -417,28 +292,14 @@ var _ = Describe("DataProcessingService", func() {
 
 		It("should set correct project date ranges", func() {
 			now := time.Now()
-			events := []*career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Event",
-					Date:      now,
-					Company:   "Acme",
-					Project:   "ProjectX",
-					Tags:      []string{},
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Event",
-					Date:      now.AddDate(0, -3, 0),
-					Company:   "Acme",
-					Project:   "ProjectX",
-					Tags:      []string{},
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-			}
+
+			event1 := fixtures.EventWith("1", "Event", "Acme", "ProjectX")
+			event1.Date = now
+
+			event2 := fixtures.EventWith("2", "Event", "Acme", "ProjectX")
+			event2.Date = now.AddDate(0, -3, 0)
+
+			events := []*career.CareerEvent{event1, event2}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
