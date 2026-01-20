@@ -5,20 +5,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/models"
-	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/screens"
 	skills_screens "github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	career "github.com/baphled/kariya/internal/repository/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
 // Ensure ManageSkillsIntent implements FilterBehavior interface
@@ -42,10 +43,8 @@ type ManageSkillsIntent struct {
 	selectedIndex int
 	selectedSkill *domain.Skill // Selected skill for detail view
 
-	// table components for skills list view
-	table         *table.Model
-	listContainer *components.TableListContainer
-	navHandler    *navigation.ListNavigationHandler
+	// tableBehavior provides type-safe table operations for skills
+	tableBehavior *behaviors.TableBehavior[*domain.Skill]
 
 	// detail view data
 	eventCounts  map[string]int        // Skill ID -> event count
@@ -53,10 +52,8 @@ type ManageSkillsIntent struct {
 	skillEvents  []*domain.CareerEvent // Events for selected skill
 	eventsLoaded bool                  // Whether events have been loaded
 
-	// events table components for skill events view
-	eventsTable           *table.Model
-	eventsListContainer   *components.TableListContainer
-	eventsNavHandler      *navigation.ListNavigationHandler
+	// eventsTableBehavior provides type-safe table operations for skill events
+	eventsTableBehavior   *behaviors.TableBehavior[*domain.CareerEvent]
 	eventsSelectedIndex   int                 // Selection index for events list
 	selectedEventFromList *domain.CareerEvent // Selected event for detail view from events list
 
@@ -73,6 +70,13 @@ type ManageSkillsIntent struct {
 	filterModal *components.SkillFilterModal
 	sortModal   *components.SkillSortModal
 	searchModal *components.SkillSearchModal
+
+	// view/edit modals (modal overlay architecture like BrowseTimelineIntent)
+	viewDetailModal  *components.ViewSkillDetailModal
+	addEditModal     *components.SkillAddEditModal
+	deleteModal      *components.DeleteConfirmModal
+	skillEventsModal *components.ViewSkillEventsModal // Modal to show events using a skill
+	eventDetailModal *components.ViewEventDetailModal // Modal to show event details from events list
 
 	// screen orchestration (new architecture)
 	activeScreen screens.Screen // Currently active screen (when using screen architecture)
@@ -96,166 +100,15 @@ type SkillsFilters struct {
 }
 
 // NewManageSkillsIntent creates a new ManageSkills intent
-func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
-	baseIntent := NewBaseIntent()
-	baseIntent.SetThemeManager(themes.NewThemeManager())
 
-	// Create table model for skills list
-	skillsColumns := []table.Column{
-		{Title: "Name", Width: 25},
-		{Title: "Category", Width: 15},
-		{Title: "Level", Width: 12},
-		{Title: "Years", Width: 8},
-		{Title: "Events", Width: 8},
-	}
-
-	skillsTable := table.New(
-		table.WithColumns(skillsColumns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
-
-	// Apply default styles initially - theme styles will be applied in Init()
-	skillsTable.SetStyles(table.DefaultStyles())
-
-	// Create table model for skill events list
-	eventsColumns := []table.Column{
-		{Title: "Date", Width: 12},
-		{Title: "Event", Width: 50},
-		{Title: "Company", Width: 20},
-	}
-
-	eventsTable := table.New(
-		table.WithColumns(eventsColumns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
-	eventsTable.SetStyles(table.DefaultStyles())
-
-	intent := &ManageSkillsIntent{
-		BaseIntent:          baseIntent,
-		context:             ctx,
-		currentState:        SkillsStateList,
-		skills:              []*domain.Skill{},
-		selectedIndex:       0,
-		filters:             &SkillsFilters{},
-		active:              true,
-		table:               &skillsTable,
-		listContainer:       components.NewTableListContainer(skillsTable, "Manage Skills", 100),
-		eventsTable:         &eventsTable,
-		eventsListContainer: components.NewTableListContainer(eventsTable, "Skill Events", 100),
-	}
-
-	// Initialize navigation handler for skills list
-	intent.navHandler = navigation.NewListNavigationHandler(intent)
-
-	// Initialize navigation handler for events list using wrapper
-	intent.eventsNavHandler = navigation.NewListNavigationHandler(&skillEventsNavigator{intent: intent})
-
-	return intent
-}
-
-// skillEventsNavigator wraps ManageSkillsIntent to implement ListNavigator for the events list
-type skillEventsNavigator struct {
-	intent *ManageSkillsIntent
-}
-
-func (n *skillEventsNavigator) GetTotalItems() int {
-	return len(n.intent.skillEvents)
-}
-
-func (n *skillEventsNavigator) GetSelectedIndex() int {
-	return n.intent.eventsSelectedIndex
-}
-
-func (n *skillEventsNavigator) SetSelectedIndex(idx int) {
-	// Validate and set index
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= len(n.intent.skillEvents) {
-		idx = len(n.intent.skillEvents) - 1
-	}
-	if idx < 0 {
-		idx = 0 // Handle empty list
-	}
-
-	n.intent.eventsSelectedIndex = idx
-
-	// Update table display
-	n.intent.updateEventsTableRows()
-}
-
-func (n *skillEventsNavigator) GetPageSize() int {
-	return 15
-}
-
-// Init initializes the intent and loads skills
-func (i *ManageSkillsIntent) Init() tea.Cmd {
-	i.active = true
-
-	// Disable screen architecture by default (tests expect legacy mode)
-	// TODO: Fix screen orchestration bugs before re-enabling
-	i.useScreens = false
-
-	// Apply themed table styles if theme is available (for legacy fallback states)
-	if theme := i.Theme(); theme != nil {
-		i.table.SetStyles(themes.NewThemedTableStyles(theme))
-	}
-
-	// Load skills asynchronously
-	return func() tea.Msg {
-		// Guard against nil repository (e.g., in tests without full context setup)
-		if i.context == nil || i.context.SkillRepository == nil {
-			return SkillsLoadedMsg{
-				Skills: nil,
-				Error:  nil,
-			}
+// skillRowFormatterWithCounts creates a row formatter that includes event counts
+func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormatter[*domain.Skill] {
+	return func(skill *domain.Skill, index int) []string {
+		// Name
+		name := skill.Name
+		if len(name) > 22 {
+			name = name[:22] + "..."
 		}
-		skills, err := i.context.SkillRepository.List(i.context.Ctx, nil)
-		return SkillsLoadedMsg{
-			Skills: skills,
-			Error:  err,
-		}
-	}
-}
-
-// updateTableRows updates the table rows based on skills
-func (i *ManageSkillsIntent) updateTableRows() {
-	pageSize := 15
-	total := len(i.skills)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && i.selectedIndex >= 0 {
-		page = i.selectedIndex / pageSize
-	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	// Handle empty list
-	if total == 0 {
-		i.table.SetRows([]table.Row{})
-		i.listContainer.SetTable(*i.table)
-		return
-	}
-
-	pageSkills := i.skills[start:end]
-
-	rows := make([]table.Row, 0, len(pageSkills))
-	for idx, skill := range pageSkills {
-		realIdx := start + idx
-
-		// Use centralized indicator formatting
-		name := i.navHandler.FormatRowText(realIdx, skill.Name)
 
 		// Category
 		category := skill.Category
@@ -277,97 +130,134 @@ func (i *ManageSkillsIntent) updateTableRows() {
 
 		// Event count
 		eventCount := "-"
-		if i.eventCounts != nil {
-			if count, ok := i.eventCounts[skill.ID]; ok {
+		if eventCounts != nil {
+			if count, ok := eventCounts[skill.ID]; ok {
 				eventCount = fmt.Sprintf("%d", count)
 			}
 		}
 
-		rows = append(rows, table.Row{name, category, level, years, eventCount})
+		return []string{name, category, level, years, eventCount}
 	}
-
-	i.table.SetRows(rows)
-
-	// Calculate relative cursor position for this page
-	relativeCursor := 0
-	if i.selectedIndex >= start && i.selectedIndex < end {
-		relativeCursor = i.selectedIndex - start
-	}
-
-	// Set table cursor to relative position within the page
-	i.table.SetCursor(relativeCursor)
-
-	// Sync the container's selectedIdx to match our relative cursor
-	i.listContainer.SetSelectedIdx(relativeCursor)
-
-	// Update the container with the modified table
-	i.listContainer.SetTable(*i.table)
 }
 
-// updateEventsTableRows updates the events table rows based on skillEvents
-func (i *ManageSkillsIntent) updateEventsTableRows() {
-	pageSize := 15
-	total := len(i.skillEvents)
+// eventRowFormatter formats a career event for table display
+func eventRowFormatter(event *domain.CareerEvent, index int) []string {
+	// Date
+	dateStr := event.Date.Format("2006-01-02")
 
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && i.eventsSelectedIndex >= 0 {
-		page = i.eventsSelectedIndex / pageSize
+	// Truncate text to first 47 chars (50 - 3 for "...")
+	text := event.Text
+	if len(text) > 47 {
+		text = text[:47] + "..."
 	}
 
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
+	// Company
+	company := event.Company
+	if company == "" {
+		company = "-"
 	}
 
-	// Handle empty list
-	if total == 0 {
-		i.eventsTable.SetRows([]table.Row{})
-		i.eventsListContainer.SetTable(*i.eventsTable)
-		return
+	return []string{dateStr, text, company}
+}
+
+// NewManageSkillsIntent creates a new ManageSkills intent
+func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
+	baseIntent := NewBaseIntent()
+	baseIntent.SetThemeManager(themes.NewThemeManager())
+
+	// Create TableBehavior for skills list
+	skillsColumns := []behaviors.ColumnDef{
+		{Title: "Name", Width: 25},
+		{Title: "Category", Width: 15},
+		{Title: "Level", Width: 12},
+		{Title: "Years", Width: 8},
+		{Title: "Events", Width: 8},
 	}
 
-	pageEvents := i.skillEvents[start:end]
+	// Create TableBehavior for skill events list
+	eventsColumns := []behaviors.ColumnDef{
+		{Title: "Date", Width: 12},
+		{Title: "Event", Width: 50},
+		{Title: "Company", Width: 20},
+	}
 
-	rows := make([]table.Row, 0, len(pageEvents))
-	for idx, event := range pageEvents {
-		realIdx := start + idx
+	intent := &ManageSkillsIntent{
+		BaseIntent:   baseIntent,
+		context:      ctx,
+		currentState: SkillsStateList,
+		skills:       []*domain.Skill{},
+		filters:      &SkillsFilters{},
+		active:       true,
+	}
 
-		// Use centralized indicator formatting
-		dateStr := i.eventsNavHandler.FormatRowText(realIdx, event.Date.Format("2006-01-02"))
+	// Initialize TableBehaviors - use closure to capture eventCounts reference
+	intent.tableBehavior = behaviors.NewTableBehavior[*domain.Skill](nil, skillsColumns, skillRowFormatterWithCounts(intent.eventCounts)).
+		PageSize(15).
+		PaginationPrefix("Skills").
+		EmptyMessage("No skills found. Press 'n' to add a new skill.")
 
-		// Truncate text to first 50 chars
-		text := event.Text
-		if len(text) > 50 {
-			text = text[:50] + "..."
+	intent.eventsTableBehavior = behaviors.NewTableBehavior[*domain.CareerEvent](nil, eventsColumns, eventRowFormatter).
+		PageSize(15).
+		PaginationPrefix("Events").
+		EmptyMessage("No events found for this skill.")
+
+	return intent
+}
+
+// Init initializes the intent and loads skills
+func (i *ManageSkillsIntent) Init() tea.Cmd {
+	i.active = true
+
+	// Disable screen architecture by default (tests expect legacy mode)
+	// TODO: Fix screen orchestration bugs before re-enabling
+	i.useScreens = false
+
+	// Apply theme to TableBehaviors if available
+	if theme := i.Theme(); theme != nil {
+		i.tableBehavior.SetTheme(theme)
+		i.eventsTableBehavior.SetTheme(theme)
+	}
+
+	// Load skills asynchronously
+	return func() tea.Msg {
+		// Guard against nil repository (e.g., in tests without full context setup)
+		if i.context == nil || i.context.SkillRepository == nil {
+			return SkillsLoadedMsg{
+				Skills: nil,
+				Error:  nil,
+			}
 		}
-
-		// Company
-		company := event.Company
-		if company == "" {
-			company = "-"
+		skills, err := i.context.SkillRepository.List(i.context.Ctx, nil)
+		return SkillsLoadedMsg{
+			Skills: skills,
+			Error:  err,
 		}
-
-		rows = append(rows, table.Row{dateStr, text, company})
 	}
+}
 
-	i.eventsTable.SetRows(rows)
-
-	// Calculate relative cursor position for this page
-	relativeCursor := 0
-	if i.eventsSelectedIndex >= start && i.eventsSelectedIndex < end {
-		relativeCursor = i.eventsSelectedIndex - start
+// syncTableSelection syncs the TableBehavior selection with the intent's data
+func (i *ManageSkillsIntent) syncTableSelection() {
+	i.selectedIndex = i.tableBehavior.GetSelectedIndex()
+	if selected := i.tableBehavior.GetSelectedItem(); selected != nil {
+		i.selectedSkill = *selected
+	} else {
+		i.selectedSkill = nil
 	}
+}
 
-	// Set table cursor to relative position within the page
-	i.eventsTable.SetCursor(relativeCursor)
+// syncEventsTableSelection syncs the events TableBehavior selection with the intent's data
+func (i *ManageSkillsIntent) syncEventsTableSelection() {
+	i.eventsSelectedIndex = i.eventsTableBehavior.GetSelectedIndex()
+	if selected := i.eventsTableBehavior.GetSelectedItem(); selected != nil {
+		i.selectedEventFromList = *selected
+	} else {
+		i.selectedEventFromList = nil
+	}
+}
 
-	// Sync the container's selectedIdx to match our relative cursor
-	i.eventsListContainer.SetSelectedIdx(relativeCursor)
-
-	// Update the container with the modified table
-	i.eventsListContainer.SetTable(*i.eventsTable)
+// refreshSkillsTable updates the TableBehavior with current skills
+func (i *ManageSkillsIntent) refreshSkillsTable() {
+	i.tableBehavior.SetItems(i.skills)
 }
 
 // Update handles messages and state transitions
@@ -399,6 +289,31 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 	}
 	if i.sortModal != nil && i.sortModal.IsVisible() {
 		return i.handleSortModalUpdate(msg)
+	}
+
+	// Handle view detail modal
+	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+		return i.handleViewDetailModalUpdate(msg)
+	}
+
+	// Handle add/edit modal
+	if i.addEditModal != nil && i.addEditModal.IsVisible() {
+		return i.handleAddEditModalUpdate(msg)
+	}
+
+	// Handle delete confirmation modal
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		return i.handleDeleteModalUpdate(msg)
+	}
+
+	// Handle skill events modal (shows events using a skill)
+	if i.skillEventsModal != nil && i.skillEventsModal.IsVisible() {
+		return i.handleSkillEventsModalUpdate(msg)
+	}
+
+	// Handle event detail modal (shows details of an event from events list)
+	if i.eventDetailModal != nil && i.eventDetailModal.IsVisible() {
+		return i.handleEventDetailModalUpdate(msg)
 	}
 
 	// Screen orchestration: delegate to active screen if present
@@ -448,6 +363,9 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case SkillEventsLoadedMsg:
 		return i.handleSkillEventsLoaded(msg)
+
+	case SkillEventsForModalLoadedMsg:
+		return i.handleSkillEventsForModalLoaded(msg)
 
 	case tea.KeyMsg:
 		// Global keys already handled above at top of function
@@ -533,50 +451,63 @@ func (i *ManageSkillsIntent) View() string {
 	if i.sortModal != nil && i.sortModal.IsVisible() {
 		return i.renderSortModalOverlay(baseView)
 	}
+	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
+		return i.renderViewDetailModalOverlay(baseView)
+	}
+	if i.addEditModal != nil && i.addEditModal.IsVisible() {
+		return i.renderAddEditModalOverlay(baseView)
+	}
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		return i.renderDeleteModalOverlay(baseView)
+	}
+	if i.skillEventsModal != nil && i.skillEventsModal.IsVisible() {
+		return i.renderSkillEventsModalOverlay(baseView)
+	}
+	if i.eventDetailModal != nil && i.eventDetailModal.IsVisible() {
+		return i.renderEventDetailModalOverlay(baseView)
+	}
 
 	return baseView
 }
 
-// renderFilterModalOverlay renders the filter modal over the base view
+// renderFilterModalOverlay renders the filter modal centered on the background.
 func (i *ManageSkillsIntent) renderFilterModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.filterModal,  // Foreground: the filter modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.filterModal, baseView)
 }
 
-// renderSortModalOverlay renders the sort modal over the base view
+// renderSortModalOverlay renders the sort modal centered on the background.
 func (i *ManageSkillsIntent) renderSortModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.sortModal,    // Foreground: the sort modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.sortModal, baseView)
 }
 
-// renderSearchModalOverlay renders the search modal over the base view
+// renderSearchModalOverlay renders the search modal centered on the background.
 func (i *ManageSkillsIntent) renderSearchModalOverlay(baseView string) string {
-	bgModel := &staticViewModel{content: baseView}
-	overlayModel := overlay.New(
-		i.searchModal,  // Foreground: the search modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (move up 2 lines to avoid footer)
-	)
-	return overlayModel.View()
+	return behaviors.RenderModalOverlay(i.searchModal, baseView)
+}
+
+// renderViewDetailModalOverlay renders the view detail modal centered on the background.
+func (i *ManageSkillsIntent) renderViewDetailModalOverlay(baseView string) string {
+	return behaviors.RenderModalOverlay(i.viewDetailModal, baseView)
+}
+
+// renderAddEditModalOverlay renders the add/edit modal centered on the background.
+func (i *ManageSkillsIntent) renderAddEditModalOverlay(baseView string) string {
+	return behaviors.RenderModalOverlay(i.addEditModal, baseView)
+}
+
+// renderDeleteModalOverlay renders the delete confirmation modal centered on the background.
+func (i *ManageSkillsIntent) renderDeleteModalOverlay(baseView string) string {
+	return behaviors.RenderModalOverlay(i.deleteModal, baseView)
+}
+
+// renderSkillEventsModalOverlay renders the skill events modal centered on the background.
+func (i *ManageSkillsIntent) renderSkillEventsModalOverlay(baseView string) string {
+	return behaviors.RenderModalOverlay(i.skillEventsModal, baseView)
+}
+
+// renderEventDetailModalOverlay renders the event detail modal centered on the background.
+func (i *ManageSkillsIntent) renderEventDetailModalOverlay(baseView string) string {
+	return behaviors.RenderModalOverlay(i.eventDetailModal, baseView)
 }
 
 // handleFilterModalUpdate handles updates when filter modal is visible
@@ -761,6 +692,233 @@ func (i *ManageSkillsIntent) handleSearchModalUpdate(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
+// handleViewDetailModalUpdate handles updates when view detail modal is visible
+func (i *ManageSkillsIntent) handleViewDetailModalUpdate(msg tea.Msg) tea.Cmd {
+	_, cmd := i.viewDetailModal.Update(msg)
+
+	if !i.viewDetailModal.IsVisible() {
+		// Modal was closed - check for action
+		action := i.viewDetailModal.GetAction()
+		switch action {
+		case "events":
+			// Load events for this skill and show modal
+			i.viewDetailModal = nil
+			return i.loadEventsForSkillModal()
+		case "edit":
+			// Open add/edit modal for this skill
+			return i.openAddEditModal(i.selectedSkill)
+		case "delete":
+			// Open delete confirmation modal
+			return i.openDeleteModal(i.selectedSkill)
+		}
+		// Simple close - clear the modal
+		i.viewDetailModal = nil
+	}
+
+	return cmd
+}
+
+// handleAddEditModalUpdate handles updates when add/edit modal is visible
+func (i *ManageSkillsIntent) handleAddEditModalUpdate(msg tea.Msg) tea.Cmd {
+	cmd, completed, skillData := i.addEditModal.Update(msg)
+
+	if !i.addEditModal.IsVisible() {
+		if completed && skillData != nil {
+			// User completed form - save skill
+			originalSkill := i.addEditModal.GetOriginalSkill()
+			if originalSkill != nil {
+				// Editing existing skill
+				skill := skillData.ToSkill(originalSkill.ID)
+				i.addEditModal = nil
+				return i.updateSkill(skill)
+			} else {
+				// Creating new skill
+				skill := skillData.ToSkill("")
+				i.addEditModal = nil
+				return i.createSkill(skill)
+			}
+		}
+		// User cancelled - close modal
+		i.addEditModal = nil
+	}
+
+	return cmd
+}
+
+// handleDeleteModalUpdate handles updates when delete confirmation modal is visible
+func (i *ManageSkillsIntent) handleDeleteModalUpdate(msg tea.Msg) tea.Cmd {
+	cmd, confirmed := i.deleteModal.Update(msg)
+
+	if !i.deleteModal.IsVisible() {
+		if confirmed && i.selectedSkill != nil {
+			// User confirmed deletion
+			skillID := i.selectedSkill.ID
+			i.deleteModal = nil
+			return func() tea.Msg {
+				err := i.context.SkillRepository.Delete(i.context.Ctx, skillID)
+				return SkillDeletedMsg{
+					SkillID: skillID,
+					Error:   err,
+				}
+			}
+		}
+		// User cancelled
+		i.deleteModal = nil
+	}
+
+	return cmd
+}
+
+// handleSkillEventsModalUpdate handles updates when skill events modal is visible
+func (i *ManageSkillsIntent) handleSkillEventsModalUpdate(msg tea.Msg) tea.Cmd {
+	_, cmd := i.skillEventsModal.Update(msg)
+
+	if !i.skillEventsModal.IsVisible() {
+		// Check if user selected an event
+		if i.skillEventsModal.HasSelection() {
+			selectedEvent := i.skillEventsModal.GetSelectedEvent()
+			i.skillEventsModal.ClearSelection()
+			// Open event detail modal
+			return i.openEventDetailModal(selectedEvent)
+		}
+		// Simple close - clear the modal
+		i.skillEventsModal = nil
+	}
+
+	return cmd
+}
+
+// handleEventDetailModalUpdate handles updates when event detail modal is visible
+func (i *ManageSkillsIntent) handleEventDetailModalUpdate(msg tea.Msg) tea.Cmd {
+	_, cmd := i.eventDetailModal.Update(msg)
+
+	if !i.eventDetailModal.IsVisible() {
+		// Event detail modal was closed
+		i.eventDetailModal = nil
+		// Re-show the skill events modal if it exists
+		if i.skillEventsModal != nil {
+			i.skillEventsModal.Show()
+		}
+	}
+
+	return cmd
+}
+
+// openSkillEventsModal opens the skill events modal for the selected skill
+func (i *ManageSkillsIntent) openSkillEventsModal(events []*domain.CareerEvent) tea.Cmd {
+	if i.selectedSkill == nil {
+		return nil
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.skillEventsModal = components.NewViewSkillEventsModal(
+		i.selectedSkill.ID,
+		i.selectedSkill.Name,
+		events,
+		i.Theme(),
+	)
+	i.skillEventsModal.SetDimensions(width, height)
+	i.skillEventsModal.Show()
+
+	return nil
+}
+
+// openEventDetailModal opens the event detail modal for a selected event
+func (i *ManageSkillsIntent) openEventDetailModal(event *domain.CareerEvent) tea.Cmd {
+	if event == nil {
+		return nil
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.eventDetailModal = components.NewViewEventDetailModal(event, i.Theme()).
+		WithShowSkillsOption(false) // Hide "s: Skills" - we're already in skills context
+	i.eventDetailModal.SetDimensions(width, height)
+	i.eventDetailModal.Show()
+
+	return nil
+}
+
+// openViewDetailModal opens the view detail modal for the selected skill
+func (i *ManageSkillsIntent) openViewDetailModal() tea.Cmd {
+	if len(i.skills) == 0 || i.selectedIndex >= len(i.skills) {
+		return nil
+	}
+
+	skill := i.skills[i.selectedIndex]
+	i.selectedSkill = skill
+
+	// Get event count and last used for this skill
+	eventCount := 0
+	if i.eventCounts != nil {
+		eventCount = i.eventCounts[skill.ID]
+	}
+
+	var lastUsed *time.Time
+	if i.lastUsedMap != nil {
+		if lu, ok := i.lastUsedMap[skill.ID]; ok {
+			lastUsed = &lu
+		}
+	}
+
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.viewDetailModal = components.NewViewSkillDetailModal(skill, i.Theme(), eventCount, lastUsed)
+	i.viewDetailModal.SetDimensions(width, height)
+	i.viewDetailModal.Show()
+
+	return nil
+}
+
+// openAddEditModal opens the add/edit modal for a skill
+func (i *ManageSkillsIntent) openAddEditModal(skill *domain.Skill) tea.Cmd {
+	// Get terminal dimensions
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+		width, height = termInfo.Width, termInfo.Height
+	}
+
+	i.addEditModal = components.NewSkillAddEditModal(skill, width, height)
+	return i.addEditModal.Init()
+}
+
+// openDeleteModal opens the delete confirmation modal for a skill
+func (i *ManageSkillsIntent) openDeleteModal(skill *domain.Skill) tea.Cmd {
+	if skill == nil {
+		return nil
+	}
+
+	i.selectedSkill = skill
+	skillName := skill.Name
+	if len(skillName) > 50 {
+		skillName = skillName[:47] + "..."
+	}
+
+	i.deleteModal = components.NewDeleteConfirmModal(
+		skill.Name,
+		"Delete Skill",
+		fmt.Sprintf("Are you sure you want to delete '%s'?", skillName),
+	)
+	return i.deleteModal.Init()
+}
+
 // getStateContent returns the content for the current state
 func (i *ManageSkillsIntent) getStateContent() string {
 	switch i.currentState {
@@ -817,14 +975,14 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 
 	switch i.currentState {
 	case SkillsStateList:
-		badges := []components.KeyBadge{
-			components.NewKeyBadge("Enter", "View details"),
-			components.NewKeyBadge("n", "New skill"),
-			components.NewKeyBadge("f", "Filter"),
-			components.NewKeyBadge("s", "Sort"),
+		badges := []*primitives.Badge{
+			primitives.HelpKeyBadge("Enter", "View details", theme),
+			primitives.HelpKeyBadge("n", "New skill", theme),
+			primitives.HelpKeyBadge("f", "Filter", theme),
+			primitives.HelpKeyBadge("s", "Sort", theme),
 		}
 		if i.HasActiveFilters() {
-			badges = append(badges, components.NewKeyBadge("x", "Clear filters"))
+			badges = append(badges, primitives.HelpKeyBadge("x", "Clear filters", theme))
 		}
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
@@ -835,9 +993,9 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "View events"),
-				components.EditBadge(),
-				components.DeleteBadge(),
+				primitives.HelpKeyBadge("Enter", "View events", theme),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -845,8 +1003,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "View details"),
-				components.EditBadge(),
+				primitives.HelpKeyBadge("Enter", "View details", theme),
+				primitives.EditBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -854,7 +1012,7 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
+				primitives.EditBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -866,8 +1024,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 	case SkillsStateDelete:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y", "Confirm"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y", "Confirm", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -875,8 +1033,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Apply"),
-				components.NewKeyBadge("u", "Used skills only"),
+				primitives.HelpKeyBadge("Enter", "Apply", theme),
+				primitives.HelpKeyBadge("u", "Used skills only", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -884,8 +1042,8 @@ func (i *ManageSkillsIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Apply"),
-				components.NewKeyBadge("e", "Most used"),
+				primitives.HelpKeyBadge("Enter", "Apply", theme),
+				primitives.HelpKeyBadge("e", "Most used", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -925,6 +1083,31 @@ func (i *ManageSkillsIntent) ActiveFilters() *SkillsFilters {
 	return i.filters
 }
 
+// HasVisibleDetailModal returns true if the detail modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleDetailModal() bool {
+	return i.viewDetailModal != nil && i.viewDetailModal.IsVisible()
+}
+
+// HasVisibleAddEditModal returns true if the add/edit modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleAddEditModal() bool {
+	return i.addEditModal != nil && i.addEditModal.IsVisible()
+}
+
+// HasVisibleDeleteModal returns true if the delete modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleDeleteModal() bool {
+	return i.deleteModal != nil && i.deleteModal.IsVisible()
+}
+
+// HasVisibleSkillEventsModal returns true if the skill events modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleSkillEventsModal() bool {
+	return i.skillEventsModal != nil && i.skillEventsModal.IsVisible()
+}
+
+// HasVisibleEventDetailModal returns true if the event detail modal is visible (for testing)
+func (i *ManageSkillsIntent) HasVisibleEventDetailModal() bool {
+	return i.eventDetailModal != nil && i.eventDetailModal.IsVisible()
+}
+
 // Message handlers
 
 func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
@@ -959,8 +1142,9 @@ func (i *ManageSkillsIntent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 		return i.transitionToListScreen()
 	}
 
-	// Legacy: Update table rows with new skills data
-	i.updateTableRows()
+	// Update TableBehavior with new skills data
+	i.refreshSkillsTable()
+	i.syncTableSelection()
 
 	return nil
 }
@@ -1110,43 +1294,38 @@ func (i *ManageSkillsIntent) handleListKeys(msg tea.KeyMsg) tea.Cmd {
 			return nil
 		}).
 		InterceptOr(msg, func() tea.Cmd {
-			// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
-			if i.navHandler.HandleKey(msg.String()) {
+			// Try TableBehavior navigation first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+			if i.tableBehavior.HandleNavigation(msg.String()) {
+				i.syncTableSelection()
 				return nil
 			}
 
 			switch msg.String() {
 			case "enter":
-				// View skill detail
+				// View skill detail - use modal overlay
+				if len(i.skills) == 0 {
+					return nil
+				}
+				return i.openViewDetailModal()
+
+			case "n":
+				// Add new skill - use modal overlay
+				return i.openAddEditModal(nil)
+
+			case "e":
+				// Edit selected skill - use modal overlay
 				if len(i.skills) == 0 {
 					return nil
 				}
 				i.selectedSkill = i.skills[i.selectedIndex]
-				i.currentState = SkillsStateDetail
-				return i.loadDetailData()
-
-			case "n":
-				// Add new skill
-				i.currentState = SkillsStateAdd
-				i.skillForm = models.NewSkillForm()
-				return i.skillForm.Init()
-
-			case "e":
-				// Edit selected skill
-				if len(i.skills) == 0 {
-					return nil
-				}
-				i.currentState = SkillsStateEdit
-				i.skillForm = models.NewSkillFormWithData(i.skills[i.selectedIndex])
-				return i.skillForm.Init()
+				return i.openAddEditModal(i.selectedSkill)
 
 			case "d":
-				// Delete selected skill
+				// Delete selected skill - use modal overlay
 				if len(i.skills) == 0 {
 					return nil
 				}
-				i.currentState = SkillsStateDelete
-				return nil
+				return i.openDeleteModal(i.skills[i.selectedIndex])
 
 			case "f":
 				// PATTERN 12: Form Modal with Immediate Init
@@ -1517,7 +1696,7 @@ func (i *ManageSkillsIntent) renderDeleteConfirm() string {
 	skill := i.skills[i.selectedIndex]
 
 	modalContent := fmt.Sprintf("Are you sure you want to delete '%s'?\n\nThis action cannot be undone.", skill.Name)
-	modal := components.NewWarningModal("Delete Skill", modalContent)
+	modal := feedback.NewWarningModal("Delete Skill", modalContent)
 
 	// Get terminal dimensions
 	width, height := 80, 24
@@ -1529,61 +1708,12 @@ func (i *ManageSkillsIntent) renderDeleteConfirm() string {
 	return modal.Render(width, height)
 }
 
-// getCardStyle returns a themed card style for consistent content presentation.
-func (i *ManageSkillsIntent) getCardStyle() lipgloss.Style {
-	if theme := i.Theme(); theme != nil {
-		return theme.Styles().CardBase
-	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#585B70"))
-}
-
 func (i *ManageSkillsIntent) renderSkillsList() string {
-	if len(i.skills) == 0 {
-		i.listContainer.SetEmptyStateMessage("No skills defined yet.\n\nPress 'n' to add your first skill.")
-		return i.listContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	i.updateTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(i.skills)
-	currentPage := (i.selectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Skills: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	i.listContainer.SetPaginationInfo(paginationInfo)
-
-	return i.listContainer.Render()
+	// TableBehavior handles empty state and pagination internally
+	return i.tableBehavior.Render()
 }
 
-// loadDetailData loads event counts and last used dates for detail view
-func (i *ManageSkillsIntent) loadDetailData() tea.Cmd {
-	// Load synchronously since we need this data immediately
-	eventCounts, err := i.context.SkillRepository.GetEventCountsForSkills(i.context.Ctx)
-	if err != nil {
-		// If loading fails, use empty maps
-		i.eventCounts = make(map[string]int)
-	} else {
-		i.eventCounts = eventCounts
-	}
-
-	lastUsedMap, err := i.context.SkillRepository.GetLastUsedForSkills(i.context.Ctx)
-	if err != nil {
-		// If loading fails, use empty map
-		i.lastUsedMap = make(map[string]time.Time)
-	} else {
-		i.lastUsedMap = lastUsedMap
-	}
-
-	return nil
-}
-
-// handleSkillEventsLoaded handles the SkillEventsLoadedMsg
+// handleSkillEventsLoaded handles the SkillEventsLoadedMsg (state-based flow)
 func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) tea.Cmd {
 	if msg.Error != nil {
 		// Show error but stay in detail view
@@ -1594,15 +1724,27 @@ func (i *ManageSkillsIntent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) t
 	i.eventsLoaded = true
 	i.eventsSelectedIndex = 0
 
-	// Apply themed table styles for events table
+	// Apply theme to events TableBehavior
 	if theme := i.Theme(); theme != nil {
-		i.eventsTable.SetStyles(themes.NewThemedTableStyles(theme))
+		i.eventsTableBehavior.SetTheme(theme)
 	}
 
-	// Update table rows with new events data
-	i.updateEventsTableRows()
+	// Update TableBehavior with events data
+	i.eventsTableBehavior.SetItems(i.skillEvents)
+	i.syncEventsTableSelection()
 
 	return nil
+}
+
+// handleSkillEventsForModalLoaded handles the SkillEventsForModalLoadedMsg (modal flow)
+func (i *ManageSkillsIntent) handleSkillEventsForModalLoaded(msg SkillEventsForModalLoadedMsg) tea.Cmd {
+	if msg.Error != nil {
+		// Show error - could display error modal here
+		return nil
+	}
+
+	// Open the skill events modal with the loaded events
+	return i.openSkillEventsModal(msg.Events)
 }
 
 // handleDetailKeys handles key presses in detail view
@@ -1656,8 +1798,9 @@ func (i *ManageSkillsIntent) handleDetailEventsKeys(msg tea.KeyMsg) tea.Cmd {
 			return nil
 		}).
 		InterceptOr(msg, func() tea.Cmd {
-			// Try list navigation handler first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
-			if i.eventsNavHandler.HandleKey(msg.String()) {
+			// Try TableBehavior navigation first (handles j/k, up/down, pgup/pgdn, home/end, g/G)
+			if i.eventsTableBehavior.HandleNavigation(msg.String()) {
+				i.syncEventsTableSelection()
 				return nil
 			}
 
@@ -1685,7 +1828,7 @@ func (i *ManageSkillsIntent) handleDetailEventsKeys(msg tea.KeyMsg) tea.Cmd {
 		})
 }
 
-// loadEventsForSkill loads events that use the selected skill
+// loadEventsForSkill loads events that use the selected skill (for state-based flow)
 func (i *ManageSkillsIntent) loadEventsForSkill() tea.Cmd {
 	return func() tea.Msg {
 		events, err := i.context.SkillRepository.GetEventsUsingSkill(i.context.Ctx, i.selectedSkill.ID)
@@ -1696,7 +1839,18 @@ func (i *ManageSkillsIntent) loadEventsForSkill() tea.Cmd {
 	}
 }
 
-// renderSkillDetail renders the skill detail content
+// loadEventsForSkillModal loads events and opens the skill events modal
+func (i *ManageSkillsIntent) loadEventsForSkillModal() tea.Cmd {
+	return func() tea.Msg {
+		events, err := i.context.SkillRepository.GetEventsUsingSkill(i.context.Ctx, i.selectedSkill.ID)
+		return SkillEventsForModalLoadedMsg{
+			Events: events,
+			Error:  err,
+		}
+	}
+}
+
+// renderSkillDetail renders the skill detail content using UIKit components
 func (i *ManageSkillsIntent) renderSkillDetail() string {
 	skill := i.selectedSkill
 	theme := i.Theme()
@@ -1745,13 +1899,14 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 		}
 	}
 
-	// Timestamps
+	// Timestamps using UIKit primitives
 	lines = append(lines, "")
-	lines = append(lines, labelStyle.Render("Created:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.CreatedAt.Format("2006-01-02 15:04")))
-	lines = append(lines, labelStyle.Render("Updated:")+lipgloss.NewStyle().Foreground(theme.MutedColor()).Render(skill.UpdatedAt.Format("2006-01-02 15:04")))
+	lines = append(lines, labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render())
+	lines = append(lines, labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render())
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return i.getCardStyle().Render(content)
+	// Use UIKit Box container for consistent card styling
+	return containers.NewBox(theme).Content(content).Render()
 }
 
 // renderSkillEvents renders the events using this skill as a table
@@ -1759,29 +1914,13 @@ func (i *ManageSkillsIntent) renderSkillEvents() string {
 	theme := i.Theme()
 
 	if !i.eventsLoaded {
-		loadingStyle := lipgloss.NewStyle().
-			Foreground(theme.SecondaryColor()).
-			MarginTop(2)
-		return i.getCardStyle().Render(loadingStyle.Render("Loading events..."))
+		// Use UIKit Box container with muted loading text
+		loadingContent := primitives.Muted("Loading events...", theme).Render()
+		return containers.NewBox(theme).Content(loadingContent).Render()
 	}
 
-	if len(i.skillEvents) == 0 {
-		i.eventsListContainer.SetEmptyStateMessage("No events use this skill yet.")
-		return i.eventsListContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	i.updateEventsTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(i.skillEvents)
-	currentPage := (i.eventsSelectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Events: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	i.eventsListContainer.SetPaginationInfo(paginationInfo)
-
-	return i.eventsListContainer.Render()
+	// TableBehavior handles empty state and pagination internally
+	return i.eventsTableBehavior.Render()
 }
 
 // renderEventDetail renders a single event's details using the reusable component
@@ -1821,11 +1960,6 @@ func (i *ManageSkillsIntent) handleEventDetailKeys(msg tea.KeyMsg) tea.Cmd {
 func (i *ManageSkillsIntent) renderFilterMenu() string {
 	theme := i.Theme()
 
-	titleStyle := lipgloss.NewStyle().
-		Foreground(theme.PrimaryColor()).
-		Bold(true).
-		MarginBottom(1)
-
 	selectedStyle := lipgloss.NewStyle().
 		Foreground(theme.SuccessColor()).
 		Bold(true)
@@ -1837,7 +1971,7 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 		Foreground(theme.MutedColor())
 
 	var lines []string
-	lines = append(lines, titleStyle.Render("Filter Skills"))
+	lines = append(lines, primitives.Title("Filter Skills", theme).MarginBottom(1).Render())
 	lines = append(lines, "")
 
 	// Category section
@@ -1935,17 +2069,13 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return i.getCardStyle().Render(content)
+	// Use UIKit Box container for consistent card styling
+	return containers.NewBox(i.Theme()).Content(content).Render()
 }
 
 // renderSortMenu renders the sort menu
 func (i *ManageSkillsIntent) renderSortMenu() string {
 	theme := i.Theme()
-
-	titleStyle := lipgloss.NewStyle().
-		Foreground(theme.PrimaryColor()).
-		Bold(true).
-		MarginBottom(1)
 
 	selectedStyle := lipgloss.NewStyle().
 		Foreground(theme.SuccessColor()).
@@ -1955,7 +2085,7 @@ func (i *ManageSkillsIntent) renderSortMenu() string {
 		Foreground(theme.ForegroundColor())
 
 	var lines []string
-	lines = append(lines, titleStyle.Render("Sort Skills"))
+	lines = append(lines, primitives.Title("Sort Skills", theme).MarginBottom(1).Render())
 	lines = append(lines, "")
 
 	sortOptions := []struct {
@@ -1988,43 +2118,26 @@ func (i *ManageSkillsIntent) renderSortMenu() string {
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
-	return i.getCardStyle().Render(content)
+	// Use UIKit Box container for consistent card styling
+	return containers.NewBox(i.Theme()).Content(content).Render()
 }
 
-// ListNavigator interface implementation
+// ListNavigator interface implementation (delegates to TableBehavior)
 
 // GetTotalItems returns the total number of skills.
 func (i *ManageSkillsIntent) GetTotalItems() int {
-	return len(i.skills)
+	return i.tableBehavior.Count()
 }
 
 // GetSelectedIndex returns the current selection index.
 func (i *ManageSkillsIntent) GetSelectedIndex() int {
-	return i.selectedIndex
+	return i.tableBehavior.GetSelectedIndex()
 }
 
 // SetSelectedIndex sets the selection index and updates the display.
 func (i *ManageSkillsIntent) SetSelectedIndex(idx int) {
-	// Validate and set index
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= len(i.skills) {
-		idx = len(i.skills) - 1
-	}
-	if idx < 0 {
-		idx = 0 // Handle empty list
-	}
-
-	i.selectedIndex = idx
-
-	// Update selected skill
-	if idx >= 0 && idx < len(i.skills) {
-		i.selectedSkill = i.skills[idx]
-	}
-
-	// Update table display
-	i.updateTableRows()
+	i.tableBehavior.SetSelectedIndex(idx)
+	i.syncTableSelection()
 }
 
 // GetPageSize returns the page size for pagination.

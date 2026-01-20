@@ -15,34 +15,86 @@ func NewClassifier() *Classifier {
 }
 
 // ClassifyRoleFit determines the role fit for a fact based on keywords
+// Deprecated: Use ClassifyRoleFitWithCategories instead for more accurate classification
 func (c *Classifier) ClassifyRoleFit(text string) career.RoleFit {
+	return c.ClassifyRoleFitWithCategories(text, nil)
+}
+
+// ClassifyRoleFitWithCategories determines role fit using both text keywords and event categories.
+// Categories provide a strong signal that should take precedence over keyword matching.
+// The logic is:
+//   - "leadership" + "technical" categories → staff (technical leadership)
+//   - "leadership" only → em (people management)
+//   - "technical" only → senior_ic (individual contributor)
+//   - Keywords in text can elevate to principal if strong signals present
+func (c *Classifier) ClassifyRoleFitWithCategories(text string, categories []string) career.RoleFit {
 	lowerText := strings.ToLower(text)
 
-	// Principal indicators
+	// First, determine base role from categories (strong signal)
+	hasLeadership := false
+	hasTechnical := false
+	for _, cat := range categories {
+		lowerCat := strings.ToLower(cat)
+		if lowerCat == "leadership" {
+			hasLeadership = true
+		}
+		if lowerCat == "technical" || lowerCat == "architecture" {
+			hasTechnical = true
+		}
+	}
+
+	// Category-based role determination (primary signal)
+	var categoryBasedRole career.RoleFit
+	if hasLeadership && hasTechnical {
+		categoryBasedRole = career.RoleFitStaff // Technical leadership
+	} else if hasLeadership {
+		categoryBasedRole = career.RoleFitEM // People management focus
+	} else {
+		categoryBasedRole = career.RoleFitSeniorIC // Default: individual contributor
+	}
+
+	// Only elevate to principal if STRONG principal indicators in text
+	// These are indicators that suggest company-wide or strategic impact
+	strongPrincipalKeywords := []string{
+		"principal", "company-wide", "enterprise", "organization-wide",
+		"technical direction", "founding", "founder", "cto", "chief",
+	}
+
+	principalScore := scoreText(lowerText, strongPrincipalKeywords)
+	if principalScore >= 2 {
+		// Multiple strong principal signals → elevate to principal
+		return career.RoleFitPrincipal
+	}
+
+	// If categories provided a signal, use it
+	if len(categories) > 0 {
+		return categoryBasedRole
+	}
+
+	// Fallback to keyword-based classification when no categories available
+	// (backwards compatibility for facts without source events)
 	principalKeywords := []string{
 		"principal", "architect", "vision", "strategy", "roadmap",
 		"company-wide", "enterprise", "organization",
 		"technical direction", "founding", "founder",
 	}
 
-	// EM indicators
 	emKeywords := []string{
-		"manager", "director", "head", "vp", "vice president",
-		"management", "people management", "hiring", "team",
+		"manager", "managed", "director", "head of", "vp", "vice president",
+		"management", "people management", "hiring", "team lead", "team of",
 	}
 
-	// Staff indicators
 	staffKeywords := []string{
 		"staff engineer", "principal engineer", "deep expertise",
-		"complex", "difficult", "systems", "architecture design",
+		"complex systems", "architecture design", "cross-team", "complex",
 	}
 
-	// Score each role fit
-	principalScore := scoreText(lowerText, principalKeywords)
+	principalScore = scoreText(lowerText, principalKeywords)
 	emScore := scoreText(lowerText, emKeywords)
 	staffScore := scoreText(lowerText, staffKeywords)
 
-	// Return highest scoring role fit (principal > em > staff > senior_ic)
+	// Return highest scoring role fit
+	// For backwards compatibility, accept single keyword matches when no categories
 	if principalScore > 0 && principalScore >= emScore && principalScore >= staffScore {
 		return career.RoleFitPrincipal
 	}

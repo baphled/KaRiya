@@ -589,7 +589,7 @@ These discoveries led to creation of comprehensive pattern documentation:
 
 **Medium Priority** (Regular use):
 4. **ExportArtifact** (5 states) - Not started
-5. **ConfigureSystem** (4 states) - Not started
+5. ✅ **ConfigureSystem** (4 states + modal sequence) - **100% complete** - Modal-based architecture, no backward compatibility
 6. **BurstManagement** (6 states) - Not started
 7. **FactManagement** (5 states) - Not started
 
@@ -1745,14 +1745,30 @@ Strategy Selection → Event Form → Submit (async) → Success/Error
 - [ ] **TUI Compliance**: Check help text accuracy
 - [ ] **State Matrix**: Update after refactor
 
-### 4.5 ConfigureSystemIntent (Priority: Medium)
-**Current**: ~500 lines (4 states) | **Target**: ~150 lines (70% reduction)
+### 4.5 ConfigureSystemIntent (Priority: Medium) ✅ COMPLETE
+**Current**: ~500 lines (4 states) | **After**: ~560 lines (modal sequence architecture)
 
-- [ ] Create config screens: domain_select, settings, staged_changes, confirm
-- [ ] Refactor ConfigureSystemIntent
-- [ ] Verify all tests pass
-- [ ] **TUI Compliance**: Universal keyboard shortcuts
-- [ ] **State Matrix**: Update after refactor
+**Completed 2026-01-20**:
+- [x] Create configtypes package (breaks import cycle)
+- [x] Create modals: EditSettingsModal, ReviewChangesModal, ConfirmModal
+- [x] Refactor to modal sequence flow (no backward compatibility)
+- [x] DomainSelectScreen as base, all steps as modal overlays
+- [x] All tests pass
+- [x] **TUI Compliance**: Universal keyboard shortcuts
+- [x] **State Matrix**: Uses modal overlays instead of states
+
+**Architecture**: Modal Sequence Flow
+```
+DomainSelectScreen (base)
+  └── EditSettingsModal (overlay)
+        └── ReviewChangesModal (overlay)
+              └── ConfirmModal (overlay)
+                    └── SavingModal (overlay)
+                          └── Success/ErrorModal (overlay)
+```
+
+**Commits**:
+- `75ece76` - refactor(intents): implement modal sequence flow for ConfigureSystem
 
 ### 4.6 BurstManagementIntent (Priority: Medium)
 **Current**: ~900 lines (6 states) | **Target**: ~200 lines (78% reduction)
@@ -3004,9 +3020,9 @@ For each new component needed:
 | FactManagement | 700 | 180 (est) | 74% (est) | 5 | Not started |
 | ImportWizard | 650 | 180 (est) | 72% (est) | 5 | Not started |
 | BulkOperations | 550 | 150 (est) | 73% (est) | 4 | Not started |
-| ConfigureSystem | 500 | 150 (est) | 70% (est) | 4 | Not started |
+| ConfigureSystem | 500 | 560 (actual) | -12% | 4+modal | ✅ Complete |
 | MetadataEditor | 450 | 130 (est) | 71% (est) | 3 | Not started |
-| **Total** | **9,941** | **2,543** | **~74%** | **57+3** | **2/11 complete** |
+| **Total** | **9,941** | **2,543** | **~74%** | **57+3** | **5/11 complete** |
 
 **Notes**:
 - GenerateCV: Hybrid approach (kept monolith, added components) - successful ✅

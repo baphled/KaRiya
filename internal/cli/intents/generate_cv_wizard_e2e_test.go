@@ -663,6 +663,10 @@ func (m *mockWizardPreviewScreen) View() string {
 	return "Mock Preview Screen"
 }
 
+func (m *mockWizardPreviewScreen) RenderContent() string {
+	return "Mock Preview Content"
+}
+
 func (m *mockWizardPreviewScreen) SetTheme(theme interface{}) {
 }
 
@@ -700,6 +704,10 @@ func (m *mockWizardReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRes
 
 func (m *mockWizardReviewScreen) View() string {
 	return "Mock Review Screen"
+}
+
+func (m *mockWizardReviewScreen) RenderContent() string {
+	return "Mock Review Content"
 }
 
 func (m *mockWizardReviewScreen) SetTheme(theme interface{}) {

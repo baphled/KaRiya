@@ -9,7 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
@@ -213,49 +213,36 @@ func NewCVProfileSelectScreenFromIntent(profiles []*CVProfile) screens.Screen {
 // Theme helper methods for consistent themed styling.
 
 // getCardStyle returns a themed card style, with fallback to default styling.
+// getTheme returns the theme or a default.
+func (i *GenerateCVIntent) getTheme() themes.Theme {
+	if theme := i.Theme(); theme != nil {
+		return theme
+	}
+	return themes.NewDefaultTheme()
+}
+
 func (i *GenerateCVIntent) getCardStyle() lipgloss.Style {
-	if theme := i.Theme(); theme != nil {
-		return theme.Styles().CardBase
-	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	return i.getTheme().Styles().CardBase
 }
 
-// getPrimaryColor returns the primary text color from theme or fallback.
+// getPrimaryColor returns the primary text color from theme.
 func (i *GenerateCVIntent) getPrimaryColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ForegroundColor()
-	}
-	return styles.ColorTextPrimary
+	return i.getTheme().ForegroundColor()
 }
 
-// getAccentColor returns the accent color from theme or fallback.
+// getAccentColor returns the accent color from theme.
 func (i *GenerateCVIntent) getAccentColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.PrimaryColor()
-	}
-	return styles.ColorAccentTeal
+	return i.getTheme().PrimaryColor()
 }
 
-// getErrorColor returns the error color from theme or fallback.
+// getErrorColor returns the error color from theme.
 func (i *GenerateCVIntent) getErrorColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ErrorColor()
-	}
-	return styles.ColorError
+	return i.getTheme().ErrorColor()
 }
 
-// getBorderColor returns the border color from theme or fallback.
+// getBorderColor returns the border color from theme.
 func (i *GenerateCVIntent) getBorderColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.BorderColor()
-	}
-	return styles.ColorBorder
+	return i.getTheme().BorderColor()
 }
 
 // Update processes a message in the intent.
@@ -1525,7 +1512,7 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateExtractingTechnologies:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1537,8 +1524,8 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateSelectTechnologies:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Space", "Toggle"),
-				components.NewKeyBadge("Enter", "Confirm"),
+				primitives.HelpKeyBadge("Space", "Toggle", theme),
+				primitives.HelpKeyBadge("Enter", "Confirm", theme),
 			),
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -1551,9 +1538,9 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateSelectSkillsConfig:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Space", "Toggle Format"),
-				components.NewKeyBadge("←→", "Adjust Limit"),
-				components.NewKeyBadge("Enter", "Continue"),
+				primitives.HelpKeyBadge("Space", "Toggle Format", theme),
+				primitives.HelpKeyBadge("←→", "Adjust Limit", theme),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
 			),
 			ThemedNavigationFooter(theme),
 			ThemedGlobalBadges(theme),
@@ -1561,7 +1548,7 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateGenerating:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1569,8 +1556,8 @@ func (i *GenerateCVIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
-				components.NewKeyBadge("c", "Continue"),
+				primitives.EditBadge(theme),
+				primitives.HelpKeyBadge("c", "Continue", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1578,16 +1565,16 @@ func (i *GenerateCVIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateConfirm:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm"),
-				components.NewKeyBadge("e/x", "Export"),
-				components.NewKeyBadge("n/Esc", "Back"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
+				primitives.HelpKeyBadge("e/x", "Export", theme),
+				primitives.HelpKeyBadge("n/Esc", "Back", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1604,15 +1591,15 @@ func (i *GenerateCVIntent) getContextHelp() string {
 	case GenerateCVStateExporting:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case GenerateCVStateExportComplete:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
-				components.BackBadge(),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -2237,11 +2224,11 @@ func (i *GenerateCVIntent) viewPreview() string {
 		}
 
 		// Section title with themed color
-		titleStyle := lipgloss.NewStyle().
-			Bold(true).
+		sectionTitle := primitives.NewText(strings.ToUpper(section.Title), i.Theme()).
+			Bold().
 			Foreground(i.getAccentColor()).
 			MarginTop(1)
-		content.WriteString(titleStyle.Render(strings.ToUpper(section.Title)) + "\n")
+		content.WriteString(sectionTitle.Render() + "\n")
 		content.WriteString(strings.Repeat("─", len(section.Title)) + "\n")
 
 		// Handle summary section (prose)

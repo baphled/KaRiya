@@ -4,10 +4,13 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/layout"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -43,7 +46,7 @@ var _ = Describe("View Helpers", func() {
 
 		Context("with logo", func() {
 			It("should include logo from BaseIntent", func() {
-				logo := components.NewASCIILogo(false, 100)
+				logo := display.NewLogo(false, 100)
 				base.SetLogo(logo)
 				base.SetLogoSpacing(3)
 
@@ -75,7 +78,9 @@ var _ = Describe("View Helpers", func() {
 
 				Expect(view.ShowModal).To(BeTrue())
 				Expect(view.Modal).NotTo(BeNil())
-				Expect(view.Modal.Type).To(Equal(components.ModalError))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalError))
 			})
 		})
 
@@ -86,7 +91,9 @@ var _ = Describe("View Helpers", func() {
 
 				Expect(view.ShowModal).To(BeTrue())
 				Expect(view.Modal).NotTo(BeNil())
-				Expect(view.Modal.Type).To(Equal(components.ModalLoading))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalLoading))
 			})
 		})
 
@@ -97,7 +104,9 @@ var _ = Describe("View Helpers", func() {
 
 				Expect(view.ShowModal).To(BeTrue())
 				Expect(view.Modal).NotTo(BeNil())
-				Expect(view.Modal.Type).To(Equal(components.ModalProgress))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalProgress))
 			})
 		})
 
@@ -108,7 +117,9 @@ var _ = Describe("View Helpers", func() {
 
 				Expect(view.ShowModal).To(BeTrue())
 				Expect(view.Modal).NotTo(BeNil())
-				Expect(view.Modal.Type).To(Equal(components.ModalSuccess))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalSuccess))
 			})
 		})
 
@@ -118,7 +129,9 @@ var _ = Describe("View Helpers", func() {
 				base.SetError(errors.New("error occurred"))
 				view := intents.CreateStandardView(base)
 
-				Expect(view.Modal.Type).To(Equal(components.ModalError))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalError))
 			})
 		})
 
@@ -128,7 +141,9 @@ var _ = Describe("View Helpers", func() {
 				base.SetSuccess("Success!")
 				view := intents.CreateStandardView(base)
 
-				Expect(view.Modal.Type).To(Equal(components.ModalLoading))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalLoading))
 			})
 		})
 	})
@@ -137,37 +152,45 @@ var _ = Describe("View Helpers", func() {
 		It("should extract validation error title", func() {
 			base.SetError(errors.New("validation failed: field is required"))
 			view := intents.CreateStandardView(base)
-			Expect(view.Modal.Title).To(ContainSubstring("Validation"))
+			modal, ok := view.Modal.(*feedback.Modal)
+			Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+			Expect(modal.Title).To(ContainSubstring("Validation"))
 		})
 
 		It("should extract database error title", func() {
 			base.SetError(errors.New("database connection failed"))
 			view := intents.CreateStandardView(base)
-			Expect(view.Modal.Title).To(ContainSubstring("Database"))
+			modal, ok := view.Modal.(*feedback.Modal)
+			Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+			Expect(modal.Title).To(ContainSubstring("Database"))
 		})
 
 		It("should use default error title", func() {
 			base.SetError(errors.New("something went wrong"))
 			view := intents.CreateStandardView(base)
-			Expect(view.Modal.Title).To(Equal("Error"))
+			modal, ok := view.Modal.(*feedback.Modal)
+			Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+			Expect(modal.Title).To(Equal("Error"))
 		})
 	})
 
 	Describe("Manual Modal Helpers", func() {
 		Describe("ShowErrorModal", func() {
 			It("should show error modal", func() {
-				view := components.NewStandardView(terminal.NewInfo())
+				view := layout.NewScreenLayout(terminal.NewInfo())
 				err := errors.New("test error")
 
 				result := intents.ShowErrorModal(view, err)
 
 				Expect(result).To(Equal(view))
 				Expect(view.ShowModal).To(BeTrue())
-				Expect(view.Modal.Type).To(Equal(components.ModalError))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalError))
 			})
 
 			It("should not show modal for nil error", func() {
-				view := components.NewStandardView(terminal.NewInfo())
+				view := layout.NewScreenLayout(terminal.NewInfo())
 				result := intents.ShowErrorModal(view, nil)
 
 				Expect(result).To(Equal(view))
@@ -177,37 +200,43 @@ var _ = Describe("View Helpers", func() {
 
 		Describe("ShowLoadingModal", func() {
 			It("should show loading modal with message", func() {
-				view := components.NewStandardView(terminal.NewInfo())
+				view := layout.NewScreenLayout(terminal.NewInfo())
 				result := intents.ShowLoadingModal(view, "Processing...", true)
 
 				Expect(result).To(Equal(view))
 				Expect(view.ShowModal).To(BeTrue())
-				Expect(view.Modal.Type).To(Equal(components.ModalLoading))
-				Expect(view.Modal.Message).To(Equal("Processing..."))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalLoading))
+				Expect(modal.Message).To(Equal("Processing..."))
 			})
 		})
 
 		Describe("ShowProgressModal", func() {
 			It("should show progress modal", func() {
-				view := components.NewStandardView(terminal.NewInfo())
+				view := layout.NewScreenLayout(terminal.NewInfo())
 				result := intents.ShowProgressModal(view, "Uploading", "50% complete", 0.5)
 
 				Expect(result).To(Equal(view))
 				Expect(view.ShowModal).To(BeTrue())
-				Expect(view.Modal.Type).To(Equal(components.ModalProgress))
-				Expect(view.Modal.Progress).To(Equal(0.5))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalProgress))
+				Expect(modal.Progress).To(Equal(0.5))
 			})
 		})
 
 		Describe("ShowSuccessModal", func() {
 			It("should show success modal", func() {
-				view := components.NewStandardView(terminal.NewInfo())
+				view := layout.NewScreenLayout(terminal.NewInfo())
 				result := intents.ShowSuccessModal(view, "Operation completed!")
 
 				Expect(result).To(Equal(view))
 				Expect(view.ShowModal).To(BeTrue())
-				Expect(view.Modal.Type).To(Equal(components.ModalSuccess))
-				Expect(view.Modal.Message).To(Equal("Operation completed!"))
+				modal, ok := view.Modal.(*feedback.Modal)
+				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
+				Expect(modal.Type).To(Equal(feedback.ModalSuccess))
+				Expect(modal.Message).To(Equal("Operation completed!"))
 			})
 		})
 	})
@@ -439,8 +468,8 @@ var _ = Describe("View Helpers", func() {
 		Describe("ThemedCustomFooter", func() {
 			It("should contain custom badges", func() {
 				footer := intents.ThemedCustomFooter(theme,
-					components.NewKeyBadge("x", "Custom1"),
-					components.NewKeyBadge("y", "Custom2"),
+					primitives.HelpKeyBadge("x", "Custom1", theme),
+					primitives.HelpKeyBadge("y", "Custom2", theme),
 				)
 
 				Expect(footer).NotTo(BeEmpty())

@@ -39,8 +39,9 @@ func (e *Extractor) ExtractFromEvent(ctx context.Context, event *career.CareerEv
 		competencies = []string{"technical"}
 	}
 
-	// Infer role fit
-	roleFit := e.classifier.ClassifyRoleFit(event.Text)
+	// Infer role fit from text AND event categories
+	// Categories provide a strong signal for role classification
+	roleFit := e.classifier.ClassifyRoleFitWithCategories(event.Text, event.Categories)
 
 	// Infer audience relevance
 	audiences := e.classifier.ClassifyAudienceRelevance(event.Text, roleFit)
@@ -90,7 +91,9 @@ func (e *Extractor) ExtractFromBurst(ctx context.Context, burst *career.Burst, e
 		burstCompetencies = []string{"technical"}
 	}
 
-	burstRoleFit := e.classifier.ClassifyRoleFit(burstFactText)
+	// Aggregate categories from all burst events for role classification
+	burstCategories := e.aggregateBurstCategories(events)
+	burstRoleFit := e.classifier.ClassifyRoleFitWithCategories(burstFactText, burstCategories)
 	burstAudiences := e.classifier.ClassifyAudienceRelevance(burstFactText, burstRoleFit)
 	if len(burstAudiences) == 0 {
 		burstAudiences = []string{"peer"}
@@ -244,4 +247,20 @@ func (e *Extractor) extractTagSpecificFacts(event *career.CareerEvent) []career.
 	// Don't create duplicate facts for every tag, only meaningful ones
 	// For now, return empty - tag context already captured in main fact
 	return facts
+}
+
+// aggregateBurstCategories collects unique categories from all burst events
+func (e *Extractor) aggregateBurstCategories(events []*career.CareerEvent) []string {
+	categories := make(map[string]bool)
+	for _, event := range events {
+		for _, cat := range event.Categories {
+			categories[cat] = true
+		}
+	}
+
+	result := make([]string, 0, len(categories))
+	for cat := range categories {
+		result = append(result, cat)
+	}
+	return result
 }

@@ -1,4 +1,4 @@
-# StandardView Developer Guide
+# ScreenLayout Developer Guide
 
 **Last Updated**: 2026-01-20  
 **Author**: KaRiya Development Team  
@@ -7,6 +7,9 @@
 > **DEPRECATION NOTICE**: `StandardView` is being replaced by `layout.NewScreenLayout()`.
 > For new code, use `layout.NewScreenLayout()` from `internal/cli/uikit/layout/`.
 > See [UIKIT_GUIDE.md](./UIKIT_GUIDE.md) for the current component library.
+
+> **Note**: This component was previously called `StandardView` and has been renamed to `ScreenLayout`. 
+> The component is now located in `internal/cli/uikit/layout/screen_layout.go`.
 
 ---
 
@@ -27,9 +30,9 @@
 
 ## Overview
 
-### What is StandardView?
+### What is ScreenLayout?
 
-StandardView is a component that provides a **standardized, consistent layout** for all TUI screens in KaRiya. It ensures every screen has:
+`ScreenLayout` (formerly `StandardView`) is a component that provides a **standardized, consistent layout** for all TUI screens in KaRiya. It ensures every screen has:
 
 - **Logo at the top** with configurable spacing
 - **Breadcrumbs** for navigation context
@@ -38,7 +41,7 @@ StandardView is a component that provides a **standardized, consistent layout** 
 - **Help footer** with visual separator
 - **Full terminal width** utilization
 
-### Why Use StandardView?
+### Why Use ScreenLayout?
 
 **Consistency**: Every screen looks and feels the same, providing a professional user experience.
 
@@ -101,19 +104,20 @@ StandardView is a component that provides a **standardized, consistent layout** 
 
 ## Basic Usage
 
-### Creating a StandardView
+### Creating a ScreenLayout
 
 ```go
 import (
-    "github.com/baphled/kariya/internal/cli/components"
+    "github.com/baphled/kariya/internal/cli/uikit/layout"
+    "github.com/baphled/kariya/internal/cli/uikit/display"
     "github.com/baphled/kariya/internal/cli/terminal"
 )
 
 func (i *YourIntent) View() string {
-    termInfo := &terminal.Info{Width: 120, Height: 40}
-    logo := components.NewASCIILogo(false, termInfo.Width)
+    termInfo := &terminal.Info{Width: 140, Height: 40}
+    logo := display.NewLogo(false, termInfo.Width)
     
-    view := components.NewStandardView(termInfo).
+    view := layout.NewScreenLayout(termInfo).
         WithLogo(logo, 2).
         WithContent("Your content here").
         WithHelp("q Quit  h Help")
@@ -124,10 +128,11 @@ func (i *YourIntent) View() string {
 
 ### Builder Pattern
 
-StandardView uses a **fluent builder pattern** - all methods return `*StandardView` for chaining:
+ScreenLayout uses a **fluent builder pattern** - all methods return `*ScreenLayout` for chaining:
 
 ```go
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
+    WithTheme(theme).                       // Set theme for styling
     WithLogo(logo, 2).                      // Add logo with 2-line spacing
     WithBreadcrumbs("Home", "Settings").    // Add breadcrumbs
     WithContent("Content").                 // Set content
@@ -138,10 +143,10 @@ view := components.NewStandardView(termInfo).
 
 ### Minimal Example
 
-The simplest possible StandardView:
+The simplest possible ScreenLayout:
 
 ```go
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Hello, World!").
     WithHelp("q Quit")
 
@@ -157,7 +162,7 @@ Breadcrumbs show the user's navigation context.
 ### Adding Breadcrumbs
 
 ```go
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithBreadcrumbs("Main Menu", "Settings", "Display")
 ```
 
@@ -179,7 +184,7 @@ func (i *YourIntent) getBreadcrumbs() []string {
     }
 }
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithBreadcrumbs(i.getBreadcrumbs()...)
 ```
 
@@ -201,7 +206,7 @@ The content area is where your main UI lives.
 
 ```go
 content := "Line 1\nLine 2\nLine 3"
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent(content)
 ```
 
@@ -216,7 +221,7 @@ style := lipgloss.NewStyle().
     Foreground(lipgloss.Color("205")).
     Bold(true)
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Styled content").
     WithContentStyle(style)
 ```
@@ -235,17 +240,17 @@ formContent := myFormComponent.View()
 // Using a table
 tableContent := myTableComponent.View()
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent(listContent)  // or formContent, or tableContent
 ```
 
 ### Long Content
 
-StandardView handles long content gracefully:
+ScreenLayout handles long content gracefully:
 
 ```go
 longContent := strings.Repeat("Line of text\n", 100)
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent(longContent)
 // Content will be rendered; scrolling is handled by your terminal
 ```
@@ -267,9 +272,11 @@ Modals overlay the main content to provide feedback.
 ### Error Modal
 
 ```go
-modal := components.NewErrorModal("Error", "Failed to save file: permission denied")
+import "github.com/baphled/kariya/internal/cli/uikit/feedback"
 
-view := components.NewStandardView(termInfo).
+modal := feedback.NewErrorModal("Error", "Failed to save file: permission denied")
+
+view := layout.NewScreenLayout(termInfo).
     WithContent("Background content").
     ShowModalOverlay(modal)
 ```
@@ -282,9 +289,9 @@ Features:
 ### Loading Modal
 
 ```go
-modal := components.NewLoadingModal("Processing your request...", false)
+modal := feedback.NewLoadingModal("Processing your request...", false)
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Background content").
     ShowModalOverlay(modal)
 ```
@@ -292,16 +299,16 @@ view := components.NewStandardView(termInfo).
 With cancellation:
 
 ```go
-modal := components.NewLoadingModal("Processing...", true)  // cancellable = true
+modal := feedback.NewLoadingModal("Processing...", true)  // cancellable = true
 ```
 
 ### Progress Modal
 
 ```go
 // progress: 0.0 (0%) to 1.0 (100%)
-modal := components.NewProgressModal("Processing", "Analyzing data...", 0.75)
+modal := feedback.NewProgressModal("Processing", "Analyzing data...", 0.75)
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Background content").
     ShowModalOverlay(modal)
 ```
@@ -317,9 +324,9 @@ modal.UpdateProgress(1.00)  // 100%
 ### Success Modal
 
 ```go
-modal := components.NewSuccessModal("File saved successfully!")
+modal := feedback.NewSuccessModal("File saved successfully!")
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Background content").
     ShowModalOverlay(modal)
 ```
@@ -332,9 +339,9 @@ Features:
 ### Warning Modal
 
 ```go
-modal := components.NewWarningModal("Warning", "This action cannot be undone")
+modal := feedback.NewWarningModal("Warning", "This action cannot be undone")
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Background content").
     ShowModalOverlay(modal)
 ```
@@ -350,12 +357,13 @@ messages := []string{
     "Generating bullets...",
     "Formatting document...",
 }
-rotator := components.NewLoadingMessageRotator(messages, 2*time.Second)
+// Note: NewLoadingMessageRotator takes only messages (no duration parameter)
+rotator := feedback.NewLoadingMessageRotator(messages)
 
-modal := components.NewLoadingModal("Generating CV", false)
+modal := feedback.NewLoadingModal("Generating CV", false)
 modal.SetMessageRotator(rotator)
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     ShowModalOverlay(modal)
 ```
 
@@ -370,7 +378,7 @@ The help footer provides context-aware user guidance.
 ### Basic Help
 
 ```go
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Content").
     WithHelp("q Quit  h Help  m Menu")
 ```
@@ -391,7 +399,7 @@ func (i *YourIntent) getHelp() string {
     }
 }
 
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithHelp(i.getHelp())
 ```
 
@@ -400,7 +408,7 @@ view := components.NewStandardView(termInfo).
 Add a visual separator above the help:
 
 ```go
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Content").
     WithHelp("q Quit").
     WithFooterSeparator(true)
@@ -410,35 +418,35 @@ view := components.NewStandardView(termInfo).
 
 ## Terminal Awareness
 
-StandardView adapts to different terminal sizes.
+ScreenLayout adapts to different terminal sizes.
 
 ### Setting Terminal Info
 
 ```go
-termInfo := &terminal.Info{Width: 120, Height: 40}
-view := components.NewStandardView(termInfo)
+termInfo := &terminal.Info{Width: 140, Height: 40}
+view := layout.NewScreenLayout(termInfo)
 ```
 
 ### Handling Nil Terminal Info
 
-StandardView gracefully handles nil with defaults:
+ScreenLayout gracefully handles nil with defaults:
 
 ```go
-view := components.NewStandardView(nil)  // Uses 120x40 default
+view := layout.NewScreenLayout(nil)  // Uses 140x40 default
 ```
 
 ### Responsive Rendering
 
-StandardView automatically adjusts to terminal size:
+ScreenLayout automatically adjusts to terminal size:
 
 ```go
 // Small terminal (80x24)
 smallTerm := &terminal.Info{Width: 80, Height: 24}
-view1 := components.NewStandardView(smallTerm)
+view1 := layout.NewScreenLayout(smallTerm)
 
 // Large terminal (200x60)
 largeTerm := &terminal.Info{Width: 200, Height: 60}
-view2 := components.NewStandardView(largeTerm)
+view2 := layout.NewScreenLayout(largeTerm)
 
 // Both render appropriately for their size
 ```
@@ -478,12 +486,12 @@ view2 := components.NewStandardView(largeTerm)
 
 1. **Don't render without terminal info** (use defaults if needed)
    ```go
-   // Bad
-   view := NewStandardView(nil)
+   // Bad (but still works - uses 140x40 defaults)
+   view := layout.NewScreenLayout(nil)
    
-   // Good
-   termInfo := &terminal.Info{Width: 120, Height: 40}
-   view := NewStandardView(termInfo)
+   // Better - explicit terminal info
+   termInfo := &terminal.Info{Width: 140, Height: 40}
+   view := layout.NewScreenLayout(termInfo)
    ```
 
 2. **Don't forget footer separators** - they improve readability
@@ -516,7 +524,7 @@ view2 := components.NewStandardView(largeTerm)
 
 **Solution**: Always set content and terminal info
 ```go
-view := components.NewStandardView(termInfo).
+view := layout.NewScreenLayout(termInfo).
     WithContent("Some content")
 ```
 
@@ -526,7 +534,7 @@ view := components.NewStandardView(termInfo).
 
 **Solution**: Create and attach logo
 ```go
-logo := components.NewASCIILogo(false, termInfo.Width)
+logo := display.NewLogo(false, termInfo.Width)
 view.WithLogo(logo, 2)
 ```
 
@@ -567,7 +575,7 @@ view.WithFooterSeparator(true)
 
 ## Examples
 
-### Complete Intent View
+### Complete Intent View (Manual)
 
 ```go
 func (i *MyIntent) View() string {
@@ -578,7 +586,8 @@ func (i *MyIntent) View() string {
     logo := i.GetLogo()
     
     // Build view
-    view := components.NewStandardView(termInfo).
+    view := layout.NewScreenLayout(termInfo).
+        WithTheme(i.Theme()).
         WithLogo(logo, 2).
         WithBreadcrumbs(i.getBreadcrumbs()...).
         WithContent(i.getContent()).
@@ -593,6 +602,30 @@ func (i *MyIntent) View() string {
     return view.Render()
 }
 ```
+
+### Using Intent Helper Methods (Recommended)
+
+Intents that embed `BaseIntent` can use convenient helper methods:
+
+```go
+func (i *MyIntent) View() string {
+    // CreateStandardView sets up theme, logo, and terminal info automatically
+    view := i.CreateStandardView()
+    
+    // Or with breadcrumbs
+    view := i.CreateStandardViewWithBreadcrumbs("Main", "Section")
+    
+    view.WithContent(i.getContent()).
+        WithHelp(i.getHelp()).
+        WithFooterSeparator(true)
+    
+    return view.Render()
+}
+```
+
+These helpers are defined in `internal/cli/intents/view_helpers.go`:
+- `CreateStandardView()` - Creates view with theme and logo
+- `CreateStandardViewWithBreadcrumbs(crumbs...)` - Creates view with breadcrumbs
 
 ### Multi-State View
 
@@ -617,23 +650,23 @@ func (i *MyIntent) getContent() string {
 
 Based on benchmarks (Phase 5, Task 16):
 
-- **StandardView render**: 0.376ms (target: <50ms) ✓
+- **ScreenLayout render**: 0.376ms (target: <50ms) ✓
 - **Modal render**: 0.113ms (target: <20ms) ✓
 - **Full view render**: 0.727ms (target: <100ms) ✓
 
-All performance targets exceeded by 100x+. See `internal/cli/components/performance_test.go` for details.
+All performance targets exceeded by 100x+.
 
 ---
 
-## Modal Overlays with StandardView
+## Modal Overlays with ScreenLayout
 
-StandardView works seamlessly with modal overlays created using `bubbletea-overlay`.
+ScreenLayout works seamlessly with modal overlays created using `bubbletea-overlay`.
 
 ### Pattern
 
 ```go
 func (i *YourIntent) View() string {
-    // 1. Render base view with StandardView
+    // 1. Render base view with ScreenLayout
     baseView := i.CreateViewWithBreadcrumbs("Main", "Section")
     baseView.WithContent(content)
     baseView.WithHelp(footer)
@@ -650,7 +683,7 @@ func (i *YourIntent) View() string {
 
 ### Key Points
 
-- ✅ StandardView renders the complete base layout
+- ✅ ScreenLayout renders the complete base layout
 - ✅ Modal overlay is applied to the fully-rendered view
 - ✅ Logo, breadcrumbs, and footer remain visible in background
 - ✅ Modal appears centered over content area

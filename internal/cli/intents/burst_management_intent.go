@@ -5,12 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/baphled/kariya/internal/cli/navigation"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -74,14 +72,8 @@ type BurstManagementIntent struct {
 	// state represents the current state of the intent.
 	state *BurstManagementIntentModel
 
-	// table is the table model for displaying bursts
-	table *table.Model
-
-	// listContainer provides table-based list UI
-	listContainer *components.TableListContainer
-
-	// navHandler centralizes navigation logic
-	navHandler *navigation.ListNavigationHandler
+	// tableBehavior provides type-safe table operations for bursts
+	tableBehavior *behaviors.TableBehavior[*domain.Burst]
 
 	// active indicates whether this intent is currently active.
 	active bool
@@ -150,6 +142,39 @@ const (
 	BurstStateExtractingFacts = "extracting_facts"
 )
 
+// burstRowFormatter formats a burst for table display
+func burstRowFormatter(burst *domain.Burst, index int) []string {
+	// Column 1: Name (truncate to 27 chars)
+	nameStr := burst.Name
+	if len(nameStr) > 27 {
+		nameStr = nameStr[:27] + "..."
+	}
+
+	// Column 2: Description (truncated preview, max 32 chars)
+	descStr := strings.TrimSpace(burst.Description)
+	descStr = strings.ReplaceAll(descStr, "\n", " ")
+	descStr = strings.ReplaceAll(descStr, "\r", " ")
+	if descStr == "" {
+		descStr = "-"
+	} else if len(descStr) > 32 {
+		descStr = descStr[:32] + "..."
+	}
+
+	// Column 3: Confirmed Status
+	confirmedStr := "✗ No"
+	if burst.Confirmed {
+		confirmedStr = "✓ Yes"
+	}
+
+	// Column 4: Event Count
+	eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
+
+	// Column 5: Created Date (YYYY-MM-DD)
+	createdStr := burst.CreatedAt.Format("2006-01-02")
+
+	return []string{nameStr, descStr, confirmedStr, eventCount, createdStr}
+}
+
 // NewBurstManagementIntent creates a new BurstManagement intent.
 func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagementIntent, error) {
 	// Validate the context.
@@ -157,9 +182,8 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		return nil, err
 	}
 
-	// Create table model for bursts with enhanced columns
-	// Total column width: 30 + 35 + 10 + 8 + 12 = 95 chars
-	columns := []table.Column{
+	// Define columns for TableBehavior
+	columns := []behaviors.ColumnDef{
 		{Title: "Name", Width: 30},
 		{Title: "Description", Width: 35},
 		{Title: "Confirmed", Width: 10},
@@ -167,17 +191,11 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 		{Title: "Created", Width: 12},
 	}
 
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(105), // Adjusted for 5 columns
-	)
-
-	// Apply default styles initially - theme styles will be applied in Init()
-	// when the theme manager is available via BaseIntent
-	t.SetStyles(table.DefaultStyles())
+	// Create TableBehavior with type-safe generics
+	tableBehavior := behaviors.NewTableBehavior[*domain.Burst](nil, columns, burstRowFormatter).
+		PageSize(15).
+		PaginationPrefix("Bursts").
+		EmptyMessage("No bursts found.")
 
 	intent := &BurstManagementIntent{
 		BaseIntent: NewBaseIntent(),
@@ -193,55 +211,28 @@ func NewBurstManagementIntent(context *BurstManagementContext) (*BurstManagement
 			sortBy:         "name",
 			sortOrder:      "asc",
 		},
-		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Manage Bursts", 105),
+		tableBehavior: tableBehavior,
 		active:        true,
 	}
-	intent.navHandler = navigation.NewListNavigationHandler(intent)
 
 	return intent, nil
 }
 
-// formatConfirmedStatus returns a plain text confirmed status string.
-// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
-func (i *BurstManagementIntent) formatConfirmedStatus(confirmed bool) string {
-	if confirmed {
-		return "✓ Yes"
+// syncTableSelection syncs the TableBehavior selection with the intent's data context
+func (i *BurstManagementIntent) syncTableSelection() {
+	i.state.selectedIndex = i.tableBehavior.GetSelectedIndex()
+	if selected := i.tableBehavior.GetSelectedItem(); selected != nil {
+		i.state.selectedBurst = *selected
+	} else {
+		i.state.selectedBurst = nil
 	}
-	return "✗ No"
-}
-
-// formatDescription returns a truncated description preview (max 35 chars).
-// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
-func (i *BurstManagementIntent) formatDescription(description string) string {
-	desc := strings.TrimSpace(description)
-	// Remove newlines and carriage returns
-	desc = strings.ReplaceAll(desc, "\n", " ")
-	desc = strings.ReplaceAll(desc, "\r", " ")
-
-	if desc == "" {
-		return "-"
-	}
-
-	maxLen := 32 // 35 - 3 for "..."
-	if len(desc) > maxLen {
-		return desc[:maxLen] + "..."
-	}
-
-	return desc
-}
-
-// formatCreatedDate returns a formatted date string (YYYY-MM-DD).
-// Note: BubbleTea table doesn't support Lipgloss-styled cells, so we use plain text.
-func (i *BurstManagementIntent) formatCreatedDate(createdAt time.Time) string {
-	return createdAt.Format("2006-01-02")
 }
 
 // Init is called when the intent is activated.
 func (i *BurstManagementIntent) Init() tea.Cmd {
-	// Apply themed table styles if theme is available
+	// Apply theme to TableBehavior if available
 	if theme := i.Theme(); theme != nil {
-		i.table.SetStyles(themes.NewThemedTableStyles(theme))
+		i.tableBehavior.SetTheme(theme)
 	}
 
 	// Load bursts from repository
@@ -252,137 +243,48 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 	if len(i.state.filteredBursts) > 0 {
 		i.state.selectedBurst = i.state.filteredBursts[0]
 	}
-	i.updateTableRows()
+
+	// Set items on TableBehavior
+	i.tableBehavior.SetItems(i.state.filteredBursts)
 	return nil
 }
 
-// getCardStyle returns a themed card style, with fallback to default styling.
+// getTheme returns the theme or a default.
+func (i *BurstManagementIntent) getTheme() themes.Theme {
+	if theme := i.Theme(); theme != nil {
+		return theme
+	}
+	return themes.NewDefaultTheme()
+}
+
+// getCardStyle returns a themed card style.
 func (i *BurstManagementIntent) getCardStyle() lipgloss.Style {
-	if theme := i.Theme(); theme != nil {
-		return theme.Styles().CardBase
-	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	return i.getTheme().Styles().CardBase
 }
 
-// getSuccessColor returns the success color from theme or fallback.
-func (i *BurstManagementIntent) getSuccessColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.SuccessColor()
-	}
-	return styles.ColorSuccess
-}
-
-// getInfoColor returns the info color from theme or fallback.
+// getInfoColor returns the info color from theme.
 func (i *BurstManagementIntent) getInfoColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.InfoColor()
-	}
-	return styles.ColorInfo
+	return i.getTheme().InfoColor()
 }
 
-// getWarningColor returns the warning color from theme or fallback.
+// getWarningColor returns the warning color from theme.
 func (i *BurstManagementIntent) getWarningColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.WarningColor()
-	}
-	return styles.ColorWarning
+	return i.getTheme().WarningColor()
 }
 
-// getErrorColor returns the error color from theme or fallback.
+// getErrorColor returns the error color from theme.
 func (i *BurstManagementIntent) getErrorColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ErrorColor()
-	}
-	return styles.ColorError
+	return i.getTheme().ErrorColor()
 }
 
-// getPrimaryColor returns the primary text color from theme or fallback.
+// getPrimaryColor returns the primary text color from theme.
 func (i *BurstManagementIntent) getPrimaryColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ForegroundColor()
-	}
-	return styles.ColorTextPrimary
+	return i.getTheme().ForegroundColor()
 }
 
-// getBackgroundCardColor returns the card background color from theme or fallback.
+// getBackgroundCardColor returns the card background color from theme.
 func (i *BurstManagementIntent) getBackgroundCardColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.Palette().BackgroundCard
-	}
-	return styles.ColorBackgroundCard
-}
-
-// updateTableRows updates the table rows based on filtered bursts, paginated
-func (i *BurstManagementIntent) updateTableRows() {
-	pageSize := 15
-	total := len(i.state.filteredBursts)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && i.state.selectedIndex >= 0 {
-		page = i.state.selectedIndex / pageSize
-	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	pageBursts := i.state.filteredBursts[start:end]
-
-	rows := make([]table.Row, 0, len(pageBursts))
-	for idx, burst := range pageBursts {
-		realIdx := start + idx
-
-		// Column 1: Name (truncate to 27 chars for focus indicator, total width 30)
-		nameStr := burst.Name
-		if len(nameStr) > 27 {
-			nameStr = nameStr[:27] + "..."
-		}
-		// Add focus indicator via navigation handler
-		nameStr = i.navHandler.FormatRowText(realIdx, nameStr)
-
-		// Column 2: Description (truncated preview, max 35 chars)
-		descStr := i.formatDescription(burst.Description)
-
-		// Column 3: Confirmed Status (icon + colored text)
-		confirmedStr := i.formatConfirmedStatus(burst.Confirmed)
-
-		// Column 4: Event Count
-		eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
-
-		// Column 5: Created Date (YYYY-MM-DD)
-		createdStr := i.formatCreatedDate(burst.CreatedAt)
-
-		rows = append(rows, table.Row{
-			nameStr,
-			descStr,
-			confirmedStr,
-			eventCount,
-			createdStr,
-		})
-	}
-
-	i.table.SetRows(rows)
-
-	// Calculate relative cursor for current page
-	relativeCursor := i.state.selectedIndex - start
-
-	// Set table cursor (for visual highlighting)
-	i.table.SetCursor(relativeCursor)
-
-	// Sync container's index to match (critical for rendering)
-	i.listContainer.SetSelectedIdx(relativeCursor)
-
-	// Update container with modified table
-	i.listContainer.SetTable(*i.table)
+	return i.getTheme().Palette().BackgroundCard
 }
 
 // Update processes a message in the intent.
@@ -437,8 +339,9 @@ func (i *BurstManagementIntent) updateListView(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-		// Try navigation handler
-		if i.navHandler.HandleKey(msg.String()) {
+		// Try TableBehavior navigation
+		if i.tableBehavior.HandleNavigation(msg.String()) {
+			i.syncTableSelection()
 			return nil
 		}
 
@@ -988,8 +891,8 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "View details"),
-				components.NewKeyBadge("n", "New burst"),
+				primitives.HelpKeyBadge("Enter", "View details", theme),
+				primitives.HelpKeyBadge("n", "New burst", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -997,11 +900,11 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("v", "View events"),
-				components.NewKeyBadge("f", "View facts"),
-				components.EditBadge(),
-				components.DeleteBadge(),
-				components.NewKeyBadge("c", "Confirm"),
+				primitives.HelpKeyBadge("v", "View events", theme),
+				primitives.HelpKeyBadge("f", "View facts", theme),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
+				primitives.HelpKeyBadge("c", "Confirm", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1014,15 +917,15 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedFormFooter(theme),
 			ThemedCustomFooter(theme,
-				components.SaveBadge(),
+				primitives.SaveBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case BurstStateDeleteConfirm:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm deletion"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm deletion", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1030,23 +933,23 @@ func (i *BurstManagementIntent) getContextHelp() string {
 		if i.state.extractionComplete {
 			return CombineThemedFooters(
 				ThemedCustomFooter(theme,
-					components.NewKeyBadge("Enter", "Continue"),
-					components.BackBadge(),
+					primitives.HelpKeyBadge("Enter", "Continue", theme),
+					primitives.BackBadge(theme),
 				),
 				ThemedGlobalBadges(theme),
 			)
 		}
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm burst"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm burst", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case BurstStateExtractingFacts:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("...", "Please wait"),
+				primitives.HelpKeyBadge("...", "Please wait", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1056,25 +959,8 @@ func (i *BurstManagementIntent) getContextHelp() string {
 }
 
 // viewList renders the burst list view with all bursts as a table.
-// viewList renders the burst list view with all bursts as a table.
 func (i *BurstManagementIntent) viewList() string {
-	if len(i.state.filteredBursts) == 0 {
-		i.listContainer.SetEmptyStateMessage("No bursts found.")
-		return i.listContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	i.updateTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(i.state.filteredBursts)
-	currentPage := (i.state.selectedIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Bursts: %d | Page %d of %d", totalItems, currentPage, totalPages)
-	i.listContainer.SetPaginationInfo(paginationInfo)
-
-	return i.listContainer.Render()
+	return i.tableBehavior.Render()
 }
 func (i *BurstManagementIntent) viewDetail() string {
 	if i.state.selectedBurst == nil {
@@ -1084,18 +970,12 @@ func (i *BurstManagementIntent) viewDetail() string {
 	var content strings.Builder
 
 	// Title with confirmation status indicator
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor())
-
 	title := "Burst Details"
 	if i.state.selectedBurst.Confirmed {
-		confirmedStyle := lipgloss.NewStyle().
-			Foreground(i.getSuccessColor()).
-			Bold(true)
-		title = "Burst Details " + confirmedStyle.Render("✓ Confirmed")
+		confirmedBadge := primitives.SuccessText("✓ Confirmed", i.Theme()).Bold().Render()
+		title = "Burst Details " + confirmedBadge
 	}
-	content.WriteString("\n" + titleStyle.Render(title) + "\n\n")
+	content.WriteString("\n" + primitives.NewText(title, i.Theme()).Bold().Foreground(i.getPrimaryColor()).Render() + "\n\n")
 
 	// Burst header.
 	content.WriteString(fmt.Sprintf("Name: %s\n", i.state.selectedBurst.Name))
@@ -1134,14 +1014,11 @@ func (i *BurstManagementIntent) viewDetailEvents() string {
 	}
 
 	var content strings.Builder
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render(
+	header := primitives.NewText(
 		fmt.Sprintf("Events in Burst: %s", i.state.selectedBurst.Name),
-	))
+		i.Theme(),
+	).Bold().Foreground(i.getPrimaryColor()).MarginBottom(1)
+	content.WriteString(header.Render())
 	content.WriteString("\n\n")
 
 	for idx, event := range i.state.burstEvents {
@@ -1173,14 +1050,11 @@ func (i *BurstManagementIntent) viewDetailFacts() string {
 	}
 
 	var content strings.Builder
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render(
+	header := primitives.NewText(
 		fmt.Sprintf("Facts from Burst: %s", i.state.selectedBurst.Name),
-	))
+		i.Theme(),
+	).Bold().Foreground(i.getPrimaryColor()).MarginBottom(1)
+	content.WriteString(header.Render())
 	content.WriteString("\n\n")
 
 	for idx, fact := range i.state.burstFacts {
@@ -1220,20 +1094,12 @@ func (i *BurstManagementIntent) viewEdit() string {
 	var content strings.Builder
 
 	// Header
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getPrimaryColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render("Edit Burst"))
+	content.WriteString(primitives.NewText("Edit Burst", i.Theme()).Bold().Foreground(i.getPrimaryColor()).MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Show error if any
 	if i.state.editError != nil {
-		errorStyle := lipgloss.NewStyle().
-			Foreground(i.getErrorColor()).
-			MarginBottom(1)
-		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.editError)))
+		content.WriteString(primitives.ErrorText(fmt.Sprintf("Error: %s", i.state.editError), i.Theme()).MarginBottom(1).Render())
 		content.WriteString("\n\n")
 	}
 
@@ -1326,54 +1192,35 @@ func (i *BurstManagementIntent) viewConfirm() string {
 	var content strings.Builder
 
 	// Header
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getSuccessColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render("Confirm Burst"))
+	content.WriteString(primitives.SuccessText("Confirm Burst", i.Theme()).Bold().MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Show error if any
 	if i.state.confirmError != nil {
-		errorStyle := lipgloss.NewStyle().
-			Foreground(i.getErrorColor()).
-			MarginBottom(1)
-		content.WriteString(errorStyle.Render(fmt.Sprintf("Error: %s", i.state.confirmError)))
+		content.WriteString(primitives.ErrorText(fmt.Sprintf("Error: %s", i.state.confirmError), i.Theme()).MarginBottom(1).Render())
 		content.WriteString("\n\n")
 	}
 
 	// Burst details
-	infoStyle := lipgloss.NewStyle().
-		Foreground(i.getPrimaryColor())
-
-	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
+	content.WriteString(primitives.NewText(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n\n")
 
 	// Show different messages based on state
 	if i.state.showReextractPrompt {
 		// Facts already exist
-		warningStyle := lipgloss.NewStyle().
-			Foreground(i.getWarningColor()).
-			Bold(true)
-
-		content.WriteString(warningStyle.Render(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount)))
+		content.WriteString(primitives.WarningText(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount), i.Theme()).Bold().Render())
 		content.WriteString("\n\n")
-		content.WriteString(infoStyle.Render("Do you want to extract more facts? New facts will be added to existing ones."))
+		content.WriteString(primitives.NewText("Do you want to extract more facts? New facts will be added to existing ones.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 		content.WriteString("\n")
 	} else if i.state.extractionComplete {
 		// Extraction completed successfully
-		successStyle := lipgloss.NewStyle().
-			Foreground(i.getSuccessColor()).
-			Bold(true)
-
-		content.WriteString(successStyle.Render(fmt.Sprintf("✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount)))
+		content.WriteString(primitives.SuccessText(fmt.Sprintf("✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount), i.Theme()).Bold().Render())
 		content.WriteString("\n\n")
-		content.WriteString(infoStyle.Render("Burst has been confirmed."))
+		content.WriteString(primitives.NewText("Burst has been confirmed.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 		content.WriteString("\n")
 	} else {
 		// About to start extraction
-		content.WriteString(infoStyle.Render("No facts found for this burst. Starting fact extraction..."))
+		content.WriteString(primitives.NewText("No facts found for this burst. Starting fact extraction...", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 		content.WriteString("\n")
 	}
 
@@ -1393,30 +1240,18 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 	var content strings.Builder
 
 	// Header
-	headerStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(i.getInfoColor()).
-		MarginBottom(1)
-
-	content.WriteString(headerStyle.Render("Extracting Facts"))
+	content.WriteString(primitives.NewText("Extracting Facts", i.Theme()).Bold().Foreground(i.getInfoColor()).MarginBottom(1).Render())
 	content.WriteString("\n\n")
 
 	// Progress indicator
-	infoStyle := lipgloss.NewStyle().
-		Foreground(i.getPrimaryColor())
-
-	content.WriteString(infoStyle.Render(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name)))
+	content.WriteString(primitives.NewText(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n\n")
 
-	progressStyle := lipgloss.NewStyle().
-		Foreground(i.getInfoColor()).
-		Bold(true)
-
-	content.WriteString(progressStyle.Render("⏳ Extracting and saving facts..."))
+	content.WriteString(primitives.NewText("⏳ Extracting and saving facts...", i.Theme()).Bold().Foreground(i.getInfoColor()).Render())
 	content.WriteString("\n\n")
-	content.WriteString(infoStyle.Render("Analyzing events and persisting facts to database."))
+	content.WriteString(primitives.NewText("Analyzing events and persisting facts to database.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n\n")
-	content.WriteString(infoStyle.Render("This may take a few moments."))
+	content.WriteString(primitives.NewText("This may take a few moments.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n")
 
 	// Apply themed card styling
@@ -1440,21 +1275,18 @@ func (i *BurstManagementIntent) Result() *IntentResult[interface{}] {
 	}
 }
 
-// ListNavigator interface implementation
+// ListNavigator interface implementation (delegates to TableBehavior)
 func (i *BurstManagementIntent) GetTotalItems() int {
-	return len(i.state.filteredBursts)
+	return i.tableBehavior.Count()
 }
 
 func (i *BurstManagementIntent) GetSelectedIndex() int {
-	return i.state.selectedIndex
+	return i.tableBehavior.GetSelectedIndex()
 }
 
 func (i *BurstManagementIntent) SetSelectedIndex(idx int) {
-	i.state.selectedIndex = idx
-	if idx >= 0 && idx < len(i.state.filteredBursts) {
-		i.state.selectedBurst = i.state.filteredBursts[idx]
-	}
-	i.updateTableRows()
+	i.tableBehavior.SetSelectedIndex(idx)
+	i.syncTableSelection()
 }
 
 func (i *BurstManagementIntent) GetPageSize() int {

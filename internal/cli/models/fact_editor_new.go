@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/navigation"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -29,7 +30,7 @@ type FactEditorModelNew struct {
 	cancelled    bool
 	width        int
 	height       int
-	helpFooter   components.HelpFooterModel
+	theme        themes.Theme
 }
 
 // NewFactEditorModelNew creates a new fact editor model using huh forms.
@@ -56,7 +57,7 @@ func NewFactEditorModelNew(fact *career.Fact, service *careerservice.Service, ct
 		cancelled:         false,
 		width:             80,
 		height:            24,
-		helpFooter:        components.NewHelpFooter("fact_editor", 80),
+		theme:             themes.NewDefaultTheme(),
 	}
 }
 
@@ -186,10 +187,11 @@ func (m *FactEditorModelNew) GetContent() string {
 
 	// Add error if present
 	if m.err != nil {
+		errorColor := m.theme.ErrorColor()
 		errorStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorError).
+			Foreground(errorColor).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(styles.ColorError).
+			BorderForeground(errorColor).
 			Padding(1, 2).
 			MarginTop(1)
 
@@ -211,23 +213,25 @@ func (m *FactEditorModelNew) View() string {
 
 	// Add error if present
 	if m.err != nil {
+		errorColor := m.theme.ErrorColor()
 		errorStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#F38BA8")). // Catppuccin Red
+			Foreground(errorColor).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#F38BA8")).
+			BorderForeground(errorColor).
 			Padding(1, 2).
 			MarginTop(1)
 
 		formView += "\n\n" + errorStyle.Render(m.err.Error())
 	}
 
-	// Use header and footer components
-	headerView := components.NewHeader("Fact Editor", m.width).View()
-	footerView := components.NewFooter(m.width).View()
-
-	// Render help footer
-	m.helpFooter.SetWidth(m.width)
-	helpFooterContent := m.helpFooter.View()
+	// Use UIKit layout components
+	headerView := layout.NewHeader("Fact Editor", m.width).
+		WithTheme(m.theme).
+		View()
+	footerView := layout.NewFooter(m.width).
+		WithTheme(m.theme).
+		WithHelp(navigation.GetContextualHelp("fact_editor")).
+		View()
 
 	// Combine all sections
 	contentStyle := lipgloss.NewStyle().
@@ -241,8 +245,6 @@ func (m *FactEditorModelNew) View() string {
 		contentStyle.Render(formView),
 		"",
 		footerView,
-		"",
-		helpFooterContent,
 	)
 
 	return fullContent

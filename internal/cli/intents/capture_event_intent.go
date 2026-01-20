@@ -6,12 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/service"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
@@ -192,33 +193,26 @@ func (i *CaptureEventIntent) Init() tea.Cmd {
 // Theme helper methods for consistent themed styling.
 
 // getCardStyle returns a themed card style, with fallback to default styling.
+// getTheme returns the theme or a default.
+func (i *CaptureEventIntent) getTheme() themes.Theme {
+	if theme := i.Theme(); theme != nil {
+		return theme
+	}
+	return themes.NewDefaultTheme()
+}
+
 func (i *CaptureEventIntent) getCardStyle() lipgloss.Style {
-	if theme := i.Theme(); theme != nil {
-		return theme.Styles().CardBase
-	}
-	// Fallback to default styling
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackgroundCard).
-		Foreground(styles.ColorTextPrimary)
+	return i.getTheme().Styles().CardBase
 }
 
-// getPrimaryColor returns the primary text color from theme or fallback.
+// getPrimaryColor returns the primary text color from theme.
 func (i *CaptureEventIntent) getPrimaryColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.ForegroundColor()
-	}
-	return styles.ColorTextPrimary
+	return i.getTheme().ForegroundColor()
 }
 
-// getAccentColor returns the accent color from theme or fallback.
+// getAccentColor returns the accent color from theme.
 func (i *CaptureEventIntent) getAccentColor() lipgloss.Color {
-	if theme := i.Theme(); theme != nil {
-		return theme.PrimaryColor()
-	}
-	return styles.ColorAccentTeal
+	return i.getTheme().PrimaryColor()
 }
 
 // initializeFormForNew initializes the form for capturing a new event.
@@ -276,7 +270,7 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case SubmitCompleteMsg:
 		// Submission succeeded - show success modal briefly, then complete intent
-		i.state.submitModal = components.NewSuccessModal("Event saved!")
+		i.state.submitModal = feedback.NewSuccessModal("Event saved!")
 		// Auto-dismiss after 2 seconds
 		return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
 			return DismissModalMsg{}
@@ -284,7 +278,7 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 
 	case SubmitErrorMsg:
 		// Submission failed - show error modal (user can press Esc to dismiss)
-		i.state.submitModal = components.NewErrorModal("Save Failed", msg.Message)
+		i.state.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
 		return nil
 
 	case DismissModalMsg:
@@ -1007,7 +1001,7 @@ func (i *CaptureEventIntent) getContextHelp() string {
 			return CombineThemedFooters(
 				ThemedFormFooter(theme),
 				ThemedCustomFooter(theme,
-					components.NewKeyBadge("Ctrl+O", "Toggle fields"),
+					primitives.HelpKeyBadge("Ctrl+O", "Toggle fields", theme),
 				),
 				ThemedGlobalBadges(theme),
 			)
@@ -1020,28 +1014,28 @@ func (i *CaptureEventIntent) getContextHelp() string {
 		// Show different help when modal is active
 		if i.state.reviewState.EditingMode != EditingModeNone {
 			return ThemedCustomFooter(theme,
-				components.NewKeyBadge("Editing", "..."),
-				components.CancelBadge(),
-				components.SaveBadge(),
+				primitives.HelpKeyBadge("Editing", "...", theme),
+				primitives.CancelBadge(theme),
+				primitives.SaveBadge(theme),
 			)
 		}
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NavigateBadge(),
-				components.EditBadge(),
-				components.NewKeyBadge("b", "Bursts"),
-				components.NewKeyBadge("f", "Facts"),
-				components.NewKeyBadge("a", "Accept"),
-				components.NewKeyBadge("r", "Reject"),
-				components.BackBadge(),
+				primitives.NavigateBadge(theme),
+				primitives.EditBadge(theme),
+				primitives.HelpKeyBadge("b", "Bursts", theme),
+				primitives.HelpKeyBadge("f", "Facts", theme),
+				primitives.HelpKeyBadge("a", "Accept", theme),
+				primitives.HelpKeyBadge("r", "Reject", theme),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case CaptureStateSubmit:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Continue"),
-				components.BackBadge(),
+				primitives.HelpKeyBadge("Enter", "Continue", theme),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -1257,7 +1251,7 @@ func (i *CaptureEventIntent) renderModalOverlay(background string, modalContent 
 	}
 
 	// Create overlay modal
-	overlay := components.NewOverlayModal(modalContent.title, modalContent.content)
+	overlay := feedback.NewOverlayModal(modalContent.title, modalContent.content)
 	overlay.SetFooter(modalContent.footer)
 	overlay.SetWidth(80) // Use a standard modal width
 
@@ -1755,7 +1749,7 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 			}
 
 			// Show loading modal and perform async submit
-			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
 			return i.performSubmit()
 		}
 		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
@@ -1773,7 +1767,7 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 			i.state.reviewState.AcceptedFacts = facts
 
 			// Show loading modal and perform async submit
-			i.state.submitModal = components.NewLoadingModal("Saving event...", false)
+			i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
 			return i.performSubmit()
 		}
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)

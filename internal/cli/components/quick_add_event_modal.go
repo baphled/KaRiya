@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // QuickAddEventModal provides a quick way to add a new career event.
@@ -140,14 +140,13 @@ func (m *QuickAddEventModal) View() string {
 		return ""
 	}
 
-	// Wrap the form in a styled box with solid background, border, and padding
-	// This ensures the modal is opaque and doesn't show background through
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
-		Background(styles.ColorBackground).
-		Padding(1, 2).
-		Render(m.form.View())
+	// Wrap the form in a styled box with solid background using UIKit
+	theme := themes.NewDefaultTheme()
+	return containers.NewBox(theme).
+		Content(m.form.View()).
+		Padding(2).
+		Background(theme.BackgroundColor()).
+		Render()
 }
 
 // IsVisible returns whether the modal is currently visible

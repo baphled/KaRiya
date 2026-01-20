@@ -137,11 +137,11 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 
 			// View should show modal overlay with event details
 			view := intent.View()
-			// Modal should overlay the list (list content still present)
-			Expect(view).To(ContainSubstring("Timeline"))
-			// Modal should contain event data
+			// Modal should contain event data - the key test is that modal shows content
 			Expect(view).To(ContainSubstring("Backend Developer"))
 			Expect(view).To(ContainSubstring("TechCorp"))
+			// Modal should show the date field
+			Expect(view).To(ContainSubstring("Date: 2024-01-01"))
 		})
 
 		It("should show full event information in modal", func() {
@@ -185,6 +185,54 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			Expect(view).To(ContainSubstring("Timeline"))
 			Expect(view).To(ContainSubstring("Backend Developer"))
 			Expect(view).To(ContainSubstring("DevOps Engineer"))
+		})
+	})
+
+	Describe("View Event Skills Modal", func() {
+		BeforeEach(func() {
+			intent.Init()
+		})
+
+		It("should show skills hint in event detail modal footer", func() {
+			// Show event detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Footer should show skills hint using UIKit badge format
+			// HelpKeyBadge renders as styled "[key] hint" parts
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Skills"))
+		})
+
+		It("should create skills modal when pressing 's' from event detail", func() {
+			// First show the event detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Press 's' to show skills
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+			// Skills modal should be visible (internal check)
+			// Since the overlay compositing might not work in unit tests,
+			// we verify the modal was created and is visible
+			Expect(intent.HasVisibleSkillsModal()).To(BeTrue())
+		})
+
+		It("should close skills modal with escape", func() {
+			// Show event detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Show skills modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(intent.HasVisibleSkillsModal()).To(BeTrue())
+
+			// Close skills modal with escape
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Skills modal should be closed
+			Expect(intent.HasVisibleSkillsModal()).To(BeFalse())
+
+			// Event detail modal should still be visible
+			detailView := intent.View()
+			Expect(detailView).To(ContainSubstring("Backend Developer"))
 		})
 	})
 
@@ -256,14 +304,12 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			Expect(result.Status).To(Equal(Cancelled))
 		})
 
-		It("should quit app from list with q", func() {
-			// Press 'q' to quit app (global key handled by intent)
+		It("should ignore 'q' key from list (quit only from main menu)", func() {
+			// Press 'q' - no longer quits from within intents
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// Should return tea.Quit command (quits entire app, not just intent)
-			Expect(cmd).NotTo(BeNil())
-			// tea.Quit is a function, we can't directly compare it
-			// but we can verify it's not nil which means 'q' was handled
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
 		})
 
 		It("should not cancel intent from detail with escape", func() {
@@ -368,14 +414,16 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			intent.Init()
 		})
 
-		// Helper function to process commands
+		// Helper function to process commands with limited recursion
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
-			if cmd != nil {
+			// Execute up to 3 levels of commands (avoids infinite loops)
+			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
-				if resultMsg != nil {
-					intent.Update(resultMsg)
+				if resultMsg == nil {
+					break
 				}
+				cmd = intent.Update(resultMsg)
 			}
 		}
 
@@ -480,14 +528,16 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			intent.Init()
 		})
 
-		// Helper function to process commands
+		// Helper function to process commands with limited recursion
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
-			if cmd != nil {
+			// Execute up to 3 levels of commands (avoids infinite loops)
+			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
-				if resultMsg != nil {
-					intent.Update(resultMsg)
+				if resultMsg == nil {
+					break
 				}
+				cmd = intent.Update(resultMsg)
 			}
 		}
 
@@ -592,14 +642,16 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			intent.Init()
 		})
 
-		// Helper function to process commands
+		// Helper function to process commands with limited recursion
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
-			if cmd != nil {
+			// Execute up to 3 levels of commands (avoids infinite loops)
+			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
-				if resultMsg != nil {
-					intent.Update(resultMsg)
+				if resultMsg == nil {
+					break
 				}
+				cmd = intent.Update(resultMsg)
 			}
 		}
 
@@ -658,14 +710,16 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			intent.Init()
 		})
 
-		// Helper function to process commands
+		// Helper function to process commands with limited recursion
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
-			if cmd != nil {
+			// Execute up to 3 levels of commands (avoids infinite loops)
+			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
-				if resultMsg != nil {
-					intent.Update(resultMsg)
+				if resultMsg == nil {
+					break
 				}
+				cmd = intent.Update(resultMsg)
 			}
 		}
 
@@ -838,7 +892,6 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
 			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
-			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Verify filter is applied (only Backend shown)
 			filteredView := intent.View()
@@ -870,7 +923,6 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'D'}})
 			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
-			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
 			updateWithCmd(intent, tea.KeyMsg{Type: tea.KeyEnter})
 
 			// Should now show clear filters badge
@@ -957,24 +1009,16 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			Expect(listView).To(ContainSubstring("Timeline"))
 		})
 
-		It("should quit app when 'q' pressed from timeline list", func() {
+		It("should ignore 'q' key from timeline list (quit only from main menu)", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 
-			// Should return tea.Quit command
-			Expect(cmd).NotTo(BeNil())
-			// Intent result should be nil (app is quitting, not cancelled)
+			// q no longer quits from within intents - only from main menu
+			Expect(cmd).To(BeNil())
+			// Intent result should be nil (intent still active)
 			result := intent.Result()
 			Expect(result).To(BeNil())
 		})
 
-		It("should handle ctrl+c to quit app", func() {
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-
-			// Should return tea.Quit command
-			Expect(cmd).NotTo(BeNil())
-			result := intent.Result()
-			Expect(result).To(BeNil())
-		})
 	})
 
 	Describe("Filtering and Sorting (Internal State)", func() {

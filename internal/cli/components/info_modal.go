@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -163,8 +164,8 @@ func (m *InfoModal) View() string {
 	borderColor := m.getBorderColor()
 
 	// Build footer with KeyBadge components
-	footer := RenderHelpFooter(m.theme,
-		NewKeyBadge("Enter/Esc", "Close"),
+	footer := primitives.RenderHelpFooter(m.theme,
+		primitives.HelpKeyBadge("Enter/Esc", "Close", m.theme),
 	)
 
 	// Build modal content

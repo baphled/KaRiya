@@ -11,20 +11,6 @@ type ColumnDef struct {
 	Width int
 }
 
-// CRUDMode represents the current CRUD operation state.
-type CRUDMode string
-
-const (
-	// ModeList indicates normal list view
-	ModeList CRUDMode = "list"
-	// ModeCreate indicates create form is active
-	ModeCreate CRUDMode = "create"
-	// ModeEdit indicates edit form is active
-	ModeEdit CRUDMode = "edit"
-	// ModeDelete indicates delete confirmation is active
-	ModeDelete CRUDMode = "delete"
-)
-
 // MenuOption represents a single option in a menu.
 type MenuOption struct {
 	// Label is the display text for this option

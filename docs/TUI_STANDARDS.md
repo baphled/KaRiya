@@ -75,14 +75,14 @@ These shortcuts work consistently across all screens:
 
 ### Global Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| **?** | Show help |
-| **h** | Go home |
-| **q** | Quit application |
-| **c** | Capture event |
-| **l** | List events |
-| **m** | Metadata review |
+| Shortcut | Action | Notes |
+|----------|--------|-------|
+| **?** | Show help | Context-sensitive help overlay |
+| **q** | Quit application | Exit KaRiya completely |
+| **Ctrl+C** | Force quit | Interrupt and quit immediately |
+| **m** | Main menu | Return to main menu from any workflow |
+
+> **Note**: The shortcuts `c` (Capture), `l` (List), and `h` (Home) are defined as navigation constants but are **context-specific** - they only work from the main menu screen, not globally from within workflows.
 
 ### Escape Key Behavior Standards
 
@@ -546,14 +546,16 @@ Every model should have tests for:
 ║ ↓/j   Next             Shift+Tab Prev field    Space  Toggle      ║
 ║ ←/h   Left             Esc       Cancel        d      Delete      ║
 ║ →/l   Right                                    e      Edit        ║
-║ Esc   Back/Home                                f      Filter      ║
+║ Esc   Back                                     f      Filter      ║
 ║                                                s      Sort        ║
-║ Global Shortcuts                               b      Bulk ops    ║
+║ Universal Shortcuts                            b      Bulk ops    ║
 ║ ──────────────────────────────────────────────────────────────────  ║
-║ ?     Help              h     Home             c     Capture      ║
-║ q     Quit              l     List             m     Metadata     ║
+║ ?     Help              m     Main Menu        Esc   Back/Cancel  ║
+║ q     Quit              Ctrl+C Force Quit                         ║
 ╚════════════════════════════════════════════════════════════════════╝
 ```
+
+> **Note**: From the main menu, `c` opens Capture, `l` opens List. These are menu-specific shortcuts, not global shortcuts.
 
 ---
 
@@ -568,7 +570,7 @@ For user-facing documentation, see:
 For developer documentation, see:
 - `docs/development/CENTRALIZED_KEY_HANDLING.md` - Centralized key handling guide
 - `docs/development/KEYBOARD_SYSTEM_GUIDE.md` - Keyboard system implementation
-- `docs/STATE_MATRIX.md` - Complete state matrix (10 intents, 64 states)
+- `docs/STATE_MATRIX.md` - Complete state matrix (11 intents)
 - `docs/rules/` - Development rules and guidelines
 - Source code comments - Inline documentation
 

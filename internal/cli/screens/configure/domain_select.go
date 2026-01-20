@@ -3,20 +3,20 @@ package configure
 import (
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 )
 
 // DomainSelectScreen allows users to select a configuration domain
 type DomainSelectScreen struct {
-	*base.BaseSelectScreen[intents.ConfigurationDomain]
+	*base.BaseSelectScreen[configtypes.ConfigurationDomain]
 }
 
 // NewDomainSelectScreen creates a new domain selection screen
-func NewDomainSelectScreen(domains []intents.ConfigurationDomain) *DomainSelectScreen {
+func NewDomainSelectScreen(domains []configtypes.ConfigurationDomain) *DomainSelectScreen {
 	// Domain renderer - formats domain for display
-	renderer := func(domain intents.ConfigurationDomain) string {
+	renderer := func(domain configtypes.ConfigurationDomain) string {
 		return formatDomainLabel(domain)
 	}
 
@@ -39,15 +39,15 @@ func NewDomainSelectScreen(domains []intents.ConfigurationDomain) *DomainSelectS
 }
 
 // formatDomainLabel converts a domain to a display label
-func formatDomainLabel(domain intents.ConfigurationDomain) string {
+func formatDomainLabel(domain configtypes.ConfigurationDomain) string {
 	switch domain {
-	case intents.DomainSystem:
+	case configtypes.DomainSystem:
 		return "System"
-	case intents.DomainProfile:
+	case configtypes.DomainProfile:
 		return "Profile"
-	case intents.DomainExport:
+	case configtypes.DomainExport:
 		return "Export"
-	case intents.DomainUI:
+	case configtypes.DomainUI:
 		return "UI"
 	default:
 		return string(domain)

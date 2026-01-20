@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -57,13 +57,62 @@ var _ = Describe("BaseIntent", func() {
 		})
 	})
 
+	Describe("GetModalDimensions", func() {
+		It("should return defaults when terminal info has zero dimensions", func() {
+			width, height := base.GetModalDimensions()
+			Expect(width).To(Equal(120))
+			Expect(height).To(Equal(40))
+		})
+
+		It("should return terminal dimensions when available", func() {
+			info := terminal.NewInfo()
+			info.Width = 200
+			info.Height = 60
+			info.IsValid = true
+			base.UpdateTerminalInfo(info)
+
+			width, height := base.GetModalDimensions()
+			Expect(width).To(Equal(200))
+			Expect(height).To(Equal(60))
+		})
+
+		It("should return defaults when terminal info is nil", func() {
+			base.UpdateTerminalInfo(nil)
+			width, height := base.GetModalDimensions()
+			Expect(width).To(Equal(120))
+			Expect(height).To(Equal(40))
+		})
+
+		It("should return defaults when only width is zero", func() {
+			info := terminal.NewInfo()
+			info.Width = 0
+			info.Height = 60
+			base.UpdateTerminalInfo(info)
+
+			width, height := base.GetModalDimensions()
+			Expect(width).To(Equal(120))
+			Expect(height).To(Equal(40))
+		})
+
+		It("should return defaults when only height is zero", func() {
+			info := terminal.NewInfo()
+			info.Width = 200
+			info.Height = 0
+			base.UpdateTerminalInfo(info)
+
+			width, height := base.GetModalDimensions()
+			Expect(width).To(Equal(120))
+			Expect(height).To(Equal(40))
+		})
+	})
+
 	Describe("Logo Management", func() {
 		It("should return nil logo initially", func() {
 			Expect(base.GetLogo()).To(BeNil())
 		})
 
 		It("should set and get logo", func() {
-			logo := components.NewASCIILogo(false, 80)
+			logo := display.NewLogo(false, 80)
 			base.SetLogo(logo)
 			Expect(base.GetLogo()).To(Equal(logo))
 		})
@@ -198,7 +247,7 @@ var _ = Describe("BaseIntent", func() {
 
 		Context("with logo", func() {
 			It("should include logo in view", func() {
-				logo := components.NewASCIILogo(false, 100)
+				logo := display.NewLogo(false, 100)
 				base.SetLogo(logo)
 
 				view := base.CreateView()

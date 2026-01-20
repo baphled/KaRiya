@@ -42,7 +42,15 @@ type Screen interface {
 
 	// View renders the Screen's current state as a string.
 	// This should use StandardView for consistency across all screens.
+	// Note: For intents that need more control over the layout, use
+	// RenderContent() to get just the content without StandardView wrapper.
 	View() string
+
+	// RenderContent returns the screen's content without StandardView wrapper.
+	// This allows intents to wrap the content in their own StandardView
+	// with custom breadcrumbs, help text, and styling.
+	// This is the preferred pattern for screen-based intents.
+	RenderContent() string
 
 	// SetTerminalInfo updates the Screen's knowledge of terminal dimensions.
 	// Screens should store this and pass it to StandardView for proper layout.
@@ -54,7 +62,7 @@ type Screen interface {
 
 	// SetLogo updates the Screen's logo and spacing.
 	// Screens should store this and pass it to StandardView for consistent branding.
-	SetLogo(logo interface{}, spacing int) // interface{} allows *components.ASCIILogo without circular import
+	SetLogo(logo interface{}, spacing int) // interface{} allows LogoModel implementations (display.Logo, etc.)
 }
 
 // ScreenResultType indicates the type of result a Screen is returning.

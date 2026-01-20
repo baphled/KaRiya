@@ -7,7 +7,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 )
@@ -122,44 +121,37 @@ func (m *ModalContent) WithTheme(theme themes.Theme) *ModalContent {
 
 // Theme helper methods for consistent themed styling.
 
-// getErrorColor returns the error color from theme or fallback.
+// getTheme returns the theme or a default theme if none is set.
+func (m *ModalContent) getTheme() themes.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return themes.NewDefaultTheme()
+}
+
+// getErrorColor returns the error color from theme.
 func (m *ModalContent) getErrorColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.ErrorColor()
-	}
-	return styles.ColorError
+	return m.getTheme().ErrorColor()
 }
 
-// getInfoColor returns the info color from theme or fallback.
+// getInfoColor returns the info color from theme.
 func (m *ModalContent) getInfoColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.InfoColor()
-	}
-	return styles.ColorInfo
+	return m.getTheme().InfoColor()
 }
 
-// getSuccessColor returns the success color from theme or fallback.
+// getSuccessColor returns the success color from theme.
 func (m *ModalContent) getSuccessColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.SuccessColor()
-	}
-	return styles.ColorSuccess
+	return m.getTheme().SuccessColor()
 }
 
-// getWarningColor returns the warning color from theme or fallback.
+// getWarningColor returns the warning color from theme.
 func (m *ModalContent) getWarningColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.WarningColor()
-	}
-	return styles.ColorWarning
+	return m.getTheme().WarningColor()
 }
 
-// getBorderColor returns the border color from theme or fallback.
+// getBorderColor returns the border color from theme.
 func (m *ModalContent) getBorderColor() lipgloss.Color {
-	if m.theme != nil {
-		return m.theme.BorderColor()
-	}
-	return styles.ColorBorder
+	return m.getTheme().BorderColor()
 }
 
 // Render renders the modal centered in the given terminal dimensions
@@ -411,6 +403,7 @@ type OverlayModal struct {
 	Content string
 	Footer  string
 	Width   int
+	theme   themes.Theme
 }
 
 // NewOverlayModal creates a new overlay modal with the given title and content.
@@ -440,6 +433,20 @@ func (o *OverlayModal) SetFooter(footer string) *OverlayModal {
 	return o
 }
 
+// WithTheme sets the theme for the overlay modal.
+func (o *OverlayModal) WithTheme(theme themes.Theme) *OverlayModal {
+	o.theme = theme
+	return o
+}
+
+// getTheme returns the theme or a default theme if none is set.
+func (o *OverlayModal) getTheme() themes.Theme {
+	if o.theme != nil {
+		return o.theme
+	}
+	return themes.NewDefaultTheme()
+}
+
 // RenderCentered renders the modal centered over the dimmed background.
 func (o *OverlayModal) RenderCentered(background string, termWidth, termHeight int) string {
 	return RenderOverlay(background, o.buildContent(), termWidth, termHeight)
@@ -447,13 +454,14 @@ func (o *OverlayModal) RenderCentered(background string, termWidth, termHeight i
 
 // buildContent assembles the modal content with title, body, and footer.
 func (o *OverlayModal) buildContent() string {
+	theme := o.getTheme()
 	var parts []string
 
 	// Add title with styling
 	if o.Title != "" {
 		titleStyle := lipgloss.NewStyle().
 			Bold(true).
-			Foreground(styles.ColorTextPrimary).
+			Foreground(theme.ForegroundColor()).
 			MarginBottom(1)
 		parts = append(parts, titleStyle.Render(o.Title))
 	}
@@ -466,7 +474,7 @@ func (o *OverlayModal) buildContent() string {
 	// Add footer with muted styling
 	if o.Footer != "" {
 		footerStyle := lipgloss.NewStyle().
-			Foreground(styles.ColorTextMuted).
+			Foreground(theme.MutedColor()).
 			MarginTop(1)
 		parts = append(parts, footerStyle.Render(o.Footer))
 	}
@@ -499,10 +507,13 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int) s
 	// Dim the entire background first
 	dimmedBg := DimContent(background)
 
+	// Use default theme for border color
+	theme := themes.NewDefaultTheme()
+
 	// Create modal box with border
 	modalStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorBorder).
+		BorderForeground(theme.BorderColor()).
 		Padding(1, 2).
 		MaxWidth(MaxOverlayWidth)
 

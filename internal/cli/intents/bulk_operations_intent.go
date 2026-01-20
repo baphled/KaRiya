@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -151,45 +151,45 @@ func (m *BulkOperationsModel) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedNavigationFooter(theme),
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Select operation"),
-				components.BackBadge(),
+				primitives.HelpKeyBadge("Enter", "Select operation", theme),
+				primitives.BackBadge(theme),
 			),
-			ThemedCustomFooter(theme, components.QuitBadge()),
+			ThemedCustomFooter(theme, primitives.QuitBadge(theme)),
 		)
 	case BulkConfigureState:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Execute"),
-				components.BackBadge(),
+				primitives.HelpKeyBadge("Enter", "Execute", theme),
+				primitives.BackBadge(theme),
 			),
-			ThemedCustomFooter(theme, components.QuitBadge()),
+			ThemedCustomFooter(theme, primitives.QuitBadge(theme)),
 		)
 	case BulkExecuteState:
 		if m.data.IsPaused {
 			return CombineThemedFooters(
 				ThemedCustomFooter(theme,
-					components.NewKeyBadge("p", "Resume"),
-					components.NewKeyBadge("c", "Complete now"),
+					primitives.HelpKeyBadge("p", "Resume", theme),
+					primitives.HelpKeyBadge("c", "Complete now", theme),
 				),
-				ThemedCustomFooter(theme, components.QuitBadge()),
+				ThemedCustomFooter(theme, primitives.QuitBadge(theme)),
 			)
 		}
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("p", "Pause"),
-				components.NewKeyBadge("c", "Complete now"),
+				primitives.HelpKeyBadge("p", "Pause", theme),
+				primitives.HelpKeyBadge("c", "Complete now", theme),
 			),
-			ThemedCustomFooter(theme, components.QuitBadge()),
+			ThemedCustomFooter(theme, primitives.QuitBadge(theme)),
 		)
 	case BulkCompleteState:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("Enter", "Done"),
+				primitives.HelpKeyBadge("Enter", "Done", theme),
 			),
-			ThemedCustomFooter(theme, components.QuitBadge()),
+			ThemedCustomFooter(theme, primitives.QuitBadge(theme)),
 		)
 	default:
-		return ThemedCustomFooter(theme, components.QuitBadge())
+		return ThemedCustomFooter(theme, primitives.QuitBadge(theme))
 	}
 }
 

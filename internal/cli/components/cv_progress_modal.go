@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
@@ -143,24 +143,22 @@ func (m *CVProgressModal) View() string {
 
 	modalHeight := 10 // Fixed height for progress modal
 
-	// Title with spinner
-	titleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorAccentTeal).
-		Bold(true).
-		Align(lipgloss.Center).
-		Width(modalWidth - 4)
+	// Use default theme for colors
+	th := theme.Default()
 
+	// Title with spinner using UIKit Text
 	spinnerChar := spinnerFrames[m.spinner]
 	titleText := fmt.Sprintf("%s  %s", spinnerChar, m.title)
-	title := titleStyle.Render(titleText)
+	title := primitives.Title(titleText, th).
+		Width(modalWidth - 4).
+		Center().
+		Render()
 
-	// Subtitle
-	subtitleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
-		Align(lipgloss.Center).
-		Width(modalWidth - 4)
-
-	subtitle := subtitleStyle.Render(m.subtitle)
+	// Subtitle using UIKit Text
+	subtitle := primitives.Subtitle(m.subtitle, th).
+		Width(modalWidth - 4).
+		Center().
+		Render()
 
 	// Footer with KeyBadge
 	footer := m.buildFooter()
@@ -177,17 +175,15 @@ func (m *CVProgressModal) View() string {
 		footer,
 	)
 
-	// Wrap in styled container with solid background
-	styledContent := lipgloss.NewStyle().
+	// Wrap in styled container with solid background using UIKit Box
+	return containers.NewBox(th).
+		Content(content).
 		Width(modalWidth).
 		Height(modalHeight).
-		Background(styles.ColorBackground). // CRITICAL: Solid background
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorAccentTeal).
 		Padding(1).
-		Render(content)
-
-	return styledContent
+		Background(th.BackgroundColor()).
+		Variant(containers.BoxInfo). // Use accent color border
+		Render()
 }
 
 // buildFooter creates the keyboard shortcuts footer using UIKit primitives.

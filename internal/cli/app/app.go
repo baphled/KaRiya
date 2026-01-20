@@ -9,6 +9,7 @@ import (
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -48,7 +49,7 @@ type Model struct {
 	// Menu state
 	selectedMenuIndex int
 	menuItems         []MenuItem
-	logo              *components.ASCIILogo
+	logo              *display.Logo
 
 	// Terminal info for responsive rendering
 	terminalInfo *terminal.Info
@@ -109,7 +110,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	}
 
 	// Create ASCII logo with animation
-	logo := components.NewASCIILogo(true, 80)
+	logo := display.NewLogo(true, 80)
 
 	// Share logo with intent router so all intents can use it
 	router.SetLogo(logo)
@@ -163,9 +164,9 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Update logo animation if in menu state
 	if m.state == StateMenu {
-		if _, ok := msg.(components.TickMsg); ok {
+		if _, ok := msg.(display.TickMsg); ok {
 			updatedLogo, cmd := m.logo.Update(msg)
-			m.logo = updatedLogo.(*components.ASCIILogo)
+			m.logo = updatedLogo.(*display.Logo)
 			return m, cmd
 		}
 	}

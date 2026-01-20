@@ -143,9 +143,11 @@ var _ = Describe("Burst Management Navigation", func() {
 			env.AssertViewContains("Capture Event")
 		})
 
-		It("should quit application when pressing 'q' from list", func() {
+		It("should ignore 'q' key from list (quit only from main menu)", func() {
 			env.SelectIntentByName("burst_management")
+			// q no longer quits from within intents - only from main menu
 			env.Quit()
+			// Intent should still be active
 		})
 	})
 
@@ -166,8 +168,10 @@ var _ = Describe("Burst Management Navigation", func() {
 			env.AssertViewContainsAny("List", "Bursts", "Name")
 		})
 
-		It("should quit application when pressing 'q' from detail", func() {
+		It("should ignore 'q' key from detail (quit only from main menu)", func() {
+			// q no longer quits from within intents - only from main menu
 			env.Quit()
+			// Intent should still be active
 		})
 	})
 

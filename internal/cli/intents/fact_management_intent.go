@@ -3,59 +3,63 @@ package intents
 import (
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/components"
-	"github.com/baphled/kariya/internal/cli/navigation"
-	"github.com/baphled/kariya/internal/cli/themes"
-	"github.com/charmbracelet/bubbles/table"
+	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	domain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type FactManagementModel struct {
 	*BaseIntent
 	data          *FactManagementContext
-	table         *table.Model
-	listContainer *components.TableListContainer
-	navHandler    *navigation.ListNavigationHandler
+	tableBehavior *behaviors.TableBehavior[*domain.Fact]
 	result        *IntentResult[*FactManagementResult]
 	active        bool
 	editModal     *EditFactModal
 }
 
+// factRowFormatter formats a Fact for display in the table
+func factRowFormatter(fact *domain.Fact, _ int) []string {
+	text := truncate(fact.Text, 50)
+	strength := fact.StrengthSignal
+	if strength == "" {
+		strength = "-"
+	}
+	categories := fmt.Sprintf("%v", fact.CompetencyCategories)
+	if len(categories) > 30 {
+		categories = categories[:27] + "..."
+	}
+	return []string{text, strength, categories}
+}
+
 func NewFactManagementIntent(data *FactManagementContext) *FactManagementModel {
-	// Create table model for facts
-	columns := []table.Column{
+	// Create column definitions for TableBehavior
+	columns := []behaviors.ColumnDef{
 		{Title: "Fact", Width: 50},
 		{Title: "Strength", Width: 15},
 		{Title: "Categories", Width: 30},
 	}
 
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows([]table.Row{}),
-		table.WithFocused(true),
-		table.WithHeight(15),
-		table.WithWidth(100),
-	)
-
-	// Apply default styles initially - theme styles will be applied in Init()
-	t.SetStyles(table.DefaultStyles())
+	// Create TableBehavior with type-safe generic
+	tableBehavior := behaviors.NewTableBehavior[*domain.Fact](nil, columns, factRowFormatter).
+		PageSize(15).
+		PaginationPrefix("Facts").
+		EmptyMessage("No facts found. Press 'n' to create a new fact, 'r' to refresh, or 'q' to quit.")
 
 	model := &FactManagementModel{
 		BaseIntent:    NewBaseIntent(),
 		data:          data,
-		table:         &t,
-		listContainer: components.NewTableListContainer(t, "Manage Facts", 100),
+		tableBehavior: tableBehavior,
 		result:        nil,
 		active:        false,
 	}
-	model.navHandler = navigation.NewListNavigationHandler(model)
 	return model
 }
 
 func (m *FactManagementModel) Init() tea.Cmd {
-	// Apply themed table styles if theme is available
+	// Apply theme to TableBehavior if available
 	if theme := m.Theme(); theme != nil {
-		m.table.SetStyles(themes.NewThemedTableStyles(theme))
+		m.tableBehavior.SetTheme(theme)
 	}
 
 	// Mark intent as active
@@ -76,61 +80,20 @@ func (m *FactManagementModel) Init() tea.Cmd {
 		return tea.Quit
 	}
 
-	m.updateTableRows()
+	// Set items in TableBehavior (replaces updateTableRows)
+	m.tableBehavior.SetItems(m.data.Facts)
 	return nil
 }
 
-// updateTableRows updates the table rows based on facts
-func (m *FactManagementModel) updateTableRows() {
-	pageSize := 15
-	total := len(m.data.Facts)
-
-	// Determine which page current selection is on
-	page := 0
-	if pageSize > 0 && m.data.SelectedFactIndex >= 0 {
-		page = m.data.SelectedFactIndex / pageSize
+// syncTableSelection syncs the TableBehavior selection with the data context
+func (m *FactManagementModel) syncTableSelection() {
+	// Update data context from TableBehavior
+	m.data.SelectedFactIndex = m.tableBehavior.GetSelectedIndex()
+	if selected := m.tableBehavior.GetSelectedItem(); selected != nil {
+		m.data.SelectedFact = *selected
+	} else {
+		m.data.SelectedFact = nil
 	}
-
-	start := page * pageSize
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
-
-	pageFacts := m.data.Facts[start:end]
-
-	rows := make([]table.Row, 0, len(pageFacts))
-	for idx, fact := range pageFacts {
-		realIdx := start + idx
-		text := truncate(fact.Text, 50)
-
-		// Use navigation handler to format row text with indicator
-		text = m.navHandler.FormatRowText(realIdx, text)
-
-		strength := fact.StrengthSignal
-		if strength == "" {
-			strength = "-"
-		}
-		categories := fmt.Sprintf("%v", fact.CompetencyCategories)
-		if len(categories) > 30 {
-			categories = categories[:27] + "..."
-		}
-		rows = append(rows, table.Row{text, strength, categories})
-	}
-
-	m.table.SetRows(rows)
-
-	// Calculate relative cursor for current page
-	relativeCursor := m.data.SelectedFactIndex - start
-
-	// Set table cursor (for visual highlighting)
-	m.table.SetCursor(relativeCursor)
-
-	// Sync container's index to match (critical for rendering)
-	m.listContainer.SetSelectedIdx(relativeCursor)
-
-	// Update container with modified table
-	m.listContainer.SetTable(*m.table)
 }
 
 func (m *FactManagementModel) Update(msg tea.Msg) tea.Cmd {
@@ -229,10 +192,10 @@ func (m *FactManagementModel) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedListFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
-				components.DeleteBadge(),
-				components.NewKeyBadge("n", "New"),
-				components.NewKeyBadge("r", "Refresh"),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
+				primitives.HelpKeyBadge("n", "New", theme),
+				primitives.HelpKeyBadge("r", "Refresh", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -240,8 +203,8 @@ func (m *FactManagementModel) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedDetailViewFooter(theme),
 			ThemedCustomFooter(theme,
-				components.EditBadge(),
-				components.DeleteBadge(),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -249,22 +212,22 @@ func (m *FactManagementModel) getContextHelp() string {
 		return CombineThemedFooters(
 			ThemedFormFooter(theme),
 			ThemedCustomFooter(theme,
-				components.SaveBadge(),
+				primitives.SaveBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case FactDeleteConfirmState:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.NewKeyBadge("y/Enter", "Confirm"),
-				components.NewKeyBadge("n/Esc", "Cancel"),
+				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
+				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
 	case FactResultsState:
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme,
-				components.BackBadge(),
+				primitives.BackBadge(theme),
 			),
 			ThemedGlobalBadges(theme),
 		)
@@ -293,11 +256,8 @@ func (m *FactManagementModel) GetSelectedIndex() int {
 }
 
 func (m *FactManagementModel) SetSelectedIndex(idx int) {
-	m.data.SelectedFactIndex = idx
-	if idx >= 0 && idx < len(m.data.Facts) {
-		m.data.SelectedFact = m.data.Facts[idx]
-	}
-	m.updateTableRows()
+	m.tableBehavior.SetSelectedIndex(idx)
+	m.syncTableSelection()
 }
 
 func (m *FactManagementModel) GetPageSize() int {
@@ -327,14 +287,16 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-		// Try navigation handler
-		if m.navHandler.HandleKey(msg.String()) {
+		// Try TableBehavior navigation handler
+		if m.tableBehavior.HandleNavigation(msg.String()) {
+			m.syncTableSelection()
 			return nil
 		}
 
 		switch msg.String() {
 
 		case "enter", " ":
+			m.syncTableSelection()
 			if m.data.SelectedFact != nil {
 				m.data.CurrentState = FactViewState
 			}
@@ -358,25 +320,18 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 					},
 				}
 			} else {
-				m.updateTableRows()
+				m.tableBehavior.SetItems(m.data.Facts)
+				m.syncTableSelection()
 			}
 
 			return nil
 
 		case "tab", "right":
-			if m.data.CurrentPage < (m.data.TotalFacts / m.data.PageSize) {
-				m.data.CurrentPage++
-				m.updateTableRows()
-			}
-
+			// Page navigation handled by TableBehavior navigation
 			return nil
 
 		case "shift+tab", "left":
-			if m.data.CurrentPage > 0 {
-				m.data.CurrentPage--
-				m.updateTableRows()
-			}
-
+			// Page navigation handled by TableBehavior navigation
 			return nil
 		}
 	}
@@ -481,7 +436,9 @@ func (m *FactManagementModel) handleEditorState(msg tea.Msg) tea.Cmd {
 						Message: fmt.Sprintf("Fact %s successfully", action),
 					},
 				}
-				m.updateTableRows()
+				// Refresh table after save
+				m.tableBehavior.SetItems(m.data.Facts)
+				m.syncTableSelection()
 			}
 		}
 
@@ -524,7 +481,9 @@ func (m *FactManagementModel) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
 							Message: "Fact deleted successfully",
 						},
 					}
-					m.updateTableRows()
+					// Refresh table after delete
+					m.tableBehavior.SetItems(m.data.Facts)
+					m.syncTableSelection()
 				}
 				m.data.FactToDelete = nil
 				m.data.CurrentState = FactListState
@@ -560,23 +519,8 @@ func (m *FactManagementModel) handleResultsState(msg tea.Msg) tea.Cmd {
 // View rendering methods
 
 func (m *FactManagementModel) viewList() string {
-	if len(m.data.Facts) == 0 {
-		m.listContainer.SetEmptyStateMessage("No facts found. Press 'n' to create a new fact, 'r' to refresh, or 'q' to quit.")
-		return m.listContainer.Render()
-	}
-
-	// Ensure table rows are synchronized with current state
-	m.updateTableRows()
-
-	// Build pagination info with page number indicator
-	pageSize := 15
-	totalItems := len(m.data.Facts)
-	currentPage := (m.data.SelectedFactIndex / pageSize) + 1
-	totalPages := (totalItems + pageSize - 1) / pageSize
-	paginationInfo := fmt.Sprintf("Total: %d facts | Page %d of %d", totalItems, currentPage, totalPages)
-	m.listContainer.SetPaginationInfo(paginationInfo)
-
-	return m.listContainer.Render()
+	// TableBehavior handles empty state, pagination, and rendering
+	return m.tableBehavior.Render()
 }
 
 // viewFact removed - unused wrapper method

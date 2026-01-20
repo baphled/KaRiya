@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
@@ -274,7 +275,10 @@ func (m *BurstSuggestionModelNew) rejectCurrent() (tea.Model, tea.Cmd) {
 // View renders the burst suggestion screen
 func (m *BurstSuggestionModelNew) View() string {
 	if len(m.suggestions) == 0 {
-		return styles.ErrorBox.Render("No burst suggestions available")
+		return containers.NewBox(m.getTheme()).
+			Variant(containers.BoxDestructive).
+			Content("No burst suggestions available").
+			Render()
 	}
 
 	if m.editing {
@@ -287,11 +291,15 @@ func (m *BurstSuggestionModelNew) View() string {
 // renderReviewView renders the suggestion review view
 func (m *BurstSuggestionModelNew) renderReviewView() string {
 	current := m.suggestions[m.currentIdx]
+	theme := m.getTheme()
 
 	var parts []string
 
 	// Header
-	header := styles.HeaderMain.Render(fmt.Sprintf("Burst Suggestion %d of %d", m.currentIdx+1, len(m.suggestions)))
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(theme.AccentColor())
+	header := headerStyle.Render(fmt.Sprintf("Burst Suggestion %d of %d", m.currentIdx+1, len(m.suggestions)))
 	parts = append(parts, header)
 
 	// Progress bar
@@ -319,13 +327,21 @@ func (m *BurstSuggestionModelNew) renderReviewView() string {
 
 // renderEditView renders the editing view using huh form
 func (m *BurstSuggestionModelNew) renderEditView() string {
+	theme := m.getTheme()
+
 	if m.editForm == nil {
-		return styles.ErrorBox.Render("Edit form not initialized")
+		return containers.NewBox(theme).
+			Variant(containers.BoxDestructive).
+			Content("Edit form not initialized").
+			Render()
 	}
 
 	var parts []string
 
-	header := styles.HeaderMain.Render("Edit Burst Name & Description")
+	headerStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(theme.AccentColor())
+	header := headerStyle.Render("Edit Burst Name & Description")
 	parts = append(parts, header)
 
 	// Render huh form
@@ -357,29 +373,31 @@ func (m *BurstSuggestionModelNew) renderProgressBar() string {
 
 // renderConfidenceScore renders the confidence score with color coding
 func (m *BurstSuggestionModelNew) renderConfidenceScore(score float64) string {
+	theme := m.getTheme()
 	percentage := int(score * 100)
-	var scoreStyle lipgloss.Style
 
+	var variant containers.BoxVariant
 	switch {
 	case score >= 0.8:
-		scoreStyle = styles.SuccessBox
+		variant = containers.BoxSuccess
 	case score >= 0.6:
-		scoreStyle = styles.InfoBox
+		variant = containers.BoxInfo
 	case score >= 0.4:
-		scoreStyle = styles.WarningBox
+		variant = containers.BoxWarning
 	default:
-		scoreStyle = styles.ErrorBox
+		variant = containers.BoxDestructive
 	}
 
 	scoreText := fmt.Sprintf("Confidence: %d%% ", percentage)
 	scoreBar := strings.Repeat("█", percentage/5) + strings.Repeat("░", 20-percentage/5)
 
 	content := fmt.Sprintf("%s[%s]", scoreText, scoreBar)
-	return scoreStyle.Render(content)
+	return containers.NewBox(theme).Variant(variant).Content(content).Render()
 }
 
 // renderBurstDetails renders the burst name and description
 func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstSuggestion) string {
+	theme := m.getTheme()
 	var parts []string
 
 	// Name or suggested name
@@ -389,10 +407,13 @@ func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstS
 	}
 
 	if name != "" {
-		nameBox := styles.CardBase.Render(fmt.Sprintf("Name: %s", name))
+		nameBox := containers.NewBox(theme).Content(fmt.Sprintf("Name: %s", name)).Render()
 		parts = append(parts, nameBox)
 	} else {
-		nameBox := styles.WarningBox.Render("Name: (not set - will be auto-generated)")
+		nameBox := containers.NewBox(theme).
+			Variant(containers.BoxWarning).
+			Content("Name: (not set - will be auto-generated)").
+			Render()
 		parts = append(parts, nameBox)
 	}
 
@@ -403,12 +424,15 @@ func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstS
 	}
 
 	if desc != "" {
-		descBox := styles.CardBase.Render(fmt.Sprintf("Description: %s", desc))
+		descBox := containers.NewBox(theme).Content(fmt.Sprintf("Description: %s", desc)).Render()
 		parts = append(parts, descBox)
 	}
 
 	// Event count
-	eventCountBox := styles.InfoBox.Render(fmt.Sprintf("Related Events: %d", len(suggestion.EventIDs)))
+	eventCountBox := containers.NewBox(theme).
+		Variant(containers.BoxInfo).
+		Content(fmt.Sprintf("Related Events: %d", len(suggestion.EventIDs))).
+		Render()
 	parts = append(parts, eventCountBox)
 
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
@@ -416,8 +440,13 @@ func (m *BurstSuggestionModelNew) renderBurstDetails(suggestion burstfact.BurstS
 
 // renderRelatedEvents renders preview of related events
 func (m *BurstSuggestionModelNew) renderRelatedEvents(suggestion burstfact.BurstSuggestion) string {
+	theme := m.getTheme()
+
 	if len(suggestion.EventIDs) == 0 {
-		return styles.WarningBox.Render("No related events")
+		return containers.NewBox(theme).
+			Variant(containers.BoxWarning).
+			Content("No related events").
+			Render()
 	}
 
 	var events []*career.CareerEvent
@@ -456,7 +485,7 @@ func (m *BurstSuggestionModelNew) renderRelatedEvents(suggestion burstfact.Burst
 
 	header := "Related Events:"
 	content := header + "\n" + strings.Join(eventLines, "\n")
-	return styles.CardBase.Render(content)
+	return containers.NewBox(theme).Content(content).Render()
 }
 
 // GetConfirmed returns the list of confirmed suggestions
@@ -525,6 +554,11 @@ func (m *BurstSuggestionModelNew) GetFooter() string {
 		return "Tab: Navigate | Enter: Save | Esc: Cancel"
 	}
 	return "Up/Down: Navigate | y: Confirm | n: Reject | e: Edit | Esc: Back"
+}
+
+// getTheme returns the theme or a default theme if none is set.
+func (m *BurstSuggestionModelNew) getTheme() themes.Theme {
+	return themes.NewDefaultTheme()
 }
 
 // createBurstFromSuggestion converts a BurstSuggestion into a Burst domain object

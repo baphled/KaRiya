@@ -37,19 +37,6 @@ var _ = Describe("MessageInterceptor", func() {
 		})
 	})
 
-	Describe("OnQuit", func() {
-		It("should call quit handler when q pressed", func() {
-			called := false
-			interceptor.OnQuit(func() tea.Cmd {
-				called = true
-				return tea.Quit
-			})
-
-			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(called).To(BeTrue())
-		})
-	})
-
 	Describe("OnHelp", func() {
 		It("should call help handler when ? pressed", func() {
 			called := false
@@ -95,18 +82,6 @@ var _ = Describe("MessageInterceptor", func() {
 			Expect(cmd).NotTo(BeNil())
 		})
 
-		It("should return global key handler command when matched", func() {
-			expectedCmd := tea.Quit
-			interceptor.OnQuit(func() tea.Cmd {
-				return expectedCmd
-			})
-
-			cmd := interceptor.InterceptOr(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}}, func() tea.Cmd {
-				return nil
-			})
-
-			Expect(cmd).NotTo(BeNil())
-		})
 	})
 
 	Describe("Intercept", func() {
@@ -115,30 +90,16 @@ var _ = Describe("MessageInterceptor", func() {
 			Expect(cmd).To(BeNil())
 		})
 
-		It("should return handler command when matched", func() {
-			expectedCmd := tea.Quit
-			interceptor.OnQuit(func() tea.Cmd {
-				return expectedCmd
-			})
-
-			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(cmd).NotTo(BeNil())
-		})
 	})
 
 	Describe("Chaining", func() {
-		It("should support method chaining", func() {
+		It("should support method chaining for back and help handlers", func() {
 			backCalled := false
-			quitCalled := false
 			helpCalled := false
 
 			result := interceptor.
 				OnBack(func() tea.Cmd {
 					backCalled = true
-					return nil
-				}).
-				OnQuit(func() tea.Cmd {
-					quitCalled = true
 					return nil
 				}).
 				OnHelp(func() tea.Cmd {
@@ -151,9 +112,6 @@ var _ = Describe("MessageInterceptor", func() {
 			// Test each handler works
 			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
 			Expect(backCalled).To(BeTrue())
-
-			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-			Expect(quitCalled).To(BeTrue())
 
 			interceptor.Intercept(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
 			Expect(helpCalled).To(BeTrue())
@@ -286,20 +244,6 @@ var _ = Describe("MessageInterceptor", func() {
 			)
 
 			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyEsc})
-			Expect(cmd).NotTo(BeNil())
-		})
-	})
-
-	Describe("StandardQuitHandler", func() {
-		It("should return tea.Quit command", func() {
-			handler := intents.StandardQuitHandler()
-			cmd := handler()
-			Expect(cmd).NotTo(BeNil())
-		})
-
-		It("should work with MessageInterceptor", func() {
-			interceptor.OnQuit(intents.StandardQuitHandler())
-			cmd := interceptor.Intercept(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 			Expect(cmd).NotTo(BeNil())
 		})
 	})

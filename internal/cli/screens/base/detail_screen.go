@@ -164,8 +164,9 @@ func (s *BaseDetailScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult
 	return nil, nil
 }
 
-// View renders the detail screen using StandardView.
-func (s *BaseDetailScreen[T]) View() string {
+// RenderContent returns the detail content without StandardView wrapper.
+// This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
+func (s *BaseDetailScreen[T]) RenderContent() string {
 	// Render content with current dimensions
 	content := ""
 	if s.contentRenderer != nil {
@@ -176,8 +177,13 @@ func (s *BaseDetailScreen[T]) View() string {
 	// For now, just render the full content
 	// In future, we can slice by lines based on scrollOffset
 
+	return content
+}
+
+// View renders the detail screen using StandardView.
+func (s *BaseDetailScreen[T]) View() string {
 	// Use BaseScreen's CreateView helper for StandardView integration
-	return s.CreateView(s.breadcrumbs, content, s.footer)
+	return s.CreateView(s.breadcrumbs, s.RenderContent(), s.footer)
 }
 
 // SetFooter updates the footer help text.

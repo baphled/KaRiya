@@ -184,6 +184,101 @@ var _ = Describe("TimelineEventListScreen", func() {
 			Expect(data["action"]).To(Equal("delete"))
 			Expect(data["event"]).To(Equal(events[0]))
 		})
+
+		It("should return filter action on 'f' key", func() {
+			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}}
+			_, result := screen.Update(msg)
+
+			Expect(result).NotTo(BeNil())
+			navResult := result.(*screens.NavigateResult)
+			data := navResult.ResultData.(map[string]interface{})
+			Expect(data["action"]).To(Equal("filter"))
+		})
+
+		Context("after navigating to different event", func() {
+			BeforeEach(func() {
+				// Navigate to second event
+				screen.Update(tea.KeyMsg{Type: tea.KeyDown})
+				Expect(screen.GetSelectedIndex()).To(Equal(1))
+			})
+
+			It("should edit the navigated-to event", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}}
+				_, result := screen.Update(msg)
+
+				Expect(result).NotTo(BeNil())
+				navResult := result.(*screens.NavigateResult)
+				data := navResult.ResultData.(map[string]interface{})
+				Expect(data["action"]).To(Equal("edit"))
+				Expect(data["event"]).To(Equal(events[1])) // Second event
+			})
+
+			It("should delete the navigated-to event", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}}
+				_, result := screen.Update(msg)
+
+				Expect(result).NotTo(BeNil())
+				navResult := result.(*screens.NavigateResult)
+				data := navResult.ResultData.(map[string]interface{})
+				Expect(data["action"]).To(Equal("delete"))
+				Expect(data["event"]).To(Equal(events[1])) // Second event
+			})
+
+			It("should view details of the navigated-to event on Enter", func() {
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(result).NotTo(BeNil())
+				navResult := result.(*screens.NavigateResult)
+				Expect(navResult.ResultData).To(Equal(events[1])) // Second event
+			})
+		})
+
+		Context("with empty event list", func() {
+			BeforeEach(func() {
+				screen = timeline.NewTimelineEventListScreen([]*career.CareerEvent{})
+				screen.SetTerminalInfo(120, 40)
+			})
+
+			It("should still allow add action on empty list", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
+				_, result := screen.Update(msg)
+
+				Expect(result).NotTo(BeNil())
+				navResult := result.(*screens.NavigateResult)
+				data := navResult.ResultData.(map[string]interface{})
+				Expect(data["action"]).To(Equal("add"))
+			})
+
+			It("should return nil for edit on empty list", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}}
+				_, result := screen.Update(msg)
+
+				Expect(result).To(BeNil())
+			})
+
+			It("should return nil for delete on empty list", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}}
+				_, result := screen.Update(msg)
+
+				Expect(result).To(BeNil())
+			})
+
+			It("should return nil for Enter on empty list", func() {
+				_, result := screen.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+				Expect(result).To(BeNil())
+			})
+
+			It("should still allow filter action on empty list", func() {
+				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}}
+				_, result := screen.Update(msg)
+
+				Expect(result).NotTo(BeNil())
+				navResult := result.(*screens.NavigateResult)
+				data := navResult.ResultData.(map[string]interface{})
+				Expect(data["action"]).To(Equal("filter"))
+			})
+		})
 	})
 
 	Describe("Cancellation", func() {

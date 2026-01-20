@@ -3,8 +3,8 @@ package base_test
 import (
 	"testing"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/uikit/display"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -166,7 +166,7 @@ var _ = Describe("BaseScreen", func() {
 
 	Describe("Logo Management", func() {
 		It("should store logo reference", func() {
-			logo := components.NewASCIILogo(false, 100)
+			logo := display.NewLogo(false, 100)
 			bs.SetLogo(logo, 2)
 
 			Expect(bs.GetLogo()).To(Equal(logo))
@@ -181,7 +181,7 @@ var _ = Describe("BaseScreen", func() {
 		})
 
 		It("should include logo in view when set", func() {
-			logo := components.NewASCIILogo(false, 100)
+			logo := display.NewLogo(false, 100)
 			bs.SetLogo(logo, 1)
 
 			view := bs.CreateView([]string{"Test"}, "Content", "Footer")
