@@ -2,7 +2,6 @@ package components
 
 import (
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
@@ -268,9 +267,12 @@ func (m *CVConfigWizardModal) View() string {
 		modalHeight = 20
 	}
 
+	// Use default theme for colors
+	th := theme.Default()
+
 	// Add main title
 	titleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorAccentTeal).
+		Foreground(th.AccentColor()).
 		Bold(true).
 		Align(lipgloss.Center).
 		Width(modalWidth - 4)
@@ -290,9 +292,9 @@ func (m *CVConfigWizardModal) View() string {
 	styledContent := lipgloss.NewStyle().
 		Width(modalWidth).
 		MaxHeight(modalHeight).
-		Background(styles.ColorBackground). // CRITICAL: Solid background prevents transparency
+		Background(th.BackgroundColor()). // CRITICAL: Solid background prevents transparency
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorAccentTeal).
+		BorderForeground(th.AccentColor()).
 		Padding(1).
 		Render(content)
 

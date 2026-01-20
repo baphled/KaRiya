@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
@@ -143,9 +142,12 @@ func (m *CVProgressModal) View() string {
 
 	modalHeight := 10 // Fixed height for progress modal
 
+	// Use default theme for colors
+	th := theme.Default()
+
 	// Title with spinner
 	titleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorAccentTeal).
+		Foreground(th.AccentColor()).
 		Bold(true).
 		Align(lipgloss.Center).
 		Width(modalWidth - 4)
@@ -156,7 +158,7 @@ func (m *CVProgressModal) View() string {
 
 	// Subtitle
 	subtitleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorTextSecondary).
+		Foreground(th.SecondaryColor()).
 		Align(lipgloss.Center).
 		Width(modalWidth - 4)
 
@@ -181,9 +183,9 @@ func (m *CVProgressModal) View() string {
 	styledContent := lipgloss.NewStyle().
 		Width(modalWidth).
 		Height(modalHeight).
-		Background(styles.ColorBackground). // CRITICAL: Solid background
+		Background(th.BackgroundColor()). // CRITICAL: Solid background
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorAccentTeal).
+		BorderForeground(th.AccentColor()).
 		Padding(1).
 		Render(content)
 
