@@ -25,7 +25,7 @@ var _ = Describe("App Menu Integration Tests", func() {
 	)
 
 	BeforeEach(func() {
-		_ = context.Background()
+		ctx := context.Background()
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
@@ -35,9 +35,11 @@ var _ = Describe("App Menu Integration Tests", func() {
 		svc.SetFactRepository(factRepo)
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
-		// Pre-populate burst/fact repositories with dummy entries to avoid nil panics
-		_ = burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1", "e2"))
-		_ = factRepo.Create(context.Background(), fixtures.Fact("f1", "e1"))
+		// Pre-populate repositories with dummy entries to avoid nil panics and empty state modals
+		// BUG-004: Generate CV now shows a warning modal if no events exist
+		_ = repo.Create(ctx, &career.CareerEvent{ID: "e1", Text: "Test event", Date: time.Now()})
+		_ = burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
+		_ = factRepo.Create(ctx, fixtures.Fact("f1", "e1"))
 		model = app.NewModel(cliService, svc)
 		model.SkipOnboarding() // Skip onboarding for tests
 

@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"time"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -60,6 +59,10 @@ type Model struct {
 	// Onboarding wizard for first-run profile setup
 	onboardingWizard *components.OnboardingWizardModal
 	appConfig        *config.Config
+
+	// Info modal for blocking user feedback (empty state, etc.)
+	// See BUG-004: Shows warning when user tries to generate CV without events
+	infoModal *components.InfoModal
 }
 
 // MenuItem represents a menu option
@@ -169,6 +172,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle info modal dismissal first (highest priority)
+		// BUG-004: Info modal shows when user tries to generate CV without events
+		if m.infoModal != nil && m.infoModal.IsVisible() {
+			if m.infoModal.Update(msg) {
+				m.infoModal = nil // Dismissed
+			}
+			return m, nil // Consume all keys when modal is showing
+		}
+
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
@@ -321,7 +333,15 @@ func (m *Model) View() string {
 	if m.state == StateOnboarding {
 		return m.viewOnboarding()
 	} else if m.state == StateMenu {
-		return m.viewMenu()
+		menuView := m.viewMenu()
+
+		// BUG-004: Overlay info modal if active (e.g., empty state warning)
+		if m.infoModal != nil && m.infoModal.IsVisible() {
+			modalView := m.infoModal.View()
+			return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, modalView)
+		}
+
+		return menuView
 	} else if m.state == StateIntent {
 		activeIntent := m.intentRouter.GetActiveIntent()
 		if activeIntent != nil {
@@ -426,6 +446,24 @@ func (m *Model) handleMenuInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "enter", " ":
 		// Select the current menu item
 		selectedItem := m.menuItems[m.selectedMenuIndex]
+
+		// BUG-004: Check for empty state conditions before activating certain intents
+		// Generate CV requires at least one career event to be meaningful
+		if selectedItem.Intent == "generate_cv" {
+			events, err := m.careerService.GetEventRepository().List(m.ctx, careerrepo.ListFilters{Limit: 1})
+			if err != nil || len(events) == 0 {
+				// Show informational modal instead of activating intent
+				m.infoModal = components.NewWarningInfoModal(
+					"No Career Events",
+					"You need to add career events before generating a CV.\n\n"+
+						"Use 'Capture Event' from the main menu to record your "+
+						"achievements, projects, and career milestones.",
+				)
+				m.infoModal.SetDimensions(m.width, m.height)
+				return m, nil
+			}
+		}
+
 		m.state = StateIntent
 		cmd, err := m.intentRouter.ActivateIntent(selectedItem.Intent, make(map[string]interface{}))
 		if err != nil {
@@ -714,14 +752,18 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	})
 
 	// GenerateCV
+	// BUG-004: Removed stub data fallback - empty state is now handled by showing
+	// an info modal in handleMenuInput before this intent is activated.
 	_ = router.RegisterIntent("generate_cv", func() intents.Intent {
 		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 100})
-		if err != nil || len(events) == 0 {
-			events = []*career.CareerEvent{{ID: "ev-stub", Text: "Test event for navigation integration", Date: time.Now()}}
+		if err != nil {
+			log.Error("Failed to load events for CV generation: %v", err)
+			events = []*career.CareerEvent{}
 		}
 		facts, err := careerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 100})
-		if err != nil || len(facts) == 0 {
-			facts = []*career.Fact{{ID: "fact-stub", Text: "Test fact for navigation integration", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "ev-stub"}}
+		if err != nil {
+			log.Error("Failed to load facts for CV generation: %v", err)
+			facts = []*career.Fact{}
 		}
 		// Load user's profile config for narrative CV exports
 		var profileCfg *config.ProfileConfig
