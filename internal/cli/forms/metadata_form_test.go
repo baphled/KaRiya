@@ -8,22 +8,18 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("MetadataForm", func() {
 	var testEvent *career.CareerEvent
 
 	BeforeEach(func() {
-		testEvent = &career.CareerEvent{
-			ID:         "event-123",
-			Text:       "Test event",
-			Date:       time.Date(2024, 1, 7, 0, 0, 0, 0, time.UTC),
-			Company:    "Test Company",
-			Project:    "Test Project",
-			Tags:       []string{"go", "testing"},
-			Categories: []string{"technical", "leadership"},
-			Skills:     []string{"skill-id-1", "skill-id-2"},
-		}
+		testEvent = fixtures.EventWith("event-123", "Test event", "Test Company", "Test Project")
+		testEvent.Date = time.Date(2024, 1, 7, 0, 0, 0, 0, time.UTC)
+		testEvent.Tags = []string{"go", "testing"}
+		testEvent.Categories = []string{"technical", "leadership"}
+		testEvent.Skills = []string{"skill-id-1", "skill-id-2"}
 	})
 
 	Describe("NewMetadataEditorForm", func() {

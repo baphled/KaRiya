@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,18 +38,11 @@ var _ = Describe("TraceabilityService", func() {
 		service = NewTraceabilityService(eventRepo, factRepo, testLogger)
 
 		// Create test events
-		testEvent1 = &career.CareerEvent{
-			ID:   uuid.New().String(),
-			Text: "Led team on project X",
-			Date: time.Now().Add(-30 * 24 * time.Hour),
-			Tags: []string{"leadership"},
-		}
-		testEvent2 = &career.CareerEvent{
-			ID:   uuid.New().String(),
-			Text: "Implemented feature Y",
-			Date: time.Now().Add(-20 * 24 * time.Hour),
-			Tags: []string{"technical"},
-		}
+		testEvent1 = fixtures.EventWith(uuid.New().String(), "Led team on project X", "", "")
+		testEvent1.Tags = []string{"leadership"}
+
+		testEvent2 = fixtures.EventWith(uuid.New().String(), "Implemented feature Y", "", "")
+		testEvent2.Tags = []string{"technical"}
 
 		// Create test facts with all required fields
 		eventID1 := uuid.New().String()

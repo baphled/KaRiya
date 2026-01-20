@@ -2,14 +2,13 @@ package burst_fact_test
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
-	"github.com/google/uuid"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Extractor Integration Tests", func() {
@@ -27,16 +26,8 @@ var _ = Describe("Extractor Integration Tests", func() {
 
 	Describe("Complete Event-to-Fact Extraction Workflow", func() {
 		It("extracts enriched facts from detailed career event", func() {
-			event := &career.CareerEvent{
-				ID:        uuid.New().String(),
-				Text:      "Architected and delivered enterprise-scale microservices platform leading cross-functional team through complete migration from monolith",
-				Date:      time.Now().Add(-90 * 24 * time.Hour),
-				Company:   "TechCorp Inc.",
-				Project:   "Platform Migration Initiative",
-				Tags:      []string{"technical", "leadership", "achievement"},
-				CreatedAt: time.Now().Add(-90 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-90 * 24 * time.Hour),
-			}
+			event := fixtures.EventWith("1", "Architected and delivered enterprise-scale microservices platform leading cross-functional team through complete migration from monolith", "TechCorp Inc.", "Platform Migration Initiative")
+			event.Tags = []string{"technical", "leadership", "achievement"}
 
 			facts := extractor.ExtractFromEvent(ctx, event)
 
@@ -60,15 +51,7 @@ var _ = Describe("Extractor Integration Tests", func() {
 		})
 
 		It("extracts facts with proper validation constraints", func() {
-			event := &career.CareerEvent{
-				ID:        uuid.New().String(),
-				Text:      "Led global engineering organization through digital transformation program",
-				Date:      time.Now().Add(-180 * 24 * time.Hour),
-				Company:   "Global Tech",
-				Project:   "Digital Transformation",
-				CreatedAt: time.Now().Add(-180 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-180 * 24 * time.Hour),
-			}
+			event := fixtures.EventWith("1", "Led global engineering organization through digital transformation program", "Global Tech", "Digital Transformation")
 
 			facts := extractor.ExtractFromEvent(ctx, event)
 
@@ -82,43 +65,12 @@ var _ = Describe("Extractor Integration Tests", func() {
 
 	Describe("Complete Burst-to-Facts Extraction Workflow", func() {
 		It("extracts comprehensive facts from burst with multiple related events", func() {
-			event1 := &career.CareerEvent{
-				ID:        uuid.New().String(),
-				Text:      "Led team through critical system refactoring",
-				Date:      time.Now().Add(-120 * 24 * time.Hour),
-				Company:   "TechCorp",
-				Project:   "Platform Modernization",
-				CreatedAt: time.Now().Add(-120 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-120 * 24 * time.Hour),
-			}
+			event1 := fixtures.EventWith("1", "Led team through critical system refactoring", "TechCorp", "Platform Modernization")
+			event2 := fixtures.EventWith("2", "Mentored engineering team on new architecture patterns", "TechCorp", "Platform Modernization")
+			event3 := fixtures.EventWith("3", "Delivered optimized architecture reducing latency by 60%", "TechCorp", "Platform Modernization")
 
-			event2 := &career.CareerEvent{
-				ID:        uuid.New().String(),
-				Text:      "Mentored engineering team on new architecture patterns",
-				Date:      time.Now().Add(-110 * 24 * time.Hour),
-				Company:   "TechCorp",
-				Project:   "Platform Modernization",
-				CreatedAt: time.Now().Add(-110 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-110 * 24 * time.Hour),
-			}
-
-			event3 := &career.CareerEvent{
-				ID:        uuid.New().String(),
-				Text:      "Delivered optimized architecture reducing latency by 60%",
-				Date:      time.Now().Add(-100 * 24 * time.Hour),
-				Company:   "TechCorp",
-				Project:   "Platform Modernization",
-				CreatedAt: time.Now().Add(-100 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-100 * 24 * time.Hour),
-			}
-
-			burst := &career.Burst{
-				ID:        uuid.New().String(),
-				Name:      "Platform Modernization Initiative",
-				EventIDs:  []string{event1.ID, event2.ID, event3.ID},
-				CreatedAt: time.Now().Add(-120 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-100 * 24 * time.Hour),
-			}
+			burst := fixtures.Burst("burst-1", event1.ID, event2.ID, event3.ID)
+			burst.Name = "Platform Modernization Initiative"
 
 			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{event1, event2, event3})
 
@@ -142,47 +94,14 @@ var _ = Describe("Extractor Integration Tests", func() {
 
 		It("extracts facts demonstrating competency accumulation", func() {
 			events := []*career.CareerEvent{
-				{
-					ID:        uuid.New().String(),
-					Text:      "Led architectural review",
-					Date:      time.Now().Add(-90 * 24 * time.Hour),
-					Company:   "TechCorp",
-					CreatedAt: time.Now().Add(-90 * 24 * time.Hour),
-					UpdatedAt: time.Now().Add(-90 * 24 * time.Hour),
-				},
-				{
-					ID:        uuid.New().String(),
-					Text:      "Mentored junior developers",
-					Date:      time.Now().Add(-80 * 24 * time.Hour),
-					Company:   "TechCorp",
-					CreatedAt: time.Now().Add(-80 * 24 * time.Hour),
-					UpdatedAt: time.Now().Add(-80 * 24 * time.Hour),
-				},
-				{
-					ID:        uuid.New().String(),
-					Text:      "Designed product feature",
-					Date:      time.Now().Add(-70 * 24 * time.Hour),
-					Company:   "TechCorp",
-					CreatedAt: time.Now().Add(-70 * 24 * time.Hour),
-					UpdatedAt: time.Now().Add(-70 * 24 * time.Hour),
-				},
-				{
-					ID:        uuid.New().String(),
-					Text:      "Consulted on optimization strategy",
-					Date:      time.Now().Add(-60 * 24 * time.Hour),
-					Company:   "TechCorp",
-					CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-					UpdatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				},
+				fixtures.EventWith("1", "Led architectural review", "TechCorp", ""),
+				fixtures.EventWith("2", "Mentored junior developers", "TechCorp", ""),
+				fixtures.EventWith("3", "Designed product feature", "TechCorp", ""),
+				fixtures.EventWith("4", "Consulted on optimization strategy", "TechCorp", ""),
 			}
 
-			burst := &career.Burst{
-				ID:        uuid.New().String(),
-				Name:      "Multi-faceted Growth Phase",
-				EventIDs:  []string{events[0].ID, events[1].ID, events[2].ID, events[3].ID},
-				CreatedAt: time.Now().Add(-90 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-60 * 24 * time.Hour),
-			}
+			burst := fixtures.Burst("burst-1", events[0].ID, events[1].ID, events[2].ID, events[3].ID)
+			burst.Name = "Multi-faceted Growth Phase"
 
 			facts := extractor.ExtractFromBurst(ctx, burst, events)
 
@@ -202,31 +121,12 @@ var _ = Describe("Extractor Integration Tests", func() {
 	Describe("Fact Extraction Quality Assurance", func() {
 		It("ensures all extracted facts pass domain validation", func() {
 			events := []*career.CareerEvent{
-				{
-					ID:        uuid.New().String(),
-					Text:      "Implemented critical performance optimization",
-					Date:      time.Now().Add(-60 * 24 * time.Hour),
-					Company:   "TechCorp",
-					CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-					UpdatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				},
-				{
-					ID:        uuid.New().String(),
-					Text:      "Led migration to cloud infrastructure",
-					Date:      time.Now().Add(-50 * 24 * time.Hour),
-					Company:   "TechCorp",
-					CreatedAt: time.Now().Add(-50 * 24 * time.Hour),
-					UpdatedAt: time.Now().Add(-50 * 24 * time.Hour),
-				},
+				fixtures.EventWith("1", "Implemented critical performance optimization", "TechCorp", ""),
+				fixtures.EventWith("2", "Led migration to cloud infrastructure", "TechCorp", ""),
 			}
 
-			burst := &career.Burst{
-				ID:        uuid.New().String(),
-				Name:      "Infrastructure Improvement",
-				EventIDs:  []string{events[0].ID, events[1].ID},
-				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-50 * 24 * time.Hour),
-			}
+			burst := fixtures.Burst("burst-1", events[0].ID, events[1].ID)
+			burst.Name = "Infrastructure Improvement"
 
 			facts := extractor.ExtractFromBurst(ctx, burst, events)
 
@@ -252,31 +152,13 @@ var _ = Describe("Extractor Integration Tests", func() {
 		})
 
 		It("maintains temporal integrity in extracted facts", func() {
-			oldEvent := &career.CareerEvent{
-				ID:        uuid.New().String(),
-				Text:      "Early career achievement",
-				Date:      time.Now().Add(-365 * 24 * time.Hour),
-				Company:   "StartupCorp",
-				CreatedAt: time.Now().Add(-365 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-365 * 24 * time.Hour),
-			}
+			oldEvent := fixtures.EventWith("1", "Early career achievement", "StartupCorp", "")
+			recentEvent := fixtures.EventWith("2", "Recent achievement", "TechCorp", "")
 
-			recentEvent := &career.CareerEvent{
-				ID:        uuid.New().String(),
-				Text:      "Recent achievement",
-				Date:      time.Now().Add(-10 * 24 * time.Hour),
-				Company:   "TechCorp",
-				CreatedAt: time.Now().Add(-10 * 24 * time.Hour),
-				UpdatedAt: time.Now().Add(-10 * 24 * time.Hour),
-			}
-
-			burst := &career.Burst{
-				ID:        uuid.New().String(),
-				Name:      "Career Journey",
-				EventIDs:  []string{oldEvent.ID, recentEvent.ID},
-				CreatedAt: oldEvent.CreatedAt,
-				UpdatedAt: recentEvent.UpdatedAt,
-			}
+			burst := fixtures.Burst("burst-1", oldEvent.ID, recentEvent.ID)
+			burst.Name = "Career Journey"
+			burst.CreatedAt = oldEvent.CreatedAt
+			burst.UpdatedAt = recentEvent.UpdatedAt
 
 			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{oldEvent, recentEvent})
 

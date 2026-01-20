@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -33,29 +34,16 @@ var _ = Describe("Career Service - Burst Methods", func() {
 
 		It("should detect bursts from provided event IDs", func() {
 			now := time.Now()
-			events := []career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Led backend infrastructure project",
-					Date:      now.AddDate(0, -2, 0),
-					Company:   "TechCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Architected backend platform",
-					Date:      now.AddDate(0, -1, 0),
-					Company:   "TechCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-			}
+			event1 := fixtures.EventWith("1", "Led backend infrastructure project", "TechCorp", "Platform")
+			event1.Date = now.AddDate(0, -2, 0)
+
+			event2 := fixtures.EventWith("2", "Architected backend platform", "TechCorp", "Platform")
+			event2.Date = now.AddDate(0, -1, 0)
 
 			// Add events to repo
-			err := repo.Create(ctx, &events[0])
+			err := repo.Create(ctx, event1)
 			Expect(err).NotTo(HaveOccurred())
-			err = repo.Create(ctx, &events[1])
+			err = repo.Create(ctx, event2)
 			Expect(err).NotTo(HaveOccurred())
 
 			suggestions, err := service.SuggestBursts(ctx, []string{"1", "2"})
@@ -72,24 +60,16 @@ var _ = Describe("Career Service - Burst Methods", func() {
 
 	Describe("ConfirmBurst", func() {
 		It("should reject burst with fewer than 2 events", func() {
-			burst := &career.Burst{
-				ID:       "burst1",
-				Name:     "Backend Platform",
-				EventIDs: []string{"1"},
-			}
+			// Create burst manually with only 1 event (fixtures.Burst enforces min 2)
+			burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
+			burst.EventIDs = []string{"1"} // Override to have only 1 event
 
 			err := service.ConfirmBurst(ctx, burst)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should accept valid burst", func() {
-			burst := &career.Burst{
-				ID:        "burst1",
-				Name:      "Backend Platform",
-				EventIDs:  []string{"1", "2"},
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
+			burst := fixtures.Burst("burst1", "1", "2")
 
 			err := service.ConfirmBurst(ctx, burst)
 			Expect(err).NotTo(HaveOccurred())
@@ -118,29 +98,16 @@ var _ = Describe("Career Service - Burst Methods", func() {
 
 		It("should detect bursts with custom options", func() {
 			now := time.Now()
-			events := []career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Led backend infrastructure project",
-					Date:      now.AddDate(0, -2, 0),
-					Company:   "TechCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Architected backend platform",
-					Date:      now.AddDate(0, -1, 0),
-					Company:   "TechCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-			}
+			event1 := fixtures.EventWith("1", "Led backend infrastructure project", "TechCorp", "Platform")
+			event1.Date = now.AddDate(0, -2, 0)
+
+			event2 := fixtures.EventWith("2", "Architected backend platform", "TechCorp", "Platform")
+			event2.Date = now.AddDate(0, -1, 0)
 
 			// Add events to repo
-			err := repo.Create(ctx, &events[0])
+			err := repo.Create(ctx, event1)
 			Expect(err).NotTo(HaveOccurred())
-			err = repo.Create(ctx, &events[1])
+			err = repo.Create(ctx, event2)
 			Expect(err).NotTo(HaveOccurred())
 
 			opts := &burst_fact.DetectionOptions{

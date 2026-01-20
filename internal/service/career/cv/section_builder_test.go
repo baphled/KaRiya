@@ -3,10 +3,10 @@ package cv
 import (
 	"context"
 	"strings"
-	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -41,14 +41,8 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented authentication system",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented authentication system", "TechCorp", "")
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -80,12 +74,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:     "event1",
-				Skills: []string{"Go", "PostgreSQL"},
-			},
-		}
+		event := fixtures.Event("event1")
+		event.Skills = []string{"Go", "PostgreSQL"}
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -126,14 +117,8 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented feature",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -155,14 +140,8 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Led architecture implementation",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Led architecture implementation", "TechCorp", "")
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -192,14 +171,8 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented feature",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -221,14 +194,8 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented feature",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -261,20 +228,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Feature A",
-				Company: "CompanyA",
-				Date:    time.Now(),
-			},
-			{
-				ID:      "event2",
-				Text:    "Feature B",
-				Company: "CompanyB",
-				Date:    time.Now(),
-			},
-		}
+		event1 := fixtures.EventWith("event1", "Feature A", "CompanyA", "")
+		event2 := fixtures.EventWith("event2", "Feature B", "CompanyB", "")
+		events := []*career.CareerEvent{event1, event2}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -330,14 +286,8 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Feature",
-				Date:    time.Now(),
-				Project: "MyProject", // Has project instead of company
-			},
-		}
+		event := fixtures.EventWith("event1", "Feature", "", "MyProject") // Has project instead of company
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -375,14 +325,8 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Feature A",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Feature A", "TechCorp", "")
+		events := []*career.CareerEvent{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())

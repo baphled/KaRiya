@@ -139,6 +139,14 @@ Scopes: `domain`, `service`, `repo`, `cli`, `logger`
 - [ ] Test names are descriptive and clear
 - [ ] One logical assertion per `It` block
 
+**Test Fixtures (Factory Pattern):**
+- [ ] Using `fixtures` package for test data (`internal/testutil/fixtures/`)
+- [ ] NOT manually constructing domain objects in tests
+- [ ] Using quick helpers for simple tests: `fixtures.Event("id")`, `fixtures.Burst(...)`, `fixtures.Fact(...)`
+- [ ] Using factories for realistic data: `fixtures.EventFactory.MustCreate()`
+- [ ] Using `fixtures.SetSeed()` for deterministic tests when needed
+- [ ] Linking related objects properly: `fixtures.Bursts(n, events)`, `fixtures.Facts(n, events)`
+
 **Example Pattern:**
 ```go
 var _ = Describe("ServiceName", func() {
@@ -148,17 +156,33 @@ var _ = Describe("ServiceName", func() {
     )
 
     BeforeEach(func() {
+        fixtures.SetSeed(42) // Deterministic test data
         repo = NewRepository()
         service = NewService(repo)
     })
 
     Context("when condition X", func() {
         It("should do Y", func() {
-            result := service.DoSomething()
+            // Use fixtures for test data
+            event := fixtures.Event("test-event")
+            result := service.DoSomething(event)
             Expect(result).To(Equal(expectedValue))
         })
     })
 })
+```
+
+**Fixtures Anti-pattern (DO NOT DO):**
+```go
+// BAD: Manual object construction
+event := &career.CareerEvent{
+    ID: "test-1",
+    Text: "Some text",
+    // ... more fields
+}
+
+// GOOD: Use fixtures
+event := fixtures.Event("test-1")
 ```
 
 ### 4. Architecture Compliance Check

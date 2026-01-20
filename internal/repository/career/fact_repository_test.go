@@ -9,6 +9,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("FactRepository", func() {
@@ -24,14 +25,8 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("Create", func() {
 		It("should create a new fact", func() {
-			fact := &career.Fact{
-				Text:                 "Led migration of platform to microservices architecture",
-				CompetencyCategories: []string{"technical", "leadership"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"hiring_manager", "peer"},
-				StrengthSignal:       "leadership",
-				SourceEventID:        "event-1",
-			}
+			fact := fixtures.FactFactory.MustCreate().(*career.Fact)
+			fact.ID = "" // Clear to test auto-generation
 
 			err := repository.Create(ctx, fact)
 			Expect(err).ToNot(HaveOccurred())
@@ -41,52 +36,24 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should return error for duplicate fact ID", func() {
-			fact := &career.Fact{
-				ID:                   "fact-1",
-				Text:                 "Led migration of platform to microservices architecture",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"hiring_manager"},
-				StrengthSignal:       "leadership",
-				SourceEventID:        "event-1",
-			}
+			fact := fixtures.Fact("fact-1", "event-1")
 
 			err := repository.Create(ctx, fact)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Try to create again with same ID
-			duplicate := &career.Fact{
-				ID:                   "fact-1",
-				Text:                 "Different fact text",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              career.RoleFitEM,
-				AudienceRelevance:    []string{"recruiter"},
-				StrengthSignal:       "management",
-				SourceEventID:        "event-2",
-			}
+			duplicate := fixtures.Fact("fact-1", "event-2")
 
 			err = repository.Create(ctx, duplicate)
 			Expect(err).To(MatchError(repo.ErrDuplicateFact))
 		})
 
 		It("should generate unique ID if not provided", func() {
-			fact1 := &career.Fact{
-				Text:                 "Fact 1",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        "event-1",
-			}
+			fact1 := fixtures.FactFactory.MustCreate().(*career.Fact)
+			fact1.ID = "" // Clear to test auto-generation
 
-			fact2 := &career.Fact{
-				Text:                 "Fact 2",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              career.RoleFitEM,
-				AudienceRelevance:    []string{"hiring_manager"},
-				StrengthSignal:       "leadership",
-				SourceEventID:        "event-2",
-			}
+			fact2 := fixtures.FactFactory.MustCreate().(*career.Fact)
+			fact2.ID = "" // Clear to test auto-generation
 
 			err1 := repository.Create(ctx, fact1)
 			err2 := repository.Create(ctx, fact2)
@@ -99,14 +66,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should create fact with burst source", func() {
-			fact := &career.Fact{
-				Text:                 "Coordinated team efforts across multiple projects",
-				CompetencyCategories: []string{"leadership"},
-				RoleFit:              career.RoleFitEM,
-				AudienceRelevance:    []string{"hiring_manager"},
-				StrengthSignal:       "management",
-				SourceBurstID:        "burst-1",
-			}
+			fact := fixtures.FactFromBurst("", "burst-1")
 
 			err := repository.Create(ctx, fact)
 			Expect(err).ToNot(HaveOccurred())
@@ -117,14 +77,8 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("GetByID", func() {
 		It("should retrieve an existing fact", func() {
-			fact := &career.Fact{
-				Text:                 "Led migration of platform to microservices architecture",
-				CompetencyCategories: []string{"technical", "leadership"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"hiring_manager", "peer"},
-				StrengthSignal:       "leadership",
-				SourceEventID:        "event-1",
-			}
+			fact := fixtures.FactFactory.MustCreate().(*career.Fact)
+			fact.ID = "" // Clear to test auto-generation
 
 			err := repository.Create(ctx, fact)
 			Expect(err).ToNot(HaveOccurred())
@@ -148,14 +102,7 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("Update", func() {
 		It("should update an existing fact", func() {
-			fact := &career.Fact{
-				Text:                 "Led migration of platform to microservices architecture",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        "event-1",
-			}
+			fact := fixtures.Fact("", "event-1")
 
 			err := repository.Create(ctx, fact)
 			Expect(err).ToNot(HaveOccurred())
@@ -183,15 +130,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should return error for non-existent fact", func() {
-			fact := &career.Fact{
-				ID:                   "non-existent-id",
-				Text:                 "Some fact text",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        "event-1",
-			}
+			fact := fixtures.Fact("non-existent-id", "event-1")
 
 			err := repository.Update(ctx, fact)
 			Expect(err).To(MatchError(repo.ErrFactNotFound))
@@ -200,14 +139,8 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("Delete", func() {
 		It("should delete an existing fact", func() {
-			fact := &career.Fact{
-				Text:                 "Led migration of platform to microservices architecture",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              career.RoleFitStaff,
-				AudienceRelevance:    []string{"peer"},
-				StrengthSignal:       "technical",
-				SourceEventID:        "event-1",
-			}
+			fact := fixtures.FactFactory.MustCreate().(*career.Fact)
+			fact.ID = "" // Clear to test auto-generation
 
 			err := repository.Create(ctx, fact)
 			Expect(err).ToNot(HaveOccurred())
@@ -227,35 +160,29 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("List", func() {
 		BeforeEach(func() {
-			// Create test facts
-			facts := []*career.Fact{
-				{
-					Text:                 "Led migration to microservices",
-					CompetencyCategories: []string{"technical", "leadership"},
-					RoleFit:              career.RoleFitStaff,
-					AudienceRelevance:    []string{"hiring_manager", "peer"},
-					StrengthSignal:       "leadership",
-					SourceEventID:        "event-1",
-				},
-				{
-					Text:                 "Mentored junior engineers",
-					CompetencyCategories: []string{"mentoring"},
-					RoleFit:              career.RoleFitSeniorIC,
-					AudienceRelevance:    []string{"peer"},
-					StrengthSignal:       "mentoring",
-					SourceEventID:        "event-2",
-				},
-				{
-					Text:                 "Designed product roadmap",
-					CompetencyCategories: []string{"product"},
-					RoleFit:              career.RoleFitEM,
-					AudienceRelevance:    []string{"hiring_manager"},
-					StrengthSignal:       "product vision",
-					SourceEventID:        "event-3",
-				},
-			}
+			// Create test facts with specific attributes for filtering tests
+			fact1 := fixtures.Fact("", "event-1")
+			fact1.Text = "Led migration to microservices"
+			fact1.CompetencyCategories = []string{"technical", "leadership"}
+			fact1.RoleFit = career.RoleFitStaff
+			fact1.AudienceRelevance = []string{"hiring_manager", "peer"}
+			fact1.StrengthSignal = "leadership"
 
-			for _, fact := range facts {
+			fact2 := fixtures.Fact("", "event-2")
+			fact2.Text = "Mentored junior engineers"
+			fact2.CompetencyCategories = []string{"mentoring"}
+			fact2.RoleFit = career.RoleFitSeniorIC
+			fact2.AudienceRelevance = []string{"peer"}
+			fact2.StrengthSignal = "mentoring"
+
+			fact3 := fixtures.Fact("", "event-3")
+			fact3.Text = "Designed product roadmap"
+			fact3.CompetencyCategories = []string{"product"}
+			fact3.RoleFit = career.RoleFitEM
+			fact3.AudienceRelevance = []string{"hiring_manager"}
+			fact3.StrengthSignal = "product vision"
+
+			for _, fact := range []*career.Fact{fact1, fact2, fact3} {
 				err := repository.Create(ctx, fact)
 				Expect(err).ToNot(HaveOccurred())
 			}
@@ -348,35 +275,20 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("Count", func() {
 		BeforeEach(func() {
-			// Create test facts
-			facts := []*career.Fact{
-				{
-					Text:                 "Technical fact 1",
-					CompetencyCategories: []string{"technical"},
-					RoleFit:              career.RoleFitStaff,
-					AudienceRelevance:    []string{"peer"},
-					StrengthSignal:       "technical",
-					SourceEventID:        "event-1",
-				},
-				{
-					Text:                 "Technical fact 2",
-					CompetencyCategories: []string{"technical"},
-					RoleFit:              career.RoleFitStaff,
-					AudienceRelevance:    []string{"peer"},
-					StrengthSignal:       "technical",
-					SourceEventID:        "event-2",
-				},
-				{
-					Text:                 "Leadership fact",
-					CompetencyCategories: []string{"leadership"},
-					RoleFit:              career.RoleFitEM,
-					AudienceRelevance:    []string{"hiring_manager"},
-					StrengthSignal:       "leadership",
-					SourceEventID:        "event-3",
-				},
-			}
+			// Create test facts with specific competencies for counting tests
+			fact1 := fixtures.Fact("", "event-1")
+			fact1.CompetencyCategories = []string{"technical"}
+			fact1.RoleFit = career.RoleFitStaff
 
-			for _, fact := range facts {
+			fact2 := fixtures.Fact("", "event-2")
+			fact2.CompetencyCategories = []string{"technical"}
+			fact2.RoleFit = career.RoleFitStaff
+
+			fact3 := fixtures.Fact("", "event-3")
+			fact3.CompetencyCategories = []string{"leadership"}
+			fact3.RoleFit = career.RoleFitEM
+
+			for _, fact := range []*career.Fact{fact1, fact2, fact3} {
 				err := repository.Create(ctx, fact)
 				Expect(err).ToNot(HaveOccurred())
 			}
@@ -421,35 +333,12 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("GetBySourceEventID", func() {
 		BeforeEach(func() {
-			// Create test facts with different sources
-			facts := []*career.Fact{
-				{
-					Text:                 "Fact from event 1",
-					CompetencyCategories: []string{"technical"},
-					RoleFit:              career.RoleFitStaff,
-					AudienceRelevance:    []string{"peer"},
-					StrengthSignal:       "technical",
-					SourceEventID:        "event-1",
-				},
-				{
-					Text:                 "Another fact from event 1",
-					CompetencyCategories: []string{"leadership"},
-					RoleFit:              career.RoleFitEM,
-					AudienceRelevance:    []string{"hiring_manager"},
-					StrengthSignal:       "leadership",
-					SourceEventID:        "event-1",
-				},
-				{
-					Text:                 "Fact from event 2",
-					CompetencyCategories: []string{"product"},
-					RoleFit:              career.RoleFitSeniorIC,
-					AudienceRelevance:    []string{"peer"},
-					StrengthSignal:       "product",
-					SourceEventID:        "event-2",
-				},
-			}
+			// Create test facts with specific source event IDs
+			fact1 := fixtures.Fact("", "event-1")
+			fact2 := fixtures.Fact("", "event-1") // Same event
+			fact3 := fixtures.Fact("", "event-2") // Different event
 
-			for _, fact := range facts {
+			for _, fact := range []*career.Fact{fact1, fact2, fact3} {
 				err := repository.Create(ctx, fact)
 				Expect(err).ToNot(HaveOccurred())
 			}
@@ -473,35 +362,12 @@ var _ = Describe("FactRepository", func() {
 
 	Describe("GetBySourceBurstID", func() {
 		BeforeEach(func() {
-			// Create test facts with different burst sources
-			facts := []*career.Fact{
-				{
-					Text:                 "Fact from burst 1",
-					CompetencyCategories: []string{"technical"},
-					RoleFit:              career.RoleFitStaff,
-					AudienceRelevance:    []string{"peer"},
-					StrengthSignal:       "technical",
-					SourceBurstID:        "burst-1",
-				},
-				{
-					Text:                 "Another fact from burst 1",
-					CompetencyCategories: []string{"leadership"},
-					RoleFit:              career.RoleFitEM,
-					AudienceRelevance:    []string{"hiring_manager"},
-					StrengthSignal:       "leadership",
-					SourceBurstID:        "burst-1",
-				},
-				{
-					Text:                 "Fact from burst 2",
-					CompetencyCategories: []string{"product"},
-					RoleFit:              career.RoleFitSeniorIC,
-					AudienceRelevance:    []string{"peer"},
-					StrengthSignal:       "product",
-					SourceBurstID:        "burst-2",
-				},
-			}
+			// Create test facts with specific source burst IDs
+			fact1 := fixtures.FactFromBurst("", "burst-1")
+			fact2 := fixtures.FactFromBurst("", "burst-1") // Same burst
+			fact3 := fixtures.FactFromBurst("", "burst-2") // Different burst
 
-			for _, fact := range facts {
+			for _, fact := range []*career.Fact{fact1, fact2, fact3} {
 				err := repository.Create(ctx, fact)
 				Expect(err).ToNot(HaveOccurred())
 			}
