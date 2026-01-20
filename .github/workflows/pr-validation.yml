@@ -9,6 +9,37 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Validate PR targets correct branch
+  validate-target-branch:
+    name: Validate Target Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check target branch
+        run: |
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+          HEAD_REF="${{ github.event.pull_request.head.ref }}"
+          
+          echo "PR: $HEAD_REF → $BASE_REF"
+          
+          # Allow next → main (release PRs)
+          if [[ "$BASE_REF" == "main" && "$HEAD_REF" == "next" ]]; then
+            echo "✅ Release PR: next → main is allowed"
+            exit 0
+          fi
+          
+          # Block all other PRs targeting main
+          if [[ "$BASE_REF" == "main" ]]; then
+            echo "❌ ERROR: PRs must target 'next' branch, not 'main'"
+            echo ""
+            echo "Only 'next → main' PRs are allowed for releases."
+            echo "Please change your PR target to 'next'."
+            echo ""
+            echo "See docs/BRANCHING_STRATEGY.md for details."
+            exit 1
+          fi
+          
+          echo "✅ Target branch '$BASE_REF' is valid"
+
   # Validate PR title follows conventional commits
   validate-pr-title:
     name: Validate PR Title

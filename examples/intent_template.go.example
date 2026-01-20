@@ -1,0 +1,314 @@
+// INTENT TEMPLATE
+//
+// THIS FILE IS A TEMPLATE - DO NOT IMPORT DIRECTLY
+// Copy and adapt for your new intent implementation.
+//
+// KEY REQUIREMENTS:
+// 1. Embed *BaseIntent for terminal awareness and theme management
+// 2. Implement the Intent interface (Init, Update, View, Result, IsComplete, SetContext)
+// 3. Use explicit state machine pattern
+// 4. Handle escape key for back navigation
+// 5. Use StandardView for consistent layout
+
+package intents
+
+import (
+	"context"
+
+	"github.com/baphled/kariya/internal/cli/components"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// -----------------------------------------------------------------------------
+// STEP 1: Define States
+// -----------------------------------------------------------------------------
+
+// ExampleState represents the states of the Example intent.
+type ExampleState string
+
+const (
+	ExampleStateInitial  ExampleState = "initial"
+	ExampleStateWorking  ExampleState = "working"
+	ExampleStateComplete ExampleState = "complete"
+	ExampleStateError    ExampleState = "error"
+)
+
+// -----------------------------------------------------------------------------
+// STEP 2: Define Context (Input)
+// -----------------------------------------------------------------------------
+
+// ExampleContext contains input parameters for the intent.
+type ExampleContext struct {
+	// Add your input parameters here
+	Items []string
+}
+
+// Validate validates the context - ALWAYS implement validation
+func (c *ExampleContext) Validate() error {
+	// Add validation logic
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// STEP 3: Define Result (Output)
+// -----------------------------------------------------------------------------
+
+// ExampleResult contains the output of the intent.
+type ExampleResult struct {
+	// Add your output fields here
+	SelectedItem string
+	Cancelled    bool
+}
+
+// -----------------------------------------------------------------------------
+// STEP 4: Define Internal Model
+// -----------------------------------------------------------------------------
+
+// ExampleModel contains the internal state of the intent.
+type ExampleModel struct {
+	context      *ExampleContext
+	currentState ExampleState
+	selectedIdx  int
+	errorMsg     string
+}
+
+// -----------------------------------------------------------------------------
+// STEP 5: Define Intent Struct
+// -----------------------------------------------------------------------------
+
+// ExampleIntent implements the Intent interface.
+type ExampleIntent struct {
+	// REQUIRED: Embed BaseIntent for terminal awareness, logo, theme
+	*BaseIntent
+
+	// Intent-specific fields
+	context *ExampleContext
+	state   *ExampleModel
+	active  bool
+	result  *IntentResult[*ExampleResult]
+}
+
+// -----------------------------------------------------------------------------
+// STEP 6: Constructor
+// -----------------------------------------------------------------------------
+
+// NewExampleIntent creates a new Example intent.
+func NewExampleIntent(ctx *ExampleContext) (*ExampleIntent, error) {
+	if err := ctx.Validate(); err != nil {
+		return nil, err
+	}
+
+	// REQUIRED: Create BaseIntent
+	base := NewBaseIntent()
+
+	return &ExampleIntent{
+		BaseIntent: base,
+		context:    ctx,
+		state: &ExampleModel{
+			context:      ctx,
+			currentState: ExampleStateInitial,
+		},
+		active: true,
+	}, nil
+}
+
+// -----------------------------------------------------------------------------
+// STEP 7: Implement Init
+// -----------------------------------------------------------------------------
+
+// Init is called when the intent is activated.
+func (i *ExampleIntent) Init() tea.Cmd {
+	// Initialize any async operations here
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// STEP 8: Implement Update with State Machine
+// -----------------------------------------------------------------------------
+
+// Update handles messages and state transitions.
+func (i *ExampleIntent) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// REQUIRED: Handle window resize for terminal awareness
+	if wmsg, ok := msg.(tea.WindowSizeMsg); ok {
+		i.UpdateTerminalInfo(&terminal.Info{
+			Width:  wmsg.Width,
+			Height: wmsg.Height,
+		})
+	}
+
+	// Delegate to state-specific handler
+	switch i.state.currentState {
+	case ExampleStateInitial:
+		return i, i.updateInitial(msg)
+	case ExampleStateWorking:
+		return i, i.updateWorking(msg)
+	case ExampleStateComplete:
+		return i, i.updateComplete(msg)
+	case ExampleStateError:
+		return i, i.updateError(msg)
+	}
+	return i, nil
+}
+
+func (i *ExampleIntent) updateInitial(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc":
+			// REQUIRED: Handle escape for back navigation/cancel
+			i.result = &IntentResult[*ExampleResult]{
+				Status: StatusCancelled,
+				Data:   &ExampleResult{Cancelled: true},
+			}
+			i.active = false
+			return nil
+
+		case "enter":
+			// Transition to working state
+			i.state.currentState = ExampleStateWorking
+			return nil
+
+		case "up", "k":
+			if i.state.selectedIdx > 0 {
+				i.state.selectedIdx--
+			}
+		case "down", "j":
+			if i.state.selectedIdx < len(i.state.context.Items)-1 {
+				i.state.selectedIdx++
+			}
+		}
+	}
+	return nil
+}
+
+func (i *ExampleIntent) updateWorking(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.String() == "esc" {
+			// Go back to initial state
+			i.state.currentState = ExampleStateInitial
+		}
+	}
+	return nil
+}
+
+func (i *ExampleIntent) updateComplete(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.String() == "enter" || msg.String() == "esc" {
+			i.active = false
+		}
+	}
+	return nil
+}
+
+func (i *ExampleIntent) updateError(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "r":
+			// Retry
+			i.state.currentState = ExampleStateInitial
+			i.state.errorMsg = ""
+		case "esc":
+			// Cancel
+			i.result = &IntentResult[*ExampleResult]{
+				Status: StatusCancelled,
+				Data:   &ExampleResult{Cancelled: true},
+			}
+			i.active = false
+		}
+	}
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// STEP 9: Implement View with StandardView
+// -----------------------------------------------------------------------------
+
+// View renders the current state.
+func (i *ExampleIntent) View() string {
+	switch i.state.currentState {
+	case ExampleStateInitial:
+		return i.viewInitial()
+	case ExampleStateWorking:
+		return i.viewWorking()
+	case ExampleStateComplete:
+		return i.viewComplete()
+	case ExampleStateError:
+		return i.viewError()
+	}
+	return ""
+}
+
+func (i *ExampleIntent) viewInitial() string {
+	content := "Select an item:\n\n"
+	for idx, item := range i.state.context.Items {
+		cursor := "  "
+		if idx == i.state.selectedIdx {
+			cursor = "> "
+		}
+		content += cursor + item + "\n"
+	}
+
+	// REQUIRED: Use StandardView for consistent layout
+	sv := components.NewStandardView().
+		WithLogo(i.GetLogo()).
+		WithContent(content).
+		WithFooter("Enter: select | Esc: cancel | j/k: navigate")
+
+	return sv.Render(i.GetTerminalInfo())
+}
+
+func (i *ExampleIntent) viewWorking() string {
+	sv := components.NewStandardView().
+		WithLogo(i.GetLogo()).
+		WithContent("Working...").
+		WithFooter("Esc: back")
+
+	return sv.Render(i.GetTerminalInfo())
+}
+
+func (i *ExampleIntent) viewComplete() string {
+	sv := components.NewStandardView().
+		WithLogo(i.GetLogo()).
+		WithContent("Complete!").
+		WithFooter("Enter/Esc: continue")
+
+	return sv.Render(i.GetTerminalInfo())
+}
+
+func (i *ExampleIntent) viewError() string {
+	sv := components.NewStandardView().
+		WithLogo(i.GetLogo()).
+		WithContent("Error: " + i.state.errorMsg).
+		WithFooter("r: retry | Esc: cancel")
+
+	return sv.Render(i.GetTerminalInfo())
+}
+
+// -----------------------------------------------------------------------------
+// STEP 10: Implement Result Methods
+// -----------------------------------------------------------------------------
+
+// Result returns the intent result.
+func (i *ExampleIntent) Result() *IntentResult[interface{}] {
+	if i.result == nil {
+		return nil
+	}
+	return &IntentResult[interface{}]{
+		Status: i.result.Status,
+		Data:   i.result.Data,
+		Error:  i.result.Error,
+	}
+}
+
+// IsComplete returns whether the intent has finished.
+func (i *ExampleIntent) IsComplete() bool {
+	return !i.active
+}
+
+// SetContext sets the intent context (for re-initialization).
+func (i *ExampleIntent) SetContext(ctx context.Context) {
+	// Handle context if needed for async operations
+}

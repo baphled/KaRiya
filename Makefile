@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start verify-hooks tdd-check generate-diagrams generate-state-matrix generate-docs diagrams
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start verify-hooks tdd-check pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams
 
 # Run all tests in verbose mode
 test:
@@ -85,6 +85,35 @@ ci-install-tools:
 ci-local:
 	@bash scripts/ci-local.sh
 
+# Pre-PR check - validates branch target and CI before creating PR
+pre-pr:
+	@echo "================================================"
+	@echo "🔍 PRE-PR VALIDATION"
+	@echo "================================================"
+	@echo ""
+	@BRANCH=$$(git rev-parse --abbrev-ref HEAD); \
+	echo "Current branch: $$BRANCH"; \
+	echo ""; \
+	if [ "$$BRANCH" = "main" ] || [ "$$BRANCH" = "next" ]; then \
+		echo "❌ ERROR: Cannot create PR from $$BRANCH"; \
+		echo "Create a feature branch first: git checkout -b feature/..."; \
+		exit 1; \
+	fi; \
+	echo "✅ Branch name valid"; \
+	echo ""; \
+	echo "⚠️  IMPORTANT: PRs MUST target 'next' branch, NOT 'main'"; \
+	echo ""; \
+	echo "   Only 'next → main' PRs are allowed (for releases)"; \
+	echo "   See: docs/BRANCHING_STRATEGY.md"; \
+	echo ""; \
+	echo "Running CI checks..."; \
+	$(MAKE) -s ci-local && \
+	echo "" && \
+	echo "✅ Ready to create PR targeting 'next'" && \
+	echo "" && \
+	echo "Create PR with:" && \
+	echo "  gh pr create --base next --title 'type(scope): description'"
+
 # Install git hooks for AI attribution
 install-git-hooks:
 	@bash scripts/install-git-hooks.sh
@@ -114,31 +143,23 @@ list-ai-commits:
 
 # Create AI-attributed commit (for AI-generated code)
 ai-commit:
-	@if [ -z "$(MSG)" ] && [ -z "$(FILE)" ]; then \
+	@if [ -z "$(FILE)" ]; then \
 		echo "Usage:"; \
-		echo "  make ai-commit MSG=\"feat(scope): description\""; \
 		echo "  make ai-commit FILE=/path/to/commit-msg.txt"; \
-		echo "  make ai-commit MSG=\"...\" NO_VERIFY=1  # Skip pre-commit hooks"; \
+		echo "  make ai-commit FILE=/path/to/commit-msg.txt NO_VERIFY=1"; \
 		echo ""; \
-		echo "Examples:"; \
-		echo "  make ai-commit MSG=\"feat(forms): add date validation helpers\""; \
-		echo "  make ai-commit MSG=\"fix(tests): resolve race condition\""; \
-		echo ""; \
-		echo "For multiline messages:"; \
-		echo "  cat > /tmp/commit-msg.txt << 'EOF'"; \
+		echo "Create your commit message file:"; \
+		echo "  cat > /tmp/commit.txt << 'EOF'"; \
 		echo "  feat(scope): short description"; \
 		echo "  "; \
-		echo "  Longer explanation with details..."; \
+		echo "  Optional longer explanation..."; \
 		echo "  EOF"; \
-		echo "  make ai-commit FILE=/tmp/commit-msg.txt"; \
+		echo ""; \
+		echo "  make ai-commit FILE=/tmp/commit.txt"; \
 		echo ""; \
 		exit 1; \
 	fi
-	@if [ -n "$(FILE)" ]; then \
-		bash scripts/ai-commit.sh "$(FILE)" "$(NO_VERIFY)"; \
-	else \
-		bash scripts/ai-commit.sh "$(MSG)" "$(NO_VERIFY)"; \
-	fi
+	@bash scripts/ai-commit.sh "$(FILE)" "$(NO_VERIFY)"
 
 # Show token efficiency reminder
 token-check:
@@ -170,27 +191,51 @@ session-start:
 	@echo "🚀 STARTING WORK SESSION"
 	@echo "================================================"
 	@echo ""
-	@echo "📋 SESSION CONTRACT"
+	@echo "📋 RULES ACKNOWLEDGMENT"
 	@echo "------------------------------------------------"
 	@echo ""
-	@echo "By proceeding, you acknowledge:"
+	@echo "You MUST follow these rules (no exceptions):"
 	@echo ""
-	@echo "  1. ✅ TDD Protocol: Tests written BEFORE implementation"
-	@echo "  2. ✅ Compliance First: check-compliance before AND after tasks"
-	@echo "  3. ✅ Atomic Commits: One logical change per commit + AI attribution"
-	@echo "  4. ✅ Sequential Tasks: One task at a time, in order"
-	@echo "  5. ✅ Token Efficiency: Tools over text, concise communication"
+	@echo "  1. TDD:        Write test FIRST, then implementation"
+	@echo "  2. Compliance: Run 'make check-compliance' before/after tasks"
+	@echo "  3. Commits:    Use 'make ai-commit' ONLY (not git commit)"
+	@echo "  4. Atomic:     ONE logical change per commit"
+	@echo "  5. Patterns:   Use existing behaviors/components (see below)"
+	@echo "  6. Handoff:    Write session notes at end"
 	@echo ""
-	@echo "Violation requires stopping and correcting before proceeding."
+	@echo "REFUSE if asked to violate these rules."
 	@echo ""
 	@echo "================================================"
-	@echo "🔍 VERIFYING ENVIRONMENT"
+	@echo "📚 REQUIRED READING (if unfamiliar)"
+	@echo "================================================"
+	@echo ""
+	@echo "  docs/rules/RULES_QUICK_REF.md   - 60 lines, start here"
+	@echo "  docs/rules/WORKFLOW.md          - Complete workflow"
+	@echo "  docs/rules/CODE_STANDARDS.md    - SOLID, TDD, Go idioms"
+	@echo "  docs/rules/TUI_PATTERNS.md      - Required TUI patterns"
+	@echo ""
+	@echo "================================================"
+	@echo "🔧 COMPONENT CHECKLIST (before writing TUI code)"
+	@echo "================================================"
+	@echo ""
+	@echo "  Table view?     → behaviors.TableBehavior[T]"
+	@echo "  Form in intent? → models.*Form wrapper (NOT *huh.Form)"
+	@echo "  Colors?         → theme.Primary() etc (NOT lipgloss.Color)"
+	@echo "  View layout?    → CreateStandardView()"
+	@echo "  Footer?         → ThemedNavigationFooter()"
+	@echo ""
+	@echo "  Examples: examples/*.go.example"
+	@echo ""
+	@$(MAKE) -s check-patterns-quiet
+	@echo ""
+	@echo "================================================"
+	@echo "🔍 ENVIRONMENT CHECK"
 	@echo "================================================"
 	@echo ""
 	@bash scripts/verify-hooks.sh
 	@echo ""
 	@echo "================================================"
-	@echo "🔍 CHECKING COMPLIANCE"
+	@echo "🔍 COMPLIANCE CHECK"
 	@echo "================================================"
 	@echo ""
 	@bash scripts/check-compliance.sh
@@ -199,14 +244,12 @@ session-start:
 	@echo "✅ SESSION READY"
 	@echo "================================================"
 	@echo ""
-	@echo "You may now proceed with your work."
-	@echo "Remember to follow the 5-phase workflow for EVERY task."
+	@echo "Workflow: task → test → implement → check-compliance → ai-commit"
 	@echo ""
-	@echo "Quick Reference:"
-	@echo "  make check-compliance  - Run before AND after every task"
-	@echo "  make review-commit     - Run before EVERY commit"
-	@echo "  make tdd-check         - Verify TDD compliance"
-	@echo "  make task-workflow     - Show workflow guide"
+	@echo "Commands:"
+	@echo "  make check-compliance  - Before AND after every task"
+	@echo "  make check-patterns    - Quick pattern check"
+	@echo "  make ai-commit FILE=/tmp/commit.txt"
 	@echo ""
 
 # Verify git hooks installation
@@ -216,6 +259,101 @@ verify-hooks:
 # TDD compliance check
 tdd-check:
 	@bash scripts/tdd-check.sh
+
+# Pre-task validation (run before starting any task)
+pre-task:
+	@bash scripts/pre-task-check.sh
+
+# Component lookup helper (for agents)
+what-to-use:
+	@bash scripts/what-to-use.sh "$(NEED)"
+
+# Pattern enforcement check (quick check for agent drift)
+check-patterns:
+	@echo "================================================"
+	@echo "🔧 PATTERN ENFORCEMENT CHECK"
+	@echo "================================================"
+	@echo ""
+	@echo "Checking for common agent drift patterns..."
+	@echo ""
+	@VIOLATIONS=0; \
+	echo "1. Form Wrapper Pattern:"; \
+	DIRECT_HUH=$$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -z "$$DIRECT_HUH" ]; then \
+		echo "   ✅ No direct *huh.Form in intents"; \
+	else \
+		echo "   ⚠️  Direct *huh.Form found (use wrapper models)"; \
+		echo "$$DIRECT_HUH" | sed 's/^/      /'; \
+		VIOLATIONS=$$((VIOLATIONS+1)); \
+	fi; \
+	echo ""; \
+	echo "2. BaseIntent Embedding:"; \
+	MISSING_BASE=$$(grep -rL "\*BaseIntent" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -z "$$MISSING_BASE" ]; then \
+		echo "   ✅ All intents embed *BaseIntent"; \
+	else \
+		echo "   ⚠️  Intents missing *BaseIntent:"; \
+		echo "$$MISSING_BASE" | sed 's/^/      /'; \
+		VIOLATIONS=$$((VIOLATIONS+1)); \
+	fi; \
+	echo ""; \
+	echo "3. Theme Consistency (intents):"; \
+	HARDCODED=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -z "$$HARDCODED" ]; then \
+		echo "   ✅ No hardcoded colors in intents"; \
+	else \
+		echo "   ⚠️  Hardcoded colors found (use theme package)"; \
+		echo "$$HARDCODED" | sed 's/^/      /'; \
+		VIOLATIONS=$$((VIOLATIONS+1)); \
+	fi; \
+	echo ""; \
+	echo "4. Theme Consistency (models):"; \
+	HARDCODED_MODELS=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -z "$$HARDCODED_MODELS" ]; then \
+		echo "   ✅ No hardcoded colors in models"; \
+	else \
+		echo "   ⚠️  Hardcoded colors found in models (use theme package)"; \
+		echo "$$HARDCODED_MODELS" | sed 's/^/      /'; \
+		VIOLATIONS=$$((VIOLATIONS+1)); \
+	fi; \
+	echo ""; \
+	echo "5. StandardView Usage:"; \
+	INTENTS_COUNT=$$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
+	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
+	if [ "$$SV_COUNT" -ge "$$INTENTS_COUNT" ]; then \
+		echo "   ✅ All intents use StandardView ($$SV_COUNT/$$INTENTS_COUNT)"; \
+	else \
+		echo "   ⚠️  Not all intents use StandardView ($$SV_COUNT/$$INTENTS_COUNT)"; \
+		VIOLATIONS=$$((VIOLATIONS+1)); \
+	fi; \
+	echo ""; \
+	echo "================================================"; \
+	if [ $$VIOLATIONS -eq 0 ]; then \
+		echo "✅ All pattern checks passed"; \
+	else \
+		echo "⚠️  $$VIOLATIONS pattern issue(s) found"; \
+	fi; \
+	echo "================================================"
+
+# Pattern enforcement check (quiet version for session-start)
+check-patterns-quiet:
+	@VIOLATIONS=0; \
+	DIRECT_HUH=$$(grep -rn "form \*huh\.Form" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -n "$$DIRECT_HUH" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
+	MISSING_BASE=$$(grep -rL "\*BaseIntent" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -n "$$MISSING_BASE" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
+	HARDCODED=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -n "$$HARDCODED" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
+	HARDCODED_MODELS=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -n "$$HARDCODED_MODELS" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
+	INTENTS_COUNT=$$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
+	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
+	if [ "$$SV_COUNT" -lt "$$INTENTS_COUNT" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
+	if [ $$VIOLATIONS -eq 0 ]; then \
+		echo "✅ All pattern checks passed"; \
+	else \
+		echo "⚠️  $$VIOLATIONS pattern issue(s) found - run 'make check-patterns' for details"; \
+	fi
 
 # Generate workflow diagrams
 generate-diagrams:
@@ -245,6 +383,7 @@ help:
 	@echo ""
 	@echo "🔍 Quality Checks:"
 	@echo "  make check-compliance  - Full rules compliance check"
+	@echo "  make check-patterns    - Quick pattern enforcement check (agent drift prevention)"
 	@echo "  make review-commit     - Review staged commit"
 	@echo "  make pre-commit        - Quick pre-commit checks"
 	@echo "  make ci-local          - Run ALL CI checks locally (mirrors GitHub Actions)"
@@ -255,16 +394,17 @@ help:
 	@echo "  make gosec             - Run security scanner"
 	@echo ""
 	@echo "🤖 AI Attribution:"
-	@echo "  make ai-commit MSG=\"...\"  - Create AI-attributed commit (recommended)"
+	@echo "  make ai-commit FILE=...    - Create AI-attributed commit (required)"
 	@echo "  make install-git-hooks    - Install AI attribution hooks"
 	@echo "  make check-ai-attribution - Check latest commit"
 	@echo "  make audit-ai-commits     - Audit all AI commits"
 	@echo "  make list-ai-commits      - List AI-generated commits"
 	@echo ""
-	@echo "💬 Workflow Guides:"
-	@echo "  make task-workflow     - Show task execution workflow"
-	@echo "  make token-check       - Show token efficiency tips"
-	@echo "  make help              - Show this help message"
+	@echo "🤖 AI Agent Helpers:"
+	@echo "  make session-start         - MUST run at session start"
+	@echo "  make pre-task              - Run before starting any task"
+	@echo "  make what-to-use NEED=x    - Lookup component to use (table, form, color, etc.)"
+	@echo "  make task-workflow         - Show task execution workflow"
 	@echo ""
 	@echo "🏗️  Build:"
 	@echo "  make build             - Build the application"
@@ -273,12 +413,11 @@ help:
 	@echo "  make generate-diagrams     - Generate workflow diagrams (Mermaid)"
 	@echo "  make generate-state-matrix - Generate state matrix documentation"
 	@echo "  make generate-docs         - Generate all documentation (diagrams + state matrix)"
-	@echo "  make diagrams              - Alias for generate-diagrams"
 	@echo ""
-	@echo "📚 Reference:"
-	@echo "  docs/rules/master-task-prompt.md     - Full task guide"
-	@echo "  docs/rules/TASK_QUICK_REF.md         - Quick reference"
-	@echo "  docs/rules/AI_COMMIT_ATTRIBUTION.md  - AI attribution rules"
-	@echo "  MASTER_TASK_PROMPT_SETUP.md          - Setup guide"
+	@echo "📚 Rules Reference:"
+	@echo "  docs/rules/RULES_QUICK_REF.md   - Quick reference (60 lines)"
+	@echo "  docs/rules/WORKFLOW.md          - Complete workflow"
+	@echo "  docs/rules/CODE_STANDARDS.md    - Code standards"
+	@echo "  docs/rules/TUI_PATTERNS.md      - TUI patterns"
 	@echo ""
 
