@@ -3,10 +3,13 @@ package intents
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // ConfigureSystemIntent implements the Intent interface for system configuration.
@@ -34,6 +37,10 @@ type ConfigureSystemIntent struct {
 	// When true, screens handle Update/View. When false, model handles them.
 	// This allows gradual migration without breaking existing functionality.
 	useScreens bool
+
+	// --- Modal Overlays ---
+	// savingModal is displayed during the saving state to provide visual feedback.
+	savingModal *feedback.Modal
 }
 
 // NewConfigureSystemIntent creates a new ConfigureSystem intent
@@ -70,11 +77,30 @@ func (c *ConfigureSystemIntent) Update(msg tea.Msg) tea.Cmd {
 		c.model.SetTheme(theme)
 	}
 
-	// Handle help modal toggle at intent level before delegating to model
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		if HandleGlobalKeys(keyMsg) == KeyHelp {
+	// Handle save completion/error messages to update modal
+	switch msg := msg.(type) {
+	case ConfigCompleteMsg:
+		// Save completed successfully - show success modal briefly then clear
+		c.savingModal = feedback.NewSuccessModal("Configuration saved!")
+		// Let model handle the state transition
+		return c.model.Update(msg)
+
+	case ConfigErrorMsg:
+		// Save failed - show error modal
+		c.savingModal = feedback.NewErrorModal("Save Failed", msg.Error.Message)
+		// Let model handle the state transition
+		return c.model.Update(msg)
+
+	case tea.KeyMsg:
+		// Handle help modal toggle at intent level before delegating to model
+		if HandleGlobalKeys(msg) == KeyHelp {
 			c.ToggleHelp()
 			return nil
+		}
+
+		// If success modal is showing, any key dismisses it
+		if c.savingModal != nil && c.model.state == ConfigStateComplete {
+			c.savingModal = nil
 		}
 	}
 
@@ -191,13 +217,28 @@ func (c *ConfigureSystemIntent) getContextHelp() string {
 
 // View renders the current state using StandardView.
 func (c *ConfigureSystemIntent) View() string {
+	// Get terminal dimensions for modal rendering
+	width, height := 120, 40 // Defaults
+	if termInfo := c.GetTerminalInfo(); termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
 	// Delegate to active screen when using screen-based architecture
 	if c.useScreens && c.activeScreen != nil {
 		// Use StandardView with screen content
 		view := c.CreateViewWithBreadcrumbs("Main Menu", "Configure System", c.getStateName())
 		view.WithContent(c.activeScreen.View())
 		view.WithHelp(c.getContextHelp()).WithFooterSeparator(true)
-		return view.Render()
+		baseView := view.Render()
+
+		// Overlay saving modal if visible
+		if c.savingModal != nil {
+			modalContent := c.savingModal.Render(width, height)
+			return c.overlayModal(baseView, modalContent, width, height)
+		}
+
+		return baseView
 	}
 
 	// Legacy: Create standard view with breadcrumbs from model
@@ -211,7 +252,15 @@ func (c *ConfigureSystemIntent) View() string {
 	help := c.getContextHelp()
 	view.WithHelp(help).WithFooterSeparator(true)
 
-	return view.Render()
+	baseView := view.Render()
+
+	// Overlay saving modal if visible
+	if c.savingModal != nil {
+		modalContent := c.savingModal.Render(width, height)
+		return c.overlayModal(baseView, modalContent, width, height)
+	}
+
+	return baseView
 }
 
 // Result returns the intent result
@@ -464,6 +513,9 @@ func (c *ConfigureSystemIntent) setCompleted(result *IntentResult[interface{}]) 
 
 // saveConfiguration starts the configuration save process.
 func (c *ConfigureSystemIntent) saveConfiguration() tea.Cmd {
+	// Show loading modal during save
+	c.savingModal = feedback.NewLoadingModal("Saving configuration...", false)
+
 	// Return a command that will simulate saving (in real implementation, this would save to disk)
 	return func() tea.Msg {
 		// Simulate save success
@@ -475,4 +527,34 @@ func (c *ConfigureSystemIntent) saveConfiguration() tea.Cmd {
 			},
 		}
 	}
+}
+
+// overlayModal overlays modal content on top of background content (centered).
+// This follows the StandardView modal overlay pattern for consistent modal rendering.
+func (c *ConfigureSystemIntent) overlayModal(background, modal string, width, height int) string {
+	bgLines := strings.Split(background, "\n")
+	modalLines := strings.Split(modal, "\n")
+
+	// Calculate vertical position to center modal
+	bgHeight := len(bgLines)
+	modalHeight := len(modalLines)
+	startLine := (bgHeight - modalHeight) / 2
+	if startLine < 0 {
+		startLine = 0
+	}
+
+	// Overlay modal lines onto background
+	result := make([]string, len(bgLines))
+	copy(result, bgLines)
+
+	for i, modalLine := range modalLines {
+		lineIndex := startLine + i
+		if lineIndex >= 0 && lineIndex < len(result) {
+			// Center modal line horizontally
+			centeredModalLine := lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
+			result[lineIndex] = centeredModalLine
+		}
+	}
+
+	return strings.Join(result, "\n")
 }
