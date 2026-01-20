@@ -46,8 +46,17 @@ type ProfileConfig struct {
 
 // CVConfig contains CV generation configuration
 type CVConfig struct {
-	DefaultFormat string `yaml:"default_format"`
-	MaxBullets    int    `yaml:"max_bullets"`
+	DefaultFormat   string                `yaml:"default_format"`
+	MaxBullets      int                   `yaml:"max_bullets"`
+	AudienceBullets AudienceBulletsConfig `yaml:"audience_bullets"`
+}
+
+// AudienceBulletsConfig defines bullets per company for each audience type
+type AudienceBulletsConfig struct {
+	Recruiter     int `yaml:"recruiter"`      // Bullets per company for recruiters (default: 4)
+	HiringManager int `yaml:"hiring_manager"` // Bullets per company for hiring managers (default: 6)
+	Peer          int `yaml:"peer"`           // Bullets per company for peers (default: 8)
+	Default       int `yaml:"default"`        // Default bullets per company (default: 5)
 }
 
 // ExportConfig contains export configuration
@@ -92,6 +101,12 @@ func DefaultConfig() *Config {
 		CV: CVConfig{
 			DefaultFormat: "markdown",
 			MaxBullets:    50,
+			AudienceBullets: AudienceBulletsConfig{
+				Recruiter:     4,
+				HiringManager: 6,
+				Peer:          8,
+				Default:       5,
+			},
 		},
 		Export: ExportConfig{
 			DefaultDestination: "file",
@@ -145,7 +160,71 @@ func LoadConfigFromPath(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 
+	// Apply defaults for any missing values
+	applyDefaults(&cfg)
+
 	return &cfg, nil
+}
+
+// applyDefaults fills in default values for any zero-value fields in the config.
+// This ensures that when loading a config file with missing fields, sensible
+// defaults are applied rather than leaving them as zero values.
+func applyDefaults(cfg *Config) {
+	defaults := DefaultConfig()
+
+	// System defaults
+	if cfg.System.DataDir == "" {
+		cfg.System.DataDir = defaults.System.DataDir
+	}
+	if cfg.System.LogLevel == "" {
+		cfg.System.LogLevel = defaults.System.LogLevel
+	}
+	if cfg.System.BackupCount == 0 {
+		cfg.System.BackupCount = defaults.System.BackupCount
+	}
+	// Note: AutoBackup is bool, can't distinguish false from unset
+
+	// Profile defaults
+	if cfg.Profile.DefaultRole == "" {
+		cfg.Profile.DefaultRole = defaults.Profile.DefaultRole
+	}
+	if cfg.Profile.DefaultAudience == "" {
+		cfg.Profile.DefaultAudience = defaults.Profile.DefaultAudience
+	}
+
+	// CV defaults
+	if cfg.CV.DefaultFormat == "" {
+		cfg.CV.DefaultFormat = defaults.CV.DefaultFormat
+	}
+	if cfg.CV.MaxBullets == 0 {
+		cfg.CV.MaxBullets = defaults.CV.MaxBullets
+	}
+
+	// AudienceBullets defaults
+	if cfg.CV.AudienceBullets.Recruiter == 0 {
+		cfg.CV.AudienceBullets.Recruiter = defaults.CV.AudienceBullets.Recruiter
+	}
+	if cfg.CV.AudienceBullets.HiringManager == 0 {
+		cfg.CV.AudienceBullets.HiringManager = defaults.CV.AudienceBullets.HiringManager
+	}
+	if cfg.CV.AudienceBullets.Peer == 0 {
+		cfg.CV.AudienceBullets.Peer = defaults.CV.AudienceBullets.Peer
+	}
+	if cfg.CV.AudienceBullets.Default == 0 {
+		cfg.CV.AudienceBullets.Default = defaults.CV.AudienceBullets.Default
+	}
+
+	// Export defaults
+	if cfg.Export.DefaultDestination == "" {
+		cfg.Export.DefaultDestination = defaults.Export.DefaultDestination
+	}
+	// Note: AutoOpen is bool, can't distinguish false from unset
+
+	// Display defaults
+	if cfg.Display.Theme == "" {
+		cfg.Display.Theme = defaults.Display.Theme
+	}
+	// Note: Animations is bool, can't distinguish false from unset
 }
 
 // SaveConfig saves configuration to the default location

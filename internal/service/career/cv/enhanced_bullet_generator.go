@@ -55,6 +55,43 @@ type EnhancedBullet struct {
 	Rank              float64
 }
 
+// ToCVBullet converts an EnhancedBullet to a CVBullet for the domain layer.
+// Uses EnhancedText as the primary Text if available, otherwise falls back to original Text.
+func (eb *EnhancedBullet) ToCVBullet() *career.CVBullet {
+	text := eb.Text
+	if eb.EnhancedText != "" {
+		text = eb.EnhancedText
+	}
+	return &career.CVBullet{
+		ID:              eb.ID,
+		Text:            text,
+		EnhancedText:    eb.EnhancedText,
+		SourceEventIDs:  eb.SourceEventIDs,
+		SourceFactIDs:   eb.SourceFactIDs,
+		Rank:            eb.Rank,
+		InclusionReason: eb.InclusionReason,
+		Confidence:      eb.Confidence,
+		RoleScore:       eb.RoleScore,
+		AudienceScore:   eb.AudienceScore,
+		MetricScore:     eb.MetricScore,
+		ImpactScore:     eb.ImpactScore,
+		ImpactLevel:     eb.ImpactLevel,
+		KeywordMatches:  eb.KeywordMatches,
+	}
+}
+
+// ConvertBullets converts a slice of EnhancedBullets to CVBullets.
+func ConvertBullets(enhanced []*EnhancedBullet) []*career.CVBullet {
+	if enhanced == nil {
+		return nil
+	}
+	bullets := make([]*career.CVBullet, len(enhanced))
+	for i, eb := range enhanced {
+		bullets[i] = eb.ToCVBullet()
+	}
+	return bullets
+}
+
 // DefaultEnhancedBulletGenerator implements EnhancedBulletGenerator
 type DefaultEnhancedBulletGenerator struct {
 	logger *logger.Logger
@@ -73,7 +110,6 @@ type RoleFilter struct {
 	SecondaryCategories []string
 	MinConfidence       float64
 	PreferredMetrics    []string
-	BulletCap           int
 }
 
 // AudienceFilter defines audience-specific filtering criteria
@@ -115,6 +151,9 @@ func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 	// Filter by audience
 	bullets = ebg.FilterByAudience(bullets, targetAudience)
 
+	// Deduplicate bullets with identical text (keeps highest confidence)
+	bullets = ebg.deduplicateBullets(bullets)
+
 	// Calculate scores
 	bullets = ebg.calculateScores(bullets, targetRole, targetAudience)
 
@@ -131,12 +170,7 @@ func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 		bullets[i] = enhanced
 	}
 
-	// Apply role-specific cap
-	cap := ebg.getBulletCapForRole(targetRole)
-	if len(bullets) > cap {
-		bullets = bullets[:cap]
-	}
-
+	// Note: Per-company/project caps are applied by SectionBuilder based on audience
 	ebg.logger.Info("Generated %d enhanced bullets for role %s with audience %s",
 		len(bullets), targetRole, targetAudience)
 
@@ -334,6 +368,63 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromEvents(events []*car
 	return bullets
 }
 
+// deduplicateBullets removes bullets with identical text, keeping the one with highest confidence
+// When merging, it combines source IDs to preserve lineage information
+func (ebg *DefaultEnhancedBulletGenerator) deduplicateBullets(bullets []*EnhancedBullet) []*EnhancedBullet {
+	if len(bullets) <= 1 {
+		return bullets
+	}
+
+	// Map to track unique bullets by normalized text
+	seen := make(map[string]*EnhancedBullet)
+
+	for _, bullet := range bullets {
+		// Normalize text for comparison (lowercase, trim spaces)
+		normalizedText := strings.ToLower(strings.TrimSpace(bullet.Text))
+
+		if existing, exists := seen[normalizedText]; exists {
+			// Merge: keep the one with higher confidence, combine source IDs
+			if bullet.Confidence > existing.Confidence {
+				// Keep new bullet but merge source IDs from existing
+				bullet.SourceEventIDs = mergeUniqueStrings(bullet.SourceEventIDs, existing.SourceEventIDs)
+				bullet.SourceFactIDs = mergeUniqueStrings(bullet.SourceFactIDs, existing.SourceFactIDs)
+				seen[normalizedText] = bullet
+			} else {
+				// Keep existing but merge source IDs from new
+				existing.SourceEventIDs = mergeUniqueStrings(existing.SourceEventIDs, bullet.SourceEventIDs)
+				existing.SourceFactIDs = mergeUniqueStrings(existing.SourceFactIDs, bullet.SourceFactIDs)
+			}
+		} else {
+			seen[normalizedText] = bullet
+		}
+	}
+
+	// Convert back to slice
+	result := make([]*EnhancedBullet, 0, len(seen))
+	for _, bullet := range seen {
+		result = append(result, bullet)
+	}
+
+	ebg.logger.Info("Deduplicated bullets: %d -> %d", len(bullets), len(result))
+	return result
+}
+
+// mergeUniqueStrings merges two string slices, removing duplicates
+func mergeUniqueStrings(a, b []string) []string {
+	seen := make(map[string]bool)
+	for _, s := range a {
+		seen[s] = true
+	}
+	for _, s := range b {
+		seen[s] = true
+	}
+	result := make([]string, 0, len(seen))
+	for s := range seen {
+		result = append(result, s)
+	}
+	return result
+}
+
 // calculateScores calculates all score components
 func (ebg *DefaultEnhancedBulletGenerator) calculateScores(bullets []*EnhancedBullet, role string, audience string) []*EnhancedBullet {
 	for _, bullet := range bullets {
@@ -524,7 +615,6 @@ func (ebg *DefaultEnhancedBulletGenerator) getRoleFilter(role string) *RoleFilte
 			SecondaryCategories: []string{"technical", "mentoring"},
 			MinConfidence:       0.8,
 			PreferredMetrics:    []string{"percentage", "count", "currency"},
-			BulletCap:           4,
 		}
 	case "staff":
 		return &RoleFilter{
@@ -532,7 +622,6 @@ func (ebg *DefaultEnhancedBulletGenerator) getRoleFilter(role string) *RoleFilte
 			SecondaryCategories: []string{"leadership", "mentoring"},
 			MinConfidence:       0.75,
 			PreferredMetrics:    []string{"percentage", "count"},
-			BulletCap:           5,
 		}
 	case "em":
 		return &RoleFilter{
@@ -540,7 +629,6 @@ func (ebg *DefaultEnhancedBulletGenerator) getRoleFilter(role string) *RoleFilte
 			SecondaryCategories: []string{"strategy", "product"},
 			MinConfidence:       0.75,
 			PreferredMetrics:    []string{"count", "percentage"},
-			BulletCap:           4,
 		}
 	case "senior_ic":
 		return &RoleFilter{
@@ -548,18 +636,10 @@ func (ebg *DefaultEnhancedBulletGenerator) getRoleFilter(role string) *RoleFilte
 			SecondaryCategories: []string{"leadership", "strategy"},
 			MinConfidence:       0.75,
 			PreferredMetrics:    []string{"percentage", "count"},
-			BulletCap:           5,
 		}
 	default:
 		return &RoleFilter{
 			MinConfidence: 0.7,
-			BulletCap:     5,
 		}
 	}
-}
-
-// getBulletCapForRole returns the maximum number of bullets for a role
-func (ebg *DefaultEnhancedBulletGenerator) getBulletCapForRole(role string) int {
-	filter := ebg.getRoleFilter(role)
-	return filter.BulletCap
 }

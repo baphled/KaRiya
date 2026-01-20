@@ -210,3 +210,96 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 		})
 	})
 })
+
+// Task 44: Conversion helper tests
+var _ = Describe("EnhancedBullet Conversion", func() {
+	Describe("ToCVBullet", func() {
+		It("should convert all fields correctly", func() {
+			enhanced := &EnhancedBullet{
+				ID:              "bullet-1",
+				Text:            "Led team to deliver microservices",
+				EnhancedText:    "Spearheaded cross-functional team to architect and deliver microservices platform",
+				SourceEventIDs:  []string{"event-1", "event-2"},
+				SourceFactIDs:   []string{"fact-1"},
+				Confidence:      0.9,
+				RoleScore:       0.85,
+				AudienceScore:   0.80,
+				MetricScore:     0.75,
+				ImpactScore:     0.95,
+				ImpactLevel:     "high",
+				KeywordMatches:  []string{"leadership", "architecture"},
+				InclusionReason: "achievement_extraction",
+				Rank:            0.88,
+			}
+
+			cvBullet := enhanced.ToCVBullet()
+
+			Expect(cvBullet.ID).To(Equal("bullet-1"))
+			Expect(cvBullet.Text).To(Equal("Spearheaded cross-functional team to architect and deliver microservices platform"))
+			Expect(cvBullet.EnhancedText).To(Equal("Spearheaded cross-functional team to architect and deliver microservices platform"))
+			Expect(cvBullet.SourceEventIDs).To(Equal([]string{"event-1", "event-2"}))
+			Expect(cvBullet.SourceFactIDs).To(Equal([]string{"fact-1"}))
+			Expect(cvBullet.Confidence).To(Equal(0.9))
+			Expect(cvBullet.RoleScore).To(Equal(0.85))
+			Expect(cvBullet.AudienceScore).To(Equal(0.80))
+			Expect(cvBullet.MetricScore).To(Equal(0.75))
+			Expect(cvBullet.ImpactScore).To(Equal(0.95))
+			Expect(cvBullet.ImpactLevel).To(Equal("high"))
+			Expect(cvBullet.KeywordMatches).To(Equal([]string{"leadership", "architecture"}))
+			Expect(cvBullet.InclusionReason).To(Equal("achievement_extraction"))
+			Expect(cvBullet.Rank).To(Equal(0.88))
+		})
+
+		It("should use original Text when EnhancedText is empty", func() {
+			enhanced := &EnhancedBullet{
+				ID:           "bullet-2",
+				Text:         "Original bullet text",
+				EnhancedText: "",
+			}
+
+			cvBullet := enhanced.ToCVBullet()
+
+			Expect(cvBullet.Text).To(Equal("Original bullet text"))
+			Expect(cvBullet.EnhancedText).To(Equal(""))
+		})
+
+		It("should use EnhancedText as Text when available", func() {
+			enhanced := &EnhancedBullet{
+				ID:           "bullet-3",
+				Text:         "Original text",
+				EnhancedText: "Enhanced and improved text",
+			}
+
+			cvBullet := enhanced.ToCVBullet()
+
+			Expect(cvBullet.Text).To(Equal("Enhanced and improved text"))
+		})
+	})
+
+	Describe("ConvertBullets", func() {
+		It("should convert a slice of EnhancedBullets to CVBullets", func() {
+			enhanced := []*EnhancedBullet{
+				{ID: "b1", Text: "Bullet 1", Confidence: 0.8},
+				{ID: "b2", Text: "Bullet 2", Confidence: 0.9},
+				{ID: "b3", Text: "Bullet 3", Confidence: 0.7},
+			}
+
+			cvBullets := ConvertBullets(enhanced)
+
+			Expect(len(cvBullets)).To(Equal(3))
+			Expect(cvBullets[0].ID).To(Equal("b1"))
+			Expect(cvBullets[1].ID).To(Equal("b2"))
+			Expect(cvBullets[2].ID).To(Equal("b3"))
+		})
+
+		It("should return nil for nil input", func() {
+			cvBullets := ConvertBullets(nil)
+			Expect(cvBullets).To(BeNil())
+		})
+
+		It("should return empty slice for empty input", func() {
+			cvBullets := ConvertBullets([]*EnhancedBullet{})
+			Expect(cvBullets).To(BeEmpty())
+		})
+	})
+})

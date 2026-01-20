@@ -191,4 +191,111 @@ var _ = Describe("Config", func() {
 			Expect(loaded.Display).To(Equal(original.Display))
 		})
 	})
+
+	Describe("Config Defaults", func() {
+		It("should apply all defaults when loading minimal config", func() {
+			// Write minimal config with just profile name
+			yamlContent := `
+profile:
+  name: Test User
+`
+			err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+			Expect(err).NotTo(HaveOccurred())
+
+			cfg, err := config.LoadConfigFromPath(configPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Custom value preserved
+			Expect(cfg.Profile.Name).To(Equal("Test User"))
+
+			// System defaults
+			Expect(cfg.System.DataDir).To(ContainSubstring(".kariya"))
+			Expect(cfg.System.LogLevel).To(Equal("info"))
+			Expect(cfg.System.BackupCount).To(Equal(5))
+
+			// Profile defaults
+			Expect(cfg.Profile.DefaultRole).To(Equal("senior_ic"))
+			Expect(cfg.Profile.DefaultAudience).To(Equal("technical"))
+
+			// CV defaults
+			Expect(cfg.CV.DefaultFormat).To(Equal("markdown"))
+			Expect(cfg.CV.MaxBullets).To(Equal(50))
+
+			// AudienceBullets defaults
+			Expect(cfg.CV.AudienceBullets.Recruiter).To(Equal(4))
+			Expect(cfg.CV.AudienceBullets.HiringManager).To(Equal(6))
+			Expect(cfg.CV.AudienceBullets.Peer).To(Equal(8))
+			Expect(cfg.CV.AudienceBullets.Default).To(Equal(5))
+
+			// Export defaults
+			Expect(cfg.Export.DefaultDestination).To(Equal("file"))
+
+			// Display defaults
+			Expect(cfg.Display.Theme).To(Equal("dark"))
+		})
+
+		It("should apply defaults for missing audience bullet values", func() {
+			// Write config with partial audience_bullets (only recruiter set)
+			yamlContent := `
+cv:
+  audience_bullets:
+    recruiter: 10
+`
+			err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+			Expect(err).NotTo(HaveOccurred())
+
+			cfg, err := config.LoadConfigFromPath(configPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Recruiter should be the custom value
+			Expect(cfg.CV.AudienceBullets.Recruiter).To(Equal(10))
+			// Others should have defaults
+			Expect(cfg.CV.AudienceBullets.HiringManager).To(Equal(6))
+			Expect(cfg.CV.AudienceBullets.Peer).To(Equal(8))
+			Expect(cfg.CV.AudienceBullets.Default).To(Equal(5))
+		})
+
+		It("should preserve all custom values when fully specified", func() {
+			// Write config with all values set
+			yamlContent := `
+system:
+  log_level: debug
+  backup_count: 10
+profile:
+  default_role: staff
+  default_audience: executive
+cv:
+  default_format: text
+  max_bullets: 100
+  audience_bullets:
+    recruiter: 3
+    hiring_manager: 5
+    peer: 10
+    default: 4
+export:
+  default_destination: clipboard
+display:
+  theme: light
+`
+			err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+			Expect(err).NotTo(HaveOccurred())
+
+			cfg, err := config.LoadConfigFromPath(configPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// All custom values preserved
+			Expect(cfg.System.LogLevel).To(Equal("debug"))
+			Expect(cfg.System.BackupCount).To(Equal(10))
+			Expect(cfg.Profile.DefaultRole).To(Equal("staff"))
+			Expect(cfg.Profile.DefaultAudience).To(Equal("executive"))
+			Expect(cfg.CV.DefaultFormat).To(Equal("text"))
+			Expect(cfg.CV.MaxBullets).To(Equal(100))
+			Expect(cfg.CV.AudienceBullets.Recruiter).To(Equal(3))
+			Expect(cfg.CV.AudienceBullets.HiringManager).To(Equal(5))
+			Expect(cfg.CV.AudienceBullets.Peer).To(Equal(10))
+			Expect(cfg.CV.AudienceBullets.Default).To(Equal(4))
+			Expect(cfg.Export.DefaultDestination).To(Equal("clipboard"))
+			Expect(cfg.Display.Theme).To(Equal("light"))
+		})
+	})
 })
