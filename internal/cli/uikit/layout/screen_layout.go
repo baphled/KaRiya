@@ -265,10 +265,11 @@ func (sl *ScreenLayout) Render() string {
 	return rendered
 }
 
-// dimContent applies a dimming effect to the content
+// dimContent applies a dimming effect to the content.
+// Uses Faint(true) for consistency with feedback.DimContent().
 func (sl *ScreenLayout) dimContent(content string) string {
 	dimStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240")) // Gray color for dimming
+		Faint(true)
 	return dimStyle.Render(content)
 }
 
