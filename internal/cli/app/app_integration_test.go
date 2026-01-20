@@ -38,6 +38,7 @@ var _ = Describe("App Menu Integration Tests", func() {
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1", "e2"}})
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
 		model = app.NewModel(cliService, svc)
+		model.SkipOnboarding() // Skip onboarding for tests
 
 		Expect(model).NotTo(BeNil())
 	})
@@ -203,6 +204,7 @@ var _ = Describe("Navigation Integration", func() {
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
 
 		model = app.NewModel(cliService, svc)
+		model.SkipOnboarding() // Skip onboarding for tests
 	})
 
 	It("should start in menu state with menu visible", func() {
@@ -290,6 +292,7 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
 
 		model = app.NewModel(cliService, svc)
+		model.SkipOnboarding() // Skip onboarding for tests
 	})
 
 	// Test each intent in the menu (0-9)
@@ -374,6 +377,7 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
 
 		model = app.NewModel(cliService, svc)
+		model.SkipOnboarding() // Skip onboarding for tests
 	})
 
 	selectIntent := func(menuIndex int) {
@@ -603,6 +607,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f3", Text: "fact 3", CompetencyCategories: []string{"communication"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e3"})
 
 		model = app.NewModel(cliService, svc)
+		model.SkipOnboarding() // Skip onboarding for tests
 	})
 
 	selectIntent := func(menuIndex int) {

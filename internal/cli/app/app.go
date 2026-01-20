@@ -24,8 +24,9 @@ import (
 type AppState string
 
 const (
-	StateMenu   AppState = "menu"
-	StateIntent AppState = "intent"
+	StateMenu       AppState = "menu"
+	StateIntent     AppState = "intent"
+	StateOnboarding AppState = "onboarding"
 )
 
 // Model is the root Bubble Tea model for the KaRiya application
@@ -55,6 +56,10 @@ type Model struct {
 
 	// Context for intent creation
 	ctx context.Context
+
+	// Onboarding wizard for first-run profile setup
+	onboardingWizard *components.OnboardingWizardModal
+	appConfig        *config.Config
 }
 
 // MenuItem represents a menu option
@@ -68,6 +73,13 @@ type MenuItem struct {
 func NewModel(cliService *service.CLIEventService, careerService *careerservice.Service) *Model {
 	ctx := context.Background()
 	log := logger.DefaultLogger()
+
+	// Load application config (for profile check)
+	appCfg, err := config.LoadConfig()
+	if err != nil {
+		log.Error("Failed to load config: %v, using defaults", err)
+		appCfg = config.DefaultConfig()
+	}
 
 	// Initialize CV services
 	configMgr := initConfigManager(log)
@@ -99,6 +111,15 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 	// Share logo with intent router so all intents can use it
 	router.SetLogo(logo)
 
+	// Determine initial state - show onboarding if required profile fields are missing
+	// Both Name and Email are required for CV generation
+	initialState := StateMenu
+	var onboardingWizard *components.OnboardingWizardModal
+	if appCfg.Profile.Name == "" || appCfg.Profile.Email == "" {
+		initialState = StateOnboarding
+		onboardingWizard = components.NewOnboardingWizardModalWithConfig(80, 24, &appCfg.Profile)
+	}
+
 	return &Model{
 		cliService:        cliService,
 		careerService:     careerService,
@@ -107,7 +128,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		configManager:     configMgr,
 		cvGenService:      cvGenService,
 		cvExportService:   cvExportService,
-		state:             StateMenu,
+		state:             initialState,
 		selectedMenuIndex: 0,
 		menuItems:         menuItems,
 		logo:              logo,
@@ -115,16 +136,24 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		ctx:               ctx,
 		width:             80,
 		height:            24,
+		onboardingWizard:  onboardingWizard,
+		appConfig:         appCfg,
 	}
 }
 
 // Init initializes the model
 func (m *Model) Init() tea.Cmd {
-	// Request initial terminal size and initialize logo animation
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		tea.WindowSize(),
 		m.logo.Init(),
-	)
+	}
+
+	// Initialize onboarding wizard if in onboarding state
+	if m.state == StateOnboarding && m.onboardingWizard != nil {
+		cmds = append(cmds, m.onboardingWizard.Init())
+	}
+
+	return tea.Batch(cmds...)
 }
 
 // Update handles messages - FIXED: Using correct Bubble Tea v1.3.10 signature
@@ -156,7 +185,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Route messages to appropriate handler based on state
 		// Note: We don't intercept escape here - intents handle their own back navigation
 		// per TUI Standards (intermediate states go back one state, root states cancel intent)
-		if m.state == StateMenu {
+		if m.state == StateOnboarding {
+			return m.handleOnboardingInput(msg)
+		} else if m.state == StateMenu {
 			return m.handleMenuInput(msg)
 		} else if m.state == StateIntent {
 			return m.handleIntentInput(msg)
@@ -176,7 +207,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update logo width for centering
 		m.logo.SetWidth(msg.Width)
 
+		// Update onboarding wizard dimensions if active
+		// IMPORTANT: Execute returned cmd - wizard rebuilds form and returns form.Init()
+		var wizardCmd tea.Cmd
+		if m.onboardingWizard != nil {
+			wizardCmd = m.onboardingWizard.Update(msg)
+		}
+
 		// Clear screen to prevent artifacts on resize
+		// Batch with wizard cmd if present
+		if wizardCmd != nil {
+			return m, tea.Batch(tea.ClearScreen, wizardCmd)
+		}
 		return m, tea.ClearScreen
 
 	case IntentCompletedMsg:
@@ -217,6 +259,36 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		// Route all other messages to the onboarding wizard (e.g., huh internal messages like nextGroupMsg)
+		// This is essential for huh forms to advance between groups
+		if m.state == StateOnboarding && m.onboardingWizard != nil {
+			cmd := m.onboardingWizard.Update(msg)
+
+			// Check if wizard completed
+			if m.onboardingWizard.IsCompleted() {
+				// Get the profile config from the wizard
+				profileCfg := m.onboardingWizard.GetProfileConfig()
+				if profileCfg != nil {
+					// Update the app config with the new profile
+					m.appConfig.Profile = *profileCfg
+
+					// Save the config
+					if err := config.SaveConfig(m.appConfig); err != nil {
+						m.logger.Error("Failed to save config: %v", err)
+					} else {
+						m.logger.Info("Profile saved successfully")
+					}
+				}
+
+				// Transition to main menu
+				m.state = StateMenu
+				m.onboardingWizard = nil
+				return m, nil
+			}
+
+			return m, cmd
+		}
+
 		// Route all other messages to the active intent (e.g., SubmitMsg from form commands)
 		if m.state == StateIntent {
 			cmd, result := m.intentRouter.HandleMessage(msg)
@@ -246,7 +318,9 @@ func (m *Model) View() string {
 		return m.renderHelpScreen()
 	}
 
-	if m.state == StateMenu {
+	if m.state == StateOnboarding {
+		return m.viewOnboarding()
+	} else if m.state == StateMenu {
 		return m.viewMenu()
 	} else if m.state == StateIntent {
 		activeIntent := m.intentRouter.GetActiveIntent()
@@ -382,6 +456,56 @@ func (m *Model) handleIntentInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, cmd
+}
+
+// handleOnboardingInput handles input during the onboarding wizard.
+// Note: Onboarding is mandatory - users cannot skip or cancel this wizard.
+// They must provide Name and Email to proceed with the application.
+func (m *Model) handleOnboardingInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.onboardingWizard == nil {
+		m.state = StateMenu
+		return m, nil
+	}
+
+	cmd := m.onboardingWizard.Update(msg)
+
+	// Check if wizard completed
+	if m.onboardingWizard.IsCompleted() {
+		// Get the profile config from the wizard
+		profileCfg := m.onboardingWizard.GetProfileConfig()
+		if profileCfg != nil {
+			// Update the app config with the new profile
+			m.appConfig.Profile = *profileCfg
+
+			// Save the config
+			if err := config.SaveConfig(m.appConfig); err != nil {
+				m.logger.Error("Failed to save config: %v", err)
+			} else {
+				m.logger.Info("Profile saved successfully")
+			}
+		}
+
+		// Transition to main menu
+		m.state = StateMenu
+		m.onboardingWizard = nil
+		return m, nil
+	}
+
+	// Note: Onboarding cannot be cancelled - users must complete it
+	// The wizard ignores Esc key presses
+
+	return m, cmd
+}
+
+// viewOnboarding renders the onboarding wizard
+func (m *Model) viewOnboarding() string {
+	if m.onboardingWizard == nil {
+		return ""
+	}
+
+	// Center the wizard modal in the terminal
+	wizardView := m.onboardingWizard.View()
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, wizardView)
 }
 
 // viewMenu renders the main menu using lipgloss.JoinVertical for consistent centering
@@ -808,4 +932,21 @@ func (m *Model) GetState() AppState {
 // GetActiveIntent returns the currently active intent
 func (m *Model) GetActiveIntent() intents.Intent {
 	return m.intentRouter.GetActiveIntent()
+}
+
+// SkipOnboarding skips the onboarding wizard and goes directly to menu.
+// This is primarily used by tests to avoid the onboarding flow.
+func (m *Model) SkipOnboarding() {
+	if m.state == StateOnboarding {
+		m.state = StateMenu
+		m.onboardingWizard = nil
+	}
+}
+
+// ForceOnboarding forces the onboarding wizard to appear, regardless of config.
+// This is primarily used by tests to verify the onboarding flow.
+// It creates a fresh wizard with empty data (not the user's existing config).
+func (m *Model) ForceOnboarding() {
+	m.state = StateOnboarding
+	m.onboardingWizard = components.NewOnboardingWizardModal(m.width, m.height)
 }
