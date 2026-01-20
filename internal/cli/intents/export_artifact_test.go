@@ -131,8 +131,9 @@ var _ = Describe("ExportArtifact Intent (Wizard-Based)", func() {
 				// Simulate Ctrl+S to skip wizard with defaults
 				intent.Update(tea.KeyMsg{Type: tea.KeyCtrlS})
 
-				// Wizard should be complete, intent should move to preview
-				Expect(intent.wizardModal).To(BeNil())
+				// Wizard should be complete (hidden but preserved for back-nav), intent should move to preview
+				Expect(intent.wizardModal).NotTo(BeNil())
+				Expect(intent.wizardModal.IsVisible()).To(BeFalse())
 				Expect(intent.GetState()).To(Equal(ExportStatePreview))
 				Expect(intent.GetConfig()).NotTo(BeNil())
 				// Defaults should be applied

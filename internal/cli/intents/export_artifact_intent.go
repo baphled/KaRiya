@@ -141,7 +141,8 @@ func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
 				Format:       ExportFormat(e.wizardModal.GetFormat()),
 				Destination:  ExportDestination(e.wizardModal.GetDestination()),
 			}
-			e.wizardModal = nil
+			// Hide wizard but keep it for back-navigation (preserves all form data)
+			e.wizardModal.Hide()
 
 			// Generate preview and show preview screen
 			e.preview = e.generatePreview()
@@ -285,28 +286,10 @@ func (e *ExportArtifactIntent) handleCancelResult() tea.Cmd {
 
 	case ExportStatePreview:
 		// Go back to configuration wizard at the last step
+		// Resume wizard (preserves all form data, goes to last step)
+		e.wizardModal.ResumeAtLastStep()
 		e.currentState = ExportStateConfigure
-
-		// Get terminal dimensions
-		width, height := 100, 40
-		termInfo := e.GetTerminalInfo()
-		if termInfo != nil {
-			width = termInfo.Width
-			height = termInfo.Height
-		}
-
-		// Re-create wizard with previous configuration and go to last step
-		e.wizardModal = components.NewExportConfigWizardModal(width, height)
-		if e.config != nil {
-			e.wizardModal.SetArtifactType(string(e.config.ArtifactType))
-			e.wizardModal.SetFormat(string(e.config.Format))
-			e.wizardModal.SetDestination(string(e.config.Destination))
-		}
-		// Go to last step so user can step back through wizard incrementally
-		e.wizardModal.GoToLastStep()
 		e.activeScreen = nil
-
-		// Note: ExportStateConfirm, ExportStateComplete, ExportStateFailed are now handled by modals
 	}
 
 	return nil

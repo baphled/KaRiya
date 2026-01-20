@@ -307,6 +307,16 @@ func (m *ExportConfigWizardModal) GoToLastStep() {
 	m.GoToStep(m.GetStepCount() - 1)
 }
 
+// ResumeAtLastStep resumes the wizard at the last step, preserving all data.
+// Use this when returning from preview to allow incremental back-navigation.
+func (m *ExportConfigWizardModal) ResumeAtLastStep() {
+	m.completed = false
+	m.cancelled = false
+	m.skipped = false
+	m.visible = true
+	m.GoToLastStep()
+}
+
 // SetArtifactType sets the artifact type.
 func (m *ExportConfigWizardModal) SetArtifactType(artifactType string) {
 	m.data.ArtifactType = artifactType
