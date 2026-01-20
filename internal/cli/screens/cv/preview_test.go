@@ -472,21 +472,24 @@ var _ = Describe("CVPreviewScreen", func() {
 		})
 
 		Context("with nil profile config", func() {
-			It("should use defaults when profile config is nil", func() {
+			It("should use empty defaults when profile config is nil", func() {
 				screenWithNilProfile := cv.NewCVPreviewScreenWithProfile(testCV, nil)
 				screenWithNilProfile.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
 
 				view := screenWithNilProfile.View()
-				// Should fall back to DefaultNarrativeProfile
-				Expect(view).To(ContainSubstring("Yomi Colledge"))
+				// Should NOT contain hardcoded personal data
+				Expect(view).NotTo(ContainSubstring("Yomi Colledge"))
+				Expect(view).NotTo(ContainSubstring("boodah"))
+				// Screen should still render
+				Expect(view).NotTo(BeEmpty())
 			})
 		})
 
 		Context("with partial profile config", func() {
-			It("should use defaults for empty fields", func() {
+			It("should keep empty fields empty (no hardcoded defaults)", func() {
 				partialProfile := &config.ProfileConfig{
 					Name: "Custom Name",
-					// Email, Title, Location left empty
+					// Email, Title, Location left empty - will remain empty
 				}
 				screenWithPartial := cv.NewCVPreviewScreenWithProfile(testCV, partialProfile)
 				screenWithPartial.Update(tea.WindowSizeMsg{Width: 80, Height: 40})
@@ -494,8 +497,9 @@ var _ = Describe("CVPreviewScreen", func() {
 				view := screenWithPartial.View()
 				// Name should be custom
 				Expect(view).To(ContainSubstring("Custom Name"))
-				// Email should fall back to default (yomi@boodah.net)
-				Expect(view).To(ContainSubstring("yomi@boodah.net"))
+				// Should NOT contain hardcoded email
+				Expect(view).NotTo(ContainSubstring("yomi@boodah.net"))
+				Expect(view).NotTo(ContainSubstring("boodah"))
 			})
 		})
 	})

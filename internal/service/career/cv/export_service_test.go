@@ -542,10 +542,11 @@ var _ = ginkgo.Describe("ExportService", func() {
 			ginkgo.It("should export to text format with narrative structure", func() {
 				content, err := service.Export(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatText)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				// Narrative includes profile header (uppercase in text format)
-				gomega.Expect(content).To(gomega.ContainSubstring("YOMI COLLEDGE"))
-				gomega.Expect(content).To(gomega.ContainSubstring("Senior Software Engineer"))
-				// Narrative sections
+				// Narrative export works even with empty profile (user hasn't onboarded)
+				// Should NOT contain hardcoded personal data
+				gomega.Expect(content).NotTo(gomega.ContainSubstring("YOMI COLLEDGE"))
+				gomega.Expect(content).NotTo(gomega.ContainSubstring("boodah"))
+				// Narrative sections should still be present
 				gomega.Expect(content).To(gomega.ContainSubstring("CORE STRENGTHS"))
 				gomega.Expect(content).To(gomega.ContainSubstring("LANGUAGES & TECHNOLOGIES"))
 				gomega.Expect(content).To(gomega.ContainSubstring("SELECTED EXPERIENCE"))
@@ -559,10 +560,11 @@ var _ = ginkgo.Describe("ExportService", func() {
 			ginkgo.It("should export to markdown format with narrative structure", func() {
 				content, err := service.Export(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatMarkdown)
 				gomega.Expect(err).NotTo(gomega.HaveOccurred())
-				// Narrative includes profile header
-				gomega.Expect(content).To(gomega.ContainSubstring("# Yomi Colledge"))
-				gomega.Expect(content).To(gomega.ContainSubstring("Senior Software Engineer"))
-				// Narrative sections
+				// Narrative export works even with empty profile (user hasn't onboarded)
+				// Should NOT contain hardcoded personal data
+				gomega.Expect(content).NotTo(gomega.ContainSubstring("# Yomi Colledge"))
+				gomega.Expect(content).NotTo(gomega.ContainSubstring("boodah"))
+				// Narrative sections should still be present
 				gomega.Expect(content).To(gomega.ContainSubstring("## Core Strengths"))
 				gomega.Expect(content).To(gomega.ContainSubstring("## Languages & Technologies"))
 				gomega.Expect(content).To(gomega.ContainSubstring("## Selected Experience"))
@@ -646,8 +648,9 @@ var _ = ginkgo.Describe("ExportService", func() {
 		ginkgo.It("should use default profile when profileCfg is nil", func() {
 			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatText, nil)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			// Default profile name is "Yomi Colledge"
-			gomega.Expect(content).To(gomega.ContainSubstring("YOMI COLLEDGE"))
+			// Default profile has empty name - onboarding data not provided
+			// The CV should still export (with empty/blank name section)
+			gomega.Expect(content).NotTo(gomega.BeEmpty())
 		})
 
 		ginkgo.It("should use custom profile when provided", func() {
@@ -658,9 +661,9 @@ var _ = ginkgo.Describe("ExportService", func() {
 				Location:  "San Francisco, CA",
 				GitHub:    "https://github.com/janedoe",
 				Portfolio: "https://janedoe.dev",
-				Languages: "Python, Rust, TypeScript",
-				Frontend:  "React, Vue",
-				Systems:   "Kubernetes, AWS, Terraform",
+				Languages: []string{"Python", "Rust", "TypeScript"},
+				Frontend:  []string{"React", "Vue"},
+				Systems:   []string{"Kubernetes", "AWS", "Terraform"},
 				CoreStrengths: []string{
 					"Distributed systems design",
 					"Team leadership",
@@ -695,18 +698,19 @@ var _ = ginkgo.Describe("ExportService", func() {
 			gomega.Expect(content).To(gomega.ContainSubstring("**Staff Engineer**"))
 		})
 
-		ginkgo.It("should fall back to defaults for empty custom profile fields", func() {
+		ginkgo.It("should keep empty fields when custom profile fields are empty", func() {
 			profileCfg := &config.ProfileConfig{
 				Name: "Custom Name",
-				// All other fields empty - should use defaults
+				// All other fields empty - should remain empty (inference fills these)
 			}
 
 			content, err := service.ExportWithProfile(ctx, cv, sections, bullets, CVStructureNarrative, ExportFormatText, profileCfg)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			// Custom name
+			// Custom name should be present
 			gomega.Expect(content).To(gomega.ContainSubstring("CUSTOM NAME"))
-			// But default role (since Title was empty)
-			gomega.Expect(content).To(gomega.ContainSubstring("Senior Software Engineer / Technical Consultant"))
+			// Empty fields should NOT contain hardcoded personal data
+			gomega.Expect(content).NotTo(gomega.ContainSubstring("Yomi"))
+			gomega.Expect(content).NotTo(gomega.ContainSubstring("boodah"))
 		})
 
 		ginkgo.It("should use standard structure regardless of profile for YAML format", func() {
@@ -723,10 +727,13 @@ var _ = ginkgo.Describe("ExportService", func() {
 	})
 
 	ginkgo.Describe("NarrativeProfileFromConfig", func() {
-		ginkgo.It("should return default profile when config is nil", func() {
+		ginkgo.It("should return empty default profile when config is nil", func() {
 			profile := NarrativeProfileFromConfig(nil)
-			gomega.Expect(profile.Name).To(gomega.Equal("Yomi Colledge"))
-			gomega.Expect(profile.Role).To(gomega.Equal("Senior Software Engineer / Technical Consultant"))
+			// Default profile should be empty - no hardcoded personal data
+			gomega.Expect(profile.Name).To(gomega.BeEmpty())
+			gomega.Expect(profile.Role).To(gomega.BeEmpty())
+			gomega.Expect(profile.CoreStrengths).To(gomega.BeEmpty())
+			gomega.Expect(profile.ValuePropositions).To(gomega.BeEmpty())
 		})
 
 		ginkgo.It("should use config values when provided", func() {
@@ -737,9 +744,9 @@ var _ = ginkgo.Describe("ExportService", func() {
 				Email:     "test@example.com",
 				GitHub:    "https://github.com/testuser",
 				Portfolio: "https://test.dev",
-				Languages: "Go, Python",
-				Frontend:  "Angular",
-				Systems:   "Docker, GCP",
+				Languages: []string{"Go", "Python"},
+				Frontend:  []string{"Angular"},
+				Systems:   []string{"Docker", "GCP"},
 				CoreStrengths: []string{
 					"Backend development",
 					"System architecture",
@@ -757,34 +764,33 @@ var _ = ginkgo.Describe("ExportService", func() {
 			gomega.Expect(profile.Email).To(gomega.Equal("test@example.com"))
 			gomega.Expect(profile.GitHub).To(gomega.Equal("https://github.com/testuser"))
 			gomega.Expect(profile.Portfolio).To(gomega.Equal("https://test.dev"))
-			gomega.Expect(profile.Languages).To(gomega.Equal("Go, Python"))
-			gomega.Expect(profile.Frontend).To(gomega.Equal("Angular"))
-			gomega.Expect(profile.Systems).To(gomega.Equal("Docker, GCP"))
+			gomega.Expect(profile.Languages).To(gomega.Equal([]string{"Go", "Python"}))
+			gomega.Expect(profile.Frontend).To(gomega.Equal([]string{"Angular"}))
+			gomega.Expect(profile.Systems).To(gomega.Equal([]string{"Docker", "GCP"}))
 			gomega.Expect(profile.CoreStrengths).To(gomega.Equal([]string{"Backend development", "System architecture"}))
 			gomega.Expect(profile.ValuePropositions).To(gomega.Equal([]string{"Pragmatic approach", "Strong communication"}))
 		})
 
-		ginkgo.It("should use defaults for empty fields", func() {
+		ginkgo.It("should keep empty fields empty (no hardcoded defaults)", func() {
 			cfg := &config.ProfileConfig{
 				Name: "Only Name Set",
-				// All other fields empty
+				// All other fields empty - should remain empty for inference service to fill
 			}
 
 			profile := NarrativeProfileFromConfig(cfg)
-			defaults := DefaultNarrativeProfile()
 
 			gomega.Expect(profile.Name).To(gomega.Equal("Only Name Set"))
-			// All other fields should use defaults
-			gomega.Expect(profile.Role).To(gomega.Equal(defaults.Role))
-			gomega.Expect(profile.Location).To(gomega.Equal(defaults.Location))
-			gomega.Expect(profile.Email).To(gomega.Equal(defaults.Email))
-			gomega.Expect(profile.GitHub).To(gomega.Equal(defaults.GitHub))
-			gomega.Expect(profile.Portfolio).To(gomega.Equal(defaults.Portfolio))
-			gomega.Expect(profile.Languages).To(gomega.Equal(defaults.Languages))
-			gomega.Expect(profile.Frontend).To(gomega.Equal(defaults.Frontend))
-			gomega.Expect(profile.Systems).To(gomega.Equal(defaults.Systems))
-			gomega.Expect(profile.CoreStrengths).To(gomega.Equal(defaults.CoreStrengths))
-			gomega.Expect(profile.ValuePropositions).To(gomega.Equal(defaults.ValuePropositions))
+			// All other fields should be empty (not hardcoded defaults)
+			gomega.Expect(profile.Role).To(gomega.BeEmpty())
+			gomega.Expect(profile.Location).To(gomega.BeEmpty())
+			gomega.Expect(profile.Email).To(gomega.BeEmpty())
+			gomega.Expect(profile.GitHub).To(gomega.BeEmpty())
+			gomega.Expect(profile.Portfolio).To(gomega.BeEmpty())
+			gomega.Expect(profile.Languages).To(gomega.BeEmpty())
+			gomega.Expect(profile.Frontend).To(gomega.BeEmpty())
+			gomega.Expect(profile.Systems).To(gomega.BeEmpty())
+			gomega.Expect(profile.CoreStrengths).To(gomega.BeEmpty())
+			gomega.Expect(profile.ValuePropositions).To(gomega.BeEmpty())
 		})
 	})
 })
