@@ -23,13 +23,13 @@ import (
 )
 
 func init() {
-	// Seed gofakeit for reproducible tests when needed
-	// Can be overridden with SetSeed() for deterministic tests
-	gofakeit.Seed(0)
+	// Seed gofakeit with 0 for consistent default behavior across test runs.
+	// Use SetSeed() to set a specific seed for deterministic test data.
+	_ = gofakeit.Seed(0)
 }
 
 // SetSeed sets the random seed for reproducible test data.
 // Use this at the start of tests that need deterministic data.
 func SetSeed(seed int64) {
-	gofakeit.Seed(seed)
+	_ = gofakeit.Seed(seed)
 }

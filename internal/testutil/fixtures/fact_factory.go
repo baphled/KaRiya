@@ -115,7 +115,10 @@ func Facts(n int, events []*career.CareerEvent) []*career.Fact {
 }
 
 // FactWith creates a minimal Fact with just ID and text.
-// Use this for simple tests that don't need full fact attributes.
+// WARNING: This creates an incomplete Fact without required domain fields
+// (CompetencyCategories, RoleFit, AudienceRelevance, StrengthSignal, SourceEventID).
+// Use only for tests that don't validate the complete Fact structure.
+// For fully-populated facts, use Fact() or FactFactory instead.
 func FactWith(id, text string) *career.Fact {
 	return &career.Fact{
 		ID:   id,

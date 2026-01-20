@@ -39,6 +39,7 @@ var BurstFactory = factory.NewFactory(
 
 // Burst creates a minimal valid Burst with the given ID and event IDs.
 // At least 2 event IDs are required for a valid burst.
+// If fewer than 2 event IDs are provided, defaults to ["event-1", "event-2"].
 func Burst(id string, eventIDs ...string) *career.Burst {
 	if len(eventIDs) < 2 {
 		eventIDs = []string{"event-1", "event-2"}
@@ -64,25 +65,21 @@ func BurstConfirmed(id string, eventIDs ...string) *career.Burst {
 }
 
 // Bursts creates n bursts with sequential IDs, linked to the provided events.
-// If events is empty, bursts will have placeholder event IDs.
+// If events is empty or has fewer than 2 elements, bursts will have placeholder event IDs.
+// Events are distributed using wrap-around to ensure each burst has exactly 2 event IDs.
 func Bursts(n int, events []*career.CareerEvent) []*career.Burst {
 	bursts := make([]*career.Burst, n)
 	for i := 0; i < n; i++ {
 		burst := BurstFactory.MustCreate().(*career.Burst)
-		// Link to actual events if provided
+		// Link to actual events if provided (need at least 2 for valid bursts)
 		if len(events) >= 2 {
 			startIdx := (i * 2) % len(events)
-			endIdx := startIdx + 2
-			if endIdx > len(events) {
-				endIdx = len(events)
+			// Always assign two event IDs, wrapping around if needed
+			eventIDs := []string{
+				events[startIdx].ID,
+				events[(startIdx+1)%len(events)].ID,
 			}
-			eventIDs := make([]string, 0)
-			for j := startIdx; j < endIdx; j++ {
-				eventIDs = append(eventIDs, events[j].ID)
-			}
-			if len(eventIDs) >= 2 {
-				burst.EventIDs = eventIDs
-			}
+			burst.EventIDs = eventIDs
 		}
 		bursts[i] = burst
 	}
