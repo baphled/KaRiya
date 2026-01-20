@@ -185,8 +185,8 @@ func (s *BaseSelectScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult
 // - Selection indicator (▶) on current item
 // - Scroll indicator if list is larger than visible area
 func (s *BaseSelectScreen[T]) View() string {
-	content := s.renderContent()
-	footer := s.renderFooter()
+	content := s.RenderContent()
+	footer := s.RenderFooter()
 
 	return s.CreateView(s.breadcrumbs, content, footer)
 }
@@ -288,8 +288,9 @@ func (s *BaseSelectScreen[T]) handleCancellation() screens.ScreenResult {
 	return result
 }
 
-// renderContent renders the list of items with selection indicator.
-func (s *BaseSelectScreen[T]) renderContent() string {
+// RenderContent renders the list of items with selection indicator.
+// This is public so intents can get raw content for custom layouts.
+func (s *BaseSelectScreen[T]) RenderContent() string {
 	// Handle empty list
 	if len(s.items) == 0 {
 		return "\n  No items available\n"
@@ -335,8 +336,9 @@ func (s *BaseSelectScreen[T]) renderContent() string {
 	return b.String()
 }
 
-// renderFooter renders footer with navigation hints.
-func (s *BaseSelectScreen[T]) renderFooter() string {
+// RenderFooter renders footer with navigation hints.
+// This is public so intents can get raw footer for custom layouts.
+func (s *BaseSelectScreen[T]) RenderFooter() string {
 	if len(s.items) == 0 {
 		return "Esc: Back  q: Quit"
 	}

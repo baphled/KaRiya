@@ -686,4 +686,154 @@ var _ = Describe("ConfigureSystem Intent", func() {
 			})
 		})
 	})
+
+	Describe("Config Data Loading", func() {
+		It("should load config data on creation", func() {
+			intent, err := NewConfigureSystemIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Config should be loaded
+			Expect(intent.cfg).NotTo(BeNil())
+
+			// Settings should be populated
+			Expect(intent.settings).NotTo(BeNil())
+			Expect(intent.settings).To(HaveKey(DomainSystem))
+			Expect(intent.settings).To(HaveKey(DomainProfile))
+			Expect(intent.settings).To(HaveKey(DomainExport))
+			Expect(intent.settings).To(HaveKey(DomainUI))
+		})
+
+		It("should return settings from loaded config", func() {
+			intent, _ := NewConfigureSystemIntent(ctx)
+
+			// Get system settings
+			settings := intent.getSettingsForDomain(DomainSystem)
+			Expect(settings).NotTo(BeNil())
+			Expect(len(settings)).To(BeNumerically(">", 0))
+
+			// Should have actual config settings (not sample data)
+			var hasLogLevel, hasDataDir bool
+			for _, s := range settings {
+				if s.Key == "log_level" {
+					hasLogLevel = true
+				}
+				if s.Key == "data_dir" {
+					hasDataDir = true
+				}
+			}
+			Expect(hasLogLevel).To(BeTrue(), "Should have log_level setting from config")
+			Expect(hasDataDir).To(BeTrue(), "Should have data_dir setting from config")
+		})
+	})
+
+	Describe("Loading Modal Rendering", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewConfigureSystemIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should show saving modal when in Saving state", func() {
+			intent.SetState(ConfigStateSaving)
+			view := intent.View()
+
+			// Should show loading modal content
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("Saving"),
+				ContainSubstring("Loading"),
+				ContainSubstring("⏳"),
+			))
+		})
+
+		It("should show saving modal with proper styling", func() {
+			intent.SetState(ConfigStateSaving)
+			view := intent.View()
+
+			// Modal should have border characters (rounded border)
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("╭"),
+				ContainSubstring("╮"),
+				ContainSubstring("│"),
+			))
+		})
+
+		It("should dim background when showing saving modal", func() {
+			intent.SetState(ConfigStateSaving)
+			view := intent.View()
+
+			// The view should still contain the domain options (they're the background)
+			// but they should be dimmed (faint styling applies escape sequences)
+			// At minimum, the saving message should be present
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("Saving"),
+				ContainSubstring("configuration"),
+			))
+		})
+	})
+
+	Describe("Success Modal Rendering", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewConfigureSystemIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should show success modal when in Complete state", func() {
+			intent.SetState(ConfigStateComplete)
+			view := intent.View()
+
+			// Should show success modal content
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("Success"),
+				ContainSubstring("Complete"),
+				ContainSubstring("✅"),
+				ContainSubstring("saved"),
+			))
+		})
+
+		It("should show success modal with proper styling", func() {
+			intent.SetState(ConfigStateComplete)
+			view := intent.View()
+
+			// Modal should have border characters
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("╭"),
+				ContainSubstring("╮"),
+			))
+		})
+	})
+
+	Describe("Error Modal Rendering", func() {
+		BeforeEach(func() {
+			var err error
+			intent, err = NewConfigureSystemIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should show error modal when in Failed state", func() {
+			intent.SetState(ConfigStateFailed)
+			view := intent.View()
+
+			// Should show error modal content
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("Failed"),
+				ContainSubstring("Error"),
+				ContainSubstring("⚠"),
+			))
+		})
+
+		It("should show error modal with proper styling", func() {
+			intent.SetState(ConfigStateFailed)
+			view := intent.View()
+
+			// Modal should have border characters
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("╭"),
+				ContainSubstring("╮"),
+			))
+		})
+	})
 })

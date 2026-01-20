@@ -3,15 +3,14 @@ package intents
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // ConfigureSystemIntent implements the Intent interface for system configuration.
@@ -40,6 +39,10 @@ type ConfigureSystemIntent struct {
 	savingModal  *feedback.Modal
 	resultModal  *feedback.Modal
 
+	// Configuration data loaded from file
+	cfg      *config.Config
+	settings map[configtypes.ConfigurationDomain][]*configtypes.ConfigurationSetting
+
 	// State
 	selectedDomain configtypes.ConfigurationDomain
 	pendingChanges map[string]interface{}
@@ -53,6 +56,16 @@ func NewConfigureSystemIntent(ctx context.Context) (*ConfigureSystemIntent, erro
 		return nil, fmt.Errorf("context is required")
 	}
 
+	// Load configuration from file (or use defaults)
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		// Fall back to defaults if config file doesn't exist
+		cfg = config.DefaultConfig()
+	}
+
+	// Convert config to settings
+	settings := settingsFromConfig(cfg)
+
 	// Available configuration domains
 	domains := []configtypes.ConfigurationDomain{
 		configtypes.DomainSystem,
@@ -64,6 +77,8 @@ func NewConfigureSystemIntent(ctx context.Context) (*ConfigureSystemIntent, erro
 	intent := &ConfigureSystemIntent{
 		BaseIntent:   NewBaseIntent(),
 		domainScreen: configure.NewDomainSelectScreen(domains),
+		cfg:          cfg,
+		settings:     settings,
 		active:       true,
 	}
 
@@ -114,6 +129,30 @@ func (c *ConfigureSystemIntent) Update(msg tea.Msg) tea.Cmd {
 			c.setCancelled()
 			return nil
 		}
+	}
+
+	// Handle async save completion messages globally (regardless of current modal state)
+	// These messages should clear all other modals and show the result
+	switch msg := msg.(type) {
+	case ConfigCompleteMsg:
+		// Clear all modals
+		c.editModal = nil
+		c.reviewModal = nil
+		c.confirmModal = nil
+		c.savingModal = nil
+		// Set result
+		c.result = msg.Result
+		c.resultModal = feedback.NewSuccessModal("Configuration saved!")
+		return nil
+	case ConfigErrorMsg:
+		// Clear all modals
+		c.editModal = nil
+		c.reviewModal = nil
+		c.confirmModal = nil
+		c.savingModal = nil
+		// Set error result
+		c.resultModal = feedback.NewErrorModal("Save Failed", msg.Error.Message)
+		return nil
 	}
 
 	// Route to active modal (in priority order)
@@ -304,7 +343,31 @@ func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
 	c.savingModal = feedback.NewLoadingModal("Saving configuration...", false)
 
 	return func() tea.Msg {
-		// Simulate save (in real implementation, this would save to disk/database)
+		// Apply changes to config
+		for key, value := range c.pendingChanges {
+			if err := applyConfigChange(c.cfg, c.selectedDomain, key, value); err != nil {
+				return ConfigErrorMsg{
+					Error: &IntentError{
+						Code:    "apply_failed",
+						Message: fmt.Sprintf("Failed to apply change: %s", err),
+					},
+				}
+			}
+		}
+
+		// Save config to file
+		if err := config.SaveConfig(c.cfg); err != nil {
+			return ConfigErrorMsg{
+				Error: &IntentError{
+					Code:    "save_failed",
+					Message: fmt.Sprintf("Failed to save config: %s", err),
+				},
+			}
+		}
+
+		// Update settings from the saved config
+		c.settings = settingsFromConfig(c.cfg)
+
 		return ConfigCompleteMsg{
 			Result: &ConfigureSystemResult{
 				Success: true,
@@ -321,7 +384,7 @@ func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
 // getDimensions returns the current terminal dimensions.
 func (c *ConfigureSystemIntent) getDimensions() (int, int) {
 	width, height := 120, 40
-	if termInfo := c.GetTerminalInfo(); termInfo != nil {
+	if termInfo := c.GetTerminalInfo(); termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
 		width = termInfo.Width
 		height = termInfo.Height
 	}
@@ -330,31 +393,13 @@ func (c *ConfigureSystemIntent) getDimensions() (int, int) {
 
 // getSettingsForDomain returns the settings for a given domain.
 func (c *ConfigureSystemIntent) getSettingsForDomain(domain configtypes.ConfigurationDomain) []*configtypes.ConfigurationSetting {
-	// Return sample settings based on domain
-	switch domain {
-	case configtypes.DomainSystem:
-		return []*configtypes.ConfigurationSetting{
-			{Key: "auto_save", Label: "Auto Save", Type: "bool", Value: true, Description: "Automatically save changes"},
-			{Key: "backup_count", Label: "Backup Count", Type: "int", Value: 5, Description: "Number of backups to keep"},
+	// Return settings loaded from config file
+	if c.settings != nil {
+		if domainSettings, ok := c.settings[domain]; ok {
+			return domainSettings
 		}
-	case configtypes.DomainProfile:
-		return []*configtypes.ConfigurationSetting{
-			{Key: "display_name", Label: "Display Name", Type: "string", Value: "User", Description: "Your display name"},
-			{Key: "email", Label: "Email", Type: "string", Value: "", Description: "Your email address"},
-		}
-	case configtypes.DomainExport:
-		return []*configtypes.ConfigurationSetting{
-			{Key: "default_format", Label: "Default Format", Type: "select", Value: "markdown", Options: []string{"markdown", "json", "yaml"}, Description: "Default export format"},
-			{Key: "include_metadata", Label: "Include Metadata", Type: "bool", Value: true, Description: "Include metadata in exports"},
-		}
-	case configtypes.DomainUI:
-		return []*configtypes.ConfigurationSetting{
-			{Key: "theme", Label: "Theme", Type: "select", Value: "default", Options: []string{"default", "dark", "light"}, Description: "UI theme"},
-			{Key: "show_tips", Label: "Show Tips", Type: "bool", Value: true, Description: "Show helpful tips"},
-		}
-	default:
-		return nil
 	}
+	return nil
 }
 
 // View renders the current state.
@@ -364,39 +409,56 @@ func (c *ConfigureSystemIntent) View() string {
 	// Create base view with breadcrumbs
 	view := c.CreateViewWithBreadcrumbs("Main Menu", "Configure System", c.getStateName())
 
-	// Render domain screen content
-	view.WithContent(c.domainScreen.View())
+	// Render domain screen RAW content (not the full View which has its own layout)
+	// This avoids double-wrapping in StandardView
+	view.WithContent(c.domainScreen.RenderContent())
 	view.WithHelp(c.getContextHelp()).WithFooterSeparator(true)
 
-	baseView := view.Render()
-
-	// Overlay modals in priority order (last one rendered on top)
+	// Use ScreenLayout's ShowModalOverlay for proper modal handling
+	// The ScreenLayout handles dimensions and centering automatically
 	if c.editModal != nil && c.editModal.IsVisible() {
-		modalContent := c.editModal.Render(width, height)
-		return c.overlayModal(baseView, modalContent, width, height)
+		view.ShowModalOverlay(editModalAdapter{c.editModal, width, height})
+	} else if c.reviewModal != nil && c.reviewModal.IsVisible() {
+		view.ShowModalOverlay(reviewModalAdapter{c.reviewModal, width, height})
+	} else if c.confirmModal != nil && c.confirmModal.IsVisible() {
+		view.ShowModalOverlay(confirmModalAdapter{c.confirmModal, width, height})
+	} else if c.savingModal != nil {
+		view.ShowModalOverlay(c.savingModal)
+	} else if c.resultModal != nil {
+		view.ShowModalOverlay(c.resultModal)
 	}
 
-	if c.reviewModal != nil && c.reviewModal.IsVisible() {
-		modalContent := c.reviewModal.Render(width, height)
-		return c.overlayModal(baseView, modalContent, width, height)
-	}
+	return view.Render()
+}
 
-	if c.confirmModal != nil && c.confirmModal.IsVisible() {
-		modalContent := c.confirmModal.Render(width, height)
-		return c.overlayModal(baseView, modalContent, width, height)
-	}
+// Modal adapters to satisfy ModalRenderer interface
+// These wrap the configure modals to provide the Render(width, height) signature
 
-	if c.savingModal != nil {
-		modalContent := c.savingModal.Render(width, height)
-		return c.overlayModal(baseView, modalContent, width, height)
-	}
+type editModalAdapter struct {
+	modal         *configure.EditSettingsModal
+	width, height int
+}
 
-	if c.resultModal != nil {
-		modalContent := c.resultModal.Render(width, height)
-		return c.overlayModal(baseView, modalContent, width, height)
-	}
+func (a editModalAdapter) Render(_, _ int) string {
+	return a.modal.Render(a.width, a.height)
+}
 
-	return baseView
+type reviewModalAdapter struct {
+	modal         *configure.ReviewChangesModal
+	width, height int
+}
+
+func (a reviewModalAdapter) Render(_, _ int) string {
+	return a.modal.Render(a.width, a.height)
+}
+
+type confirmModalAdapter struct {
+	modal         *configure.ConfirmModal
+	width, height int
+}
+
+func (a confirmModalAdapter) Render(_, _ int) string {
+	return a.modal.Render(a.width, a.height)
 }
 
 // getStateName returns a human-readable name for the current state.
@@ -452,34 +514,6 @@ func (c *ConfigureSystemIntent) getContextHelp() string {
 		ThemedNavigationFooter(theme),
 		ThemedGlobalBadges(theme),
 	)
-}
-
-// overlayModal overlays modal content on top of background content (centered).
-func (c *ConfigureSystemIntent) overlayModal(background, modal string, width, height int) string {
-	bgLines := strings.Split(background, "\n")
-	modalLines := strings.Split(modal, "\n")
-
-	// Calculate vertical position to center modal
-	bgHeight := len(bgLines)
-	modalHeight := len(modalLines)
-	startLine := (bgHeight - modalHeight) / 2
-	if startLine < 0 {
-		startLine = 0
-	}
-
-	// Overlay modal lines onto background
-	result := make([]string, len(bgLines))
-	copy(result, bgLines)
-
-	for i, modalLine := range modalLines {
-		lineIndex := startLine + i
-		if lineIndex >= 0 && lineIndex < len(result) {
-			centeredModalLine := lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
-			result[lineIndex] = centeredModalLine
-		}
-	}
-
-	return strings.Join(result, "\n")
 }
 
 // Result returns the intent result.
@@ -587,4 +621,21 @@ func (c *ConfigureSystemIntent) SetState(state ConfigurationState) {
 // SetDomain sets the domain (for testing).
 func (c *ConfigureSystemIntent) SetDomain(domain ConfigurationDomain) {
 	c.selectedDomain = domain
+}
+
+// Testing helpers
+
+// GetSavingModal returns the saving modal (for testing).
+func (c *ConfigureSystemIntent) GetSavingModal() *feedback.Modal {
+	return c.savingModal
+}
+
+// GetResultModal returns the result modal (for testing).
+func (c *ConfigureSystemIntent) GetResultModal() *feedback.Modal {
+	return c.resultModal
+}
+
+// RenderDomainContent returns the domain screen content (for testing).
+func (c *ConfigureSystemIntent) RenderDomainContent() string {
+	return c.domainScreen.RenderContent()
 }
