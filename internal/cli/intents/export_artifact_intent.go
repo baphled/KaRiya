@@ -850,18 +850,13 @@ func (e *ExportArtifactIntent) generateEventsPreview(ctx context.Context) string
 		return fmt.Sprintf("Error generating preview: %v", err)
 	}
 
-	// Calculate stats
-	isTruncated := len(content) > 2000
-	if isTruncated {
-		content = content[:2000] + "\n\n...(preview truncated)..."
-	}
-
+	// Calculate stats (no truncation - viewport handles scrolling)
 	e.previewStats = &exportscreens.PreviewStats{
 		ItemCount:     len(events),
 		TotalCount:    totalCount,
 		EstimatedSize: int64(len(content) * totalCount / max(len(events), 1)),
 		ContentLines:  countLines(content),
-		IsTruncated:   isTruncated,
+		IsTruncated:   false,
 	}
 
 	return content
@@ -901,18 +896,13 @@ func (e *ExportArtifactIntent) generateFactsPreview(ctx context.Context) string 
 		return fmt.Sprintf("Error generating preview: %v", err)
 	}
 
-	// Calculate stats
-	isTruncated := len(content) > 2000
-	if isTruncated {
-		content = content[:2000] + "\n\n...(preview truncated)..."
-	}
-
+	// Calculate stats (no truncation - viewport handles scrolling)
 	e.previewStats = &exportscreens.PreviewStats{
 		ItemCount:     len(facts),
 		TotalCount:    totalCount,
 		EstimatedSize: int64(len(content) * totalCount / max(len(facts), 1)),
 		ContentLines:  countLines(content),
-		IsTruncated:   isTruncated,
+		IsTruncated:   false,
 	}
 
 	return content
@@ -952,18 +942,13 @@ func (e *ExportArtifactIntent) generateBurstsPreview(ctx context.Context) string
 		return fmt.Sprintf("Error generating preview: %v", err)
 	}
 
-	// Calculate stats
-	isTruncated := len(content) > 2000
-	if isTruncated {
-		content = content[:2000] + "\n\n...(preview truncated)..."
-	}
-
+	// Calculate stats (no truncation - viewport handles scrolling)
 	e.previewStats = &exportscreens.PreviewStats{
 		ItemCount:     len(bursts),
 		TotalCount:    totalCount,
 		EstimatedSize: int64(len(content) * totalCount / max(len(bursts), 1)),
 		ContentLines:  countLines(content),
-		IsTruncated:   isTruncated,
+		IsTruncated:   false,
 	}
 
 	return content
