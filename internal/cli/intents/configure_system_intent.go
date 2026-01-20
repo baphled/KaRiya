@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/configure"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,523 +16,445 @@ import (
 
 // ConfigureSystemIntent implements the Intent interface for system configuration.
 //
-// Screen Orchestration:
-// This intent supports gradual migration to screen-based architecture via EnableScreens().
-// When screens are enabled, Update/View delegate to activeScreen.
-// When screens are disabled (default), the legacy model handles Update/View.
+// Architecture: Modal Sequence Flow
+// - DomainSelectScreen is the base screen (always visible)
+// - Modals overlay in sequence: Edit → Review → Confirm → Saving → Result
 //
-// Related:
-// - internal/cli/screens/configure/ (ConfigureSystem screens)
-// - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
+// Flow:
+// 1. User selects a domain from DomainSelectScreen
+// 2. EditSettingsModal opens (form for editing settings)
+// 3. User submits → ReviewChangesModal opens (shows diff)
+// 4. User confirms → ConfirmModal opens ("Are you sure?")
+// 5. User confirms → SavingModal shows (spinner)
+// 6. Save completes → SuccessModal or ErrorModal shows
 type ConfigureSystemIntent struct {
-	// Embed BaseIntent for terminal awareness, logo, and state management
 	*BaseIntent
 
-	model *ConfigureSystemModel
+	// Base screen - always visible
+	domainScreen *configure.DomainSelectScreen
 
-	// --- Screen Orchestration ---
-	// activeScreen holds the current screen being displayed.
-	// When non-nil and useScreens is true, Update/View delegate to this screen.
-	activeScreen screens.Screen
+	// Modal overlays - only one visible at a time
+	editModal    *configure.EditSettingsModal
+	reviewModal  *configure.ReviewChangesModal
+	confirmModal *configure.ConfirmModal
+	savingModal  *feedback.Modal
+	resultModal  *feedback.Modal
 
-	// useScreens controls whether to use the new screen-based architecture.
-	// When true, screens handle Update/View. When false, model handles them.
-	// This allows gradual migration without breaking existing functionality.
-	useScreens bool
-
-	// --- Modal Overlays ---
-	// savingModal is displayed during the saving state to provide visual feedback.
-	savingModal *feedback.Modal
+	// State
+	selectedDomain configtypes.ConfigurationDomain
+	pendingChanges map[string]interface{}
+	active         bool
+	result         *ConfigureSystemResult
 }
 
-// NewConfigureSystemIntent creates a new ConfigureSystem intent
+// NewConfigureSystemIntent creates a new ConfigureSystem intent.
 func NewConfigureSystemIntent(ctx context.Context) (*ConfigureSystemIntent, error) {
 	if ctx == nil {
 		return nil, fmt.Errorf("context is required")
 	}
 
-	context := NewConfigureSystemContext()
-	model := NewConfigureSystemModel(context)
+	// Available configuration domains
+	domains := []configtypes.ConfigurationDomain{
+		configtypes.DomainSystem,
+		configtypes.DomainProfile,
+		configtypes.DomainExport,
+		configtypes.DomainUI,
+	}
 
-	// Create BaseIntent for terminal awareness and state management
-	base := NewBaseIntent()
+	intent := &ConfigureSystemIntent{
+		BaseIntent:   NewBaseIntent(),
+		domainScreen: configure.NewDomainSelectScreen(domains),
+		active:       true,
+	}
 
-	return &ConfigureSystemIntent{
-		BaseIntent: base,
-		model:      model,
-	}, nil
+	return intent, nil
 }
 
-// Init initializes the intent
+// Init initializes the intent.
 func (c *ConfigureSystemIntent) Init() tea.Cmd {
-	// Pass theme to model
+	// Set theme on domain screen
 	if theme := c.Theme(); theme != nil {
-		c.model.SetTheme(theme)
+		c.domainScreen.SetTheme(theme)
 	}
-	return c.model.Init()
+
+	// Set terminal info
+	if termInfo := c.GetTerminalInfo(); termInfo != nil {
+		c.domainScreen.SetTerminalInfo(termInfo.Width, termInfo.Height)
+	}
+
+	return c.domainScreen.Init()
 }
 
-// Update handles messages
+// Update handles messages.
 func (c *ConfigureSystemIntent) Update(msg tea.Msg) tea.Cmd {
-	// Ensure theme stays in sync with model
-	if theme := c.Theme(); theme != nil {
-		c.model.SetTheme(theme)
+	// Handle window size for all components
+	if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
+		c.domainScreen.SetTerminalInfo(wsMsg.Width, wsMsg.Height)
+		if c.editModal != nil {
+			c.editModal.Update(msg)
+		}
+		if c.reviewModal != nil {
+			c.reviewModal.Update(msg)
+		}
+		if c.confirmModal != nil {
+			c.confirmModal.Update(msg)
+		}
 	}
 
-	// Handle save completion/error messages to update modal
-	switch msg := msg.(type) {
-	case ConfigCompleteMsg:
-		// Save completed successfully - show success modal briefly then clear
-		c.savingModal = feedback.NewSuccessModal("Configuration saved!")
-		// Let model handle the state transition
-		return c.model.Update(msg)
-
-	case ConfigErrorMsg:
-		// Save failed - show error modal
-		c.savingModal = feedback.NewErrorModal("Save Failed", msg.Error.Message)
-		// Let model handle the state transition
-		return c.model.Update(msg)
-
-	case tea.KeyMsg:
-		// Handle help modal toggle at intent level before delegating to model
-		if HandleGlobalKeys(msg) == KeyHelp {
+	// Handle key messages
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		// Global help toggle
+		if HandleGlobalKeys(keyMsg) == KeyHelp {
 			c.ToggleHelp()
 			return nil
 		}
 
-		// If success modal is showing, any key dismisses it
-		if c.savingModal != nil && c.model.state == ConfigStateComplete {
-			c.savingModal = nil
+		// Global quit
+		if keyMsg.String() == "q" && c.editModal == nil && c.reviewModal == nil && c.confirmModal == nil {
+			c.setCancelled()
+			return nil
 		}
 	}
 
-	// Delegate to active screen when using screen-based architecture
-	if c.useScreens && c.activeScreen != nil {
-		cmd, result := c.activeScreen.Update(msg)
-		if result != nil {
-			screenCmd := c.handleScreenResult(result)
-			if screenCmd != nil {
-				return tea.Batch(cmd, screenCmd)
+	// Route to active modal (in priority order)
+	if c.resultModal != nil {
+		return c.updateResultModal(msg)
+	}
+	if c.savingModal != nil {
+		return c.updateSavingModal(msg)
+	}
+	if c.confirmModal != nil && c.confirmModal.IsVisible() {
+		return c.updateConfirmModal(msg)
+	}
+	if c.reviewModal != nil && c.reviewModal.IsVisible() {
+		return c.updateReviewModal(msg)
+	}
+	if c.editModal != nil && c.editModal.IsVisible() {
+		return c.updateEditModal(msg)
+	}
+
+	// No modal - route to domain screen
+	return c.updateDomainScreen(msg)
+}
+
+// updateDomainScreen handles updates to the domain selection screen.
+func (c *ConfigureSystemIntent) updateDomainScreen(msg tea.Msg) tea.Cmd {
+	cmd, result := c.domainScreen.Update(msg)
+
+	if result != nil {
+		switch r := result.(type) {
+		case *screens.NavigateResult:
+			// Domain selected - open edit modal
+			if domain, ok := r.Data().(configtypes.ConfigurationDomain); ok {
+				c.selectedDomain = domain
+				c.openEditModal()
+				return c.editModal.Init()
+			}
+
+		case *screens.CancelResult:
+			// Cancel at root - exit intent
+			c.setCancelled()
+			return nil
+		}
+	}
+
+	return cmd
+}
+
+// updateEditModal handles updates to the edit settings modal.
+func (c *ConfigureSystemIntent) updateEditModal(msg tea.Msg) tea.Cmd {
+	cmd := c.editModal.Update(msg)
+
+	if !c.editModal.IsVisible() {
+		if c.editModal.IsCompleted() {
+			// Form submitted - get changes and open review modal
+			c.pendingChanges = c.editModal.GetChanges()
+			c.editModal = nil
+			c.openReviewModal()
+			return nil
+		}
+		if c.editModal.IsCancelled() {
+			// Cancelled - close modal, stay on domain screen
+			c.editModal = nil
+			return nil
+		}
+	}
+
+	return cmd
+}
+
+// updateReviewModal handles updates to the review changes modal.
+func (c *ConfigureSystemIntent) updateReviewModal(msg tea.Msg) tea.Cmd {
+	cmd := c.reviewModal.Update(msg)
+
+	if !c.reviewModal.IsVisible() {
+		if c.reviewModal.IsConfirmed() {
+			// Confirmed - open confirm modal
+			c.reviewModal = nil
+			c.openConfirmModal()
+			return nil
+		}
+		if c.reviewModal.IsCancelled() {
+			// Cancelled - go back to edit
+			c.reviewModal = nil
+			c.openEditModal()
+			return c.editModal.Init()
+		}
+	}
+
+	return cmd
+}
+
+// updateConfirmModal handles updates to the confirm modal.
+func (c *ConfigureSystemIntent) updateConfirmModal(msg tea.Msg) tea.Cmd {
+	cmd := c.confirmModal.Update(msg)
+
+	if !c.confirmModal.IsVisible() {
+		if c.confirmModal.IsConfirmed() {
+			// Confirmed - start saving
+			c.confirmModal = nil
+			return c.startSaving()
+		}
+		if c.confirmModal.IsCancelled() {
+			// Cancelled - go back to review
+			c.confirmModal = nil
+			c.openReviewModal()
+			return nil
+		}
+	}
+
+	return cmd
+}
+
+// updateSavingModal handles updates during saving.
+func (c *ConfigureSystemIntent) updateSavingModal(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case ConfigCompleteMsg:
+		// Save completed successfully
+		c.savingModal = nil
+		c.result = msg.Result
+		c.resultModal = feedback.NewSuccessModal("Configuration saved!")
+		return nil
+
+	case ConfigErrorMsg:
+		// Save failed
+		c.savingModal = nil
+		c.resultModal = feedback.NewErrorModal("Save Failed", msg.Error.Message)
+		return nil
+	}
+
+	return nil
+}
+
+// updateResultModal handles updates to the result modal (success/error).
+func (c *ConfigureSystemIntent) updateResultModal(msg tea.Msg) tea.Cmd {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		// Any key dismisses the result modal
+		switch keyMsg.String() {
+		case "enter", "esc", "q", " ":
+			c.resultModal = nil
+			// If success, complete the intent
+			if c.result != nil && c.result.Success {
+				c.active = false
+			} else {
+				// Error - go back to edit
+				c.openEditModal()
+				return c.editModal.Init()
 			}
 		}
-		return cmd
 	}
 
-	// Legacy: delegate to model
-	return c.model.Update(msg)
+	return nil
 }
 
-// getStateName returns a human-readable name for the current state.
-func (c *ConfigureSystemIntent) getStateName() string {
-	switch c.model.state {
-	case ConfigStateSelectDomain:
-		return "Select Domain"
-	case ConfigStateEditSettings:
-		return "Edit Settings"
-	case ConfigStateReviewChanges:
-		return "Review Changes"
-	case ConfigStateConfirm:
-		return "Confirm"
-	case ConfigStateSaving:
-		return "Saving"
-	case ConfigStateComplete:
-		return "Complete"
-	case ConfigStateFailed:
-		return "Failed"
-	default:
-		return string(c.model.state)
+// openEditModal opens the edit settings modal for the selected domain.
+func (c *ConfigureSystemIntent) openEditModal() {
+	width, height := c.getDimensions()
+	settings := c.getSettingsForDomain(c.selectedDomain)
+	c.editModal = configure.NewEditSettingsModal(c.selectedDomain, settings, width, height)
+	if theme := c.Theme(); theme != nil {
+		c.editModal.SetTheme(theme)
 	}
 }
 
-// getContextHelp returns context-aware help text for the current state.
-func (c *ConfigureSystemIntent) getContextHelp() string {
-	theme := c.Theme()
+// openReviewModal opens the review changes modal.
+func (c *ConfigureSystemIntent) openReviewModal() {
+	width, height := c.getDimensions()
+	c.reviewModal = configure.NewReviewChangesModal(c.selectedDomain, c.pendingChanges, width, height)
+	if theme := c.Theme(); theme != nil {
+		c.reviewModal.SetTheme(theme)
+	}
+}
 
-	switch c.model.state {
-	case ConfigStateSelectDomain:
-		return CombineThemedFooters(
-			ThemedNavigationFooter(theme),
-			ThemedGlobalBadges(theme),
-		)
-	case ConfigStateEditSettings:
-		if c.model.editingValue {
-			return CombineThemedFooters(
-				ThemedCustomFooter(theme,
-					primitives.HelpKeyBadge("Type", "Edit", theme),
-					primitives.ConfirmBadge(theme),
-					primitives.CancelBadge(theme),
-				),
-				ThemedGlobalBadges(theme),
-			)
+// openConfirmModal opens the confirmation modal.
+func (c *ConfigureSystemIntent) openConfirmModal() {
+	width, height := c.getDimensions()
+	c.confirmModal = configure.NewConfirmModal(
+		"Confirm Changes",
+		"Are you sure you want to save these changes?",
+		width, height,
+	)
+	if theme := c.Theme(); theme != nil {
+		c.confirmModal.SetTheme(theme)
+	}
+}
+
+// startSaving starts the configuration save process.
+func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
+	c.savingModal = feedback.NewLoadingModal("Saving configuration...", false)
+
+	return func() tea.Msg {
+		// Simulate save (in real implementation, this would save to disk/database)
+		return ConfigCompleteMsg{
+			Result: &ConfigureSystemResult{
+				Success: true,
+				Domain:  c.selectedDomain,
+				Changes: &ConfigurationChanges{
+					Domain:   c.selectedDomain,
+					Modified: c.pendingChanges,
+				},
+			},
 		}
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.NavigateBadge(theme),
-				primitives.SelectBadge(theme),
-				primitives.HelpKeyBadge("Enter", "Edit", theme),
-				primitives.SaveBadge(theme),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	case ConfigStateReviewChanges:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.ConfirmBadge(theme),
-				primitives.BackBadge(theme),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	case ConfigStateConfirm:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("y/Enter", "Confirm", theme),
-				primitives.HelpKeyBadge("n/Esc", "Cancel", theme),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	case ConfigStateSaving:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("...", "Please wait", theme),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	case ConfigStateComplete:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("Enter", "Done", theme),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	case ConfigStateFailed:
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.HelpKeyBadge("r", "Retry", theme),
-				primitives.CancelBadge(theme),
-			),
-			ThemedGlobalBadges(theme),
-		)
-	default:
-		return ThemedGlobalBadges(theme)
 	}
 }
 
-// View renders the current state using StandardView.
-func (c *ConfigureSystemIntent) View() string {
-	// Get terminal dimensions for modal rendering
-	width, height := 120, 40 // Defaults
+// getDimensions returns the current terminal dimensions.
+func (c *ConfigureSystemIntent) getDimensions() (int, int) {
+	width, height := 120, 40
 	if termInfo := c.GetTerminalInfo(); termInfo != nil {
 		width = termInfo.Width
 		height = termInfo.Height
 	}
+	return width, height
+}
 
-	// Delegate to active screen when using screen-based architecture
-	if c.useScreens && c.activeScreen != nil {
-		// Use StandardView with screen content
-		view := c.CreateViewWithBreadcrumbs("Main Menu", "Configure System", c.getStateName())
-		view.WithContent(c.activeScreen.View())
-		view.WithHelp(c.getContextHelp()).WithFooterSeparator(true)
-		baseView := view.Render()
-
-		// Overlay saving modal if visible
-		if c.savingModal != nil {
-			modalContent := c.savingModal.Render(width, height)
-			return c.overlayModal(baseView, modalContent, width, height)
+// getSettingsForDomain returns the settings for a given domain.
+func (c *ConfigureSystemIntent) getSettingsForDomain(domain configtypes.ConfigurationDomain) []*configtypes.ConfigurationSetting {
+	// Return sample settings based on domain
+	switch domain {
+	case configtypes.DomainSystem:
+		return []*configtypes.ConfigurationSetting{
+			{Key: "auto_save", Label: "Auto Save", Type: "bool", Value: true, Description: "Automatically save changes"},
+			{Key: "backup_count", Label: "Backup Count", Type: "int", Value: 5, Description: "Number of backups to keep"},
 		}
-
-		return baseView
+	case configtypes.DomainProfile:
+		return []*configtypes.ConfigurationSetting{
+			{Key: "display_name", Label: "Display Name", Type: "string", Value: "User", Description: "Your display name"},
+			{Key: "email", Label: "Email", Type: "string", Value: "", Description: "Your email address"},
+		}
+	case configtypes.DomainExport:
+		return []*configtypes.ConfigurationSetting{
+			{Key: "default_format", Label: "Default Format", Type: "select", Value: "markdown", Options: []string{"markdown", "json", "yaml"}, Description: "Default export format"},
+			{Key: "include_metadata", Label: "Include Metadata", Type: "bool", Value: true, Description: "Include metadata in exports"},
+		}
+	case configtypes.DomainUI:
+		return []*configtypes.ConfigurationSetting{
+			{Key: "theme", Label: "Theme", Type: "select", Value: "default", Options: []string{"default", "dark", "light"}, Description: "UI theme"},
+			{Key: "show_tips", Label: "Show Tips", Type: "bool", Value: true, Description: "Show helpful tips"},
+		}
+	default:
+		return nil
 	}
+}
 
-	// Legacy: Create standard view with breadcrumbs from model
+// View renders the current state.
+func (c *ConfigureSystemIntent) View() string {
+	width, height := c.getDimensions()
+
+	// Create base view with breadcrumbs
 	view := c.CreateViewWithBreadcrumbs("Main Menu", "Configure System", c.getStateName())
 
-	// Get content from model
-	content := c.model.View()
-	view.WithContent(content)
-
-	// Get context-aware help
-	help := c.getContextHelp()
-	view.WithHelp(help).WithFooterSeparator(true)
+	// Render domain screen content
+	view.WithContent(c.domainScreen.View())
+	view.WithHelp(c.getContextHelp()).WithFooterSeparator(true)
 
 	baseView := view.Render()
 
-	// Overlay saving modal if visible
+	// Overlay modals in priority order (last one rendered on top)
+	if c.editModal != nil && c.editModal.IsVisible() {
+		modalContent := c.editModal.Render(width, height)
+		return c.overlayModal(baseView, modalContent, width, height)
+	}
+
+	if c.reviewModal != nil && c.reviewModal.IsVisible() {
+		modalContent := c.reviewModal.Render(width, height)
+		return c.overlayModal(baseView, modalContent, width, height)
+	}
+
+	if c.confirmModal != nil && c.confirmModal.IsVisible() {
+		modalContent := c.confirmModal.Render(width, height)
+		return c.overlayModal(baseView, modalContent, width, height)
+	}
+
 	if c.savingModal != nil {
 		modalContent := c.savingModal.Render(width, height)
+		return c.overlayModal(baseView, modalContent, width, height)
+	}
+
+	if c.resultModal != nil {
+		modalContent := c.resultModal.Render(width, height)
 		return c.overlayModal(baseView, modalContent, width, height)
 	}
 
 	return baseView
 }
 
-// Result returns the intent result
-func (c *ConfigureSystemIntent) Result() *IntentResult[interface{}] {
-	// Return nil when intent hasn't completed yet
-	// Only return non-nil result when the intent has explicitly completed
-	return c.model.Result()
-}
-
-// GetState returns the current state (for testing)
-func (c *ConfigureSystemIntent) GetState() ConfigurationState {
-	return c.model.state
-}
-
-// GetDomain returns the current domain (for testing)
-func (c *ConfigureSystemIntent) GetDomain() ConfigurationDomain {
-	return c.model.domain
-}
-
-// GetChanges returns the current changes (for testing)
-func (c *ConfigureSystemIntent) GetChanges() *ConfigurationChanges {
-	return c.model.changes
-}
-
-// GetResult returns the configuration result (for testing)
-func (c *ConfigureSystemIntent) GetResult() *ConfigureSystemResult {
-	return c.model.result
-}
-
-// SetSelectedIndex sets the selected index with clamping (for testing)
-func (c *ConfigureSystemIntent) SetSelectedIndex(index int) {
-	c.model.SetSelectedIndex(index)
-}
-
-// GetSelectedIndex returns the selected index (for testing)
-func (c *ConfigureSystemIntent) GetSelectedIndex() int {
-	return c.model.GetSelectedIndex()
-}
-
-// SetState sets the state (for testing)
-func (c *ConfigureSystemIntent) SetState(state ConfigurationState) {
-	c.model.state = state
-}
-
-// SetDomain sets the domain (for testing)
-func (c *ConfigureSystemIntent) SetDomain(domain ConfigurationDomain) {
-	c.model.domain = domain
-}
-
-// IsActive returns whether the intent is active
-func (c *ConfigureSystemIntent) IsActive() bool {
-	return c.model.active
-}
-
-// GetDomainCount returns the number of domains (for testing)
-func (c *ConfigureSystemIntent) GetDomainCount() int {
-	return c.model.GetTotalItems()
-}
-
-// GetDomainPageSize returns the domain list page size (for testing)
-func (c *ConfigureSystemIntent) GetDomainPageSize() int {
-	return c.model.GetPageSize()
-}
-
-// =============================================================================
-// Screen Orchestration
-// =============================================================================
-
-// EnableScreens enables the screen-based architecture for this intent.
-// When enabled, Update/View delegate to the active screen.
-// This is opt-in to allow gradual migration.
-func (c *ConfigureSystemIntent) EnableScreens() {
-	c.useScreens = true
-}
-
-// IsUsingScreens returns whether the intent is using screen-based architecture.
-func (c *ConfigureSystemIntent) IsUsingScreens() bool {
-	return c.useScreens
-}
-
-// handleScreenResult processes a screen result and determines next action.
-func (c *ConfigureSystemIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
-	if result == nil {
-		return nil
-	}
-
-	switch result.Type() {
-	case screens.ResultCancel:
-		return c.HandleCancel(result.(*screens.CancelResult))
-	case screens.ResultNavigate:
-		return c.HandleNavigate(result.(*screens.NavigateResult))
-	case screens.ResultSubmit:
-		return c.HandleSubmit(result.(*screens.SubmitResult))
-	case screens.ResultError:
-		return c.HandleError(result.(*screens.ErrorResult))
-	}
-
-	return nil
-}
-
-// HandleCancel handles screen cancellation (back/escape).
-// Implements ScreenResultHandler interface.
-func (c *ConfigureSystemIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
-	// Check if main_menu was requested
-	if result.Metadata()["main_menu"] == true {
-		c.setCancelled()
-		return nil
-	}
-
-	// Navigate back based on current state
-	switch c.model.state {
-	case ConfigStateSelectDomain:
-		// At root state, cancel means exit intent
-		c.setCancelled()
-		return nil
-
-	case ConfigStateEditSettings:
-		// Go back to domain selection
-		c.model.state = ConfigStateSelectDomain
-		c.activeScreen = nil // Will use model's view
-		return nil
-
-	case ConfigStateReviewChanges:
-		// Go back to edit settings
-		c.model.state = ConfigStateEditSettings
-		c.activeScreen = nil
-		return nil
-
-	case ConfigStateConfirm:
-		// Go back to review changes
-		c.model.state = ConfigStateReviewChanges
-		c.activeScreen = nil
-		return nil
-
-	case ConfigStateComplete, ConfigStateFailed:
-		// Complete/failed - exit intent
-		c.setCancelled()
-		return nil
-
-	default:
-		c.setCancelled()
-		return nil
-	}
-}
-
-// HandleNavigate handles screen navigation results.
-// Implements ScreenResultHandler interface.
-func (c *ConfigureSystemIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
-	data := result.Data()
-
-	switch c.model.state {
-	case ConfigStateReviewChanges:
-		// User wants to confirm
-		if data == "confirm" {
-			c.model.state = ConfigStateConfirm
-			c.activeScreen = nil
+// getStateName returns a human-readable name for the current state.
+func (c *ConfigureSystemIntent) getStateName() string {
+	if c.resultModal != nil {
+		if c.result != nil && c.result.Success {
+			return "Complete"
 		}
-		return nil
-
-	case ConfigStateConfirm:
-		// User confirmed or declined
-		if confirmed, ok := data.(bool); ok {
-			if confirmed {
-				// Start saving
-				c.model.state = ConfigStateSaving
-				c.activeScreen = nil
-				return c.saveConfiguration()
-			}
-			// User declined, go back to review
-			c.model.state = ConfigStateReviewChanges
-			c.activeScreen = nil
-		}
-		return nil
-
-	case ConfigStateFailed:
-		// Retry
-		if data == "retry" {
-			c.model.state = ConfigStateSaving
-			c.activeScreen = nil
-			return c.saveConfiguration()
-		}
-		return nil
-
-	default:
-		return nil
+		return "Failed"
 	}
+	if c.savingModal != nil {
+		return "Saving"
+	}
+	if c.confirmModal != nil && c.confirmModal.IsVisible() {
+		return "Confirm"
+	}
+	if c.reviewModal != nil && c.reviewModal.IsVisible() {
+		return "Review Changes"
+	}
+	if c.editModal != nil && c.editModal.IsVisible() {
+		return "Edit Settings"
+	}
+	return "Select Domain"
 }
 
-// HandleSubmit handles screen submit results.
-// Implements ScreenResultHandler interface.
-func (c *ConfigureSystemIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
-	// Check if main_menu was requested
-	if result.Metadata()["main_menu"] == true {
-		c.setCancelled()
-		return nil
+// getContextHelp returns context-aware help text for the current state.
+func (c *ConfigureSystemIntent) getContextHelp() string {
+	theme := c.Theme()
+
+	// Modal help is rendered inside the modal itself
+	if c.editModal != nil && c.editModal.IsVisible() {
+		return ""
+	}
+	if c.reviewModal != nil && c.reviewModal.IsVisible() {
+		return ""
+	}
+	if c.confirmModal != nil && c.confirmModal.IsVisible() {
+		return ""
+	}
+	if c.savingModal != nil {
+		return primitives.RenderHelpFooter(theme,
+			primitives.HelpKeyBadge("...", "Please wait", theme),
+		)
+	}
+	if c.resultModal != nil {
+		return primitives.RenderHelpFooter(theme,
+			primitives.HelpKeyBadge("Enter", "Continue", theme),
+		)
 	}
 
-	switch c.model.state {
-	case ConfigStateEditSettings:
-		// Form submitted, get changes and go to review
-		if changes, ok := result.Data().(map[string]interface{}); ok {
-			c.model.changes = &ConfigurationChanges{
-				Domain:   c.model.domain,
-				Original: make(map[string]interface{}),
-				Modified: changes,
-			}
-		}
-		c.model.state = ConfigStateReviewChanges
-		c.activeScreen = nil
-		return nil
-
-	case ConfigStateComplete:
-		// User dismissed success screen
-		c.setCompleted(&IntentResult[interface{}]{
-			Status: Completed,
-			Data:   c.model.result,
-		})
-		return nil
-
-	default:
-		return nil
-	}
-}
-
-// HandleError handles screen error results.
-// Implements ScreenResultHandler interface.
-func (c *ConfigureSystemIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
-	// Store error and transition to failed state
-	c.model.error = &IntentError{
-		Message: result.Message,
-	}
-	c.model.state = ConfigStateFailed
-	c.activeScreen = nil
-	return nil
-}
-
-// setCancelled marks the intent as cancelled.
-func (c *ConfigureSystemIntent) setCancelled() {
-	c.model.active = false
-	c.model.result = &ConfigureSystemResult{
-		Success: false,
-		Error:   &IntentError{Message: "cancelled by user"},
-	}
-}
-
-// setCompleted marks the intent as completed with the given result.
-func (c *ConfigureSystemIntent) setCompleted(result *IntentResult[interface{}]) {
-	c.model.active = false
-}
-
-// saveConfiguration starts the configuration save process.
-func (c *ConfigureSystemIntent) saveConfiguration() tea.Cmd {
-	// Show loading modal during save
-	c.savingModal = feedback.NewLoadingModal("Saving configuration...", false)
-
-	// Return a command that will simulate saving (in real implementation, this would save to disk)
-	return func() tea.Msg {
-		// Simulate save success
-		return ConfigCompleteMsg{
-			Result: &ConfigureSystemResult{
-				Success: true,
-				Domain:  c.model.domain,
-				Changes: c.model.changes,
-			},
-		}
-	}
+	// Domain selection help
+	return CombineThemedFooters(
+		ThemedNavigationFooter(theme),
+		ThemedGlobalBadges(theme),
+	)
 }
 
 // overlayModal overlays modal content on top of background content (centered).
-// This follows the StandardView modal overlay pattern for consistent modal rendering.
 func (c *ConfigureSystemIntent) overlayModal(background, modal string, width, height int) string {
 	bgLines := strings.Split(background, "\n")
 	modalLines := strings.Split(modal, "\n")
@@ -550,11 +474,117 @@ func (c *ConfigureSystemIntent) overlayModal(background, modal string, width, he
 	for i, modalLine := range modalLines {
 		lineIndex := startLine + i
 		if lineIndex >= 0 && lineIndex < len(result) {
-			// Center modal line horizontally
 			centeredModalLine := lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
 			result[lineIndex] = centeredModalLine
 		}
 	}
 
 	return strings.Join(result, "\n")
+}
+
+// Result returns the intent result.
+func (c *ConfigureSystemIntent) Result() *IntentResult[interface{}] {
+	if !c.active && c.result != nil {
+		return &IntentResult[interface{}]{
+			Status: Completed,
+			Data:   c.result,
+		}
+	}
+	if !c.active {
+		return &IntentResult[interface{}]{
+			Status: Cancelled,
+		}
+	}
+	return nil
+}
+
+// setCancelled marks the intent as cancelled.
+func (c *ConfigureSystemIntent) setCancelled() {
+	c.active = false
+	c.result = nil
+}
+
+// IsActive returns whether the intent is active.
+func (c *ConfigureSystemIntent) IsActive() bool {
+	return c.active
+}
+
+// GetState returns the current state (for testing).
+func (c *ConfigureSystemIntent) GetState() ConfigurationState {
+	if c.resultModal != nil {
+		if c.result != nil && c.result.Success {
+			return ConfigStateComplete
+		}
+		return ConfigStateFailed
+	}
+	if c.savingModal != nil {
+		return ConfigStateSaving
+	}
+	if c.confirmModal != nil && c.confirmModal.IsVisible() {
+		return ConfigStateConfirm
+	}
+	if c.reviewModal != nil && c.reviewModal.IsVisible() {
+		return ConfigStateReviewChanges
+	}
+	if c.editModal != nil && c.editModal.IsVisible() {
+		return ConfigStateEditSettings
+	}
+	return ConfigStateSelectDomain
+}
+
+// GetDomain returns the selected domain (for testing).
+func (c *ConfigureSystemIntent) GetDomain() ConfigurationDomain {
+	return c.selectedDomain
+}
+
+// GetChanges returns the pending changes (for testing).
+func (c *ConfigureSystemIntent) GetChanges() *ConfigurationChanges {
+	if c.pendingChanges == nil {
+		return nil
+	}
+	return &ConfigurationChanges{
+		Domain:   c.selectedDomain,
+		Modified: c.pendingChanges,
+	}
+}
+
+// GetResult returns the configuration result (for testing).
+func (c *ConfigureSystemIntent) GetResult() *ConfigureSystemResult {
+	return c.result
+}
+
+// SetState sets the state (for testing).
+func (c *ConfigureSystemIntent) SetState(state ConfigurationState) {
+	// Clear all modals first
+	c.editModal = nil
+	c.reviewModal = nil
+	c.confirmModal = nil
+	c.savingModal = nil
+	c.resultModal = nil
+
+	// Set appropriate modal based on state
+	switch state {
+	case ConfigStateEditSettings:
+		if c.selectedDomain != "" {
+			c.openEditModal()
+		}
+	case ConfigStateReviewChanges:
+		if c.pendingChanges != nil {
+			c.openReviewModal()
+		}
+	case ConfigStateConfirm:
+		c.openConfirmModal()
+	case ConfigStateSaving:
+		c.savingModal = feedback.NewLoadingModal("Saving...", false)
+	case ConfigStateComplete:
+		c.result = &ConfigureSystemResult{Success: true}
+		c.resultModal = feedback.NewSuccessModal("Complete")
+	case ConfigStateFailed:
+		c.resultModal = feedback.NewErrorModal("Failed", "Error occurred")
+	}
+}
+
+// SetDomain sets the domain (for testing).
+func (c *ConfigureSystemIntent) SetDomain(domain ConfigurationDomain) {
+	c.selectedDomain = domain
 }

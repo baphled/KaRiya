@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -27,7 +27,7 @@ const ConfirmState = "confirm"
 type ConfirmScreen struct {
 	*base.BaseScreen
 
-	domain      intents.ConfigurationDomain
+	domain      configtypes.ConfigurationDomain
 	changeCount int
 
 	// Button group for yes/no selection
@@ -50,7 +50,7 @@ type ConfirmScreen struct {
 //   - y/n keys submit directly
 //   - Escape cancels
 //   - 'm' returns to main menu
-func NewConfirmScreen(domain intents.ConfigurationDomain, changeCount int) *ConfirmScreen {
+func NewConfirmScreen(domain configtypes.ConfigurationDomain, changeCount int) *ConfirmScreen {
 	theme := themes.NewDefaultTheme()
 
 	// Create button group with Cancel as default (index 1)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -32,8 +32,8 @@ type SettingsFormData struct {
 
 // EditSettingsScreen allows users to edit configuration settings for a domain.
 type EditSettingsScreen struct {
-	domain   intents.ConfigurationDomain
-	settings []*intents.ConfigurationSetting
+	domain   configtypes.ConfigurationDomain
+	settings []*configtypes.ConfigurationSetting
 	formData *SettingsFormData
 	form     *huh.Form
 
@@ -47,7 +47,7 @@ type EditSettingsScreen struct {
 }
 
 // NewEditSettingsScreen creates a new edit settings screen.
-func NewEditSettingsScreen(domain intents.ConfigurationDomain, settings []*intents.ConfigurationSetting) *EditSettingsScreen {
+func NewEditSettingsScreen(domain configtypes.ConfigurationDomain, settings []*configtypes.ConfigurationSetting) *EditSettingsScreen {
 	// Initialize form data from settings
 	formData := &SettingsFormData{
 		Values:          make(map[string]*string),
@@ -113,7 +113,7 @@ func (s *EditSettingsScreen) rebuildForm() {
 }
 
 // createFieldForSetting creates the appropriate huh field for a setting.
-func (s *EditSettingsScreen) createFieldForSetting(setting *intents.ConfigurationSetting) huh.Field {
+func (s *EditSettingsScreen) createFieldForSetting(setting *configtypes.ConfigurationSetting) huh.Field {
 	switch setting.Type {
 	case "string":
 		return huh.NewInput().

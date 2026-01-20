@@ -3,7 +3,7 @@ package configure
 import (
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -26,7 +26,7 @@ const FailedState = "failed"
 type FailedScreen struct {
 	*base.BaseScreen
 
-	domain       intents.ConfigurationDomain
+	domain       configtypes.ConfigurationDomain
 	errorMessage string
 
 	// Theme for rendering (nil-safe via getTheme())
@@ -38,7 +38,7 @@ type FailedScreen struct {
 // Parameters:
 //   - domain: The configuration domain that failed to save
 //   - errorMessage: The error message to display (defaults to generic message if empty)
-func NewFailedScreen(domain intents.ConfigurationDomain, errorMessage string) *FailedScreen {
+func NewFailedScreen(domain configtypes.ConfigurationDomain, errorMessage string) *FailedScreen {
 	if errorMessage == "" {
 		errorMessage = "An unknown error occurred while saving configuration."
 	}

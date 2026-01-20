@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -26,7 +26,7 @@ const CompleteState = "complete"
 type CompleteScreen struct {
 	*base.BaseScreen
 
-	domain      intents.ConfigurationDomain
+	domain      configtypes.ConfigurationDomain
 	changeCount int
 
 	// Theme for rendering (nil-safe via getTheme())
@@ -38,7 +38,7 @@ type CompleteScreen struct {
 // Parameters:
 //   - domain: The configuration domain that was modified
 //   - changeCount: Number of settings that were changed
-func NewCompleteScreen(domain intents.ConfigurationDomain, changeCount int) *CompleteScreen {
+func NewCompleteScreen(domain configtypes.ConfigurationDomain, changeCount int) *CompleteScreen {
 	return &CompleteScreen{
 		BaseScreen:  base.NewBaseScreen(),
 		domain:      domain,

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -19,7 +19,7 @@ const ReviewChangesState = "review_changes"
 
 // ReviewChangesScreen displays a summary of configuration changes for user review.
 type ReviewChangesScreen struct {
-	domain   intents.ConfigurationDomain
+	domain   configtypes.ConfigurationDomain
 	changes  map[string]interface{} // key -> new value
 	original map[string]interface{} // key -> original value
 	labels   map[string]string      // key -> human-readable label
@@ -32,7 +32,7 @@ type ReviewChangesScreen struct {
 
 // NewReviewChangesScreen creates a new review changes screen.
 func NewReviewChangesScreen(
-	domain intents.ConfigurationDomain,
+	domain configtypes.ConfigurationDomain,
 	changes map[string]interface{},
 	original map[string]interface{},
 	labels map[string]string,

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/configtypes"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/config"
@@ -20,46 +21,29 @@ func titleCase(s string) string {
 	return cases.Title(language.English).String(s)
 }
 
-// ConfigurationDomain represents a configuration domain (e.g., "system", "profile", "export")
-type ConfigurationDomain string
+// Re-export types from configtypes for backward compatibility
+type ConfigurationDomain = configtypes.ConfigurationDomain
+type ConfigurationSetting = configtypes.ConfigurationSetting
+type ConfigurationState = configtypes.ConfigurationState
+type ConfigurationChanges = configtypes.ConfigurationChanges
 
+// Re-export constants
 const (
-	DomainSystem  ConfigurationDomain = "system"
-	DomainProfile ConfigurationDomain = "profile"
-	DomainExport  ConfigurationDomain = "export"
-	DomainUI      ConfigurationDomain = "ui"
+	DomainSystem  = configtypes.DomainSystem
+	DomainProfile = configtypes.DomainProfile
+	DomainExport  = configtypes.DomainExport
+	DomainUI      = configtypes.DomainUI
 )
 
-// ConfigurationSetting represents a single configuration setting
-type ConfigurationSetting struct {
-	Key          string      // e.g., "theme"
-	Label        string      // e.g., "Theme"
-	Value        interface{} // Current value
-	DefaultValue interface{} // Default value
-	Type         string      // "string", "bool", "int", "select"
-	Options      []string    // For "select" type
-	Description  string      // Help text
-}
-
-// ConfigurationState represents the current state of the configuration
-type ConfigurationState string
-
 const (
-	ConfigStateSelectDomain  ConfigurationState = "select_domain"
-	ConfigStateEditSettings  ConfigurationState = "edit_settings"
-	ConfigStateReviewChanges ConfigurationState = "review_changes"
-	ConfigStateConfirm       ConfigurationState = "confirm"
-	ConfigStateSaving        ConfigurationState = "saving"
-	ConfigStateComplete      ConfigurationState = "complete"
-	ConfigStateFailed        ConfigurationState = "failed"
+	ConfigStateSelectDomain  = configtypes.ConfigStateSelectDomain
+	ConfigStateEditSettings  = configtypes.ConfigStateEditSettings
+	ConfigStateReviewChanges = configtypes.ConfigStateReviewChanges
+	ConfigStateConfirm       = configtypes.ConfigStateConfirm
+	ConfigStateSaving        = configtypes.ConfigStateSaving
+	ConfigStateComplete      = configtypes.ConfigStateComplete
+	ConfigStateFailed        = configtypes.ConfigStateFailed
 )
-
-// ConfigurationChanges tracks all changes made during editing
-type ConfigurationChanges struct {
-	Domain   ConfigurationDomain
-	Original map[string]interface{} // Original values
-	Modified map[string]interface{} // Modified values
-}
 
 // ConfigureSystemContext contains context for the ConfigureSystem intent
 type ConfigureSystemContext struct {
