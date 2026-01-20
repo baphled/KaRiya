@@ -67,10 +67,21 @@ Run `make what-to-use NEED="keyword"` for detailed usage and examples.
 make what-to-use NEED="keyword"   # Component help with examples
 ```
 
+### Development Guides (docs/development/)
+
 | Topic | Document |
 |-------|----------|
-| Full project handbook | [docs/PROJECT_HANDBOOK.md](docs/PROJECT_HANDBOOK.md) |
-| TUI patterns | [docs/rules/TUI_PATTERNS.md](docs/rules/TUI_PATTERNS.md) |
+| Session protocol | [docs/development/SESSION_PROTOCOL.md](docs/development/SESSION_PROTOCOL.md) |
+| Architecture | [docs/development/ARCHITECTURE_OVERVIEW.md](docs/development/ARCHITECTURE_OVERVIEW.md) |
+| Development workflow | [docs/development/DEVELOPMENT_WORKFLOW.md](docs/development/DEVELOPMENT_WORKFLOW.md) |
+| Common tasks | [docs/development/COMMON_TASKS.md](docs/development/COMMON_TASKS.md) |
+| Intent patterns | [docs/development/INTENT_PATTERNS_LIBRARY.md](docs/development/INTENT_PATTERNS_LIBRARY.md) |
+| Keyboard system | [docs/development/KEYBOARD_SYSTEM_GUIDE.md](docs/development/KEYBOARD_SYSTEM_GUIDE.md) |
+
+### Reference Guides
+
+| Topic | Document |
+|-------|----------|
 | Intent architecture | [docs/INTENT_ARCHITECTURE_GUIDE.md](docs/INTENT_ARCHITECTURE_GUIDE.md) |
 | UIKit components | [docs/UIKIT_GUIDE.md](docs/UIKIT_GUIDE.md) |
 | Code standards | [docs/rules/senior-engineer-guidelines.md](docs/rules/senior-engineer-guidelines.md) |
