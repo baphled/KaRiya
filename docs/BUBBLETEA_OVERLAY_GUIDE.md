@@ -6,6 +6,9 @@
 **Stars**: 100+  
 **Purpose**: Reliable modal overlay compositing for Bubble Tea applications
 
+> **UIKit Integration**: Use `behaviors.RenderModalOverlay()` which wraps this library.
+> See [UIKIT_GUIDE.md](./UIKIT_GUIDE.md) for the standardized modal patterns.
+
 ---
 
 ## Table of Contents

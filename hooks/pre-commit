@@ -1,0 +1,170 @@
+#!/bin/bash
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔍 PRE-COMMIT ENFORCEMENT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+VIOLATIONS=0
+
+check_pass() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+check_fail() {
+    echo -e "${RED}❌ $1${NC}"
+    VIOLATIONS=$((VIOLATIONS+1))
+}
+
+check_session() {
+    echo "Checking session..."
+    if [ ! -f ".session-active" ]; then
+        check_fail "No active session. Run 'make session-start' first."
+        return 1
+    fi
+    check_pass "Session active"
+}
+
+is_code_change() {
+    STAGED_GO=$(git diff --cached --name-only | grep '\.go$' || true)
+    [ -n "$STAGED_GO" ]
+}
+
+check_tdd_workflow() {
+    if ! is_code_change; then
+        echo -e "${YELLOW}ℹ️  TDD workflow: skipped (no Go code changes)${NC}"
+        return 0
+    fi
+    
+    echo "Checking TDD workflow..."
+    if [ -f ".tdd-state" ]; then
+        TDD_STATE=$(cat .tdd-state)
+        if [ "$TDD_STATE" != "complete" ] && [ "$TDD_STATE" != "document" ]; then
+            check_fail "TDD workflow incomplete. Current state: $TDD_STATE"
+            echo "   Complete the cycle: make tdd-red → tdd-green → tdd-refactor → tdd-document"
+            return 1
+        fi
+    fi
+    check_pass "TDD workflow"
+}
+
+check_format() {
+    if ! is_code_change; then
+        echo -e "${YELLOW}ℹ️  Code formatting: skipped (no Go code changes)${NC}"
+        return 0
+    fi
+    
+    echo "Checking code formatting..."
+    UNFORMATTED=$(gofmt -l . 2>&1 | grep -v '^vendor/' | grep '\.go$' || true)
+    if [ -n "$UNFORMATTED" ]; then
+        check_fail "Code not formatted. Run: go fmt ./..."
+        echo "$UNFORMATTED" | head -5
+        return 1
+    fi
+    check_pass "Code formatted"
+}
+
+check_build() {
+    if ! is_code_change; then
+        echo -e "${YELLOW}ℹ️  Build check: skipped (no Go code changes)${NC}"
+        return 0
+    fi
+    
+    echo "Checking build..."
+    if ! go build ./... > /dev/null 2>&1; then
+        check_fail "Build failed"
+        return 1
+    fi
+    check_pass "Build passes"
+}
+
+check_tests() {
+    if ! is_code_change; then
+        echo -e "${YELLOW}ℹ️  Tests: skipped (no Go code changes)${NC}"
+        return 0
+    fi
+    
+    echo "Running tests for changed packages..."
+    CHANGED_GO=$(git diff --cached --name-only | grep '\.go$' || true)
+    if [ -n "$CHANGED_GO" ]; then
+        PACKAGES=$(echo "$CHANGED_GO" | xargs -I{} dirname {} | sort -u | sed 's|^|./|')
+        for pkg in $PACKAGES; do
+            if [ -d "$pkg" ]; then
+                if ! go test "$pkg" > /dev/null 2>&1; then
+                    check_fail "Tests failed in $pkg"
+                    return 1
+                fi
+            fi
+        done
+    fi
+    check_pass "Tests pass"
+}
+
+check_generated_files() {
+    echo "Checking for generated files..."
+    GENERATED=$(git diff --cached --name-only | grep -E '\.(out|exe|dll|so|dylib|test)$' || true)
+    if [ -n "$GENERATED" ]; then
+        check_fail "Generated files in staging: $GENERATED"
+        return 1
+    fi
+    check_pass "No generated files"
+}
+
+check_secrets() {
+    echo "Checking for secrets..."
+    SECRET_PATTERNS='password["\s]*[:=]|secret["\s]*[:=]|api[_-]?key["\s]*[:=]|token["\s]*[:=]'
+    if git diff --cached | grep -iE "$SECRET_PATTERNS" | grep -v 'password_hash' > /dev/null 2>&1; then
+        check_fail "Potential secrets detected"
+        return 1
+    fi
+    check_pass "No secrets"
+}
+
+check_strict_patterns() {
+    if ! is_code_change; then
+        echo -e "${YELLOW}ℹ️  Pattern checks: skipped (no Go code changes)${NC}"
+        return 0
+    fi
+    
+    echo "Running strict pattern checks..."
+    if [ -f "scripts/check-patterns-strict.sh" ]; then
+        if ! bash scripts/check-patterns-strict.sh; then
+            check_fail "Pattern violations found"
+            return 1
+        fi
+    fi
+    check_pass "Pattern checks"
+}
+
+main() {
+    check_session || true
+    check_tdd_workflow || true
+    check_format || true
+    check_build || true
+    check_tests || true
+    check_generated_files || true
+    check_secrets || true
+    check_strict_patterns || true
+
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    if [ $VIOLATIONS -eq 0 ]; then
+        echo -e "${GREEN}✅ All pre-commit checks passed${NC}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        exit 0
+    else
+        echo -e "${RED}❌ $VIOLATIONS check(s) failed${NC}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        exit 1
+    fi
+}
+
+main

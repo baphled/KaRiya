@@ -1,8 +1,12 @@
 # StandardView Developer Guide
 
-**Last Updated**: 2026-01-07  
+**Last Updated**: 2026-01-20  
 **Author**: KaRiya Development Team  
-**Status**: Production Ready
+**Status**: LEGACY - Migrating to UIKit
+
+> **DEPRECATION NOTICE**: `StandardView` is being replaced by `layout.NewScreenLayout()`.
+> For new code, use `layout.NewScreenLayout()` from `internal/cli/uikit/layout/`.
+> See [UIKIT_GUIDE.md](./UIKIT_GUIDE.md) for the current component library.
 
 ---
 

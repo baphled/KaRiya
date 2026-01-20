@@ -1,5 +1,9 @@
 # Quick Start: Standardized View Implementation
 
+> **DEPRECATION NOTICE**: This guide references `StandardView` which is being replaced.
+> For new code, use `layout.NewScreenLayout()` from `internal/cli/uikit/layout/`.
+> See [UIKIT_GUIDE.md](./UIKIT_GUIDE.md) for the current component library.
+
 ## What We're Building
 
 A standardized layout system for all KaRiya TUI screens that ensures:

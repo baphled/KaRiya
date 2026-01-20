@@ -679,6 +679,40 @@ theme.BorderActiveColor()  // Active/focused border
 
 ## Migration Guide
 
+### Deprecated Patterns (BLOCKING)
+
+These patterns are **BLOCKED** by pre-commit hooks. Do not use them in new code.
+
+| Deprecated | Replacement |
+|------------|-------------|
+| `components.KeyBadge` | `primitives.HelpKeyBadge()` |
+| `components.StandardView` | `layout.NewScreenLayout()` |
+| `components.NewErrorModal` | `feedback.NewErrorModal()` |
+| `components.NewLoadingModal` | `feedback.NewLoadingModal()` |
+| `components.NewProgressModal` | `feedback.NewProgressModal()` |
+| `components.NewSuccessModal` | `feedback.NewSuccessModal()` |
+| `components.NewWarningModal` | `feedback.NewWarningModal()` |
+| `components.RenderOverlay` | `behaviors.RenderModalOverlay()` |
+| `components.RenderHelpFooter` | `primitives.RenderHelpFooter()` |
+| `components.ModalContainer` | `feedback.ModalContainer` |
+| `components.HelpModal` | `feedback.HelpModal` |
+| `components.ASCIILogo` | DELETED - remove logo usage |
+| `CreateStandardView` | `layout.NewScreenLayout()` |
+| `ThemedNavigationFooter` | `primitives.RenderHelpFooter()` |
+| `ThemedCustomFooter` | `primitives.RenderHelpFooter()` |
+
+### Legacy `components/` Directory
+
+The `internal/cli/components/` directory is **LEGACY** and scheduled for removal.
+
+**Status**: All components should be migrated to `uikit/`:
+- `components/standard_view.go` -> `uikit/layout/screen_layout.go`
+- `components/key_badge.go` -> `uikit/primitives/badge.go`
+- `components/modals.go` -> `uikit/feedback/modal.go`
+- `components/help_modal.go` -> `uikit/feedback/help_modal.go`
+- `components/modal_container.go` -> `uikit/feedback/modal_container.go`
+- `components/ascii_logo.go` -> DELETED
+
 ### From Direct Lipgloss to UIKit
 
 #### Step 1: Update Imports

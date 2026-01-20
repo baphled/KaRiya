@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start verify-hooks tdd-check pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict install-git-hooks install-tracked-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
 
 # Run all tests in verbose mode
 test:
@@ -118,6 +118,20 @@ pre-pr:
 install-git-hooks:
 	@bash scripts/install-git-hooks.sh
 
+# Install tracked git hooks (from hooks/ directory)
+install-tracked-hooks:
+	@echo "Installing tracked git hooks..."
+	@if [ -f hooks/pre-commit ]; then \
+		cp hooks/pre-commit .git/hooks/pre-commit && \
+		chmod +x .git/hooks/pre-commit && \
+		echo "✅ pre-commit hook installed"; \
+	fi
+	@echo "Done."
+
+# Strict pattern enforcement check (blocking)
+check-patterns-strict:
+	@bash scripts/check-patterns-strict.sh
+
 # Check AI attribution in latest commit
 check-ai-attribution:
 	@echo "Checking latest commit for AI attribution..."
@@ -185,6 +199,13 @@ token-check:
 task-workflow:
 	@cat docs/rules/TASK_QUICK_REF.md
 
+# Check if session is active (for use by other targets)
+check-session:
+	@if [ ! -f ".session-active" ]; then \
+		echo "❌ No active session. Run 'make session-start' first."; \
+		exit 1; \
+	fi
+
 # Session start - mandatory entry point for every work session
 session-start:
 	@echo "================================================"
@@ -251,6 +272,7 @@ session-start:
 	@echo "✅ SESSION READY"
 	@echo "================================================"
 	@echo ""
+	@touch .session-active
 	@echo "Workflow: task → test → implement → check-compliance → ai-commit"
 	@echo ""
 	@echo "Commands:"
@@ -259,6 +281,15 @@ session-start:
 	@echo "  make ai-commit FILE=/tmp/commit.txt"
 	@echo ""
 
+# End session - cleanup session state
+session-end:
+	@if [ -f ".session-active" ]; then \
+		rm -f .session-active .tdd-state; \
+		echo "✅ Session ended. Remember to write handoff notes!"; \
+	else \
+		echo "No active session."; \
+	fi
+
 # Verify git hooks installation
 verify-hooks:
 	@bash scripts/verify-hooks.sh
@@ -266,6 +297,96 @@ verify-hooks:
 # TDD compliance check
 tdd-check:
 	@bash scripts/tdd-check.sh
+
+# TDD workflow: Red phase (write failing test)
+tdd-red:
+	@$(MAKE) -s check-session
+	@echo "red" > .tdd-state
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "🔴 TDD RED PHASE"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "Write a failing test that describes the behavior."
+	@echo ""
+	@echo "Rules:"
+	@echo "  • Test must FAIL initially"
+	@echo "  • Test describes WHAT, not HOW"
+	@echo "  • One behavior per test"
+	@echo ""
+	@echo "Next: make tdd-green"
+	@echo ""
+
+# TDD workflow: Green phase (make test pass)
+tdd-green:
+	@$(MAKE) -s check-session
+	@if [ ! -f ".tdd-state" ] || [ "$$(cat .tdd-state)" != "red" ]; then \
+		echo "❌ Must complete red phase first. Run: make tdd-red"; \
+		exit 1; \
+	fi
+	@echo "green" > .tdd-state
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "🟢 TDD GREEN PHASE"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "Write MINIMAL code to make the test pass."
+	@echo ""
+	@echo "Rules:"
+	@echo "  • Just enough code to pass"
+	@echo "  • No extra features"
+	@echo "  • Don't optimize yet"
+	@echo ""
+	@echo "Next: make tdd-refactor"
+	@echo ""
+
+# TDD workflow: Refactor phase (improve code)
+tdd-refactor:
+	@$(MAKE) -s check-session
+	@if [ ! -f ".tdd-state" ] || [ "$$(cat .tdd-state)" != "green" ]; then \
+		echo "❌ Must complete green phase first. Run: make tdd-green"; \
+		exit 1; \
+	fi
+	@echo "refactor" > .tdd-state
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "🔵 TDD REFACTOR PHASE"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "Improve code quality while keeping tests green."
+	@echo ""
+	@echo "Consider:"
+	@echo "  • Extract methods/functions"
+	@echo "  • Remove duplication"
+	@echo "  • Improve naming"
+	@echo "  • Apply patterns"
+	@echo ""
+	@echo "Next: make tdd-document"
+	@echo ""
+
+# TDD workflow: Document phase (finalize)
+tdd-document:
+	@$(MAKE) -s check-session
+	@if [ ! -f ".tdd-state" ] || [ "$$(cat .tdd-state)" != "refactor" ]; then \
+		echo "❌ Must complete refactor phase first. Run: make tdd-refactor"; \
+		exit 1; \
+	fi
+	@echo "complete" > .tdd-state
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "📝 TDD DOCUMENT PHASE"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "Finalize documentation and commit."
+	@echo ""
+	@echo "Checklist:"
+	@echo "  • Go doc comments on exports"
+	@echo "  • Update relevant docs if needed"
+	@echo "  • Run: make check-compliance"
+	@echo "  • Commit: make ai-commit FILE=/tmp/commit.txt"
+	@echo ""
+	@echo "✅ TDD cycle complete! Ready to commit."
+	@echo ""
 
 # Pre-task validation (run before starting any task)
 pre-task:
@@ -396,6 +517,22 @@ generate-docs: generate-diagrams generate-state-matrix
 # Alias for convenience
 diagrams: generate-diagrams
 
+# Create new feature task (auto-numbered)
+new-feature:
+	@if [ -z "$(TASK)" ]; then \
+		echo "Usage: make new-feature TASK='feature name'"; \
+		exit 1; \
+	fi
+	@bash scripts/new-feature.sh "$(TASK)"
+
+# Create new bug report (auto-numbered)
+new-bug:
+	@if [ -z "$(BUG)" ]; then \
+		echo "Usage: make new-bug BUG='bug description'"; \
+		exit 1; \
+	fi
+	@bash scripts/new-bug.sh "$(BUG)"
+
 # Show help for all available targets
 help:
 	@echo "================================================"
@@ -409,16 +546,17 @@ help:
 	@echo "  make coverage          - Generate coverage report"
 	@echo ""
 	@echo "🔍 Quality Checks:"
-	@echo "  make check-compliance  - Full rules compliance check"
-	@echo "  make check-patterns    - Quick pattern enforcement check (agent drift prevention)"
-	@echo "  make review-commit     - Review staged commit"
-	@echo "  make pre-commit        - Quick pre-commit checks"
-	@echo "  make ci-local          - Run ALL CI checks locally (mirrors GitHub Actions)"
-	@echo "  make ci-install-tools  - Install all required CI tools"
-	@echo "  make fmt               - Format code"
-	@echo "  make vet               - Run static analysis"
-	@echo "  make staticcheck       - Run staticcheck (advanced analysis)"
-	@echo "  make gosec             - Run security scanner"
+	@echo "  make check-compliance       - Full rules compliance check"
+	@echo "  make check-patterns         - Quick pattern enforcement check"
+	@echo "  make check-patterns-strict  - Strict pattern check (blocking)"
+	@echo "  make review-commit          - Review staged commit"
+	@echo "  make pre-commit             - Quick pre-commit checks"
+	@echo "  make ci-local               - Run ALL CI checks locally"
+	@echo "  make ci-install-tools       - Install all required CI tools"
+	@echo "  make fmt                    - Format code"
+	@echo "  make vet                    - Run static analysis"
+	@echo "  make staticcheck            - Run staticcheck"
+	@echo "  make gosec                  - Run security scanner"
 	@echo ""
 	@echo "🤖 AI Attribution:"
 	@echo "  make ai-commit FILE=...    - Create AI-attributed commit (required)"
@@ -429,9 +567,20 @@ help:
 	@echo ""
 	@echo "🤖 AI Agent Helpers:"
 	@echo "  make session-start         - MUST run at session start"
+	@echo "  make session-end           - End session (cleanup)"
 	@echo "  make pre-task              - Run before starting any task"
 	@echo "  make what-to-use NEED=x    - Lookup component to use (table, form, color, etc.)"
 	@echo "  make task-workflow         - Show task execution workflow"
+	@echo ""
+	@echo "🔄 TDD Workflow:"
+	@echo "  make tdd-red               - Start TDD: write failing test"
+	@echo "  make tdd-green             - Make test pass with minimal code"
+	@echo "  make tdd-refactor          - Improve code quality"
+	@echo "  make tdd-document          - Finalize and commit"
+	@echo ""
+	@echo "📋 Task Management:"
+	@echo "  make new-feature TASK=x    - Create new feature task"
+	@echo "  make new-bug BUG=x         - Create new bug report"
 	@echo ""
 	@echo "🏗️  Build:"
 	@echo "  make build             - Build the application"

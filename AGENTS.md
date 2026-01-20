@@ -19,12 +19,30 @@ make session-start   # MUST run first - validates environment
 | Command | Purpose |
 |---------|---------|
 | `make session-start` | Start every session (required) |
+| `make session-end` | End session (cleanup) |
 | `make pre-task` | Checklist before any task |
 | `make check-compliance` | Validate before/after tasks |
 | `make what-to-use NEED="x"` | Component lookup (table, form, modal...) |
 | `make check-patterns` | Detect pattern violations |
+| `make check-patterns-strict` | Strict pattern check (blocking) |
 | `make ai-commit FILE=...` | Commit with AI attribution |
 | `make pre-pr` | Validate before creating PR |
+
+## TDD Workflow Commands
+
+| Command | Purpose |
+|---------|---------|
+| `make tdd-red` | Start TDD: write failing test |
+| `make tdd-green` | Make test pass with minimal code |
+| `make tdd-refactor` | Improve code quality |
+| `make tdd-document` | Finalize and commit |
+
+## Task Management
+
+| Command | Purpose |
+|---------|---------|
+| `make new-feature TASK="x"` | Create new feature task |
+| `make new-bug BUG="x"` | Create new bug report |
 
 ## Component Patterns (Enforced)
 
@@ -75,6 +93,7 @@ make what-to-use NEED="keyword"   # Component help with examples
 | Topic | Document |
 |-------|----------|
 | Session protocol | [docs/development/SESSION_PROTOCOL.md](docs/development/SESSION_PROTOCOL.md) |
+| BDD workflow | [docs/development/BDD_WORKFLOW.md](docs/development/BDD_WORKFLOW.md) |
 | Architecture | [docs/development/ARCHITECTURE_OVERVIEW.md](docs/development/ARCHITECTURE_OVERVIEW.md) |
 | Development workflow | [docs/development/DEVELOPMENT_WORKFLOW.md](docs/development/DEVELOPMENT_WORKFLOW.md) |
 | Common tasks | [docs/development/COMMON_TASKS.md](docs/development/COMMON_TASKS.md) |
@@ -104,7 +123,7 @@ See `examples/` directory:
 internal/cli/
 ├── intents/     # Workflows (state machines)
 ├── behaviors/   # Reusable behaviors (TableBehavior, CRUD)
-├── components/  # Modal components (domain-specific)
+├── components/  # LEGACY - migrate to uikit/ (see UIKIT_GUIDE.md)
 ├── uikit/       # UIKit component library
 │   ├── primitives/  # Text, Button, Badge, Input
 │   ├── containers/  # Box, Overlay
