@@ -3,6 +3,7 @@ package cv
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("CV Generation Integration Tests", func() {
@@ -288,19 +290,22 @@ var _ = Describe("CV Generation Integration Tests", func() {
 	// Previously, BulletGenerator applied a total cap (e.g., 40 bullets) before grouping
 	// by company, causing later companies to be completely excluded from the CV.
 	Describe("BUG-003: Multi-Company CV Generation", func() {
-		// Helper to seed events for multiple companies
+		// Helper to seed events for multiple companies using fixtures
 		seedMultiCompanyEvents := func(companies []string, eventsPerCompany int) map[string][]*career.CareerEvent {
 			result := make(map[string][]*career.CareerEvent)
 			for _, company := range companies {
 				events := make([]*career.CareerEvent, eventsPerCompany)
 				for i := 0; i < eventsPerCompany; i++ {
-					event := &career.CareerEvent{
-						Text:       "Implemented feature " + string(rune('A'+i)) + " at " + company,
-						Date:       time.Now().AddDate(0, 0, -i),
-						Tags:       []string{"technical", "project"},
-						Company:    company,
-						Categories: []string{"technical"},
-					}
+					eventID := fmt.Sprintf("%s-event-%d", company, i)
+					event := fixtures.EventWith(
+						eventID,
+						fmt.Sprintf("Implemented feature %c at %s", rune('A'+i), company),
+						company,
+						"",
+					)
+					event.Tags = []string{"technical", "project"}
+					event.Categories = []string{"technical"}
+					event.Date = time.Now().AddDate(0, 0, -i)
 					err := eventRepo.Create(ctx, event)
 					Expect(err).NotTo(HaveOccurred())
 					events[i] = event
