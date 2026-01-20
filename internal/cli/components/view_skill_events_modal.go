@@ -241,12 +241,12 @@ func (m *ViewSkillEventsModal) View() string {
 	// Build content - either table or empty message
 	var content string
 	if len(m.events) == 0 {
-		// Use lipgloss for padding since UIKit Text doesn't have Padding method
-		emptyStyle := lipgloss.NewStyle().
-			Foreground(theme.MutedColor()).
-			Italic(true).
-			Padding(2, 0)
-		content = emptyStyle.Render("No events use this skill.")
+		// Use UIKit Text with margin for empty state
+		content = primitives.Muted("No events use this skill.", theme).
+			Italic().
+			MarginTop(2).
+			MarginBottom(2).
+			Render()
 	} else {
 		content = m.table.View()
 	}
@@ -264,16 +264,14 @@ func (m *ViewSkillEventsModal) View() string {
 	// Build modal content
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, title, "", content, "", footer)
 
-	// Wrap in styled box with solid background using UIKit
-	boxContent := containers.NewBox(theme).
+	// Wrap in styled box with solid background using UIKit (with MaxHeight)
+	return containers.NewBox(theme).
 		Content(modalContent).
 		Width(modalWidth).
+		MaxHeight(maxModalHeight).
 		Padding(2).
 		Background(theme.BackgroundColor()).
 		Render()
-
-	// Apply max height constraint via lipgloss (UIKit Box doesn't have MaxHeight)
-	return lipgloss.NewStyle().MaxHeight(maxModalHeight).Render(boxContent)
 }
 
 // SetDimensions updates the modal's available dimensions.

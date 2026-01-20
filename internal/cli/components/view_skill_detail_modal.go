@@ -161,37 +161,30 @@ func (m *ViewSkillDetailModal) View() string {
 		Render()
 }
 
-// renderSkillDetails renders the skill information as a card.
-func (m *ViewSkillDetailModal) renderSkillDetails(theme themes.Theme) string {
+// renderSkillDetails renders the skill information as a card using UIKit KeyValue.
+func (m *ViewSkillDetailModal) renderSkillDetails(th themes.Theme) string {
 	skill := m.skill
 
-	// Use lipgloss for label/value layout (UIKit doesn't have width constraints yet)
-	labelStyle := lipgloss.NewStyle().
-		Foreground(theme.MutedColor()).
-		Width(15)
-
-	valueStyle := lipgloss.NewStyle().
-		Foreground(theme.PrimaryColor()).
-		Bold(true)
-
-	var lines []string
+	// Use UIKit KeyValue for consistent label-value layout
+	// theme.Theme is an alias for themes.Theme, so direct pass works
+	kv := primitives.NewKeyValue(th).LabelWidth(15)
 
 	// Name
-	lines = append(lines, labelStyle.Render("Name:")+valueStyle.Render(skill.Name))
+	kv.Add("Name:", skill.Name)
 
 	// Category
 	category := skill.Category
 	if category == "" {
 		category = "-"
 	}
-	lines = append(lines, labelStyle.Render("Category:")+valueStyle.Render(category))
+	kv.Add("Category:", category)
 
 	// Level
 	level := skill.Level
 	if level == "" {
 		level = "-"
 	}
-	lines = append(lines, labelStyle.Render("Level:")+valueStyle.Render(level))
+	kv.Add("Level:", level)
 
 	// Years Used
 	if skill.YearsUsed != nil {
@@ -199,23 +192,23 @@ func (m *ViewSkillDetailModal) renderSkillDetails(theme themes.Theme) string {
 		if *skill.YearsUsed != 1 {
 			yearText += "s"
 		}
-		lines = append(lines, labelStyle.Render("Years Used:")+valueStyle.Render(yearText))
+		kv.Add("Years Used:", yearText)
 	}
 
 	// Event Count
-	lines = append(lines, labelStyle.Render("Event Count:")+valueStyle.Render(fmt.Sprintf("%d", m.eventCount)))
+	kv.Add("Event Count:", fmt.Sprintf("%d", m.eventCount))
 
 	// Last Used (if available)
 	if m.lastUsed != nil {
-		lines = append(lines, labelStyle.Render("Last Used:")+valueStyle.Render(m.lastUsed.Format("2006-01-02")))
+		kv.Add("Last Used:", m.lastUsed.Format("2006-01-02"))
 	}
 
-	// Timestamps
-	lines = append(lines, "")
-	lines = append(lines, labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render())
-	lines = append(lines, labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render())
+	// Timestamps (muted)
+	kv.AddBlank()
+	kv.AddMuted("Created:", skill.CreatedAt.Format("2006-01-02 15:04"))
+	kv.AddMuted("Updated:", skill.UpdatedAt.Format("2006-01-02 15:04"))
 
-	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+	return kv.Render()
 }
 
 // SetDimensions updates the modal's available dimensions.

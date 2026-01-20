@@ -179,8 +179,8 @@ func (m *ViewEventSkillsModal) renderSkillsContent(width int) string {
 
 	var content strings.Builder
 
-	// Separator style (using theme border color)
-	separatorStyle := lipgloss.NewStyle().Foreground(m.theme.BorderColor())
+	// Separator using UIKit Muted text for consistent theming
+	separator := primitives.Muted(" | ", m.theme).Render()
 
 	for i, skill := range m.skills {
 		if skill == nil {
@@ -212,7 +212,7 @@ func (m *ViewEventSkillsModal) renderSkillsContent(width int) string {
 
 		if len(details) > 0 {
 			content.WriteString("  ")
-			content.WriteString(strings.Join(details, separatorStyle.Render(" | ")))
+			content.WriteString(strings.Join(details, separator))
 			content.WriteString("\n")
 		}
 

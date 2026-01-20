@@ -2,6 +2,7 @@ package components
 
 import (
 	"github.com/baphled/kariya/internal/cli/forms"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
@@ -270,14 +271,11 @@ func (m *CVConfigWizardModal) View() string {
 	// Use default theme for colors
 	th := theme.Default()
 
-	// Add main title
-	titleStyle := lipgloss.NewStyle().
-		Foreground(th.AccentColor()).
-		Bold(true).
-		Align(lipgloss.Center).
-		Width(modalWidth - 4)
-
-	title := titleStyle.Render("CV Configuration")
+	// Add main title using UIKit Text with centering
+	title := primitives.Title("CV Configuration", th).
+		Width(modalWidth - 4).
+		Center().
+		Render()
 
 	// Render form
 	formView := m.form.View()
@@ -288,17 +286,15 @@ func (m *CVConfigWizardModal) View() string {
 	// Combine title, form and footer
 	content := lipgloss.JoinVertical(lipgloss.Left, title, "", formView, "", footer)
 
-	// Wrap in styled container with solid background
-	styledContent := lipgloss.NewStyle().
+	// Wrap in styled container with solid background using UIKit Box
+	return containers.NewBox(th).
+		Content(content).
 		Width(modalWidth).
 		MaxHeight(modalHeight).
-		Background(th.BackgroundColor()). // CRITICAL: Solid background prevents transparency
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(th.AccentColor()).
 		Padding(1).
-		Render(content)
-
-	return styledContent
+		Background(th.BackgroundColor()).
+		Variant(containers.BoxInfo). // Use accent color border
+		Render()
 }
 
 // buildFooter creates the keyboard shortcuts footer using UIKit primitives.
