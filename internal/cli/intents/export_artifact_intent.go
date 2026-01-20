@@ -611,50 +611,6 @@ func getDestinationName(d ExportDestination) string {
 
 // --- Screen Factory Methods ---
 
-// newTypeSelectScreen creates the artifact type selection screen.
-func (e *ExportArtifactIntent) newTypeSelectScreen() screens.Screen {
-	// Convert to types package slice
-	artifactTypes := make([]types.ExportArtifactType, len(e.context.ArtifactTypes))
-	for i, t := range e.context.ArtifactTypes {
-		artifactTypes[i] = types.ExportArtifactType(t)
-	}
-
-	return exportscreens.NewTypeSelect(
-		artifactTypes,
-		[]string{"Main Menu", "Export Artifact", "Select Type"},
-	)
-}
-
-// newFormatSelectScreen creates the format selection screen.
-func (e *ExportArtifactIntent) newFormatSelectScreen() screens.Screen {
-	// Convert to types package slice
-	formats := e.context.SupportedFormats[e.config.ArtifactType]
-	typesFormats := make([]types.ExportFormat, len(formats))
-	for i, f := range formats {
-		typesFormats[i] = types.ExportFormat(f)
-	}
-
-	return exportscreens.NewFormatSelect(
-		typesFormats,
-		types.ExportArtifactType(e.config.ArtifactType),
-		[]string{"Main Menu", "Export Artifact", "Select Format"},
-	)
-}
-
-// newDestSelectScreen creates the destination selection screen.
-func (e *ExportArtifactIntent) newDestSelectScreen() screens.Screen {
-	// Convert to types package slice
-	destinations := make([]types.ExportDestination, len(e.context.Destinations))
-	for i, d := range e.context.Destinations {
-		destinations[i] = types.ExportDestination(d)
-	}
-
-	return exportscreens.NewDestSelect(
-		destinations,
-		[]string{"Main Menu", "Export Artifact", "Select Destination"},
-	)
-}
-
 // newPreviewScreen creates the preview screen.
 func (e *ExportArtifactIntent) newPreviewScreen() screens.Screen {
 	return exportscreens.NewPreview(
@@ -665,8 +621,8 @@ func (e *ExportArtifactIntent) newPreviewScreen() screens.Screen {
 	)
 }
 
-// Note: Confirm, Progress, Complete, and Failed states now use modal overlays
-// instead of full screens for visual consistency with other workflows.
+// Note: Type, Format, and Destination selection are now handled by the wizard modal.
+// Confirm, Progress, Complete, and Failed states use modal overlays.
 
 // --- Export Business Logic ---
 
