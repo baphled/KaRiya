@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	exportscreens "github.com/baphled/kariya/internal/cli/screens/export"
+	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -414,179 +415,103 @@ func (e *ExportArtifactIntent) setCancelled() {
 
 // newTypeSelectScreen creates the artifact type selection screen.
 func (e *ExportArtifactIntent) newTypeSelectScreen() screens.Screen {
-	renderer := func(item ExportArtifactType) string {
-		descriptions := map[ExportArtifactType]string{
-			ExportTypeEvents:  "Export career events",
-			ExportTypeFacts:   "Export extracted facts",
-			ExportTypeBursts:  "Export career bursts",
-			ExportTypeProfile: "Export profile data",
-			ExportTypeCV:      "Export generated CV",
-		}
-		desc := descriptions[item]
-		if desc == "" {
-			desc = "Export " + string(item)
-		}
-		return fmt.Sprintf("%s\n  %s", string(item), desc)
+	// Convert to types package slice
+	artifactTypes := make([]types.ExportArtifactType, len(e.context.ArtifactTypes))
+	for i, t := range e.context.ArtifactTypes {
+		artifactTypes[i] = types.ExportArtifactType(t)
 	}
 
-	return base.NewBaseSelectScreen(
-		e.context.ArtifactTypes,
-		renderer,
+	return exportscreens.NewTypeSelect(
+		artifactTypes,
 		[]string{"Main Menu", "Export Artifact", "Select Type"},
-		"Select Artifact Type",
 	)
 }
 
 // newFormatSelectScreen creates the format selection screen.
 func (e *ExportArtifactIntent) newFormatSelectScreen() screens.Screen {
-	renderer := func(item ExportFormat) string {
-		descriptions := map[ExportFormat]string{
-			ExportFormatJSON: "JavaScript Object Notation",
-			ExportFormatCSV:  "Comma Separated Values",
-			ExportFormatYAML: "YAML Ain't Markup Language",
-			ExportFormatTXT:  "Plain text format",
-			ExportFormatMD:   "Markdown format",
-			ExportFormatPDF:  "Portable Document Format",
-		}
-		desc := descriptions[item]
-		if desc == "" {
-			desc = string(item) + " format"
-		}
-		return fmt.Sprintf("%s\n  %s", string(item), desc)
+	// Convert to types package slice
+	formats := e.context.SupportedFormats[e.config.ArtifactType]
+	typesFormats := make([]types.ExportFormat, len(formats))
+	for i, f := range formats {
+		typesFormats[i] = types.ExportFormat(f)
 	}
 
-	formats := e.context.SupportedFormats[e.config.ArtifactType]
-	return base.NewBaseSelectScreen(
-		formats,
-		renderer,
+	return exportscreens.NewFormatSelect(
+		typesFormats,
+		types.ExportArtifactType(e.config.ArtifactType),
 		[]string{"Main Menu", "Export Artifact", "Select Format"},
-		fmt.Sprintf("Select Export Format for %s", e.config.ArtifactType),
 	)
 }
 
 // newDestSelectScreen creates the destination selection screen.
 func (e *ExportArtifactIntent) newDestSelectScreen() screens.Screen {
-	renderer := func(item ExportDestination) string {
-		descriptions := map[ExportDestination]string{
-			ExportDestinationFile:      "Save to a file on disk",
-			ExportDestinationClipboard: "Copy to system clipboard",
-			ExportDestinationEmail:     "Send via email",
-		}
-		desc := descriptions[item]
-		if desc == "" {
-			desc = string(item)
-		}
-		return fmt.Sprintf("%s\n  %s", string(item), desc)
+	// Convert to types package slice
+	destinations := make([]types.ExportDestination, len(e.context.Destinations))
+	for i, d := range e.context.Destinations {
+		destinations[i] = types.ExportDestination(d)
 	}
 
-	return base.NewBaseSelectScreen(
-		e.context.Destinations,
-		renderer,
+	return exportscreens.NewDestSelect(
+		destinations,
 		[]string{"Main Menu", "Export Artifact", "Select Destination"},
-		"Select Export Destination",
 	)
 }
 
 // newPreviewScreen creates the preview screen.
 func (e *ExportArtifactIntent) newPreviewScreen() screens.Screen {
-	renderer := func(data string, _, _ int) string {
-		var b strings.Builder
-		b.WriteString(fmt.Sprintf("Preview Export (%s as %s):\n\n", e.config.ArtifactType, e.config.Format))
-		b.WriteString("════════════════════════════════════════════════════════\n\n")
-		b.WriteString(data)
-		b.WriteString("\n\n════════════════════════════════════════════════════════")
-		return b.String()
-	}
-
-	screen := base.NewBaseDetailScreen(
-		[]string{"Main Menu", "Export Artifact", "Preview"},
-		renderer,
+	return exportscreens.NewPreview(
 		e.preview,
+		types.ExportArtifactType(e.config.ArtifactType),
+		types.ExportFormat(e.config.Format),
+		[]string{"Main Menu", "Export Artifact", "Preview"},
 	)
-	screen.SetFooter("↑/↓/j/k: Scroll  Enter: Continue  Esc: Back")
-
-	return screen
 }
 
 // newConfirmScreen creates the confirmation screen.
 func (e *ExportArtifactIntent) newConfirmScreen() screens.Screen {
-	message := fmt.Sprintf(
-		"Confirm export?\n\n"+
-			"Artifact: %s\n"+
-			"Format: %s\n"+
-			"Destination: %s",
-		e.config.ArtifactType,
-		e.config.Format,
-		e.config.Destination,
-	)
-
-	screen := base.NewBaseConfirmScreen(
+	return exportscreens.NewConfirm(
+		types.ExportArtifactType(e.config.ArtifactType),
+		types.ExportFormat(e.config.Format),
+		types.ExportDestination(e.config.Destination),
 		[]string{"Main Menu", "Export Artifact", "Confirm"},
-		"Confirm Export",
-		message,
 	)
-	screen.SetYesText("Export")
-	screen.SetNoText("Cancel")
-
-	return screen
 }
 
 // newProgressScreen creates the progress screen.
 func (e *ExportArtifactIntent) newProgressScreen() screens.Screen {
-	screen := base.NewBaseProgressScreen(
+	return exportscreens.NewProgress(
+		types.ExportArtifactType(e.config.ArtifactType),
 		[]string{"Main Menu", "Export Artifact", "Exporting"},
-		"Exporting",
-		"Exporting "+string(e.config.ArtifactType)+"...",
 	)
-	screen.SetAllowCancel(false)
-
-	return screen
 }
 
 // newCompleteScreen creates the completion screen.
 func (e *ExportArtifactIntent) newCompleteScreen() screens.Screen {
-	renderer := func(data *ExportArtifactResult, _, _ int) string {
-		var b strings.Builder
-		b.WriteString("Export Complete!\n\n")
-		b.WriteString(fmt.Sprintf("Artifact: %s\n", data.ArtifactType))
-		b.WriteString(fmt.Sprintf("Format: %s\n", data.Format))
-		b.WriteString(fmt.Sprintf("Destination: %s\n", data.Destination))
-		b.WriteString(fmt.Sprintf("File: %s\n", data.FilePath))
-		b.WriteString(fmt.Sprintf("Size: %s\n", formatBytes(data.Size)))
-		return b.String()
+	result := &exportscreens.CompleteResult{
+		ArtifactType: types.ExportArtifactType(e.exportResult.ArtifactType),
+		Format:       types.ExportFormat(e.exportResult.Format),
+		Destination:  types.ExportDestination(e.exportResult.Destination),
+		FilePath:     e.exportResult.FilePath,
+		Size:         e.exportResult.Size,
 	}
 
-	screen := base.NewBaseDetailScreen(
+	return exportscreens.NewComplete(
+		result,
 		[]string{"Main Menu", "Export Artifact", "Complete"},
-		renderer,
-		e.exportResult,
 	)
-	screen.SetFooter("Enter: Done  Esc: Back")
-
-	return screen
 }
 
 // newFailedScreen creates the failed screen.
 func (e *ExportArtifactIntent) newFailedScreen() screens.Screen {
-	renderer := func(data *IntentError, _, _ int) string {
-		var b strings.Builder
-		b.WriteString("Export Failed\n\n")
-		b.WriteString(fmt.Sprintf("Error: %s\n", data.Message))
-		if data.Code != "" {
-			b.WriteString(fmt.Sprintf("Code: %s\n", data.Code))
-		}
-		return b.String()
+	err := &exportscreens.FailedError{
+		Code:    e.exportError.Code,
+		Message: e.exportError.Message,
 	}
 
-	screen := base.NewBaseDetailScreen(
+	return exportscreens.NewFailed(
+		err,
 		[]string{"Main Menu", "Export Artifact", "Failed"},
-		renderer,
-		e.exportError,
 	)
-	screen.SetFooter("r: Retry  Esc: Back")
-	screen.AddAction("r", "retry")
-
-	return screen
 }
 
 // --- Export Business Logic ---

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/navigation"
+	"github.com/baphled/kariya/internal/cli/types"
 	careerdomain "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career"
@@ -18,36 +19,33 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ExportArtifactType represents the type of artifact to export
-type ExportArtifactType string
-
-const (
-	ExportTypeCV      ExportArtifactType = "cv"
-	ExportTypeEvents  ExportArtifactType = "events"
-	ExportTypeFacts   ExportArtifactType = "facts"
-	ExportTypeBursts  ExportArtifactType = "bursts"
-	ExportTypeProfile ExportArtifactType = "profile"
+// Type aliases for export types from internal/cli/types package.
+// These allow the intents package to use shorter names while the canonical
+// definitions live in the shared types package.
+type (
+	ExportArtifactType = types.ExportArtifactType
+	ExportFormat       = types.ExportFormat
+	ExportDestination  = types.ExportDestination
 )
 
-// ExportFormat represents the export file format
-type ExportFormat string
-
+// Re-export constants from types package for convenience.
 const (
-	ExportFormatPDF  ExportFormat = "pdf"
-	ExportFormatJSON ExportFormat = "json"
-	ExportFormatYAML ExportFormat = "yaml"
-	ExportFormatCSV  ExportFormat = "csv"
-	ExportFormatTXT  ExportFormat = "txt"
-	ExportFormatMD   ExportFormat = "markdown"
-)
+	ExportTypeCV      = types.ExportTypeCV
+	ExportTypeEvents  = types.ExportTypeEvents
+	ExportTypeFacts   = types.ExportTypeFacts
+	ExportTypeBursts  = types.ExportTypeBursts
+	ExportTypeProfile = types.ExportTypeProfile
 
-// ExportDestination represents where to export the artifact
-type ExportDestination string
+	ExportFormatPDF  = types.ExportFormatPDF
+	ExportFormatJSON = types.ExportFormatJSON
+	ExportFormatYAML = types.ExportFormatYAML
+	ExportFormatCSV  = types.ExportFormatCSV
+	ExportFormatTXT  = types.ExportFormatTXT
+	ExportFormatMD   = types.ExportFormatMD
 
-const (
-	ExportDestinationFile      ExportDestination = "file"
-	ExportDestinationClipboard ExportDestination = "clipboard"
-	ExportDestinationEmail     ExportDestination = "email"
+	ExportDestinationFile      = types.ExportDestinationFile
+	ExportDestinationClipboard = types.ExportDestinationClipboard
+	ExportDestinationEmail     = types.ExportDestinationEmail
 )
 
 // ExportArtifactContext contains context for the ExportArtifact intent
