@@ -7,6 +7,14 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Alignment constants for text positioning.
+// These wrap lipgloss.Position values for convenience.
+const (
+	AlignLeft   = lipgloss.Left
+	AlignCenter = lipgloss.Center
+	AlignRight  = lipgloss.Right
+)
+
 // TextStyle defines the semantic style of text.
 type TextStyle int
 
@@ -25,22 +33,33 @@ const (
 	TextSuccess
 	// TextWarning is for warning messages.
 	TextWarning
+	// TextInfo is for informational messages.
+	TextInfo
 )
 
 // Text is a theme-aware text component with fluent API.
-// It supports semantic styles, bold formatting, width constraints, and alignment.
+// It supports semantic styles, bold formatting, width constraints, alignment, margins, and custom colors.
 //
 // Example:
 //
 //	title := primitives.Title("Welcome", theme).Bold().Align(lipgloss.Center)
+//	spaced := primitives.Body("Content", theme).MarginBottom(1)
 //	error := primitives.ErrorText("Failed", theme).Width(40)
+//	custom := primitives.NewText("Custom", theme).Foreground(lipgloss.Color("#FF0000"))
+//	italic := primitives.Muted("Note", theme).Italic()
 type Text struct {
 	theme.Aware
-	content   string
-	textStyle TextStyle
-	bold      bool
-	width     int
-	align     lipgloss.Position
+	content          string
+	textStyle        TextStyle
+	bold             bool
+	italic           bool
+	width            int
+	align            lipgloss.Position
+	marginTop        int
+	marginBottom     int
+	marginLeft       int
+	marginRight      int
+	customForeground *lipgloss.Color // Optional custom foreground color override
 }
 
 // NewText creates a new text component with the given content and theme.
@@ -72,6 +91,13 @@ func (t *Text) Bold() *Text {
 	return t
 }
 
+// Italic makes the text italic.
+// Returns the text for method chaining.
+func (t *Text) Italic() *Text {
+	t.italic = true
+	return t
+}
+
 // Width sets the maximum width of the text.
 // Text will be wrapped if it exceeds this width.
 // Returns the text for method chaining.
@@ -87,6 +113,63 @@ func (t *Text) Align(align lipgloss.Position) *Text {
 	return t
 }
 
+// Center is a convenience method to center-align the text.
+// Equivalent to Align(lipgloss.Center).
+// Returns the text for method chaining.
+func (t *Text) Center() *Text {
+	return t.Align(lipgloss.Center)
+}
+
+// Left is a convenience method to left-align the text.
+// Equivalent to Align(lipgloss.Left).
+// Returns the text for method chaining.
+func (t *Text) Left() *Text {
+	return t.Align(lipgloss.Left)
+}
+
+// Right is a convenience method to right-align the text.
+// Equivalent to Align(lipgloss.Right).
+// Returns the text for method chaining.
+func (t *Text) Right() *Text {
+	return t.Align(lipgloss.Right)
+}
+
+// MarginTop adds vertical spacing above the text (in lines).
+// Returns the text for method chaining.
+func (t *Text) MarginTop(n int) *Text {
+	t.marginTop = n
+	return t
+}
+
+// MarginBottom adds vertical spacing below the text (in lines).
+// Returns the text for method chaining.
+func (t *Text) MarginBottom(n int) *Text {
+	t.marginBottom = n
+	return t
+}
+
+// MarginLeft adds horizontal spacing before the text (in characters).
+// Returns the text for method chaining.
+func (t *Text) MarginLeft(n int) *Text {
+	t.marginLeft = n
+	return t
+}
+
+// MarginRight adds horizontal spacing after the text (in characters).
+// Returns the text for method chaining.
+func (t *Text) MarginRight(n int) *Text {
+	t.marginRight = n
+	return t
+}
+
+// Foreground sets a custom foreground color, overriding the semantic style color.
+// This is useful when you need a specific color that doesn't match any semantic style.
+// Returns the text for method chaining.
+func (t *Text) Foreground(color lipgloss.Color) *Text {
+	t.customForeground = &color
+	return t
+}
+
 // Render returns the styled text as a string.
 func (t *Text) Render() string {
 	style := t.buildStyle()
@@ -97,27 +180,45 @@ func (t *Text) Render() string {
 func (t *Text) buildStyle() lipgloss.Style {
 	style := lipgloss.NewStyle()
 
-	// Apply semantic color based on text style
-	switch t.textStyle {
-	case TextTitle:
-		style = style.Foreground(t.PrimaryColor()).Bold(true)
-	case TextSubtitle:
-		style = style.Foreground(t.SecondaryColor())
-	case TextBody:
-		style = style.Foreground(t.Theme().ForegroundColor())
-	case TextMuted:
-		style = style.Foreground(t.MutedColor())
-	case TextError:
-		style = style.Foreground(t.ErrorColor())
-	case TextSuccess:
-		style = style.Foreground(t.SuccessColor())
-	case TextWarning:
-		style = style.Foreground(t.WarningColor())
+	// Apply custom foreground if set, otherwise use semantic color
+	if t.customForeground != nil {
+		style = style.Foreground(*t.customForeground)
+	} else {
+		// Apply semantic color based on text style
+		switch t.textStyle {
+		case TextTitle:
+			style = style.Foreground(t.PrimaryColor())
+		case TextSubtitle:
+			style = style.Foreground(t.SecondaryColor())
+		case TextBody:
+			style = style.Foreground(t.Theme().ForegroundColor())
+		case TextMuted:
+			style = style.Foreground(t.MutedColor())
+		case TextError:
+			style = style.Foreground(t.ErrorColor())
+		case TextSuccess:
+			style = style.Foreground(t.SuccessColor())
+		case TextWarning:
+			style = style.Foreground(t.WarningColor())
+		case TextInfo:
+			style = style.Foreground(t.Theme().InfoColor())
+		}
+	}
+
+	// Apply bold based on style or explicit setting
+	// Title style always gets bold unless overridden
+	if t.textStyle == TextTitle {
+		style = style.Bold(true)
 	}
 
 	// Apply bold if requested
 	if t.bold {
 		style = style.Bold(true)
+	}
+
+	// Apply italic if requested
+	if t.italic {
+		style = style.Italic(true)
 	}
 
 	// Apply width constraint if set
@@ -128,6 +229,20 @@ func (t *Text) buildStyle() lipgloss.Style {
 	// Apply alignment if width is set (alignment requires width)
 	if t.width > 0 && t.align != 0 {
 		style = style.Align(t.align)
+	}
+
+	// Apply margins if set
+	if t.marginTop > 0 {
+		style = style.MarginTop(t.marginTop)
+	}
+	if t.marginBottom > 0 {
+		style = style.MarginBottom(t.marginBottom)
+	}
+	if t.marginLeft > 0 {
+		style = style.MarginLeft(t.marginLeft)
+	}
+	if t.marginRight > 0 {
+		style = style.MarginRight(t.marginRight)
 	}
 
 	return style
@@ -168,4 +283,9 @@ func SuccessText(content string, th theme.Theme) *Text {
 // WarningText creates a warning-styled text component.
 func WarningText(content string, th theme.Theme) *Text {
 	return NewText(content, th).Style(TextWarning)
+}
+
+// InfoText creates an info-styled text component.
+func InfoText(content string, th theme.Theme) *Text {
+	return NewText(content, th).Style(TextInfo)
 }

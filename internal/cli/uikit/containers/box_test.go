@@ -77,6 +77,11 @@ var _ = Describe("Box", func() {
 			Expect(result).To(Equal(box))
 		})
 
+		It("should set maxHeight (0 = no limit)", func() {
+			result := box.MaxHeight(30)
+			Expect(result).To(Equal(box))
+		})
+
 		It("should set padding", func() {
 			result := box.Padding(2)
 			Expect(result).To(Equal(box))
@@ -174,6 +179,38 @@ var _ = Describe("Box", func() {
 			// Padded content should have more whitespace
 			Expect(rendered).To(ContainSubstring("Padded"))
 			Expect(len(rendered)).To(BeNumerically(">", len("Padded")+20))
+		})
+
+		It("should apply maxHeight constraint", func() {
+			// Create content with many lines
+			content := "Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8"
+			box.MaxHeight(5).Content(content)
+			rendered := box.Render()
+
+			// MaxHeight should limit the output height
+			lines := splitLines(rendered)
+			Expect(len(lines)).To(BeNumerically("<=", 5))
+		})
+
+		It("should respect maxHeight with border and padding", func() {
+			// Long content
+			content := "A\nB\nC\nD\nE\nF\nG\nH\nI\nJ"
+			box.MaxHeight(8).Padding(1).Content(content)
+			rendered := box.Render()
+
+			lines := splitLines(rendered)
+			Expect(len(lines)).To(BeNumerically("<=", 8))
+		})
+
+		It("should support chaining with maxHeight", func() {
+			result := box.
+				Title("Test").
+				Content("Content").
+				Width(60).
+				MaxHeight(20).
+				Padding(1)
+
+			Expect(result).To(Equal(box))
 		})
 	})
 })

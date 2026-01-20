@@ -19,6 +19,12 @@ const (
 	BoxDestructive
 	// BoxSubtle uses muted colors for background content.
 	BoxSubtle
+	// BoxSuccess uses success colors for positive feedback.
+	BoxSuccess
+	// BoxWarning uses warning colors for caution messages.
+	BoxWarning
+	// BoxInfo uses accent colors for informational content.
+	BoxInfo
 )
 
 // Box provides bordered container for modal frames, cards, panels.
@@ -199,8 +205,6 @@ func (b *Box) getBorderStyle() lipgloss.Border {
 	switch b.variant {
 	case BoxEmphasized:
 		return lipgloss.ThickBorder()
-	case BoxDefault, BoxDestructive, BoxSubtle:
-		return lipgloss.RoundedBorder()
 	default:
 		return lipgloss.RoundedBorder()
 	}
@@ -214,6 +218,12 @@ func (b *Box) getBorderColor() lipgloss.Color {
 		switch b.variant {
 		case BoxDestructive:
 			return lipgloss.Color("#F38BA8") // Catppuccin Red
+		case BoxSuccess:
+			return lipgloss.Color("#A6E3A1") // Catppuccin Green
+		case BoxWarning:
+			return lipgloss.Color("#F9E2AF") // Catppuccin Yellow
+		case BoxInfo:
+			return lipgloss.Color("#89B4FA") // Catppuccin Blue
 		case BoxSubtle:
 			return lipgloss.Color("#6C7086") // Catppuccin Overlay0
 		default:
@@ -225,6 +235,12 @@ func (b *Box) getBorderColor() lipgloss.Color {
 	switch b.variant {
 	case BoxDestructive:
 		return lipgloss.Color(theme.ErrorColor())
+	case BoxSuccess:
+		return lipgloss.Color(theme.SuccessColor())
+	case BoxWarning:
+		return lipgloss.Color(theme.WarningColor())
+	case BoxInfo:
+		return lipgloss.Color(theme.InfoColor())
 	case BoxSubtle:
 		return lipgloss.Color(theme.MutedColor())
 	case BoxEmphasized:

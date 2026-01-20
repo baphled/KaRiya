@@ -135,115 +135,208 @@ var _ = Describe("Badge", func() {
 			})
 		})
 
-		// Preset badge constructors for CV workflow
-		Describe("NavigateBadge", func() {
-			It("should create navigate badge with arrow keys", func() {
-				badge := primitives.NavigateBadge(th)
+		Describe("HelpKeyBadge", func() {
+			It("should create help key badge with two-part styling", func() {
+				badge := primitives.HelpKeyBadge("Esc", "Back", th)
 				rendered := badge.Render()
-				Expect(rendered).To(ContainSubstring("↑↓"))
-				Expect(rendered).To(ContainSubstring("Navigate"))
+				Expect(rendered).To(ContainSubstring("Esc"))
+				Expect(rendered).To(ContainSubstring("Back"))
 			})
 
-			It("should accept nil theme", func() {
-				badge := primitives.NavigateBadge(nil)
-				Expect(badge).NotTo(BeNil())
-			})
-		})
-
-		Describe("SelectBadge", func() {
-			It("should create select badge with Enter key", func() {
-				badge := primitives.SelectBadge(th)
+			It("should work with nil theme", func() {
+				badge := primitives.HelpKeyBadge("Enter", "Select", nil)
 				rendered := badge.Render()
 				Expect(rendered).To(ContainSubstring("Enter"))
 				Expect(rendered).To(ContainSubstring("Select"))
 			})
 		})
+	})
 
-		Describe("CancelBadge", func() {
-			It("should create cancel badge with Esc key", func() {
-				badge := primitives.CancelBadge(th)
-				rendered := badge.Render()
-				Expect(rendered).To(ContainSubstring("Esc"))
-				Expect(rendered).To(ContainSubstring("Cancel"))
-			})
+	Describe("Common Help Key Badge Constructors", func() {
+		It("NavigateBadge should return navigation badge", func() {
+			badge := primitives.NavigateBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Navigate"))
 		})
 
-		Describe("BackBadge", func() {
-			It("should create back badge with Esc key", func() {
-				badge := primitives.BackBadge(th)
-				rendered := badge.Render()
-				Expect(rendered).To(ContainSubstring("Esc"))
-				Expect(rendered).To(ContainSubstring("Back"))
-			})
+		It("SelectBadge should return select badge", func() {
+			badge := primitives.SelectBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Enter"))
+			Expect(rendered).To(ContainSubstring("Select"))
 		})
 
-		Describe("ConfirmBadge", func() {
-			It("should create confirm badge with Enter key", func() {
-				badge := primitives.ConfirmBadge(th)
-				rendered := badge.Render()
-				Expect(rendered).To(ContainSubstring("Enter"))
-				Expect(rendered).To(ContainSubstring("Confirm"))
-			})
+		It("CancelBadge should return cancel badge", func() {
+			badge := primitives.CancelBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Esc"))
+			Expect(rendered).To(ContainSubstring("Cancel"))
 		})
 
-		Describe("QuitBadge", func() {
-			It("should create quit badge with q key", func() {
-				badge := primitives.QuitBadge(th)
-				rendered := badge.Render()
-				Expect(rendered).To(ContainSubstring("q"))
-				Expect(rendered).To(ContainSubstring("Quit"))
-			})
+		It("QuitBadge should return quit badge", func() {
+			badge := primitives.QuitBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("q"))
+			Expect(rendered).To(ContainSubstring("Quit"))
 		})
 
-		Describe("HelpBadge", func() {
-			It("should create help badge with ? key", func() {
-				badge := primitives.HelpBadge(th)
-				rendered := badge.Render()
-				Expect(rendered).To(ContainSubstring("?"))
-				Expect(rendered).To(ContainSubstring("Help"))
-			})
+		It("BackBadge should return back badge", func() {
+			badge := primitives.BackBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Esc"))
+			Expect(rendered).To(ContainSubstring("Back"))
 		})
 
-		Describe("SkipBadge", func() {
-			It("should create skip badge with Ctrl+S key", func() {
-				badge := primitives.SkipBadge(th)
-				rendered := badge.Render()
-				Expect(rendered).To(ContainSubstring("Ctrl+S"))
-				Expect(rendered).To(ContainSubstring("Skip"))
-			})
+		It("EditBadge should return edit badge", func() {
+			badge := primitives.EditBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("e"))
+			Expect(rendered).To(ContainSubstring("Edit"))
+		})
+
+		It("DeleteBadge should return delete badge", func() {
+			badge := primitives.DeleteBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("d"))
+			Expect(rendered).To(ContainSubstring("Delete"))
+		})
+
+		It("SaveBadge should return save badge", func() {
+			badge := primitives.SaveBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Ctrl+S"))
+			Expect(rendered).To(ContainSubstring("Save"))
+		})
+
+		It("SearchBadge should return search badge", func() {
+			badge := primitives.SearchBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("/"))
+			Expect(rendered).To(ContainSubstring("Search"))
+		})
+
+		It("FilterBadge should return filter badge", func() {
+			badge := primitives.FilterBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("f"))
+			Expect(rendered).To(ContainSubstring("Filter"))
+		})
+
+		It("MenuBadge should return main menu badge", func() {
+			badge := primitives.MenuBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("m"))
+			Expect(rendered).To(ContainSubstring("Main Menu"))
+		})
+
+		It("YesBadge should return yes badge", func() {
+			badge := primitives.YesBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("y"))
+			Expect(rendered).To(ContainSubstring("Yes"))
+		})
+
+		It("NoBadge should return no badge", func() {
+			badge := primitives.NoBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("n"))
+			Expect(rendered).To(ContainSubstring("No"))
+		})
+
+		It("ToggleBadge should return toggle badge", func() {
+			badge := primitives.ToggleBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Toggle"))
+		})
+
+		It("RetryBadge should return retry badge", func() {
+			badge := primitives.RetryBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("r"))
+			Expect(rendered).To(ContainSubstring("Retry"))
+		})
+
+		It("RetryEnterBadge should return retry badge with Enter/r", func() {
+			badge := primitives.RetryEnterBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Enter/r"))
+			Expect(rendered).To(ContainSubstring("Retry"))
+		})
+
+		It("ContinueBadge should return continue badge", func() {
+			badge := primitives.ContinueBadge(th)
+			rendered := badge.Render()
+			Expect(rendered).To(ContainSubstring("Enter"))
+			Expect(rendered).To(ContainSubstring("Continue"))
 		})
 	})
 
 	Describe("RenderHelpFooter", func() {
-		It("should render multiple badges separated by spaces", func() {
-			badges := []*primitives.Badge{
+		It("should render multiple badges", func() {
+			footer := primitives.RenderHelpFooter(th,
 				primitives.NavigateBadge(th),
 				primitives.SelectBadge(th),
-			}
-			result := primitives.RenderHelpFooter(th, badges...)
-			Expect(result).To(ContainSubstring("Navigate"))
-			Expect(result).To(ContainSubstring("Select"))
+				primitives.BackBadge(th),
+			)
+			Expect(footer).To(ContainSubstring("Navigate"))
+			Expect(footer).To(ContainSubstring("Select"))
+			Expect(footer).To(ContainSubstring("Back"))
 		})
 
-		It("should return empty string for no badges", func() {
-			result := primitives.RenderHelpFooter(th)
-			Expect(result).To(BeEmpty())
+		It("should return empty string for empty badges", func() {
+			footer := primitives.RenderHelpFooter(th)
+			Expect(footer).To(BeEmpty())
 		})
 
-		It("should handle nil theme", func() {
-			badges := []*primitives.Badge{
+		It("should work with nil theme", func() {
+			footer := primitives.RenderHelpFooter(nil,
 				primitives.NavigateBadge(nil),
-			}
-			result := primitives.RenderHelpFooter(nil, badges...)
-			Expect(result).To(ContainSubstring("Navigate"))
+				primitives.BackBadge(nil),
+			)
+			Expect(footer).To(ContainSubstring("Navigate"))
+			Expect(footer).To(ContainSubstring("Back"))
+		})
+	})
+
+	Describe("Standard Footer Presets", func() {
+		It("RenderMenuFooter should render menu footer", func() {
+			footer := primitives.RenderMenuFooter(th)
+			Expect(footer).To(ContainSubstring("Navigate"))
+			Expect(footer).To(ContainSubstring("Select"))
+			Expect(footer).To(ContainSubstring("Help"))
+			Expect(footer).To(ContainSubstring("Quit"))
 		})
 
-		It("should render single badge without separator", func() {
-			badges := []*primitives.Badge{
-				primitives.CancelBadge(th),
-			}
-			result := primitives.RenderHelpFooter(th, badges...)
-			Expect(result).To(ContainSubstring("Cancel"))
+		It("RenderListFooter should render list footer", func() {
+			footer := primitives.RenderListFooter(th)
+			Expect(footer).To(ContainSubstring("Navigate"))
+			Expect(footer).To(ContainSubstring("Select"))
+			Expect(footer).To(ContainSubstring("Back"))
+		})
+
+		It("RenderFormFooter should render form footer", func() {
+			footer := primitives.RenderFormFooter(th)
+			Expect(footer).To(ContainSubstring("Confirm"))
+			Expect(footer).To(ContainSubstring("Cancel"))
+		})
+
+		It("RenderEditFooter should render edit footer", func() {
+			footer := primitives.RenderEditFooter(th)
+			Expect(footer).To(ContainSubstring("Save"))
+			Expect(footer).To(ContainSubstring("Cancel"))
+		})
+
+		It("RenderBrowseFooter should render browse footer", func() {
+			footer := primitives.RenderBrowseFooter(th)
+			Expect(footer).To(ContainSubstring("Navigate"))
+			Expect(footer).To(ContainSubstring("Edit"))
+			Expect(footer).To(ContainSubstring("Delete"))
+		})
+
+		It("RenderExportFooter should render export footer", func() {
+			footer := primitives.RenderExportFooter(th)
+			Expect(footer).To(ContainSubstring("Navigate"))
+			Expect(footer).To(ContainSubstring("Confirm"))
 		})
 	})
 })
