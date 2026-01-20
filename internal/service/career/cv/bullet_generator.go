@@ -40,6 +40,9 @@ func NewBulletGenerator(eventRepo careerrepo.Repository, factRepo careerrepo.Fac
 }
 
 // GenerateBullets generates ranked CV bullets from events and facts
+// Note: Per-company/project bullet caps are applied by SectionBuilder, not here.
+// This function filters by role/audience relevance and ranks bullets, but does not
+// apply any total bullet cap. See BUG-003 for rationale.
 func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) ([]*career.CVBullet, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -59,11 +62,12 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context, events []
 	// Rank the bullets
 	rankedBullets := bg.rankBullets(filteredBullets, events)
 
-	// Apply role-specific compression
-	compressedBullets := bg.compressByRole(rankedBullets, targetRole)
+	// NOTE: We intentionally do NOT apply a total bullet cap here.
+	// Per-company/project caps are correctly applied by SectionBuilder.getBulletsPerCompanyForRole()
+	// A total cap here would exclude entire companies from the CV. (See BUG-003)
 
-	bg.logger.Info("Generated %d bullets from %d events and %d facts for role %s", len(compressedBullets), len(events), len(facts), targetRole)
-	return compressedBullets, nil
+	bg.logger.Info("Generated %d bullets from %d events and %d facts for role %s", len(rankedBullets), len(events), len(facts), targetRole)
+	return rankedBullets, nil
 }
 
 // generateInitialBullets creates initial bullets from events and facts
@@ -234,38 +238,6 @@ func (bg *DefaultBulletGenerator) calculateBulletScore(bullet *career.CVBullet) 
 	}
 
 	return math.Min(baseScore, 1.0) // Cap at 1.0
-}
-
-// compressByRole applies role-specific bullet caps
-func (bg *DefaultBulletGenerator) compressByRole(bullets []*career.CVBullet, targetRole string) []*career.CVBullet {
-	maxBullets := bg.getBulletCapForRole(targetRole)
-
-	if len(bullets) <= maxBullets {
-		return bullets
-	}
-
-	// Remove lower-ranked bullets
-	compressed := bullets[:maxBullets]
-	bg.logger.Info("Compressed bullets from %d to %d for role %s", len(bullets), len(compressed), targetRole)
-	return compressed
-}
-
-// getBulletCapForRole returns the maximum number of bullets for a role
-// These are total bullets across ALL companies/sections, not per company
-// Set generously to ensure good facts aren't filtered out before section building
-func (bg *DefaultBulletGenerator) getBulletCapForRole(targetRole string) int {
-	switch strings.ToLower(targetRole) {
-	case "principal":
-		return 50 // Allow all high-quality principal facts through
-	case "staff":
-		return 40
-	case "em":
-		return 40
-	case "senior_ic":
-		return 40
-	default:
-		return 30 // Default cap
-	}
 }
 
 // isEventRelevantToRole checks if an event is relevant to a role
