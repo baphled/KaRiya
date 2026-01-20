@@ -206,3 +206,12 @@ func (b *BaseScreen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
 	}
 	return nil
 }
+
+// RenderContent is a default implementation that returns empty string.
+// Screens should override this method to provide their content.
+//
+// This method allows intents to get just the content without StandardView wrapper,
+// enabling them to apply their own StandardView with custom breadcrumbs and help.
+func (b *BaseScreen) RenderContent() string {
+	return ""
+}

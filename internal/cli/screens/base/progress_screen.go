@@ -164,8 +164,9 @@ func (s *BaseProgressScreen) Init() tea.Cmd {
 	return TickCmd()
 }
 
-// View renders the progress screen using StandardView.
-func (s *BaseProgressScreen) View() string {
+// RenderContent returns the progress content without StandardView wrapper.
+// This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
+func (s *BaseProgressScreen) RenderContent() string {
 	var b strings.Builder
 
 	// Title (bold and colored)
@@ -185,8 +186,11 @@ func (s *BaseProgressScreen) View() string {
 	b.WriteString(infoStyle.Render("This may take a few moments..."))
 	b.WriteString("\n")
 
-	content := b.String()
+	return b.String()
+}
 
+// View renders the progress screen using StandardView.
+func (s *BaseProgressScreen) View() string {
 	// Update footer based on cancellation setting
 	footer := s.footer
 	if !s.allowCancel {
@@ -194,7 +198,7 @@ func (s *BaseProgressScreen) View() string {
 	}
 
 	// Use BaseScreen's CreateView helper for StandardView integration
-	return s.CreateView(s.breadcrumbs, content, footer)
+	return s.CreateView(s.breadcrumbs, s.RenderContent(), footer)
 }
 
 // SetFooter updates the footer help text.

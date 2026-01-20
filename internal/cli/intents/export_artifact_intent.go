@@ -286,10 +286,10 @@ func (e *ExportArtifactIntent) View() string {
 	// Create standard view with breadcrumbs
 	view := e.CreateViewWithBreadcrumbs("Main Menu", "Export Artifact", e.getStateName())
 
-	// Get content from screen
-	view.WithContent(e.activeScreen.View())
+	// Get content from screen (RenderContent returns just the content without StandardView wrapper)
+	view.WithContent(e.activeScreen.RenderContent())
 
-	// Get context-aware help
+	// Get context-aware help (themed badges)
 	help := e.getContextHelp()
 	view.WithHelp(help).WithFooterSeparator(true)
 

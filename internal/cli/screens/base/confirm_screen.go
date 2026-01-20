@@ -139,8 +139,9 @@ func (s *BaseConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 	return nil, nil
 }
 
-// View renders the confirmation screen using StandardView.
-func (s *BaseConfirmScreen) View() string {
+// RenderContent returns the confirmation content without StandardView wrapper.
+// This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
+func (s *BaseConfirmScreen) RenderContent() string {
 	var b strings.Builder
 
 	// Title (bold and centered)
@@ -178,10 +179,13 @@ func (s *BaseConfirmScreen) View() string {
 	b.WriteString(buttons)
 	b.WriteString("\n")
 
-	content := b.String()
+	return b.String()
+}
 
+// View renders the confirmation screen using StandardView.
+func (s *BaseConfirmScreen) View() string {
 	// Use BaseScreen's CreateView helper for StandardView integration
-	return s.CreateView(s.breadcrumbs, content, s.footer)
+	return s.CreateView(s.breadcrumbs, s.RenderContent(), s.footer)
 }
 
 // SetFooter updates the footer help text.
