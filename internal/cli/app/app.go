@@ -752,7 +752,6 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	})
 
 	// GenerateCV
-	// GenerateCV
 	// BUG-004: Removed stub data fallback - empty state is now handled by showing
 	// an info modal in handleMenuInput before this intent is activated.
 	_ = router.RegisterIntent("generate_cv", func() intents.Intent {
