@@ -365,7 +365,7 @@ func ThemedCustomFooter(theme themes.Theme, badges ...*primitives.Badge) string 
 func ThemedGlobalBadges(theme themes.Theme) string {
 	return primitives.RenderHelpFooter(theme,
 		primitives.QuitBadge(theme),
-		primitives.HelpKeyBadge("m", "Main Menu", theme),
+		primitives.MenuBadge(theme),
 	)
 }
 

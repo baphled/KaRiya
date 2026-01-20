@@ -12,9 +12,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/configure"
 )
 
-func TestDomainSelect(t *testing.T) {
+func TestConfigureScreens(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "DomainSelectScreen Suite")
+	RunSpecs(t, "Configure Screens Suite")
 }
 
 var _ = Describe("DomainSelectScreen", func() {
