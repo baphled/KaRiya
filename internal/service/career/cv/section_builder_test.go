@@ -2,11 +2,10 @@ package cv
 
 import (
 	"context"
-	"strings"
-	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -20,12 +19,12 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 	BeforeEach(func() {
 		log = logger.DefaultLogger()
-		builder = NewSectionBuilder(nil, log)
+		builder = NewSectionBuilder(log)
 		ctx = context.Background()
 	})
 
 	It("should return empty sections for no bullets", func() {
-		sections, err := builder.BuildSections(ctx, []*career.CVBullet{}, []*career.CareerEvent{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+		sections, err := builder.BuildSections(ctx, []*career.CVBullet{}, []*career.CareerEvent{}, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(sections)).To(Equal(0))
 	})
@@ -41,16 +40,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented authentication system",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented authentication system", "TechCorp", "")
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{event}, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(sections)).To(BeNumerically(">", 0))
 
@@ -70,24 +62,25 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		Expect(expSection.Content[0].Bullets[0].Text).To(Equal("Implemented authentication system"))
 	})
 
-	It("should create skills section from event skills (Phase 11 - Task 40)", func() {
+	It("should create skills section from fact-based bullets", func() {
 		bullets := []*career.CVBullet{
 			{
 				ID:             "bullet1",
-				Text:           "Built API",
-				SourceEventIDs: []string{"event1"},
+				Text:           "Improved system performance",
+				SourceEventIDs: []string{},
+				SourceFactIDs:  []string{"fact1"},
 				Rank:           0.8,
 			},
 		}
 
-		events := []*career.CareerEvent{
+		facts := []*career.Fact{
 			{
-				ID:     "event1",
-				Skills: []string{"Go", "PostgreSQL"},
+				ID:                   "fact1",
+				CompetencyCategories: []string{"Performance Optimization", "System Design"},
 			},
 		}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{}, facts, "principal")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(sections)).To(BeNumerically(">", 0))
 
@@ -100,19 +93,19 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			}
 		}
 		Expect(skillsSection).NotTo(BeNil())
-		Expect(skillsSection.Title).To(Equal("Technical Skills"))
+		Expect(skillsSection.Title).To(Equal("Core Competencies"))
 		Expect(len(skillsSection.Content)).To(BeNumerically(">", 0))
-		// Skills section should have technical skills with counts
-		hasSkill := false
+		// Skills section should have competency categories, not bullet text
+		hasCategory := false
 		for _, group := range skillsSection.Content {
 			for _, bullet := range group.Bullets {
-				if strings.Contains(bullet.Text, "Go") || strings.Contains(bullet.Text, "PostgreSQL") {
-					hasSkill = true
+				if bullet.Text == "Performance Optimization" || bullet.Text == "System Design" {
+					hasCategory = true
 					break
 				}
 			}
 		}
-		Expect(hasSkill).To(BeTrue())
+		Expect(hasCategory).To(BeTrue())
 	})
 
 	It("should not create skills section without fact-based bullets", func() {
@@ -126,16 +119,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented feature",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{event}, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 
 		// Should only have experience section, no skills
@@ -155,16 +141,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Led architecture implementation",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Led architecture implementation", "TechCorp", "")
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{event}, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 
 		// Should include summary section for principal role
@@ -192,16 +171,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented feature",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{event}, []*career.Fact{}, "senior_ic")
 		Expect(err).NotTo(HaveOccurred())
 
 		// Should not include summary section for senior_ic
@@ -221,16 +193,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Implemented feature",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{event}, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 
 		// Should have experience first, then skills, then summary
@@ -262,21 +227,11 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Feature A",
-				Company: "CompanyA",
-				Date:    time.Now(),
-			},
-			{
-				ID:      "event2",
-				Text:    "Feature B",
-				Company: "CompanyB",
-				Date:    time.Now(),
-			},
+			fixtures.EventWith("event1", "Feature A", "CompanyA", ""),
+			fixtures.EventWith("event2", "Feature B", "CompanyB", ""),
 		}
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 
 		// Find experience section
@@ -316,7 +271,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		cancelCtx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		_, err := builder.BuildSections(cancelCtx, bullets, []*career.CareerEvent{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+		_, err := builder.BuildSections(cancelCtx, bullets, []*career.CareerEvent{}, []*career.Fact{}, "principal")
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -330,16 +285,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Feature",
-				Date:    time.Now(),
-				Project: "MyProject", // Has project instead of company
-			},
-		}
+		event := fixtures.EventWith("event1", "Feature", "", "MyProject")
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{event}, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(sections)).To(BeNumerically(">", 0))
 
@@ -375,16 +323,9 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			},
 		}
 
-		events := []*career.CareerEvent{
-			{
-				ID:      "event1",
-				Text:    "Feature A",
-				Company: "TechCorp",
-				Date:    time.Now(),
-			},
-		}
+		event := fixtures.EventWith("event1", "Feature A", "TechCorp", "")
 
-		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
+		sections, err := builder.BuildSections(ctx, bullets, []*career.CareerEvent{event}, []*career.Fact{}, "principal")
 		Expect(err).NotTo(HaveOccurred())
 
 		// All section IDs should be unique
