@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -41,6 +42,9 @@ type ExportArtifactIntent struct {
 
 	// preview holds the generated preview content
 	preview string
+
+	// previewStats holds statistics about the preview
+	previewStats *exportscreens.PreviewStats
 
 	// result holds the final export result
 	exportResult *ExportArtifactResult
@@ -613,11 +617,13 @@ func getDestinationName(d ExportDestination) string {
 
 // newPreviewScreen creates the preview screen.
 func (e *ExportArtifactIntent) newPreviewScreen() screens.Screen {
-	return exportscreens.NewPreview(
+	return exportscreens.NewPreviewWithStats(
 		e.preview,
 		types.ExportArtifactType(e.config.ArtifactType),
 		types.ExportFormat(e.config.Format),
+		types.ExportDestination(e.config.Destination),
 		[]string{"Main Menu", "Export Artifact", "Preview"},
+		e.previewStats,
 	)
 }
 
@@ -814,6 +820,11 @@ func (e *ExportArtifactIntent) generateEventsPreview(ctx context.Context) string
 		return "Preview not available - repository not initialized"
 	}
 
+	// Get total count for stats
+	allEvents, _ := e.context.EventRepository.List(ctx, careerrepo.ListFilters{})
+	totalCount := len(allEvents)
+
+	// Get preview items (limited)
 	events, err := e.context.EventRepository.List(ctx, careerrepo.ListFilters{Limit: 10})
 	if err != nil {
 		return fmt.Sprintf("Error loading events: %v", err)
@@ -839,9 +850,20 @@ func (e *ExportArtifactIntent) generateEventsPreview(ctx context.Context) string
 		return fmt.Sprintf("Error generating preview: %v", err)
 	}
 
-	if len(content) > 2000 {
+	// Calculate stats
+	isTruncated := len(content) > 2000
+	if isTruncated {
 		content = content[:2000] + "\n\n...(preview truncated)..."
 	}
+
+	e.previewStats = &exportscreens.PreviewStats{
+		ItemCount:     len(events),
+		TotalCount:    totalCount,
+		EstimatedSize: int64(len(content) * totalCount / max(len(events), 1)),
+		ContentLines:  countLines(content),
+		IsTruncated:   isTruncated,
+	}
+
 	return content
 }
 
@@ -849,6 +871,10 @@ func (e *ExportArtifactIntent) generateFactsPreview(ctx context.Context) string 
 	if e.context.FactRepository == nil {
 		return "Preview not available - repository not initialized"
 	}
+
+	// Get total count for stats
+	allFacts, _ := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{})
+	totalCount := len(allFacts)
 
 	facts, err := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{Limit: 10})
 	if err != nil {
@@ -875,9 +901,20 @@ func (e *ExportArtifactIntent) generateFactsPreview(ctx context.Context) string 
 		return fmt.Sprintf("Error generating preview: %v", err)
 	}
 
-	if len(content) > 2000 {
+	// Calculate stats
+	isTruncated := len(content) > 2000
+	if isTruncated {
 		content = content[:2000] + "\n\n...(preview truncated)..."
 	}
+
+	e.previewStats = &exportscreens.PreviewStats{
+		ItemCount:     len(facts),
+		TotalCount:    totalCount,
+		EstimatedSize: int64(len(content) * totalCount / max(len(facts), 1)),
+		ContentLines:  countLines(content),
+		IsTruncated:   isTruncated,
+	}
+
 	return content
 }
 
@@ -885,6 +922,10 @@ func (e *ExportArtifactIntent) generateBurstsPreview(ctx context.Context) string
 	if e.context.BurstRepository == nil {
 		return "Preview not available - repository not initialized"
 	}
+
+	// Get total count for stats
+	allBursts, _ := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{})
+	totalCount := len(allBursts)
 
 	bursts, err := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{Limit: 10})
 	if err != nil {
@@ -911,10 +952,29 @@ func (e *ExportArtifactIntent) generateBurstsPreview(ctx context.Context) string
 		return fmt.Sprintf("Error generating preview: %v", err)
 	}
 
-	if len(content) > 2000 {
+	// Calculate stats
+	isTruncated := len(content) > 2000
+	if isTruncated {
 		content = content[:2000] + "\n\n...(preview truncated)..."
 	}
+
+	e.previewStats = &exportscreens.PreviewStats{
+		ItemCount:     len(bursts),
+		TotalCount:    totalCount,
+		EstimatedSize: int64(len(content) * totalCount / max(len(bursts), 1)),
+		ContentLines:  countLines(content),
+		IsTruncated:   isTruncated,
+	}
+
 	return content
+}
+
+// countLines counts the number of lines in a string.
+func countLines(s string) int {
+	if s == "" {
+		return 0
+	}
+	return strings.Count(s, "\n") + 1
 }
 
 // getContext returns a context for service calls.
