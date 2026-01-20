@@ -34,52 +34,43 @@ type NarrativeProfileData struct {
 	GitHub            string
 	Portfolio         string
 	CoreStrengths     []string
-	Languages         string
-	Frontend          string
-	Systems           string
+	Languages         []string
+	Frontend          []string
+	Systems           []string
 	ValuePropositions []string
 }
 
-// DefaultNarrativeProfile returns the default narrative profile data.
-// This is used as fallback when no profile is configured.
+// DefaultNarrativeProfile returns an empty narrative profile data.
+// This is used as a base when no profile is configured.
+// Personal fields (Name, Email, etc.) should be provided via onboarding.
+// Inferred fields (CoreStrengths, ValuePropositions, Technologies) should be
+// populated by ProfileInferenceService from the user's career data.
 func DefaultNarrativeProfile() *NarrativeProfileData {
 	return &NarrativeProfileData{
-		Name:      "Yomi Colledge",
-		Role:      "Senior Software Engineer / Technical Consultant",
-		Location:  "Remote (UK)",
-		Email:     "yomi@boodah.net",
-		GitHub:    "https://github.com/baphled",
-		Portfolio: "http://boodah.net",
-		CoreStrengths: []string{
-			"Language-agnostic backend and systems engineering",
-			"System design and architectural ownership",
-			"Cross-functional collaboration and mentorship",
-			"Pragmatic problem-solving with production focus",
-			"Technical leadership without formal authority",
-		},
-		Languages: "Ruby, Go, PHP, C/C++, JavaScript, Shell",
-		Frontend:  "Vue.js",
-		Systems:   "Linux, SQL, APIs, CI/CD, automation",
-		ValuePropositions: []string{
-			"Languages as tools, not identity",
-			"Calm handling of complexity",
-			"Ownership without ego",
-			"Clear technical communication",
-			"Production-first mindset",
-		},
+		Name:              "",
+		Role:              "",
+		Location:          "",
+		Email:             "",
+		GitHub:            "",
+		Portfolio:         "",
+		CoreStrengths:     []string{},
+		Languages:         []string{},
+		Frontend:          []string{},
+		Systems:           []string{},
+		ValuePropositions: []string{},
 	}
 }
 
 // NarrativeProfileFromConfig creates a NarrativeProfileData from config.ProfileConfig.
-// Falls back to default values for any empty fields.
+// Empty fields remain empty - they should be populated by ProfileInferenceService
+// from the user's career data (events, facts, skills) rather than falling back
+// to hardcoded defaults.
 func NarrativeProfileFromConfig(cfg *config.ProfileConfig) *NarrativeProfileData {
 	if cfg == nil {
 		return DefaultNarrativeProfile()
 	}
 
-	defaults := DefaultNarrativeProfile()
-
-	profile := &NarrativeProfileData{
+	return &NarrativeProfileData{
 		Name:              cfg.Name,
 		Role:              cfg.Title,
 		Location:          cfg.Location,
@@ -92,43 +83,6 @@ func NarrativeProfileFromConfig(cfg *config.ProfileConfig) *NarrativeProfileData
 		Systems:           cfg.Systems,
 		ValuePropositions: cfg.WhatIBring,
 	}
-
-	// Use defaults for empty fields
-	if profile.Name == "" {
-		profile.Name = defaults.Name
-	}
-	if profile.Role == "" {
-		profile.Role = defaults.Role
-	}
-	if profile.Location == "" {
-		profile.Location = defaults.Location
-	}
-	if profile.Email == "" {
-		profile.Email = defaults.Email
-	}
-	if profile.GitHub == "" {
-		profile.GitHub = defaults.GitHub
-	}
-	if profile.Portfolio == "" {
-		profile.Portfolio = defaults.Portfolio
-	}
-	if len(profile.CoreStrengths) == 0 {
-		profile.CoreStrengths = defaults.CoreStrengths
-	}
-	if profile.Languages == "" {
-		profile.Languages = defaults.Languages
-	}
-	if profile.Frontend == "" {
-		profile.Frontend = defaults.Frontend
-	}
-	if profile.Systems == "" {
-		profile.Systems = defaults.Systems
-	}
-	if len(profile.ValuePropositions) == 0 {
-		profile.ValuePropositions = defaults.ValuePropositions
-	}
-
-	return profile
 }
 
 // filterBulletsByConfidence filters bullets to only include those with confidence >= threshold.

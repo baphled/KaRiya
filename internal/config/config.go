@@ -38,9 +38,9 @@ type ProfileConfig struct {
 	GitHub        string   `yaml:"github"`         // e.g., "https://github.com/username"
 	Portfolio     string   `yaml:"portfolio"`      // e.g., "http://portfolio.example.com"
 	CoreStrengths []string `yaml:"core_strengths"` // List of core strengths
-	Languages     string   `yaml:"languages"`      // e.g., "Ruby, Go, PHP, C/C++, JavaScript, Shell"
-	Frontend      string   `yaml:"frontend"`       // e.g., "Vue.js, React"
-	Systems       string   `yaml:"systems"`        // e.g., "Linux, SQL, APIs, CI/CD, automation"
+	Languages     []string `yaml:"languages"`      // e.g., "Ruby, Go, PHP, C/C++, JavaScript, Shell"
+	Frontend      []string `yaml:"frontend"`       // e.g., "Vue.js, React"
+	Systems       []string `yaml:"systems"`        // e.g., "Linux, SQL, APIs, CI/CD, automation"
 	WhatIBring    []string `yaml:"what_i_bring"`   // List of value propositions
 }
 
@@ -93,9 +93,9 @@ func DefaultConfig() *Config {
 			GitHub:          "",
 			Portfolio:       "",
 			CoreStrengths:   []string{},
-			Languages:       "",
-			Frontend:        "",
-			Systems:         "",
+			Languages:       []string{},
+			Frontend:        []string{},
+			Systems:         []string{},
 			WhatIBring:      []string{},
 		},
 		CV: CVConfig{

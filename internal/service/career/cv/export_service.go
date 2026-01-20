@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -401,7 +402,7 @@ func (es *ExportService) exportConsultingText(ctx context.Context, cv *career.CV
 	buf.WriteString(profile.Role + "\n")
 	buf.WriteString(profile.Location + "\n")
 	buf.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
-	buf.WriteString(fmt.Sprintf("GitHub: %s\n\n", profile.GitHub))
+	buf.WriteString(fmt.Sprintf("GitHub: %s\n\n", forms.GitHubURL(profile.GitHub)))
 
 	buf.WriteString(strings.Repeat("-", 80) + "\n\n")
 
@@ -460,7 +461,7 @@ func (es *ExportService) exportConsultingMarkdown(ctx context.Context, cv *caree
 	// Profile header
 	buf.WriteString(fmt.Sprintf("# %s\n\n", cv.Name))
 	buf.WriteString(fmt.Sprintf("**%s** | %s\n\n", profile.Role, profile.Location))
-	buf.WriteString(fmt.Sprintf("Email: %s | GitHub: %s\n\n", profile.Email, profile.GitHub))
+	buf.WriteString(fmt.Sprintf("Email: %s | GitHub: %s\n\n", profile.Email, forms.GitHubURL(profile.GitHub)))
 	buf.WriteString("---\n\n")
 
 	// Summary section
@@ -567,14 +568,14 @@ func (es *ExportService) exportHighlightsText(ctx context.Context, cv *career.CV
 	buf.WriteString("\n")
 
 	// Technologies section
-	if profile.Languages != "" || profile.Systems != "" {
+	if len(profile.Languages) > 0 || len(profile.Systems) > 0 {
 		buf.WriteString("TECHNOLOGIES\n")
 		buf.WriteString(strings.Repeat("-", 12) + "\n\n")
-		if profile.Languages != "" {
-			buf.WriteString(fmt.Sprintf("Languages: %s\n", profile.Languages))
+		if len(profile.Languages) > 0 {
+			buf.WriteString(fmt.Sprintf("Languages: %s\n", strings.Join(profile.Languages, ", ")))
 		}
-		if profile.Systems != "" {
-			buf.WriteString(fmt.Sprintf("Systems: %s\n", profile.Systems))
+		if len(profile.Systems) > 0 {
+			buf.WriteString(fmt.Sprintf("Systems: %s\n", strings.Join(profile.Systems, ", ")))
 		}
 		buf.WriteString("\n")
 	}
@@ -625,13 +626,13 @@ func (es *ExportService) exportHighlightsMarkdown(ctx context.Context, cv *caree
 	buf.WriteString("\n")
 
 	// Technologies
-	if profile.Languages != "" || profile.Systems != "" {
+	if len(profile.Languages) > 0 || len(profile.Systems) > 0 {
 		buf.WriteString("## Technologies\n\n")
-		if profile.Languages != "" {
-			buf.WriteString(fmt.Sprintf("**Languages:** %s\n\n", profile.Languages))
+		if len(profile.Languages) > 0 {
+			buf.WriteString(fmt.Sprintf("**Languages:** %s\n\n", strings.Join(profile.Languages, ", ")))
 		}
-		if profile.Systems != "" {
-			buf.WriteString(fmt.Sprintf("**Systems:** %s\n", profile.Systems))
+		if len(profile.Systems) > 0 {
+			buf.WriteString(fmt.Sprintf("**Systems:** %s\n", strings.Join(profile.Systems, ", ")))
 		}
 		buf.WriteString("\n")
 	}
@@ -686,7 +687,7 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 	buf.WriteString(profile.Role + "\n")
 	buf.WriteString(profile.Location + "\n")
 	buf.WriteString(fmt.Sprintf("Email: %s\n", profile.Email))
-	buf.WriteString(fmt.Sprintf("GitHub: %s\n", profile.GitHub))
+	buf.WriteString(fmt.Sprintf("GitHub: %s\n", forms.GitHubURL(profile.GitHub)))
 	buf.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
 
 	buf.WriteString(strings.Repeat("-", 80) + "\n\n")
@@ -712,9 +713,9 @@ func (es *ExportService) exportNarrativeTextWithProfile(ctx context.Context, cv 
 	// Languages & Technologies section
 	buf.WriteString("LANGUAGES & TECHNOLOGIES\n")
 	buf.WriteString(strings.Repeat("-", 24) + "\n\n")
-	buf.WriteString(fmt.Sprintf("Languages: %s\n", profile.Languages))
-	buf.WriteString(fmt.Sprintf("Frontend: %s\n", profile.Frontend))
-	buf.WriteString(fmt.Sprintf("Systems: %s\n\n", profile.Systems))
+	buf.WriteString(fmt.Sprintf("Languages: %s\n", strings.Join(profile.Languages, ", ")))
+	buf.WriteString(fmt.Sprintf("Frontend: %s\n", strings.Join(profile.Frontend, ", ")))
+	buf.WriteString(fmt.Sprintf("Systems: %s\n\n", strings.Join(profile.Systems, ", ")))
 
 	// Selected Experience section (filtered by confidence)
 	buf.WriteString("SELECTED EXPERIENCE\n")
@@ -771,7 +772,7 @@ func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context,
 	buf.WriteString(fmt.Sprintf("**%s**\n", profile.Role))
 	buf.WriteString(fmt.Sprintf("%s\n", profile.Location))
 	buf.WriteString(fmt.Sprintf("Email: [%s](mailto:%s)\n", profile.Email, profile.Email))
-	buf.WriteString(fmt.Sprintf("GitHub: %s\n", profile.GitHub))
+	buf.WriteString(fmt.Sprintf("GitHub: %s\n", forms.GitHubURL(profile.GitHub)))
 	buf.WriteString(fmt.Sprintf("Portfolio: %s\n\n", profile.Portfolio))
 
 	buf.WriteString("---\n\n")
@@ -794,9 +795,9 @@ func (es *ExportService) exportNarrativeMarkdownWithProfile(ctx context.Context,
 
 	// Languages & Technologies section
 	buf.WriteString("## Languages & Technologies\n\n")
-	buf.WriteString(fmt.Sprintf("**Languages:** %s\n", profile.Languages))
-	buf.WriteString(fmt.Sprintf("**Frontend:** %s\n", profile.Frontend))
-	buf.WriteString(fmt.Sprintf("**Systems:** %s\n\n", profile.Systems))
+	buf.WriteString(fmt.Sprintf("**Languages:** %s\n", strings.Join(profile.Languages, ", ")))
+	buf.WriteString(fmt.Sprintf("**Frontend:** %s\n", strings.Join(profile.Frontend, ", ")))
+	buf.WriteString(fmt.Sprintf("**Systems:** %s\n\n", strings.Join(profile.Systems, ", ")))
 
 	// Selected Experience section (filtered by confidence)
 	buf.WriteString("## Selected Experience\n\n")

@@ -239,8 +239,8 @@ var _ = Describe("CV Structure Export", func() {
 
 			It("should include Technologies section", func() {
 				profileCfg := &config.ProfileConfig{
-					Languages: "Go, Ruby, Python",
-					Systems:   "Linux, Kubernetes, PostgreSQL",
+					Languages: []string{"Go", "Ruby", "Python"},
+					Systems:   []string{"Linux", "Kubernetes", "PostgreSQL"},
 				}
 				content, err := service.ExportWithProfile(ctx, cvView, sections, bullets, cv.CVStructureHighlights, cv.ExportFormatText, profileCfg)
 				Expect(err).NotTo(HaveOccurred())

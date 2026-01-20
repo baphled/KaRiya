@@ -304,3 +304,65 @@ func Custom(validate func(string) bool, errorMsg string) func(string) error {
 		return nil
 	}
 }
+
+// GitHub username validation errors
+var (
+	ErrGitHubUsernameURL         = fmt.Errorf("enter username only, not full URL (e.g., 'baphled' not 'github.com/baphled')")
+	ErrGitHubUsernameHyphenPos   = fmt.Errorf("username cannot start or end with a hyphen")
+	ErrGitHubUsernameConsecutive = fmt.Errorf("username cannot contain consecutive hyphens")
+	ErrGitHubUsernameChars       = fmt.Errorf("username must contain only alphanumeric characters and hyphens")
+	ErrGitHubUsernameTooLong     = fmt.Errorf("username must be at most 39 characters")
+)
+
+// GitHubUsername validates that a value is a valid GitHub username (not a URL).
+// GitHub username rules:
+// - May only contain alphanumeric characters or hyphens
+// - Cannot have consecutive hyphens
+// - Cannot begin or end with a hyphen
+// - Maximum 39 characters
+func GitHubUsername(value string) error {
+	value = strings.TrimSpace(value)
+
+	// Allow empty (optional field)
+	if value == "" {
+		return nil
+	}
+
+	// Reject URLs - user should enter username only
+	if strings.Contains(value, "github.com") || strings.HasPrefix(value, "http") {
+		return ErrGitHubUsernameURL
+	}
+
+	// Check max length (GitHub limit is 39)
+	if len(value) > 39 {
+		return ErrGitHubUsernameTooLong
+	}
+
+	// Cannot start or end with hyphen
+	if strings.HasPrefix(value, "-") || strings.HasSuffix(value, "-") {
+		return ErrGitHubUsernameHyphenPos
+	}
+
+	// Cannot have consecutive hyphens
+	if strings.Contains(value, "--") {
+		return ErrGitHubUsernameConsecutive
+	}
+
+	// Must contain only alphanumeric and hyphens
+	validChars := regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+	if !validChars.MatchString(value) {
+		return ErrGitHubUsernameChars
+	}
+
+	return nil
+}
+
+// GitHubURL formats a GitHub username as a full URL.
+// Returns empty string if username is empty.
+func GitHubURL(username string) string {
+	username = strings.TrimSpace(username)
+	if username == "" {
+		return ""
+	}
+	return fmt.Sprintf("https://github.com/%s", username)
+}

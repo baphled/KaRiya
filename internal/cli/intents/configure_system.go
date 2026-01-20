@@ -318,6 +318,22 @@ func settingsFromConfig(cfg *config.Config) map[ConfigurationDomain][]*Configura
 				Description:  "Your systems/infrastructure expertise (comma-separated)",
 			},
 			{
+				Key:          "core_strengths",
+				Label:        "Core Strengths",
+				Value:        cfg.Profile.CoreStrengths,
+				DefaultValue: []string{},
+				Type:         "list",
+				Description:  "Your core professional strengths (comma-separated)",
+			},
+			{
+				Key:          "what_i_bring",
+				Label:        "What I Bring",
+				Value:        cfg.Profile.WhatIBring,
+				DefaultValue: []string{},
+				Type:         "list",
+				Description:  "Your unique value propositions (comma-separated)",
+			},
+			{
 				Key:          "default_role",
 				Label:        "Default Role",
 				Value:        cfg.Profile.DefaultRole,
@@ -484,21 +500,34 @@ func (m *ConfigureSystemModel) initializeInputs() {
 	for _, setting := range settings {
 		input := textinput.New()
 		input.Placeholder = setting.Description
-		input.SetValue(fmt.Sprintf("%v", setting.Value))
 
 		// Configure based on type
 		switch setting.Type {
 		case "int":
+			input.SetValue(fmt.Sprintf("%v", setting.Value))
 			input.CharLimit = 10
 			input.Validate = validateInt
 		case "string":
+			input.SetValue(fmt.Sprintf("%v", setting.Value))
 			input.CharLimit = 200
 		case "bool":
 			// For bool, we'll use "true"/"false" strings
+			input.SetValue(fmt.Sprintf("%v", setting.Value))
 			input.CharLimit = 5
 		case "select":
 			// For select, show current value (user will need to type exact match)
+			input.SetValue(fmt.Sprintf("%v", setting.Value))
 			input.CharLimit = 50
+		case "list":
+			// For list, display as comma-separated values
+			if strSlice, ok := setting.Value.([]string); ok {
+				input.SetValue(strings.Join(strSlice, ", "))
+			} else {
+				input.SetValue("")
+			}
+			input.CharLimit = 500
+		default:
+			input.SetValue(fmt.Sprintf("%v", setting.Value))
 		}
 
 		m.settingsInputs[setting.Key] = input
@@ -586,6 +615,22 @@ func (m *ConfigureSystemModel) saveCurrentValue() {
 	case "bool":
 		v := input.Value()
 		newValue = (v == "true" || v == "True" || v == "TRUE")
+	case "list":
+		// Parse comma-separated string into []string
+		rawValue := input.Value()
+		if rawValue == "" {
+			newValue = []string{}
+		} else {
+			parts := strings.Split(rawValue, ",")
+			result := make([]string, 0, len(parts))
+			for _, part := range parts {
+				trimmed := strings.TrimSpace(part)
+				if trimmed != "" {
+					result = append(result, trimmed)
+				}
+			}
+			newValue = result
+		}
 	}
 
 	// Store in changes
@@ -946,11 +991,15 @@ func applyProfileChange(prof *config.ProfileConfig, key string, value interface{
 	case "portfolio":
 		prof.Portfolio = value.(string)
 	case "languages":
-		prof.Languages = value.(string)
+		prof.Languages = value.([]string)
 	case "frontend":
-		prof.Frontend = value.(string)
+		prof.Frontend = value.([]string)
 	case "systems":
-		prof.Systems = value.(string)
+		prof.Systems = value.([]string)
+	case "core_strengths":
+		prof.CoreStrengths = value.([]string)
+	case "what_i_bring":
+		prof.WhatIBring = value.([]string)
 	case "default_role":
 		prof.DefaultRole = value.(string)
 	case "default_audience":

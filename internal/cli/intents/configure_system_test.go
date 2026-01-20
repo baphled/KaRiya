@@ -478,6 +478,121 @@ var _ = Describe("ConfigureSystem Intent", func() {
 				Expect(setting.Type).To(BeElementOf("string", "bool", "int", "select"))
 			}
 		})
+
+		It("should include core_strengths setting in Profile domain", func() {
+			ctx := NewConfigureSystemContext()
+			var found bool
+			for _, setting := range ctx.Settings[DomainProfile] {
+				if setting.Key == "core_strengths" {
+					found = true
+					Expect(setting.Type).To(Equal("list"))
+					Expect(setting.Label).To(Equal("Core Strengths"))
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "core_strengths setting should exist in Profile domain")
+		})
+
+		It("should include what_i_bring setting in Profile domain", func() {
+			ctx := NewConfigureSystemContext()
+			var found bool
+			for _, setting := range ctx.Settings[DomainProfile] {
+				if setting.Key == "what_i_bring" {
+					found = true
+					Expect(setting.Type).To(Equal("list"))
+					Expect(setting.Label).To(Equal("What I Bring"))
+					break
+				}
+			}
+			Expect(found).To(BeTrue(), "what_i_bring setting should exist in Profile domain")
+		})
+
+		It("should support list type in setting types", func() {
+			ctx := NewConfigureSystemContext()
+			// Check Profile domain which should contain list types
+			var hasListType bool
+			for _, setting := range ctx.Settings[DomainProfile] {
+				if setting.Type == "list" {
+					hasListType = true
+					break
+				}
+			}
+			Expect(hasListType).To(BeTrue(), "Profile domain should have at least one list type setting")
+		})
+	})
+
+	Describe("List Type Settings", func() {
+		var (
+			intent *ConfigureSystemIntent
+			ctx    context.Context
+		)
+
+		BeforeEach(func() {
+			ctx = context.Background()
+			var err error
+			intent, err = NewConfigureSystemIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		Describe("Display in EditSettings", func() {
+			BeforeEach(func() {
+				intent.SetState(ConfigStateEditSettings)
+				intent.SetDomain(DomainProfile)
+			})
+
+			It("should display core_strengths setting", func() {
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Core Strengths"))
+			})
+
+			It("should display what_i_bring setting", func() {
+				view := intent.View()
+				Expect(view).To(ContainSubstring("What I Bring"))
+			})
+
+			It("should show list values as comma-separated string", func() {
+				// Set list values in config
+				intent.model.context.Config.Profile.CoreStrengths = []string{"Go", "TDD", "Clean Code"}
+				// Reinitialize context to pick up changes
+				intent.model.context.Settings = settingsFromConfig(intent.model.context.Config)
+				intent.model.initializeInputs()
+
+				view := intent.View()
+				Expect(view).To(ContainSubstring("Go, TDD, Clean Code"))
+			})
+		})
+
+		Describe("Saving List Values", func() {
+			It("should parse comma-separated input into []string for core_strengths", func() {
+				// This tests the applyProfileChange function with list type
+				cfg := intent.model.context.Config
+				err := applyProfileChange(&cfg.Profile, "core_strengths", []string{"Leadership", "Architecture", "Mentoring"})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfg.Profile.CoreStrengths).To(Equal([]string{"Leadership", "Architecture", "Mentoring"}))
+			})
+
+			It("should parse comma-separated input into []string for what_i_bring", func() {
+				cfg := intent.model.context.Config
+				err := applyProfileChange(&cfg.Profile, "what_i_bring", []string{"Technical Excellence", "Team Growth"})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfg.Profile.WhatIBring).To(Equal([]string{"Technical Excellence", "Team Growth"}))
+			})
+		})
+
+		Describe("Input Handling for List Type", func() {
+			It("should initialize list input with comma-separated values", func() {
+				intent.model.context.Config.Profile.CoreStrengths = []string{"Go", "TDD"}
+				intent.model.context.Settings = settingsFromConfig(intent.model.context.Config)
+				intent.SetDomain(DomainProfile)
+				intent.model.initializeInputs()
+
+				// Find the core_strengths input
+				input, exists := intent.model.settingsInputs["core_strengths"]
+				Expect(exists).To(BeTrue(), "core_strengths input should exist")
+				Expect(input.Value()).To(Equal("Go, TDD"))
+			})
+		})
 	})
 
 	Describe("Intent Interface Compliance", func() {
