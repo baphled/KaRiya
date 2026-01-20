@@ -3,6 +3,7 @@ package intents
 import (
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -995,7 +996,7 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 
 		It("should implement FilterBehavior interface", func() {
 			// Verify intent implements FilterBehavior interface
-			var _ FilterBehavior = intent
+			var _ behaviors.FilterBehavior = intent
 		})
 
 		It("should correctly detect active filters", func() {
