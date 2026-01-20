@@ -24,6 +24,7 @@
       2,
       "always",
       [
+        "behaviors",
         "domain",
         "service",
         "repo",
@@ -47,6 +48,7 @@
         "navigation",
         "screens",
         "tasks",
+        "uikit",
         "workflows",
         "summary",
         "testing"
