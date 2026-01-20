@@ -1,7 +1,13 @@
 # Intent Patterns Library
 
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-20
 **Status**: ✅ **PRODUCTION STANDARDS - COMPREHENSIVE PATTERN CATALOG**
+
+> **UIKit Migration Note**: New code should use UIKit components from `internal/cli/uikit/`:
+> - `layout.ScreenLayout` for view layouts (replaces `CreateStandardView`)
+> - `feedback.Modal` + `behaviors.RenderModalOverlay()` for modals
+> - `primitives.HelpKeyBadge()` for footer badges (replaces `components.KeyBadge`)
+> - See [UIKIT_GUIDE.md](../UIKIT_GUIDE.md) for complete reference
 
 ---
 

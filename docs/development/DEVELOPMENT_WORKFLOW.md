@@ -125,3 +125,30 @@ In-depth process documentation for specific workflows:
 **Complete list**: See [`docs/rules/README.md`](docs/rules/README.md) for the complete, categorized index of all 14 rule files with detailed descriptions and cross-references.
 
 ---
+
+## UIKit Component Standards
+
+When writing TUI code, use the UIKit component library for consistency:
+
+### Required UIKit Components
+
+| Need | Use | Location |
+|------|-----|----------|
+| View layout | `layout.ScreenLayout` | `uikit/layout/` |
+| Footer badges | `primitives.HelpKeyBadge()` | `uikit/primitives/` |
+| Text styling | `primitives.Title()`, `Body()`, `Muted()` | `uikit/primitives/` |
+| Modals | `feedback.Modal` + `behaviors.RenderModalOverlay()` | `uikit/feedback/` |
+| Boxes/containers | `containers.NewBox()` | `uikit/containers/` |
+
+### Quick Lookup
+
+```bash
+make what-to-use NEED="modal"   # Component usage examples
+make check-patterns             # Verify pattern compliance
+```
+
+### Full Reference
+
+See [`docs/UIKIT_GUIDE.md`](../UIKIT_GUIDE.md) for complete component documentation.
+
+---

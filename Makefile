@@ -226,10 +226,12 @@ session-start:
 	@echo "  Table view?     → behaviors.TableBehavior[T]"
 	@echo "  Form in intent? → models.*Form wrapper (NOT *huh.Form)"
 	@echo "  Colors?         → theme.Primary() etc (NOT lipgloss.Color)"
-	@echo "  View layout?    → CreateStandardView()"
-	@echo "  Footer?         → ThemedNavigationFooter()"
+	@echo "  View layout?    → layout.ScreenLayout (UIKit)"
+	@echo "  Footer badges?  → primitives.HelpKeyBadge() (UIKit)"
+	@echo "  Modals?         → feedback.Modal + RenderModalOverlay()"
 	@echo ""
-	@echo "  Examples: examples/*.go.example"
+	@echo "  Run: make what-to-use NEED='keyword' for details"
+	@echo "  Docs: docs/UIKIT_GUIDE.md"
 	@echo ""
 	@$(MAKE) -s check-patterns-quiet
 	@echo ""
@@ -324,12 +326,32 @@ check-patterns:
 	echo ""; \
 	echo "5. StandardView Usage:"; \
 	INTENTS_COUNT=$$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
-	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
+	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView\|ScreenLayout" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
 	if [ "$$SV_COUNT" -ge "$$INTENTS_COUNT" ]; then \
-		echo "   ✅ All intents use StandardView ($$SV_COUNT/$$INTENTS_COUNT)"; \
+		echo "   ✅ All intents use StandardView/ScreenLayout ($$SV_COUNT/$$INTENTS_COUNT)"; \
 	else \
-		echo "   ⚠️  Not all intents use StandardView ($$SV_COUNT/$$INTENTS_COUNT)"; \
+		echo "   ⚠️  Not all intents use StandardView/ScreenLayout ($$SV_COUNT/$$INTENTS_COUNT)"; \
 		VIOLATIONS=$$((VIOLATIONS+1)); \
+	fi; \
+	echo ""; \
+	echo "6. UIKit Badge Pattern (new code):"; \
+	DEPRECATED_BADGE=$$(grep -rn "components\.KeyBadge" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	UIKIT_BADGE=$$(grep -rn "primitives\..*Badge\|HelpKeyBadge" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -n "$$UIKIT_BADGE" ]; then \
+		echo "   ✅ UIKit badges in use"; \
+	elif [ -n "$$DEPRECATED_BADGE" ]; then \
+		echo "   ℹ️  Legacy KeyBadge found (migrate to primitives.HelpKeyBadge)"; \
+		echo "$$DEPRECATED_BADGE" | head -3 | sed 's/^/      /'; \
+	else \
+		echo "   ℹ️  No badge usage detected"; \
+	fi; \
+	echo ""; \
+	echo "7. UIKit Modal Pattern (new code):"; \
+	UIKIT_MODAL=$$(grep -rn "feedback\.New.*Modal\|RenderModalOverlay" internal/cli/intents/*.go 2>/dev/null | grep -v "_test.go" || true); \
+	if [ -n "$$UIKIT_MODAL" ]; then \
+		echo "   ✅ UIKit modal pattern in use"; \
+	else \
+		echo "   ℹ️  Consider using feedback.Modal + behaviors.RenderModalOverlay()"; \
 	fi; \
 	echo ""; \
 	echo "================================================"; \
@@ -352,7 +374,7 @@ check-patterns-quiet:
 	HARDCODED_MODELS=$$(grep -rn "lipgloss\.Color(\"#[0-9A-Fa-f]" internal/cli/models/*.go 2>/dev/null | grep -v "_test.go" || true); \
 	if [ -n "$$HARDCODED_MODELS" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
 	INTENTS_COUNT=$$(ls internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" | wc -l); \
-	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
+	SV_COUNT=$$(grep -l "CreateStandardView\|StandardView\|ScreenLayout" internal/cli/intents/*_intent.go 2>/dev/null | wc -l); \
 	if [ "$$SV_COUNT" -lt "$$INTENTS_COUNT" ]; then VIOLATIONS=$$((VIOLATIONS+1)); fi; \
 	if [ $$VIOLATIONS -eq 0 ]; then \
 		echo "✅ All pattern checks passed"; \
