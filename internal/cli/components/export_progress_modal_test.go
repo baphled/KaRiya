@@ -3,7 +3,6 @@ package components_test
 import (
 	"fmt"
 	"strings"
-	"testing"
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -11,11 +10,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestExportProgressModal(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Export Progress Modal Suite")
-}
 
 var _ = Describe("ExportProgressModal", func() {
 	var modal *components.ExportProgressModal

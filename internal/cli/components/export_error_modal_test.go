@@ -1,19 +1,12 @@
 package components_test
 
 import (
-	"testing"
-
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/themes"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
-
-func TestExportErrorModal(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Export Error Modal Suite")
-}
 
 var _ = Describe("ExportErrorModal", func() {
 	var modal *components.ExportErrorModal
