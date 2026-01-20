@@ -166,9 +166,79 @@ rm -f "$TEMP_MSG_FILE"
 # Step 4: Get AI agent and model information
 # ============================================================================
 
-# Use environment variables with sensible defaults
-AGENT_NAME="${AI_AGENT:-OpenCode}"
-MODEL_NAME="${AI_MODEL:-Claude Sonnet 4.5}"
+# Auto-detect AI agent from environment
+detect_ai_agent() {
+    # Check for explicit environment variable first
+    if [ -n "$AI_AGENT" ]; then
+        echo "$AI_AGENT"
+        return
+    fi
+    
+    # Detect Claude Code (sets CLAUDE_CODE env var or runs in specific context)
+    if [ -n "$CLAUDE_CODE" ] || [ -n "$ANTHROPIC_API_KEY" ] && [ -z "$OPENCODE_API_KEY" ]; then
+        echo "Claude Code"
+        return
+    fi
+    
+    # Detect OpenCode
+    if [ -n "$OPENCODE_API_KEY" ] || [ -n "$OPENCODE" ]; then
+        echo "OpenCode"
+        return
+    fi
+    
+    # Detect Cursor
+    if [ -n "$CURSOR_SESSION" ] || [ -n "$CURSOR" ]; then
+        echo "Cursor"
+        return
+    fi
+    
+    # Detect GitHub Copilot
+    if [ -n "$GITHUB_COPILOT" ]; then
+        echo "GitHub Copilot"
+        return
+    fi
+    
+    # Default based on common patterns - check parent process
+    if ps -o command= $PPID 2>/dev/null | grep -qi "claude"; then
+        echo "Claude Code"
+        return
+    fi
+    
+    # Fallback to environment variable or default
+    echo "${AI_AGENT:-Claude Code}"
+}
+
+detect_ai_model() {
+    # Check for explicit environment variable first
+    if [ -n "$AI_MODEL" ]; then
+        echo "$AI_MODEL"
+        return
+    fi
+    
+    # Default models per agent
+    local agent="$1"
+    case "$agent" in
+        "Claude Code")
+            echo "Claude Sonnet 4"
+            ;;
+        "OpenCode")
+            echo "Claude Sonnet 4"
+            ;;
+        "Cursor")
+            echo "GPT-4"
+            ;;
+        "GitHub Copilot")
+            echo "GPT-4"
+            ;;
+        *)
+            echo "Claude Sonnet 4"
+            ;;
+    esac
+}
+
+# Detect agent and model
+AGENT_NAME=$(detect_ai_agent)
+MODEL_NAME=$(detect_ai_model "$AGENT_NAME")
 
 # Get reviewer name from git config
 REVIEWER_NAME=$(git config user.name)

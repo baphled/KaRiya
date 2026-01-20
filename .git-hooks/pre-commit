@@ -3,13 +3,15 @@
 # Pre-commit Hook - Fast Code Quality Checks
 #
 # This hook enforces FAST checks only:
-# 1. No generated files
-# 2. No debug statements
-# 3. No secrets
-# 4. Code formatting
-# 5. Build success
-# 6. Static analysis (go vet)
-# 7. TDD compliance check
+# 1. Session active check
+# 2. No generated files
+# 3. No debug statements
+# 4. No secrets
+# 5. Code formatting (Go files only)
+# 6. Build success (Go files only)
+# 7. Static analysis (Go files only)
+# 8. TDD compliance check (Go files only)
+# 9. Strict pattern checks (Go files only)
 #
 # NOTE: Full test suite and race detection should be run via:
 #   make check-compliance
@@ -29,6 +31,12 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "🔍 PRE-COMMIT CHECKS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+
+# Session check (warn only, don't block)
+if [ ! -f ".session-active" ]; then
+    echo -e "${YELLOW}⚠️  No active session. Run 'make session-start' for full workflow.${NC}"
+    echo ""
+fi
 
 # Check if this is documentation-only changes
 STAGED_FILES=$(git diff --cached --name-only)
@@ -153,6 +161,20 @@ if [ "$SKIP_TDD_CHECK" != "1" ]; then
     fi
 else
     echo -e "${YELLOW}⚠️  TDD check skipped (SKIP_TDD_CHECK=1)${NC}"
+fi
+
+# Strict pattern check for Go files (can be overridden)
+if [ "$SKIP_PATTERN_CHECK" != "1" ]; then
+    if [ -f "scripts/check-patterns-strict.sh" ]; then
+        STAGED_GO=$(git diff --cached --name-only | grep '\.go$' || true)
+        if [ -n "$STAGED_GO" ]; then
+            echo "Running strict pattern checks..."
+            if ! bash scripts/check-patterns-strict.sh 2>/dev/null; then
+                echo -e "${YELLOW}⚠️  Pattern violations found. Run 'make check-patterns' for details.${NC}"
+                # Don't block - just warn
+            fi
+        fi
+    fi
 fi
 
 echo ""

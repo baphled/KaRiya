@@ -1,4 +1,4 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict install-git-hooks install-tracked-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
+.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
 
 # Run all tests in verbose mode
 test:
@@ -114,19 +114,9 @@ pre-pr:
 	echo "Create PR with:" && \
 	echo "  gh pr create --base next --title 'type(scope): description'"
 
-# Install git hooks for AI attribution
+# Install git hooks for AI attribution (from .git-hooks/ directory)
 install-git-hooks:
 	@bash scripts/install-git-hooks.sh
-
-# Install tracked git hooks (from hooks/ directory)
-install-tracked-hooks:
-	@echo "Installing tracked git hooks..."
-	@if [ -f hooks/pre-commit ]; then \
-		cp hooks/pre-commit .git/hooks/pre-commit && \
-		chmod +x .git/hooks/pre-commit && \
-		echo "✅ pre-commit hook installed"; \
-	fi
-	@echo "Done."
 
 # Strict pattern enforcement check (blocking)
 check-patterns-strict:
@@ -289,6 +279,14 @@ session-end:
 	else \
 		echo "No active session."; \
 	fi
+
+# Reset session state (for recovery after crash/interruption)
+session-reset:
+	@echo "Resetting session state..."
+	@rm -f .session-active .tdd-state
+	@echo "✅ Session state cleared."
+	@echo ""
+	@echo "To start fresh: make session-start"
 
 # Verify git hooks installation
 verify-hooks:

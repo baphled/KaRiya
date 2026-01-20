@@ -20,13 +20,14 @@ make session-start   # MUST run first - validates environment
 |---------|---------|
 | `make session-start` | Start every session (required) |
 | `make session-end` | End session (cleanup) |
+| `make session-reset` | Recovery after crash/interruption |
 | `make pre-task` | Checklist before any task |
 | `make check-compliance` | Validate before/after tasks |
 | `make what-to-use NEED="x"` | Component lookup (table, form, modal...) |
 | `make check-patterns` | Detect pattern violations |
 | `make check-patterns-strict` | Strict pattern check (blocking) |
 | `make ai-commit FILE=...` | Commit with AI attribution |
-| `make pre-pr` | Validate before creating PR |
+| `make pre-pr` | Validate before creating PR (targets `next`)
 
 ## TDD Workflow Commands
 
@@ -109,6 +110,23 @@ make what-to-use NEED="keyword"   # Component help with examples
 | Code standards | [docs/rules/senior-engineer-guidelines.md](docs/rules/senior-engineer-guidelines.md) |
 | Commit rules | [docs/rules/AI_COMMIT_ATTRIBUTION.md](docs/rules/AI_COMMIT_ATTRIBUTION.md) |
 | Branching | [docs/BRANCHING_STRATEGY.md](docs/BRANCHING_STRATEGY.md) |
+
+## AI Agent Configuration
+
+The `ai-commit` script auto-detects the AI agent from environment. Override with:
+
+```bash
+export AI_AGENT="Claude Code"    # or "OpenCode", "Cursor", etc.
+export AI_MODEL="Claude Sonnet 4"
+```
+
+Auto-detection checks (in order):
+1. `AI_AGENT` environment variable
+2. `CLAUDE_CODE` or `ANTHROPIC_API_KEY` → Claude Code
+3. `OPENCODE_API_KEY` or `OPENCODE` → OpenCode
+4. `CURSOR_SESSION` or `CURSOR` → Cursor
+5. Parent process name containing "claude" → Claude Code
+6. Default: Claude Code
 
 ## Code Examples
 
