@@ -4,10 +4,10 @@ import (
 	"context"
 	"io"
 	"strings"
-	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -33,11 +33,7 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 
 	It("should generate bullets from events", func() {
 		events := []*career.CareerEvent{
-			{
-				ID:   "e1",
-				Text: "Led team to deliver microservices",
-				Date: time.Now(),
-			},
+			fixtures.EventWith("e1", "Led team to deliver microservices", "", ""),
 		}
 
 		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", "hiring_manager")
