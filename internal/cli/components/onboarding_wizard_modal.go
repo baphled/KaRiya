@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/styles"
+	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/baphled/kariya/internal/config"
@@ -254,14 +255,10 @@ func (m *OnboardingWizardModal) View() string {
 		modalHeight = 20
 	}
 
-	// Title style
-	titleStyle := lipgloss.NewStyle().
-		Foreground(styles.ColorAccentTeal).
-		Bold(true).
-		Align(lipgloss.Center).
-		Width(modalWidth - 4)
+	th := theme.Default()
 
-	title := titleStyle.Render("Profile Setup")
+	// Title using UIKit primitives
+	title := primitives.Title("Profile Setup", th).Width(modalWidth - 4).Align(lipgloss.Center).Render()
 
 	// Render form
 	formView := m.form.View()
@@ -272,17 +269,16 @@ func (m *OnboardingWizardModal) View() string {
 	// Combine title, form and footer
 	content := lipgloss.JoinVertical(lipgloss.Left, title, "", formView, "", footer)
 
-	// Wrap in styled container with SOLID BACKGROUND (critical - prevents transparency)
-	styledContent := lipgloss.NewStyle().
+	// Wrap in styled container using UIKit Box with SOLID BACKGROUND (critical - prevents transparency)
+	box := containers.NewBox(th).
+		Content(content).
 		Width(modalWidth).
 		MaxHeight(modalHeight).
 		Background(styles.ColorBackground).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.ColorAccentTeal).
-		Padding(1).
-		Render(content)
+		BorderColor(styles.ColorAccentTeal).
+		Padding(1)
 
-	return styledContent
+	return box.Render()
 }
 
 // buildFooter creates the keyboard shortcuts footer using UIKit primitives.

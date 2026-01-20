@@ -31,19 +31,23 @@ const (
 //	    Variant(containers.BoxDestructive).
 //	    Width(50).
 //	    Padding(2).
+//	    Background(lipgloss.Color("#1e1e2e")).
 //	    WithShadow()
 //	rendered := box.Render()
 type Box struct {
 	theme.Aware
 
 	// Configuration
-	content    string
-	title      string
-	variant    BoxVariant
-	width      int // 0 = auto
-	height     int // 0 = auto
-	padding    int
-	withShadow bool
+	content     string
+	title       string
+	variant     BoxVariant
+	width       int // 0 = auto
+	height      int // 0 = auto
+	maxHeight   int // 0 = no max height
+	padding     int
+	withShadow  bool
+	background  *lipgloss.Color // Optional background color
+	borderColor *lipgloss.Color // Optional border color override
 }
 
 // NewBox creates a new box with the given theme.
@@ -100,13 +104,37 @@ func (b *Box) WithShadow() *Box {
 	return b
 }
 
+// Background sets a solid background color for the box.
+// Useful for modal overlays to prevent transparency.
+func (b *Box) Background(color lipgloss.Color) *Box {
+	b.background = &color
+	return b
+}
+
+// MaxHeight sets the maximum height of the box.
+func (b *Box) MaxHeight(maxHeight int) *Box {
+	b.maxHeight = maxHeight
+	return b
+}
+
+// BorderColor sets a custom border color, overriding the variant color.
+func (b *Box) BorderColor(color lipgloss.Color) *Box {
+	b.borderColor = &color
+	return b
+}
+
 // Render returns the rendered box as a string.
 func (b *Box) Render() string {
 	// Get border style based on variant
 	borderStyle := b.getBorderStyle()
 
-	// Get border color based on variant
-	borderColor := b.getBorderColor()
+	// Get border color - use custom if set, otherwise variant-based
+	var borderColor lipgloss.Color
+	if b.borderColor != nil {
+		borderColor = *b.borderColor
+	} else {
+		borderColor = b.getBorderColor()
+	}
 
 	// Build the base style
 	style := lipgloss.NewStyle().
@@ -114,12 +142,20 @@ func (b *Box) Render() string {
 		BorderForeground(borderColor).
 		Padding(b.padding)
 
+	// Apply background if set
+	if b.background != nil {
+		style = style.Background(*b.background)
+	}
+
 	// Apply width/height if set
 	if b.width > 0 {
 		style = style.Width(b.width - (b.padding * 2) - 2) // Subtract padding and borders
 	}
 	if b.height > 0 {
 		style = style.Height(b.height - (b.padding * 2) - 2)
+	}
+	if b.maxHeight > 0 {
+		style = style.MaxHeight(b.maxHeight)
 	}
 
 	// Build content

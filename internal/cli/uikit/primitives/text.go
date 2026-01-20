@@ -28,11 +28,11 @@ const (
 )
 
 // Text is a theme-aware text component with fluent API.
-// It supports semantic styles, bold formatting, and width constraints.
+// It supports semantic styles, bold formatting, width constraints, and alignment.
 //
 // Example:
 //
-//	title := primitives.Title("Welcome", theme).Bold()
+//	title := primitives.Title("Welcome", theme).Bold().Align(lipgloss.Center)
 //	error := primitives.ErrorText("Failed", theme).Width(40)
 type Text struct {
 	theme.Aware
@@ -40,6 +40,7 @@ type Text struct {
 	textStyle TextStyle
 	bold      bool
 	width     int
+	align     lipgloss.Position
 }
 
 // NewText creates a new text component with the given content and theme.
@@ -79,6 +80,13 @@ func (t *Text) Width(w int) *Text {
 	return t
 }
 
+// Align sets the text alignment (lipgloss.Left, lipgloss.Center, lipgloss.Right).
+// Returns the text for method chaining.
+func (t *Text) Align(align lipgloss.Position) *Text {
+	t.align = align
+	return t
+}
+
 // Render returns the styled text as a string.
 func (t *Text) Render() string {
 	style := t.buildStyle()
@@ -115,6 +123,11 @@ func (t *Text) buildStyle() lipgloss.Style {
 	// Apply width constraint if set
 	if t.width > 0 {
 		style = style.Width(t.width)
+	}
+
+	// Apply alignment if width is set (alignment requires width)
+	if t.width > 0 && t.align != 0 {
+		style = style.Align(t.align)
 	}
 
 	return style
