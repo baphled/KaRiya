@@ -44,13 +44,14 @@ This directory contains all development standards, guidelines, and workflows for
   - Practical examples
   - Recovery techniques
 
-#### [go-guidelines.md](go-guidelines.md) (194 lines)
+#### [go-guidelines.md](go-guidelines.md) (~280 lines)
 - **Type**: Language Guidelines
 - **Purpose**: Go-specific coding standards
 - **Key Topics**:
   - Framework usage (Fiber, Beego, Cobra)
   - Error handling and concurrency
   - Testing with Ginkgo
+  - **Test Fixtures (factory-go/gofakeit)** - Factory pattern for test data
   - LSP setup
 
 ### 2. Quick References (4 files)
@@ -187,6 +188,7 @@ This directory contains all development standards, guidelines, and workflows for
 | Make a commit | [COMMIT_QUICK_REFERENCE.md](COMMIT_QUICK_REFERENCE.md) |
 | Attribute AI work | [AI_COMMIT_ATTRIBUTION.md](AI_COMMIT_ATTRIBUTION.md) |
 | Write Go code | [go-guidelines.md](go-guidelines.md) |
+| Create test data | [go-guidelines.md](go-guidelines.md) (Test Fixtures section) |
 | Check compliance | [COMPLIANCE_QUICK_REF.md](COMPLIANCE_QUICK_REF.md) |
 | Save tokens | [token-efficiency.md](token-efficiency.md) |
 | Review commits | [review-commit-prompt.md](review-commit-prompt.md) |
@@ -293,6 +295,7 @@ After reading the rules, ensure you understand:
 - [ ] Atomic commit principles
 - [ ] AI attribution requirements (if using AI)
 - [ ] Go coding standards
+- [ ] Test fixtures (factory pattern for test data)
 - [ ] Token efficiency strategies
 - [ ] Compliance check process
 

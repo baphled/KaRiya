@@ -8,7 +8,7 @@ import (
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/google/uuid"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -26,31 +26,18 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 
 	It("should populate sections when generating CV with real bullet generator and section builder", func() {
 		// Create test events
-		events := []*career.CareerEvent{
-			{
-				ID:         uuid.New().String(),
-				Text:       "Architected microservices platform",
-				Date:       time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-				Company:    "TechCorp",
-				CreatedAt:  time.Now(),
-				UpdatedAt:  time.Now(),
-				Tags:       []string{"architecture"},
-				Categories: []string{"technical"},
-			},
-		}
+		event := fixtures.EventWith("event-1", "Architected microservices platform", "TechCorp", "")
+		event.Date = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+		event.Tags = []string{"architecture"}
+		event.Categories = []string{"technical"}
+		events := []*career.CareerEvent{event}
 
-		facts := []*career.Fact{
-			{
-				ID:                   uuid.New().String(),
-				Text:                 "Expert in distributed systems",
-				CompetencyCategories: []string{"technical"},
-				RoleFit:              "staff",
-				AudienceRelevance:    []string{"hiring_manager"},
-				SourceEventID:        events[0].ID,
-				CreatedAt:            time.Now(),
-				UpdatedAt:            time.Now(),
-			},
-		}
+		fact := fixtures.Fact("fact-1", event.ID)
+		fact.Text = "Expert in distributed systems"
+		fact.CompetencyCategories = []string{"technical"}
+		fact.RoleFit = "staff"
+		fact.AudienceRelevance = []string{"hiring_manager"}
+		facts := []*career.Fact{fact}
 
 		config := &career.CVConfig{
 			Name:           "test-cv",

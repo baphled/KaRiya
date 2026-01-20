@@ -9,6 +9,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("BurstRepository", func() {
@@ -24,11 +25,8 @@ var _ = Describe("BurstRepository", func() {
 
 	Describe("Create", func() {
 		It("should create a new burst", func() {
-			burst := &career.Burst{
-				Name:        "Platform Migration",
-				Description: "Migrated entire platform to microservices",
-				EventIDs:    []string{"event-1", "event-2"},
-			}
+			burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
+			burst.ID = "" // Clear ID to test auto-generation
 
 			err := repository.Create(ctx, burst)
 			Expect(err).ToNot(HaveOccurred())
@@ -38,38 +36,24 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should return error for duplicate burst ID", func() {
-			burst := &career.Burst{
-				ID:          "burst-1",
-				Name:        "Platform Migration",
-				Description: "Migrated entire platform to microservices",
-				EventIDs:    []string{"event-1", "event-2"},
-			}
+			burst := fixtures.Burst("burst-1", "event-1", "event-2")
 
 			err := repository.Create(ctx, burst)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Try to create again with same ID
-			duplicate := &career.Burst{
-				ID:          "burst-1",
-				Name:        "Different Name",
-				Description: "Different description",
-				EventIDs:    []string{"event-3", "event-4"},
-			}
+			duplicate := fixtures.Burst("burst-1", "event-3", "event-4")
 
 			err = repository.Create(ctx, duplicate)
 			Expect(err).To(MatchError(repo.ErrDuplicateBurst))
 		})
 
 		It("should generate unique ID if not provided", func() {
-			burst1 := &career.Burst{
-				Name:     "Burst 1",
-				EventIDs: []string{"event-1", "event-2"},
-			}
+			burst1 := fixtures.BurstFactory.MustCreate().(*career.Burst)
+			burst1.ID = "" // Clear ID to test auto-generation
 
-			burst2 := &career.Burst{
-				Name:     "Burst 2",
-				EventIDs: []string{"event-3", "event-4"},
-			}
+			burst2 := fixtures.BurstFactory.MustCreate().(*career.Burst)
+			burst2.ID = "" // Clear ID to test auto-generation
 
 			err1 := repository.Create(ctx, burst1)
 			err2 := repository.Create(ctx, burst2)
@@ -84,11 +68,8 @@ var _ = Describe("BurstRepository", func() {
 
 	Describe("GetByID", func() {
 		It("should retrieve an existing burst", func() {
-			burst := &career.Burst{
-				Name:        "Platform Migration",
-				Description: "Migrated entire platform to microservices",
-				EventIDs:    []string{"event-1", "event-2"},
-			}
+			burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
+			burst.ID = "" // Clear to test auto-generation
 
 			err := repository.Create(ctx, burst)
 			Expect(err).ToNot(HaveOccurred())
@@ -99,7 +80,6 @@ var _ = Describe("BurstRepository", func() {
 			Expect(retrieved.Name).To(Equal(burst.Name))
 			Expect(retrieved.Description).To(Equal(burst.Description))
 			Expect(retrieved.EventIDs).To(Equal(burst.EventIDs))
-
 		})
 
 		It("should return error for non-existent burst", func() {
@@ -110,11 +90,7 @@ var _ = Describe("BurstRepository", func() {
 
 	Describe("Update", func() {
 		It("should update an existing burst", func() {
-			burst := &career.Burst{
-				Name:        "Platform Migration",
-				Description: "Initial description",
-				EventIDs:    []string{"event-1", "event-2"},
-			}
+			burst := fixtures.Burst("", "event-1", "event-2")
 
 			err := repository.Create(ctx, burst)
 			Expect(err).ToNot(HaveOccurred())
@@ -138,11 +114,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should return error for non-existent burst", func() {
-			burst := &career.Burst{
-				ID:       "non-existent-id",
-				Name:     "Platform Migration",
-				EventIDs: []string{"event-1", "event-2"},
-			}
+			burst := fixtures.Burst("non-existent-id", "event-1", "event-2")
 
 			err := repository.Update(ctx, burst)
 			Expect(err).To(MatchError(repo.ErrBurstNotFound))
@@ -151,11 +123,8 @@ var _ = Describe("BurstRepository", func() {
 
 	Describe("Delete", func() {
 		It("should delete an existing burst", func() {
-			burst := &career.Burst{
-				Name:        "Platform Migration",
-				Description: "Migrated entire platform to microservices",
-				EventIDs:    []string{"event-1", "event-2"},
-			}
+			burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
+			burst.ID = "" // Clear to test auto-generation
 
 			err := repository.Create(ctx, burst)
 			Expect(err).ToNot(HaveOccurred())
@@ -175,26 +144,20 @@ var _ = Describe("BurstRepository", func() {
 
 	Describe("List", func() {
 		BeforeEach(func() {
-			// Create test bursts
-			bursts := []*career.Burst{
-				{
-					Name:        "Platform Migration",
-					Description: "Migrated to microservices",
-					EventIDs:    []string{"event-1", "event-2"},
-				},
-				{
-					Name:        "Team Leadership",
-					Description: "Led cross-functional team",
-					EventIDs:    []string{"event-3", "event-4", "event-5"},
-				},
-				{
-					Name:        "Product Launch",
-					Description: "Launched new product feature",
-					EventIDs:    []string{"event-6", "event-7"},
-				},
-			}
+			// Create test bursts with specific names for sorting tests
+			burst1 := fixtures.Burst("", "event-1", "event-2")
+			burst1.Name = "Platform Migration"
+			burst1.Description = "Migrated to microservices"
 
-			for _, burst := range bursts {
+			burst2 := fixtures.Burst("", "event-3", "event-4", "event-5")
+			burst2.Name = "Team Leadership"
+			burst2.Description = "Led cross-functional team"
+
+			burst3 := fixtures.Burst("", "event-6", "event-7")
+			burst3.Name = "Product Launch"
+			burst3.Description = "Launched new product feature"
+
+			for _, burst := range []*career.Burst{burst1, burst2, burst3} {
 				err := repository.Create(ctx, burst)
 				Expect(err).ToNot(HaveOccurred())
 			}
@@ -290,23 +253,10 @@ var _ = Describe("BurstRepository", func() {
 
 	Describe("Count", func() {
 		BeforeEach(func() {
-			// Create test bursts
-			bursts := []*career.Burst{
-				{
-					Name:     "Platform Migration",
-					EventIDs: []string{"event-1", "event-2"},
-				},
-				{
-					Name:     "Team Leadership",
-					EventIDs: []string{"event-3", "event-4"},
-				},
-				{
-					Name:     "API Design",
-					EventIDs: []string{"event-5", "event-6"},
-				},
-			}
-
-			for _, burst := range bursts {
+			// Create test bursts using factory
+			for i := 0; i < 3; i++ {
+				burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
+				burst.ID = "" // Clear to test auto-generation
 				err := repository.Create(ctx, burst)
 				Expect(err).ToNot(HaveOccurred())
 			}
@@ -317,6 +267,5 @@ var _ = Describe("BurstRepository", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(3))
 		})
-
 	})
 })

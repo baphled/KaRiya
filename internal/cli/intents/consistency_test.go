@@ -3,9 +3,9 @@ package intents
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -66,11 +66,7 @@ var _ = Describe("StandardView Consistency", func() {
 					},
 				},
 				Events: []*career.CareerEvent{
-					{
-						ID:   uuid.New().String(),
-						Text: "Implemented test feature for CV generation",
-						Date: time.Now(),
-					},
+					fixtures.EventWith(uuid.New().String(), "Implemented test feature for CV generation", "TechCorp", "Platform"),
 				},
 			}
 
@@ -237,11 +233,7 @@ var _ = Describe("All Intents Initialization", func() {
 						},
 					},
 					Events: []*career.CareerEvent{
-						{
-							ID:   uuid.New().String(),
-							Text: "Implemented test feature for CV generation",
-							Date: time.Now(),
-						},
+						fixtures.EventWith(uuid.New().String(), "Implemented test feature for CV generation", "TechCorp", "Platform"),
 					},
 				})
 			},

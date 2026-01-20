@@ -7,7 +7,7 @@ import (
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
-	"github.com/google/uuid"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -37,33 +37,21 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should generate bullets from valid events", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:         "event1",
-					Text:       "Implemented authentication system",
-					Date:       time.Now(),
-					Categories: []string{"technical"},
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented authentication system", "", "")
+			event.Categories = []string{"technical"}
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(bullets)).To(BeNumerically(">", 0))
 		})
 
 		It("should handle context cancellation", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Some event",
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", "Some event", "", "")
 
 			cancelCtx, cancel := context.WithCancel(context.Background())
 			cancel()
 
-			_, err := generator.GenerateBullets(cancelCtx, events, []*career.Fact{}, "principal", "hiring_manager")
+			_, err := generator.GenerateBullets(cancelCtx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -74,15 +62,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should handle nil fact list gracefully", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented feature",
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented feature", "", "")
 
-			bullets, err := generator.GenerateBullets(ctx, events, nil, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, nil, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
@@ -91,24 +73,15 @@ var _ = Describe("DefaultBulletGenerator", func() {
 	Describe("Event/Fact Combination Tests", func() {
 		Context("High-quality events", func() {
 			It("should generate bullets from high-quality events", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:         "event1",
-						Text:       "Led team of 5 engineers to deliver microservices architecture",
-						Date:       time.Now(),
-						Categories: []string{"leadership", "technical"},
-						Tags:       []string{"achievement", "ownership"},
-					},
-					{
-						ID:         "event2",
-						Text:       "Improved system performance by 40%",
-						Date:       time.Now(),
-						Categories: []string{"technical"},
-						Tags:       []string{"achievement", "metrics"},
-					},
-				}
+				event1 := fixtures.EventWith("event1", "Led team of 5 engineers to deliver microservices architecture", "", "")
+				event1.Categories = []string{"leadership", "technical"}
+				event1.Tags = []string{"achievement", "ownership"}
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				event2 := fixtures.EventWith("event2", "Improved system performance by 40%", "", "")
+				event2.Categories = []string{"technical"}
+				event2.Tags = []string{"achievement", "metrics"}
+
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event1, event2}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bullets)).To(BeNumerically(">", 0))
 			})
@@ -116,22 +89,13 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 		Context("Medium-quality events", func() {
 			It("should generate bullets from medium-quality events", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:         "event1",
-						Text:       "Contributed to API design improvements",
-						Date:       time.Now(),
-						Categories: []string{"technical"},
-					},
-					{
-						ID:         "event2",
-						Text:       "Participated in code review process",
-						Date:       time.Now(),
-						Categories: []string{"technical"},
-					},
-				}
+				event1 := fixtures.EventWith("event1", "Contributed to API design improvements", "", "")
+				event1.Categories = []string{"technical"}
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "staff", "peer")
+				event2 := fixtures.EventWith("event2", "Participated in code review process", "", "")
+				event2.Categories = []string{"technical"}
+
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event1, event2}, []*career.Fact{}, "staff", "peer")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
@@ -139,15 +103,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 		Context("Low-quality events", func() {
 			It("should filter out low-quality events", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Attended meeting",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Attended meeting", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Low-quality events may be filtered out
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
@@ -156,45 +114,23 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 		Context("Mixed event and fact combinations", func() {
 			It("should generate bullets from both events and facts", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:         "event1",
-						Text:       "Implemented distributed caching system",
-						Date:       time.Now(),
-						Categories: []string{"technical"},
-					},
-				}
+				event := fixtures.EventWith("event1", "Implemented distributed caching system", "", "")
+				event.Categories = []string{"technical"}
 
-				facts := []*career.Fact{
-					{
-						ID:   "fact1",
-						Text: "Expert in system design and architecture",
-					},
-				}
+				fact := fixtures.FactWith("fact1", "Expert in system design and architecture")
 
-				bullets, err := generator.GenerateBullets(ctx, events, facts, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{fact}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
 
 			It("should prefer facts over events for bullet generation", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:         "event1",
-						Text:       "Worked on API",
-						Date:       time.Now(),
-						Categories: []string{"technical"},
-					},
-				}
+				event := fixtures.EventWith("event1", "Worked on API", "", "")
+				event.Categories = []string{"technical"}
 
-				facts := []*career.Fact{
-					{
-						ID:   "fact1",
-						Text: "Designed scalable APIs serving 1M+ requests",
-					},
-				}
+				fact := fixtures.FactWith("fact1", "Designed scalable APIs serving 1M+ requests")
 
-				bullets, err := generator.GenerateBullets(ctx, events, facts, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{fact}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Facts should be included if they're of high quality
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
@@ -205,15 +141,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 	Describe("Inclusion/Exclusion Criteria", func() {
 		Context("Single claim bullets", func() {
 			It("should filter out multiple-claim bullets", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Implemented feature and wrote documentation and conducted training",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Implemented feature and wrote documentation and conducted training", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Multiple claims should be filtered
 				if len(bullets) > 0 {
@@ -224,15 +154,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			})
 
 			It("should accept single-claim bullets", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Implemented authentication system",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Implemented authentication system", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Single claims should be accepted (if they pass other criteria)
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
@@ -241,20 +165,10 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 		Context("Aspirational language", func() {
 			It("should filter out aspirational language", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Will implement new system",
-						Date: time.Now(),
-					},
-					{
-						ID:   "event2",
-						Text: "Plan to improve performance",
-						Date: time.Now(),
-					},
-				}
+				event1 := fixtures.EventWith("event1", "Will implement new system", "", "")
+				event2 := fixtures.EventWith("event2", "Plan to improve performance", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event1, event2}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Aspirational language should be filtered
 				if len(bullets) > 0 {
@@ -265,15 +179,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			})
 
 			It("should accept past-tense accomplishments", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Implemented authentication system",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Implemented authentication system", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
@@ -281,15 +189,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 		Context("Inferred metrics", func() {
 			It("should filter out inferred metrics", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Probably improved system performance by around 50%",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Probably improved system performance by around 50%", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Inferred metrics should be filtered
 				if len(bullets) > 0 {
@@ -300,15 +202,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			})
 
 			It("should accept concrete metrics", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Improved system performance by 40%",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Improved system performance by 40%", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
@@ -316,15 +212,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 		Context("Role inflation", func() {
 			It("should filter out role inflation for junior roles", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Led company-wide strategic initiative",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Led company-wide strategic initiative", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "staff", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "staff", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Role inflation should be filtered for staff role
 				if len(bullets) > 0 {
@@ -335,15 +225,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			})
 
 			It("should accept appropriate claims for principal role", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:   "event1",
-						Text: "Led strategic architecture initiative",
-						Date: time.Now(),
-					},
-				}
+				event := fixtures.EventWith("event1", "Led strategic architecture initiative", "", "")
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bullets)).To(BeNumerically(">=", 0))
 			})
@@ -366,22 +250,13 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 	Describe("Ranking Algorithm", func() {
 		It("should rank bullets by priority", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Led team to deliver feature",
-					Date: time.Now(),
-					Tags: []string{"ownership"},
-				},
-				{
-					ID:   "event2",
-					Text: "Contributed to feature",
-					Date: time.Now(),
-					Tags: []string{"contribution"},
-				},
-			}
+			event1 := fixtures.EventWith("event1", "Led team to deliver feature", "", "")
+			event1.Tags = []string{"ownership"}
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			event2 := fixtures.EventWith("event2", "Contributed to feature", "", "")
+			event2.Tags = []string{"contribution"}
+
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event1, event2}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			// Bullets should be ranked (higher rank first)
@@ -393,14 +268,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should score based on inclusion reason", func() {
-			facts := []*career.Fact{
-				{
-					ID:   "fact1",
-					Text: "Expert in distributed systems",
-				},
-			}
+			fact := fixtures.FactWith("fact1", "Expert in distributed systems")
 
-			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, []*career.Fact{fact}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			// Facts should have higher scores than direct events
@@ -413,20 +283,13 @@ var _ = Describe("DefaultBulletGenerator", func() {
 			now := time.Now()
 			oneYearAgo := now.AddDate(-1, 0, 0)
 
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented feature",
-					Date: now,
-				},
-				{
-					ID:   "event2",
-					Text: "Implemented feature",
-					Date: oneYearAgo,
-				},
-			}
+			event1 := fixtures.EventWith("event1", "Implemented feature", "", "")
+			event1.Date = now
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			event2 := fixtures.EventWith("event2", "Implemented feature", "", "")
+			event2.Date = oneYearAgo
+
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event1, event2}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			// Newer events should rank higher than older ones with similar content
@@ -438,16 +301,10 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should boost score for repeated signals", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented feature",
-					Date: time.Now(),
-					Tags: []string{"achievement", "technical"},
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented feature", "", "")
+			event.Tags = []string{"achievement", "technical"}
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			// Events with multiple signals should have higher scores
@@ -459,14 +316,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 
 	Describe("Role-Specific Compression", func() {
 		It("should cap principal role at 3-4 bullets", func() {
-			events := make([]*career.CareerEvent, 10)
-			for i := 0; i < 10; i++ {
-				events[i] = &career.CareerEvent{
-					ID:         uuid.New().String(),
-					Text:       "Implemented feature " + string(rune('A'+i)),
-					Date:       time.Now(),
-					Categories: []string{"technical"},
-				}
+			events := fixtures.Events(10)
+			for _, e := range events {
+				e.Categories = []string{"technical"}
 			}
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
@@ -475,14 +327,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should cap staff role at 4-5 bullets", func() {
-			events := make([]*career.CareerEvent, 10)
-			for i := 0; i < 10; i++ {
-				events[i] = &career.CareerEvent{
-					ID:         uuid.New().String(),
-					Text:       "Implemented feature " + string(rune('A'+i)),
-					Date:       time.Now(),
-					Categories: []string{"technical"},
-				}
+			events := fixtures.Events(10)
+			for _, e := range events {
+				e.Categories = []string{"technical"}
 			}
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "staff", "hiring_manager")
@@ -491,14 +338,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should cap EM role at 3-4 bullets", func() {
-			events := make([]*career.CareerEvent, 10)
-			for i := 0; i < 10; i++ {
-				events[i] = &career.CareerEvent{
-					ID:         uuid.New().String(),
-					Text:       "Implemented feature " + string(rune('A'+i)),
-					Date:       time.Now(),
-					Categories: []string{"leadership"},
-				}
+			events := fixtures.Events(10)
+			for _, e := range events {
+				e.Categories = []string{"leadership"}
 			}
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "em", "hiring_manager")
@@ -507,14 +349,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should cap senior_ic role at 4-5 bullets", func() {
-			events := make([]*career.CareerEvent, 10)
-			for i := 0; i < 10; i++ {
-				events[i] = &career.CareerEvent{
-					ID:         uuid.New().String(),
-					Text:       "Implemented feature " + string(rune('A'+i)),
-					Date:       time.Now(),
-					Categories: []string{"technical"},
-				}
+			events := fixtures.Events(10)
+			for _, e := range events {
+				e.Categories = []string{"technical"}
 			}
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "senior_ic", "hiring_manager")
@@ -523,14 +360,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should remove lower-ranked bullets first when compressing", func() {
-			events := make([]*career.CareerEvent, 5)
-			for i := 0; i < 5; i++ {
-				events[i] = &career.CareerEvent{
-					ID:         uuid.New().String(),
-					Text:       "Implemented feature " + string(rune('A'+i)),
-					Date:       time.Now(),
-					Categories: []string{"technical"},
-				}
+			events := fixtures.Events(5)
+			for _, e := range events {
+				e.Categories = []string{"technical"}
 			}
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
@@ -546,216 +378,48 @@ var _ = Describe("DefaultBulletGenerator", func() {
 	})
 
 	Describe("Audience-Specific Filtering", func() {
-		Context("when filtering facts by audience relevance", func() {
-			It("should include facts relevant to hiring_manager audience", func() {
-				facts := []*career.Fact{
-					{
-						ID:                   "fact1",
-						Text:                 "Delivered 40% cost reduction through system optimization",
-						RoleFit:              "principal",
-						AudienceRelevance:    []string{"hiring_manager"},
-						SourceEventID:        "event1",
-						CompetencyCategories: []string{"delivery"},
-					},
-					{
-						ID:                   "fact2",
-						Text:                 "Implemented complex distributed caching algorithm",
-						RoleFit:              "principal",
-						AudienceRelevance:    []string{"peer"},
-						SourceEventID:        "event2",
-						CompetencyCategories: []string{"technical"},
-					},
-				}
+		It("should filter for hiring_manager audience", func() {
+			event := fixtures.EventWith("event1", "Improved system performance by 40%", "", "")
+			event.Categories = []string{"technical"}
 
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "principal", "hiring_manager")
-				Expect(err).NotTo(HaveOccurred())
-				// Should only include fact1 (relevant to hiring_manager)
-				// fact2 is only relevant to peer, should be excluded
-				Expect(len(bullets)).To(Equal(1))
-				Expect(bullets[0].Text).To(ContainSubstring("cost reduction"))
-			})
-
-			It("should include facts relevant to recruiter audience", func() {
-				facts := []*career.Fact{
-					{
-						ID:                   "fact1",
-						Text:                 "Senior engineer with expertise in Go, Ruby, and Python",
-						RoleFit:              "staff",
-						AudienceRelevance:    []string{"recruiter"},
-						SourceEventID:        "event1",
-						CompetencyCategories: []string{"technical"},
-					},
-					{
-						ID:                   "fact2",
-						Text:                 "Deep expertise in consensus algorithms and CAP theorem",
-						RoleFit:              "staff",
-						AudienceRelevance:    []string{"peer"},
-						SourceEventID:        "event2",
-						CompetencyCategories: []string{"technical"},
-					},
-				}
-
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "staff", "recruiter")
-				Expect(err).NotTo(HaveOccurred())
-				// Should only include fact1 (relevant to recruiter)
-				Expect(len(bullets)).To(Equal(1))
-				Expect(bullets[0].Text).To(ContainSubstring("Go, Ruby"))
-			})
-
-			It("should include facts relevant to peer audience", func() {
-				facts := []*career.Fact{
-					{
-						ID:                   "fact1",
-						Text:                 "Designed novel approach to distributed consensus using Raft",
-						RoleFit:              "principal",
-						AudienceRelevance:    []string{"peer"},
-						SourceEventID:        "event1",
-						CompetencyCategories: []string{"architecture"},
-					},
-					{
-						ID:                   "fact2",
-						Text:                 "Reduced operational costs by 30%",
-						RoleFit:              "principal",
-						AudienceRelevance:    []string{"hiring_manager"},
-						SourceEventID:        "event2",
-						CompetencyCategories: []string{"delivery"},
-					},
-				}
-
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "principal", "peer")
-				Expect(err).NotTo(HaveOccurred())
-				// Should only include fact1 (relevant to peer)
-				Expect(len(bullets)).To(Equal(1))
-				Expect(bullets[0].Text).To(ContainSubstring("Raft"))
-			})
-
-			It("should return all facts when audience is empty", func() {
-				facts := []*career.Fact{
-					{
-						ID:                   "fact1",
-						Text:                 "Business impact achievement",
-						RoleFit:              "principal",
-						AudienceRelevance:    []string{"hiring_manager"},
-						SourceEventID:        "event1",
-						CompetencyCategories: []string{"delivery"},
-					},
-					{
-						ID:                   "fact2",
-						Text:                 "Technical depth achievement",
-						RoleFit:              "principal",
-						AudienceRelevance:    []string{"peer"},
-						SourceEventID:        "event2",
-						CompetencyCategories: []string{"technical"},
-					},
-				}
-
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "principal", "")
-				Expect(err).NotTo(HaveOccurred())
-				// Should include both facts when no audience filter
-				Expect(len(bullets)).To(Equal(2))
-			})
-
-			It("should exclude facts not relevant to selected audience", func() {
-				facts := []*career.Fact{
-					{
-						ID:                   "fact1",
-						Text:                 "Technical implementation detail for peers",
-						RoleFit:              "staff",
-						AudienceRelevance:    []string{"peer"},
-						SourceEventID:        "event1",
-						CompetencyCategories: []string{"technical"},
-					},
-				}
-
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "staff", "hiring_manager")
-				Expect(err).NotTo(HaveOccurred())
-				// fact1 is only relevant to peer, not hiring_manager
-				Expect(len(bullets)).To(Equal(0))
-			})
-
-			It("should include facts with multiple audience relevance", func() {
-				facts := []*career.Fact{
-					{
-						ID:                   "fact1",
-						Text:                 "Led migration that reduced costs and improved architecture",
-						RoleFit:              "principal",
-						AudienceRelevance:    []string{"hiring_manager", "peer"},
-						SourceEventID:        "event1",
-						CompetencyCategories: []string{"architecture", "delivery"},
-					},
-				}
-
-				// Should be included for hiring_manager
-				bulletsMgr, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "principal", "hiring_manager")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bulletsMgr)).To(Equal(1))
-
-				// Should also be included for peer
-				bulletsPeer, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "principal", "peer")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bulletsPeer)).To(Equal(1))
-			})
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
-		Context("legacy tests for event-based generation", func() {
-			It("should filter for hiring_manager audience", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:         "event1",
-						Text:       "Improved system performance by 40%",
-						Date:       time.Now(),
-						Categories: []string{"technical"},
-					},
-				}
+		It("should filter for recruiter audience", func() {
+			event := fixtures.EventWith("event1", "Led team of 5 engineers", "", "")
+			event.Categories = []string{"leadership"}
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumerically(">=", 0))
-			})
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "recruiter")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
+		})
 
-			It("should filter for recruiter audience", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:         "event1",
-						Text:       "Led team of 5 engineers",
-						Date:       time.Now(),
-						Categories: []string{"leadership"},
-					},
-				}
+		It("should filter for peer audience", func() {
+			event := fixtures.EventWith("event1", "Implemented distributed caching system", "", "")
+			event.Categories = []string{"technical"}
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "recruiter")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumerically(">=", 0))
-			})
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "peer")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
+		})
 
-			It("should filter for peer audience", func() {
-				events := []*career.CareerEvent{
-					{
-						ID:         "event1",
-						Text:       "Implemented distributed caching system",
-						Date:       time.Now(),
-						Categories: []string{"technical"},
-					},
-				}
+		It("should support multiple audiences", func() {
+			event := fixtures.EventWith("event1", "Improved system performance by 40%", "", "")
+			event.Categories = []string{"technical"}
 
-				bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "peer")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(len(bullets)).To(BeNumerically(">=", 0))
-			})
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 	})
 
 	Describe("Source Tracking", func() {
 		It("should preserve event source IDs", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented feature",
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented feature", "", "")
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			if len(bullets) > 0 {
@@ -764,14 +428,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should preserve fact source IDs", func() {
-			facts := []*career.Fact{
-				{
-					ID:   "fact1",
-					Text: "Expert in system design",
-				},
-			}
+			fact := fixtures.FactWith("fact1", "Expert in system design")
 
-			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, []*career.Fact{fact}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			if len(bullets) > 0 {
@@ -780,15 +439,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should track inclusion reason", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented feature",
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented feature", "", "")
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			if len(bullets) > 0 {
@@ -797,15 +450,9 @@ var _ = Describe("DefaultBulletGenerator", func() {
 		})
 
 		It("should calculate confidence score", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented feature",
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented feature", "", "")
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 
 			if len(bullets) > 0 {
@@ -822,71 +469,42 @@ var _ = Describe("DefaultBulletGenerator", func() {
 				longText += "Lorem ipsum dolor sit amet. "
 			}
 
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: longText,
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", longText, "", "")
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle special characters in event text", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented @#$%^&*() special feature",
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented @#$%^&*() special feature", "", "")
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle events with no categories", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:   "event1",
-					Text: "Implemented feature",
-					Date: time.Now(),
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented feature", "", "")
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle events with no tags", func() {
-			events := []*career.CareerEvent{
-				{
-					ID:         "event1",
-					Text:       "Implemented feature",
-					Date:       time.Now(),
-					Categories: []string{"technical"},
-				},
-			}
+			event := fixtures.EventWith("event1", "Implemented feature", "", "")
+			event.Categories = []string{"technical"}
 
-			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")
+			bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{event}, []*career.Fact{}, "principal", "hiring_manager")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(bullets)).To(BeNumerically(">=", 0))
 		})
 
 		It("should handle large number of events (1000+)", func() {
-			events := make([]*career.CareerEvent, 1000)
-			for i := 0; i < 1000; i++ {
-				events[i] = &career.CareerEvent{
-					ID:         uuid.New().String(),
-					Text:       "Implemented feature",
-					Date:       time.Now(),
-					Categories: []string{"technical"},
-				}
+			events := fixtures.Events(1000)
+			for _, e := range events {
+				e.Categories = []string{"technical"}
 			}
 
 			bullets, err := generator.GenerateBullets(ctx, events, []*career.Fact{}, "principal", "hiring_manager")

@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Memory Repository", func() {
@@ -21,19 +22,10 @@ var _ = Describe("Memory Repository", func() {
 		ctx = context.Background()
 	})
 
-	// Helper function to create test events
-	createTestEvent := func() *career.CareerEvent {
-		return &career.CareerEvent{
-			Text:    "Test Career Event Description",
-			Date:    time.Now(),
-			Tags:    []string{"project"},
-			Company: "Test Company",
-		}
-	}
-
 	Describe("Create", func() {
 		It("should successfully create an event", func() {
-			event := createTestEvent()
+			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
@@ -43,8 +35,7 @@ var _ = Describe("Memory Repository", func() {
 		})
 
 		It("should prevent duplicate event creation", func() {
-			event := createTestEvent()
-			event.ID = "fixed-id"
+			event := fixtures.Event("fixed-id")
 
 			// First creation should succeed
 			err := repo.Create(ctx, event)
@@ -59,7 +50,8 @@ var _ = Describe("Memory Repository", func() {
 
 	Describe("GetByID", func() {
 		It("should retrieve existing event", func() {
-			event := createTestEvent()
+			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
@@ -79,7 +71,8 @@ var _ = Describe("Memory Repository", func() {
 
 	Describe("Update", func() {
 		It("should successfully update an event", func() {
-			event := createTestEvent()
+			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
@@ -99,7 +92,8 @@ var _ = Describe("Memory Repository", func() {
 		})
 
 		It("should prevent update of non-existent event", func() {
-			event := createTestEvent()
+			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			// Don't create it - just try to update
 
 			err := repo.Update(ctx, event)
 			Expect(err).To(HaveOccurred())
@@ -109,7 +103,8 @@ var _ = Describe("Memory Repository", func() {
 
 	Describe("Delete", func() {
 		It("should successfully delete an event", func() {
-			event := createTestEvent()
+			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
@@ -131,9 +126,10 @@ var _ = Describe("Memory Repository", func() {
 
 	Describe("List", func() {
 		It("should list events with no filters", func() {
-			// Create multiple events
+			// Create multiple events using factory
 			for i := 0; i < 5; i++ {
-				event := createTestEvent()
+				event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+				event.ID = "" // Clear to test auto-generation
 				err := repo.Create(ctx, event)
 				Expect(err).NotTo(HaveOccurred())
 			}
@@ -147,10 +143,12 @@ var _ = Describe("Memory Repository", func() {
 
 		It("should list events with tag filter", func() {
 			// Create events with different tags
-			event1 := createTestEvent()
+			event1 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event1.ID = "" // Clear to test auto-generation
 			event1.Tags = []string{"project"}
 
-			event2 := createTestEvent()
+			event2 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event2.ID = "" // Clear to test auto-generation
 			event2.Tags = []string{"technical"}
 
 			err := repo.Create(ctx, event1)
@@ -170,9 +168,10 @@ var _ = Describe("Memory Repository", func() {
 
 	Describe("Count", func() {
 		It("should count events with no filters", func() {
-			// Create multiple events
+			// Create multiple events using factory
 			for i := 0; i < 5; i++ {
-				event := createTestEvent()
+				event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+				event.ID = "" // Clear to test auto-generation
 				err := repo.Create(ctx, event)
 				Expect(err).NotTo(HaveOccurred())
 			}
@@ -184,10 +183,12 @@ var _ = Describe("Memory Repository", func() {
 
 		It("should count events with tag filter", func() {
 			// Create events with different tags
-			event1 := createTestEvent()
+			event1 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event1.ID = "" // Clear to test auto-generation
 			event1.Tags = []string{"project"}
 
-			event2 := createTestEvent()
+			event2 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event2.ID = "" // Clear to test auto-generation
 			event2.Tags = []string{"technical"}
 
 			err := repo.Create(ctx, event1)

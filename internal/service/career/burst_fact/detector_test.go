@@ -2,9 +2,9 @@ package burst_fact
 
 import (
 	"context"
-	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -22,13 +22,7 @@ var _ = Describe("BurstDetector", func() {
 
 	Describe("DetectBursts", func() {
 		It("should return empty list for fewer than minimum events", func() {
-			event := career.CareerEvent{
-				ID:        "1",
-				Text:      "Single event",
-				Date:      time.Now(),
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			}
+			event := fixtures.EventValWith("1", "Single event", "", "")
 
 			suggestions, err := detector.DetectBursts(ctx, []career.CareerEvent{event}, nil)
 			Expect(err).NotTo(HaveOccurred())
@@ -36,22 +30,9 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should build similarity matrix for event pairs", func() {
-			now := time.Now()
 			events := []career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Backend work",
-					Date:      now,
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Backend platform",
-					Date:      now.AddDate(0, -1, 0),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				fixtures.EventValWith("1", "Backend work", "", ""),
+				fixtures.EventValWith("2", "Backend platform", "", ""),
 			}
 
 			matrix := detector.buildSimilarityMatrix(events)
@@ -61,22 +42,9 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should find clusters of similar events", func() {
-			now := time.Now()
 			events := []career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Backend infrastructure work",
-					Date:      now,
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Backend platform architecture",
-					Date:      now.AddDate(0, -1, 0),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				fixtures.EventValWith("1", "Backend infrastructure work", "", ""),
+				fixtures.EventValWith("2", "Backend platform architecture", "", ""),
 			}
 
 			matrix := detector.buildSimilarityMatrix(events)
@@ -85,22 +53,9 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should convert cluster to suggestion with confidence score", func() {
-			now := time.Now()
 			events := []career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Backend work",
-					Date:      now,
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Backend platform",
-					Date:      now.AddDate(0, -1, 0),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				fixtures.EventValWith("1", "Backend work", "", ""),
+				fixtures.EventValWith("2", "Backend platform", "", ""),
 			}
 
 			matrix := detector.buildSimilarityMatrix(events)
@@ -122,22 +77,9 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should respect minimum confidence threshold", func() {
-			now := time.Now()
 			events := []career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Event A",
-					Date:      now,
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Event B",
-					Date:      now.AddDate(0, -1, 0),
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				fixtures.EventValWith("1", "Event A", "", ""),
+				fixtures.EventValWith("2", "Event B", "", ""),
 			}
 
 			opts := &DetectionOptions{MinConfidence: 0.99}
@@ -147,17 +89,9 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should limit results to MaxSuggestionsCount", func() {
-			now := time.Now()
-			events := []career.CareerEvent{}
+			events := make([]career.CareerEvent, 15)
 			for i := 0; i < 15; i++ {
-				events = append(events, career.CareerEvent{
-					ID:        string(rune(48 + i)),
-					Text:      "Backend infrastructure work",
-					Date:      now.AddDate(0, -int(i/2), 0),
-					Company:   "TechCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				})
+				events[i] = fixtures.EventValWith(string(rune(48+i)), "Backend infrastructure work", "TechCorp", "")
 			}
 
 			opts := &DetectionOptions{MaxSuggestionsCount: 5}
@@ -173,32 +107,10 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should sort suggestions by confidence", func() {
-			now := time.Now()
 			events := []career.CareerEvent{
-				{
-					ID:        "1",
-					Text:      "Backend infrastructure work",
-					Date:      now.AddDate(0, -2, 0),
-					Company:   "TechCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "2",
-					Text:      "Backend platform",
-					Date:      now.AddDate(0, -1, 0),
-					Company:   "TechCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
-				{
-					ID:        "3",
-					Text:      "Unrelated event",
-					Date:      now,
-					Company:   "OtherCorp",
-					CreatedAt: now,
-					UpdatedAt: now,
-				},
+				fixtures.EventValWith("1", "Backend infrastructure work", "TechCorp", ""),
+				fixtures.EventValWith("2", "Backend platform", "TechCorp", ""),
+				fixtures.EventValWith("3", "Unrelated event", "OtherCorp", ""),
 			}
 
 			suggestions, err := detector.DetectBursts(ctx, events, nil)

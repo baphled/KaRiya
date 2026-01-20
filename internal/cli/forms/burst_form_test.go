@@ -6,17 +6,16 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("BurstForm", func() {
 	var testBurst *career.Burst
 
 	BeforeEach(func() {
-		testBurst = &career.Burst{
-			ID:          "burst-123",
-			Name:        "Test Burst",
-			Description: "Test description",
-		}
+		testBurst = fixtures.Burst("burst-123", "e1", "e2")
+		testBurst.Name = "Test Burst"
+		testBurst.Description = "Test description"
 	})
 
 	Describe("NewBurstEditorForm", func() {

@@ -206,6 +206,80 @@ KaRiya uses specific naming conventions to distinguish between different types o
 
 See `AGENTS.md` section "E2E Test Structure" for detailed examples.
 
+### Test Fixtures (Factory Pattern) - MANDATORY
+
+* **Description:** Use the `fixtures` package for generating test data. This package uses `factory-go` for the factory pattern and `gofakeit` for realistic fake data generation. **Always use fixtures instead of manually creating test objects.**
+
+* **Location:** `internal/testutil/fixtures/`
+
+* **Why Use Fixtures:**
+  1. **Consistency** - All test data follows domain validation rules
+  2. **Realism** - Factory-generated data uses realistic values (company names, dates, etc.)
+  3. **Maintainability** - Single source of truth for test object creation
+  4. **Reproducibility** - Use `SetSeed()` for deterministic tests
+  5. **Less Boilerplate** - Quick helpers reduce test setup code
+
+* **Available Factories:**
+
+  | Factory | Domain Object | Quick Helper |
+  |---------|--------------|--------------|
+  | `EventFactory` | `career.CareerEvent` | `Event(id)`, `EventWith(...)`, `Events(n)` |
+  | `BurstFactory` | `career.Burst` | `Burst(id, eventIDs...)`, `BurstConfirmed(...)`, `Bursts(n, events)` |
+  | `FactFactory` | `career.Fact` | `Fact(id, sourceEventID)`, `FactFromBurst(...)`, `Facts(n, events)` |
+
+* **Usage Examples:**
+
+  ```go
+  import "github.com/baphled/kariya/internal/testutil/fixtures"
+
+  // Quick helpers for minimal valid objects
+  event := fixtures.Event("evt-1")
+  burst := fixtures.Burst("burst-1", "evt-1", "evt-2")
+  fact := fixtures.Fact("fact-1", "evt-1")
+
+  // Factory with realistic random data
+  event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+
+  // Factory with field overrides
+  event := fixtures.EventFactory.MustCreateWithOption(map[string]interface{}{
+      "Company": "TechCorp",
+      "Project": "Platform",
+  }).(*career.CareerEvent)
+
+  // Batch creation
+  events := fixtures.Events(10)
+  bursts := fixtures.Bursts(5, events)
+  facts := fixtures.Facts(20, events)
+
+  // Reproducible tests with seed
+  fixtures.SetSeed(42)
+  event1 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+  ```
+
+* **Rules:**
+
+  1. **ALWAYS use fixtures** - Never manually construct domain objects in tests
+  2. **Use quick helpers for simple tests** - `Event("id")` is cleaner than factory calls
+  3. **Use factories for realistic data** - When tests need varied, realistic data
+  4. **Use `SetSeed()` for determinism** - When test assertions depend on specific values
+  5. **Link related objects** - Use `Bursts(n, events)` to properly link bursts to events
+
+* **Anti-patterns (DO NOT DO):**
+
+  ```go
+  // BAD: Manual object construction
+  event := &career.CareerEvent{
+      ID:        "test-1",
+      Text:      "Some text",
+      Date:      time.Now(),
+      CreatedAt: time.Now(),
+      UpdatedAt: time.Now(),
+  }
+
+  // GOOD: Use fixtures
+  event := fixtures.Event("test-1")
+  ```
+
 ## Code Style
 
 1. Format code with the standard **gofmt** tool (or run `go fmt`). This automatically formats code (indentation, spacing, etc.) according to Go conventions. Additionally, run **`go vet`** to catch common issues (unused variables, misuse of `unsafe`, etc.). These tools should be part of your development/CI process so that code is always formatted and vetted.
