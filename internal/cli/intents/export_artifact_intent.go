@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	exportscreens "github.com/baphled/kariya/internal/cli/screens/export"
 	"github.com/baphled/kariya/internal/cli/types"
-	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -323,31 +323,19 @@ func (e *ExportArtifactIntent) View() string {
 
 	baseView := view.Render()
 
-	// Get terminal dimensions for modal overlay
-	termInfo := e.GetTerminalInfo()
-	width, height := 120, 40 // Sensible defaults
-	if termInfo != nil {
-		width = termInfo.Width
-		height = termInfo.Height
-	}
-
-	// Render modal overlays on top of the base view using UIKit Overlay
-	// This provides a dimmed background with centered modal content
+	// Render modal overlays on top of the base view using bubbletea-overlay
+	// This composites the modal centered on the background content
 	if e.confirmModal != nil && e.confirmModal.IsVisible() {
-		modalView := e.confirmModal.View()
-		return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
+		return behaviors.RenderModalOverlay(e.confirmModal, baseView)
 	}
 	if e.progressModal != nil && e.progressModal.IsVisible() {
-		modalView := e.progressModal.View()
-		return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
+		return behaviors.RenderModalOverlay(e.progressModal, baseView)
 	}
 	if e.successModal != nil && e.successModal.IsVisible() {
-		modalView := e.successModal.View()
-		return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
+		return behaviors.RenderModalOverlay(e.successModal, baseView)
 	}
 	if e.errorModal != nil && e.errorModal.IsVisible() {
-		modalView := e.errorModal.View()
-		return containers.NewOverlay(width, height).Content(modalView).Dimmed().Render()
+		return behaviors.RenderModalOverlay(e.errorModal, baseView)
 	}
 
 	return baseView
