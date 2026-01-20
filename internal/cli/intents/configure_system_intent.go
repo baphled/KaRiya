@@ -4,16 +4,36 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// ConfigureSystemIntent implements the Intent interface for system configuration
+// ConfigureSystemIntent implements the Intent interface for system configuration.
+//
+// Screen Orchestration:
+// This intent supports gradual migration to screen-based architecture via EnableScreens().
+// When screens are enabled, Update/View delegate to activeScreen.
+// When screens are disabled (default), the legacy model handles Update/View.
+//
+// Related:
+// - internal/cli/screens/configure/ (ConfigureSystem screens)
+// - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
 type ConfigureSystemIntent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management
 	*BaseIntent
 
 	model *ConfigureSystemModel
+
+	// --- Screen Orchestration ---
+	// activeScreen holds the current screen being displayed.
+	// When non-nil and useScreens is true, Update/View delegate to this screen.
+	activeScreen screens.Screen
+
+	// useScreens controls whether to use the new screen-based architecture.
+	// When true, screens handle Update/View. When false, model handles them.
+	// This allows gradual migration without breaking existing functionality.
+	useScreens bool
 }
 
 // NewConfigureSystemIntent creates a new ConfigureSystem intent
@@ -57,6 +77,20 @@ func (c *ConfigureSystemIntent) Update(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 	}
+
+	// Delegate to active screen when using screen-based architecture
+	if c.useScreens && c.activeScreen != nil {
+		cmd, result := c.activeScreen.Update(msg)
+		if result != nil {
+			screenCmd := c.handleScreenResult(result)
+			if screenCmd != nil {
+				return tea.Batch(cmd, screenCmd)
+			}
+		}
+		return cmd
+	}
+
+	// Legacy: delegate to model
 	return c.model.Update(msg)
 }
 
@@ -157,7 +191,16 @@ func (c *ConfigureSystemIntent) getContextHelp() string {
 
 // View renders the current state using StandardView.
 func (c *ConfigureSystemIntent) View() string {
-	// Create standard view with breadcrumbs
+	// Delegate to active screen when using screen-based architecture
+	if c.useScreens && c.activeScreen != nil {
+		// Use StandardView with screen content
+		view := c.CreateViewWithBreadcrumbs("Main Menu", "Configure System", c.getStateName())
+		view.WithContent(c.activeScreen.View())
+		view.WithHelp(c.getContextHelp()).WithFooterSeparator(true)
+		return view.Render()
+	}
+
+	// Legacy: Create standard view with breadcrumbs from model
 	view := c.CreateViewWithBreadcrumbs("Main Menu", "Configure System", c.getStateName())
 
 	// Get content from model
@@ -231,4 +274,205 @@ func (c *ConfigureSystemIntent) GetDomainCount() int {
 // GetDomainPageSize returns the domain list page size (for testing)
 func (c *ConfigureSystemIntent) GetDomainPageSize() int {
 	return c.model.GetPageSize()
+}
+
+// =============================================================================
+// Screen Orchestration
+// =============================================================================
+
+// EnableScreens enables the screen-based architecture for this intent.
+// When enabled, Update/View delegate to the active screen.
+// This is opt-in to allow gradual migration.
+func (c *ConfigureSystemIntent) EnableScreens() {
+	c.useScreens = true
+}
+
+// IsUsingScreens returns whether the intent is using screen-based architecture.
+func (c *ConfigureSystemIntent) IsUsingScreens() bool {
+	return c.useScreens
+}
+
+// handleScreenResult processes a screen result and determines next action.
+func (c *ConfigureSystemIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+	if result == nil {
+		return nil
+	}
+
+	switch result.Type() {
+	case screens.ResultCancel:
+		return c.HandleCancel(result.(*screens.CancelResult))
+	case screens.ResultNavigate:
+		return c.HandleNavigate(result.(*screens.NavigateResult))
+	case screens.ResultSubmit:
+		return c.HandleSubmit(result.(*screens.SubmitResult))
+	case screens.ResultError:
+		return c.HandleError(result.(*screens.ErrorResult))
+	}
+
+	return nil
+}
+
+// HandleCancel handles screen cancellation (back/escape).
+// Implements ScreenResultHandler interface.
+func (c *ConfigureSystemIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+	// Check if main_menu was requested
+	if result.Metadata()["main_menu"] == true {
+		c.setCancelled()
+		return nil
+	}
+
+	// Navigate back based on current state
+	switch c.model.state {
+	case ConfigStateSelectDomain:
+		// At root state, cancel means exit intent
+		c.setCancelled()
+		return nil
+
+	case ConfigStateEditSettings:
+		// Go back to domain selection
+		c.model.state = ConfigStateSelectDomain
+		c.activeScreen = nil // Will use model's view
+		return nil
+
+	case ConfigStateReviewChanges:
+		// Go back to edit settings
+		c.model.state = ConfigStateEditSettings
+		c.activeScreen = nil
+		return nil
+
+	case ConfigStateConfirm:
+		// Go back to review changes
+		c.model.state = ConfigStateReviewChanges
+		c.activeScreen = nil
+		return nil
+
+	case ConfigStateComplete, ConfigStateFailed:
+		// Complete/failed - exit intent
+		c.setCancelled()
+		return nil
+
+	default:
+		c.setCancelled()
+		return nil
+	}
+}
+
+// HandleNavigate handles screen navigation results.
+// Implements ScreenResultHandler interface.
+func (c *ConfigureSystemIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
+	data := result.Data()
+
+	switch c.model.state {
+	case ConfigStateReviewChanges:
+		// User wants to confirm
+		if data == "confirm" {
+			c.model.state = ConfigStateConfirm
+			c.activeScreen = nil
+		}
+		return nil
+
+	case ConfigStateConfirm:
+		// User confirmed or declined
+		if confirmed, ok := data.(bool); ok {
+			if confirmed {
+				// Start saving
+				c.model.state = ConfigStateSaving
+				c.activeScreen = nil
+				return c.saveConfiguration()
+			}
+			// User declined, go back to review
+			c.model.state = ConfigStateReviewChanges
+			c.activeScreen = nil
+		}
+		return nil
+
+	case ConfigStateFailed:
+		// Retry
+		if data == "retry" {
+			c.model.state = ConfigStateSaving
+			c.activeScreen = nil
+			return c.saveConfiguration()
+		}
+		return nil
+
+	default:
+		return nil
+	}
+}
+
+// HandleSubmit handles screen submit results.
+// Implements ScreenResultHandler interface.
+func (c *ConfigureSystemIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
+	// Check if main_menu was requested
+	if result.Metadata()["main_menu"] == true {
+		c.setCancelled()
+		return nil
+	}
+
+	switch c.model.state {
+	case ConfigStateEditSettings:
+		// Form submitted, get changes and go to review
+		if changes, ok := result.Data().(map[string]interface{}); ok {
+			c.model.changes = &ConfigurationChanges{
+				Domain:   c.model.domain,
+				Original: make(map[string]interface{}),
+				Modified: changes,
+			}
+		}
+		c.model.state = ConfigStateReviewChanges
+		c.activeScreen = nil
+		return nil
+
+	case ConfigStateComplete:
+		// User dismissed success screen
+		c.setCompleted(&IntentResult[interface{}]{
+			Status: Completed,
+			Data:   c.model.result,
+		})
+		return nil
+
+	default:
+		return nil
+	}
+}
+
+// HandleError handles screen error results.
+// Implements ScreenResultHandler interface.
+func (c *ConfigureSystemIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	// Store error and transition to failed state
+	c.model.error = &IntentError{
+		Message: result.Message,
+	}
+	c.model.state = ConfigStateFailed
+	c.activeScreen = nil
+	return nil
+}
+
+// setCancelled marks the intent as cancelled.
+func (c *ConfigureSystemIntent) setCancelled() {
+	c.model.active = false
+	c.model.result = &ConfigureSystemResult{
+		Success: false,
+		Error:   &IntentError{Message: "cancelled by user"},
+	}
+}
+
+// setCompleted marks the intent as completed with the given result.
+func (c *ConfigureSystemIntent) setCompleted(result *IntentResult[interface{}]) {
+	c.model.active = false
+}
+
+// saveConfiguration starts the configuration save process.
+func (c *ConfigureSystemIntent) saveConfiguration() tea.Cmd {
+	// Return a command that will simulate saving (in real implementation, this would save to disk)
+	return func() tea.Msg {
+		// Simulate save success
+		return ConfigCompleteMsg{
+			Result: &ConfigureSystemResult{
+				Success: true,
+				Domain:  c.model.domain,
+				Changes: c.model.changes,
+			},
+		}
+	}
 }
