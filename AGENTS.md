@@ -1,5 +1,22 @@
 # KaRiya AI Agent Instructions
 
+## Migration Note
+
+**Breaking change**: `ai-commit` now requires a file path instead of inline message:
+
+```bash
+# OLD (no longer works)
+make ai-commit MSG="feat: description"
+
+# NEW (required)
+cat > /tmp/commit.txt << 'EOF'
+feat(scope): description
+
+Optional body...
+EOF
+make ai-commit FILE=/tmp/commit.txt
+```
+
 ## Session Start (Required)
 
 ```bash
