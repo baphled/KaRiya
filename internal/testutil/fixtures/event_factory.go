@@ -114,3 +114,23 @@ func Events(n int) []*career.CareerEvent {
 	}
 	return events
 }
+
+// EventVal creates a minimal valid CareerEvent value (not pointer) with the given ID.
+// Use this for tests that require value types rather than pointers.
+func EventVal(id string) career.CareerEvent {
+	return *Event(id)
+}
+
+// EventValWith creates a CareerEvent value with custom fields.
+func EventValWith(id, text, company, project string) career.CareerEvent {
+	return *EventWith(id, text, company, project)
+}
+
+// EventVals creates n events as values with sequential IDs.
+func EventVals(n int) []career.CareerEvent {
+	events := make([]career.CareerEvent, n)
+	for i := 0; i < n; i++ {
+		events[i] = *EventFactory.MustCreate().(*career.CareerEvent)
+	}
+	return events
+}
