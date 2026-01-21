@@ -578,5 +578,79 @@ var _ = Describe("CVConfigWizardModal", func() {
 			config := modal.GetConfigData()
 			Expect(config.ProfileID).To(Equal("profile-1"))
 		})
+
+		It("should preserve profile selection through window resize", func() {
+			profiles := []components.ProfileOption{
+				{ID: "profile-1", Name: "Staff Engineer"},
+				{ID: "profile-2", Name: "Senior Engineer"},
+			}
+			modal = components.NewCVConfigWizardModalWithProfiles(120, 40, profiles)
+			modal.Init()
+
+			// Select profile via keyboard navigation
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// DO NOT call GetConfigData() here - that would sync the value
+			// The bug is that resize without prior sync loses the selection
+
+			// Trigger window resize (calls buildForm internally)
+			modal.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+
+			// Selection should be preserved after resize
+			config := modal.GetConfigData()
+			Expect(config.ProfileID).To(Equal("profile-1"))
+		})
+
+		It("should preserve profile selection through SetExtractedTechnologies", func() {
+			profiles := []components.ProfileOption{
+				{ID: "profile-1", Name: "Staff Engineer"},
+				{ID: "profile-2", Name: "Senior Engineer"},
+			}
+			modal = components.NewCVConfigWizardModalWithProfiles(120, 40, profiles)
+			modal.Init()
+
+			// Select profile via keyboard navigation
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// DO NOT call GetConfigData() here - that would sync the value
+			// The bug is that SetExtractedTechnologies without prior sync loses the selection
+
+			// Trigger form rebuild via SetExtractedTechnologies
+			techs := []components.ExtractedTechnology{
+				{Name: "Go", Category: "Language"},
+			}
+			modal.SetExtractedTechnologies(techs)
+
+			// Selection should be preserved
+			config := modal.GetConfigData()
+			Expect(config.ProfileID).To(Equal("profile-1"))
+		})
+
+		It("should preserve profile selection through Reset", func() {
+			profiles := []components.ProfileOption{
+				{ID: "profile-1", Name: "Staff Engineer"},
+				{ID: "profile-2", Name: "Senior Engineer"},
+			}
+			modal = components.NewCVConfigWizardModalWithProfiles(120, 40, profiles)
+			modal.Init()
+
+			// Select profile via keyboard navigation
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Use SetProfileID to complete (this updates both formData and data)
+			// But the keyboard selection should also be preserved
+			modal.SetProfileID("profile-1")
+			modal.Complete()
+
+			// Reset the wizard (calls buildForm internally)
+			modal.Reset()
+
+			// Selection should be preserved after reset
+			config := modal.GetConfigData()
+			Expect(config.ProfileID).To(Equal("profile-1"))
+		})
 	})
 })

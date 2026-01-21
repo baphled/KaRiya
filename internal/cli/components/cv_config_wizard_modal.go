@@ -109,6 +109,10 @@ func NewCVConfigWizardModalWithProfiles(width, height int, profiles []ProfileOpt
 
 // buildForm creates the huh form with 3 steps (groups).
 func (m *CVConfigWizardModal) buildForm() {
+	// Sync current form state before rebuilding to preserve selections
+	// Safe to call even when formData is nil (first call)
+	m.syncFromFormData()
+
 	// Calculate modal dimensions
 	modalWidth := m.width - 20
 	if modalWidth > 80 {
