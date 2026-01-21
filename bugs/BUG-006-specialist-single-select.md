@@ -1,9 +1,10 @@
 # Bug 006: Specialist Tech Focus Should Use Single-Select
 
-**Status**: Root Cause  
-**Severity**: 🟠 High  
+**Status**: Closed  
+**Severity**: 🟢 Resolved  
 **Created**: 2026-01-21  
 **Updated**: 2026-01-21  
+**Fixed**: 2026-01-21 (commit 368c704)  
 
 ---
 
@@ -15,8 +16,8 @@ When selecting "Specialist" tech focus in CV wizard, user is shown MultiSelect f
 
 ## Affected Components
 
-- [x] `internal/cli/forms/cv_config_form.go:106` - Always creates MultiSelect
-- [ ] `internal/cli/components/cv_config_wizard_modal.go` - May need form rebuild logic
+- [x] `internal/cli/forms/cv_config_form.go:106` - Now uses Select or MultiSelect based on singleTechSelect (FIXED)
+- [x] `internal/cli/components/cv_config_wizard_modal.go` - Passes singleTechSelect based on TechFocus (FIXED)
 
 **Related Intents/Workflows**:
 - GenerateCVIntent (wizard mode)
@@ -127,11 +128,11 @@ Have the modal watch for TechFocus changes and rebuild the entire form.
 
 ## Testing Plan
 
-### Phase 1: Unit Tests
+### Phase 1: Unit Tests (COMPLETED)
 
-- [ ] Test `NewCVConfigForm` with `singleTechSelect=false` creates MultiSelect
-- [ ] Test `NewCVConfigForm` with `singleTechSelect=true` creates Select
-- [ ] Test form data binding works for single-select mode
+- [x] Test `NewCVConfigForm` with `singleTechSelect=false` creates MultiSelect
+- [x] Test `NewCVConfigForm` with `singleTechSelect=true` creates Select
+- [x] Test form data binding works for single-select mode
 
 **Files**:
 - `internal/cli/forms/cv_config_form_test.go`
@@ -156,28 +157,27 @@ Have the modal watch for TechFocus changes and rebuild the entire form.
 
 ## Verification Checklist
 
-### Code Quality
-- [ ] Fix implemented and tested
-- [ ] All tests passing (go test ./...)
-- [ ] No race conditions (go test -race)
-- [ ] Code coverage maintained (>80%)
-- [ ] Linting passing (staticcheck)
+### Code Quality (COMPLETED)
+- [x] Fix implemented and tested
+- [x] All tests passing (go test ./...)
+- [x] No race conditions (go test -race)
+- [x] Code coverage maintained (>80%)
+- [x] Linting passing (staticcheck)
 
-### Functionality
-- [ ] Specialist mode shows single-select
-- [ ] Generalist mode shows multi-select
-- [ ] Language Agnostic mode hides tech selection (existing behavior)
-- [ ] Selected technology persists through wizard completion
+### Functionality (COMPLETED)
+- [x] Specialist mode shows single-select
+- [x] Generalist mode shows multi-select
+- [x] Language Agnostic mode hides tech selection (existing behavior)
+- [x] Selected technology persists through wizard completion
 
-### Documentation
-- [ ] Code comments added/updated
-- [ ] FORMS_GUIDE.md updated if needed
-- [ ] Bug report updated with resolution
+### Documentation (COMPLETED)
+- [x] Code comments added/updated
+- [x] Bug report updated with resolution
 
-### Compliance
-- [ ] Follows project coding standards
-- [ ] Atomic commits with clear messages
-- [ ] AI attribution
+### Compliance (COMPLETED)
+- [x] Follows project coding standards
+- [x] Atomic commits with clear messages
+- [x] AI attribution
 
 ---
 
@@ -208,4 +208,5 @@ Have the modal watch for TechFocus changes and rebuild the entire form.
 ---
 
 **Last Updated**: 2026-01-21  
-**Updated By**: Opencode
+**Updated By**: Opencode  
+**Fix Commit**: 368c704 - fix(cv): add singleTechSelect parameter for specialist mode (BUG-006)
