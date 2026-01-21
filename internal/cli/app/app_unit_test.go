@@ -2,11 +2,13 @@ package app_test
 
 import (
 	"context"
+	"path/filepath"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
+	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -25,6 +27,7 @@ var _ = Describe("App Unit Tests", func() {
 	)
 
 	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		ctx = context.Background()
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
@@ -51,6 +54,10 @@ var _ = Describe("App Unit Tests", func() {
 
 		model = app.NewModel(cliService, svc)
 		model.SkipOnboarding() // Skip onboarding for tests
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
 	})
 
 	Describe("Init", func() {

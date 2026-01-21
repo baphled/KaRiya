@@ -1,6 +1,9 @@
 package e2e_test
 
 import (
+	"os"
+
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -180,6 +183,77 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 		It("should go directly to menu with standard Setup", func() {
 			// Should be at menu immediately
 			Expect(env.IsInMenuState()).To(BeTrue(), "Should start at menu with standard Setup")
+		})
+	})
+
+	Describe("BUG-007 Regression: Config File Isolation", func() {
+		var (
+			realConfigPath  string
+			originalContent []byte
+			originalExists  bool
+		)
+
+		BeforeEach(func() {
+			// Get the real config path BEFORE any test setup
+			var err error
+			realConfigPath, err = config.GetConfigPath()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Read original content if it exists
+			originalContent, err = os.ReadFile(realConfigPath)
+			if err == nil {
+				originalExists = true
+			} else if os.IsNotExist(err) {
+				originalExists = false
+			} else {
+				Fail("Failed to read original config: " + err.Error())
+			}
+
+			// Now set up the test environment with onboarding
+			env = e2e.SetupWithOnboarding(GinkgoT())
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("BUG-007: should NOT write to user's real config file during onboarding", func() {
+			// Complete onboarding with test values
+			env.CompleteOnboarding("BUG007 Test User", "bug007@example.com")
+
+			// Verify onboarding completed
+			Expect(env.IsInOnboardingState()).To(BeFalse(), "Onboarding should be complete")
+			Expect(env.IsInMenuState()).To(BeTrue(), "Should be at menu after completion")
+
+			// Now verify the real config file was NOT modified
+			if originalExists {
+				currentContent, err := os.ReadFile(realConfigPath)
+				Expect(err).NotTo(HaveOccurred(), "Should be able to read real config")
+				Expect(currentContent).To(Equal(originalContent),
+					"Real config file should NOT have been modified by test")
+			} else {
+				// If config didn't exist before, it should still not exist
+				_, err := os.Stat(realConfigPath)
+				Expect(os.IsNotExist(err)).To(BeTrue(),
+					"Real config file should NOT have been created by test")
+			}
+		})
+
+		It("BUG-007: should NOT contain test values in real config after onboarding", func() {
+			// Complete onboarding with distinctive test values
+			env.CompleteOnboarding("BUG007 Unique Name", "bug007unique@test.com")
+
+			// Read the real config file
+			if originalExists {
+				currentContent, err := os.ReadFile(realConfigPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				contentStr := string(currentContent)
+				Expect(contentStr).NotTo(ContainSubstring("BUG007 Unique Name"),
+					"Real config should NOT contain test name")
+				Expect(contentStr).NotTo(ContainSubstring("bug007unique@test.com"),
+					"Real config should NOT contain test email")
+			}
 		})
 	})
 })

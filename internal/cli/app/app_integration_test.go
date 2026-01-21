@@ -2,11 +2,13 @@ package app_test
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -25,6 +27,7 @@ var _ = Describe("App Menu Integration Tests", func() {
 	)
 
 	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		ctx := context.Background()
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
@@ -35,15 +38,16 @@ var _ = Describe("App Menu Integration Tests", func() {
 		svc.SetFactRepository(factRepo)
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
-		// Pre-populate repositories with dummy entries to avoid nil panics and empty state modals
-		// BUG-004: Generate CV now shows a warning modal if no events exist
 		_ = repo.Create(ctx, &career.CareerEvent{ID: "e1", Text: "Test event", Date: time.Now()})
 		_ = burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
 		_ = factRepo.Create(ctx, fixtures.Fact("f1", "e1"))
 		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding() // Skip onboarding for tests
-
+		model.SkipOnboarding()
 		Expect(model).NotTo(BeNil())
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
 	})
 
 	Describe("Bubbles table integration", func() {
@@ -152,6 +156,7 @@ var _ = Describe("Navigation Integration", func() {
 	)
 
 	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
@@ -161,14 +166,15 @@ var _ = Describe("Navigation Integration", func() {
 		svc.SetFactRepository(factRepo)
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
-
-		// Add dummy data
 		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
-
 		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding() // Skip onboarding for tests
+		model.SkipOnboarding()
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
 	})
 
 	It("should start in menu state with menu visible", func() {
@@ -240,6 +246,7 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 	)
 
 	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
@@ -249,17 +256,17 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		svc.SetFactRepository(factRepo)
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
-
-		// Add dummy data
 		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
-
 		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding() // Skip onboarding for tests
+		model.SkipOnboarding()
 	})
 
-	// Test each intent in the menu (0-6)
+	AfterEach(func() {
+		config.ResetConfigPath()
+	})
+
 	testIntentNavigation := func(menuIndex int, intentName string) {
 		It("should navigate within "+intentName+" intent", func() {
 			// Navigate to the menu item
@@ -321,6 +328,7 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 	)
 
 	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
@@ -330,14 +338,15 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 		svc.SetFactRepository(factRepo)
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
-
-		// Add dummy data
 		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
-
 		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding() // Skip onboarding for tests
+		model.SkipOnboarding()
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
 	})
 
 	selectIntent := func(menuIndex int) {
@@ -473,6 +482,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 	)
 
 	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
@@ -482,24 +492,21 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		svc.SetFactRepository(factRepo)
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
-
-		// Add multiple events for timeline
 		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "event 1", Date: time.Now()})
 		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e2", Text: "event 2", Date: time.Now()})
 		_ = repo.Create(context.Background(), &career.CareerEvent{ID: "e3", Text: "event 3", Date: time.Now()})
-
-		// Add multiple bursts
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "burst 1", EventIDs: []string{"e1"}})
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b2", Name: "burst 2", EventIDs: []string{"e2"}})
 		_ = burstRepo.Create(context.Background(), &career.Burst{ID: "b3", Name: "burst 3", EventIDs: []string{"e3"}})
-
-		// Add multiple facts
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "fact 1", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f2", Text: "fact 2", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e2"})
 		_ = factRepo.Create(context.Background(), &career.Fact{ID: "f3", Text: "fact 3", CompetencyCategories: []string{"communication"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e3"})
-
 		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding() // Skip onboarding for tests
+		model.SkipOnboarding()
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
 	})
 
 	selectIntent := func(menuIndex int) {

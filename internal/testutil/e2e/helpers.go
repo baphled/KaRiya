@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -86,15 +87,22 @@ func Setup(t TestingT) *TestEnv {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	prevConfigPath := config.SwapConfigPathForTesting(configPath)
+
 	// Open database connection
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
 	if err := careerrepo.RunMigrations(db); err != nil {
-		_ = db.Close() // Ignore error as we're already in failure path
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
+		_ = db.Close()                                 // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -121,8 +129,10 @@ func Setup(t TestingT) *TestEnv {
 	model.SkipOnboarding()
 
 	cleanup := func() {
+		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		// This allows nested isolation without breaking suite-level isolation
+		config.SetConfigPathForTesting(prevConfigPath)
 		_ = db.Close()
-		_ = db.Close() // Error ignored as this is test cleanup
 	}
 
 	return &TestEnv{
@@ -145,6 +155,9 @@ func Setup(t TestingT) *TestEnv {
 // Use this to test the onboarding workflow specifically.
 // This forces onboarding to appear regardless of the user's config file.
 //
+// IMPORTANT: This function isolates config file writes to a temporary directory
+// to prevent tests from polluting the user's real config file (BUG-007 fix).
+//
 // Works with both *testing.T and GinkgoT().
 func SetupWithOnboarding(t TestingT) *TestEnv {
 	t.Helper()
@@ -153,15 +166,22 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	prevConfigPath := config.SwapConfigPathForTesting(configPath)
+
 	// Open database connection
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
 	if err := careerrepo.RunMigrations(db); err != nil {
-		_ = db.Close() // Ignore error as we're already in failure path
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
+		_ = db.Close()                                 // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -186,8 +206,9 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	model.ForceOnboarding()
 
 	cleanup := func() {
+		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		config.SetConfigPathForTesting(prevConfigPath)
 		_ = db.Close()
-		_ = db.Close() // Error ignored as this is test cleanup
 	}
 
 	return &TestEnv{
@@ -214,6 +235,12 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
+	tmpDir := t.TempDir()
+
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	prevConfigPath := config.SwapConfigPathForTesting(configPath)
 
 	// Create in-memory repositories
 	eventRepo := careerrepo.NewMemoryRepository()
@@ -245,7 +272,10 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		Service:      svc,
 		CLIService:   cliService,
 		Ctx:          ctx,
-		cleanup:      func() {},
+		cleanup: func() {
+			// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+			config.SetConfigPathForTesting(prevConfigPath)
+		},
 	}
 }
 

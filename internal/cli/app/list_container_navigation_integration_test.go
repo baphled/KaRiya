@@ -2,10 +2,12 @@ package app_test
 
 import (
 	"context"
+	"path/filepath"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -24,6 +26,7 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 	)
 
 	BeforeEach(func() {
+		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
@@ -57,8 +60,12 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 		_ = factRepo.Create(context.Background(), fixtures.Fact("f1", "e1"))
 
 		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding() // Skip onboarding for tests
+		model.SkipOnboarding()
 		Expect(model).NotTo(BeNil())
+	})
+
+	AfterEach(func() {
+		config.ResetConfigPath()
 	})
 
 	Describe("BrowseTimeline navigation from menu", func() {
