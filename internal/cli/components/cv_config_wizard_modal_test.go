@@ -562,4 +562,21 @@ var _ = Describe("CVConfigWizardModal", func() {
 			Expect(modal.IsVisible()).To(BeTrue())
 		})
 	})
+
+	Describe("Form Navigation Selection Persistence", func() {
+		It("should return the profile selected via keyboard navigation in GetConfigData", func() {
+			profiles := []components.ProfileOption{
+				{ID: "profile-1", Name: "Staff Engineer"},
+				{ID: "profile-2", Name: "Senior Engineer"},
+			}
+			modal = components.NewCVConfigWizardModalWithProfiles(120, 40, profiles)
+			modal.Init()
+
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			config := modal.GetConfigData()
+			Expect(config.ProfileID).To(Equal("profile-1"))
+		})
+	})
 })
