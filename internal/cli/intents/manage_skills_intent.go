@@ -74,7 +74,7 @@ type ManageSkillsIntent struct {
 	// view/edit modals (modal overlay architecture like BrowseTimelineIntent)
 	viewDetailModal  *components.ViewSkillDetailModal
 	addEditModal     *components.SkillAddEditModal
-	deleteModal      *components.DeleteConfirmModal
+	deleteModal      *feedback.ConfirmModal
 	skillEventsModal *components.ViewSkillEventsModal // Modal to show events using a skill
 	eventDetailModal *components.ViewEventDetailModal // Modal to show event details from events list
 
@@ -911,11 +911,10 @@ func (i *ManageSkillsIntent) openDeleteModal(skill *domain.Skill) tea.Cmd {
 		skillName = skillName[:47] + "..."
 	}
 
-	i.deleteModal = components.NewDeleteConfirmModal(
-		skill.Name,
+	i.deleteModal = feedback.NewConfirmModal(
 		"Delete Skill",
 		fmt.Sprintf("Are you sure you want to delete '%s'?", skillName),
-	)
+	).WithVariant(feedback.ConfirmDestructive)
 	return i.deleteModal.Init()
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -81,7 +82,7 @@ type BrowseTimelineIntent struct {
 	sortModal *components.EventSortModal
 
 	// deleteModal holds the delete confirmation modal (shown over the list)
-	deleteModal *components.DeleteConfirmModal
+	deleteModal *feedback.ConfirmModal
 
 	// quickAddModal holds the quick add event modal (shown over the list) - Phase 4 UX Issue 3A
 	quickAddModal *components.QuickAddEventModal
@@ -860,11 +861,10 @@ func (i *BrowseTimelineIntent) HandleNavigate(result *screens.NavigateResult) te
 				if len(eventText) > 50 {
 					eventText = eventText[:47] + "..."
 				}
-				i.deleteModal = components.NewDeleteConfirmModal(
-					event.Text,
+				i.deleteModal = feedback.NewConfirmModal(
 					"Delete Event",
 					fmt.Sprintf("Are you sure you want to delete '%s'?", eventText),
-				)
+				).WithVariant(feedback.ConfirmDestructive)
 				// Store event for deletion if confirmed
 				i.state.selectedEvent = event
 				return i.deleteModal.Init()
