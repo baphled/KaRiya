@@ -425,8 +425,8 @@ func applyScoringDefaults(cfg *Config, defaults *Config) {
 		cfg.Scoring.Thresholds.HighImpactConfidence = defaults.Scoring.Thresholds.HighImpactConfidence
 	}
 
-	// Role settings defaults - only apply if map is nil or empty
-	if cfg.Scoring.RoleSettings == nil || len(cfg.Scoring.RoleSettings) == 0 {
+	// Role settings defaults - only apply if map is empty
+	if len(cfg.Scoring.RoleSettings) == 0 {
 		cfg.Scoring.RoleSettings = defaults.Scoring.RoleSettings
 	}
 }
