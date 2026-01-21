@@ -148,7 +148,8 @@ func Setup(t TestingT) *TestEnv {
 		}
 		// Give Windows time to release file handles before temp dir cleanup
 		// This prevents "file in use" errors on Windows CI
-		time.Sleep(10 * time.Millisecond)
+		// 100ms is needed for reliable cleanup on Windows CI runners
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	return &TestEnv{
@@ -388,7 +389,8 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 		}
 		// Give Windows time to release file handles before temp dir cleanup
 		// This prevents "file in use" errors on Windows CI
-		time.Sleep(10 * time.Millisecond)
+		// 100ms is needed for reliable cleanup on Windows CI runners
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	return &TestEnv{
