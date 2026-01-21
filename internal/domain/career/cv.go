@@ -80,7 +80,7 @@ func (cv *CVView) validateTargetRole() error {
 	if trimmedRole == "" {
 		return ErrInvalidCVRole
 	}
-	if !constants.IsValidRole(trimmedRole) {
+	if !constants.IsValidRoleFit(trimmedRole) {
 		return fmt.Errorf("invalid target role: %s", cv.TargetRole)
 	}
 	return nil
@@ -443,7 +443,7 @@ func (cc *CVConfig) validateTargetRole() error {
 	if trimmedRole == "" {
 		return ErrInvalidCVRole
 	}
-	if !constants.IsValidRole(trimmedRole) {
+	if !constants.IsValidRoleFit(trimmedRole) {
 		return fmt.Errorf("invalid target role: %s", cc.TargetRole)
 	}
 	return nil

@@ -15,44 +15,44 @@ func TestConstants(t *testing.T) {
 }
 
 var _ = Describe("Constants", func() {
-	Describe("Role", func() {
-		Describe("AllRoles", func() {
-			It("returns all defined roles", func() {
-				roles := constants.AllRoles()
+	Describe("RoleFit", func() {
+		Describe("AllRoleFits", func() {
+			It("returns all defined role fits", func() {
+				roles := constants.AllRoleFits()
 				Expect(roles).To(HaveLen(4))
 				Expect(roles).To(ContainElements(
-					constants.RolePrincipal,
-					constants.RoleEM,
-					constants.RoleStaff,
-					constants.RoleSeniorIC,
+					constants.RoleFitPrincipal,
+					constants.RoleFitEM,
+					constants.RoleFitStaff,
+					constants.RoleFitSeniorIC,
 				))
 			})
 		})
 
-		Describe("IsValidRole", func() {
-			It("returns true for valid roles", func() {
-				Expect(constants.IsValidRole("principal")).To(BeTrue())
-				Expect(constants.IsValidRole("em")).To(BeTrue())
-				Expect(constants.IsValidRole("staff")).To(BeTrue())
-				Expect(constants.IsValidRole("senior_ic")).To(BeTrue())
+		Describe("IsValidRoleFit", func() {
+			It("returns true for valid role fits", func() {
+				Expect(constants.IsValidRoleFit("principal")).To(BeTrue())
+				Expect(constants.IsValidRoleFit("em")).To(BeTrue())
+				Expect(constants.IsValidRoleFit("staff")).To(BeTrue())
+				Expect(constants.IsValidRoleFit("senior_ic")).To(BeTrue())
 			})
 
-			It("returns false for invalid roles", func() {
-				Expect(constants.IsValidRole("invalid")).To(BeFalse())
-				Expect(constants.IsValidRole("")).To(BeFalse())
-				Expect(constants.IsValidRole("PRINCIPAL")).To(BeFalse())
+			It("returns false for invalid role fits", func() {
+				Expect(constants.IsValidRoleFit("invalid")).To(BeFalse())
+				Expect(constants.IsValidRoleFit("")).To(BeFalse())
+				Expect(constants.IsValidRoleFit("PRINCIPAL")).To(BeFalse())
 			})
 		})
 
-		Describe("CVTargetRoles", func() {
-			It("returns roles suitable for CV targeting", func() {
-				roles := constants.CVTargetRoles()
+		Describe("CVTargetRoleFits", func() {
+			It("returns role fits suitable for CV targeting", func() {
+				roles := constants.CVTargetRoleFits()
 				Expect(roles).To(HaveLen(4))
 				Expect(roles).To(ContainElements(
-					constants.RolePrincipal,
-					constants.RoleStaff,
-					constants.RoleEM,
-					constants.RoleSeniorIC,
+					constants.RoleFitPrincipal,
+					constants.RoleFitStaff,
+					constants.RoleFitEM,
+					constants.RoleFitSeniorIC,
 				))
 			})
 		})

@@ -3,29 +3,29 @@
 // of truth for all enumerations and constant values used throughout the application.
 package constants
 
-// Role represents a career role/level target for CVs and facts.
-type Role string
+// RoleFit represents a career role/level target for CVs and facts.
+type RoleFit string
 
 const (
-	RolePrincipal Role = "principal"
-	RoleEM        Role = "em"
-	RoleStaff     Role = "staff"
-	RoleSeniorIC  Role = "senior_ic"
+	RoleFitPrincipal RoleFit = "principal"
+	RoleFitEM        RoleFit = "em"
+	RoleFitStaff     RoleFit = "staff"
+	RoleFitSeniorIC  RoleFit = "senior_ic"
 )
 
-// AllRoles returns all defined roles.
-func AllRoles() []Role {
-	return []Role{
-		RolePrincipal,
-		RoleEM,
-		RoleStaff,
-		RoleSeniorIC,
+// AllRoleFits returns all defined role fits.
+func AllRoleFits() []RoleFit {
+	return []RoleFit{
+		RoleFitPrincipal,
+		RoleFitEM,
+		RoleFitStaff,
+		RoleFitSeniorIC,
 	}
 }
 
-// IsValidRole checks if the given string is a valid role.
-func IsValidRole(s string) bool {
-	for _, r := range AllRoles() {
+// IsValidRoleFit checks if the given string is a valid role fit.
+func IsValidRoleFit(s string) bool {
+	for _, r := range AllRoleFits() {
 		if string(r) == s {
 			return true
 		}
@@ -33,9 +33,9 @@ func IsValidRole(s string) bool {
 	return false
 }
 
-// CVTargetRoles returns roles suitable for CV targeting.
-func CVTargetRoles() []Role {
-	return AllRoles()
+// CVTargetRoleFits returns role fits suitable for CV targeting.
+func CVTargetRoleFits() []RoleFit {
+	return AllRoleFits()
 }
 
 // CompetencyCategory represents broad professional competency categories.

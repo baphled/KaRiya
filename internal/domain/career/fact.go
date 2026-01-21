@@ -9,15 +9,15 @@ import (
 )
 
 // RoleFit represents the career level fit for a fact.
-// This is an alias to constants.Role for backward compatibility.
-type RoleFit = constants.Role
+// This is an alias to constants.RoleFit for backward compatibility.
+type RoleFit = constants.RoleFit
 
 // RoleFit constants for backward compatibility.
 const (
-	RoleFitPrincipal = constants.RolePrincipal
-	RoleFitEM        = constants.RoleEM
-	RoleFitStaff     = constants.RoleStaff
-	RoleFitSeniorIC  = constants.RoleSeniorIC
+	RoleFitPrincipal = constants.RoleFitPrincipal
+	RoleFitEM        = constants.RoleFitEM
+	RoleFitStaff     = constants.RoleFitStaff
+	RoleFitSeniorIC  = constants.RoleFitSeniorIC
 )
 
 // AspirationKeywords contains words that indicate aspirational language
@@ -137,7 +137,7 @@ func (f *Fact) validateRoleFit() error {
 	if string(f.RoleFit) == "" {
 		return errors.New("fact role fit cannot be empty")
 	}
-	if !constants.IsValidRole(string(f.RoleFit)) {
+	if !constants.IsValidRoleFit(string(f.RoleFit)) {
 		return errors.New("invalid role fit: must be one of principal, em, staff, or senior_ic")
 	}
 	return nil
