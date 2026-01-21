@@ -235,13 +235,10 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 		i.tableBehavior.SetTheme(theme)
 	}
 
-	// Load bursts from repository
-	if err := i.context.LoadBursts(); err != nil {
-		// Log error but continue - empty list is acceptable
-		i.state.filteredBursts = []*domain.Burst{}
-		i.tableBehavior.SetItems(i.state.filteredBursts)
-		return nil
-	}
+	// Load bursts from repository (if repository available)
+	// Error is ignored - context.Bursts may already be populated (e.g., in tests)
+	//nolint:errcheck // LoadBursts may fail if no repository, but context.Bursts may be pre-populated
+	i.context.LoadBursts()
 
 	// Initialize filtered bursts with the provided bursts.
 	i.state.filteredBursts = i.context.Bursts
