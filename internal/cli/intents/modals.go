@@ -4,6 +4,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -89,16 +90,18 @@ func NewEditMetadataModal(company, project string, tags, categories []string) *E
 	categoriesCopy := make([]string, len(categories))
 	copy(categoriesCopy, categories)
 
-	// Build tag options from AllowedTags
+	// Build tag options from constants
 	tagOptions := make([]huh.Option[string], 0)
-	for tag := range career.AllowedTags {
-		tagOptions = append(tagOptions, huh.NewOption(tag, tag))
+	for _, tag := range constants.AllEventTags() {
+		tagStr := string(tag)
+		tagOptions = append(tagOptions, huh.NewOption(tagStr, tagStr))
 	}
 
-	// Build category options from AllowedCategories
+	// Build category options from constants
 	categoryOptions := make([]huh.Option[string], 0)
-	for cat := range career.AllowedCategories {
-		categoryOptions = append(categoryOptions, huh.NewOption(cat, cat))
+	for _, cat := range constants.AllCompetencyCategories() {
+		catStr := string(cat)
+		categoryOptions = append(categoryOptions, huh.NewOption(catStr, catStr))
 	}
 
 	modal := &EditMetadataModal{

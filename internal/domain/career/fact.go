@@ -4,32 +4,21 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"github.com/baphled/kariya/internal/constants"
 )
 
-// RoleFit represents the career level fit for a fact
-type RoleFit string
+// RoleFit represents the career level fit for a fact.
+// This is an alias to constants.Role for backward compatibility.
+type RoleFit = constants.Role
 
+// RoleFit constants for backward compatibility.
 const (
-	RoleFitPrincipal RoleFit = "principal"
-	RoleFitEM        RoleFit = "em"
-	RoleFitStaff     RoleFit = "staff"
-	RoleFitSeniorIC  RoleFit = "senior_ic"
+	RoleFitPrincipal = constants.RolePrincipal
+	RoleFitEM        = constants.RoleEM
+	RoleFitStaff     = constants.RoleStaff
+	RoleFitSeniorIC  = constants.RoleSeniorIC
 )
-
-// AllowedRoleFits defines the set of valid role fit values
-var AllowedRoleFits = map[string]bool{
-	"principal": true,
-	"em":        true,
-	"staff":     true,
-	"senior_ic": true,
-}
-
-// AllowedAudienceRelevance defines the set of valid audience types
-var AllowedAudienceRelevance = map[string]bool{
-	"hiring_manager": true,
-	"recruiter":      true,
-	"peer":           true,
-}
 
 // AspirationKeywords contains words that indicate aspirational language
 var AspirationKeywords = map[string]bool{
@@ -134,7 +123,7 @@ func (f *Fact) validateCompetencyCategories() error {
 		if seen[category] {
 			return errors.New("fact contains duplicate competency categories")
 		}
-		if !AllowedCategories[category] {
+		if !constants.IsValidCompetencyCategory(category) {
 			return errors.New("invalid competency category: " + category)
 		}
 		seen[category] = true
@@ -148,7 +137,7 @@ func (f *Fact) validateRoleFit() error {
 	if string(f.RoleFit) == "" {
 		return errors.New("fact role fit cannot be empty")
 	}
-	if !AllowedRoleFits[string(f.RoleFit)] {
+	if !constants.IsValidRole(string(f.RoleFit)) {
 		return errors.New("invalid role fit: must be one of principal, em, staff, or senior_ic")
 	}
 	return nil
@@ -166,7 +155,7 @@ func (f *Fact) validateAudienceRelevance() error {
 		if seen[audience] {
 			return errors.New("fact contains duplicate audience relevance types")
 		}
-		if !AllowedAudienceRelevance[audience] {
+		if !constants.IsValidAudience(audience) {
 			return errors.New("invalid audience relevance: " + audience)
 		}
 		seen[audience] = true

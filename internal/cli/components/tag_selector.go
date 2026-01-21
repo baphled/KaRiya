@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/constants"
 )
 
 // TagSelector manages tag selection for career events
@@ -33,9 +33,10 @@ func (ts *TagSelector) SelectedTags() []string {
 
 // AvailableTags returns all available tags from the domain in alphabetical order
 func (ts *TagSelector) AvailableTags() []string {
-	tags := make([]string, 0, len(career.AllowedTags))
-	for tag := range career.AllowedTags {
-		tags = append(tags, tag)
+	allTags := constants.AllEventTags()
+	tags := make([]string, 0, len(allTags))
+	for _, tag := range allTags {
+		tags = append(tags, string(tag))
 	}
 	// Sort for consistent output
 	sort.Strings(tags)
@@ -45,7 +46,7 @@ func (ts *TagSelector) AvailableTags() []string {
 // SelectTag adds a tag to the selected list
 func (ts *TagSelector) SelectTag(tag string) error {
 	// Validate tag is allowed
-	if !career.AllowedTags[tag] {
+	if !constants.IsValidEventTag(tag) {
 		return fmt.Errorf("%s is not a valid tag", tag)
 	}
 
@@ -82,9 +83,10 @@ func (ts *TagSelector) FilterTags(prefix string) []string {
 	lowerPrefix := strings.ToLower(prefix)
 	filtered := make([]string, 0)
 
-	for tag := range career.AllowedTags {
-		if strings.HasPrefix(strings.ToLower(tag), lowerPrefix) {
-			filtered = append(filtered, tag)
+	for _, tag := range constants.AllEventTags() {
+		tagStr := string(tag)
+		if strings.HasPrefix(strings.ToLower(tagStr), lowerPrefix) {
+			filtered = append(filtered, tagStr)
 		}
 	}
 
@@ -115,7 +117,7 @@ func (ts *TagSelector) Reset() {
 func (ts *TagSelector) SetSelectedTags(tags []string) {
 	ts.selected = make(map[string]bool)
 	for _, tag := range tags {
-		if career.AllowedTags[tag] && len(ts.selected) < 8 {
+		if constants.IsValidEventTag(tag) && len(ts.selected) < 8 {
 			ts.selected[tag] = true
 		}
 	}
