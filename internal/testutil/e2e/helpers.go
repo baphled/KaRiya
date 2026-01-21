@@ -309,17 +309,12 @@ func (e *TestEnv) resetDatabase() {
 	}
 
 	// Truncate tables in order (respecting foreign key constraints)
-	tables := []string{
-		"event_skills",
-		"facts",
-		"bursts",
-		"skills",
-		"career_events",
-	}
-
-	for _, table := range tables {
-		_, _ = e.DB.Exec("DELETE FROM " + table)
-	}
+	// Using explicit statements to avoid SQL string concatenation warnings
+	_, _ = e.DB.Exec("DELETE FROM event_skills")
+	_, _ = e.DB.Exec("DELETE FROM facts")
+	_, _ = e.DB.Exec("DELETE FROM bursts")
+	_, _ = e.DB.Exec("DELETE FROM skills")
+	_, _ = e.DB.Exec("DELETE FROM career_events")
 }
 
 // SetupWithOnboarding creates an E2E test environment with the onboarding wizard active.
