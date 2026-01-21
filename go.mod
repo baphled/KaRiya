@@ -13,7 +13,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
-	github.com/onsi/ginkgo/v2 v2.27.4
+	github.com/onsi/ginkgo/v2 v2.27.5
 	github.com/onsi/gomega v1.39.0
 	github.com/pressly/goose/v3 v3.26.0
 	github.com/rmhubbert/bubbletea-overlay v0.6.3
