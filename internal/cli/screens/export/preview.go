@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -40,7 +39,6 @@ type Preview struct {
 	width        int
 	height       int
 	stats        *PreviewStats
-	highlighter  *components.SyntaxHighlighter
 }
 
 // NewPreview creates a new preview screen with viewport support.
@@ -232,14 +230,8 @@ func (s *Preview) renderStatsLine(th themes.Theme) string {
 	return strings.Join(parts, "  │  ")
 }
 
-// initializeViewport sets up the viewport with highlighted content.
+// initializeViewport sets up the viewport with content.
 func (s *Preview) initializeViewport(th themes.Theme) {
-	// Create highlighter
-	s.highlighter = components.NewSyntaxHighlighter(th)
-
-	// Apply syntax highlighting based on format
-	highlightedContent := s.highlighter.Highlight(s.content, string(s.format))
-
 	// Calculate viewport dimensions
 	// Account for:
 	// - Header: ~5 lines (title, stats, separator, blank line)
@@ -258,7 +250,7 @@ func (s *Preview) initializeViewport(th themes.Theme) {
 	}
 
 	s.viewport = viewport.New(viewportWidth, viewportHeight)
-	s.viewport.SetContent(highlightedContent)
+	s.viewport.SetContent(s.content)
 	s.ready = true
 }
 

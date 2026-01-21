@@ -46,6 +46,8 @@ type ColorPalette struct {
 // Theme defines the contract for all themes.
 // Implementations provide color palettes and pre-composed styles
 // for consistent UI rendering.
+//
+//nolint:interfacebloat // Theme requires many color accessors for complete theming support
 type Theme interface {
 	// Metadata
 	Name() string

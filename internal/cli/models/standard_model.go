@@ -24,6 +24,8 @@ type ContextMetadata struct {
 // StandardModel defines a comprehensive interface for models in the KaRiya CLI
 // It provides a standardized approach to model initialization, rendering,
 // state management, and interaction.
+//
+//nolint:interfacebloat // StandardModel is a comprehensive interface for full TUI model capabilities
 type StandardModel interface {
 	// Core Model Lifecycle Methods
 	Init() tea.Cmd

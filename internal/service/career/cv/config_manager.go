@@ -19,6 +19,8 @@ var (
 )
 
 // ConfigManager defines the interface for managing CV configurations.
+//
+//nolint:interfacebloat // Config management requires load, save, delete, list, and validation methods
 type ConfigManager interface {
 	// LoadConfig loads a CV configuration by name.
 	// Returns ErrConfigNotFound if the configuration doesn't exist.

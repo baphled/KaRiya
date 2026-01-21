@@ -97,7 +97,7 @@ func (r *TestEventRepository) List(ctx context.Context, filters careerrepo.ListF
 }
 
 func (r *TestEventRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
-	return nil, nil
+	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
 func (r *TestEventRepository) Create(ctx context.Context, event *career.CareerEvent) error {
@@ -126,7 +126,7 @@ func (r *TestFactRepository) List(ctx context.Context, filters careerrepo.FactLi
 }
 
 func (r *TestFactRepository) GetByID(ctx context.Context, id string) (*career.Fact, error) {
-	return nil, nil
+	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
 func (r *TestFactRepository) Create(ctx context.Context, fact *career.Fact) error {

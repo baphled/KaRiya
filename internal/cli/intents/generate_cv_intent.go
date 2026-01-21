@@ -2578,7 +2578,7 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 		}
 
 		if err != nil {
-			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to export: %v", err)}
+			return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to export: %w", err)}
 		}
 
 		// Save based on option
@@ -2586,14 +2586,14 @@ func (i *GenerateCVIntent) exportCVAsync() tea.Cmd {
 		case CVExportOptionSaveToFile:
 			path, err := i.context.ExportService.SaveToFile(ctx, i.state.generatedCV.Name, exportFormat, content)
 			if err != nil {
-				return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to save file: %v", err)}
+				return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to save file: %w", err)}
 			}
 			return CVExportCompleteMsg{Path: path, Error: nil}
 
 		case CVExportOptionClipboard:
 			err := i.context.ExportService.CopyToClipboard(ctx, content)
 			if err != nil {
-				return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to copy to clipboard: %v", err)}
+				return CVExportCompleteMsg{Path: "", Error: fmt.Errorf("failed to copy to clipboard: %w", err)}
 			}
 			return CVExportCompleteMsg{Path: "clipboard", Error: nil}
 
