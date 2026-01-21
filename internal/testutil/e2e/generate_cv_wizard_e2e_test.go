@@ -49,7 +49,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Wizard Modal Initialization", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3) // 5 events, 2 bursts, 3 facts
 		})
 
@@ -104,7 +104,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Wizard Step 1: Profile and Audience Selection", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -170,7 +170,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Wizard Escape Key Behavior", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -217,7 +217,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Wizard Completion and CV Generation", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -265,7 +265,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Global Keyboard Shortcuts in Wizard", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -300,7 +300,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Data Persistence Through Wizard Workflow", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -360,7 +360,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("View Stability in Wizard", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -427,7 +427,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Empty Data Handling", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			// Don't populate test data - test empty state
 		})
 
@@ -464,7 +464,7 @@ var _ = Describe("E2E GenerateCV Wizard Workflow", func() {
 	// ========================================================================
 	Describe("Wizard Re-entry", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 

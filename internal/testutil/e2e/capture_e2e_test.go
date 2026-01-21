@@ -10,7 +10,7 @@ var _ = Describe("E2E Capture Workflow", func() {
 
 	Describe("Database Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -40,7 +40,7 @@ var _ = Describe("E2E Capture Workflow", func() {
 
 	Describe("Session Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {

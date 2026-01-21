@@ -10,7 +10,7 @@ var _ = Describe("E2E Chained Workflows", func() {
 
 	Describe("Browse After Data Population", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -46,7 +46,7 @@ var _ = Describe("E2E Chained Workflows", func() {
 
 	Describe("Multi-Intent Navigation", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -98,7 +98,7 @@ var _ = Describe("E2E Chained Workflows", func() {
 
 	Describe("Session Persistence Across Intents", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -141,7 +141,7 @@ var _ = Describe("E2E Chained Workflows", func() {
 
 	Describe("Data Visibility Across Intents", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -174,7 +174,7 @@ var _ = Describe("E2E Chained Workflows", func() {
 
 	Describe("Workflow: Browse then Configure", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(3, 0, 0)
 		})
 

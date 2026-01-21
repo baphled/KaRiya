@@ -13,7 +13,7 @@ var _ = Describe("E2E Configure Workflow", func() {
 
 	Describe("Session Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -29,7 +29,7 @@ var _ = Describe("E2E Configure Workflow", func() {
 
 	Describe("Modal Sequence Flow", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -304,7 +304,7 @@ var _ = Describe("E2E Configure Workflow", func() {
 
 	Describe("Direct Message Testing", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {

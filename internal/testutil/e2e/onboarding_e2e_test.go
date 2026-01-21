@@ -14,9 +14,7 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 
 	Describe("Onboarding Initialization", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithOnboarding(GinkgoT())
-			// Initialize the model to set up huh forms properly
-			env.InitModel()
+			env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -36,10 +34,12 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 		})
 
 		It("should show Welcome message", func() {
+			env.InitModel()
 			env.AssertViewContains("Welcome to KaRiya")
 		})
 
 		It("should show Name field", func() {
+			env.InitModel()
 			env.AssertViewContains("Your Name")
 		})
 
@@ -50,7 +50,7 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 
 	Describe("Onboarding Step Navigation", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithOnboarding(GinkgoT())
+			env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
 			// Initialize the model to set up huh forms properly
 			env.InitModel()
 		})
@@ -114,7 +114,7 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 
 	Describe("Onboarding Completion", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithOnboarding(GinkgoT())
+			env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
 			// InitModel is called by CompleteOnboarding
 		})
 
@@ -140,7 +140,7 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 
 	Describe("Onboarding Escape Key Behavior", func() {
 		BeforeEach(func() {
-			env = e2e.SetupWithOnboarding(GinkgoT())
+			env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
 			// Initialize the model to set up huh forms properly
 			env.InitModel()
 		})
@@ -168,7 +168,7 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 	Describe("Onboarding with Existing E2E Setup", func() {
 		BeforeEach(func() {
 			// Use regular Setup (which skips onboarding)
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {

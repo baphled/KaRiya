@@ -12,14 +12,15 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 
 ## Critical Rules (Zero Tolerance)
 
-1. **PRs target `next`** - Never `main`. Only `next->main` for releases.
-2. **TDD** - Write test FIRST, then implementation (Red->Green->Refactor)
-3. **Commits** - Use `make ai-commit FILE=<path>` only (not `git commit`)
-4. **Compliance** - Run `make check-compliance` before AND after tasks
-5. **One task** - One logical change per commit
-6. **Senior Engineer Identity** - Apply SOLID, DRY, KISS, YAGNI principles
-7. **Architecture Compliance** - Follow layer hierarchy, no shortcuts
-8. **Comment Hygiene** - No TODO/FIXME/HACK/XXX in merged code, no inline comments
+1. **Feature branches** - NEVER commit directly to `next` or `main`. Always create a feature branch first.
+2. **PRs target `next`** - Never `main`. Only `next->main` for releases.
+3. **TDD** - Write test FIRST, then implementation (Red->Green->Refactor)
+4. **Commits** - Use `make ai-commit FILE=<path>` only (not `git commit`)
+5. **Compliance** - Run `make check-compliance` before AND after tasks
+6. **One task** - One logical change per commit
+7. **Senior Engineer Identity** - Apply SOLID, DRY, KISS, YAGNI principles
+8. **Architecture Compliance** - Follow layer hierarchy, no shortcuts
+9. **Comment Hygiene** - No TODO/FIXME/HACK/XXX in merged code, no inline comments
 
 ---
 
@@ -496,6 +497,7 @@ Run `make what-to-use NEED="keyword"` for detailed usage and examples.
 The AI agent MUST refuse if asked to:
 
 - Skip `make session-start`
+- Commit directly to `next` or `main` (always use feature branches)
 - Write implementation before test (TDD violation)
 - Make multiple changes per commit
 - Use `git commit` directly (must use `make ai-commit`)

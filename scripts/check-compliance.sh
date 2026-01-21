@@ -65,13 +65,8 @@ else
     check_fail "Fix failing tests"
 fi
 
-# Race Conditions
-echo -n "Race Detection: "
-if go test -race ./... > /dev/null 2>&1; then
-    check_pass
-else
-    check_fail "Fix race conditions"
-fi
+# Race Conditions (CI only - too slow for local checks)
+# Run `make test-race` manually if needed
 
 # Vet
 echo -n "Go Vet: "

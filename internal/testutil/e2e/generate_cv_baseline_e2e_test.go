@@ -36,7 +36,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 
 	Describe("Complete Workflow - Profile to Preview", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			// Populate with enough data for CV generation
 			env.PopulateTestData(5, 2, 3) // 5 events, 2 bursts, 3 facts
 		})
@@ -138,7 +138,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 
 	Describe("Navigation - Back Through States", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -185,7 +185,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 
 	Describe("Navigation - Escape Key Behavior Per State", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -218,7 +218,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 
 	Describe("Data Validation", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -260,7 +260,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 
 	Describe("View Stability - No Panics", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -305,7 +305,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 
 	Describe("Universal Shortcuts", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -350,7 +350,7 @@ var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {
 
 	Describe("Session Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
