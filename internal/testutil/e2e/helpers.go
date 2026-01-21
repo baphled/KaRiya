@@ -243,6 +243,7 @@ func CleanupShared() {
 
 // GetSharedEnv returns the shared test environment for use in BeforeEach.
 // It resets the database state and creates a fresh Model.
+// Repositories and services are reused from SetupShared (they're stateless).
 // The TestingT is set for the current test.
 //
 // Usage in test file:
@@ -259,34 +260,14 @@ func GetSharedEnv(t TestingT) *TestEnv {
 	// Reset database state (truncate all tables)
 	sharedEnv.resetDatabase()
 
-	// Create fresh repositories pointing to same DB
-	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(sharedEnv.DB)
-	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(sharedEnv.DB)
-	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(sharedEnv.DB)
-	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(sharedEnv.DB)
-
-	// Create fresh service
-	svc := careerservice.NewService(eventRepo)
-	svc.SetBurstRepository(burstRepo)
-	svc.SetFactRepository(factRepo)
-	svc.SetSkillRepository(skillRepo)
-
-	// Create fresh CLI service
-	cliService := service.NewCLIEventService(svc)
-
-	// Create fresh application model
-	model := app.NewModel(cliService, svc)
+	// Create fresh application model (only thing with UI state)
+	// Repositories and services are stateless, so we reuse them
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service)
 	model.SkipOnboarding()
 
-	// Update shared env with fresh instances
+	// Update only what changes per-test
 	sharedEnv.T = t
 	sharedEnv.Model = model
-	sharedEnv.EventRepo = eventRepo
-	sharedEnv.BurstRepo = burstRepo
-	sharedEnv.FactRepo = factRepo
-	sharedEnv.SkillRepo = skillRepo
-	sharedEnv.Service = svc
-	sharedEnv.CLIService = cliService
 	sharedEnv.Ctx = context.Background()
 
 	return sharedEnv
