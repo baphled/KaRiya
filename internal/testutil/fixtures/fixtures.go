@@ -25,11 +25,17 @@ import (
 func init() {
 	// Seed gofakeit with 0 for consistent default behavior across test runs.
 	// Use SetSeed() to set a specific seed for deterministic test data.
-	_ = gofakeit.Seed(0)
+	if err := gofakeit.Seed(0); err != nil {
+		// Seeding should not fail in normal circumstances
+		_ = err
+	}
 }
 
 // SetSeed sets the random seed for reproducible test data.
 // Use this at the start of tests that need deterministic data.
 func SetSeed(seed int64) {
-	_ = gofakeit.Seed(seed)
+	if err := gofakeit.Seed(seed); err != nil {
+		// Seeding should not fail in normal circumstances
+		_ = err
+	}
 }

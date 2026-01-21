@@ -104,13 +104,19 @@ func (tm *ThemeManager) AutoSelect() {
 
 		// Match dark/light mode
 		if theme.IsDark() == info.IsDark {
-			_ = tm.SetActive(name)
+			if err := tm.SetActive(name); err != nil {
+				// Theme exists but couldn't be set, continue to next
+				continue
+			}
 			return
 		}
 	}
 
 	// Fall back to default theme if no match found
 	if _, err := tm.Get("default"); err == nil {
-		_ = tm.SetActive("default")
+		if err := tm.SetActive("default"); err != nil {
+			// Default theme couldn't be set, nothing more to do
+			_ = err
+		}
 	}
 }
