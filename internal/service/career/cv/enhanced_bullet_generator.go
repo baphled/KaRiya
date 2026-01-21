@@ -307,7 +307,7 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromAchievements(achieve
 			SourceFactIDs:   achievement.FactIDs,
 			Metrics:         achievement.Metrics,
 			Confidence:      achievement.Confidence,
-			InclusionReason: "achievement_extraction",
+			InclusionReason: string(constants.InclusionReasonAchievementExtraction),
 			ImpactLevel:     ebg.determineImpactLevel(achievement),
 		}
 		bullets = append(bullets, bullet)
@@ -341,7 +341,7 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromFacts(facts []*caree
 			AudienceRelevance: fact.AudienceRelevance,
 			Category:          ebg.extractPrimaryCategory(fact.CompetencyCategories), // BUG-008
 			Confidence:        0.85,
-			InclusionReason:   "fact_extraction",
+			InclusionReason:   string(constants.InclusionReasonFactExtraction),
 			ImpactLevel:       "medium",
 		}
 		bullets = append(bullets, bullet)
@@ -379,7 +379,7 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromEvents(events []*car
 			SourceEventIDs:  []string{event.ID},
 			Category:        ebg.extractPrimaryCategory(event.Categories), // BUG-008
 			Confidence:      0.80,
-			InclusionReason: "event_direct",
+			InclusionReason: string(constants.InclusionReasonEventDirect),
 			ImpactLevel:     "low",
 		}
 		bullets = append(bullets, bullet)
@@ -508,9 +508,9 @@ func (ebg *DefaultEnhancedBulletGenerator) calculateRoleScore(bullet *EnhancedBu
 	}
 
 	// Bonus for achievement-based bullets
-	if bullet.InclusionReason == "achievement_extraction" {
+	if bullet.InclusionReason == string(constants.InclusionReasonAchievementExtraction) {
 		score += roleScoreAchievementBonus
-	} else if bullet.InclusionReason == "fact_extraction" {
+	} else if bullet.InclusionReason == string(constants.InclusionReasonFactExtraction) {
 		score += roleScoreFactBonus
 	}
 
