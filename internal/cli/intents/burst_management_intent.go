@@ -236,7 +236,12 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 	}
 
 	// Load bursts from repository
-	_ = i.context.LoadBursts()
+	if err := i.context.LoadBursts(); err != nil {
+		// Log error but continue - empty list is acceptable
+		i.state.filteredBursts = []*domain.Burst{}
+		i.tableBehavior.SetItems(i.state.filteredBursts)
+		return nil
+	}
 
 	// Initialize filtered bursts with the provided bursts.
 	i.state.filteredBursts = i.context.Bursts

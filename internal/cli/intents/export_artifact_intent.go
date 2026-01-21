@@ -805,9 +805,12 @@ func (e *ExportArtifactIntent) generateEventsPreview(ctx context.Context) string
 		return "Preview not available - repository not initialized"
 	}
 
-	// Get total count for stats
-	allEvents, _ := e.context.EventRepository.List(ctx, careerrepo.ListFilters{})
-	totalCount := len(allEvents)
+	// Get total count for stats (ignore error - 0 is acceptable fallback)
+	allEvents, err := e.context.EventRepository.List(ctx, careerrepo.ListFilters{})
+	totalCount := 0
+	if err == nil {
+		totalCount = len(allEvents)
+	}
 
 	// Get preview items (limited)
 	events, err := e.context.EventRepository.List(ctx, careerrepo.ListFilters{Limit: 10})
@@ -852,9 +855,12 @@ func (e *ExportArtifactIntent) generateFactsPreview(ctx context.Context) string 
 		return "Preview not available - repository not initialized"
 	}
 
-	// Get total count for stats
-	allFacts, _ := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{})
-	totalCount := len(allFacts)
+	// Get total count for stats (ignore error - 0 is acceptable fallback)
+	allFacts, err := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{})
+	totalCount := 0
+	if err == nil {
+		totalCount = len(allFacts)
+	}
 
 	facts, err := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{Limit: 10})
 	if err != nil {
@@ -898,9 +904,12 @@ func (e *ExportArtifactIntent) generateBurstsPreview(ctx context.Context) string
 		return "Preview not available - repository not initialized"
 	}
 
-	// Get total count for stats
-	allBursts, _ := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{})
-	totalCount := len(allBursts)
+	// Get total count for stats (ignore error - 0 is acceptable fallback)
+	allBursts, err := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{})
+	totalCount := 0
+	if err == nil {
+		totalCount = len(allBursts)
+	}
 
 	bursts, err := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{Limit: 10})
 	if err != nil {

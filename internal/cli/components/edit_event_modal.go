@@ -1,6 +1,8 @@
 package components
 
 import (
+	"time"
+
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
@@ -198,8 +200,11 @@ func (d *EditEventData) ToCareerEvent(eventID string, createdAt, updatedAt inter
 	eventDate, err := forms.ParseDateString(d.Date)
 	if err != nil {
 		// If parse fails, this should have been caught by validation
-		// But as a fallback, use the provided date string as-is and try standard parse
-		eventDate, _ = forms.ParseDateString("today")
+		// But as a fallback, try "today" or use current time
+		eventDate, err = forms.ParseDateString("today")
+		if err != nil {
+			eventDate = time.Now()
+		}
 	}
 
 	event := &career.CareerEvent{

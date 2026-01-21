@@ -871,9 +871,10 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// Perform enrichment for all strategies (if CareerService is available)
 		// This extracts bursts and facts from the saved event
 		if i.state.context.CareerService != nil {
-			// Enrichment error is logged but doesn't fail submission
+			// Enrichment error is logged internally but doesn't fail submission
 			// The event is already saved successfully - enrichment is optional
-			_ = i.performEnrichment(ctx, event)
+			//nolint:errcheck // Intentional: enrichment failure should not block event submission
+			i.performEnrichment(ctx, event)
 		}
 
 		// Save any accepted facts from review that might have been manually edited/added
