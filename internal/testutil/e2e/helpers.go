@@ -87,6 +87,10 @@ func Setup(t TestingT) *TestEnv {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	config.SetConfigPathForTesting(configPath)
+
 	// Open database connection
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
@@ -122,8 +126,9 @@ func Setup(t TestingT) *TestEnv {
 	model.SkipOnboarding()
 
 	cleanup := func() {
+		// BUG-007 FIX: Reset config path override to prevent pollution
+		config.ResetConfigPath()
 		_ = db.Close()
-		_ = db.Close() // Error ignored as this is test cleanup
 	}
 
 	return &TestEnv{
@@ -200,7 +205,6 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 		// BUG-007 FIX: Reset config path override to prevent pollution
 		config.ResetConfigPath()
 		_ = db.Close()
-		_ = db.Close() // Error ignored as this is test cleanup
 	}
 
 	return &TestEnv{
@@ -227,6 +231,11 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
+	tmpDir := t.TempDir()
+
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	config.SetConfigPathForTesting(configPath)
 
 	// Create in-memory repositories
 	eventRepo := careerrepo.NewMemoryRepository()
@@ -258,7 +267,10 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		Service:      svc,
 		CLIService:   cliService,
 		Ctx:          ctx,
-		cleanup:      func() {},
+		cleanup: func() {
+			// BUG-007 FIX: Reset config path override to prevent pollution
+			config.ResetConfigPath()
+		},
 	}
 }
 
