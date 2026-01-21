@@ -232,6 +232,57 @@ var _ = Describe("Config", func() {
 		})
 	})
 
+	Describe("SwapConfigPathForTesting", func() {
+		It("should return the previous path", func() {
+			firstPath := filepath.Join(tempDir, "first.yaml")
+			secondPath := filepath.Join(tempDir, "second.yaml")
+
+			// Set first path
+			config.SetConfigPathForTesting(firstPath)
+
+			// Swap to second path - should return first path
+			prev := config.SwapConfigPathForTesting(secondPath)
+			Expect(prev).To(Equal(firstPath))
+
+			// Current path should be second
+			current, _ := config.GetConfigPath()
+			Expect(current).To(Equal(secondPath))
+		})
+
+		It("should return empty string when no previous override exists", func() {
+			config.ResetConfigPath() // Ensure clean state
+
+			testPath := filepath.Join(tempDir, "test.yaml")
+			prev := config.SwapConfigPathForTesting(testPath)
+			Expect(prev).To(BeEmpty())
+
+			// Clean up
+			config.ResetConfigPath()
+		})
+
+		It("should support nested isolation pattern", func() {
+			// Simulate BeforeSuite setting a path
+			suiteConfigPath := filepath.Join(tempDir, "suite.yaml")
+			config.SetConfigPathForTesting(suiteConfigPath)
+
+			// Simulate e2e test swapping its own path
+			testConfigPath := filepath.Join(tempDir, "test.yaml")
+			prevPath := config.SwapConfigPathForTesting(testConfigPath)
+			Expect(prevPath).To(Equal(suiteConfigPath))
+
+			// Current should be test path
+			current, _ := config.GetConfigPath()
+			Expect(current).To(Equal(testConfigPath))
+
+			// Simulate e2e cleanup restoring previous path
+			config.SetConfigPathForTesting(prevPath)
+
+			// Should be back to suite path
+			restored, _ := config.GetConfigPath()
+			Expect(restored).To(Equal(suiteConfigPath))
+		})
+	})
+
 	Describe("Config Struct", func() {
 		It("should marshal to YAML correctly", func() {
 			cfg := config.DefaultConfig()

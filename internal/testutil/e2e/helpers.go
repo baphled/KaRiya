@@ -88,18 +88,21 @@ func Setup(t TestingT) *TestEnv {
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
-	config.SetConfigPathForTesting(configPath)
+	prevConfigPath := config.SwapConfigPathForTesting(configPath)
 
 	// Open database connection
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
 	if err := careerrepo.RunMigrations(db); err != nil {
-		_ = db.Close() // Ignore error as we're already in failure path
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
+		_ = db.Close()                                 // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -126,8 +129,9 @@ func Setup(t TestingT) *TestEnv {
 	model.SkipOnboarding()
 
 	cleanup := func() {
-		// BUG-007 FIX: Reset config path override to prevent pollution
-		config.ResetConfigPath()
+		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		// This allows nested isolation without breaking suite-level isolation
+		config.SetConfigPathForTesting(prevConfigPath)
 		_ = db.Close()
 	}
 
@@ -163,21 +167,21 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
-	// This prevents onboarding completion from polluting the user's real config
+	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
-	config.SetConfigPathForTesting(configPath)
+	prevConfigPath := config.SwapConfigPathForTesting(configPath)
 
 	// Open database connection
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		config.ResetConfigPath() // Clean up on failure
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
 	if err := careerrepo.RunMigrations(db); err != nil {
-		config.ResetConfigPath() // Clean up on failure
-		_ = db.Close()           // Ignore error as we're already in failure path
+		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
+		_ = db.Close()                                 // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -202,8 +206,8 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	model.ForceOnboarding()
 
 	cleanup := func() {
-		// BUG-007 FIX: Reset config path override to prevent pollution
-		config.ResetConfigPath()
+		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		config.SetConfigPathForTesting(prevConfigPath)
 		_ = db.Close()
 	}
 
@@ -234,8 +238,9 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	tmpDir := t.TempDir()
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
-	config.SetConfigPathForTesting(configPath)
+	prevConfigPath := config.SwapConfigPathForTesting(configPath)
 
 	// Create in-memory repositories
 	eventRepo := careerrepo.NewMemoryRepository()
@@ -268,8 +273,8 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		CLIService:   cliService,
 		Ctx:          ctx,
 		cleanup: func() {
-			// BUG-007 FIX: Reset config path override to prevent pollution
-			config.ResetConfigPath()
+			// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+			config.SetConfigPathForTesting(prevConfigPath)
 		},
 	}
 }

@@ -187,6 +187,22 @@ func SetConfigPathForTesting(path string) {
 	configPathOverride = path
 }
 
+// SwapConfigPathForTesting sets a new config path and returns the previous one.
+// This enables nested isolation: e2e tests can set their own path while preserving
+// the BeforeSuite path, then restore it in cleanup.
+//
+// Example:
+//
+//	prevPath := config.SwapConfigPathForTesting(myTempPath)
+//	defer config.SetConfigPathForTesting(prevPath)  // Restore in cleanup
+func SwapConfigPathForTesting(path string) string {
+	configPathMu.Lock()
+	defer configPathMu.Unlock()
+	prev := configPathOverride
+	configPathOverride = path
+	return prev
+}
+
 // ResetConfigPath clears the config path override and restores default behavior.
 // This should be called in test cleanup (AfterEach) to prevent test pollution.
 func ResetConfigPath() {
