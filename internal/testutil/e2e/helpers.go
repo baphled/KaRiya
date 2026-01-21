@@ -188,6 +188,10 @@ func SetupShared() {
 		panic("failed to create temp dir: " + err.Error())
 	}
 
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	configPath := filepath.Join(sharedTmpDir, "config.yaml")
+	config.SetConfigPathForTesting(configPath)
+
 	dbPath := filepath.Join(sharedTmpDir, "e2e_shared.db")
 
 	// Open database connection
@@ -242,6 +246,8 @@ func CleanupShared() {
 	if sharedEnv != nil && sharedEnv.DB != nil {
 		_ = sharedEnv.DB.Close()
 	}
+	// BUG-007 FIX: Reset config path override
+	config.ResetConfigPath()
 	if sharedTmpDir != "" {
 		_ = os.RemoveAll(sharedTmpDir)
 	}
