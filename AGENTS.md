@@ -19,6 +19,39 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 5. **One task** - One logical change per commit
 6. **Senior Engineer Identity** - Apply SOLID, DRY, KISS, YAGNI principles
 7. **Architecture Compliance** - Follow layer hierarchy, no shortcuts
+8. **Comment Hygiene** - No TODO/FIXME/HACK/XXX in merged code, no inline comments
+
+---
+
+## Comment Rules (Enforced by Linter)
+
+### Forbidden Comment Markers (must resolve before merge)
+
+| Marker | Issue | Action |
+|--------|-------|--------|
+| `TODO` | Incomplete work | Complete the work or create an issue |
+| `FIXME` | Known bug | Fix it or create a bug report |
+| `HACK` | Technical debt | Refactor properly |
+| `XXX` | Attention needed | Resolve the issue |
+
+**Allowed**: `BUG-XXX` references (e.g., `BUG-004: Fixed in this commit`)
+
+### Inline Comments - FORBIDDEN
+
+```go
+// BAD - inline comment at end of line
+x := 42 // magic number for calculation
+
+// GOOD - comment on its own line above the code
+// Number of retries before giving up.
+x := 42
+```
+
+### Comment Style
+
+- Top-level comments should end with a period.
+- Use complete sentences for documentation.
+- Place comments above the code they describe, not beside it.
 
 ---
 

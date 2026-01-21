@@ -70,9 +70,14 @@ func (r *SQLiteFactRepository) Create(ctx context.Context, fact *career.Fact) er
 	// Insert the fact
 	_, err = r.db.ExecContext(ctx, `
 		INSERT INTO facts
-		(id, text, competencies, role_fit, audience_relevance, strength_signal, source_event_id, source_burst_id, created_at, updated_at)
+		(id, text, competencies, role_fit, audience_relevance, strength_signal,
+		 source_event_id, source_burst_id, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, fact.ID, fact.Text, competenciesString, string(fact.RoleFit), audienceString, fact.StrengthSignal, fact.SourceEventID, fact.SourceBurstID, fact.CreatedAt, fact.UpdatedAt)
+	`,
+		fact.ID, fact.Text, competenciesString, string(fact.RoleFit),
+		audienceString, fact.StrengthSignal, fact.SourceEventID,
+		fact.SourceBurstID, fact.CreatedAt, fact.UpdatedAt,
+	)
 
 	if err != nil {
 		return fmt.Errorf("failed to create fact with ID %s: %w", fact.ID, err)
@@ -87,7 +92,8 @@ func (r *SQLiteFactRepository) GetByID(ctx context.Context, id string) (*career.
 	var competenciesString, audienceString string
 
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, text, competencies, role_fit, audience_relevance, strength_signal, source_event_id, source_burst_id, created_at, updated_at
+		SELECT id, text, competencies, role_fit, audience_relevance,
+		       strength_signal, source_event_id, source_burst_id, created_at, updated_at
 		FROM facts
 		WHERE id = ?
 	`, id)
@@ -150,9 +156,14 @@ func (r *SQLiteFactRepository) Update(ctx context.Context, fact *career.Fact) er
 	// Update the fact
 	_, err = r.db.ExecContext(ctx, `
 		UPDATE facts
-		SET text = ?, competencies = ?, role_fit = ?, audience_relevance = ?, strength_signal = ?, source_event_id = ?, source_burst_id = ?, updated_at = ?
+		SET text = ?, competencies = ?, role_fit = ?, audience_relevance = ?,
+		    strength_signal = ?, source_event_id = ?, source_burst_id = ?, updated_at = ?
 		WHERE id = ?
-	`, fact.Text, competenciesString, string(fact.RoleFit), audienceString, fact.StrengthSignal, fact.SourceEventID, fact.SourceBurstID, fact.UpdatedAt, fact.ID)
+	`,
+		fact.Text, competenciesString, string(fact.RoleFit), audienceString,
+		fact.StrengthSignal, fact.SourceEventID, fact.SourceBurstID,
+		fact.UpdatedAt, fact.ID,
+	)
 
 	if err != nil {
 		return fmt.Errorf("failed to update fact with ID %s: %w", fact.ID, err)
@@ -184,7 +195,10 @@ func (r *SQLiteFactRepository) Delete(ctx context.Context, id string) error {
 
 // List retrieves facts with optional filtering
 func (r *SQLiteFactRepository) List(ctx context.Context, filters FactListFilters) ([]*career.Fact, error) {
-	query := "SELECT id, text, competencies, role_fit, audience_relevance, strength_signal, source_event_id, source_burst_id, created_at, updated_at FROM facts WHERE 1=1"
+	query := `SELECT id, text, competencies, role_fit, audience_relevance,
+	                 strength_signal, source_event_id, source_burst_id,
+	                 created_at, updated_at
+	          FROM facts WHERE 1=1`
 	var args []interface{}
 
 	// Apply competency category filter
@@ -339,7 +353,8 @@ func (r *SQLiteFactRepository) Count(ctx context.Context, filters FactListFilter
 // GetBySourceEventID retrieves all facts for a specific event
 func (r *SQLiteFactRepository) GetBySourceEventID(ctx context.Context, eventID string) ([]*career.Fact, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, text, competencies, role_fit, audience_relevance, strength_signal, source_event_id, source_burst_id, created_at, updated_at
+		SELECT id, text, competencies, role_fit, audience_relevance,
+		       strength_signal, source_event_id, source_burst_id, created_at, updated_at
 		FROM facts
 		WHERE source_event_id = ?
 	`, eventID)
@@ -390,7 +405,8 @@ func (r *SQLiteFactRepository) GetBySourceEventID(ctx context.Context, eventID s
 // GetBySourceBurstID retrieves all facts for a specific burst
 func (r *SQLiteFactRepository) GetBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, text, competencies, role_fit, audience_relevance, strength_signal, source_event_id, source_burst_id, created_at, updated_at
+		SELECT id, text, competencies, role_fit, audience_relevance,
+		       strength_signal, source_event_id, source_burst_id, created_at, updated_at
 		FROM facts
 		WHERE source_burst_id = ?
 	`, burstID)

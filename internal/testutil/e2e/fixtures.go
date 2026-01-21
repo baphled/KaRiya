@@ -140,7 +140,10 @@ func CreateSampleFacts(count int, events []*career.CareerEvent) []*career.Fact {
 		{"technical", "consulting"},
 	}
 
-	roleFits := []career.RoleFit{career.RoleFitStaff, career.RoleFitSeniorIC, career.RoleFitPrincipal, career.RoleFitEM, career.RoleFitStaff}
+	roleFits := []career.RoleFit{
+		career.RoleFitStaff, career.RoleFitSeniorIC, career.RoleFitPrincipal,
+		career.RoleFitEM, career.RoleFitStaff,
+	}
 	audiences := [][]string{
 		{"hiring_manager", "peer"},
 		{"hiring_manager", "recruiter"},

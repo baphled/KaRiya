@@ -160,7 +160,9 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 }
 
 // retrieveEventsWithFilters retrieves events based on filter criteria
-func (svc *DefaultCVGenerationService) retrieveEventsWithFilters(ctx context.Context, filters map[string]interface{}) ([]*career.CareerEvent, error) {
+func (svc *DefaultCVGenerationService) retrieveEventsWithFilters(
+	ctx context.Context, filters map[string]interface{},
+) ([]*career.CareerEvent, error) {
 	// Return all events for CV generation
 	// Use a high limit to ensure we get all events (repository defaults to 100)
 	events, err := svc.eventRepo.List(ctx, careerrepo.ListFilters{
@@ -179,7 +181,9 @@ func (svc *DefaultCVGenerationService) retrieveEventsWithFilters(ctx context.Con
 }
 
 // applyEventFilters applies filter criteria to events
-func (svc *DefaultCVGenerationService) applyEventFilters(events []*career.CareerEvent, filters map[string]interface{}) []*career.CareerEvent {
+func (svc *DefaultCVGenerationService) applyEventFilters(
+	events []*career.CareerEvent, filters map[string]interface{},
+) []*career.CareerEvent {
 	var filtered []*career.CareerEvent
 
 	for _, event := range events {

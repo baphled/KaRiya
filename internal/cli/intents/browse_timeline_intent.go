@@ -1147,7 +1147,8 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 
 	switch i.state.currentState {
 	case BrowseStateTimeline:
-		// Timeline list footer: Navigate, View Details, Add, Edit, Delete, Search, Filter, Sort, Clear (conditional), Back + Global shortcuts
+		// Timeline list footer: Navigate, View Details, Add, Edit, Delete,
+		// Search, Filter, Sort, Clear (conditional), Back + Global shortcuts
 		badges := []*primitives.Badge{
 			primitives.NavigateBadge(theme), // ↑/↓: Navigate
 			primitives.HelpKeyBadge("Enter", "View Details", theme),
