@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/baphled/kariya/internal/constants"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -296,6 +297,182 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 		It("should return empty slice for empty input", func() {
 			cvBullets := ConvertBullets([]*EnhancedBullet{})
 			Expect(cvBullets).To(BeEmpty())
+		})
+	})
+})
+
+// BUG-008: Role-based CV differentiation tests
+var _ = Describe("BUG-008: Role-based scoring", func() {
+	var (
+		generator EnhancedBulletGenerator
+		log       *logger.Logger
+		ctx       context.Context
+	)
+
+	BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		generator = NewEnhancedBulletGenerator(log)
+		ctx = context.Background()
+	})
+
+	Describe("Category propagation", func() {
+		Context("from CareerEvent to EnhancedBullet", func() {
+			It("should propagate primary category from event", func() {
+				events := []*career.CareerEvent{
+					{
+						ID:         "evt-1",
+						Text:       "Led team migration to Kubernetes",
+						Categories: []string{"leadership", "technical"},
+					},
+				}
+
+				bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", "")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(bullets)).To(BeNumerically(">", 0))
+				// Primary category (first in list) should be propagated
+				Expect(bullets[0].Category).To(Equal(constants.CompetencyLeadership))
+			})
+
+			It("should propagate technical category from event", func() {
+				events := []*career.CareerEvent{
+					{
+						ID:         "evt-2",
+						Text:       "Built real-time data pipeline",
+						Categories: []string{"technical"},
+					},
+				}
+
+				bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "senior_ic", "")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(bullets)).To(BeNumerically(">", 0))
+				Expect(bullets[0].Category).To(Equal(constants.CompetencyTechnical))
+			})
+		})
+
+		Context("from Fact to EnhancedBullet", func() {
+			It("should propagate primary competency category from fact", func() {
+				facts := []*career.Fact{
+					{
+						ID:                   "fact-1",
+						Text:                 "Mentored 4 junior engineers",
+						CompetencyCategories: []string{"mentoring", "leadership"},
+						AudienceRelevance:    []string{"hiring_manager"},
+						SourceEventID:        "evt-1",
+					},
+				}
+
+				bullets, err := generator.GenerateBullets(ctx, nil, facts, nil, "em", "hiring_manager")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(len(bullets)).To(BeNumerically(">", 0))
+				Expect(bullets[0].Category).To(Equal(constants.CompetencyMentoring))
+			})
+		})
+
+		Context("ToCVBullet conversion", func() {
+			It("should include category in CVBullet", func() {
+				enhanced := &EnhancedBullet{
+					ID:       "bullet-1",
+					Text:     "Technical achievement",
+					Category: constants.CompetencyTechnical,
+				}
+
+				cvBullet := enhanced.ToCVBullet()
+				Expect(cvBullet.Category).To(Equal(constants.CompetencyTechnical))
+			})
+		})
+	})
+
+	Describe("Role-based scoring", func() {
+		var defaultGen *DefaultEnhancedBulletGenerator
+
+		BeforeEach(func() {
+			defaultGen = generator.(*DefaultEnhancedBulletGenerator)
+		})
+
+		Context("calculateRoleScore with categories", func() {
+			It("should score leadership bullets higher for principal than senior_ic", func() {
+				bullet := &EnhancedBullet{
+					Category:   constants.CompetencyLeadership,
+					Confidence: 0.7,
+				}
+
+				principalScore := defaultGen.calculateRoleScore(bullet, "principal")
+				seniorScore := defaultGen.calculateRoleScore(bullet, "senior_ic")
+
+				Expect(principalScore).To(BeNumerically(">", seniorScore))
+			})
+
+			It("should score technical bullets higher for senior_ic than principal", func() {
+				bullet := &EnhancedBullet{
+					Category:   constants.CompetencyTechnical,
+					Confidence: 0.7,
+				}
+
+				seniorScore := defaultGen.calculateRoleScore(bullet, "senior_ic")
+				principalScore := defaultGen.calculateRoleScore(bullet, "principal")
+
+				Expect(seniorScore).To(BeNumerically(">", principalScore))
+			})
+
+			It("should score mentoring bullets higher for em than senior_ic", func() {
+				bullet := &EnhancedBullet{
+					Category:   constants.CompetencyMentoring,
+					Confidence: 0.7,
+				}
+
+				emScore := defaultGen.calculateRoleScore(bullet, "em")
+				seniorScore := defaultGen.calculateRoleScore(bullet, "senior_ic")
+
+				Expect(emScore).To(BeNumerically(">", seniorScore))
+			})
+
+			It("should give primary category bullets a strong boost", func() {
+				// Technical is primary for senior_ic
+				bullet := &EnhancedBullet{
+					Category:   constants.CompetencyTechnical,
+					Confidence: 0.7,
+				}
+
+				score := defaultGen.calculateRoleScore(bullet, "senior_ic")
+				// Base (0.5) + primary boost (0.30) = 0.80 minimum
+				Expect(score).To(BeNumerically(">=", 0.80))
+			})
+
+			It("should give secondary category bullets a medium boost", func() {
+				// Leadership is secondary for senior_ic
+				bullet := &EnhancedBullet{
+					Category:   constants.CompetencyLeadership,
+					Confidence: 0.7,
+				}
+
+				score := defaultGen.calculateRoleScore(bullet, "senior_ic")
+				// Base (0.5) + secondary boost (0.15) = 0.65 minimum
+				Expect(score).To(BeNumerically(">=", 0.65))
+				// But less than primary boost
+				Expect(score).To(BeNumerically("<", 0.80))
+			})
+		})
+
+		Context("end-to-end role differentiation", func() {
+			It("should produce different rankings for different roles", func() {
+				events := []*career.CareerEvent{
+					{ID: "1", Text: "Built data pipeline", Categories: []string{"technical"}},
+					{ID: "2", Text: "Led architecture redesign", Categories: []string{"leadership"}},
+					{ID: "3", Text: "Mentored junior engineers", Categories: []string{"mentoring"}},
+				}
+
+				seniorBullets, err := generator.GenerateBullets(ctx, events, nil, nil, "senior_ic", "")
+				Expect(err).NotTo(HaveOccurred())
+
+				principalBullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", "")
+				Expect(err).NotTo(HaveOccurred())
+
+				// Technical bullet should rank higher for senior_ic
+				Expect(seniorBullets[0].Category).To(Equal(constants.CompetencyTechnical))
+
+				// Leadership bullet should rank higher for principal
+				Expect(principalBullets[0].Category).To(Equal(constants.CompetencyLeadership))
+			})
 		})
 	})
 })

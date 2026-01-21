@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/baphled/kariya/internal/constants"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/google/uuid"
@@ -41,7 +42,8 @@ type EnhancedBullet struct {
 	EnhancedText      string
 	SourceEventIDs    []string
 	SourceFactIDs     []string
-	AudienceRelevance []string // Audience types this bullet is relevant to
+	AudienceRelevance []string                     // Audience types this bullet is relevant to
+	Category          constants.CompetencyCategory // Primary competency category (BUG-008)
 	Metrics           []*Metric
 	Confidence        float64
 	RoleScore         float64 // 0.0-1.0
@@ -71,6 +73,7 @@ func (eb *EnhancedBullet) ToCVBullet() *career.CVBullet {
 		Rank:            eb.Rank,
 		InclusionReason: eb.InclusionReason,
 		Confidence:      eb.Confidence,
+		Category:        eb.Category, // BUG-008: propagate category
 		RoleScore:       eb.RoleScore,
 		AudienceScore:   eb.AudienceScore,
 		MetricScore:     eb.MetricScore,
@@ -106,8 +109,8 @@ func NewEnhancedBulletGenerator(log *logger.Logger) EnhancedBulletGenerator {
 
 // RoleFilter defines role-specific filtering criteria
 type RoleFilter struct {
-	PrimaryCategories   []string
-	SecondaryCategories []string
+	PrimaryCategories   []constants.CompetencyCategory
+	SecondaryCategories []constants.CompetencyCategory
 	MinConfidence       float64
 	PreferredMetrics    []string
 }
@@ -321,6 +324,7 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromFacts(facts []*caree
 			SourceFactIDs:     []string{fact.ID},
 			SourceEventIDs:    sourceEventIDs,
 			AudienceRelevance: fact.AudienceRelevance,
+			Category:          ebg.extractPrimaryCategory(fact.CompetencyCategories), // BUG-008
 			Confidence:        0.85,
 			InclusionReason:   "fact_extraction",
 			ImpactLevel:       "medium",
@@ -358,6 +362,7 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromEvents(events []*car
 			Text:            event.Text,
 			EnhancedText:    event.Text,
 			SourceEventIDs:  []string{event.ID},
+			Category:        ebg.extractPrimaryCategory(event.Categories), // BUG-008
 			Confidence:      0.80,
 			InclusionReason: "event_direct",
 			ImpactLevel:     "low",
@@ -366,6 +371,20 @@ func (ebg *DefaultEnhancedBulletGenerator) createBulletsFromEvents(events []*car
 	}
 
 	return bullets
+}
+
+// extractPrimaryCategory extracts the primary (first) category from a list of categories
+// and converts it to the type-safe CompetencyCategory constant (BUG-008)
+func (ebg *DefaultEnhancedBulletGenerator) extractPrimaryCategory(categories []string) constants.CompetencyCategory {
+	if len(categories) == 0 {
+		return ""
+	}
+	// Use first category as primary
+	primary := strings.ToLower(categories[0])
+	if constants.IsValidCompetencyCategory(primary) {
+		return constants.CompetencyCategory(primary)
+	}
+	return ""
 }
 
 // deduplicateBullets removes bullets with identical text, keeping the one with highest confidence
@@ -448,20 +467,41 @@ func (ebg *DefaultEnhancedBulletGenerator) calculateFinalScore(bullet *EnhancedB
 	return math.Min(score, 1.0)
 }
 
-// calculateRoleScore calculates role relevance score
+// calculateRoleScore calculates role relevance score based on category alignment
 func (ebg *DefaultEnhancedBulletGenerator) calculateRoleScore(bullet *EnhancedBullet, role string) float64 {
 	score := 0.5 // Base score
 
+	// Get role filter for category matching
+	filter := ebg.getRoleFilter(role)
+
+	// Primary category match: strong boost (+0.30)
+	for _, primary := range filter.PrimaryCategories {
+		if bullet.Category == primary {
+			score += 0.30
+			break
+		}
+	}
+
+	// Secondary category match: medium boost (+0.15) - only if no primary match
+	if score == 0.5 {
+		for _, secondary := range filter.SecondaryCategories {
+			if bullet.Category == secondary {
+				score += 0.15
+				break
+			}
+		}
+	}
+
 	// Bonus for achievement-based bullets
 	if bullet.InclusionReason == "achievement_extraction" {
-		score += 0.3
+		score += 0.1
 	} else if bullet.InclusionReason == "fact_extraction" {
-		score += 0.2
+		score += 0.05
 	}
 
 	// Bonus for high confidence
 	if bullet.Confidence > 0.8 {
-		score += 0.1
+		score += 0.05
 	}
 
 	return math.Min(score, 1.0)
@@ -611,29 +651,29 @@ func (ebg *DefaultEnhancedBulletGenerator) getRoleFilter(role string) *RoleFilte
 	switch strings.ToLower(role) {
 	case "principal":
 		return &RoleFilter{
-			PrimaryCategories:   []string{"leadership", "strategy", "architecture"},
-			SecondaryCategories: []string{"technical", "mentoring"},
+			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyLeadership},
+			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyTechnical, constants.CompetencyMentoring},
 			MinConfidence:       0.8,
 			PreferredMetrics:    []string{"percentage", "count", "currency"},
 		}
 	case "staff":
 		return &RoleFilter{
-			PrimaryCategories:   []string{"technical", "architecture"},
-			SecondaryCategories: []string{"leadership", "mentoring"},
+			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyTechnical},
+			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyLeadership, constants.CompetencyMentoring},
 			MinConfidence:       0.75,
 			PreferredMetrics:    []string{"percentage", "count"},
 		}
 	case "em":
 		return &RoleFilter{
-			PrimaryCategories:   []string{"leadership", "mentoring"},
-			SecondaryCategories: []string{"strategy", "product"},
+			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyLeadership, constants.CompetencyMentoring},
+			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyProduct},
 			MinConfidence:       0.75,
 			PreferredMetrics:    []string{"count", "percentage"},
 		}
 	case "senior_ic":
 		return &RoleFilter{
-			PrimaryCategories:   []string{"technical", "architecture"},
-			SecondaryCategories: []string{"leadership", "strategy"},
+			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyTechnical},
+			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyLeadership},
 			MinConfidence:       0.75,
 			PreferredMetrics:    []string{"percentage", "count"},
 		}

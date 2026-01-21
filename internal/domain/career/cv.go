@@ -218,13 +218,14 @@ type CVBullet struct {
 	Confidence      float64  `json:"confidence"`       // 0.0 - 1.0
 
 	// Enhanced fields from EnhancedBulletGenerator (Task 44)
-	EnhancedText   string   `json:"enhanced_text,omitempty"`   // Professionally improved text
-	RoleScore      float64  `json:"role_score,omitempty"`      // 0.0-1.0 role relevance
-	AudienceScore  float64  `json:"audience_score,omitempty"`  // 0.0-1.0 audience fit
-	MetricScore    float64  `json:"metric_score,omitempty"`    // 0.0-1.0 metric quality
-	ImpactScore    float64  `json:"impact_score,omitempty"`    // 0.0-1.0 impact level
-	ImpactLevel    string   `json:"impact_level,omitempty"`    // "low", "medium", "high"
-	KeywordMatches []string `json:"keyword_matches,omitempty"` // Matched role/audience keywords
+	EnhancedText   string                       `json:"enhanced_text,omitempty"`   // Professionally improved text
+	Category       constants.CompetencyCategory `json:"category,omitempty"`        // Primary competency category (BUG-008)
+	RoleScore      float64                      `json:"role_score,omitempty"`      // 0.0-1.0 role relevance
+	AudienceScore  float64                      `json:"audience_score,omitempty"`  // 0.0-1.0 audience fit
+	MetricScore    float64                      `json:"metric_score,omitempty"`    // 0.0-1.0 metric quality
+	ImpactScore    float64                      `json:"impact_score,omitempty"`    // 0.0-1.0 impact level
+	ImpactLevel    string                       `json:"impact_level,omitempty"`    // "low", "medium", "high"
+	KeywordMatches []string                     `json:"keyword_matches,omitempty"` // Matched role/audience keywords
 }
 
 // Validate checks if the CVBullet meets all defined criteria
