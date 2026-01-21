@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/huh"
 )
@@ -16,25 +17,6 @@ type SkillFormData struct {
 	Level           string
 	YearsUsed       string
 	SubmitConfirmed bool
-}
-
-// Common skill categories as suggestions
-var CommonSkillCategories = []string{
-	"backend",
-	"frontend",
-	"devops",
-	"database",
-	"cloud",
-	"tooling",
-	"other",
-}
-
-// Valid skill levels
-var ValidSkillLevels = []string{
-	"beginner",
-	"intermediate",
-	"advanced",
-	"expert",
 }
 
 // NewSkillForm creates a form for adding or editing a skill.
@@ -132,22 +114,23 @@ func NewSkillFormWithDataAndDimensions(data *SkillFormData, width, height int) *
 	return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
 }
 
-// buildCategoryOptions builds the category select options.
+// buildCategoryOptions builds the category select options from centralized constants.
 func buildCategoryOptions() []SelectOption {
-	options := make([]SelectOption, len(CommonSkillCategories))
-	for i, cat := range CommonSkillCategories {
-		options[i] = SelectOption{Key: cat, Value: cat}
+	categories := constants.SuggestedSkillCategories()
+	options := make([]SelectOption, len(categories))
+	for i, cat := range categories {
+		options[i] = SelectOption{Key: string(cat), Value: string(cat)}
 	}
 	return options
 }
 
-// buildLevelOptions builds the level select options.
+// buildLevelOptions builds the level select options from centralized constants.
 func buildLevelOptions() []SelectOption {
 	options := []SelectOption{
 		{Key: "", Value: "(not specified)"},
 	}
-	for _, level := range ValidSkillLevels {
-		options = append(options, SelectOption{Key: level, Value: level})
+	for _, level := range constants.AllSkillLevels() {
+		options = append(options, SelectOption{Key: string(level), Value: string(level)})
 	}
 	return options
 }
@@ -209,14 +192,18 @@ func SkillLevel(value string) error {
 		return nil // Optional field
 	}
 
-	// Check if value is in valid levels
-	for _, valid := range ValidSkillLevels {
-		if trimmed == valid {
-			return nil
-		}
+	// Use centralized skill level validation
+	if constants.IsValidSkillLevel(trimmed) {
+		return nil
 	}
 
-	return fmt.Errorf("must be one of: %s", strings.Join(ValidSkillLevels, ", "))
+	// Build error message from all valid levels
+	levels := constants.AllSkillLevels()
+	levelStrs := make([]string, len(levels))
+	for i, l := range levels {
+		levelStrs[i] = string(l)
+	}
+	return fmt.Errorf("must be one of: %s", strings.Join(levelStrs, ", "))
 }
 
 // SkillYearsUsed validates years of experience (optional, 0-50 if provided).

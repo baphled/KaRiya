@@ -5,19 +5,21 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// CompetencyCategory represents broad professional competency categories
-type CompetencyCategory string
+// CompetencyCategory is an alias to constants.CompetencyCategory for backward compatibility.
+type CompetencyCategory = constants.CompetencyCategory
 
+// Competency category constants for backward compatibility.
 const (
-	TechnicalCompetency  CompetencyCategory = "technical"
-	LeadershipCompetency CompetencyCategory = "leadership"
-	ProductCompetency    CompetencyCategory = "product"
-	ConsultingCompetency CompetencyCategory = "consulting"
-	ResearchCompetency   CompetencyCategory = "research"
-	MentoringCompetency  CompetencyCategory = "mentoring"
+	TechnicalCompetency  = constants.CompetencyTechnical
+	LeadershipCompetency = constants.CompetencyLeadership
+	ProductCompetency    = constants.CompetencyProduct
+	ConsultingCompetency = constants.CompetencyConsulting
+	ResearchCompetency   = constants.CompetencyResearch
+	MentoringCompetency  = constants.CompetencyMentoring
 )
 
 // Classifier provides methods for classifying career events

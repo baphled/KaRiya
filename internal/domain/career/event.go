@@ -4,29 +4,9 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"github.com/baphled/kariya/internal/constants"
 )
-
-// AllowedTags defines the set of valid tags for a CareerEvent
-var AllowedTags = map[string]bool{
-	"project":     true,
-	"achievement": true,
-	"leadership":  true,
-	"technical":   true,
-	"consulting":  true,
-	"research":    true,
-	"product":     true,
-	"mentoring":   true,
-}
-
-// AllowedCategories defines the set of valid competency categories for a CareerEvent
-var AllowedCategories = map[string]bool{
-	"technical":  true,
-	"leadership": true,
-	"product":    true,
-	"consulting": true,
-	"research":   true,
-	"mentoring":  true,
-}
 
 // CareerEvent represents a professional event or milestone
 type CareerEvent struct {
@@ -91,7 +71,7 @@ func (ce *CareerEvent) validateDate() error {
 // validateTags checks that all tags are from the allowed set
 func (ce *CareerEvent) validateTags() error {
 	for _, tag := range ce.Tags {
-		if !AllowedTags[tag] {
+		if !constants.IsValidEventTag(tag) {
 			return errors.New("invalid tag: " + tag)
 		}
 	}
@@ -101,7 +81,7 @@ func (ce *CareerEvent) validateTags() error {
 // validateCategories checks that all categories are from the allowed set
 func (ce *CareerEvent) validateCategories() error {
 	for _, category := range ce.Categories {
-		if !AllowedCategories[strings.ToLower(category)] {
+		if !constants.IsValidCompetencyCategory(strings.ToLower(category)) {
 			return errors.New("invalid category: " + category)
 		}
 	}

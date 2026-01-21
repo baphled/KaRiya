@@ -6,53 +6,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/baphled/kariya/internal/constants"
 )
-
-// AllowedTargetRoles defines the set of valid target roles for a CV
-var AllowedTargetRoles = map[string]bool{
-	"principal": true,
-	"staff":     true,
-	"em":        true,
-	"senior_ic": true,
-}
-
-// AllowedTargetAudiences defines the set of valid target audiences for a CV
-var AllowedTargetAudiences = map[string]bool{
-	"hiring_manager": true,
-	"recruiter":      true,
-	"peer":           true,
-}
-
-// AllowedSectionTypes defines the set of valid section types
-var AllowedSectionTypes = map[string]bool{
-	"experience": true,
-	"projects":   true,
-	"skills":     true,
-	"summary":    true,
-}
-
-// InclusionReasons defines the set of valid reasons for including a bullet
-var InclusionReasons = map[string]bool{
-	// Semantic reasons (manual categorization)
-	"ownership":    true,
-	"contribution": true,
-	"strategy":     true,
-	"execution":    true,
-	"outcome":      true,
-	"activity":     true,
-	// Source-based reasons (used by BulletGenerator and EnhancedBulletGenerator)
-	"fact_extraction":        true,
-	"event_direct":           true,
-	"achievement_extraction": true,
-}
-
-// ImpactLevels defines the set of valid impact level values for CVBullet
-var ImpactLevels = map[string]bool{
-	"":       true, // Empty is valid (not set)
-	"low":    true,
-	"medium": true,
-	"high":   true,
-}
 
 // CVView represents an in-memory, ephemeral CV generated from career events and facts
 // CVViews are NOT stored in the database - they are generated on-demand
@@ -124,7 +80,7 @@ func (cv *CVView) validateTargetRole() error {
 	if trimmedRole == "" {
 		return ErrInvalidCVRole
 	}
-	if !AllowedTargetRoles[trimmedRole] {
+	if !constants.IsValidRoleFit(trimmedRole) {
 		return fmt.Errorf("invalid target role: %s", cv.TargetRole)
 	}
 	return nil
@@ -136,7 +92,7 @@ func (cv *CVView) validateTargetAudience() error {
 	if trimmedAudience == "" {
 		return ErrInvalidAudience
 	}
-	if !AllowedTargetAudiences[trimmedAudience] {
+	if !constants.IsValidAudience(trimmedAudience) {
 		return fmt.Errorf("invalid target audience: %s", cv.TargetAudience)
 	}
 	return nil
@@ -224,7 +180,7 @@ func (cs *CVSection) validateSectionType() error {
 	if trimmedType == "" {
 		return errors.New("section type cannot be empty")
 	}
-	if !AllowedSectionTypes[trimmedType] {
+	if !constants.IsValidSectionType(trimmedType) {
 		return fmt.Errorf("invalid section type: %s", cs.SectionType)
 	}
 	return nil
@@ -381,7 +337,7 @@ func (cb *CVBullet) validateInclusionReason() error {
 	if trimmedReason == "" {
 		return errors.New("inclusion reason cannot be empty")
 	}
-	if !InclusionReasons[trimmedReason] {
+	if !constants.IsValidInclusionReason(trimmedReason) {
 		return fmt.Errorf("invalid inclusion reason: %s", cb.InclusionReason)
 	}
 	return nil
@@ -407,7 +363,7 @@ func (cb *CVBullet) validateEnhancedScores() error {
 
 // validateImpactLevel ensures impact level is valid
 func (cb *CVBullet) validateImpactLevel() error {
-	if !ImpactLevels[cb.ImpactLevel] {
+	if !constants.IsValidImpactLevel(cb.ImpactLevel) {
 		return fmt.Errorf("invalid impact level: %s (must be low, medium, high, or empty)", cb.ImpactLevel)
 	}
 	return nil
@@ -487,7 +443,7 @@ func (cc *CVConfig) validateTargetRole() error {
 	if trimmedRole == "" {
 		return ErrInvalidCVRole
 	}
-	if !AllowedTargetRoles[trimmedRole] {
+	if !constants.IsValidRoleFit(trimmedRole) {
 		return fmt.Errorf("invalid target role: %s", cc.TargetRole)
 	}
 	return nil
@@ -499,7 +455,7 @@ func (cc *CVConfig) validateTargetAudience() error {
 	if trimmedAudience == "" {
 		return ErrInvalidAudience
 	}
-	if !AllowedTargetAudiences[trimmedAudience] {
+	if !constants.IsValidAudience(trimmedAudience) {
 		return fmt.Errorf("invalid target audience: %s", cc.TargetAudience)
 	}
 	return nil

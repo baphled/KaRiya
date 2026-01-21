@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"github.com/baphled/kariya/internal/constants"
 )
 
 // Skill represents a professional skill or technology competency.
@@ -17,27 +19,6 @@ type Skill struct {
 	LastUsed  *time.Time `json:"last_used"`  // Optional last usage date (can be derived from events)
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
-}
-
-// CommonSkillCategories provides suggested categories for skills.
-// Users can define custom categories; these are suggestions, not constraints.
-var CommonSkillCategories = []string{
-	"backend",
-	"frontend",
-	"devops",
-	"database",
-	"cloud",
-	"mobile",
-	"tooling",
-	"other",
-}
-
-// AllowedSkillLevels defines the valid skill level values.
-var AllowedSkillLevels = map[string]bool{
-	"beginner":     true,
-	"intermediate": true,
-	"advanced":     true,
-	"expert":       true,
 }
 
 // Validate checks if the Skill meets all defined criteria.
@@ -101,7 +82,7 @@ func (s *Skill) validateLevel() error {
 		return nil
 	}
 
-	if !AllowedSkillLevels[s.Level] {
+	if !constants.IsValidSkillLevel(s.Level) {
 		return errors.New("level must be one of: beginner, intermediate, advanced, expert")
 	}
 	return nil

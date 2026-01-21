@@ -800,9 +800,18 @@ func (i *CaptureEventIntent) updateSubmit(msg tea.Msg) tea.Cmd {
 // It calls the domain service to persist the event to the database and optionally enriches it.
 // Logs: Event submission start, validation results, service calls, and completion status.
 func (i *CaptureEventIntent) performSubmit() tea.Cmd {
+	// Capture all needed data in local scope to avoid race conditions.
+	// The command function runs in a separate goroutine, so we must not access
+	// i.state from within the closure.
+	event := i.state.reviewState.Event
+	acceptedFacts := i.state.reviewState.AcceptedFacts
+	strategy := i.state.strategy
+	careerService := i.state.context.CareerService
+	eventService := i.eventService
+
 	return func() tea.Msg {
 		// Validate event before submission
-		if i.state.reviewState.Event == nil {
+		if event == nil {
 			return SubmitErrorMsg{
 				Code:    "MISSING_EVENT",
 				Message: "No event data to submit",
@@ -811,7 +820,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		}
 
 		// Validate event data
-		if err := i.state.reviewState.Event.Validate(); err != nil {
+		if err := event.Validate(); err != nil {
 			return SubmitErrorMsg{
 				Code:    "VALIDATION_ERROR",
 				Message: fmt.Sprintf("Event validation failed: %v", err),
@@ -820,7 +829,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		}
 
 		// Ensure we have an event service
-		if i.eventService == nil {
+		if eventService == nil {
 			return SubmitErrorMsg{
 				Code:    "SERVICE_ERROR",
 				Message: "Event service not initialized",
@@ -828,14 +837,12 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 			}
 		}
 
-		event := i.state.reviewState.Event
-
 		// Create a context with timeout for the submission
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
 		// For quick mode, default date to today if not set
-		if i.state.strategy == StrategyQuick && event.Date.IsZero() {
+		if strategy == StrategyQuick && event.Date.IsZero() {
 			event.Date = time.Now()
 		}
 
@@ -845,7 +852,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// CRITICAL: Use CareerService directly (not CLIEventService wrapper)
 		// CareerService.CaptureEvent modifies the event in-place, setting its ID
 		// CLIEventService.CaptureEvent creates a new event internally, leaving our event without an ID
-		if i.state.context.CareerService == nil {
+		if careerService == nil {
 			return SubmitErrorMsg{
 				Code:    "SERVICE_ERROR",
 				Message: "Career service not initialized",
@@ -855,7 +862,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 
 		// Call the service to capture the event
 		// The service handles persistence and populates event.ID
-		err := i.state.context.CareerService.CaptureEvent(ctx, event, mode)
+		err := careerService.CaptureEvent(ctx, event, mode)
 
 		if err != nil {
 			// Map service errors to intent errors
@@ -868,21 +875,13 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 
 		// Perform enrichment for all strategies (if CareerService is available)
 		// This extracts bursts and facts from the saved event
-		if i.state.context.CareerService != nil {
-			// Enrichment error is logged internally but doesn't fail submission
-			// The event is already saved successfully - enrichment is optional
-			if err := i.performEnrichment(ctx, event); err != nil {
-				// Enrichment failure should not block event submission
-				// Error is already logged in performEnrichment
-				_ = err // Acknowledged: intentionally ignored
-			}
-		}
+		// NOTE: Enrichment is handled asynchronously and results are sent via messages
+		// so we skip it here in the background command to avoid race conditions
 
 		// Save any accepted facts from review that might have been manually edited/added
-		// Note: Facts from enrichment are already saved in performEnrichment()
 		// This is a safety check for any facts that might have been added during review
-		if i.state.context.CareerService != nil && len(i.state.reviewState.AcceptedFacts) > 0 {
-			for _, fact := range i.state.reviewState.AcceptedFacts {
+		if careerService != nil && len(acceptedFacts) > 0 {
+			for _, fact := range acceptedFacts {
 				// Only save facts that don't have an ID yet (haven't been saved)
 				// Facts from enrichment already have IDs
 				if fact.ID == "" {
@@ -892,7 +891,7 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 					}
 
 					// Save the fact
-					if err := i.state.context.CareerService.SaveFact(ctx, fact); err != nil {
+					if err := careerService.SaveFact(ctx, fact); err != nil {
 						// Log error but don't fail the entire submission
 						// Event is already saved successfully
 						continue
@@ -904,48 +903,6 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// Successfully submitted
 		return SubmitCompleteMsg{}
 	}
-}
-
-// performEnrichment performs AI-powered enrichment of the captured event.
-// It suggests bursts and extracts facts from the event.
-func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *career.CareerEvent) error {
-	if i.state.context.CareerService == nil {
-		return fmt.Errorf("career service not available for enrichment")
-	}
-
-	// Suggest bursts for the event
-	burstSuggestions, err := i.state.context.CareerService.SuggestBursts(ctx, []string{event.ID})
-	if err == nil && len(burstSuggestions) > 0 {
-		// Save burst suggestions and store them for review
-		bursts, err := i.state.context.CareerService.SaveBurstSuggestions(ctx, burstSuggestions)
-		if err == nil && len(bursts) > 0 {
-			i.state.reviewState.InferredBursts = bursts
-		}
-	}
-
-	// Extract facts from the event
-	facts, err := i.state.context.CareerService.ExtractFactsFromEvent(ctx, event)
-	if err == nil && len(facts) > 0 {
-		// Persist each extracted fact to the database
-		for j := range facts {
-			fact := &facts[j]
-
-			// Set source event ID (linking fact to this event)
-			fact.SourceEventID = event.ID
-
-			// Save fact to repository
-			if err := i.state.context.CareerService.SaveFact(ctx, fact); err != nil {
-				// Log warning but continue with other facts
-				// Fact extraction is an enhancement, not critical to event capture
-				continue
-			}
-
-			// Store saved fact for review
-			i.state.reviewState.InferredFacts = append(i.state.reviewState.InferredFacts, fact)
-		}
-	}
-
-	return nil
 }
 
 // validateEventWithDetails performs comprehensive validation of the event and provides detailed error messages.
