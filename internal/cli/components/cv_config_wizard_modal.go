@@ -60,7 +60,8 @@ type CVConfigData struct {
 
 	// Step 2: TECH (optional - only if techs extracted)
 	TechFocus    string   // "language_agnostic" | "generalist" | "specialist"
-	Technologies []string // MultiSelect (if generalist/specialist)
+	Technologies []string // MultiSelect (if generalist mode)
+	Technology   string   // Single-select (if specialist mode)
 	FocusArea    string   // "backend" | "frontend" | "fullstack" | "devops"
 
 	// Step 3: FORMAT
@@ -128,19 +129,23 @@ func (m *CVConfigWizardModal) buildForm() {
 		formTechs[i] = forms.ExtractedTechnology{Name: tech.Name}
 	}
 
+	// Determine if specialist mode (single-select) based on TechFocus
+	singleTechSelect := m.data.TechFocus == "specialist"
+
 	// Store formData as field so huh pointer bindings persist
 	m.formData = &forms.CVConfigFormData{
 		ProfileID:    m.data.ProfileID,
 		Audience:     m.data.Audience,
 		TechFocus:    m.data.TechFocus,
 		Technologies: m.data.Technologies,
+		Technology:   m.data.Technology,
 		FocusArea:    m.data.FocusArea,
 		SkillsFormat: m.data.SkillsFormat,
 		SkillsLimit:  m.data.SkillsLimit,
 		CVLength:     m.data.CVLength,
 	}
 
-	m.form = forms.NewCVConfigForm(m.formData, formProfileOpts, formTechs, modalWidth, 0)
+	m.form = forms.NewCVConfigForm(m.formData, formProfileOpts, formTechs, modalWidth, 0, singleTechSelect)
 }
 
 // Init initializes the wizard modal and its form.
@@ -421,12 +426,20 @@ func (m *CVConfigWizardModal) SetTechFocus(focus string) {
 	m.data.TechFocus = focus
 }
 
-// SetTechnologies sets the selected technologies.
+// SetTechnologies sets the selected technologies (for generalist mode).
 func (m *CVConfigWizardModal) SetTechnologies(techs []string) {
 	if m.formData != nil {
 		m.formData.Technologies = techs
 	}
 	m.data.Technologies = techs
+}
+
+// SetTechnology sets the selected technology (for specialist mode).
+func (m *CVConfigWizardModal) SetTechnology(tech string) {
+	if m.formData != nil {
+		m.formData.Technology = tech
+	}
+	m.data.Technology = tech
 }
 
 // SetFocusArea sets the focus area.
@@ -492,6 +505,7 @@ func (m *CVConfigWizardModal) syncFromFormData() {
 	m.data.Audience = m.formData.Audience
 	m.data.TechFocus = m.formData.TechFocus
 	m.data.Technologies = m.formData.Technologies
+	m.data.Technology = m.formData.Technology
 	m.data.FocusArea = m.formData.FocusArea
 	m.data.SkillsFormat = m.formData.SkillsFormat
 	m.data.SkillsLimit = m.formData.SkillsLimit
