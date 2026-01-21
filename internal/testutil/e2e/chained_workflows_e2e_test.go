@@ -2,7 +2,6 @@ package e2e_test
 
 import (
 	"github.com/baphled/kariya/internal/testutil/e2e"
-	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -69,16 +68,6 @@ var _ = Describe("E2E Chained Workflows", func() {
 			env.AssertViewContainsAny("Profile", "Select", "CV")
 		})
 
-		It("should navigate from Browse to Export", func() {
-			env.SelectIntentByName("browse_timeline")
-			env.AssertViewContainsAny("Timeline", "Events")
-
-			env.Cancel()
-
-			env.SelectIntentByName("export_artifact")
-			env.AssertViewContainsAny("Export", "Type", "events")
-		})
-
 		It("should navigate through multiple intents in sequence", func() {
 			// Browse
 			env.SelectIntentByName("browse_timeline")
@@ -86,10 +75,6 @@ var _ = Describe("E2E Chained Workflows", func() {
 
 			// Generate CV
 			env.SelectIntentByName("generate_cv")
-			env.Cancel()
-
-			// Export
-			env.SelectIntentByName("export_artifact")
 			env.Cancel()
 
 			// Configure
@@ -163,17 +148,13 @@ var _ = Describe("E2E Chained Workflows", func() {
 			env.Cleanup()
 		})
 
-		It("should see events in both Browse and Export", func() {
+		It("should see events in Browse", func() {
 			env.PopulateTestData(3, 0, 0)
 
 			// Check Browse
 			env.SelectIntentByName("browse_timeline")
 			env.AssertViewContainsAny("Events", "Acme Corp")
 			env.Cancel()
-
-			// Check Export can see events
-			env.SelectIntentByName("export_artifact")
-			env.AssertViewContainsAny("events", "Export", "Type")
 		})
 
 		It("should see facts in FactManagement and GenerateCV context", func() {
@@ -217,48 +198,6 @@ var _ = Describe("E2E Chained Workflows", func() {
 		})
 	})
 
-	Describe("Workflow: Export After Browse", func() {
-		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
-			env.PopulateTestData(5, 2, 3)
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should allow browsing then exporting events", func() {
-			// Browse timeline
-			env.SelectIntentByName("browse_timeline")
-			env.AssertViewContainsAny("Events", "Timeline")
-			env.Cancel()
-
-			// Export events - wizard-based flow
-			env.SelectIntentByName("export_artifact")
-			// Wizard Step 1: Type selection (events is default)
-			env.AssertViewContainsAny("Career Events", "Events", "Export")
-			// Use Ctrl+S to skip wizard and go to preview with defaults
-			env.PressKey(tea.KeyCtrlS)
-			// Preview screen shows export content
-			env.AssertViewContainsAny("Preview", "Export", "Confirm", "[", "{")
-		})
-
-		It("should allow browsing then exporting facts", func() {
-			// Browse
-			env.SelectIntentByName("browse_timeline")
-			env.Cancel()
-
-			// Export - wizard-based flow
-			env.SelectIntentByName("export_artifact")
-			// Wizard Step 1: Navigate to facts
-			env.PressKeyRune('j') // Navigate to facts
-			// Use Ctrl+S to skip wizard and go to preview
-			env.PressKey(tea.KeyCtrlS)
-			// Preview screen shows export content (facts this time)
-			env.AssertViewContainsAny("Preview", "Export", "Confirm", "[", "{")
-		})
-	})
-
 	Describe("Return to Menu Between Intents", func() {
 		BeforeEach(func() {
 			env = e2e.SetupWithMemory(GinkgoT())
@@ -273,7 +212,6 @@ var _ = Describe("E2E Chained Workflows", func() {
 			intents := []string{
 				"browse_timeline",
 				"generate_cv",
-				"export_artifact",
 				"configure_system",
 			}
 

@@ -277,8 +277,7 @@ func (e *TestEnv) SelectIntent(index int) *TestEnv {
 
 // SelectIntentByName navigates to and selects a menu item by its intent name.
 // Valid names: "capture_event", "browse_timeline", "manage_skills", "generate_cv",
-// "export_artifact", "configure_system", "burst_management", "fact_management",
-// "import_wizard", "metadata_editor", "bulk_operations"
+// "configure_system", "burst_management", "fact_management"
 //
 // NOTE: This order must match the menu items defined in internal/cli/app/app.go
 func (e *TestEnv) SelectIntentByName(name string) *TestEnv {
@@ -289,13 +288,9 @@ func (e *TestEnv) SelectIntentByName(name string) *TestEnv {
 		"browse_timeline":  1,
 		"manage_skills":    2,
 		"generate_cv":      3,
-		"export_artifact":  4,
-		"configure_system": 5,
-		"burst_management": 6,
-		"fact_management":  7,
-		"import_wizard":    8,
-		"metadata_editor":  9,
-		"bulk_operations":  10,
+		"configure_system": 4,
+		"burst_management": 5,
+		"fact_management":  6,
 	}
 
 	index, ok := intentOrder[name]

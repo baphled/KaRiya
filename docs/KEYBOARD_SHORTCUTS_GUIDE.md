@@ -215,32 +215,6 @@ KaRiya offers two CV generation workflows: **Wizard Modal** (recommended) and **
 | **Export Complete** | `Enter` | Done | Complete workflow |
 | | `Esc` | Retry | Return to location selection |
 
-### Export Artifact Workflow
-
-| Screen | Key | Action | Description |
-|--------|-----|--------|-------------|
-| **Select Type** | `↑/↓` or `k/j` | Navigate | Choose artifact type (events, facts, bursts) |
-| | `Enter` | Select | Proceed to format selection |
-| | `Esc` | Cancel | Return to main menu |
-| **Select Format** | `↑/↓` or `k/j` | Navigate | Choose format (JSON, CSV, YAML, TXT) |
-| | `Enter` | Select | Proceed to destination |
-| | `Esc` | Back | Return to type selection |
-| **Select Destination** | `↑/↓` or `k/j` | Navigate | Choose destination (File, Clipboard) |
-| | `Enter` | Select | Proceed to configuration |
-| | `Esc` | Back | Return to format selection |
-| **Configure** | `Enter` | Continue | Proceed to preview |
-| | `Esc` | Back | Return to destination |
-| **Preview** | `↑/↓` or `k/j` | Scroll | Scroll through export preview |
-| | `PgUp/PgDn` | Page scroll | Scroll by page |
-| | `Enter` | Continue | Proceed to confirmation |
-| | `Esc` | Back | Return to configuration |
-| **Confirm** | `y` or `Enter` | Confirm | Start export |
-| | `n` or `Esc` | Cancel | Return to preview |
-| **In Progress** | `Esc` | Background | Let export complete |
-| **Complete/Failed** | `Enter` | Done | Finish workflow |
-| | `r` | Retry | Retry export (if failed) |
-| | `Esc` | Back | Return to confirmation |
-
 ### Configure System Workflow
 
 | Screen | Key | Action | Description |
@@ -345,19 +319,6 @@ From CV Confirm → e/x → Select Format → Enter → Select Location → Ente
 11. Ctrl+S            - Submit
 ```
 
-### Bulk Operations
-
-**Selecting and Tagging Multiple Events**:
-```
-1. l                  - List events from home
-2. b                  - Enter bulk operations mode
-3. Space              - Select/deselect current event
-4. ↓                  - Move to next event
-5. Space              - Select/deselect
-6. a                  - Select all (optional)
-7. Enter              - Apply bulk operation
-```
-
 ---
 
 ## Screen-Specific Examples
@@ -372,7 +333,6 @@ From CV Confirm → e/x → Select Format → Enter → Select Location → Ente
 │  ►  Capture Event (c)        Add a new career event         │
 │     Browse Timeline (l)      View your career history       │
 │     Generate CV (g)          Create role-specific CV        │
-│     Export Artifact (e)      Export data to files           │
 │     Configure System (s)     System settings                │
 │     Help (?)                 View help documentation        │
 │     Quit (q)                 Exit the application           │
@@ -382,7 +342,7 @@ From CV Confirm → e/x → Select Format → Enter → Select Location → Ente
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Available shortcuts**: `↑/↓` or `k/j` to navigate, `Enter` to select, `c/l/g/e/s/?/q` for direct access
+**Available shortcuts**: `↑/↓` or `k/j` to navigate, `Enter` to select, `c/l/g/s/?/q` for direct access
 
 ### Event Form Screen
 
