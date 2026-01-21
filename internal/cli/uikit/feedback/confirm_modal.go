@@ -3,9 +3,9 @@ package feedback
 import (
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	themes "github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -85,7 +85,7 @@ func (m *ConfirmModal) getTheme() themes.Theme {
 	if m.theme != nil {
 		return m.theme
 	}
-	return themes.NewDefaultTheme()
+	return themes.Default()
 }
 
 // Init initializes the modal (required by BubbleTea lifecycle).

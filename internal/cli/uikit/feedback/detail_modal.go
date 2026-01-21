@@ -1,11 +1,12 @@
 package feedback
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	themes "github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -82,7 +83,7 @@ func (m *DetailModal) getTheme() themes.Theme {
 	if m.theme != nil {
 		return m.theme
 	}
-	return themes.NewDefaultTheme()
+	return themes.Default()
 }
 
 // Init initializes the modal (required by BubbleTea lifecycle).
@@ -184,7 +185,7 @@ func (m *DetailModal) View() string {
 			// Add scroll percentage if scrollable
 			percentScrolled := int(m.viewport.ScrollPercent() * 100)
 			badges = append(badges, primitives.HelpKeyBadge("↑↓/jk", "Scroll", theme))
-			badges = append([]*primitives.Badge{primitives.HelpKeyBadge(string(rune('%'))+string(rune(percentScrolled/10+'0'))+string(rune(percentScrolled%10+'0')), "", theme)}, badges...)
+			badges = append([]*primitives.Badge{primitives.HelpKeyBadge(formatPercent(percentScrolled), "", theme)}, badges...)
 		}
 		scrollHint = primitives.RenderHelpFooter(theme, badges...)
 	} else {
@@ -213,9 +214,9 @@ func (m *DetailModal) View() string {
 		Render()
 }
 
-// formatPercent formats a percentage for display
+// formatPercent formats a percentage for display (0-100)
 func formatPercent(percent int) string {
-	return "[" + string(rune('0'+percent/10)) + string(rune('0'+percent%10)) + "%]"
+	return fmt.Sprintf("[%d%%]", percent)
 }
 
 // IsVisible returns whether the modal is currently visible.
