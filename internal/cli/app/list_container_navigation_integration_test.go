@@ -280,34 +280,8 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 	})
 
 	Describe("Navigation in other list-based intents", func() {
-		It("should support navigation in ExportArtifact intent", func() {
-			// Navigate to ExportArtifact (4th menu item)
-			for i := 0; i < 3; i++ {
-				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-				model = modelInterface.(*app.Model)
-			}
-
-			// Activate ExportArtifact intent
-			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			model = modelInterface.(*app.Model)
-
-			// Should be in intent state
-			Expect(model.GetState()).To(Equal(app.StateIntent))
-
-			// Try to navigate
-			modelInterface, _ = model.Update(tea.KeyMsg{Type: tea.KeyDown})
-			model = modelInterface.(*app.Model)
-
-			// Should still be in intent state
-			Expect(model.GetState()).To(Equal(app.StateIntent))
-
-			// View should render
-			view := model.View()
-			Expect(view).NotTo(BeEmpty())
-		})
-
 		It("should support navigation in ConfigureSystem intent", func() {
-			// Navigate to ConfigureSystem (5th menu item)
+			// Navigate to ConfigureSystem (5th menu item, index 4)
 			for i := 0; i < 4; i++ {
 				modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 				model = modelInterface.(*app.Model)

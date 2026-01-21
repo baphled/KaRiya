@@ -132,45 +132,6 @@ var _ = Describe("App Menu Integration Tests", func() {
 			Expect(newModel).NotTo(BeNil())
 			Expect(cmd).NotTo(BeNil())
 		})
-
-		It("should activate ImportWizard intent without panic", func() {
-			modelInterface := tea.Model(model)
-			for i := 0; i < 7; i++ {
-				var cmd tea.Cmd
-				modelInterface, cmd = modelInterface.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-				_ = cmd
-			}
-			msg := tea.KeyMsg{Type: tea.KeyEnter}
-			newModel, cmd := modelInterface.Update(msg)
-			Expect(newModel).NotTo(BeNil())
-			Expect(cmd).NotTo(BeNil())
-		})
-
-		It("should activate MetadataEditor intent without panic", func() {
-			modelInterface := tea.Model(model)
-			for i := 0; i < 8; i++ {
-				var cmd tea.Cmd
-				modelInterface, cmd = modelInterface.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-				_ = cmd
-			}
-			msg := tea.KeyMsg{Type: tea.KeyEnter}
-			newModel, cmd := modelInterface.Update(msg)
-			Expect(newModel).NotTo(BeNil())
-			Expect(cmd).NotTo(BeNil())
-		})
-
-		It("should activate BulkOperations intent without panic", func() {
-			modelInterface := tea.Model(model)
-			for i := 0; i < 9; i++ {
-				var cmd tea.Cmd
-				modelInterface, cmd = modelInterface.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-				_ = cmd
-			}
-			msg := tea.KeyMsg{Type: tea.KeyEnter}
-			newModel, cmd := modelInterface.Update(msg)
-			Expect(newModel).NotTo(BeNil())
-			Expect(cmd).NotTo(BeNil())
-		})
 	})
 
 	Describe("Error Handling", func() {
@@ -298,7 +259,7 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		model.SkipOnboarding() // Skip onboarding for tests
 	})
 
-	// Test each intent in the menu (0-9)
+	// Test each intent in the menu (0-6)
 	testIntentNavigation := func(menuIndex int, intentName string) {
 		It("should navigate within "+intentName+" intent", func() {
 			// Navigate to the menu item
@@ -345,13 +306,9 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		testIntentNavigation(1, "BrowseTimeline")
 		testIntentNavigation(2, "ManageSkills")
 		testIntentNavigation(3, "GenerateCV")
-		testIntentNavigation(4, "ExportArtifact")
-		testIntentNavigation(5, "ConfigureSystem")
-		testIntentNavigation(6, "BurstManagement")
-		testIntentNavigation(7, "FactManagement")
-		testIntentNavigation(8, "ImportWizard")
-		testIntentNavigation(9, "MetadataEditor")
-		testIntentNavigation(10, "BulkOperations")
+		testIntentNavigation(4, "ConfigureSystem")
+		testIntentNavigation(5, "BurstManagement")
+		testIntentNavigation(6, "FactManagement")
 	})
 })
 
@@ -440,31 +397,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("GenerateCV Intent", func() {
 		It("should display CV generation view", func() {
-			selectIntent(4)
+			selectIntent(3)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(4)
-			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-			model = modelInterface.(*app.Model)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-		})
-	})
-
-	Describe("ExportArtifact Intent", func() {
-		It("should display export view", func() {
-			selectIntent(5)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-			Expect(view).NotTo(BeEmpty())
-		})
-
-		It("should navigate with arrow keys", func() {
-			selectIntent(5)
+			selectIntent(3)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -474,14 +414,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("ConfigureSystem Intent", func() {
 		It("should display configuration view", func() {
-			selectIntent(6)
+			selectIntent(4)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(6)
+			selectIntent(4)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -491,14 +431,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("BurstManagement Intent", func() {
 		It("should display burst management view", func() {
-			selectIntent(7)
+			selectIntent(5)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(7)
+			selectIntent(5)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -508,65 +448,14 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 
 	Describe("FactManagement Intent", func() {
 		It("should display fact management view", func() {
-			selectIntent(8)
+			selectIntent(6)
 			view := model.View()
 			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
 			Expect(view).NotTo(BeEmpty())
 		})
 
 		It("should navigate with arrow keys", func() {
-			selectIntent(8)
-			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-			model = modelInterface.(*app.Model)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-		})
-	})
-
-	Describe("ImportWizard Intent", func() {
-		It("should display import wizard view", func() {
-			selectIntent(9)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-			Expect(view).NotTo(BeEmpty())
-		})
-
-		It("should navigate with arrow keys", func() {
-			selectIntent(9)
-			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-			model = modelInterface.(*app.Model)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-		})
-	})
-
-	Describe("MetadataEditor Intent", func() {
-		It("should display metadata editor view", func() {
-			selectIntent(10)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-			Expect(view).NotTo(BeEmpty())
-		})
-
-		It("should navigate with arrow keys", func() {
-			selectIntent(10)
-			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
-			model = modelInterface.(*app.Model)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-		})
-	})
-
-	Describe("BulkOperations Intent", func() {
-		It("should display bulk operations view", func() {
-			selectIntent(11)
-			view := model.View()
-			Expect(view).NotTo(ContainSubstring("KaRiya - Career Event Manager"))
-			Expect(view).NotTo(BeEmpty())
-		})
-
-		It("should navigate with arrow keys", func() {
-			selectIntent(11)
+			selectIntent(6)
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
 			model = modelInterface.(*app.Model)
 			view := model.View()
@@ -675,7 +564,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 
 	Describe("BurstManagement List Navigation", func() {
 		It("should allow navigating down the burst list with 'j'", func() {
-			selectIntent(7) // BurstManagement
+			selectIntent(5) // BurstManagement
 
 			// Navigate down
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -686,7 +575,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow navigating up the burst list with 'k'", func() {
-			selectIntent(7) // BurstManagement
+			selectIntent(5) // BurstManagement
 
 			// Navigate down first
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -701,7 +590,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow multiple consecutive down navigations in burst list", func() {
-			selectIntent(7) // BurstManagement
+			selectIntent(5) // BurstManagement
 
 			// Navigate down multiple times
 			for i := 0; i < 3; i++ {
@@ -716,7 +605,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 
 	Describe("FactManagement List Navigation", func() {
 		It("should allow navigating down the fact list with 'j'", func() {
-			selectIntent(8) // FactManagement
+			selectIntent(6) // FactManagement
 
 			// Navigate down
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -727,7 +616,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow navigating up the fact list with 'k'", func() {
-			selectIntent(8) // FactManagement
+			selectIntent(6) // FactManagement
 
 			// Navigate down first
 			modelInterface, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")})
@@ -742,7 +631,7 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		})
 
 		It("should allow multiple consecutive down navigations in fact list", func() {
-			selectIntent(8) // FactManagement
+			selectIntent(6) // FactManagement
 
 			// Navigate down multiple times
 			for i := 0; i < 3; i++ {

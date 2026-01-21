@@ -117,25 +117,6 @@ func BenchmarkGenerateCVView(b *testing.B) {
 	}
 }
 
-// BenchmarkExportArtifactInit benchmarks ExportArtifact intent initialization
-func BenchmarkExportArtifactInit(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		intent, _ := NewExportArtifactIntent(NewTestExportArtifactContext())
-		_ = intent.Init()
-	}
-}
-
-// BenchmarkExportArtifactView benchmarks ExportArtifact intent view rendering
-func BenchmarkExportArtifactView(b *testing.B) {
-	intent, _ := NewExportArtifactIntent(NewTestExportArtifactContext())
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = intent.View()
-	}
-}
-
 // BenchmarkConfigureSystemInit benchmarks ConfigureSystem intent initialization
 func BenchmarkConfigureSystemInit(b *testing.B) {
 	ctx := context.Background()

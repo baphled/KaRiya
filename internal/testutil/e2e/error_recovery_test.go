@@ -43,13 +43,6 @@ var _ = Describe("E2E Error Recovery", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should handle Export with no data gracefully", func() {
-			env.SelectIntentByName("export_artifact")
-			view := env.GetView()
-			Expect(view).NotTo(ContainSubstring("panic"))
-			Expect(view).NotTo(BeEmpty())
-		})
-
 		It("should handle GenerateCV with no facts gracefully", func() {
 			env.SelectIntentByName("generate_cv")
 			view := env.GetView()
@@ -143,7 +136,6 @@ var _ = Describe("E2E Error Recovery", func() {
 			intents := []string{
 				"browse_timeline",
 				"generate_cv",
-				"export_artifact",
 				"configure_system",
 			}
 			for _, intent := range intents {
@@ -173,12 +165,6 @@ var _ = Describe("E2E Error Recovery", func() {
 
 		It("should recover to menu after cancelling GenerateCV", func() {
 			env.SelectIntentByName("generate_cv")
-			env.Cancel()
-			env.AssertViewContains("Capture Event")
-		})
-
-		It("should recover to menu after cancelling Export", func() {
-			env.SelectIntentByName("export_artifact")
 			env.Cancel()
 			env.AssertViewContains("Capture Event")
 		})
@@ -319,14 +305,6 @@ var _ = Describe("E2E Error Recovery", func() {
 			env.Cleanup()
 		})
 
-		It("should handle cancel from Export format selection", func() {
-			env.SelectIntentByName("export_artifact")
-			env.Confirm() // Select export type
-			env.Cancel()  // Cancel from format selection
-			env.Cancel()  // Back to menu
-			env.AssertViewContains("Capture Event")
-		})
-
 		It("should handle cancel from GenerateCV audience selection", func() {
 			env.SelectIntentByName("generate_cv")
 			env.Confirm() // Select profile
@@ -344,37 +322,4 @@ var _ = Describe("E2E Error Recovery", func() {
 		})
 	})
 
-	Describe("UI Shell Intents Error Handling", func() {
-		BeforeEach(func() {
-			env = e2e.SetupWithMemory(GinkgoT())
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should handle ImportWizard gracefully", func() {
-			env.SelectIntentByName("import_wizard")
-			view := env.GetView()
-			Expect(view).NotTo(ContainSubstring("panic"))
-			env.Cancel()
-			env.AssertViewContains("Capture Event")
-		})
-
-		It("should handle MetadataEditor gracefully", func() {
-			env.SelectIntentByName("metadata_editor")
-			view := env.GetView()
-			Expect(view).NotTo(ContainSubstring("panic"))
-			env.Cancel()
-			env.AssertViewContains("Capture Event")
-		})
-
-		It("should handle BulkOperations gracefully", func() {
-			env.SelectIntentByName("bulk_operations")
-			view := env.GetView()
-			Expect(view).NotTo(ContainSubstring("panic"))
-			env.Cancel()
-			env.AssertViewContains("Capture Event")
-		})
-	})
 })

@@ -100,13 +100,9 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 		{Name: "Browse Timeline", Intent: "browse_timeline", Help: "View your career events"},
 		{Name: "Manage Skills", Intent: "manage_skills", Help: "Manage your skills"},
 		{Name: "Generate CV", Intent: "generate_cv", Help: "Create a new CV"},
-		{Name: "Export Artifact", Intent: "export_artifact", Help: "Export CV or data"},
 		{Name: "Configure System", Intent: "configure_system", Help: "Manage settings"},
 		{Name: "Manage Bursts", Intent: "burst_management", Help: "Organize career bursts"},
 		{Name: "Manage Facts", Intent: "fact_management", Help: "Review extracted facts"},
-		{Name: "Import Data", Intent: "import_wizard", Help: "Import from CSV"},
-		{Name: "Edit Metadata", Intent: "metadata_editor", Help: "Update metadata"},
-		{Name: "Bulk Operations", Intent: "bulk_operations", Help: "Perform bulk actions"},
 	}
 
 	// Create ASCII logo with animation
@@ -800,28 +796,6 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 		return intent
 	})
 
-	// ExportArtifact
-	_ = router.RegisterIntent("export_artifact", func() intents.Intent {
-		exportCtx := &intents.ExportArtifactContext{
-			ArtifactTypes:    intents.DefaultArtifactTypes(),
-			SupportedFormats: intents.DefaultSupportedFormats(),
-			DefaultFormat:    intents.DefaultFormats(),
-			Destinations:     intents.DefaultDestinations(),
-			ExportService:    cvExportService,
-			CareerService:    careerService,
-			EventRepository:  careerService.GetEventRepository(),
-			FactRepository:   careerService.GetFactRepository(),
-			BurstRepository:  careerService.GetBurstRepository(),
-			AppContext:       ctx,
-		}
-		intent, err := intents.NewExportArtifactIntent(exportCtx)
-		if err != nil {
-			log.Error("Failed to create ExportArtifact intent: %v", err)
-			return nil
-		}
-		return intent
-	})
-
 	// ConfigureSystem
 	_ = router.RegisterIntent("configure_system", func() intents.Intent {
 		intent, err := intents.NewConfigureSystemIntent(ctx)
@@ -859,51 +833,6 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 		intent := intents.NewFactManagementIntent(factCtx)
 		if intent == nil {
 			log.Error("Failed to create FactManagement intent")
-			return nil
-		}
-		return intent
-	})
-
-	// ImportWizard - Use helper constructor
-	_ = router.RegisterIntent("import_wizard", func() intents.Intent {
-		importCtx := intents.NewImportWizardContext(ctx)
-		if importCtx == nil {
-			log.Error("Failed to create ImportWizard context")
-			return nil
-		}
-		intent := intents.NewImportWizardIntent(importCtx)
-		if intent == nil {
-			log.Error("Failed to create ImportWizard intent")
-			return nil
-		}
-		return intent
-	})
-
-	// MetadataEditor - Use helper constructor
-	_ = router.RegisterIntent("metadata_editor", func() intents.Intent {
-		metaCtx := intents.NewMetadataEditorContext(ctx)
-		if metaCtx == nil {
-			log.Error("Failed to create MetadataEditor context")
-			return nil
-		}
-		intent := intents.NewMetadataEditorIntent(metaCtx)
-		if intent == nil {
-			log.Error("Failed to create MetadataEditor intent")
-			return nil
-		}
-		return intent
-	})
-
-	// BulkOperations - Use helper constructor
-	_ = router.RegisterIntent("bulk_operations", func() intents.Intent {
-		bulkCtx := intents.NewBulkOperationsContext(ctx)
-		if bulkCtx == nil {
-			log.Error("Failed to create BulkOperations context")
-			return nil
-		}
-		intent := intents.NewBulkOperationsIntent(bulkCtx)
-		if intent == nil {
-			log.Error("Failed to create BulkOperations intent")
 			return nil
 		}
 		return intent
