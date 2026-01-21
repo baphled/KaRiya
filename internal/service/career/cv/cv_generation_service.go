@@ -25,7 +25,7 @@ type DefaultCVGenerationService struct {
 	eventRepo       careerrepo.Repository
 	factRepo        careerrepo.FactRepository
 	configManager   ConfigManager
-	bulletGenerator BulletGenerator
+	bulletGenerator EnhancedBulletGenerator
 	sectionBuilder  SectionBuilder
 	logger          *logger.Logger
 }
@@ -35,7 +35,7 @@ func NewCVGenerationService(
 	eventRepo careerrepo.Repository,
 	factRepo careerrepo.FactRepository,
 	configManager ConfigManager,
-	bulletGenerator BulletGenerator,
+	bulletGenerator EnhancedBulletGenerator,
 	sectionBuilder SectionBuilder,
 	log *logger.Logger,
 ) *DefaultCVGenerationService {
@@ -112,22 +112,25 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		facts = []*career.Fact{}
 	}
 
-	// Generate bullets using BulletGenerator
-	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, config.TargetRole, config.TargetAudience)
+	// Generate bullets using EnhancedBulletGenerator (BUG-008: role-based scoring)
+	enhancedBullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, nil, config.TargetRole, config.TargetAudience)
 	if err != nil {
 		svc.logger.Error("Failed to generate bullets: %v", err)
 		return nil, fmt.Errorf("failed to generate bullets: %w", err)
 	}
 
-	svc.logger.Info("Generated %d bullets from %d events and %d facts", len(bullets), len(events), len(facts))
+	svc.logger.Info("Generated %d bullets from %d events and %d facts", len(enhancedBullets), len(events), len(facts))
 
 	// Apply technology-based filtering if not Language Agnostic (Phase 10 - Task 40)
 	if config.TechnologyFocus != "" && config.TechnologyFocus != string(TechnologyFocusLanguageAgnostic) {
 		techFocus := TechnologyFocus(config.TechnologyFocus)
-		bullets = svc.bulletGenerator.FilterByTechnologies(bullets, events, techFocus, config.SelectedTechnologies)
+		enhancedBullets = svc.bulletGenerator.FilterByTechnologies(enhancedBullets, events, techFocus, config.SelectedTechnologies)
 		svc.logger.Info("Applied technology filtering (%s) with %d technologies, %d bullets after filtering",
-			config.TechnologyFocus, len(config.SelectedTechnologies), len(bullets))
+			config.TechnologyFocus, len(config.SelectedTechnologies), len(enhancedBullets))
 	}
+
+	// Convert EnhancedBullets to CVBullets for SectionBuilder
+	bullets := ConvertBullets(enhancedBullets)
 
 	// Build sections using SectionBuilder (Phase 11 - Task 40: pass skills format config)
 	skillsConfig := &SkillsFormatConfig{

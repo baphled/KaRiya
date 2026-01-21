@@ -869,11 +869,8 @@ func initConfigManager(log *logger.Logger) cv.ConfigManager {
 
 // initCVGenerationService initializes the CV generation service
 func initCVGenerationService(careerService *careerservice.Service, configMgr cv.ConfigManager, log *logger.Logger) cv.CVGenerationService {
-	bulletGenerator := cv.NewBulletGenerator(
-		careerService.GetEventRepository(),
-		careerService.GetFactRepository(),
-		log,
-	)
+	// BUG-008: Use EnhancedBulletGenerator for role-based scoring
+	bulletGenerator := cv.NewEnhancedBulletGenerator(log)
 	sectionBuilder := cv.NewSectionBuilder(
 		careerService.GetSkillRepository(),
 		log,

@@ -642,17 +642,34 @@ func (r *CountingFactRepository) GetBySourceBurstID(ctx context.Context, burstID
 	return []*career.Fact{}, nil
 }
 
+// EmptyBulletGenerator implements EnhancedBulletGenerator for tests
 type EmptyBulletGenerator struct{}
 
 func NewEmptyBulletGenerator() *EmptyBulletGenerator {
 	return &EmptyBulletGenerator{}
 }
 
-func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, targetRole string, targetAudience string) ([]*career.CVBullet, error) {
-	return []*career.CVBullet{}, nil
+func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*EnhancedBullet, error) {
+	return []*EnhancedBullet{}, nil
 }
 
-func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*career.CVBullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*career.CVBullet {
+func (g *EmptyBulletGenerator) FilterByRole(bullets []*EnhancedBullet, role string) []*EnhancedBullet {
+	return bullets
+}
+
+func (g *EmptyBulletGenerator) FilterByAudience(bullets []*EnhancedBullet, audience string) []*EnhancedBullet {
+	return bullets
+}
+
+func (g *EmptyBulletGenerator) RankByRelevance(bullets []*EnhancedBullet, role string, audience string) []*EnhancedBullet {
+	return bullets
+}
+
+func (g *EmptyBulletGenerator) EnhanceWording(bullet *EnhancedBullet, role string) (*EnhancedBullet, error) {
+	return bullet, nil
+}
+
+func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*EnhancedBullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*EnhancedBullet {
 	return bullets // No-op for tests
 }
 
