@@ -63,12 +63,9 @@ internal/cli/
 │   ├── capture_event.go              # CaptureEventIntent
 │   ├── generate_cv.go                # GenerateCVIntent
 │   ├── browse_timeline.go            # BrowseTimelineIntent
-│   ├── export_artifact.go            # ExportArtifactIntent
-│   ├── import_wizard.go              # ImportWizardIntent
 │   ├── manage_skills.go              # ManageSkillsIntent
 │   ├── burst_management.go           # BurstManagementIntent
 │   ├── fact_management.go            # FactManagementIntent
-│   ├── bulk_operations.go            # BulkOperationsIntent
 │   └── configure_system.go           # ConfigureSystemIntent
 │
 ├── screens/                          # View layer (hybrid: base + domain)

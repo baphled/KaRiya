@@ -239,8 +239,9 @@ env.SelectIntent(2)       // Select 3rd menu item
 env.SelectIntentByName("capture_event")
 env.SelectIntentByName("browse_timeline")
 env.SelectIntentByName("generate_cv")
-env.SelectIntentByName("export_artifact")
 env.SelectIntentByName("configure_system")
+env.SelectIntentByName("burst_management")
+env.SelectIntentByName("fact_management")
 ```
 
 #### View Assertions
@@ -471,11 +472,6 @@ var _ = Describe("Multi-Intent Navigation", func() {
         // Generate CV
         env.SelectIntentByName("generate_cv")
         env.AssertViewContainsAny("Profile", "Select")
-        env.Cancel()
-
-        // Export
-        env.SelectIntentByName("export_artifact")
-        env.AssertViewContainsAny("Export", "Type")
         env.Cancel()
 
         // Should be back at menu
@@ -725,11 +721,10 @@ var _ = Describe("IntentName - Escape Key Behavior", func() {
 - `Exporting` (async) → Let complete, go back to `ExportSelectLocation`
 - `ExportComplete` (final) → Go back to `ExportSelectLocation`
 
-**See Also**: Escape key test files for all 5 primary intents:
+**See Also**: Escape key test files for primary intents:
 - `internal/cli/intents/capture_event_escape_test.go` (151 lines)
 - `internal/cli/intents/browse_timeline_escape_test.go` (131 lines)
 - `internal/cli/intents/generate_cv_escape_test.go` (258 lines)
-- `internal/cli/intents/export_artifact_escape_test.go`
 - `internal/cli/intents/configure_system_escape_test.go`
 
 ---

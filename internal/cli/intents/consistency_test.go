@@ -80,18 +80,6 @@ var _ = Describe("StandardView Consistency", func() {
 		})
 	})
 
-	Describe("ExportArtifact", func() {
-		It("should use StandardView patterns", func() {
-			intent, err := NewExportArtifactIntent(NewTestExportArtifactContext())
-			Expect(err).NotTo(HaveOccurred())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("ExportArtifact", view)
-		})
-	})
-
 	Describe("ConfigureSystem", func() {
 		It("should use StandardView patterns", func() {
 			ctx := context.Background()
@@ -103,60 +91,6 @@ var _ = Describe("StandardView Consistency", func() {
 			view := intent.View()
 
 			testStandardViewConsistency("ConfigureSystem", view)
-		})
-	})
-
-	Describe("ImportWizard", func() {
-		It("should use StandardView patterns", func() {
-			ctx := NewImportWizardContext(context.Background())
-			ctx.FilePath = "/test/sample.csv"
-			ctx.FileSize = 1024
-			ctx.TotalRows = 100
-
-			intent := NewImportWizardIntent(ctx)
-			Expect(intent).NotTo(BeNil())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("ImportWizard", view)
-		})
-	})
-
-	Describe("MetadataEditor", func() {
-		It("should use StandardView patterns", func() {
-			ctx := NewMetadataEditorContext(context.Background())
-			ctx.EntityType = "CareerEvent"
-			ctx.EntityID = "test-123"
-			ctx.LoadMetadata(map[string]interface{}{
-				"title":       "Test Event",
-				"description": "Test Description",
-				"tags":        []string{"test", "example"},
-			})
-
-			intent := NewMetadataEditorIntent(ctx)
-			Expect(intent).NotTo(BeNil())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("MetadataEditor", view)
-		})
-	})
-
-	Describe("BulkOperations", func() {
-		It("should use StandardView patterns", func() {
-			ctx := NewBulkOperationsContext(context.Background())
-			ctx.SelectedOp = "delete"
-			ctx.AffectedItemCount = 50
-
-			intent := NewBulkOperationsIntent(ctx)
-			Expect(intent).NotTo(BeNil())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("BulkOperations", view)
 		})
 	})
 
@@ -239,12 +173,6 @@ var _ = Describe("All Intents Initialization", func() {
 			},
 			func(i interface{}) { i.(*GenerateCVIntent).Init() },
 			func(i interface{}) string { return i.(*GenerateCVIntent).View() },
-		),
-		Entry("ExportArtifact",
-			"ExportArtifact",
-			func() (interface{}, error) { return NewExportArtifactIntent(NewTestExportArtifactContext()) },
-			func(i interface{}) { i.(*ExportArtifactIntent).Init() },
-			func(i interface{}) string { return i.(*ExportArtifactIntent).View() },
 		),
 		Entry("ConfigureSystem",
 			"ConfigureSystem",

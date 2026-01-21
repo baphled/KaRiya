@@ -246,41 +246,7 @@ stateDiagram-v2
     end note
 ```
 
-### 4. Export Artifact Intent Flow
-
-```mermaid
-stateDiagram-v2
-    direction TB
-    [*] --> SelectArtifactType
-    SelectArtifactType --> ConfigureExport
-    ConfigureExport --> PreviewExport
-    PreviewExport --> ConfirmExport
-    ConfirmExport --> ExportInProgress
-    ExportInProgress --> [*]
-
-    note right of ExportInProgress
-        Async operation pattern:
-        - InProgress state is ephemeral
-        - Completion triggers strongly-typed result
-        - Error handling with retry logic
-        - Success auto-exits to MainMenu
-        - Failure remains local for retry
-    end note
-```
-
-#### Async Operations Pattern
-
-**For all async operations** (Export, Enrichment, Burst/Fact extraction):
-- Use ephemeral `InProgress` state
-- Completion triggers strongly-typed `IntentResult[T]`
-- Error states include:
-  - Validation errors (immediate retry)
-  - Network errors (with backoff retry)
-  - Timeout errors (with exponential backoff)
-- Success auto-returns to previous intent or main menu
-- Failure allows user to retry or cancel
-
-### 5. System Configuration Intent Flow
+### 4. System Configuration Intent Flow
 
 ```mermaid
 stateDiagram-v2
@@ -546,26 +512,6 @@ stateDiagram-v2
     end note
 ```
 
-### 11. Bulk Operations Intent Flow
-
-```mermaid
-stateDiagram-v2
-    direction TB
-    [*] --> SelectItems
-    SelectItems --> ChooseOperation
-    ChooseOperation --> ConfigureOperation
-    ConfigureOperation --> PreviewChanges
-    PreviewChanges --> ConfirmBulk
-    ConfirmBulk --> BulkInProgress
-    BulkInProgress --> [*]
-
-    note right of SelectItems
-        Multi-select events/bursts/facts
-        Bulk tag, delete, export
-        Preview all changes before apply
-    end note
-```
-
 ## Future Expansion Considerations
 - Career Goal Setting (as secondary/contextual intent)
 - Mentor Matching (as secondary/contextual intent)
@@ -577,21 +523,17 @@ stateDiagram-v2
 
 ## Intent Summary
 
-**Total Intents**: 11
+**Total Intents**: 7
 
 | Intent | Status | Description |
 |--------|--------|-------------|
 | CaptureEvent | ✅ Production | Capture career events with burst/fact extraction |
 | BrowseTimeline | ✅ Production | Browse and filter career timeline |
 | GenerateCV | ✅ Production | Generate role-specific CVs |
-| ExportArtifact | ✅ Production | Export data to various formats |
 | ConfigureSystem | ✅ Production | System configuration |
 | BurstManagement | ✅ Production | Manage burst entries |
 | FactManagement | ✅ Production | Manage extracted facts |
-| MetadataEditor | ✅ Production | Edit event metadata |
-| ImportWizard | ✅ Production | Import from CSV/JSON |
 | ManageSkills | ✅ Production | Skill management |
-| BulkOperations | ✅ Production | Bulk operations on items |
 
 ## Audit Summary
 
@@ -615,7 +557,7 @@ stateDiagram-v2
 - ✅ Clarified back navigation semantics
 - ✅ Enhanced project structure with clear boundaries
 - ✅ Added detailed implementation guidelines
-- ✅ Documented all 11 intents (January 2026)
+- ✅ Documented all 7 intents (January 2026)
 
 **No Blockers**: Architecture is ready for implementation immediately.
 

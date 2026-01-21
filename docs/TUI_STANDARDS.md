@@ -60,18 +60,7 @@ These shortcuts work consistently across all screens:
 - **↑/k**: Previous event
 - **↓/j**: Next event
 - **Enter**: Edit selected event
-- **b**: Bulk operations on selected events
-- **Space**: Toggle selection (for bulk operations)
 - **Esc**: Back to home
-
-#### Bulk Operations
-- **↑/k**: Previous item
-- **↓/j**: Next item
-- **Space**: Toggle selection
-- **a**: Select all
-- **d**: Deselect all
-- **Enter**: Apply changes
-- **Esc**: Cancel (discard changes)
 
 ### Global Shortcuts
 
@@ -279,9 +268,7 @@ footer.SetStrategy("Quick")
 **Context-Aware Shortcuts**:
 - **"form"**: Tab, Shift+Tab, Enter, Esc (field navigation)
 - **"list"**: Up/Down, Enter, Delete, Edit, Filter, Sort, Esc
-- **"metadata_review"**: Up/Down, Enter, Bulk ops, Space, Esc
-- **"metadata_editor"**: Tab, Shift+Tab, Enter, Esc
-- **"bulk_operations"**: Up/Down, Space, All/None, Enter, Esc
+- **"metadata_review"**: Up/Down, Enter, Space, Esc
 
 **Usage**:
 ```go
@@ -344,11 +331,9 @@ Home
 │       └── View Recent Events (List)
 ├── List Events
 │   ├── View Event Details
-│   ├── Edit Event Metadata
-│   └── Bulk Operations
+│   └── Edit Event Metadata
 └── Metadata Review
-    ├── Edit Event
-    └── Bulk Operations
+    └── Edit Event
 ```
 
 ### Navigation Rules
