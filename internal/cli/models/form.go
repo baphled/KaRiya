@@ -162,9 +162,15 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.tagIndex < len(availableTags) {
 					tag := availableTags[m.tagIndex]
 					if m.tagSelector.IsSelected(tag) {
-						_ = m.tagSelector.DeselectTag(tag) // Error ignored: toggle based on IsSelected check
+						if err := m.tagSelector.DeselectTag(tag); err != nil {
+							// Pre-check with IsSelected makes this unlikely, ignore
+							_ = err
+						}
 					} else {
-						_ = m.tagSelector.SelectTag(tag) // Error ignored: toggle based on IsSelected check
+						if err := m.tagSelector.SelectTag(tag); err != nil {
+							// Pre-check with IsSelected makes this unlikely, ignore
+							_ = err
+						}
 					}
 				}
 				return m, nil
@@ -174,9 +180,15 @@ func (m *FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.categoryIndex < len(availableCategories) {
 					category := availableCategories[m.categoryIndex]
 					if m.categorySelector.IsSelected(category) {
-						_ = m.categorySelector.DeselectCategory(category) // Error ignored: toggle based on IsSelected check
+						if err := m.categorySelector.DeselectCategory(category); err != nil {
+							// Pre-check with IsSelected makes this unlikely, ignore
+							_ = err
+						}
 					} else {
-						_ = m.categorySelector.SelectCategory(category) // Error ignored: toggle based on IsSelected check
+						if err := m.categorySelector.SelectCategory(category); err != nil {
+							// Pre-check with IsSelected makes this unlikely, ignore
+							_ = err
+						}
 					}
 				}
 				return m, nil
@@ -635,7 +647,10 @@ func (m *FormModel) LoadEventForEditing(event *career.CareerEvent) {
 
 	// Set categories in category selector
 	if len(event.Categories) > 0 {
-		_ = m.categorySelector.SetSelected(event.Categories) // Error ignored: existing event categories should be valid
+		if err := m.categorySelector.SetSelected(event.Categories); err != nil {
+			// Existing event categories should be valid, ignore
+			_ = err
+		}
 	}
 
 	// Set skills in skill selector

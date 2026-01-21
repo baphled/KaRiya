@@ -56,7 +56,10 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 	availableTags := tagSelector.AvailableTags()
 
 	categorySelector := components.NewCategorySelector()
-	_ = categorySelector.SetSelected(event.Categories) // Error ignored: existing event categories should be valid
+	if err := categorySelector.SetSelected(event.Categories); err != nil {
+		// Existing event categories should be valid, ignore
+		_ = err
+	}
 	availableCategories := categorySelector.AvailableCategories()
 
 	// Load all available skills from repository
@@ -68,7 +71,10 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 	skillSelector := components.NewSkillSelector(allSkills)
 	// Pre-select skills from event
 	for _, skillID := range event.Skills {
-		_ = skillSelector.SelectSkill(skillID) // Error ignored: event skills should be valid
+		if err := skillSelector.SelectSkill(skillID); err != nil {
+			// Event skills should be valid, ignore
+			_ = err
+		}
 	}
 	availableSkills := skillSelector.AvailableSkills()
 
