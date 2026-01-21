@@ -141,7 +141,14 @@ func Setup(t TestingT) *TestEnv {
 		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
 		// This allows nested isolation without breaking suite-level isolation
 		config.SetConfigPathForTesting(prevConfigPath)
-		_ = db.Close()
+		// Close database connection
+		if err := db.Close(); err != nil {
+			// Log but don't fail - this is cleanup
+			t.Errorf("warning: failed to close db: %v", err)
+		}
+		// Give Windows time to release file handles before temp dir cleanup
+		// This prevents "file in use" errors on Windows CI
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	return &TestEnv{
@@ -374,7 +381,14 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	cleanup := func() {
 		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
 		config.SetConfigPathForTesting(prevConfigPath)
-		_ = db.Close()
+		// Close database connection
+		if err := db.Close(); err != nil {
+			// Log but don't fail - this is cleanup
+			t.Errorf("warning: failed to close db: %v", err)
+		}
+		// Give Windows time to release file handles before temp dir cleanup
+		// This prevents "file in use" errors on Windows CI
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	return &TestEnv{
