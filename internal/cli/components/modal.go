@@ -265,7 +265,8 @@ func (m *ModalContent) Render(terminalWidth, terminalHeight int) string {
 		BorderForeground(borderColor).
 		Padding(1, 2).
 		Width(modalWidth).
-		MaxWidth(modalWidth)
+		MaxWidth(modalWidth).
+		MaxHeight(modalHeight)
 
 	// Apply fade-in effect
 	if opacity < 1.0 {

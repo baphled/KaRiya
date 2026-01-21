@@ -83,7 +83,7 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 	if skillsConfig == nil {
 		skillsConfig = &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: []string{}}
 	}
-	skillsSection := sb.buildSkillsSection(events, skillsConfig, order)
+	skillsSection := sb.buildSkillsSection(ctx, events, skillsConfig, order)
 	if skillsSection != nil {
 		sections = append(sections, skillsSection)
 	}
@@ -188,7 +188,7 @@ func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet
 
 // buildSkillsSection creates the technical skills section from event skills (Phase 11 - Task 40)
 // Looks up skill names from IDs, supports flat/grouped formatting with limits
-func (sb *DefaultSectionBuilder) buildSkillsSection(events []*career.CareerEvent, config *SkillsFormatConfig, order int) *career.CVSection {
+func (sb *DefaultSectionBuilder) buildSkillsSection(ctx context.Context, events []*career.CareerEvent, config *SkillsFormatConfig, order int) *career.CVSection {
 	// Collect unique skill IDs from all events
 	skillIDSet := make(map[string]bool)
 	for _, event := range events {
@@ -213,7 +213,7 @@ func (sb *DefaultSectionBuilder) buildSkillsSection(events []*career.CareerEvent
 	skills := make([]skillInfo, 0, len(skillIDs))
 	if sb.skillRepo != nil {
 		for _, skillID := range skillIDs {
-			skill, err := sb.skillRepo.GetByID(context.Background(), skillID)
+			skill, err := sb.skillRepo.GetByID(ctx, skillID)
 			if err == nil && skill != nil {
 				skills = append(skills, skillInfo{
 					ID:       skill.ID,
