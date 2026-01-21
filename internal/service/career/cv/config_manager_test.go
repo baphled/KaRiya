@@ -309,7 +309,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 			// Create a non-YAML file
 			nonYamlPath := filepath.Join(tempDir, "readme.txt")
-			err = os.WriteFile(nonYamlPath, []byte("test"), 0644)
+			err = os.WriteFile(nonYamlPath, []byte("test"), 0600)
 			Expect(err).NotTo(HaveOccurred())
 
 			// List should only return the YAML config
@@ -330,7 +330,7 @@ var _ = Describe("YAMLConfigManager", func() {
 
 			// Manually create an invalid YAML file
 			invalidPath := filepath.Join(tempDir, "invalid.yaml")
-			Expect(os.WriteFile(invalidPath, []byte("invalid: yaml: [[["), 0644)).To(Succeed())
+			Expect(os.WriteFile(invalidPath, []byte("invalid: yaml: [[["), 0600)).To(Succeed())
 
 			// List should return valid configs and skip invalid ones
 			loaded, err := manager.ListConfigs(ctx)

@@ -114,7 +114,6 @@ func (m *ViewSkillDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.action = "delete"
 			m.Hide()
 			return m, nil
-
 		}
 	}
 

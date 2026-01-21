@@ -234,18 +234,18 @@ func (b *Box) getBorderColor() lipgloss.Color {
 	// Use theme colors
 	switch b.variant {
 	case BoxDestructive:
-		return lipgloss.Color(theme.ErrorColor())
+		return theme.ErrorColor()
 	case BoxSuccess:
-		return lipgloss.Color(theme.SuccessColor())
+		return theme.SuccessColor()
 	case BoxWarning:
-		return lipgloss.Color(theme.WarningColor())
+		return theme.WarningColor()
 	case BoxInfo:
-		return lipgloss.Color(theme.InfoColor())
+		return theme.InfoColor()
 	case BoxSubtle:
-		return lipgloss.Color(theme.MutedColor())
+		return theme.MutedColor()
 	case BoxEmphasized:
-		return lipgloss.Color(theme.PrimaryColor())
+		return theme.PrimaryColor()
 	default:
-		return lipgloss.Color(theme.BorderColor())
+		return theme.BorderColor()
 	}
 }

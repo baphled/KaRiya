@@ -12,7 +12,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	exportscreens "github.com/baphled/kariya/internal/cli/screens/export"
-	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -137,9 +136,9 @@ func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
 		if e.wizardModal.IsCompleted() {
 			// Get configuration from wizard
 			e.config = &ExportConfiguration{
-				ArtifactType: ExportArtifactType(e.wizardModal.GetArtifactType()),
-				Format:       ExportFormat(e.wizardModal.GetFormat()),
-				Destination:  ExportDestination(e.wizardModal.GetDestination()),
+				ArtifactType: e.wizardModal.GetArtifactType(),
+				Format:       e.wizardModal.GetFormat(),
+				Destination:  e.wizardModal.GetDestination(),
 			}
 			// Hide wizard but keep it for back-navigation (preserves all form data)
 			e.wizardModal.Hide()
@@ -604,9 +603,9 @@ func getDestinationName(d ExportDestination) string {
 func (e *ExportArtifactIntent) newPreviewScreen() screens.Screen {
 	return exportscreens.NewPreviewWithStats(
 		e.preview,
-		types.ExportArtifactType(e.config.ArtifactType),
-		types.ExportFormat(e.config.Format),
-		types.ExportDestination(e.config.Destination),
+		e.config.ArtifactType,
+		e.config.Format,
+		e.config.Destination,
 		[]string{"Main Menu", "Export Artifact", "Preview"},
 		e.previewStats,
 	)
@@ -805,9 +804,12 @@ func (e *ExportArtifactIntent) generateEventsPreview(ctx context.Context) string
 		return "Preview not available - repository not initialized"
 	}
 
-	// Get total count for stats
-	allEvents, _ := e.context.EventRepository.List(ctx, careerrepo.ListFilters{})
-	totalCount := len(allEvents)
+	// Get total count for stats (ignore error - 0 is acceptable fallback)
+	allEvents, err := e.context.EventRepository.List(ctx, careerrepo.ListFilters{})
+	totalCount := 0
+	if err == nil {
+		totalCount = len(allEvents)
+	}
 
 	// Get preview items (limited)
 	events, err := e.context.EventRepository.List(ctx, careerrepo.ListFilters{Limit: 10})
@@ -852,9 +854,12 @@ func (e *ExportArtifactIntent) generateFactsPreview(ctx context.Context) string 
 		return "Preview not available - repository not initialized"
 	}
 
-	// Get total count for stats
-	allFacts, _ := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{})
-	totalCount := len(allFacts)
+	// Get total count for stats (ignore error - 0 is acceptable fallback)
+	allFacts, err := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{})
+	totalCount := 0
+	if err == nil {
+		totalCount = len(allFacts)
+	}
 
 	facts, err := e.context.FactRepository.List(ctx, careerrepo.FactListFilters{Limit: 10})
 	if err != nil {
@@ -898,9 +903,12 @@ func (e *ExportArtifactIntent) generateBurstsPreview(ctx context.Context) string
 		return "Preview not available - repository not initialized"
 	}
 
-	// Get total count for stats
-	allBursts, _ := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{})
-	totalCount := len(allBursts)
+	// Get total count for stats (ignore error - 0 is acceptable fallback)
+	allBursts, err := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{})
+	totalCount := 0
+	if err == nil {
+		totalCount = len(allBursts)
+	}
 
 	bursts, err := e.context.BurstRepository.List(ctx, careerrepo.BurstListFilters{Limit: 10})
 	if err != nil {

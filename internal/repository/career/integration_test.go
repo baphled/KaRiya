@@ -25,6 +25,7 @@ var _ = Describe("Career Event Repository Integration Tests", func() {
 	})
 
 	// Helper function to generate unique test events
+	//nolint:gosec // G404: math/rand is fine for test data generation
 	generateTestEvent := func() *career.CareerEvent {
 		return &career.CareerEvent{
 			Text:    fmt.Sprintf("Test Event %d", rand.Intn(10000)),
