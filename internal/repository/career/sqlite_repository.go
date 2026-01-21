@@ -29,8 +29,7 @@ func NewSQLiteRepository(dbPath string) (*SQLiteRepository, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Run migrations to ensure schema is up to date
-	if err := RunMigrations(db); err != nil {
+	if err := RunMigrationsForTests(db); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 

@@ -22,7 +22,7 @@ type SQLiteBurstRepository struct {
 // This constructor is kept for backward compatibility with existing tests.
 func NewSQLiteBurstRepository(db *sql.DB) (*SQLiteBurstRepository, error) {
 	// Run migrations to ensure schema is up to date
-	if err := RunMigrations(db); err != nil {
+	if err := RunMigrationsForTests(db); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 

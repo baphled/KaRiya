@@ -108,7 +108,7 @@ func Setup(t TestingT) *TestEnv {
 	}
 
 	// Run migrations
-	if err := careerrepo.RunMigrations(db); err != nil {
+	if err := careerrepo.RunMigrationsForTests(db); err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		_ = db.Close()                                 // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
@@ -187,8 +187,7 @@ func SetupShared() {
 		panic("failed to open shared test db: " + err.Error())
 	}
 
-	// Run migrations once
-	if err := careerrepo.RunMigrations(db); err != nil {
+	if err := careerrepo.RunMigrationsForTests(db); err != nil {
 		_ = db.Close()
 		panic("failed to run migrations: " + err.Error())
 	}
@@ -273,6 +272,35 @@ func GetSharedEnv(t TestingT) *TestEnv {
 	return sharedEnv
 }
 
+// GetSharedEnvWithOnboarding returns the shared test environment with onboarding enabled.
+// Like GetSharedEnv, it reuses the database but creates a fresh Model with ForceOnboarding().
+//
+// Usage in test file:
+//
+//	var env *e2e.TestEnv
+//	BeforeEach(func() {
+//	    env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
+//	})
+func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
+	if sharedEnv == nil {
+		panic("shared env not initialized - call SetupShared() in BeforeSuite")
+	}
+
+	// Reset database state (truncate all tables)
+	sharedEnv.resetDatabase()
+
+	// Create fresh application model with onboarding FORCED
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service)
+	model.ForceOnboarding()
+
+	// Update only what changes per-test
+	sharedEnv.T = t
+	sharedEnv.Model = model
+	sharedEnv.Ctx = context.Background()
+
+	return sharedEnv
+}
+
 // resetDatabase truncates all tables to reset state between tests.
 func (e *TestEnv) resetDatabase() {
 	if e.DB == nil {
@@ -321,7 +349,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	}
 
 	// Run migrations
-	if err := careerrepo.RunMigrations(db); err != nil {
+	if err := careerrepo.RunMigrationsForTests(db); err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		_ = db.Close()                                 // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
@@ -964,11 +992,7 @@ func (e *TestEnv) SkipOnboarding() *TestEnv {
 func (e *TestEnv) InitModel() *TestEnv {
 	e.T.Helper()
 
-	// Call Init() to set up the model
-	cmd := e.Model.Init()
-
-	// Process the init commands - this triggers huh form setup
-	e.processFormCmds(cmd, 20)
+	_ = e.Model.Init()
 
 	// Send a WindowSizeMsg to trigger form layout
 	e.SendMessage(tea.WindowSizeMsg{Width: 120, Height: 40})
