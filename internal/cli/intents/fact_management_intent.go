@@ -294,7 +294,6 @@ func (m *FactManagementModel) handleListState(msg tea.Msg) tea.Cmd {
 		}
 
 		switch msg.String() {
-
 		case "enter", " ":
 			m.syncTableSelection()
 			if m.data.SelectedFact != nil {

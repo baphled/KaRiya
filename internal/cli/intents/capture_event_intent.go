@@ -416,7 +416,6 @@ func (i *CaptureEventIntent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 
 			// CRITICAL: Initialize the form so it can accept input
 			return i.state.captureForm.Init()
-
 		}
 
 		// Handle global keys (q=quit, ?=help, esc=back)
@@ -528,7 +527,6 @@ func (i *CaptureEventIntent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 
 	// Return the command from the form update
 	return formCmd
-
 }
 
 // updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
@@ -961,7 +959,7 @@ func (i *CaptureEventIntent) getStateName() string {
 	case CaptureStateSubmit:
 		return "Submit"
 	default:
-		return string(i.state.currentState)
+		return i.state.currentState
 	}
 }
 
@@ -1576,7 +1574,7 @@ func (i *CaptureEventIntent) setFailed(code, message string, cause error) {
 // Result returns the intent's result if it has completed, or nil if still active.
 // This implements the Intent interface.
 func (i *CaptureEventIntent) GetState() string {
-	return string(i.state.currentState)
+	return i.state.currentState
 }
 
 // GetForm returns the current form model instance (for test and debug)

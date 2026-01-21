@@ -12,7 +12,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	exportscreens "github.com/baphled/kariya/internal/cli/screens/export"
-	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -137,9 +136,9 @@ func (e *ExportArtifactIntent) Update(msg tea.Msg) tea.Cmd {
 		if e.wizardModal.IsCompleted() {
 			// Get configuration from wizard
 			e.config = &ExportConfiguration{
-				ArtifactType: ExportArtifactType(e.wizardModal.GetArtifactType()),
-				Format:       ExportFormat(e.wizardModal.GetFormat()),
-				Destination:  ExportDestination(e.wizardModal.GetDestination()),
+				ArtifactType: e.wizardModal.GetArtifactType(),
+				Format:       e.wizardModal.GetFormat(),
+				Destination:  e.wizardModal.GetDestination(),
 			}
 			// Hide wizard but keep it for back-navigation (preserves all form data)
 			e.wizardModal.Hide()
@@ -604,9 +603,9 @@ func getDestinationName(d ExportDestination) string {
 func (e *ExportArtifactIntent) newPreviewScreen() screens.Screen {
 	return exportscreens.NewPreviewWithStats(
 		e.preview,
-		types.ExportArtifactType(e.config.ArtifactType),
-		types.ExportFormat(e.config.Format),
-		types.ExportDestination(e.config.Destination),
+		e.config.ArtifactType,
+		e.config.Format,
+		e.config.Destination,
 		[]string{"Main Menu", "Export Artifact", "Preview"},
 		e.previewStats,
 	)

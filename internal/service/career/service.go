@@ -247,7 +247,6 @@ func (s *Service) GetEventByID(ctx context.Context, eventID string) (*domain.Car
 			Warn("Failed to retrieve event")
 	}
 	return event, err
-
 }
 
 // SuggestBursts detects and suggests bursts for provided event IDs
