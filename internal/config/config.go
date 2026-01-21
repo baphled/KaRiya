@@ -73,7 +73,11 @@ type DisplayConfig struct {
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
-	homeDir, _ := os.UserHomeDir()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		// Fallback to current directory if home dir unavailable
+		homeDir = "."
+	}
 	dataDir := filepath.Join(homeDir, ".kariya")
 
 	return &Config{

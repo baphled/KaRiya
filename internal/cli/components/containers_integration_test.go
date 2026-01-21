@@ -1,9 +1,10 @@
 package components_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"strings"
 )
 
 var _ = Describe("Container Rendering", func() {

@@ -126,8 +126,8 @@ func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 	facts []*career.Fact,
 	achievements []*Achievement,
 	targetRole string,
-	targetAudience string) ([]*EnhancedBullet, error) {
-
+	targetAudience string,
+) ([]*EnhancedBullet, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
