@@ -507,6 +507,12 @@ issues:
         - gocyclo     # Test complexity is often higher
         - gocognit    # Test complexity is often higher
 
+    # Allow .kariya paths in config.go - this is where the default path is legitimately defined
+    - path: internal/config/config\.go
+      linters:
+        - forbidigo
+      text: "HARDCODED PATH"
+
     # Exclude linters from generated files
     - path: ".*_generated\\.go"
       linters:
