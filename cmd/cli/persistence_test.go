@@ -195,7 +195,7 @@ var _ = Describe("Form Submission Persistence", func() {
 			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
 
 			// Submit form
-			form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
+			_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).NotTo(BeNil())
 
 			// Execute the command and get the result
