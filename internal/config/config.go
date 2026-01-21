@@ -4,9 +4,64 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
+
+// configPathOverride holds an optional override for the config path.
+// This is used by tests to isolate config file writes.
+var (
+	configPathOverride string
+	configPathMu       sync.RWMutex
+)
+
+// isTestEnvironment checks if we're running in a test environment.
+// This detects both `go test` and test binaries.
+func isTestEnvironment() bool {
+	// Check if running under go test (the binary name ends with .test)
+	executable, err := os.Executable()
+	if err == nil && strings.HasSuffix(executable, ".test") {
+		return true
+	}
+
+	// Check for test flags in os.Args
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-test.") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// requireTestIsolation panics if we're in a test environment but the config
+// path override hasn't been set. This prevents tests from accidentally
+// writing to the user's real config file (BUG-007 prevention).
+func requireTestIsolation(operation string) {
+	if !isTestEnvironment() {
+		return // Production code can use real paths
+	}
+
+	configPathMu.RLock()
+	hasOverride := configPathOverride != ""
+	configPathMu.RUnlock()
+
+	if !hasOverride {
+		panic(fmt.Sprintf(
+			"BUG-007 PROTECTION: %s called in test without config isolation!\n\n"+
+				"Tests must isolate config writes to prevent polluting ~/.kariya/config.yaml.\n\n"+
+				"Fix: Call config.SetConfigPathForTesting(path) before using %s,\n"+
+				"     or use e2e.Setup()/e2e.SetupWithOnboarding() which handle isolation.\n\n"+
+				"Example:\n"+
+				"    tempDir := t.TempDir()\n"+
+				"    config.SetConfigPathForTesting(filepath.Join(tempDir, \"config.yaml\"))\n"+
+				"    defer config.ResetConfigPath()\n",
+			operation, operation,
+		))
+	}
+}
 
 // Config represents the application configuration
 type Config struct {
@@ -123,8 +178,35 @@ func DefaultConfig() *Config {
 	}
 }
 
-// GetConfigPath returns the path to the config file
+// SetConfigPathForTesting overrides the config path for testing purposes.
+// This allows tests to isolate config file writes to a temporary directory.
+// Call ResetConfigPath() in test cleanup to restore default behavior.
+func SetConfigPathForTesting(path string) {
+	configPathMu.Lock()
+	defer configPathMu.Unlock()
+	configPathOverride = path
+}
+
+// ResetConfigPath clears the config path override and restores default behavior.
+// This should be called in test cleanup (AfterEach) to prevent test pollution.
+func ResetConfigPath() {
+	configPathMu.Lock()
+	defer configPathMu.Unlock()
+	configPathOverride = ""
+}
+
+// GetConfigPath returns the path to the config file.
+// If SetConfigPathForTesting was called, returns the overridden path.
+// Otherwise, returns the default path: ~/.kariya/config.yaml
 func GetConfigPath() (string, error) {
+	configPathMu.RLock()
+	override := configPathOverride
+	configPathMu.RUnlock()
+
+	if override != "" {
+		return override, nil
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
@@ -133,8 +215,11 @@ func GetConfigPath() (string, error) {
 	return filepath.Join(homeDir, ".kariya", "config.yaml"), nil
 }
 
-// LoadConfig loads configuration from the default location
+// LoadConfig loads configuration from the default location.
+// In test environments, this will panic if SetConfigPathForTesting hasn't been called.
 func LoadConfig() (*Config, error) {
+	requireTestIsolation("config.LoadConfig()")
+
 	path, err := GetConfigPath()
 	if err != nil {
 		return nil, err
@@ -231,8 +316,11 @@ func applyDefaults(cfg *Config) {
 	// Note: Animations is bool, can't distinguish false from unset
 }
 
-// SaveConfig saves configuration to the default location
+// SaveConfig saves configuration to the default location.
+// In test environments, this will panic if SetConfigPathForTesting hasn't been called.
 func SaveConfig(cfg *Config) error {
+	requireTestIsolation("config.SaveConfig()")
+
 	path, err := GetConfigPath()
 	if err != nil {
 		return err

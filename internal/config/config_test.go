@@ -142,6 +142,96 @@ var _ = Describe("Config", func() {
 		})
 	})
 
+	Describe("SetConfigPathForTesting", func() {
+		AfterEach(func() {
+			// Always reset after each test to avoid polluting other tests
+			config.ResetConfigPath()
+		})
+
+		It("should override GetConfigPath to return the test path", func() {
+			testPath := filepath.Join(tempDir, "test-config.yaml")
+
+			config.SetConfigPathForTesting(testPath)
+
+			path, err := config.GetConfigPath()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(path).To(Equal(testPath))
+		})
+
+		It("should make SaveConfig use the overridden path", func() {
+			testPath := filepath.Join(tempDir, "test-config.yaml")
+			config.SetConfigPathForTesting(testPath)
+
+			cfg := config.DefaultConfig()
+			cfg.Profile.Name = "Test Override"
+
+			err := config.SaveConfig(cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify file was saved to test path
+			_, err = os.Stat(testPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify content
+			loaded, err := config.LoadConfigFromPath(testPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loaded.Profile.Name).To(Equal("Test Override"))
+		})
+
+		It("should make LoadConfig use the overridden path", func() {
+			testPath := filepath.Join(tempDir, "test-config.yaml")
+
+			// Save a config to test path first
+			cfg := config.DefaultConfig()
+			cfg.Profile.Name = "Override Test"
+			err := config.SaveConfigToPath(cfg, testPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Set override and load
+			config.SetConfigPathForTesting(testPath)
+
+			loaded, err := config.LoadConfig()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loaded.Profile.Name).To(Equal("Override Test"))
+		})
+	})
+
+	Describe("ResetConfigPath", func() {
+		It("should restore GetConfigPath to return the default path", func() {
+			testPath := filepath.Join(tempDir, "test-config.yaml")
+
+			// Get original path
+			originalPath, err := config.GetConfigPath()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Override
+			config.SetConfigPathForTesting(testPath)
+			overriddenPath, _ := config.GetConfigPath()
+			Expect(overriddenPath).To(Equal(testPath))
+
+			// Reset
+			config.ResetConfigPath()
+
+			// Should return original path
+			restoredPath, err := config.GetConfigPath()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(restoredPath).To(Equal(originalPath))
+		})
+
+		It("should be safe to call multiple times", func() {
+			// Reset without setting should not panic
+			Expect(func() {
+				config.ResetConfigPath()
+				config.ResetConfigPath()
+			}).NotTo(Panic())
+
+			// GetConfigPath should still work
+			path, err := config.GetConfigPath()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(path).To(ContainSubstring(".kariya"))
+		})
+	})
+
 	Describe("Config Struct", func() {
 		It("should marshal to YAML correctly", func() {
 			cfg := config.DefaultConfig()

@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
@@ -145,6 +146,9 @@ func Setup(t TestingT) *TestEnv {
 // Use this to test the onboarding workflow specifically.
 // This forces onboarding to appear regardless of the user's config file.
 //
+// IMPORTANT: This function isolates config file writes to a temporary directory
+// to prevent tests from polluting the user's real config file (BUG-007 fix).
+//
 // Works with both *testing.T and GinkgoT().
 func SetupWithOnboarding(t TestingT) *TestEnv {
 	t.Helper()
@@ -153,15 +157,22 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	// This prevents onboarding completion from polluting the user's real config
+	configPath := filepath.Join(tmpDir, "config.yaml")
+	config.SetConfigPathForTesting(configPath)
+
 	// Open database connection
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
+		config.ResetConfigPath() // Clean up on failure
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
 	if err := careerrepo.RunMigrations(db); err != nil {
-		_ = db.Close() // Ignore error as we're already in failure path
+		config.ResetConfigPath() // Clean up on failure
+		_ = db.Close()           // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -186,6 +197,8 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	model.ForceOnboarding()
 
 	cleanup := func() {
+		// BUG-007 FIX: Reset config path override to prevent pollution
+		config.ResetConfigPath()
 		_ = db.Close()
 		_ = db.Close() // Error ignored as this is test cleanup
 	}
