@@ -187,6 +187,8 @@ linters-settings:
       screens-no-intent-imports:
         files:
           - "**/screens/**/*.go"
+          - "**/screens/*.go"
+          - "!**/*_test.go"
         deny:
           - pkg: "github.com/baphled/kariya/internal/cli/intents"
             desc: |
@@ -268,30 +270,47 @@ linters-settings:
               See docs/UIKIT_GUIDE.md for theme integration.
 
       # =========================================================================
-      # FORMS: Enforce proper form patterns
+      # FORMS: huh can ONLY be imported in forms/ package
+      # Architecture: forms/ -> models/ -> components/ -> screens/ -> intents/
+      # Only forms/ is allowed to import huh directly
+      # Test files are excluded - they may need direct form creation for testing
       # =========================================================================
-      forms-proper-usage:
+      huh-restricted-to-forms:
         files:
           - "**/intents/**/*.go"
+          - "**/intents/*.go"
+          - "**/screens/**/*.go"
+          - "**/screens/*.go"
+          - "**/components/**/*.go"
+          - "**/components/*.go"
+          - "**/models/**/*.go"
+          - "**/models/*.go"
+          - "!**/*_test.go"
         deny:
           - pkg: "github.com/charmbracelet/huh"
             desc: |
-              PATTERN VIOLATION: Don't use huh.Form directly in intents.
+              ARCHITECTURE VIOLATION: huh can ONLY be imported in forms/ package.
 
-              Use the forms/ package wrappers instead:
+              Package-specific guidance:
+
+              INTENTS: Use models/ form wrappers:
+              - models.CaptureForm, models.MetadataForm, etc.
+              - forms.IsCompleted(f), forms.IsAborted(f) for state checks
+
+              SCREENS: Use base.FormScreen or forms/ builders:
+              - base.NewFormScreen(theme, form)
               - forms.NewThemedForm(theme, groups...)
-              - forms.NewFormWithHeight(height, groups...)
-              - forms.NewFormWithFixedConfirm(fields, confirm, w, h)
 
-              Or use models/ form wrappers:
-              - models.FormModel (wraps huh with theme integration)
+              COMPONENTS: Use forms/ builders:
+              - forms.NewInput(FieldConfig{...})
+              - forms.NewSelect(key, title, options...)
+              - forms.NewForm(groups...)
 
-              Direct huh.Form usage bypasses:
-              - Theme integration
-              - Standard form configuration
-              - Height/dimension handling
+              MODELS: Use forms.Form interface:
+              - Store forms.Form (not *huh.Form)
+              - Use forms.IsCompleted(), forms.IsAborted()
 
-              See internal/cli/forms/forms.go for available helpers.
+              See docs/FORMS_GUIDE.md and docs/rules/FORMS_WORKFLOW_GUIDE.md
 
       # =========================================================================
       # TABLES: Enforce TableBehavior usage
@@ -341,6 +360,7 @@ linters-settings:
           - github.com/charmbracelet
           - github.com/google/uuid
           - github.com/mattn/go-sqlite3
+          - modernc.org/sqlite
           - github.com/onsi/ginkgo/v2
           - github.com/onsi/gomega
           - github.com/spf13/cobra
