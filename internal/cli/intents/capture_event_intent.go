@@ -871,8 +871,11 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		if i.state.context.CareerService != nil {
 			// Enrichment error is logged internally but doesn't fail submission
 			// The event is already saved successfully - enrichment is optional
-			//nolint:errcheck // Intentional: enrichment failure should not block event submission
-			i.performEnrichment(ctx, event)
+			if err := i.performEnrichment(ctx, event); err != nil {
+				// Enrichment failure should not block event submission
+				// Error is already logged in performEnrichment
+				_ = err // Acknowledged: intentionally ignored
+			}
 		}
 
 		// Save any accepted facts from review that might have been manually edited/added

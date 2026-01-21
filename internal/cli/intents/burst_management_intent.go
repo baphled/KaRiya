@@ -236,9 +236,12 @@ func (i *BurstManagementIntent) Init() tea.Cmd {
 	}
 
 	// Load bursts from repository (if repository available)
-	// Error is ignored - context.Bursts may already be populated (e.g., in tests)
-	//nolint:errcheck // LoadBursts may fail if no repository, but context.Bursts may be pre-populated
-	i.context.LoadBursts()
+	// Error is acceptable - context.Bursts may already be populated (e.g., in tests)
+	if err := i.context.LoadBursts(); err != nil {
+		// LoadBursts may fail if no repository configured, but context.Bursts
+		// may be pre-populated directly. Only log for debugging if needed.
+		_ = err // Acknowledged: intentionally ignored, context.Bursts used as-is
+	}
 
 	// Initialize filtered bursts with the provided bursts.
 	i.state.filteredBursts = i.context.Bursts
