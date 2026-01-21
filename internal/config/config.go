@@ -403,32 +403,38 @@ func applyDefaults(cfg *Config) {
 
 // applyScoringDefaults applies default values for the scoring configuration.
 // This enables auto-migration when loading configs without a scoring section.
+//
+// To avoid the issue where a user-provided value of 0.0 gets overwritten,
+// we check if the entire scoring section appears uninitialized. If ALL weights
+// are zero AND ALL thresholds are zero AND role settings are empty, we assume
+// the section is missing and apply all defaults. This means users who want to
+// set some values to zero must set at least one non-zero value in the section.
 func applyScoringDefaults(cfg *Config, defaults *Config) {
-	// Weight defaults - only apply if all weights are zero (not partially set)
-	if cfg.Scoring.Weights.RoleScore == 0 && cfg.Scoring.Weights.AudienceScore == 0 &&
-		cfg.Scoring.Weights.MetricScore == 0 && cfg.Scoring.Weights.ImpactScore == 0 &&
-		cfg.Scoring.Weights.Confidence == 0 {
+	// Check if the entire scoring section appears uninitialized:
+	// - All weights are zero
+	// - All thresholds are zero
+	// - No role settings defined
+	allWeightsZero := cfg.Scoring.Weights.RoleScore == 0 &&
+		cfg.Scoring.Weights.AudienceScore == 0 &&
+		cfg.Scoring.Weights.MetricScore == 0 &&
+		cfg.Scoring.Weights.ImpactScore == 0 &&
+		cfg.Scoring.Weights.Confidence == 0
+
+	allThresholdsZero := cfg.Scoring.Thresholds.FactDefaultConfidence == 0 &&
+		cfg.Scoring.Thresholds.EventDefaultConfidence == 0 &&
+		cfg.Scoring.Thresholds.HighConfidence == 0 &&
+		cfg.Scoring.Thresholds.HighImpactConfidence == 0
+
+	noRoleSettings := len(cfg.Scoring.RoleSettings) == 0
+
+	// If the entire section is uninitialized, apply all defaults
+	if allWeightsZero && allThresholdsZero && noRoleSettings {
 		cfg.Scoring.Weights = defaults.Scoring.Weights
-	}
-
-	// Threshold defaults
-	if cfg.Scoring.Thresholds.FactDefaultConfidence == 0 {
-		cfg.Scoring.Thresholds.FactDefaultConfidence = defaults.Scoring.Thresholds.FactDefaultConfidence
-	}
-	if cfg.Scoring.Thresholds.EventDefaultConfidence == 0 {
-		cfg.Scoring.Thresholds.EventDefaultConfidence = defaults.Scoring.Thresholds.EventDefaultConfidence
-	}
-	if cfg.Scoring.Thresholds.HighConfidence == 0 {
-		cfg.Scoring.Thresholds.HighConfidence = defaults.Scoring.Thresholds.HighConfidence
-	}
-	if cfg.Scoring.Thresholds.HighImpactConfidence == 0 {
-		cfg.Scoring.Thresholds.HighImpactConfidence = defaults.Scoring.Thresholds.HighImpactConfidence
-	}
-
-	// Role settings defaults - only apply if map is empty
-	if len(cfg.Scoring.RoleSettings) == 0 {
+		cfg.Scoring.Thresholds = defaults.Scoring.Thresholds
 		cfg.Scoring.RoleSettings = defaults.Scoring.RoleSettings
 	}
+	// Otherwise, the user has customized at least part of the scoring section,
+	// so we respect their configuration (including any explicit zeros).
 }
 
 // SaveConfig saves configuration to the default location.
