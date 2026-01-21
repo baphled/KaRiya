@@ -11,7 +11,8 @@ type CVConfigFormData struct {
 	ProfileID       string
 	Audience        string
 	TechFocus       string
-	Technologies    []string
+	Technologies    []string // For multi-select (generalist mode)
+	Technology      string   // For single-select (specialist mode)
 	FocusArea       string
 	SkillsFormat    string
 	SkillsLimit     int // max skills per category/total (0 = no limit)
@@ -47,8 +48,10 @@ type ExtractedTechnology struct {
 	Name string
 }
 
-// NewCVConfigForm creates the CV configuration wizard form
-func NewCVConfigForm(data *CVConfigFormData, profileOptions []ProfileOption, extractedTechs []ExtractedTechnology, width, height int) *huh.Form {
+// NewCVConfigForm creates the CV configuration wizard form.
+// singleTechSelect: when true, uses single-select for technologies (specialist mode),
+// when false, uses multi-select (generalist mode).
+func NewCVConfigForm(data *CVConfigFormData, profileOptions []ProfileOption, extractedTechs []ExtractedTechnology, width, height int, singleTechSelect bool) *huh.Form {
 	// Step 1: WHO - Profile and Audience
 	profileOpts := make([]huh.Option[string], 0, len(profileOptions)+1)
 	profileOpts = append(profileOpts, huh.NewOption("-- Select a profile --", ""))
@@ -102,13 +105,26 @@ func NewCVConfigForm(data *CVConfigFormData, profileOptions []ProfileOption, ext
 			techOptions = append(techOptions, huh.NewOption(tech.Name, tech.Name))
 		}
 
-		step2Fields = append(step2Fields,
-			huh.NewMultiSelect[string]().
+		// Use single-select for specialist mode, multi-select for generalist
+		var techField huh.Field
+		if singleTechSelect {
+			techField = huh.NewSelect[string]().
+				Key("technology").
+				Title("Select Technology to Highlight").
+				Description("Choose ONE technology to specialize in").
+				Options(techOptions...).
+				Value(&data.Technology)
+		} else {
+			techField = huh.NewMultiSelect[string]().
 				Key("technologies").
 				Title("Select Technologies to Highlight").
 				Description("Choose technologies to emphasize (leave empty for all)").
 				Options(techOptions...).
-				Value(&data.Technologies),
+				Value(&data.Technologies)
+		}
+
+		step2Fields = append(step2Fields,
+			techField,
 
 			huh.NewSelect[string]().
 				Key("focus_area").
