@@ -319,11 +319,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 		Context("from CareerEvent to EnhancedBullet", func() {
 			It("should propagate primary category from event", func() {
 				events := []*career.CareerEvent{
-					{
-						ID:         "evt-1",
-						Text:       "Led team migration to Kubernetes",
-						Categories: []string{"leadership", "technical"},
-					},
+					fixtures.EventWithCategories("evt-1", "Led team migration to Kubernetes", []string{"leadership", "technical"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "principal", "")
@@ -335,11 +331,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 			It("should propagate technical category from event", func() {
 				events := []*career.CareerEvent{
-					{
-						ID:         "evt-2",
-						Text:       "Built real-time data pipeline",
-						Categories: []string{"technical"},
-					},
+					fixtures.EventWithCategories("evt-2", "Built real-time data pipeline", []string{"technical"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "senior_ic", "")
@@ -352,13 +344,8 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 		Context("from Fact to EnhancedBullet", func() {
 			It("should propagate primary competency category from fact", func() {
 				facts := []*career.Fact{
-					{
-						ID:                   "fact-1",
-						Text:                 "Mentored 4 junior engineers",
-						CompetencyCategories: []string{"mentoring", "leadership"},
-						AudienceRelevance:    []string{"hiring_manager"},
-						SourceEventID:        "evt-1",
-					},
+					fixtures.FactWithCategories("fact-1", "Mentored 4 junior engineers", "evt-1",
+						[]string{"mentoring", "leadership"}, []string{"hiring_manager"}),
 				}
 
 				bullets, err := generator.GenerateBullets(ctx, nil, facts, nil, "em", "hiring_manager")
@@ -457,9 +444,9 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 		Context("end-to-end role differentiation", func() {
 			It("should produce different rankings for different roles", func() {
 				events := []*career.CareerEvent{
-					{ID: "1", Text: "Built data pipeline", Categories: []string{"technical"}},
-					{ID: "2", Text: "Led architecture redesign", Categories: []string{"leadership"}},
-					{ID: "3", Text: "Mentored junior engineers", Categories: []string{"mentoring"}},
+					fixtures.EventWithCategories("1", "Built data pipeline", []string{"technical"}),
+					fixtures.EventWithCategories("2", "Led architecture redesign", []string{"leadership"}),
+					fixtures.EventWithCategories("3", "Mentored junior engineers", []string{"mentoring"}),
 				}
 
 				seniorBullets, err := generator.GenerateBullets(ctx, events, nil, nil, "senior_ic", "")
