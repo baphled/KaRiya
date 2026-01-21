@@ -368,7 +368,10 @@ func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVVie
 }
 
 // exportStandard exports using the standard CV structure.
-func (es *ExportService) exportStandard(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, format ExportFormat) (string, error) {
+func (es *ExportService) exportStandard(
+	ctx context.Context, cv *career.CVView, sections []*career.CVSection,
+	bullets map[string][]*career.CVBullet, format ExportFormat,
+) (string, error) {
 	switch format {
 	case ExportFormatText:
 		return es.ExportToText(ctx, cv, sections, bullets)
@@ -665,7 +668,10 @@ func (es *ExportService) getTopBulletsByConfidence(bullets map[string][]*career.
 }
 
 // exportNarrativeWithProfile exports using the narrative CV structure with optional profile config.
-func (es *ExportService) exportNarrativeWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
+func (es *ExportService) exportNarrativeWithProfile(
+	ctx context.Context, cv *career.CVView, sections []*career.CVSection,
+	format ExportFormat, profileCfg *config.ProfileConfig,
+) (string, error) {
 	switch format {
 	case ExportFormatText:
 		return es.exportNarrativeTextWithProfile(ctx, cv, sections, profileCfg)

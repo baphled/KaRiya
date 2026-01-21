@@ -296,8 +296,11 @@ func settingsFromConfig(cfg *config.Config) map[ConfigurationDomain][]*Configura
 				Value:        cfg.Profile.DefaultRole,
 				DefaultValue: "senior_ic",
 				Type:         "select",
-				Options:      []string{"junior_ic", "mid_ic", "senior_ic", "staff_ic", "principal_ic", "manager", "senior_manager", "director"},
-				Description:  "Default role for CV generation",
+				Options: []string{
+					"junior_ic", "mid_ic", "senior_ic", "staff_ic",
+					"principal_ic", "manager", "senior_manager", "director",
+				},
+				Description: "Default role for CV generation",
 			},
 			{
 				Key:          "default_audience",

@@ -83,10 +83,12 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 			selectedProfile: selectedProfile,
 			selectedIndex:   0,
 		},
-		active:        true,
-		logger:        nil,
-		useScreens:    false, // Disabled by default to maintain backward compatibility
-		useWizardFlow: false, // Disabled by default for test compatibility. PRODUCTION: Enable via EnableWizardFlow() (see app.go line 616).
+		active:     true,
+		logger:     nil,
+		useScreens: false, // Disabled by default to maintain backward compatibility
+		// Disabled by default for test compatibility.
+		// PRODUCTION: Enable via EnableWizardFlow() (see app.go line 616).
+		useWizardFlow: false,
 		// IMPORTANT: The wizard flow is the RECOMMENDED approach and is enabled by default in production.
 		// Legacy 17-state flow is DEPRECATED and maintained only for backward compatibility with existing tests.
 		// See deprecation comments at lines 669-2264 (update methods) and 1672-2475 (view methods).
@@ -2006,7 +2008,9 @@ func (i *GenerateCVIntent) viewSelectTechnologyFocus() string {
 
 		// Check if option is available
 		disabled := ""
-		if !i.state.technologiesAvailable && (option.focus == cv.TechnologyFocusGeneralist || option.focus == cv.TechnologyFocusSpecialist) {
+		isAdvancedFocus := option.focus == cv.TechnologyFocusGeneralist ||
+			option.focus == cv.TechnologyFocusSpecialist
+		if !i.state.technologiesAvailable && isAdvancedFocus {
 			disabled = " (unavailable - requires 3+ technologies)"
 		}
 

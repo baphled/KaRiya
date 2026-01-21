@@ -104,7 +104,9 @@ type SkillCategory struct {
 }
 
 // GroupEventsByCompany organizes events into company-based structure
-func (svc *DefaultDataProcessingService) GroupEventsByCompany(ctx context.Context, events []*career.CareerEvent) (map[string]*CompanyGroup, error) {
+func (svc *DefaultDataProcessingService) GroupEventsByCompany(
+	ctx context.Context, events []*career.CareerEvent,
+) (map[string]*CompanyGroup, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -162,7 +164,9 @@ func (svc *DefaultDataProcessingService) GroupEventsByCompany(ctx context.Contex
 }
 
 // ExtractAchievements identifies key achievements from events and facts
-func (svc *DefaultDataProcessingService) ExtractAchievements(ctx context.Context, event *career.CareerEvent, facts []*career.Fact) ([]*Achievement, error) {
+func (svc *DefaultDataProcessingService) ExtractAchievements(
+	ctx context.Context, event *career.CareerEvent, facts []*career.Fact,
+) ([]*Achievement, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -206,7 +210,9 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(ctx context.Context
 }
 
 // ExtractSkills identifies skills from events and facts
-func (svc *DefaultDataProcessingService) ExtractSkills(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact) (map[string]*SkillCategory, error) {
+func (svc *DefaultDataProcessingService) ExtractSkills(
+	ctx context.Context, events []*career.CareerEvent, facts []*career.Fact,
+) (map[string]*SkillCategory, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -341,7 +347,9 @@ func (svc *DefaultDataProcessingService) CalculateMetrics(ctx context.Context, t
 }
 
 // ExtractProjectsFromEvents identifies unique projects within events
-func (svc *DefaultDataProcessingService) ExtractProjectsFromEvents(ctx context.Context, events []*career.CareerEvent) ([]*ProjectGroup, error) {
+func (svc *DefaultDataProcessingService) ExtractProjectsFromEvents(
+	ctx context.Context, events []*career.CareerEvent,
+) ([]*ProjectGroup, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}

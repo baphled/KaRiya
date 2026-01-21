@@ -1524,7 +1524,14 @@ func (i *ManageSkillsIntent) applySortSelection() tea.Cmd {
 
 // hasActiveFilters returns true if any filters are active (private implementation)
 func (i *ManageSkillsIntent) hasActiveFilters() bool {
-	return i.filters != nil && (i.filters.Category != "" || i.filters.Level != "" || i.filters.MinEvents > 0 || i.filters.SortBy != "" || i.filters.SearchText != "")
+	if i.filters == nil {
+		return false
+	}
+	return i.filters.Category != "" ||
+		i.filters.Level != "" ||
+		i.filters.MinEvents > 0 ||
+		i.filters.SortBy != "" ||
+		i.filters.SearchText != ""
 }
 
 // HasActiveFilters returns true if any non-default filters are active.

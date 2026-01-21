@@ -39,7 +39,10 @@ func (ts *TraceabilityService) GetBulletSources(
 		return nil, nil, fmt.Errorf("bullet cannot be nil")
 	}
 
-	ts.logger.Info("Getting sources for bullet %s with %d events and %d facts", bulletID, len(bullet.SourceEventIDs), len(bullet.SourceFactIDs))
+	ts.logger.Info(
+		"Getting sources for bullet %s with %d events and %d facts",
+		bulletID, len(bullet.SourceEventIDs), len(bullet.SourceFactIDs),
+	)
 
 	sourceEvents := make([]*career.CareerEvent, 0, len(bullet.SourceEventIDs))
 	for _, eventID := range bullet.SourceEventIDs {
@@ -199,5 +202,8 @@ func (vr *ValidationReport) SummaryString() string {
 	if vr.IsValid() {
 		return fmt.Sprintf("All %d bullets have valid sources", vr.ValidBullets)
 	}
-	return fmt.Sprintf("Validation failed: %d valid, %d invalid out of %d total bullets", vr.ValidBullets, vr.InvalidBullets, vr.TotalBullets)
+	return fmt.Sprintf(
+		"Validation failed: %d valid, %d invalid out of %d total bullets",
+		vr.ValidBullets, vr.InvalidBullets, vr.TotalBullets,
+	)
 }

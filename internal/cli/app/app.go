@@ -417,7 +417,10 @@ func (m *Model) renderHelpScreen() string {
 
 	// Footer
 	lines = append(lines, borderStyle.Render("  ════════════════════════════════════════════════════════"))
-	lines = append(lines, descStyle.Render("  Press ")+keyStyle.Render("?")+" "+descStyle.Render("or")+" "+keyStyle.Render("Esc")+" "+descStyle.Render("to close this help"))
+	lines = append(lines,
+		descStyle.Render("  Press ")+keyStyle.Render("?")+
+			" "+descStyle.Render("or")+" "+keyStyle.Render("Esc")+
+			" "+descStyle.Render("to close this help"))
 	lines = append(lines, "")
 
 	helpContent := lipgloss.JoinVertical(lipgloss.Left, lines...)
@@ -629,7 +632,9 @@ func (m *Model) renderResponsiveTable() string {
 	// Add separator
 	separator := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("240")).
-		Render(lipgloss.NewStyle().Width(actionWidth + descWidth + 2).Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"))
+		Render(lipgloss.NewStyle().
+			Width(actionWidth + descWidth + 2).
+			Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"))
 	lines = append(lines, separator)
 
 	// Create menu rows as simple text

@@ -22,7 +22,10 @@ func NewCLIEventService(service *careerservice.Service) *CLIEventService {
 }
 
 // CaptureEvent captures a new career event using the existing service
-func (c *CLIEventService) CaptureEvent(ctx context.Context, text string, date time.Time, mode careerservice.EventCaptureMode, opts ...Option) error {
+func (c *CLIEventService) CaptureEvent(
+	ctx context.Context, text string, date time.Time,
+	mode careerservice.EventCaptureMode, opts ...Option,
+) error {
 	// Apply default and optional configurations
 	config := defaultConfig()
 	for _, opt := range opts {
