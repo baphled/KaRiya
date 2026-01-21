@@ -12,6 +12,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// Role scoring constants for calculateRoleScore
+const (
+	roleScoreBase                    = 0.50 // Base score for all bullets
+	roleScorePrimaryCategoryBoost    = 0.30 // Boost for primary category match
+	roleScoreSecondaryCategoryBoost  = 0.15 // Boost for secondary category match
+	roleScoreAchievementBonus        = 0.10 // Bonus for achievement-based bullets
+	roleScoreFactBonus               = 0.05 // Bonus for fact-based bullets
+	roleScoreHighConfidenceBonus     = 0.05 // Bonus for high confidence bullets
+	roleScoreHighConfidenceThreshold = 0.80 // Threshold for high confidence
+)
+
 // EnhancedBulletGenerator generates professionally enhanced, ranked CV bullets
 type EnhancedBulletGenerator interface {
 	// GenerateBullets generates enhanced bullets from events and facts
@@ -469,24 +480,24 @@ func (ebg *DefaultEnhancedBulletGenerator) calculateFinalScore(bullet *EnhancedB
 
 // calculateRoleScore calculates role relevance score based on category alignment
 func (ebg *DefaultEnhancedBulletGenerator) calculateRoleScore(bullet *EnhancedBullet, role string) float64 {
-	score := 0.5 // Base score
+	score := roleScoreBase
 
 	// Get role filter for category matching
 	filter := ebg.getRoleFilter(role)
 
-	// Primary category match: strong boost (+0.30)
+	// Primary category match: strong boost
 	for _, primary := range filter.PrimaryCategories {
 		if bullet.Category == primary {
-			score += 0.30
+			score += roleScorePrimaryCategoryBoost
 			break
 		}
 	}
 
-	// Secondary category match: medium boost (+0.15) - only if no primary match
-	if score == 0.5 {
+	// Secondary category match: medium boost - only if no primary match
+	if score == roleScoreBase {
 		for _, secondary := range filter.SecondaryCategories {
 			if bullet.Category == secondary {
-				score += 0.15
+				score += roleScoreSecondaryCategoryBoost
 				break
 			}
 		}
@@ -494,14 +505,14 @@ func (ebg *DefaultEnhancedBulletGenerator) calculateRoleScore(bullet *EnhancedBu
 
 	// Bonus for achievement-based bullets
 	if bullet.InclusionReason == "achievement_extraction" {
-		score += 0.1
+		score += roleScoreAchievementBonus
 	} else if bullet.InclusionReason == "fact_extraction" {
-		score += 0.05
+		score += roleScoreFactBonus
 	}
 
 	// Bonus for high confidence
-	if bullet.Confidence > 0.8 {
-		score += 0.05
+	if bullet.Confidence > roleScoreHighConfidenceThreshold {
+		score += roleScoreHighConfidenceBonus
 	}
 
 	return math.Min(score, 1.0)

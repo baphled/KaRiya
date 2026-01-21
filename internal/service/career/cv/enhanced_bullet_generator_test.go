@@ -434,8 +434,8 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 				}
 
 				score := defaultGen.calculateRoleScore(bullet, "senior_ic")
-				// Base (0.5) + primary boost (0.30) = 0.80 minimum
-				Expect(score).To(BeNumerically(">=", 0.80))
+				expectedMin := roleScoreBase + roleScorePrimaryCategoryBoost
+				Expect(score).To(BeNumerically(">=", expectedMin))
 			})
 
 			It("should give secondary category bullets a medium boost", func() {
@@ -446,10 +446,11 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 				}
 
 				score := defaultGen.calculateRoleScore(bullet, "senior_ic")
-				// Base (0.5) + secondary boost (0.15) = 0.65 minimum
-				Expect(score).To(BeNumerically(">=", 0.65))
+				expectedMin := roleScoreBase + roleScoreSecondaryCategoryBoost
+				expectedMax := roleScoreBase + roleScorePrimaryCategoryBoost
+				Expect(score).To(BeNumerically(">=", expectedMin))
 				// But less than primary boost
-				Expect(score).To(BeNumerically("<", 0.80))
+				Expect(score).To(BeNumerically("<", expectedMax))
 			})
 		})
 
