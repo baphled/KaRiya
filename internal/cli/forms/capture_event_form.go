@@ -3,7 +3,7 @@ package forms
 import (
 	"sort"
 
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/charmbracelet/huh"
 )
 
@@ -60,10 +60,11 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 		)
 	} else {
 		// Manual capture: all fields
-		// Prepare options for tags and categories from domain
-		tagList := make([]string, 0, len(career.AllowedTags))
-		for tag := range career.AllowedTags {
-			tagList = append(tagList, tag)
+		// Prepare options for tags and categories from constants
+		allTags := constants.AllEventTags()
+		tagList := make([]string, 0, len(allTags))
+		for _, tag := range allTags {
+			tagList = append(tagList, string(tag))
 		}
 		sort.Strings(tagList)
 
@@ -72,9 +73,10 @@ func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, hei
 			tagOptions = append(tagOptions, huh.NewOption(tag, tag))
 		}
 
-		catList := make([]string, 0, len(career.AllowedCategories))
-		for cat := range career.AllowedCategories {
-			catList = append(catList, cat)
+		allCats := constants.AllCompetencyCategories()
+		catList := make([]string, 0, len(allCats))
+		for _, cat := range allCats {
+			catList = append(catList, string(cat))
 		}
 		sort.Strings(catList)
 
@@ -186,10 +188,11 @@ func NewCaptureEventFormForModal(data *CaptureEventFormData, strategy string, wi
 		)
 	} else {
 		// Manual capture: all fields
-		// Prepare options for tags and categories from domain
-		tagList := make([]string, 0, len(career.AllowedTags))
-		for tag := range career.AllowedTags {
-			tagList = append(tagList, tag)
+		// Prepare options for tags and categories from constants
+		allTags := constants.AllEventTags()
+		tagList := make([]string, 0, len(allTags))
+		for _, tag := range allTags {
+			tagList = append(tagList, string(tag))
 		}
 		sort.Strings(tagList)
 
@@ -198,9 +201,10 @@ func NewCaptureEventFormForModal(data *CaptureEventFormData, strategy string, wi
 			tagOptions = append(tagOptions, huh.NewOption(tag, tag))
 		}
 
-		catList := make([]string, 0, len(career.AllowedCategories))
-		for cat := range career.AllowedCategories {
-			catList = append(catList, cat)
+		allCats := constants.AllCompetencyCategories()
+		catList := make([]string, 0, len(allCats))
+		for _, cat := range allCats {
+			catList = append(catList, string(cat))
 		}
 		sort.Strings(catList)
 

@@ -439,4 +439,193 @@ display:
 			Expect(cfg.Display.Theme).To(Equal("light"))
 		})
 	})
+
+	Describe("ScoringConfig", func() {
+		Describe("DefaultConfig", func() {
+			It("should include default scoring config with valid weights", func() {
+				cfg := config.DefaultConfig()
+
+				Expect(cfg.Scoring).NotTo(BeNil())
+
+				// Weights should sum to 1.0
+				weights := cfg.Scoring.Weights
+				sum := weights.RoleScore + weights.AudienceScore + weights.MetricScore +
+					weights.ImpactScore + weights.Confidence
+				Expect(sum).To(BeNumerically("~", 1.0, 0.001))
+			})
+
+			It("should have default weight values", func() {
+				cfg := config.DefaultConfig()
+
+				Expect(cfg.Scoring.Weights.RoleScore).To(Equal(0.25))
+				Expect(cfg.Scoring.Weights.AudienceScore).To(Equal(0.20))
+				Expect(cfg.Scoring.Weights.MetricScore).To(Equal(0.20))
+				Expect(cfg.Scoring.Weights.ImpactScore).To(Equal(0.20))
+				Expect(cfg.Scoring.Weights.Confidence).To(Equal(0.15))
+			})
+
+			It("should have default confidence thresholds", func() {
+				cfg := config.DefaultConfig()
+
+				Expect(cfg.Scoring.Thresholds.FactDefaultConfidence).To(Equal(0.85))
+				Expect(cfg.Scoring.Thresholds.EventDefaultConfidence).To(Equal(0.80))
+				Expect(cfg.Scoring.Thresholds.HighConfidence).To(Equal(0.80))
+				Expect(cfg.Scoring.Thresholds.HighImpactConfidence).To(Equal(0.85))
+			})
+
+			It("should have default role settings", func() {
+				cfg := config.DefaultConfig()
+
+				Expect(cfg.Scoring.RoleSettings).To(HaveKey("principal"))
+				Expect(cfg.Scoring.RoleSettings).To(HaveKey("staff"))
+				Expect(cfg.Scoring.RoleSettings).To(HaveKey("em"))
+				Expect(cfg.Scoring.RoleSettings).To(HaveKey("senior_ic"))
+
+				principal := cfg.Scoring.RoleSettings["principal"]
+				Expect(principal.MinConfidence).To(Equal(0.80))
+				Expect(principal.MaxBulletsPerCompany).To(Equal(4))
+
+				staff := cfg.Scoring.RoleSettings["staff"]
+				Expect(staff.MinConfidence).To(Equal(0.75))
+				Expect(staff.MaxBulletsPerCompany).To(Equal(5))
+			})
+		})
+
+		Describe("Loading config with scoring section", func() {
+			It("should load custom scoring weights", func() {
+				yamlContent := `
+scoring:
+  weights:
+    role_score: 0.30
+    audience_score: 0.25
+    metric_score: 0.20
+    impact_score: 0.15
+    confidence: 0.10
+`
+				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				Expect(err).NotTo(HaveOccurred())
+
+				cfg, err := config.LoadConfigFromPath(configPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cfg.Scoring.Weights.RoleScore).To(Equal(0.30))
+				Expect(cfg.Scoring.Weights.AudienceScore).To(Equal(0.25))
+				Expect(cfg.Scoring.Weights.MetricScore).To(Equal(0.20))
+				Expect(cfg.Scoring.Weights.ImpactScore).To(Equal(0.15))
+				Expect(cfg.Scoring.Weights.Confidence).To(Equal(0.10))
+			})
+
+			It("should load custom thresholds", func() {
+				yamlContent := `
+scoring:
+  thresholds:
+    fact_default_confidence: 0.90
+    event_default_confidence: 0.85
+    high_confidence: 0.85
+    high_impact_confidence: 0.90
+`
+				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				Expect(err).NotTo(HaveOccurred())
+
+				cfg, err := config.LoadConfigFromPath(configPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cfg.Scoring.Thresholds.FactDefaultConfidence).To(Equal(0.90))
+				Expect(cfg.Scoring.Thresholds.EventDefaultConfidence).To(Equal(0.85))
+				Expect(cfg.Scoring.Thresholds.HighConfidence).To(Equal(0.85))
+				Expect(cfg.Scoring.Thresholds.HighImpactConfidence).To(Equal(0.90))
+			})
+
+			It("should load custom role settings", func() {
+				yamlContent := `
+scoring:
+  role_settings:
+    principal:
+      min_confidence: 0.85
+      max_bullets_per_company: 3
+    staff:
+      min_confidence: 0.80
+      max_bullets_per_company: 4
+`
+				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				Expect(err).NotTo(HaveOccurred())
+
+				cfg, err := config.LoadConfigFromPath(configPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cfg.Scoring.RoleSettings["principal"].MinConfidence).To(Equal(0.85))
+				Expect(cfg.Scoring.RoleSettings["principal"].MaxBulletsPerCompany).To(Equal(3))
+				Expect(cfg.Scoring.RoleSettings["staff"].MinConfidence).To(Equal(0.80))
+				Expect(cfg.Scoring.RoleSettings["staff"].MaxBulletsPerCompany).To(Equal(4))
+			})
+		})
+
+		Describe("Auto-migration of missing scoring section", func() {
+			It("should apply default scoring when section is missing", func() {
+				yamlContent := `
+profile:
+  name: Test User
+`
+				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				Expect(err).NotTo(HaveOccurred())
+
+				cfg, err := config.LoadConfigFromPath(configPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Defaults should be applied
+				Expect(cfg.Scoring.Weights.RoleScore).To(Equal(0.25))
+				Expect(cfg.Scoring.Thresholds.FactDefaultConfidence).To(Equal(0.85))
+				Expect(cfg.Scoring.RoleSettings).To(HaveLen(4))
+			})
+
+			It("should preserve existing config values when adding scoring defaults", func() {
+				yamlContent := `
+profile:
+  name: Existing User
+  email: existing@example.com
+cv:
+  max_bullets: 100
+`
+				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				Expect(err).NotTo(HaveOccurred())
+
+				cfg, err := config.LoadConfigFromPath(configPath)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Existing values preserved
+				Expect(cfg.Profile.Name).To(Equal("Existing User"))
+				Expect(cfg.Profile.Email).To(Equal("existing@example.com"))
+				Expect(cfg.CV.MaxBullets).To(Equal(100))
+
+				// Scoring defaults applied
+				Expect(cfg.Scoring.Weights.RoleScore).To(Equal(0.25))
+			})
+		})
+
+		Describe("ValidateWeights", func() {
+			It("should return nil for valid weights summing to 1.0", func() {
+				cfg := config.DefaultConfig()
+				err := cfg.Scoring.ValidateWeights()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should return error for weights not summing to 1.0", func() {
+				cfg := config.DefaultConfig()
+				cfg.Scoring.Weights.RoleScore = 0.50 // This breaks the sum
+
+				err := cfg.Scoring.ValidateWeights()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("must sum to 1.0"))
+			})
+
+			It("should accept weights within tolerance", func() {
+				cfg := config.DefaultConfig()
+				// Slightly adjust to test tolerance
+				cfg.Scoring.Weights.RoleScore = 0.2501
+
+				err := cfg.Scoring.ValidateWeights()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
 })

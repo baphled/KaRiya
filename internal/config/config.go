@@ -70,6 +70,7 @@ type Config struct {
 	CV      CVConfig      `yaml:"cv"`
 	Export  ExportConfig  `yaml:"export"`
 	Display DisplayConfig `yaml:"display"`
+	Scoring ScoringConfig `yaml:"scoring"`
 }
 
 // SystemConfig contains system-level configuration
@@ -126,6 +127,50 @@ type DisplayConfig struct {
 	Animations bool   `yaml:"animations"`
 }
 
+// ScoringConfig contains bullet scoring configuration for CV generation.
+// This allows customizing how bullets are scored and filtered.
+type ScoringConfig struct {
+	Weights      ScoringWeights            `yaml:"weights"`
+	Thresholds   ScoringThresholds         `yaml:"thresholds"`
+	RoleSettings map[string]RoleScoringCfg `yaml:"role_settings"`
+}
+
+// ScoringWeights defines the weights for each scoring component.
+// All weights must sum to 1.0.
+type ScoringWeights struct {
+	RoleScore     float64 `yaml:"role_score"`     // Weight for role relevance (default: 0.25)
+	AudienceScore float64 `yaml:"audience_score"` // Weight for audience fit (default: 0.20)
+	MetricScore   float64 `yaml:"metric_score"`   // Weight for metric presence (default: 0.20)
+	ImpactScore   float64 `yaml:"impact_score"`   // Weight for impact level (default: 0.20)
+	Confidence    float64 `yaml:"confidence"`     // Weight for confidence (default: 0.15)
+}
+
+// ScoringThresholds defines confidence and scoring thresholds.
+type ScoringThresholds struct {
+	FactDefaultConfidence  float64 `yaml:"fact_default_confidence"`  // Default confidence for facts (default: 0.85)
+	EventDefaultConfidence float64 `yaml:"event_default_confidence"` // Default confidence for events (default: 0.80)
+	HighConfidence         float64 `yaml:"high_confidence"`          // Threshold for "high" confidence (default: 0.80)
+	HighImpactConfidence   float64 `yaml:"high_impact_confidence"`   // Confidence for "high" impact (default: 0.85)
+}
+
+// RoleScoringCfg defines scoring settings for a specific role.
+type RoleScoringCfg struct {
+	MinConfidence        float64 `yaml:"min_confidence"`          // Minimum confidence for bullets
+	MaxBulletsPerCompany int     `yaml:"max_bullets_per_company"` // Max bullets per company/project
+}
+
+// ValidateWeights checks that scoring weights sum to 1.0 within tolerance.
+func (s *ScoringConfig) ValidateWeights() error {
+	sum := s.Weights.RoleScore + s.Weights.AudienceScore + s.Weights.MetricScore +
+		s.Weights.ImpactScore + s.Weights.Confidence
+
+	const tolerance = 0.01
+	if sum < 1.0-tolerance || sum > 1.0+tolerance {
+		return fmt.Errorf("scoring weights must sum to 1.0, got %.4f", sum)
+	}
+	return nil
+}
+
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	homeDir, err := os.UserHomeDir()
@@ -174,6 +219,27 @@ func DefaultConfig() *Config {
 		Display: DisplayConfig{
 			Theme:      "dark",
 			Animations: true,
+		},
+		Scoring: ScoringConfig{
+			Weights: ScoringWeights{
+				RoleScore:     0.25,
+				AudienceScore: 0.20,
+				MetricScore:   0.20,
+				ImpactScore:   0.20,
+				Confidence:    0.15,
+			},
+			Thresholds: ScoringThresholds{
+				FactDefaultConfidence:  0.85,
+				EventDefaultConfidence: 0.80,
+				HighConfidence:         0.80,
+				HighImpactConfidence:   0.85,
+			},
+			RoleSettings: map[string]RoleScoringCfg{
+				"principal": {MinConfidence: 0.80, MaxBulletsPerCompany: 4},
+				"staff":     {MinConfidence: 0.75, MaxBulletsPerCompany: 5},
+				"em":        {MinConfidence: 0.75, MaxBulletsPerCompany: 4},
+				"senior_ic": {MinConfidence: 0.75, MaxBulletsPerCompany: 5},
+			},
 		},
 	}
 }
@@ -330,6 +396,45 @@ func applyDefaults(cfg *Config) {
 		cfg.Display.Theme = defaults.Display.Theme
 	}
 	// Note: Animations is bool, can't distinguish false from unset
+
+	// Scoring defaults (auto-migration for configs without scoring section)
+	applyScoringDefaults(cfg, defaults)
+}
+
+// applyScoringDefaults applies default values for the scoring configuration.
+// This enables auto-migration when loading configs without a scoring section.
+//
+// To avoid the issue where a user-provided value of 0.0 gets overwritten,
+// we check if the entire scoring section appears uninitialized. If ALL weights
+// are zero AND ALL thresholds are zero AND role settings are empty, we assume
+// the section is missing and apply all defaults. This means users who want to
+// set some values to zero must set at least one non-zero value in the section.
+func applyScoringDefaults(cfg *Config, defaults *Config) {
+	// Check if the entire scoring section appears uninitialized:
+	// - All weights are zero
+	// - All thresholds are zero
+	// - No role settings defined
+	allWeightsZero := cfg.Scoring.Weights.RoleScore == 0 &&
+		cfg.Scoring.Weights.AudienceScore == 0 &&
+		cfg.Scoring.Weights.MetricScore == 0 &&
+		cfg.Scoring.Weights.ImpactScore == 0 &&
+		cfg.Scoring.Weights.Confidence == 0
+
+	allThresholdsZero := cfg.Scoring.Thresholds.FactDefaultConfidence == 0 &&
+		cfg.Scoring.Thresholds.EventDefaultConfidence == 0 &&
+		cfg.Scoring.Thresholds.HighConfidence == 0 &&
+		cfg.Scoring.Thresholds.HighImpactConfidence == 0
+
+	noRoleSettings := len(cfg.Scoring.RoleSettings) == 0
+
+	// If the entire section is uninitialized, apply all defaults
+	if allWeightsZero && allThresholdsZero && noRoleSettings {
+		cfg.Scoring.Weights = defaults.Scoring.Weights
+		cfg.Scoring.Thresholds = defaults.Scoring.Thresholds
+		cfg.Scoring.RoleSettings = defaults.Scoring.RoleSettings
+	}
+	// Otherwise, the user has customized at least part of the scoring section,
+	// so we respect their configuration (including any explicit zeros).
 }
 
 // SaveConfig saves configuration to the default location.

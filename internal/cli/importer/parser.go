@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
 )
@@ -247,7 +248,7 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 			for _, tag := range rawTags {
 				tag = strings.TrimSpace(strings.ToLower(tag))
 				if tag != "" {
-					if !career.AllowedTags[tag] {
+					if !constants.IsValidEventTag(tag) {
 						parsedRow.ValidationErrors = append(parsedRow.ValidationErrors,
 							fmt.Sprintf("Invalid tag: %s (allowed: %v)", tag, getAllowedTagsList()))
 						parsedRow.IsValid = false
@@ -280,7 +281,7 @@ func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap
 			for _, cat := range rawCategories {
 				cat = strings.TrimSpace(strings.ToLower(cat))
 				if cat != "" {
-					if !career.AllowedCategories[cat] {
+					if !constants.IsValidCompetencyCategory(cat) {
 						parsedRow.ValidationErrors = append(parsedRow.ValidationErrors,
 							fmt.Sprintf("Invalid category: %s (allowed: %v)", cat, getAllowedCategoriesList()))
 						parsedRow.IsValid = false
@@ -422,18 +423,20 @@ func (p *CSVParser) isSameDuplicateKey(event1, event2 *career.CareerEvent) bool 
 
 // getAllowedTagsList returns a slice of allowed tags
 func getAllowedTagsList() []string {
-	var tags []string
-	for tag := range career.AllowedTags {
-		tags = append(tags, tag)
+	allTags := constants.AllEventTags()
+	tags := make([]string, 0, len(allTags))
+	for _, tag := range allTags {
+		tags = append(tags, string(tag))
 	}
 	return tags
 }
 
 // getAllowedCategoriesList returns a slice of allowed categories
 func getAllowedCategoriesList() []string {
-	var categories []string
-	for cat := range career.AllowedCategories {
-		categories = append(categories, cat)
+	allCats := constants.AllCompetencyCategories()
+	categories := make([]string, 0, len(allCats))
+	for _, cat := range allCats {
+		categories = append(categories, string(cat))
 	}
 	return categories
 }
