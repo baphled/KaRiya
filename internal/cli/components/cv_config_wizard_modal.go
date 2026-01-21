@@ -33,7 +33,13 @@ import (
 //	    // Use config to generate CV
 //	}
 type CVConfigWizardModal struct {
-	form           *huh.Form
+	form *huh.Form
+	// formData holds the form state that is directly bound to huh form fields via pointers.
+	// Changes made through keyboard navigation and other interactions update this field automatically.
+	// Use syncFromFormData() to sync formData to data before reading configuration values.
+	formData *forms.CVConfigFormData
+	// data is the canonical configuration struct used outside the form.
+	// It must be synced from formData via syncFromFormData() before reading.
 	data           *CVConfigData
 	currentStep    int
 	visible        bool
@@ -122,8 +128,8 @@ func (m *CVConfigWizardModal) buildForm() {
 		formTechs[i] = forms.ExtractedTechnology{Name: tech.Name}
 	}
 
-	// Convert CVConfigData to CVConfigFormData
-	formData := &forms.CVConfigFormData{
+	// Store formData as field so huh pointer bindings persist
+	m.formData = &forms.CVConfigFormData{
 		ProfileID:    m.data.ProfileID,
 		Audience:     m.data.Audience,
 		TechFocus:    m.data.TechFocus,
@@ -134,20 +140,7 @@ func (m *CVConfigWizardModal) buildForm() {
 		CVLength:     m.data.CVLength,
 	}
 
-	// Use forms package helper (applies theme automatically like QuickAddEventModal)
-	m.form = forms.NewCVConfigForm(formData, formProfileOpts, formTechs, modalWidth, 0)
-
-	// Sync back to component data (form modifies formData directly)
-	m.data = &CVConfigData{
-		ProfileID:    formData.ProfileID,
-		Audience:     formData.Audience,
-		TechFocus:    formData.TechFocus,
-		Technologies: formData.Technologies,
-		FocusArea:    formData.FocusArea,
-		SkillsFormat: formData.SkillsFormat,
-		SkillsLimit:  formData.SkillsLimit,
-		CVLength:     formData.CVLength,
-	}
+	m.form = forms.NewCVConfigForm(m.formData, formProfileOpts, formTechs, modalWidth, 0)
 }
 
 // Init initializes the wizard modal and its form.
@@ -359,7 +352,9 @@ func (m *CVConfigWizardModal) IsSkipped() bool {
 }
 
 // GetConfigData returns the collected configuration data.
+// It syncs from formData first to ensure we return the latest form state.
 func (m *CVConfigWizardModal) GetConfigData() *CVConfigData {
+	m.syncFromFormData()
 	return m.data
 }
 
@@ -404,41 +399,65 @@ func (m *CVConfigWizardModal) GetProfileOptions() []ProfileOption {
 
 // SetProfileID sets the profile ID.
 func (m *CVConfigWizardModal) SetProfileID(id string) {
+	if m.formData != nil {
+		m.formData.ProfileID = id
+	}
 	m.data.ProfileID = id
 }
 
 // SetAudience sets the target audience.
 func (m *CVConfigWizardModal) SetAudience(audience string) {
+	if m.formData != nil {
+		m.formData.Audience = audience
+	}
 	m.data.Audience = audience
 }
 
 // SetTechFocus sets the technology focus.
 func (m *CVConfigWizardModal) SetTechFocus(focus string) {
+	if m.formData != nil {
+		m.formData.TechFocus = focus
+	}
 	m.data.TechFocus = focus
 }
 
 // SetTechnologies sets the selected technologies.
 func (m *CVConfigWizardModal) SetTechnologies(techs []string) {
+	if m.formData != nil {
+		m.formData.Technologies = techs
+	}
 	m.data.Technologies = techs
 }
 
 // SetFocusArea sets the focus area.
 func (m *CVConfigWizardModal) SetFocusArea(area string) {
+	if m.formData != nil {
+		m.formData.FocusArea = area
+	}
 	m.data.FocusArea = area
 }
 
 // SetSkillsFormat sets the skills format.
 func (m *CVConfigWizardModal) SetSkillsFormat(format string) {
+	if m.formData != nil {
+		m.formData.SkillsFormat = format
+	}
 	m.data.SkillsFormat = format
 }
 
 // SetSkillsLimit sets the skills limit per category/total.
 func (m *CVConfigWizardModal) SetSkillsLimit(limit int) {
+	if m.formData != nil {
+		m.formData.SkillsLimit = limit
+	}
 	m.data.SkillsLimit = limit
 }
 
 // SetCVLength sets the CV length.
 func (m *CVConfigWizardModal) SetCVLength(length string) {
+	if m.formData != nil {
+		m.formData.CVLength = length
+	}
 	m.data.CVLength = length
 }
 
@@ -451,7 +470,9 @@ func (m *CVConfigWizardModal) Complete() {
 }
 
 // HasRequiredFields checks if all required fields are filled.
+// It syncs from formData first to ensure we check the latest form state.
 func (m *CVConfigWizardModal) HasRequiredFields() bool {
+	m.syncFromFormData()
 	return m.data.ProfileID != ""
 }
 
@@ -460,19 +481,51 @@ func (m *CVConfigWizardModal) GetDimensions() (width, height int) {
 	return m.width, m.height
 }
 
+// syncFromFormData copies values from formData to data.
+// This ensures m.data reflects the latest form state after keyboard navigation.
+// Call this before reading from m.data in any method.
+func (m *CVConfigWizardModal) syncFromFormData() {
+	if m.formData == nil {
+		return
+	}
+	m.data.ProfileID = m.formData.ProfileID
+	m.data.Audience = m.formData.Audience
+	m.data.TechFocus = m.formData.TechFocus
+	m.data.Technologies = m.formData.Technologies
+	m.data.FocusArea = m.formData.FocusArea
+	m.data.SkillsFormat = m.formData.SkillsFormat
+	m.data.SkillsLimit = m.formData.SkillsLimit
+	m.data.CVLength = m.formData.CVLength
+}
+
 // applyDefaults sets default values for any empty configuration fields.
 // This is called when the user skips the wizard.
 func (m *CVConfigWizardModal) applyDefaults() {
+	// Sync from formData first to get latest form state
+	m.syncFromFormData()
+
 	if m.data.Audience == "" {
 		m.data.Audience = "hiring_manager"
+		if m.formData != nil {
+			m.formData.Audience = "hiring_manager"
+		}
 	}
 	if m.data.TechFocus == "" {
 		m.data.TechFocus = "language_agnostic"
+		if m.formData != nil {
+			m.formData.TechFocus = "language_agnostic"
+		}
 	}
 	if m.data.SkillsFormat == "" {
 		m.data.SkillsFormat = "grouped"
+		if m.formData != nil {
+			m.formData.SkillsFormat = "grouped"
+		}
 	}
 	if m.data.CVLength == "" {
 		m.data.CVLength = "2_page"
+		if m.formData != nil {
+			m.formData.CVLength = "2_page"
+		}
 	}
 }
