@@ -7,9 +7,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/types"
 )
 
 // CVProfileSelectState represents the internal state constant for this screen
@@ -17,13 +17,13 @@ const CVProfileSelectState = "profile_select"
 
 // CVProfileSelectScreen allows users to select a CV profile.
 type CVProfileSelectScreen struct {
-	*base.BaseSelectScreen[*intents.CVProfile]
+	*base.BaseSelectScreen[*types.CVProfile]
 }
 
 // NewCVProfileSelectScreen creates a new CV profile selection screen.
-func NewCVProfileSelectScreen(profiles []*intents.CVProfile) *CVProfileSelectScreen {
+func NewCVProfileSelectScreen(profiles []*types.CVProfile) *CVProfileSelectScreen {
 	// Create item renderer for CV profiles
-	renderer := func(item *intents.CVProfile) string {
+	renderer := func(item *types.CVProfile) string {
 		// Build profile display
 		lines := []string{
 			item.Name,

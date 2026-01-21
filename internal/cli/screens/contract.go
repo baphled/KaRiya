@@ -25,6 +25,8 @@ import (
 // Related:
 // - tasks/tasks-42-tui-architecture-refactor.md
 // - docs/TUI_DEVELOPER_GUIDE.md
+//
+//nolint:interfacebloat // Screen interface provides complete screen lifecycle and rendering contract
 type Screen interface {
 	// Update handles a BubbleTea message and returns:
 	// - A BubbleTea command (for async operations, window updates, etc.)

@@ -498,7 +498,7 @@ func (r *EmptyRepository) List(ctx context.Context, filters careerrepo.ListFilte
 }
 
 func (r *EmptyRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
-	return nil, nil
+	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
 func (r *EmptyRepository) Create(ctx context.Context, event *career.CareerEvent) error {
@@ -538,7 +538,7 @@ func (r *CountingRepository) List(ctx context.Context, filters careerrepo.ListFi
 }
 
 func (r *CountingRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
-	return nil, nil
+	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
 func (r *CountingRepository) Create(ctx context.Context, event *career.CareerEvent) error {
@@ -568,7 +568,7 @@ func (r *EmptyFactRepository) List(ctx context.Context, filters careerrepo.FactL
 }
 
 func (r *EmptyFactRepository) GetByID(ctx context.Context, id string) (*career.Fact, error) {
-	return nil, nil
+	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
 func (r *EmptyFactRepository) Create(ctx context.Context, fact *career.Fact) error {
@@ -615,7 +615,7 @@ func (r *CountingFactRepository) List(ctx context.Context, filters careerrepo.Fa
 }
 
 func (r *CountingFactRepository) GetByID(ctx context.Context, id string) (*career.Fact, error) {
-	return nil, nil
+	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
 func (r *CountingFactRepository) Create(ctx context.Context, fact *career.Fact) error {

@@ -3,6 +3,7 @@ package career
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -135,7 +136,7 @@ func (r *SQLiteRepository) GetByID(ctx context.Context, id string) (*domain.Care
 		&event.UpdatedAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("event with ID %s not found: %w", id, ErrEventNotFound)
 	}
 	if err != nil {

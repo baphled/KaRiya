@@ -20,6 +20,8 @@ var (
 )
 
 // FactRepository defines the interface for fact persistence
+//
+//nolint:interfacebloat // Repository interfaces require CRUD + query methods
 type FactRepository interface {
 	// Create adds a new fact to the repository
 	Create(ctx context.Context, fact *career.Fact) error
