@@ -4,6 +4,7 @@ package e2e
 import (
 	"context"
 	"database/sql"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -18,6 +19,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	_ "modernc.org/sqlite"
 )
+
+// sharedEnv holds the shared test environment for BeforeSuite/AfterSuite pattern.
+// This avoids recreating the database for every test.
+var sharedEnv *TestEnv
+
+// sharedTmpDir holds the temp directory for the shared environment.
+var sharedTmpDir string
 
 // TestingT is an interface that matches both *testing.T and GinkgoT()
 // This allows the e2e package to work with both standard Go tests and Ginkgo.
@@ -151,6 +159,159 @@ func Setup(t TestingT) *TestEnv {
 	}
 }
 
+// SetupShared creates a shared E2E test environment for use with BeforeSuite.
+// Call this once in BeforeSuite, then use GetSharedEnv() in BeforeEach.
+// This avoids the overhead of creating a new database for every test.
+//
+// Usage in suite_test.go:
+//
+//	var _ = BeforeSuite(func() {
+//	    e2e.SetupShared()
+//	})
+//
+//	var _ = AfterSuite(func() {
+//	    e2e.CleanupShared()
+//	})
+func SetupShared() {
+	var err error
+	sharedTmpDir, err = os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		panic("failed to create temp dir: " + err.Error())
+	}
+
+	dbPath := filepath.Join(sharedTmpDir, "e2e_shared.db")
+
+	// Open database connection
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		panic("failed to open shared test db: " + err.Error())
+	}
+
+	// Run migrations once
+	if err := careerrepo.RunMigrations(db); err != nil {
+		_ = db.Close()
+		panic("failed to run migrations: " + err.Error())
+	}
+
+	// Create repositories
+	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(db)
+	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(db)
+	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(db)
+	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(db)
+
+	// Create service
+	svc := careerservice.NewService(eventRepo)
+	svc.SetBurstRepository(burstRepo)
+	svc.SetFactRepository(factRepo)
+	svc.SetSkillRepository(skillRepo)
+
+	// Create CLI service
+	cliService := service.NewCLIEventService(svc)
+
+	// Create application model
+	model := app.NewModel(cliService, svc)
+	model.SkipOnboarding()
+
+	sharedEnv = &TestEnv{
+		T:          nil, // Set per-test in GetSharedEnv
+		Model:      model,
+		DB:         db,
+		DBPath:     dbPath,
+		EventRepo:  eventRepo,
+		BurstRepo:  burstRepo,
+		FactRepo:   factRepo,
+		SkillRepo:  skillRepo,
+		Service:    svc,
+		CLIService: cliService,
+		Ctx:        context.Background(),
+		cleanup:    nil, // Managed by CleanupShared
+	}
+}
+
+// CleanupShared releases all shared test resources.
+// Call this in AfterSuite.
+func CleanupShared() {
+	if sharedEnv != nil && sharedEnv.DB != nil {
+		_ = sharedEnv.DB.Close()
+	}
+	if sharedTmpDir != "" {
+		_ = os.RemoveAll(sharedTmpDir)
+	}
+	sharedEnv = nil
+	sharedTmpDir = ""
+}
+
+// GetSharedEnv returns the shared test environment for use in BeforeEach.
+// It resets the database state and creates a fresh Model.
+// The TestingT is set for the current test.
+//
+// Usage in test file:
+//
+//	var env *e2e.TestEnv
+//	BeforeEach(func() {
+//	    env = e2e.GetSharedEnv(GinkgoT())
+//	})
+func GetSharedEnv(t TestingT) *TestEnv {
+	if sharedEnv == nil {
+		panic("shared env not initialized - call SetupShared() in BeforeSuite")
+	}
+
+	// Reset database state (truncate all tables)
+	sharedEnv.resetDatabase()
+
+	// Create fresh repositories pointing to same DB
+	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(sharedEnv.DB)
+	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(sharedEnv.DB)
+	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(sharedEnv.DB)
+	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(sharedEnv.DB)
+
+	// Create fresh service
+	svc := careerservice.NewService(eventRepo)
+	svc.SetBurstRepository(burstRepo)
+	svc.SetFactRepository(factRepo)
+	svc.SetSkillRepository(skillRepo)
+
+	// Create fresh CLI service
+	cliService := service.NewCLIEventService(svc)
+
+	// Create fresh application model
+	model := app.NewModel(cliService, svc)
+	model.SkipOnboarding()
+
+	// Update shared env with fresh instances
+	sharedEnv.T = t
+	sharedEnv.Model = model
+	sharedEnv.EventRepo = eventRepo
+	sharedEnv.BurstRepo = burstRepo
+	sharedEnv.FactRepo = factRepo
+	sharedEnv.SkillRepo = skillRepo
+	sharedEnv.Service = svc
+	sharedEnv.CLIService = cliService
+	sharedEnv.Ctx = context.Background()
+
+	return sharedEnv
+}
+
+// resetDatabase truncates all tables to reset state between tests.
+func (e *TestEnv) resetDatabase() {
+	if e.DB == nil {
+		return
+	}
+
+	// Truncate tables in order (respecting foreign key constraints)
+	tables := []string{
+		"event_skills",
+		"facts",
+		"bursts",
+		"skills",
+		"career_events",
+	}
+
+	for _, table := range tables {
+		_, _ = e.DB.Exec("DELETE FROM " + table)
+	}
+}
+
 // SetupWithOnboarding creates an E2E test environment with the onboarding wizard active.
 // Use this to test the onboarding workflow specifically.
 // This forces onboarding to appear regardless of the user's config file.
@@ -281,7 +442,10 @@ func SetupWithMemory(t TestingT) *TestEnv {
 
 // Cleanup releases all test resources.
 // Should be called with defer immediately after Setup.
+// For shared environments (from GetSharedEnv), this is a no-op since
+// cleanup is handled by CleanupShared() in AfterSuite.
 func (e *TestEnv) Cleanup() {
+	// Skip cleanup for shared environment (cleanup is nil)
 	if e.cleanup != nil {
 		e.cleanup()
 	}

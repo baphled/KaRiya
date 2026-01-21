@@ -29,7 +29,7 @@ var _ = Describe("E2E Generate CV Empty State (BUG-004)", func() {
 	Describe("when no career events exist", func() {
 		BeforeEach(func() {
 			// Setup with empty database (no events, no facts)
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			// Explicitly verify we have no events
 			Expect(env.GetEvents()).To(BeEmpty(), "Test setup should have no events")
 		})
@@ -106,7 +106,7 @@ var _ = Describe("E2E Generate CV Empty State (BUG-004)", func() {
 
 	Describe("when career events exist", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 
 			// Add a real career event
 			env.AddEvent(&career.CareerEvent{

@@ -10,7 +10,7 @@ var _ = Describe("E2E Generatecv Workflow", func() {
 
 	Describe("With Career Data", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3) // 5 events, 2 bursts, 3 facts
 		})
 
@@ -35,7 +35,7 @@ var _ = Describe("E2E Generatecv Workflow", func() {
 
 	Describe("Session Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {

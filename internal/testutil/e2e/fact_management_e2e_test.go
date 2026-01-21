@@ -14,7 +14,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Empty Fact List", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -43,7 +43,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Fact List with Data", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 0, 3) // 5 events, 0 bursts, 3 facts
 		})
 
@@ -81,7 +81,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Vim-style Navigation", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 0, 3)
 			env.SelectIntentByName("fact_management")
 		})
@@ -119,7 +119,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Session Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -140,7 +140,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Workflow Integration", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 0, 3)
 		})
 
@@ -173,7 +173,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Fact Detail View", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 0, 3)
 			env.SelectIntentByName("fact_management")
 		})
@@ -201,7 +201,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Fact Edit Workflow", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 0, 3) // 5 events, 0 bursts, 3 facts
 			env.SelectIntentByName("fact_management")
 			env.Confirm() // Go to detail view
@@ -247,7 +247,7 @@ var _ = Describe("E2E FactManagement Workflow", func() {
 
 	Describe("Edit Form Display and UX", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 0, 3) // 5 events, 0 bursts, 3 facts
 			env.SelectIntentByName("fact_management")
 			env.Confirm() // Go to detail view

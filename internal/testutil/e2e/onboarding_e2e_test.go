@@ -168,7 +168,7 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 	Describe("Onboarding with Existing E2E Setup", func() {
 		BeforeEach(func() {
 			// Use regular Setup (which skips onboarding)
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
