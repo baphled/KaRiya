@@ -32,6 +32,9 @@ linters:
     - nilerr            # Finds code that returns nil even if it checks err != nil
     - errorlint         # Find issues with error wrapping
 
+    # Forbidden patterns (prevent writing to real paths in tests)
+    - forbidigo         # Forbid specific function calls
+
     # Code quality
     - gocyclo           # Cyclomatic complexity
     - gocognit          # Cognitive complexity
@@ -466,6 +469,23 @@ linters-settings:
   testifylint:
     enable-all: true
 
+  # =============================================================================
+  # FORBIDDEN PATTERNS (Prevent common mistakes - BUG-007 protection)
+  # =============================================================================
+  forbidigo:
+    forbid:
+      # -------------------------------------------------------------------------
+      # Prevent hardcoded .kariya paths in any code
+      # -------------------------------------------------------------------------
+      - p: '\.kariya'
+        msg: |
+          HARDCODED PATH: Avoid hardcoding .kariya paths.
+
+          For production: Use config.GetConfigPath() or config.DefaultConfig().System.DataDir
+          For tests: Use t.TempDir() for isolation
+
+    analyze-types: false
+
 issues:
   # Don't skip any directories
   exclude-dirs: []
@@ -486,6 +506,12 @@ issues:
         - dupl        # Test code often has similar patterns
         - gocyclo     # Test complexity is often higher
         - gocognit    # Test complexity is often higher
+
+    # Allow .kariya paths in config.go - this is where the default path is legitimately defined
+    - path: internal/config/config\.go
+      linters:
+        - forbidigo
+      text: "HARDCODED PATH"
 
     # Exclude linters from generated files
     - path: ".*_generated\\.go"
