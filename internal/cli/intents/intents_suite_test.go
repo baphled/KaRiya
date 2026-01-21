@@ -1,4 +1,4 @@
-package intents_test
+package intents
 
 import (
 	"os"
@@ -13,7 +13,6 @@ import (
 var testConfigDir string
 
 var _ = BeforeSuite(func() {
-	// Create a temp directory for config isolation (BUG-007 prevention)
 	var err error
 	testConfigDir, err = os.MkdirTemp("", "intents_test_*")
 	Expect(err).NotTo(HaveOccurred())
