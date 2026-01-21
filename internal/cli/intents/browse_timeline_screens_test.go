@@ -415,8 +415,17 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 
 		// Helper function to process commands with limited recursion
+		// ONLY executes commands for non-rune keys (Enter, Tab, etc.) to avoid
+		// cursor blink tick delays (530ms per keystroke) which make tests slow
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
+
+			// Skip command execution for rune keys (typing) - they trigger cursor blink ticks
+			// Only execute commands for control keys (Enter, Tab, etc.)
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes {
+				return
+			}
+
 			// Execute up to 3 levels of commands (avoids infinite loops)
 			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
@@ -529,8 +538,15 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 
 		// Helper function to process commands with limited recursion
+		// ONLY executes commands for non-rune keys to avoid cursor blink tick delays
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
+
+			// Skip command execution for rune keys (typing) - they trigger cursor blink ticks
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes {
+				return
+			}
+
 			// Execute up to 3 levels of commands (avoids infinite loops)
 			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
@@ -643,8 +659,15 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 
 		// Helper function to process commands with limited recursion
+		// ONLY executes commands for non-rune keys to avoid cursor blink tick delays
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
+
+			// Skip command execution for rune keys (typing) - they trigger cursor blink ticks
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes {
+				return
+			}
+
 			// Execute up to 3 levels of commands (avoids infinite loops)
 			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
@@ -711,8 +734,15 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 
 		// Helper function to process commands with limited recursion
+		// ONLY executes commands for non-rune keys to avoid cursor blink tick delays
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
+
+			// Skip command execution for rune keys (typing) - they trigger cursor blink ticks
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes {
+				return
+			}
+
 			// Execute up to 3 levels of commands (avoids infinite loops)
 			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
@@ -782,8 +812,15 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 
 		// Helper function to process commands with limited recursion
+		// ONLY executes commands for non-rune keys to avoid cursor blink tick delays
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
+
+			// Skip command execution for rune keys (typing) - they trigger cursor blink ticks
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes {
+				return
+			}
+
 			// Execute up to 3 levels of commands (avoids infinite loops)
 			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
@@ -872,8 +909,15 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 
 		// Helper function to process commands with limited recursion
+		// ONLY executes commands for non-rune keys to avoid cursor blink tick delays
 		updateWithCmd := func(intent *BrowseTimelineIntent, msg tea.Msg) {
 			cmd := intent.Update(msg)
+
+			// Skip command execution for rune keys (typing) - they trigger cursor blink ticks
+			if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes {
+				return
+			}
+
 			// Execute up to 3 levels of commands (avoids infinite loops)
 			for i := 0; i < 3 && cmd != nil; i++ {
 				resultMsg := cmd()
@@ -1173,8 +1217,15 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 
 		It("should handle search, browse, and clear workflow", func() {
 			// Helper to process commands
+			// ONLY executes commands for non-rune keys to avoid cursor blink tick delays
 			updateWithCmd := func(msg tea.Msg) {
 				cmd := intent.Update(msg)
+
+				// Skip command execution for rune keys (typing) - they trigger cursor blink ticks
+				if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyRunes {
+					return
+				}
+
 				for i := 0; i < 3 && cmd != nil; i++ {
 					resultMsg := cmd()
 					if resultMsg == nil {

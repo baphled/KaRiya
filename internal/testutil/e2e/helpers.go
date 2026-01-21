@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -618,16 +619,39 @@ func (e *TestEnv) SubmitHuhForm() *TestEnv {
 // Most Bubble Tea commands (cursor blink, window resize) are ignored because they
 // cause infinite loops or stuck goroutines in tests. We only care about messages
 // that actually change application state.
+//
+// Commands that take longer than 10ms to execute (tick commands with delays) are skipped
+// to avoid slow tests from cursor blink animations (530ms each).
 func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 	if cmd == nil {
 		return
 	}
 
-	msg := cmd()
-	if msg == nil {
+	// Execute command with timeout to skip slow tick commands
+	// Cursor blink ticks take 530ms, normal commands are instant
+	type result struct {
+		msg tea.Msg
+	}
+	done := make(chan result, 1)
+	go func() {
+		done <- result{msg: cmd()}
+	}()
+
+	select {
+	case r := <-done:
+		if r.msg == nil {
+			return
+		}
+		e.processCmdResult(r.msg)
+	case <-time.After(10 * time.Millisecond):
+		// Command is a slow tick (cursor blink, etc.) - skip it
 		return
 	}
+}
 
+// processCmdResult processes a message returned from a command.
+// Only essential state transition messages are processed.
+func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	// Only process messages that are essential for state transitions
 	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
 	switch msg.(type) {
