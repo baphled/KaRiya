@@ -1207,25 +1207,44 @@ func (i *BurstManagementIntent) viewConfirm() string {
 	}
 
 	// Burst details
-	content.WriteString(primitives.NewText(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme()).Foreground(i.getPrimaryColor()).Render())
+	burstText := primitives.NewText(
+		fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme(),
+	).Foreground(i.getPrimaryColor()).Render()
+	content.WriteString(burstText)
 	content.WriteString("\n\n")
 
 	// Show different messages based on state
 	if i.state.showReextractPrompt {
 		// Facts already exist
-		content.WriteString(primitives.WarningText(fmt.Sprintf("This burst already has %d facts extracted.", i.state.existingFactsCount), i.Theme()).Bold().Render())
+		warnMsg := fmt.Sprintf(
+			"This burst already has %d facts extracted.", i.state.existingFactsCount,
+		)
+		content.WriteString(primitives.WarningText(warnMsg, i.Theme()).Bold().Render())
 		content.WriteString("\n\n")
-		content.WriteString(primitives.NewText("Do you want to extract more facts? New facts will be added to existing ones.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
+		infoText := primitives.NewText(
+			"Do you want to extract more facts? New facts will be added to existing ones.",
+			i.Theme(),
+		).Foreground(i.getPrimaryColor()).Render()
+		content.WriteString(infoText)
 		content.WriteString("\n")
 	} else if i.state.extractionComplete {
 		// Extraction completed successfully
-		content.WriteString(primitives.SuccessText(fmt.Sprintf("✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount), i.Theme()).Bold().Render())
+		successMsg := fmt.Sprintf(
+			"✓ Successfully extracted and saved %d facts!", i.state.extractedFactsCount,
+		)
+		content.WriteString(primitives.SuccessText(successMsg, i.Theme()).Bold().Render())
 		content.WriteString("\n\n")
-		content.WriteString(primitives.NewText("Burst has been confirmed.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
+		confirmText := primitives.NewText(
+			"Burst has been confirmed.", i.Theme(),
+		).Foreground(i.getPrimaryColor()).Render()
+		content.WriteString(confirmText)
 		content.WriteString("\n")
 	} else {
 		// About to start extraction
-		content.WriteString(primitives.NewText("No facts found for this burst. Starting fact extraction...", i.Theme()).Foreground(i.getPrimaryColor()).Render())
+		startText := primitives.NewText(
+			"No facts found for this burst. Starting fact extraction...", i.Theme(),
+		).Foreground(i.getPrimaryColor()).Render()
+		content.WriteString(startText)
 		content.WriteString("\n")
 	}
 
@@ -1249,12 +1268,21 @@ func (i *BurstManagementIntent) viewExtractingFacts() string {
 	content.WriteString("\n\n")
 
 	// Progress indicator
-	content.WriteString(primitives.NewText(fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme()).Foreground(i.getPrimaryColor()).Render())
+	burstNameText := primitives.NewText(
+		fmt.Sprintf("Burst: %s", i.state.selectedBurst.Name), i.Theme(),
+	).Foreground(i.getPrimaryColor()).Render()
+	content.WriteString(burstNameText)
 	content.WriteString("\n\n")
 
-	content.WriteString(primitives.NewText("⏳ Extracting and saving facts...", i.Theme()).Bold().Foreground(i.getInfoColor()).Render())
+	extractingText := primitives.NewText(
+		"⏳ Extracting and saving facts...", i.Theme(),
+	).Bold().Foreground(i.getInfoColor()).Render()
+	content.WriteString(extractingText)
 	content.WriteString("\n\n")
-	content.WriteString(primitives.NewText("Analyzing events and persisting facts to database.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
+	analyzingText := primitives.NewText(
+		"Analyzing events and persisting facts to database.", i.Theme(),
+	).Foreground(i.getPrimaryColor()).Render()
+	content.WriteString(analyzingText)
 	content.WriteString("\n\n")
 	content.WriteString(primitives.NewText("This may take a few moments.", i.Theme()).Foreground(i.getPrimaryColor()).Render())
 	content.WriteString("\n")

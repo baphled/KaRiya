@@ -30,7 +30,14 @@ type skillInfo struct {
 type SectionBuilder interface {
 	// BuildSections organizes bullets into CV sections
 	// skillsConfig: optional configuration for skills section formatting (Phase 11 - Task 40)
-	BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error)
+	BuildSections(
+		ctx context.Context,
+		bullets []*career.CVBullet,
+		events []*career.CareerEvent,
+		facts []*career.Fact,
+		targetRole string,
+		skillsConfig *SkillsFormatConfig,
+	) ([]*career.CVSection, error)
 }
 
 // DefaultSectionBuilder is the default implementation of SectionBuilder
@@ -93,7 +100,10 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 }
 
 // buildExperienceSection creates the experience section
-func (sb *DefaultSectionBuilder) buildExperienceSection(bullets []*career.CVBullet, events []*career.CareerEvent, order int, targetRole string) *career.CVSection {
+func (sb *DefaultSectionBuilder) buildExperienceSection(
+	bullets []*career.CVBullet, events []*career.CareerEvent,
+	order int, targetRole string,
+) *career.CVSection {
 	if len(bullets) == 0 {
 		sb.logger.Info("buildExperienceSection: no bullets provided")
 		return nil
@@ -142,7 +152,10 @@ func (sb *DefaultSectionBuilder) buildExperienceSection(bullets []*career.CVBull
 }
 
 // buildProjectsSection creates the projects section
-func (sb *DefaultSectionBuilder) buildProjectsSection(bullets []*career.CVBullet, events []*career.CareerEvent, order int, targetRole string) *career.CVSection {
+func (sb *DefaultSectionBuilder) buildProjectsSection(
+	bullets []*career.CVBullet, events []*career.CareerEvent,
+	order int, targetRole string,
+) *career.CVSection {
 	if len(bullets) == 0 {
 		return nil
 	}

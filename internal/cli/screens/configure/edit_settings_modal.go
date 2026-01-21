@@ -37,7 +37,11 @@ type EditSettingsModal struct {
 }
 
 // NewEditSettingsModal creates a new edit settings modal.
-func NewEditSettingsModal(domain configtypes.ConfigurationDomain, settings []*configtypes.ConfigurationSetting, width, height int) *EditSettingsModal {
+func NewEditSettingsModal(
+	domain configtypes.ConfigurationDomain,
+	settings []*configtypes.ConfigurationSetting,
+	width, height int,
+) *EditSettingsModal {
 	// Initialize form data from settings
 	formData := &SettingsFormData{
 		Values:          make(map[string]*string),

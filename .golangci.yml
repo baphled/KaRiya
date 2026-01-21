@@ -79,6 +79,10 @@ linters:
     - tparallel         # Detects inappropriate use of t.Parallel()
     - testifylint       # Checks testify usage
 
+    # Comment hygiene
+    - godox             # Catches TODO, FIXME, BUG, HACK comments (must be resolved before merge)
+    - godot             # Checks that comments end with a period (enforces complete sentences)
+
 linters-settings:
   # =============================================================================
   # ERROR HANDLING (Go idiom: never ignore errors)
@@ -505,6 +509,21 @@ linters-settings:
           For tests: Use t.TempDir() for isolation
 
     analyze-types: false
+
+  # =============================================================================
+  # COMMENT HYGIENE
+  # Enforces clean, professional comments without leftover markers
+  # =============================================================================
+  godox:
+    # Keywords to catch - these should NOT appear in committed code
+    # Action markers that indicate incomplete work:
+    keywords:
+      - TODO      # Must be resolved before merge
+      - FIXME     # Must be resolved before merge
+      - HACK      # Technical debt marker - resolve or document properly
+      - XXX       # Attention marker - resolve before merge
+      # NOTE: "BUG" is allowed when followed by issue number (e.g., BUG-004)
+      # NOTE: "Note:" is allowed for documentation purposes
 
 issues:
   # Don't skip any directories
