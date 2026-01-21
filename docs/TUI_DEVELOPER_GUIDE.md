@@ -86,7 +86,6 @@ internal/cli/
 ├── models/                # Screen models
 │   ├── form.go           # Event capture form
 │   ├── list.go           # Event list view
-│   ├── metadata_editor.go # Metadata editor
 │   └── [other screens]
 ├── styles/                # Visual styling
 │   └── styles.go         # Color and layout styles
