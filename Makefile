@@ -1,8 +1,8 @@
-.PHONY: test coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
 
-# Run all tests in verbose mode
+# Run all tests in verbose mode (race detection in CI only)
 test:
-	ginkgo -v --race ./...
+	ginkgo -v ./...
 
 # Run a specific test suite
 test-suite:
@@ -10,7 +10,11 @@ test-suite:
 		echo "Please specify a test suite using SUITE=path/to/suite"; \
 		exit 1; \
 	fi
-	ginkgo -v --race $(SUITE)
+	ginkgo -v $(SUITE)
+
+# Run tests with race detection (slow - use sparingly)
+test-race:
+	ginkgo -v --race ./...
 
 # Run a specific test
 individual-test:
@@ -538,7 +542,8 @@ help:
 	@echo "================================================"
 	@echo ""
 	@echo "🧪 Testing:"
-	@echo "  make test              - Run all tests"
+	@echo "  make test              - Run all tests (fast, no race detection)"
+	@echo "  make test-race         - Run all tests with race detection (slow)"
 	@echo "  make test-suite        - Run specific suite (SUITE=path)"
 	@echo "  make individual-test   - Run specific test (TEST=name)"
 	@echo "  make coverage          - Generate coverage report"

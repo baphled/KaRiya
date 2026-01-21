@@ -13,7 +13,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 	Describe("Empty Burst List Data State", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -27,7 +27,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 	Describe("Burst List with Persisted Data", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 0) // 5 events, 2 bursts, 0 facts
 		})
 
@@ -50,7 +50,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 	Describe("Session Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -83,7 +83,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 	Describe("Burst Edit Data Persistence", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 0)
 		})
 

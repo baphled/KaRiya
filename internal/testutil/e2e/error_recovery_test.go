@@ -12,7 +12,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 	Describe("Empty State Handling", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -53,7 +53,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 	Describe("Boundary Navigation", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(3, 0, 3)
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 	Describe("Rapid Key Presses", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 
@@ -220,7 +220,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 	Describe("State Consistency After Errors", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -261,7 +261,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 	Describe("Restart Recovery", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 		})
 
 		AfterEach(func() {
@@ -297,7 +297,7 @@ var _ = Describe("E2E Error Recovery", func() {
 
 	Describe("Multiple Cancel in Nested Views", func() {
 		BeforeEach(func() {
-			env = e2e.Setup(GinkgoT())
+			env = e2e.GetSharedEnv(GinkgoT())
 			env.PopulateTestData(5, 2, 3)
 		})
 

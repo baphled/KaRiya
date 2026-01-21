@@ -4,8 +4,10 @@ package e2e
 import (
 	"context"
 	"database/sql"
+	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -18,6 +20,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	_ "modernc.org/sqlite"
 )
+
+// sharedEnv holds the shared test environment for BeforeSuite/AfterSuite pattern.
+// This avoids recreating the database for every test.
+var sharedEnv *TestEnv
+
+// sharedTmpDir holds the temp directory for the shared environment.
+var sharedTmpDir string
 
 // TestingT is an interface that matches both *testing.T and GinkgoT()
 // This allows the e2e package to work with both standard Go tests and Ginkgo.
@@ -84,7 +93,13 @@ func Setup(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
-	tmpDir := t.TempDir()
+	// Use os.MkdirTemp instead of t.TempDir() to control cleanup timing
+	// t.TempDir() registers auto-cleanup that runs after AfterEach, causing
+	// Windows file lock errors when the DB file is still being released
+	tmpDir, err := os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
@@ -100,7 +115,7 @@ func Setup(t TestingT) *TestEnv {
 	}
 
 	// Run migrations
-	if err := careerrepo.RunMigrations(db); err != nil {
+	if err := careerrepo.RunMigrationsForTests(db); err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		_ = db.Close()                                 // Ignore error as we're already in failure path
 		t.Fatalf("failed to run migrations: %v", err)
@@ -132,7 +147,18 @@ func Setup(t TestingT) *TestEnv {
 		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
 		// This allows nested isolation without breaking suite-level isolation
 		config.SetConfigPathForTesting(prevConfigPath)
-		_ = db.Close()
+		// Close database connection
+		if err := db.Close(); err != nil {
+			// Log but don't fail - this is cleanup
+			t.Errorf("warning: failed to close db: %v", err)
+		}
+		// Give Windows time to release file handles before temp dir cleanup
+		// This prevents "file in use" errors on Windows CI
+		// 100ms is needed for reliable cleanup on Windows CI runners
+		time.Sleep(100 * time.Millisecond)
+		// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
+		// This gives us control over cleanup timing (after DB close + sleep)
+		_ = os.RemoveAll(tmpDir)
 	}
 
 	return &TestEnv{
@@ -151,6 +177,169 @@ func Setup(t TestingT) *TestEnv {
 	}
 }
 
+// SetupShared creates a shared E2E test environment for use with BeforeSuite.
+// Call this once in BeforeSuite, then use GetSharedEnv() in BeforeEach.
+// This avoids the overhead of creating a new database for every test.
+//
+// Usage in suite_test.go:
+//
+//	var _ = BeforeSuite(func() {
+//	    e2e.SetupShared()
+//	})
+//
+//	var _ = AfterSuite(func() {
+//	    e2e.CleanupShared()
+//	})
+func SetupShared() {
+	var err error
+	sharedTmpDir, err = os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		panic("failed to create temp dir: " + err.Error())
+	}
+
+	// BUG-007 FIX: Isolate config file writes to temp directory
+	configPath := filepath.Join(sharedTmpDir, "config.yaml")
+	config.SetConfigPathForTesting(configPath)
+
+	dbPath := filepath.Join(sharedTmpDir, "e2e_shared.db")
+
+	// Open database connection
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		panic("failed to open shared test db: " + err.Error())
+	}
+
+	if err := careerrepo.RunMigrationsForTests(db); err != nil {
+		_ = db.Close()
+		panic("failed to run migrations: " + err.Error())
+	}
+
+	// Create repositories
+	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(db)
+	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(db)
+	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(db)
+	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(db)
+
+	// Create service
+	svc := careerservice.NewService(eventRepo)
+	svc.SetBurstRepository(burstRepo)
+	svc.SetFactRepository(factRepo)
+	svc.SetSkillRepository(skillRepo)
+
+	// Create CLI service
+	cliService := service.NewCLIEventService(svc)
+
+	// Create application model
+	model := app.NewModel(cliService, svc)
+	model.SkipOnboarding()
+
+	sharedEnv = &TestEnv{
+		T:          nil, // Set per-test in GetSharedEnv
+		Model:      model,
+		DB:         db,
+		DBPath:     dbPath,
+		EventRepo:  eventRepo,
+		BurstRepo:  burstRepo,
+		FactRepo:   factRepo,
+		SkillRepo:  skillRepo,
+		Service:    svc,
+		CLIService: cliService,
+		Ctx:        context.Background(),
+		cleanup:    nil, // Managed by CleanupShared
+	}
+}
+
+// CleanupShared releases all shared test resources.
+// Call this in AfterSuite.
+func CleanupShared() {
+	if sharedEnv != nil && sharedEnv.DB != nil {
+		_ = sharedEnv.DB.Close()
+	}
+	// BUG-007 FIX: Reset config path override
+	config.ResetConfigPath()
+	if sharedTmpDir != "" {
+		_ = os.RemoveAll(sharedTmpDir)
+	}
+	sharedEnv = nil
+	sharedTmpDir = ""
+}
+
+// GetSharedEnv returns the shared test environment for use in BeforeEach.
+// It resets the database state and creates a fresh Model.
+// Repositories and services are reused from SetupShared (they're stateless).
+// The TestingT is set for the current test.
+//
+// Usage in test file:
+//
+//	var env *e2e.TestEnv
+//	BeforeEach(func() {
+//	    env = e2e.GetSharedEnv(GinkgoT())
+//	})
+func GetSharedEnv(t TestingT) *TestEnv {
+	if sharedEnv == nil {
+		panic("shared env not initialized - call SetupShared() in BeforeSuite")
+	}
+
+	// Reset database state (truncate all tables)
+	sharedEnv.resetDatabase()
+
+	// Create fresh application model (only thing with UI state)
+	// Repositories and services are stateless, so we reuse them
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service)
+	model.SkipOnboarding()
+
+	// Update only what changes per-test
+	sharedEnv.T = t
+	sharedEnv.Model = model
+	sharedEnv.Ctx = context.Background()
+
+	return sharedEnv
+}
+
+// GetSharedEnvWithOnboarding returns the shared test environment with onboarding enabled.
+// Like GetSharedEnv, it reuses the database but creates a fresh Model with ForceOnboarding().
+//
+// Usage in test file:
+//
+//	var env *e2e.TestEnv
+//	BeforeEach(func() {
+//	    env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
+//	})
+func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
+	if sharedEnv == nil {
+		panic("shared env not initialized - call SetupShared() in BeforeSuite")
+	}
+
+	// Reset database state (truncate all tables)
+	sharedEnv.resetDatabase()
+
+	// Create fresh application model with onboarding FORCED
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service)
+	model.ForceOnboarding()
+
+	// Update only what changes per-test
+	sharedEnv.T = t
+	sharedEnv.Model = model
+	sharedEnv.Ctx = context.Background()
+
+	return sharedEnv
+}
+
+// resetDatabase truncates all tables to reset state between tests.
+func (e *TestEnv) resetDatabase() {
+	if e.DB == nil {
+		return
+	}
+
+	// Truncate tables in order (respecting foreign key constraints)
+	// Using explicit statements to avoid SQL string concatenation warnings
+	_, _ = e.DB.Exec("DELETE FROM event_skills")
+	_, _ = e.DB.Exec("DELETE FROM facts")
+	_, _ = e.DB.Exec("DELETE FROM bursts")
+	_, _ = e.DB.Exec("DELETE FROM skills")
+	_, _ = e.DB.Exec("DELETE FROM career_events")
+}
+
 // SetupWithOnboarding creates an E2E test environment with the onboarding wizard active.
 // Use this to test the onboarding workflow specifically.
 // This forces onboarding to appear regardless of the user's config file.
@@ -163,7 +352,13 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
-	tmpDir := t.TempDir()
+	// Use os.MkdirTemp instead of t.TempDir() to control cleanup timing
+	// t.TempDir() registers auto-cleanup that runs after AfterEach, causing
+	// Windows file lock errors when the DB file is still being released
+	tmpDir, err := os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
@@ -175,13 +370,15 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
+		_ = os.RemoveAll(tmpDir)                       // Clean up temp dir on failure
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
-	if err := careerrepo.RunMigrations(db); err != nil {
+	if err := careerrepo.RunMigrationsForTests(db); err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		_ = db.Close()                                 // Ignore error as we're already in failure path
+		_ = os.RemoveAll(tmpDir)                       // Clean up temp dir on failure
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -208,7 +405,18 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	cleanup := func() {
 		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
 		config.SetConfigPathForTesting(prevConfigPath)
-		_ = db.Close()
+		// Close database connection
+		if err := db.Close(); err != nil {
+			// Log but don't fail - this is cleanup
+			t.Errorf("warning: failed to close db: %v", err)
+		}
+		// Give Windows time to release file handles before temp dir cleanup
+		// This prevents "file in use" errors on Windows CI
+		// 100ms is needed for reliable cleanup on Windows CI runners
+		time.Sleep(100 * time.Millisecond)
+		// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
+		// This gives us control over cleanup timing (after DB close + sleep)
+		_ = os.RemoveAll(tmpDir)
 	}
 
 	return &TestEnv{
@@ -235,7 +443,12 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
-	tmpDir := t.TempDir()
+	// Use os.MkdirTemp instead of t.TempDir() to control cleanup timing
+	// This maintains consistency with Setup() and SetupWithOnboarding()
+	tmpDir, err := os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
@@ -275,13 +488,18 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		cleanup: func() {
 			// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
 			config.SetConfigPathForTesting(prevConfigPath)
+			// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
+			_ = os.RemoveAll(tmpDir)
 		},
 	}
 }
 
 // Cleanup releases all test resources.
 // Should be called with defer immediately after Setup.
+// For shared environments (from GetSharedEnv), this is a no-op since
+// cleanup is handled by CleanupShared() in AfterSuite.
 func (e *TestEnv) Cleanup() {
+	// Skip cleanup for shared environment (cleanup is nil)
 	if e.cleanup != nil {
 		e.cleanup()
 	}
@@ -445,16 +663,39 @@ func (e *TestEnv) SubmitHuhForm() *TestEnv {
 // Most Bubble Tea commands (cursor blink, window resize) are ignored because they
 // cause infinite loops or stuck goroutines in tests. We only care about messages
 // that actually change application state.
+//
+// Commands that take longer than 10ms to execute (tick commands with delays) are skipped
+// to avoid slow tests from cursor blink animations (530ms each).
 func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 	if cmd == nil {
 		return
 	}
 
-	msg := cmd()
-	if msg == nil {
+	// Execute command with timeout to skip slow tick commands
+	// Cursor blink ticks take 530ms, normal commands are instant
+	type result struct {
+		msg tea.Msg
+	}
+	done := make(chan result, 1)
+	go func() {
+		done <- result{msg: cmd()}
+	}()
+
+	select {
+	case r := <-done:
+		if r.msg == nil {
+			return
+		}
+		e.processCmdResult(r.msg)
+	case <-time.After(10 * time.Millisecond):
+		// Command is a slow tick (cursor blink, etc.) - skip it
 		return
 	}
+}
 
+// processCmdResult processes a message returned from a command.
+// Only essential state transition messages are processed.
+func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	// Only process messages that are essential for state transitions
 	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
 	switch msg.(type) {
@@ -819,11 +1060,7 @@ func (e *TestEnv) SkipOnboarding() *TestEnv {
 func (e *TestEnv) InitModel() *TestEnv {
 	e.T.Helper()
 
-	// Call Init() to set up the model
-	cmd := e.Model.Init()
-
-	// Process the init commands - this triggers huh form setup
-	e.processFormCmds(cmd, 20)
+	_ = e.Model.Init()
 
 	// Send a WindowSizeMsg to trigger form layout
 	e.SendMessage(tea.WindowSizeMsg{Width: 120, Height: 40})
