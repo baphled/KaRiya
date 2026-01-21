@@ -249,7 +249,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			// Temporarily register the edit intent
-			_ = m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
+			//nolint:errcheck // RegisterIntent only errors on duplicate registration which cannot happen here
+			m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
 				intent, err := intents.NewCaptureEventIntent(captureCtx)
 				if err != nil {
 					m.logger.Error("Failed to create CaptureEvent intent for editing: %v", err)
@@ -698,9 +699,12 @@ func createDefaultCVProfiles() []*intents.CVProfile {
 }
 
 // registerAllIntents registers all 10 intents with the router
+// All RegisterIntent calls below use nolint:errcheck because RegisterIntent only returns
+// an error on duplicate registration, which cannot happen in this initialization code.
 func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service.CLIEventService, careerService *careerservice.Service, log *logger.Logger, ctx context.Context, cvGenService cv.CVGenerationService, cvExportService *cv.ExportService) {
 	// CaptureEvent
-	_ = router.RegisterIntent("capture_event", func() intents.Intent {
+	//nolint:errcheck // duplicate registration cannot happen here
+	router.RegisterIntent("capture_event", func() intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
 			CaptureStrategy: "manual",
 			Metadata:        make(map[string]string),
@@ -716,7 +720,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	})
 
 	// BrowseTimeline
-	_ = router.RegisterIntent("browse_timeline", func() intents.Intent {
+	//nolint:errcheck // duplicate registration cannot happen here
+	router.RegisterIntent("browse_timeline", func() intents.Intent {
 		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{
 			Limit:     1000,
 			SortBy:    "date",
@@ -739,7 +744,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	})
 
 	// ManageSkills
-	_ = router.RegisterIntent("manage_skills", func() intents.Intent {
+	//nolint:errcheck // duplicate registration cannot happen here
+	router.RegisterIntent("manage_skills", func() intents.Intent {
 		skillsCtx := &intents.ManageSkillsContext{
 			Ctx:             ctx,
 			SkillRepository: careerService.GetSkillRepository(),
@@ -751,7 +757,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	// GenerateCV
 	// BUG-004: Removed stub data fallback - empty state is now handled by showing
 	// an info modal in handleMenuInput before this intent is activated.
-	_ = router.RegisterIntent("generate_cv", func() intents.Intent {
+	//nolint:errcheck // duplicate registration cannot happen here
+	router.RegisterIntent("generate_cv", func() intents.Intent {
 		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 100})
 		if err != nil {
 			log.Error("Failed to load events for CV generation: %v", err)
@@ -797,7 +804,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	})
 
 	// ConfigureSystem
-	_ = router.RegisterIntent("configure_system", func() intents.Intent {
+	//nolint:errcheck // duplicate registration cannot happen here
+	router.RegisterIntent("configure_system", func() intents.Intent {
 		intent, err := intents.NewConfigureSystemIntent(ctx)
 		if err != nil {
 			log.Error("Failed to create ConfigureSystem intent: %v", err)
@@ -807,7 +815,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	})
 
 	// BurstManagement - Use helper constructor
-	_ = router.RegisterIntent("burst_management", func() intents.Intent {
+	//nolint:errcheck // duplicate registration cannot happen here
+	router.RegisterIntent("burst_management", func() intents.Intent {
 		burstRepo := careerService.GetBurstRepository()
 		burstCtx := intents.NewBurstManagementContext(careerService, burstRepo, ctx)
 		if burstCtx == nil {
@@ -823,7 +832,8 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	})
 
 	// FactManagement - Use helper constructor
-	_ = router.RegisterIntent("fact_management", func() intents.Intent {
+	//nolint:errcheck // duplicate registration cannot happen here
+	router.RegisterIntent("fact_management", func() intents.Intent {
 		factRepo := careerService.GetFactRepository()
 		factCtx := intents.NewFactManagementContext(factRepo, ctx)
 		if factCtx == nil {
