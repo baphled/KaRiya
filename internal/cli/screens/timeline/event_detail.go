@@ -1,10 +1,12 @@
 package timeline
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"fmt"
+
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
-	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/theme"
+	"github.com/baphled/kariya/internal/cli/uikit/widgets"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -97,14 +99,32 @@ func (s *TimelineEventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.Screen
 // RenderContent returns just the content (event detail card) without StandardView wrapper.
 // This allows the intent to wrap it with proper breadcrumbs and themed footer.
 func (s *TimelineEventDetailScreen) RenderContent() string {
-	// Use the same component as legacy for consistency
-	var themeObj themes.Theme
-	if t := s.Theme(); t != nil {
-		if th, ok := t.(themes.Theme); ok {
-			themeObj = th
-		}
+	if s.event == nil {
+		return "No event selected."
 	}
-	return components.RenderEventDetailCard(s.event, themeObj)
+
+	// Use UIKit DetailView for consistent styling
+	th := theme.Default()
+	dv := widgets.NewDetailView(th).
+		Title("Event Details").
+		Field("Date", s.event.Date.Format("2006-01-02")).
+		FieldIf("Company", s.event.Company).
+		FieldIf("Project", s.event.Project).
+		Field("Text", s.event.Text)
+
+	// Add optional fields
+	if len(s.event.Tags) > 0 {
+		dv.List("Tags", s.event.Tags)
+	}
+	if len(s.event.Categories) > 0 {
+		dv.List("Categories", s.event.Categories)
+	}
+	if len(s.event.Skills) > 0 {
+		// Skills are IDs
+		dv.Field("Skills", fmt.Sprintf("%d associated", len(s.event.Skills)))
+	}
+
+	return dv.Render()
 }
 
 // View renders the event detail screen using StandardView.

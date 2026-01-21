@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/types"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerRepo "github.com/baphled/kariya/internal/repository/career"
@@ -166,14 +167,10 @@ func (ctx *GenerateCVContext) Validate() error {
 	return nil
 }
 
-// CVProfile represents a CV profile (combination of role and audience).
-type CVProfile struct {
-	ID             string
-	Name           string
-	TargetRole     string // principal, staff, em, senior_ic
-	TargetAudience string // hiring_manager, recruiter, peer
-	Description    string
-}
+// CVProfile is a type alias for the shared types.CVProfile.
+// This allows intents to use CVProfile directly while the actual type
+// is defined in types package for sharing with screens.
+type CVProfile = types.CVProfile
 
 // GenerateCVResult is the result data returned when the intent completes.
 type GenerateCVResult struct {

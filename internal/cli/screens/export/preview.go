@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
@@ -12,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
+	"github.com/baphled/kariya/internal/cli/uikit/widgets"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -40,7 +40,7 @@ type Preview struct {
 	width        int
 	height       int
 	stats        *PreviewStats
-	highlighter  *components.SyntaxHighlighter
+	highlighter  *widgets.SyntaxHighlighter
 }
 
 // NewPreview creates a new preview screen with viewport support.
@@ -234,8 +234,8 @@ func (s *Preview) renderStatsLine(th themes.Theme) string {
 
 // initializeViewport sets up the viewport with highlighted content.
 func (s *Preview) initializeViewport(th themes.Theme) {
-	// Create highlighter
-	s.highlighter = components.NewSyntaxHighlighter(th)
+	// Create highlighter using UIKit theme
+	s.highlighter = widgets.NewSyntaxHighlighter(theme.Default())
 
 	// Apply syntax highlighting based on format
 	highlightedContent := s.highlighter.Highlight(s.content, string(s.format))

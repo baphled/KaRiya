@@ -175,27 +175,27 @@ var _ = Describe("Form Submission Persistence", func() {
 			Expect(form.GetInputValue(0)).To(Equal("Led critical infrastructure upgrade"))
 
 			// Navigate to date field
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "today")
 
 			// Navigate to company field
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "TechCorp")
 
 			// Navigate to project field
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab})
 			form = typeText(form, "Infrastructure")
 
 			// Navigate through Tags, Categories, Skills fields to reach Submit button
 			// Current position: ProjectField (3)
 			// Need to reach: SubmitButton (7)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // TagsField (4)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // CategoriesField (5)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SkillsField (6)
-			_, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // TagsField (4)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // CategoriesField (5)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SkillsField (6)
+			form, _ = updateForm(form, tea.KeyMsg{Type: tea.KeyTab}) // SubmitButton (7)
 
 			// Submit form
-			_, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
+			form, cmd := updateForm(form, tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(cmd).NotTo(BeNil())
 
 			// Execute the command and get the result

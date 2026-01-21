@@ -17,6 +17,8 @@ var (
 )
 
 // SkillRepository defines the interface for skill persistence
+//
+//nolint:interfacebloat // Repository interfaces require CRUD + query + relation methods
 type SkillRepository interface {
 	// Create adds a new skill to the repository
 	Create(ctx context.Context, skill *career.Skill) error

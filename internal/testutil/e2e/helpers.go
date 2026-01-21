@@ -20,6 +20,8 @@ import (
 
 // TestingT is an interface that matches both *testing.T and GinkgoT()
 // This allows the e2e package to work with both standard Go tests and Ginkgo.
+//
+//nolint:interfacebloat // Matches standard testing.T interface which has many methods
 type TestingT interface {
 	Helper()
 	TempDir() string

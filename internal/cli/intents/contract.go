@@ -59,6 +59,8 @@ type Intent interface {
 // - Validates intent results
 // - Propagates results back to the root model
 // - Prevents illegal state transitions
+//
+//nolint:interfacebloat // IntentRouter needs all methods for complete intent lifecycle management
 type IntentRouter interface {
 	// ActivateIntent activates an intent by name.
 	// Returns an error if the intent doesn't exist or the transition is illegal.
