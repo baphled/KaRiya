@@ -1,20 +1,16 @@
 package technology
 
-// FocusArea represents a career focus area based on skill categories.
-type FocusArea string
+import "github.com/baphled/kariya/internal/constants"
 
+// FocusArea is an alias to constants.FocusArea for backward compatibility.
+type FocusArea = constants.FocusArea
+
+// Focus area constants for backward compatibility.
 const (
-	// FocusAreaBackend indicates backend development focus
-	FocusAreaBackend FocusArea = "backend"
-
-	// FocusAreaFrontend indicates frontend development focus
-	FocusAreaFrontend FocusArea = "frontend"
-
-	// FocusAreaFullstack indicates fullstack development focus
-	FocusAreaFullstack FocusArea = "fullstack"
-
-	// FocusAreaDevOps indicates DevOps/infrastructure focus
-	FocusAreaDevOps FocusArea = "devops"
+	FocusAreaBackend   = constants.FocusAreaBackend
+	FocusAreaFrontend  = constants.FocusAreaFrontend
+	FocusAreaFullstack = constants.FocusAreaFullstack
+	FocusAreaDevOps    = constants.FocusAreaDevOps
 )
 
 // FocusAreaSuggestion represents a suggested focus area with confidence and evidence.

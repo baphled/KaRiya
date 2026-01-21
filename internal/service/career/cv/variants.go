@@ -1,6 +1,10 @@
 package cv
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/baphled/kariya/internal/constants"
+)
 
 // RoleEmphasis defines what aspect of experience to emphasize in a CV
 type RoleEmphasis string
@@ -19,36 +23,25 @@ const (
 	RoleEmphasisLanguageAgnostic RoleEmphasis = "language_agnostic"
 )
 
-// TechnologyFocus represents the technology presentation style for a CV.
-// Used by the wizard modal for technology-specific filtering.
-type TechnologyFocus string
+// TechnologyFocus is an alias to constants.TechnologyFocus for backward compatibility.
+type TechnologyFocus = constants.TechnologyFocus
 
+// Technology focus constants for backward compatibility.
 const (
-	// TechnologyFocusLanguageAgnostic - Technology-agnostic narrative style
-	TechnologyFocusLanguageAgnostic TechnologyFocus = "language_agnostic"
-
-	// TechnologyFocusGeneralist - Generalist style highlighting 2-5 technologies
-	TechnologyFocusGeneralist TechnologyFocus = "generalist"
-
-	// TechnologyFocusSpecialist - Specialist style focused on 1 technology
-	TechnologyFocusSpecialist TechnologyFocus = "specialist"
+	TechnologyFocusLanguageAgnostic = constants.TechnologyFocusLanguageAgnostic
+	TechnologyFocusGeneralist       = constants.TechnologyFocusGeneralist
+	TechnologyFocusSpecialist       = constants.TechnologyFocusSpecialist
 )
 
-// FocusArea represents a career focus area for the wizard modal.
-type FocusArea string
+// FocusArea is an alias to constants.FocusArea for backward compatibility.
+type FocusArea = constants.FocusArea
 
+// Focus area constants for backward compatibility.
 const (
-	// FocusAreaBackend - Backend development focus
-	FocusAreaBackend FocusArea = "backend"
-
-	// FocusAreaFrontend - Frontend development focus
-	FocusAreaFrontend FocusArea = "frontend"
-
-	// FocusAreaFullstack - Fullstack development focus
-	FocusAreaFullstack FocusArea = "fullstack"
-
-	// FocusAreaDevOps - DevOps/infrastructure focus
-	FocusAreaDevOps FocusArea = "devops"
+	FocusAreaBackend   = constants.FocusAreaBackend
+	FocusAreaFrontend  = constants.FocusAreaFrontend
+	FocusAreaFullstack = constants.FocusAreaFullstack
+	FocusAreaDevOps    = constants.FocusAreaDevOps
 )
 
 // LengthFormat defines CV density/length
