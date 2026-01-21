@@ -93,7 +93,13 @@ func Setup(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
-	tmpDir := t.TempDir()
+	// Use os.MkdirTemp instead of t.TempDir() to control cleanup timing
+	// t.TempDir() registers auto-cleanup that runs after AfterEach, causing
+	// Windows file lock errors when the DB file is still being released
+	tmpDir, err := os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
@@ -150,6 +156,9 @@ func Setup(t TestingT) *TestEnv {
 		// This prevents "file in use" errors on Windows CI
 		// 100ms is needed for reliable cleanup on Windows CI runners
 		time.Sleep(100 * time.Millisecond)
+		// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
+		// This gives us control over cleanup timing (after DB close + sleep)
+		_ = os.RemoveAll(tmpDir)
 	}
 
 	return &TestEnv{
@@ -343,7 +352,13 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
-	tmpDir := t.TempDir()
+	// Use os.MkdirTemp instead of t.TempDir() to control cleanup timing
+	// t.TempDir() registers auto-cleanup that runs after AfterEach, causing
+	// Windows file lock errors when the DB file is still being released
+	tmpDir, err := os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
@@ -355,6 +370,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
+		_ = os.RemoveAll(tmpDir)                       // Clean up temp dir on failure
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
@@ -362,6 +378,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	if err := careerrepo.RunMigrationsForTests(db); err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		_ = db.Close()                                 // Ignore error as we're already in failure path
+		_ = os.RemoveAll(tmpDir)                       // Clean up temp dir on failure
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -397,6 +414,9 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 		// This prevents "file in use" errors on Windows CI
 		// 100ms is needed for reliable cleanup on Windows CI runners
 		time.Sleep(100 * time.Millisecond)
+		// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
+		// This gives us control over cleanup timing (after DB close + sleep)
+		_ = os.RemoveAll(tmpDir)
 	}
 
 	return &TestEnv{
@@ -423,7 +443,12 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	t.Helper()
 
 	ctx := context.Background()
-	tmpDir := t.TempDir()
+	// Use os.MkdirTemp instead of t.TempDir() to control cleanup timing
+	// This maintains consistency with Setup() and SetupWithOnboarding()
+	tmpDir, err := os.MkdirTemp("", "e2e_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
 
 	// BUG-007 FIX: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
@@ -463,6 +488,8 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		cleanup: func() {
 			// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
 			config.SetConfigPathForTesting(prevConfigPath)
+			// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
+			_ = os.RemoveAll(tmpDir)
 		},
 	}
 }
