@@ -879,7 +879,6 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// so we skip it here in the background command to avoid race conditions
 
 		// Save any accepted facts from review that might have been manually edited/added
-		// Note: Facts from enrichment are already saved in performEnrichment()
 		// This is a safety check for any facts that might have been added during review
 		if careerService != nil && len(acceptedFacts) > 0 {
 			for _, fact := range acceptedFacts {
@@ -904,48 +903,6 @@ func (i *CaptureEventIntent) performSubmit() tea.Cmd {
 		// Successfully submitted
 		return SubmitCompleteMsg{}
 	}
-}
-
-// performEnrichment performs AI-powered enrichment of the captured event.
-// It suggests bursts and extracts facts from the event.
-func (i *CaptureEventIntent) performEnrichment(ctx context.Context, event *career.CareerEvent) error {
-	if i.state.context.CareerService == nil {
-		return fmt.Errorf("career service not available for enrichment")
-	}
-
-	// Suggest bursts for the event
-	burstSuggestions, err := i.state.context.CareerService.SuggestBursts(ctx, []string{event.ID})
-	if err == nil && len(burstSuggestions) > 0 {
-		// Save burst suggestions and store them for review
-		bursts, err := i.state.context.CareerService.SaveBurstSuggestions(ctx, burstSuggestions)
-		if err == nil && len(bursts) > 0 {
-			i.state.reviewState.InferredBursts = bursts
-		}
-	}
-
-	// Extract facts from the event
-	facts, err := i.state.context.CareerService.ExtractFactsFromEvent(ctx, event)
-	if err == nil && len(facts) > 0 {
-		// Persist each extracted fact to the database
-		for j := range facts {
-			fact := &facts[j]
-
-			// Set source event ID (linking fact to this event)
-			fact.SourceEventID = event.ID
-
-			// Save fact to repository
-			if err := i.state.context.CareerService.SaveFact(ctx, fact); err != nil {
-				// Log warning but continue with other facts
-				// Fact extraction is an enhancement, not critical to event capture
-				continue
-			}
-
-			// Store saved fact for review
-			i.state.reviewState.InferredFacts = append(i.state.reviewState.InferredFacts, fact)
-		}
-	}
-
-	return nil
 }
 
 // validateEventWithDetails performs comprehensive validation of the event and provides detailed error messages.
