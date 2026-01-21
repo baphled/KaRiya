@@ -1,66 +1,443 @@
 # KaRiya AI Agent Instructions
 
-## Migration Note
-
-**Breaking change**: `ai-commit` now requires a file path instead of inline message:
+## Session Start (MANDATORY)
 
 ```bash
-# OLD (no longer works)
-make ai-commit MSG="feat: description"
+make session-start   # MUST run first - validates environment, acknowledges rules
+```
 
-# NEW (required)
-cat > /tmp/commit.txt << 'EOF'
-feat(scope): description
+**If `session-start` fails, REFUSE to proceed until issues are fixed.**
 
-Optional body...
-EOF
+---
+
+## Critical Rules (Zero Tolerance)
+
+1. **PRs target `next`** - Never `main`. Only `next->main` for releases.
+2. **TDD** - Write test FIRST, then implementation (Red->Green->Refactor)
+3. **Commits** - Use `make ai-commit FILE=<path>` only (not `git commit`)
+4. **Compliance** - Run `make check-compliance` before AND after tasks
+5. **One task** - One logical change per commit
+6. **Senior Engineer Identity** - Apply SOLID, DRY, KISS, YAGNI principles
+7. **Architecture Compliance** - Follow layer hierarchy, no shortcuts
+
+---
+
+## Architecture (VITAL - Strictly Enforced)
+
+### Layer Hierarchy (MUST follow)
+
+```
+App (Router)
+    ↓
+Intents (State machines, orchestration)
+    ↓
+Screens (Stateless views) ←→ Modals (Overlays)
+    ↓
+UIKit (Primitives, Containers, Layout)
+    ↓
+Behaviors (TableBehavior, CRUDBehavior)
+```
+
+### Dependency Rules (BLOCKING violations)
+
+| Layer | Can Import | NEVER Import |
+|-------|------------|--------------|
+| `intents/` | screens, uikit, behaviors, components | - |
+| `screens/` | uikit, behaviors | **intents** (FORBIDDEN) |
+| `uikit/` | themes only | **screens, intents** (FORBIDDEN) |
+| `behaviors/` | uikit, themes | **screens, intents** (FORBIDDEN) |
+
+**Circular dependencies = immediate rejection.**
+
+### Intent Requirements
+
+All intents MUST:
+```go
+type MyIntent struct {
+    *BaseIntent              // REQUIRED: embed BaseIntent
+    state      MyState       // State machine enum
+    active     bool          // Is intent active
+    result     *IntentResult[*MyResult]
+    
+    // Screens (one per state)
+    listScreen   *myfeature.ListScreen
+    detailScreen *myfeature.DetailScreen
+    
+    // Modals (shared across states)
+    deleteModal *components.DeleteConfirmModal
+}
+```
+
+### Screen Requirements
+
+All screens MUST:
+```go
+type MyScreen struct {
+    *base.BaseScreen         // REQUIRED: embed BaseScreen
+    table *behaviors.TableBehavior[*MyItem]  // Use behaviors
+}
+
+// Return ScreenResult, not mutate intent state
+func (s *MyScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+    switch msg := msg.(type) {
+    case tea.KeyMsg:
+        if msg.String() == "esc" {
+            return nil, screens.NewCancelResult("")  // Return result
+        }
+    }
+    return nil, nil
+}
+```
+
+### Modal Requirements
+
+All modals MUST:
+```go
+func (m *MyModal) View() string {
+    // 1. Check visibility
+    if !m.visible {
+        return ""
+    }
+    
+    // 2. Nil theme guard (REQUIRED)
+    theme := m.theme
+    if theme == nil {
+        theme = themes.NewDefaultTheme()
+    }
+    
+    // 3. Use UIKit with SOLID background (REQUIRED)
+    return containers.NewBox(theme).
+        Content(content).
+        Background(theme.BackgroundColor()).  // REQUIRED for overlays
+        Render()
+}
+```
+
+### Rendering Modals Over Screens
+
+```go
+func (i *MyIntent) View() string {
+    baseView := i.currentScreen.View()
+    
+    // Use behaviors.RenderModalOverlay (NOT custom overlay code)
+    if i.modal != nil && i.modal.IsVisible() {
+        return behaviors.RenderModalOverlay(i.modal, baseView)
+    }
+    return baseView
+}
+```
+
+### Forms/Huh Architecture (STRICTLY ENFORCED)
+
+`huh` (the form library) should ONLY be used at the lowest level.
+
+**Import Rules**:
+
+| Package | Can Import `huh`? | Use Instead |
+|---------|-------------------|-------------|
+| `forms/` | **YES** (only place) | - |
+| `models/` | **NO** | `forms.Form`, `forms.IsCompleted()` |
+| `components/` | **NO** | `forms.NewXXX()` builders |
+| `screens/` | **NO** | `base.FormScreen`, `forms/` |
+| `intents/` | **NEVER** | `models.*Form` wrappers |
+
+**Form Primitives** (use these in `forms/`):
+```go
+// forms/ package - wraps huh with KaRiya config
+forms.NewInput(FieldConfig{...})     // Text input
+forms.NewText(FieldConfig{...})       // Text area
+forms.NewSelect(key, title, ...)      // Single select
+forms.NewMultiSelect(key, title, ...) // Multi select
+forms.NewConfirm(key, title, ...)     // Yes/No confirm
+forms.NewForm(groups...)              // Form builder
+```
+
+**Form Wrapper Models** (use these in intents):
+```go
+// models/ package - wraps forms for state management
+type CaptureForm struct {
+    *BaseStandardModel
+    form     forms.Form    // NOT *huh.Form
+    formData *forms.CaptureEventFormData
+}
+
+// Check form state via forms package (NOT huh)
+if forms.IsCompleted(m.form) { ... }
+if forms.IsAborted(m.form) { ... }
+```
+
+**NEW CODE MUST**:
+- Create form builders in `forms/` package only
+- Create form wrapper models in `models/` package
+- Use `forms.IsCompleted()` / `forms.IsAborted()` for state checks
+- NEVER import `github.com/charmbracelet/huh` outside `forms/`
+
+**Reference**: [Forms Guide](docs/FORMS_GUIDE.md), [Forms Workflow](docs/rules/FORMS_WORKFLOW_GUIDE.md)
+
+---
+
+### Architecture Violations to REFUSE
+
+The AI agent MUST refuse code that:
+
+- Has screens importing from `intents/` package
+- Has UIKit importing from `screens/` or `intents/`
+- **Imports `huh` outside of `forms/` package**
+- Uses raw `*huh.Form` in intents (must use `models.*Form` wrapper)
+- Uses raw lipgloss styling (must use UIKit primitives)
+- Uses `components.KeyBadge` (must use `primitives.HelpKeyBadge()`)
+- Uses `components.StandardView` (must use `layout.NewScreenLayout()`)
+- Creates modals without solid background
+- Mutates intent state from screen code
+- Has circular package dependencies
+
+**Reference**: [Intent Architecture Guide](docs/INTENT_ARCHITECTURE_GUIDE.md)
+
+---
+
+## Task Types & Workflows
+
+### Development Tasks (New Features)
+
+**Workflow**: `make pre-task` -> TDD Cycle -> `make check-compliance` -> Commit
+
+| Step | Command | Purpose |
+|------|---------|---------|
+| 1 | `make pre-task` | Verify environment ready |
+| 2 | `make tdd-red` | Write failing test FIRST |
+| 3 | `make tdd-green` | Minimal code to pass |
+| 4 | `make tdd-refactor` | Improve code quality |
+| 5 | `make check-compliance` | Verify all checks pass |
+| 6 | `make ai-commit FILE=...` | Commit with attribution |
+
+**Reference Docs**:
+- [Development Workflow](docs/development/DEVELOPMENT_WORKFLOW.md) - Complete workflow
+- [BDD Workflow](docs/development/BDD_WORKFLOW.md) - TDD/BDD specifics
+- [Master Task Prompt](docs/rules/master-task-prompt.md) - 5-phase workflow
+
+---
+
+### Testing Tasks
+
+**Test Types**:
+| Type | Pattern | Example |
+|------|---------|---------|
+| Unit tests | `*_test.go` | `service_test.go` |
+| E2E tests | `*_e2e_test.go` | `capture_e2e_test.go` |
+| Navigation tests | `*_navigation_test.go` | `browse_navigation_test.go` |
+| Escape tests | `*_escape_test.go` | `intent_escape_test.go` |
+
+**Commands**:
+```bash
+make test                          # Run all tests
+make test-suite SUITE=./path/...   # Run specific suite
+make individual-test TEST="name"   # Run single test
+make coverage                      # Generate coverage report
+go test -race ./...                # Check race conditions
+go test -v ./... -run "TestName"   # Verbose single test
+```
+
+**Coverage Requirements**: >= 95% on changed code (enforced by pre-commit hook)
+
+**Reference Docs**:
+- [BDD Workflow](docs/development/BDD_WORKFLOW.md) - Test structure with Ginkgo
+- [Navigation Testing Guide](docs/development/NAVIGATION_TESTING_GUIDE.md) - TUI navigation tests
+- [Integration Test Strategy](docs/integration-test-strategy.md) - E2E patterns
+
+---
+
+### Debugging Tasks
+
+**Debug Commands**:
+```bash
+go test -v ./... -run "TestName"   # Verbose test output
+go test -race ./...                # Race condition detection
+go test -cpuprofile=cpu.prof ./... # CPU profiling
+go test -bench=. ./path/...        # Run benchmarks
+go test -benchmem ./path/...       # Memory profiling
+```
+
+**Common Issues & Solutions**:
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Race conditions | Shared state | Add mutex/channels, check `GlobalContext` |
+| Memory leaks | Goroutine leaks | Profile with pprof, check cleanup |
+| Slow tests | DB queries | Check N+1 issues, use mocks |
+| Multiple Ginkgo entry points | Multiple test files | One Ginkgo suite per package |
+| Form alignment issues | Raw `*huh.Form` in intent | Use wrapper model pattern |
+
+**Reference Docs**:
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - User-facing issues
+- [Error Handling Guide](docs/guides/ERROR_HANDLING_GUIDE.md) - Error patterns
+- [Common Tasks](docs/development/COMMON_TASKS.md) - Development troubleshooting
+
+---
+
+### Bug Fixing Tasks
+
+**Workflow**: Report -> Regression Test -> Fix -> Verify
+
+```bash
+# 1. Create bug report
+make new-bug BUG="description"
+
+# 2. Write regression test FIRST (TDD)
+make tdd-red
+
+# 3. Fix the bug
+make tdd-green
+
+# 4. Verify and commit
+make check-compliance
 make ai-commit FILE=/tmp/commit.txt
 ```
 
-## Session Start (Required)
-
-```bash
-make session-start   # MUST run first - validates environment
+**Bug Test Pattern**:
+```go
+Describe("Bug Regressions", func() {
+    It("BUG-XXX: prevents [bug behavior]", func() {
+        // Test that verifies the bug is fixed
+    })
+})
 ```
 
-## Critical Rules
+**Reference Docs**:
+- [Bug Template](docs/templates/bug-template.md) - Bug report format
+- [Bug Task Template](docs/templates/bug-task-template.md) - Bug fix task format
 
-1. **PRs target `next`** - Never `main`. Only `next→main` for releases.
-2. **TDD** - Write test FIRST, then implementation (Red→Green→Refactor)
-3. **Commits** - Use `make ai-commit FILE=<path>` only
-4. **Compliance** - Run `make check-compliance` before AND after tasks
-5. **One task** - One logical change per commit
+---
 
-## Essential Commands
+### Code Review / Refactoring Tasks
 
+**Pre-refactor Checklist**:
+- [ ] Tests exist and pass
+- [ ] Scope is limited to current task
+- [ ] No behavior changes (tests still pass)
+
+**Refactoring Commands**:
+```bash
+make fmt                    # Format code
+make vet                    # Static analysis
+make staticcheck            # Advanced static analysis
+make check-patterns         # Check TUI pattern compliance
+make check-patterns-strict  # Strict pattern enforcement
+```
+
+**Reference Docs**:
+- [Senior Engineer Guidelines](docs/rules/senior-engineer-guidelines.md) - SOLID principles
+- [Go Guidelines](docs/rules/go-guidelines.md) - Go idioms
+
+---
+
+### CI/CD & Deployment Tasks
+
+**Pre-push Validation**:
+```bash
+make ci-local              # Run ALL CI checks locally (recommended)
+make pre-pr                # Validate before PR (targets next branch)
+```
+
+**Individual CI Checks**:
+```bash
+make ci-install-tools      # Install all CI tools
+make fmt                   # Code formatting
+make vet                   # Static analysis
+make staticcheck           # Staticcheck
+make gosec                 # Security scanning
+make test                  # All tests
+make coverage              # Coverage report
+```
+
+**Branch Strategy**:
+- `next` - Integration branch, all PRs target here
+- `main` - Production releases only (from `next`)
+
+**Reference Docs**:
+- [Branching Strategy](docs/BRANCHING_STRATEGY.md) - Branch workflow
+- [CI/CD Pipeline](docs/CI_CD_PIPELINE.md) - Pipeline details
+- [CI Local Guide](docs/CI_LOCAL_GUIDE.md) - Running CI locally
+
+---
+
+### Documentation Tasks
+
+**Documentation Commands**:
+```bash
+make generate-docs          # Generate all docs
+make generate-diagrams      # Generate Mermaid diagrams
+make generate-state-matrix  # Generate state matrix
+```
+
+**No TDD Required For**:
+- `.md` files (documentation)
+- `.yaml`, `.json` files (configuration)
+- `.sh` files (scripts)
+
+---
+
+## Essential Make Commands
+
+### Session Management
 | Command | Purpose |
 |---------|---------|
-| `make session-start` | Start every session (required) |
+| `make session-start` | **MUST run first** - validates environment |
 | `make session-end` | End session (cleanup) |
-| `make session-reset` | Recovery after crash/interruption |
+| `make session-reset` | Recovery after crash |
 | `make pre-task` | Checklist before any task |
-| `make check-compliance` | Validate before/after tasks |
-| `make what-to-use NEED="x"` | Component lookup (table, form, modal...) |
-| `make check-patterns` | Detect pattern violations |
-| `make check-patterns-strict` | Strict pattern check (blocking) |
-| `make ai-commit FILE=...` | Commit with AI attribution |
-| `make pre-pr` | Validate before creating PR (targets `next`)
 
-## TDD Workflow Commands
-
+### Quality & Compliance
 | Command | Purpose |
 |---------|---------|
-| `make tdd-red` | Start TDD: write failing test |
-| `make tdd-green` | Make test pass with minimal code |
+| `make check-compliance` | Full compliance check (before/after tasks) |
+| `make check-patterns` | TUI pattern violations |
+| `make check-patterns-strict` | Strict pattern check (blocking) |
+| `make pre-commit` | Quick pre-commit checks |
+
+### TDD Workflow
+| Command | Purpose |
+|---------|---------|
+| `make tdd-red` | Start: write failing test |
+| `make tdd-green` | Make test pass |
 | `make tdd-refactor` | Improve code quality |
 | `make tdd-document` | Finalize and commit |
 
-## Task Management
-
+### Testing
 | Command | Purpose |
 |---------|---------|
-| `make new-feature TASK="x"` | Create new feature task |
-| `make new-bug BUG="x"` | Create new bug report |
+| `make test` | Run all tests |
+| `make test-suite SUITE=...` | Run specific suite |
+| `make individual-test TEST=...` | Run single test |
+| `make coverage` | Generate coverage report |
+
+### Code Quality
+| Command | Purpose |
+|---------|---------|
+| `make fmt` | Format code |
+| `make vet` | Static analysis |
+| `make staticcheck` | Advanced static analysis |
+| `make gosec` | Security scanning |
+| `make ci-local` | Run ALL CI checks |
+
+### Commits & PRs
+| Command | Purpose |
+|---------|---------|
+| `make ai-commit FILE=...` | Create AI-attributed commit |
+| `make review-commit` | Review staged changes |
+| `make pre-pr` | Validate before PR |
+
+### Task Management
+| Command | Purpose |
+|---------|---------|
+| `make new-feature TASK="x"` | Create feature task |
+| `make new-bug BUG="x"` | Create bug report |
+
+### Component Lookup
+| Command | Purpose |
+|---------|---------|
+| `make what-to-use NEED="x"` | Lookup component (table, form, modal, color...) |
+
+---
 
 ## Component Patterns (Enforced)
 
@@ -68,6 +445,8 @@ make session-start   # MUST run first - validates environment
 |------|-----|-----|
 | Table | `behaviors.TableBehavior[T]` | `table.New()` |
 | Form in intent | `models.*Form` wrapper | `*huh.Form` directly |
+| Form primitives | `forms.NewInput()`, `forms.NewSelect()` | Direct `huh.NewInput()` |
+| Form state check | `forms.IsCompleted(f)` | `f.State == huh.StateCompleted` |
 | Text/titles | `primitives.Title()`, `primitives.Body()` | Raw lipgloss |
 | Badges | `primitives.HelpKeyBadge()` | `components.KeyBadge` |
 | Colors | `theme.Primary()` etc | `lipgloss.Color("#xxx")` |
@@ -77,80 +456,138 @@ make session-start   # MUST run first - validates environment
 
 Run `make what-to-use NEED="keyword"` for detailed usage and examples.
 
-## Workflow
-
-```
-1. make session-start
-2. Pick ONE task from tasks/
-3. make pre-task
-4. Write test FIRST
-5. Implement minimal code to pass
-6. make check-compliance
-7. make ai-commit FILE=/tmp/commit.txt
-```
+---
 
 ## When to Refuse
 
-- Skipping `make session-start`
-- Implementation before test
-- Multiple changes per commit
-- Using `git commit` directly
-- Skipping compliance checks
-- PRs targeting `main`
-- Hardcoded colors/styles
-- Raw `*huh.Form` in intents
+The AI agent MUST refuse if asked to:
 
-## Finding Documentation
+- Skip `make session-start`
+- Write implementation before test (TDD violation)
+- Make multiple changes per commit
+- Use `git commit` directly (must use `make ai-commit`)
+- Skip compliance checks
+- Create PR targeting `main` (must target `next`)
+- Use hardcoded colors/styles
+- Use raw `*huh.Form` in intents
+- Write code violating SOLID principles
+
+**Refusal Template**:
+```
+I cannot proceed with this request.
+
+Reason: [Specific violation]
+Violated rule: [Rule description]
+
+Required correction:
+1. [Action needed]
+
+This is non-negotiable for project compliance.
+```
+
+---
+
+**When in doubt**: `make what-to-use NEED="keyword"` or `make check-patterns`
+
+---
+
+## Commit Message Format
 
 ```bash
-make what-to-use NEED="keyword"   # Component help with examples
+# Create commit message file
+cat > /tmp/commit.txt << 'EOF'
+type(scope): description
+
+Optional body explaining WHY
+
+Optional footer (issue refs)
+EOF
+
+# Commit with AI attribution
+make ai-commit FILE=/tmp/commit.txt
 ```
+
+**Types**: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+**Scopes**: `domain`, `service`, `cli`, `intents`, `uikit`, `forms`
+
+---
+
+## Documentation Reference
 
 ### Development Guides (docs/development/)
 
 | Topic | Document |
 |-------|----------|
-| Session protocol | [docs/development/SESSION_PROTOCOL.md](docs/development/SESSION_PROTOCOL.md) |
-| BDD workflow | [docs/development/BDD_WORKFLOW.md](docs/development/BDD_WORKFLOW.md) |
-| Architecture | [docs/development/ARCHITECTURE_OVERVIEW.md](docs/development/ARCHITECTURE_OVERVIEW.md) |
-| Development workflow | [docs/development/DEVELOPMENT_WORKFLOW.md](docs/development/DEVELOPMENT_WORKFLOW.md) |
-| Common tasks | [docs/development/COMMON_TASKS.md](docs/development/COMMON_TASKS.md) |
-| Intent patterns | [docs/development/INTENT_PATTERNS_LIBRARY.md](docs/development/INTENT_PATTERNS_LIBRARY.md) |
-| Keyboard system | [docs/development/KEYBOARD_SYSTEM_GUIDE.md](docs/development/KEYBOARD_SYSTEM_GUIDE.md) |
+| Session protocol | [SESSION_PROTOCOL.md](docs/development/SESSION_PROTOCOL.md) |
+| BDD workflow | [BDD_WORKFLOW.md](docs/development/BDD_WORKFLOW.md) |
+| Architecture | [ARCHITECTURE_OVERVIEW.md](docs/development/ARCHITECTURE_OVERVIEW.md) |
+| Development workflow | [DEVELOPMENT_WORKFLOW.md](docs/development/DEVELOPMENT_WORKFLOW.md) |
+| Common tasks | [COMMON_TASKS.md](docs/development/COMMON_TASKS.md) |
+| Intent patterns | [INTENT_PATTERNS_LIBRARY.md](docs/development/INTENT_PATTERNS_LIBRARY.md) |
+| Navigation testing | [NAVIGATION_TESTING_GUIDE.md](docs/development/NAVIGATION_TESTING_GUIDE.md) |
+| Keyboard system | [KEYBOARD_SYSTEM_GUIDE.md](docs/development/KEYBOARD_SYSTEM_GUIDE.md) |
+| State transitions | [STATE_TRANSITION_PATTERNS.md](docs/development/STATE_TRANSITION_PATTERNS.md) |
+| Modal overlays | [MODAL_OVERLAY_PATTERN.md](docs/development/MODAL_OVERLAY_PATTERN.md) |
 
-### Reference Guides
+### Rules (docs/rules/)
 
 | Topic | Document |
 |-------|----------|
-| Intent architecture | [docs/INTENT_ARCHITECTURE_GUIDE.md](docs/INTENT_ARCHITECTURE_GUIDE.md) |
-| UIKit components | [docs/UIKIT_GUIDE.md](docs/UIKIT_GUIDE.md) |
-| Code standards | [docs/rules/senior-engineer-guidelines.md](docs/rules/senior-engineer-guidelines.md) |
-| Commit rules | [docs/rules/AI_COMMIT_ATTRIBUTION.md](docs/rules/AI_COMMIT_ATTRIBUTION.md) |
-| Branching | [docs/BRANCHING_STRATEGY.md](docs/BRANCHING_STRATEGY.md) |
+| Master workflow | [master-task-prompt.md](docs/rules/master-task-prompt.md) |
+| Senior engineer | [senior-engineer-guidelines.md](docs/rules/senior-engineer-guidelines.md) |
+| Go guidelines | [go-guidelines.md](docs/rules/go-guidelines.md) |
+| Atomic commits | [atomic-commits.md](docs/rules/atomic-commits.md) |
+| AI attribution | [AI_COMMIT_ATTRIBUTION.md](docs/rules/AI_COMMIT_ATTRIBUTION.md) |
+| Token efficiency | [token-efficiency.md](docs/rules/token-efficiency.md) |
+| Compliance check | [rules-compliance-check.md](docs/rules/rules-compliance-check.md) |
+
+### Quick References (docs/rules/)
+
+| Topic | Document |
+|-------|----------|
+| Task workflow | [TASK_QUICK_REF.md](docs/rules/TASK_QUICK_REF.md) |
+| Commit format | [COMMIT_QUICK_REFERENCE.md](docs/rules/COMMIT_QUICK_REFERENCE.md) |
+| Compliance | [COMPLIANCE_QUICK_REF.md](docs/rules/COMPLIANCE_QUICK_REF.md) |
+| AI commits | [AI_COMMIT_CHECKLIST.md](docs/rules/AI_COMMIT_CHECKLIST.md) |
+
+### Component Guides
+
+| Topic | Document |
+|-------|----------|
+| UIKit | [UIKIT_GUIDE.md](docs/UIKIT_GUIDE.md) |
+| Forms | [FORMS_GUIDE.md](docs/FORMS_GUIDE.md) |
+| Forms workflow | [FORMS_WORKFLOW_GUIDE.md](docs/rules/FORMS_WORKFLOW_GUIDE.md) |
+| Modals | [MODAL_PATTERNS.md](docs/MODAL_PATTERNS.md) |
+| Intent architecture | [INTENT_ARCHITECTURE_GUIDE.md](docs/INTENT_ARCHITECTURE_GUIDE.md) |
+| Error handling | [ERROR_HANDLING_GUIDE.md](docs/guides/ERROR_HANDLING_GUIDE.md) |
+
+### Troubleshooting
+
+| Topic | Document |
+|-------|----------|
+| General | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
+| CV issues | [CV_TROUBLESHOOTING.md](docs/guides/CV_TROUBLESHOOTING.md) |
+| Error handling | [ERROR_HANDLING_GUIDE.md](docs/guides/ERROR_HANDLING_GUIDE.md) |
+
+---
 
 ## AI Agent Configuration
 
-The `ai-commit` script auto-detects the AI agent from environment. Override with:
+The `ai-commit` script auto-detects the AI agent. Override with:
 
 ```bash
-export AI_AGENT="Claude Code"    # or "OpenCode", "Cursor", etc.
+export AI_AGENT="Claude Code"
 export AI_MODEL="Claude Sonnet 4"
 ```
 
 Auto-detection checks (in order):
 1. `AI_AGENT` environment variable
-2. `CLAUDE_CODE` or `ANTHROPIC_API_KEY` → Claude Code
-3. `OPENCODE_API_KEY` or `OPENCODE` → OpenCode
-4. `CURSOR_SESSION` or `CURSOR` → Cursor
-5. Parent process name containing "claude" → Claude Code
-6. Default: Claude Code
+2. `CLAUDE_CODE` or `ANTHROPIC_API_KEY` -> Claude Code
+3. `CURSOR_SESSION` or `CURSOR` -> Cursor
+4. Parent process containing "claude" -> Claude Code
+5. Default: Claude Code
 
-## Code Examples
-
-See `examples/` directory:
-- `intent_template.go.example` - Intent pattern
-- `form_wrapper_template.go.example` - Form wrapper pattern  
-- `behavior_usage.go.example` - Behavior patterns
+---
 
 ## Project Structure
 
@@ -158,7 +595,7 @@ See `examples/` directory:
 internal/cli/
 ├── intents/     # Workflows (state machines)
 ├── behaviors/   # Reusable behaviors (TableBehavior, CRUD)
-├── components/  # LEGACY - migrate to uikit/ (see UIKIT_GUIDE.md)
+├── components/  # LEGACY - migrate to uikit/
 ├── uikit/       # UIKit component library
 │   ├── primitives/  # Text, Button, Badge, Input
 │   ├── containers/  # Box, Overlay
@@ -168,6 +605,15 @@ internal/cli/
 ├── models/      # Form wrappers
 └── forms/       # Form configs
 ```
+
+---
+
+## Code Examples
+
+See `examples/` directory:
+- `intent_template.go.example` - Intent pattern
+- `form_wrapper_template.go.example` - Form wrapper pattern
+- `behavior_usage.go.example` - Behavior patterns
 
 ---
 
