@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/constants"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -113,13 +114,15 @@ func ConvertBullets(bullets []*Bullet) []*career.CVBullet {
 
 // DefaultBulletGenerator implements BulletGenerator
 type DefaultBulletGenerator struct {
-	logger *logger.Logger
+	logger        *logger.Logger
+	scoringConfig *config.ScoringConfig
 }
 
 // NewBulletGenerator creates a new bullet generator
-func NewBulletGenerator(log *logger.Logger) BulletGenerator {
+func NewBulletGenerator(log *logger.Logger, scoringConfig *config.ScoringConfig) BulletGenerator {
 	return &DefaultBulletGenerator{
-		logger: log,
+		logger:        log,
+		scoringConfig: scoringConfig,
 	}
 }
 
@@ -296,6 +299,7 @@ func (bg *DefaultBulletGenerator) createBulletsFromAchievements(achievements []*
 			SourceEventIDs:  []string{achievement.EventID},
 			SourceFactIDs:   achievement.FactIDs,
 			Metrics:         achievement.Metrics,
+			Category:        achievement.Category, // BUG-008: propagate from achievement
 			Confidence:      achievement.Confidence,
 			InclusionReason: string(constants.InclusionReasonAchievementExtraction),
 			ImpactLevel:     bg.determineImpactLevel(achievement),
@@ -461,15 +465,33 @@ func (bg *DefaultBulletGenerator) calculateScores(bullets []*Bullet, role string
 	return bullets
 }
 
-// calculateFinalScore calculates weighted final score
+// calculateFinalScore calculates weighted final score using config weights
 func (bg *DefaultBulletGenerator) calculateFinalScore(bullet *Bullet) float64 {
-	score := (0.25 * bullet.RoleScore) +
-		(0.20 * bullet.AudienceScore) +
-		(0.20 * bullet.MetricScore) +
-		(0.20 * bullet.ImpactScore) +
-		(0.15 * bullet.Confidence)
+	// Use config weights if available, otherwise use defaults
+	weights := bg.getWeights()
+
+	score := (weights.RoleScore * bullet.RoleScore) +
+		(weights.AudienceScore * bullet.AudienceScore) +
+		(weights.MetricScore * bullet.MetricScore) +
+		(weights.ImpactScore * bullet.ImpactScore) +
+		(weights.Confidence * bullet.Confidence)
 
 	return math.Min(score, 1.0)
+}
+
+// getWeights returns the scoring weights from config or defaults
+func (bg *DefaultBulletGenerator) getWeights() config.ScoringWeights {
+	if bg.scoringConfig != nil {
+		return bg.scoringConfig.Weights
+	}
+	// Default weights (same as config.DefaultConfig)
+	return config.ScoringWeights{
+		RoleScore:     0.25,
+		AudienceScore: 0.20,
+		MetricScore:   0.20,
+		ImpactScore:   0.20,
+		Confidence:    0.15,
+	}
 }
 
 // calculateRoleScore calculates role relevance score based on category alignment
@@ -646,39 +668,60 @@ func (bg *DefaultBulletGenerator) structureForImpact(text string) string {
 
 // getRoleFilter returns the filter for a specific role
 func (bg *DefaultBulletGenerator) getRoleFilter(role string) *RoleFilter {
+	// Get MinConfidence from config if available
+	minConfidence := bg.getMinConfidenceForRole(role)
+
 	switch strings.ToLower(role) {
 	case "principal":
 		return &RoleFilter{
 			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyLeadership},
 			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyTechnical, constants.CompetencyMentoring},
-			MinConfidence:       0.8,
+			MinConfidence:       minConfidence,
 			PreferredMetrics:    []string{"percentage", "count", "currency"},
 		}
 	case "staff":
 		return &RoleFilter{
 			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyTechnical},
 			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyLeadership, constants.CompetencyMentoring},
-			MinConfidence:       0.75,
+			MinConfidence:       minConfidence,
 			PreferredMetrics:    []string{"percentage", "count"},
 		}
 	case "em":
 		return &RoleFilter{
 			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyLeadership, constants.CompetencyMentoring},
 			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyProduct},
-			MinConfidence:       0.75,
+			MinConfidence:       minConfidence,
 			PreferredMetrics:    []string{"count", "percentage"},
 		}
 	case "senior_ic":
 		return &RoleFilter{
 			PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyTechnical},
 			SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyLeadership},
-			MinConfidence:       0.75,
+			MinConfidence:       minConfidence,
 			PreferredMetrics:    []string{"percentage", "count"},
 		}
 	default:
 		return &RoleFilter{
-			MinConfidence: 0.7,
+			MinConfidence: minConfidence,
 		}
+	}
+}
+
+// getMinConfidenceForRole returns the minimum confidence for a role from config or defaults
+func (bg *DefaultBulletGenerator) getMinConfidenceForRole(role string) float64 {
+	if bg.scoringConfig != nil && bg.scoringConfig.RoleSettings != nil {
+		if settings, ok := bg.scoringConfig.RoleSettings[strings.ToLower(role)]; ok {
+			return settings.MinConfidence
+		}
+	}
+	// Default values (same as config.DefaultConfig)
+	switch strings.ToLower(role) {
+	case "principal":
+		return 0.80
+	case "staff", "em", "senior_ic":
+		return 0.75
+	default:
+		return 0.70
 	}
 }
 

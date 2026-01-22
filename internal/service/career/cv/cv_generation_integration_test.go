@@ -52,7 +52,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// Create CV services (BUG-008: use BulletGenerator for role-based scoring)
-		bulletGenerator := NewBulletGenerator(log)
+		bulletGenerator := NewBulletGenerator(log, nil) // nil uses default scoring config
 		sectionBuilder := NewSectionBuilder(nil, log)
 		configManager := NewMemoryConfigManager()
 

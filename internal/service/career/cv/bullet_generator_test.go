@@ -22,7 +22,7 @@ var _ = Describe("BulletGenerator", func() {
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		generator = NewBulletGenerator(log)
+		generator = NewBulletGenerator(log, nil) // nil uses default scoring config
 		ctx = context.Background()
 	})
 
@@ -311,7 +311,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		generator = NewBulletGenerator(log)
+		generator = NewBulletGenerator(log, nil) // nil uses default scoring config
 		ctx = context.Background()
 	})
 

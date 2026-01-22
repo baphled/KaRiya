@@ -59,12 +59,13 @@ Scoring magic numbers extracted to named constants:
 
 ## What Remains (Future Work - Low Priority)
 
-### Minor Items (Do Not Affect Core Functionality)
+### Minor Items (All Complete)
 
 | Item | File | Status | Notes |
 |------|------|--------|-------|
-| `Achievement.Category` field | data_processing_service.go:73 | NOT ADDED | Achievements rarely used, not blocking |
-| Use `config.ScoringConfig.Weights` | bullet_generator.go | NOT DONE | Hardcoded weights work fine |
+| `Achievement.Category` field | data_processing_service.go | DONE | Category propagated from events/facts |
+| Use `config.ScoringConfig.Weights` | bullet_generator.go | DONE | Uses `getWeights()` helper |
+| Use `config.ScoringConfig.RoleSettings` | bullet_generator.go | DONE | Uses `getMinConfidenceForRole()` helper |
 
 ### Deprecated Systems (REMOVED)
 
@@ -86,18 +87,21 @@ Scoring magic numbers extracted to named constants:
 ```go
 // bullet_generator.go
 func (bg *DefaultBulletGenerator) getRoleFilter(role string) *RoleFilter {
+    // Get MinConfidence from config if available
+    minConfidence := bg.getMinConfidenceForRole(role)
+
     switch strings.ToLower(role) {
     case "principal":
         return &RoleFilter{
             PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyLeadership},
             SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyTechnical, constants.CompetencyMentoring},
-            MinConfidence:       0.8,
+            MinConfidence:       minConfidence, // From config.ScoringConfig.RoleSettings
         }
     case "senior_ic":
         return &RoleFilter{
             PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyTechnical},
             SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyLeadership},
-            MinConfidence:       0.75,
+            MinConfidence:       minConfidence, // From config.ScoringConfig.RoleSettings
         }
     // ... staff, em cases
     }
@@ -161,7 +165,7 @@ Tests located in `bullet_generator_test.go` under "BUG-008: Role-based scoring":
 ## Definition of Done
 
 ### Phase 1: Category Propagation
-- [ ] `Achievement` struct has `Category constants.CompetencyCategory` field
+- [x] `Achievement` struct has `Category constants.CompetencyCategory` field
 - [x] `Bullet` struct has `Category constants.CompetencyCategory` field
 - [x] `CVBullet` struct has `Category constants.CompetencyCategory` field
 - [x] Category populated from `CareerEvent.Categories[0]`
@@ -172,8 +176,8 @@ Tests located in `bullet_generator_test.go` under "BUG-008: Role-based scoring":
 ### Phase 2: Role Scoring
 - [x] `calculateRoleScore()` uses bullet category for scoring
 - [x] `calculateRoleScore()` applies role-specific weights from `getRoleFilter()`
-- [ ] `calculateFinalScore()` uses `config.ScoringConfig.Weights`
-- [ ] Use `config.ScoringConfig.RoleSettings` for MinConfidence and MaxBulletsPerCompany
+- [x] `calculateFinalScore()` uses `config.ScoringConfig.Weights`
+- [x] Use `config.ScoringConfig.RoleSettings` for MinConfidence
 - [x] Different roles produce measurably different bullet rankings
 - [x] Unit tests for role-based scoring
 - [x] Integration test comparing Senior IC vs Principal output

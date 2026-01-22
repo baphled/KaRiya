@@ -87,7 +87,7 @@ func NewModel(cliService *service.CLIEventService, careerService *careerservice.
 
 	// Initialize CV services
 	configMgr := initConfigManager(log)
-	cvGenService := initCVGenerationService(careerService, configMgr, log)
+	cvGenService := initCVGenerationService(careerService, configMgr, &appCfg.Scoring, log)
 	cvExportService := cv.NewExportService(log)
 
 	// Initialize intent router
@@ -774,10 +774,12 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			log.Error("Failed to load facts for CV generation: %v", err)
 			facts = []*career.Fact{}
 		}
-		// Load user's profile config for narrative CV exports
+		// Load user's profile and scoring config for CV generation
 		var profileCfg *config.ProfileConfig
+		var scoringCfg *config.ScoringConfig
 		if cfg, err := config.LoadConfig(); err == nil {
 			profileCfg = &cfg.Profile
+			scoringCfg = &cfg.Scoring
 		}
 
 		cvCtx := &intents.GenerateCVContext{
@@ -787,7 +789,7 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			DefaultProfile:        createDefaultCVProfiles()[0],
 			CVGenerationService:   cvGenService,
 			DataProcessingService: cv.NewDataProcessingService(log),
-			BulletGenerator:       cv.NewBulletGenerator(log),
+			BulletGenerator:       cv.NewBulletGenerator(log, scoringCfg),
 			ExportService:         cvExportService,
 			ProfileConfig:         profileCfg,
 			AppContext:            ctx,
@@ -868,9 +870,9 @@ func initConfigManager(log *logger.Logger) cv.ConfigManager {
 }
 
 // initCVGenerationService initializes the CV generation service
-func initCVGenerationService(careerService *careerservice.Service, configMgr cv.ConfigManager, log *logger.Logger) cv.CVGenerationService {
-	// BUG-008: Use BulletGenerator for role-based scoring
-	bulletGenerator := cv.NewBulletGenerator(log)
+func initCVGenerationService(careerService *careerservice.Service, configMgr cv.ConfigManager, scoringCfg *config.ScoringConfig, log *logger.Logger) cv.CVGenerationService {
+	// BUG-008: Use BulletGenerator for role-based scoring with config
+	bulletGenerator := cv.NewBulletGenerator(log, scoringCfg)
 	sectionBuilder := cv.NewSectionBuilder(
 		careerService.GetSkillRepository(),
 		log,
