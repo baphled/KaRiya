@@ -150,7 +150,7 @@ type SkillDeleteConfirm struct { ... }
 
 type CVProfileSelect struct { ... }
 type CVAudienceSelect struct { ... }
-type CVRoleEmphasisSelect struct { ... }
+type TechnologyFocusSelect struct { ... }
 type CVPreview struct { ... }
 
 type TimelineEventList struct { ... }
@@ -288,12 +288,11 @@ type SkillEntity struct { ... }   // Technical suffix
 
 ```go
 // Good: Clear type with const values
-type RoleEmphasis string
+type TechnologyFocus string
 const (
-    RoleEmphasisSeniorBackend    RoleEmphasis = "senior_backend"
-    RoleEmphasisStaffPrincipal   RoleEmphasis = "staff_principal"
-    RoleEmphasisConsulting       RoleEmphasis = "consulting"
-    RoleEmphasisLanguageAgnostic RoleEmphasis = "language_agnostic"
+    TechnologyFocusLanguageAgnostic TechnologyFocus = "language_agnostic"
+    TechnologyFocusGeneralist       TechnologyFocus = "generalist"
+    TechnologyFocusSpecialist       TechnologyFocus = "specialist"
 )
 
 type LengthFormat string
