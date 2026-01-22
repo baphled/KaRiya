@@ -5,8 +5,8 @@
 **Fixed:** Role-based scoring is now fully wired up and operational in production.
 
 **What was done:**
-1. Implemented category-based role scoring in `EnhancedBulletGenerator`
-2. Wired `CVGenerationService` to use `EnhancedBulletGenerator` (previously used old `BulletGenerator`)
+1. Implemented category-based role scoring in `BulletGenerator`
+2. Wired `CVGenerationService` to use `BulletGenerator`
 3. Different roles now produce measurably different bullet rankings
 
 ## Summary
@@ -27,14 +27,14 @@ The CV generation system had a significant architectural gap where role and audi
 ## What Was Fixed
 
 ### Production Wiring (COMPLETE)
-- `CVGenerationService` now uses `EnhancedBulletGenerator` instead of old `BulletGenerator`
-- `NewCVGenerationService()` constructor updated to accept `EnhancedBulletGenerator`
-- `app.go` updated to wire `EnhancedBulletGenerator` into the service
-- `FilterByTechnologies()` added to `EnhancedBulletGenerator` interface
+- `CVGenerationService` now uses `BulletGenerator`
+- `NewCVGenerationService()` constructor updated to accept `BulletGenerator`
+- `app.go` updated to wire `BulletGenerator` into the service
+- `FilterByTechnologies()` added to `BulletGenerator` interface
 - Role-based scoring is now active in production CV generation
 
 ### Category Propagation (COMPLETE)
-- `EnhancedBullet.Category` field added (line 57 in enhanced_bullet_generator.go)
+- `Bullet.Category` field added (in bullet_generator.go)
 - `CVBullet.Category` field added (line 222 in cv.go)
 - Category populated from `CareerEvent.Categories[0]` via `extractPrimaryCategory()`
 - Category populated from `Fact.CompetencyCategories[0]` via `extractPrimaryCategory()`
@@ -64,7 +64,7 @@ Scoring magic numbers extracted to named constants:
 | Item | File | Status | Notes |
 |------|------|--------|-------|
 | `Achievement.Category` field | data_processing_service.go:73 | NOT ADDED | Achievements rarely used, not blocking |
-| Use `config.ScoringConfig.Weights` | enhanced_bullet_generator.go | NOT DONE | Hardcoded weights work fine |
+| Use `config.ScoringConfig.Weights` | bullet_generator.go | NOT DONE | Hardcoded weights work fine |
 
 ### Deprecated Systems (REMOVED)
 
@@ -73,7 +73,7 @@ Scoring magic numbers extracted to named constants:
 | `CVVariant` (16 variants) | Removed from variants.go |
 | `RoleEmphasis` | Removed from variants.go |
 | `RoleEmphasisConfig.ScoreBulletCategory()` | role_emphasis.go deleted |
-| `AudienceFilter` struct | Removed from enhanced_bullet_generator.go |
+| `AudienceFilter` struct | Removed from bullet_generator.go |
 | `ProfileOverride` struct | Removed from cv_helpers.go |
 | `ApplyProfileOverride*` functions | Removed from cv_helpers.go |
 | `BulletConfig`, `SectionConfig` | Removed from variants.go |
@@ -84,8 +84,8 @@ Scoring magic numbers extracted to named constants:
 ### Role Filter Configuration
 
 ```go
-// enhanced_bullet_generator.go:661-696
-func (ebg *DefaultEnhancedBulletGenerator) getRoleFilter(role string) *RoleFilter {
+// bullet_generator.go
+func (bg *DefaultBulletGenerator) getRoleFilter(role string) *RoleFilter {
     switch strings.ToLower(role) {
     case "principal":
         return &RoleFilter{
@@ -107,11 +107,11 @@ func (ebg *DefaultEnhancedBulletGenerator) getRoleFilter(role string) *RoleFilte
 ### Scoring Algorithm
 
 ```go
-// enhanced_bullet_generator.go:482-519
-func (ebg *DefaultEnhancedBulletGenerator) calculateRoleScore(bullet *EnhancedBullet, role string) float64 {
+// bullet_generator.go
+func (bg *DefaultBulletGenerator) calculateRoleScore(bullet *Bullet, role string) float64 {
     score := roleScoreBase  // 0.50
 
-    filter := ebg.getRoleFilter(role)
+    filter := bg.getRoleFilter(role)
 
     // Primary category match: +0.30
     for _, primary := range filter.PrimaryCategories {
@@ -146,10 +146,10 @@ func (ebg *DefaultEnhancedBulletGenerator) calculateRoleScore(bullet *EnhancedBu
 
 ## Regression Tests
 
-Tests located in `enhanced_bullet_generator_test.go` under "BUG-008: Role-based scoring":
+Tests located in `bullet_generator_test.go` under "BUG-008: Role-based scoring":
 
-- Category propagation from CareerEvent to EnhancedBullet
-- Category propagation from Fact to EnhancedBullet
+- Category propagation from CareerEvent to Bullet
+- Category propagation from Fact to Bullet
 - ToCVBullet conversion preserves Category
 - Leadership bullets score higher for principal than senior_ic
 - Technical bullets score higher for senior_ic than principal
@@ -162,7 +162,7 @@ Tests located in `enhanced_bullet_generator_test.go` under "BUG-008: Role-based 
 
 ### Phase 1: Category Propagation
 - [ ] `Achievement` struct has `Category constants.CompetencyCategory` field
-- [x] `EnhancedBullet` struct has `Category constants.CompetencyCategory` field
+- [x] `Bullet` struct has `Category constants.CompetencyCategory` field
 - [x] `CVBullet` struct has `Category constants.CompetencyCategory` field
 - [x] Category populated from `CareerEvent.Categories[0]`
 - [x] Category populated from `Fact.CompetencyCategories[0]`
@@ -204,7 +204,7 @@ Tests located in `enhanced_bullet_generator_test.go` under "BUG-008: Role-based 
 3. `refactor(cv): extract role scoring magic numbers to named constants`
 
 **Key Changes:**
-- Added `Category` field to `EnhancedBullet` and `CVBullet` structs
+- Added `Category` field to `Bullet` and `CVBullet` structs
 - Implemented `extractPrimaryCategory()` to propagate categories from events/facts
 - Updated `calculateRoleScore()` to use category-based scoring
 - Updated `RoleFilter` to use type-safe `constants.CompetencyCategory`
@@ -221,5 +221,5 @@ Tests located in `enhanced_bullet_generator_test.go` under "BUG-008: Role-based 
 - Deleted `variants_test.go` (tests for deleted types)
 - Removed `CVVariant`, `BulletConfig`, `SectionConfig`, `VariantService`, `BuiltInVariants` from variants.go
 - Removed `ProfileOverride` and `ApplyProfileOverride*` functions from cv_helpers.go
-- Removed `AudienceFilter` struct from enhanced_bullet_generator.go
+- Removed `AudienceFilter` struct from bullet_generator.go
 - Total: ~1300 lines of dead code removed
