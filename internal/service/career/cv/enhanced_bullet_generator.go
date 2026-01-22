@@ -21,6 +21,7 @@ const (
 	roleScoreFactBonus               = 0.05 // Bonus for fact-based bullets
 	roleScoreHighConfidenceBonus     = 0.05 // Bonus for high confidence bullets
 	roleScoreHighConfidenceThreshold = 0.80 // Threshold for high confidence
+	technologySkillMatchBonus        = 0.15 // Bonus for matching selected technologies
 )
 
 // EnhancedBulletGenerator generates professionally enhanced, ranked CV bullets
@@ -746,9 +747,9 @@ func (ebg *DefaultEnhancedBulletGenerator) FilterByTechnologies(
 			}
 		}
 
-		// Apply skill match bonus (+0.15)
+		// Apply skill match bonus for matching selected technologies
 		if hasSelectedTech {
-			bullet.Rank = math.Min(bullet.Rank+0.15, 1.0)
+			bullet.Rank = math.Min(bullet.Rank+technologySkillMatchBonus, 1.0)
 		}
 		// No penalty for events without skills (keep baseline score)
 	}
