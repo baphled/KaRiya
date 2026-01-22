@@ -66,14 +66,18 @@ Scoring magic numbers extracted to named constants:
 | `Achievement.Category` field | data_processing_service.go:73 | NOT ADDED | Achievements rarely used, not blocking |
 | Use `config.ScoringConfig.Weights` | enhanced_bullet_generator.go | NOT DONE | Hardcoded weights work fine |
 
-### Deprecated Systems (Can Remove)
+### Deprecated Systems (REMOVED)
 
-| System | Location | Status |
-|--------|----------|--------|
-| `CVVariant` (16 variants) | variants.go | UI uses `CVProfile` instead |
-| `RoleEmphasis` | variants.go | Different taxonomy - not needed |
-| `RoleEmphasisConfig.ScoreBulletCategory()` | role_emphasis.go | Never called |
-| `AudienceFilter` struct | enhanced_bullet_generator.go | Never instantiated |
+| System | Status |
+|--------|--------|
+| `CVVariant` (16 variants) | Removed from variants.go |
+| `RoleEmphasis` | Removed from variants.go |
+| `RoleEmphasisConfig.ScoreBulletCategory()` | role_emphasis.go deleted |
+| `AudienceFilter` struct | Removed from enhanced_bullet_generator.go |
+| `ProfileOverride` struct | Removed from cv_helpers.go |
+| `ApplyProfileOverride*` functions | Removed from cv_helpers.go |
+| `BulletConfig`, `SectionConfig` | Removed from variants.go |
+| `VariantService`, `BuiltInVariants` | Removed from variants.go |
 
 ## How It Works Now
 
@@ -175,8 +179,8 @@ Tests located in `enhanced_bullet_generator_test.go` under "BUG-008: Role-based 
 - [x] Integration test comparing Senior IC vs Principal output
 
 ### Phase 3: Audience Filtering
-- [ ] `isEventRelevantToAudience()` implemented (currently stub)
-- [ ] Or: Remove stub and document that events don't filter by audience
+- [x] `isEventRelevantToAudience()` stub removed (events don't filter by audience)
+- [x] `AudienceFilter` struct removed
 
 ### All Phases
 - [x] All existing tests pass
@@ -206,3 +210,16 @@ Tests located in `enhanced_bullet_generator_test.go` under "BUG-008: Role-based 
 - Updated `RoleFilter` to use type-safe `constants.CompetencyCategory`
 - Added comprehensive regression tests
 - Tests now use factory pattern (`fixtures.EventWithCategories()`, `fixtures.FactWithCategories()`)
+
+### 2026-01-22 - Cleanup
+
+**Commits:**
+1. `refactor(cv): remove unused variant types and test-only code`
+
+**Key Changes:**
+- Deleted `role_emphasis.go` and `role_emphasis_test.go` (unused)
+- Deleted `variants_test.go` (tests for deleted types)
+- Removed `CVVariant`, `BulletConfig`, `SectionConfig`, `VariantService`, `BuiltInVariants` from variants.go
+- Removed `ProfileOverride` and `ApplyProfileOverride*` functions from cv_helpers.go
+- Removed `AudienceFilter` struct from enhanced_bullet_generator.go
+- Total: ~1300 lines of dead code removed
