@@ -83,32 +83,6 @@ Behaviors (TableBehavior, CRUDBehavior)
 
 **Circular dependencies = immediate rejection.**
 
-### File Structure Rules (STRICTLY ENFORCED)
-
-**Each type in its own location:**
-
-| Type | Contains | Location | Example |
-|------|----------|----------|---------|
-| **Context** | Input parameters (events, services, config) | Separate file in `intents/` | `browse_timeline.go` |
-| **Model** | State wrapper (SHOULD BE FLATTENED) | Prefer: flattened into intent<br>Alternative: separate file | Flatten into `browse_timeline_intent.go`<br>OR `browse_timeline_model.go` |
-| **Intent** | Implementation (Update, View, handlers) | `*_intent.go` in `intents/` | `browse_timeline_intent.go` |
-| **Screen** | UI component (view + update) | `screens/feature/` package | `screens/browse/list_screen.go` |
-| **Modal** | Overlay component | `components/` or `uikit/feedback/` | `components/delete_modal.go` |
-
-**Example structure:**
-```
-internal/cli/intents/
-├── browse_timeline.go          # Context struct
-├── browse_timeline_intent.go   # Intent implementation
-screens/browse/
-├── list_screen.go              # ListScreen
-├── detail_screen.go            # DetailScreen
-components/
-└── delete_modal.go             # DeleteModal
-```
-
-**Enforcement**: Check #16 (`check-intent-architecture.sh`) blocks commits with violations.
-
 ### Intent Requirements
 
 All intents MUST:
@@ -196,12 +170,12 @@ func (i *MyIntent) View() string {
 | Package | Can Import `huh`? | Use Instead |
 |---------|-------------------|-------------|
 | `forms/` | **YES** (only place) | - |
-| `screens/` | **NO** | `forms/` package directly |
-| `intents/` | **NEVER** | `screens/*FormScreen` |
-| `models/` | **DEPRECATED** | Use `screens/` instead |
-| `components/` | **DEPRECATED** | Use `screens/` instead |
+| `models/` | **NO** | `forms.Form`, `forms.IsCompleted()` |
+| `components/` | **NO** | `forms.NewXXX()` builders |
+| `screens/` | **NO** | `base.FormScreen`, `forms/` |
+| `intents/` | **NEVER** | `models.*Form` wrappers |
 
-**Form Primitives** (use these in `forms/` package):
+**Form Primitives** (use these in `forms/`):
 ```go
 // forms/ package - wraps huh with KaRiya config
 forms.NewInput(FieldConfig{...})     // Text input
@@ -212,187 +186,27 @@ forms.NewConfirm(key, title, ...)     // Yes/No confirm
 forms.NewForm(groups...)              // Form builder
 ```
 
-**Form Screens** (use these in intents):
+**Form Wrapper Models** (use these in intents):
 ```go
-// screens/{feature}/form_screen.go - Screen with embedded form
-type FormScreen struct {
-    *base.BaseScreen
-    form     forms.Form    // Direct use of forms package
-    formData *MyFormData
+// models/ package - wraps forms for state management
+type CaptureForm struct {
+    *BaseStandardModel
+    form     forms.Form    // NOT *huh.Form
+    formData *forms.CaptureEventFormData
 }
 
 // Check form state via forms package (NOT huh)
-func (s *FormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-    if forms.IsCompleted(s.form) {
-        return nil, screens.NewSubmitResult(s.formData)
-    }
-    if forms.IsAborted(s.form) {
-        return nil, screens.NewCancelResult("form")
-    }
-    // ...
-}
+if forms.IsCompleted(m.form) { ... }
+if forms.IsAborted(m.form) { ... }
 ```
 
 **NEW CODE MUST**:
 - Create form builders in `forms/` package only
-- Create form screens in `screens/{feature}/form_screen.go`
+- Create form wrapper models in `models/` package
 - Use `forms.IsCompleted()` / `forms.IsAborted()` for state checks
 - NEVER import `github.com/charmbracelet/huh` outside `forms/`
-- **NEVER use `models/` package for forms** (DEPRECATED)
-
-**DEPRECATED PATTERNS** (DO NOT USE):
-```go
-// ❌ WRONG - models/ package for forms
-import "github.com/baphled/kariya/internal/cli/models"
-type MyIntent struct {
-    form *models.CaptureForm  // DEPRECATED
-}
-
-// ✅ CORRECT - screens/ package
-import "github.com/baphled/kariya/internal/cli/screens/myfeature"
-type MyIntent struct {
-    formScreen *myfeature.FormScreen  // Use screen
-}
-```
 
 **Reference**: [Forms Guide](docs/FORMS_GUIDE.md), [Forms Workflow](docs/rules/FORMS_WORKFLOW_GUIDE.md)
-
----
-
-### Intent File Organization (STRICT STANDARD)
-
-ALL intents MUST follow this subdirectory structure:
-
-#### File Structure (REQUIRED)
-
-**Core Files (5 required):**
-```
-intents/{feature}/
-├── context.go    # IntentContext struct + Validate() + domain types
-├── result.go     # Result struct (20-50 lines)
-├── constants.go  # State enum ONLY (15-50 lines)
-├── messages.go   # ALL *Msg types (30-100 lines)
-└── intent.go     # NewIntent, Init, Update, View, Result (200-400 lines)
-```
-
-**Optional Recommended Files (for larger intents):**
-```
-intents/{feature}/
-├── types.go      # Intent struct definition (if intent.go > 300 lines)
-├── handlers.go   # ScreenResultHandler methods (HandleCancel, HandleNavigate, etc.)
-├── helpers.go    # Helper methods (modal openers, view helpers, etc.)
-├── filters.go    # Domain-specific filter/sort logic
-└── interfaces.go # Service interfaces for dependency injection
-```
-
-**Screens Structure:**
-```
-screens/{feature}/
-├── list_screen.go      # List view (TableBehavior)
-├── detail_screen.go    # Detail view
-├── form_screen.go      # Form view (if applicable)
-└── modals/             # Feature-specific modals (if >2 modals)
-    ├── filter_modal.go
-    ├── search_modal.go
-    └── helpers.go      # Modal helpers
-```
-
-**Reference Implementation**: `intents/browse_timeline/` and `screens/timeline/`
-
-#### File Responsibilities
-
-| File | Contains | Max Lines | Enforcement |
-|------|----------|-----------|-------------|
-| **context.go** | IntentContext struct, Validate(), domain types (Filters) | 50-200 | Guideline |
-| **result.go** | Result struct | 20-50 | Guideline |
-| **constants.go** | State enum ONLY | 15-50 | Guideline |
-| **messages.go** | ALL *Msg types | 30-100 | Guideline |
-| **intent.go** | NewIntent, Init, Update, View, Result | 200-400 | **BLOCKED at 600** (Check #18) |
-| **types.go** | Intent struct definition (optional) | 50-150 | Guideline |
-| **handlers.go** | ScreenResultHandler methods (optional) | 50-200 | Guideline |
-| **helpers.go** | Helper methods (optional) | 100-300 | Guideline |
-
-#### Intent Rules (ENFORCED)
-
-**Intent MUST**:
-- Have 5 core files (context.go, result.go, constants.go, messages.go, intent.go)
-- Keep intent.go under 400 lines (warning) / 600 lines (hard block)
-- Delegate business logic to Context
-- Delegate rendering to Screens
-- Use centralized modals (`uikit/feedback/`) or feature modals (`screens/{feature}/modals/`)
-- Only orchestrate - NO implementation
-
-**Intent MUST NOT**:
-- Contain rendering logic (extract to `screens/{feature}/`)
-- Contain business logic (move to Context in `context.go`)
-- Define State enum in intent.go (must be in `constants.go`)
-- Define *Msg types in intent.go (must be in `messages.go`)
-- Exceed 600 lines (hard block by Check #18)
-- Have >2 render methods (only `View()` + optional helper)
-
-#### Type Location Rules
-
-| Type | File | Rule |
-|------|------|------|
-| `*IntentContext struct` | `context.go` | Input params, Validate(), domain types |
-| `*Result struct` | `result.go` | Output type |
-| `*State string` | `constants.go` | State enum ONLY |
-| `const (...)` | `constants.go` | State constants |
-| `*Msg struct` | `messages.go` | **ALL message types** |
-| `*Intent struct` | `intent.go` OR `types.go` | Struct definition |
-| Handler methods | `handlers.go` (optional) | HandleCancel, HandleNavigate, etc. |
-| Helper methods | `helpers.go` (optional) | Modal openers, view helpers |
-
-#### Enforcement
-
-Run before every commit:
-```bash
-make check-intent-architecture  # Checks #17-23 enforce structure
-```
-
-**Automated Checks**:
-- **Check #17**: Subdirectory structure (blocks incomplete structures)
-- **Check #18**: Intent file size (warns >400 lines, blocks >600 lines)
-- **Check #19**: No rendering in intent (blocks >2 render methods)
-- **Check #20**: Type location (blocks types in wrong files)
-- **Check #21**: UIKit component usage
-- **Check #22**: Deprecated models package usage
-- **Check #23**: Screens directory structure
-
-#### AI Agent Behavior
-
-**When creating new intents**:
-1. ✅ ALWAYS use subdirectory structure with 5 core files
-2. ✅ ALWAYS extract views to `screens/{feature}/`
-3. ✅ ALWAYS keep `intent.go` under 400 lines
-4. ✅ USE `types.go`, `handlers.go`, `helpers.go` if intent.go > 300 lines
-5. ✅ ALWAYS put `*Msg` types in `messages.go`
-6. ✅ CREATE `screens/{feature}/modals/` if >2 modals
-
-**When modifying existing intents**:
-- If adding >50 lines → **REFUSE**, suggest migration first
-- If intent exceeds 600 lines → **REFUSE** all changes except migration
-- If intent not in subdirectory → **REFUSE**, require migration
-
-**Refusal Template**:
-```
-I cannot modify this intent - it doesn't follow the subdirectory structure.
-
-Current: intents/burst_management_intent.go (1,488 lines)
-Required: intents/burst_management/ subdirectory with 5+ files
-
-This intent must be migrated first:
-1. Create intents/burst_management/ subdirectory
-2. Create 5 core files: context.go, result.go, constants.go, messages.go, intent.go
-3. (Optional) Create types.go, handlers.go, helpers.go to keep intent.go small
-4. Extract views to screens/burst_management/
-5. Move modals to screens/burst_management/modals/
-6. Reduce intent.go to 200-400 lines (broker only)
-
-See: docs/guides/INTENT_MIGRATION_TO_SUBDIRECTORY.md
-```
-
-**Template Location**: `examples/intent_subdirectory_template/`
 
 ---
 
@@ -664,7 +478,7 @@ make generate-state-matrix  # Generate state matrix
 | Need | Use | Not |
 |------|-----|-----|
 | Table | `behaviors.TableBehavior[T]` | `table.New()` |
-| Form in intent | `screens/*FormScreen` | `models.*Form` (DEPRECATED) |
+| Form in intent | `models.*Form` wrapper | `*huh.Form` directly |
 | Form primitives | `forms.NewInput()`, `forms.NewSelect()` | Direct `huh.NewInput()` |
 | Form state check | `forms.IsCompleted(f)` | `f.State == huh.StateCompleted` |
 | Text/titles | `primitives.Title()`, `primitives.Body()` | Raw lipgloss |
@@ -817,161 +631,6 @@ import "github.com/charmbracelet/huh"
 // ✅ REQUIRE THIS
 import "github.com/baphled/kariya/internal/cli/forms"
 import "github.com/baphled/kariya/internal/cli/models"
-```
-
-#### 10. Missing Context Field
-```go
-// ❌ REFUSE THIS
-type MyIntent struct {
-    *BaseIntent
-    items []*Item  // Raw parameters - NO context struct
-}
-
-// ✅ REQUIRE THIS
-type MyIntentContext struct {
-    Items []*Item
-}
-
-type MyIntent struct {
-    *BaseIntent
-    context *MyIntentContext  // REQUIRED
-}
-```
-
-#### 11. Missing State Field
-```go
-// ❌ REFUSE THIS
-type MyIntent struct {
-    *BaseIntent
-    // Missing state field
-}
-
-// ✅ REQUIRE THIS
-type MyIntentState string
-
-const (
-    StateList   MyIntentState = "list"
-    StateDetail MyIntentState = "detail"
-)
-
-type MyIntent struct {
-    *BaseIntent
-    state MyIntentState  // REQUIRED
-}
-```
-
-#### 12. Generic activeScreen Without Typed Fields
-```go
-// ❌ REFUSE THIS
-type MyIntent struct {
-    *BaseIntent
-    activeScreen screens.Screen  // WRONG: No typed fields
-}
-
-// ✅ REQUIRE THIS
-type MyIntent struct {
-    *BaseIntent
-    
-    // Explicit typed fields (REQUIRED when using screens)
-    listScreen   *myfeature.ListScreen
-    detailScreen *myfeature.DetailScreen
-    
-    // Generic pointer
-    activeScreen screens.Screen
-}
-```
-
-#### 13. Business Logic in Update() Method
-```go
-// ❌ REFUSE THIS
-func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
-    // WRONG: Direct SQL queries
-    rows, err := db.Query("SELECT * FROM...")
-    
-    // WRONG: Complex business logic
-    for _, item := range items {
-        // Complex processing...
-    }
-}
-
-// ✅ REQUIRE THIS - Delegate to services
-func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
-    // Orchestrate, don't implement
-    cmd, result := i.listScreen.Update(msg)
-    
-    if result != nil {
-        return i.handleScreenResult(result)
-    }
-    
-    return cmd
-}
-```
-
-#### 14. All Types in One File (File Separation)
-
-**CRITICAL**: Context (input params) and Models (state wrappers) MUST be in separate files from intent implementation.
-
-```go
-// ❌ REFUSE THIS - All in one file
-// File: my_intent.go
-package intents
-
-type MyIntentContext struct { ... }  // WRONG: Context in intent file
-type MyIntentModel struct { ... }    // WRONG: Model in intent file
-type MyIntent struct { ... }
-
-// ✅ REQUIRE THIS - Proper separation
-
-// File: my.go (or my_context.go)
-// Purpose: Input parameters (Events, Services, Config)
-package intents
-
-type MyIntentContext struct {
-    Events  []*career.Event    // Input data
-    Service *service.MyService // Dependencies
-    Config  *MyConfig          // Configuration
-}
-
-// File: my_intent.go
-// Purpose: Intent implementation ONLY
-package intents
-
-type MyIntent struct {
-    *BaseIntent
-    context *MyIntentContext  // Reference to context
-    state   MyIntentState     // State fields (flattened, NOT wrapped)
-    active  bool
-    
-    // Explicit screen fields
-    listScreen   *myfeature.ListScreen
-    detailScreen *myfeature.DetailScreen
-}
-
-// Screens: screens/myfeature/*.go
-// Modals: components/*.go or uikit/feedback/*.go
-```
-
-**Key Points**:
-- **Context** = Input parameters (events, services, config) → Separate file
-- **Model** = State wrapper → Should be FLATTENED (preferred) or separate file
-- **Intent** = Implementation (Update, View, handlers) → Main file
-- **Screens** = UI components → `screens/` package
-- **Modals** = Overlay components → `components/` or `uikit/feedback/`
-
-#### 15. String-Based Key Handling (WARNING)
-```go
-// ⚠️ DISCOURAGED - String comparisons
-if keyMsg.String() == "q" {
-    return tea.Quit
-}
-
-// ✅ RECOMMENDED - Use HandleGlobalKeys
-switch HandleGlobalKeys(keyMsg) {
-case KeyQuit:
-    return tea.Quit
-case KeyHelp:
-    i.helpModal.Toggle()
-}
 ```
 
 ### Pattern Violations

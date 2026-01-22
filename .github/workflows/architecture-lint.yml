@@ -28,13 +28,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Fetch base branch for legacy detection
-        run: |
-          git fetch origin next:refs/remotes/origin/next || true
-          echo "Fetched origin/next for legacy intent detection"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -51,8 +44,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5

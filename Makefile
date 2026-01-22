@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -548,18 +548,6 @@ new-bug:
 	fi
 	@bash scripts/new-bug.sh "$(BUG)"
 
-# Create new intent with subdirectory structure
-new-intent:
-	@if [ -z "$(NAME)" ]; then \
-		echo "Usage: make new-intent NAME='feature_name'"; \
-		echo ""; \
-		echo "Examples:"; \
-		echo "  make new-intent NAME=skill_management"; \
-		echo "  make new-intent NAME=event_capture"; \
-		exit 1; \
-	fi
-	@bash scripts/new-intent.sh "$(NAME)"
-
 # Show help for all available targets
 help:
 	@echo "================================================"
@@ -609,7 +597,6 @@ help:
 	@echo "📋 Task Management:"
 	@echo "  make new-feature TASK=x    - Create new feature task"
 	@echo "  make new-bug BUG=x         - Create new bug report"
-	@echo "  make new-intent NAME=x     - Create new intent subdirectory structure"
 	@echo ""
 	@echo "🏗️  Build:"
 	@echo "  make build             - Build the application"
