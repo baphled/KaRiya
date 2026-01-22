@@ -2,6 +2,7 @@ package cv
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"sort"
 	"strings"
@@ -105,7 +106,9 @@ type SkillCategory struct {
 	Skills []*Skill
 }
 
-// GroupEventsByCompany organizes events into company-based structure
+// GroupEventsByCompany organizes events into company-based structure.
+// It detects separate tenures when events at OTHER companies exist between
+// two periods at the same company (BUG-009 fix).
 func (svc *DefaultDataProcessingService) GroupEventsByCompany(
 	ctx context.Context, events []*career.CareerEvent,
 ) (map[string]*CompanyGroup, error) {
@@ -119,50 +122,152 @@ func (svc *DefaultDataProcessingService) GroupEventsByCompany(
 
 	groups := make(map[string]*CompanyGroup)
 
-	// Group events by company
+	// Sort ALL events chronologically (oldest first) for tenure detection.
+	sortedEvents := make([]*career.CareerEvent, len(events))
+	copy(sortedEvents, events)
+	sort.Slice(sortedEvents, func(i, j int) bool {
+		return sortedEvents[i].Date.Before(sortedEvents[j].Date)
+	})
+
+	// Group events by company.
 	eventsByCompany := make(map[string][]*career.CareerEvent)
 	for _, event := range events {
 		company := event.Company
 		if company == "" {
-			company = "Other"
+			company = constants.DefaultCompanyName
 		}
 		eventsByCompany[company] = append(eventsByCompany[company], event)
 	}
 
-	// Process each company group
+	// Process each company group with tenure detection.
 	for company, companyEvents := range eventsByCompany {
-		// Sort events by date (newest first)
-		sort.Slice(companyEvents, func(i, j int) bool {
-			return companyEvents[i].Date.After(companyEvents[j].Date)
-		})
+		// Detect separate tenures for this company.
+		tenures := svc.detectTenures(companyEvents, sortedEvents)
 
-		// Determine position (use most common or first)
-		position := svc.extractPosition(companyEvents)
+		// Create a group for each tenure.
+		for tenureIndex, tenureEvents := range tenures {
+			// Sort tenure events by date (newest first) for display.
+			sort.Slice(tenureEvents, func(i, j int) bool {
+				return tenureEvents[i].Date.After(tenureEvents[j].Date)
+			})
 
-		// Calculate date range
-		startDate, endDate := svc.calculateDateRange(companyEvents)
+			// Determine position (use most common or first).
+			position := svc.extractPosition(tenureEvents)
 
-		// Extract projects
-		projects := svc.extractProjects(companyEvents)
+			// Calculate date range for this tenure.
+			startDate, endDate := svc.calculateDateRange(tenureEvents)
 
-		// Create company group
-		group := &CompanyGroup{
-			ID:        uuid.New().String(),
-			Company:   company,
-			Position:  position,
-			StartDate: startDate,
-			EndDate:   endDate,
-			Projects:  projects,
-			Skills:    []*Skill{},
-			EventIDs:  extractEventIDs(companyEvents),
+			// Extract projects.
+			projects := svc.extractProjects(tenureEvents)
+
+			// Create unique key for multiple tenures: "Company A" or "Company A#2".
+			groupKey := company
+			if len(tenures) > 1 {
+				groupKey = fmt.Sprintf("%s%s%d", company, constants.TenureSeparator, tenureIndex+1)
+			}
+
+			// Create company group.
+			group := &CompanyGroup{
+				ID:        uuid.New().String(),
+				Company:   company,
+				Position:  position,
+				StartDate: startDate,
+				EndDate:   endDate,
+				Projects:  projects,
+				Skills:    []*Skill{},
+				EventIDs:  extractEventIDs(tenureEvents),
+			}
+
+			groups[groupKey] = group
 		}
-
-		groups[company] = group
 	}
 
-	svc.logger.Info("Grouped %d events into %d companies", len(events), len(groups))
+	svc.logger.Info("Grouped %d events into %d companies/tenures", len(events), len(groups))
 
 	return groups, nil
+}
+
+// detectTenures splits a company's events into separate tenure groups.
+// A new tenure is detected when events at OTHER companies fall between
+// two consecutive events at this company (BUG-009).
+func (svc *DefaultDataProcessingService) detectTenures(
+	companyEvents []*career.CareerEvent,
+	allEventsSorted []*career.CareerEvent,
+) [][]*career.CareerEvent {
+	if len(companyEvents) <= 1 {
+		return [][]*career.CareerEvent{companyEvents}
+	}
+
+	// Get the company name from first event.
+	company := companyEvents[0].Company
+	if company == "" {
+		company = constants.DefaultCompanyName
+	}
+
+	// Sort company events chronologically (oldest first).
+	sortedCompanyEvents := make([]*career.CareerEvent, len(companyEvents))
+	copy(sortedCompanyEvents, companyEvents)
+	sort.Slice(sortedCompanyEvents, func(i, j int) bool {
+		return sortedCompanyEvents[i].Date.Before(sortedCompanyEvents[j].Date)
+	})
+
+	// Detect tenure boundaries by checking for intervening work at other companies.
+	var tenures [][]*career.CareerEvent
+	currentTenure := []*career.CareerEvent{sortedCompanyEvents[0]}
+
+	for i := 1; i < len(sortedCompanyEvents); i++ {
+		prevEvent := sortedCompanyEvents[i-1]
+		currEvent := sortedCompanyEvents[i]
+
+		// Check if there are events at OTHER companies between these two dates.
+		hasIntervening := hasInterveningCompanyEvents(
+			prevEvent.Date,
+			currEvent.Date,
+			company,
+			allEventsSorted,
+		)
+
+		if hasIntervening {
+			// Start a new tenure.
+			tenures = append(tenures, currentTenure)
+			currentTenure = []*career.CareerEvent{currEvent}
+		} else {
+			// Continue current tenure.
+			currentTenure = append(currentTenure, currEvent)
+		}
+	}
+
+	// Add the last tenure.
+	tenures = append(tenures, currentTenure)
+
+	return tenures
+}
+
+// hasInterveningCompanyEvents checks if any events at OTHER companies
+// exist between two dates (exclusive of both endpoints).
+// This is a shared utility used by both data processing and section builder.
+func hasInterveningCompanyEvents(
+	startDate, endDate time.Time,
+	currentCompany string,
+	allEventsSorted []*career.CareerEvent,
+) bool {
+	for _, event := range allEventsSorted {
+		eventCompany := event.Company
+		if eventCompany == "" {
+			eventCompany = constants.DefaultCompanyName
+		}
+
+		// Skip events at the same company.
+		if eventCompany == currentCompany {
+			continue
+		}
+
+		// Check if this event falls between the two dates (exclusive).
+		if event.Date.After(startDate) && event.Date.Before(endDate) {
+			return true
+		}
+	}
+	return false
 }
 
 // ExtractAchievements identifies key achievements from events and facts

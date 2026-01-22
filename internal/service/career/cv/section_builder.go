@@ -395,33 +395,46 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 	}
 }
 
-// groupBulletsByCompany groups bullets by company from source events
+// groupBulletsByCompany groups bullets by company from source events.
+// It detects separate tenures when events at OTHER companies exist between
+// two periods at the same company (BUG-009 fix).
 func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBullet, events []*career.CareerEvent) []*bulletGroup {
-	// Create map of event ID to event
+	// Create map of event ID to event.
 	eventMap := make(map[string]*career.CareerEvent)
 	for _, event := range events {
 		eventMap[event.ID] = event
 	}
 
-	// Group bullets by company
-	groups := make(map[string]*bulletGroup)
+	// Sort ALL events chronologically (oldest first) for tenure detection.
+	sortedEvents := make([]*career.CareerEvent, len(events))
+	copy(sortedEvents, events)
+	sort.Slice(sortedEvents, func(i, j int) bool {
+		return sortedEvents[i].Date.Before(sortedEvents[j].Date)
+	})
+
+	// First pass: Associate each bullet with its primary company and earliest event date.
+	var bulletInfos []bulletInfo
 	skippedCount := 0
+
 	for _, bullet := range bullets {
-		// Count companies from ALL source events to determine primary company
 		companyCounts := make(map[string]int)
-		var eventDates []time.Time
+		var earliestDate, latestDate time.Time
 
 		for _, eventID := range bullet.SourceEventIDs {
 			if event, exists := eventMap[eventID]; exists {
-				// Only count events WITH company (not empty)
 				if event.Company != "" {
 					companyCounts[event.Company]++
-					eventDates = append(eventDates, event.Date)
+					if earliestDate.IsZero() || event.Date.Before(earliestDate) {
+						earliestDate = event.Date
+					}
+					if latestDate.IsZero() || event.Date.After(latestDate) {
+						latestDate = event.Date
+					}
 				}
 			}
 		}
 
-		// Determine primary company (most frequent)
+		// Determine primary company (most frequent).
 		primaryCompany := ""
 		maxCount := 0
 		for company, count := range companyCounts {
@@ -431,43 +444,109 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 			}
 		}
 
-		// Skip bullets with no company
 		if primaryCompany == "" {
 			skippedCount++
 			continue
 		}
 
-		// Initialize group if needed
-		if _, exists := groups[primaryCompany]; !exists {
-			groups[primaryCompany] = &bulletGroup{
-				header:  primaryCompany,
-				bullets: make([]*career.CVBullet, 0),
-			}
-		}
-
-		// Add bullet to group and update date range
-		group := groups[primaryCompany]
-		group.bullets = append(group.bullets, bullet)
-
-		// Update date range
-		for _, date := range eventDates {
-			if group.startDate.IsZero() || date.Before(group.startDate) {
-				group.startDate = date
-			}
-			if group.endDate.IsZero() || date.After(group.endDate) {
-				group.endDate = date
-			}
-		}
+		bulletInfos = append(bulletInfos, bulletInfo{
+			bullet:       bullet,
+			company:      primaryCompany,
+			earliestDate: earliestDate,
+			latestDate:   latestDate,
+		})
 	}
 
-	// Convert to slice
+	// Sort bullet infos by date (oldest first) for tenure detection.
+	sort.Slice(bulletInfos, func(i, j int) bool {
+		return bulletInfos[i].earliestDate.Before(bulletInfos[j].earliestDate)
+	})
+
+	// Group bullets by company, maintaining order.
+	bulletsByCompany := make(map[string][]bulletInfo)
+	for _, bi := range bulletInfos {
+		bulletsByCompany[bi.company] = append(bulletsByCompany[bi.company], bi)
+	}
+
+	// Detect tenures for each company and create groups.
 	var groupSlice []*bulletGroup
-	for _, group := range groups {
-		groupSlice = append(groupSlice, group)
+
+	for company, companyBullets := range bulletsByCompany {
+		if len(companyBullets) == 0 {
+			continue
+		}
+
+		// Detect tenure boundaries.
+		tenures := sb.detectBulletTenures(companyBullets, company, sortedEvents)
+
+		// Create a group for each tenure.
+		for _, tenure := range tenures {
+			group := &bulletGroup{
+				header:  company,
+				bullets: make([]*career.CVBullet, 0, len(tenure)),
+			}
+
+			for _, bi := range tenure {
+				group.bullets = append(group.bullets, bi.bullet)
+
+				// Update date range.
+				if group.startDate.IsZero() || bi.earliestDate.Before(group.startDate) {
+					group.startDate = bi.earliestDate
+				}
+				if group.endDate.IsZero() || bi.latestDate.After(group.endDate) {
+					group.endDate = bi.latestDate
+				}
+			}
+
+			groupSlice = append(groupSlice, group)
+		}
 	}
 
 	sb.logger.Info("groupBulletsByCompany: created %d groups, skipped %d bullets without company", len(groupSlice), skippedCount)
 	return groupSlice
+}
+
+// detectBulletTenures splits a company's bullets into separate tenure groups.
+// A new tenure is detected when events at OTHER companies fall between
+// two consecutive bullets at this company (BUG-009).
+func (sb *DefaultSectionBuilder) detectBulletTenures(
+	companyBullets []bulletInfo,
+	company string,
+	allEventsSorted []*career.CareerEvent,
+) [][]bulletInfo {
+	if len(companyBullets) <= 1 {
+		return [][]bulletInfo{companyBullets}
+	}
+
+	var tenures [][]bulletInfo
+	currentTenure := []bulletInfo{companyBullets[0]}
+
+	for i := 1; i < len(companyBullets); i++ {
+		prevBullet := companyBullets[i-1]
+		currBullet := companyBullets[i]
+
+		// Check if there are events at OTHER companies between these two dates.
+		hasIntervening := hasInterveningCompanyEvents(
+			prevBullet.latestDate,
+			currBullet.earliestDate,
+			company,
+			allEventsSorted,
+		)
+
+		if hasIntervening {
+			// Start a new tenure.
+			tenures = append(tenures, currentTenure)
+			currentTenure = []bulletInfo{currBullet}
+		} else {
+			// Continue current tenure.
+			currentTenure = append(currentTenure, currBullet)
+		}
+	}
+
+	// Add the last tenure.
+	tenures = append(tenures, currentTenure)
+
+	return tenures
 }
 
 // groupBulletsByProject groups bullets by project from source events (where Company is empty)
@@ -597,6 +676,14 @@ type bulletGroup struct {
 	startDate time.Time // Earliest event date in group
 	endDate   time.Time // Latest event date in group
 	bullets   []*career.CVBullet
+}
+
+// bulletInfo holds information about a bullet for tenure detection (BUG-009).
+type bulletInfo struct {
+	bullet       *career.CVBullet
+	company      string
+	earliestDate time.Time
+	latestDate   time.Time
 }
 
 // formatMonthYear formats a time.Time as "Jan 2006"

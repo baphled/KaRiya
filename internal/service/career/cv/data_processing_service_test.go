@@ -2,6 +2,8 @@ package cv
 
 import (
 	"context"
+	"sort"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -73,7 +75,7 @@ var _ = Describe("DataProcessingService", func() {
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result["Other"]).NotTo(BeNil())
+			Expect(result[constants.DefaultCompanyName]).NotTo(BeNil())
 		})
 
 		It("should set correct date ranges", func() {
@@ -498,6 +500,156 @@ var _ = Describe("DataProcessingService", func() {
 
 			_, err := dps.GroupEventsByCompany(ctx, []*career.CareerEvent{})
 			Expect(err).To(HaveOccurred())
+		})
+	})
+
+	// BUG-009: Tenure detection tests
+	Describe("GroupEventsByCompany with tenure detection", func() {
+		Context("when person worked at same company in separate periods", func() {
+			It("should detect single tenure when no gaps exist", func() {
+				// Company A events only - should be single tenure
+				now := time.Now()
+
+				event1 := fixtures.EventWith("1", "Work at Acme", "Acme Corp", "")
+				event1.Date = now.AddDate(0, -2, 0) // 2 months ago
+
+				event2 := fixtures.EventWith("2", "More work at Acme", "Acme Corp", "")
+				event2.Date = now.AddDate(0, -1, 0) // 1 month ago
+
+				events := []*career.CareerEvent{event1, event2}
+
+				result, err := dps.GroupEventsByCompany(svc, events)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveLen(1))
+				Expect(result["Acme Corp"]).NotTo(BeNil())
+				Expect(result["Acme Corp"].EventIDs).To(HaveLen(2))
+			})
+
+			It("should detect multiple tenures with intervening company", func() {
+				// Timeline: Company A (Mar-Jul 2022) -> Company B (Aug 2022-Jun 2023) -> Company A (Jul 2023-Apr 2024)
+				// Should create TWO separate groups for Company A
+
+				// First tenure at Company A
+				eventA1 := fixtures.EventWith("a1", "First stint at A", "Company A", "")
+				eventA1.Date = time.Date(2022, 3, 15, 0, 0, 0, 0, time.UTC)
+
+				eventA2 := fixtures.EventWith("a2", "More work at A", "Company A", "")
+				eventA2.Date = time.Date(2022, 7, 15, 0, 0, 0, 0, time.UTC)
+
+				// Company B in between
+				eventB1 := fixtures.EventWith("b1", "Work at B", "Company B", "")
+				eventB1.Date = time.Date(2022, 8, 15, 0, 0, 0, 0, time.UTC)
+
+				eventB2 := fixtures.EventWith("b2", "More work at B", "Company B", "")
+				eventB2.Date = time.Date(2023, 6, 15, 0, 0, 0, 0, time.UTC)
+
+				// Second tenure at Company A
+				eventA3 := fixtures.EventWith("a3", "Back at A", "Company A", "")
+				eventA3.Date = time.Date(2023, 7, 15, 0, 0, 0, 0, time.UTC)
+
+				eventA4 := fixtures.EventWith("a4", "Still at A", "Company A", "")
+				eventA4.Date = time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC)
+
+				events := []*career.CareerEvent{eventA1, eventA2, eventB1, eventB2, eventA3, eventA4}
+
+				result, err := dps.GroupEventsByCompany(svc, events)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Should have 3 groups: Company A (tenure 1), Company B, Company A (tenure 2)
+				Expect(len(result)).To(Equal(3))
+
+				// Check that Company A has two separate entries
+				companyACount := 0
+				for key := range result {
+					if key == "Company A" || strings.HasPrefix(key, "Company A"+constants.TenureSeparator) {
+						companyACount++
+					}
+				}
+				Expect(companyACount).To(Equal(2))
+			})
+
+			It("should treat Freelance as tenure separator", func() {
+				// Company A -> Freelance -> Company A should create two separate Company A tenures
+
+				eventA1 := fixtures.EventWith("a1", "First at A", "Company A", "")
+				eventA1.Date = time.Date(2022, 1, 15, 0, 0, 0, 0, time.UTC)
+
+				eventF := fixtures.EventWith("f1", "Freelance work", "Freelance", "")
+				eventF.Date = time.Date(2022, 6, 15, 0, 0, 0, 0, time.UTC)
+
+				eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
+				eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
+
+				events := []*career.CareerEvent{eventA1, eventF, eventA2}
+
+				result, err := dps.GroupEventsByCompany(svc, events)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Should have 3 groups: Company A (tenure 1), Freelance, Company A (tenure 2)
+				Expect(len(result)).To(Equal(3))
+
+				// Check that Company A has two separate entries
+				companyACount := 0
+				for key := range result {
+					if key == "Company A" || strings.HasPrefix(key, "Company A"+constants.TenureSeparator) {
+						companyACount++
+					}
+				}
+				Expect(companyACount).To(Equal(2))
+			})
+
+			It("should order tenures reverse-chronologically by end date", func() {
+				// Create events with clear timeline
+				eventA1 := fixtures.EventWith("a1", "First at A", "Company A", "")
+				eventA1.Date = time.Date(2022, 1, 15, 0, 0, 0, 0, time.UTC)
+
+				eventB := fixtures.EventWith("b1", "Work at B", "Company B", "")
+				eventB.Date = time.Date(2022, 6, 15, 0, 0, 0, 0, time.UTC)
+
+				eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
+				eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
+
+				events := []*career.CareerEvent{eventA1, eventB, eventA2}
+
+				result, err := dps.GroupEventsByCompany(svc, events)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Collect all groups and sort by end date descending
+				var groups []*CompanyGroup
+				for _, g := range result {
+					groups = append(groups, g)
+				}
+
+				// Sort by end date descending (newest first)
+				sort.Slice(groups, func(i, j int) bool {
+					return groups[i].EndDate.After(groups[j].EndDate)
+				})
+
+				// The most recent Company A tenure should have end date in 2023
+				// The first entry should be the newest (2023 Company A tenure)
+				Expect(groups[0].Company).To(Equal("Company A"))
+				Expect(groups[0].EndDate.Year()).To(Equal(2023))
+			})
+
+			It("should handle adjacent same-company events as single tenure", func() {
+				// Events at same company with no intervening work should be single tenure
+				eventA1 := fixtures.EventWith("a1", "Work", "Company A", "")
+				eventA1.Date = time.Date(2022, 1, 15, 0, 0, 0, 0, time.UTC)
+
+				eventA2 := fixtures.EventWith("a2", "More work", "Company A", "")
+				eventA2.Date = time.Date(2022, 2, 15, 0, 0, 0, 0, time.UTC)
+
+				eventA3 := fixtures.EventWith("a3", "Even more", "Company A", "")
+				eventA3.Date = time.Date(2022, 3, 15, 0, 0, 0, 0, time.UTC)
+
+				events := []*career.CareerEvent{eventA1, eventA2, eventA3}
+
+				result, err := dps.GroupEventsByCompany(svc, events)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(HaveLen(1))
+				Expect(result["Company A"]).NotTo(BeNil())
+				Expect(result["Company A"].EventIDs).To(HaveLen(3))
+			})
 		})
 	})
 })
