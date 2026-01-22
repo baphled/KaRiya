@@ -59,19 +59,17 @@ Scoring magic numbers extracted to named constants:
 
 ## What Remains (Future Work - Low Priority)
 
-### Minor Stubs (Do Not Affect Core Functionality)
+### Minor Items (Do Not Affect Core Functionality)
 
 | Item | File | Status | Notes |
 |------|------|--------|-------|
 | `Achievement.Category` field | data_processing_service.go:73 | NOT ADDED | Achievements rarely used, not blocking |
-| `customizeForRole()` | enhanced_bullet_generator.go:658 | STUB | Cosmetic text enhancement, not scoring |
 | Use `config.ScoringConfig.Weights` | enhanced_bullet_generator.go | NOT DONE | Hardcoded weights work fine |
 
 ### Deprecated Systems (Can Remove)
 
 | System | Location | Status |
 |--------|----------|--------|
-| `BulletGenerator` (old) | bullet_generator.go | Replaced by `EnhancedBulletGenerator` |
 | `CVVariant` (16 variants) | variants.go | UI uses `CVProfile` instead |
 | `RoleEmphasis` | variants.go | Different taxonomy - not needed |
 | `RoleEmphasisConfig.ScoreBulletCategory()` | role_emphasis.go | Never called |

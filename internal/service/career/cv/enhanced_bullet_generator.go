@@ -281,9 +281,6 @@ func (ebg *DefaultEnhancedBulletGenerator) EnhanceWording(bullet *EnhancedBullet
 	// Structure for impact
 	enhanced = ebg.structureForImpact(enhanced)
 
-	// Role-specific customization
-	enhanced = ebg.customizeForRole(enhanced, role)
-
 	// Capitalize first letter
 	if len(enhanced) > 0 {
 		enhanced = strings.ToUpper(enhanced[:1]) + enhanced[1:]
@@ -653,13 +650,6 @@ func (ebg *DefaultEnhancedBulletGenerator) structureForImpact(text string) strin
 	}
 
 	return strings.TrimSpace(result)
-}
-
-// customizeForRole applies role-specific customization
-func (ebg *DefaultEnhancedBulletGenerator) customizeForRole(text string, role string) string {
-	// For now, return as-is
-	// Future: apply role-specific wording preferences
-	return text
 }
 
 // getRoleFilter returns the filter for a specific role
