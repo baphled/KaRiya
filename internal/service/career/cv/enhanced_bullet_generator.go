@@ -131,14 +131,6 @@ type RoleFilter struct {
 	PreferredMetrics    []string
 }
 
-// AudienceFilter defines audience-specific filtering criteria
-type AudienceFilter struct {
-	Name             string
-	FocusAreas       []string
-	PreferredMetrics []string
-	MinImpactLevel   string
-}
-
 // GenerateBullets generates enhanced bullets from events and facts
 func (ebg *DefaultEnhancedBulletGenerator) GenerateBullets(ctx context.Context,
 	events []*career.CareerEvent,
