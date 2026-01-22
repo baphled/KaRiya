@@ -601,26 +601,293 @@ fi
 echo ""
 
 # ============================================
+# 17. SUBDIRECTORY STRUCTURE
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "17. SUBDIRECTORY STRUCTURE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check for subdirectory-based intents
+SUBDIRS=$(find internal/cli/intents -mindepth 1 -maxdepth 1 -type d 2>/dev/null | grep -v types || true)
+
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        INTENT_NAME=$(basename "$intent_dir")
+        
+        # Check for required files
+        REQUIRED_FILES=("context.go" "result.go" "constants.go" "messages.go" "intent.go")
+        MISSING_FILES=""
+        
+        for req_file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$intent_dir/$req_file" ]; then
+                MISSING_FILES="$MISSING_FILES $req_file"
+            fi
+        done
+        
+        if [ -n "$MISSING_FILES" ]; then
+            echo -e "${RED}❌ VIOLATION: Incomplete subdirectory structure${NC}"
+            echo "   Intent: $INTENT_NAME"
+            echo "   Missing files:$MISSING_FILES"
+            echo ""
+            echo "   Required structure:"
+            echo "   intents/$INTENT_NAME/"
+            echo "   ├── context.go    (Context struct, business logic)"
+            echo "   ├── result.go     (Result struct)"
+            echo "   ├── constants.go  (State enum, error constants)"
+            echo "   ├── messages.go   (ALL *Msg types)"
+            echo "   └── intent.go     (Intent implementation)"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
+    done
+fi
+
+# Check for OLD flat structure (grace period - WARNING only)
+OLD_INTENTS=$(find internal/cli/intents -maxdepth 1 -name "*_intent.go" -type f 2>/dev/null || true)
+OLD_COUNT=$(echo "$OLD_INTENTS" | grep -c "_intent.go" 2>/dev/null || echo 0)
+
+if [ $OLD_COUNT -gt 0 ]; then
+    echo -e "${YELLOW}⚠️  WARNING: $OLD_COUNT intents using old flat structure${NC}"
+    echo "   These intents should be migrated to subdirectory structure:"
+    echo ""
+    echo "$OLD_INTENTS" | while read intent_file; do
+        if [ -n "$intent_file" ]; then
+            echo "   - $(basename "$intent_file" _intent.go)"
+        fi
+    done
+    echo ""
+    echo "   Migration guide: docs/guides/INTENT_MIGRATION_TO_SUBDIRECTORY.md"
+    echo ""
+    WARNINGS=$((WARNINGS+1))
+fi
+
+if [ $VIOLATIONS -eq 0 ] && [ $OLD_COUNT -eq 0 ]; then
+    echo -e "${GREEN}✅ All intents use subdirectory structure${NC}"
+elif [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ Subdirectory intents are complete${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 18. INTENT FILE SIZE LIMIT
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "18. INTENT FILE SIZE LIMIT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check subdirectory-based intents
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        INTENT_FILE="$intent_dir/intent.go"
+        if [ -f "$INTENT_FILE" ]; then
+            LINE_COUNT=$(wc -l < "$INTENT_FILE")
+            INTENT_NAME=$(basename "$intent_dir")
+            
+            if [ $LINE_COUNT -gt 600 ]; then
+                echo -e "${RED}❌ VIOLATION: intent.go exceeds 600 lines${NC}"
+                echo "   File: $INTENT_FILE ($LINE_COUNT lines)"
+                echo "   Rule: Intent should be broker only (orchestration)"
+                echo ""
+                echo "   Required actions:"
+                echo "   - Extract views to screens/$INTENT_NAME/"
+                echo "   - Move business logic to context.go"
+                echo "   - Extract helpers to appropriate packages"
+                echo ""
+                echo "   Target: 200-400 lines"
+                echo "   Maximum: 600 lines (hard limit)"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            elif [ $LINE_COUNT -gt 400 ]; then
+                echo -e "${YELLOW}⚠️  WARNING: intent.go approaching limit${NC}"
+                echo "   File: $INTENT_FILE ($LINE_COUNT lines)"
+                echo "   Target: 200-400 lines (broker only)"
+                echo "   Consider: Extract views to screens/$INTENT_NAME/"
+                echo ""
+                WARNINGS=$((WARNINGS+1))
+            fi
+        fi
+    done
+fi
+
+# Also check old flat structure files
+if [ -n "$OLD_INTENTS" ]; then
+    for intent_file in $OLD_INTENTS; do
+        if [ -f "$intent_file" ] && [ -n "$intent_file" ]; then
+            LINE_COUNT=$(wc -l < "$intent_file")
+            INTENT_NAME=$(basename "$intent_file" _intent.go)
+            
+            if [ $LINE_COUNT -gt 1000 ]; then
+                echo -e "${YELLOW}⚠️  WARNING: Legacy intent file exceeds 1,000 lines${NC}"
+                echo "   File: $intent_file ($LINE_COUNT lines)"
+                echo "   Action: Migrate to subdirectory structure"
+                echo ""
+                WARNINGS=$((WARNINGS+1))
+            fi
+        fi
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ All intent files within size limits${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 19. NO RENDERING IN INTENT
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "19. NO RENDERING IN INTENT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        INTENT_FILE="$intent_dir/intent.go"
+        if [ -f "$INTENT_FILE" ]; then
+            INTENT_NAME=$(basename "$intent_dir")
+            
+            # Count render methods (allow View() + 1 helper max)
+            RENDER_COUNT=$(grep -c "^func.*render\|^func.*Render" "$INTENT_FILE" 2>/dev/null || echo 0)
+            VIEW_COUNT=$(grep -c "^func.*View() string" "$INTENT_FILE" 2>/dev/null || echo 0)
+            TOTAL_RENDER=$((RENDER_COUNT + VIEW_COUNT))
+            
+            # Allow View() + 1 helper = 2 methods max
+            if [ $TOTAL_RENDER -gt 2 ]; then
+                echo -e "${RED}❌ VIOLATION: Rendering methods in intent.go${NC}"
+                echo "   File: $INTENT_FILE ($TOTAL_RENDER render methods)"
+                echo "   Rule: Intent should only have View() that delegates to screens"
+                echo ""
+                echo "   Found methods:"
+                grep -n "^func.*render\|^func.*Render\|^func.*View" "$INTENT_FILE" 2>/dev/null | head -10 | sed 's/^/   /' || true
+                echo ""
+                echo "   Required action:"
+                echo "   - Extract rendering to screens/$INTENT_NAME/"
+                echo "   - Keep only View() in intent.go"
+                echo "   - View() should delegate: return i.activeScreen.View()"
+                echo ""
+                echo "   See: docs/guides/SCREEN_EXTRACTION_GUIDE.md"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        fi
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ No rendering logic in intent files${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 20. TYPE LOCATION ENFORCEMENT
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "20. TYPE LOCATION ENFORCEMENT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        INTENT_NAME=$(basename "$intent_dir")
+        
+        # Check Context location
+        if [ -f "$intent_dir/intent.go" ]; then
+            CONTEXT_IN_INTENT=$(grep "^type.*Context struct" "$intent_dir/intent.go" 2>/dev/null || true)
+            if [ -n "$CONTEXT_IN_INTENT" ]; then
+                echo -e "${RED}❌ VIOLATION: Context defined in intent.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: Context must be in context.go"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+            
+            # Check Result location
+            RESULT_IN_INTENT=$(grep "^type.*Result struct" "$intent_dir/intent.go" 2>/dev/null || true)
+            if [ -n "$RESULT_IN_INTENT" ]; then
+                echo -e "${RED}❌ VIOLATION: Result defined in intent.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: Result must be in result.go"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+            
+            # Check State enum location
+            STATE_IN_INTENT=$(grep "^type.*State string" "$intent_dir/intent.go" 2>/dev/null || true)
+            if [ -n "$STATE_IN_INTENT" ]; then
+                echo -e "${RED}❌ VIOLATION: State enum defined in intent.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: State enum must be in constants.go"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+            
+            # Check Msg types location (CRITICAL - must be in messages.go)
+            MSG_IN_INTENT=$(grep "^type.*Msg struct" "$intent_dir/intent.go" 2>/dev/null || true)
+            if [ -n "$MSG_IN_INTENT" ]; then
+                echo -e "${RED}❌ VIOLATION: Msg types defined in intent.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: ALL *Msg types must be in messages.go"
+                echo ""
+                echo "   Found:"
+                echo "$MSG_IN_INTENT" | sed 's/^/   /'
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+            
+            # Check if Msg types are in constants.go (WRONG - should be messages.go)
+            if [ -f "$intent_dir/constants.go" ]; then
+                MSG_IN_CONSTANTS=$(grep "^type.*Msg struct" "$intent_dir/constants.go" 2>/dev/null || true)
+                if [ -n "$MSG_IN_CONSTANTS" ]; then
+                    echo -e "${RED}❌ VIOLATION: Msg types in constants.go${NC}"
+                    echo "   Intent: $INTENT_NAME"
+                    echo "   Rule: Msg types must be in messages.go (not constants.go)"
+                    echo ""
+                    VIOLATIONS=$((VIOLATIONS+1))
+                fi
+            fi
+        fi
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ All types in correct locations${NC}"
+fi
+
+echo ""
+
+# ============================================
 # SUMMARY
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📊 SUMMARY"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Total checks run: 20"
+echo "Violations: $VIOLATIONS"
+echo "Warnings: $WARNINGS"
+echo ""
 
 if [ $VIOLATIONS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
     echo -e "${GREEN}✅ ALL ARCHITECTURE CHECKS PASSED${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     exit 0
 elif [ $VIOLATIONS -eq 0 ]; then
-    echo -e "${YELLOW}⚠️  $WARNINGS WARNING(S) - Consider fixing${NC}"
+    echo -e "${YELLOW}⚠️  PASSED with $WARNINGS warnings${NC}"
+    echo ""
+    echo "Warnings indicate technical debt or pending migrations."
+    echo "Consider addressing to improve code quality."
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     exit 0
 else
-    echo -e "${RED}❌ $VIOLATIONS VIOLATION(S) FOUND${NC}"
+    echo -e "${RED}❌ FAILED: $VIOLATIONS violations must be fixed${NC}"
     if [ $WARNINGS -gt 0 ]; then
-        echo -e "${YELLOW}⚠️  $WARNINGS WARNING(S)${NC}"
+        echo -e "${YELLOW}⚠️  $WARNINGS warnings${NC}"
     fi
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Fix these violations before committing."
-    echo "See: docs/INTENT_ARCHITECTURE_GUIDE.md"
+    echo "See: docs/checklists/INTENT_DEVELOPMENT_CHECKLIST.md"
+    echo ""
     exit 1
 fi
