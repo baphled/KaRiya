@@ -41,3 +41,20 @@ const (
 	// LengthUltraShort is a 1-page highlights format with only top achievements
 	LengthUltraShort LengthFormat = "ultra_short"
 )
+
+// MapUILengthToFormat maps UI form values to service layer LengthFormat constants.
+// This bridges the gap between user-facing form options and internal service types.
+func MapUILengthToFormat(uiLength string) LengthFormat {
+	switch uiLength {
+	case "1_page":
+		return LengthUltraShort
+	case "2_page":
+		return LengthShort
+	case "standard":
+		return LengthStandard
+	case "detailed":
+		return LengthFull
+	default:
+		return LengthStandard
+	}
+}

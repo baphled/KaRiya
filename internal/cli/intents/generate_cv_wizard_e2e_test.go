@@ -2123,16 +2123,20 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 		})
 
 		It("should have correct CVLength options per documentation", func() {
-			// Per docs/workflows/CV_GENERATION_WORKFLOW.md line 200-203:
-			// - 1 Page (concise)
-			// - 2 Pages (standard)
-			// - Detailed (3+ pages)
+			// Per BUG-010 fix: Added 4th option to match service layer
+			// - 1 Page (executive summary) -> 1_page
+			// - 2 Pages (concise) -> 2_page
+			// - Standard (2-3 pages) -> standard
+			// - Detailed (3+ pages) -> detailed
 
 			intent.wizardModal.SetCVLength("1_page")
 			Expect(intent.wizardModal.GetConfigData().CVLength).To(Equal("1_page"))
 
 			intent.wizardModal.SetCVLength("2_page")
 			Expect(intent.wizardModal.GetConfigData().CVLength).To(Equal("2_page"))
+
+			intent.wizardModal.SetCVLength("standard")
+			Expect(intent.wizardModal.GetConfigData().CVLength).To(Equal("standard"))
 
 			intent.wizardModal.SetCVLength("detailed")
 			Expect(intent.wizardModal.GetConfigData().CVLength).To(Equal("detailed"))

@@ -956,7 +956,7 @@ func (i *GenerateCVIntent) generateCVAsync() tea.Cmd {
 			TechnologyFocus:      string(i.state.selectedTechnologyFocus),
 			SelectedTechnologies: i.state.selectedTechnologies,
 			FocusArea:            string(i.state.selectedFocusArea),
-			LengthFormat:         i.state.selectedCVLength,
+			LengthFormat:         string(cv.MapUILengthToFormat(i.state.selectedCVLength)),
 
 			// Skills section configuration
 			SkillsFormat: i.state.selectedSkillsFormat,
