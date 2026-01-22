@@ -857,13 +857,130 @@ fi
 echo ""
 
 # ============================================
+# 21. UIKIT COMPONENT USAGE
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "21. UIKIT COMPONENT USAGE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check for deprecated components usage
+for file in $INTENT_FILES; do
+    # Check for components.KeyBadge (should use primitives.HelpKeyBadge)
+    KEYBADGE_USAGE=$(grep "components\.KeyBadge" "$file" 2>/dev/null || true)
+    if [ -n "$KEYBADGE_USAGE" ]; then
+        echo -e "${RED}❌ VIOLATION: Deprecated components.KeyBadge${NC}"
+        echo "   File: $file"
+        echo "   Rule: Use primitives.HelpKeyBadge() instead"
+        echo ""
+        echo "   Found:"
+        echo "$KEYBADGE_USAGE" | head -3 | sed 's/^/   /'
+        echo ""
+        echo "   Migration:"
+        echo "   OLD: components.KeyBadge(\"key\", \"label\")"
+        echo "   NEW: primitives.HelpKeyBadge(\"key\", \"label\", theme)"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+    
+    # Check for components.StandardView (should use layout.NewScreenLayout)
+    STANDARDVIEW_USAGE=$(grep "components\.StandardView" "$file" 2>/dev/null || true)
+    if [ -n "$STANDARDVIEW_USAGE" ]; then
+        echo -e "${RED}❌ VIOLATION: Deprecated components.StandardView${NC}"
+        echo "   File: $file"
+        echo "   Rule: Use layout.NewScreenLayout() instead"
+        echo ""
+        echo "   Found:"
+        echo "$STANDARDVIEW_USAGE" | head -3 | sed 's/^/   /'
+        echo ""
+        echo "   Migration:"
+        echo "   OLD: components.StandardView{...}"
+        echo "   NEW: layout.NewScreenLayout(theme).WithContent(...).Render()"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+    
+    # Check for raw lipgloss.NewStyle() usage (should use theme or UIKit)
+    RAW_LIPGLOSS=$(grep -E "lipgloss\.NewStyle\(\)|lipgloss\.Color\(" "$file" 2>/dev/null || true)
+    if [ -n "$RAW_LIPGLOSS" ]; then
+        LIPGLOSS_COUNT=$(echo "$RAW_LIPGLOSS" | wc -l)
+        if [ $LIPGLOSS_COUNT -gt 5 ]; then
+            echo -e "${YELLOW}⚠️  WARNING: Excessive raw lipgloss usage${NC}"
+            echo "   File: $file ($LIPGLOSS_COUNT instances)"
+            echo "   Recommendation: Use theme system or UIKit components"
+            echo ""
+            echo "   Instead of: lipgloss.NewStyle().Foreground(lipgloss.Color(\"#ff0000\"))"
+            echo "   Use theme: style := lipgloss.NewStyle().Foreground(theme.Error())"
+            echo "   Or UIKit: primitives.ErrorText(\"message\", theme)"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        fi
+    fi
+    
+    # Check for correct modal usage (feedback package for common modals)
+    CUSTOM_MODAL=$(grep "type.*Modal struct" "$file" 2>/dev/null || true)
+    if [ -n "$CUSTOM_MODAL" ]; then
+        # Check if it's a common pattern (confirm, error, loading, etc.)
+        if echo "$CUSTOM_MODAL" | grep -qE "Confirm|Delete|Error|Loading|Success|Warning"; then
+            echo -e "${YELLOW}⚠️  WARNING: Custom modal for common pattern${NC}"
+            echo "   File: $file"
+            echo "   Found: $CUSTOM_MODAL"
+            echo "   Recommendation: Use centralized modals from uikit/feedback/"
+            echo ""
+            echo "   Available centralized modals:"
+            echo "   - feedback.NewConfirmModal() - Confirmation dialogs"
+            echo "   - feedback.NewErrorModal() - Error messages"
+            echo "   - feedback.NewLoadingModal() - Loading states"
+            echo "   - feedback.NewSuccessModal() - Success messages"
+            echo "   - feedback.NewWarningModal() - Warnings"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        fi
+    fi
+done
+
+# Check subdirectory-based intents for UIKit usage
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        INTENT_FILE="$intent_dir/intent.go"
+        if [ -f "$INTENT_FILE" ]; then
+            # Same checks for subdirectory intents
+            KEYBADGE_USAGE=$(grep "components\.KeyBadge" "$INTENT_FILE" 2>/dev/null || true)
+            if [ -n "$KEYBADGE_USAGE" ]; then
+                echo -e "${RED}❌ VIOLATION: Deprecated components.KeyBadge${NC}"
+                echo "   File: $INTENT_FILE"
+                echo "   Rule: Use primitives.HelpKeyBadge() instead"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+            
+            STANDARDVIEW_USAGE=$(grep "components\.StandardView" "$INTENT_FILE" 2>/dev/null || true)
+            if [ -n "$STANDARDVIEW_USAGE" ]; then
+                echo -e "${RED}❌ VIOLATION: Deprecated components.StandardView${NC}"
+                echo "   File: $INTENT_FILE"
+                echo "   Rule: Use layout.NewScreenLayout() instead"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        fi
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
+    echo -e "${GREEN}✅ UIKit components used correctly${NC}"
+elif [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ No UIKit violations (warnings present)${NC}"
+fi
+
+echo ""
+
+# ============================================
 # SUMMARY
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📊 SUMMARY"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Total checks run: 20"
+echo "Total checks run: 21"
 echo "Violations: $VIOLATIONS"
 echo "Warnings: $WARNINGS"
 echo ""
