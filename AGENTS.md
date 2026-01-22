@@ -633,6 +633,41 @@ import "github.com/baphled/kariya/internal/cli/forms"
 import "github.com/baphled/kariya/internal/cli/models"
 ```
 
+#### 10. Missing Context Field
+```go
+// ❌ REFUSE THIS
+type MyIntent struct {
+    *BaseIntent
+    items []*Item  // Raw parameters - NO context struct
+}
+
+// ✅ REQUIRE THIS
+type MyIntentContext struct {
+    Items []*Item
+}
+
+type MyIntent struct {
+    *BaseIntent
+    context *MyIntentContext  // REQUIRED
+}
+```
+
+#### 11. String-Based Key Handling (WARNING)
+```go
+// ⚠️ DISCOURAGED - String comparisons
+if keyMsg.String() == "q" {
+    return tea.Quit
+}
+
+// ✅ RECOMMENDED - Use HandleGlobalKeys
+switch HandleGlobalKeys(keyMsg) {
+case KeyQuit:
+    return tea.Quit
+case KeyHelp:
+    i.helpModal.Toggle()
+}
+```
+
 ### Pattern Violations
 - Use hardcoded colors/styles (must use theme system)
 - Use raw `*huh.Form` in intents (must use wrapper models)

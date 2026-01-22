@@ -296,6 +296,106 @@ fi
 echo ""
 
 # ============================================
+# 10. KEY HANDLING PATTERN CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "10. KEY HANDLING PATTERN"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    # Check for string-based key comparisons (should use HandleGlobalKeys)
+    STRING_KEY_MATCH=$(grep -n 'keyMsg\.String()\s*==' "$file" 2>/dev/null | grep -v "HandleGlobalKeys\|tea.KeyMsg" || true)
+    
+    if [ -n "$STRING_KEY_MATCH" ]; then
+        echo -e "${YELLOW}⚠️  WARNING: String-based key matching${NC}"
+        echo "   File: $file"
+        echo "   Recommendation: Use HandleGlobalKeys() for common keys"
+        echo ""
+        echo "   Found:"
+        echo "$STRING_KEY_MATCH" | head -3 | sed 's/^/   /'
+        echo ""
+        echo "   Instead of: if keyMsg.String() == \"q\""
+        echo "   Use: switch HandleGlobalKeys(keyMsg) { case KeyQuit: ... }"
+        echo ""
+        WARNINGS=$((WARNINGS+1))
+    fi
+done
+
+echo ""
+
+# ============================================
+# 11. CONTEXT FIELD CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "11. CONTEXT FIELD REQUIREMENT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    INTENT_NAME=$(basename "$file" _intent.go | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1' | sed 's/ //g')
+    
+    # Check if intent has a context field
+    HAS_CONTEXT=$(grep -q "context\s\+\*${INTENT_NAME}Context" "$file" && echo "yes" || echo "no")
+    
+    if [ "$HAS_CONTEXT" = "no" ]; then
+        # Check if it's using generic context
+        HAS_ANY_CONTEXT=$(grep -q "context\s\+\*.*Context" "$file" && echo "yes" || echo "no")
+        
+        if [ "$HAS_ANY_CONTEXT" = "no" ]; then
+            echo -e "${RED}❌ VIOLATION: Missing context field${NC}"
+            echo "   File: $file"
+            echo "   Rule: Intents should have a context field for input parameters"
+            echo ""
+            echo "   Add: context *${INTENT_NAME}Context"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ All intents have context fields${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 12. HANDLEGLOBALKEYS USAGE CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "12. HANDLEGLOBALKEYS USAGE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    # Check if intent handles keyboard input
+    HAS_KEYMSG=$(grep -q "tea\.KeyMsg" "$file" && echo "yes" || echo "no")
+    
+    if [ "$HAS_KEYMSG" = "yes" ]; then
+        # Check if it uses HandleGlobalKeys
+        USES_HANDLEGLOBALKEYS=$(grep -q "HandleGlobalKeys" "$file" && echo "yes" || echo "no")
+        
+        if [ "$USES_HANDLEGLOBALKEYS" = "no" ]; then
+            echo -e "${YELLOW}⚠️  WARNING: Not using HandleGlobalKeys${NC}"
+            echo "   File: $file"
+            echo "   Recommendation: Use HandleGlobalKeys() for q, ?, m keys"
+            echo ""
+            echo "   Example:"
+            echo "   switch HandleGlobalKeys(keyMsg) {"
+            echo "       case KeyQuit: return tea.Quit"
+            echo "       case KeyHelp: i.helpModal.Toggle()"
+            echo "   }"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        fi
+    fi
+done
+
+if [ $WARNINGS -eq 0 ]; then
+    echo -e "${GREEN}✅ All intents use HandleGlobalKeys${NC}"
+fi
+
+echo ""
+
+# ============================================
 # SUMMARY
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

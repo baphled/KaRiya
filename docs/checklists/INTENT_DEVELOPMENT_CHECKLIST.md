@@ -103,7 +103,41 @@ type MyIntent struct {
 
 ---
 
-### 4. Context Usage ✅
+### 4. Required Context Field ✅
+
+**Rule**: All intents MUST have a context field for input parameters
+
+```go
+// ❌ BAD: No context field
+type MyIntent struct {
+    *BaseIntent
+    items []*Item  // Raw parameters
+}
+
+// ✅ GOOD: Context struct
+type MyIntentContext struct {
+    Items []*Item
+    Mode  string
+}
+
+type MyIntent struct {
+    *BaseIntent
+    context *MyIntentContext
+    
+    // ... other fields
+}
+```
+
+**Why**: 
+- Centralizes input validation
+- Makes intent reusable with different contexts
+- Clear separation between input and state
+
+**Checked by**: `check-intent-architecture.sh` (Check #11)
+
+---
+
+### 5. Context Usage ✅
 
 **Rule**: Use `i.getContext()` instead of `context.Background()`
 
@@ -121,7 +155,7 @@ ctx := i.getContext()
 
 ---
 
-### 5. No Dead Code ✅
+### 6. No Dead Code ✅
 
 **Rule**: Remove code marked "should not be reached" or create cleanup task
 
@@ -138,7 +172,7 @@ case *timeline.TimelineEventDetailScreen:
 
 ---
 
-### 6. ScreenResultHandler Implementation ✅
+### 7. ScreenResultHandler Implementation ✅
 
 **Rule**: Intents using screens MUST implement `ScreenResultHandler`
 
@@ -157,7 +191,7 @@ func (i *MyIntent) HandleError(*screens.ErrorResult) tea.Cmd
 
 ---
 
-### 7. Modal Overlay Pattern ✅
+### 8. Modal Overlay Pattern ✅
 
 **Rule**: Use `behaviors.RenderModalOverlay()` for modal rendering
 
@@ -180,7 +214,37 @@ func (i *MyIntent) View() string {
 
 ## Code Quality (WARNINGS)
 
-### 8. Godoc Completeness ⚠️
+### 9. Key Handling Pattern ⚠️
+
+**Rule**: Use `HandleGlobalKeys()` for common key handling, avoid string comparisons
+
+```go
+// ⚠️ ACCEPTABLE but not ideal
+if keyMsg.String() == "q" {
+    return tea.Quit
+}
+
+// ✅ BETTER - Use HandleGlobalKeys
+switch HandleGlobalKeys(keyMsg) {
+case KeyQuit:
+    return tea.Quit
+case KeyHelp:
+    i.helpModal.Toggle()
+    return nil
+}
+```
+
+**Why**: 
+- Centralized key handling logic
+- Easier to maintain and test
+- Consistent behavior across intents
+- Type-safe (not string-based)
+
+**Checked by**: `check-intent-architecture.sh` (Check #10, #12)
+
+---
+
+### 10. Godoc Completeness ⚠️
 
 **Rule**: All exported functions should have godoc comments
 
@@ -199,7 +263,7 @@ func (i *MyIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 
 ---
 
-### 9. Screen Management Pattern ⚠️
+### 11. Screen Management Pattern ⚠️
 
 **Recommendation**: Declare typed screen fields for clarity
 
@@ -477,17 +541,20 @@ func (i *MyIntent) setCancelled() {
 
 | Check | Type | Severity | Script |
 |-------|------|----------|--------|
-| BaseIntent embedding | Automated | 🔴 BLOCKING | check-intent-architecture.sh |
-| Typed state enum | Automated | 🔴 BLOCKING | check-intent-architecture.sh |
-| Flattened state | Automated | 🔴 BLOCKING | check-intent-architecture.sh |
-| Context usage | Automated | 🔴 BLOCKING | check-intent-architecture.sh |
-| Dead code | Automated | 🔴 BLOCKING | check-intent-architecture.sh |
-| ScreenResultHandler | Automated | 🔴 BLOCKING | check-intent-architecture.sh |
-| Modal overlay | Automated | 🔴 BLOCKING | check-intent-architecture.sh |
+| BaseIntent embedding | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#6) |
+| Typed state enum | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#1) |
+| Flattened state | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#2) |
+| Required context field | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#11) |
+| Context usage (getContext) | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#3) |
+| Dead code | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#4) |
+| ScreenResultHandler | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#9) |
+| Modal overlay | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#8) |
 | Layer dependencies | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Forms architecture | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
-| Godoc completeness | Automated | 🟡 WARNING | check-intent-architecture.sh |
-| Screen management | Automated | 🟡 WARNING | check-intent-architecture.sh |
+| Key handling pattern | Automated | 🟡 WARNING | check-intent-architecture.sh (#10) |
+| HandleGlobalKeys usage | Automated | 🟡 WARNING | check-intent-architecture.sh (#12) |
+| Godoc completeness | Automated | 🟡 WARNING | check-intent-architecture.sh (#7) |
+| Screen management | Automated | 🟡 WARNING | check-intent-architecture.sh (#5) |
 | E2E tests | Automated | 🔴 BLOCKING | check-patterns-strict.sh |
 | Coverage ≥95% | Automated | 🔴 BLOCKING | check-patterns-strict.sh |
 
