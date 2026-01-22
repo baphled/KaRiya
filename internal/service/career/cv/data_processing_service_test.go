@@ -75,7 +75,7 @@ var _ = Describe("DataProcessingService", func() {
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result["Other"]).NotTo(BeNil())
+			Expect(result[constants.DefaultCompanyName]).NotTo(BeNil())
 		})
 
 		It("should set correct date ranges", func() {
@@ -561,7 +561,7 @@ var _ = Describe("DataProcessingService", func() {
 				// Check that Company A has two separate entries
 				companyACount := 0
 				for key := range result {
-					if key == "Company A" || strings.HasPrefix(key, "Company A#") {
+					if key == "Company A" || strings.HasPrefix(key, "Company A"+constants.TenureSeparator) {
 						companyACount++
 					}
 				}
@@ -591,7 +591,7 @@ var _ = Describe("DataProcessingService", func() {
 				// Check that Company A has two separate entries
 				companyACount := 0
 				for key := range result {
-					if key == "Company A" || strings.HasPrefix(key, "Company A#") {
+					if key == "Company A" || strings.HasPrefix(key, "Company A"+constants.TenureSeparator) {
 						companyACount++
 					}
 				}

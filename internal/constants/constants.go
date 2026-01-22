@@ -208,6 +208,16 @@ const (
 	SectionTypeSummary    SectionType = "summary"
 )
 
+// CV grouping constants for company/tenure handling.
+const (
+	// DefaultCompanyName is used when an event has no company specified.
+	DefaultCompanyName = "Other"
+
+	// TenureSeparator is used to create unique keys for multiple tenures at the same company.
+	// Format: "Company Name#1", "Company Name#2", etc.
+	TenureSeparator = "#"
+)
+
 // AllSectionTypes returns all defined section types.
 func AllSectionTypes() []SectionType {
 	return []SectionType{

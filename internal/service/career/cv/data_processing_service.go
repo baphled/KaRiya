@@ -134,7 +134,7 @@ func (svc *DefaultDataProcessingService) GroupEventsByCompany(
 	for _, event := range events {
 		company := event.Company
 		if company == "" {
-			company = "Other"
+			company = constants.DefaultCompanyName
 		}
 		eventsByCompany[company] = append(eventsByCompany[company], event)
 	}
@@ -163,7 +163,7 @@ func (svc *DefaultDataProcessingService) GroupEventsByCompany(
 			// Create unique key for multiple tenures: "Company A" or "Company A#2".
 			groupKey := company
 			if len(tenures) > 1 {
-				groupKey = fmt.Sprintf("%s#%d", company, tenureIndex+1)
+				groupKey = fmt.Sprintf("%s%s%d", company, constants.TenureSeparator, tenureIndex+1)
 			}
 
 			// Create company group.
@@ -201,7 +201,7 @@ func (svc *DefaultDataProcessingService) detectTenures(
 	// Get the company name from first event.
 	company := companyEvents[0].Company
 	if company == "" {
-		company = "Other"
+		company = constants.DefaultCompanyName
 	}
 
 	// Sort company events chronologically (oldest first).
@@ -254,7 +254,7 @@ func hasInterveningCompanyEvents(
 	for _, event := range allEventsSorted {
 		eventCompany := event.Company
 		if eventCompany == "" {
-			eventCompany = "Other"
+			eventCompany = constants.DefaultCompanyName
 		}
 
 		// Skip events at the same company.
