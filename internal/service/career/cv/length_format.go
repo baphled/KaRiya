@@ -92,6 +92,12 @@ func (c *LengthFormatConfig) MeetsConfidenceThreshold(confidence float64) bool {
 	return confidence >= c.MinConfidence
 }
 
+// intPtr returns a pointer to an int value.
+// Used to set optional *int config fields.
+func intPtr(i int) *int {
+	return &i
+}
+
 // getLengthFormatConfigMap returns the map of all length format configurations
 func getLengthFormatConfigMap() map[LengthFormat]*LengthFormatConfig {
 	return map[LengthFormat]*LengthFormatConfig{

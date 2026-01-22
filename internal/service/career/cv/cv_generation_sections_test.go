@@ -51,9 +51,10 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		factRepo := &TestFactRepository{facts: facts}
 
 		// Create services with REAL implementations (not empty mocks)
+		// BUG-008: use BulletGenerator for role-based scoring
 		configManager := NewMemoryConfigManager()
-		bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
-		sectionBuilder := NewSectionBuilder(nil, log) // Use REAL section builder, not empty
+		bulletGenerator := NewBulletGenerator(log, nil) // nil uses default scoring config
+		sectionBuilder := NewSectionBuilder(nil, log)   // Use REAL section builder, not empty
 
 		service := NewCVGenerationService(
 			eventRepo,

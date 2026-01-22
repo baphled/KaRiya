@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/constants"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/google/uuid"
@@ -78,6 +79,7 @@ type Achievement struct {
 	FactIDs     []string
 	Confidence  float64
 	ActionVerb  string
+	Category    constants.CompetencyCategory // Primary competency category (BUG-008)
 }
 
 // Metric represents a quantifiable measure
@@ -180,6 +182,7 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(
 		EventID:     event.ID,
 		Confidence:  0.8,
 		ActionVerb:  svc.extractActionVerb(event.Text),
+		Category:    svc.extractPrimaryCategory(event.Categories), // BUG-008
 	}
 
 	// Extract metrics from event text
@@ -201,6 +204,7 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(
 				FactIDs:     []string{fact.ID},
 				Confidence:  0.9, // Facts are higher confidence
 				ActionVerb:  svc.extractActionVerb(fact.Text),
+				Category:    svc.extractPrimaryCategory(fact.CompetencyCategories), // BUG-008
 			}
 			achievements = append(achievements, achievement)
 		}
@@ -651,4 +655,18 @@ func removeDuplicates(items []string) []string {
 		}
 	}
 	return result
+}
+
+// extractPrimaryCategory extracts the primary (first) category from a list of categories
+// and converts it to the type-safe CompetencyCategory constant (BUG-008)
+func (svc *DefaultDataProcessingService) extractPrimaryCategory(categories []string) constants.CompetencyCategory {
+	if len(categories) == 0 {
+		return ""
+	}
+	// Use first category as primary
+	primary := strings.ToLower(categories[0])
+	if constants.IsValidCompetencyCategory(primary) {
+		return constants.CompetencyCategory(primary)
+	}
+	return ""
 }

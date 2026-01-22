@@ -1,199 +1,229 @@
-# BUG-008: Role Scoring Not Implemented in Enhanced Bullet Generator
+# BUG-008: Role-Based CV Differentiation System Not Implemented
+
+## Status: FIXED
+
+**Fixed:** Role-based scoring is now fully wired up and operational in production.
+
+**What was done:**
+1. Implemented category-based role scoring in `BulletGenerator`
+2. Wired `CVGenerationService` to use `BulletGenerator`
+3. Different roles now produce measurably different bullet rankings
 
 ## Summary
 
-The `calculateRoleScore()` function in `enhanced_bullet_generator.go` receives a `role` parameter but never uses it, causing all CV roles (senior_ic, staff, principal, em) to produce identical bullet scoring and selection.
+The CV generation system had a significant architectural gap where role and audience selection provided minimal actual differentiation in bullet scoring and selection. The system was designed to prioritize different achievements based on target role (Principal vs Staff vs Senior IC vs EM), but the scoring logic was never implemented.
 
-## Steps to Reproduce
+**Original Problem:** A "Principal" CV and "Senior IC" CV produced nearly identical bullet rankings.
 
-1. Generate CV with role = "senior_ic" (Senior Engineer)
-2. Generate CV with role = "staff" (Staff Engineer)
-3. Compare bullet selection between the two CVs
-4. Observe that bullet rankings are nearly identical
-
-## Expected Behavior
-
-Different roles should prioritize different types of achievements:
-
-| Role | Primary Focus | Secondary Focus |
-|------|---------------|-----------------|
-| senior_ic | Hands-on technical delivery, implementation | Code quality, debugging |
-| staff | Technical leadership, architecture decisions | Mentoring, cross-team work |
-| principal | Strategy, cross-team influence | Technical vision, standards |
-| em | People management, team building | Process improvement, hiring |
-
-## Actual Behavior
-
-All roles produce the same bullet rankings because:
-
-1. `calculateRoleScore()` (lines 452-468) receives `role` but **never uses it**
-2. `customizeForRole()` (lines 602-607) is a stub that returns text unchanged
-3. `getRoleFilter()` defines `PrimaryCategories`/`SecondaryCategories` but these are **never used** for scoring
-
-### Code Evidence
-
-```go
-// enhanced_bullet_generator.go:452-468
-func (g *EnhancedBulletGenerator) calculateRoleScore(
-    bullet *Bullet,
-    role career.TargetRole,  // <-- Parameter received but NEVER USED
-    filter *RoleFilter,
-) float64 {
-    // ... scoring logic that ignores role entirely ...
-}
-```
-
-```go
-// enhanced_bullet_generator.go:602-607
-func (g *EnhancedBulletGenerator) customizeForRole(text string, role career.TargetRole) string {
-    // Future: apply role-specific wording preferences
-    return text  // <-- Stub: returns unchanged
-}
-```
-
-## Root Cause
-
-Task 40 (Role Emphasis Redesign) was marked complete on 2026-01-14, but the actual role differentiation logic was left as stubs with TODO comments. The UI and workflow were implemented, but the underlying scoring and filtering don't differentiate between roles.
-
-## Files Affected
-
-| File | Lines | Issue |
-|------|-------|-------|
-| `internal/service/career/cv/enhanced_bullet_generator.go` | 452-468 | `calculateRoleScore()` ignores role |
-| `internal/service/career/cv/enhanced_bullet_generator.go` | 602-607 | `customizeForRole()` is stub |
-| `internal/service/career/cv/bullet_generator.go` | varies | `FilterByRole()` only filters by MinConfidence |
-
-## Fix Approach
-
-Implement actual role-based scoring in `calculateRoleScore()`:
-
-```go
-func (g *EnhancedBulletGenerator) calculateRoleScore(
-    bullet *Bullet,
-    role career.TargetRole,
-    filter *RoleFilter,
-) float64 {
-    baseScore := bullet.Confidence
-    
-    // Apply role-specific category weights
-    categoryBonus := g.getRoleCategoryBonus(bullet.Category, role)
-    
-    return math.Min(1.0, baseScore + categoryBonus)
-}
-
-func (g *EnhancedBulletGenerator) getRoleCategoryBonus(category string, role career.TargetRole) float64 {
-    weights := map[career.TargetRole]map[string]float64{
-        career.TargetRoleSeniorIC: {
-            "technical":  +0.20,
-            "leadership": -0.05,
-            "mentoring":  +0.05,
-        },
-        career.TargetRoleStaff: {
-            "technical":  +0.15,
-            "leadership": +0.15,
-            "mentoring":  +0.10,
-        },
-        career.TargetRolePrincipal: {
-            "technical":  +0.10,
-            "leadership": +0.20,
-            "mentoring":  +0.05,
-        },
-        career.TargetRoleEM: {
-            "technical":  +0.00,
-            "leadership": +0.20,
-            "mentoring":  +0.15,
-        },
-    }
-    
-    if roleWeights, ok := weights[role]; ok {
-        if bonus, ok := roleWeights[category]; ok {
-            return bonus
-        }
-    }
-    return 0.0
-}
-```
+**Current Status:** Role-based scoring now differentiates bullets based on category alignment. The fix is wired into production.
 
 ## Severity
 
-- [ ] Critical - Application crash/data loss
-- [x] High - Major feature broken
+- [ ] Critical - Core feature broken
+- [ ] High - Major feature broken
 - [ ] Medium - Feature partially broken
-- [ ] Low - Minor issue/cosmetic
+- [x] Low - Minor stubs remain (cosmetic, not affecting core functionality)
 
-## Regression Test
+## What Was Fixed
+
+### Production Wiring (COMPLETE)
+- `CVGenerationService` now uses `BulletGenerator`
+- `NewCVGenerationService()` constructor updated to accept `BulletGenerator`
+- `app.go` updated to wire `BulletGenerator` into the service
+- `FilterByTechnologies()` added to `BulletGenerator` interface
+- Role-based scoring is now active in production CV generation
+
+### Category Propagation (COMPLETE)
+- `Bullet.Category` field added (in bullet_generator.go)
+- `CVBullet.Category` field added (line 222 in cv.go)
+- Category populated from `CareerEvent.Categories[0]` via `extractPrimaryCategory()`
+- Category populated from `Fact.CompetencyCategories[0]` via `extractPrimaryCategory()`
+- Uses `constants.IsValidCompetencyCategory()` for validation
+
+### Role-Based Scoring (COMPLETE)
+- `calculateRoleScore()` now uses bullet category for scoring differentiation
+- `getRoleFilter()` updated to use type-safe `constants.CompetencyCategory`
+- Primary category match: +0.30 score boost (roleScorePrimaryCategoryBoost)
+- Secondary category match: +0.15 score boost (roleScoreSecondaryCategoryBoost)
+- Different roles produce measurably different bullet rankings
+
+### Named Constants (COMPLETE)
+Scoring magic numbers extracted to named constants:
+- `roleScoreBase` = 0.50
+- `roleScorePrimaryCategoryBoost` = 0.30
+- `roleScoreSecondaryCategoryBoost` = 0.15
+- `roleScoreAchievementBonus` = 0.10
+- `roleScoreFactBonus` = 0.05
+- `roleScoreHighConfidenceBonus` = 0.05
+- `roleScoreHighConfidenceThreshold` = 0.80
+
+## What Remains (Future Work - Low Priority)
+
+### Minor Items (All Complete)
+
+| Item | File | Status | Notes |
+|------|------|--------|-------|
+| `Achievement.Category` field | data_processing_service.go | DONE | Category propagated from events/facts |
+| Use `config.ScoringConfig.Weights` | bullet_generator.go | DONE | Uses `getWeights()` helper |
+| Use `config.ScoringConfig.RoleSettings` | bullet_generator.go | DONE | Uses `getMinConfidenceForRole()` helper |
+
+### Deprecated Systems (REMOVED)
+
+| System | Status |
+|--------|--------|
+| `CVVariant` (16 variants) | Removed from variants.go |
+| `RoleEmphasis` | Removed from variants.go |
+| `RoleEmphasisConfig.ScoreBulletCategory()` | role_emphasis.go deleted |
+| `AudienceFilter` struct | Removed from bullet_generator.go |
+| `ProfileOverride` struct | Removed from cv_helpers.go |
+| `ApplyProfileOverride*` functions | Removed from cv_helpers.go |
+| `BulletConfig`, `SectionConfig` | Removed from variants.go |
+| `VariantService`, `BuiltInVariants` | Removed from variants.go |
+
+## How It Works Now
+
+### Role Filter Configuration
 
 ```go
-var _ = Describe("BUG-008: Role scoring differentiation", func() {
-    var generator *EnhancedBulletGenerator
-    
-    BeforeEach(func() {
-        generator = NewEnhancedBulletGenerator(/* deps */)
-    })
-    
-    Describe("calculateRoleScore", func() {
-        It("should score technical bullets higher for senior_ic than staff", func() {
-            bullet := &Bullet{
-                Category:   "technical",
-                Confidence: 0.70,
-            }
-            
-            seniorScore := generator.calculateRoleScore(bullet, career.TargetRoleSeniorIC, nil)
-            staffScore := generator.calculateRoleScore(bullet, career.TargetRoleStaff, nil)
-            
-            Expect(seniorScore).To(BeNumerically(">", staffScore))
-        })
-        
-        It("should score leadership bullets higher for staff than senior_ic", func() {
-            bullet := &Bullet{
-                Category:   "leadership",
-                Confidence: 0.70,
-            }
-            
-            staffScore := generator.calculateRoleScore(bullet, career.TargetRoleStaff, nil)
-            seniorScore := generator.calculateRoleScore(bullet, career.TargetRoleSeniorIC, nil)
-            
-            Expect(staffScore).To(BeNumerically(">", seniorScore))
-        })
-        
-        It("should score mentoring bullets higher for EM than senior_ic", func() {
-            bullet := &Bullet{
-                Category:   "mentoring",
-                Confidence: 0.70,
-            }
-            
-            emScore := generator.calculateRoleScore(bullet, career.TargetRoleEM, nil)
-            seniorScore := generator.calculateRoleScore(bullet, career.TargetRoleSeniorIC, nil)
-            
-            Expect(emScore).To(BeNumerically(">", seniorScore))
-        })
-    })
-})
+// bullet_generator.go
+func (bg *DefaultBulletGenerator) getRoleFilter(role string) *RoleFilter {
+    // Get MinConfidence from config if available
+    minConfidence := bg.getMinConfidenceForRole(role)
+
+    switch strings.ToLower(role) {
+    case "principal":
+        return &RoleFilter{
+            PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyLeadership},
+            SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyTechnical, constants.CompetencyMentoring},
+            MinConfidence:       minConfidence, // From config.ScoringConfig.RoleSettings
+        }
+    case "senior_ic":
+        return &RoleFilter{
+            PrimaryCategories:   []constants.CompetencyCategory{constants.CompetencyTechnical},
+            SecondaryCategories: []constants.CompetencyCategory{constants.CompetencyLeadership},
+            MinConfidence:       minConfidence, // From config.ScoringConfig.RoleSettings
+        }
+    // ... staff, em cases
+    }
+}
 ```
+
+### Scoring Algorithm
+
+```go
+// bullet_generator.go
+func (bg *DefaultBulletGenerator) calculateRoleScore(bullet *Bullet, role string) float64 {
+    score := roleScoreBase  // 0.50
+
+    filter := bg.getRoleFilter(role)
+
+    // Primary category match: +0.30
+    for _, primary := range filter.PrimaryCategories {
+        if bullet.Category == primary {
+            score += roleScorePrimaryCategoryBoost
+            break
+        }
+    }
+
+    // Secondary category match: +0.15 (only if no primary match)
+    if score == roleScoreBase {
+        for _, secondary := range filter.SecondaryCategories {
+            if bullet.Category == secondary {
+                score += roleScoreSecondaryCategoryBoost
+                break
+            }
+        }
+    }
+
+    // Additional bonuses for inclusion reason and confidence
+    // ...
+}
+```
+
+### Expected Behavior
+
+| Event Category | Senior IC Score | Principal Score | Winner |
+|----------------|-----------------|-----------------|--------|
+| technical | 0.80 (primary) | 0.65 (secondary) | Senior IC |
+| leadership | 0.65 (secondary) | 0.80 (primary) | Principal |
+| mentoring | 0.50 (none) | 0.65 (secondary) | Principal |
+
+## Regression Tests
+
+Tests located in `bullet_generator_test.go` under "BUG-008: Role-based scoring":
+
+- Category propagation from CareerEvent to Bullet
+- Category propagation from Fact to Bullet
+- ToCVBullet conversion preserves Category
+- Leadership bullets score higher for principal than senior_ic
+- Technical bullets score higher for senior_ic than principal
+- Mentoring bullets score higher for em than senior_ic
+- Primary category bullets get strong boost
+- Secondary category bullets get medium boost
+- End-to-end: different roles produce different rankings
 
 ## Definition of Done
 
-- [ ] Root cause confirmed via code inspection
-- [ ] Regression test written FIRST (TDD)
-- [ ] `calculateRoleScore()` uses role parameter
-- [ ] `customizeForRole()` implemented or removed
-- [ ] All existing tests pass
-- [ ] New role differentiation tests pass
-- [ ] `make check-compliance` passes
-- [ ] Committed with `make ai-commit`
+### Phase 1: Category Propagation
+- [x] `Achievement` struct has `Category constants.CompetencyCategory` field
+- [x] `Bullet` struct has `Category constants.CompetencyCategory` field
+- [x] `CVBullet` struct has `Category constants.CompetencyCategory` field
+- [x] Category populated from `CareerEvent.Categories[0]`
+- [x] Category populated from `Fact.CompetencyCategories[0]`
+- [x] Use `constants.IsValidCompetencyCategory()` for validation
+- [x] Unit tests for category propagation
+
+### Phase 2: Role Scoring
+- [x] `calculateRoleScore()` uses bullet category for scoring
+- [x] `calculateRoleScore()` applies role-specific weights from `getRoleFilter()`
+- [x] `calculateFinalScore()` uses `config.ScoringConfig.Weights`
+- [x] Use `config.ScoringConfig.RoleSettings` for MinConfidence
+- [x] Different roles produce measurably different bullet rankings
+- [x] Unit tests for role-based scoring
+- [x] Integration test comparing Senior IC vs Principal output
+
+### Phase 3: Audience Filtering
+- [x] `isEventRelevantToAudience()` stub removed (events don't filter by audience)
+- [x] `AudienceFilter` struct removed
+
+### All Phases
+- [x] All existing tests pass
+- [x] New regression tests pass
+- [x] `make check-compliance` passes
+- [x] Committed with `make ai-commit`
 
 ## Related
 
 - **Task 40**: Role Emphasis Redesign (marked complete but left stubs)
-- **BUG-009**: Category Mismatch (related - wrong categories in filters)
+- **Task 50**: Centralize Constants (prerequisite - provides type-safe enums and ScoringConfig)
+- **Task 51**: This fix - implements role-based scoring differentiation
 
-## Notes
+## Change Log
 
-This bug explains why CVs "look like a staff engineer" regardless of role selection. The entire role-based filtering system is effectively a no-op because the scoring function ignores the role parameter.
+### 2026-01-21 - Initial Fix
 
-## Investigation Session
+**Commits:**
+1. `docs(docs): expand BUG-008 with comprehensive role-scoring analysis`
+2. `fix(cv): implement role-based scoring using category alignment (BUG-008)`
+3. `refactor(cv): extract role scoring magic numbers to named constants`
 
-**Date**: 2026-01-21
-**Session**: Technology-Focused CV Generation Investigation
+**Key Changes:**
+- Added `Category` field to `Bullet` and `CVBullet` structs
+- Implemented `extractPrimaryCategory()` to propagate categories from events/facts
+- Updated `calculateRoleScore()` to use category-based scoring
+- Updated `RoleFilter` to use type-safe `constants.CompetencyCategory`
+- Added comprehensive regression tests
+- Tests now use factory pattern (`fixtures.EventWithCategories()`, `fixtures.FactWithCategories()`)
 
-Found during analysis of why senior_ic and staff CVs produce nearly identical output.
+### 2026-01-22 - Cleanup
+
+**Commits:**
+1. `refactor(cv): remove unused variant types and test-only code`
+
+**Key Changes:**
+- Deleted `role_emphasis.go` and `role_emphasis_test.go` (unused)
+- Deleted `variants_test.go` (tests for deleted types)
+- Removed `CVVariant`, `BulletConfig`, `SectionConfig`, `VariantService`, `BuiltInVariants` from variants.go
+- Removed `ProfileOverride` and `ApplyProfileOverride*` functions from cv_helpers.go
+- Removed `AudienceFilter` struct from bullet_generator.go
+- Total: ~1300 lines of dead code removed

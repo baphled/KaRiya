@@ -134,3 +134,17 @@ func EventVals(n int) []career.CareerEvent {
 	}
 	return events
 }
+
+// EventWithCategories creates a CareerEvent with specified categories.
+// Use for tests that need specific category assignments (e.g., role-based scoring).
+func EventWithCategories(id, text string, categories []string) *career.CareerEvent {
+	now := time.Now()
+	return &career.CareerEvent{
+		ID:         id,
+		Text:       text,
+		Categories: categories,
+		Date:       now,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+}
