@@ -3,6 +3,7 @@ package cv
 import (
 	"context"
 	"strings"
+	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -337,5 +338,129 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			Expect(ids[section.ID]).To(BeFalse())
 			ids[section.ID] = true
 		}
+	})
+
+	// BUG-009: Tenure-aware bullet grouping tests
+	Context("tenure-aware bullet grouping", func() {
+		It("should create separate experience entries for separate tenures", func() {
+			// Timeline: Company A (Jan 2022) -> Company B (Jun 2022) -> Company A (Jan 2023)
+
+			// First tenure at Company A
+			eventA1 := fixtures.EventWith("a1", "First work at A", "Company A", "")
+			eventA1.Date = time.Date(2022, 1, 15, 0, 0, 0, 0, time.UTC)
+
+			// Company B in between
+			eventB := fixtures.EventWith("b1", "Work at B", "Company B", "")
+			eventB.Date = time.Date(2022, 6, 15, 0, 0, 0, 0, time.UTC)
+
+			// Second tenure at Company A
+			eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
+			eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{eventA1, eventB, eventA2}
+
+			// Bullets for each event
+			bullets := []*career.CVBullet{
+				{ID: "bullet-a1", Text: "Achievement at A (first)", SourceEventIDs: []string{"a1"}, Rank: 0.8},
+				{ID: "bullet-b", Text: "Achievement at B", SourceEventIDs: []string{"b1"}, Rank: 0.7},
+				{ID: "bullet-a2", Text: "Achievement at A (second)", SourceEventIDs: []string{"a2"}, Rank: 0.9},
+			}
+
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find experience section
+			var expSection *career.CVSection
+			for _, s := range sections {
+				if s.SectionType == "experience" {
+					expSection = s
+					break
+				}
+			}
+			Expect(expSection).NotTo(BeNil())
+
+			// Should have 3 content groups: Company A (tenure 1), Company B, Company A (tenure 2)
+			Expect(len(expSection.Content)).To(Equal(3))
+
+			// Count Company A entries
+			companyACount := 0
+			for _, group := range expSection.Content {
+				if group.Header == "Company A" {
+					companyACount++
+				}
+			}
+			Expect(companyACount).To(Equal(2))
+		})
+
+		It("should render separate entries when Freelance separates tenures", func() {
+			// Company A -> Freelance -> Company A
+
+			eventA1 := fixtures.EventWith("a1", "First at A", "Company A", "")
+			eventA1.Date = time.Date(2022, 1, 15, 0, 0, 0, 0, time.UTC)
+
+			eventF := fixtures.EventWith("f1", "Freelance work", "Freelance", "")
+			eventF.Date = time.Date(2022, 6, 15, 0, 0, 0, 0, time.UTC)
+
+			eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
+			eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{eventA1, eventF, eventA2}
+
+			bullets := []*career.CVBullet{
+				{ID: "b1", Text: "Work 1", SourceEventIDs: []string{"a1"}, Rank: 0.8},
+				{ID: "b2", Text: "Freelance", SourceEventIDs: []string{"f1"}, Rank: 0.7},
+				{ID: "b3", Text: "Work 2", SourceEventIDs: []string{"a2"}, Rank: 0.9},
+			}
+
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find experience section
+			var expSection *career.CVSection
+			for _, s := range sections {
+				if s.SectionType == "experience" {
+					expSection = s
+					break
+				}
+			}
+			Expect(expSection).NotTo(BeNil())
+
+			// Should have 3 groups
+			Expect(len(expSection.Content)).To(Equal(3))
+		})
+
+		It("should order experience entries by most recent first", func() {
+			// Events at different times
+			eventOld := fixtures.EventWith("old", "Old work", "OldCorp", "")
+			eventOld.Date = time.Date(2020, 1, 15, 0, 0, 0, 0, time.UTC)
+
+			eventNew := fixtures.EventWith("new", "New work", "NewCorp", "")
+			eventNew.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{eventOld, eventNew}
+
+			bullets := []*career.CVBullet{
+				{ID: "b1", Text: "Old achievement", SourceEventIDs: []string{"old"}, Rank: 0.8},
+				{ID: "b2", Text: "New achievement", SourceEventIDs: []string{"new"}, Rank: 0.9},
+			}
+
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find experience section
+			var expSection *career.CVSection
+			for _, s := range sections {
+				if s.SectionType == "experience" {
+					expSection = s
+					break
+				}
+			}
+			Expect(expSection).NotTo(BeNil())
+
+			// First entry should be NewCorp (most recent)
+			Expect(expSection.Content[0].Header).To(Equal("NewCorp"))
+			// Second entry should be OldCorp
+			Expect(expSection.Content[1].Header).To(Equal("OldCorp"))
+		})
 	})
 })
