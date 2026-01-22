@@ -33,40 +33,20 @@ Legacy intents are **massively bloated**:
 
 ### Phase 1: Create Subdirectory Structure
 
-**Target Structure (Core Files - 5 Required)**:
+**Target Structure**:
 ```
 intents/{feature}/
-├── context.go     # IntentContext struct + Validate() + domain types (50-200 lines)
-├── result.go      # Result struct (20-50 lines)
-├── constants.go   # State enum ONLY (15-50 lines)
-├── messages.go    # ALL *Msg types (30-100 lines)
-└── intent.go      # NewIntent, Init, Update, View, Result (200-400 lines, MAX 600)
-```
+├── context.go     # Business logic, data (100-200 lines)
+├── result.go      # Output type (20-50 lines)
+├── constants.go   # State enum, error constants (50-80 lines)
+├── messages.go    # ALL *Msg types (50-100 lines)
+└── intent.go      # Broker ONLY (200-400 lines, MAX 600)
 
-**Optional Recommended Files (for larger intents)**:
-```
-intents/{feature}/
-├── types.go       # Intent struct definition (if intent.go > 300 lines)
-├── handlers.go    # ScreenResultHandler methods (HandleCancel, HandleNavigate, etc.)
-├── helpers.go     # Helper methods (modal openers, view helpers, etc.)
-├── filters.go     # Domain-specific filter/sort logic
-└── interfaces.go  # Service interfaces for dependency injection
-```
-
-**Screens Structure**:
-```
 screens/{feature}/
-├── list_screen.go      # List view (TableBehavior)
-├── detail_screen.go    # Detail view
-├── form_screen.go      # Form view (if applicable)
-└── modals/             # Feature-specific modals (if >2 modals)
-    ├── filter_modal.go
-    ├── search_modal.go
-    ├── edit_modal.go
-    └── helpers.go      # Modal helpers
+├── list_screen.go    # List view
+├── detail_screen.go  # Detail view
+└── form_screen.go    # Form view (if applicable)
 ```
-
-**Reference Implementation**: `intents/browse_timeline/` and `screens/timeline/`
 
 ### Phase 2: Extract Types
 
@@ -743,23 +723,15 @@ Use this checklist for each intent migration:
 - [ ] Identify all modals
 - [ ] Create subdirectory: `intents/{feature}/`
 - [ ] Create screen directory: `screens/{feature}/`
-- [ ] Create modals directory: `screens/{feature}/modals/` (if >2 modals)
 
-### Phase 2: Extract Types (5 Core Files)
-- [ ] Create `constants.go` (State enum ONLY - no error constants)
+### Phase 2: Extract Types
+- [ ] Create `constants.go` (State enum + error constants)
 - [ ] Create `messages.go` (ALL *Msg types)
 - [ ] Create `result.go` (Output type)
-- [ ] Create `context.go` (IntentContext + Validate() + domain types like Filters)
+- [ ] Create `context.go` (Input params + business logic)
 - [ ] Verify types compile independently
 
-### Phase 3: Extract Optional Files (for larger intents)
-- [ ] Create `types.go` (Intent struct if intent.go would be > 300 lines)
-- [ ] Create `handlers.go` (HandleCancel, HandleNavigate, HandleSubmit, HandleError)
-- [ ] Create `helpers.go` (modal openers, view helpers, transitionToScreen)
-- [ ] Create `filters.go` (domain-specific filter/sort logic)
-- [ ] Create `interfaces.go` (service interfaces for dependency injection)
-
-### Phase 4: Extract Screens
+### Phase 3: Extract Screens
 - [ ] Create `list_screen.go` (if list view exists)
 - [ ] Create `detail_screen.go` (if detail view exists)
 - [ ] Create `form_screen.go` (if form exists)
@@ -767,45 +739,39 @@ Use this checklist for each intent migration:
 - [ ] Use UIKit components (not raw lipgloss)
 - [ ] Verify screens compile independently
 
-### Phase 5: Extract Modals to screens/{feature}/modals/
+### Phase 4: Extract Modals
 - [ ] Identify custom modals
-- [ ] Create `screens/{feature}/modals/` directory
-- [ ] Move feature-specific modals (filter, search, edit, etc.)
-- [ ] Create `helpers.go` in modals/ for shared modal logic
-- [ ] Use centralized `uikit/feedback/` modals for generic patterns:
+- [ ] Replace with `uikit/feedback/` modals:
   - Delete confirmation → `feedback.ConfirmModal`
   - Success message → `feedback.SuccessModal`
   - Error message → `feedback.ErrorModal`
   - Loading → `feedback.LoadingModal`
+- [ ] Remove custom modal code
 
-### Phase 6: Refactor Intent
+### Phase 5: Refactor Intent
 - [ ] Create `intent.go` (broker only)
-- [ ] Embed `*intents.BaseIntent`
-- [ ] Add context field (`*IntentContext`)
+- [ ] Embed `*BaseIntent`
+- [ ] Add context field
 - [ ] Add typed screen fields
-- [ ] Add typed modal fields (from `screens/{feature}/modals/` and `uikit/feedback/`)
-- [ ] Add `modalRegistry *intents.ModalRegistry` for unified modal handling
-- [ ] Implement `NewIntent(ctx *IntentContext) (*Intent, error)`
+- [ ] Add typed modal fields
 - [ ] Implement `Init()` (setup screens)
-- [ ] Implement `Update()` (delegate to screens, handle modals)
-- [ ] Implement `View()` (use modalRegistry.RenderOverlay())
+- [ ] Implement `Update()` (delegate to screens)
+- [ ] Implement `View()` (delegate to screens, overlay modals)
 - [ ] Implement `ScreenResultHandler` interface
-- [ ] Verify intent.go < 400 lines (warning) / 600 lines (hard block)
+- [ ] Verify intent.go < 600 lines
 
-### Phase 7: Testing
+### Phase 6: Testing
 - [ ] Run `make check-intent-architecture`
 - [ ] Verify Check #17 passes (subdirectory structure)
 - [ ] Verify Check #18 passes (file size)
 - [ ] Verify Check #19 passes (no rendering in intent)
 - [ ] Verify Check #20 passes (type location)
 - [ ] Verify Check #21 passes (UIKit usage)
-- [ ] Verify Check #22 passes (no deprecated models package)
-- [ ] Verify Check #23 passes (screens directory structure)
 - [ ] Run unit tests
 - [ ] Run E2E tests
 - [ ] Manual testing
 
-### Phase 8: Cleanup
+### Phase 7: Cleanup
 - [ ] Delete original flat file
 - [ ] Update imports in other files
 - [ ] Run `make fmt`
@@ -928,7 +894,6 @@ make coverage
 
 ---
 
-**Last Updated**: 2026-01-24  
+**Last Updated**: 2026-01-22  
 **Status**: Required for all legacy intents  
-**Enforcement**: Automated by pre-commit hook (Check #17-23)  
-**Reference Implementation**: `intents/browse_timeline/` and `screens/timeline/`
+**Enforcement**: Automated by pre-commit hook (Check #17-21)
