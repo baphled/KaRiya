@@ -642,34 +642,34 @@ func (r *CountingFactRepository) GetBySourceBurstID(ctx context.Context, burstID
 	return []*career.Fact{}, nil
 }
 
-// EmptyBulletGenerator implements EnhancedBulletGenerator for tests
+// EmptyBulletGenerator implements BulletGenerator for tests
 type EmptyBulletGenerator struct{}
 
 func NewEmptyBulletGenerator() *EmptyBulletGenerator {
 	return &EmptyBulletGenerator{}
 }
 
-func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*EnhancedBullet, error) {
-	return []*EnhancedBullet{}, nil
+func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*Bullet, error) {
+	return []*Bullet{}, nil
 }
 
-func (g *EmptyBulletGenerator) FilterByRole(bullets []*EnhancedBullet, role string) []*EnhancedBullet {
+func (g *EmptyBulletGenerator) FilterByRole(bullets []*Bullet, role string) []*Bullet {
 	return bullets
 }
 
-func (g *EmptyBulletGenerator) FilterByAudience(bullets []*EnhancedBullet, audience string) []*EnhancedBullet {
+func (g *EmptyBulletGenerator) FilterByAudience(bullets []*Bullet, audience string) []*Bullet {
 	return bullets
 }
 
-func (g *EmptyBulletGenerator) RankByRelevance(bullets []*EnhancedBullet, role string, audience string) []*EnhancedBullet {
+func (g *EmptyBulletGenerator) RankByRelevance(bullets []*Bullet, role string, audience string) []*Bullet {
 	return bullets
 }
 
-func (g *EmptyBulletGenerator) EnhanceWording(bullet *EnhancedBullet, role string) (*EnhancedBullet, error) {
+func (g *EmptyBulletGenerator) EnhanceWording(bullet *Bullet, role string) (*Bullet, error) {
 	return bullet, nil
 }
 
-func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*EnhancedBullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*EnhancedBullet {
+func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*Bullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*Bullet {
 	return bullets // No-op for tests
 }
 

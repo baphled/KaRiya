@@ -476,7 +476,7 @@ var _ = Describe("CVBullet", func() {
 		})
 
 		Context("with generator-based inclusion reasons", func() {
-			// These reasons are used by BulletGenerator and EnhancedBulletGenerator
+			// These reasons are used by BulletGenerator
 			// to indicate the source of the bullet (Task 44)
 			generatorReasons := []string{"fact_extraction", "event_direct", "achievement_extraction"}
 
@@ -490,7 +490,7 @@ var _ = Describe("CVBullet", func() {
 			}
 		})
 
-		// Task 44: Enhanced fields from EnhancedBulletGenerator
+		// Task 44: Enhanced fields from BulletGenerator
 		Context("with enhanced fields", func() {
 			It("should pass validation with EnhancedText set", func() {
 				cvBullet.EnhancedText = "Architected and led implementation of distributed system serving 10M users"

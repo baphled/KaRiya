@@ -25,7 +25,7 @@ type DefaultCVGenerationService struct {
 	eventRepo       careerrepo.Repository
 	factRepo        careerrepo.FactRepository
 	configManager   ConfigManager
-	bulletGenerator EnhancedBulletGenerator
+	bulletGenerator BulletGenerator
 	sectionBuilder  SectionBuilder
 	logger          *logger.Logger
 }
@@ -35,7 +35,7 @@ func NewCVGenerationService(
 	eventRepo careerrepo.Repository,
 	factRepo careerrepo.FactRepository,
 	configManager ConfigManager,
-	bulletGenerator EnhancedBulletGenerator,
+	bulletGenerator BulletGenerator,
 	sectionBuilder SectionBuilder,
 	log *logger.Logger,
 ) *DefaultCVGenerationService {

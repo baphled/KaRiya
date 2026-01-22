@@ -13,16 +13,16 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("EnhancedBulletGenerator", func() {
+var _ = Describe("BulletGenerator", func() {
 	var (
-		generator EnhancedBulletGenerator
+		generator BulletGenerator
 		log       *logger.Logger
 		ctx       context.Context
 	)
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		generator = NewEnhancedBulletGenerator(log)
+		generator = NewBulletGenerator(log)
 		ctx = context.Background()
 	})
 
@@ -43,7 +43,7 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 	})
 
 	It("should filter by role confidence", func() {
-		bullets := []*EnhancedBullet{
+		bullets := []*Bullet{
 			{ID: "b1", Confidence: 0.85},
 			{ID: "b2", Confidence: 0.70},
 		}
@@ -53,7 +53,7 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 	})
 
 	It("should rank bullets by score", func() {
-		bullets := []*EnhancedBullet{
+		bullets := []*Bullet{
 			{ID: "b1", RoleScore: 0.8, AudienceScore: 0.7, MetricScore: 0.6, ImpactScore: 0.7, Confidence: 0.8},
 			{ID: "b2", RoleScore: 0.5, AudienceScore: 0.5, MetricScore: 0.5, ImpactScore: 0.5, Confidence: 0.5},
 		}
@@ -64,7 +64,7 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 	})
 
 	It("should enhance bullet wording", func() {
-		bullet := &EnhancedBullet{
+		bullet := &Bullet{
 			ID:   "b1",
 			Text: "Worked on authentication system",
 		}
@@ -209,10 +209,10 @@ var _ = Describe("EnhancedBulletGenerator", func() {
 })
 
 // Task 44: Conversion helper tests
-var _ = Describe("EnhancedBullet Conversion", func() {
+var _ = Describe("Bullet Conversion", func() {
 	Describe("ToCVBullet", func() {
 		It("should convert all fields correctly", func() {
-			enhanced := &EnhancedBullet{
+			enhanced := &Bullet{
 				ID:              "bullet-1",
 				Text:            "Led team to deliver microservices",
 				EnhancedText:    "Spearheaded cross-functional team to architect and deliver microservices platform",
@@ -248,7 +248,7 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 		})
 
 		It("should use original Text when EnhancedText is empty", func() {
-			enhanced := &EnhancedBullet{
+			enhanced := &Bullet{
 				ID:           "bullet-2",
 				Text:         "Original bullet text",
 				EnhancedText: "",
@@ -261,7 +261,7 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 		})
 
 		It("should use EnhancedText as Text when available", func() {
-			enhanced := &EnhancedBullet{
+			enhanced := &Bullet{
 				ID:           "bullet-3",
 				Text:         "Original text",
 				EnhancedText: "Enhanced and improved text",
@@ -275,7 +275,7 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 
 	Describe("ConvertBullets", func() {
 		It("should convert bullets to domain CVBullets", func() {
-			enhanced := []*EnhancedBullet{
+			enhanced := []*Bullet{
 				{ID: "b1", Text: "Bullet 1", Confidence: 0.8},
 				{ID: "b2", Text: "Bullet 2", Confidence: 0.9},
 				{ID: "b3", Text: "Bullet 3", Confidence: 0.7},
@@ -295,7 +295,7 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 		})
 
 		It("should return empty slice for empty input", func() {
-			cvBullets := ConvertBullets([]*EnhancedBullet{})
+			cvBullets := ConvertBullets([]*Bullet{})
 			Expect(cvBullets).To(BeEmpty())
 		})
 	})
@@ -304,19 +304,19 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 // BUG-008: Role-based CV differentiation tests
 var _ = Describe("BUG-008: Role-based scoring", func() {
 	var (
-		generator EnhancedBulletGenerator
+		generator BulletGenerator
 		log       *logger.Logger
 		ctx       context.Context
 	)
 
 	BeforeEach(func() {
 		log = logger.New(io.Discard, logger.InfoLevel)
-		generator = NewEnhancedBulletGenerator(log)
+		generator = NewBulletGenerator(log)
 		ctx = context.Background()
 	})
 
 	Describe("Category propagation", func() {
-		Context("from CareerEvent to EnhancedBullet", func() {
+		Context("from CareerEvent to Bullet", func() {
 			It("should propagate primary category from event", func() {
 				events := []*career.CareerEvent{
 					fixtures.EventWithCategories("evt-1", "Led team migration to Kubernetes", []string{"leadership", "technical"}),
@@ -341,7 +341,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 			})
 		})
 
-		Context("from Fact to EnhancedBullet", func() {
+		Context("from Fact to Bullet", func() {
 			It("should propagate primary competency category from fact", func() {
 				facts := []*career.Fact{
 					fixtures.FactWithCategories("fact-1", "Mentored 4 junior engineers", "evt-1",
@@ -357,7 +357,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 		Context("ToCVBullet conversion", func() {
 			It("should include category in CVBullet", func() {
-				enhanced := &EnhancedBullet{
+				enhanced := &Bullet{
 					ID:       "bullet-1",
 					Text:     "Technical achievement",
 					Category: constants.CompetencyTechnical,
@@ -370,15 +370,15 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 	})
 
 	Describe("Role-based scoring", func() {
-		var defaultGen *DefaultEnhancedBulletGenerator
+		var defaultGen *DefaultBulletGenerator
 
 		BeforeEach(func() {
-			defaultGen = generator.(*DefaultEnhancedBulletGenerator)
+			defaultGen = generator.(*DefaultBulletGenerator)
 		})
 
 		Context("calculateRoleScore with categories", func() {
 			It("should score leadership bullets higher for principal than senior_ic", func() {
-				bullet := &EnhancedBullet{
+				bullet := &Bullet{
 					Category:   constants.CompetencyLeadership,
 					Confidence: 0.7,
 				}
@@ -390,7 +390,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 			})
 
 			It("should score technical bullets higher for senior_ic than principal", func() {
-				bullet := &EnhancedBullet{
+				bullet := &Bullet{
 					Category:   constants.CompetencyTechnical,
 					Confidence: 0.7,
 				}
@@ -402,7 +402,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 			})
 
 			It("should score mentoring bullets higher for em than senior_ic", func() {
-				bullet := &EnhancedBullet{
+				bullet := &Bullet{
 					Category:   constants.CompetencyMentoring,
 					Confidence: 0.7,
 				}
@@ -415,7 +415,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 			It("should give primary category bullets a strong boost", func() {
 				// Technical is primary for senior_ic
-				bullet := &EnhancedBullet{
+				bullet := &Bullet{
 					Category:   constants.CompetencyTechnical,
 					Confidence: 0.7,
 				}
@@ -427,7 +427,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 			It("should give secondary category bullets a medium boost", func() {
 				// Leadership is secondary for senior_ic
-				bullet := &EnhancedBullet{
+				bullet := &Bullet{
 					Category:   constants.CompetencyLeadership,
 					Confidence: 0.7,
 				}

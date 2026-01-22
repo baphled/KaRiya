@@ -217,7 +217,7 @@ type CVBullet struct {
 	InclusionReason string   `json:"inclusion_reason"` // why this bullet was included
 	Confidence      float64  `json:"confidence"`       // 0.0 - 1.0
 
-	// Enhanced fields from EnhancedBulletGenerator (Task 44)
+	// Enhanced fields from BulletGenerator (Task 44)
 	EnhancedText   string                       `json:"enhanced_text,omitempty"`   // Professionally improved text
 	Category       constants.CompetencyCategory `json:"category,omitempty"`        // Primary competency category (BUG-008)
 	RoleScore      float64                      `json:"role_score,omitempty"`      // 0.0-1.0 role relevance

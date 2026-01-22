@@ -781,16 +781,16 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 		}
 
 		cvCtx := &intents.GenerateCVContext{
-			Events:                  events,
-			Facts:                   facts,
-			AvailableProfiles:       createDefaultCVProfiles(),
-			DefaultProfile:          createDefaultCVProfiles()[0],
-			CVGenerationService:     cvGenService,
-			DataProcessingService:   cv.NewDataProcessingService(log),
-			EnhancedBulletGenerator: cv.NewEnhancedBulletGenerator(log),
-			ExportService:           cvExportService,
-			ProfileConfig:           profileCfg,
-			AppContext:              ctx,
+			Events:                events,
+			Facts:                 facts,
+			AvailableProfiles:     createDefaultCVProfiles(),
+			DefaultProfile:        createDefaultCVProfiles()[0],
+			CVGenerationService:   cvGenService,
+			DataProcessingService: cv.NewDataProcessingService(log),
+			BulletGenerator:       cv.NewBulletGenerator(log),
+			ExportService:         cvExportService,
+			ProfileConfig:         profileCfg,
+			AppContext:            ctx,
 			ReviewScreenFactory: func(cvView *career.CVView) screens.Screen {
 				return cvscreens.NewCVReviewScreen(cvView)
 			},
@@ -869,8 +869,8 @@ func initConfigManager(log *logger.Logger) cv.ConfigManager {
 
 // initCVGenerationService initializes the CV generation service
 func initCVGenerationService(careerService *careerservice.Service, configMgr cv.ConfigManager, log *logger.Logger) cv.CVGenerationService {
-	// BUG-008: Use EnhancedBulletGenerator for role-based scoring
-	bulletGenerator := cv.NewEnhancedBulletGenerator(log)
+	// BUG-008: Use BulletGenerator for role-based scoring
+	bulletGenerator := cv.NewBulletGenerator(log)
 	sectionBuilder := cv.NewSectionBuilder(
 		careerService.GetSkillRepository(),
 		log,

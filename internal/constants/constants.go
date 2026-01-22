@@ -273,7 +273,7 @@ const (
 	InclusionReasonActivity     InclusionReason = "activity"
 )
 
-// Source-based reasons (used by BulletGenerator and EnhancedBulletGenerator)
+// Source-based reasons (used by BulletGenerator)
 const (
 	InclusionReasonFactExtraction        InclusionReason = "fact_extraction"
 	InclusionReasonEventDirect           InclusionReason = "event_direct"
