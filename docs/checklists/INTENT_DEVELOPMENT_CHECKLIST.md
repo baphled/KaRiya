@@ -368,7 +368,68 @@ func (i *MyIntent) View() string {
 
 ## Code Quality (WARNINGS)
 
-### 13. Key Handling Pattern ⚠️
+### 13. File Separation ✅
+
+**Rule**: Context, Model, Screen, and Modal structs MUST be in separate files
+
+```go
+// ❌ VIOLATION - All in one file: my_intent.go
+package intents
+
+type MyIntentContext struct { ... }  // WRONG: In intent file
+type MyIntentModel struct { ... }    // WRONG: In intent file
+type MyListScreen struct { ... }     // WRONG: In intent file
+type MyModal struct { ... }          // WRONG: In intent file
+
+type MyIntent struct { ... }
+
+// ✅ REQUIRED - Proper file separation:
+
+// File: my_context.go
+type MyIntentContext struct { ... }
+
+// File: my_model.go (if needed, but prefer flattening)
+type MyIntentModel struct { ... }
+
+// File: screens/myfeature/list_screen.go
+type ListScreen struct { ... }
+
+// File: components/my_modal.go or uikit/feedback/my_modal.go
+type MyModal struct { ... }
+
+// File: my_intent.go
+type MyIntent struct {
+    context *MyIntentContext
+    // Flattened model fields here
+}
+```
+
+**File Structure**:
+```
+internal/cli/
+├── intents/
+│   ├── my_intent.go          # Intent implementation only
+│   ├── my_context.go          # Context struct
+│   └── my_model.go            # Model struct (if not flattened)
+├── screens/
+│   └── myfeature/
+│       ├── list_screen.go     # Screen implementations
+│       └── detail_screen.go
+└── components/
+    └── my_modal.go            # Modal implementations
+```
+
+**Why**:
+- Separation of concerns
+- Single responsibility per file
+- Easier to navigate and maintain
+- Clear boundaries between types
+
+**Checked by**: `check-intent-architecture.sh` (Check #16)
+
+---
+
+### 14. Key Handling Pattern ⚠️
 
 **Rule**: Use `HandleGlobalKeys()` for common key handling, avoid string comparisons
 
@@ -398,7 +459,7 @@ case KeyHelp:
 
 ---
 
-### 14. Godoc Completeness ⚠️
+### 15. Godoc Completeness ⚠️
 
 **Rule**: All exported functions should have godoc comments
 
@@ -417,7 +478,7 @@ func (i *MyIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 
 ---
 
-### 15. Screen Management Pattern ⚠️
+### 16. Screen Management Pattern ⚠️
 
 **Recommendation**: Declare typed screen fields for clarity
 
@@ -706,6 +767,7 @@ func (i *MyIntent) setCancelled() {
 | ScreenResultHandler | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#8) |
 | Modal overlay | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#7) |
 | **Explicit screen fields** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#11)** |
+| **File separation** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#16)** |
 | Layer dependencies | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Forms architecture | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Explicit modal fields | Automated | 🟡 WARNING | check-intent-architecture.sh (#12) |

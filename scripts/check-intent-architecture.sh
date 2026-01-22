@@ -512,6 +512,84 @@ fi
 echo ""
 
 # ============================================
+# 16. FILE SEPARATION CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "16. FILE SEPARATION"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    BASENAME=$(basename "$file" .go)
+    DIRNAME=$(dirname "$file")
+    
+    # Check if Context struct is defined in intent file
+    INTENT_NAME=$(echo "$BASENAME" | sed 's/_intent$//' | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1' | sed 's/ //g')
+    CONTEXT_IN_INTENT=$(grep -q "^type ${INTENT_NAME}Context struct" "$file" && echo "yes" || echo "no")
+    
+    if [ "$CONTEXT_IN_INTENT" = "yes" ]; then
+        echo -e "${RED}❌ VIOLATION: Context defined in intent file${NC}"
+        echo "   File: $file"
+        echo "   Rule: Context struct must be in separate file"
+        echo ""
+        echo "   Required:"
+        echo "   - Intent: ${BASENAME}.go"
+        echo "   - Context: ${BASENAME%_intent}_context.go"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+    
+    # Check if Model struct is defined in intent file
+    MODEL_IN_INTENT=$(grep -q "^type ${INTENT_NAME}Model struct" "$file" && echo "yes" || echo "no")
+    
+    if [ "$MODEL_IN_INTENT" = "yes" ]; then
+        echo -e "${RED}❌ VIOLATION: Model defined in intent file${NC}"
+        echo "   File: $file"
+        echo "   Rule: Model struct must be in separate file"
+        echo ""
+        echo "   Note: Model structs should be flattened into intent."
+        echo "   If needed, create: ${BASENAME%_intent}_model.go"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+    
+    # Check if Screen structs are defined in intent file
+    SCREEN_IN_INTENT=$(grep -q "^type.*Screen struct" "$file" && echo "yes" || echo "no")
+    
+    if [ "$SCREEN_IN_INTENT" = "yes" ]; then
+        echo -e "${RED}❌ VIOLATION: Screen defined in intent file${NC}"
+        echo "   File: $file"
+        echo "   Rule: Screen structs must be in screens/ package"
+        echo ""
+        echo "   Required:"
+        echo "   - Screens: internal/cli/screens/myfeature/*.go"
+        echo "   - Intent: internal/cli/intents/${BASENAME}.go"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+    
+    # Check if Modal structs are defined in intent file
+    MODAL_IN_INTENT=$(grep -q "^type.*Modal struct" "$file" && echo "yes" || echo "no")
+    
+    if [ "$MODAL_IN_INTENT" = "yes" ]; then
+        echo -e "${RED}❌ VIOLATION: Modal defined in intent file${NC}"
+        echo "   File: $file"
+        echo "   Rule: Modal structs must be in components/ or uikit/feedback/"
+        echo ""
+        echo "   Required:"
+        echo "   - Modals: internal/cli/components/*.go or internal/cli/uikit/feedback/*.go"
+        echo "   - Intent: internal/cli/intents/${BASENAME}.go"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ File separation correct${NC}"
+fi
+
+echo ""
+
+# ============================================
 # SUMMARY
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

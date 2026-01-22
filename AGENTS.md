@@ -721,7 +721,31 @@ func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
 }
 ```
 
-#### 14. String-Based Key Handling (WARNING)
+#### 14. All Types in One File (File Separation)
+```go
+// ❌ REFUSE THIS - All in one file
+// File: my_intent.go
+package intents
+
+type MyIntentContext struct { ... }  // WRONG
+type MyIntentModel struct { ... }    // WRONG
+type MyIntent struct { ... }
+
+// ✅ REQUIRE THIS - Separate files
+
+// File: my_context.go
+type MyIntentContext struct { ... }
+
+// File: my_intent.go
+type MyIntent struct {
+    context *MyIntentContext
+}
+
+// Screens in: screens/myfeature/*.go
+// Modals in: components/*.go or uikit/feedback/*.go
+```
+
+#### 15. String-Based Key Handling (WARNING)
 ```go
 // ⚠️ DISCOURAGED - String comparisons
 if keyMsg.String() == "q" {
