@@ -103,7 +103,41 @@ type MyIntent struct {
 
 ---
 
-### 4. Required Context Field ✅
+### 4. Required State Field ✅
+
+**Rule**: All intents MUST have a state field (typed enum)
+
+```go
+// ❌ BAD: No state field
+type MyIntent struct {
+    *BaseIntent
+    // Missing state field
+}
+
+// ✅ GOOD: Typed state field
+type MyIntentState string
+
+const (
+    StateList   MyIntentState = "list"
+    StateDetail MyIntentState = "detail"
+)
+
+type MyIntent struct {
+    *BaseIntent
+    state MyIntentState  // REQUIRED
+}
+```
+
+**Why**: 
+- State machine pattern for orchestration
+- Type-safe state transitions
+- Clear intent lifecycle
+
+**Checked by**: `check-intent-architecture.sh` (Check #10)
+
+---
+
+### 5. Required Context Field ✅
 
 **Rule**: All intents MUST have a context field for input parameters
 
@@ -133,11 +167,131 @@ type MyIntent struct {
 - Makes intent reusable with different contexts
 - Clear separation between input and state
 
+**Checked by**: `check-intent-architecture.sh` (Check #14)
+
+---
+
+### 6. Explicit Screen Fields ✅
+
+**Rule**: Intents using screens MUST declare explicit typed screen fields
+
+```go
+// ❌ BAD: Only generic activeScreen
+type MyIntent struct {
+    *BaseIntent
+    activeScreen screens.Screen  // WRONG: No typed fields
+}
+
+// ✅ GOOD: Explicit typed fields
+type MyIntent struct {
+    *BaseIntent
+    
+    // Explicit screen fields (REQUIRED)
+    listScreen   *myfeature.ListScreen
+    detailScreen *myfeature.DetailScreen
+    formScreen   *myfeature.FormScreen
+    
+    // Generic pointer (points to one of the above)
+    activeScreen screens.Screen
+}
+```
+
+**Why**:
+- Makes intent structure clear
+- Easy to see all possible screens
+- Type-safe screen management
+- Better code navigation
+
 **Checked by**: `check-intent-architecture.sh` (Check #11)
 
 ---
 
-### 5. Context Usage ✅
+### 7. Explicit Modal Fields ⚠️
+
+**Rule**: Intents using modals SHOULD declare explicit typed modal fields
+
+```go
+// ⚠️ ACCEPTABLE but not ideal
+type MyIntent struct {
+    *BaseIntent
+    // Modals used but not declared
+}
+
+// ✅ BETTER: Explicit modal fields
+type MyIntent struct {
+    *BaseIntent
+    
+    // Modals (explicit declaration)
+    deleteModal   *feedback.ConfirmModal
+    successModal  *feedback.SuccessModal
+    errorModal    *feedback.ErrorModal
+    filterModal   *components.FilterModal
+}
+```
+
+**Why**:
+- Makes intent structure clear
+- Easy to see all possible modals
+- Better code documentation
+
+**Checked by**: `check-intent-architecture.sh` (Check #12)
+
+---
+
+### 8. Lean Intent Pattern ✅
+
+**Rule**: Intents should orchestrate, NOT contain business logic
+
+```go
+// ❌ BAD: Business logic in Update
+func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
+    // WRONG: Direct SQL queries
+    rows, err := db.Query("SELECT * FROM items WHERE...")
+    
+    // WRONG: Complex computations
+    for _, item := range items {
+        for _, tag := range item.Tags {
+            // Complex processing...
+        }
+    }
+    
+    return nil
+}
+
+// ✅ GOOD: Delegate to services
+func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
+    // Delegate to screen
+    cmd, result := i.listScreen.Update(msg)
+    
+    if result != nil {
+        return i.handleScreenResult(result)
+    }
+    
+    return cmd
+}
+
+// Business logic goes in service layer
+func (i *MyIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
+    if submit, ok := result.(*screens.SubmitResult); ok {
+        // Delegate to service
+        ctx := i.getContext()
+        err := i.service.SaveItem(ctx, submit.Data)
+        // ...
+    }
+}
+```
+
+**Why**:
+- Separation of concerns
+- Testable business logic
+- Reusable services
+- Maintainable intents
+
+**Checked by**: `check-intent-architecture.sh` (Check #9)
+
+---
+
+### 9. Context Usage ✅
 
 **Rule**: Use `i.getContext()` instead of `context.Background()`
 
@@ -155,7 +309,7 @@ ctx := i.getContext()
 
 ---
 
-### 6. No Dead Code ✅
+### 10. No Dead Code ✅
 
 **Rule**: Remove code marked "should not be reached" or create cleanup task
 
@@ -172,7 +326,7 @@ case *timeline.TimelineEventDetailScreen:
 
 ---
 
-### 7. ScreenResultHandler Implementation ✅
+### 11. ScreenResultHandler Implementation ✅
 
 **Rule**: Intents using screens MUST implement `ScreenResultHandler`
 
@@ -191,7 +345,7 @@ func (i *MyIntent) HandleError(*screens.ErrorResult) tea.Cmd
 
 ---
 
-### 8. Modal Overlay Pattern ✅
+### 12. Modal Overlay Pattern ✅
 
 **Rule**: Use `behaviors.RenderModalOverlay()` for modal rendering
 
@@ -214,7 +368,7 @@ func (i *MyIntent) View() string {
 
 ## Code Quality (WARNINGS)
 
-### 9. Key Handling Pattern ⚠️
+### 13. Key Handling Pattern ⚠️
 
 **Rule**: Use `HandleGlobalKeys()` for common key handling, avoid string comparisons
 
@@ -244,7 +398,7 @@ case KeyHelp:
 
 ---
 
-### 10. Godoc Completeness ⚠️
+### 14. Godoc Completeness ⚠️
 
 **Rule**: All exported functions should have godoc comments
 
@@ -263,7 +417,7 @@ func (i *MyIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 
 ---
 
-### 11. Screen Management Pattern ⚠️
+### 15. Screen Management Pattern ⚠️
 
 **Recommendation**: Declare typed screen fields for clarity
 
@@ -541,20 +695,23 @@ func (i *MyIntent) setCancelled() {
 
 | Check | Type | Severity | Script |
 |-------|------|----------|--------|
-| BaseIntent embedding | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#6) |
+| BaseIntent embedding | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#5) |
 | Typed state enum | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#1) |
 | Flattened state | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#2) |
-| Required context field | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#11) |
+| **Required state field** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#10)** |
+| **Required context field** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#14)** |
 | Context usage (getContext) | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#3) |
 | Dead code | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#4) |
-| ScreenResultHandler | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#9) |
-| Modal overlay | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#8) |
+| **Lean intent pattern** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#9)** |
+| ScreenResultHandler | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#8) |
+| Modal overlay | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#7) |
+| **Explicit screen fields** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#11)** |
 | Layer dependencies | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Forms architecture | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
-| Key handling pattern | Automated | 🟡 WARNING | check-intent-architecture.sh (#10) |
-| HandleGlobalKeys usage | Automated | 🟡 WARNING | check-intent-architecture.sh (#12) |
-| Godoc completeness | Automated | 🟡 WARNING | check-intent-architecture.sh (#7) |
-| Screen management | Automated | 🟡 WARNING | check-intent-architecture.sh (#5) |
+| Explicit modal fields | Automated | 🟡 WARNING | check-intent-architecture.sh (#12) |
+| Key handling pattern | Automated | 🟡 WARNING | check-intent-architecture.sh (#13) |
+| HandleGlobalKeys usage | Automated | 🟡 WARNING | check-intent-architecture.sh (#15) |
+| Godoc completeness | Automated | 🟡 WARNING | check-intent-architecture.sh (#6) |
 | E2E tests | Automated | 🔴 BLOCKING | check-patterns-strict.sh |
 | Coverage ≥95% | Automated | 🔴 BLOCKING | check-patterns-strict.sh |
 

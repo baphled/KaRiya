@@ -139,42 +139,10 @@ fi
 echo ""
 
 # ============================================
-# 5. SCREEN MANAGEMENT PATTERN CHECK
+# 5. BASEINTENT EMBEDDING CHECK
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "5. SCREEN MANAGEMENT PATTERN"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-for file in $INTENT_FILES; do
-    # Check if intent uses screens
-    HAS_ACTIVE_SCREEN=$(grep -q "activeScreen.*screens\.Screen" "$file" && echo "yes" || echo "no")
-    
-    if [ "$HAS_ACTIVE_SCREEN" = "yes" ]; then
-        # Check for typed screen fields (listScreen, detailScreen, etc.)
-        TYPED_SCREENS=$(grep "Screen\s\+\*.*\..*Screen" "$file" 2>/dev/null | wc -l)
-        
-        if [ "$TYPED_SCREENS" -eq "0" ]; then
-            echo -e "${YELLOW}⚠️  WARNING: Only generic activeScreen field${NC}"
-            echo "   File: $file"
-            echo "   Recommendation: Add typed screen fields for clarity"
-            echo "   Example: listScreen *timeline.TimelineEventListScreen"
-            echo ""
-            WARNINGS=$((WARNINGS+1))
-        fi
-    fi
-done
-
-if [ $WARNINGS -eq 0 ]; then
-    echo -e "${GREEN}✅ Screen management patterns look good${NC}"
-fi
-
-echo ""
-
-# ============================================
-# 6. BASEINTENT EMBEDDING CHECK
-# ============================================
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "6. BASEINTENT EMBEDDING"
+echo "5. BASEINTENT EMBEDDING"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 MISSING_BASE=$(grep -L "\*BaseIntent" internal/cli/intents/*_intent.go 2>/dev/null | grep -v "_test.go" || true)
@@ -197,7 +165,7 @@ echo ""
 # 7. GODOC COMPLETENESS CHECK
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "7. GODOC COMPLETENESS"
+echo "6. GODOC COMPLETENESS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $INTENT_FILES; do
@@ -235,7 +203,7 @@ echo ""
 # 8. MODAL OVERLAY PATTERN CHECK
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "8. MODAL OVERLAY PATTERN"
+echo "7. MODAL OVERLAY PATTERN"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $INTENT_FILES; do
@@ -266,7 +234,7 @@ echo ""
 # 9. SCREENRESULTHANDLER IMPLEMENTATION CHECK
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "9. SCREENRESULTHANDLER IMPLEMENTATION"
+echo "8. SCREENRESULTHANDLER IMPLEMENTATION"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $INTENT_FILES; do
@@ -296,10 +264,158 @@ fi
 echo ""
 
 # ============================================
-# 10. KEY HANDLING PATTERN CHECK
+# 9. LEAN INTENT PATTERN CHECK
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "10. KEY HANDLING PATTERN"
+echo "9. LEAN INTENT PATTERN"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    # Check for direct database/service calls in Update() method
+    # Intent should delegate to screens/services, not contain business logic
+    UPDATE_METHOD=$(sed -n '/^func.*Update.*tea\.Msg/,/^func /p' "$file" 2>/dev/null || true)
+    
+    if [ -n "$UPDATE_METHOD" ]; then
+        # Check for SQL queries in Update
+        HAS_SQL=$(echo "$UPDATE_METHOD" | grep -E "\.Query\(|\.Exec\(|\.QueryRow\(|INSERT INTO|SELECT.*FROM|UPDATE.*SET|DELETE FROM" || true)
+        
+        if [ -n "$HAS_SQL" ]; then
+            echo -e "${RED}❌ VIOLATION: Business logic in Update()${NC}"
+            echo "   File: $file"
+            echo "   Rule: Intents should orchestrate, not contain business logic"
+            echo "   Found: Direct SQL/database calls in Update() method"
+            echo ""
+            echo "   Move business logic to:"
+            echo "   - Service layer for data operations"
+            echo "   - Screen layer for UI logic"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
+        
+        # Check for complex computations (heuristic: multiple nested loops or complex math)
+        COMPLEX_LOGIC=$(echo "$UPDATE_METHOD" | grep -E "for.*for.*{|\.Calculate|\.Process.*{" | wc -l)
+        
+        if [ "$COMPLEX_LOGIC" -gt 2 ]; then
+            echo -e "${YELLOW}⚠️  WARNING: Complex logic in Update()${NC}"
+            echo "   File: $file"
+            echo "   Recommendation: Move complex computations to service layer"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        fi
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ Intents follow lean orchestration pattern${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 10. REQUIRED STATE FIELD CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "10. REQUIRED STATE FIELD"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    # Check if intent has a state field
+    HAS_STATE=$(grep -q "^\s*state\s\+\w" "$file" && echo "yes" || echo "no")
+    
+    if [ "$HAS_STATE" = "no" ]; then
+        echo -e "${RED}❌ VIOLATION: Missing state field${NC}"
+        echo "   File: $file"
+        echo "   Rule: All intents must have a state field (typed enum)"
+        echo ""
+        echo "   Required:"
+        echo "   state MyIntentState  // Typed state enum"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ All intents have state fields${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 11. EXPLICIT SCREEN FIELDS CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "11. EXPLICIT SCREEN FIELDS"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    # Check if intent uses screens
+    HAS_ACTIVE_SCREEN=$(grep -q "activeScreen.*screens\.Screen" "$file" && echo "yes" || echo "no")
+    
+    if [ "$HAS_ACTIVE_SCREEN" = "yes" ]; then
+        # Check for explicitly typed screen fields (listScreen, detailScreen, etc.)
+        TYPED_SCREENS=$(grep "Screen\s\+\*.*\..*Screen" "$file" 2>/dev/null | wc -l)
+        
+        if [ "$TYPED_SCREENS" -eq "0" ]; then
+            echo -e "${RED}❌ VIOLATION: Only generic activeScreen field${NC}"
+            echo "   File: $file"
+            echo "   Rule: Intents must declare explicit typed screen fields"
+            echo ""
+            echo "   Required pattern:"
+            echo "   listScreen   *myfeature.ListScreen"
+            echo "   detailScreen *myfeature.DetailScreen"
+            echo "   activeScreen screens.Screen  // Points to one of the above"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ Screen management patterns correct${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 12. EXPLICIT MODAL FIELDS CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "12. EXPLICIT MODAL FIELDS"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+for file in $INTENT_FILES; do
+    # Check if intent uses RenderModalOverlay (implies modals)
+    USES_MODALS=$(grep -q "RenderModalOverlay\|\.IsVisible()" "$file" && echo "yes" || echo "no")
+    
+    if [ "$USES_MODALS" = "yes" ]; then
+        # Check for explicitly typed modal fields
+        TYPED_MODALS=$(grep -E "Modal\s+\*.*Modal" "$file" 2>/dev/null | wc -l)
+        
+        if [ "$TYPED_MODALS" -eq "0" ]; then
+            echo -e "${YELLOW}⚠️  WARNING: Using modals without explicit fields${NC}"
+            echo "   File: $file"
+            echo "   Recommendation: Declare explicit modal fields in struct"
+            echo ""
+            echo "   Example:"
+            echo "   deleteModal  *feedback.ConfirmModal"
+            echo "   successModal *feedback.SuccessModal"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        fi
+    fi
+done
+
+if [ $WARNINGS -eq 0 ]; then
+    echo -e "${GREEN}✅ Modal fields properly declared${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 13. KEY HANDLING PATTERN CHECK
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "13. KEY HANDLING PATTERN"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $INTENT_FILES; do
@@ -324,10 +440,10 @@ done
 echo ""
 
 # ============================================
-# 11. CONTEXT FIELD CHECK
+# 14. CONTEXT FIELD CHECK
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "11. CONTEXT FIELD REQUIREMENT"
+echo "14. CONTEXT FIELD REQUIREMENT"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $INTENT_FILES; do
@@ -359,10 +475,10 @@ fi
 echo ""
 
 # ============================================
-# 12. HANDLEGLOBALKEYS USAGE CHECK
+# 15. HANDLEGLOBALKEYS USAGE CHECK
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "12. HANDLEGLOBALKEYS USAGE"
+echo "15. HANDLEGLOBALKEYS USAGE"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $INTENT_FILES; do

@@ -652,7 +652,76 @@ type MyIntent struct {
 }
 ```
 
-#### 11. String-Based Key Handling (WARNING)
+#### 11. Missing State Field
+```go
+// ❌ REFUSE THIS
+type MyIntent struct {
+    *BaseIntent
+    // Missing state field
+}
+
+// ✅ REQUIRE THIS
+type MyIntentState string
+
+const (
+    StateList   MyIntentState = "list"
+    StateDetail MyIntentState = "detail"
+)
+
+type MyIntent struct {
+    *BaseIntent
+    state MyIntentState  // REQUIRED
+}
+```
+
+#### 12. Generic activeScreen Without Typed Fields
+```go
+// ❌ REFUSE THIS
+type MyIntent struct {
+    *BaseIntent
+    activeScreen screens.Screen  // WRONG: No typed fields
+}
+
+// ✅ REQUIRE THIS
+type MyIntent struct {
+    *BaseIntent
+    
+    // Explicit typed fields (REQUIRED when using screens)
+    listScreen   *myfeature.ListScreen
+    detailScreen *myfeature.DetailScreen
+    
+    // Generic pointer
+    activeScreen screens.Screen
+}
+```
+
+#### 13. Business Logic in Update() Method
+```go
+// ❌ REFUSE THIS
+func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
+    // WRONG: Direct SQL queries
+    rows, err := db.Query("SELECT * FROM...")
+    
+    // WRONG: Complex business logic
+    for _, item := range items {
+        // Complex processing...
+    }
+}
+
+// ✅ REQUIRE THIS - Delegate to services
+func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
+    // Orchestrate, don't implement
+    cmd, result := i.listScreen.Update(msg)
+    
+    if result != nil {
+        return i.handleScreenResult(result)
+    }
+    
+    return cmd
+}
+```
+
+#### 14. String-Based Key Handling (WARNING)
 ```go
 // ⚠️ DISCOURAGED - String comparisons
 if keyMsg.String() == "q" {
