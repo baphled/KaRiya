@@ -335,4 +335,34 @@ var _ = Describe("LengthFormat", func() {
 			Expect(*ultraShort.MaxBulletsPerJob).To(Equal(2))
 		})
 	})
+
+	Describe("MapUILengthToFormat", func() {
+		It("should map '1_page' to LengthUltraShort", func() {
+			result := cv.MapUILengthToFormat("1_page")
+			Expect(result).To(Equal(cv.LengthUltraShort))
+		})
+
+		It("should map '2_page' to LengthShort", func() {
+			result := cv.MapUILengthToFormat("2_page")
+			Expect(result).To(Equal(cv.LengthShort))
+		})
+
+		It("should map 'standard' to LengthStandard", func() {
+			result := cv.MapUILengthToFormat("standard")
+			Expect(result).To(Equal(cv.LengthStandard))
+		})
+
+		It("should map 'detailed' to LengthFull", func() {
+			result := cv.MapUILengthToFormat("detailed")
+			Expect(result).To(Equal(cv.LengthFull))
+		})
+
+		It("should return LengthStandard as default for unknown values", func() {
+			result := cv.MapUILengthToFormat("unknown")
+			Expect(result).To(Equal(cv.LengthStandard))
+
+			result = cv.MapUILengthToFormat("")
+			Expect(result).To(Equal(cv.LengthStandard))
+		})
+	})
 })
