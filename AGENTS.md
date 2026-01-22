@@ -83,6 +83,32 @@ Behaviors (TableBehavior, CRUDBehavior)
 
 **Circular dependencies = immediate rejection.**
 
+### File Structure Rules (STRICTLY ENFORCED)
+
+**Each type in its own location:**
+
+| Type | Contains | Location | Example |
+|------|----------|----------|---------|
+| **Context** | Input parameters (events, services, config) | Separate file in `intents/` | `browse_timeline.go` |
+| **Model** | State wrapper (SHOULD BE FLATTENED) | Prefer: flattened into intent<br>Alternative: separate file | Flatten into `browse_timeline_intent.go`<br>OR `browse_timeline_model.go` |
+| **Intent** | Implementation (Update, View, handlers) | `*_intent.go` in `intents/` | `browse_timeline_intent.go` |
+| **Screen** | UI component (view + update) | `screens/feature/` package | `screens/browse/list_screen.go` |
+| **Modal** | Overlay component | `components/` or `uikit/feedback/` | `components/delete_modal.go` |
+
+**Example structure:**
+```
+internal/cli/intents/
+├── browse_timeline.go          # Context struct
+├── browse_timeline_intent.go   # Intent implementation
+screens/browse/
+├── list_screen.go              # ListScreen
+├── detail_screen.go            # DetailScreen
+components/
+└── delete_modal.go             # DeleteModal
+```
+
+**Enforcement**: Check #16 (`check-intent-architecture.sh`) blocks commits with violations.
+
 ### Intent Requirements
 
 All intents MUST:
@@ -722,28 +748,55 @@ func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
 ```
 
 #### 14. All Types in One File (File Separation)
+
+**CRITICAL**: Context (input params) and Models (state wrappers) MUST be in separate files from intent implementation.
+
 ```go
 // ❌ REFUSE THIS - All in one file
 // File: my_intent.go
 package intents
 
-type MyIntentContext struct { ... }  // WRONG
-type MyIntentModel struct { ... }    // WRONG
+type MyIntentContext struct { ... }  // WRONG: Context in intent file
+type MyIntentModel struct { ... }    // WRONG: Model in intent file
 type MyIntent struct { ... }
 
-// ✅ REQUIRE THIS - Separate files
+// ✅ REQUIRE THIS - Proper separation
 
-// File: my_context.go
-type MyIntentContext struct { ... }
+// File: my.go (or my_context.go)
+// Purpose: Input parameters (Events, Services, Config)
+package intents
 
-// File: my_intent.go
-type MyIntent struct {
-    context *MyIntentContext
+type MyIntentContext struct {
+    Events  []*career.Event    // Input data
+    Service *service.MyService // Dependencies
+    Config  *MyConfig          // Configuration
 }
 
-// Screens in: screens/myfeature/*.go
-// Modals in: components/*.go or uikit/feedback/*.go
+// File: my_intent.go
+// Purpose: Intent implementation ONLY
+package intents
+
+type MyIntent struct {
+    *BaseIntent
+    context *MyIntentContext  // Reference to context
+    state   MyIntentState     // State fields (flattened, NOT wrapped)
+    active  bool
+    
+    // Explicit screen fields
+    listScreen   *myfeature.ListScreen
+    detailScreen *myfeature.DetailScreen
+}
+
+// Screens: screens/myfeature/*.go
+// Modals: components/*.go or uikit/feedback/*.go
 ```
+
+**Key Points**:
+- **Context** = Input parameters (events, services, config) → Separate file
+- **Model** = State wrapper → Should be FLATTENED (preferred) or separate file
+- **Intent** = Implementation (Update, View, handlers) → Main file
+- **Screens** = UI components → `screens/` package
+- **Modals** = Overlay components → `components/` or `uikit/feedback/`
 
 #### 15. String-Based Key Handling (WARNING)
 ```go

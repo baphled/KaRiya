@@ -522,32 +522,43 @@ for file in $INTENT_FILES; do
     BASENAME=$(basename "$file" .go)
     DIRNAME=$(dirname "$file")
     
-    # Check if Context struct is defined in intent file
-    INTENT_NAME=$(echo "$BASENAME" | sed 's/_intent$//' | sed 's/_/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2));}1' | sed 's/ //g')
-    CONTEXT_IN_INTENT=$(grep -q "^type ${INTENT_NAME}Context struct" "$file" && echo "yes" || echo "no")
+    # Check if ANY Context struct is defined in intent file (ending with Context)
+    CONTEXT_STRUCTS=$(grep "^type.*Context struct" "$file" | grep -v "// " || true)
     
-    if [ "$CONTEXT_IN_INTENT" = "yes" ]; then
-        echo -e "${RED}❌ VIOLATION: Context defined in intent file${NC}"
+    if [ -n "$CONTEXT_STRUCTS" ]; then
+        echo -e "${RED}❌ VIOLATION: Context struct(s) defined in intent file${NC}"
         echo "   File: $file"
-        echo "   Rule: Context struct must be in separate file"
+        echo "   Rule: Context structs must be in separate file"
         echo ""
-        echo "   Required:"
-        echo "   - Intent: ${BASENAME}.go"
-        echo "   - Context: ${BASENAME%_intent}_context.go"
+        echo "   Found:"
+        echo "$CONTEXT_STRUCTS" | sed 's/^/   /'
+        echo ""
+        echo "   Required separation:"
+        echo "   - Intent: ${BASENAME}.go (only intent struct and methods)"
+        echo "   - Context: ${BASENAME%_intent}.go OR ${BASENAME%_intent}_context.go"
+        echo ""
+        echo "   Context = Input parameters (Events, Services, Config, etc.)"
+        echo "   Context should be in its own file, separate from intent implementation"
         echo ""
         VIOLATIONS=$((VIOLATIONS+1))
     fi
     
-    # Check if Model struct is defined in intent file
-    MODEL_IN_INTENT=$(grep -q "^type ${INTENT_NAME}Model struct" "$file" && echo "yes" || echo "no")
+    # Check if ANY Model struct is defined in intent file (ending with Model)
+    MODEL_STRUCTS=$(grep "^type.*Model struct" "$file" | grep -v "// " || true)
     
-    if [ "$MODEL_IN_INTENT" = "yes" ]; then
-        echo -e "${RED}❌ VIOLATION: Model defined in intent file${NC}"
+    if [ -n "$MODEL_STRUCTS" ]; then
+        echo -e "${RED}❌ VIOLATION: Model struct(s) defined in intent file${NC}"
         echo "   File: $file"
-        echo "   Rule: Model struct must be in separate file"
+        echo "   Rule: Model structs must be flattened into intent OR in separate file"
         echo ""
-        echo "   Note: Model structs should be flattened into intent."
-        echo "   If needed, create: ${BASENAME%_intent}_model.go"
+        echo "   Found:"
+        echo "$MODEL_STRUCTS" | sed 's/^/   /'
+        echo ""
+        echo "   RECOMMENDED: Flatten model fields directly into intent struct"
+        echo "   ALTERNATIVE: Create separate file: ${BASENAME%_intent}_model.go"
+        echo ""
+        echo "   Model = State wrapper (should be flattened per Check #2)"
+        echo "   If you must keep it, put it in a separate file"
         echo ""
         VIOLATIONS=$((VIOLATIONS+1))
     fi
