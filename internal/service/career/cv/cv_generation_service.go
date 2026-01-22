@@ -112,25 +112,25 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		facts = []*career.Fact{}
 	}
 
-	// Generate bullets using EnhancedBulletGenerator (BUG-008: role-based scoring)
-	enhancedBullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, nil, config.TargetRole, config.TargetAudience)
+	// Generate bullets (BUG-008: role-based scoring)
+	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, nil, config.TargetRole, config.TargetAudience)
 	if err != nil {
 		svc.logger.Error("Failed to generate bullets: %v", err)
 		return nil, fmt.Errorf("failed to generate bullets: %w", err)
 	}
 
-	svc.logger.Info("Generated %d bullets from %d events and %d facts", len(enhancedBullets), len(events), len(facts))
+	svc.logger.Info("Generated %d bullets from %d events and %d facts", len(bullets), len(events), len(facts))
 
 	// Apply technology-based filtering if not Language Agnostic (Phase 10 - Task 40)
 	if config.TechnologyFocus != "" && config.TechnologyFocus != string(TechnologyFocusLanguageAgnostic) {
 		techFocus := TechnologyFocus(config.TechnologyFocus)
-		enhancedBullets = svc.bulletGenerator.FilterByTechnologies(enhancedBullets, events, techFocus, config.SelectedTechnologies)
+		bullets = svc.bulletGenerator.FilterByTechnologies(bullets, events, techFocus, config.SelectedTechnologies)
 		svc.logger.Info("Applied technology filtering (%s) with %d technologies, %d bullets after filtering",
-			config.TechnologyFocus, len(config.SelectedTechnologies), len(enhancedBullets))
+			config.TechnologyFocus, len(config.SelectedTechnologies), len(bullets))
 	}
 
-	// Convert EnhancedBullets to CVBullets for SectionBuilder
-	bullets := ConvertBullets(enhancedBullets)
+	// Convert to domain bullets for SectionBuilder
+	cvBullets := ConvertBullets(bullets)
 
 	// Build sections using SectionBuilder (Phase 11 - Task 40: pass skills format config)
 	skillsConfig := &SkillsFormatConfig{
@@ -138,7 +138,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		Limit:                config.SkillsLimit,
 		SelectedTechnologies: config.SelectedTechnologies,
 	}
-	sections, err := svc.sectionBuilder.BuildSections(ctx, bullets, events, facts, config.TargetRole, skillsConfig)
+	sections, err := svc.sectionBuilder.BuildSections(ctx, cvBullets, events, facts, config.TargetRole, skillsConfig)
 	if err != nil {
 		svc.logger.Error("Failed to build sections: %v", err)
 		return nil, fmt.Errorf("failed to build sections: %w", err)

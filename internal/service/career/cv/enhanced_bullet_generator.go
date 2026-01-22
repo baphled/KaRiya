@@ -99,7 +99,7 @@ func (eb *EnhancedBullet) ToCVBullet() *career.CVBullet {
 	}
 }
 
-// ConvertBullets converts a slice of EnhancedBullets to CVBullets.
+// ConvertBullets converts bullets to domain CVBullets.
 func ConvertBullets(enhanced []*EnhancedBullet) []*career.CVBullet {
 	if enhanced == nil {
 		return nil

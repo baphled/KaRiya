@@ -274,7 +274,7 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 	})
 
 	Describe("ConvertBullets", func() {
-		It("should convert a slice of EnhancedBullets to CVBullets", func() {
+		It("should convert bullets to domain CVBullets", func() {
 			enhanced := []*EnhancedBullet{
 				{ID: "b1", Text: "Bullet 1", Confidence: 0.8},
 				{ID: "b2", Text: "Bullet 2", Confidence: 0.9},
