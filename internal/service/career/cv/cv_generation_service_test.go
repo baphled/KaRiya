@@ -41,6 +41,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				configManager,
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -60,6 +61,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				configManager,
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -87,6 +89,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				configManager,
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -103,6 +106,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				nil,
 				nil,
 				nil,
+				NewMockDataProcessingService(),
 				nil,
 				log,
 			)
@@ -121,6 +125,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				nil,
 				nil,
 				nil,
+				NewMockDataProcessingService(),
 				nil,
 				log,
 			)
@@ -140,6 +145,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				nil,
 				nil,
 				nil,
+				NewMockDataProcessingService(),
 				nil,
 				log,
 			)
@@ -160,6 +166,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -184,6 +191,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -213,6 +221,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -234,6 +243,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -260,6 +270,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -282,6 +293,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewCountingFactRepository(3),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -310,6 +322,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -335,6 +348,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 					NewEmptyFactRepository(),
 					NewMockConfigManager(),
 					NewEmptyBulletGenerator(),
+					NewMockDataProcessingService(),
 					NewEmptySectionBuilder(),
 					log,
 				)
@@ -358,6 +372,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -386,6 +401,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -408,6 +424,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -430,6 +447,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -437,6 +455,148 @@ var _ = Describe("DefaultCVGenerationService", func() {
 			cv, err := service.GenerateCVFromConfig(ctx, config)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cv).NotTo(BeNil())
+		})
+	})
+
+	Describe("DataProcessingService integration", func() {
+		Describe("NewCVGenerationService", func() {
+			It("should panic when DataProcessingService is nil", func() {
+				Expect(func() {
+					NewCVGenerationService(
+						NewEmptyRepository(),
+						NewEmptyFactRepository(),
+						NewMockConfigManager(),
+						NewEmptyBulletGenerator(),
+						nil, // nil DataProcessingService
+						NewEmptySectionBuilder(),
+						log,
+					)
+				}).To(Panic())
+			})
+		})
+
+		Describe("GenerateCVFromConfig with achievements", func() {
+			It("should extract achievements from events", func() {
+				mockDataProcessor := NewMockDataProcessingService()
+				config := &career.CVConfig{
+					Name:           "test-cv",
+					TargetRole:     "principal",
+					TargetAudience: "hiring_manager",
+					EventFilters:   make(map[string]interface{}),
+				}
+
+				// Create test events
+				event1 := &career.CareerEvent{
+					ID:   uuid.New().String(),
+					Text: "Led API improvements, reducing latency by 40%",
+					Date: time.Now(),
+				}
+				event2 := &career.CareerEvent{
+					ID:   uuid.New().String(),
+					Text: "Mentored 5 junior engineers",
+					Date: time.Now(),
+				}
+
+				// Create repository that returns test events
+				eventRepo := NewMockEventRepository([]*career.CareerEvent{event1, event2})
+
+				service := NewCVGenerationService(
+					eventRepo,
+					NewEmptyFactRepository(),
+					NewMockConfigManager(),
+					NewEmptyBulletGenerator(),
+					mockDataProcessor,
+					NewEmptySectionBuilder(),
+					log,
+				)
+
+				_, err := service.GenerateCVFromConfig(ctx, config)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify ExtractAchievements was called for each event
+				Expect(mockDataProcessor.ExtractAchievementsCalls).To(Equal(2))
+			})
+
+			It("should pass achievements to BulletGenerator", func() {
+				mockBulletGen := NewMockBulletGenerator()
+				mockDataProcessor := NewMockDataProcessingService()
+
+				// Configure mock to return achievements
+				mockDataProcessor.AchievementsToReturn = []*Achievement{
+					{
+						ID:          uuid.New().String(),
+						Description: "Achievement 1",
+						Metrics:     []*Metric{{Type: "percentage", Value: "40", Unit: "%"}},
+						Confidence:  0.9,
+					},
+				}
+
+				config := &career.CVConfig{
+					Name:           "test-cv",
+					TargetRole:     "principal",
+					TargetAudience: "hiring_manager",
+					EventFilters:   make(map[string]interface{}),
+				}
+
+				event := &career.CareerEvent{
+					ID:   uuid.New().String(),
+					Text: "Test event",
+					Date: time.Now(),
+				}
+
+				eventRepo := NewMockEventRepository([]*career.CareerEvent{event})
+
+				service := NewCVGenerationService(
+					eventRepo,
+					NewEmptyFactRepository(),
+					NewMockConfigManager(),
+					mockBulletGen,
+					mockDataProcessor,
+					NewEmptySectionBuilder(),
+					log,
+				)
+
+				_, err := service.GenerateCVFromConfig(ctx, config)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify achievements were passed to BulletGenerator (not nil)
+				Expect(mockBulletGen.ReceivedAchievements).NotTo(BeNil())
+				Expect(len(mockBulletGen.ReceivedAchievements)).To(BeNumerically(">", 0))
+			})
+
+			It("should handle ExtractAchievements errors gracefully", func() {
+				mockDataProcessor := NewMockDataProcessingService()
+				mockDataProcessor.ShouldReturnError = true
+
+				config := &career.CVConfig{
+					Name:           "test-cv",
+					TargetRole:     "principal",
+					TargetAudience: "hiring_manager",
+					EventFilters:   make(map[string]interface{}),
+				}
+
+				event := &career.CareerEvent{
+					ID:   uuid.New().String(),
+					Text: "Test event",
+					Date: time.Now(),
+				}
+
+				eventRepo := NewMockEventRepository([]*career.CareerEvent{event})
+
+				service := NewCVGenerationService(
+					eventRepo,
+					NewEmptyFactRepository(),
+					NewMockConfigManager(),
+					NewEmptyBulletGenerator(),
+					mockDataProcessor,
+					NewEmptySectionBuilder(),
+					log,
+				)
+
+				// Should not fail even if achievement extraction fails
+				_, err := service.GenerateCVFromConfig(ctx, config)
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 	})
 })
@@ -681,4 +841,113 @@ func NewEmptySectionBuilder() *EmptySectionBuilder {
 
 func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
 	return []*career.CVSection{}, nil
+}
+
+// MockDataProcessingService for testing achievement extraction
+type MockDataProcessingService struct {
+	ExtractAchievementsCalls int
+	AchievementsToReturn     []*Achievement
+	ShouldReturnError        bool
+}
+
+func NewMockDataProcessingService() *MockDataProcessingService {
+	return &MockDataProcessingService{
+		AchievementsToReturn: []*Achievement{},
+	}
+}
+
+func (m *MockDataProcessingService) ExtractAchievements(ctx context.Context, event *career.CareerEvent, facts []*career.Fact) ([]*Achievement, error) {
+	m.ExtractAchievementsCalls++
+	if m.ShouldReturnError {
+		return nil, ErrConfigNotFound // reuse existing error for test
+	}
+	return m.AchievementsToReturn, nil
+}
+
+func (m *MockDataProcessingService) GroupEventsByCompany(ctx context.Context, events []*career.CareerEvent) (map[string]*CompanyGroup, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+func (m *MockDataProcessingService) ExtractSkills(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact) (map[string]*SkillCategory, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+func (m *MockDataProcessingService) CalculateMetrics(ctx context.Context, text string) ([]*Metric, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+func (m *MockDataProcessingService) ExtractProjectsFromEvents(ctx context.Context, events []*career.CareerEvent) ([]*ProjectGroup, error) {
+	return nil, nil //nolint:nilnil // test stub
+}
+
+// MockEventRepository for testing with specific events
+type MockEventRepository struct {
+	events []*career.CareerEvent
+}
+
+func NewMockEventRepository(events []*career.CareerEvent) *MockEventRepository {
+	return &MockEventRepository{events: events}
+}
+
+func (r *MockEventRepository) List(ctx context.Context, filters careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+	return r.events, nil
+}
+
+func (r *MockEventRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+	for _, event := range r.events {
+		if event.ID == id {
+			return event, nil
+		}
+	}
+	return nil, nil //nolint:nilnil // test stub
+}
+
+func (r *MockEventRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+	return nil
+}
+
+func (r *MockEventRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+	return nil
+}
+
+func (r *MockEventRepository) Delete(ctx context.Context, id string) error {
+	return nil
+}
+
+func (r *MockEventRepository) Count(ctx context.Context, filters careerrepo.ListFilters) (int, error) {
+	return len(r.events), nil
+}
+
+// MockBulletGenerator for testing bullet generation with achievements
+type MockBulletGenerator struct {
+	ReceivedAchievements []*Achievement
+}
+
+func NewMockBulletGenerator() *MockBulletGenerator {
+	return &MockBulletGenerator{}
+}
+
+func (g *MockBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*Bullet, error) {
+	g.ReceivedAchievements = achievements
+	return []*Bullet{}, nil
+}
+
+func (g *MockBulletGenerator) FilterByRole(bullets []*Bullet, role string) []*Bullet {
+	return bullets
+}
+
+func (g *MockBulletGenerator) FilterByAudience(bullets []*Bullet, audience string) []*Bullet {
+	return bullets
+}
+
+func (g *MockBulletGenerator) RankByRelevance(bullets []*Bullet, role string, audience string) []*Bullet {
+	return bullets
+}
+
+func (g *MockBulletGenerator) EnhanceWording(bullet *Bullet, role string) (*Bullet, error) {
+	return bullet, nil
+}
+
+func (g *MockBulletGenerator) FilterByTechnologies(bullets []*Bullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*Bullet {
+	return bullets
 }
