@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Role scoring constants for calculateRoleScore
+// Role scoring constants for calculateRoleScore.
 const (
 	roleScoreBase                    = 0.50 // Base score for all bullets
 	roleScorePrimaryCategoryBoost    = 0.30 // Boost for primary category match
@@ -23,6 +23,8 @@ const (
 	roleScoreHighConfidenceBonus     = 0.05 // Bonus for high confidence bullets
 	roleScoreHighConfidenceThreshold = 0.80 // Threshold for high confidence
 	technologySkillMatchBonus        = 0.15 // Bonus for matching selected technologies
+	impactLevelHighBonus             = 0.15 // Bonus for high impact level
+	impactLevelMediumBonus           = 0.05 // Bonus for medium impact level
 )
 
 // BulletGenerator generates professionally ranked CV bullets
@@ -551,11 +553,11 @@ func (bg *DefaultBulletGenerator) calculateAudienceScore(bullet *Bullet, audienc
 		}
 	}
 
-	// Additional bonus for relevant impact level
+	// Additional bonus for relevant impact level.
 	if bullet.ImpactLevel == "high" {
-		score += 0.15
+		score += impactLevelHighBonus
 	} else if bullet.ImpactLevel == "medium" {
-		score += 0.05
+		score += impactLevelMediumBonus
 	}
 
 	return math.Min(score, 1.0)
