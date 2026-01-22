@@ -216,25 +216,52 @@ Remove year suffixes from company names:
 
 **Implemented**: 2026-01-22
 
+### Commits
+
+| Commit | Description |
+|--------|-------------|
+| `3e3f770` | Initial fix: add tenure detection for separate company engagements |
+| `c7f1867` | Cleanup: consolidate tenure detection utilities and remove dead code |
+| `6f5e52b` | Refactor: replace hardcoded strings with constants |
+
 ### Changes Made
 
-1. **`data_processing_service.go`**:
+1. **`internal/constants/constants.go`**:
+   - Added `DefaultCompanyName` constant (`"Other"`) for empty company fallback
+   - Added `TenureSeparator` constant (`"#"`) for tenure key formatting
+
+2. **`data_processing_service.go`**:
    - Added `detectTenures()` function to split events into separate tenure groups
-   - Added `hasInterveningCompanyEvents()` helper to detect intervening employment
+   - Added shared `hasInterveningCompanyEvents()` helper (package-level function)
    - Updated `GroupEventsByCompany()` to use tenure detection
    - Multiple tenures use key format: `"Company A#1"`, `"Company A#2"`
+   - Replaced hardcoded strings with constants
 
-2. **`section_builder.go`**:
+3. **`section_builder.go`**:
    - Added `bulletInfo` type for tenure tracking
    - Added `detectBulletTenures()` function for bullet-level tenure detection
-   - Added `hasInterveningCompanyEvents()` helper
    - Updated `groupBulletsByCompany()` to create separate groups per tenure
+   - Uses shared `hasInterveningCompanyEvents()` from data_processing_service.go
+
+### Cleanup Applied
+
+- Removed duplicate `hasInterveningCompanyEvents()` from section_builder.go
+- Removed unused `companyEventIDs` map in `detectTenures()`
+- Removed unused `sourceEventID` field from `bulletInfo` struct
+- Consistent empty company handling (treats `""` as `constants.DefaultCompanyName`)
 
 ### Test Coverage
 
-- Added 8 new tests for tenure detection scenarios
+- Added 5 tenure detection tests in `data_processing_service_test.go`
+- Added 3 tenure-aware bullet grouping tests in `section_builder_test.go`
 - All 342 CV tests pass
 - Tests cover: single tenure, multiple tenures, Freelance separation, chronological ordering
+- Tests use constants instead of hardcoded strings
+
+### PR
+
+- **PR #109**: https://github.com/baphled/KaRiya/pull/109
+- **Branch**: `fix/bug-009-cv-tenure-detection`
 
 ---
 
