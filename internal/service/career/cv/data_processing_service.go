@@ -211,12 +211,6 @@ func (svc *DefaultDataProcessingService) detectTenures(
 		return sortedCompanyEvents[i].Date.Before(sortedCompanyEvents[j].Date)
 	})
 
-	// Build a set of company event IDs for quick lookup.
-	companyEventIDs := make(map[string]bool)
-	for _, e := range companyEvents {
-		companyEventIDs[e.ID] = true
-	}
-
 	// Detect tenure boundaries by checking for intervening work at other companies.
 	var tenures [][]*career.CareerEvent
 	currentTenure := []*career.CareerEvent{sortedCompanyEvents[0]}
@@ -226,7 +220,7 @@ func (svc *DefaultDataProcessingService) detectTenures(
 		currEvent := sortedCompanyEvents[i]
 
 		// Check if there are events at OTHER companies between these two dates.
-		hasIntervening := svc.hasInterveningCompanyEvents(
+		hasIntervening := hasInterveningCompanyEvents(
 			prevEvent.Date,
 			currEvent.Date,
 			company,
@@ -251,7 +245,8 @@ func (svc *DefaultDataProcessingService) detectTenures(
 
 // hasInterveningCompanyEvents checks if any events at OTHER companies
 // exist between two dates (exclusive of both endpoints).
-func (svc *DefaultDataProcessingService) hasInterveningCompanyEvents(
+// This is a shared utility used by both data processing and section builder.
+func hasInterveningCompanyEvents(
 	startDate, endDate time.Time,
 	currentCompany string,
 	allEventsSorted []*career.CareerEvent,

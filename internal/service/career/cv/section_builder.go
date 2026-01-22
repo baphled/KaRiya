@@ -419,7 +419,6 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 	for _, bullet := range bullets {
 		companyCounts := make(map[string]int)
 		var earliestDate, latestDate time.Time
-		var earliestEventID string
 
 		for _, eventID := range bullet.SourceEventIDs {
 			if event, exists := eventMap[eventID]; exists {
@@ -427,7 +426,6 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 					companyCounts[event.Company]++
 					if earliestDate.IsZero() || event.Date.Before(earliestDate) {
 						earliestDate = event.Date
-						earliestEventID = event.ID
 					}
 					if latestDate.IsZero() || event.Date.After(latestDate) {
 						latestDate = event.Date
@@ -452,11 +450,10 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 		}
 
 		bulletInfos = append(bulletInfos, bulletInfo{
-			bullet:        bullet,
-			company:       primaryCompany,
-			earliestDate:  earliestDate,
-			latestDate:    latestDate,
-			sourceEventID: earliestEventID,
+			bullet:       bullet,
+			company:      primaryCompany,
+			earliestDate: earliestDate,
+			latestDate:   latestDate,
 		})
 	}
 
@@ -529,7 +526,7 @@ func (sb *DefaultSectionBuilder) detectBulletTenures(
 		currBullet := companyBullets[i]
 
 		// Check if there are events at OTHER companies between these two dates.
-		hasIntervening := sb.hasInterveningCompanyEvents(
+		hasIntervening := hasInterveningCompanyEvents(
 			prevBullet.latestDate,
 			currBullet.earliestDate,
 			company,
@@ -550,32 +547,6 @@ func (sb *DefaultSectionBuilder) detectBulletTenures(
 	tenures = append(tenures, currentTenure)
 
 	return tenures
-}
-
-// hasInterveningCompanyEvents checks if any events at OTHER companies
-// exist between two dates (exclusive of both endpoints).
-func (sb *DefaultSectionBuilder) hasInterveningCompanyEvents(
-	startDate, endDate time.Time,
-	currentCompany string,
-	allEventsSorted []*career.CareerEvent,
-) bool {
-	for _, event := range allEventsSorted {
-		eventCompany := event.Company
-		if eventCompany == "" {
-			continue
-		}
-
-		// Skip events at the same company.
-		if eventCompany == currentCompany {
-			continue
-		}
-
-		// Check if this event falls between the two dates (exclusive).
-		if event.Date.After(startDate) && event.Date.Before(endDate) {
-			return true
-		}
-	}
-	return false
 }
 
 // groupBulletsByProject groups bullets by project from source events (where Company is empty)
@@ -709,11 +680,10 @@ type bulletGroup struct {
 
 // bulletInfo holds information about a bullet for tenure detection (BUG-009).
 type bulletInfo struct {
-	bullet        *career.CVBullet
-	company       string
-	earliestDate  time.Time
-	latestDate    time.Time
-	sourceEventID string
+	bullet       *career.CVBullet
+	company      string
+	earliestDate time.Time
+	latestDate   time.Time
 }
 
 // formatMonthYear formats a time.Time as "Jan 2006"
