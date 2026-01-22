@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/baphled/kariya/internal/constants"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	. "github.com/onsi/ginkgo/v2"
@@ -37,7 +38,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 					ID:              "bullet1",
 					Text:            "Built API",
 					SourceEventIDs:  []string{"event1"},
-					InclusionReason: "event_direct",
+					InclusionReason: string(constants.InclusionReasonEventDirect),
 				},
 			}
 
@@ -184,7 +185,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 					ID:              "bullet2",
 					Text:            "Developed service",
 					SourceEventIDs:  []string{"event2"},
-					InclusionReason: "event_direct",
+					InclusionReason: string(constants.InclusionReasonEventDirect),
 				})
 			})
 

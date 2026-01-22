@@ -225,7 +225,7 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 				ImpactScore:     0.95,
 				ImpactLevel:     "high",
 				KeywordMatches:  []string{"leadership", "architecture"},
-				InclusionReason: "achievement_extraction",
+				InclusionReason: string(constants.InclusionReasonAchievementExtraction),
 				Rank:            0.88,
 			}
 
@@ -243,7 +243,7 @@ var _ = Describe("EnhancedBullet Conversion", func() {
 			Expect(cvBullet.ImpactScore).To(Equal(0.95))
 			Expect(cvBullet.ImpactLevel).To(Equal("high"))
 			Expect(cvBullet.KeywordMatches).To(Equal([]string{"leadership", "architecture"}))
-			Expect(cvBullet.InclusionReason).To(Equal("achievement_extraction"))
+			Expect(cvBullet.InclusionReason).To(Equal(string(constants.InclusionReasonAchievementExtraction)))
 			Expect(cvBullet.Rank).To(Equal(0.88))
 		})
 
