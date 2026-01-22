@@ -175,8 +175,9 @@ func NewCVConfigForm(data *CVConfigFormData, profileOptions []ProfileOption, ext
 			Title("CV Length").
 			Description("Target length for the CV").
 			Options(
-				huh.NewOption("1 Page (concise)", "1_page"),
-				huh.NewOption("2 Pages (standard)", "2_page"),
+				huh.NewOption("1 Page (executive summary)", "1_page"),
+				huh.NewOption("2 Pages (concise)", "2_page"),
+				huh.NewOption("Standard (2-3 pages)", "standard"),
 				huh.NewOption("Detailed (3+ pages)", "detailed"),
 			).
 			Value(&data.CVLength),
