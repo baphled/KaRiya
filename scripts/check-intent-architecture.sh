@@ -974,13 +974,66 @@ fi
 echo ""
 
 # ============================================
+# 22. DEPRECATED MODELS PACKAGE FOR FORMS
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "22. DEPRECATED MODELS PACKAGE FOR FORMS"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check for models.*Form usage in intents
+for file in $INTENT_FILES; do
+    # Check for models import
+    MODELS_IMPORT=$(grep "\"github.com/baphled/kariya/internal/cli/models\"" "$file" 2>/dev/null || true)
+    
+    if [ -n "$MODELS_IMPORT" ]; then
+        # Check if it's being used for forms
+        MODELS_FORM_USAGE=$(grep "models\.\w*Form\|models\.New\w*Form" "$file" 2>/dev/null || true)
+        
+        if [ -n "$MODELS_FORM_USAGE" ]; then
+            echo -e "${RED}❌ VIOLATION: Deprecated models/ package for forms${NC}"
+            echo "   File: $file"
+            echo "   Rule: Use screens/*FormScreen instead of models.*Form"
+            echo ""
+            echo "   Found (DEPRECATED):"
+            echo "$MODELS_FORM_USAGE" | head -3 | sed 's/^/   /'
+            echo ""
+            echo "   Migration:"
+            echo "   OLD: import \"github.com/baphled/kariya/internal/cli/models\""
+            echo "        type MyIntent struct {"
+            echo "            form *models.CaptureForm"
+            echo "        }"
+            echo ""
+            echo "   NEW: import \"github.com/baphled/kariya/internal/cli/screens/myfeature\""
+            echo "        type MyIntent struct {"
+            echo "            formScreen *myfeature.FormScreen"
+            echo "        }"
+            echo ""
+            echo "   Rationale:"
+            echo "   - models/ package is DEPRECATED for forms"
+            echo "   - Use screens/ package with embedded forms.Form"
+            echo "   - Cleaner: intents → screens → forms (not intents → models → forms)"
+            echo ""
+            echo "   See: docs/FORMS_GUIDE.md, docs/rules/FORMS_WORKFLOW_GUIDE.md"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ No deprecated models/ usage for forms${NC}"
+fi
+
+echo ""
+
+# ============================================
 # SUMMARY
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📊 SUMMARY"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Total checks run: 21"
+echo "Total checks run: 22"
 echo "Violations: $VIOLATIONS"
 echo "Warnings: $WARNINGS"
 echo ""

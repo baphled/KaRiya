@@ -196,12 +196,12 @@ func (i *MyIntent) View() string {
 | Package | Can Import `huh`? | Use Instead |
 |---------|-------------------|-------------|
 | `forms/` | **YES** (only place) | - |
-| `models/` | **NO** | `forms.Form`, `forms.IsCompleted()` |
-| `components/` | **NO** | `forms.NewXXX()` builders |
-| `screens/` | **NO** | `base.FormScreen`, `forms/` |
-| `intents/` | **NEVER** | `models.*Form` wrappers |
+| `screens/` | **NO** | `forms/` package directly |
+| `intents/` | **NEVER** | `screens/*FormScreen` |
+| `models/` | **DEPRECATED** | Use `screens/` instead |
+| `components/` | **DEPRECATED** | Use `screens/` instead |
 
-**Form Primitives** (use these in `forms/`):
+**Form Primitives** (use these in `forms/` package):
 ```go
 // forms/ package - wraps huh with KaRiya config
 forms.NewInput(FieldConfig{...})     // Text input
@@ -212,25 +212,48 @@ forms.NewConfirm(key, title, ...)     // Yes/No confirm
 forms.NewForm(groups...)              // Form builder
 ```
 
-**Form Wrapper Models** (use these in intents):
+**Form Screens** (use these in intents):
 ```go
-// models/ package - wraps forms for state management
-type CaptureForm struct {
-    *BaseStandardModel
-    form     forms.Form    // NOT *huh.Form
-    formData *forms.CaptureEventFormData
+// screens/{feature}/form_screen.go - Screen with embedded form
+type FormScreen struct {
+    *base.BaseScreen
+    form     forms.Form    // Direct use of forms package
+    formData *MyFormData
 }
 
 // Check form state via forms package (NOT huh)
-if forms.IsCompleted(m.form) { ... }
-if forms.IsAborted(m.form) { ... }
+func (s *FormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+    if forms.IsCompleted(s.form) {
+        return nil, screens.NewSubmitResult(s.formData)
+    }
+    if forms.IsAborted(s.form) {
+        return nil, screens.NewCancelResult("form")
+    }
+    // ...
+}
 ```
 
 **NEW CODE MUST**:
 - Create form builders in `forms/` package only
-- Create form wrapper models in `models/` package
+- Create form screens in `screens/{feature}/form_screen.go`
 - Use `forms.IsCompleted()` / `forms.IsAborted()` for state checks
 - NEVER import `github.com/charmbracelet/huh` outside `forms/`
+- **NEVER use `models/` package for forms** (DEPRECATED)
+
+**DEPRECATED PATTERNS** (DO NOT USE):
+```go
+// ❌ WRONG - models/ package for forms
+import "github.com/baphled/kariya/internal/cli/models"
+type MyIntent struct {
+    form *models.CaptureForm  // DEPRECATED
+}
+
+// ✅ CORRECT - screens/ package
+import "github.com/baphled/kariya/internal/cli/screens/myfeature"
+type MyIntent struct {
+    formScreen *myfeature.FormScreen  // Use screen
+}
+```
 
 **Reference**: [Forms Guide](docs/FORMS_GUIDE.md), [Forms Workflow](docs/rules/FORMS_WORKFLOW_GUIDE.md)
 
@@ -608,7 +631,7 @@ make generate-state-matrix  # Generate state matrix
 | Need | Use | Not |
 |------|-----|-----|
 | Table | `behaviors.TableBehavior[T]` | `table.New()` |
-| Form in intent | `models.*Form` wrapper | `*huh.Form` directly |
+| Form in intent | `screens/*FormScreen` | `models.*Form` (DEPRECATED) |
 | Form primitives | `forms.NewInput()`, `forms.NewSelect()` | Direct `huh.NewInput()` |
 | Form state check | `forms.IsCompleted(f)` | `f.State == huh.StateCompleted` |
 | Text/titles | `primitives.Title()`, `primitives.Body()` | Raw lipgloss |

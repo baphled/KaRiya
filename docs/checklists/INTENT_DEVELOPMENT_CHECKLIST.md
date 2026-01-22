@@ -967,6 +967,111 @@ primitives.ErrorText("message", theme)
 
 ---
 
+### 22. Deprecated Models Package for Forms ✅
+
+**Rule**: NEVER use `models/` package for forms - use `screens/*FormScreen` instead
+
+**Violations (BLOCKING)**:
+```go
+// ❌ NEVER use these (DEPRECATED)
+import "github.com/baphled/kariya/internal/cli/models"
+
+type MyIntent struct {
+    form *models.CaptureForm  // DEPRECATED
+}
+
+formModel := models.NewCaptureForm(service)  // DEPRECATED
+
+// ✅ ALWAYS use these
+import "github.com/baphled/kariya/internal/cli/screens/myfeature"
+
+type MyIntent struct {
+    formScreen *myfeature.FormScreen  // CORRECT
+}
+
+i.formScreen = myfeature.NewFormScreen()  // CORRECT
+```
+
+**Architecture Flow**:
+```
+❌ WRONG (DEPRECATED):
+intents → models.*Form → forms package → huh
+
+✅ CORRECT:
+intents → screens/*FormScreen → forms package → huh
+```
+
+**Why**:
+- `models/` package for forms is DEPRECATED
+- Cleaner architecture with fewer layers
+- Consistent with screen pattern (list, detail, form)
+- Forms are just another type of screen
+- Easier to test and maintain
+
+**Migration Example**:
+```go
+// BEFORE (DEPRECATED)
+type CaptureEventIntent struct {
+    *BaseIntent
+    form *models.CaptureForm  // WRONG
+}
+
+func (i *CaptureEventIntent) Init() tea.Cmd {
+    i.form = models.NewCaptureForm(i.service)
+    return i.form.Init()
+}
+
+func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
+    var cmd tea.Cmd
+    i.form, cmd = i.form.Update(msg)
+    
+    if i.form.Submitted() {
+        // handle submission
+    }
+    return cmd
+}
+
+func (i *CaptureEventIntent) View() string {
+    return i.form.View()
+}
+
+// AFTER (CORRECT)
+type CaptureEventIntent struct {
+    *BaseIntent
+    formScreen *capture.FormScreen  // CORRECT
+}
+
+func (i *CaptureEventIntent) Init() tea.Cmd {
+    i.formScreen = capture.NewFormScreen(i.service)
+    i.formScreen.SetTerminalInfo(i.GetTerminalInfo())
+    i.formScreen.SetTheme(i.Theme())
+    i.activeScreen = i.formScreen
+    return nil
+}
+
+func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
+    cmd, result := i.formScreen.Update(msg)
+    
+    if result != nil {
+        return i.handleScreenResult(result)
+    }
+    return cmd
+}
+
+func (i *CaptureEventIntent) View() string {
+    return i.activeScreen.View()
+}
+```
+
+**Checked by**: `check-intent-architecture.sh` (Check #22)
+
+**See Also**:
+- [Forms Guide](../FORMS_GUIDE.md)
+- [Forms Workflow](../rules/FORMS_WORKFLOW_GUIDE.md)
+- [Screen Extraction Guide](../guides/SCREEN_EXTRACTION_GUIDE.md)
+
+---
+
 ## Enforcement Summary
 
 | Check | Type | Severity | Script |
@@ -988,6 +1093,7 @@ primitives.ErrorText("message", theme)
 | **No rendering in intent** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#19)** |
 | **Type location** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#20)** |
 | **UIKit component usage** | **Automated** | **🔴 BLOCKING + 🟡 WARNING** | **check-intent-architecture.sh (#21)** |
+| **Deprecated models/ for forms** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#22)** |
 | Layer dependencies | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Forms architecture | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Explicit modal fields | Automated | 🟡 WARNING | check-intent-architecture.sh (#12) |
