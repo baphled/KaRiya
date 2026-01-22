@@ -752,6 +752,221 @@ func (i *MyIntent) setCancelled() {
 
 ---
 
+## File Organization (STRICT STANDARD)
+
+### 17. Subdirectory Structure ✅
+
+**Rule**: New intents MUST use subdirectory structure with 5 files
+
+**Required Structure**:
+```
+intents/{feature}/
+├── context.go     # Business logic, data (100-200 lines)
+├── result.go      # Output type (20-50 lines)
+├── constants.go   # State enum, error constants (50-80 lines)
+├── messages.go    # ALL *Msg types (50-100 lines)
+└── intent.go      # Broker ONLY (200-400 lines, MAX 600)
+
+screens/{feature}/
+├── list_screen.go    # List view
+├── detail_screen.go  # Detail view
+└── form_screen.go    # Form view
+```
+
+**Legacy Intents**: 7 intents still using flat structure - marked for migration
+
+**Why**:
+- File organization standard
+- Enforced separation of concerns
+- Intent.go stays lean (broker only)
+- Clear type boundaries
+
+**Checked by**: `check-intent-architecture.sh` (Check #17)
+
+---
+
+### 18. Intent File Size Limit ✅
+
+**Rule**: Intent.go MUST NOT exceed 600 lines (target 200-400 lines)
+
+```bash
+# Warnings at >400 lines
+# BLOCKS commits at >600 lines
+```
+
+**Action for >600 lines**:
+1. REFUSE all feature additions
+2. Only allow critical bug fixes
+3. Apply Boy Scout Rule - refactor touched areas
+4. Migrate to subdirectory structure
+
+**Why**:
+- Intent is broker, not implementation
+- Forces extraction of business logic → context.go
+- Forces extraction of views → screens/
+- Forces centralized modals → uikit/feedback/
+
+**Checked by**: `check-intent-architecture.sh` (Check #18)
+
+**Current Violators** (5 intents >1,000 lines):
+- `generate_cv_intent.go` - 2,746 lines
+- `manage_skills_intent.go` - 2,415 lines
+- `capture_event_intent.go` - 1,884 lines
+- `burst_management_intent.go` - 1,488 lines
+- `browse_timeline_intent.go` - 1,195 lines
+
+---
+
+### 19. No Rendering in Intent ✅
+
+**Rule**: Intent MUST only have View() that delegates to screens (max 2 render methods)
+
+```go
+// ❌ BAD: Rendering in intent
+func (i *MyIntent) View() string {
+    // WRONG: 200 lines of lipgloss styling
+    title := lipgloss.NewStyle().Foreground(...)
+    // ... massive rendering code
+}
+
+func (i *MyIntent) renderHeader() string { ... }
+func (i *MyIntent) renderBody() string { ... }
+func (i *MyIntent) renderFooter() string { ... }
+func (i *MyIntent) renderModal() string { ... }
+// 8+ render methods = VIOLATION
+
+// ✅ GOOD: Delegate to screens
+func (i *MyIntent) View() string {
+    baseView := i.activeScreen.View()
+    
+    if i.modal != nil && i.modal.IsVisible() {
+        return behaviors.RenderModalOverlay(i.modal, baseView)
+    }
+    
+    return baseView
+}
+// Only 1 method, delegates rendering
+```
+
+**Why**:
+- Screens handle rendering, not intents
+- Reduces intent file size
+- Reusable screen components
+- Clear separation of concerns
+
+**Checked by**: `check-intent-architecture.sh` (Check #19)
+
+---
+
+### 20. Type Location Enforcement ✅
+
+**Rule**: Types MUST be in correct files
+
+| Type | File | Violation |
+|------|------|-----------|
+| `*Context struct` | `context.go` | 🔴 In intent.go |
+| `*Result struct` | `result.go` | 🔴 In intent.go |
+| `*State string` | `constants.go` | 🔴 In intent.go |
+| `const (...)` | `constants.go` | 🔴 In intent.go |
+| `var Err...` | `constants.go` | 🔴 In intent.go |
+| `*Msg struct` | `messages.go` | 🔴 In intent.go or constants.go |
+| `*Intent struct` | `intent.go` | ✅ Correct location |
+
+**Example Structure**:
+```go
+// File: intents/myfeature/context.go
+type MyFeatureContext struct {
+    Events  []*Event
+    Service *MyService
+}
+
+// File: intents/myfeature/result.go
+type MyFeatureResult struct {
+    Item *Item
+}
+
+// File: intents/myfeature/constants.go
+type MyFeatureState string
+
+const (
+    StateList   MyFeatureState = "list"
+    StateDetail MyFeatureState = "detail"
+)
+
+var ErrNoItems = errors.New("no items found")
+
+// File: intents/myfeature/messages.go
+type ItemSelectedMsg struct {
+    Item *Item
+}
+
+type FilterAppliedMsg struct {
+    Filters *FilterConfig
+}
+
+// File: intents/myfeature/intent.go
+type MyFeatureIntent struct {
+    *BaseIntent
+    context *MyFeatureContext
+    state   MyFeatureState
+    // Implementation only
+}
+```
+
+**Why**:
+- Clear file responsibilities
+- Single responsibility per file
+- Easy navigation
+- Enforced separation
+
+**Checked by**: `check-intent-architecture.sh` (Check #20)
+
+---
+
+### 21. UIKit Component Usage ✅
+
+**Rule**: Use UIKit components, not deprecated `components/` package
+
+**Violations (BLOCKING)**:
+```go
+// ❌ NEVER use these
+import "github.com/baphled/kariya/internal/cli/components"
+
+components.KeyBadge("key", "label")      // WRONG
+components.StandardView{...}             // WRONG
+
+// ✅ ALWAYS use these
+import "github.com/baphled/kariya/internal/cli/uikit/primitives"
+import "github.com/baphled/kariya/internal/cli/uikit/layout"
+
+primitives.HelpKeyBadge("key", "label", theme)  // CORRECT
+layout.NewScreenLayout(theme).WithContent(...)  // CORRECT
+```
+
+**Warnings (TECHNICAL DEBT)**:
+```go
+// ⚠️ DISCOURAGED: Excessive raw lipgloss
+lipgloss.NewStyle().Foreground(lipgloss.Color("#ff0000"))
+
+// ✅ RECOMMENDED: Use theme system
+style := lipgloss.NewStyle().Foreground(theme.Error())
+
+// ✅ OR UIKit primitives
+primitives.ErrorText("message", theme)
+```
+
+**Why**:
+- `components/` is LEGACY, being phased out
+- UIKit provides consistent, reusable components
+- Theme integration built-in
+- Reduces duplicate styling code
+
+**Checked by**: `check-intent-architecture.sh` (Check #21)
+
+**See Also**: [UIKit Guide](../UIKIT_GUIDE.md)
+
+---
+
 ## Enforcement Summary
 
 | Check | Type | Severity | Script |
@@ -768,6 +983,11 @@ func (i *MyIntent) setCancelled() {
 | Modal overlay | Automated | 🔴 BLOCKING | check-intent-architecture.sh (#7) |
 | **Explicit screen fields** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#11)** |
 | **File separation** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#16)** |
+| **Subdirectory structure** | **Automated** | **🟡 WARNING** | **check-intent-architecture.sh (#17)** |
+| **Intent file size limit** | **Automated** | **🔴 BLOCKING (>600 lines)** | **check-intent-architecture.sh (#18)** |
+| **No rendering in intent** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#19)** |
+| **Type location** | **Automated** | **🔴 BLOCKING** | **check-intent-architecture.sh (#20)** |
+| **UIKit component usage** | **Automated** | **🔴 BLOCKING + 🟡 WARNING** | **check-intent-architecture.sh (#21)** |
 | Layer dependencies | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Forms architecture | Automated | 🔴 BLOCKING | golangci-lint (depguard) |
 | Explicit modal fields | Automated | 🟡 WARNING | check-intent-architecture.sh (#12) |
