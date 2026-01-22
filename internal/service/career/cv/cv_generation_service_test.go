@@ -41,6 +41,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				configManager,
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -60,6 +61,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				configManager,
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -87,6 +89,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				configManager,
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -103,6 +106,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				nil,
 				nil,
 				nil,
+				NewMockDataProcessingService(),
 				nil,
 				log,
 			)
@@ -121,6 +125,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				nil,
 				nil,
 				nil,
+				NewMockDataProcessingService(),
 				nil,
 				log,
 			)
@@ -140,6 +145,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				nil,
 				nil,
 				nil,
+				NewMockDataProcessingService(),
 				nil,
 				log,
 			)
@@ -160,6 +166,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -184,6 +191,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -213,6 +221,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -234,6 +243,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -260,6 +270,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -282,6 +293,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewCountingFactRepository(3),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -310,6 +322,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -335,6 +348,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 					NewEmptyFactRepository(),
 					NewMockConfigManager(),
 					NewEmptyBulletGenerator(),
+					NewMockDataProcessingService(),
 					NewEmptySectionBuilder(),
 					log,
 				)
@@ -358,6 +372,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -386,6 +401,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -408,6 +424,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)
@@ -430,6 +447,7 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				NewEmptyFactRepository(),
 				NewMockConfigManager(),
 				NewEmptyBulletGenerator(),
+				NewMockDataProcessingService(),
 				NewEmptySectionBuilder(),
 				log,
 			)

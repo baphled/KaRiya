@@ -26,6 +26,7 @@ type DefaultCVGenerationService struct {
 	factRepo        careerrepo.FactRepository
 	configManager   ConfigManager
 	bulletGenerator BulletGenerator
+	dataProcessor   DataProcessingService
 	sectionBuilder  SectionBuilder
 	logger          *logger.Logger
 }
@@ -36,14 +37,19 @@ func NewCVGenerationService(
 	factRepo careerrepo.FactRepository,
 	configManager ConfigManager,
 	bulletGenerator BulletGenerator,
+	dataProcessor DataProcessingService,
 	sectionBuilder SectionBuilder,
 	log *logger.Logger,
 ) *DefaultCVGenerationService {
+	if dataProcessor == nil {
+		panic("dataProcessor cannot be nil")
+	}
 	return &DefaultCVGenerationService{
 		eventRepo:       eventRepo,
 		factRepo:        factRepo,
 		configManager:   configManager,
 		bulletGenerator: bulletGenerator,
+		dataProcessor:   dataProcessor,
 		sectionBuilder:  sectionBuilder,
 		logger:          log,
 	}
@@ -129,8 +135,22 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		facts = []*career.Fact{}
 	}
 
-	// Generate bullets (BUG-008: role-based scoring)
-	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, nil, config.TargetRole, config.TargetAudience)
+	// Extract achievements from events for metric detection
+	var achievements []*Achievement
+	for _, event := range events {
+		relatedFacts := svc.filterFactsForEvent(facts, event.ID)
+		eventAchievements, err := svc.dataProcessor.ExtractAchievements(ctx, event, relatedFacts)
+		if err != nil {
+			svc.logger.Warn("Failed to extract achievements for event %s: %v", event.ID, err)
+			continue
+		}
+		achievements = append(achievements, eventAchievements...)
+	}
+
+	svc.logger.Info("Extracted %d achievements from %d events", len(achievements), len(events))
+
+	// Generate bullets (BUG-008: role-based scoring) WITH achievements
+	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, achievements, config.TargetRole, config.TargetAudience)
 	if err != nil {
 		svc.logger.Error("Failed to generate bullets: %v", err)
 		return nil, fmt.Errorf("failed to generate bullets: %w", err)
@@ -331,4 +351,15 @@ func (svc *DefaultCVGenerationService) retrieveFacts(ctx context.Context) ([]*ca
 	}
 
 	return facts, nil
+}
+
+// filterFactsForEvent returns facts that originated from a specific event
+func (svc *DefaultCVGenerationService) filterFactsForEvent(facts []*career.Fact, eventID string) []*career.Fact {
+	var result []*career.Fact
+	for _, fact := range facts {
+		if fact.SourceEventID == eventID {
+			result = append(result, fact)
+		}
+	}
+	return result
 }

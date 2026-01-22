@@ -873,6 +873,7 @@ func initConfigManager(log *logger.Logger) cv.ConfigManager {
 func initCVGenerationService(careerService *careerservice.Service, configMgr cv.ConfigManager, scoringCfg *config.ScoringConfig, log *logger.Logger) cv.CVGenerationService {
 	// BUG-008: Use BulletGenerator for role-based scoring with config
 	bulletGenerator := cv.NewBulletGenerator(log, scoringCfg)
+	dataProcessor := cv.NewDataProcessingService(log)
 	sectionBuilder := cv.NewSectionBuilder(
 		careerService.GetSkillRepository(),
 		log,
@@ -882,6 +883,7 @@ func initCVGenerationService(careerService *careerservice.Service, configMgr cv.
 		careerService.GetFactRepository(),
 		configMgr,
 		bulletGenerator,
+		dataProcessor,
 		sectionBuilder,
 		log,
 	)

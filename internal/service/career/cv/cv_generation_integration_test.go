@@ -55,12 +55,14 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		bulletGenerator := NewBulletGenerator(log, nil) // nil uses default scoring config
 		sectionBuilder := NewSectionBuilder(nil, log)
 		configManager := NewMemoryConfigManager()
+		dataProcessor := NewDataProcessingService(log)
 
 		cvGenService = NewCVGenerationService(
 			eventRepo,
 			factRepo,
 			configManager,
 			bulletGenerator,
+			dataProcessor,
 			sectionBuilder,
 			log,
 		)

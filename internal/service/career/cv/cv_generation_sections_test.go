@@ -55,12 +55,14 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		configManager := NewMemoryConfigManager()
 		bulletGenerator := NewBulletGenerator(log, nil) // nil uses default scoring config
 		sectionBuilder := NewSectionBuilder(nil, log)   // Use REAL section builder, not empty
+		dataProcessor := NewDataProcessingService(log)
 
 		service := NewCVGenerationService(
 			eventRepo,
 			factRepo,
 			configManager,
 			bulletGenerator,
+			dataProcessor,
 			sectionBuilder,
 			log,
 		)
