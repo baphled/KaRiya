@@ -129,46 +129,175 @@ var _ = Describe("DataProcessingService", func() {
 
 		// BUG-008: Achievement.Category propagation tests
 		Context("Category propagation", func() {
-			It("should set Category from event.Categories", func() {
-				event := fixtures.EventWithCategories("evt-1", "Led architecture review", []string{"leadership", "technical"})
+			Context("from event.Categories", func() {
+				It("should use first category as primary", func() {
+					event := fixtures.EventWithCategories("evt-1", "Led architecture review", []string{"leadership", "technical"})
 
-				achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(achievements).To(HaveLen(1))
-				Expect(achievements[0].Category).To(Equal(constants.CompetencyLeadership))
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements).To(HaveLen(1))
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyLeadership))
+				})
+
+				It("should handle single category", func() {
+					event := fixtures.EventWithCategories("evt-1", "Built API", []string{"technical"})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyTechnical))
+				})
+
+				It("should handle empty categories slice", func() {
+					event := fixtures.EventWith("evt-1", "Some work", "Acme", "")
+					event.Categories = []string{}
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyCategory("")))
+				})
+
+				It("should handle nil categories slice", func() {
+					event := fixtures.EventWith("evt-1", "Some work", "Acme", "")
+					event.Categories = nil
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyCategory("")))
+				})
+
+				It("should normalize category to lowercase", func() {
+					event := fixtures.EventWithCategories("evt-1", "Led team", []string{"LEADERSHIP"})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyLeadership))
+				})
+
+				It("should handle mixed case category", func() {
+					event := fixtures.EventWithCategories("evt-1", "Built system", []string{"Technical"})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyTechnical))
+				})
+
+				It("should return empty for invalid category", func() {
+					event := fixtures.EventWithCategories("evt-1", "Did stuff", []string{"invalid_category"})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyCategory("")))
+				})
+
+				It("should skip invalid first category and return empty", func() {
+					// When first category is invalid, we still return empty (don't fall through to second)
+					event := fixtures.EventWithCategories("evt-1", "Did stuff", []string{"invalid", "leadership"})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					// extractPrimaryCategory only looks at first category
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyCategory("")))
+				})
+
+				It("should handle whitespace-only category", func() {
+					event := fixtures.EventWithCategories("evt-1", "Did stuff", []string{"   "})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyCategory("")))
+				})
+
+				It("should handle empty string category", func() {
+					event := fixtures.EventWithCategories("evt-1", "Did stuff", []string{""})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyCategory("")))
+				})
 			})
 
-			It("should set Category from fact.CompetencyCategories", func() {
-				event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
-				fact := fixtures.FactWithCategories("f1", "Mentored 5 junior engineers", "evt-1",
-					[]string{"mentoring", "leadership"}, []string{"hiring_manager"})
+			Context("from fact.CompetencyCategories", func() {
+				It("should use first category as primary", func() {
+					event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
+					fact := fixtures.FactWithCategories("f1", "Mentored 5 junior engineers", "evt-1",
+						[]string{"mentoring", "leadership"}, []string{"hiring_manager"})
 
-				achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(achievements).To(HaveLen(2))
-				// Fact-based achievement should have mentoring category
-				Expect(achievements[1].Category).To(Equal(constants.CompetencyMentoring))
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements).To(HaveLen(2))
+					Expect(achievements[1].Category).To(Equal(constants.CompetencyMentoring))
+				})
+
+				It("should handle empty categories", func() {
+					event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
+					fact := fixtures.Fact("f1", "evt-1")
+					fact.CompetencyCategories = []string{}
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[1].Category).To(Equal(constants.CompetencyCategory("")))
+				})
+
+				It("should handle nil categories", func() {
+					event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
+					fact := fixtures.Fact("f1", "evt-1")
+					fact.CompetencyCategories = nil
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[1].Category).To(Equal(constants.CompetencyCategory("")))
+				})
+
+				It("should normalize category to lowercase", func() {
+					event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
+					fact := fixtures.FactWithCategories("f1", "Led project", "evt-1",
+						[]string{"PRODUCT"}, []string{})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[1].Category).To(Equal(constants.CompetencyProduct))
+				})
+
+				It("should return empty for invalid category", func() {
+					event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
+					fact := fixtures.FactWithCategories("f1", "Did something", "evt-1",
+						[]string{"not_a_real_category"}, []string{})
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements[1].Category).To(Equal(constants.CompetencyCategory("")))
+				})
 			})
 
-			It("should handle event with no categories", func() {
-				event := fixtures.EventWith("evt-1", "Some work", "Acme", "")
-				event.Categories = []string{}
+			Context("with multiple facts", func() {
+				It("should propagate different categories for different facts", func() {
+					event := fixtures.EventWithCategories("evt-1", "Event", []string{"leadership"})
+					fact1 := fixtures.FactWithCategories("f1", "Technical work", "evt-1", []string{"technical"}, []string{})
+					fact2 := fixtures.FactWithCategories("f2", "Mentoring work", "evt-1", []string{"mentoring"}, []string{})
 
-				achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(achievements).To(HaveLen(1))
-				Expect(achievements[0].Category).To(Equal(constants.CompetencyCategory("")))
-			})
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact1, fact2})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements).To(HaveLen(3)) // 1 event + 2 facts
 
-			It("should handle fact with no categories", func() {
-				event := fixtures.EventWith("evt-1", "Event text", "Acme", "")
-				fact := fixtures.Fact("f1", "evt-1")
-				fact.CompetencyCategories = []string{}
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyLeadership)) // from event
+					Expect(achievements[1].Category).To(Equal(constants.CompetencyTechnical))  // from fact1
+					Expect(achievements[2].Category).To(Equal(constants.CompetencyMentoring))  // from fact2
+				})
 
-				achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{fact})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(achievements).To(HaveLen(2))
-				Expect(achievements[1].Category).To(Equal(constants.CompetencyCategory("")))
+				It("should handle mix of valid and empty categories", func() {
+					event := fixtures.EventWithCategories("evt-1", "Event", []string{"leadership"})
+					factWithCategory := fixtures.FactWithCategories("f1", "Technical", "evt-1", []string{"technical"}, []string{})
+					factWithoutCategory := fixtures.Fact("f2", "evt-1")
+					factWithoutCategory.CompetencyCategories = []string{}
+
+					achievements, err := dps.ExtractAchievements(svc, event, []*career.Fact{factWithCategory, factWithoutCategory})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(achievements).To(HaveLen(3))
+
+					Expect(achievements[0].Category).To(Equal(constants.CompetencyLeadership))
+					Expect(achievements[1].Category).To(Equal(constants.CompetencyTechnical))
+					Expect(achievements[2].Category).To(Equal(constants.CompetencyCategory("")))
+				})
 			})
 		})
 	})

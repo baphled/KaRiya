@@ -475,147 +475,676 @@ var _ = Describe("BUG-008: ScoringConfig integration", func() {
 	})
 
 	Describe("getWeights", func() {
-		It("should return default weights when config is nil", func() {
-			gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+		Context("with nil config", func() {
+			It("should return default weights", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
 
-			weights := gen.getWeights()
+				weights := gen.getWeights()
 
-			Expect(weights.RoleScore).To(Equal(0.25))
-			Expect(weights.AudienceScore).To(Equal(0.20))
-			Expect(weights.MetricScore).To(Equal(0.20))
-			Expect(weights.ImpactScore).To(Equal(0.20))
-			Expect(weights.Confidence).To(Equal(0.15))
+				Expect(weights.RoleScore).To(Equal(0.25))
+				Expect(weights.AudienceScore).To(Equal(0.20))
+				Expect(weights.MetricScore).To(Equal(0.20))
+				Expect(weights.ImpactScore).To(Equal(0.20))
+				Expect(weights.Confidence).To(Equal(0.15))
+			})
+
+			It("should return weights that sum to 1.0", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+
+				weights := gen.getWeights()
+				sum := weights.RoleScore + weights.AudienceScore + weights.MetricScore +
+					weights.ImpactScore + weights.Confidence
+
+				Expect(sum).To(BeNumerically("~", 1.0, 0.001))
+			})
 		})
 
-		It("should return config weights when provided", func() {
-			scoringCfg := &config.ScoringConfig{
-				Weights: config.ScoringWeights{
-					RoleScore:     0.30,
-					AudienceScore: 0.25,
-					MetricScore:   0.15,
-					ImpactScore:   0.15,
-					Confidence:    0.15,
-				},
-			}
-			gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+		Context("with config provided", func() {
+			It("should return config weights", func() {
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.30,
+						AudienceScore: 0.25,
+						MetricScore:   0.15,
+						ImpactScore:   0.15,
+						Confidence:    0.15,
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
 
-			weights := gen.getWeights()
+				weights := gen.getWeights()
 
-			Expect(weights.RoleScore).To(Equal(0.30))
-			Expect(weights.AudienceScore).To(Equal(0.25))
-			Expect(weights.MetricScore).To(Equal(0.15))
-			Expect(weights.ImpactScore).To(Equal(0.15))
-			Expect(weights.Confidence).To(Equal(0.15))
+				Expect(weights.RoleScore).To(Equal(0.30))
+				Expect(weights.AudienceScore).To(Equal(0.25))
+				Expect(weights.MetricScore).To(Equal(0.15))
+				Expect(weights.ImpactScore).To(Equal(0.15))
+				Expect(weights.Confidence).To(Equal(0.15))
+			})
+
+			It("should handle zero weights", func() {
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.0,
+						AudienceScore: 0.0,
+						MetricScore:   0.0,
+						ImpactScore:   0.0,
+						Confidence:    1.0, // Only confidence matters
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				weights := gen.getWeights()
+
+				Expect(weights.RoleScore).To(Equal(0.0))
+				Expect(weights.Confidence).To(Equal(1.0))
+			})
+
+			It("should handle weights that sum to more than 1.0", func() {
+				// Config allows weights > 1.0 (validation is separate)
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.50,
+						AudienceScore: 0.50,
+						MetricScore:   0.50,
+						ImpactScore:   0.50,
+						Confidence:    0.50,
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				weights := gen.getWeights()
+
+				// Should return as-is (validation is done by config.ValidateWeights)
+				Expect(weights.RoleScore).To(Equal(0.50))
+			})
+
+			It("should handle partial zero weights", func() {
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.50,
+						AudienceScore: 0.0, // Zero
+						MetricScore:   0.25,
+						ImpactScore:   0.0, // Zero
+						Confidence:    0.25,
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				weights := gen.getWeights()
+
+				Expect(weights.AudienceScore).To(Equal(0.0))
+				Expect(weights.ImpactScore).To(Equal(0.0))
+			})
 		})
 	})
 
 	Describe("getMinConfidenceForRole", func() {
-		It("should return default MinConfidence when config is nil", func() {
-			gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+		Context("with nil config", func() {
+			It("should return default for principal", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("principal")).To(Equal(0.80))
+			})
 
-			Expect(gen.getMinConfidenceForRole("principal")).To(Equal(0.80))
-			Expect(gen.getMinConfidenceForRole("staff")).To(Equal(0.75))
-			Expect(gen.getMinConfidenceForRole("em")).To(Equal(0.75))
-			Expect(gen.getMinConfidenceForRole("senior_ic")).To(Equal(0.75))
-			Expect(gen.getMinConfidenceForRole("unknown")).To(Equal(0.70))
+			It("should return default for staff", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("staff")).To(Equal(0.75))
+			})
+
+			It("should return default for em", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("em")).To(Equal(0.75))
+			})
+
+			It("should return default for senior_ic", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("senior_ic")).To(Equal(0.75))
+			})
+
+			It("should return lowest default for unknown role", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("unknown")).To(Equal(0.70))
+			})
+
+			It("should return lowest default for empty role string", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("")).To(Equal(0.70))
+			})
 		})
 
-		It("should return config MinConfidence when provided", func() {
-			scoringCfg := &config.ScoringConfig{
-				RoleSettings: map[string]config.RoleScoringCfg{
-					"principal": {MinConfidence: 0.90},
-					"staff":     {MinConfidence: 0.85},
-					"em":        {MinConfidence: 0.85},
-					"senior_ic": {MinConfidence: 0.80},
-				},
-			}
-			gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+		Context("with config provided", func() {
+			It("should return config values for known roles", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.90},
+						"staff":     {MinConfidence: 0.85},
+						"em":        {MinConfidence: 0.85},
+						"senior_ic": {MinConfidence: 0.80},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
 
-			Expect(gen.getMinConfidenceForRole("principal")).To(Equal(0.90))
-			Expect(gen.getMinConfidenceForRole("staff")).To(Equal(0.85))
-			Expect(gen.getMinConfidenceForRole("em")).To(Equal(0.85))
-			Expect(gen.getMinConfidenceForRole("senior_ic")).To(Equal(0.80))
+				Expect(gen.getMinConfidenceForRole("principal")).To(Equal(0.90))
+				Expect(gen.getMinConfidenceForRole("staff")).To(Equal(0.85))
+				Expect(gen.getMinConfidenceForRole("em")).To(Equal(0.85))
+				Expect(gen.getMinConfidenceForRole("senior_ic")).To(Equal(0.80))
+			})
+
+			It("should fall back to default for role not in config", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.90},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				// staff not in config, should use default
+				Expect(gen.getMinConfidenceForRole("staff")).To(Equal(0.75))
+			})
+
+			It("should handle empty RoleSettings map", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				// All should use defaults
+				Expect(gen.getMinConfidenceForRole("principal")).To(Equal(0.80))
+				Expect(gen.getMinConfidenceForRole("staff")).To(Equal(0.75))
+			})
+
+			It("should handle nil RoleSettings map", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: nil,
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				Expect(gen.getMinConfidenceForRole("principal")).To(Equal(0.80))
+			})
 		})
 
-		It("should return default for unknown role when config has no entry", func() {
-			scoringCfg := &config.ScoringConfig{
-				RoleSettings: map[string]config.RoleScoringCfg{
-					"principal": {MinConfidence: 0.90},
-				},
-			}
-			gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+		Context("role name case sensitivity", func() {
+			It("should normalize uppercase role to lowercase", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("PRINCIPAL")).To(Equal(0.80))
+			})
 
-			// Unknown role should use default
-			Expect(gen.getMinConfidenceForRole("unknown")).To(Equal(0.70))
+			It("should normalize mixed case role to lowercase", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+				Expect(gen.getMinConfidenceForRole("Principal")).To(Equal(0.80))
+			})
+
+			It("should match config with lowercase lookup", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.95},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				// Uppercase input should match lowercase key
+				Expect(gen.getMinConfidenceForRole("PRINCIPAL")).To(Equal(0.95))
+			})
+		})
+
+		Context("edge cases", func() {
+			It("should handle zero MinConfidence in config", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.0},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				Expect(gen.getMinConfidenceForRole("principal")).To(Equal(0.0))
+			})
+
+			It("should handle MinConfidence of 1.0 in config", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 1.0},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				Expect(gen.getMinConfidenceForRole("principal")).To(Equal(1.0))
+			})
 		})
 	})
 
-	Describe("calculateFinalScore with config weights", func() {
-		It("should use config weights in score calculation", func() {
-			// Config with high weight on RoleScore
-			scoringCfg := &config.ScoringConfig{
-				Weights: config.ScoringWeights{
-					RoleScore:     0.50, // High weight
-					AudienceScore: 0.10,
-					MetricScore:   0.10,
-					ImpactScore:   0.10,
-					Confidence:    0.20,
-				},
-			}
-			gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+	Describe("calculateFinalScore", func() {
+		Context("with config weights", func() {
+			It("should use config weights in calculation", func() {
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.50, // High weight
+						AudienceScore: 0.10,
+						MetricScore:   0.10,
+						ImpactScore:   0.10,
+						Confidence:    0.20,
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
 
-			bullet := &Bullet{
-				RoleScore:     1.0, // Max role score
-				AudienceScore: 0.5,
-				MetricScore:   0.5,
-				ImpactScore:   0.5,
-				Confidence:    0.5,
-			}
+				bullet := &Bullet{
+					RoleScore:     1.0,
+					AudienceScore: 0.5,
+					MetricScore:   0.5,
+					ImpactScore:   0.5,
+					Confidence:    0.5,
+				}
 
-			score := gen.calculateFinalScore(bullet)
+				score := gen.calculateFinalScore(bullet)
 
-			// Expected: 0.50*1.0 + 0.10*0.5 + 0.10*0.5 + 0.10*0.5 + 0.20*0.5 = 0.50 + 0.05 + 0.05 + 0.05 + 0.10 = 0.75
-			Expect(score).To(BeNumerically("~", 0.75, 0.01))
+				// Expected: 0.50*1.0 + 0.10*0.5 + 0.10*0.5 + 0.10*0.5 + 0.20*0.5 = 0.75
+				Expect(score).To(BeNumerically("~", 0.75, 0.01))
+			})
+
+			It("should use default weights when config is nil", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+
+				bullet := &Bullet{
+					RoleScore:     1.0,
+					AudienceScore: 1.0,
+					MetricScore:   1.0,
+					ImpactScore:   1.0,
+					Confidence:    1.0,
+				}
+
+				score := gen.calculateFinalScore(bullet)
+
+				// Expected: 0.25 + 0.20 + 0.20 + 0.20 + 0.15 = 1.0
+				Expect(score).To(BeNumerically("~", 1.0, 0.01))
+			})
 		})
 
-		It("should use default weights when config is nil", func() {
-			gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+		Context("boundary conditions", func() {
+			It("should return 0 when all scores are 0", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
 
-			bullet := &Bullet{
-				RoleScore:     1.0,
-				AudienceScore: 1.0,
-				MetricScore:   1.0,
-				ImpactScore:   1.0,
-				Confidence:    1.0,
-			}
+				bullet := &Bullet{
+					RoleScore:     0.0,
+					AudienceScore: 0.0,
+					MetricScore:   0.0,
+					ImpactScore:   0.0,
+					Confidence:    0.0,
+				}
 
-			score := gen.calculateFinalScore(bullet)
+				score := gen.calculateFinalScore(bullet)
 
-			// Expected: 0.25*1.0 + 0.20*1.0 + 0.20*1.0 + 0.20*1.0 + 0.15*1.0 = 1.0
-			Expect(score).To(BeNumerically("~", 1.0, 0.01))
+				Expect(score).To(Equal(0.0))
+			})
+
+			It("should cap score at 1.0 when weighted sum exceeds 1.0", func() {
+				// Use weights that sum to > 1.0 with max scores
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.50,
+						AudienceScore: 0.50,
+						MetricScore:   0.50,
+						ImpactScore:   0.50,
+						Confidence:    0.50,
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				bullet := &Bullet{
+					RoleScore:     1.0,
+					AudienceScore: 1.0,
+					MetricScore:   1.0,
+					ImpactScore:   1.0,
+					Confidence:    1.0,
+				}
+
+				score := gen.calculateFinalScore(bullet)
+
+				// Should be capped at 1.0
+				Expect(score).To(Equal(1.0))
+			})
+
+			It("should handle scores at threshold values", func() {
+				gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+
+				bullet := &Bullet{
+					RoleScore:     0.5,
+					AudienceScore: 0.5,
+					MetricScore:   0.5,
+					ImpactScore:   0.5,
+					Confidence:    0.5,
+				}
+
+				score := gen.calculateFinalScore(bullet)
+
+				// Expected: 0.25*0.5 + 0.20*0.5 + 0.20*0.5 + 0.20*0.5 + 0.15*0.5 = 0.5
+				Expect(score).To(BeNumerically("~", 0.5, 0.01))
+			})
+		})
+
+		Context("with zero weights", func() {
+			It("should ignore score components with zero weight", func() {
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.0, // Ignored
+						AudienceScore: 0.0, // Ignored
+						MetricScore:   0.0, // Ignored
+						ImpactScore:   0.0, // Ignored
+						Confidence:    1.0, // Only this matters
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				bullet := &Bullet{
+					RoleScore:     1.0, // Should be ignored
+					AudienceScore: 1.0, // Should be ignored
+					MetricScore:   1.0, // Should be ignored
+					ImpactScore:   1.0, // Should be ignored
+					Confidence:    0.8,
+				}
+
+				score := gen.calculateFinalScore(bullet)
+
+				// Only confidence contributes: 1.0 * 0.8 = 0.8
+				Expect(score).To(BeNumerically("~", 0.8, 0.01))
+			})
+		})
+
+		Context("precision and rounding", func() {
+			It("should handle fractional weights correctly", func() {
+				scoringCfg := &config.ScoringConfig{
+					Weights: config.ScoringWeights{
+						RoleScore:     0.333,
+						AudienceScore: 0.333,
+						MetricScore:   0.334,
+						ImpactScore:   0.0,
+						Confidence:    0.0,
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg).(*DefaultBulletGenerator)
+
+				bullet := &Bullet{
+					RoleScore:     1.0,
+					AudienceScore: 1.0,
+					MetricScore:   1.0,
+					ImpactScore:   0.0,
+					Confidence:    0.0,
+				}
+
+				score := gen.calculateFinalScore(bullet)
+
+				// Expected: 0.333 + 0.333 + 0.334 = 1.0
+				Expect(score).To(BeNumerically("~", 1.0, 0.01))
+			})
 		})
 	})
 
 	Describe("FilterByRole with config MinConfidence", func() {
-		It("should filter bullets using config MinConfidence", func() {
-			scoringCfg := &config.ScoringConfig{
-				RoleSettings: map[string]config.RoleScoringCfg{
-					"principal": {MinConfidence: 0.85}, // Higher threshold
+		Context("basic filtering", func() {
+			It("should filter bullets below threshold", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.85},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.90}, // Above
+					{ID: "b2", Confidence: 0.80}, // Below
+					{ID: "b3", Confidence: 0.85}, // At threshold (passes)
+				}
+
+				filtered := gen.FilterByRole(bullets, "principal")
+
+				Expect(filtered).To(HaveLen(2))
+				Expect(filtered[0].ID).To(Equal("b1"))
+				Expect(filtered[1].ID).To(Equal("b3"))
+			})
+
+			It("should use default threshold when config is nil", func() {
+				gen := NewBulletGenerator(log, nil)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.85}, // Above 0.80 default
+					{ID: "b2", Confidence: 0.75}, // Below 0.80 default
+					{ID: "b3", Confidence: 0.80}, // At threshold
+				}
+
+				filtered := gen.FilterByRole(bullets, "principal")
+
+				Expect(filtered).To(HaveLen(2))
+			})
+		})
+
+		Context("edge cases", func() {
+			It("should return empty slice for empty input", func() {
+				gen := NewBulletGenerator(log, nil)
+
+				filtered := gen.FilterByRole([]*Bullet{}, "principal")
+
+				Expect(filtered).To(BeEmpty())
+			})
+
+			It("should return empty slice when all bullets below threshold", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.95},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.90},
+					{ID: "b2", Confidence: 0.80},
+					{ID: "b3", Confidence: 0.70},
+				}
+
+				filtered := gen.FilterByRole(bullets, "principal")
+
+				Expect(filtered).To(BeEmpty())
+			})
+
+			It("should return all bullets when all above threshold", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.50},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.90},
+					{ID: "b2", Confidence: 0.80},
+					{ID: "b3", Confidence: 0.70},
+				}
+
+				filtered := gen.FilterByRole(bullets, "principal")
+
+				Expect(filtered).To(HaveLen(3))
+			})
+
+			It("should handle MinConfidence of 0 (all pass)", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.0},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.10},
+					{ID: "b2", Confidence: 0.01},
+					{ID: "b3", Confidence: 0.0},
+				}
+
+				filtered := gen.FilterByRole(bullets, "principal")
+
+				Expect(filtered).To(HaveLen(3))
+			})
+
+			It("should handle MinConfidence of 1.0 (only perfect pass)", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 1.0},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 1.0},  // Exactly 1.0
+					{ID: "b2", Confidence: 0.99}, // Just under
+					{ID: "b3", Confidence: 0.999},
+				}
+
+				filtered := gen.FilterByRole(bullets, "principal")
+
+				Expect(filtered).To(HaveLen(1))
+				Expect(filtered[0].ID).To(Equal("b1"))
+			})
+
+			It("should handle nil input slice", func() {
+				gen := NewBulletGenerator(log, nil)
+
+				filtered := gen.FilterByRole(nil, "principal")
+
+				Expect(filtered).To(BeNil())
+			})
+		})
+
+		Context("role name handling", func() {
+			It("should handle uppercase role name", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.90},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.95},
+					{ID: "b2", Confidence: 0.85},
+				}
+
+				filtered := gen.FilterByRole(bullets, "PRINCIPAL")
+
+				Expect(filtered).To(HaveLen(1))
+			})
+
+			It("should use default for unknown role", func() {
+				scoringCfg := &config.ScoringConfig{
+					RoleSettings: map[string]config.RoleScoringCfg{
+						"principal": {MinConfidence: 0.90},
+					},
+				}
+				gen := NewBulletGenerator(log, scoringCfg)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.75},
+					{ID: "b2", Confidence: 0.65},
+				}
+
+				// Unknown role uses default 0.70
+				filtered := gen.FilterByRole(bullets, "unknown_role")
+
+				Expect(filtered).To(HaveLen(1))
+				Expect(filtered[0].ID).To(Equal("b1"))
+			})
+
+			It("should use lowest default for empty role string", func() {
+				gen := NewBulletGenerator(log, nil)
+
+				bullets := []*Bullet{
+					{ID: "b1", Confidence: 0.75},
+					{ID: "b2", Confidence: 0.65},
+				}
+
+				// Empty role uses default 0.70
+				filtered := gen.FilterByRole(bullets, "")
+
+				Expect(filtered).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe("Bullet creation from Achievement with Category", func() {
+		It("should propagate Category from Achievement to Bullet", func() {
+			gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+			ctx := context.Background()
+
+			achievements := []*Achievement{
+				{
+					ID:          "ach-1",
+					Description: "Led team migration",
+					EventID:     "evt-1",
+					Confidence:  0.9,
+					Category:    constants.CompetencyLeadership,
 				},
 			}
-			gen := NewBulletGenerator(log, scoringCfg)
 
-			bullets := []*Bullet{
-				{ID: "b1", Confidence: 0.90}, // Above threshold
-				{ID: "b2", Confidence: 0.80}, // Below threshold
-				{ID: "b3", Confidence: 0.85}, // At threshold
+			bullets, err := gen.GenerateBullets(ctx, nil, nil, achievements, "principal", "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bullets).To(HaveLen(1))
+			Expect(bullets[0].Category).To(Equal(constants.CompetencyLeadership))
+		})
+
+		It("should handle Achievement with empty Category", func() {
+			gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+			ctx := context.Background()
+
+			achievements := []*Achievement{
+				{
+					ID:          "ach-1",
+					Description: "Did something",
+					EventID:     "evt-1",
+					Confidence:  0.9,
+					Category:    "", // Empty
+				},
 			}
 
-			filtered := gen.FilterByRole(bullets, "principal")
+			bullets, err := gen.GenerateBullets(ctx, nil, nil, achievements, "principal", "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bullets).To(HaveLen(1))
+			Expect(bullets[0].Category).To(Equal(constants.CompetencyCategory("")))
+		})
 
-			Expect(filtered).To(HaveLen(2))
-			Expect(filtered[0].ID).To(Equal("b1"))
-			Expect(filtered[1].ID).To(Equal("b3"))
+		It("should propagate different Categories for multiple Achievements", func() {
+			gen := NewBulletGenerator(log, nil).(*DefaultBulletGenerator)
+			ctx := context.Background()
+
+			achievements := []*Achievement{
+				{
+					ID:          "ach-1",
+					Description: "Led team",
+					EventID:     "evt-1",
+					Confidence:  0.9,
+					Category:    constants.CompetencyLeadership,
+				},
+				{
+					ID:          "ach-2",
+					Description: "Built system",
+					EventID:     "evt-2",
+					Confidence:  0.85,
+					Category:    constants.CompetencyTechnical,
+				},
+			}
+
+			bullets, err := gen.GenerateBullets(ctx, nil, nil, achievements, "principal", "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bullets).To(HaveLen(2))
+
+			// Find bullets by their text to check categories (order may vary due to scoring)
+			var leadershipBullet, technicalBullet *Bullet
+			for _, b := range bullets {
+				if strings.Contains(b.Text, "Led team") {
+					leadershipBullet = b
+				}
+				if strings.Contains(b.Text, "Built system") {
+					technicalBullet = b
+				}
+			}
+
+			Expect(leadershipBullet).NotTo(BeNil())
+			Expect(leadershipBullet.Category).To(Equal(constants.CompetencyLeadership))
+			Expect(technicalBullet).NotTo(BeNil())
+			Expect(technicalBullet.Category).To(Equal(constants.CompetencyTechnical))
 		})
 	})
 })
