@@ -125,3 +125,20 @@ func FactWith(id, text string) *career.Fact {
 		Text: text,
 	}
 }
+
+// FactWithCategories creates a Fact with specified categories and audience relevance.
+// Use for tests that need specific category assignments (e.g., role-based scoring).
+func FactWithCategories(id, text, sourceEventID string, categories, audienceRelevance []string) *career.Fact {
+	now := time.Now()
+	return &career.Fact{
+		ID:                   id,
+		Text:                 text,
+		CompetencyCategories: categories,
+		RoleFit:              career.RoleFitStaff,
+		AudienceRelevance:    audienceRelevance,
+		StrengthSignal:       "high",
+		SourceEventID:        sourceEventID,
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+}

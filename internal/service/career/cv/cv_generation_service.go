@@ -112,8 +112,8 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		facts = []*career.Fact{}
 	}
 
-	// Generate bullets using BulletGenerator
-	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, config.TargetRole, config.TargetAudience)
+	// Generate bullets (BUG-008: role-based scoring)
+	bullets, err := svc.bulletGenerator.GenerateBullets(ctx, events, facts, nil, config.TargetRole, config.TargetAudience)
 	if err != nil {
 		svc.logger.Error("Failed to generate bullets: %v", err)
 		return nil, fmt.Errorf("failed to generate bullets: %w", err)
@@ -129,13 +129,16 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 			config.TechnologyFocus, len(config.SelectedTechnologies), len(bullets))
 	}
 
+	// Convert to domain bullets for SectionBuilder
+	cvBullets := ConvertBullets(bullets)
+
 	// Build sections using SectionBuilder (Phase 11 - Task 40: pass skills format config)
 	skillsConfig := &SkillsFormatConfig{
 		Format:               config.SkillsFormat,
 		Limit:                config.SkillsLimit,
 		SelectedTechnologies: config.SelectedTechnologies,
 	}
-	sections, err := svc.sectionBuilder.BuildSections(ctx, bullets, events, facts, config.TargetRole, skillsConfig)
+	sections, err := svc.sectionBuilder.BuildSections(ctx, cvBullets, events, facts, config.TargetRole, skillsConfig)
 	if err != nil {
 		svc.logger.Error("Failed to build sections: %v", err)
 		return nil, fmt.Errorf("failed to build sections: %w", err)

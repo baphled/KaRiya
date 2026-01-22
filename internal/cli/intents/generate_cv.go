@@ -120,8 +120,8 @@ type GenerateCVContext struct {
 	// DataProcessingService processes career data for CV generation
 	DataProcessingService cv.DataProcessingService
 
-	// EnhancedBulletGenerator generates enhanced CV bullets
-	EnhancedBulletGenerator cv.EnhancedBulletGenerator
+	// BulletGenerator generates CV bullets
+	BulletGenerator cv.BulletGenerator
 
 	// ExportService exports CVs to various formats
 	ExportService *cv.ExportService

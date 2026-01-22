@@ -51,8 +51,8 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		factRepo, err = careerrepo.NewSQLiteFactRepository(db)
 		Expect(err).NotTo(HaveOccurred())
 
-		// Create CV services
-		bulletGenerator := NewBulletGenerator(eventRepo, factRepo, log)
+		// Create CV services with role-based scoring.
+		bulletGenerator := NewBulletGenerator(log, nil) // nil uses default scoring config
 		sectionBuilder := NewSectionBuilder(nil, log)
 		configManager := NewMemoryConfigManager()
 

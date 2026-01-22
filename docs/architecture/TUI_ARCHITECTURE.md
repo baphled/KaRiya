@@ -88,8 +88,8 @@ internal/cli/
 │   ├── cv/                           # GenerateCV screens
 │   │   ├── profile_select.go         # CVProfileSelect
 │   │   ├── audience_select.go        # CVAudienceSelect
-│   │   ├── role_emphasis_select.go   # CVRoleEmphasisSelect
-│   │   ├── length_format_select.go   # CVLengthFormatSelect
+│   │   ├── technology_focus_select.go # TechnologyFocusSelect
+│   │   ├── focus_area_select.go      # FocusAreaSelect
 │   │   ├── generating.go             # CVGenerating
 │   │   └── preview.go                # CVPreview
 │   │
@@ -328,64 +328,77 @@ func (i *ManageSkillsIntent) Update(msg tea.Msg) tea.Cmd {
 
 ---
 
-### Example 2: GenerateCVIntent with Variants
+### Example 2: GenerateCVIntent with Technology Focus
 
-**Current Flow** (10+ states):
+**Current Flow** (wizard-based):
 ```
-SelectProfile → SelectAudience → SelectRoleEmphasis → SelectLengthFormat → 
-Generating → Preview → Confirm → Export
+Configuring (wizard modal) → Extracting → Generating → Review → Preview → Exporting
 ```
 
-**Proposed with Screens** (~200 lines):
+**Legacy Flow** (step-by-step):
+```
+SelectProfile → SelectAudience → ExtractingTechnologies → SelectTechnologyFocus → 
+SelectTechnologies/SelectFocusArea → SelectSkillsConfig → Generating → Preview → 
+Review → Confirm → Export
+```
+
+**Implementation** (~200 lines):
 
 ```go
 type GenerateCVIntent struct {
-    state   CVState
+    state   GenerateCVState
     context *GenerateCVContext
     result  *IntentResult[*GenerateCVResult]
     
     // Collected data through workflow
-    selectedProfile      *cv.ProfileConfig
-    selectedAudience     string
-    selectedRoleEmphasis cv.RoleEmphasis
-    selectedLengthFormat cv.LengthFormat
-    selectedVariant      *cv.CVVariant
-    generatedCV          *career.CVView
+    selectedProfile        *CVProfile
+    selectedAudience       string
+    selectedTechnologyFocus cv.TechnologyFocus  // Language Agnostic / Generalist / Specialist
+    selectedFocusArea      cv.FocusArea         // Backend / Frontend / Fullstack / DevOps
+    selectedTechnologies   []string
+    generatedCV            *career.CVView
     
     activeScreen screens.Screen
 }
 
-func (i *GenerateCVIntent) transitionTo(state CVState) {
-    i.state = state
+func (i *GenerateCVIntent) transitionTo(state GenerateCVState) {
+    i.state.currentState = state
     
     switch state {
-    case CVSelectProfile:
-        i.activeScreen = cv.NewCVProfileSelect(i.context.AvailableProfiles)
+    case GenerateCVStateSelectProfile:
+        i.activeScreen = NewCVProfileSelect(i.context.AvailableProfiles)
         
-    case CVSelectAudience:
-        i.activeScreen = cv.NewCVAudienceSelect([]string{
+    case GenerateCVStateSelectAudience:
+        i.activeScreen = NewCVAudienceSelect([]string{
             "hiring_manager", "recruiter", "peer",
         })
         
-    case CVSelectRoleEmphasis:
-        emphases := cv.NewVariantService().ListRoleEmphases()
-        i.activeScreen = cv.NewCVRoleEmphasisSelect(emphases)
+    case GenerateCVStateSelectTechnologyFocus:
+        options := []cv.TechnologyFocus{
+            cv.TechnologyFocusLanguageAgnostic,
+            cv.TechnologyFocusGeneralist,
+            cv.TechnologyFocusSpecialist,
+        }
+        i.activeScreen = NewTechnologyFocusSelect(options)
         
-    case CVSelectLengthFormat:
-        lengths := cv.NewVariantService().ListLengthFormats()
-        i.activeScreen = cv.NewCVLengthFormatSelect(lengths)
+    case GenerateCVStateSelectFocusArea:
+        focusAreas := []cv.FocusArea{
+            cv.FocusAreaBackend,
+            cv.FocusAreaFrontend,
+            cv.FocusAreaFullstack,
+            cv.FocusAreaDevOps,
+        }
+        i.activeScreen = NewFocusAreaSelect(focusAreas)
         
-    case CVGenerating:
-        i.activeScreen = cv.NewCVGenerating(cv.ProgressConfig{
+    case GenerateCVStateGenerating:
+        i.activeScreen = NewCVGenerating(ProgressConfig{
             Title:   "Generating CV",
-            Message: fmt.Sprintf("Creating %s CV...", i.selectedVariant.Name),
+            Message: "Creating CV...",
         })
         
-    case CVPreview:
-        i.activeScreen = cv.NewCVPreview(cv.CVPreviewConfig{
-            CV:        i.generatedCV,
-            Variant:   i.selectedVariant,
-            Structure: i.selectedVariant.BaseStructure,
+    case GenerateCVStatePreview:
+        i.activeScreen = NewCVPreview(CVPreviewConfig{
+            CV: i.generatedCV,
         })
     }
 }
@@ -393,23 +406,26 @@ func (i *GenerateCVIntent) transitionTo(state CVState) {
 func (i *GenerateCVIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
     switch r := result.(type) {
     case *screens.NavigateResult:
-        switch i.state {
-        case CVSelectProfile:
-            i.selectedProfile = r.Data.(*cv.ProfileConfig)
-            i.transitionTo(CVSelectAudience)
+        switch i.state.currentState {
+        case GenerateCVStateSelectProfile:
+            i.selectedProfile = r.Data.(*CVProfile)
+            i.transitionTo(GenerateCVStateSelectAudience)
             
-        case CVSelectAudience:
+        case GenerateCVStateSelectAudience:
             i.selectedAudience = r.Data.(string)
-            i.transitionTo(CVSelectRoleEmphasis)
+            i.transitionTo(GenerateCVStateExtractingTechnologies)
             
-        case CVSelectRoleEmphasis:
-            i.selectedRoleEmphasis = r.Data.(cv.RoleEmphasis)
-            i.transitionTo(CVSelectLengthFormat)
+        case GenerateCVStateSelectTechnologyFocus:
+            i.selectedTechnologyFocus = r.Data.(cv.TechnologyFocus)
+            if i.selectedTechnologyFocus == cv.TechnologyFocusLanguageAgnostic {
+                i.transitionTo(GenerateCVStateSelectFocusArea)
+            } else {
+                i.transitionTo(GenerateCVStateSelectTechnologies)
+            }
             
-        case CVSelectLengthFormat:
-            i.selectedLengthFormat = r.Data.(cv.LengthFormat)
-            i.selectedVariant = i.lookupVariant()
-            i.transitionTo(CVGenerating)
+        case GenerateCVStateSelectFocusArea:
+            i.selectedFocusArea = r.Data.(cv.FocusArea)
+            i.transitionTo(GenerateCVStateGenerating)
             return i.generateCVAsync()
         }
         
