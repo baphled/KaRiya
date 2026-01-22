@@ -95,7 +95,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		lengthConfig := GetLengthFormatConfig(LengthFormat(config.LengthFormat))
 		if lengthConfig.MaxYearsHistory != nil {
 			originalCount := len(events)
-			var filteredEvents []*career.CareerEvent
+			filteredEvents := make([]*career.CareerEvent, 0, len(events))
 			for _, event := range events {
 				if lengthConfig.ShouldIncludeEvent(event.Date) {
 					filteredEvents = append(filteredEvents, event)
@@ -150,7 +150,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 	if config.LengthFormat != "" {
 		lengthConfig := GetLengthFormatConfig(LengthFormat(config.LengthFormat))
 		originalCount := len(bullets)
-		var filteredBullets []*Bullet
+		filteredBullets := make([]*Bullet, 0, len(bullets))
 		for _, bullet := range bullets {
 			if lengthConfig.MeetsConfidenceThreshold(bullet.Confidence) {
 				filteredBullets = append(filteredBullets, bullet)
