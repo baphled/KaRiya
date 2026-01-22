@@ -90,6 +90,23 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		return nil, fmt.Errorf("failed to retrieve events: %w", err)
 	}
 
+	// BUG-010: Apply length format constraints - filter events by date
+	if config.LengthFormat != "" {
+		lengthConfig := GetLengthFormatConfig(LengthFormat(config.LengthFormat))
+		if lengthConfig.MaxYearsHistory != nil {
+			originalCount := len(events)
+			var filteredEvents []*career.CareerEvent
+			for _, event := range events {
+				if lengthConfig.ShouldIncludeEvent(event.Date) {
+					filteredEvents = append(filteredEvents, event)
+				}
+			}
+			events = filteredEvents
+			svc.logger.Info("Applied length format %s: filtered events from %d to %d (max years: %d)",
+				config.LengthFormat, originalCount, len(events), *lengthConfig.MaxYearsHistory)
+		}
+	}
+
 	if len(events) == 0 {
 		svc.logger.Info("No events found matching filters")
 		return &career.CVView{
@@ -127,6 +144,21 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		bullets = svc.bulletGenerator.FilterByTechnologies(bullets, events, techFocus, config.SelectedTechnologies)
 		svc.logger.Info("Applied technology filtering (%s) with %d technologies, %d bullets after filtering",
 			config.TechnologyFocus, len(config.SelectedTechnologies), len(bullets))
+	}
+
+	// BUG-010: Apply length format constraints - filter bullets by confidence
+	if config.LengthFormat != "" {
+		lengthConfig := GetLengthFormatConfig(LengthFormat(config.LengthFormat))
+		originalCount := len(bullets)
+		var filteredBullets []*Bullet
+		for _, bullet := range bullets {
+			if lengthConfig.MeetsConfidenceThreshold(bullet.Confidence) {
+				filteredBullets = append(filteredBullets, bullet)
+			}
+		}
+		bullets = filteredBullets
+		svc.logger.Info("Applied length format %s confidence filter: %d bullets filtered to %d (min confidence: %.2f)",
+			config.LengthFormat, originalCount, len(bullets), lengthConfig.MinConfidence)
 	}
 
 	// Convert to domain bullets for SectionBuilder
