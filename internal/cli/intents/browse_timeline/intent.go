@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
@@ -68,9 +69,6 @@ type Intent struct {
 	deleteError error
 
 	// --- Screen Orchestration ---
-
-	// listScreen is the timeline event list screen.
-	listScreen *timeline.TimelineEventListScreen
 
 	// activeScreen holds the current screen being displayed.
 	activeScreen screens.Screen
@@ -315,8 +313,39 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 
 	// Handle view detail modal if visible.
 	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "s" {
-			return i.showSkillsForCurrentEvent()
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch keyMsg.String() {
+			case "s":
+				return i.showSkillsForCurrentEvent()
+			case "e":
+				// Open edit modal for the currently viewed event.
+				if i.selectedEvent != nil {
+					termInfo := i.GetTerminalInfo()
+					width, height := 120, 40
+					if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
+						width, height = termInfo.Width, termInfo.Height
+					}
+					i.viewDetailModal.Hide()
+					i.viewDetailModal = nil
+					i.editModal = components.NewEditEventModal(i.selectedEvent, width, height)
+					return i.editModal.Init()
+				}
+			case "d":
+				// Open delete confirmation for the currently viewed event.
+				if i.selectedEvent != nil {
+					eventText := i.selectedEvent.Text
+					if len(eventText) > 50 {
+						eventText = eventText[:47] + "..."
+					}
+					i.viewDetailModal.Hide()
+					i.viewDetailModal = nil
+					i.deleteModal = feedback.NewConfirmModal(
+						"Delete Event",
+						fmt.Sprintf("Are you sure you want to delete '%s'?", eventText),
+					).WithVariant(feedback.ConfirmDestructive)
+					return i.deleteModal.Init()
+				}
+			}
 		}
 		_, cmd := i.viewDetailModal.Update(msg)
 		if !i.viewDetailModal.IsVisible() {
@@ -474,6 +503,20 @@ func (i *Intent) applyFilters() {
 			}
 		}
 
+		// Apply date range filter (if specified).
+		if i.filters.DateFrom != "" {
+			dateFrom, err := time.Parse("2006-01-02", i.filters.DateFrom)
+			if err == nil && evt.Date.Before(dateFrom) {
+				continue
+			}
+		}
+		if i.filters.DateTo != "" {
+			dateTo, err := time.Parse("2006-01-02", i.filters.DateTo)
+			if err == nil && evt.Date.After(dateTo) {
+				continue
+			}
+		}
+
 		// Apply tag filters.
 		if len(i.filters.Tags) > 0 {
 			hasTag := false
@@ -591,6 +634,16 @@ func (i *Intent) HasVisibleSkillsModal() bool {
 // HasVisibleErrorModal returns true if the error modal is currently visible.
 func (i *Intent) HasVisibleErrorModal() bool {
 	return i.errorModal != nil
+}
+
+// HasVisibleQuickAddModal returns true if the quick add modal is currently visible.
+func (i *Intent) HasVisibleQuickAddModal() bool {
+	return i.quickAddModal != nil && i.quickAddModal.IsVisible()
+}
+
+// HasVisibleEditModal returns true if the edit modal is currently visible.
+func (i *Intent) HasVisibleEditModal() bool {
+	return i.editModal != nil && i.editModal.IsVisible()
 }
 
 // ShowErrorModal displays an error modal with the given title and message.
