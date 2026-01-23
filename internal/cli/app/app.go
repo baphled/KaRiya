@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
+	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -736,11 +737,11 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 			log.Error("Failed to load events: %v", err)
 			events = make([]*career.CareerEvent, 0)
 		}
-		browserCtx := &intents.BrowseTimelineContext{
+		browserCtx := &browse_timeline.IntentContext{
 			Events:          events,
 			CLIEventService: cliService,
 		}
-		intent, err := intents.NewBrowseTimelineIntent(browserCtx)
+		intent, err := browse_timeline.NewIntent(browserCtx)
 		if err != nil {
 			log.Error("Failed to create BrowseTimeline intent: %v", err)
 			return nil

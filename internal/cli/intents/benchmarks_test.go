@@ -55,35 +55,7 @@ func BenchmarkCaptureEventUpdate(b *testing.B) {
 	}
 }
 
-// BenchmarkBrowseTimelineInit benchmarks BrowseTimeline intent initialization
-func BenchmarkBrowseTimelineInit(b *testing.B) {
-	ctx := &BrowseTimelineContext{
-		Events:          make([]*career.CareerEvent, 0),
-		InitialFilters:  nil,
-		SelectedEventID: "",
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		intent, _ := NewBrowseTimelineIntent(ctx)
-		_ = intent.Init()
-	}
-}
-
-// BenchmarkBrowseTimelineView benchmarks BrowseTimeline intent view rendering
-func BenchmarkBrowseTimelineView(b *testing.B) {
-	ctx := &BrowseTimelineContext{
-		Events:          make([]*career.CareerEvent, 0),
-		InitialFilters:  nil,
-		SelectedEventID: "",
-	}
-	intent, _ := NewBrowseTimelineIntent(ctx)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = intent.View()
-	}
-}
+// BrowseTimeline benchmarks have been moved to internal/cli/intents/browse_timeline/benchmarks_test.go
 
 // BenchmarkGenerateCVInit benchmarks GenerateCV intent initialization
 func BenchmarkGenerateCVInit(b *testing.B) {

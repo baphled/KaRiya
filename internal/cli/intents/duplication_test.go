@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
+	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -13,7 +14,7 @@ import (
 var _ = Describe("View Duplication Prevention", func() {
 	Describe("BrowseTimeline", func() {
 		var (
-			intent *intents.BrowseTimelineIntent
+			intent *browse_timeline.Intent
 			events []*career.CareerEvent
 		)
 
@@ -29,9 +30,9 @@ var _ = Describe("View Duplication Prevention", func() {
 				},
 			}
 
-			ctx := &intents.BrowseTimelineContext{
+			ctx := &browse_timeline.IntentContext{
 				Events: events,
-				InitialFilters: &intents.TimelineFilters{
+				InitialFilters: &browse_timeline.Filters{
 					Tags:      make([]string, 0),
 					Companies: make([]string, 0),
 					SortBy:    "date",
@@ -40,7 +41,7 @@ var _ = Describe("View Duplication Prevention", func() {
 			}
 
 			var err error
-			intent, err = intents.NewBrowseTimelineIntent(ctx)
+			intent, err = browse_timeline.NewIntent(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})

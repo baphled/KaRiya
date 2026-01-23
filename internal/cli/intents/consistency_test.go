@@ -40,19 +40,7 @@ var _ = Describe("StandardView Consistency", func() {
 		})
 	})
 
-	Describe("BrowseTimeline", func() {
-		It("should use StandardView patterns", func() {
-			ctx := &BrowseTimelineContext{}
-
-			intent, err := NewBrowseTimelineIntent(ctx)
-			Expect(err).NotTo(HaveOccurred())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("BrowseTimeline", view)
-		})
-	})
+	// BrowseTimeline consistency tests are in internal/cli/intents/browse_timeline/
 
 	Describe("GenerateCV", func() {
 		It("should use StandardView patterns", func() {
@@ -148,12 +136,7 @@ var _ = Describe("All Intents Initialization", func() {
 			func(i interface{}) { i.(*CaptureEventIntent).Init() },
 			func(i interface{}) string { return i.(*CaptureEventIntent).View() },
 		),
-		Entry("BrowseTimeline",
-			"BrowseTimeline",
-			func() (interface{}, error) { return NewBrowseTimelineIntent(&BrowseTimelineContext{}) },
-			func(i interface{}) { i.(*BrowseTimelineIntent).Init() },
-			func(i interface{}) string { return i.(*BrowseTimelineIntent).View() },
-		),
+		// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
 		Entry("GenerateCV",
 			"GenerateCV",
 			func() (interface{}, error) {
