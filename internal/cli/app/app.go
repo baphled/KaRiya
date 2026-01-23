@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
@@ -64,7 +65,7 @@ type Model struct {
 
 	// Info modal for blocking user feedback (empty state, etc.)
 	// See BUG-004: Shows warning when user tries to generate CV without events
-	infoModal *components.InfoModal
+	infoModal *feedback.InfoModal
 }
 
 // MenuItem represents a menu option
@@ -455,7 +456,7 @@ func (m *Model) handleMenuInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			events, err := m.careerService.GetEventRepository().List(m.ctx, careerrepo.ListFilters{Limit: 1})
 			if err != nil || len(events) == 0 {
 				// Show informational modal instead of activating intent
-				m.infoModal = components.NewWarningInfoModal(
+				m.infoModal = feedback.NewWarningInfoModal(
 					"No Career Events",
 					"You need to add career events before generating a CV.\n\n"+
 						"Use 'Capture Event' from the main menu to record your "+
