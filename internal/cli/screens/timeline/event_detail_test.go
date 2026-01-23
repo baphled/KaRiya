@@ -158,8 +158,9 @@ var _ = Describe("TimelineEventDetailScreen", func() {
 
 		It("should show skills count", func() {
 			view := screen.View()
-			// Format: "Skills: 2 associated"
-			Expect(view).To(ContainSubstring("Skills: 2"))
+			// Label "Skills:" is styled with ANSI codes, so check label and value separately.
+			Expect(view).To(ContainSubstring("Skills:"))
+			Expect(view).To(ContainSubstring("2 associated"))
 		})
 
 		It("should show help text in footer", func() {
