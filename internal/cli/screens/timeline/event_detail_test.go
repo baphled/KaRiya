@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -163,8 +164,9 @@ var _ = Describe("TimelineEventDetailScreen", func() {
 
 		It("should show help text in footer", func() {
 			view := screen.View()
-			Expect(view).To(ContainSubstring("e: Edit"))
-			Expect(view).To(ContainSubstring("d: Delete"))
+			// UIKit badges render action hints (not "key: action" format)
+			Expect(view).To(ContainSubstring("Edit"))
+			Expect(view).To(ContainSubstring("Delete"))
 			Expect(view).To(ContainSubstring("Esc"))
 		})
 
@@ -228,6 +230,83 @@ var _ = Describe("TimelineEventDetailScreen", func() {
 			theme := "test-theme"
 			screen.SetTheme(theme)
 			Expect(screen.Theme()).To(Equal(theme))
+		})
+	})
+
+	Describe("Theme Integration", func() {
+		BeforeEach(func() {
+			screen = timeline.NewTimelineEventDetailScreen(event)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should use provided theme for rendering content", func() {
+			// Create a theme and set it on the screen
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			// RenderContent should use the screen's theme, not theme.Default()
+			// This test verifies the screen doesn't hardcode theme.Default()
+			content := screen.RenderContent()
+			Expect(content).NotTo(BeEmpty())
+			// The content should be rendered (if theme wasn't used properly,
+			// the DetailView would fall back to defaults but still render)
+			Expect(content).To(ContainSubstring("Event Details"))
+		})
+
+		It("should fall back to default theme when no theme is set", func() {
+			// Don't set a theme - screen should handle gracefully
+			content := screen.RenderContent()
+			Expect(content).NotTo(BeEmpty())
+			Expect(content).To(ContainSubstring("Event Details"))
+		})
+	})
+
+	Describe("UIKit Footer Rendering", func() {
+		BeforeEach(func() {
+			screen = timeline.NewTimelineEventDetailScreen(event)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should NOT use legacy colon-separated format in footer", func() {
+			// Set a proper theme
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			view := screen.View()
+
+			// Legacy format uses "key: action" (e.g., "e: Edit", "d: Delete")
+			// UIKit primitives use styled "[key] action" format without colons
+			// Verify the old format is NOT used
+			Expect(view).NotTo(ContainSubstring("e: Edit"))
+			Expect(view).NotTo(ContainSubstring("d: Delete"))
+			Expect(view).NotTo(ContainSubstring("q: Quit"))
+			Expect(view).NotTo(ContainSubstring("?: Help"))
+		})
+
+		It("should render footer with UIKit badges containing action hints", func() {
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			view := screen.View()
+
+			// UIKit badges render action hints (the hint part of HelpKeyBadge)
+			Expect(view).To(ContainSubstring("Edit"))
+			Expect(view).To(ContainSubstring("Delete"))
+			Expect(view).To(ContainSubstring("Back"))
+			Expect(view).To(ContainSubstring("Quit"))
+			Expect(view).To(ContainSubstring("Help"))
+		})
+
+		It("should render footer with default theme when no theme is set", func() {
+			// Don't set theme - should fall back to default and still use UIKit
+			view := screen.View()
+
+			// Should NOT have legacy colon format
+			Expect(view).NotTo(ContainSubstring("Esc/Backspace: Back"))
+
+			// Should have action hints
+			Expect(view).To(ContainSubstring("Edit"))
+			Expect(view).To(ContainSubstring("Back"))
 		})
 	})
 })

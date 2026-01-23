@@ -5,6 +5,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -189,16 +190,34 @@ func (s *TimelineEventListScreen) RenderContent() string {
 }
 
 // View renders the event list screen using StandardView with table.
-// This is kept for backward compatibility but RenderContent() is preferred
-// when the intent manages the StandardView wrapper.
 func (s *TimelineEventListScreen) View() string {
 	content := s.RenderContent()
 
-	// Footer with actions (matching legacy)
-	// Note: 'q' is a global key handled by intent (quits app), '?' shows help
-	footer := "↑/↓/j/k: Navigate  Ctrl+D/U: Page Down/Up  Enter: View  a: Add  e: Edit  d: Delete  Esc: Back  q: Quit  ?: Help"
+	// Get theme for UIKit primitives (fall back to default if not set).
+	var th themes.Theme
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if t, ok := screenTheme.(themes.Theme); ok {
+			th = t
+		}
+	}
+	if th == nil {
+		th = themes.NewDefaultTheme()
+	}
 
-	// Use BaseScreen's CreateView helper for StandardView integration
+	// Build footer using UIKit primitives for consistent styling.
+	footer := primitives.RenderHelpFooter(th,
+		primitives.NavigateBadge(th),
+		primitives.HelpKeyBadge("Ctrl+D/U", "Page", th),
+		primitives.HelpKeyBadge("Enter", "View", th),
+		primitives.AddBadge(th),
+		primitives.EditBadge(th),
+		primitives.DeleteBadge(th),
+		primitives.BackBadge(th),
+		primitives.QuitBadge(th),
+		primitives.HelpBadge(th),
+	)
+
+	// Use BaseScreen's CreateView helper for StandardView integration.
 	breadcrumbs := []string{"Main Menu", "Timeline"}
 	return s.CreateView(breadcrumbs, content, footer)
 }
