@@ -47,13 +47,10 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			CLIEventService: &service.CLIEventService{},
 		}
 
-		// Create intent (active by default)
+		// Create intent (active by default, screens are always enabled)
 		var err error
 		intent, err = NewBrowseTimelineIntent(context)
 		Expect(err).NotTo(HaveOccurred())
-
-		// Enable screen-based architecture
-		intent.EnableScreens()
 	})
 
 	Describe("Initialization with Screens", func() {
@@ -362,7 +359,6 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 			intent, err = NewBrowseTimelineIntent(context)
 			Expect(err).NotTo(HaveOccurred())
 
-			intent.EnableScreens()
 			intent.Init()
 		})
 
@@ -388,25 +384,17 @@ var _ = Describe("BrowseTimelineIntent - Screen Architecture", func() {
 		})
 	})
 
-	Describe("Screen vs Legacy Mode", func() {
-		It("should use legacy mode when screens not enabled", func() {
-			// Create new intent without enabling screens
-			legacyIntent, err := NewBrowseTimelineIntent(context)
+	Describe("Screen Architecture", func() {
+		It("should always use screen-based architecture", func() {
+			// Create intent and verify it uses screen-based rendering
+			screenIntent, err := NewBrowseTimelineIntent(context)
 			Expect(err).NotTo(HaveOccurred())
-			legacyIntent.Init()
+			screenIntent.Init()
 
-			// View should use legacy table-based rendering
-			view := legacyIntent.View()
+			// View should use screen-based rendering with breadcrumbs
+			view := screenIntent.View()
 			Expect(view).NotTo(BeEmpty())
-			// Legacy view won't have screen-specific markers like "Career Timeline"
-		})
-
-		It("should use screen mode when screens enabled", func() {
-			// Already enabled in BeforeEach
-			intent.Init()
-
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Timeline")) // Breadcrumb text in screen mode
+			Expect(view).To(ContainSubstring("Timeline"))
 		})
 	})
 

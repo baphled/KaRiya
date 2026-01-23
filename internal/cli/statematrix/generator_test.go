@@ -54,7 +54,7 @@ var _ = Describe("Generator", func() {
 					StateCount: 2,
 					States: []statematrix.StateInfo{
 						{Constant: "BrowseStateTimeline", Type: "ROOT", EscapeBehavior: "Cancel intent → Main Menu"},
-						{Constant: "BrowseStateEventDetail", Type: "Intermediate", EscapeBehavior: "Back → Previous state"},
+						{Constant: "BrowseStateDeleteConfirm", Type: "Confirmation", EscapeBehavior: "Cancel → Return to list"},
 					},
 				},
 			},
@@ -539,7 +539,7 @@ var _ = Describe("Parser", func() {
 			})
 
 			It("should identify detail states as Intermediate", func() {
-				classification := statematrix.ClassifyState("BrowseStateEventDetail")
+				classification := statematrix.ClassifyState("SomeStateDetail")
 				Expect(classification).To(Equal("Intermediate"))
 			})
 		})

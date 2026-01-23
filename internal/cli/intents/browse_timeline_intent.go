@@ -455,15 +455,6 @@ func (i *BrowseTimelineIntent) View() string {
 
 		return baseView
 
-	case *timeline.TimelineEventDetailScreen:
-		// LEGACY: Event detail is now shown as a modal, not a full screen
-		// This case is kept for backward compatibility but should not be reached
-		// Event detail: Use RenderContent and add themed footer
-		view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
-		view.WithContent(screen.RenderContent())
-		view.WithHelp(i.getContextHelp())
-		return view.Render()
-
 	case *timeline.EventDeleteConfirmScreen:
 		// Delete confirmation: Use full View() (has its own footer)
 		return screen.View()
@@ -738,14 +729,8 @@ func (i *BrowseTimelineIntent) removeEventFromList(eventID string) {
 }
 
 // ============================================================================
-// Screen Orchestration (Phase 4.2 - Complete)
+// Screen Orchestration
 // ============================================================================
-
-// EnableScreens is a no-op for backward compatibility.
-// Screens are now the default and only architecture.
-func (i *BrowseTimelineIntent) EnableScreens() {
-	// No-op: screens are always enabled
-}
 
 // transitionToScreen sets the active screen and updates state.
 func (i *BrowseTimelineIntent) transitionToScreen(screen screens.Screen) {
@@ -773,12 +758,10 @@ func (i *BrowseTimelineIntent) transitionToScreen(screen screens.Screen) {
 // Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
 // BrowseTimelineIntent implements ScreenResultHandler interface for compile-time safety.
 func (i *BrowseTimelineIntent) handleScreenResult(result interface{}) tea.Cmd {
-	// Handle nil result
 	if result == nil {
 		return nil
 	}
 
-	// Cast to ScreenResult (BrowseTimeline accepts interface{} for backward compatibility)
 	screenResult, ok := result.(screens.ScreenResult)
 	if !ok {
 		return nil
@@ -795,14 +778,6 @@ func (i *BrowseTimelineIntent) HandleCancel(result *screens.CancelResult) tea.Cm
 	case BrowseStateTimeline:
 		// At root state, cancel means exit intent
 		i.setCancelled()
-		return nil
-
-	case BrowseStateEventDetail:
-		// LEGACY: Event detail is now a modal, not a separate state
-		// This case is kept for backward compatibility but should not be reached
-		// Return to timeline list
-		i.state.currentState = BrowseStateTimeline
-		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
 		return nil
 
 	case BrowseStateDeleteConfirm:
@@ -992,8 +967,8 @@ func (i *BrowseTimelineIntent) getStateName() string {
 	switch i.state.currentState {
 	case BrowseStateTimeline:
 		return "Timeline"
-	case BrowseStateEventDetail:
-		return "Event Details"
+	case BrowseStateDeleteConfirm:
+		return "Delete Confirmation"
 	default:
 		return "Unknown"
 	}
@@ -1169,18 +1144,6 @@ func (i *BrowseTimelineIntent) getContextHelp() string {
 
 		return CombineThemedFooters(
 			ThemedCustomFooter(theme, badges...),
-			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
-		)
-	case BrowseStateEventDetail:
-		// LEGACY: Event detail is now a modal with its own footer
-		// This case is kept for backward compatibility but should not be reached
-		// Event detail footer: Edit, Delete, Back + Global shortcuts
-		return CombineThemedFooters(
-			ThemedCustomFooter(theme,
-				primitives.EditBadge(theme),   // e: Edit
-				primitives.DeleteBadge(theme), // d: Delete
-				primitives.BackBadge(theme),   // Esc: Back
-			),
 			ThemedGlobalBadges(theme), // q: Quit, m: Main Menu
 		)
 	case BrowseStateDeleteConfirm:

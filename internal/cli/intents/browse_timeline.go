@@ -92,7 +92,7 @@ type BrowseTimelineModel struct {
 	context *BrowseTimelineContext
 
 	// currentState tracks which view is active.
-	currentState string // BrowseStateTimeline, BrowseStateEventDetail, BrowseStateDeleteConfirm
+	currentState string // BrowseStateTimeline, BrowseStateDeleteConfirm
 
 	// filteredEvents are the events after applying current filters.
 	filteredEvents []*career.CareerEvent
@@ -122,6 +122,5 @@ type BrowseTimelineModel struct {
 // BrowseTimelineStates for navigation.
 const (
 	BrowseStateTimeline      = "timeline"
-	BrowseStateEventDetail   = "event_detail"
 	BrowseStateDeleteConfirm = "delete_confirm"
 )
