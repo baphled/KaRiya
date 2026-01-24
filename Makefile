@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -73,7 +73,7 @@ review-commit:
 	@bash scripts/review-commit.sh
 
 # Check full project compliance (all rules)
-check-compliance: staticcheck
+check-compliance: staticcheck check-intent-architecture
 	@bash scripts/check-compliance.sh
 
 # Install all CI tools locally
@@ -504,6 +504,19 @@ check-patterns-quiet:
 	else \
 		echo "⚠️  $$VIOLATIONS pattern issue(s) found - run 'make check-patterns' for details"; \
 	fi
+
+# Intent architecture enforcement (strict validation)
+check-intent-architecture:
+	@bash scripts/check-intent-architecture.sh
+
+# Run golangci-lint (comprehensive static analysis)
+golangci-lint:
+	@echo "Running golangci-lint..."
+	@command -v golangci-lint >/dev/null 2>&1 || { \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2; \
+	}
+	@golangci-lint run --timeout=5m
 
 # Generate workflow diagrams
 generate-diagrams:

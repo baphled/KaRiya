@@ -1,0 +1,90 @@
+name: Architecture Lint
+
+on:
+  pull_request:
+    paths:
+      - 'internal/cli/intents/**'
+      - 'internal/cli/screens/**'
+      - 'internal/cli/components/**'
+      - 'internal/cli/behaviors/**'
+      - 'internal/cli/uikit/**'
+      - 'internal/cli/models/**'
+      - 'internal/cli/forms/**'
+  push:
+    branches:
+      - next
+      - main
+    paths:
+      - 'internal/cli/intents/**'
+      - 'internal/cli/screens/**'
+
+jobs:
+  intent-architecture:
+    name: Intent Architecture Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Check Intent Architecture
+        run: make check-intent-architecture
+
+  golangci-lint:
+    name: Comprehensive Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.55.2
+          args: --timeout=5m
+
+  pattern-compliance:
+    name: Pattern Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Patterns
+        run: make check-patterns
+
+  report:
+    name: Architecture Report
+    runs-on: ubuntu-latest
+    needs: [intent-architecture, golangci-lint, pattern-compliance]
+    if: always()
+    steps:
+      - name: Architecture Validation Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🏛️  ARCHITECTURE VALIDATION SUMMARY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Intent Architecture: ${{ needs.intent-architecture.result }}"
+          echo "Golangci-lint:       ${{ needs.golangci-lint.result }}"
+          echo "Pattern Compliance:  ${{ needs.pattern-compliance.result }}"
+          echo ""
+          if [ "${{ needs.intent-architecture.result }}" != "success" ] || \
+             [ "${{ needs.golangci-lint.result }}" != "success" ] || \
+             [ "${{ needs.pattern-compliance.result }}" != "success" ]; then
+            echo "❌ Architecture validation FAILED"
+            echo ""
+            echo "See: docs/checklists/INTENT_DEVELOPMENT_CHECKLIST.md"
+            exit 1
+          else
+            echo "✅ All architecture checks passed"
+          fi

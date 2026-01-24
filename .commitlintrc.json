@@ -24,6 +24,7 @@
       2,
       "always",
       [
+        "arch",
         "behaviors",
         "domain",
         "service",
@@ -38,6 +39,8 @@
         "workflow",
         "config",
         "docs",
+        "guides",
+        "rules",
         "tests",
         "intents",
         "models",
