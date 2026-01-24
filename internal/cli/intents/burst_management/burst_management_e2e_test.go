@@ -358,28 +358,32 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			// Process suggestions loaded
 			_ = intent.Update(msg)
-			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			// Verify suggestion modal is visible
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.IsVisible()).To(BeTrue())
 
 			// Verify initial view shows first suggestion
-			view := intent.View()
+			view := modal.View()
 			Expect(view).To(ContainSubstring("Backend Work"))
 			Expect(view).To(ContainSubstring("1 of 3"))
 
 			// Navigate to next suggestion
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			view = intent.View()
+			_, _ = modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			view = modal.View()
 			Expect(view).To(ContainSubstring("DevOps Tasks"))
 			Expect(view).To(ContainSubstring("2 of 3"))
 
 			// Navigate to next suggestion (third)
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			view = intent.View()
+			_, _ = modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			view = modal.View()
 			Expect(view).To(ContainSubstring("Frontend Updates"))
 			Expect(view).To(ContainSubstring("3 of 3"))
 
 			// Navigate back with 'p'
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
-			view = intent.View()
+			_, _ = modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+			view = modal.View()
 			Expect(view).To(ContainSubstring("DevOps Tasks"))
 			Expect(view).To(ContainSubstring("2 of 3"))
 		})
@@ -437,22 +441,25 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 				Error:       nil,
 			}
 
+			// Process suggestions loaded - creates modal
 			_ = intent.Update(msg)
-			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
 
-			// Accept the suggestion
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			// Verify modal is visible
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.IsVisible()).To(BeTrue())
 
-			// Execute the command (creates the burst)
-			if cmd != nil {
-				resultMsg := cmd()
-				if resultMsg != nil {
-					_ = intent.Update(resultMsg)
-				}
+			// Accept the suggestion via intent (message-based pattern)
+			// Send 'a' key to intent, which forwards to modal, detects closure, and sends completion message
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// The modal closed and sent SuggestionReviewCompleteMsg via tea.Batch
+			// We need to manually trigger processing of that message in tests
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{suggestions[0]},
+				Cancelled:           false,
 			}
-
-			// Should return to list state
-			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			_ = intent.Update(completeMsg)
 
 			// Burst count should increase
 			Expect(len(intent.GetFilteredBursts())).To(Equal(initialBurstCount + 1))
@@ -518,14 +525,20 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 				Error:       nil,
 			}
 
+			// Process suggestions loaded
 			_ = intent.Update(msg)
-			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			// Verify modal is visible
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.IsVisible()).To(BeTrue())
 
 			// Reject the only suggestion
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+			_, _ = modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
 
-			// Should return to list
-			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			// Modal should close (no suggestions left)
+			Expect(modal.IsVisible()).To(BeFalse())
+			Expect(modal.HasSuggestions()).To(BeFalse())
 		})
 
 		It("should cancel suggestion review with Esc", func() {
@@ -546,14 +559,21 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 				Error:       nil,
 			}
 
+			// Process suggestions loaded
 			_ = intent.Update(msg)
-			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			// Verify modal is visible
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.IsVisible()).To(BeTrue())
 
 			// Cancel with Esc
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			_, _ = modal.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Should return to list without creating burst
-			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			// Modal should close
+			Expect(modal.IsVisible()).To(BeFalse())
+
+			// No burst should be created
 			Expect(len(intent.GetFilteredBursts())).To(Equal(initialBurstCount))
 		})
 

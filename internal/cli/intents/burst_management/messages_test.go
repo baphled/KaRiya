@@ -227,37 +227,45 @@ var _ = Describe("Messages", func() {
 		})
 	})
 
-	Describe("BurstSuggestionAcceptedMsg", func() {
-		It("should store accepted suggestion and created burst", func() {
-			suggestion := burst_fact.BurstSuggestion{
-				EventIDs:        []string{"event-1", "event-2"},
-				ConfidenceScore: 0.9,
-				Name:            "Accepted Burst",
+	Describe("SuggestionReviewCompleteMsg", func() {
+		It("should store accepted suggestions", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					EventIDs:        []string{"event-1", "event-2"},
+					ConfidenceScore: 0.9,
+					Name:            "Accepted Burst 1",
+				},
+				{
+					EventIDs:        []string{"event-3", "event-4"},
+					ConfidenceScore: 0.85,
+					Name:            "Accepted Burst 2",
+				},
 			}
-			burst := &career.Burst{
-				ID:   "burst-new",
-				Name: "Accepted Burst",
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions,
+				Cancelled:           false,
 			}
-			msg := burst_management.BurstSuggestionAcceptedMsg{
-				Suggestion: suggestion,
-				Burst:      burst,
-				Error:      nil,
-			}
-			Expect(msg.Suggestion.Name).To(Equal("Accepted Burst"))
-			Expect(msg.Burst.ID).To(Equal("burst-new"))
-			Expect(msg.Error).To(BeNil())
+			Expect(msg.AcceptedSuggestions).To(HaveLen(2))
+			Expect(msg.AcceptedSuggestions[0].Name).To(Equal("Accepted Burst 1"))
+			Expect(msg.Cancelled).To(BeFalse())
 		})
 
-		It("should store error on acceptance failure", func() {
-			suggestion := burst_fact.BurstSuggestion{
-				EventIDs: []string{"event-1"},
+		It("should indicate cancellation with empty suggestions", func() {
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: nil,
+				Cancelled:           true,
 			}
-			msg := burst_management.BurstSuggestionAcceptedMsg{
-				Suggestion: suggestion,
-				Burst:      nil,
-				Error:      errTest,
+			Expect(msg.Cancelled).To(BeTrue())
+			Expect(msg.AcceptedSuggestions).To(BeNil())
+		})
+
+		It("should handle completion with no accepted suggestions", func() {
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{},
+				Cancelled:           false,
 			}
-			Expect(msg.Error).NotTo(BeNil())
+			Expect(msg.AcceptedSuggestions).To(HaveLen(0))
+			Expect(msg.Cancelled).To(BeFalse())
 		})
 	})
 

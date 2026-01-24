@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/burst_fact"
 )
 
 var _ = Describe("Helper Methods", func() {
@@ -281,6 +282,122 @@ var _ = Describe("Helper Methods", func() {
 			intent.RefreshData()
 
 			// Should be in list state with list screen.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+	})
+
+	Describe("SuggestionReviewCompleteMsg handling", func() {
+		It("should create bursts from accepted suggestions", func() {
+			initialCount := len(intent.GetFilteredBursts())
+
+			// Create completion message with accepted suggestions.
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+					{
+						Name:            "Accepted Burst 1",
+						Description:     "First accepted suggestion",
+						EventIDs:        []string{"e1", "e2"},
+						ConfidenceScore: 0.9,
+					},
+					{
+						Name:            "Accepted Burst 2",
+						Description:     "Second accepted suggestion",
+						EventIDs:        []string{"e3", "e4"},
+						ConfidenceScore: 0.85,
+					},
+				},
+				Cancelled: false,
+			}
+
+			// Handle the message via Update.
+			cmd := intent.Update(msg)
+			Expect(cmd).To(BeNil())
+
+			// Verify bursts were created.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(initialCount + 2))
+
+			// Verify burst details.
+			newBursts := intent.GetFilteredBursts()[initialCount:]
+			Expect(newBursts[0].Name).To(Equal("Accepted Burst 1"))
+			Expect(newBursts[0].Description).To(Equal("First accepted suggestion"))
+			Expect(newBursts[0].EventIDs).To(Equal([]string{"e1", "e2"}))
+			Expect(newBursts[0].Confirmed).To(BeFalse())
+
+			Expect(newBursts[1].Name).To(Equal("Accepted Burst 2"))
+			Expect(newBursts[1].Description).To(Equal("Second accepted suggestion"))
+			Expect(newBursts[1].EventIDs).To(Equal([]string{"e3", "e4"}))
+			Expect(newBursts[1].Confirmed).To(BeFalse())
+		})
+
+		It("should transition to list screen when cancelled", func() {
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: nil,
+				Cancelled:           true,
+			}
+
+			cmd := intent.Update(msg)
+			Expect(cmd).To(BeNil())
+
+			// Should transition to list state.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+
+			// No bursts should be created.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1)) // Original burst only
+		})
+
+		It("should transition to list screen when no suggestions accepted", func() {
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{},
+				Cancelled:           false,
+			}
+
+			cmd := intent.Update(msg)
+			Expect(cmd).To(BeNil())
+
+			// Should transition to list state.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+
+			// No bursts should be created.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1)) // Original burst only
+		})
+
+		It("should add bursts to context bursts list", func() {
+			initialContextCount := len(ctx.Bursts)
+
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+					{
+						Name:            "New Burst",
+						Description:     "New burst description",
+						EventIDs:        []string{"e1"},
+						ConfidenceScore: 0.95,
+					},
+				},
+				Cancelled: false,
+			}
+
+			intent.Update(msg)
+
+			// Verify burst added to context.
+			Expect(ctx.Bursts).To(HaveLen(initialContextCount + 1))
+			Expect(ctx.Bursts[initialContextCount].Name).To(Equal("New Burst"))
+		})
+
+		It("should refresh list screen with new bursts", func() {
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+					{
+						Name:        "New Burst",
+						Description: "Description",
+						EventIDs:    []string{"e1"},
+					},
+				},
+				Cancelled: false,
+			}
+
+			intent.Update(msg)
+
+			// Should be in list state with updated screen.
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 		})
 	})

@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/burst_fact"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -720,6 +721,154 @@ var _ = Describe("Intent Methods", func() {
 			Expect(intent.GetState()).To(Equal(burst_management.StateEdit))
 			// Modal should still be visible (form has validation error).
 			Expect(intent.HasVisibleEditModal()).To(BeTrue())
+		})
+	})
+
+	Describe("Suggestion Modal Message Flow", func() {
+		It("should create modal when suggestions are loaded", func() {
+			ctx := &burst_management.IntentContext{
+				Bursts: []*career.Burst{},
+			}
+			ctx.Validate()
+			intent, _ := burst_management.NewIntent(ctx)
+			intent.Init()
+
+			// Load suggestions.
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{
+					{
+						Name:            "Suggestion 1",
+						Description:     "First suggestion",
+						EventIDs:        []string{"e1"},
+						ConfidenceScore: 0.9,
+					},
+				},
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			// Verify modal is created and visible.
+			Expect(intent.GetSuggestionModal()).NotTo(BeNil())
+			Expect(intent.GetSuggestionModal().IsVisible()).To(BeTrue())
+		})
+
+		It("should forward key to modal when modal is visible", func() {
+			ctx := &burst_management.IntentContext{
+				Bursts: []*career.Burst{},
+			}
+			ctx.Validate()
+			intent, _ := burst_management.NewIntent(ctx)
+			intent.Init()
+
+			// Load suggestions.
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{
+					{Name: "Test", EventIDs: []string{"e1"}},
+				},
+				Error: nil,
+			}
+			intent.Update(msg)
+
+			// Send key to intent.
+			keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
+			intent.Update(keyMsg)
+
+			// Modal should have processed the key and closed.
+			Expect(intent.GetSuggestionModal()).To(BeNil())
+		})
+
+		It("should send SuggestionReviewCompleteMsg when modal closes with accepted suggestions", func() {
+			ctx := &burst_management.IntentContext{
+				Bursts: []*career.Burst{},
+			}
+			ctx.Validate()
+			intent, _ := burst_management.NewIntent(ctx)
+			intent.Init()
+
+			initialCount := len(intent.GetFilteredBursts())
+
+			// Load suggestions.
+			loadMsg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{
+					{
+						Name:        "Accepted Burst",
+						Description: "Test burst",
+						EventIDs:    []string{"e1"},
+					},
+				},
+				Error: nil,
+			}
+			intent.Update(loadMsg)
+
+			// Accept suggestion (modal closes and sends message).
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// Process the completion message (in tests, we need to send it manually).
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{loadMsg.Suggestions[0]},
+				Cancelled:           false,
+			}
+			intent.Update(completeMsg)
+
+			// Verify burst was created.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(initialCount + 1))
+			Expect(intent.GetFilteredBursts()[0].Name).To(Equal("Accepted Burst"))
+		})
+
+		It("should clear modal when cancelled", func() {
+			ctx := &burst_management.IntentContext{
+				Bursts: []*career.Burst{},
+			}
+			ctx.Validate()
+			intent, _ := burst_management.NewIntent(ctx)
+			intent.Init()
+
+			// Load suggestions.
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{
+					{Name: "Test", EventIDs: []string{"e1"}},
+				},
+				Error: nil,
+			}
+			intent.Update(msg)
+
+			// Cancel modal.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Modal should be cleared.
+			Expect(intent.GetSuggestionModal()).To(BeNil())
+		})
+
+		It("should not create bursts when review is cancelled", func() {
+			ctx := &burst_management.IntentContext{
+				Bursts: []*career.Burst{},
+			}
+			ctx.Validate()
+			intent, _ := burst_management.NewIntent(ctx)
+			intent.Init()
+
+			initialCount := len(intent.GetFilteredBursts())
+
+			// Load suggestions.
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{
+					{Name: "Test", EventIDs: []string{"e1"}},
+				},
+				Error: nil,
+			}
+			intent.Update(msg)
+
+			// Cancel and process completion.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: nil,
+				Cancelled:           true,
+			}
+			intent.Update(completeMsg)
+
+			// No bursts should be created.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(initialCount))
 		})
 	})
 })

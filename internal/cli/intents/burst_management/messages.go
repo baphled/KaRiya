@@ -58,11 +58,10 @@ type BurstSuggestionsLoadedMsg struct {
 	Error       error
 }
 
-// BurstSuggestionAcceptedMsg is sent when user accepts a suggestion.
-type BurstSuggestionAcceptedMsg struct {
-	Suggestion burst_fact.BurstSuggestion
-	Burst      *career.Burst
-	Error      error
+// SuggestionReviewCompleteMsg is sent when the suggestion review modal closes.
+type SuggestionReviewCompleteMsg struct {
+	AcceptedSuggestions []burst_fact.BurstSuggestion
+	Cancelled           bool
 }
 
 // EditBurstMsg is sent when the edit modal completes successfully with updated burst data.

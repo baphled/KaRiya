@@ -2,10 +2,9 @@
 package burst_management
 
 import (
-	"fmt"
-
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
+	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
@@ -47,6 +46,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleBurstFactsLoaded(msg)
 	case BurstSuggestionsLoadedMsg:
 		return i.handleBurstSuggestionsLoaded(msg)
+	case SuggestionReviewCompleteMsg:
+		return i.handleSuggestionReviewComplete(msg)
 	}
 
 	// Handle modals first (highest priority).
@@ -90,8 +91,6 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateExtractingFactsView(msg)
 	case StateSuggesting:
 		return i.updateSuggestingView(msg)
-	case StateSuggestionReview:
-		return i.updateSuggestionReviewView(msg)
 	}
 
 	return nil
@@ -146,6 +145,28 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 				return i.showBurstDetailModal(i.selectedBurst)
 			}
 			return noopCmd
+		}
+		return cmd
+	}
+
+	// Suggestion review modal.
+	if i.suggestionModal != nil && i.suggestionModal.IsVisible() {
+		_, cmd := i.suggestionModal.Update(msg)
+		if !i.suggestionModal.IsVisible() {
+			// Modal was closed - send completion message.
+			accepted := i.suggestionModal.GetAcceptedSuggestions()
+			cancelled := i.suggestionModal.GetAction() == burstmodals.SuggestionActionCancel
+
+			completeMsg := SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: accepted,
+				Cancelled:           cancelled,
+			}
+
+			// Clear modal.
+			i.suggestionModal = nil
+
+			// Send completion message to be handled.
+			return tea.Batch(cmd, func() tea.Msg { return completeMsg })
 		}
 		return cmd
 	}
@@ -309,67 +330,6 @@ func (i *Intent) updateSuggestingView(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// updateSuggestionReviewView handles the suggestion review state.
-func (i *Intent) updateSuggestionReviewView(msg tea.Msg) tea.Cmd {
-	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "esc":
-			// Cancel suggestion review and return to list.
-			i.state = StateList
-			i.suggestions = nil
-			i.currentSuggestionIdx = 0
-			// Restore list screen.
-			i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
-			return nil
-
-		case "n", "right":
-			// Next suggestion.
-			if i.currentSuggestionIdx < len(i.suggestions)-1 {
-				i.currentSuggestionIdx++
-			}
-			return nil
-
-		case "p", "left":
-			// Previous suggestion.
-			if i.currentSuggestionIdx > 0 {
-				i.currentSuggestionIdx--
-			}
-			return nil
-
-		case "a":
-			// Accept current suggestion - create burst.
-			if i.currentSuggestionIdx < len(i.suggestions) {
-				return i.acceptSuggestion(i.suggestions[i.currentSuggestionIdx])
-			}
-			return nil
-
-		case "r":
-			// Reject current suggestion - move to next or return to list.
-			if i.currentSuggestionIdx < len(i.suggestions)-1 {
-				// Remove current suggestion and stay at same index.
-				i.suggestions = append(i.suggestions[:i.currentSuggestionIdx], i.suggestions[i.currentSuggestionIdx+1:]...)
-				// Adjust index if we're past the end.
-				if i.currentSuggestionIdx >= len(i.suggestions) {
-					i.currentSuggestionIdx = len(i.suggestions) - 1
-				}
-			} else {
-				// Last suggestion - remove and return to list.
-				i.suggestions = i.suggestions[:i.currentSuggestionIdx]
-			}
-
-			// If no suggestions left, return to list.
-			if len(i.suggestions) == 0 {
-				i.state = StateList
-				i.currentSuggestionIdx = 0
-				// Restore list screen.
-				i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
-			}
-			return nil
-		}
-	}
-	return nil
-}
-
 // View renders the intent's current state.
 func (i *Intent) View() string {
 	if !i.active {
@@ -424,8 +384,6 @@ func (i *Intent) getStateContent() string {
 		return i.viewExtractingFacts()
 	case StateSuggesting:
 		return i.viewSuggesting()
-	case StateSuggestionReview:
-		return i.viewSuggestionReview()
 	}
 	return "Unknown state"
 }
@@ -487,46 +445,6 @@ func (i *Intent) viewSuggesting() string {
 	content := primitives.Title("🔍 Detecting Burst Patterns", theme).Render() + "\n\n"
 	content += primitives.Body("Analyzing your events to find related patterns...\n", theme).Render()
 	content += primitives.Body("This may take a moment.\n", theme).Render()
-
-	return content
-}
-
-// viewSuggestionReview renders the suggestion review view.
-func (i *Intent) viewSuggestionReview() string {
-	if len(i.suggestions) == 0 {
-		return "No suggestions available"
-	}
-
-	// Show current suggestion.
-	currentIdx := i.currentSuggestionIdx
-	if currentIdx >= len(i.suggestions) {
-		currentIdx = 0
-	}
-
-	suggestion := i.suggestions[currentIdx]
-
-	theme := i.Theme()
-
-	// Build content with or without theme.
-	var content string
-	if theme != nil {
-		content = primitives.Title(fmt.Sprintf("Burst Suggestion %d of %d", currentIdx+1, len(i.suggestions)), theme).Render() + "\n\n"
-		content += primitives.Body(fmt.Sprintf("Name: %s\n", suggestion.Name), theme).Render()
-		content += primitives.Body(fmt.Sprintf("Description: %s\n", suggestion.Description), theme).Render()
-		content += primitives.Body(fmt.Sprintf("Events: %d\n", len(suggestion.EventIDs)), theme).Render()
-		content += primitives.Body(fmt.Sprintf("Confidence: %.1f%%\n", suggestion.ConfidenceScore*100), theme).Render()
-		content += "\n"
-		content += primitives.Body("Press 'a' to accept, 'r' to reject, 'n' for next, 'p' for previous, 'esc' to cancel", theme).Render()
-	} else {
-		// Fallback without theme (e.g., in tests).
-		content = fmt.Sprintf("Burst Suggestion %d of %d\n\n", currentIdx+1, len(i.suggestions))
-		content += fmt.Sprintf("Name: %s\n", suggestion.Name)
-		content += fmt.Sprintf("Description: %s\n", suggestion.Description)
-		content += fmt.Sprintf("Events: %d\n", len(suggestion.EventIDs))
-		content += fmt.Sprintf("Confidence: %.1f%%\n", suggestion.ConfidenceScore*100)
-		content += "\n"
-		content += "Press 'a' to accept, 'r' to reject, 'n' for next, 'p' for previous, 'esc' to cancel"
-	}
 
 	return content
 }

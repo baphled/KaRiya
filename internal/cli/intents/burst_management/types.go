@@ -59,12 +59,6 @@ type Intent struct {
 	// burstFacts are the facts for the current burst.
 	burstFacts []*career.Fact
 
-	// suggestions are burst suggestions from AI detection.
-	suggestions []BurstSuggestion
-
-	// currentSuggestionIdx is the index of the current suggestion being reviewed.
-	currentSuggestionIdx int
-
 	// --- Loading states ---
 
 	// loadingEvents indicates if events are being loaded.
@@ -130,20 +124,14 @@ type Intent struct {
 	// confirmModal holds the burst confirmation modal.
 	confirmModal *feedback.ConfirmModal
 
+	// suggestionModal holds the suggestion review modal.
+	suggestionModal *burstmodals.SuggestionReviewModal
+
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal
 
 	// modalRegistry manages all modals with unified Update/View handling.
 	modalRegistry *intents.ModalRegistry
-}
-
-// BurstSuggestion is a type alias for burst_fact.BurstSuggestion.
-// Defined here for convenience to avoid import cycles.
-type BurstSuggestion struct {
-	EventIDs        []string
-	ConfidenceScore float64
-	Name            string
-	Description     string
 }
 
 // GetState returns the current state of the intent.
@@ -254,8 +242,13 @@ func (i *Intent) HasActiveModal() bool {
 }
 
 // GetDetailModal returns the detail modal (for testing).
-func (i *Intent) GetDetailModal() interface{} {
+func (i *Intent) GetDetailModal() *burstmodals.BurstDetailModal {
 	return i.detailModal
+}
+
+// GetSuggestionModal returns the suggestion modal (for testing).
+func (i *Intent) GetSuggestionModal() *burstmodals.SuggestionReviewModal {
+	return i.suggestionModal
 }
 
 // NewIntent creates a new BurstManagement intent.
@@ -269,18 +262,16 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 	}
 
 	intent := &Intent{
-		BaseIntent:           intents.NewBaseIntent(),
-		context:              ctx,
-		state:                StateList,
-		active:               true,
-		filteredBursts:       ctx.Bursts,
-		selectedIndex:        0,
-		viewedBursts:         make([]*career.Burst, 0),
-		burstEvents:          make([]*career.CareerEvent, 0),
-		burstFacts:           make([]*career.Fact, 0),
-		suggestions:          make([]BurstSuggestion, 0),
-		currentSuggestionIdx: 0,
-		modalRegistry:        intents.NewModalRegistry(),
+		BaseIntent:     intents.NewBaseIntent(),
+		context:        ctx,
+		state:          StateList,
+		active:         true,
+		filteredBursts: ctx.Bursts,
+		selectedIndex:  0,
+		viewedBursts:   make([]*career.Burst, 0),
+		burstEvents:    make([]*career.CareerEvent, 0),
+		burstFacts:     make([]*career.Fact, 0),
+		modalRegistry:  intents.NewModalRegistry(),
 	}
 
 	return intent, nil
