@@ -625,9 +625,10 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 		return nil
 	}
 
-	// Show suggestion review modal.
+	// Show suggestion review modal and update state.
 	i.suggestionModal = burstmodals.NewSuggestionReviewModal(msg.Suggestions, i.Theme())
 	i.suggestionModal.Show()
+	i.state = StateSuggestionReview
 	return nil
 }
 
@@ -635,9 +636,13 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg) tea.Cmd {
 	if msg.Cancelled || len(msg.AcceptedSuggestions) == 0 {
 		// No suggestions accepted or user cancelled - return to list.
+		i.state = StateList
 		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 		return nil
 	}
+
+	// Track successfully created bursts for fact extraction.
+	createdBursts := make([]*career.Burst, 0, len(msg.AcceptedSuggestions))
 
 	// Create bursts from accepted suggestions.
 	for _, suggestion := range msg.AcceptedSuggestions {
@@ -659,25 +664,30 @@ func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg)
 			}
 		}
 
-		// Add to filtered bursts list.
+		// Add to filtered bursts list and track for fact extraction.
 		i.filteredBursts = append(i.filteredBursts, burst)
 		i.context.Bursts = append(i.context.Bursts, burst)
+		createdBursts = append(createdBursts, burst)
 	}
 
 	// Refresh list screen with new bursts.
 	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 
-	// Trigger fact extraction for all created bursts.
+	// Trigger fact extraction only for successfully created bursts.
 	var cmds []tea.Cmd
-	for _, burst := range i.filteredBursts[len(i.filteredBursts)-len(msg.AcceptedSuggestions):] {
+	for _, burst := range createdBursts {
 		cmds = append(cmds, i.extractFactsForBurst(burst))
 	}
 
 	if len(cmds) > 0 {
 		i.extractingFacts = true
 		i.state = StateExtractingFacts
+		i.loadingModal = feedback.NewLoadingModal("Extracting facts from accepted bursts...", true).WithTheme(i.Theme())
 		return tea.Batch(cmds...)
 	}
+
+	// No bursts created (all failed) - stay on list.
+	i.state = StateList
 	return nil
 }
 
