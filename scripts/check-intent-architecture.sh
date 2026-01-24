@@ -614,7 +614,7 @@ if [ -n "$SUBDIRS" ]; then
     for intent_dir in $SUBDIRS; do
         INTENT_NAME=$(basename "$intent_dir")
         
-        # Check for required files
+        # Check for required core files (5 required)
         REQUIRED_FILES=("context.go" "result.go" "constants.go" "messages.go" "intent.go")
         MISSING_FILES=""
         
@@ -627,17 +627,50 @@ if [ -n "$SUBDIRS" ]; then
         if [ -n "$MISSING_FILES" ]; then
             echo -e "${RED}❌ VIOLATION: Incomplete subdirectory structure${NC}"
             echo "   Intent: $INTENT_NAME"
-            echo "   Missing files:$MISSING_FILES"
+            echo "   Missing required files:$MISSING_FILES"
             echo ""
-            echo "   Required structure:"
+            echo "   Required structure (5 CORE FILES):"
             echo "   intents/$INTENT_NAME/"
-            echo "   ├── context.go    (Context struct, business logic)"
+            echo "   ├── context.go    (IntentContext struct + Validate())"
             echo "   ├── result.go     (Result struct)"
-            echo "   ├── constants.go  (State enum, error constants)"
+            echo "   ├── constants.go  (State enum)"
             echo "   ├── messages.go   (ALL *Msg types)"
-            echo "   └── intent.go     (Intent implementation)"
+            echo "   └── intent.go     (NewIntent, Init, Update, View, Result)"
+            echo ""
+            echo "   Optional recommended files:"
+            echo "   ├── types.go      (Intent struct definition)"
+            echo "   ├── handlers.go   (ScreenResultHandler methods)"
+            echo "   ├── helpers.go    (Helper methods)"
+            echo "   ├── filters.go    (Domain-specific filter logic)"
+            echo "   └── interfaces.go (Service interfaces)"
             echo ""
             VIOLATIONS=$((VIOLATIONS+1))
+        fi
+        
+        # Check for recommended files (WARNING only)
+        RECOMMENDED_FILES=("types.go" "handlers.go" "helpers.go")
+        MISSING_RECOMMENDED=""
+        
+        for rec_file in "${RECOMMENDED_FILES[@]}"; do
+            if [ ! -f "$intent_dir/$rec_file" ]; then
+                MISSING_RECOMMENDED="$MISSING_RECOMMENDED $rec_file"
+            fi
+        done
+        
+        # Only warn if missing recommended files AND intent.go is large
+        if [ -n "$MISSING_RECOMMENDED" ]; then
+            INTENT_FILE="$intent_dir/intent.go"
+            if [ -f "$INTENT_FILE" ]; then
+                LINE_COUNT=$(wc -l < "$INTENT_FILE")
+                if [ $LINE_COUNT -gt 300 ]; then
+                    echo -e "${YELLOW}⚠️  WARNING: Consider splitting large intent.go${NC}"
+                    echo "   Intent: $INTENT_NAME ($LINE_COUNT lines)"
+                    echo "   Missing recommended files:$MISSING_RECOMMENDED"
+                    echo "   Recommendation: Extract to keep intent.go under 300 lines"
+                    echo ""
+                    WARNINGS=$((WARNINGS+1))
+                fi
+            fi
         fi
     done
 fi
@@ -791,7 +824,7 @@ if [ -n "$SUBDIRS" ]; then
     for intent_dir in $SUBDIRS; do
         INTENT_NAME=$(basename "$intent_dir")
         
-        # Check Context location
+        # Check Context location - must be in context.go, NOT in intent.go or types.go
         if [ -f "$intent_dir/intent.go" ]; then
             CONTEXT_IN_INTENT=$(grep "^type.*Context struct" "$intent_dir/intent.go" 2>/dev/null || true)
             if [ -n "$CONTEXT_IN_INTENT" ]; then
@@ -801,8 +834,21 @@ if [ -n "$SUBDIRS" ]; then
                 echo ""
                 VIOLATIONS=$((VIOLATIONS+1))
             fi
-            
-            # Check Result location
+        fi
+        
+        if [ -f "$intent_dir/types.go" ]; then
+            CONTEXT_IN_TYPES=$(grep "^type.*Context struct" "$intent_dir/types.go" 2>/dev/null || true)
+            if [ -n "$CONTEXT_IN_TYPES" ]; then
+                echo -e "${RED}❌ VIOLATION: Context defined in types.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: Context must be in context.go"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        fi
+        
+        # Check Result location - must be in result.go
+        if [ -f "$intent_dir/intent.go" ]; then
             RESULT_IN_INTENT=$(grep "^type.*Result struct" "$intent_dir/intent.go" 2>/dev/null || true)
             if [ -n "$RESULT_IN_INTENT" ]; then
                 echo -e "${RED}❌ VIOLATION: Result defined in intent.go${NC}"
@@ -811,8 +857,21 @@ if [ -n "$SUBDIRS" ]; then
                 echo ""
                 VIOLATIONS=$((VIOLATIONS+1))
             fi
-            
-            # Check State enum location
+        fi
+        
+        if [ -f "$intent_dir/types.go" ]; then
+            RESULT_IN_TYPES=$(grep "^type.*Result struct" "$intent_dir/types.go" 2>/dev/null || true)
+            if [ -n "$RESULT_IN_TYPES" ]; then
+                echo -e "${RED}❌ VIOLATION: Result defined in types.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: Result must be in result.go"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        fi
+        
+        # Check State enum location - must be in constants.go
+        if [ -f "$intent_dir/intent.go" ]; then
             STATE_IN_INTENT=$(grep "^type.*State string" "$intent_dir/intent.go" 2>/dev/null || true)
             if [ -n "$STATE_IN_INTENT" ]; then
                 echo -e "${RED}❌ VIOLATION: State enum defined in intent.go${NC}"
@@ -821,8 +880,21 @@ if [ -n "$SUBDIRS" ]; then
                 echo ""
                 VIOLATIONS=$((VIOLATIONS+1))
             fi
-            
-            # Check Msg types location (CRITICAL - must be in messages.go)
+        fi
+        
+        if [ -f "$intent_dir/types.go" ]; then
+            STATE_IN_TYPES=$(grep "^type.*State string" "$intent_dir/types.go" 2>/dev/null || true)
+            if [ -n "$STATE_IN_TYPES" ]; then
+                echo -e "${RED}❌ VIOLATION: State enum defined in types.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: State enum must be in constants.go"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        fi
+        
+        # Check Msg types location (CRITICAL - must be in messages.go)
+        if [ -f "$intent_dir/intent.go" ]; then
             MSG_IN_INTENT=$(grep "^type.*Msg struct" "$intent_dir/intent.go" 2>/dev/null || true)
             if [ -n "$MSG_IN_INTENT" ]; then
                 echo -e "${RED}❌ VIOLATION: Msg types defined in intent.go${NC}"
@@ -834,18 +906,55 @@ if [ -n "$SUBDIRS" ]; then
                 echo ""
                 VIOLATIONS=$((VIOLATIONS+1))
             fi
-            
-            # Check if Msg types are in constants.go (WRONG - should be messages.go)
-            if [ -f "$intent_dir/constants.go" ]; then
-                MSG_IN_CONSTANTS=$(grep "^type.*Msg struct" "$intent_dir/constants.go" 2>/dev/null || true)
-                if [ -n "$MSG_IN_CONSTANTS" ]; then
-                    echo -e "${RED}❌ VIOLATION: Msg types in constants.go${NC}"
-                    echo "   Intent: $INTENT_NAME"
-                    echo "   Rule: Msg types must be in messages.go (not constants.go)"
-                    echo ""
-                    VIOLATIONS=$((VIOLATIONS+1))
-                fi
+        fi
+        
+        if [ -f "$intent_dir/types.go" ]; then
+            MSG_IN_TYPES=$(grep "^type.*Msg struct" "$intent_dir/types.go" 2>/dev/null || true)
+            if [ -n "$MSG_IN_TYPES" ]; then
+                echo -e "${RED}❌ VIOLATION: Msg types defined in types.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: ALL *Msg types must be in messages.go"
+                echo ""
+                echo "   Found:"
+                echo "$MSG_IN_TYPES" | sed 's/^/   /'
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
             fi
+        fi
+        
+        # Check if Msg types are in constants.go (WRONG - should be messages.go)
+        if [ -f "$intent_dir/constants.go" ]; then
+            MSG_IN_CONSTANTS=$(grep "^type.*Msg struct" "$intent_dir/constants.go" 2>/dev/null || true)
+            if [ -n "$MSG_IN_CONSTANTS" ]; then
+                echo -e "${RED}❌ VIOLATION: Msg types in constants.go${NC}"
+                echo "   Intent: $INTENT_NAME"
+                echo "   Rule: Msg types must be in messages.go (not constants.go)"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        fi
+        
+        # Check Intent struct location - allowed in intent.go OR types.go
+        HAS_INTENT_STRUCT=false
+        if [ -f "$intent_dir/intent.go" ]; then
+            INTENT_STRUCT_IN_INTENT=$(grep "^type.*Intent struct" "$intent_dir/intent.go" 2>/dev/null || true)
+            if [ -n "$INTENT_STRUCT_IN_INTENT" ]; then
+                HAS_INTENT_STRUCT=true
+            fi
+        fi
+        if [ -f "$intent_dir/types.go" ]; then
+            INTENT_STRUCT_IN_TYPES=$(grep "^type.*Intent struct" "$intent_dir/types.go" 2>/dev/null || true)
+            if [ -n "$INTENT_STRUCT_IN_TYPES" ]; then
+                HAS_INTENT_STRUCT=true
+            fi
+        fi
+        
+        if [ "$HAS_INTENT_STRUCT" = false ]; then
+            echo -e "${RED}❌ VIOLATION: No Intent struct found${NC}"
+            echo "   Intent: $INTENT_NAME"
+            echo "   Rule: Intent struct must be in intent.go OR types.go"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
         fi
     done
 fi
@@ -1027,13 +1136,89 @@ fi
 echo ""
 
 # ============================================
+# 23. SCREENS DIRECTORY STRUCTURE
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "23. SCREENS DIRECTORY STRUCTURE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check for screens that correspond to subdirectory intents
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        INTENT_NAME=$(basename "$intent_dir")
+        
+        # Map intent name to expected screen directory
+        # browse_timeline -> timeline, burst_management -> burst, etc.
+        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/_intent$//' | sed 's/browse_//' | sed 's/_management$//')
+        
+        # Check if intent uses screens (has activeScreen or *Screen fields)
+        USES_SCREENS=false
+        for go_file in "$intent_dir"/*.go; do
+            if [ -f "$go_file" ]; then
+                if grep -q "screens\.Screen\|\..*Screen\s" "$go_file" 2>/dev/null; then
+                    USES_SCREENS=true
+                    break
+                fi
+            fi
+        done
+        
+        if [ "$USES_SCREENS" = true ]; then
+            # Check for corresponding screens directory
+            SCREEN_DIR="internal/cli/screens/$SCREEN_DIR_NAME"
+            
+            if [ ! -d "$SCREEN_DIR" ]; then
+                # Try alternative naming conventions
+                ALT_SCREEN_DIR="internal/cli/screens/$INTENT_NAME"
+                if [ ! -d "$ALT_SCREEN_DIR" ]; then
+                    echo -e "${YELLOW}⚠️  WARNING: Intent uses screens but no screens directory found${NC}"
+                    echo "   Intent: $INTENT_NAME"
+                    echo "   Expected: $SCREEN_DIR or $ALT_SCREEN_DIR"
+                    echo "   Recommendation: Extract screen components to screens package"
+                    echo ""
+                    WARNINGS=$((WARNINGS+1))
+                fi
+            fi
+        fi
+    done
+fi
+
+# Check for screens with modals subdirectory (recommended pattern)
+SCREEN_DIRS=$(find internal/cli/screens -mindepth 1 -maxdepth 1 -type d 2>/dev/null | grep -v base || true)
+
+if [ -n "$SCREEN_DIRS" ]; then
+    for screen_dir in $SCREEN_DIRS; do
+        SCREEN_NAME=$(basename "$screen_dir")
+        
+        # Check if screen has modal files but no modals subdirectory
+        MODAL_FILES=$(find "$screen_dir" -maxdepth 1 -name "*modal*.go" -type f 2>/dev/null | wc -l)
+        MODALS_SUBDIR="$screen_dir/modals"
+        
+        if [ "$MODAL_FILES" -gt 2 ] && [ ! -d "$MODALS_SUBDIR" ]; then
+            echo -e "${YELLOW}⚠️  WARNING: Multiple modal files without modals subdirectory${NC}"
+            echo "   Screen: $SCREEN_NAME ($MODAL_FILES modal files)"
+            echo "   Recommendation: Create $MODALS_SUBDIR and move modal files"
+            echo ""
+            WARNINGS=$((WARNINGS+1))
+        fi
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
+    echo -e "${GREEN}✅ Screens structure looks good${NC}"
+elif [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ No screen violations (warnings present)${NC}"
+fi
+
+echo ""
+
+# ============================================
 # SUMMARY
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📊 SUMMARY"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Total checks run: 22"
+echo "Total checks run: 23"
 echo "Violations: $VIOLATIONS"
 echo "Warnings: $WARNINGS"
 echo ""

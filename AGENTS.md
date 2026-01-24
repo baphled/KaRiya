@@ -264,43 +264,69 @@ type MyIntent struct {
 ALL intents MUST follow this subdirectory structure:
 
 #### File Structure (REQUIRED)
+
+**Core Files (5 required):**
 ```
 intents/{feature}/
-├── context.go    # Business logic, data (100-200 lines)
-├── result.go     # Output type (20-50 lines)
-├── constants.go  # State enum, errors (50-80 lines)
-├── messages.go   # ALL *Msg types (50-100 lines)
-└── intent.go     # Broker ONLY (200-400 lines, MAX 600)
-
-screens/{feature}/
-├── list_screen.go    # List view
-├── detail_screen.go  # Detail view
-└── form_screen.go    # Form view
+├── context.go    # IntentContext struct + Validate() + domain types
+├── result.go     # Result struct (20-50 lines)
+├── constants.go  # State enum ONLY (15-50 lines)
+├── messages.go   # ALL *Msg types (30-100 lines)
+└── intent.go     # NewIntent, Init, Update, View, Result (200-400 lines)
 ```
+
+**Optional Recommended Files (for larger intents):**
+```
+intents/{feature}/
+├── types.go      # Intent struct definition (if intent.go > 300 lines)
+├── handlers.go   # ScreenResultHandler methods (HandleCancel, HandleNavigate, etc.)
+├── helpers.go    # Helper methods (modal openers, view helpers, etc.)
+├── filters.go    # Domain-specific filter/sort logic
+└── interfaces.go # Service interfaces for dependency injection
+```
+
+**Screens Structure:**
+```
+screens/{feature}/
+├── list_screen.go      # List view (TableBehavior)
+├── detail_screen.go    # Detail view
+├── form_screen.go      # Form view (if applicable)
+└── modals/             # Feature-specific modals (if >2 modals)
+    ├── filter_modal.go
+    ├── search_modal.go
+    └── helpers.go      # Modal helpers
+```
+
+**Reference Implementation**: `intents/browse_timeline/` and `screens/timeline/`
 
 #### File Responsibilities
 
 | File | Contains | Max Lines | Enforcement |
 |------|----------|-----------|-------------|
-| **context.go** | Business logic, data management | 100-200 | Guideline |
-| **result.go** | Output type (Result struct) | 20-50 | Guideline |
-| **constants.go** | State enum, error constants | 50-80 | Guideline |
-| **messages.go** | ALL *Msg types | 50-100 | Guideline |
-| **intent.go** | Broker/orchestration ONLY | 200-400 | **BLOCKED at 600** (Check #18) |
+| **context.go** | IntentContext struct, Validate(), domain types (Filters) | 50-200 | Guideline |
+| **result.go** | Result struct | 20-50 | Guideline |
+| **constants.go** | State enum ONLY | 15-50 | Guideline |
+| **messages.go** | ALL *Msg types | 30-100 | Guideline |
+| **intent.go** | NewIntent, Init, Update, View, Result | 200-400 | **BLOCKED at 600** (Check #18) |
+| **types.go** | Intent struct definition (optional) | 50-150 | Guideline |
+| **handlers.go** | ScreenResultHandler methods (optional) | 50-200 | Guideline |
+| **helpers.go** | Helper methods (optional) | 100-300 | Guideline |
 
 #### Intent Rules (ENFORCED)
 
 **Intent MUST**:
-- Be 200-400 lines (broker only)
+- Have 5 core files (context.go, result.go, constants.go, messages.go, intent.go)
+- Keep intent.go under 400 lines (warning) / 600 lines (hard block)
 - Delegate business logic to Context
 - Delegate rendering to Screens
-- Use centralized modals (`uikit/feedback/`)
+- Use centralized modals (`uikit/feedback/`) or feature modals (`screens/{feature}/modals/`)
 - Only orchestrate - NO implementation
 
 **Intent MUST NOT**:
 - Contain rendering logic (extract to `screens/{feature}/`)
 - Contain business logic (move to Context in `context.go`)
-- Define types (must be in separate files)
+- Define State enum in intent.go (must be in `constants.go`)
+- Define *Msg types in intent.go (must be in `messages.go`)
 - Exceed 600 lines (hard block by Check #18)
 - Have >2 render methods (only `View()` + optional helper)
 
@@ -308,19 +334,20 @@ screens/{feature}/
 
 | Type | File | Rule |
 |------|------|------|
-| `*Context struct` | `context.go` | Business logic and data |
+| `*IntentContext struct` | `context.go` | Input params, Validate(), domain types |
 | `*Result struct` | `result.go` | Output type |
-| `*State string` | `constants.go` | State enum |
+| `*State string` | `constants.go` | State enum ONLY |
 | `const (...)` | `constants.go` | State constants |
-| `var Err...` | `constants.go` | Error constants |
 | `*Msg struct` | `messages.go` | **ALL message types** |
-| `*Intent struct` | `intent.go` | Implementation ONLY |
+| `*Intent struct` | `intent.go` OR `types.go` | Struct definition |
+| Handler methods | `handlers.go` (optional) | HandleCancel, HandleNavigate, etc. |
+| Helper methods | `helpers.go` (optional) | Modal openers, view helpers |
 
 #### Enforcement
 
 Run before every commit:
 ```bash
-make check-intent-architecture  # Checks #17-20 enforce structure
+make check-intent-architecture  # Checks #17-23 enforce structure
 ```
 
 **Automated Checks**:
@@ -328,15 +355,19 @@ make check-intent-architecture  # Checks #17-20 enforce structure
 - **Check #18**: Intent file size (warns >400 lines, blocks >600 lines)
 - **Check #19**: No rendering in intent (blocks >2 render methods)
 - **Check #20**: Type location (blocks types in wrong files)
+- **Check #21**: UIKit component usage
+- **Check #22**: Deprecated models package usage
+- **Check #23**: Screens directory structure
 
 #### AI Agent Behavior
 
 **When creating new intents**:
-1. ✅ ALWAYS use subdirectory structure
+1. ✅ ALWAYS use subdirectory structure with 5 core files
 2. ✅ ALWAYS extract views to `screens/{feature}/`
 3. ✅ ALWAYS keep `intent.go` under 400 lines
-4. ✅ ALWAYS use templates from `examples/intent_subdirectory_template/`
+4. ✅ USE `types.go`, `handlers.go`, `helpers.go` if intent.go > 300 lines
 5. ✅ ALWAYS put `*Msg` types in `messages.go`
+6. ✅ CREATE `screens/{feature}/modals/` if >2 modals
 
 **When modifying existing intents**:
 - If adding >50 lines → **REFUSE**, suggest migration first
@@ -348,13 +379,15 @@ make check-intent-architecture  # Checks #17-20 enforce structure
 I cannot modify this intent - it doesn't follow the subdirectory structure.
 
 Current: intents/burst_management_intent.go (1,488 lines)
-Required: intents/burst_management/ subdirectory with 5 files
+Required: intents/burst_management/ subdirectory with 5+ files
 
 This intent must be migrated first:
 1. Create intents/burst_management/ subdirectory
-2. Split into: context.go, result.go, constants.go, messages.go, intent.go
-3. Extract views to screens/burst_management/
-4. Reduce intent.go to 200-400 lines (broker only)
+2. Create 5 core files: context.go, result.go, constants.go, messages.go, intent.go
+3. (Optional) Create types.go, handlers.go, helpers.go to keep intent.go small
+4. Extract views to screens/burst_management/
+5. Move modals to screens/burst_management/modals/
+6. Reduce intent.go to 200-400 lines (broker only)
 
 See: docs/guides/INTENT_MIGRATION_TO_SUBDIRECTORY.md
 ```
