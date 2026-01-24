@@ -29,7 +29,29 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// Handle messages based on current state.
+	// Handle modals first (highest priority).
+	if cmd := i.handleModalUpdates(msg); cmd != nil || i.HasActiveModal() {
+		return cmd
+	}
+
+	// Handle key shortcuts when no modal is active.
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if cmd := i.handleKeyShortcuts(keyMsg); cmd != nil {
+			return cmd
+		}
+	}
+
+	// Delegate to active screen (if available).
+	// TODO: Uncomment when screens are implemented
+	// if i.activeScreen != nil {
+	// 	cmd, result := i.activeScreen.Update(msg)
+	// 	if result != nil {
+	// 		return tea.Batch(cmd, i.handleScreenResult(result))
+	// 	}
+	// 	return cmd
+	// }
+
+	// Fallback to state-based handling (TEMPORARY until screens are created)
 	switch i.state {
 	case StateList:
 		return i.updateListView(msg)
@@ -53,6 +75,35 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.updateSuggestionReviewView(msg)
 	}
 
+	return nil
+}
+
+// noopCmd is a sentinel command to indicate a message was consumed.
+// This prevents the message from propagating to the screen after a modal closes.
+func noopCmd() tea.Msg { return nil }
+
+// handleModalUpdates handles updates for all modals in priority order.
+// Returns a command (possibly noopCmd) if a modal consumed the message.
+func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
+	// Error modal has special handling (highest priority).
+	if i.errorModal != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
+			i.errorModal = nil
+			return noopCmd
+		}
+		return noopCmd
+	}
+
+	// TODO: Add other modal handlers (editModal, deleteModal, etc.)
+	// when modals are implemented
+
+	return nil
+}
+
+// handleKeyShortcuts handles keyboard shortcuts when no modal is active.
+func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
+	// TODO: Add global shortcuts (e.g., 's' for suggest, 'a' for add)
+	// when implemented
 	return nil
 }
 
@@ -123,10 +174,43 @@ func (i *Intent) View() string {
 		return "BurstManagement intent is not active"
 	}
 
-	// Get content for current state.
+	// TODO: Use screen-based rendering when screens are implemented
+	// For now, fall back to state-based content
+	// if i.activeScreen != nil {
+	// 	return i.renderWithScreen(i.activeScreen)
+	// }
+
+	// Get content for current state (temporary).
 	content := i.getStateContent()
-	return content
+
+	// Render with breadcrumbs and help.
+	view := i.CreateViewWithBreadcrumbs("Main Menu", "Burst Management", i.getStateName())
+	view.WithContent(content)
+	view.WithHelp(i.getContextHelp())
+	return view.Render()
 }
+
+// renderWithScreen renders the current screen with modal overlays.
+// TODO: Implement when screens are created.
+// func (i *Intent) renderWithScreen(screen screens.Screen) string {
+// 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Burst Management", i.getStateName())
+// 	view.WithContent(screen.RenderContent())
+// 	view.WithHelp(i.getContextHelp())
+// 	baseView := view.Render()
+//
+// 	// Render any visible modal as overlay.
+// 	if i.errorModal != nil {
+// 		return behaviors.RenderModalOverlay(i.errorModal, baseView)
+// 	}
+// 	if i.editModal != nil && i.editModal.IsVisible() {
+// 		return behaviors.RenderModalOverlay(i.editModal, baseView)
+// 	}
+// 	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+// 		return behaviors.RenderModalOverlay(i.deleteModal, baseView)
+// 	}
+//
+// 	return baseView
+// }
 
 // getStateContent returns the content for the current state.
 func (i *Intent) getStateContent() string {
