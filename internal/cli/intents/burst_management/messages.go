@@ -64,3 +64,10 @@ type BurstSuggestionAcceptedMsg struct {
 	Burst      *career.Burst
 	Error      error
 }
+
+// EditBurstMsg is sent when the edit modal completes successfully with updated burst data.
+type EditBurstMsg struct {
+	BurstID     string
+	Name        string
+	Description string
+}

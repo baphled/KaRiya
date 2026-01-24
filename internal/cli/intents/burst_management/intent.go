@@ -2,6 +2,12 @@
 package burst_management
 
 import (
+	"fmt"
+
+	"github.com/baphled/kariya/internal/cli/screens"
+	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -19,7 +25,9 @@ func (i *Intent) Init() tea.Cmd {
 		i.selectedBurst = i.filteredBursts[0]
 	}
 
+	// Set initial state and transition to list screen.
 	i.state = StateList
+	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 	return nil
 }
 
@@ -27,6 +35,18 @@ func (i *Intent) Init() tea.Cmd {
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
+	}
+
+	// Handle custom messages (from modals, etc).
+	switch msg := msg.(type) {
+	case EditBurstMsg:
+		return i.handleEditBurstMsg(msg)
+	case BurstEventsLoadedMsg:
+		return i.handleBurstEventsLoaded(msg)
+	case BurstFactsLoadedMsg:
+		return i.handleBurstFactsLoaded(msg)
+	case BurstSuggestionsLoadedMsg:
+		return i.handleBurstSuggestionsLoaded(msg)
 	}
 
 	// Handle modals first (highest priority).
@@ -42,16 +62,15 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	// Delegate to active screen (if available).
-	// TODO: Uncomment when screens are implemented
-	// if i.activeScreen != nil {
-	// 	cmd, result := i.activeScreen.Update(msg)
-	// 	if result != nil {
-	// 		return tea.Batch(cmd, i.handleScreenResult(result))
-	// 	}
-	// 	return cmd
-	// }
+	if i.activeScreen != nil {
+		cmd, result := i.activeScreen.Update(msg)
+		if result != nil {
+			return tea.Batch(cmd, i.handleScreenResult(result))
+		}
+		return cmd
+	}
 
-	// Fallback to state-based handling (TEMPORARY until screens are created)
+	// Fallback to state-based handling (for states without screens yet)
 	switch i.state {
 	case StateList:
 		return i.updateListView(msg)
@@ -94,8 +113,134 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 		return noopCmd
 	}
 
-	// TODO: Add other modal handlers (editModal, deleteModal, etc.)
-	// when modals are implemented
+	// Delete confirmation modal.
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		cmd, confirmed := i.deleteModal.Update(msg)
+		if !i.deleteModal.IsVisible() {
+			// Modal was closed.
+			if confirmed && i.selectedBurst != nil {
+				// User confirmed deletion - delete the burst.
+				return tea.Batch(cmd, i.deleteBurst(i.selectedBurst))
+			}
+			// User cancelled or modal closed without confirmation.
+			i.deleteModal = nil
+			i.selectedBurst = nil
+			i.state = StateList
+			return cmd
+		}
+		return cmd
+	}
+
+	// Confirm burst modal.
+	if i.confirmModal != nil && i.confirmModal.IsVisible() {
+		cmd, confirmed := i.confirmModal.Update(msg)
+		if !i.confirmModal.IsVisible() {
+			// Modal was closed.
+			if confirmed && i.selectedBurst != nil {
+				// User confirmed - mark burst as confirmed.
+				return tea.Batch(cmd, i.confirmBurst())
+			}
+			// User cancelled - show detail modal again.
+			i.confirmModal = nil
+			if i.selectedBurst != nil {
+				return i.showBurstDetailModal(i.selectedBurst)
+			}
+			return noopCmd
+		}
+		return cmd
+	}
+
+	// Detail modals (detail, events, facts) - handle keyboard shortcuts.
+	if i.detailModal != nil && i.detailModal.IsVisible() {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch keyMsg.String() {
+			case "v":
+				// View events - show events modal.
+				i.detailModal.Hide()
+				return i.showBurstEventsModal()
+			case "f":
+				// View facts - show facts modal.
+				i.detailModal.Hide()
+				return i.showBurstFactsModal()
+			case "e":
+				// Edit burst.
+				i.detailModal.Hide()
+				return i.openEditModal(i.selectedBurst)
+			case "d":
+				// Delete burst.
+				i.detailModal.Hide()
+				return i.openDeleteModal(i.selectedBurst)
+			case "c":
+				// Confirm burst.
+				i.detailModal.Hide()
+				i.confirmModal = feedback.NewConfirmModal(
+					"Confirm Burst",
+					"Mark this burst as confirmed and extract facts?",
+				).WithVariant(feedback.ConfirmDefault)
+				return i.confirmModal.Init()
+			case "esc", "enter":
+				// Close detail modal.
+				i.detailModal = nil
+				return noopCmd
+			}
+		}
+		// Update the modal.
+		_, cmd := i.detailModal.Update(msg)
+		return cmd
+	}
+
+	// Events modal.
+	if i.eventsModal != nil && i.eventsModal.IsVisible() {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.String() == "esc" || keyMsg.String() == "enter") {
+			// Close events modal and show detail modal again.
+			i.eventsModal = nil
+			if i.selectedBurst != nil {
+				return i.showBurstDetailModal(i.selectedBurst)
+			}
+			return noopCmd
+		}
+		// Update the modal.
+		_, cmd := i.eventsModal.Update(msg)
+		return cmd
+	}
+
+	// Facts modal.
+	if i.factsModal != nil && i.factsModal.IsVisible() {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.String() == "esc" || keyMsg.String() == "enter") {
+			// Close facts modal and show detail modal again.
+			i.factsModal = nil
+			if i.selectedBurst != nil {
+				return i.showBurstDetailModal(i.selectedBurst)
+			}
+			return noopCmd
+		}
+		// Update the modal.
+		_, cmd := i.factsModal.Update(msg)
+		return cmd
+	}
+
+	// Edit burst modal.
+	if i.editModal != nil && i.editModal.IsVisible() {
+		cmd, completed, formData := i.editModal.Update(msg)
+		if !i.editModal.IsVisible() {
+			// Modal was closed.
+			if completed && formData != nil && i.selectedBurst != nil {
+				// User completed form - send EditBurstMsg.
+				editMsg := EditBurstMsg{
+					BurstID:     i.selectedBurst.ID,
+					Name:        formData.Name,
+					Description: formData.Description,
+				}
+				// Clear modal and return msg to trigger edit handling.
+				i.editModal = nil
+				return tea.Batch(cmd, func() tea.Msg { return editMsg })
+			}
+			// User cancelled - return to list view.
+			i.editModal = nil
+			return noopCmd
+		}
+		return cmd
+	}
 
 	return nil
 }
@@ -149,6 +294,7 @@ func (i *Intent) updateDeleteConfirmView(msg tea.Msg) tea.Cmd {
 }
 
 // updateConfirmView handles the confirmation state.
+// The confirm modal is handled in handleModalUpdates, so this is a no-op.
 func (i *Intent) updateConfirmView(msg tea.Msg) tea.Cmd {
 	return nil
 }
@@ -165,6 +311,57 @@ func (i *Intent) updateSuggestingView(msg tea.Msg) tea.Cmd {
 
 // updateSuggestionReviewView handles the suggestion review state.
 func (i *Intent) updateSuggestionReviewView(msg tea.Msg) tea.Cmd {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
+		case "esc":
+			// Cancel suggestion review and return to list.
+			i.state = StateList
+			i.suggestions = nil
+			i.currentSuggestionIdx = 0
+			return nil
+
+		case "n", "right":
+			// Next suggestion.
+			if i.currentSuggestionIdx < len(i.suggestions)-1 {
+				i.currentSuggestionIdx++
+			}
+			return nil
+
+		case "p", "left":
+			// Previous suggestion.
+			if i.currentSuggestionIdx > 0 {
+				i.currentSuggestionIdx--
+			}
+			return nil
+
+		case "a":
+			// Accept current suggestion - create burst.
+			if i.currentSuggestionIdx < len(i.suggestions) {
+				return i.acceptSuggestion(i.suggestions[i.currentSuggestionIdx])
+			}
+			return nil
+
+		case "r":
+			// Reject current suggestion - move to next or return to list.
+			if i.currentSuggestionIdx < len(i.suggestions)-1 {
+				// Remove current suggestion and stay at same index.
+				i.suggestions = append(i.suggestions[:i.currentSuggestionIdx], i.suggestions[i.currentSuggestionIdx+1:]...)
+				// Adjust index if we're past the end.
+				if i.currentSuggestionIdx >= len(i.suggestions) {
+					i.currentSuggestionIdx = len(i.suggestions) - 1
+				}
+			} else {
+				// Last suggestion - remove and return to list.
+				i.suggestions = i.suggestions[:i.currentSuggestionIdx]
+			}
+
+			// If no suggestions left, return to list.
+			if len(i.suggestions) == 0 {
+				i.state = StateList
+			}
+			return nil
+		}
+	}
 	return nil
 }
 
@@ -174,13 +371,12 @@ func (i *Intent) View() string {
 		return "BurstManagement intent is not active"
 	}
 
-	// TODO: Use screen-based rendering when screens are implemented
-	// For now, fall back to state-based content
-	// if i.activeScreen != nil {
-	// 	return i.renderWithScreen(i.activeScreen)
-	// }
+	// Use screen-based rendering when screen is available.
+	if i.activeScreen != nil {
+		return i.renderWithScreen(i.activeScreen)
+	}
 
-	// Get content for current state (temporary).
+	// Fallback to state-based content (for states without screens yet).
 	content := i.getStateContent()
 
 	// Render with breadcrumbs and help.
@@ -191,26 +387,16 @@ func (i *Intent) View() string {
 }
 
 // renderWithScreen renders the current screen with modal overlays.
-// TODO: Implement when screens are created.
-// func (i *Intent) renderWithScreen(screen screens.Screen) string {
-// 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Burst Management", i.getStateName())
-// 	view.WithContent(screen.RenderContent())
-// 	view.WithHelp(i.getContextHelp())
-// 	baseView := view.Render()
-//
-// 	// Render any visible modal as overlay.
-// 	if i.errorModal != nil {
-// 		return behaviors.RenderModalOverlay(i.errorModal, baseView)
-// 	}
-// 	if i.editModal != nil && i.editModal.IsVisible() {
-// 		return behaviors.RenderModalOverlay(i.editModal, baseView)
-// 	}
-// 	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-// 		return behaviors.RenderModalOverlay(i.deleteModal, baseView)
-// 	}
-//
-// 	return baseView
-// }
+func (i *Intent) renderWithScreen(screen screens.Screen) string {
+	view := i.CreateViewWithBreadcrumbs("Main Menu", "Burst Management", i.getStateName())
+	view.WithContent(screen.RenderContent())
+	view.WithHelp(i.getContextHelp())
+	baseView := view.Render()
+
+	// Rebuild registry and render any visible modal as overlay.
+	i.rebuildModalRegistry()
+	return i.modalRegistry.RenderOverlay(baseView)
+}
 
 // getStateContent returns the content for the current state.
 func (i *Intent) getStateContent() string {
@@ -287,10 +473,45 @@ func (i *Intent) viewExtractingFacts() string {
 
 // viewSuggesting renders the burst suggestion loading view.
 func (i *Intent) viewSuggesting() string {
-	return "Suggesting bursts view"
+	theme := i.Theme()
+	if theme == nil {
+		return "Detecting burst patterns..."
+	}
+
+	// Show loading spinner/message.
+	content := primitives.Title("🔍 Detecting Burst Patterns", theme).Render() + "\n\n"
+	content += primitives.Body("Analyzing your events to find related patterns...\n", theme).Render()
+	content += primitives.Body("This may take a moment.\n", theme).Render()
+
+	return content
 }
 
 // viewSuggestionReview renders the suggestion review view.
 func (i *Intent) viewSuggestionReview() string {
-	return "Suggestion review view"
+	if len(i.suggestions) == 0 {
+		return "No suggestions available"
+	}
+
+	theme := i.Theme()
+	if theme == nil {
+		return fmt.Sprintf("Reviewing %d suggestions", len(i.suggestions))
+	}
+
+	// Show current suggestion.
+	currentIdx := i.currentSuggestionIdx
+	if currentIdx >= len(i.suggestions) {
+		currentIdx = 0
+	}
+
+	suggestion := i.suggestions[currentIdx]
+
+	content := primitives.Title(fmt.Sprintf("Burst Suggestion %d of %d", currentIdx+1, len(i.suggestions)), theme).Render() + "\n\n"
+	content += primitives.Body(fmt.Sprintf("Name: %s\n", suggestion.Name), theme).Render()
+	content += primitives.Body(fmt.Sprintf("Description: %s\n", suggestion.Description), theme).Render()
+	content += primitives.Body(fmt.Sprintf("Events: %d\n", len(suggestion.EventIDs)), theme).Render()
+	content += primitives.Body(fmt.Sprintf("Confidence: %.1f%%\n", suggestion.ConfidenceScore*100), theme).Render()
+	content += "\n"
+	content += primitives.Body("Press 'a' to accept, 'r' to reject, 'n' for next, 'p' for previous, 'esc' to cancel", theme).Render()
+
+	return content
 }

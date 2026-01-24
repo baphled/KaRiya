@@ -1,8 +1,15 @@
 package burst_management
 
 import (
+	"fmt"
+
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
+	"github.com/baphled/kariya/internal/cli/screens/facts"
+	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -27,52 +34,69 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	switch i.state {
 	case StateList:
-		// Cancel from list returns to main menu
+		// Check if any modal is active - if so, Esc should close the modal, not cancel the intent.
+		// This handles cases where modals are loading or in transition.
+		if i.detailModal != nil || i.eventsModal != nil || i.factsModal != nil ||
+			i.editModal != nil || i.deleteModal != nil || i.confirmModal != nil ||
+			i.errorModal != nil || i.loadingEvents || i.loadingFacts {
+			// Modal is active or loading - ignore cancel from screen.
+			return nil
+		}
+		// No modals active - cancel from list returns to main menu.
 		i.SetCancelled()
 		return nil
 
 	case StateDetail, StateDetailEvents, StateDetailFacts:
-		// Return to list from detail views
+		// Return to list from detail views.
 		i.state = StateList
-		// TODO: Transition to list screen
+		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 		return nil
 
 	case StateDeleteConfirm:
-		// Cancel delete returns to list
+		// Cancel delete returns to list.
 		i.state = StateList
-		// TODO: Transition to list screen
+		i.deleteModal = nil
+		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 		return nil
 
 	default:
-		// Default: return to list
+		// Default: return to list.
 		i.state = StateList
+		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 		return nil
 	}
 }
 
 // HandleNavigate handles screen navigation results.
 func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
-	// Handle action data (add, edit, delete)
+	// Handle action data (add, edit, delete, suggest).
 	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
 		return i.handleActionData(actionData)
 	}
 
-	// Handle burst selection (view details)
-	// TODO: Add burst selection handling when screens are implemented
+	// Handle burst selection (view details).
+	if burst, ok := result.ResultData.(*career.Burst); ok {
+		i.selectedBurst = burst
+		i.AddViewedBurst(burst)
+		// Show detail modal instead of transitioning to detail screen.
+		return i.showBurstDetailModal(burst)
+	}
 
 	return nil
 }
 
 // HandleSubmit handles form submission results.
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
-	// TODO: Implement submit handling when forms are added
+	// Form submissions will be implemented when modals are added.
+	// This will handle edit burst form, create burst form, etc.
 	return nil
 }
 
 // HandleError handles error results from screens.
 func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	// Store error and show error modal.
 	i.deleteError = result.Err
-	// TODO: Show error modal
+	i.errorModal = feedback.NewErrorModal("Operation Failed", result.Err.Error())
 	return nil
 }
 
@@ -81,19 +105,85 @@ func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 	action, _ := actionData["action"].(string)
 	switch action {
 	case "add":
-		// TODO: Open create burst modal
+		// Open create burst modal (when implemented).
+		// For now, just transition state.
+		i.state = StateEdit
 		return nil
 
 	case "edit":
-		// TODO: Open edit burst modal
+		// Extract burst from action data.
+		if burst, ok := actionData["burst"].(*career.Burst); ok {
+			i.selectedBurst = burst
+			i.state = StateEdit
+			// Open edit modal using helper.
+			return i.openEditModal(burst)
+		}
 		return nil
 
 	case "delete":
-		// TODO: Open delete confirmation modal
+		// Extract burst from action data.
+		if burst, ok := actionData["burst"].(*career.Burst); ok {
+			i.selectedBurst = burst
+			// Create delete confirmation modal.
+			burstName := burst.Name
+			if len(burstName) > 50 {
+				burstName = burstName[:47] + "..."
+			}
+			i.deleteModal = feedback.NewConfirmModal(
+				"Delete Burst",
+				fmt.Sprintf("Are you sure you want to delete '%s'?", burstName),
+			).WithVariant(feedback.ConfirmDestructive)
+			i.state = StateDeleteConfirm
+			return i.deleteModal.Init()
+		}
 		return nil
 
 	case "suggest":
-		// TODO: Trigger burst suggestion AI detection
+		// Trigger burst suggestion AI detection.
+		i.state = StateSuggesting
+		// Load all events and trigger burst detection.
+		return i.startBurstDetection()
+
+	case "view_events":
+		// View events in burst.
+		if burst, ok := actionData["burst"].(*career.Burst); ok {
+			i.selectedBurst = burst
+			i.state = StateDetailEvents
+			// Load events for this burst.
+			i.burstEvents = i.loadBurstEvents(burst)
+			// Use timeline.TimelineEventListScreen to display burst events.
+			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.burstEvents))
+		}
+		return nil
+
+	case "view_facts":
+		// View facts extracted from burst.
+		if burst, ok := actionData["burst"].(*career.Burst); ok {
+			i.selectedBurst = burst
+			i.state = StateDetailFacts
+			// Load facts for this burst.
+			i.burstFacts = i.loadBurstFacts(burst)
+			// Use facts.FactListScreen to display burst facts.
+			i.transitionToScreen(facts.NewFactListScreen(i.burstFacts))
+		}
+		return nil
+
+	case "confirm":
+		// Confirm burst (mark as confirmed).
+		if burst, ok := actionData["burst"].(*career.Burst); ok {
+			i.selectedBurst = burst
+			// Show confirmation modal.
+			burstName := burst.Name
+			if len(burstName) > 50 {
+				burstName = burstName[:47] + "..."
+			}
+			i.confirmModal = feedback.NewConfirmModal(
+				"Confirm Burst",
+				fmt.Sprintf("Mark '%s' as confirmed? This indicates the burst is validated and complete.", burstName),
+			)
+			i.state = StateConfirm
+			return i.confirmModal.Init()
+		}
 		return nil
 
 	default:

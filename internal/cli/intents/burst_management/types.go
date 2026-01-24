@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 )
@@ -108,23 +109,32 @@ type Intent struct {
 
 	// --- Screen Orchestration ---
 
-	// activeScreen holds the current screen being displayed.
+	// activeScreen holds the current screen being displayed (BurstListScreen only).
 	activeScreen screens.Screen
 
+	// detailModal holds the burst detail modal (replaces detail screen).
+	detailModal *burstmodals.BurstDetailModal
+
+	// eventsModal holds the burst events modal (replaces events screen).
+	eventsModal *burstmodals.BurstEventsModal
+
+	// factsModal holds the burst facts modal (replaces facts screen).
+	factsModal *burstmodals.BurstFactsModal
+
 	// editModal holds the edit burst modal.
-	editModal *EditBurstModal
+	editModal *burstmodals.EditBurstModal
 
 	// deleteModal holds the delete confirmation modal.
 	deleteModal *feedback.ConfirmModal
 
+	// confirmModal holds the burst confirmation modal.
+	confirmModal *feedback.ConfirmModal
+
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal
-}
 
-// EditBurstModal is a placeholder for the burst edit modal.
-// TODO: Implement actual modal type when extracting modals.
-type EditBurstModal struct {
-	// Placeholder for modal implementation.
+	// modalRegistry manages all modals with unified Update/View handling.
+	modalRegistry *intents.ModalRegistry
 }
 
 // BurstSuggestion is a type alias for burst_fact.BurstSuggestion.
@@ -229,14 +239,23 @@ func (i *Intent) SetCancelled() {
 }
 
 // GetModalRegistry returns the modal registry.
-// TODO: Implement ModalRegistry when needed.
-func (i *Intent) GetModalRegistry() interface{} {
-	return nil
+func (i *Intent) GetModalRegistry() *intents.ModalRegistry {
+	return i.modalRegistry
 }
 
 // HasActiveModal returns true if any modal is currently visible.
+// Uses the modal registry to check for visible modals.
 func (i *Intent) HasActiveModal() bool {
-	return i.editModal != nil || i.deleteModal != nil || i.errorModal != nil
+	// Rebuild registry to ensure it's current with modal state.
+	i.rebuildModalRegistry()
+
+	// Use registry to check for visible modals.
+	return i.modalRegistry != nil && i.modalRegistry.HasVisibleModal()
+}
+
+// GetDetailModal returns the detail modal (for testing).
+func (i *Intent) GetDetailModal() interface{} {
+	return i.detailModal
 }
 
 // NewIntent creates a new BurstManagement intent.
@@ -261,6 +280,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		burstFacts:           make([]*career.Fact, 0),
 		suggestions:          make([]BurstSuggestion, 0),
 		currentSuggestionIdx: 0,
+		modalRegistry:        intents.NewModalRegistry(),
 	}
 
 	return intent, nil
