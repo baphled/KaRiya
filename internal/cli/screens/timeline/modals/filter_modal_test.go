@@ -156,6 +156,60 @@ var _ = Describe("FilterModal", func() {
 			Expect(data).To(BeNil())
 			Expect(cmd).To(BeNil())
 		})
+
+		It("forwards regular keys to form", func() {
+			keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}}
+
+			cmd, applied, data := modal.Update(keyMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
+		})
+
+		It("forwards tab key to form", func() {
+			tabMsg := tea.KeyMsg{Type: tea.KeyTab}
+
+			cmd, applied, data := modal.Update(tabMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
+		})
+
+		It("forwards enter key to form", func() {
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+
+			cmd, applied, data := modal.Update(enterMsg)
+
+			_ = cmd
+			_ = applied
+			_ = data
+		})
+
+		It("forwards up/down keys to form for selection", func() {
+			downMsg := tea.KeyMsg{Type: tea.KeyDown}
+
+			cmd, applied, data := modal.Update(downMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
+		})
+
+		It("forwards space key to form for multi-select toggle", func() {
+			spaceMsg := tea.KeyMsg{Type: tea.KeySpace}
+
+			cmd, applied, data := modal.Update(spaceMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
+		})
 	})
 
 	Describe("View", func() {

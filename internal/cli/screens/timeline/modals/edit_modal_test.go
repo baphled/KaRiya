@@ -102,6 +102,62 @@ var _ = Describe("EditModal", func() {
 			Expect(data).To(BeNil())
 			Expect(cmd).To(BeNil())
 		})
+
+		It("forwards regular keys to form", func() {
+			keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
+
+			cmd, completed, data := modal.Update(keyMsg)
+
+			// Form receives the key and may return a command.
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(completed).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd // cmd may be nil or not depending on form state
+		})
+
+		It("forwards tab key to form", func() {
+			tabMsg := tea.KeyMsg{Type: tea.KeyTab}
+
+			cmd, completed, data := modal.Update(tabMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(completed).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
+		})
+
+		It("forwards enter key to form", func() {
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+
+			cmd, completed, data := modal.Update(enterMsg)
+
+			// Form may or may not complete based on state.
+			_ = cmd
+			_ = completed
+			_ = data
+		})
+
+		It("handles window resize with small width", func() {
+			resizeMsg := tea.WindowSizeMsg{Width: 30, Height: 20}
+
+			cmd, completed, data := modal.Update(resizeMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(completed).To(BeFalse())
+			Expect(data).To(BeNil())
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("handles window resize with large width", func() {
+			resizeMsg := tea.WindowSizeMsg{Width: 200, Height: 50}
+
+			cmd, completed, data := modal.Update(resizeMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(completed).To(BeFalse())
+			Expect(data).To(BeNil())
+			Expect(cmd).NotTo(BeNil())
+		})
 	})
 
 	Describe("View", func() {

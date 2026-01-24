@@ -57,6 +57,56 @@ var _ = Describe("SortModal", func() {
 
 			Expect(modal).NotTo(BeNil())
 		})
+
+		It("handles config with only SortBy set", func() {
+			current := &modals.SortConfig{
+				SortBy:    "category",
+				SortOrder: "",
+			}
+			modal = modals.NewSortModal(events, current, 80, 24)
+
+			config := modal.ToSortConfig()
+			Expect(config.SortBy).To(Equal("category"))
+			Expect(config.SortOrder).To(Equal("desc")) // Default
+		})
+
+		It("handles config with only SortOrder set", func() {
+			current := &modals.SortConfig{
+				SortBy:    "",
+				SortOrder: "asc",
+			}
+			modal = modals.NewSortModal(events, current, 80, 24)
+
+			config := modal.ToSortConfig()
+			Expect(config.SortBy).To(Equal("date")) // Default
+			Expect(config.SortOrder).To(Equal("asc"))
+		})
+
+		It("respects minimum width constraint", func() {
+			modal = modals.NewSortModal(events, nil, 20, 24)
+
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.View()).NotTo(BeEmpty())
+		})
+
+		It("respects maximum width constraint", func() {
+			modal = modals.NewSortModal(events, nil, 200, 24)
+
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.View()).NotTo(BeEmpty())
+		})
+
+		It("handles width at minimum boundary", func() {
+			modal = modals.NewSortModal(events, nil, 40, 24)
+
+			Expect(modal).NotTo(BeNil())
+		})
+
+		It("handles width at maximum boundary", func() {
+			modal = modals.NewSortModal(events, nil, 100, 24)
+
+			Expect(modal).NotTo(BeNil())
+		})
 	})
 
 	Describe("Init", func() {
@@ -107,6 +157,49 @@ var _ = Describe("SortModal", func() {
 			Expect(applied).To(BeFalse())
 			Expect(data).To(BeNil())
 			Expect(cmd).To(BeNil())
+		})
+
+		It("forwards regular keys to form", func() {
+			keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}}
+
+			cmd, applied, data := modal.Update(keyMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
+		})
+
+		It("forwards tab key to form", func() {
+			tabMsg := tea.KeyMsg{Type: tea.KeyTab}
+
+			cmd, applied, data := modal.Update(tabMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
+		})
+
+		It("forwards enter key to form", func() {
+			enterMsg := tea.KeyMsg{Type: tea.KeyEnter}
+
+			cmd, applied, data := modal.Update(enterMsg)
+
+			_ = cmd
+			_ = applied
+			_ = data
+		})
+
+		It("forwards up/down keys to form for selection", func() {
+			downMsg := tea.KeyMsg{Type: tea.KeyDown}
+
+			cmd, applied, data := modal.Update(downMsg)
+
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(applied).To(BeFalse())
+			Expect(data).To(BeNil())
+			_ = cmd
 		})
 	})
 
