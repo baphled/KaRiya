@@ -1,6 +1,8 @@
 package burst_management_test
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 var _ = Describe("Helper Methods", func() {
@@ -399,6 +402,314 @@ var _ = Describe("Helper Methods", func() {
 
 			// Should transition to extracting facts to process new bursts.
 			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+		})
+
+		It("should show loading modal during fact extraction after accepting suggestions", func() {
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+					{
+						Name:        "Burst With Loading",
+						Description: "Should show loading modal",
+						EventIDs:    []string{"e1"},
+					},
+				},
+				Cancelled: false,
+			}
+
+			intent.Update(msg)
+
+			// Loading modal should be visible during fact extraction.
+			Expect(intent.HasActiveModal()).To(BeTrue())
+			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+		})
+	})
+
+	Describe("handleFactExtractionComplete list refresh", func() {
+		It("should refresh list screen when fact extraction completes with nil selectedBurst", func() {
+			// First accept a suggestion to create a burst.
+			acceptMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+					{
+						Name:        "New Burst For Refresh",
+						Description: "Testing list refresh",
+						EventIDs:    []string{"e1"},
+					},
+				},
+				Cancelled: false,
+			}
+			intent.Update(acceptMsg)
+
+			// Verify burst was created.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(2)) // Original + new
+
+			// Ensure selectedBurst is nil (as in suggestion acceptance flow).
+			intent.SetSelectedBurst(nil)
+
+			// Simulate fact extraction completing.
+			extractMsg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{{ID: "f1", Text: "Extracted fact"}},
+				Error: nil,
+			}
+			intent.Update(extractMsg)
+
+			// Should be on list state.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+
+			// View should render correctly with the new burst visible.
+			view := intent.View()
+			Expect(view).To(ContainSubstring("New Burst For Refresh"))
+		})
+	})
+
+	// BUG REGRESSION TESTS
+	Describe("BUG: handleFactExtractionComplete with nil selectedBurst", func() {
+		It("should not panic when selectedBurst is nil", func() {
+			// Ensure selectedBurst is nil.
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{{ID: "f1", Text: "Test fact"}},
+				Error: nil,
+			}
+
+			Expect(func() {
+				intent.Update(msg)
+			}).NotTo(Panic())
+		})
+
+		It("should return to list state without showing detail modal when selectedBurst is nil", func() {
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{{ID: "f1", Text: "Test fact"}},
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(intent.GetDetailModal()).To(BeNil())
+		})
+
+		It("should handle fact extraction error with nil selectedBurst", func() {
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Error: fmt.Errorf("extraction failed"),
+			}
+
+			Expect(func() {
+				intent.Update(msg)
+			}).NotTo(Panic())
+
+			// Should show error modal.
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+	})
+
+	Describe("BUG: State transition after suggestion modal shown", func() {
+		It("should transition to StateSuggestionReview when suggestions are loaded", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{
+					{Name: "Test", EventIDs: []string{"e1"}, ConfidenceScore: 0.8},
+				},
+			}
+
+			intent.Update(msg)
+
+			// State should be StateSuggestionReview, not StateSuggesting.
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+		})
+	})
+
+	Describe("BUG: Slice bounds in handleSuggestionReviewComplete", func() {
+		It("should not panic when accepted count differs from created count", func() {
+			// This tests the slice bounds bug at helpers.go:672.
+			// If some bursts fail to create, the slice calculation is wrong.
+
+			suggestions := []burst_fact.BurstSuggestion{
+				{Name: "Burst 1", EventIDs: []string{"e1"}, ConfidenceScore: 0.9},
+				{Name: "Burst 2", EventIDs: []string{"e2"}, ConfidenceScore: 0.85},
+			}
+
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions,
+				Cancelled:           false,
+			}
+
+			// Should not panic.
+			Expect(func() {
+				intent.Update(msg)
+			}).NotTo(Panic())
+		})
+
+		It("should track created bursts correctly for fact extraction", func() {
+			initialCount := len(intent.GetFilteredBursts())
+
+			suggestions := []burst_fact.BurstSuggestion{
+				{Name: "Tracked Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
+			}
+
+			msg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions,
+				Cancelled:           false,
+			}
+
+			cmd := intent.Update(msg)
+
+			// Should have created burst.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(initialCount + 1))
+
+			// Should return fact extraction command.
+			Expect(cmd).NotTo(BeNil())
+		})
+	})
+
+	Describe("BurstEventsLoadedMsg handling", func() {
+		It("should show events modal on successful load", func() {
+			intent.SetSelectedBurst(ctx.Bursts[0])
+
+			events := []*career.CareerEvent{
+				{ID: "e1", Text: "Event 1"},
+				{ID: "e2", Text: "Event 2"},
+			}
+
+			msg := burst_management.BurstEventsLoadedMsg{
+				Events: events,
+				Error:  nil,
+			}
+
+			intent.Update(msg)
+
+			// Events modal should be visible.
+			Expect(intent.HasActiveModal()).To(BeTrue())
+		})
+
+		It("should show error modal on events load error", func() {
+			intent.SetSelectedBurst(ctx.Bursts[0])
+
+			msg := burst_management.BurstEventsLoadedMsg{
+				Events: nil,
+				Error:  fmt.Errorf("failed to load events"),
+			}
+
+			intent.Update(msg)
+
+			// Error modal should be visible.
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should handle nil selectedBurst gracefully", func() {
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.BurstEventsLoadedMsg{
+				Events: []*career.CareerEvent{{ID: "e1"}},
+				Error:  nil,
+			}
+
+			// Should not panic.
+			Expect(func() {
+				intent.Update(msg)
+			}).NotTo(Panic())
+		})
+	})
+
+	Describe("BurstFactsLoadedMsg handling", func() {
+		It("should show facts modal on successful load", func() {
+			intent.SetSelectedBurst(ctx.Bursts[0])
+
+			facts := []*career.Fact{
+				{ID: "f1", Text: "Fact 1"},
+				{ID: "f2", Text: "Fact 2"},
+			}
+
+			msg := burst_management.BurstFactsLoadedMsg{
+				Facts: facts,
+				Error: nil,
+			}
+
+			intent.Update(msg)
+
+			// Facts modal should be visible.
+			Expect(intent.HasActiveModal()).To(BeTrue())
+		})
+
+		It("should show error modal on facts load error", func() {
+			intent.SetSelectedBurst(ctx.Bursts[0])
+
+			msg := burst_management.BurstFactsLoadedMsg{
+				Facts: nil,
+				Error: fmt.Errorf("failed to load facts"),
+			}
+
+			intent.Update(msg)
+
+			// Error modal should be visible.
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should handle nil selectedBurst gracefully", func() {
+			intent.SetSelectedBurst(nil)
+
+			msg := burst_management.BurstFactsLoadedMsg{
+				Facts: []*career.Fact{{ID: "f1"}},
+				Error: nil,
+			}
+
+			// Should not panic.
+			Expect(func() {
+				intent.Update(msg)
+			}).NotTo(Panic())
+		})
+	})
+
+	Describe("Confirm burst flow", func() {
+		It("should handle confirm key in detail state", func() {
+			intent.SetSelectedBurst(ctx.Bursts[0])
+			intent.SetState(burst_management.StateDetail)
+
+			// Press 'c' to confirm - should not panic.
+			Expect(func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			}).NotTo(Panic())
+		})
+
+		It("should handle confirm with nil selectedBurst", func() {
+			intent.SetSelectedBurst(nil)
+			intent.SetState(burst_management.StateDetail)
+
+			// Press 'c' to confirm - should not panic.
+			Expect(func() {
+				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			}).NotTo(Panic())
+		})
+	})
+
+	Describe("State management", func() {
+		It("should allow setting and getting state", func() {
+			intent.SetState(burst_management.StateDetail)
+			Expect(intent.GetState()).To(Equal(burst_management.StateDetail))
+
+			intent.SetState(burst_management.StateList)
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should allow setting and getting selected burst", func() {
+			burst := ctx.Bursts[0]
+			intent.SetSelectedBurst(burst)
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+
+			intent.SetSelectedBurst(nil)
+			Expect(intent.GetSelectedBurst()).To(BeNil())
+		})
+
+		It("should track viewed bursts", func() {
+			burst := ctx.Bursts[0]
+			intent.AddViewedBurst(burst)
+
+			viewed := intent.GetViewedBursts()
+			Expect(viewed).To(ContainElement(burst))
 		})
 	})
 })
