@@ -43,15 +43,9 @@ func NewEventDetailModal(event *career.CareerEvent, theme themes.Theme) *EventDe
 
 	content := RenderEventDetailContent(event, theme)
 
-	// Convert themes.Theme to themes2.Theme for UIKit compatibility.
-	var uikitTheme themes2.Theme
-	if t, ok := theme.(themes2.Theme); ok {
-		uikitTheme = t
-	}
-
 	modal := feedback.NewDetailModal("Event Details", content)
-	if uikitTheme != nil {
-		modal = modal.WithTheme(uikitTheme)
+	if theme != nil {
+		modal = modal.WithTheme(theme)
 	}
 
 	m := &EventDetailModal{
@@ -76,21 +70,19 @@ func (m *EventDetailModal) WithShowSkillsOption(show bool) *EventDetailModal {
 
 // updateFooterBadges updates the footer badges based on current options.
 func (m *EventDetailModal) updateFooterBadges() {
-	var uikitTheme themes2.Theme
-	if t, ok := m.theme.(themes2.Theme); ok {
-		uikitTheme = t
-	} else {
-		uikitTheme = themes2.Default()
+	theme := m.theme
+	if theme == nil {
+		theme = themes2.Default()
 	}
 
 	badges := []*primitives.Badge{
-		primitives.HelpKeyBadge("e", "Edit", uikitTheme),
-		primitives.HelpKeyBadge("d", "Delete", uikitTheme),
+		primitives.HelpKeyBadge("e", "Edit", theme),
+		primitives.HelpKeyBadge("d", "Delete", theme),
 	}
 	if m.showSkillsOption {
-		badges = append(badges, primitives.HelpKeyBadge("s", "Skills", uikitTheme))
+		badges = append(badges, primitives.HelpKeyBadge("s", "Skills", theme))
 	}
-	badges = append(badges, primitives.HelpKeyBadge("Enter/Esc", "Close", uikitTheme))
+	badges = append(badges, primitives.HelpKeyBadge("Enter/Esc", "Close", theme))
 
 	m.modal = m.modal.WithFooterBadges(badges...)
 }
@@ -160,15 +152,9 @@ func NewSkillsDetailModal(eventID string, skills []*career.Skill, theme themes.T
 	content := RenderSkillsContent(skills, theme)
 	title := fmt.Sprintf("Skills (%d)", len(skills))
 
-	// Convert themes.Theme to themes2.Theme for UIKit compatibility.
-	var uikitTheme themes2.Theme
-	if t, ok := theme.(themes2.Theme); ok {
-		uikitTheme = t
-	}
-
 	modal := feedback.NewDetailModal(title, content)
-	if uikitTheme != nil {
-		modal = modal.WithTheme(uikitTheme)
+	if theme != nil {
+		modal = modal.WithTheme(theme)
 	}
 
 	return &SkillsDetailModal{
