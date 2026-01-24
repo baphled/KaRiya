@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
