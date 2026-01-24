@@ -401,19 +401,12 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 			})
 		})
 
-		Context("FactManagement - New vs Edit", func() {
-			It("should handle context-aware navigation", func() {
-				ctx := NewFactManagementContext(nil, context.Background())
-
-				intent := NewFactManagementIntent(ctx)
-				Expect(intent).NotTo(BeNil())
-				intent.Init()
-
-				// Test that escape from list (root) cancels
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				result := intent.Result()
-				Expect(result).NotTo(BeNil())
+		// Note: FactManagement has been migrated to intents/fact_management/ package
+		// with its own comprehensive test suite including escape key tests.
+		// See fact_management/intent_test.go for global key enforcement tests.
+		PContext("FactManagement - Migrated to subpackage", func() {
+			It("should handle context-aware navigation - see fact_management/intent_test.go", func() {
+				Skip("Migrated to fact_management subpackage")
 			})
 		})
 	})
