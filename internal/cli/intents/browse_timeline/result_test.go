@@ -1,13 +1,12 @@
 package browse_timeline_test
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/browse_timeline"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Result", func() {
@@ -18,12 +17,7 @@ var _ = Describe("Result", func() {
 		})
 
 		It("should store selected event", func() {
-			event := &career.CareerEvent{
-				ID:      "event-1",
-				Text:    "Backend Developer",
-				Date:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-				Company: "TechCorp",
-			}
+			event := fixtures.EventWith("event-1", "Backend Developer", "TechCorp", "Platform")
 			result := &browse_timeline.Result{
 				SelectedEvent: event,
 			}
@@ -46,9 +40,9 @@ var _ = Describe("Result", func() {
 
 		It("should store viewed events", func() {
 			events := []*career.CareerEvent{
-				{ID: "event-1", Text: "Event 1"},
-				{ID: "event-2", Text: "Event 2"},
-				{ID: "event-3", Text: "Event 3"},
+				fixtures.Event("event-1"),
+				fixtures.Event("event-2"),
+				fixtures.Event("event-3"),
 			}
 			result := &browse_timeline.Result{
 				ViewedEvents: events,
@@ -58,8 +52,8 @@ var _ = Describe("Result", func() {
 
 		It("should store selected facts", func() {
 			facts := []*career.Fact{
-				{ID: "fact-1", Text: "Fact 1"},
-				{ID: "fact-2", Text: "Fact 2"},
+				fixtures.Fact("fact-1", "event-1"),
+				fixtures.Fact("fact-2", "event-1"),
 			}
 			result := &browse_timeline.Result{
 				SelectedFacts: facts,
@@ -69,32 +63,34 @@ var _ = Describe("Result", func() {
 	})
 
 	Describe("Nil Handling", func() {
-		It("should handle nil selected event", func() {
-			result := &browse_timeline.Result{
-				SelectedEvent: nil,
-			}
-			Expect(result.SelectedEvent).To(BeNil())
-		})
+		Context("when fields are nil", func() {
+			It("should handle nil selected event", func() {
+				result := &browse_timeline.Result{
+					SelectedEvent: nil,
+				}
+				Expect(result.SelectedEvent).To(BeNil())
+			})
 
-		It("should handle nil final filters", func() {
-			result := &browse_timeline.Result{
-				FinalFilters: nil,
-			}
-			Expect(result.FinalFilters).To(BeNil())
-		})
+			It("should handle nil final filters", func() {
+				result := &browse_timeline.Result{
+					FinalFilters: nil,
+				}
+				Expect(result.FinalFilters).To(BeNil())
+			})
 
-		It("should handle nil viewed events", func() {
-			result := &browse_timeline.Result{
-				ViewedEvents: nil,
-			}
-			Expect(result.ViewedEvents).To(BeNil())
-		})
+			It("should handle nil viewed events", func() {
+				result := &browse_timeline.Result{
+					ViewedEvents: nil,
+				}
+				Expect(result.ViewedEvents).To(BeNil())
+			})
 
-		It("should handle nil selected facts", func() {
-			result := &browse_timeline.Result{
-				SelectedFacts: nil,
-			}
-			Expect(result.SelectedFacts).To(BeNil())
+			It("should handle nil selected facts", func() {
+				result := &browse_timeline.Result{
+					SelectedFacts: nil,
+				}
+				Expect(result.SelectedFacts).To(BeNil())
+			})
 		})
 	})
 
@@ -118,12 +114,7 @@ var _ = Describe("Result", func() {
 
 	Describe("Complete Result", func() {
 		It("should store all fields together", func() {
-			selectedEvent := &career.CareerEvent{
-				ID:      "selected-1",
-				Text:    "Selected Event",
-				Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
-				Company: "TechCorp",
-			}
+			selectedEvent := fixtures.EventWith("selected-1", "Selected Event", "TechCorp", "Platform")
 			filters := &browse_timeline.Filters{
 				SearchText: "backend",
 				Tags:       []string{"golang", "api"},
@@ -131,11 +122,11 @@ var _ = Describe("Result", func() {
 				SortOrder:  "desc",
 			}
 			viewedEvents := []*career.CareerEvent{
-				{ID: "viewed-1", Text: "Viewed 1"},
-				{ID: "viewed-2", Text: "Viewed 2"},
+				fixtures.Event("viewed-1"),
+				fixtures.Event("viewed-2"),
 			}
 			selectedFacts := []*career.Fact{
-				{ID: "fact-1", Text: "Achievement 1"},
+				fixtures.Fact("fact-1", "selected-1"),
 			}
 
 			result := &browse_timeline.Result{
@@ -154,7 +145,7 @@ var _ = Describe("Result", func() {
 
 	Describe("Cancelled Result Pattern", func() {
 		It("should represent cancellation with nil selected event", func() {
-			// When user cancels, SelectedEvent is nil but filters may be preserved
+			// When user cancels, SelectedEvent is nil but filters may be preserved.
 			result := &browse_timeline.Result{
 				SelectedEvent: nil,
 				FinalFilters: &browse_timeline.Filters{
@@ -168,12 +159,13 @@ var _ = Describe("Result", func() {
 
 	Describe("Analytics Support", func() {
 		It("should track viewing history for analytics", func() {
-			// ViewedEvents supports tracking which events were viewed during session
+			// ViewedEvents supports tracking which events were viewed during session.
+			event := fixtures.Event("event-1")
 			result := &browse_timeline.Result{
 				ViewedEvents: []*career.CareerEvent{
-					{ID: "event-1", Text: "First viewed"},
-					{ID: "event-2", Text: "Second viewed"},
-					{ID: "event-1", Text: "First viewed again"}, // Can have duplicates
+					event,
+					fixtures.Event("event-2"),
+					event, // Can have duplicates (viewed same event twice).
 				},
 			}
 			Expect(result.ViewedEvents).To(HaveLen(3))

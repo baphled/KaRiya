@@ -1,23 +1,17 @@
 package browse_timeline_test
 
 import (
-	"time"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/browse_timeline"
-	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Messages", func() {
 	Describe("EventSelectedMsg", func() {
 		It("should store the selected event", func() {
-			event := &career.CareerEvent{
-				ID:   "event-1",
-				Text: "Backend Developer at TechCorp",
-				Date: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-			}
+			event := fixtures.EventWith("event-1", "Backend Developer at TechCorp", "TechCorp", "Platform")
 			msg := browse_timeline.EventSelectedMsg{
 				Event: event,
 				Index: 0,
@@ -28,26 +22,30 @@ var _ = Describe("Messages", func() {
 
 		It("should store the selection index", func() {
 			msg := browse_timeline.EventSelectedMsg{
-				Event: &career.CareerEvent{ID: "event-1"},
+				Event: fixtures.Event("event-1"),
 				Index: 5,
 			}
 			Expect(msg.Index).To(Equal(5))
 		})
 
-		It("should handle nil event", func() {
-			msg := browse_timeline.EventSelectedMsg{
-				Event: nil,
-				Index: 0,
-			}
-			Expect(msg.Event).To(BeNil())
+		Context("when event is nil", func() {
+			It("should handle nil event", func() {
+				msg := browse_timeline.EventSelectedMsg{
+					Event: nil,
+					Index: 0,
+				}
+				Expect(msg.Event).To(BeNil())
+			})
 		})
 
-		It("should handle zero index", func() {
-			msg := browse_timeline.EventSelectedMsg{
-				Event: &career.CareerEvent{ID: "first"},
-				Index: 0,
-			}
-			Expect(msg.Index).To(Equal(0))
+		Context("when index is zero", func() {
+			It("should handle zero index", func() {
+				msg := browse_timeline.EventSelectedMsg{
+					Event: fixtures.Event("first"),
+					Index: 0,
+				}
+				Expect(msg.Index).To(Equal(0))
+			})
 		})
 	})
 
@@ -65,20 +63,24 @@ var _ = Describe("Messages", func() {
 			Expect(msg.Filters.SearchText).To(Equal("developer"))
 		})
 
-		It("should handle empty filters", func() {
-			filters := &browse_timeline.Filters{}
-			msg := browse_timeline.FilterChangedMsg{
-				Filters: filters,
-			}
-			Expect(msg.Filters).NotTo(BeNil())
-			Expect(msg.Filters.SearchText).To(BeEmpty())
+		Context("when filters are empty", func() {
+			It("should handle empty filters", func() {
+				filters := &browse_timeline.Filters{}
+				msg := browse_timeline.FilterChangedMsg{
+					Filters: filters,
+				}
+				Expect(msg.Filters).NotTo(BeNil())
+				Expect(msg.Filters.SearchText).To(BeEmpty())
+			})
 		})
 
-		It("should handle nil filters", func() {
-			msg := browse_timeline.FilterChangedMsg{
-				Filters: nil,
-			}
-			Expect(msg.Filters).To(BeNil())
+		Context("when filters are nil", func() {
+			It("should handle nil filters", func() {
+				msg := browse_timeline.FilterChangedMsg{
+					Filters: nil,
+				}
+				Expect(msg.Filters).To(BeNil())
+			})
 		})
 
 		It("should store complex filter combinations", func() {
@@ -110,11 +112,13 @@ var _ = Describe("Messages", func() {
 			Expect(msg.EventID).To(Equal("event-123"))
 		})
 
-		It("should handle empty event ID", func() {
-			msg := browse_timeline.EventDeletedMsg{
-				EventID: "",
-			}
-			Expect(msg.EventID).To(BeEmpty())
+		Context("when event ID is empty", func() {
+			It("should handle empty event ID", func() {
+				msg := browse_timeline.EventDeletedMsg{
+					EventID: "",
+				}
+				Expect(msg.EventID).To(BeEmpty())
+			})
 		})
 
 		It("should handle UUID-style event ID", func() {
@@ -127,7 +131,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("Message Type Distinctiveness", func() {
 		It("should have distinct message types", func() {
-			// Verify each message type is distinguishable via type assertion
+			// Verify each message type is distinguishable via type assertion.
 			var msg1 interface{} = browse_timeline.EventSelectedMsg{}
 			var msg2 interface{} = browse_timeline.FilterChangedMsg{}
 			var msg3 interface{} = browse_timeline.EventDeletedMsg{}

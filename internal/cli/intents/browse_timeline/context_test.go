@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents/browse_timeline"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("Context", func() {
@@ -18,8 +19,8 @@ var _ = Describe("Context", func() {
 
 			It("should create a context with events", func() {
 				events := []*career.CareerEvent{
-					{ID: "1", Text: "Event 1"},
-					{ID: "2", Text: "Event 2"},
+					fixtures.Event("event-1"),
+					fixtures.Event("event-2"),
 				}
 				ctx := &browse_timeline.IntentContext{
 					Events: events,
@@ -46,74 +47,82 @@ var _ = Describe("Context", func() {
 		})
 
 		Describe("Validate", func() {
-			It("should initialize nil Events to empty slice", func() {
-				ctx := &browse_timeline.IntentContext{
-					Events: nil,
-				}
-				err := ctx.Validate()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ctx.Events).NotTo(BeNil())
-				Expect(ctx.Events).To(BeEmpty())
+			Context("when Events is nil", func() {
+				It("should initialize to empty slice", func() {
+					ctx := &browse_timeline.IntentContext{
+						Events: nil,
+					}
+					err := ctx.Validate()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ctx.Events).NotTo(BeNil())
+					Expect(ctx.Events).To(BeEmpty())
+				})
 			})
 
-			It("should initialize nil InitialFilters to default", func() {
-				ctx := &browse_timeline.IntentContext{
-					InitialFilters: nil,
-				}
-				err := ctx.Validate()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ctx.InitialFilters).NotTo(BeNil())
+			Context("when InitialFilters is nil", func() {
+				It("should initialize to default", func() {
+					ctx := &browse_timeline.IntentContext{
+						InitialFilters: nil,
+					}
+					err := ctx.Validate()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ctx.InitialFilters).NotTo(BeNil())
+				})
+
+				It("should set default sort options", func() {
+					ctx := &browse_timeline.IntentContext{}
+					err := ctx.Validate()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ctx.InitialFilters.SortBy).To(Equal("date"))
+					Expect(ctx.InitialFilters.SortOrder).To(Equal("desc"))
+				})
+
+				It("should initialize empty filter slices", func() {
+					ctx := &browse_timeline.IntentContext{}
+					err := ctx.Validate()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ctx.InitialFilters.Tags).NotTo(BeNil())
+					Expect(ctx.InitialFilters.Tags).To(BeEmpty())
+					Expect(ctx.InitialFilters.Companies).NotTo(BeNil())
+					Expect(ctx.InitialFilters.Companies).To(BeEmpty())
+					Expect(ctx.InitialFilters.Categories).NotTo(BeNil())
+					Expect(ctx.InitialFilters.Categories).To(BeEmpty())
+					Expect(ctx.InitialFilters.Projects).NotTo(BeNil())
+					Expect(ctx.InitialFilters.Projects).To(BeEmpty())
+				})
 			})
 
-			It("should set default sort options in filters", func() {
-				ctx := &browse_timeline.IntentContext{}
-				err := ctx.Validate()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ctx.InitialFilters.SortBy).To(Equal("date"))
-				Expect(ctx.InitialFilters.SortOrder).To(Equal("desc"))
+			Context("when Events already exist", func() {
+				It("should preserve existing Events", func() {
+					events := []*career.CareerEvent{
+						fixtures.Event("event-1"),
+					}
+					ctx := &browse_timeline.IntentContext{
+						Events: events,
+					}
+					err := ctx.Validate()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ctx.Events).To(HaveLen(1))
+					Expect(ctx.Events[0].ID).To(Equal("event-1"))
+				})
 			})
 
-			It("should initialize empty filter slices", func() {
-				ctx := &browse_timeline.IntentContext{}
-				err := ctx.Validate()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ctx.InitialFilters.Tags).NotTo(BeNil())
-				Expect(ctx.InitialFilters.Tags).To(BeEmpty())
-				Expect(ctx.InitialFilters.Companies).NotTo(BeNil())
-				Expect(ctx.InitialFilters.Companies).To(BeEmpty())
-				Expect(ctx.InitialFilters.Categories).NotTo(BeNil())
-				Expect(ctx.InitialFilters.Categories).To(BeEmpty())
-				Expect(ctx.InitialFilters.Projects).NotTo(BeNil())
-				Expect(ctx.InitialFilters.Projects).To(BeEmpty())
-			})
-
-			It("should preserve existing Events when validating", func() {
-				events := []*career.CareerEvent{
-					{ID: "1", Text: "Event 1"},
-				}
-				ctx := &browse_timeline.IntentContext{
-					Events: events,
-				}
-				err := ctx.Validate()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ctx.Events).To(HaveLen(1))
-				Expect(ctx.Events[0].ID).To(Equal("1"))
-			})
-
-			It("should preserve existing InitialFilters when validating", func() {
-				filters := &browse_timeline.Filters{
-					SearchText: "existing",
-					SortBy:     "text",
-					SortOrder:  "asc",
-				}
-				ctx := &browse_timeline.IntentContext{
-					InitialFilters: filters,
-				}
-				err := ctx.Validate()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ctx.InitialFilters.SearchText).To(Equal("existing"))
-				Expect(ctx.InitialFilters.SortBy).To(Equal("text"))
-				Expect(ctx.InitialFilters.SortOrder).To(Equal("asc"))
+			Context("when InitialFilters already exist", func() {
+				It("should preserve existing InitialFilters", func() {
+					filters := &browse_timeline.Filters{
+						SearchText: "existing",
+						SortBy:     "text",
+						SortOrder:  "asc",
+					}
+					ctx := &browse_timeline.IntentContext{
+						InitialFilters: filters,
+					}
+					err := ctx.Validate()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ctx.InitialFilters.SearchText).To(Equal("existing"))
+					Expect(ctx.InitialFilters.SortBy).To(Equal("text"))
+					Expect(ctx.InitialFilters.SortOrder).To(Equal("asc"))
+				})
 			})
 		})
 	})
@@ -201,8 +210,6 @@ var _ = Describe("Context", func() {
 	})
 
 	Describe("EventService Interface", func() {
-		// EventService is an interface, tested via screens_test.go
-		// This test verifies the interface definition is correct
 		It("should define required methods", func() {
 			// The EventService interface defines:
 			// - DeleteEvent
@@ -210,8 +217,8 @@ var _ = Describe("Context", func() {
 			// - CaptureEvent
 			// - UpdateEventMetadata
 			// - GetSkillsForEvent
-			// Implementation is tested in screens_test.go
-			Expect(true).To(BeTrue()) // Interface exists and compiles
+			// Interface existence verified by compilation.
+			Expect(true).To(BeTrue())
 		})
 	})
 })
