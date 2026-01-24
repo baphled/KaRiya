@@ -645,12 +645,14 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 
 	if len(i.suggestions) == 0 {
 		// No suggestions found - show message and return to list.
-		i.ShowErrorModal("No Bursts Detected", "No burst patterns were found in your events. Try adding more events or adjusting detection settings.")
+		i.ShowErrorModal("No Suggestions Found", "No suggestions were generated from your events. Try adding more events or adjusting detection settings.")
 		i.state = StateList
 		return nil
 	}
 
 	// Transition to suggestion review state.
+	// Clear the active screen so View() renders state-based content.
+	i.activeScreen = nil
 	i.state = StateSuggestionReview
 	return nil
 }
@@ -695,6 +697,8 @@ func (i *Intent) acceptSuggestion(suggestion BurstSuggestion) tea.Cmd {
 	// If no suggestions left, return to list.
 	if len(i.suggestions) == 0 {
 		i.state = StateList
+		i.suggestions = nil
+		i.currentSuggestionIdx = 0
 		// Refresh list screen with new burst.
 		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 	}

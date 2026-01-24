@@ -318,6 +318,8 @@ func (i *Intent) updateSuggestionReviewView(msg tea.Msg) tea.Cmd {
 			i.state = StateList
 			i.suggestions = nil
 			i.currentSuggestionIdx = 0
+			// Restore list screen.
+			i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 			return nil
 
 		case "n", "right":
@@ -358,6 +360,9 @@ func (i *Intent) updateSuggestionReviewView(msg tea.Msg) tea.Cmd {
 			// If no suggestions left, return to list.
 			if len(i.suggestions) == 0 {
 				i.state = StateList
+				i.currentSuggestionIdx = 0
+				// Restore list screen.
+				i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 			}
 			return nil
 		}
@@ -492,11 +497,6 @@ func (i *Intent) viewSuggestionReview() string {
 		return "No suggestions available"
 	}
 
-	theme := i.Theme()
-	if theme == nil {
-		return fmt.Sprintf("Reviewing %d suggestions", len(i.suggestions))
-	}
-
 	// Show current suggestion.
 	currentIdx := i.currentSuggestionIdx
 	if currentIdx >= len(i.suggestions) {
@@ -505,13 +505,28 @@ func (i *Intent) viewSuggestionReview() string {
 
 	suggestion := i.suggestions[currentIdx]
 
-	content := primitives.Title(fmt.Sprintf("Burst Suggestion %d of %d", currentIdx+1, len(i.suggestions)), theme).Render() + "\n\n"
-	content += primitives.Body(fmt.Sprintf("Name: %s\n", suggestion.Name), theme).Render()
-	content += primitives.Body(fmt.Sprintf("Description: %s\n", suggestion.Description), theme).Render()
-	content += primitives.Body(fmt.Sprintf("Events: %d\n", len(suggestion.EventIDs)), theme).Render()
-	content += primitives.Body(fmt.Sprintf("Confidence: %.1f%%\n", suggestion.ConfidenceScore*100), theme).Render()
-	content += "\n"
-	content += primitives.Body("Press 'a' to accept, 'r' to reject, 'n' for next, 'p' for previous, 'esc' to cancel", theme).Render()
+	theme := i.Theme()
+
+	// Build content with or without theme.
+	var content string
+	if theme != nil {
+		content = primitives.Title(fmt.Sprintf("Burst Suggestion %d of %d", currentIdx+1, len(i.suggestions)), theme).Render() + "\n\n"
+		content += primitives.Body(fmt.Sprintf("Name: %s\n", suggestion.Name), theme).Render()
+		content += primitives.Body(fmt.Sprintf("Description: %s\n", suggestion.Description), theme).Render()
+		content += primitives.Body(fmt.Sprintf("Events: %d\n", len(suggestion.EventIDs)), theme).Render()
+		content += primitives.Body(fmt.Sprintf("Confidence: %.1f%%\n", suggestion.ConfidenceScore*100), theme).Render()
+		content += "\n"
+		content += primitives.Body("Press 'a' to accept, 'r' to reject, 'n' for next, 'p' for previous, 'esc' to cancel", theme).Render()
+	} else {
+		// Fallback without theme (e.g., in tests).
+		content = fmt.Sprintf("Burst Suggestion %d of %d\n\n", currentIdx+1, len(i.suggestions))
+		content += fmt.Sprintf("Name: %s\n", suggestion.Name)
+		content += fmt.Sprintf("Description: %s\n", suggestion.Description)
+		content += fmt.Sprintf("Events: %d\n", len(suggestion.EventIDs))
+		content += fmt.Sprintf("Confidence: %.1f%%\n", suggestion.ConfidenceScore*100)
+		content += "\n"
+		content += "Press 'a' to accept, 'r' to reject, 'n' for next, 'p' for previous, 'esc' to cancel"
+	}
 
 	return content
 }

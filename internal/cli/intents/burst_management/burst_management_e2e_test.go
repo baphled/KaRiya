@@ -1,11 +1,13 @@
 package burst_management_test
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/burst_fact"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -324,6 +326,291 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Service not available"))
+		})
+
+		It("should navigate through suggestions with n/p keys", func() {
+			// Simulate suggestions loaded
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Backend Work",
+					Description:     "API development",
+					EventIDs:        []string{"e1", "e2"},
+					ConfidenceScore: 0.85,
+				},
+				{
+					Name:            "DevOps Tasks",
+					Description:     "Infrastructure work",
+					EventIDs:        []string{"e3"},
+					ConfidenceScore: 0.75,
+				},
+				{
+					Name:            "Frontend Updates",
+					Description:     "UI improvements",
+					EventIDs:        []string{"e4", "e5"},
+					ConfidenceScore: 0.90,
+				},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+
+			// Process suggestions loaded
+			_ = intent.Update(msg)
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			// Verify initial view shows first suggestion
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Backend Work"))
+			Expect(view).To(ContainSubstring("1 of 3"))
+
+			// Navigate to next suggestion
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			view = intent.View()
+			Expect(view).To(ContainSubstring("DevOps Tasks"))
+			Expect(view).To(ContainSubstring("2 of 3"))
+
+			// Navigate to next suggestion (third)
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			view = intent.View()
+			Expect(view).To(ContainSubstring("Frontend Updates"))
+			Expect(view).To(ContainSubstring("3 of 3"))
+
+			// Navigate back with 'p'
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+			view = intent.View()
+			Expect(view).To(ContainSubstring("DevOps Tasks"))
+			Expect(view).To(ContainSubstring("2 of 3"))
+		})
+
+		It("should navigate through suggestions with arrow keys", func() {
+			// Simulate suggestions loaded
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "First",
+					Description:     "First suggestion",
+					EventIDs:        []string{"e1"},
+					ConfidenceScore: 0.80,
+				},
+				{
+					Name:            "Second",
+					Description:     "Second suggestion",
+					EventIDs:        []string{"e2"},
+					ConfidenceScore: 0.70,
+				},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+
+			_ = intent.Update(msg)
+
+			// Navigate with right arrow
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRight})
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Second"))
+
+			// Navigate back with left arrow
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyLeft})
+			view = intent.View()
+			Expect(view).To(ContainSubstring("First"))
+		})
+
+		It("should accept suggestion and create burst", func() {
+			initialBurstCount := len(intent.GetFilteredBursts())
+
+			// Simulate suggestions loaded
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Accepted Burst",
+					Description:     "This will be accepted",
+					EventIDs:        []string{"e1", "e2", "e3"},
+					ConfidenceScore: 0.95,
+				},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+
+			_ = intent.Update(msg)
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			// Accept the suggestion
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// Execute the command (creates the burst)
+			if cmd != nil {
+				resultMsg := cmd()
+				if resultMsg != nil {
+					_ = intent.Update(resultMsg)
+				}
+			}
+
+			// Should return to list state
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+
+			// Burst count should increase
+			Expect(len(intent.GetFilteredBursts())).To(Equal(initialBurstCount + 1))
+
+			// Verify the created burst
+			newBurst := intent.GetFilteredBursts()[initialBurstCount]
+			Expect(newBurst.Name).To(Equal("Accepted Burst"))
+			Expect(newBurst.Description).To(Equal("This will be accepted"))
+			Expect(newBurst.EventIDs).To(Equal([]string{"e1", "e2", "e3"}))
+			Expect(newBurst.Confirmed).To(BeFalse())
+		})
+
+		It("should reject suggestion and move to next", func() {
+			// Simulate suggestions loaded
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "First - Will Reject",
+					Description:     "First suggestion",
+					EventIDs:        []string{"e1"},
+					ConfidenceScore: 0.60,
+				},
+				{
+					Name:            "Second - Keep",
+					Description:     "Second suggestion",
+					EventIDs:        []string{"e2"},
+					ConfidenceScore: 0.80,
+				},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+
+			_ = intent.Update(msg)
+
+			// Verify we're showing first suggestion
+			view := intent.View()
+			Expect(view).To(ContainSubstring("First - Will Reject"))
+
+			// Reject the first suggestion
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+
+			// Should now show second suggestion at index 0
+			view = intent.View()
+			Expect(view).To(ContainSubstring("Second - Keep"))
+			Expect(view).To(ContainSubstring("1 of 1")) // Only one left
+		})
+
+		It("should return to list when all suggestions are rejected", func() {
+			// Simulate suggestions loaded with only one
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Only One",
+					Description:     "Only suggestion",
+					EventIDs:        []string{"e1"},
+					ConfidenceScore: 0.50,
+				},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+
+			_ = intent.Update(msg)
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			// Reject the only suggestion
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+
+			// Should return to list
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should cancel suggestion review with Esc", func() {
+			initialBurstCount := len(intent.GetFilteredBursts())
+
+			// Simulate suggestions loaded
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Will Cancel",
+					Description:     "Not accepting this",
+					EventIDs:        []string{"e1"},
+					ConfidenceScore: 0.70,
+				},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+
+			_ = intent.Update(msg)
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+
+			// Cancel with Esc
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Should return to list without creating burst
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(len(intent.GetFilteredBursts())).To(Equal(initialBurstCount))
+		})
+
+		It("should display suggestion details correctly", func() {
+			// Simulate suggestion with specific values
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Test Burst Name",
+					Description:     "Detailed description here",
+					EventIDs:        []string{"e1", "e2", "e3", "e4"},
+					ConfidenceScore: 0.8523,
+				},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+				Error:       nil,
+			}
+
+			_ = intent.Update(msg)
+
+			// Verify view contains all details
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Test Burst Name"))
+			Expect(view).To(ContainSubstring("Detailed description here"))
+			Expect(view).To(ContainSubstring("Events: 4"))
+			Expect(view).To(ContainSubstring("85.2%")) // Confidence formatted
+		})
+
+		It("should handle error in suggestions loaded message", func() {
+			// Simulate error during suggestion loading
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: nil,
+				Error:       fmt.Errorf("failed to analyze events"),
+			}
+
+			_ = intent.Update(msg)
+
+			// Should show error and stay at list
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should handle empty suggestions list", func() {
+			// Simulate no suggestions found
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{},
+				Error:       nil,
+			}
+
+			_ = intent.Update(msg)
+
+			// Should show error about no suggestions and stay at list
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			view := intent.View()
+			Expect(view).To(ContainSubstring("No suggestions"))
 		})
 	})
 })
