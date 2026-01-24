@@ -2,24 +2,8 @@
 package browse_timeline
 
 import (
-	"context"
-	"time"
-
-	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
-	careerservice "github.com/baphled/kariya/internal/service/career"
 )
-
-// EventService defines the interface for event CRUD operations.
-// This allows for mocking in tests.
-type EventService interface {
-	DeleteEvent(ctx context.Context, eventID string) error
-	ListEvents(ctx context.Context, filters *careerrepo.ListFilters) ([]*career.CareerEvent, error)
-	CaptureEvent(ctx context.Context, text string, date time.Time, mode careerservice.EventCaptureMode, opts ...service.Option) error
-	UpdateEventMetadata(ctx context.Context, event *career.CareerEvent) error
-	GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error)
-}
 
 // IntentContext is the minimal context passed to BrowseTimeline intent.
 // It contains only what's necessary to start the intent.
