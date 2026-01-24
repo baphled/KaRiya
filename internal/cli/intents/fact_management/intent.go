@@ -6,8 +6,6 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/screens"
-	"github.com/baphled/kariya/internal/cli/screens/fact"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -35,12 +33,19 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		BaseIntent:    intents.NewBaseIntent(),
 		context:       ctx,
 		state:         StateList,
-		active:        true,
+		active:        false,
 		tableBehavior: tableBehavior,
-		modalRegistry: intents.NewModalRegistry(),
 	}
 
 	return intent, nil
+}
+
+// truncate shortens a string to the specified length.
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }
 
 // factRowFormatter formats a Fact for display in the table.
@@ -57,20 +62,15 @@ func factRowFormatter(fact *domain.Fact, _ int) []string {
 	return []string{text, strength, categories}
 }
 
-// truncate shortens a string to the specified length.
-func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen] + "..."
-}
-
 // Init initializes the intent.
 func (i *Intent) Init() tea.Cmd {
 	// Apply theme to TableBehavior if available.
 	if theme := i.Theme(); theme != nil {
 		i.tableBehavior.SetTheme(theme)
 	}
+
+	// Mark intent as active.
+	i.active = true
 
 	// Load facts from repository.
 	if err := i.context.LoadFacts(); err != nil {
@@ -88,24 +88,11 @@ func (i *Intent) Init() tea.Cmd {
 	// Set items in TableBehavior.
 	i.tableBehavior.SetItems(i.context.Facts)
 
-	// Create the list screen.
-	i.listScreen = fact.NewListScreen(i.tableBehavior)
-	i.transitionToScreen(i.listScreen)
-
 	return nil
 }
 
 // Update processes messages.
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
-	if !i.active {
-		return nil
-	}
-
-	// Handle modals first.
-	if cmd := i.handleModalUpdates(msg); cmd != nil || i.hasActiveModal() {
-		return cmd
-	}
-
 	// Handle state-specific updates.
 	switch i.state {
 	case StateList:
@@ -119,9 +106,9 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	case StateResults:
 		return i.handleResultsState(msg)
 	case StateCompleted:
+		// Do not send tea.Quit, just return nil and let router manage exit.
 		return nil
 	}
-
 	return nil
 }
 
@@ -151,11 +138,7 @@ func (i *Intent) View() string {
 	help := i.getContextHelp()
 	view.WithHelp(help).WithFooterSeparator(true)
 
-	baseView := view.Render()
-
-	// Render modal overlay if any modal is visible.
-	i.rebuildModalRegistry()
-	return i.modalRegistry.RenderOverlay(baseView)
+	return view.Render()
 }
 
 // Result returns the intent result.
@@ -167,30 +150,6 @@ func (i *Intent) Result() *intents.IntentResult[interface{}] {
 		Status: i.result.Status,
 		Error:  i.result.Error,
 	}
-}
-
-// ScreenResultHandler implementation.
-
-// HandleCancel handles cancel results from screens.
-func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
-	i.setCancelled()
-	return nil
-}
-
-// HandleNavigate handles navigation results from screens.
-func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
-	return nil
-}
-
-// HandleSubmit handles submit results from screens.
-func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
-	return nil
-}
-
-// HandleError handles error results from screens.
-func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
-	i.showErrorModal("Error", result.Err.Error())
-	return nil
 }
 
 // ListNavigator interface implementation.

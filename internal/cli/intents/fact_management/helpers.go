@@ -5,12 +5,7 @@ import (
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/screens"
-	factmodals "github.com/baphled/kariya/internal/cli/screens/fact/modals"
-	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
-	domain "github.com/baphled/kariya/internal/domain/career"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 // syncTableSelection syncs the TableBehavior selection with the context.
@@ -35,150 +30,13 @@ func (i *Intent) setCancelled() {
 	}
 }
 
-// transitionToScreen sets the active screen.
-func (i *Intent) transitionToScreen(screen screens.Screen) {
-	i.activeScreen = screen
-
-	termInfo := i.GetTerminalInfo()
-	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
-		screen.SetTerminalInfo(termInfo.Width, termInfo.Height)
-	}
-
-	if theme := i.Theme(); theme != nil {
-		screen.SetTheme(theme)
-	}
-
-	if logo := i.GetLogo(); logo != nil {
-		screen.SetLogo(logo, i.GetLogoSpacing())
-	}
-}
-
-// hasActiveModal returns true if any modal is visible.
-func (i *Intent) hasActiveModal() bool {
-	return i.errorModal != nil ||
-		(i.deleteModal != nil && i.deleteModal.IsVisible()) ||
-		(i.editModal != nil && i.editModal.IsVisible()) ||
-		(i.detailModal != nil && i.detailModal.IsVisible())
-}
-
-// rebuildModalRegistry rebuilds the modal registry with current modals.
-func (i *Intent) rebuildModalRegistry() {
-	if i.modalRegistry == nil {
-		i.modalRegistry = intents.NewModalRegistry()
-	}
-	i.modalRegistry.Clear()
-
-	termInfo := i.GetTerminalInfo()
-	width, height := 80, 24
-	if termInfo != nil && termInfo.Width > 0 && termInfo.Height > 0 {
-		width, height = termInfo.Width, termInfo.Height
-	}
-
-	// Error modal (highest priority).
-	if i.errorModal != nil {
-		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme()))
-	}
-
-	// Delete confirmation modal.
-	if i.deleteModal != nil {
-		i.modalRegistry.Register(intents.NewConfirmModalAdapter(i.deleteModal))
-	}
-
-	// Edit modal.
-	if i.editModal != nil && i.editModal.IsVisible() {
-		i.modalRegistry.Register(intents.NewViewModalAdapter(
-			func() bool { return i.editModal != nil && i.editModal.IsVisible() },
-			func() string { return i.editModal.View() },
-			func(msg tea.Msg) (tea.Model, tea.Cmd) {
-				cmd, _ := i.editModal.Update(msg)
-				return nil, cmd
-			},
-		))
-	}
-
-	// Detail modal.
-	if i.detailModal != nil && i.detailModal.IsVisible() {
-		i.modalRegistry.Register(intents.NewViewModalAdapter(
-			func() bool { return i.detailModal != nil && i.detailModal.IsVisible() },
-			func() string { return i.detailModal.View() },
-			func(msg tea.Msg) (tea.Model, tea.Cmd) {
-				_, cmd := i.detailModal.Update(msg)
-				return nil, cmd
-			},
-		))
-	}
-}
-
-// Modal opening helpers.
-
-func (i *Intent) openDetailModal(fact *domain.Fact) {
-	i.detailModal = factmodals.NewDetailModal(fact)
-	i.detailModal.SetTheme(i.Theme())
-	i.detailModal.Show()
-	i.state = StateView
-}
-
-func (i *Intent) openEditModal(fact *domain.Fact, isNew bool) {
-	i.editModal = factmodals.NewEditModal(fact, isNew)
-	i.editModal.SetTheme(i.Theme())
-	i.editModal.Show()
-	i.state = StateEditor
-}
-
-func (i *Intent) openDeleteConfirm(fact *domain.Fact) {
-	i.context.FactToDelete = fact
-	text := truncate(fact.Text, 50)
-	i.deleteModal = feedback.NewConfirmModal(
-		"Delete Fact",
-		fmt.Sprintf("Are you sure you want to delete '%s'?", text),
-	).WithVariant(feedback.ConfirmDestructive)
-	i.state = StateDeleteConfirm
-}
-
-func (i *Intent) showErrorModal(title, message string) {
-	i.errorModal = feedback.NewErrorModal(title, message)
-}
-
-// performDelete deletes the pending fact.
-func (i *Intent) performDelete() tea.Cmd {
-	if i.context.FactToDelete == nil {
-		return nil
-	}
-
-	if err := i.context.DeleteFact(i.context.FactToDelete.ID); err != nil {
-		i.result = &intents.IntentResult[*Result]{
-			Status: intents.Failed,
-			Error: &intents.IntentError{
-				Code:    "DELETE_FAILED",
-				Message: "Failed to delete fact",
-				Cause:   err,
-			},
-		}
-	} else {
-		i.result = &intents.IntentResult[*Result]{
-			Status: intents.Completed,
-			Data: &Result{
-				Action:  "deleted",
-				Fact:    i.context.FactToDelete,
-				Facts:   i.context.Facts,
-				Message: "Fact deleted successfully",
-			},
-		}
-		i.tableBehavior.SetItems(i.context.Facts)
-		i.syncTableSelection()
-	}
-	i.context.FactToDelete = nil
-	i.state = StateList
-	return nil
-}
-
 // View helper methods.
 
 func (i *Intent) getBreadcrumbs() []string {
 	breadcrumbs := []string{"Main Menu", "Manage Facts"}
 
 	switch i.state {
-	case StateView, StateEditor, StateDeleteConfirm:
+	case StateView, StateDeleteConfirm:
 		if i.context.SelectedFact != nil {
 			factID := i.context.SelectedFact.ID
 			if len(factID) > 8 {
@@ -186,6 +44,16 @@ func (i *Intent) getBreadcrumbs() []string {
 			}
 			factName := fmt.Sprintf("Fact #%s", factID)
 			breadcrumbs = append(breadcrumbs, factName)
+		}
+	case StateEditor:
+		if i.context.IsNewFact {
+			breadcrumbs = append(breadcrumbs, "New Fact")
+		} else if i.context.EditingFact != nil {
+			factID := i.context.EditingFact.ID
+			if len(factID) > 8 {
+				factID = factID[:8]
+			}
+			breadcrumbs = append(breadcrumbs, fmt.Sprintf("Edit Fact #%s", factID))
 		}
 	case StateResults:
 		breadcrumbs = append(breadcrumbs, "Results")
@@ -197,6 +65,7 @@ func (i *Intent) getBreadcrumbs() []string {
 func (i *Intent) getStateContent() string {
 	switch i.state {
 	case StateList:
+		// Table is self-contained, just render it.
 		return i.tableBehavior.Render()
 	case StateView:
 		return i.getViewFactContent()
@@ -231,10 +100,13 @@ func (i *Intent) getViewFactContent() string {
 }
 
 func (i *Intent) getEditorContent() string {
+	// If modal is available, render just the form content (not full modal container).
+	// StandardView already provides the layout structure.
 	if i.editModal != nil {
 		return i.editModal.GetContent()
 	}
 
+	// Fallback for legacy behavior.
 	var content string
 	content += "Edit Fact\n\n"
 
@@ -243,6 +115,13 @@ func (i *Intent) getEditorContent() string {
 		content += fmt.Sprintf("Categories: %v\n", i.context.EditingFact.CompetencyCategories)
 		content += fmt.Sprintf("Strength Signal: %s\n", i.context.EditingFact.StrengthSignal)
 		content += fmt.Sprintf("Role Fit: %v\n\n", i.context.EditingFact.RoleFit)
+
+		// Errors are shown in modal via getContextHelp.
+		if !i.context.HasFormErrors() {
+			content += "Make your changes and press Ctrl+S to save.\n"
+		}
+	} else {
+		content += "No fact loaded for editing.\n"
 	}
 
 	return content

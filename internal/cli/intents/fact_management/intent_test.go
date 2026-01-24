@@ -450,17 +450,6 @@ var _ = Describe("Intent", func() {
 		})
 	})
 
-	Describe("ScreenResultHandler Interface", func() {
-		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
-			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
-			Expect(err).NotTo(HaveOccurred())
-			intent.Init()
-		})
-
-		It("should implement ScreenResultHandler", func() {
-			var _ intents.ScreenResultHandler = intent
-		})
-	})
+	// Note: This intent doesn't use ScreenResultHandler as it uses
+	// simple state-based navigation rather than the screens package.
 })

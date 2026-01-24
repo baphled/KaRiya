@@ -2,8 +2,9 @@
 package fact_management
 
 import (
+	"fmt"
+
 	"github.com/baphled/kariya/internal/cli/intents"
-	factmodals "github.com/baphled/kariya/internal/cli/screens/fact/modals"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -19,6 +20,7 @@ func (i *Intent) handleListState(msg tea.Msg) tea.Cmd {
 			i.ToggleHelp()
 			return nil
 		case intents.KeyBack:
+			// At root state, back means cancel and return to main menu.
 			i.setCancelled()
 			return nil
 		}
@@ -33,27 +35,33 @@ func (i *Intent) handleListState(msg tea.Msg) tea.Cmd {
 		case "enter", " ":
 			i.syncTableSelection()
 			if i.context.SelectedFact != nil {
-				i.openDetailModal(i.context.SelectedFact)
+				i.state = StateView
 			}
 			return nil
 
 		case "n":
 			i.context.StartNewFact()
-			i.openEditModal(i.context.EditingFact, true)
-			return nil
+			i.editModal = intents.NewEditFactModal(i.context.EditingFact)
+			i.state = StateEditor
+			// Return form init command to properly initialize the huh form.
+			return i.editModal.Init()
 
 		case "e":
 			i.syncTableSelection()
 			if i.context.SelectedFact != nil {
 				i.context.StartEditFact(i.context.SelectedFact)
-				i.openEditModal(i.context.EditingFact, false)
+				i.editModal = intents.NewEditFactModal(i.context.EditingFact)
+				i.state = StateEditor
+				// Return form init command to properly initialize the huh form.
+				return i.editModal.Init()
 			}
 			return nil
 
 		case "d":
 			i.syncTableSelection()
 			if i.context.SelectedFact != nil {
-				i.openDeleteConfirm(i.context.SelectedFact)
+				i.context.FactToDelete = i.context.SelectedFact
+				i.state = StateDeleteConfirm
 			}
 			return nil
 
@@ -88,6 +96,7 @@ func (i *Intent) handleViewState(msg tea.Msg) tea.Cmd {
 			i.ToggleHelp()
 			return nil
 		case intents.KeyBack:
+			// Go back to list state.
 			i.state = StateList
 			i.context.SelectedFact = nil
 			return nil
@@ -97,15 +106,17 @@ func (i *Intent) handleViewState(msg tea.Msg) tea.Cmd {
 		case "e":
 			if i.context.SelectedFact != nil {
 				i.context.StartEditFact(i.context.SelectedFact)
-				i.openEditModal(i.context.EditingFact, false)
+				i.editModal = intents.NewEditFactModal(i.context.EditingFact)
+				i.state = StateEditor
+				// Return form init command to properly initialize the huh form.
+				return i.editModal.Init()
 			}
-			return nil
 
 		case "d":
 			if i.context.SelectedFact != nil {
-				i.openDeleteConfirm(i.context.SelectedFact)
+				i.context.FactToDelete = i.context.SelectedFact
+				i.state = StateDeleteConfirm
 			}
-			return nil
 		}
 	}
 	return nil
@@ -113,6 +124,8 @@ func (i *Intent) handleViewState(msg tea.Msg) tea.Cmd {
 
 // handleEditorState handles messages in the editor state.
 func (i *Intent) handleEditorState(msg tea.Msg) tea.Cmd {
+	// Handle global keys FIRST (before delegating to modal)
+	// This ensures esc, q, ? keys work even when modal has focus.
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch intents.HandleGlobalKeys(msg) {
@@ -122,13 +135,73 @@ func (i *Intent) handleEditorState(msg tea.Msg) tea.Cmd {
 			i.ToggleHelp()
 			return nil
 		case intents.KeyBack:
-			i.editModal = nil
+			// Close modal if active.
+			if i.editModal != nil {
+				i.editModal = nil
+			}
 			i.context.CancelEdit()
-			i.state = StateList
+			if i.context.IsNewFact {
+				i.state = StateList
+			} else {
+				i.state = StateView
+			}
 			return nil
 		}
 	}
-	return nil
+
+	// If modal is not initialized, handle legacy behavior (fallback).
+	if i.editModal == nil {
+		return nil
+	}
+
+	// Delegate to the modal for form handling.
+	cmd := i.editModal.Update(msg)
+
+	// Check if modal completed (form submitted or cancelled).
+	if result := i.editModal.Result(); result != nil {
+		if result.Accepted {
+			// Apply changes from the modal to the editing fact.
+			i.context.EditingFact.Text = result.Modified.Text
+			i.context.EditingFact.CompetencyCategories = result.Modified.CompetencyCategories
+			i.context.EditingFact.RoleFit = result.Modified.RoleFit
+			i.context.EditingFact.AudienceRelevance = result.Modified.AudienceRelevance
+			i.context.EditingFact.StrengthSignal = result.Modified.StrengthSignal
+
+			// Save the fact.
+			if err := i.context.SaveEdit(); err != nil {
+				i.context.SetFormError("general", fmt.Sprintf("Save failed: %v", err))
+			} else {
+				action := "updated"
+				if i.context.IsNewFact {
+					action = "created"
+				}
+				i.result = &intents.IntentResult[*Result]{
+					Status: intents.Completed,
+					Data: &Result{
+						Action:  action,
+						Fact:    i.context.EditingFact,
+						Facts:   i.context.Facts,
+						Message: fmt.Sprintf("Fact %s successfully", action),
+					},
+				}
+				// Refresh table after save.
+				i.tableBehavior.SetItems(i.context.Facts)
+				i.syncTableSelection()
+			}
+		}
+
+		// Clear modal and return to appropriate state.
+		i.editModal = nil
+		i.context.CancelEdit()
+		if i.context.IsNewFact {
+			i.state = StateList
+		} else {
+			i.state = StateView
+		}
+		return nil
+	}
+
+	return cmd
 }
 
 // handleDeleteConfirmState handles messages in the delete confirm state.
@@ -137,10 +210,37 @@ func (i *Intent) handleDeleteConfirmState(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "y":
-			return i.performDelete()
+			if i.context.FactToDelete != nil {
+				if err := i.context.DeleteFact(i.context.FactToDelete.ID); err != nil {
+					i.result = &intents.IntentResult[*Result]{
+						Status: intents.Failed,
+						Error: &intents.IntentError{
+							Code:    "DELETE_FAILED",
+							Message: "Failed to delete fact",
+							Cause:   err,
+						},
+					}
+				} else {
+					i.result = &intents.IntentResult[*Result]{
+						Status: intents.Completed,
+						Data: &Result{
+							Action:  "deleted",
+							Fact:    i.context.FactToDelete,
+							Facts:   i.context.Facts,
+							Message: "Fact deleted successfully",
+						},
+					}
+					// Refresh table after delete.
+					i.tableBehavior.SetItems(i.context.Facts)
+					i.syncTableSelection()
+				}
+				i.context.FactToDelete = nil
+				i.state = StateList
+			}
+
 		case "n", "esc":
 			i.context.FactToDelete = nil
-			i.state = StateList
+			i.state = StateView
 		}
 	}
 	return nil
@@ -162,116 +262,4 @@ func (i *Intent) handleResultsState(msg tea.Msg) tea.Cmd {
 		}
 	}
 	return nil
-}
-
-// handleModalUpdates handles updates for all modals.
-func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
-	// Error modal has highest priority.
-	if i.errorModal != nil {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
-			i.errorModal = nil
-			return noopCmd
-		}
-		return noopCmd
-	}
-
-	// Delete confirmation modal.
-	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-		cmd, confirmed := i.deleteModal.Update(msg)
-		if !i.deleteModal.IsVisible() {
-			if confirmed && i.context.FactToDelete != nil {
-				deleteCmd := i.performDelete()
-				i.deleteModal = nil
-				return deleteCmd
-			}
-			i.context.FactToDelete = nil
-			i.deleteModal = nil
-			return noopCmd
-		}
-		return cmd
-	}
-
-	// Edit modal.
-	if i.editModal != nil && i.editModal.IsVisible() {
-		cmd, result := i.editModal.Update(msg)
-		if !i.editModal.IsVisible() {
-			if result != nil && result.Accepted {
-				i.applyEditResult(result)
-			}
-			i.editModal = nil
-			i.context.CancelEdit()
-			i.state = StateList
-			return noopCmd
-		}
-		return cmd
-	}
-
-	// Detail modal.
-	if i.detailModal != nil && i.detailModal.IsVisible() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			switch keyMsg.String() {
-			case "e":
-				if i.context.SelectedFact != nil {
-					i.detailModal.Hide()
-					i.detailModal = nil
-					i.context.StartEditFact(i.context.SelectedFact)
-					i.openEditModal(i.context.EditingFact, false)
-					return nil
-				}
-			case "d":
-				if i.context.SelectedFact != nil {
-					i.detailModal.Hide()
-					i.detailModal = nil
-					i.openDeleteConfirm(i.context.SelectedFact)
-					return nil
-				}
-			}
-		}
-		_, cmd := i.detailModal.Update(msg)
-		if !i.detailModal.IsVisible() {
-			i.detailModal = nil
-		}
-		return cmd
-	}
-
-	return nil
-}
-
-// noopCmd is a sentinel command to indicate a message was consumed.
-func noopCmd() tea.Msg { return nil }
-
-// applyEditResult applies the result of an edit operation.
-func (i *Intent) applyEditResult(result *factmodals.EditResult) {
-	if result == nil || !result.Accepted {
-		return
-	}
-
-	// Apply changes from the modal to the editing fact.
-	i.context.EditingFact.Text = result.Fact.Text
-	i.context.EditingFact.CompetencyCategories = result.Fact.CompetencyCategories
-	i.context.EditingFact.RoleFit = result.Fact.RoleFit
-	i.context.EditingFact.AudienceRelevance = result.Fact.AudienceRelevance
-	i.context.EditingFact.StrengthSignal = result.Fact.StrengthSignal
-
-	// Save the fact.
-	if err := i.context.SaveEdit(); err != nil {
-		i.context.SetFormError("general", "Save failed: "+err.Error())
-	} else {
-		action := "updated"
-		if i.context.IsNewFact {
-			action = "created"
-		}
-		i.result = &intents.IntentResult[*Result]{
-			Status: intents.Completed,
-			Data: &Result{
-				Action:  action,
-				Fact:    i.context.EditingFact,
-				Facts:   i.context.Facts,
-				Message: "Fact " + action + " successfully",
-			},
-		}
-		// Refresh table after save.
-		i.tableBehavior.SetItems(i.context.Facts)
-		i.syncTableSelection()
-	}
 }
