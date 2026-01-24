@@ -1,13 +1,17 @@
 package burst_management_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/testutil/fixtures"
+	"github.com/baphled/kariya/internal/testutil/mocks"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -631,6 +635,450 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("No suggestions"))
+		})
+	})
+})
+
+var _ = Describe("Burst Suggestion Integration E2E", func() {
+	var (
+		intent      *burst_management.Intent
+		ctx         *burst_management.IntentContext
+		mockService *mocks.BurstServiceMock
+		burstRepo   *careerrepo.MemoryBurstRepository
+		events      []*career.CareerEvent
+		suggestions []burst_fact.BurstSuggestion
+	)
+
+	BeforeEach(func() {
+		now := time.Now()
+
+		// Create test events.
+		events = []*career.CareerEvent{
+			{ID: "e1", Text: "Led backend project", Date: now.AddDate(0, -1, 0), Company: "TechCorp", Project: "Platform"},
+			{ID: "e2", Text: "Built microservices", Date: now.AddDate(0, -2, 0), Company: "TechCorp", Project: "Platform"},
+			{ID: "e3", Text: "Frontend redesign", Date: now.AddDate(0, -3, 0), Company: "TechCorp", Project: "UI"},
+			{ID: "e4", Text: "React migration", Date: now.AddDate(0, -4, 0), Company: "TechCorp", Project: "UI"},
+			{ID: "e5", Text: "DevOps setup", Date: now.AddDate(0, -5, 0), Company: "TechCorp", Project: "Infra"},
+		}
+
+		// Create suggestions (each must have at least 2 events for validation).
+		suggestions = []burst_fact.BurstSuggestion{
+			{
+				Name:            "Backend Development",
+				Description:     "API and microservices work",
+				EventIDs:        []string{"e1", "e2"},
+				ConfidenceScore: 0.85,
+			},
+			{
+				Name:            "Frontend Modernization",
+				Description:     "UI redesign and React migration",
+				EventIDs:        []string{"e3", "e4"},
+				ConfidenceScore: 0.78,
+			},
+			{
+				Name:            "Infrastructure",
+				Description:     "DevOps and CI/CD setup",
+				EventIDs:        []string{"e5", "e1"},
+				ConfidenceScore: 0.65,
+			},
+		}
+
+		// Create mock service using centralized mock.
+		mockService = mocks.NewBurstServiceMock().
+			SetEvents(events).
+			SetSuggestions(suggestions).
+			SetExtractedFacts([]career.Fact{
+				{ID: "f1", Text: "Built scalable API"},
+				{ID: "f2", Text: "Improved response time by 40%"},
+			})
+
+		// Create burst repository.
+		burstRepo = careerrepo.NewMemoryBurstRepository()
+
+		// Create context with service and repository.
+		ctx = &burst_management.IntentContext{
+			Bursts:          []*career.Burst{},
+			Service:         mockService,
+			BurstRepository: burstRepo,
+		}
+		ctx.Validate()
+
+		// Create intent.
+		var err error
+		intent, err = burst_management.NewIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+	})
+
+	Describe("Suggestion Detection Trigger", func() {
+		It("should trigger suggestion detection with 's' key", func() {
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(cmd).NotTo(BeNil())
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggesting))
+		})
+
+		It("should show suggesting state in view", func() {
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggesting))
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Suggesting"))
+		})
+
+		It("should trigger via action=suggest from screen", func() {
+			actionData := map[string]interface{}{
+				"action": "suggest",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).NotTo(BeNil())
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggesting))
+		})
+	})
+
+	Describe("Suggestion Accept with Repository", func() {
+		It("should create burst and save to repository", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions[:1]}
+			intent.Update(msg)
+
+			modal := intent.GetSuggestionModal()
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			accepted := modal.GetAcceptedSuggestions()
+
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: accepted,
+			}
+			intent.Update(completeMsg)
+
+			Expect(len(intent.GetFilteredBursts())).To(Equal(1))
+
+			allBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(allBursts).To(HaveLen(1))
+			Expect(allBursts[0].Name).To(Equal("Backend Development"))
+		})
+
+		It("should trigger fact extraction after accept", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions[:1]}
+			intent.Update(msg)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions[:1],
+			}
+			cmd := intent.Update(completeMsg)
+
+			Expect(cmd).NotTo(BeNil())
+			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+			Expect(intent.IsExtractingFacts()).To(BeTrue())
+		})
+	})
+
+	Describe("Multiple Suggestions with Repository", func() {
+		It("should save all accepted bursts", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions[:2]}
+			intent.Update(msg)
+
+			modal := intent.GetSuggestionModal()
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			accepted := modal.GetAcceptedSuggestions()
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: accepted,
+			}
+			intent.Update(completeMsg)
+
+			allBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(allBursts).To(HaveLen(2))
+		})
+
+		It("should handle accept, reject, accept sequence", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
+			intent.Update(msg)
+
+			modal := intent.GetSuggestionModal()
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(modal.GetAcceptedSuggestions()).To(HaveLen(1))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+			Expect(modal.GetAcceptedSuggestions()).To(HaveLen(1))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(modal.GetAcceptedSuggestions()).To(HaveLen(2))
+		})
+	})
+
+	Describe("Error Handling with Service", func() {
+		It("should handle detection error", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Error: fmt.Errorf("detection failed"),
+			}
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should handle fact extraction failure", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions[:1]}
+			intent.Update(msg)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions[:1],
+			}
+			intent.Update(completeMsg)
+
+			extractError := burst_management.FactExtractionCompleteMsg{
+				Error: fmt.Errorf("extraction failed"),
+			}
+			intent.Update(extractError)
+
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should recover to list state after error dismissal", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{
+				Error: fmt.Errorf("some error"),
+			}
+			intent.Update(msg)
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+		})
+	})
+
+	Describe("Escape Handling", func() {
+		It("should cancel suggestion review with Esc", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
+			intent.Update(msg)
+
+			modal := intent.GetSuggestionModal()
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+			Expect(modal.IsVisible()).To(BeFalse())
+		})
+
+		It("should not create bursts when cancelled", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
+			intent.Update(msg)
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				Cancelled: true,
+			}
+			intent.Update(completeMsg)
+
+			Expect(len(intent.GetFilteredBursts())).To(Equal(0))
+		})
+
+		It("should preserve partial accepts when cancelled", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
+			intent.Update(msg)
+
+			modal := intent.GetSuggestionModal()
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			accepted := modal.GetAcceptedSuggestions()
+			Expect(accepted).To(HaveLen(1))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(modal.GetAcceptedSuggestions()).To(HaveLen(1))
+		})
+	})
+})
+
+var _ = Describe("Fact Extraction from Accepted Burst Suggestions", func() {
+	var (
+		intent *burst_management.Intent
+		ctx    *burst_management.IntentContext
+	)
+
+	BeforeEach(func() {
+		ctx = &burst_management.IntentContext{
+			Bursts: fixtures.Bursts(2, fixtures.Events(4)),
+		}
+		ctx.Validate()
+
+		var err error
+		intent, err = burst_management.NewIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+	})
+
+	Context("when user accepts a burst suggestion", func() {
+		var suggestions []burst_fact.BurstSuggestion
+
+		BeforeEach(func() {
+			suggestions = []burst_fact.BurstSuggestion{
+				{
+					Name:            "Backend Development",
+					Description:     "Built microservices",
+					EventIDs:        []string{"e1", "e2", "e3"},
+					ConfidenceScore: 0.95,
+				},
+			}
+		})
+
+		It("creates the burst", func() {
+			initialCount := len(intent.GetFilteredBursts())
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
+			_ = intent.Update(msg)
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions,
+			}
+			_ = intent.Update(completeMsg)
+
+			Expect(intent.GetFilteredBursts()).To(HaveLen(initialCount + 1))
+		})
+
+		It("triggers fact extraction for the created burst", func() {
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
+			_ = intent.Update(msg)
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions,
+			}
+			cmd := intent.Update(completeMsg)
+
+			Expect(cmd).NotTo(BeNil(), "should return a command to trigger fact extraction")
+
+			cmdMsg := cmd()
+			_, isFactExtraction := cmdMsg.(burst_management.FactExtractionCompleteMsg)
+			Expect(isFactExtraction).To(BeTrue(), "command should trigger fact extraction")
+		})
+	})
+
+	Context("when user accepts multiple burst suggestions", func() {
+		It("triggers fact extraction for each burst", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{Name: "Burst 1", EventIDs: []string{"e1"}, ConfidenceScore: 0.9},
+				{Name: "Burst 2", EventIDs: []string{"e2"}, ConfidenceScore: 0.85},
+			}
+
+			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
+			_ = intent.Update(msg)
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			completeMsg := burst_management.SuggestionReviewCompleteMsg{
+				AcceptedSuggestions: suggestions,
+			}
+			cmd := intent.Update(completeMsg)
+
+			Expect(cmd).NotTo(BeNil(), "should return commands to extract facts for both bursts")
+		})
+	})
+})
+
+var _ = Describe("Fact Extraction from Confirmed Bursts", func() {
+	var (
+		intent *burst_management.Intent
+		ctx    *burst_management.IntentContext
+	)
+
+	BeforeEach(func() {
+		events := fixtures.Events(4)
+		bursts := fixtures.Bursts(1, events)
+		bursts[0].Confirmed = false
+
+		ctx = &burst_management.IntentContext{
+			Bursts: bursts,
+		}
+		ctx.Validate()
+
+		var err error
+		intent, err = burst_management.NewIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+	})
+
+	Context("when confirming an unconfirmed burst", func() {
+		It("triggers fact extraction", func() {
+			burst := intent.GetFilteredBursts()[0]
+
+			result := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(result)
+
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+		})
+
+		It("transitions to extracting facts state after confirmation", func() {
+			burst := intent.GetFilteredBursts()[0]
+
+			result := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(result)
+
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			Expect(cmd).NotTo(BeNil(), "confirming burst should return a command for fact extraction")
+		})
+	})
+})
+
+var _ = Describe("Re-extraction Workflow", func() {
+	var (
+		intent      *burst_management.Intent
+		ctx         *burst_management.IntentContext
+		mockService *mocks.BurstServiceMock
+	)
+
+	BeforeEach(func() {
+		events := fixtures.Events(4)
+		bursts := fixtures.Bursts(1, events)
+		bursts[0].Confirmed = true
+
+		mockService = mocks.NewBurstServiceMock()
+		mockService.SetFactsForBurst(bursts[0].ID, []*career.Fact{
+			{ID: "fact-1", SourceBurstID: bursts[0].ID, Text: "Led architecture design"},
+			{ID: "fact-2", SourceBurstID: bursts[0].ID, Text: "Delivered project on time"},
+		})
+
+		ctx = &burst_management.IntentContext{
+			Bursts:  bursts,
+			Service: mockService,
+		}
+		ctx.Validate()
+
+		var err error
+		intent, err = burst_management.NewIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+	})
+
+	Context("when confirming a burst that already has facts", func() {
+		It("prompts user for re-extraction", func() {
+			burst := intent.GetFilteredBursts()[0]
+
+			result := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(result)
+
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Re-extract"))
 		})
 	})
 })

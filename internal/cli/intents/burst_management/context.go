@@ -6,7 +6,6 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
-	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
 // IntentContext is the minimal context passed to BurstManagement intent.
@@ -16,7 +15,7 @@ type IntentContext struct {
 	Bursts []*career.Burst
 
 	// Service provides burst and fact operations.
-	Service *careerservice.Service
+	Service BurstService
 
 	// BurstRepository for direct burst CRUD operations.
 	BurstRepository careerrepo.BurstRepository

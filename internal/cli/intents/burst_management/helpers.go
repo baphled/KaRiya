@@ -4,7 +4,6 @@ package burst_management
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -17,39 +16,6 @@ import (
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-// burstRowFormatter formats a burst for table display.
-func burstRowFormatter(burst *career.Burst, index int) []string {
-	// Column 1: Name (truncate to 27 chars).
-	nameStr := burst.Name
-	if len(nameStr) > 27 {
-		nameStr = nameStr[:27] + "..."
-	}
-
-	// Column 2: Description (truncated preview, max 32 chars).
-	descStr := strings.TrimSpace(burst.Description)
-	descStr = strings.ReplaceAll(descStr, "\n", " ")
-	descStr = strings.ReplaceAll(descStr, "\r", " ")
-	if descStr == "" {
-		descStr = "-"
-	} else if len(descStr) > 32 {
-		descStr = descStr[:32] + "..."
-	}
-
-	// Column 3: Confirmed Status.
-	confirmedStr := "✗ No"
-	if burst.Confirmed {
-		confirmedStr = "✓ Yes"
-	}
-
-	// Column 4: Event Count.
-	eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
-
-	// Column 5: Created Date (YYYY-MM-DD).
-	createdStr := burst.CreatedAt.Format("2006-01-02")
-
-	return []string{nameStr, descStr, confirmedStr, eventCount, createdStr}
-}
 
 // getTerminalDimensions returns current terminal dimensions with fallback defaults.
 func (i *Intent) getTerminalDimensions() (width, height int) {
@@ -254,11 +220,12 @@ func (i *Intent) loadBurstFacts(burst *career.Burst) []*career.Fact {
 	}
 
 	ctx := i.getContext()
-	// For now, return empty list.
-	// TODO: Implement fact loading when burst-fact relationship is defined.
-	// This might involve querying facts by burst ID or event IDs.
-	_ = ctx
-	return []*career.Fact{}
+	facts, err := i.context.Service.GetFactsBySourceBurstID(ctx, burst.ID)
+	if err != nil {
+		return []*career.Fact{}
+	}
+
+	return facts
 }
 
 // confirmBurst marks the selected burst as confirmed and saves it.
@@ -281,8 +248,10 @@ func (i *Intent) confirmBurst() tea.Cmd {
 		}
 	}
 
-	// Return to detail modal showing updated burst.
-	return i.showBurstDetailModal(i.selectedBurst)
+	// Transition to extracting facts state and trigger extraction.
+	i.state = StateExtractingFacts
+	i.extractingFacts = true
+	return i.extractFactsForBurst(i.selectedBurst)
 }
 
 // handleEditBurstMsg handles the EditBurstMsg sent by the edit modal.
@@ -688,5 +657,51 @@ func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg)
 
 	// Refresh list screen with new bursts.
 	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+
+	// Trigger fact extraction for all created bursts.
+	var cmds []tea.Cmd
+	for _, burst := range i.filteredBursts[len(i.filteredBursts)-len(msg.AcceptedSuggestions):] {
+		cmds = append(cmds, i.extractFactsForBurst(burst))
+	}
+
+	if len(cmds) > 0 {
+		i.extractingFacts = true
+		i.state = StateExtractingFacts
+		return tea.Batch(cmds...)
+	}
 	return nil
+}
+
+func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
+	if burst == nil {
+		return func() tea.Msg {
+			return FactExtractionCompleteMsg{Error: fmt.Errorf("no burst provided")}
+		}
+	}
+
+	return func() tea.Msg {
+		if i.context.Service == nil {
+			return FactExtractionCompleteMsg{Error: fmt.Errorf("service not available")}
+		}
+
+		ctx := i.getContext()
+
+		facts, err := i.context.Service.ExtractFactsFromBurst(ctx, burst)
+		if err != nil {
+			return FactExtractionCompleteMsg{Error: err}
+		}
+
+		savedFacts := make([]*career.Fact, 0, len(facts))
+		for idx := range facts {
+			fact := &facts[idx]
+			fact.SourceBurstID = burst.ID
+
+			if err := i.context.Service.SaveFact(ctx, fact); err != nil {
+				continue
+			}
+			savedFacts = append(savedFacts, fact)
+		}
+
+		return FactExtractionCompleteMsg{Facts: savedFacts}
+	}
 }

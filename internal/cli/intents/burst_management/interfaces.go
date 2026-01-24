@@ -6,24 +6,21 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career/burst_fact"
 )
 
-// BurstService defines the interface for burst operations.
+// BurstService defines the interface for burst and fact operations.
 // This allows for mocking in tests.
 type BurstService interface {
-	// Burst CRUD operations.
-	GetBurst(ctx context.Context, id string) (*career.Burst, error)
-	ListBursts(ctx context.Context, filters careerrepo.BurstListFilters) ([]*career.Burst, error)
-	CreateBurst(ctx context.Context, burst *career.Burst) error
-	UpdateBurst(ctx context.Context, burst *career.Burst) error
-	DeleteBurst(ctx context.Context, id string) error
-
 	// Event operations.
 	GetEventByID(ctx context.Context, eventID string) (*career.CareerEvent, error)
-	ListEvents(ctx context.Context, filters *careerrepo.ListFilters) ([]*career.CareerEvent, error)
+	ListEvents(ctx context.Context, filters careerrepo.ListFilters) ([]*career.CareerEvent, error)
 
 	// Fact operations.
 	GetFactsBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error)
 	ExtractFactsFromBurst(ctx context.Context, burst *career.Burst) ([]career.Fact, error)
 	SaveFact(ctx context.Context, fact *career.Fact) error
+
+	// Suggestion operations.
+	SuggestBursts(ctx context.Context, eventIDs []string) ([]burst_fact.BurstSuggestion, error)
 }

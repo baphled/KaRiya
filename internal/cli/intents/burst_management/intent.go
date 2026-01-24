@@ -2,6 +2,8 @@
 package burst_management
 
 import (
+	"fmt"
+
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
 	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
@@ -48,6 +50,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleBurstSuggestionsLoaded(msg)
 	case SuggestionReviewCompleteMsg:
 		return i.handleSuggestionReviewComplete(msg)
+	case FactExtractionCompleteMsg:
+		return i.handleFactExtractionComplete(msg)
 	}
 
 	// Handle modals first (highest priority).
@@ -194,10 +198,19 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 			case "c":
 				// Confirm burst.
 				i.detailModal.Hide()
-				i.confirmModal = feedback.NewConfirmModal(
-					"Confirm Burst",
-					"Mark this burst as confirmed and extract facts?",
-				).WithVariant(feedback.ConfirmDefault)
+
+				existingFacts := i.loadBurstFacts(i.selectedBurst)
+				if len(existingFacts) > 0 {
+					i.confirmModal = feedback.NewConfirmModal(
+						"Re-extract Facts",
+						fmt.Sprintf("This burst already has %d facts. Re-extract and add more?", len(existingFacts)),
+					).WithVariant(feedback.ConfirmDefault)
+				} else {
+					i.confirmModal = feedback.NewConfirmModal(
+						"Confirm Burst",
+						"Mark this burst as confirmed and extract facts?",
+					).WithVariant(feedback.ConfirmDefault)
+				}
 				return i.confirmModal.Init()
 			case "esc", "enter":
 				// Close detail modal.
@@ -268,8 +281,12 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 
 // handleKeyShortcuts handles keyboard shortcuts when no modal is active.
 func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
-	// TODO: Add global shortcuts (e.g., 's' for suggest, 'a' for add)
-	// when implemented
+	switch keyMsg.String() {
+	case "s":
+		// Trigger burst suggestion detection.
+		i.state = StateSuggesting
+		return i.startBurstDetection()
+	}
 	return nil
 }
 
@@ -320,8 +337,34 @@ func (i *Intent) updateConfirmView(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+// handleFactExtractionComplete handles the FactExtractionCompleteMsg.
+func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea.Cmd {
+	i.extractingFacts = false
+
+	if msg.Error != nil {
+		i.errorModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	i.extractedFactsCount = len(msg.Facts)
+	i.state = StateList
+	return i.showBurstDetailModal(i.selectedBurst)
+}
+
 // updateExtractingFactsView handles the fact extraction state.
 func (i *Intent) updateExtractingFactsView(msg tea.Msg) tea.Cmd {
+	switch msg := msg.(type) {
+	case FactExtractionCompleteMsg:
+		return i.handleFactExtractionComplete(msg)
+
+	case tea.KeyMsg:
+		if msg.String() == "esc" {
+			i.extractingFacts = false
+			i.state = StateList
+			return nil
+		}
+	}
 	return nil
 }
 
@@ -431,7 +474,16 @@ func (i *Intent) viewConfirm() string {
 
 // viewExtractingFacts renders the fact extraction progress view.
 func (i *Intent) viewExtractingFacts() string {
-	return "Extracting facts view"
+	theme := i.Theme()
+	if theme == nil {
+		return "Extracting facts..."
+	}
+
+	content := primitives.Title("Extracting and Saving Facts", theme).Render() + "\n\n"
+	content += primitives.Body("Analyzing burst events to extract facts...\n", theme).Render()
+	content += primitives.Body("Facts will be saved to the database automatically.\n", theme).Render()
+
+	return content
 }
 
 // viewSuggesting renders the burst suggestion loading view.

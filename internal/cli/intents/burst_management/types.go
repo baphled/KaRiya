@@ -89,17 +89,8 @@ type Intent struct {
 
 	// --- Progress tracking ---
 
-	// extractedFactsCount is the count of facts extracted.
+	// extractedFactsCount tracks the number of facts extracted in current operation.
 	extractedFactsCount int
-
-	// existingFactsCount is the count of existing facts.
-	existingFactsCount int
-
-	// extractionComplete indicates if extraction completed.
-	extractionComplete bool
-
-	// showReextractPrompt indicates if re-extract prompt should be shown.
-	showReextractPrompt bool
 
 	// --- Screen Orchestration ---
 
@@ -249,6 +240,16 @@ func (i *Intent) GetDetailModal() *burstmodals.BurstDetailModal {
 // GetSuggestionModal returns the suggestion modal (for testing).
 func (i *Intent) GetSuggestionModal() *burstmodals.SuggestionReviewModal {
 	return i.suggestionModal
+}
+
+// IsExtractingFacts returns true if fact extraction is in progress.
+func (i *Intent) IsExtractingFacts() bool {
+	return i.extractingFacts
+}
+
+// GetExtractedFactsCount returns the count of facts extracted in the last operation.
+func (i *Intent) GetExtractedFactsCount() int {
+	return i.extractedFactsCount
 }
 
 // NewIntent creates a new BurstManagement intent.

@@ -571,9 +571,8 @@ var _ = Describe("Intent Methods", func() {
 
 			// Burst should now be confirmed.
 			Expect(intent.GetSelectedBurst().Confirmed).To(BeTrue())
-			// Should show detail modal again with updated burst.
-			Expect(intent.GetState()).To(Equal(burst_management.StateList))
-			Expect(intent.GetDetailModal()).NotTo(BeNil())
+			// Should transition to extracting facts state.
+			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
 		})
 
 		It("should cancel confirmation when 'n' is pressed", func() {

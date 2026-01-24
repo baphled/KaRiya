@@ -10,6 +10,9 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
+// testContextKey is a custom type for context keys in tests.
+type testContextKey string
+
 var _ = Describe("Context", func() {
 	Describe("IntentContext", func() {
 		Describe("Construction", func() {
@@ -71,7 +74,7 @@ var _ = Describe("Context", func() {
 			})
 
 			It("should preserve existing Context when validating", func() {
-				existingCtx := context.WithValue(context.Background(), "key", "value")
+				existingCtx := context.WithValue(context.Background(), testContextKey("key"), "value")
 				ctx := &burst_management.IntentContext{
 					Context: existingCtx,
 				}

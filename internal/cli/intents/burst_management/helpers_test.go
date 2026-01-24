@@ -311,7 +311,7 @@ var _ = Describe("Helper Methods", func() {
 
 			// Handle the message via Update.
 			cmd := intent.Update(msg)
-			Expect(cmd).To(BeNil())
+			Expect(cmd).NotTo(BeNil(), "should return command to trigger fact extraction")
 
 			// Verify bursts were created.
 			Expect(intent.GetFilteredBursts()).To(HaveLen(initialCount + 2))
@@ -383,7 +383,7 @@ var _ = Describe("Helper Methods", func() {
 			Expect(ctx.Bursts[initialContextCount].Name).To(Equal("New Burst"))
 		})
 
-		It("should refresh list screen with new bursts", func() {
+		It("should transition to extracting facts after accepting suggestions", func() {
 			msg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: []burst_fact.BurstSuggestion{
 					{
@@ -397,8 +397,8 @@ var _ = Describe("Helper Methods", func() {
 
 			intent.Update(msg)
 
-			// Should be in list state with updated screen.
-			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			// Should transition to extracting facts to process new bursts.
+			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
 		})
 	})
 })
