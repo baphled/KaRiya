@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
@@ -36,6 +35,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		selectedFacts:  make([]*career.Fact, 0),
 		viewedEvents:   make([]*career.CareerEvent, 0),
 		active:         true,
+		modalRegistry:  intents.NewModalRegistry(),
 	}
 
 	return intent, nil
@@ -84,110 +84,78 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 // This prevents the message from propagating to the screen after a modal closes.
 func noopCmd() tea.Msg { return nil }
 
+// modalHandler defines the interface for handling a modal's update cycle.
+type modalHandler struct {
+	isActive func() bool
+	update   func(tea.Msg) tea.Cmd
+	isClosed func() bool
+}
+
 // handleModalUpdates handles updates for all modals in priority order.
 // Returns a command (possibly noopCmd) if a modal consumed the message.
 func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
-	// Error modal (highest priority).
+	// Error modal has special handling (highest priority).
 	if i.errorModal != nil {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
 			i.errorModal = nil
-			return noopCmd // Consume the escape key.
+			return noopCmd
 		}
-		return noopCmd // Modal is active, consume all messages.
+		return noopCmd
 	}
 
-	// Search modal.
-	if i.searchModal != nil && i.searchModal.IsVisible() {
-		cmd := i.updateSearchModal(msg)
-		// If modal just closed, consume the message.
-		if i.searchModal == nil || !i.searchModal.IsVisible() {
-			if cmd == nil {
-				return noopCmd
-			}
-		}
-		return cmd
+	// Define modal handlers in priority order.
+	handlers := []modalHandler{
+		{
+			isActive: func() bool { return i.searchModal != nil && i.searchModal.IsVisible() },
+			update:   i.updateSearchModal,
+			isClosed: func() bool { return i.searchModal == nil || !i.searchModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.filterModal != nil && i.filterModal.IsVisible() },
+			update:   i.updateFilterModal,
+			isClosed: func() bool { return i.filterModal == nil || !i.filterModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.sortModal != nil && i.sortModal.IsVisible() },
+			update:   i.updateSortModal,
+			isClosed: func() bool { return i.sortModal == nil || !i.sortModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.quickAddModal != nil && i.quickAddModal.IsVisible() },
+			update:   i.updateQuickAddModal,
+			isClosed: func() bool { return i.quickAddModal == nil || !i.quickAddModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.editModal != nil && i.editModal.IsVisible() },
+			update:   i.updateEditModal,
+			isClosed: func() bool { return i.editModal == nil || !i.editModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.deleteModal != nil && i.deleteModal.IsVisible() },
+			update:   i.updateDeleteModal,
+			isClosed: func() bool { return i.deleteModal == nil || !i.deleteModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() },
+			update:   i.updateViewSkillsModal,
+			isClosed: func() bool { return i.viewSkillsModal == nil || !i.viewSkillsModal.IsVisible() },
+		},
+		{
+			isActive: func() bool { return i.viewDetailModal != nil && i.viewDetailModal.IsVisible() },
+			update:   i.updateViewDetailModal,
+			isClosed: func() bool { return i.viewDetailModal == nil || !i.viewDetailModal.IsVisible() },
+		},
 	}
 
-	// Filter modal.
-	if i.filterModal != nil && i.filterModal.IsVisible() {
-		cmd := i.updateFilterModal(msg)
-		if i.filterModal == nil || !i.filterModal.IsVisible() {
-			if cmd == nil {
+	// Process the first active modal.
+	for _, h := range handlers {
+		if h.isActive() {
+			cmd := h.update(msg)
+			if h.isClosed() && cmd == nil {
 				return noopCmd
 			}
+			return cmd
 		}
-		return cmd
-	}
-
-	// Sort modal.
-	if i.sortModal != nil && i.sortModal.IsVisible() {
-		cmd := i.updateSortModal(msg)
-		if i.sortModal == nil || !i.sortModal.IsVisible() {
-			if cmd == nil {
-				return noopCmd
-			}
-		}
-		return cmd
-	}
-
-	// Quick add modal.
-	if i.quickAddModal != nil && i.quickAddModal.IsVisible() {
-		cmd := i.updateQuickAddModal(msg)
-		if i.quickAddModal == nil || !i.quickAddModal.IsVisible() {
-			if cmd == nil {
-				return noopCmd
-			}
-		}
-		return cmd
-	}
-
-	// Edit modal.
-	if i.editModal != nil && i.editModal.IsVisible() {
-		cmd := i.updateEditModal(msg)
-		if i.editModal == nil || !i.editModal.IsVisible() {
-			if cmd == nil {
-				return noopCmd
-			}
-		}
-		return cmd
-	}
-
-	// Delete modal.
-	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-		cmd := i.updateDeleteModal(msg)
-		// Always consume the message when delete modal was active.
-		// This prevents Enter from propagating to the screen.
-		if i.deleteModal == nil || !i.deleteModal.IsVisible() {
-			if cmd == nil {
-				return noopCmd
-			}
-		}
-		return cmd
-	}
-
-	// View skills modal.
-	if i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() {
-		_, cmd := i.viewSkillsModal.Update(msg)
-		wasVisible := i.viewSkillsModal.IsVisible()
-		if !wasVisible {
-			i.viewSkillsModal = nil
-			if cmd == nil {
-				return noopCmd
-			}
-		}
-		return cmd
-	}
-
-	// View detail modal.
-	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
-		cmd := i.updateViewDetailModal(msg)
-		// Always consume message when view detail modal was active.
-		if i.viewDetailModal == nil || !i.viewDetailModal.IsVisible() {
-			if cmd == nil {
-				return noopCmd
-			}
-		}
-		return cmd
 	}
 
 	return nil
@@ -195,15 +163,8 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 
 // hasActiveModal returns true if any modal is currently visible.
 func (i *Intent) hasActiveModal() bool {
-	return i.errorModal != nil ||
-		(i.searchModal != nil && i.searchModal.IsVisible()) ||
-		(i.filterModal != nil && i.filterModal.IsVisible()) ||
-		(i.sortModal != nil && i.sortModal.IsVisible()) ||
-		(i.quickAddModal != nil && i.quickAddModal.IsVisible()) ||
-		(i.editModal != nil && i.editModal.IsVisible()) ||
-		(i.deleteModal != nil && i.deleteModal.IsVisible()) ||
-		(i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible()) ||
-		(i.viewDetailModal != nil && i.viewDetailModal.IsVisible())
+	i.rebuildModalRegistry()
+	return i.modalRegistry.HasVisibleModal()
 }
 
 // updateSearchModal handles search modal updates.
@@ -214,8 +175,7 @@ func (i *Intent) updateSearchModal(msg tea.Msg) tea.Cmd {
 		if searchData.SearchText != "" {
 			i.filterStack.Push(intents.FilterLayerSearch)
 		}
-		i.applyFilters()
-		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
+		i.RefreshData()
 	}
 	return cmd
 }
@@ -238,8 +198,7 @@ func (i *Intent) updateFilterModal(msg tea.Msg) tea.Cmd {
 		if len(filterData.Projects) > 0 {
 			i.filterStack.Push(intents.FilterLayerProject)
 		}
-		i.applyFilters()
-		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
+		i.RefreshData()
 	}
 	return cmd
 }
@@ -253,8 +212,7 @@ func (i *Intent) updateSortModal(msg tea.Msg) tea.Cmd {
 		if sortData.SortBy != "date" || sortData.SortOrder != "desc" {
 			i.filterStack.Push(intents.FilterLayerSort)
 		}
-		i.applyFilters()
-		i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
+		i.RefreshData()
 	}
 	return cmd
 }
@@ -276,8 +234,7 @@ func (i *Intent) updateQuickAddModal(msg tea.Msg) tea.Cmd {
 				return cmd
 			}
 			i.context.Events = refreshedEvents
-			i.applyFilters()
-			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
+			i.RefreshData()
 		}
 		i.quickAddModal = nil
 	}
@@ -302,8 +259,7 @@ func (i *Intent) updateEditModal(msg tea.Msg) tea.Cmd {
 					break
 				}
 			}
-			i.applyFilters()
-			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
+			i.RefreshData()
 		}
 		i.editModal = nil
 	}
@@ -330,11 +286,19 @@ func (i *Intent) updateDeleteModal(msg tea.Msg) tea.Cmd {
 				}
 			}
 			i.context.Events = newEvents
-			i.applyFilters()
-			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
+			i.RefreshData()
 		}
 		i.selectedEvent = nil
 		i.deleteModal = nil
+	}
+	return cmd
+}
+
+// updateViewSkillsModal handles view skills modal updates.
+func (i *Intent) updateViewSkillsModal(msg tea.Msg) tea.Cmd {
+	_, cmd := i.viewSkillsModal.Update(msg)
+	if !i.viewSkillsModal.IsVisible() {
+		i.viewSkillsModal = nil
 	}
 	return cmd
 }
@@ -386,8 +350,7 @@ func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
 	case "x":
 		if i.HasActiveFilters() {
 			i.ClearFilters()
-			i.applyFilters()
-			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.filteredEvents))
+			i.RefreshData()
 			return nil
 		}
 	}
@@ -417,38 +380,9 @@ func (i *Intent) renderTimelineView(screen *timeline.TimelineEventListScreen) st
 	view.WithHelp(i.getContextHelp())
 	baseView := view.Render()
 
-	// Modal overlays in priority order.
-	if i.errorModal != nil {
-		width, height := i.getTerminalDimensions()
-		adapter := intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme())
-		return adapter.RenderOverlay(baseView)
-	}
-	if i.searchModal != nil && i.searchModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.searchModal, baseView)
-	}
-	if i.filterModal != nil && i.filterModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.filterModal, baseView)
-	}
-	if i.sortModal != nil && i.sortModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.sortModal, baseView)
-	}
-	if i.quickAddModal != nil && i.quickAddModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.quickAddModal, baseView)
-	}
-	if i.editModal != nil && i.editModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.editModal, baseView)
-	}
-	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.deleteModal, baseView)
-	}
-	if i.viewSkillsModal != nil && i.viewSkillsModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.viewSkillsModal, baseView)
-	}
-	if i.viewDetailModal != nil && i.viewDetailModal.IsVisible() {
-		return behaviors.RenderModalOverlay(i.viewDetailModal, baseView)
-	}
-
-	return baseView
+	// Rebuild registry and render any visible modal as overlay.
+	i.rebuildModalRegistry()
+	return i.modalRegistry.RenderOverlay(baseView)
 }
 
 // Result returns the intent result.

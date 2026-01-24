@@ -177,3 +177,82 @@ func (i *Intent) HasVisibleEditModal() bool {
 func (i *Intent) ShowErrorModal(title, message string) {
 	i.errorModal = feedback.NewErrorModal(title, message)
 }
+
+// rebuildModalRegistry creates a fresh modal registry with all current modals.
+// Call this whenever a modal is created or destroyed to keep the registry current.
+func (i *Intent) rebuildModalRegistry() {
+	if i.modalRegistry == nil {
+		i.modalRegistry = intents.NewModalRegistry()
+	}
+	i.modalRegistry.Clear()
+
+	// Register modals in priority order (highest priority first).
+	// Error modal has highest priority.
+	if i.errorModal != nil {
+		width, height := i.getTerminalDimensions()
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme()))
+	}
+
+	// Form modals (search, filter, sort, quickAdd, edit).
+	if i.searchModal != nil {
+		i.modalRegistry.Register(intents.NewFormModalAdapter(
+			i.searchModal.IsVisible,
+			i.searchModal.View,
+			i.searchModal.Update,
+		))
+	}
+
+	if i.filterModal != nil {
+		i.modalRegistry.Register(intents.NewFormModalAdapter(
+			i.filterModal.IsVisible,
+			i.filterModal.View,
+			i.filterModal.Update,
+		))
+	}
+
+	if i.sortModal != nil {
+		i.modalRegistry.Register(intents.NewFormModalAdapter(
+			i.sortModal.IsVisible,
+			i.sortModal.View,
+			i.sortModal.Update,
+		))
+	}
+
+	if i.quickAddModal != nil {
+		i.modalRegistry.Register(intents.NewFormModalAdapter(
+			i.quickAddModal.IsVisible,
+			i.quickAddModal.View,
+			i.quickAddModal.Update,
+		))
+	}
+
+	if i.editModal != nil {
+		i.modalRegistry.Register(intents.NewFormModalAdapter(
+			i.editModal.IsVisible,
+			i.editModal.View,
+			i.editModal.Update,
+		))
+	}
+
+	// Confirm modal (delete).
+	if i.deleteModal != nil {
+		i.modalRegistry.Register(intents.NewConfirmModalAdapter(i.deleteModal))
+	}
+
+	// View modals.
+	if i.viewSkillsModal != nil {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.viewSkillsModal.IsVisible,
+			i.viewSkillsModal.View,
+			i.viewSkillsModal.Update,
+		))
+	}
+
+	if i.viewDetailModal != nil {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.viewDetailModal.IsVisible,
+			i.viewDetailModal.View,
+			i.viewDetailModal.Update,
+		))
+	}
+}

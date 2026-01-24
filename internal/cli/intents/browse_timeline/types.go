@@ -86,4 +86,7 @@ type Intent struct {
 
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal
+
+	// modalRegistry manages all modals with unified Update/View handling.
+	modalRegistry *intents.ModalRegistry
 }
