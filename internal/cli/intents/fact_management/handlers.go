@@ -135,12 +135,14 @@ func (i *Intent) handleEditorState(msg tea.Msg) tea.Cmd {
 			i.ToggleHelp()
 			return nil
 		case intents.KeyBack:
+			// Save IsNewFact before CancelEdit clears it.
+			wasNewFact := i.context.IsNewFact
 			// Close modal if active.
 			if i.editModal != nil {
 				i.editModal = nil
 			}
 			i.context.CancelEdit()
-			if i.context.IsNewFact {
+			if wasNewFact {
 				i.state = StateList
 			} else {
 				i.state = StateView
