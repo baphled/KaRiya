@@ -116,6 +116,20 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 		return noopCmd
 	}
 
+	// Loading modal - cancellable with Esc.
+	if i.loadingModal != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
+			// Cancel the loading operation.
+			i.loadingModal = nil
+			i.suggestionsLoading = false
+			i.extractingFacts = false
+			i.state = StateList
+			return noopCmd
+		}
+		// Loading modal is visible - consume all other messages.
+		return noopCmd
+	}
+
 	// Delete confirmation modal.
 	if i.deleteModal != nil && i.deleteModal.IsVisible() {
 		cmd, confirmed := i.deleteModal.Update(msg)
@@ -340,6 +354,7 @@ func (i *Intent) updateConfirmView(msg tea.Msg) tea.Cmd {
 // handleFactExtractionComplete handles the FactExtractionCompleteMsg.
 func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea.Cmd {
 	i.extractingFacts = false
+	i.loadingModal = nil
 
 	if msg.Error != nil {
 		i.errorModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
@@ -391,7 +406,11 @@ func (i *Intent) View() string {
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Burst Management", i.getStateName())
 	view.WithContent(content)
 	view.WithHelp(i.getContextHelp())
-	return view.Render()
+	baseView := view.Render()
+
+	// Apply modal overlay if any modals are visible (loading, error, etc.).
+	i.rebuildModalRegistry()
+	return i.modalRegistry.RenderOverlay(baseView)
 }
 
 // renderWithScreen renders the current screen with modal overlays.

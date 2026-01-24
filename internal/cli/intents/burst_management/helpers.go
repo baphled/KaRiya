@@ -251,6 +251,7 @@ func (i *Intent) confirmBurst() tea.Cmd {
 	// Transition to extracting facts state and trigger extraction.
 	i.state = StateExtractingFacts
 	i.extractingFacts = true
+	i.loadingModal = feedback.NewLoadingModal("Extracting facts from burst...", true).WithTheme(i.Theme())
 	return i.extractFactsForBurst(i.selectedBurst)
 }
 
@@ -456,6 +457,12 @@ func (i *Intent) rebuildModalRegistry() {
 		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme()))
 	}
 
+	// Loading modal (for StateExtractingFacts and StateSuggesting).
+	if i.loadingModal != nil {
+		width, height := i.getTerminalDimensions()
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.loadingModal, width, height, i.Theme()))
+	}
+
 	// Detail modals (detail, events, facts).
 	i.updateDetailModalRegistry()
 
@@ -552,8 +559,9 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 		return nil
 	}
 
-	// Mark as loading.
+	// Mark as loading and create loading modal.
 	i.suggestionsLoading = true
+	i.loadingModal = feedback.NewLoadingModal("Detecting burst patterns...", true).WithTheme(i.Theme())
 
 	return func() tea.Msg {
 		ctx := i.getContext()
@@ -601,6 +609,7 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 // handleBurstSuggestionsLoaded handles the BurstSuggestionsLoadedMsg.
 func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea.Cmd {
 	i.suggestionsLoading = false
+	i.loadingModal = nil
 
 	if msg.Error != nil {
 		i.suggestionsError = msg.Error

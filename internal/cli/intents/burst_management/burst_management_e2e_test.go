@@ -719,12 +719,12 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			Expect(intent.GetState()).To(Equal(burst_management.StateSuggesting))
 		})
 
-		It("should show suggesting state in view", func() {
+		It("should show loading modal in view", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 
 			Expect(intent.GetState()).To(Equal(burst_management.StateSuggesting))
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Suggesting"))
+			Expect(view).To(ContainSubstring("Detecting burst patterns"))
 		})
 
 		It("should trigger via action=suggest from screen", func() {

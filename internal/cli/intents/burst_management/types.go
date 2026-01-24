@@ -121,6 +121,9 @@ type Intent struct {
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal
 
+	// loadingModal holds the loading modal (shown during async operations).
+	loadingModal *feedback.Modal
+
 	// modalRegistry manages all modals with unified Update/View handling.
 	modalRegistry *intents.ModalRegistry
 }
