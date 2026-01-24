@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -51,11 +52,12 @@ type trackingEventService struct {
 	deleteCalledWith      string
 	captureCalledWithText string
 	updateCalledWith      *career.CareerEvent
+	deleteError           error
 }
 
 func (t *trackingEventService) DeleteEvent(ctx stdcontext.Context, eventID string) error {
 	t.deleteCalledWith = eventID
-	return nil
+	return t.deleteError
 }
 
 func (t *trackingEventService) ListEvents(ctx stdcontext.Context, filters *careerrepo.ListFilters) ([]*career.CareerEvent, error) {
@@ -305,50 +307,49 @@ var _ = Describe("Intent - Screen Architecture", func() {
 		})
 
 		It("should handle add action from list", func() {
-			// Press 'a' for add
+			// Press 'a' for add - screen returns NavigateResult, intent opens modal.
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			// Action is triggered (TODO: routing not implemented yet)
-			// Intent should remain active, not completed
-			// We just verify it doesn't crash
+			// Quick add modal should now be visible.
+			Expect(intent.HasVisibleQuickAddModal()).To(BeTrue())
 		})
 
 		It("should handle edit action from list", func() {
-			// Press 'e' for edit
+			// Press 'e' for edit - screen returns NavigateResult with selected event.
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 
-			// Action is triggered (TODO: routing not implemented yet)
-			// We just verify it doesn't crash
+			// Edit modal should now be visible.
+			Expect(intent.HasVisibleEditModal()).To(BeTrue())
 		})
 
 		It("should handle delete action from list", func() {
-			// Press 'd' for delete
+			// Press 'd' for delete - screen returns NavigateResult with selected event.
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
 
-			// Action is triggered (TODO: routing not implemented yet)
-			// We just verify it doesn't crash
+			// Delete modal opens - verify via hasActiveModal which checks all modals.
+			Expect(intent.Result()).To(BeNil(), "intent should still be active")
 		})
 
 		It("should handle edit action from detail view", func() {
-			// Go to detail view
+			// Go to detail view.
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Press 'e' for edit
+			// Press 'e' for edit - detail modal handles this and opens edit modal.
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
 
-			// Action is triggered (TODO: routing not implemented yet)
-			// We just verify it doesn't crash
+			// Edit modal should now be visible.
+			Expect(intent.HasVisibleEditModal()).To(BeTrue())
 		})
 
 		It("should handle delete action from detail view", func() {
-			// Go to detail view
+			// Go to detail view.
 			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
-			// Press 'd' for delete
+			// Press 'd' for delete - detail modal handles this and opens delete modal.
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
 
-			// Action is triggered (TODO: routing not implemented yet)
-			// We just verify it doesn't crash
+			// Intent should still be active (delete modal is open).
+			Expect(intent.Result()).To(BeNil(), "intent should still be active")
 		})
 	})
 
@@ -1983,6 +1984,241 @@ var _ = Describe("Intent - Screen Architecture", func() {
 			Expect(view).To(ContainSubstring("TechCorp"))
 			Expect(view).To(ContainSubstring("CloudInc"))
 			Expect(view).To(ContainSubstring("WebSolutions"))
+		})
+	})
+
+	Describe("Company Filter Functionality", func() {
+		var intent *Intent
+		var btCtx *IntentContext
+
+		BeforeEach(func() {
+			events := []*career.CareerEvent{
+				{
+					ID:      "comp-1",
+					Date:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					Text:    "Work at TechCorp",
+					Company: "TechCorp",
+				},
+				{
+					ID:      "comp-2",
+					Date:    time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC),
+					Text:    "Work at StartupXYZ",
+					Company: "StartupXYZ",
+				},
+			}
+
+			btCtx = &IntentContext{
+				Events:          events,
+				CLIEventService: &mockEventService{},
+			}
+
+			var err error
+			intent, err = NewIntent(btCtx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should filter events by company", func() {
+			intent.filters.Companies = []string{"TechCorp"}
+			intent.applyFilters()
+
+			Expect(intent.filteredEvents).To(HaveLen(1))
+			Expect(intent.filteredEvents[0].Company).To(Equal("TechCorp"))
+		})
+
+		It("should show all events when company filter is empty", func() {
+			intent.filters.Companies = []string{}
+			intent.applyFilters()
+
+			Expect(intent.filteredEvents).To(HaveLen(2))
+		})
+	})
+
+	Describe("Clear All Filters", func() {
+		var intent *Intent
+
+		BeforeEach(func() {
+			events := []*career.CareerEvent{
+				{ID: "1", Date: time.Now(), Text: "Event 1", Company: "A", Tags: []string{"tag1"}},
+				{ID: "2", Date: time.Now(), Text: "Event 2", Company: "B", Tags: []string{"tag2"}},
+			}
+			btCtx := &IntentContext{
+				Events:          events,
+				CLIEventService: &mockEventService{},
+			}
+			var err error
+			intent, err = NewIntent(btCtx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should reset all filters to defaults", func() {
+			// Set various filters.
+			intent.filters.SearchText = "search term"
+			intent.filters.Companies = []string{"A"}
+			intent.filters.Categories = []string{"cat1"}
+			intent.filters.Tags = []string{"tag1"}
+			intent.filters.SortBy = "company"
+			intent.filters.SortOrder = "asc"
+
+			// Clear all.
+			intent.clearAllFilters()
+
+			// Verify all reset.
+			Expect(intent.filters.SearchText).To(BeEmpty())
+			Expect(intent.filters.Companies).To(BeEmpty())
+			Expect(intent.filters.Categories).To(BeEmpty())
+			Expect(intent.filters.Tags).To(BeEmpty())
+			Expect(intent.filters.SortBy).To(Equal("date"))
+			Expect(intent.filters.SortOrder).To(Equal("desc"))
+		})
+	})
+
+	Describe("HandleSubmit", func() {
+		var intent *Intent
+
+		BeforeEach(func() {
+			btCtx := &IntentContext{
+				Events:          []*career.CareerEvent{{ID: "1", Date: time.Now(), Text: "Test"}},
+				CLIEventService: &mockEventService{},
+			}
+			var err error
+			intent, err = NewIntent(btCtx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should return nil for submit results", func() {
+			result := &screens.SubmitResult{}
+			cmd := intent.HandleSubmit(result)
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("HandleError", func() {
+		var intent *Intent
+
+		BeforeEach(func() {
+			btCtx := &IntentContext{
+				Events:          []*career.CareerEvent{{ID: "1", Date: time.Now(), Text: "Test"}},
+				CLIEventService: &mockEventService{},
+			}
+			var err error
+			intent, err = NewIntent(btCtx)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should store error from error result", func() {
+			testErr := errors.New("test error")
+			result := &screens.ErrorResult{Err: testErr}
+
+			cmd := intent.HandleError(result)
+
+			Expect(cmd).To(BeNil())
+			Expect(intent.deleteError).To(Equal(testErr))
+		})
+	})
+
+	Describe("Remove Event From List", func() {
+		var intent *Intent
+
+		BeforeEach(func() {
+			events := []*career.CareerEvent{
+				{ID: "evt-1", Date: time.Now(), Text: "First"},
+				{ID: "evt-2", Date: time.Now(), Text: "Second"},
+				{ID: "evt-3", Date: time.Now(), Text: "Third"},
+			}
+			btCtx := &IntentContext{
+				Events:          events,
+				CLIEventService: &mockEventService{},
+			}
+			var err error
+			intent, err = NewIntent(btCtx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should remove event from context events", func() {
+			Expect(intent.context.Events).To(HaveLen(3))
+
+			intent.removeEventFromList("evt-2")
+
+			Expect(intent.context.Events).To(HaveLen(2))
+			for _, evt := range intent.context.Events {
+				Expect(evt.ID).NotTo(Equal("evt-2"))
+			}
+		})
+
+		It("should remove event from filtered events", func() {
+			Expect(intent.filteredEvents).To(HaveLen(3))
+
+			intent.removeEventFromList("evt-1")
+
+			Expect(intent.filteredEvents).To(HaveLen(2))
+			for _, evt := range intent.filteredEvents {
+				Expect(evt.ID).NotTo(Equal("evt-1"))
+			}
+		})
+
+		It("should handle removing non-existent event gracefully", func() {
+			Expect(intent.context.Events).To(HaveLen(3))
+
+			intent.removeEventFromList("non-existent")
+
+			Expect(intent.context.Events).To(HaveLen(3))
+		})
+	})
+
+	Describe("Delete Confirmation Handler", func() {
+		var intent *Intent
+		var trackingSvc *trackingEventService
+
+		BeforeEach(func() {
+			events := []*career.CareerEvent{
+				{ID: "del-1", Date: time.Now(), Text: "To Delete"},
+				{ID: "del-2", Date: time.Now(), Text: "Keep This"},
+			}
+			trackingSvc = &trackingEventService{}
+			btCtx := &IntentContext{
+				Events:          events,
+				CLIEventService: trackingSvc,
+			}
+			var err error
+			intent, err = NewIntent(btCtx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+			intent.selectedEvent = events[0]
+		})
+
+		It("should not delete when cancelled", func() {
+			intent.handleDeleteConfirmation(false)
+
+			// Event should still exist.
+			Expect(intent.context.Events).To(HaveLen(2))
+			Expect(trackingSvc.deleteCalledWith).To(BeEmpty())
+		})
+
+		It("should delete event when confirmed", func() {
+			intent.handleDeleteConfirmation(true)
+
+			// Delete should have been called.
+			Expect(trackingSvc.deleteCalledWith).To(Equal("del-1"))
+		})
+
+		It("should handle nil selectedEvent gracefully", func() {
+			intent.selectedEvent = nil
+
+			cmd := intent.handleDeleteConfirmation(true)
+
+			Expect(cmd).To(BeNil())
+			Expect(trackingSvc.deleteCalledWith).To(BeEmpty())
+		})
+
+		It("should store error if delete fails", func() {
+			trackingSvc.deleteError = errors.New("delete failed")
+
+			intent.handleDeleteConfirmation(true)
+
+			Expect(intent.deleteError).To(MatchError("delete failed"))
 		})
 	})
 })
