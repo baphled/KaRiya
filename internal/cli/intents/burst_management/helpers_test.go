@@ -293,6 +293,9 @@ var _ = Describe("Helper Methods", func() {
 		It("should create bursts from accepted suggestions", func() {
 			initialCount := len(intent.GetFilteredBursts())
 
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
+
 			// Create completion message with accepted suggestions.
 			msg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: []burst_fact.BurstSuggestion{
@@ -324,15 +327,18 @@ var _ = Describe("Helper Methods", func() {
 			Expect(newBursts[0].Name).To(Equal("Accepted Burst 1"))
 			Expect(newBursts[0].Description).To(Equal("First accepted suggestion"))
 			Expect(newBursts[0].EventIDs).To(Equal([]string{"e1", "e2"}))
-			Expect(newBursts[0].Confirmed).To(BeFalse())
+			Expect(newBursts[0].Confirmed).To(BeTrue(), "accepted suggestions should be auto-confirmed")
 
 			Expect(newBursts[1].Name).To(Equal("Accepted Burst 2"))
 			Expect(newBursts[1].Description).To(Equal("Second accepted suggestion"))
 			Expect(newBursts[1].EventIDs).To(Equal([]string{"e3", "e4"}))
-			Expect(newBursts[1].Confirmed).To(BeFalse())
+			Expect(newBursts[1].Confirmed).To(BeTrue(), "accepted suggestions should be auto-confirmed")
 		})
 
 		It("should transition to list screen when cancelled", func() {
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
+
 			msg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: nil,
 				Cancelled:           true,
@@ -349,6 +355,9 @@ var _ = Describe("Helper Methods", func() {
 		})
 
 		It("should transition to list screen when no suggestions accepted", func() {
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
+
 			msg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: []burst_fact.BurstSuggestion{},
 				Cancelled:           false,
@@ -366,6 +375,9 @@ var _ = Describe("Helper Methods", func() {
 
 		It("should add bursts to context bursts list", func() {
 			initialContextCount := len(ctx.Bursts)
+
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
 
 			msg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: []burst_fact.BurstSuggestion{
@@ -387,6 +399,9 @@ var _ = Describe("Helper Methods", func() {
 		})
 
 		It("should transition to extracting facts after accepting suggestions", func() {
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
+
 			msg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: []burst_fact.BurstSuggestion{
 					{
@@ -405,6 +420,9 @@ var _ = Describe("Helper Methods", func() {
 		})
 
 		It("should show loading modal during fact extraction after accepting suggestions", func() {
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
+
 			msg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: []burst_fact.BurstSuggestion{
 					{
@@ -426,6 +444,9 @@ var _ = Describe("Helper Methods", func() {
 
 	Describe("handleFactExtractionComplete list refresh", func() {
 		It("should refresh list screen when fact extraction completes with nil selectedBurst", func() {
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
+
 			// First accept a suggestion to create a burst.
 			acceptMsg := burst_management.SuggestionReviewCompleteMsg{
 				AcceptedSuggestions: []burst_fact.BurstSuggestion{
@@ -528,6 +549,9 @@ var _ = Describe("Helper Methods", func() {
 			// This tests the slice bounds bug at helpers.go:672.
 			// If some bursts fail to create, the slice calculation is wrong.
 
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
+
 			suggestions := []burst_fact.BurstSuggestion{
 				{Name: "Burst 1", EventIDs: []string{"e1"}, ConfidenceScore: 0.9},
 				{Name: "Burst 2", EventIDs: []string{"e2"}, ConfidenceScore: 0.85},
@@ -546,6 +570,9 @@ var _ = Describe("Helper Methods", func() {
 
 		It("should track created bursts correctly for fact extraction", func() {
 			initialCount := len(intent.GetFilteredBursts())
+
+			// Set state to suggestion review so the handler will process the message.
+			intent.SetState(burst_management.StateSuggestionReview)
 
 			suggestions := []burst_fact.BurstSuggestion{
 				{Name: "Tracked Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},

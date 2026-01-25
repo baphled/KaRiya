@@ -257,4 +257,45 @@ var _ = Describe("BurstDetailModal", func() {
 			Expect(view).To(ContainSubstring("Unconfirmed Burst"))
 		})
 	})
+
+	// BUG REGRESSION: nil burst handling
+	Describe("Nil Burst Handling", func() {
+		It("should not panic when created with nil burst", func() {
+			Expect(func() {
+				modal = modals.NewBurstDetailModal(nil, theme)
+			}).NotTo(Panic())
+		})
+
+		It("should handle nil burst gracefully in View", func() {
+			modal = modals.NewBurstDetailModal(nil, theme)
+			modal.Show()
+
+			Expect(func() {
+				view := modal.View()
+				Expect(view).NotTo(BeEmpty())
+			}).NotTo(Panic())
+		})
+
+		It("should return nil from GetBurst when created with nil", func() {
+			modal = modals.NewBurstDetailModal(nil, theme)
+			Expect(modal.GetBurst()).To(BeNil())
+		})
+
+		It("should handle SetBurst with nil", func() {
+			modal = modals.NewBurstDetailModal(burst, theme)
+
+			Expect(func() {
+				modal.SetBurst(nil)
+			}).NotTo(Panic())
+		})
+
+		It("should handle Update when burst is nil", func() {
+			modal = modals.NewBurstDetailModal(nil, theme)
+			modal.Show()
+
+			Expect(func() {
+				modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+			}).NotTo(Panic())
+		})
+	})
 })

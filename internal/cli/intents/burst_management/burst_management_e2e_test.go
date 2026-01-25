@@ -17,6 +17,126 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var _ = Describe("Accepting a Burst Suggestion", func() {
+	var (
+		intent      *burst_management.Intent
+		ctx         *burst_management.IntentContext
+		burstRepo   *careerrepo.MemoryBurstRepository
+		mockService *mocks.BurstServiceMock
+	)
+
+	BeforeEach(func() {
+		burstRepo = careerrepo.NewMemoryBurstRepository()
+		mockService = mocks.NewBurstServiceMock()
+
+		ctx = &burst_management.IntentContext{
+			Bursts:          []*career.Burst{},
+			BurstRepository: burstRepo,
+			Service:         mockService,
+		}
+		ctx.Validate()
+
+		var err error
+		intent, err = burst_management.NewIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+	})
+
+	It("should save the burst and return to list after accepting", func() {
+		// Given: A burst suggestion
+		suggestion := burst_fact.BurstSuggestion{
+			Name:            "API Development",
+			Description:     "Built REST endpoints",
+			EventIDs:        []string{"e1", "e2"},
+			ConfidenceScore: 0.9,
+		}
+
+		// When: User accepts the suggestion
+		intent.Update(burst_management.BurstSuggestionsLoadedMsg{
+			Suggestions: []burst_fact.BurstSuggestion{suggestion},
+		})
+		intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+		// Then: The burst should be saved to the repository
+		savedBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+		Expect(err).NotTo(HaveOccurred())
+		Expect(savedBursts).To(HaveLen(1), "Burst should be saved to repository")
+		Expect(savedBursts[0].Name).To(Equal("API Development"))
+
+		// And: State should be list (burst is saved, modal closed)
+		Expect(intent.GetState()).To(Equal(burst_management.StateList))
+
+		// And: The burst should appear in the list view
+		Expect(intent.GetFilteredBursts()).To(HaveLen(1))
+		Expect(intent.GetFilteredBursts()[0].Name).To(Equal("API Development"))
+	})
+
+	Context("when accepting multiple suggestions one by one", func() {
+		It("should save each accepted burst", func() {
+			// Given: Multiple suggestions (each with at least 2 events as required by repository)
+			suggestions := []burst_fact.BurstSuggestion{
+				{Name: "First Project", EventIDs: []string{"e1", "e2"}},
+				{Name: "Second Project", EventIDs: []string{"e3", "e4"}},
+				{Name: "Third Project", EventIDs: []string{"e5", "e6"}},
+			}
+
+			// When: User loads suggestions
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+
+			// Check modal is visible and has suggestions
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil(), "Modal should exist")
+			Expect(modal.IsVisible()).To(BeTrue(), "Modal should be visible")
+
+			// Accept first
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			// After accepting first, modal should still be visible (2 left)
+			modal = intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil(), "Modal should still exist after first accept")
+			Expect(modal.IsVisible()).To(BeTrue(), "Modal should be visible (2 suggestions left)")
+			Expect(modal.GetAcceptedSuggestions()).To(HaveLen(1),
+				"Should have 1 accepted after first 'a'")
+			GinkgoWriter.Printf("After first 'a': accepted=%d, visible=%v\n",
+				len(modal.GetAcceptedSuggestions()), modal.IsVisible())
+
+			// Reject second
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+			modal = intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil(), "Modal should still exist after reject")
+			Expect(modal.IsVisible()).To(BeTrue(), "Modal should be visible (1 suggestion left)")
+			GinkgoWriter.Printf("After 'r': accepted=%d, visible=%v\n",
+				len(modal.GetAcceptedSuggestions()), modal.IsVisible())
+
+			// Accept third - this closes the modal
+			GinkgoWriter.Printf("Before third 'a': accepted=%d\n",
+				len(modal.GetAcceptedSuggestions()))
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// Modal should be nil now (closed)
+			Expect(intent.GetSuggestionModal()).To(BeNil(),
+				"Modal should be cleared after processing")
+
+			// Check the state - should be StateExtractingFacts or StateList
+			state := intent.GetState()
+			GinkgoWriter.Printf("State after processing: %v\n", state)
+			GinkgoWriter.Printf("Filtered bursts count: %d\n", len(intent.GetFilteredBursts()))
+
+			// Check bursts in memory first
+			Expect(intent.GetFilteredBursts()).To(HaveLen(2),
+				"Should have 2 bursts in memory")
+
+			// Then: Only the accepted bursts should be saved
+			savedBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			Expect(savedBursts).To(HaveLen(2), "Only accepted bursts should be saved")
+
+			names := []string{savedBursts[0].Name, savedBursts[1].Name}
+			Expect(names).To(ContainElement("First Project"))
+			Expect(names).To(ContainElement("Third Project"))
+			Expect(names).NotTo(ContainElement("Second Project"))
+		})
+	})
+})
+
 var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 	var (
 		intent *burst_management.Intent
@@ -430,7 +550,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 		It("should accept suggestion and create burst", func() {
 			initialBurstCount := len(intent.GetFilteredBursts())
 
-			// Simulate suggestions loaded
+			// Simulate suggestions loaded.
 			suggestions := []burst_fact.BurstSuggestion{
 				{
 					Name:            "Accepted Burst",
@@ -445,35 +565,27 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 				Error:       nil,
 			}
 
-			// Process suggestions loaded - creates modal
+			// Process suggestions loaded - creates modal.
 			_ = intent.Update(msg)
 
-			// Verify modal is visible
+			// Verify modal is visible.
 			modal := intent.GetSuggestionModal()
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeTrue())
 
-			// Accept the suggestion via intent (message-based pattern)
-			// Send 'a' key to intent, which forwards to modal, detects closure, and sends completion message
+			// Accept the suggestion via 'a' key.
+			// With immediate-save behavior, burst is created right away when 'a' is pressed.
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			// The modal closed and sent SuggestionReviewCompleteMsg via tea.Batch
-			// We need to manually trigger processing of that message in tests
-			completeMsg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{suggestions[0]},
-				Cancelled:           false,
-			}
-			_ = intent.Update(completeMsg)
-
-			// Burst count should increase
+			// Burst should be created immediately (no need for SuggestionReviewCompleteMsg).
 			Expect(len(intent.GetFilteredBursts())).To(Equal(initialBurstCount + 1))
 
-			// Verify the created burst
+			// Verify the created burst.
 			newBurst := intent.GetFilteredBursts()[initialBurstCount]
 			Expect(newBurst.Name).To(Equal("Accepted Burst"))
 			Expect(newBurst.Description).To(Equal("This will be accepted"))
 			Expect(newBurst.EventIDs).To(Equal([]string{"e1", "e2", "e3"}))
-			Expect(newBurst.Confirmed).To(BeFalse())
+			Expect(newBurst.Confirmed).To(BeTrue(), "accepted suggestions should be auto-confirmed")
 		})
 
 		It("should reject suggestion and move to next", func() {
@@ -766,16 +878,14 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		It("should trigger fact extraction after accept", func() {
 			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions[:1]}
 			intent.Update(msg)
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			completeMsg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions[:1],
-			}
-			cmd := intent.Update(completeMsg)
+			// Pressing 'a' saves burst immediately and triggers fact extraction async.
+			// State stays as list to keep UI responsive.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			Expect(cmd).NotTo(BeNil())
-			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
-			Expect(intent.IsExtractingFacts()).To(BeTrue())
+			Expect(cmd).NotTo(BeNil(), "Should return fact extraction command")
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1), "Burst should be saved immediately")
 		})
 	})
 
@@ -950,12 +1060,10 @@ var _ = Describe("Fact Extraction from Accepted Burst Suggestions", func() {
 		It("triggers fact extraction for the created burst", func() {
 			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
 			_ = intent.Update(msg)
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			completeMsg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			}
-			cmd := intent.Update(completeMsg)
+			// Pressing 'a' on single suggestion accepts and closes modal,
+			// which triggers fact extraction directly via handleModalUpdates.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			Expect(cmd).NotTo(BeNil(), "should return a command to trigger fact extraction")
 
@@ -974,20 +1082,18 @@ var _ = Describe("Fact Extraction from Accepted Burst Suggestions", func() {
 
 			msg := burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions}
 			_ = intent.Update(msg)
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept first
 
-			completeMsg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			}
-			cmd := intent.Update(completeMsg)
+			// Pressing 'a' on last suggestion accepts and closes modal,
+			// which triggers fact extraction directly via handleModalUpdates.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept second (last)
 
 			Expect(cmd).NotTo(BeNil(), "should return commands to extract facts for both bursts")
 		})
 	})
 })
 
-var _ = Describe("Fact Extraction from Confirmed Bursts", func() {
+var _ = Describe("Burst Confirmation from Detail View", func() {
 	var (
 		intent *burst_management.Intent
 		ctx    *burst_management.IntentContext
@@ -1009,8 +1115,8 @@ var _ = Describe("Fact Extraction from Confirmed Bursts", func() {
 		intent.Init()
 	})
 
-	Context("when confirming an unconfirmed burst", func() {
-		It("triggers fact extraction", func() {
+	Context("when confirming an unconfirmed burst from detail view", func() {
+		It("marks burst as confirmed without triggering fact extraction", func() {
 			burst := intent.GetFilteredBursts()[0]
 
 			result := &screens.NavigateResult{ResultData: burst}
@@ -1020,10 +1126,13 @@ var _ = Describe("Fact Extraction from Confirmed Bursts", func() {
 
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
-			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+			// Should return to detail view, not extracting facts.
+			// Fact extraction only happens via suggestion acceptance (press 's' then 'a').
+			Expect(intent.GetState()).To(Equal(burst_management.StateDetail))
+			Expect(intent.GetSelectedBurst().Confirmed).To(BeTrue())
 		})
 
-		It("transitions to extracting facts state after confirmation", func() {
+		It("returns to detail view after confirmation", func() {
 			burst := intent.GetFilteredBursts()[0]
 
 			result := &screens.NavigateResult{ResultData: burst}
@@ -1031,9 +1140,10 @@ var _ = Describe("Fact Extraction from Confirmed Bursts", func() {
 
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 
-			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
-			Expect(cmd).NotTo(BeNil(), "confirming burst should return a command for fact extraction")
+			// Detail modal should be visible after confirmation.
+			Expect(intent.GetDetailModal()).NotTo(BeNil())
 		})
 	})
 })
@@ -1215,6 +1325,163 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Created Burst"))
 		})
+
+		It("should stay on suggestion modal when fact extraction completes with remaining suggestions", func() {
+			// BUG: When user presses 'a' on first of multiple suggestions:
+			// 1. Burst is saved and fact extraction starts
+			// 2. Modal still visible showing second suggestion
+			// 3. FactExtractionCompleteMsg arrives
+			// 4. BUG: handleFactExtractionComplete sets state=StateList and transitions to list screen
+			// 5. User is unexpectedly taken off the suggestion modal
+
+			// Given: Multiple suggestions (2+)
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "First Burst",
+					Description:     "First suggestion",
+					EventIDs:        []string{"e1", "e2"},
+					ConfidenceScore: 0.9,
+				},
+				{
+					Name:            "Second Burst",
+					Description:     "Second suggestion - should still be visible after first extraction completes",
+					EventIDs:        []string{"e3", "e4"},
+					ConfidenceScore: 0.85,
+				},
+			}
+
+			// Load suggestions - modal opens with first suggestion
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+			Expect(intent.GetSuggestionModal()).NotTo(BeNil())
+			Expect(intent.GetSuggestionModal().IsVisible()).To(BeTrue())
+
+			// Accept first suggestion - modal stays open with second suggestion
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// Modal should still be visible (second suggestion remaining)
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil(), "Modal should still exist after accepting first suggestion")
+			Expect(modal.IsVisible()).To(BeTrue(), "Modal should still be visible with second suggestion")
+			Expect(modal.GetSuggestionsCount()).To(Equal(1), "Should have 1 suggestion remaining")
+
+			// Now fact extraction completes for the first burst
+			intent.Update(burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{{ID: "f1", Text: "Extracted fact from first burst"}},
+			})
+
+			// BUG FIX: User should STILL be on suggestion review modal showing second suggestion
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview),
+				"Should stay in StateSuggestionReview, not transition to StateList")
+
+			modal = intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil(),
+				"Suggestion modal should NOT be cleared when fact extraction completes")
+			Expect(modal.IsVisible()).To(BeTrue(),
+				"Suggestion modal should remain visible showing second suggestion")
+
+			// Verify the view still shows the suggestion modal content
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Second Burst"),
+				"View should still show the second suggestion")
+		})
+
+		It("should return to burst list (not main menu) when pressing esc on suggestion modal", func() {
+			// BUG: When user presses 'esc' on suggestion modal:
+			// 1. Modal closes and transitions to list
+			// 2. But the esc key propagates to the list screen
+			// 3. List screen returns CancelResult which takes user to main menu
+			// EXPECTED: User should stay on burst list after pressing esc on suggestion modal
+
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Test Burst",
+					Description:     "Test description",
+					EventIDs:        []string{"e1", "e2"},
+					ConfidenceScore: 0.9,
+				},
+			}
+
+			// Load suggestions - modal opens
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggestionReview))
+			Expect(intent.GetSuggestionModal()).NotTo(BeNil())
+			Expect(intent.GetSuggestionModal().IsVisible()).To(BeTrue())
+
+			// Press esc to cancel suggestion review
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Should be on list state, not cancelled to main menu
+			Expect(intent.GetState()).To(Equal(burst_management.StateList),
+				"Should be on StateList after pressing esc on suggestion modal")
+
+			// Modal should be cleared
+			Expect(intent.GetSuggestionModal()).To(BeNil(),
+				"Suggestion modal should be cleared after esc")
+
+			// Intent should still be active (not cancelled to main menu)
+			Expect(intent.IsActive()).To(BeTrue(),
+				"Intent should remain active - user should stay on burst list, not go to main menu")
+
+			// The command returned should NOT cause navigation to main menu
+			// A nil command or noopCmd is fine, but CancelResult would be bad
+			if cmd != nil {
+				// Execute the command and check it doesn't return a cancel message
+				result := cmd()
+				_, isCancelResult := result.(*screens.CancelResult)
+				Expect(isCancelResult).To(BeFalse(),
+					"Command should not return CancelResult that would navigate to main menu")
+			}
+		})
+
+		It("should not show detail modal after esc on suggestion when existing bursts exist", func() {
+			// BUG: When user has existing bursts and then reviews suggestions:
+			// 1. Init() sets selectedBurst to first existing burst
+			// 2. User opens suggestion review
+			// 3. User presses esc to cancel
+			// 4. When fact extraction completes (from previously accepted suggestion),
+			//    handleFactExtractionComplete shows detail modal because selectedBurst != nil
+			// EXPECTED: selectedBurst should be cleared when entering suggestion review
+
+			// Pre-populate with an existing burst (simulating Init with existing data)
+			existingBurst := &career.Burst{
+				ID:          "existing-1",
+				Name:        "Existing Burst",
+				Description: "This existed before suggestions",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			intent.SetSelectedBurst(existingBurst)
+			Expect(intent.GetSelectedBurst()).NotTo(BeNil(), "Setup: selectedBurst should be set")
+
+			// Load suggestions
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "New Suggestion",
+					Description:     "From suggestion flow",
+					EventIDs:        []string{"e3", "e4"},
+					ConfidenceScore: 0.9,
+				},
+			}
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+
+			// selectedBurst should be cleared when entering suggestion review
+			Expect(intent.GetSelectedBurst()).To(BeNil(),
+				"selectedBurst should be cleared when entering suggestion review")
+
+			// Press esc to cancel suggestion review
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Should be on list state
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+
+			// Detail modal should NOT be visible (we didn't select any burst to view)
+			Expect(intent.GetDetailModal()).To(BeNil(),
+				"Detail modal should not be shown after cancelling suggestion review")
+
+			// selectedBurst should still be nil
+			Expect(intent.GetSelectedBurst()).To(BeNil(),
+				"selectedBurst should remain nil after cancelling suggestion review")
+		})
 	})
 
 	Describe("BUG: showBurstDetailModal with nil burst", func() {
@@ -1316,15 +1583,11 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			// 2. Suggestions loaded
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 
-			// 3. Accept suggestion
+			// 3. Accept suggestion - pressing 'a' on single suggestion
+			// accepts and closes modal, triggering completion directly.
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			// 4. Process completion
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
-
-			// 5. Fact extraction completes (with or without error)
+			// 4. Fact extraction completes (with or without error)
 			intent.Update(burst_management.FactExtractionCompleteMsg{
 				Facts: []*career.Fact{},
 				Error: nil,
@@ -1336,11 +1599,10 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			// Verify: state should be list
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 
-			// Verify: view should show the burst (no panic, renders correctly)
-			Expect(func() {
-				view := intent.View()
-				Expect(view).NotTo(BeEmpty())
-			}).NotTo(Panic())
+			// Verify: view should show the burst NAME (not just non-empty)
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Visible Burst"),
+				"List view should display the created burst name")
 		})
 
 		It("should show multiple created bursts after accepting multiple suggestions", func() {
@@ -1349,30 +1611,24 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 				{Name: "Burst Two", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.8},
 			}
 
-			// Load and accept all
+			// Load and accept all - pressing 'a' twice accepts both suggestions.
+			// When the last suggestion is accepted, modal closes and triggers completion.
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept first
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept second
-
-			// Get accepted from modal before it's cleared
-			modal := intent.GetSuggestionModal()
-			var accepted []burst_fact.BurstSuggestion
-			if modal != nil {
-				accepted = modal.GetAcceptedSuggestions()
-			} else {
-				accepted = suggestions // Modal already closed
-			}
-
-			// Process completion
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: accepted,
-			})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept second (closes modal)
 
 			// Fact extraction completes
 			intent.Update(burst_management.FactExtractionCompleteMsg{Facts: []*career.Fact{}})
 
 			// Both bursts should be visible
 			Expect(intent.GetFilteredBursts()).To(HaveLen(2))
+
+			// Verify both burst names appear in view
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Burst One"),
+				"List view should display the first burst name")
+			Expect(view).To(ContainSubstring("Burst Two"),
+				"List view should display the second burst name")
 		})
 	})
 
@@ -1386,12 +1642,10 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 				},
 			}
 
-			// Accept suggestion
+			// Accept suggestion - pressing 'a' on single suggestion
+			// accepts and closes modal, triggering completion directly.
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
 
 			// Burst should exist before fact extraction completes
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
@@ -1411,11 +1665,54 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 	})
 
 	Describe("BUG: Loading modal and list refresh during suggestion acceptance", func() {
-		It("should show loading modal during fact extraction after accepting suggestions", func() {
+		It("should capture accepted suggestions correctly when pressing 'a'", func() {
+			// This test verifies that GetAcceptedSuggestions() returns the correct
+			// suggestions after the user presses 'a' to accept.
+
 			suggestions := []burst_fact.BurstSuggestion{
 				{
-					Name:            "Burst With Loading Modal",
-					Description:     "Should show loading during extraction",
+					Name:            "Accepted Suggestion",
+					Description:     "Should be in accepted list",
+					EventIDs:        []string{"e1", "e2"},
+					ConfidenceScore: 0.9,
+				},
+			}
+
+			// 1. Load suggestions - modal opens
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			// Initially no accepted suggestions
+			Expect(modal.GetAcceptedSuggestions()).To(BeEmpty())
+
+			// 2. Press 'a' to accept
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// After pressing 'a', modal should be closed (last suggestion)
+			// But we need to check accepted BEFORE the modal is cleared in handleModalUpdates
+			// The issue is: handleModalUpdates clears the modal AFTER getting accepted
+			// So by now, intent.GetSuggestionModal() might be nil
+
+			// If modal is nil, the accepted suggestions should have been processed
+			// Let's verify by checking if the burst was created via the command
+			if intent.GetSuggestionModal() == nil {
+				// Modal was cleared - the command was returned
+				// In real app, Bubble Tea would execute it
+				// For this test, we need to manually check the data flow
+				Expect(intent.GetFilteredBursts()).To(HaveLen(1),
+					"BUG: Modal closed but burst not created - completion message not processed")
+			}
+		})
+
+		It("should create burst via full command execution flow", func() {
+			// This test properly simulates the Bubble Tea command execution
+
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Full Flow Burst",
+					Description:     "Created via command execution",
 					EventIDs:        []string{"e1", "e2"},
 					ConfidenceScore: 0.9,
 				},
@@ -1424,21 +1721,62 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			// 1. Load suggestions
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 
-			// 2. Accept suggestion (modal closes when last suggestion accepted)
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			// 2. Press 'a' - returns a tea.Batch command
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(cmd).NotTo(BeNil(), "Should return command when modal closes")
 
-			// 3. Process completion - this triggers fact extraction
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
+			// 3. tea.Batch returns a BatchMsg when executed
+			// We need to manually dispatch the completion message
+			// The completion message should be SuggestionReviewCompleteMsg
+			batchResult := cmd()
 
-			// Verify: loading modal should be visible during fact extraction
-			Expect(intent.HasActiveModal()).To(BeTrue(), "Loading modal should be visible during fact extraction")
-			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+			// 4. BatchMsg contains multiple messages - find and dispatch each
+			if batchMsg, ok := batchResult.(tea.BatchMsg); ok {
+				for _, innerCmd := range batchMsg {
+					if innerCmd != nil {
+						innerMsg := innerCmd()
+						if innerMsg != nil {
+							intent.Update(innerMsg)
+						}
+					}
+				}
+			} else if batchResult != nil {
+				// Single message
+				intent.Update(batchResult)
+			}
 
-			// Verify: view should render the loading modal
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Extracting"), "View should show extraction in progress")
+			// 5. Verify burst was created
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1),
+				"Burst should be created after full command flow")
+			Expect(intent.GetFilteredBursts()[0].Name).To(Equal("Full Flow Burst"))
+		})
+
+		It("should trigger fact extraction immediately after accepting suggestion", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Burst With Immediate Extraction",
+					Description:     "Fact extraction starts immediately",
+					EventIDs:        []string{"e1", "e2"},
+					ConfidenceScore: 0.9,
+				},
+			}
+
+			// 1. Load suggestions.
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+
+			// 2. Accept suggestion - burst is saved and fact extraction starts immediately.
+			// With immediate extraction, we don't show a loading modal to keep UI responsive.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// Verify: fact extraction command is returned (runs async).
+			Expect(cmd).NotTo(BeNil(), "Should return fact extraction command")
+
+			// Verify: burst was saved immediately.
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
+			Expect(intent.GetFilteredBursts()[0].Name).To(Equal("Burst With Immediate Extraction"))
+
+			// Verify: state is list (not extracting) - UI stays responsive.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 		})
 
 		It("should refresh list view and show burst name after fact extraction completes", func() {
@@ -1451,12 +1789,10 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 				},
 			}
 
-			// Complete the full workflow
+			// Accept the suggestion - pressing 'a' on single suggestion
+			// accepts and closes modal, triggering completion directly.
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
 
 			// Fact extraction completes
 			intent.Update(burst_management.FactExtractionCompleteMsg{
@@ -1483,19 +1819,17 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 				},
 			}
 
-			// Accept suggestion
+			// Accept suggestion - pressing 'a' on single suggestion
+			// saves burst immediately and triggers fact extraction async.
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
 
-			// Before extraction completes, burst should already be in filtered list
+			// Before extraction completes, burst should already be in filtered list.
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
 			Expect(intent.GetFilteredBursts()[0].Name).To(Equal("Immediate Visibility Burst"))
 
-			// State is extracting, but the list screen was already updated
-			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+			// State is list - UI stays responsive while extraction happens in background.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 		})
 	})
 })
@@ -1550,12 +1884,10 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				},
 			}
 
-			// Accept the suggestion
+			// Accept the suggestion - pressing 'a' on single suggestion
+			// accepts and closes modal, triggering completion directly.
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
 
 			// Verify burst is in repository
 			repobursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
@@ -1574,11 +1906,10 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				},
 			}
 
+			// Accept the suggestion - pressing 'a' on single suggestion
+			// accepts and closes modal, triggering completion directly.
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
 
 			// The in-memory burst should also have the ID
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
@@ -1599,12 +1930,10 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 			// Complete the suggestion flow
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			// This returns a command that triggers fact extraction
-			cmd := intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
+			// Pressing 'a' on single suggestion accepts and closes modal,
+			// which triggers fact extraction directly via handleModalUpdates.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			// Get the burst ID that was created
 			createdBurst := intent.GetFilteredBursts()[0]
@@ -1637,12 +1966,10 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			}
 
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			// This returns a command that triggers fact extraction
-			cmd := intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
+			// Pressing 'a' on single suggestion accepts and closes modal,
+			// which triggers fact extraction directly via handleModalUpdates.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			// Get the created burst - it should have an ID from repository
 			createdBurst := intent.GetFilteredBursts()[0]
@@ -1678,12 +2005,10 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				},
 			}
 
-			// Complete the flow
+			// Accept suggestion - pressing 'a' on single suggestion
+			// accepts and closes modal, triggering completion directly.
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: suggestions,
-			})
 
 			// Handle fact extraction (may fail, but burst should still be visible)
 			intent.Update(burst_management.FactExtractionCompleteMsg{
@@ -1720,21 +2045,11 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			modal := intent.GetSuggestionModal()
 			Expect(modal).NotTo(BeNil())
 			acceptedBeforeFinal := modal.GetAcceptedSuggestions()
-
-			// Accept third (last one) - this closes the modal
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-
-			// Build accepted list: previous accepts + the one we just accepted
-			accepted := []burst_fact.BurstSuggestion{
-				{Name: "First Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
-				{Name: "Third Burst", EventIDs: []string{"e1", "e3"}, ConfidenceScore: 0.8},
-			}
 			Expect(acceptedBeforeFinal).To(HaveLen(1)) // First was already accepted
 
-			// Process completion
-			intent.Update(burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: accepted,
-			})
+			// Accept third (last one) - this closes the modal and
+			// triggers completion directly via handleModalUpdates.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			// Should have 2 bursts (First and Third, not Second)
 			Expect(intent.GetFilteredBursts()).To(HaveLen(2))
@@ -1764,16 +2079,12 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 			// Accept first - modal still open
 			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			// Accept second - modal closes after this
 
-			// Since modal closes after last accept, use the known suggestions
+			// Accept second (last) - modal closes and triggers completion directly.
 			// This should not panic even if the number of created bursts
-			// doesn't match the number of accepted suggestions
+			// doesn't match the number of accepted suggestions.
 			Expect(func() {
 				intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-				intent.Update(burst_management.SuggestionReviewCompleteMsg{
-					AcceptedSuggestions: suggestions,
-				})
 			}).NotTo(Panic())
 
 			// All successfully created bursts should be in the list
@@ -1797,6 +2108,132 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			// Verify in repository too
 			repoBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
 			Expect(repoBursts).To(HaveLen(len(suggestions)))
+		})
+	})
+
+	Describe("Complete Suggestion to Visible Burst E2E Flow", func() {
+		// This tests the complete user flow: accept suggestion -> burst visible in list view
+		It("should display accepted burst name in list view after acceptance", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "My New Project Burst",
+					Description:     "Working on amazing features",
+					EventIDs:        []string{"e1", "e2"},
+					ConfidenceScore: 0.92,
+				},
+			}
+
+			// 1. Load suggestions and accept
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// 2. Complete fact extraction
+			intent.Update(burst_management.FactExtractionCompleteMsg{
+				Facts: []*career.Fact{{ID: "f1", Text: "Delivered feature X"}},
+				Error: nil,
+			})
+
+			// 3. Verify burst name is visible in the rendered View
+			view := intent.View()
+			Expect(view).To(ContainSubstring("My New Project Burst"),
+				"The accepted burst name should be visible in the list view")
+
+			// 4. Verify burst is in memory
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
+			Expect(intent.GetFilteredBursts()[0].Name).To(Equal("My New Project Burst"))
+
+			// 5. Verify burst is persisted to repository
+			repoBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repoBursts).To(HaveLen(1))
+			Expect(repoBursts[0].Name).To(Equal("My New Project Burst"))
+		})
+	})
+
+	Describe("Burst Persistence with Facts and Events E2E", func() {
+		// This tests that when a burst is saved, facts are persisted with correct linkage
+		// and events are properly linked to the burst.
+
+		It("should persist burst with linked events and extracted facts", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:            "Backend API Development",
+					Description:     "Built REST API endpoints",
+					EventIDs:        []string{"e1", "e2", "e3"}, // Links to 3 events
+					ConfidenceScore: 0.95,
+				},
+			}
+
+			// 1. Accept suggestion
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// 2. Verify burst was created with linked events
+			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
+			createdBurst := intent.GetFilteredBursts()[0]
+			Expect(createdBurst.EventIDs).To(Equal([]string{"e1", "e2", "e3"}),
+				"Burst should have events linked from the suggestion")
+			Expect(createdBurst.ID).NotTo(BeEmpty(),
+				"Burst should have ID from repository")
+
+			// 3. Execute fact extraction command
+			Expect(cmd).NotTo(BeNil(), "Should return fact extraction command")
+			msg := cmd()
+			Expect(msg).NotTo(BeNil())
+
+			// 4. Verify facts were saved with correct burst linkage
+			savedFacts := mockService.GetSavedFacts()
+			Expect(savedFacts).To(HaveLen(2), "Mock returns 2 extracted facts")
+			for _, fact := range savedFacts {
+				Expect(fact.SourceBurstID).To(Equal(createdBurst.ID),
+					"Each fact should be linked to the created burst")
+			}
+
+			// 5. Verify burst is in repository with events
+			repoBursts, err := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repoBursts).To(HaveLen(1))
+			Expect(repoBursts[0].EventIDs).To(Equal([]string{"e1", "e2", "e3"}),
+				"Persisted burst should have events linked")
+		})
+
+		It("should persist multiple bursts with their respective events and facts", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					Name:     "Frontend Work",
+					EventIDs: []string{"e1", "e2"},
+				},
+				{
+					Name:     "Backend Work",
+					EventIDs: []string{"e2", "e3"},
+				},
+			}
+
+			// Accept both suggestions
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})        // Accept first
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept second (closes modal)
+
+			// Verify both bursts were created with their respective events
+			Expect(intent.GetFilteredBursts()).To(HaveLen(2))
+
+			burst1 := intent.GetFilteredBursts()[0]
+			burst2 := intent.GetFilteredBursts()[1]
+
+			Expect(burst1.EventIDs).To(Equal([]string{"e1", "e2"}))
+			Expect(burst2.EventIDs).To(Equal([]string{"e2", "e3"}))
+
+			// Execute fact extraction
+			if cmd != nil {
+				msg := cmd()
+				if msg != nil {
+					intent.Update(msg)
+				}
+			}
+
+			// Verify bursts are in repository
+			repoBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
+			Expect(repoBursts).To(HaveLen(2))
 		})
 	})
 

@@ -238,6 +238,10 @@ func SetupShared() {
 	// Create application model
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
+	// BUG FIX: Set terminal dimensions to ensure modals render correctly.
+	// Without this, viewport calculations may use 0 height, showing only last lines.
+	model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
 	sharedEnv = &TestEnv{
 		T:          nil, // Set per-test in GetSharedEnv
 		Model:      model,

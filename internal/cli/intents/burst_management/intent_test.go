@@ -1,13 +1,18 @@
 package burst_management_test
 
 import (
+	"context"
+	"errors"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/testutil/mocks"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -571,8 +576,8 @@ var _ = Describe("Intent Methods", func() {
 
 			// Burst should now be confirmed.
 			Expect(intent.GetSelectedBurst().Confirmed).To(BeTrue())
-			// Should transition to extracting facts state.
-			Expect(intent.GetState()).To(Equal(burst_management.StateExtractingFacts))
+			// Should return to detail view (fact extraction only happens via suggestion acceptance).
+			Expect(intent.GetState()).To(Equal(burst_management.StateDetail))
 		})
 
 		It("should cancel confirmation when 'n' is pressed", func() {
@@ -868,6 +873,1441 @@ var _ = Describe("Intent Methods", func() {
 
 			// No bursts should be created.
 			Expect(intent.GetFilteredBursts()).To(HaveLen(initialCount))
+		})
+	})
+
+	Describe("View Rendering", func() {
+		var (
+			intent *burst_management.Intent
+			ctx    *burst_management.IntentContext
+		)
+
+		BeforeEach(func() {
+			testBurst := &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test description",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			ctx = &burst_management.IntentContext{
+				Bursts: []*career.Burst{testBurst},
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should render inactive message when not active", func() {
+			intent.Deactivate()
+			view := intent.View()
+			Expect(view).To(ContainSubstring("not active"))
+		})
+
+		It("should render view in StateList", func() {
+			intent.SetState(burst_management.StateList)
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateDetail with selected burst", func() {
+			intent.SetState(burst_management.StateDetail)
+			intent.SetSelectedBurst(ctx.Bursts[0])
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateDetailEvents", func() {
+			intent.SetState(burst_management.StateDetailEvents)
+			intent.SetSelectedBurst(ctx.Bursts[0])
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateDetailFacts", func() {
+			intent.SetState(burst_management.StateDetailFacts)
+			intent.SetSelectedBurst(ctx.Bursts[0])
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateEdit", func() {
+			intent.SetState(burst_management.StateEdit)
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateDeleteConfirm", func() {
+			intent.SetState(burst_management.StateDeleteConfirm)
+			intent.SetSelectedBurst(ctx.Bursts[0])
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateConfirm", func() {
+			intent.SetState(burst_management.StateConfirm)
+			intent.SetSelectedBurst(ctx.Bursts[0])
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateExtractingFacts", func() {
+			intent.SetState(burst_management.StateExtractingFacts)
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateSuggesting", func() {
+			intent.SetState(burst_management.StateSuggesting)
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		It("should render view in StateSuggestionReview", func() {
+			intent.SetState(burst_management.StateSuggestionReview)
+			view := intent.View()
+			Expect(view).NotTo(BeEmpty())
+		})
+
+		Context("state-specific content fallback", func() {
+			// These tests force the getStateContent path by having no activeScreen.
+
+			It("should show 'No bursts found' when list is empty", func() {
+				emptyCtx := &burst_management.IntentContext{
+					Bursts: []*career.Burst{},
+				}
+				emptyCtx.Validate()
+				emptyIntent, err := burst_management.NewIntent(emptyCtx)
+				Expect(err).NotTo(HaveOccurred())
+				emptyIntent.Init()
+
+				// Clear active screen to force fallback.
+				emptyIntent.SetState(burst_management.StateList)
+				view := emptyIntent.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+
+			It("should handle StateDetail with no selected burst", func() {
+				intent.SetState(burst_management.StateDetail)
+				intent.SetSelectedBurst(nil)
+				view := intent.View()
+				Expect(view).NotTo(BeEmpty())
+			})
+		})
+	})
+
+	Describe("Handler Functions", func() {
+		var (
+			intent *burst_management.Intent
+			ctx    *burst_management.IntentContext
+		)
+
+		BeforeEach(func() {
+			testBurst := &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test description",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			ctx = &burst_management.IntentContext{
+				Bursts: []*career.Burst{testBurst},
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should handle HandleSubmit gracefully", func() {
+			result := &screens.SubmitResult{
+				FormData: map[string]interface{}{"test": "data"},
+			}
+			cmd := intent.HandleSubmit(result)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle HandleError and show error modal", func() {
+			result := &screens.ErrorResult{
+				Err: errors.New("test error"),
+			}
+			cmd := intent.HandleError(result)
+			Expect(cmd).To(BeNil())
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should return extracted facts count", func() {
+			// The count should be 0 initially.
+			count := intent.GetExtractedFactsCount()
+			Expect(count).To(Equal(0))
+		})
+	})
+
+	Describe("Action Data Handling via HandleNavigate", func() {
+		var (
+			intent *burst_management.Intent
+			ctx    *burst_management.IntentContext
+			burst  *career.Burst
+		)
+
+		BeforeEach(func() {
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test description",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			ctx = &burst_management.IntentContext{
+				Bursts: []*career.Burst{burst},
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should handle 'add' action and transition to edit state", func() {
+			actionData := map[string]interface{}{
+				"action": "add",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateEdit))
+		})
+
+		It("should handle 'edit' action with burst and open edit modal", func() {
+			actionData := map[string]interface{}{
+				"action": "edit",
+				"burst":  burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateEdit))
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+			Expect(intent.HasVisibleEditModal()).To(BeTrue())
+		})
+
+		It("should handle 'edit' action without burst gracefully", func() {
+			actionData := map[string]interface{}{
+				"action": "edit",
+				// No burst provided.
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle 'delete' action with burst and open delete modal", func() {
+			actionData := map[string]interface{}{
+				"action": "delete",
+				"burst":  burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateDeleteConfirm))
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+			Expect(intent.HasVisibleDeleteModal()).To(BeTrue())
+		})
+
+		It("should handle 'delete' action with long burst name (truncated)", func() {
+			longNameBurst := &career.Burst{
+				ID:          "burst-long",
+				Name:        "This is a very long burst name that exceeds fifty characters and should be truncated",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			actionData := map[string]interface{}{
+				"action": "delete",
+				"burst":  longNameBurst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateDeleteConfirm))
+			Expect(intent.HasVisibleDeleteModal()).To(BeTrue())
+		})
+
+		It("should handle 'delete' action without burst gracefully", func() {
+			actionData := map[string]interface{}{
+				"action": "delete",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle 'suggest' action and attempt burst detection", func() {
+			actionData := map[string]interface{}{
+				"action": "suggest",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			// Without a service, startBurstDetection shows error and returns to list.
+			// The state is set to StateSuggesting first, then reset to StateList on error.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			// Error modal should be visible since no service is available.
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should handle 'view_events' action with burst", func() {
+			actionData := map[string]interface{}{
+				"action": "view_events",
+				"burst":  burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateDetailEvents))
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+		})
+
+		It("should handle 'view_events' action without burst gracefully", func() {
+			actionData := map[string]interface{}{
+				"action": "view_events",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle 'view_facts' action with burst", func() {
+			actionData := map[string]interface{}{
+				"action": "view_facts",
+				"burst":  burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateDetailFacts))
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+		})
+
+		It("should handle 'view_facts' action without burst gracefully", func() {
+			actionData := map[string]interface{}{
+				"action": "view_facts",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle 'confirm' action with burst and open confirm modal", func() {
+			actionData := map[string]interface{}{
+				"action": "confirm",
+				"burst":  burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateConfirm))
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+			Expect(intent.HasVisibleConfirmModal()).To(BeTrue())
+		})
+
+		It("should handle 'confirm' action with long burst name (truncated)", func() {
+			longNameBurst := &career.Burst{
+				ID:          "burst-long",
+				Name:        "This is a very long burst name that exceeds fifty characters and should be truncated",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			actionData := map[string]interface{}{
+				"action": "confirm",
+				"burst":  longNameBurst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateConfirm))
+			Expect(intent.HasVisibleConfirmModal()).To(BeTrue())
+		})
+
+		It("should handle 'confirm' action without burst gracefully", func() {
+			actionData := map[string]interface{}{
+				"action": "confirm",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle unknown action gracefully", func() {
+			actionData := map[string]interface{}{
+				"action": "unknown_action",
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).To(BeNil())
+		})
+
+		It("should handle action data without action key gracefully", func() {
+			actionData := map[string]interface{}{
+				"burst": burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			cmd := intent.HandleNavigate(result)
+			Expect(cmd).To(BeNil())
+		})
+	})
+
+	Describe("View Fallback Rendering", func() {
+		It("should render fallback view when activeScreen is nil", func() {
+			ctx := &burst_management.IntentContext{
+				Bursts: []*career.Burst{},
+			}
+			ctx.Validate()
+
+			intent, err := burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Activate intent without calling Init() to have no activeScreen.
+			intent.SetState(burst_management.StateList)
+
+			// View should still render (fallback path).
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Loading..."))
+		})
+	})
+
+	Describe("HandleCancel State Transitions", func() {
+		var (
+			intent *burst_management.Intent
+			ctx    *burst_management.IntentContext
+			burst  *career.Burst
+		)
+
+		BeforeEach(func() {
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test description",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			ctx = &burst_management.IntentContext{
+				Bursts: []*career.Burst{burst},
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should cancel intent when in StateList with no active modals", func() {
+			intent.SetState(burst_management.StateList)
+			result := &screens.CancelResult{}
+			intent.HandleCancel(result)
+			// Intent should be cancelled.
+			intentResult := intent.Result()
+			Expect(intentResult).NotTo(BeNil())
+			Expect(intentResult.IsCancelled()).To(BeTrue())
+		})
+
+		It("should ignore cancel when in StateList with detail modal active", func() {
+			intent.SetState(burst_management.StateList)
+			// Navigate to detail to activate detail modal.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			Expect(intent.GetDetailModal()).NotTo(BeNil())
+
+			// Try to cancel - should be ignored.
+			cancelResult := &screens.CancelResult{}
+			intent.HandleCancel(cancelResult)
+
+			// Intent should NOT be cancelled (modal is active).
+			// Result is nil when intent hasn't been completed/cancelled.
+			intentResult := intent.Result()
+			Expect(intentResult).To(BeNil())
+		})
+
+		It("should return to list from StateDetail", func() {
+			intent.SetState(burst_management.StateDetail)
+			result := &screens.CancelResult{}
+			intent.HandleCancel(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should return to list from StateDetailEvents", func() {
+			intent.SetState(burst_management.StateDetailEvents)
+			result := &screens.CancelResult{}
+			intent.HandleCancel(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should return to list from StateDetailFacts", func() {
+			intent.SetState(burst_management.StateDetailFacts)
+			result := &screens.CancelResult{}
+			intent.HandleCancel(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should return to list and clear delete modal from StateDeleteConfirm", func() {
+			// Set up delete state with modal.
+			intent.SetState(burst_management.StateDeleteConfirm)
+			actionData := map[string]interface{}{
+				"action": "delete",
+				"burst":  burst,
+			}
+			navResult := &screens.NavigateResult{ResultData: actionData}
+			intent.HandleNavigate(navResult)
+			Expect(intent.HasVisibleDeleteModal()).To(BeTrue())
+
+			// Now cancel.
+			cancelResult := &screens.CancelResult{}
+			intent.HandleCancel(cancelResult)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+			Expect(intent.HasVisibleDeleteModal()).To(BeFalse())
+		})
+
+		It("should return to list from default/unknown state", func() {
+			// Use StateEdit as an example of a state that falls into default.
+			intent.SetState(burst_management.StateEdit)
+			result := &screens.CancelResult{}
+			intent.HandleCancel(result)
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should ignore cancel when loadingEvents is true", func() {
+			intent.SetState(burst_management.StateList)
+			// Simulate loading events state by navigating to detail and pressing 'v'.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			// Press 'v' to trigger events loading.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+
+			// Try to cancel.
+			cancelResult := &screens.CancelResult{}
+			intent.HandleCancel(cancelResult)
+
+			// Intent should NOT be cancelled (loading in progress).
+			// Result is nil when intent hasn't been completed/cancelled.
+			intentResult := intent.Result()
+			Expect(intentResult).To(BeNil())
+		})
+	})
+
+	Describe("Context CRUD Operations", func() {
+		var ctx *burst_management.IntentContext
+
+		BeforeEach(func() {
+			ctx = &burst_management.IntentContext{
+				Bursts: []*career.Burst{},
+			}
+			ctx.Validate()
+		})
+
+		It("should handle CreateBurst without repository", func() {
+			burst := &career.Burst{
+				ID:          "new-burst",
+				Name:        "New Burst",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			err := ctx.CreateBurst(burst)
+			// Without repository, should return nil (no-op).
+			Expect(err).To(BeNil())
+		})
+
+		It("should handle UpdateBurst without repository", func() {
+			burst := &career.Burst{
+				ID:          "burst-1",
+				Name:        "Updated Burst",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			err := ctx.UpdateBurst(burst)
+			// Without repository, should return nil (no-op).
+			Expect(err).To(BeNil())
+		})
+
+		It("should handle DeleteBurst without repository", func() {
+			err := ctx.DeleteBurst("burst-1")
+			// Without repository, should return nil (no-op).
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe("Service Integration Tests", func() {
+		var (
+			intent      *burst_management.Intent
+			ctx         *burst_management.IntentContext
+			mockService *mocks.BurstServiceMock
+			burst       *career.Burst
+			events      []*career.CareerEvent
+		)
+
+		BeforeEach(func() {
+			events = []*career.CareerEvent{
+				{ID: "e1", Text: "First event text"},
+				{ID: "e2", Text: "Second event text"},
+			}
+
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test description",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			mockService = mocks.NewBurstServiceMock().SetEvents(events)
+
+			ctx = &burst_management.IntentContext{
+				Bursts:  []*career.Burst{burst},
+				Service: mockService,
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should load burst events via view_events action with service", func() {
+			actionData := map[string]interface{}{
+				"action": "view_events",
+				"burst":  burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateDetailEvents))
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+		})
+
+		It("should load burst facts via view_facts action with service", func() {
+			// Set up facts for the burst.
+			testFacts := []*career.Fact{
+				{ID: "f1", Text: "Fact 1"},
+				{ID: "f2", Text: "Fact 2"},
+			}
+			mockService.SetFactsForBurst(burst.ID, testFacts)
+
+			actionData := map[string]interface{}{
+				"action": "view_facts",
+				"burst":  burst,
+			}
+			result := &screens.NavigateResult{
+				ResultData: actionData,
+			}
+			intent.HandleNavigate(result)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateDetailFacts))
+			Expect(intent.GetSelectedBurst()).To(Equal(burst))
+		})
+
+		It("should start burst detection with service and return suggestions", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{Name: "Suggested Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
+			}
+			mockService.SetSuggestions(suggestions)
+
+			// Trigger via 's' key shortcut.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateSuggesting))
+		})
+
+		It("should handle BurstEventsLoadedMsg with events", func() {
+			// First navigate to detail to set selectedBurst.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+
+			// Press 'v' to trigger events loading.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+
+			// Simulate async message returned.
+			msg := burst_management.BurstEventsLoadedMsg{
+				Events: events,
+			}
+			intent.Update(msg)
+
+			// Events modal should be visible.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should handle BurstFactsLoadedMsg with facts", func() {
+			testFacts := []*career.Fact{
+				{ID: "f1", Text: "Fact 1"},
+			}
+
+			// First navigate to detail to set selectedBurst.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+
+			// Press 'f' to trigger facts loading.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Simulate async message returned.
+			msg := burst_management.BurstFactsLoadedMsg{
+				Facts: testFacts,
+			}
+			intent.Update(msg)
+
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should handle fact extraction complete with facts", func() {
+			extractedFacts := []*career.Fact{
+				{ID: "f1", Text: "Extracted fact 1"},
+				{ID: "f2", Text: "Extracted fact 2"},
+			}
+
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: extractedFacts,
+				Error: nil,
+			}
+			intent.Update(msg)
+
+			Expect(intent.GetExtractedFactsCount()).To(Equal(2))
+		})
+
+		It("should handle fact extraction error", func() {
+			msg := burst_management.FactExtractionCompleteMsg{
+				Facts: nil,
+				Error: errors.New("extraction failed"),
+			}
+			intent.Update(msg)
+
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should handle EditBurstMsg with valid update", func() {
+			mockRepo := careerrepo.NewMemoryBurstRepository()
+			// Add the burst to the repo first.
+			_ = mockRepo.Create(ctx.Context, burst)
+
+			ctx.BurstRepository = mockRepo
+
+			// Create new intent with repo.
+			newIntent, _ := burst_management.NewIntent(ctx)
+			newIntent.Init()
+
+			// Navigate to detail and then edit.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			newIntent.HandleNavigate(navResult)
+			newIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+			// Send edit message.
+			editMsg := burst_management.EditBurstMsg{
+				BurstID:     burst.ID,
+				Name:        "Updated Name",
+				Description: "Updated Description",
+			}
+			newIntent.Update(editMsg)
+
+			// Verify the burst was updated.
+			Expect(newIntent.GetSelectedBurst().Name).To(Equal("Updated Name"))
+		})
+	})
+
+	Describe("Context CRUD with Repository", func() {
+		var (
+			ctx  *burst_management.IntentContext
+			repo *careerrepo.MemoryBurstRepository
+		)
+
+		BeforeEach(func() {
+			repo = careerrepo.NewMemoryBurstRepository()
+			ctx = &burst_management.IntentContext{
+				Bursts:          []*career.Burst{},
+				BurstRepository: repo,
+			}
+			ctx.Validate()
+		})
+
+		It("should create burst with repository", func() {
+			burst := &career.Burst{
+				ID:          "new-burst",
+				Name:        "New Burst",
+				Description: "Test burst",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			err := ctx.CreateBurst(burst)
+			Expect(err).To(BeNil())
+
+			// Verify it was created.
+			bursts, _ := repo.List(ctx.Context, careerrepo.BurstListFilters{})
+			Expect(bursts).To(HaveLen(1))
+			Expect(bursts[0].Name).To(Equal("New Burst"))
+		})
+
+		It("should fail CreateBurst with invalid burst", func() {
+			burst := &career.Burst{
+				ID:          "",
+				Name:        "", // Invalid - name required.
+				Description: "",
+				EventIDs:    []string{},
+			}
+			err := ctx.CreateBurst(burst)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should update burst with repository", func() {
+			// Create first.
+			burst := &career.Burst{
+				ID:          "burst-1",
+				Name:        "Original Name",
+				Description: "Original",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			_ = repo.Create(ctx.Context, burst)
+
+			// Update.
+			burst.Name = "Updated Name"
+			err := ctx.UpdateBurst(burst)
+			Expect(err).To(BeNil())
+
+			// Verify update.
+			updated, _ := repo.GetByID(ctx.Context, "burst-1")
+			Expect(updated.Name).To(Equal("Updated Name"))
+		})
+
+		It("should fail UpdateBurst with invalid burst", func() {
+			burst := &career.Burst{
+				ID:          "burst-1",
+				Name:        "", // Invalid - name required.
+				Description: "",
+				EventIDs:    []string{},
+			}
+			err := ctx.UpdateBurst(burst)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should delete burst with repository", func() {
+			// Create first.
+			burst := &career.Burst{
+				ID:          "burst-1",
+				Name:        "To Delete",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+			_ = repo.Create(ctx.Context, burst)
+
+			// Delete.
+			err := ctx.DeleteBurst("burst-1")
+			Expect(err).To(BeNil())
+
+			// Verify deletion.
+			bursts, _ := repo.List(ctx.Context, careerrepo.BurstListFilters{})
+			Expect(bursts).To(HaveLen(0))
+		})
+
+		It("should load bursts from repository", func() {
+			// Create some bursts.
+			_ = repo.Create(ctx.Context, &career.Burst{ID: "b1", Name: "Burst 1", EventIDs: []string{"e1", "e2"}})
+			_ = repo.Create(ctx.Context, &career.Burst{ID: "b2", Name: "Burst 2", EventIDs: []string{"e3", "e4"}})
+
+			err := ctx.LoadBursts()
+			Expect(err).To(BeNil())
+			Expect(ctx.Bursts).To(HaveLen(2))
+		})
+	})
+
+	Describe("Delete and Confirm Flows with Repository", func() {
+		var (
+			intent      *burst_management.Intent
+			ctx         *burst_management.IntentContext
+			mockService *mocks.BurstServiceMock
+			repo        *careerrepo.MemoryBurstRepository
+			burst       *career.Burst
+		)
+
+		BeforeEach(func() {
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test description",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			repo = careerrepo.NewMemoryBurstRepository()
+			_ = repo.Create(context.Background(), burst)
+
+			mockService = mocks.NewBurstServiceMock()
+
+			ctx = &burst_management.IntentContext{
+				Bursts:          []*career.Burst{burst},
+				Service:         mockService,
+				BurstRepository: repo,
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should delete burst through confirm modal", func() {
+			// Navigate to detail and delete.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+
+			// Confirm deletion with 'y'.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			// Burst should be deleted from repository.
+			bursts, _ := repo.List(ctx.Context, careerrepo.BurstListFilters{})
+			Expect(bursts).To(HaveLen(0))
+		})
+
+		It("should handle delete error gracefully", func() {
+			// Remove burst from repo to simulate delete error.
+			_ = repo.Delete(ctx.Context, burst.ID)
+
+			// Navigate to detail and delete.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
+
+			// Try to confirm deletion - should fail.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			// Should show error modal.
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should confirm burst and extract facts", func() {
+			// Set up extracted facts.
+			extractedFacts := []career.Fact{
+				{ID: "f1", Text: "Extracted fact"},
+			}
+			mockService.SetExtractedFacts(extractedFacts)
+
+			// Navigate to detail and confirm.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+
+			// Confirm with 'y'.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			// Burst should be confirmed (updated in repo).
+			confirmed, _ := repo.GetByID(ctx.Context, burst.ID)
+			Expect(confirmed.Confirmed).To(BeTrue())
+		})
+
+		It("should handle confirm error gracefully", func() {
+			// Remove burst from repo to simulate update error.
+			_ = repo.Delete(ctx.Context, burst.ID)
+
+			// Navigate to detail and confirm.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+
+			// Try to confirm - should fail.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+
+			// Should show error modal.
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+	})
+
+	Describe("Async Command Execution", func() {
+		var (
+			intent      *burst_management.Intent
+			ctx         *burst_management.IntentContext
+			mockService *mocks.BurstServiceMock
+			burst       *career.Burst
+			events      []*career.CareerEvent
+		)
+
+		BeforeEach(func() {
+			events = []*career.CareerEvent{
+				{ID: "e1", Text: "Event 1"},
+				{ID: "e2", Text: "Event 2"},
+			}
+
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			mockService = mocks.NewBurstServiceMock().SetEvents(events)
+
+			ctx = &burst_management.IntentContext{
+				Bursts:  []*career.Burst{burst},
+				Service: mockService,
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should execute showBurstEventsModal command", func() {
+			// Navigate to detail.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+
+			// Press 'v' to show events modal.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command to get the message.
+			msg := cmd()
+			Expect(msg).NotTo(BeNil())
+
+			// Should be a BurstEventsLoadedMsg.
+			eventsMsg, ok := msg.(burst_management.BurstEventsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(eventsMsg.Events).To(HaveLen(2))
+		})
+
+		It("should execute showBurstFactsModal command", func() {
+			testFacts := []*career.Fact{
+				{ID: "f1", Text: "Fact 1"},
+			}
+			mockService.SetFactsForBurst(burst.ID, testFacts)
+
+			// Navigate to detail.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+
+			// Press 'f' to show facts modal.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command to get the message.
+			msg := cmd()
+			Expect(msg).NotTo(BeNil())
+
+			// Should be a BurstFactsLoadedMsg.
+			factsMsg, ok := msg.(burst_management.BurstFactsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(factsMsg.Facts).To(HaveLen(1))
+		})
+
+		It("should execute startBurstDetection command", func() {
+			suggestions := []burst_fact.BurstSuggestion{
+				{Name: "Suggestion", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.8},
+			}
+			mockService.SetSuggestions(suggestions)
+
+			// Press 's' to start detection.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command to get the message.
+			msg := cmd()
+			Expect(msg).NotTo(BeNil())
+
+			// Should be a BurstSuggestionsLoadedMsg.
+			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(suggestionsMsg.Suggestions).To(HaveLen(1))
+			Expect(suggestionsMsg.Error).To(BeNil())
+		})
+
+		It("should handle startBurstDetection with list events error", func() {
+			mockService.SetListEventsError(errors.New("list events failed"))
+
+			// Press 's' to start detection.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+
+			// Should be error message.
+			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(suggestionsMsg.Error).NotTo(BeNil())
+		})
+
+		It("should handle startBurstDetection with suggest error", func() {
+			mockService.SetSuggestError(errors.New("suggest failed"))
+
+			// Press 's' to start detection.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+
+			// Should be error message.
+			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(suggestionsMsg.Error).NotTo(BeNil())
+		})
+
+		It("should handle startBurstDetection with no events", func() {
+			mockService.SetEvents([]*career.CareerEvent{})
+
+			// Press 's' to start detection.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+
+			// Should be error message (no events).
+			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(suggestionsMsg.Error).NotTo(BeNil())
+			Expect(suggestionsMsg.Error.Error()).To(ContainSubstring("no events"))
+		})
+	})
+
+	Describe("Modal Update Edge Cases", func() {
+		var (
+			intent      *burst_management.Intent
+			ctx         *burst_management.IntentContext
+			mockService *mocks.BurstServiceMock
+			burst       *career.Burst
+		)
+
+		BeforeEach(func() {
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			mockService = mocks.NewBurstServiceMock()
+
+			ctx = &burst_management.IntentContext{
+				Bursts:  []*career.Burst{burst},
+				Service: mockService,
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should consume messages when error modal is visible", func() {
+			// Show error modal.
+			intent.ShowErrorModal("Test", "Error")
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+
+			// Any other key should be consumed by error modal.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+			// Error modal should still be visible.
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should cancel loading modal with Esc", func() {
+			// Navigate to detail.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+
+			// Press 's' to start detection - this shows loading modal.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+			// Press Esc to cancel loading.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
+
+			// Should return to list state.
+			Expect(intent.GetState()).To(Equal(burst_management.StateList))
+		})
+
+		It("should dismiss error modal with Esc", func() {
+			intent.ShowErrorModal("Test Error", "Error message")
+			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
+
+			// Press Esc to dismiss.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
+
+			Expect(intent.HasVisibleErrorModal()).To(BeFalse())
+		})
+
+		It("should return to detail after cancelling events modal", func() {
+			// Navigate to detail.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+
+			// Press 'v' for events.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+
+			// Simulate events loaded.
+			eventsMsg := burst_management.BurstEventsLoadedMsg{
+				Events: []*career.CareerEvent{},
+			}
+			intent.Update(eventsMsg)
+
+			// Now close events modal with Esc or Enter.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
+
+			// Should return to detail modal.
+			Expect(intent.GetDetailModal()).NotTo(BeNil())
+		})
+
+		It("should return to detail after cancelling facts modal", func() {
+			// Navigate to detail.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+
+			// Press 'f' for facts.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+
+			// Simulate facts loaded.
+			factsMsg := burst_management.BurstFactsLoadedMsg{
+				Facts: []*career.Fact{},
+			}
+			intent.Update(factsMsg)
+
+			// Now close facts modal with Enter.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			// Should return to detail modal.
+			Expect(intent.GetDetailModal()).NotTo(BeNil())
+		})
+
+		It("should close detail modal with Enter", func() {
+			// Navigate to detail.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			Expect(intent.GetDetailModal()).NotTo(BeNil())
+
+			// Press Enter to close.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			Expect(intent.GetDetailModal()).To(BeNil())
+		})
+
+		It("should handle edit burst msg with burst ID not found", func() {
+			repo := careerrepo.NewMemoryBurstRepository()
+			_ = repo.Create(ctx.Context, burst)
+			ctx.BurstRepository = repo
+
+			newIntent, _ := burst_management.NewIntent(ctx)
+			newIntent.Init()
+
+			// Navigate to detail and edit.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			newIntent.HandleNavigate(navResult)
+			newIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+
+			// Send edit with wrong burst ID.
+			editMsg := burst_management.EditBurstMsg{
+				BurstID:     "non-existent-id",
+				Name:        "Updated",
+				Description: "Test",
+			}
+			newIntent.Update(editMsg)
+
+			// Should show error since burst not found.
+			Expect(newIntent.HasVisibleErrorModal()).To(BeTrue())
+		})
+
+		It("should cancel edit modal with Esc", func() {
+			// Navigate to detail and edit.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+			Expect(intent.HasVisibleEditModal()).To(BeTrue())
+
+			// Press Esc to cancel.
+			intent.Update(tea.KeyMsg{Type: tea.KeyEscape})
+
+			Expect(intent.HasVisibleEditModal()).To(BeFalse())
+		})
+
+		It("should cancel confirm modal and return to detail", func() {
+			// Navigate to detail and confirm.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			Expect(intent.HasVisibleConfirmModal()).To(BeTrue())
+
+			// Press 'n' to cancel.
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+			// Should return to detail modal.
+			Expect(intent.HasVisibleConfirmModal()).To(BeFalse())
+			Expect(intent.GetDetailModal()).NotTo(BeNil())
+		})
+	})
+
+	Describe("Fact Extraction", func() {
+		var (
+			intent      *burst_management.Intent
+			ctx         *burst_management.IntentContext
+			mockService *mocks.BurstServiceMock
+			repo        *careerrepo.MemoryBurstRepository
+			burst       *career.Burst
+		)
+
+		BeforeEach(func() {
+			burst = &career.Burst{
+				ID:          "burst-1",
+				Name:        "Test Burst",
+				Description: "Test",
+				EventIDs:    []string{"e1", "e2"},
+			}
+
+			repo = careerrepo.NewMemoryBurstRepository()
+			_ = repo.Create(context.Background(), burst)
+
+			mockService = mocks.NewBurstServiceMock()
+
+			ctx = &burst_management.IntentContext{
+				Bursts:          []*career.Burst{burst},
+				Service:         mockService,
+				BurstRepository: repo,
+			}
+			ctx.Validate()
+
+			var err error
+			intent, err = burst_management.NewIntent(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			intent.Init()
+		})
+
+		It("should execute extractFactsForBurst and save facts via suggestion acceptance", func() {
+			// Set up extracted facts.
+			extractedFacts := []career.Fact{
+				{ID: "f1", Text: "Fact 1"},
+				{ID: "f2", Text: "Fact 2"},
+			}
+			mockService.SetExtractedFacts(extractedFacts)
+
+			// Create a suggestion and accept it - this triggers fact extraction.
+			suggestion := burst_fact.BurstSuggestion{
+				Name:     "Test Suggestion",
+				EventIDs: []string{"e1", "e2"},
+			}
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+			})
+
+			// Press 'a' to accept - this saves burst and triggers fact extraction.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+			Expect(msg).NotTo(BeNil())
+
+			// Should be FactExtractionCompleteMsg.
+			extractionMsg, ok := msg.(burst_management.FactExtractionCompleteMsg)
+			Expect(ok).To(BeTrue())
+			Expect(extractionMsg.Facts).To(HaveLen(2))
+			Expect(extractionMsg.Error).To(BeNil())
+		})
+
+		It("should handle extractFactsForBurst with extraction error via suggestion acceptance", func() {
+			mockService.SetExtractError(errors.New("extraction failed"))
+
+			// Create a suggestion and accept it.
+			suggestion := burst_fact.BurstSuggestion{
+				Name:     "Test Suggestion",
+				EventIDs: []string{"e1", "e2"},
+			}
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+			})
+
+			// Press 'a' to accept.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+
+			// Should be error.
+			extractionMsg, ok := msg.(burst_management.FactExtractionCompleteMsg)
+			Expect(ok).To(BeTrue())
+			Expect(extractionMsg.Error).NotTo(BeNil())
+		})
+
+		It("should handle extractFactsForBurst with save error via suggestion acceptance (skips failed saves)", func() {
+			extractedFacts := []career.Fact{
+				{ID: "f1", Text: "Fact 1"},
+			}
+			mockService.SetExtractedFacts(extractedFacts)
+			mockService.SetSaveFactError(errors.New("save failed"))
+
+			// Create a suggestion and accept it.
+			suggestion := burst_fact.BurstSuggestion{
+				Name:     "Test Suggestion",
+				EventIDs: []string{"e1", "e2"},
+			}
+			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+			})
+
+			// Press 'a' to accept.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+
+			// Save errors are skipped, so Facts will be empty but no error.
+			extractionMsg, ok := msg.(burst_management.FactExtractionCompleteMsg)
+			Expect(ok).To(BeTrue())
+			Expect(extractionMsg.Error).To(BeNil())
+			Expect(extractionMsg.Facts).To(HaveLen(0)) // No facts saved due to error.
+		})
+
+		It("should show re-extract confirmation when facts already exist", func() {
+			// Set up existing facts for the burst.
+			existingFacts := []*career.Fact{
+				{ID: "f1", Text: "Existing fact"},
+			}
+			mockService.SetFactsForBurst(burst.ID, existingFacts)
+
+			// Navigate to detail and confirm.
+			navResult := &screens.NavigateResult{ResultData: burst}
+			intent.HandleNavigate(navResult)
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+
+			// Should show confirm modal (with re-extract message).
+			Expect(intent.HasVisibleConfirmModal()).To(BeTrue())
 		})
 	})
 })

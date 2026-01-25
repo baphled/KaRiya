@@ -132,6 +132,11 @@ func renderBurstDetailContent(burst *career.Burst, theme themes.Theme) string {
 		theme = themes.NewDefaultTheme()
 	}
 
+	// Guard against nil burst.
+	if burst == nil {
+		return primitives.NewText("No burst selected", theme).Render()
+	}
+
 	var b strings.Builder
 
 	// Title with confirmation status indicator.

@@ -48,6 +48,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	case BurstSuggestionsLoadedMsg:
 		return i.handleBurstSuggestionsLoaded(msg)
 	case SuggestionReviewCompleteMsg:
+		// This case handles direct message sends (e.g., from tests).
+		// In normal flow, handleModalUpdates calls the handler directly when modal closes.
 		return i.handleSuggestionReviewComplete(msg)
 	case FactExtractionCompleteMsg:
 		return i.handleFactExtractionComplete(msg)
@@ -146,22 +148,52 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 
 	// Suggestion review modal.
 	if i.suggestionModal != nil && i.suggestionModal.IsVisible() {
+		// Intercept 'a' key to save burst and extract facts immediately.
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "a" {
+			// Get current suggestion BEFORE modal removes it from the list.
+			currentSuggestion := i.suggestionModal.GetCurrentSuggestion()
+			if currentSuggestion != nil {
+				// Save burst and trigger fact extraction immediately.
+				cmd := i.saveAndExtractBurst(*currentSuggestion)
+
+				// Now let modal update its internal state.
+				i.suggestionModal.Update(msg)
+
+				// If modal closed (no more suggestions), return to list view.
+				if !i.suggestionModal.IsVisible() {
+					i.suggestionModal = nil
+					i.state = StateList
+					i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+				}
+
+				return cmd
+			}
+		}
+
+		// Handle other keys normally.
 		_, cmd := i.suggestionModal.Update(msg)
 		if !i.suggestionModal.IsVisible() {
-			// Modal was closed - send completion message.
+			// Modal was closed (Esc or rejected all).
 			accepted := i.suggestionModal.GetAcceptedSuggestions()
 			cancelled := i.suggestionModal.GetAction() == burstmodals.SuggestionActionCancel
-
-			completeMsg := SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: accepted,
-				Cancelled:           cancelled,
-			}
 
 			// Clear modal.
 			i.suggestionModal = nil
 
-			// Send completion message to be handled.
-			return tea.Batch(cmd, func() tea.Msg { return completeMsg })
+			// If user accepted some suggestions before cancelling, create them.
+			if len(accepted) > 0 && !cancelled {
+				completeMsg := SuggestionReviewCompleteMsg{
+					AcceptedSuggestions: accepted,
+					Cancelled:           false,
+				}
+				return tea.Batch(cmd, func() tea.Msg { return completeMsg })
+			}
+
+			// No suggestions or cancelled - return to list.
+			// Return noopCmd to prevent the esc key from propagating to the list screen.
+			i.state = StateList
+			i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+			return noopCmd
 		}
 		return cmd
 	}
@@ -288,11 +320,22 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 
 	if msg.Error != nil {
 		i.errorModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
-		i.state = StateList
+		// Only transition to list if suggestion modal is not visible.
+		// User may still be reviewing remaining suggestions.
+		if i.suggestionModal == nil || !i.suggestionModal.IsVisible() {
+			i.state = StateList
+		}
 		return nil
 	}
 
 	i.extractedFactsCount = len(msg.Facts)
+
+	// If the suggestion modal is still visible (user reviewing remaining suggestions),
+	// do NOT change state or transition screens. Let user continue reviewing.
+	if i.suggestionModal != nil && i.suggestionModal.IsVisible() {
+		return nil
+	}
+
 	i.state = StateList
 
 	// Only show detail modal if a burst was selected (e.g., from confirm flow).
