@@ -155,6 +155,8 @@ screens/configure/
 **Modals**: 3 custom (move to modals/) + UIKit  
 **Estimated Reduction**: 657 → ~350 lines (47%)
 
+> **Note on Complexity Tradeoffs**: While line counts decrease with extraction, the number of files increases. This improves maintainability and testability but requires clear documentation of screen/modal responsibilities. Always document the purpose of each extracted component in PR descriptions and code comments to help new contributors understand the workflow.
+
 ---
 
 ### 3. burst_management (1,488 lines)
