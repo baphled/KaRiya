@@ -70,6 +70,7 @@ func (i *Intent) getContextHelp() string {
 	case StateList:
 		badges := []*primitives.Badge{
 			primitives.NavigateBadge(theme),
+			primitives.PageBadge(theme),
 			primitives.ViewBadge(theme),
 			primitives.AddBadge(theme),
 			primitives.EditBadge(theme),
