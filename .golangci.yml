@@ -657,6 +657,14 @@ issues:
         - depguard
       text: "huh-restricted-to-forms"
 
+    # Timeline modals use huh directly - part of browse_timeline migration
+    # These are new in PR #115 but follow the existing modal pattern.
+    # Migration to forms/ package tracked for future work.
+    - path: internal/cli/screens/timeline/modals/.*\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
 severity:
   default-severity: warning
   case-sensitive: false
