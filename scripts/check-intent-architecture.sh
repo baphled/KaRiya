@@ -75,14 +75,34 @@ LEGACY_WARNINGS=0
 
 BASE_BRANCH="${BASE_BRANCH:-origin/next}"
 
-# Build list of legacy intent files from base branch
+# Build list of legacy intent NAMES from base branch (not full paths)
+# This is used by is_legacy_intent() to determine if a file belongs to a legacy intent
 LEGACY_INTENTS=""
-if git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
-    # Get flat structure intents
-    LEGACY_FLAT=$(git ls-tree --name-only "$BASE_BRANCH" internal/cli/intents/ 2>/dev/null | grep "_intent.go$" || true)
-    # Get subdirectory intents
-    LEGACY_SUBDIRS=$(git ls-tree -d --name-only "$BASE_BRANCH" internal/cli/intents/ 2>/dev/null | grep -v "types$" || true)
+if ! command -v git >/dev/null 2>&1; then
+    echo -e "${YELLOW}Warning: git command not found; treating all intents as new (no legacy detection).${NC}" >&2
+elif git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
+    LEGACY_FLAT=""
+    LEGACY_SUBDIRS=""
+    
+    # Get flat structure intents (e.g., capture_event_intent.go -> capture_event)
+    # We extract just the basename and remove _intent.go suffix to get the intent name
+    if LEGACY_FLAT_OUTPUT=$(git ls-tree --name-only "$BASE_BRANCH" internal/cli/intents/ 2>/dev/null); then
+        LEGACY_FLAT=$(echo "$LEGACY_FLAT_OUTPUT" | grep "_intent.go$" | xargs -I{} basename {} _intent.go || true)
+    else
+        echo -e "${YELLOW}Warning: failed to list flat legacy intents from ${BASE_BRANCH}. Treating them as new.${NC}" >&2
+    fi
+    
+    # Get subdirectory intents (e.g., internal/cli/intents/browse_timeline/ -> browse_timeline)
+    # We extract just the directory name
+    if LEGACY_SUBDIRS_OUTPUT=$(git ls-tree -d --name-only "$BASE_BRANCH" internal/cli/intents/ 2>/dev/null); then
+        LEGACY_SUBDIRS=$(echo "$LEGACY_SUBDIRS_OUTPUT" | grep -v "types$" | xargs -I{} basename {} || true)
+    else
+        echo -e "${YELLOW}Warning: failed to list subdirectory legacy intents from ${BASE_BRANCH}. Treating them as new.${NC}" >&2
+    fi
+    
     LEGACY_INTENTS="$LEGACY_FLAT $LEGACY_SUBDIRS"
+else
+    echo -e "${YELLOW}Warning: Base branch '$BASE_BRANCH' not found; treating all intents as new.${NC}" >&2
 fi
 
 # Check if a file is from a legacy intent
@@ -104,13 +124,32 @@ is_legacy_intent() {
     fi
     
     # Check if this intent exists in base branch
+    # Use -qw for word boundaries to avoid partial matches (e.g., "event" matching "capture_event")
     if [ -n "$LEGACY_INTENTS" ]; then
-        if echo "$LEGACY_INTENTS" | grep -q "${intent_name}"; then
+        if echo "$LEGACY_INTENTS" | grep -qw "${intent_name}"; then
             return 0  # Legacy
         fi
     fi
     
     return 1  # New
+}
+
+# Map intent name to expected screen directory name
+# browse_timeline -> timeline, burst_management -> burst, etc.
+get_screen_dir_name() {
+    local intent_name="$1"
+    echo "$intent_name" | sed 's/^browse_//' | sed 's/_management$//'
+}
+
+# Check if an intent uses modals (scans all .go files in intent directory)
+intent_uses_modals() {
+    local intent_dir="$1"
+    for go_file in "$intent_dir"/*.go; do
+        if [ -f "$go_file" ] && grep -qE 'Modal\s+\*|modalRegistry' "$go_file" 2>/dev/null; then
+            return 0  # Uses modals
+        fi
+    done
+    return 1  # No modals
 }
 
 # Report a violation or legacy warning based on intent status
@@ -128,7 +167,8 @@ report_issue() {
         echo "   Rule: $rule"
         if [ -n "$example" ]; then
             echo ""
-            echo "$example" | sed 's/^/   /'
+            # Use printf to safely handle multi-line text with special characters
+            printf '%s\n' "$example" | sed 's/^/   /'
         fi
         echo ""
         echo -e "   ${CYAN}Note: This is a legacy intent. Fix recommended but not required.${NC}"
@@ -140,7 +180,8 @@ report_issue() {
         echo "   Rule: $rule"
         if [ -n "$example" ]; then
             echo ""
-            echo "$example" | sed 's/^/   /'
+            # Use printf to safely handle multi-line text with special characters
+            printf '%s\n' "$example" | sed 's/^/   /'
         fi
         echo ""
         VIOLATIONS=$((VIOLATIONS+1))
@@ -884,7 +925,9 @@ if [ $OLD_COUNT -gt 0 ]; then
     echo ""
     echo "   Migration guide: docs/guides/INTENT_MIGRATION_TO_SUBDIRECTORY.md"
     echo ""
-    LEGACY_WARNINGS=$((LEGACY_WARNINGS+OLD_COUNT))
+    # Note: Don't add OLD_COUNT to LEGACY_WARNINGS here to avoid double-counting.
+    # Individual violations in flat structure intents are already counted through
+    # report_issue() calls in checks 1-16. This message is purely informational.
 fi
 
 if [ $CHECK17_ISSUES -eq 0 ] && [ $OLD_COUNT -eq 0 ]; then
@@ -1283,9 +1326,9 @@ if [ -n "$SUBDIRS" ]; then
     for intent_dir in $SUBDIRS; do
         INTENT_NAME=$(basename "$intent_dir")
         
-        # Map intent name to expected screen directory
-        # browse_timeline -> timeline, burst_management -> burst_management, etc.
-        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/browse_//')
+        # Map intent name to expected screen directory using helper function
+        # browse_timeline -> timeline, burst_management -> burst, etc.
+        SCREEN_DIR_NAME=$(get_screen_dir_name "$INTENT_NAME")
         
         # Check if intent uses screens (has activeScreen or *Screen fields)
         USES_SCREENS=false
@@ -1369,13 +1412,12 @@ Reference: screens/burst_management/ (PR #117)"
                 # ===========================================
                 # CHECK MODALS SUBDIRECTORY
                 # ===========================================
-                USES_MODALS=false
-                for go_file in "$intent_dir"/*.go; do
-                    if [ -f "$go_file" ] && grep -q "Modal\s\+\*\|modalRegistry" "$go_file" 2>/dev/null; then
-                        USES_MODALS=true
-                        break
-                    fi
-                done
+                # Use helper function for consistent modal detection
+                if intent_uses_modals "$intent_dir"; then
+                    USES_MODALS=true
+                else
+                    USES_MODALS=false
+                fi
                 
                 if [ "$USES_MODALS" = true ]; then
                     MODALS_DIR="$FOUND_SCREEN_DIR/modals"
@@ -1476,9 +1518,12 @@ if [ -n "$SUBDIRS" ]; then
         
         if [ -n "$STRUCT_FILE" ]; then
             # Check for required fields in Intent struct
+            # Note: These patterns match Go struct field syntax (field name + whitespace + type).
+            # They may match fields in other structs, but since we're specifically checking
+            # types.go or intent.go which should primarily contain the Intent struct, this is acceptable.
             
-            # Check for 'active bool' field
-            HAS_ACTIVE=$(grep -q "active\s\+bool" "$STRUCT_FILE" && echo "yes" || echo "no")
+            # Check for 'active bool' field (matches: "active<whitespace>bool")
+            HAS_ACTIVE=$(grep -qE '^\s*active\s+bool' "$STRUCT_FILE" && echo "yes" || echo "no")
             if [ "$HAS_ACTIVE" = "no" ]; then
                 report_issue "$STRUCT_FILE" "Required Fields" "Missing 'active bool' field" \
                     "Intent struct must have 'active bool' field for lifecycle management" \
@@ -1494,7 +1539,7 @@ type Intent struct {
             fi
             
             # Check for 'result *intents.IntentResult' field
-            HAS_RESULT=$(grep -q "result\s\+\*intents\.IntentResult" "$STRUCT_FILE" && echo "yes" || echo "no")
+            HAS_RESULT=$(grep -qE '^\s*result\s+\*intents\.IntentResult' "$STRUCT_FILE" && echo "yes" || echo "no")
             if [ "$HAS_RESULT" = "no" ]; then
                 report_issue "$STRUCT_FILE" "Required Fields" "Missing 'result *intents.IntentResult' field" \
                     "Intent struct must have typed result field for completion" \
@@ -1503,8 +1548,8 @@ result *intents.IntentResult[*Result]  // <- REQUIRED"
             fi
             
             # Check for modalRegistry if intent uses modals
-            USES_MODALS=$(grep -q "Modal\s\+\*" "$STRUCT_FILE" && echo "yes" || echo "no")
-            HAS_REGISTRY=$(grep -q "modalRegistry\s\+\*intents\.ModalRegistry" "$STRUCT_FILE" && echo "yes" || echo "no")
+            USES_MODALS=$(grep -qE 'Modal\s+\*' "$STRUCT_FILE" && echo "yes" || echo "no")
+            HAS_REGISTRY=$(grep -qE 'modalRegistry\s+\*intents\.ModalRegistry' "$STRUCT_FILE" && echo "yes" || echo "no")
             
             if [ "$USES_MODALS" = "yes" ] && [ "$HAS_REGISTRY" = "no" ]; then
                 echo -e "${YELLOW}⚠️  WARNING: Using modals without ModalRegistry${NC}"
@@ -1535,8 +1580,9 @@ if [ -n "$SUBDIRS" ]; then
         CONTEXT_FILE="$intent_dir/context.go"
         
         if [ -f "$CONTEXT_FILE" ]; then
-            # Check for Validate method
-            HAS_VALIDATE=$(grep -q "func.*IntentContext.*Validate" "$CONTEXT_FILE" && echo "yes" || echo "no")
+            # Check for Validate method on IntentContext (must be a method receiver, not just any function)
+            # Pattern: func (receiver *...IntentContext) Validate
+            HAS_VALIDATE=$(grep -qE 'func \([^)]*\*[^)]*IntentContext\) Validate' "$CONTEXT_FILE" && echo "yes" || echo "no")
             
             if [ "$HAS_VALIDATE" = "no" ]; then
                 report_issue "$CONTEXT_FILE" "Context Validate" "Missing Validate() method on IntentContext" \
@@ -1649,45 +1695,39 @@ fi
 echo ""
 
 # ============================================
-# 28. TEST COVERAGE FOR CORE FILES
+# 28. OPTIONAL TEST FILE RECOMMENDATIONS
 # ============================================
+# Note: Check 17 already handles REQUIRED test files (context_test.go, result_test.go, etc.)
+# This check only recommends OPTIONAL test files for recommended source files.
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "28. TEST COVERAGE FOR CORE FILES"
+echo "28. OPTIONAL TEST FILE RECOMMENDATIONS"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ -n "$SUBDIRS" ]; then
     for intent_dir in $SUBDIRS; do
         INTENT_NAME=$(basename "$intent_dir")
-        MISSING_TESTS=""
+        MISSING_OPTIONAL_TESTS=""
         
-        # Check for test files for core files
-        CORE_FILES=("context" "result" "constants" "messages" "intent")
+        # Check for test files for OPTIONAL source files (not covered by Check 17)
+        OPTIONAL_FILES=("types" "handlers" "helpers" "filters" "interfaces")
         
-        for core in "${CORE_FILES[@]}"; do
-            SOURCE_FILE="$intent_dir/${core}.go"
-            TEST_FILE="$intent_dir/${core}_test.go"
+        for opt_file in "${OPTIONAL_FILES[@]}"; do
+            SOURCE_FILE="$intent_dir/${opt_file}.go"
+            TEST_FILE="$intent_dir/${opt_file}_test.go"
             
+            # Only recommend test if the source file exists but test doesn't
             if [ -f "$SOURCE_FILE" ] && [ ! -f "$TEST_FILE" ]; then
-                MISSING_TESTS="$MISSING_TESTS ${core}_test.go"
+                MISSING_OPTIONAL_TESTS="$MISSING_OPTIONAL_TESTS ${opt_file}_test.go"
             fi
         done
         
-        if [ -n "$MISSING_TESTS" ]; then
-            echo -e "${YELLOW}⚠️  WARNING: Missing test files${NC}"
+        if [ -n "$MISSING_OPTIONAL_TESTS" ]; then
+            echo -e "${YELLOW}⚠️  RECOMMENDATION: Consider adding test files${NC}"
             echo "   Intent: $INTENT_NAME"
-            echo "   Missing:$MISSING_TESTS"
+            echo "   Missing optional tests:$MISSING_OPTIONAL_TESTS"
+            echo "   Note: These are recommended but not required."
             echo ""
-            WARNINGS=$((WARNINGS+1))
-        fi
-        
-        # Check for Ginkgo test suite file
-        SUITE_FILE=$(find "$intent_dir" -maxdepth 1 -name "*_suite_test.go" 2>/dev/null | head -1)
-        if [ -z "$SUITE_FILE" ]; then
-            echo -e "${YELLOW}⚠️  WARNING: Missing Ginkgo test suite${NC}"
-            echo "   Intent: $INTENT_NAME"
-            echo "   Expected: ${INTENT_NAME}_suite_test.go"
-            echo ""
-            WARNINGS=$((WARNINGS+1))
+            # Don't increment WARNINGS - these are just recommendations
         fi
     done
 fi
@@ -1705,8 +1745,8 @@ if [ -n "$SUBDIRS" ]; then
     for intent_dir in $SUBDIRS; do
         INTENT_NAME=$(basename "$intent_dir")
         
-        # Find corresponding screens directory
-        SCREEN_DIR_NAME=$(echo "$INTENT_NAME" | sed 's/browse_//' | sed 's/_management$//')
+        # Find corresponding screens directory using helper function for consistency
+        SCREEN_DIR_NAME=$(get_screen_dir_name "$INTENT_NAME")
         SCREEN_DIR="internal/cli/screens/$SCREEN_DIR_NAME"
         ALT_SCREEN_DIR="internal/cli/screens/$INTENT_NAME"
         
@@ -1718,18 +1758,19 @@ if [ -n "$SUBDIRS" ]; then
         fi
         
         if [ -n "$FOUND_SCREEN_DIR" ]; then
-            # Check if intent uses modals
-            USES_MODALS=false
-            for go_file in "$intent_dir"/*.go; do
-                if [ -f "$go_file" ] && grep -q "Modal\s\+\*" "$go_file" 2>/dev/null; then
-                    USES_MODALS=true
-                    break
-                fi
-            done
+            # Use helper function for consistent modal detection
+            if intent_uses_modals "$intent_dir"; then
+                USES_MODALS=true
+            else
+                USES_MODALS=false
+            fi
             
             if [ "$USES_MODALS" = true ]; then
                 MODALS_DIR="$FOUND_SCREEN_DIR/modals"
                 if [ ! -d "$MODALS_DIR" ]; then
+                    # Note: Check 23 already reports this as a violation for new intents.
+                    # This provides an additional warning for legacy intents that may have
+                    # passed Check 23's legacy detection but still need the modals directory.
                     echo -e "${YELLOW}⚠️  WARNING: Intent uses modals but no modals/ directory${NC}"
                     echo "   Intent: $INTENT_NAME"
                     echo "   Expected: $MODALS_DIR"
