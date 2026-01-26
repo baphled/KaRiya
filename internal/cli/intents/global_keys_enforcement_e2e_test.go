@@ -224,9 +224,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
-					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
-				}),
+				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -264,9 +262,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
-					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
-				}),
+				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -289,8 +285,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					switch i := intent.(type) {
 					case *GenerateCVIntent:
 						baseIntent = i.BaseIntent
-					case *BrowseTimelineIntent:
-						baseIntent = i.BaseIntent
+					// BrowseTimelineIntent is in internal/cli/intents/browse_timeline/
 					case *CaptureEventIntent:
 						baseIntent = i.BaseIntent
 					}
@@ -317,9 +312,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
-					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
-				}),
+				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",

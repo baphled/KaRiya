@@ -13,6 +13,13 @@ import (
 )
 
 // ListScreen displays a list of items using TableBehavior.
+//
+// The {Entity} type is expected to have the following fields used by formatRow:
+//   - Name      string    - Display name for the entity
+//   - Category  string    - Category or type classification
+//   - CreatedAt time.Time - Creation timestamp
+//
+// Customize the formatRow method and table columns to match your entity structure.
 type ListScreen struct {
 	*base.BaseScreen
 

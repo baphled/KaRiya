@@ -5,6 +5,8 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
 	"github.com/baphled/kariya/internal/cli/uikit/widgets"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -103,8 +105,18 @@ func (s *TimelineEventDetailScreen) RenderContent() string {
 		return "No event selected."
 	}
 
-	// Use UIKit DetailView for consistent styling
-	th := theme.Default()
+	// Use screen's theme if available, otherwise fall back to default.
+	// This ensures the intent's theme is used when set via SetTheme().
+	var th theme.Theme
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if t, ok := screenTheme.(theme.Theme); ok {
+			th = t
+		}
+	}
+	if th == nil {
+		th = theme.Default()
+	}
+
 	dv := widgets.NewDetailView(th).
 		Title("Event Details").
 		Field("Date", s.event.Date.Format("2006-01-02")).
@@ -128,16 +140,30 @@ func (s *TimelineEventDetailScreen) RenderContent() string {
 }
 
 // View renders the event detail screen using StandardView.
-// This is kept for backward compatibility but RenderContent() is preferred
-// when the intent manages the StandardView wrapper.
 func (s *TimelineEventDetailScreen) View() string {
 	content := s.RenderContent()
 
-	// Footer with actions (matching legacy)
-	// Note: 'q' is a global key handled by intent (quits app)
-	footer := "e: Edit  d: Delete  Esc/Backspace: Back to timeline  q: Quit  ?: Help"
+	// Get theme for UIKit primitives (fall back to default if not set).
+	var th themes.Theme
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if t, ok := screenTheme.(themes.Theme); ok {
+			th = t
+		}
+	}
+	if th == nil {
+		th = themes.NewDefaultTheme()
+	}
 
-	// Use BaseScreen's CreateView helper for StandardView integration
+	// Build footer using UIKit primitives for consistent styling.
+	footer := primitives.RenderHelpFooter(th,
+		primitives.EditBadge(th),
+		primitives.DeleteBadge(th),
+		primitives.HelpKeyBadge("Esc/Backspace", "Back", th),
+		primitives.QuitBadge(th),
+		primitives.HelpBadge(th),
+	)
+
+	// Use BaseScreen's CreateView helper for StandardView integration.
 	breadcrumbs := []string{"Main Menu", "Timeline", "Event Details"}
 	return s.CreateView(breadcrumbs, content, footer)
 }

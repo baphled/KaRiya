@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/selectors"
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -44,9 +44,9 @@ type FormModel struct {
 	event              *career.CareerEvent
 	charCount          int
 	maxChars           int
-	tagSelector        *components.TagSelector
-	categorySelector   *components.CategorySelector
-	skillSelector      *components.SkillSelector
+	tagSelector        *selectors.TagSelector
+	categorySelector   *selectors.CategorySelector
+	skillSelector      *selectors.SkillSelector
 	fieldErrors        map[FormField]string // Track field-level validation errors
 	editMode           bool                 // True if editing an existing event
 	editEventID        string               // ID of event being edited
@@ -95,9 +95,9 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 		err:                nil,
 		submitted:          false,
 		maxChars:           2000,
-		tagSelector:        components.NewTagSelector(),
-		categorySelector:   components.NewCategorySelector(),
-		skillSelector:      components.NewSkillSelector([]*career.Skill{}),
+		tagSelector:        selectors.NewTagSelector(),
+		categorySelector:   selectors.NewCategorySelector(),
+		skillSelector:      selectors.NewSkillSelector([]*career.Skill{}),
 		fieldErrors:        make(map[FormField]string),
 		strategy:           "manual", // Default to manual mode
 		showOptionalFields: true,     // Show all fields by default in manual mode
@@ -593,7 +593,7 @@ func (m *FormModel) GetInputValue(index int) string {
 }
 
 // TagSelector returns the tag selector instance
-func (m *FormModel) TagSelector() *components.TagSelector {
+func (m *FormModel) TagSelector() *selectors.TagSelector {
 	return m.tagSelector
 }
 
@@ -698,7 +698,7 @@ func (m *FormModel) GetStrategy() string {
 }
 
 // CategorySelector returns the category selector instance
-func (m *FormModel) CategorySelector() *components.CategorySelector {
+func (m *FormModel) CategorySelector() *selectors.CategorySelector {
 	return m.categorySelector
 }
 
@@ -964,10 +964,10 @@ func (m *FormModel) SetBreadcrumbs(crumbs []string) {
 
 // LoadSkills initializes the skill selector with available skills
 func (m *FormModel) LoadSkills(skills []*career.Skill) {
-	m.skillSelector = components.NewSkillSelector(skills)
+	m.skillSelector = selectors.NewSkillSelector(skills)
 }
 
 // SkillSelector returns the skill selector for external access
-func (m *FormModel) SkillSelector() *components.SkillSelector {
+func (m *FormModel) SkillSelector() *selectors.SkillSelector {
 	return m.skillSelector
 }

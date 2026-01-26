@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -341,7 +342,8 @@ var _ = Describe("TimelineEventListScreen", func() {
 
 		It("should show help text in footer", func() {
 			view := screen.View()
-			Expect(view).To(ContainSubstring("↑/↓"))
+			// UIKit NavigateBadge uses "↑↓/jk" format
+			Expect(view).To(ContainSubstring("↑↓/jk"))
 			Expect(view).To(ContainSubstring("Enter"))
 			Expect(view).To(ContainSubstring("Esc"))
 		})
@@ -394,6 +396,70 @@ var _ = Describe("TimelineEventListScreen", func() {
 			theme := "test-theme"
 			screen.SetTheme(theme)
 			Expect(screen.Theme()).To(Equal(theme))
+		})
+	})
+
+	Describe("UIKit Footer Rendering", func() {
+		BeforeEach(func() {
+			screen = timeline.NewTimelineEventListScreen(events)
+			screen.SetTerminalInfo(120, 40)
+		})
+
+		It("should NOT use legacy colon-separated format in footer", func() {
+			// Set a proper theme
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			view := screen.View()
+
+			// Legacy format uses "key: action" (e.g., "Enter: View", "a: Add")
+			// UIKit primitives use styled "[key] action" format without colons
+			// Verify the old format is NOT used
+			Expect(view).NotTo(ContainSubstring("Enter: View"))
+			Expect(view).NotTo(ContainSubstring("a: Add"))
+			Expect(view).NotTo(ContainSubstring("e: Edit"))
+			Expect(view).NotTo(ContainSubstring("d: Delete"))
+			Expect(view).NotTo(ContainSubstring("q: Quit"))
+			Expect(view).NotTo(ContainSubstring("?: Help"))
+		})
+
+		It("should render footer with UIKit badges containing action hints", func() {
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			view := screen.View()
+
+			// UIKit badges render action hints (the hint part of HelpKeyBadge)
+			Expect(view).To(ContainSubstring("Navigate"))
+			Expect(view).To(ContainSubstring("View"))
+			Expect(view).To(ContainSubstring("Add"))
+			Expect(view).To(ContainSubstring("Edit"))
+			Expect(view).To(ContainSubstring("Delete"))
+			Expect(view).To(ContainSubstring("Back"))
+			Expect(view).To(ContainSubstring("Quit"))
+			Expect(view).To(ContainSubstring("Help"))
+		})
+
+		It("should render footer with default theme when no theme is set", func() {
+			// Don't set theme - should fall back to default and still use UIKit
+			view := screen.View()
+
+			// Should NOT have legacy colon format
+			Expect(view).NotTo(ContainSubstring("Esc: Back"))
+
+			// Should have action hints
+			Expect(view).To(ContainSubstring("Navigate"))
+			Expect(view).To(ContainSubstring("Back"))
+		})
+
+		It("should include page navigation badge", func() {
+			th := themes.NewDefaultTheme()
+			screen.SetTheme(th)
+
+			view := screen.View()
+
+			// Should have page navigation hint
+			Expect(view).To(ContainSubstring("Page"))
 		})
 	})
 })

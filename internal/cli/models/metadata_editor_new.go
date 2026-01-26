@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/navigation"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/layout"
+	"github.com/baphled/kariya/internal/cli/uikit/selectors"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -34,9 +34,9 @@ type MetadataEditorModelNew struct {
 	ctx              context.Context
 	form             *huh.Form
 	formData         *forms.MetadataFormData
-	tagSelector      *components.TagSelector
-	categorySelector *components.CategorySelector
-	skillSelector    *components.SkillSelector
+	tagSelector      *selectors.TagSelector
+	categorySelector *selectors.CategorySelector
+	skillSelector    *selectors.SkillSelector
 	err              error
 	submitted        bool
 	cancelled        bool
@@ -51,11 +51,11 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 	eventCopy := *event
 
 	// Create tag and category selectors to get available options
-	tagSelector := components.NewTagSelector()
+	tagSelector := selectors.NewTagSelector()
 	tagSelector.SetSelectedTags(event.Tags)
 	availableTags := tagSelector.AvailableTags()
 
-	categorySelector := components.NewCategorySelector()
+	categorySelector := selectors.NewCategorySelector()
 	if err := categorySelector.SetSelected(event.Categories); err != nil {
 		// Existing event categories should be valid, ignore
 		_ = err
@@ -68,7 +68,7 @@ func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice
 		allSkills = []*career.Skill{} // If error, use empty list
 	}
 
-	skillSelector := components.NewSkillSelector(allSkills)
+	skillSelector := selectors.NewSkillSelector(allSkills)
 	// Pre-select skills from event
 	for _, skillID := range event.Skills {
 		if err := skillSelector.SelectSkill(skillID); err != nil {

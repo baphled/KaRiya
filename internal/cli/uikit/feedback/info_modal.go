@@ -1,10 +1,10 @@
-package components
+package feedback
 
 import (
 	"strings"
 
-	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	themes "github.com/baphled/kariya/internal/cli/uikit/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -22,13 +22,15 @@ const (
 )
 
 // InfoModal is a reusable informational modal for displaying messages to the user.
-// Unlike DeleteConfirmModal, it has a single action: dismiss. It does not ask for
+// Unlike ConfirmModal, it has a single action: dismiss. It does not ask for
 // confirmation - it simply displays information and allows the user to acknowledge it.
+//
+// This is the UIKit version that uses the theme system from uikit/theme.
 //
 // Usage:
 //
-//	modal := components.NewInfoModal("Title", "Message explaining something...")
-//	modal := components.NewWarningInfoModal("Warning Title", "Warning message...")
+//	modal := feedback.NewInfoModal("Title", "Message explaining something...")
+//	modal := feedback.NewWarningInfoModal("Warning Title", "Warning message...")
 //
 //	// In Update:
 //	if modal.Update(msg) {
@@ -65,7 +67,7 @@ func NewInfoModal(title, message string) *InfoModal {
 		message: message,
 		visible: true,
 		variant: InfoModalInfo,
-		theme:   themes.NewDefaultTheme(),
+		theme:   themes.Default(),
 		width:   100,
 		height:  24,
 	}
@@ -85,7 +87,7 @@ func NewWarningInfoModal(title, message string) *InfoModal {
 		message: message,
 		visible: true,
 		variant: InfoModalWarning,
-		theme:   themes.NewDefaultTheme(),
+		theme:   themes.Default(),
 		width:   100,
 		height:  24,
 	}
@@ -105,7 +107,7 @@ func NewSuccessInfoModal(title, message string) *InfoModal {
 		message: message,
 		visible: true,
 		variant: InfoModalSuccess,
-		theme:   themes.NewDefaultTheme(),
+		theme:   themes.Default(),
 		width:   100,
 		height:  24,
 	}
@@ -160,12 +162,14 @@ func (m *InfoModal) View() string {
 		return ""
 	}
 
+	theme := m.getTheme()
+
 	// Get border color based on variant
 	borderColor := m.getBorderColor()
 
 	// Build footer with KeyBadge components
-	footer := primitives.RenderHelpFooter(m.theme,
-		primitives.HelpKeyBadge("Enter/Esc", "Close", m.theme),
+	footer := primitives.RenderHelpFooter(theme,
+		primitives.HelpKeyBadge("Enter/Esc", "Close", theme),
 	)
 
 	// Build modal content
@@ -202,7 +206,7 @@ func (m *InfoModal) View() string {
 		Width(modalWidth).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(borderColor).
-		Background(m.theme.BackgroundColor()). // Solid background for overlay
+		Background(theme.BackgroundColor()). // Solid background for overlay
 		Padding(1, 2).
 		Align(lipgloss.Center)
 
@@ -211,17 +215,27 @@ func (m *InfoModal) View() string {
 	return modalBox
 }
 
+// getTheme returns the theme or default if nil (nil-theme guard pattern).
+func (m *InfoModal) getTheme() themes.Theme {
+	if m.theme != nil {
+		return m.theme
+	}
+	return themes.Default()
+}
+
 // getBorderColor returns the appropriate border color based on variant.
 func (m *InfoModal) getBorderColor() lipgloss.Color {
+	theme := m.getTheme()
+
 	switch m.variant {
 	case InfoModalWarning:
-		return m.theme.WarningColor()
+		return theme.WarningColor()
 	case InfoModalSuccess:
-		return m.theme.SuccessColor()
+		return theme.SuccessColor()
 	case InfoModalInfo:
 		fallthrough
 	default:
-		return m.theme.InfoColor()
+		return theme.InfoColor()
 	}
 }
 
@@ -240,9 +254,11 @@ func (m *InfoModal) Hide() {
 	m.visible = false
 }
 
-// SetTheme sets the theme for the modal (useful for testing or custom themes).
-func (m *InfoModal) SetTheme(theme themes.Theme) {
+// WithTheme sets the theme for the modal (useful for testing or custom themes).
+// Returns the modal for method chaining.
+func (m *InfoModal) WithTheme(theme themes.Theme) *InfoModal {
 	m.theme = theme
+	return m
 }
 
 // SetDimensions sets the terminal dimensions for responsive sizing.
