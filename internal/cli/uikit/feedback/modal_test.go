@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestNewErrorModal(t *testing.T) {
@@ -677,4 +679,133 @@ func TestRenderOverlayWithDefaultTheme(t *testing.T) {
 	if output == "" {
 		t.Error("Expected non-empty output from RenderOverlayWithDefaultTheme")
 	}
+}
+
+func TestLoadingModal_IncreasedWidth(t *testing.T) {
+	// Test that loading modal supports wider content (up to 100 chars).
+	// This test verifies the modal renders correctly with longer messages.
+	longMessage := strings.Repeat("X", 90) // Message longer than old max (76)
+	modal := NewLoadingModal(longMessage, false)
+
+	output := modal.Render(120, 40)
+
+	if output == "" {
+		t.Error("Expected non-empty output for wide loading modal")
+	}
+
+	// The modal should contain the full message without excessive wrapping.
+	// With the old maxWidth of 76, this 90-char message would wrap.
+	// With the new maxWidth of 96, it should fit on one line.
+	lines := strings.Split(output, "\n")
+	messageFound := false
+	for _, line := range lines {
+		// Check if any line contains a large portion of our X's (accounting for spinner).
+		xCount := strings.Count(line, "X")
+		if xCount >= 85 {
+			messageFound = true
+			break
+		}
+	}
+
+	if !messageFound {
+		t.Error("Expected long message to render without excessive line wrapping (max width should be 100)")
+	}
+}
+
+func TestLoadingModal_RespectsTerminalWidth(t *testing.T) {
+	// Test that modal width adapts to narrow terminals to prevent cutoff.
+	longMessage := strings.Repeat("Y", 90)
+	modal := NewLoadingModal(longMessage, false)
+
+	// Render in a narrow terminal (80 chars wide).
+	output := modal.Render(80, 40)
+
+	if output == "" {
+		t.Error("Expected non-empty output for narrow terminal")
+	}
+
+	// Check that modal visual width doesn't exceed terminal width.
+	// Use lipgloss.Width to measure visual width (ignores ANSI codes).
+	lines := strings.Split(output, "\n")
+	for i, line := range lines {
+		lineWidth := lipgloss.Width(line)
+		if lineWidth > 80 {
+			t.Errorf("Line %d exceeds terminal width: visual width %d > 80", i, lineWidth)
+		}
+	}
+}
+
+func TestLoadingModal_BoxIntegrity(t *testing.T) {
+	// Diagnostic test to verify the modal box renders completely.
+	// Tests that borders are intact and content is not truncated.
+	message := "Detecting burst patterns and analyzing data..."
+	modal := NewLoadingModal(message, true)
+
+	// Test at typical terminal width.
+	output := modal.Render(120, 40)
+
+	lines := strings.Split(output, "\n")
+
+	// Find lines with border characters (rounded border uses ╭╮╰╯│─).
+	var topBorderLine, bottomBorderLine int
+	topBorderLine = -1
+	bottomBorderLine = -1
+
+	for i, line := range lines {
+		if strings.Contains(line, "╭") && strings.Contains(line, "╮") {
+			topBorderLine = i
+		}
+		if strings.Contains(line, "╰") && strings.Contains(line, "╯") {
+			bottomBorderLine = i
+		}
+	}
+
+	// Verify top border is complete (has both corners).
+	if topBorderLine == -1 {
+		t.Error("Top border not found - modal box may be incomplete")
+		t.Logf("Modal output:\n%s", output)
+	} else {
+		topLine := lines[topBorderLine]
+		if !strings.Contains(topLine, "╭") || !strings.Contains(topLine, "╮") {
+			t.Errorf("Top border incomplete: %q", topLine)
+		}
+	}
+
+	// Verify bottom border is complete (has both corners).
+	if bottomBorderLine == -1 {
+		t.Error("Bottom border not found - modal box may be incomplete")
+		t.Logf("Modal output:\n%s", output)
+	} else {
+		bottomLine := lines[bottomBorderLine]
+		if !strings.Contains(bottomLine, "╰") || !strings.Contains(bottomLine, "╯") {
+			t.Errorf("Bottom border incomplete: %q", bottomLine)
+		}
+	}
+
+	// Verify all lines between borders have side borders.
+	if topBorderLine >= 0 && bottomBorderLine > topBorderLine {
+		for i := topBorderLine + 1; i < bottomBorderLine; i++ {
+			line := lines[i]
+			pipeCount := strings.Count(line, "│")
+			if pipeCount < 2 {
+				t.Errorf("Line %d missing side borders (found %d '│'): %q", i, pipeCount, line)
+			}
+		}
+	}
+
+	// Verify message content is present.
+	if !strings.Contains(output, "Detecting") || !strings.Contains(output, "burst") {
+		t.Error("Modal content appears truncated - message not fully visible")
+		t.Logf("Modal output:\n%s", output)
+	}
+
+	// Log modal dimensions for debugging.
+	maxWidth := 0
+	for _, line := range lines {
+		w := lipgloss.Width(line)
+		if w > maxWidth {
+			maxWidth = w
+		}
+	}
+	t.Logf("Modal rendered: %d lines, max width %d", len(lines), maxWidth)
 }
