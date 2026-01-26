@@ -116,8 +116,10 @@ type BurstManagementResult struct {
 	SelectedBurstID string
 }
 
-// NewBurstManagementContext creates a new context for BurstManagement intent
-func NewBurstManagementContext(service *careerservice.Service, burstRepo career.BurstRepository, ctx context.Context) *BurstManagementContext {
+// NewBurstManagementContext creates a new context for BurstManagement intent.
+func NewBurstManagementContext(
+	service *careerservice.Service, burstRepo career.BurstRepository, ctx context.Context,
+) *BurstManagementContext {
 	return &BurstManagementContext{
 		CurrentState:            BurstListState,
 		Bursts:                  make([]*domain.Burst, 0),

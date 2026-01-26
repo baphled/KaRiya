@@ -19,7 +19,9 @@ type MetadataFormData struct {
 // NewMetadataEditorForm creates a form for editing event metadata.
 // The form has 6 fields: Date, Company, Project, Tags, Categories, Skills,
 // plus a Submit confirmation button.
-func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCategories []string, availableSkills []*career.Skill) *huh.Form {
+func NewMetadataEditorForm(
+	event *career.CareerEvent, availableTags, availableCategories []string, availableSkills []*career.Skill,
+) *huh.Form {
 	data := GetMetadataFormData(event)
 	data.SubmitConfirmed = false
 
@@ -103,7 +105,9 @@ func NewMetadataEditorForm(event *career.CareerEvent, availableTags, availableCa
 }
 
 // NewMetadataEditorFormWithData creates a form for editing event metadata with initial form data.
-func NewMetadataEditorFormWithData(data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill) *huh.Form {
+func NewMetadataEditorFormWithData(
+	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
+) *huh.Form {
 	// Initialize submit confirmation to false
 	data.SubmitConfirmed = false
 

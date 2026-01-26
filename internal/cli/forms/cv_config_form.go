@@ -51,7 +51,10 @@ type ExtractedTechnology struct {
 // NewCVConfigForm creates the CV configuration wizard form.
 // singleTechSelect: when true, uses single-select for technologies (specialist mode),
 // when false, uses multi-select (generalist mode).
-func NewCVConfigForm(data *CVConfigFormData, profileOptions []ProfileOption, extractedTechs []ExtractedTechnology, width, height int, singleTechSelect bool) *huh.Form {
+func NewCVConfigForm(
+	data *CVConfigFormData, profileOptions []ProfileOption, extractedTechs []ExtractedTechnology,
+	width, height int, singleTechSelect bool,
+) *huh.Form {
 	// Step 1: WHO - Profile and Audience
 	profileOpts := make([]huh.Option[string], 0, len(profileOptions)+1)
 	profileOpts = append(profileOpts, huh.NewOption("-- Select a profile --", ""))

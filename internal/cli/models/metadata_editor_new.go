@@ -46,7 +46,10 @@ type MetadataEditorModelNew struct {
 }
 
 // NewMetadataEditorModelNew creates a new metadata editor model using huh forms.
-func NewMetadataEditorModelNew(event *career.CareerEvent, service *careerservice.Service, cliSvc *cliservice.CLIEventService, ctx context.Context) *MetadataEditorModelNew {
+func NewMetadataEditorModelNew(
+	event *career.CareerEvent, service *careerservice.Service,
+	cliSvc *cliservice.CLIEventService, ctx context.Context,
+) *MetadataEditorModelNew {
 	// Create a copy of the event for reverting
 	eventCopy := *event
 

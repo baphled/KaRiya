@@ -42,7 +42,9 @@ type BurstSuggestionModelNew struct {
 }
 
 // NewBurstSuggestionModelNew creates a new burst suggestion model using huh forms for editing.
-func NewBurstSuggestionModelNew(svc *careerservice.Service, suggestions []burstfact.BurstSuggestion, ctx context.Context) *BurstSuggestionModelNew {
+func NewBurstSuggestionModelNew(
+	svc *careerservice.Service, suggestions []burstfact.BurstSuggestion, ctx context.Context,
+) *BurstSuggestionModelNew {
 	return &BurstSuggestionModelNew{
 		BaseStandardModel: NewBaseStandardModel(),
 		service:           svc,
