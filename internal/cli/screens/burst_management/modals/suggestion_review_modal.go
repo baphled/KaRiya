@@ -56,12 +56,13 @@ func NewSuggestionReviewModal(suggestions []burst_fact.BurstSuggestion, theme th
 	columns := []behaviors.ColumnDef{
 		{Title: "Name", Width: 30},
 		{Title: "Events", Width: 8},
-		{Title: "Confidence", Width: 18},
+		{Title: "Confidence", Width: 24},
 	}
 
 	// Row formatter for suggestions.
+	// Use width 15 for bar to show meaningful differences between confidence levels.
 	formatter := func(s burst_fact.BurstSuggestion, _ int) []string {
-		confidenceBar := primitives.CompactBar(s.ConfidenceScore, 8, nil).
+		confidenceBar := primitives.CompactBar(s.ConfidenceScore, 15, nil).
 			ShowPercentage(true).
 			Render()
 		return []string{
