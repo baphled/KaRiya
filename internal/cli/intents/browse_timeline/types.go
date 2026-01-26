@@ -61,6 +61,10 @@ type Intent struct {
 	// activeScreen holds the current screen being displayed.
 	activeScreen screens.Screen
 
+	// --- Modals (priority order: error > delete > edit > detail > skills > filter > search > sort > quickAdd) ---
+	// The modalRegistry manages priority and ensures only the highest-priority visible modal
+	// receives updates and renders. Priority is defined in initializeModalRegistry().
+
 	// filterModal holds the filter modal (shown over the list).
 	filterModal *modals.FilterModal
 

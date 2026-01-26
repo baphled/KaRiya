@@ -1,6 +1,7 @@
 package browse_timeline
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,7 +14,7 @@ func createBenchmarkEvents(n int) []*career.CareerEvent {
 	now := time.Now()
 	for i := 0; i < n; i++ {
 		events[i] = &career.CareerEvent{
-			ID:        "event-" + string(rune('0'+i)),
+			ID:        fmt.Sprintf("event-%d", i),
 			Text:      "Benchmark event",
 			Company:   "BenchCorp",
 			Date:      now,
