@@ -564,6 +564,26 @@ issues:
       linters:
         - dupl
 
+    # Modal files use common patterns that trigger lint warnings
+    # These are intentional patterns for Bubble Tea modal handling
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - revive
+      text: "unnecessary-stmt"
+
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - revive
+      text: "unused-parameter"
+
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - godot
+
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - funlen
+
     # Exclude test fixtures and utilities from strict checks
     # These are test helpers where MustCreate() is intentionally used without error checks.
     - path: internal/testutil/
