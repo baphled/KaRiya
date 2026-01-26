@@ -34,8 +34,10 @@
 # ├── helpers_test.go           # Tests for helpers (if helpers.go exists)
 # ├── interfaces.go             # RECOMMENDED: Service interfaces for DI
 # ├── filters.go                # OPTIONAL: Domain-specific filter logic
-# ├── {feature}_suite_test.go   # REQUIRED: Ginkgo test suite entry point
-# └── {feature}_e2e_test.go     # RECOMMENDED: End-to-end tests
+# └── {feature}_suite_test.go   # REQUIRED: Ginkgo test suite entry point
+#
+# internal/testutil/e2e/
+# └── {feature}_e2e_test.go     # REQUIRED: End-to-end tests for the intent
 #
 # screens/{feature_name}/
 # ├── {name}_list_screen.go         # List view screen
@@ -831,15 +833,37 @@ func TestBrowseTimeline(t *testing.T) {
         fi
         
         # ===========================================
-        # E2E TEST FILE (recommended)
+        # E2E TEST FILE (REQUIRED - in internal/testutil/e2e/)
         # ===========================================
-        E2E_FILE=$(find "$intent_dir" -maxdepth 1 -name "*_e2e_test.go" 2>/dev/null | head -1)
+        E2E_DIR="internal/testutil/e2e"
+        E2E_FILE=$(find "$E2E_DIR" -maxdepth 1 -name "${INTENT_NAME}_e2e_test.go" 2>/dev/null | head -1)
+        
+        # Also check for variations like browse_timeline -> browse_timeline_e2e_test.go
         if [ -z "$E2E_FILE" ]; then
-            echo -e "${YELLOW}⚠️  WARNING: No E2E test file${NC}"
-            echo "   Intent: $INTENT_NAME"
-            echo "   Recommendation: Add ${INTENT_NAME}_e2e_test.go for integration tests"
-            echo ""
-            WARNINGS=$((WARNINGS+1))
+            E2E_FILE=$(find "$E2E_DIR" -maxdepth 1 -name "*${INTENT_NAME}*_e2e_test.go" 2>/dev/null | head -1)
+        fi
+        
+        if [ -z "$E2E_FILE" ]; then
+            report_issue "$intent_dir" "E2E Tests" "Missing E2E test file" \
+                "E2E tests are REQUIRED in internal/testutil/e2e/" \
+                "REQUIRED: Create E2E test file
+
+Location: internal/testutil/e2e/${INTENT_NAME}_e2e_test.go
+
+Example structure:
+package e2e_test
+
+import (
+    . \"github.com/onsi/ginkgo/v2\"
+    . \"github.com/onsi/gomega\"
+)
+
+var _ = Describe(\"${INTENT_NAME} E2E\", func() {
+    // E2E test cases
+})
+
+Reference: internal/testutil/e2e/browse_timeline_e2e_test.go"
+            CHECK17_ISSUES=$((CHECK17_ISSUES+1))
         fi
     done
 fi
