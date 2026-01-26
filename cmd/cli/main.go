@@ -443,7 +443,7 @@ func handleShowFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer
 }
 
 // handleNonInteractiveImport performs import without showing the interactive UI.
-func handleNonInteractiveImport(filePath string, _ bool, reviewFacts bool, svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
+func handleNonInteractiveImport(filePath string, _ bool, _ bool, svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	if _, err := os.Stat(filePath); err != nil {
 		fmt.Fprintf(errOut, "Error: Cannot access import file '%s': %v\n", filePath, err)
 		return 1

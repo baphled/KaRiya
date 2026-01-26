@@ -89,7 +89,7 @@ func NewExportServiceWithClipboard(logger *logger.Logger, clipboard ClipboardWri
 }
 
 // ExportToText exports a CV to plain text format
-func (es *ExportService) ExportToText(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
+func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", fmt.Errorf("CV view is nil")
 	}

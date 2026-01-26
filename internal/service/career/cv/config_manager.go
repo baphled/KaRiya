@@ -73,7 +73,7 @@ func (m *MemoryConfigManager) LoadConfig(_ context.Context, name string) (*caree
 }
 
 // SaveConfig saves or updates a configuration.
-func (m *MemoryConfigManager) SaveConfig(ctx context.Context, config *career.CVConfig) error {
+func (m *MemoryConfigManager) SaveConfig(_ context.Context, config *career.CVConfig) error {
 	if config == nil {
 		return ErrInvalidConfigName
 	}
@@ -101,7 +101,7 @@ func (m *MemoryConfigManager) SaveConfig(ctx context.Context, config *career.CVC
 }
 
 // DeleteConfig deletes a configuration by name.
-func (m *MemoryConfigManager) DeleteConfig(ctx context.Context, name string) error {
+func (m *MemoryConfigManager) DeleteConfig(_ context.Context, name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

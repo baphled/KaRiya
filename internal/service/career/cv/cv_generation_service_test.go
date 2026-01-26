@@ -630,7 +630,7 @@ func (m *MockConfigManager) DeleteConfig(_ context.Context, name string) error {
 	return nil
 }
 
-func (m *MockConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig, error) {
+func (m *MockConfigManager) ListConfigs(_ context.Context) ([]*career.CVConfig, error) {
 	configs := make([]*career.CVConfig, 0, len(m.configs))
 	for _, config := range m.configs {
 		configs = append(configs, config)
