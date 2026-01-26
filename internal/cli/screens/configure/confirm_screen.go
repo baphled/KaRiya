@@ -80,9 +80,8 @@ func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return cmd, nil
 	}
 
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
 		case "esc":
 			// Cancel - go back
 			return nil, &screens.CancelResult{}
@@ -109,7 +108,7 @@ func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 		case "left", "right", "h", "l", "tab":
 			// Delegate navigation to ButtonGroup
-			s.buttonGroup.Update(msg)
+			s.buttonGroup.Update(keyMsg)
 			return nil, nil
 		}
 	}

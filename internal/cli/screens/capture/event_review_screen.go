@@ -87,9 +87,8 @@ func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 	}
 
 	// Handle key messages
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
 		case "enter":
 			// Confirm review - return SubmitResult with all data
 			return nil, &screens.SubmitResult{
