@@ -24,72 +24,123 @@
 
 ## Implementation Checklist
 
-### File Structure
-- [ ] Create intent model file: `internal/cli/intents/{intent_name}.go`
-- [ ] Create intent implementation: `internal/cli/intents/{intent_name}_intent.go`
-- [ ] Create test file: `internal/cli/intents/{intent_name}_test.go`
-- [ ] Create escape test file: `internal/cli/intents/{intent_name}_escape_test.go`
+### File Structure (Subdirectory - REQUIRED)
+
+Create the subdirectory structure:
+```bash
+mkdir -p internal/cli/intents/{feature}/
+mkdir -p internal/cli/screens/{feature}/
+mkdir -p internal/cli/screens/{feature}/modals/  # If >2 modals
+```
+
+**Core Files (5 Required)**:
+- [ ] Create `internal/cli/intents/{feature}/context.go` (IntentContext + Validate())
+- [ ] Create `internal/cli/intents/{feature}/result.go` (Result struct)
+- [ ] Create `internal/cli/intents/{feature}/constants.go` (State enum ONLY)
+- [ ] Create `internal/cli/intents/{feature}/messages.go` (ALL *Msg types)
+- [ ] Create `internal/cli/intents/{feature}/intent.go` (Implementation)
+
+**Optional Files (for larger intents)**:
+- [ ] Create `types.go` (Intent struct if intent.go > 300 lines)
+- [ ] Create `handlers.go` (ScreenResultHandler methods)
+- [ ] Create `helpers.go` (Helper methods)
+- [ ] Create `filters.go` (Domain-specific filter logic)
+- [ ] Create `interfaces.go` (Service interfaces)
+
+**Test Files**:
+- [ ] Create `{feature}_suite_test.go` (Ginkgo suite)
+- [ ] Create `intent_test.go` (Unit tests)
+- [ ] Create `{feature}_escape_test.go` (Escape behavior tests)
 
 ### Data Structures
 
-#### Context
+#### Context (in context.go)
 ```go
-type YourIntentContext struct {
-    // Input data needed by the intent
+// File: intents/{feature}/context.go
+package myfeature
+
+type IntentContext struct {
+    Items   []*domain.Item
+    Service ItemService  // Use interface for dependency injection
 }
 
-func (c *YourIntentContext) Validate() error {
-    // Validate required fields
+func (c *IntentContext) Validate() error {
+    if c.Items == nil {
+        c.Items = make([]*domain.Item, 0)
+    }
     return nil
 }
-```
 
-- [ ] Define `{Intent}Context` struct
-- [ ] Add `Validate()` method
-- [ ] Document all fields with comments
-
-#### Result
-```go
-type YourIntentResult struct {
-    // Output data from successful intent completion
+// Domain types can also be here
+type Filters struct {
+    SearchText string
+    Categories []string
 }
 ```
 
-- [ ] Define `{Intent}Result` struct
+- [ ] Define `IntentContext` struct in `context.go`
+- [ ] Add `Validate()` method
+- [ ] Document all fields with comments
+- [ ] Include domain types (Filters, etc.) if needed
+
+#### Result (in result.go)
+```go
+// File: intents/{feature}/result.go
+package myfeature
+
+type Result struct {
+    SelectedItem *domain.Item
+    FinalFilters *Filters
+}
+```
+
+- [ ] Define `Result` struct in `result.go`
 - [ ] Include all data needed by parent/caller
 - [ ] Document what each field represents
 
-#### Model
+#### Intent Struct (in intent.go or types.go)
 ```go
-type YourIntentModel struct {
-    context *YourIntentContext
-    state   YourState
-    result  *IntentResult[*YourIntentResult]
-    active  bool
-    // ... state-specific fields ...
+// File: intents/{feature}/types.go (or intent.go if small)
+package myfeature
+
+type Intent struct {
+    *intents.BaseIntent
+    context      *IntentContext
+    state        State
+    active       bool
+    result       *intents.IntentResult[*Result]
+    activeScreen screens.Screen
+    // Modal fields...
+    modalRegistry *intents.ModalRegistry
 }
 ```
 
-- [ ] Define `{Intent}Model` struct
-- [ ] Include `context`, `state`, `result`, `active` fields
+- [ ] Define `Intent` struct (in `intent.go` or `types.go`)
+- [ ] Embed `*intents.BaseIntent`
+- [ ] Include `context`, `state`, `active`, `result` fields
+- [ ] Add `modalRegistry` for unified modal handling
 - [ ] Add state-specific fields as needed
 
 ### State Machine
 
-#### State Enum
+#### State Enum (in constants.go)
 ```go
-type YourState string
+// File: intents/{feature}/constants.go
+package myfeature
+
+type State string
 
 const (
-    StateInitial    YourState = "initial"
-    StateIntermediate YourState = "intermediate"
-    StateFinal      YourState = "final"
+    StateList   State = "list"
+    StateDetail State = "detail"
 )
 ```
 
+- [ ] Define State type in `constants.go` (NOT in intent.go)
 - [ ] Define all states as constants
 - [ ] Use descriptive state names
 - [ ] Document state transitions in comments
+- [ ] Do NOT put error constants here (use Go errors package)
 
 ### Intent Interface Implementation
 
@@ -516,18 +567,20 @@ var _ = Describe("YourIntent - Escape Key Behavior", func() {
 
 ## Reference Examples
 
-### Minimal Intent (2 states)
-See: `internal/cli/intents/browse_timeline_intent.go`
+### New Subdirectory Structure (RECOMMENDED)
+See: `internal/cli/intents/browse_timeline/` - Complete subdirectory implementation with:
+- 5 core files (context.go, result.go, constants.go, messages.go, intent.go)
+- Optional files (types.go, handlers.go, helpers.go, filters.go, interfaces.go)
+- Feature-specific screens (`screens/timeline/`)
+- Feature-specific modals (`screens/timeline/modals/`)
 
-### Medium Intent (4 states)
+### Legacy Flat Structure (To Be Migrated)
 See: `internal/cli/intents/capture_event_intent.go`
-
-### Complex Intent (10 states)
 See: `internal/cli/intents/generate_cv_intent.go`
+See: `internal/cli/intents/burst_management_intent.go`
 
-### Async Operations
-See: `internal/cli/intents/configure_system.go` (Saving state)
-See: `internal/cli/intents/generate_cv_intent.go` (Generating state)
+**Note**: Legacy intents should be migrated to subdirectory structure.
+See: `docs/guides/INTENT_MIGRATION_TO_SUBDIRECTORY.md`
 
 ---
 
@@ -536,17 +589,33 @@ See: `internal/cli/intents/generate_cv_intent.go` (Generating state)
 Copy this template to start a new intent:
 
 ```bash
-# Create files
-touch internal/cli/intents/my_intent.go
-touch internal/cli/intents/my_intent_intent.go
-touch internal/cli/intents/my_intent_test.go
-touch internal/cli/intents/my_intent_escape_test.go
+# Create subdirectory structure
+mkdir -p internal/cli/intents/my_feature
+mkdir -p internal/cli/screens/my_feature
+mkdir -p internal/cli/screens/my_feature/modals  # If >2 modals
 
-# Copy template from existing intent
-# Recommend: browse_timeline_intent.go for simple intents
-#            capture_event_intent.go for forms
-#            generate_cv_intent.go for complex workflows
+# Create core files (5 required)
+touch internal/cli/intents/my_feature/context.go
+touch internal/cli/intents/my_feature/result.go
+touch internal/cli/intents/my_feature/constants.go
+touch internal/cli/intents/my_feature/messages.go
+touch internal/cli/intents/my_feature/intent.go
+
+# Create optional files (for larger intents)
+touch internal/cli/intents/my_feature/types.go      # Intent struct
+touch internal/cli/intents/my_feature/handlers.go   # ScreenResultHandler
+touch internal/cli/intents/my_feature/helpers.go    # Helper methods
+
+# Create test files
+touch internal/cli/intents/my_feature/my_feature_suite_test.go
+touch internal/cli/intents/my_feature/intent_test.go
+
+# Copy from reference implementation
+# RECOMMENDED: intents/browse_timeline/ - Complete subdirectory example
+#              screens/timeline/ - Screen and modal patterns
 ```
+
+**Reference Implementation**: `intents/browse_timeline/` demonstrates the new subdirectory pattern.
 
 ---
 
@@ -564,6 +633,7 @@ An intent is considered complete when:
 
 ---
 
-**Last Updated**: 2026-01-06  
-**Based on**: Escape Key Standardization (Phases 1-4)  
-**Reference**: `docs/ESCAPE_KEY_STANDARDIZATION_COMPLETE.md`
+**Last Updated**: 2026-01-24  
+**Based on**: Subdirectory Structure Migration + Escape Key Standardization  
+**Reference Implementation**: `intents/browse_timeline/` and `screens/timeline/`  
+**Migration Guide**: `docs/guides/INTENT_MIGRATION_TO_SUBDIRECTORY.md`
