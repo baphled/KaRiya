@@ -2,6 +2,7 @@
 package burst_management
 
 import (
+	"context"
 	"errors"
 
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -126,6 +127,10 @@ type Intent struct {
 
 	// modalRegistry manages all modals with unified Update/View handling.
 	modalRegistry *intents.ModalRegistry
+
+	// cancelFunc is the cancel function for the current async operation.
+	// Call this to cancel loading operations when user presses Esc.
+	cancelFunc context.CancelFunc
 }
 
 // GetState returns the current state of the intent.
@@ -253,6 +258,17 @@ func (i *Intent) IsExtractingFacts() bool {
 // GetExtractedFactsCount returns the count of facts extracted in the last operation.
 func (i *Intent) GetExtractedFactsCount() int {
 	return i.extractedFactsCount
+}
+
+// SetLoadingEventsForTesting sets the loadingEvents flag for testing purposes.
+// This allows tests to simulate the loading state without requiring a full service setup.
+func (i *Intent) SetLoadingEventsForTesting(loading bool) {
+	i.loadingEvents = loading
+}
+
+// SetLoadingFactsForTesting sets the loadingFacts flag for testing purposes.
+func (i *Intent) SetLoadingFactsForTesting(loading bool) {
+	i.loadingFacts = loading
 }
 
 // NewIntent creates a new BurstManagement intent.

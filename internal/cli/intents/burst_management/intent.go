@@ -2,6 +2,7 @@
 package burst_management
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -98,7 +99,11 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	// Loading modal - cancellable with Esc.
 	if i.loadingModal != nil {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
-			// Cancel the loading operation.
+			// Cancel the async operation.
+			if i.cancelFunc != nil {
+				i.cancelFunc()
+				i.cancelFunc = nil
+			}
 			i.loadingModal = nil
 			i.suggestionsLoading = false
 			i.extractingFacts = false
@@ -161,7 +166,8 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 
 				// If modal closed (no more suggestions), return to list view.
 				if !i.suggestionModal.IsVisible() {
-					i.suggestionModal = nil
+					// Clear suggestion-related state to prevent race conditions.
+					i.clearSuggestionState()
 					i.state = StateList
 					i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 				}
@@ -177,8 +183,9 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 			accepted := i.suggestionModal.GetAcceptedSuggestions()
 			cancelled := i.suggestionModal.GetAction() == burstmodals.SuggestionActionCancel
 
-			// Clear modal.
-			i.suggestionModal = nil
+			// Clear suggestion-related state to prevent race conditions with async operations.
+			// This ensures that background fact extraction won't interfere with navigation.
+			i.clearSuggestionState()
 
 			// If user accepted some suggestions before cancelling, create them.
 			if len(accepted) > 0 && !cancelled {
@@ -276,24 +283,25 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
-	// Edit burst modal.
+	// Edit burst modal (editing existing bursts only - new bursts are created via AI suggestions).
 	if i.editModal != nil && i.editModal.IsVisible() {
 		cmd, completed, formData := i.editModal.Update(msg)
 		if !i.editModal.IsVisible() {
 			// Modal was closed.
 			if completed && formData != nil && i.selectedBurst != nil {
-				// User completed form - send EditBurstMsg.
+				// Editing existing burst - send EditBurstMsg.
 				editMsg := EditBurstMsg{
 					BurstID:     i.selectedBurst.ID,
 					Name:        formData.Name,
 					Description: formData.Description,
 				}
-				// Clear modal and return msg to trigger edit handling.
 				i.editModal = nil
 				return tea.Batch(cmd, func() tea.Msg { return editMsg })
 			}
 			// User cancelled - return to list view.
 			i.editModal = nil
+			i.state = StateList
+			i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 			return noopCmd
 		}
 		return cmd
@@ -319,6 +327,11 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 	i.loadingModal = nil
 
 	if msg.Error != nil {
+		// Silently ignore cancelled operations - user already knows they cancelled.
+		if msg.Error == context.Canceled {
+			i.state = StateList
+			return nil
+		}
 		i.errorModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
 		// Only transition to list if suggestion modal is not visible.
 		// User may still be reviewing remaining suggestions.

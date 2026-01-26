@@ -34,11 +34,10 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
 	switch i.state {
 	case StateList:
-		// Check if any modal is active - if so, Esc should close the modal, not cancel the intent.
-		// This handles cases where modals are loading or in transition.
-		if i.detailModal != nil || i.eventsModal != nil || i.factsModal != nil ||
-			i.editModal != nil || i.deleteModal != nil || i.confirmModal != nil ||
-			i.errorModal != nil || i.loadingEvents || i.loadingFacts {
+		// Check if any modal is visible - if so, Esc should close the modal, not cancel the intent.
+		// Use hasVisibleModal() to properly check visibility rather than just nil checks.
+		// This prevents race conditions where async operations might leave stale modal references.
+		if i.hasVisibleModal() {
 			// Modal is active or loading - ignore cancel from screen.
 			return nil
 		}
@@ -104,12 +103,6 @@ func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 	action, _ := actionData["action"].(string)
 	switch action {
-	case "add":
-		// Open create burst modal (when implemented).
-		// For now, just transition state.
-		i.state = StateEdit
-		return nil
-
 	case "edit":
 		// Extract burst from action data.
 		if burst, ok := actionData["burst"].(*career.Burst); ok {

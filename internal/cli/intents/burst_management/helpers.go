@@ -132,6 +132,54 @@ func (i *Intent) transitionToScreen(screen screens.Screen) {
 	}
 }
 
+// clearSuggestionState clears state related to suggestion review.
+// This is called when exiting suggestion review to prevent race conditions
+// with background fact extraction operations.
+func (i *Intent) clearSuggestionState() {
+	i.suggestionModal = nil
+	i.suggestionsLoading = false
+	// Clear selected burst since we're returning from suggestion review.
+	// This prevents handleFactExtractionComplete from showing detail modal.
+	i.selectedBurst = nil
+}
+
+// hasVisibleModal returns true if any modal is currently visible.
+// This uses IsVisible() checks rather than nil checks to handle
+// cases where modals are created but not yet shown or already hidden.
+func (i *Intent) hasVisibleModal() bool {
+	if i.detailModal != nil && i.detailModal.IsVisible() {
+		return true
+	}
+	if i.eventsModal != nil && i.eventsModal.IsVisible() {
+		return true
+	}
+	if i.factsModal != nil && i.factsModal.IsVisible() {
+		return true
+	}
+	if i.editModal != nil && i.editModal.IsVisible() {
+		return true
+	}
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		return true
+	}
+	if i.confirmModal != nil && i.confirmModal.IsVisible() {
+		return true
+	}
+	if i.errorModal != nil {
+		return true
+	}
+	if i.loadingModal != nil {
+		return true
+	}
+
+	// Check loading flags (these indicate async operations in progress).
+	if i.loadingEvents || i.loadingFacts {
+		return true
+	}
+
+	return false
+}
+
 // deleteBurst deletes a burst and refreshes the list.
 func (i *Intent) deleteBurst(burst *career.Burst) tea.Cmd {
 	if burst == nil {
@@ -236,18 +284,22 @@ func (i *Intent) confirmBurst() tea.Cmd {
 		return nil
 	}
 
-	// Mark burst as confirmed.
-	i.selectedBurst.Confirmed = true
-
-	// Save to repository if available.
+	// Save to repository first (if available) BEFORE modifying in-memory state.
 	if i.context.BurstRepository != nil {
+		// Create a copy with Confirmed=true for the update.
 		ctx := i.getContext()
+		i.selectedBurst.Confirmed = true
 		err := i.context.BurstRepository.Update(ctx, i.selectedBurst)
 		if err != nil {
+			// Rollback in-memory change on failure.
+			i.selectedBurst.Confirmed = false
 			i.confirmError = err
 			i.errorModal = feedback.NewErrorModal("Confirmation Failed", err.Error())
 			return nil
 		}
+	} else {
+		// No repository - just update in memory.
+		i.selectedBurst.Confirmed = true
 	}
 
 	// Stay on detail view - just update the confirmed status visually.
@@ -275,6 +327,10 @@ func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 	// Clear the edit modal (it's already been closed by handleModalUpdates or test).
 	i.editModal = nil
 
+	// Save original values in case we need to rollback.
+	originalName := i.selectedBurst.Name
+	originalDescription := i.selectedBurst.Description
+
 	// Update burst with new values.
 	i.selectedBurst.Name = msg.Name
 	i.selectedBurst.Description = msg.Description
@@ -284,6 +340,9 @@ func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 		ctx := i.getContext()
 		err := i.context.BurstRepository.Update(ctx, i.selectedBurst)
 		if err != nil {
+			// Rollback in-memory changes on failure.
+			i.selectedBurst.Name = originalName
+			i.selectedBurst.Description = originalDescription
 			i.editError = err
 			i.errorModal = feedback.NewErrorModal("Update Failed", err.Error())
 			return nil
@@ -335,9 +394,9 @@ func (i *Intent) GetContextHelp() string {
 }
 
 // showBurstDetailModal creates and shows the burst detail modal.
+// Note: viewedBursts tracking is handled by HandleNavigate, not here.
 func (i *Intent) showBurstDetailModal(burst *career.Burst) tea.Cmd {
 	i.selectedBurst = burst
-	i.viewedBursts = append(i.viewedBursts, burst)
 	width, height := i.getTerminalDimensions()
 	theme := i.Theme()
 
@@ -353,6 +412,14 @@ func (i *Intent) showBurstDetailModal(burst *career.Burst) tea.Cmd {
 func (i *Intent) showBurstEventsModal() tea.Cmd {
 	if i.selectedBurst == nil {
 		return nil
+	}
+
+	// Check for nil service before starting async load.
+	if i.context.Service == nil {
+		// No service available - return empty events immediately.
+		return func() tea.Msg {
+			return BurstEventsLoadedMsg{Events: []*career.CareerEvent{}}
+		}
 	}
 
 	i.loadingEvents = true
@@ -373,6 +440,14 @@ func (i *Intent) showBurstEventsModal() tea.Cmd {
 func (i *Intent) showBurstFactsModal() tea.Cmd {
 	if i.selectedBurst == nil {
 		return nil
+	}
+
+	// Check for nil service before starting async load.
+	if i.context.Service == nil {
+		// No service available - return empty facts immediately.
+		return func() tea.Msg {
+			return BurstFactsLoadedMsg{Facts: []*career.Fact{}}
+		}
 	}
 
 	i.loadingFacts = true
@@ -562,16 +637,37 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 		return nil
 	}
 
+	// Cancel any previous async operation.
+	if i.cancelFunc != nil {
+		i.cancelFunc()
+	}
+
+	// Create cancellable context for this operation.
+	ctx, cancel := context.WithCancel(context.Background())
+	i.cancelFunc = cancel
+
 	// Mark as loading and create loading modal.
 	i.suggestionsLoading = true
 	i.loadingModal = feedback.NewLoadingModal("Detecting burst patterns...", true).WithTheme(i.Theme())
 
+	// Capture existing bursts before async operation.
+	existingBursts := i.context.Bursts
+
+	// Capture service reference to avoid race conditions.
+	service := i.context.Service
+
 	return func() tea.Msg {
-		ctx := i.getContext()
+		// Check if cancelled before starting.
+		if ctx.Err() != nil {
+			return BurstSuggestionsLoadedMsg{
+				Suggestions: nil,
+				Error:       ctx.Err(),
+			}
+		}
 
 		// Get all events from the service.
-		// List all events to get their IDs (use empty filters to get all).
-		events, err := i.context.Service.ListEvents(ctx, careerrepo.ListFilters{})
+		// List all events to get their IDs (use Limit=-1 for no limit).
+		events, err := service.ListEvents(ctx, careerrepo.ListFilters{Limit: -1})
 		if err != nil {
 			return BurstSuggestionsLoadedMsg{
 				Suggestions: nil,
@@ -579,22 +675,40 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 			}
 		}
 
-		// Extract event IDs.
-		eventIDs := make([]string, len(events))
-		for idx, event := range events {
-			eventIDs[idx] = event.ID
-		}
-
-		// If no events, return empty suggestions.
-		if len(eventIDs) == 0 {
+		// Check if cancelled after loading events.
+		if ctx.Err() != nil {
 			return BurstSuggestionsLoadedMsg{
 				Suggestions: nil,
-				Error:       fmt.Errorf("no events available for burst detection"),
+				Error:       ctx.Err(),
 			}
 		}
 
-		// Call the service to detect bursts.
-		suggestions, err := i.context.Service.SuggestBursts(ctx, eventIDs)
+		// Build a set of event IDs that are already in confirmed bursts.
+		usedEventIDs := make(map[string]bool)
+		for _, burst := range existingBursts {
+			for _, eventID := range burst.EventIDs {
+				usedEventIDs[eventID] = true
+			}
+		}
+
+		// Extract event IDs, excluding those already in bursts.
+		var eventIDs []string
+		for _, event := range events {
+			if !usedEventIDs[event.ID] {
+				eventIDs = append(eventIDs, event.ID)
+			}
+		}
+
+		// If no events available for detection, return appropriate message.
+		if len(eventIDs) == 0 {
+			return BurstSuggestionsLoadedMsg{
+				Suggestions: nil,
+				Error:       fmt.Errorf("no unassigned events available for burst detection"),
+			}
+		}
+
+		// Call the service to detect bursts from unassigned events only.
+		suggestions, err := service.SuggestBursts(ctx, eventIDs)
 		if err != nil {
 			return BurstSuggestionsLoadedMsg{
 				Suggestions: nil,
@@ -615,6 +729,11 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 	i.loadingModal = nil
 
 	if msg.Error != nil {
+		// Silently ignore cancelled operations - user already knows they cancelled.
+		if msg.Error == context.Canceled {
+			i.state = StateList
+			return nil
+		}
 		i.suggestionsError = msg.Error
 		i.ShowErrorModal("Burst Detection Failed", msg.Error.Error())
 		i.state = StateList
@@ -633,6 +752,8 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 	// This prevents handleFactExtractionComplete from showing the detail modal for an old burst.
 	i.selectedBurst = nil
 	i.suggestionModal = burstmodals.NewSuggestionReviewModal(msg.Suggestions, i.Theme())
+	width, height := i.getTerminalDimensions()
+	i.suggestionModal.SetDimensions(width, height)
 	i.suggestionModal.Show()
 	i.state = StateSuggestionReview
 	return nil
@@ -750,16 +871,36 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 		}
 	}
 
+	// Cancel any previous async operation.
+	if i.cancelFunc != nil {
+		i.cancelFunc()
+	}
+
+	// Create cancellable context for this operation.
+	ctx, cancel := context.WithCancel(context.Background())
+	i.cancelFunc = cancel
+
+	// Capture service reference to avoid race conditions.
+	service := i.context.Service
+
 	return func() tea.Msg {
-		if i.context.Service == nil {
+		// Check if cancelled before starting.
+		if ctx.Err() != nil {
+			return FactExtractionCompleteMsg{Error: ctx.Err()}
+		}
+
+		if service == nil {
 			return FactExtractionCompleteMsg{Error: fmt.Errorf("service not available")}
 		}
 
-		ctx := i.getContext()
-
-		facts, err := i.context.Service.ExtractFactsFromBurst(ctx, burst)
+		facts, err := service.ExtractFactsFromBurst(ctx, burst)
 		if err != nil {
 			return FactExtractionCompleteMsg{Error: err}
+		}
+
+		// Check if cancelled after extraction.
+		if ctx.Err() != nil {
+			return FactExtractionCompleteMsg{Error: ctx.Err()}
 		}
 
 		savedFacts := make([]*career.Fact, 0, len(facts))
@@ -767,7 +908,12 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 			fact := &facts[idx]
 			fact.SourceBurstID = burst.ID
 
-			if err := i.context.Service.SaveFact(ctx, fact); err != nil {
+			// Check if cancelled during save loop.
+			if ctx.Err() != nil {
+				return FactExtractionCompleteMsg{Error: ctx.Err()}
+			}
+
+			if err := service.SaveFact(ctx, fact); err != nil {
 				continue
 			}
 			savedFacts = append(savedFacts, fact)
