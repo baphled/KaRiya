@@ -403,6 +403,11 @@ linters-settings:
     disabled-checks:
       - whyNoLint       # We don't require nolint explanations everywhere
       - hugeParam       # Can be noisy for Bubble Tea models
+      - ifElseChain     # if-else chains are sometimes clearer than switch
+      - singleCaseSwitch # Single case switches are used for type assertions
+      - unnamedResult   # Named results not always needed
+      - paramTypeCombine # Parameter type combining can reduce readability
+      - octalLiteral    # Legacy code uses 0600 style
     settings:
       captLocal:
         paramsOnly: true
@@ -419,6 +424,7 @@ linters-settings:
       # Naming conventions
       - name: exported
         severity: warning
+        disabled: true  # Stuttering warnings (e.g., base.BaseScreen) are intentional
       - name: var-naming
         severity: warning
       - name: package-comments
@@ -613,6 +619,11 @@ issues:
         - funlen
         - nestif
         - dupl
+        - revive      # Complex state machine with many handlers
+
+    - path: internal/cli/intents/burst_management\.go
+      linters:
+        - revive      # Context parameter position in factory functions
 
     - path: internal/cli/intents/fact_management_intent\.go
       linters:
@@ -621,6 +632,11 @@ issues:
         - funlen
         - nestif
         - dupl
+        - revive      # Complex state machine with many handlers
+
+    - path: internal/cli/intents/fact_management\.go
+      linters:
+        - revive      # Context parameter position in factory functions
 
     - path: internal/cli/intents/capture_event_intent\.go
       linters:
@@ -629,6 +645,7 @@ issues:
         - funlen
         - nestif
         - dupl
+        - revive      # Complex state machine with many handlers
 
     - path: internal/cli/intents/manage_skills_intent\.go
       linters:
@@ -637,6 +654,7 @@ issues:
         - funlen
         - nestif
         - dupl
+        - revive      # Complex state machine with many handlers
 
     - path: internal/cli/intents/generate_cv_intent\.go
       linters:
@@ -645,6 +663,15 @@ issues:
         - funlen
         - nestif
         - dupl
+        - revive      # Complex wizard flow with many states
+
+    - path: internal/cli/intents/configure_system_intent\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - revive      # System configuration intent
 
     # =========================================================================
     # LEGACY SERVICE LAYER - Needs separate refactoring
@@ -677,6 +704,30 @@ issues:
         - gocognit
         - gocyclo
         - funlen
+        - gocritic    # Style suggestions in complex generation logic
+
+    - path: internal/service/career/cv/yaml_config_manager\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - gocritic    # YAML parsing has complex structure handling
+
+    - path: internal/service/career/cv/data_processing_service\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - gocritic    # Data processing has complex logic
+
+    - path: internal/service/career/cv/cv_generation_service\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
 
     # =========================================================================
     # LEGACY CLI - Needs refactoring
@@ -694,6 +745,85 @@ issues:
         - gocyclo
         - funlen
         - nestif
+
+    - path: internal/cli/models/burst_suggestion_new\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - revive      # Complex form model
+
+    - path: internal/cli/models/standard_model\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - revive      # Standard model base class
+
+    - path: internal/cli/models/metadata_editor_new\.go
+      linters:
+        - revive      # Context parameter position
+
+    - path: internal/cli/models/fact_editor_new\.go
+      linters:
+        - revive      # Context parameter position
+
+    # =========================================================================
+    # LEGACY SCREENS - Complex UI components
+    # =========================================================================
+    - path: internal/cli/screens/capture/event_review_screen\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - gocritic    # Complex review screen
+
+    - path: internal/cli/screens/configure/edit_settings\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    # =========================================================================
+    # LEGACY FORMS - Form builders with many fields
+    # =========================================================================
+    - path: internal/cli/forms/metadata_form\.go
+      linters:
+        - funlen      # Form builders need many lines for field definitions
+        - gocritic
+
+    - path: internal/cli/forms/capture_event_form\.go
+      linters:
+        - funlen      # Form builders need many lines
+        - gocritic
+
+    - path: internal/cli/forms/cv_config_form\.go
+      linters:
+        - funlen      # Form builders need many lines
+        - revive      # Argument limit for form factory functions
+
+    - path: internal/cli/forms/validators\.go
+      linters:
+        - revive      # Redefines min for validation
+
+    # =========================================================================
+    # LEGACY STATE MATRIX - Parser/scanner utilities
+    # =========================================================================
+    - path: internal/cli/statematrix/scanner\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+
+    - path: internal/cli/statematrix/parser\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
 
     - path: internal/cli/importer/parser\.go
       linters:
@@ -725,6 +855,107 @@ issues:
         - gocyclo
         - funlen
         - dupl
+
+    - path: internal/repository/career/memory_skill_repository\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - dupl
+
+    # =========================================================================
+    # LEGACY UIKIT WIDGETS - Complex rendering components
+    # =========================================================================
+    - path: internal/cli/uikit/widgets/detail_view\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - gocritic
+
+    # =========================================================================
+    # TERMINAL INFO - Uses builtin redefinitions intentionally
+    # =========================================================================
+    - path: internal/cli/terminal/info\.go
+      linters:
+        - revive      # Redefines max function intentionally
+
+    # =========================================================================
+    # LEGACY PACKAGE NAMING - burst_fact uses underscore (Go convention violation)
+    # Renaming would require significant refactoring across the codebase.
+    # =========================================================================
+    - path: internal/service/career/burst_fact/.*\.go
+      linters:
+        - revive
+      text: "var-naming.*underscore in package name"
+
+    - path: internal/service/career/burst_fact/detector\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - gocritic    # Complex burst detection logic
+
+    # =========================================================================
+    # LEGACY REPOSITORIES - Filter methods have complex query building
+    # =========================================================================
+    - path: internal/repository/career/sqlite_burst_repository\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - dupl
+
+    - path: internal/repository/career/burst_repository\.go
+      linters:
+        - dupl        # Memory repos share similar patterns
+
+    - path: internal/repository/career/fact_repository\.go
+      linters:
+        - dupl        # Memory repos share similar patterns
+
+    # =========================================================================
+    # LEGACY SCREENS - Complex preview/export screens
+    # =========================================================================
+    - path: internal/cli/screens/export/preview\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - gocritic
+
+    - path: internal/cli/screens/cv/preview\.go
+      linters:
+        - gocritic    # Preview rendering has style-specific code
+
+    # =========================================================================
+    # LEGACY UIKIT - Layout components
+    # =========================================================================
+    - path: internal/cli/uikit/layout/screen_layout\.go
+      linters:
+        - gocognit
+        - funlen
+        - gocritic    # Layout rendering has complex composition
+
+    # =========================================================================
+    # LEGACY COMPONENTS - Filter modals
+    # =========================================================================
+    - path: internal/cli/components/skill_filter_modal\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    # =========================================================================
+    # LEGACY INTENTS - Modals helper
+    # =========================================================================
+    - path: internal/cli/intents/modals\.go
+      linters:
+        - funlen
+        - gocritic    # Modal registry has many similar entries
 
     # Intent test files - test patterns have different requirements
     - path: internal/cli/intents/.*_test\.go

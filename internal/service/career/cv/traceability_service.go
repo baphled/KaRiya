@@ -133,7 +133,7 @@ func (ts *TraceabilityService) GetFactUsage(
 
 // ValidateTraceability validates all bullets have sources.
 func (ts *TraceabilityService) ValidateTraceability(
-	ctx context.Context,
+	_ context.Context,
 	bullets []*career.CVBullet,
 ) *ValidationReport {
 	ts.logger.Info("Validating traceability for %d bullets", len(bullets))
@@ -163,7 +163,7 @@ func (ts *TraceabilityService) ValidateTraceability(
 
 // GetEventBulletMapping returns a mapping of events to bullets.
 func (ts *TraceabilityService) GetEventBulletMapping(
-	ctx context.Context,
+	_ context.Context,
 	bullets []*career.CVBullet,
 ) map[string][]*career.CVBullet {
 	ts.logger.Info("Creating event-to-bullet mapping for %d bullets", len(bullets))
@@ -181,7 +181,7 @@ func (ts *TraceabilityService) GetEventBulletMapping(
 
 // GetFactBulletMapping returns a mapping of facts to bullets.
 func (ts *TraceabilityService) GetFactBulletMapping(
-	ctx context.Context,
+	_ context.Context,
 	bullets []*career.CVBullet,
 ) map[string][]*career.CVBullet {
 	ts.logger.Info("Creating fact-to-bullet mapping for %d bullets", len(bullets))

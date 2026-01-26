@@ -613,19 +613,19 @@ func NewMockConfigManager() *MockConfigManager {
 	}
 }
 
-func (m *MockConfigManager) LoadConfig(ctx context.Context, name string) (*career.CVConfig, error) {
+func (m *MockConfigManager) LoadConfig(_ context.Context, name string) (*career.CVConfig, error) {
 	if config, ok := m.configs[name]; ok {
 		return config, nil
 	}
 	return nil, ErrConfigNotFound
 }
 
-func (m *MockConfigManager) SaveConfig(ctx context.Context, config *career.CVConfig) error {
+func (m *MockConfigManager) SaveConfig(_ context.Context, config *career.CVConfig) error {
 	m.configs[config.Name] = config
 	return nil
 }
 
-func (m *MockConfigManager) DeleteConfig(ctx context.Context, name string) error {
+func (m *MockConfigManager) DeleteConfig(_ context.Context, name string) error {
 	delete(m.configs, name)
 	return nil
 }
