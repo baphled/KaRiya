@@ -3742,10 +3742,12 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 			// Trigger suggestion detection.
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 
-			// Execute the async command.
+			// Execute the async command (handles batch commands).
 			if cmd != nil {
-				msg := cmd()
-				intent.Update(msg)
+				msg := executeAsyncCmd(cmd)
+				if msg != nil {
+					intent.Update(msg)
+				}
 			}
 
 			// Should show error.
@@ -3759,10 +3761,12 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 			// Trigger suggestion detection.
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 
-			// Execute the async command.
+			// Execute the async command (handles batch commands).
 			if cmd != nil {
-				msg := cmd()
-				intent.Update(msg)
+				msg := executeAsyncCmd(cmd)
+				if msg != nil {
+					intent.Update(msg)
+				}
 			}
 
 			// Should show error.

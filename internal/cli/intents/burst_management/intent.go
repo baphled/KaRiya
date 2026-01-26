@@ -96,22 +96,31 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 		return noopCmd
 	}
 
-	// Loading modal - cancellable with Esc.
+	// Loading modal - cancellable with Esc, advances spinner on tick.
 	if i.loadingModal != nil {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
-			// Cancel the async operation.
-			if i.cancelFunc != nil {
-				i.cancelFunc()
-				i.cancelFunc = nil
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.Type == tea.KeyEsc {
+				// Cancel the async operation.
+				if i.cancelFunc != nil {
+					i.cancelFunc()
+					i.cancelFunc = nil
+				}
+				i.loadingModal = nil
+				i.suggestionsLoading = false
+				i.extractingFacts = false
+				i.state = StateList
+				return noopCmd
 			}
-			i.loadingModal = nil
-			i.suggestionsLoading = false
-			i.extractingFacts = false
-			i.state = StateList
-			return noopCmd
+			// Other keys: start spinner tick and consume message.
+			return i.loadingModal.Init()
+		case feedback.ModalSpinnerTickMsg:
+			// Forward tick to loading modal to advance spinner.
+			return i.loadingModal.Update(msg)
+		default:
+			// For any other message, ensure spinner tick is running.
+			return i.loadingModal.Init()
 		}
-		// Loading modal is visible - consume all other messages.
-		return noopCmd
 	}
 
 	// Delete confirmation modal.

@@ -254,10 +254,10 @@ var _ = Describe("Helper Methods", func() {
 			Expect(help).NotTo(BeEmpty())
 		})
 
-		It("should return global badges for unknown state", func() {
+		It("should return empty for unknown state", func() {
 			intent.SetState(burst_management.State("invalid")) // Invalid state
 			help := intent.GetContextHelp()
-			Expect(help).NotTo(BeEmpty())
+			Expect(help).To(BeEmpty())
 		})
 	})
 

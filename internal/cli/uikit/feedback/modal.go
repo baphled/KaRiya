@@ -5,11 +5,15 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 )
+
+// ModalSpinnerTickMsg is sent periodically to advance the spinner animation.
+type ModalSpinnerTickMsg struct{}
 
 // ModalType defines the type of modal
 type ModalType int
@@ -424,6 +428,37 @@ func (m *Modal) RotateMessage() string {
 		return m.messageRotator.Rotate()
 	}
 	return m.Message
+}
+
+// Init initializes the modal and starts spinner animation for loading modals.
+// Returns a tick command for loading modals, nil for other modal types.
+func (m *Modal) Init() tea.Cmd {
+	if m.Type == ModalLoading && m.spinner != nil {
+		return m.tickSpinner()
+	}
+	return nil
+}
+
+// Update handles messages for the modal, advancing the spinner on tick.
+func (m *Modal) Update(msg tea.Msg) tea.Cmd {
+	switch msg.(type) {
+	case ModalSpinnerTickMsg:
+		if m.Type == ModalLoading && m.spinner != nil {
+			m.spinner.Advance()
+			if m.messageRotator != nil {
+				m.messageRotator.Rotate()
+			}
+			return m.tickSpinner()
+		}
+	}
+	return nil
+}
+
+// tickSpinner returns a command to tick the spinner animation.
+func (m *Modal) tickSpinner() tea.Cmd {
+	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
+		return ModalSpinnerTickMsg{}
+	})
 }
 
 // ============================================================================

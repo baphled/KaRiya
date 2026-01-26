@@ -3,18 +3,90 @@ package burst_management_test
 import (
 	"context"
 	"errors"
+	"sync"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
 	"github.com/baphled/kariya/internal/testutil/mocks"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// executeBatchCmd executes a tea.Cmd and returns all non-tick messages.
+// This helper handles both single commands and batch commands.
+// For batch commands, it waits for all goroutines to complete.
+func executeBatchCmd(cmd tea.Cmd) []tea.Msg {
+	if cmd == nil {
+		return nil
+	}
+
+	// Call the command - for batches, this starts goroutines
+	msg := cmd()
+
+	// Check if it's a batch message (slice of commands)
+	if batchMsg, ok := msg.(tea.BatchMsg); ok {
+		var wg sync.WaitGroup
+		var mu sync.Mutex
+		var messages []tea.Msg
+
+		for _, batchCmd := range batchMsg {
+			if batchCmd == nil {
+				continue
+			}
+			wg.Add(1)
+			go func(c tea.Cmd) {
+				defer wg.Done()
+				result := c()
+				if result != nil {
+					// Filter out spinner tick messages
+					if _, isTick := result.(feedback.ModalSpinnerTickMsg); !isTick {
+						mu.Lock()
+						messages = append(messages, result)
+						mu.Unlock()
+					}
+				}
+			}(batchCmd)
+		}
+
+		// Wait with timeout
+		done := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			return messages
+		case <-time.After(5 * time.Second):
+			return messages // Return what we have on timeout
+		}
+	}
+
+	// Single command - return message directly (filter tick messages)
+	if msg != nil {
+		if _, isTick := msg.(feedback.ModalSpinnerTickMsg); !isTick {
+			return []tea.Msg{msg}
+		}
+	}
+	return nil
+}
+
+// executeAsyncCmd is a convenience wrapper that returns the first non-tick message.
+func executeAsyncCmd(cmd tea.Cmd) tea.Msg {
+	messages := executeBatchCmd(cmd)
+	if len(messages) > 0 {
+		return messages[0]
+	}
+	return nil
+}
 
 var _ = Describe("Intent Methods", func() {
 	Describe("Init", func() {
@@ -1934,8 +2006,8 @@ var _ = Describe("Intent Methods", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 			Expect(cmd).NotTo(BeNil())
 
-			// Execute the command to get the message.
-			msg := cmd()
+			// Execute the command to get the message (handles batch commands).
+			msg := executeAsyncCmd(cmd)
 			Expect(msg).NotTo(BeNil())
 
 			// Should be a BurstSuggestionsLoadedMsg with suggestions from unassigned events.
@@ -1952,8 +2024,8 @@ var _ = Describe("Intent Methods", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 			Expect(cmd).NotTo(BeNil())
 
-			// Execute the command.
-			msg := cmd()
+			// Execute the command (handles batch commands).
+			msg := executeAsyncCmd(cmd)
 
 			// Should be error message.
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
@@ -1968,8 +2040,8 @@ var _ = Describe("Intent Methods", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 			Expect(cmd).NotTo(BeNil())
 
-			// Execute the command.
-			msg := cmd()
+			// Execute the command (handles batch commands).
+			msg := executeAsyncCmd(cmd)
 
 			// Should be error message.
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
@@ -1984,8 +2056,8 @@ var _ = Describe("Intent Methods", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 			Expect(cmd).NotTo(BeNil())
 
-			// Execute the command.
-			msg := cmd()
+			// Execute the command (handles batch commands).
+			msg := executeAsyncCmd(cmd)
 
 			// Should be error message (no unassigned events available).
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
@@ -2023,8 +2095,8 @@ var _ = Describe("Intent Methods", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 			Expect(cmd).NotTo(BeNil())
 
-			// Execute the command.
-			msg := cmd()
+			// Execute the command (handles batch commands).
+			msg := executeAsyncCmd(cmd)
 
 			// Should succeed with suggestions from unassigned events only.
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
@@ -2055,8 +2127,8 @@ var _ = Describe("Intent Methods", func() {
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 			Expect(cmd).NotTo(BeNil())
 
-			// Execute the command.
-			msg := cmd()
+			// Execute the command (handles batch commands).
+			msg := executeAsyncCmd(cmd)
 
 			// Should be error message (no unassigned events).
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)

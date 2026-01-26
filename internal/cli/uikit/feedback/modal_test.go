@@ -735,6 +735,64 @@ func TestLoadingModal_RespectsTerminalWidth(t *testing.T) {
 	}
 }
 
+func TestModal_Init_LoadingModalReturnsTickCommand(t *testing.T) {
+	modal := NewLoadingModal("Loading...", false)
+
+	cmd := modal.Init()
+
+	// Loading modal should return a tick command to animate spinner.
+	if cmd == nil {
+		t.Error("Expected Init() to return a tick command for loading modal")
+	}
+}
+
+func TestModal_Init_NonLoadingModalReturnsNil(t *testing.T) {
+	// Error modals don't need spinner animation.
+	modal := NewErrorModal("Error", "Something went wrong")
+
+	cmd := modal.Init()
+
+	if cmd != nil {
+		t.Error("Expected Init() to return nil for non-loading modal")
+	}
+}
+
+func TestModal_Update_SpinnerTickAdvancesSpinner(t *testing.T) {
+	modal := NewLoadingModal("Loading...", false)
+
+	// Get initial spinner frame.
+	initialFrame := modal.spinner.GetFrame()
+
+	// Send a SpinnerTickMsg to advance the spinner.
+	cmd := modal.Update(ModalSpinnerTickMsg{})
+
+	// Spinner should have advanced.
+	newFrame := modal.spinner.GetFrame()
+	if newFrame == initialFrame {
+		t.Error("Expected spinner to advance after SpinnerTickMsg")
+	}
+
+	// Should return another tick command to continue animation.
+	if cmd == nil {
+		t.Error("Expected Update() to return a tick command to continue animation")
+	}
+}
+
+func TestModal_Update_SpinnerTickRotatesMessage(t *testing.T) {
+	modal := NewLoadingModal("Initial", false)
+	rotator := NewLoadingMessageRotator([]string{"Msg1", "Msg2", "Msg3"})
+	modal.SetMessageRotator(rotator)
+
+	// First tick should rotate to Msg2.
+	modal.Update(ModalSpinnerTickMsg{})
+
+	// GetCurrent after rotate should now be at the next index.
+	current := rotator.GetCurrent()
+	if current != "Msg2" {
+		t.Errorf("Expected message to rotate to 'Msg2', got '%s'", current)
+	}
+}
+
 func TestLoadingModal_BoxIntegrity(t *testing.T) {
 	// Diagnostic test to verify the modal box renders completely.
 	// Tests that borders are intact and content is not truncated.

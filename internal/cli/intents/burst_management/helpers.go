@@ -64,6 +64,8 @@ func (i *Intent) getStateName() string {
 func (i *Intent) getContextHelp() string {
 	theme := i.Theme()
 
+	// Only show badges for keys that are actually handled by this intent.
+	// Global keys (q, m) are not handled, so ThemedGlobalBadges is not used.
 	switch i.state {
 	case StateList:
 		badges := []*primitives.Badge{
@@ -75,11 +77,7 @@ func (i *Intent) getContextHelp() string {
 			primitives.SuggestBadge(theme),
 			primitives.BackBadge(theme),
 		}
-
-		return intents.CombineThemedFooters(
-			intents.ThemedCustomFooter(theme, badges...),
-			intents.ThemedGlobalBadges(theme),
-		)
+		return intents.ThemedCustomFooter(theme, badges...)
 
 	case StateDetail:
 		badges := []*primitives.Badge{
@@ -90,24 +88,16 @@ func (i *Intent) getContextHelp() string {
 			primitives.ConfirmActionBadge(theme),
 			primitives.BackBadge(theme),
 		}
-
-		return intents.CombineThemedFooters(
-			intents.ThemedCustomFooter(theme, badges...),
-			intents.ThemedGlobalBadges(theme),
-		)
+		return intents.ThemedCustomFooter(theme, badges...)
 
 	case StateDetailEvents, StateDetailFacts:
 		badges := []*primitives.Badge{
 			primitives.BackBadge(theme),
 		}
-
-		return intents.CombineThemedFooters(
-			intents.ThemedCustomFooter(theme, badges...),
-			intents.ThemedGlobalBadges(theme),
-		)
+		return intents.ThemedCustomFooter(theme, badges...)
 
 	default:
-		return intents.ThemedGlobalBadges(theme)
+		return ""
 	}
 }
 

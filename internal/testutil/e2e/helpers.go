@@ -694,15 +694,16 @@ func (e *TestEnv) SubmitHuhForm() *TestEnv {
 // cause infinite loops or stuck goroutines in tests. We only care about messages
 // that actually change application state.
 //
-// Commands that take longer than 10ms to execute (tick commands with delays) are skipped
-// to avoid slow tests from cursor blink animations (530ms each).
+// Commands that take longer than 500ms to execute (tick commands with delays) are skipped
+// to avoid slow tests from cursor blink animations (530ms each). The 500ms timeout
+// allows database operations to complete while still filtering out cursor blinks.
 func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 	if cmd == nil {
 		return
 	}
 
 	// Execute command with timeout to skip slow tick commands
-	// Cursor blink ticks take 530ms, normal commands are instant
+	// Cursor blink ticks take 530ms, database operations typically complete in <100ms
 	type result struct {
 		msg tea.Msg
 	}
@@ -717,7 +718,7 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 			return
 		}
 		e.processCmdResult(r.msg)
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(500 * time.Millisecond):
 		// Command is a slow tick (cursor blink, etc.) - skip it
 		return
 	}
@@ -728,7 +729,16 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	// Only process messages that are essential for state transitions
 	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
-	switch msg.(type) {
+	switch msg := msg.(type) {
+	case tea.BatchMsg:
+		// Batch command returned a list of commands to execute.
+		// Execute each command in the batch (this handles tea.Batch results).
+		for _, cmd := range msg {
+			if cmd != nil {
+				e.executeCmd(cmd)
+			}
+		}
+
 	case models.SubmitMsg:
 		// Form submission - essential for form → review state transition
 		modelInterface, nextCmd := e.Model.Update(msg)
