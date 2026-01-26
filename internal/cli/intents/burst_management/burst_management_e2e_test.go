@@ -548,20 +548,25 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			_ = intent.Update(msg)
 
-			// All suggestions should be visible in table view.
-			view := intent.View()
-			Expect(view).To(ContainSubstring("First"))
-			Expect(view).To(ContainSubstring("Second"))
+			// Verify modal is visible and has correct suggestions.
+			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.IsVisible()).To(BeTrue())
+
+			// First suggestion (highest confidence) should be selected.
+			current := modal.GetCurrentSuggestion()
+			Expect(current).NotTo(BeNil())
+			Expect(current.Name).To(Equal("First"))
 
 			// Navigate with down arrow to select Second.
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyDown})
-			view = intent.View()
-			Expect(view).To(ContainSubstring("Second"))
+			_, _ = modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			current = modal.GetCurrentSuggestion()
+			Expect(current.Name).To(Equal("Second"))
 
 			// Navigate back with up arrow to select First.
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyUp})
-			view = intent.View()
-			Expect(view).To(ContainSubstring("First"))
+			_, _ = modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+			current = modal.GetCurrentSuggestion()
+			Expect(current.Name).To(Equal("First"))
 		})
 
 		It("should accept suggestion and create burst", func() {
@@ -630,12 +635,11 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			_ = intent.Update(msg)
 
 			// Modal sorts by confidence: "Second - Keep" (0.80) is first.
-			// Both suggestions are visible in table format.
-			view := intent.View()
-			Expect(view).To(ContainSubstring("Second - Keep"))
-			Expect(view).To(ContainSubstring("First - Will Reject"))
-
+			// Verify modal state directly (view assertions are unreliable due to table truncation).
 			modal := intent.GetSuggestionModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.IsVisible()).To(BeTrue())
+			Expect(modal.GetSuggestionsCount()).To(Equal(2))
 			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Second - Keep"))
 
 			// Reject the first (highest confidence) suggestion
@@ -2390,6 +2394,48 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				finalBursts, _ := burstRepo.List(context.Background(), careerrepo.BurstListFilters{})
 				Expect(len(finalBursts)).To(Equal(initialCount))
 			})
+
+			It("BUG: should stay on burst list when escape is pressed on delete modal", func() {
+				// BUG: When pressing esc on delete modal from list screen:
+				// 1. Delete modal handles esc and closes (returns nil cmd)
+				// 2. Esc key propagates to screen which returns CancelResult
+				// 3. HandleCancel sees StateList with no modal and cancels to main menu
+				// EXPECTED: User should stay on burst list, not navigate to main menu
+
+				// Open delete modal from list state.
+				actionData := map[string]interface{}{
+					"action": "delete",
+					"burst":  burst,
+				}
+				result := &screens.NavigateResult{ResultData: actionData}
+				intent.HandleNavigate(result)
+
+				// Verify delete modal is open.
+				Expect(intent.HasVisibleDeleteModal()).To(BeTrue())
+				Expect(intent.GetState()).To(Equal(burst_management.StateDeleteConfirm))
+
+				// Press 'esc' to cancel delete modal.
+				cmd := intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+				// Delete modal should be closed.
+				Expect(intent.HasVisibleDeleteModal()).To(BeFalse())
+
+				// Should be on list state, not cancelled to main menu.
+				Expect(intent.GetState()).To(Equal(burst_management.StateList),
+					"Should stay on StateList after pressing esc on delete modal")
+
+				// Intent should still be active (not cancelled to main menu).
+				Expect(intent.IsActive()).To(BeTrue(),
+					"Intent should remain active - user should stay on burst list, not go to main menu")
+
+				// The command returned should NOT cause navigation to main menu.
+				if cmd != nil {
+					result := cmd()
+					_, isCancelResult := result.(*screens.CancelResult)
+					Expect(isCancelResult).To(BeFalse(),
+						"Command should not return CancelResult that would navigate to main menu")
+				}
+			})
 		})
 
 		Describe("Confirm Modal Escape", func() {
@@ -2846,7 +2892,7 @@ var _ = Describe("User Journey: All Burst Saves Fail During Suggestion Acceptanc
 			// Then: I should see error modals for the failures.
 			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
 			view := intent.View()
-			Expect(view).To(ContainSubstring("Create Failed"))
+			Expect(view).To(ContainSubstring("Failed to create burst"))
 
 			// And: No bursts should be in the list (all saves failed).
 			Expect(intent.GetFilteredBursts()).To(BeEmpty())

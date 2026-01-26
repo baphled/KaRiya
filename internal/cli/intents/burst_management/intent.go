@@ -133,10 +133,11 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 				return tea.Batch(cmd, i.deleteBurst(i.selectedBurst))
 			}
 			// User cancelled or modal closed without confirmation.
+			// Return noopCmd to prevent esc from propagating to screen.
 			i.deleteModal = nil
 			i.selectedBurst = nil
 			i.state = StateList
-			return cmd
+			return noopCmd
 		}
 		return cmd
 	}
