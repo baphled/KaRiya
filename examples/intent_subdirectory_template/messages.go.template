@@ -1,0 +1,44 @@
+// Package {feature} implements the {Feature} intent.
+package {feature}
+
+import "github.com/baphled/kariya/internal/domain/career"
+
+// Custom message types for {Feature} state transitions.
+// ALL *Msg structs MUST be in this file.
+
+// ItemsLoadedMsg is sent when items are loaded from the repository.
+type ItemsLoadedMsg struct {
+	Items []*career.{Entity}
+	Error error
+}
+
+// ItemSelectedMsg indicates the user selected an item.
+type ItemSelectedMsg struct {
+	Item  *career.{Entity}
+	Index int
+}
+
+// ItemCreatedMsg is sent when an item is created.
+type ItemCreatedMsg struct {
+	Item  *career.{Entity}
+	Error error
+}
+
+// ItemUpdatedMsg is sent when an item is updated.
+type ItemUpdatedMsg struct {
+	Item  *career.{Entity}
+	Error error
+}
+
+// ItemDeletedMsg is sent when an item is deleted.
+type ItemDeletedMsg struct {
+	ItemID string
+	Error  error
+}
+
+// ItemFormCompleteMsg is sent when the item form is completed or cancelled.
+type ItemFormCompleteMsg struct {
+	Item      *career.{Entity}
+	Cancelled bool
+	Error     error
+}

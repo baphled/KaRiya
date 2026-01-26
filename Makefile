@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -73,7 +73,7 @@ review-commit:
 	@bash scripts/review-commit.sh
 
 # Check full project compliance (all rules)
-check-compliance: staticcheck
+check-compliance: staticcheck check-intent-architecture
 	@bash scripts/check-compliance.sh
 
 # Install all CI tools locally
@@ -505,6 +505,19 @@ check-patterns-quiet:
 		echo "⚠️  $$VIOLATIONS pattern issue(s) found - run 'make check-patterns' for details"; \
 	fi
 
+# Intent architecture enforcement (strict validation)
+check-intent-architecture:
+	@bash scripts/check-intent-architecture.sh
+
+# Run golangci-lint (comprehensive static analysis)
+golangci-lint:
+	@echo "Running golangci-lint..."
+	@command -v golangci-lint >/dev/null 2>&1 || { \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2; \
+	}
+	@golangci-lint run --timeout=5m
+
 # Generate workflow diagrams
 generate-diagrams:
 	@bash scripts/generate_workflow_diagrams.sh
@@ -534,6 +547,18 @@ new-bug:
 		exit 1; \
 	fi
 	@bash scripts/new-bug.sh "$(BUG)"
+
+# Create new intent with subdirectory structure
+new-intent:
+	@if [ -z "$(NAME)" ]; then \
+		echo "Usage: make new-intent NAME='feature_name'"; \
+		echo ""; \
+		echo "Examples:"; \
+		echo "  make new-intent NAME=skill_management"; \
+		echo "  make new-intent NAME=event_capture"; \
+		exit 1; \
+	fi
+	@bash scripts/new-intent.sh "$(NAME)"
 
 # Show help for all available targets
 help:
@@ -584,6 +609,7 @@ help:
 	@echo "📋 Task Management:"
 	@echo "  make new-feature TASK=x    - Create new feature task"
 	@echo "  make new-bug BUG=x         - Create new bug report"
+	@echo "  make new-intent NAME=x     - Create new intent subdirectory structure"
 	@echo ""
 	@echo "🏗️  Build:"
 	@echo "  make build             - Build the application"

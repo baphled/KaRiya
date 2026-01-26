@@ -1,0 +1,19 @@
+// Package {feature} implements the {Feature} intent.
+package {feature}
+
+import "github.com/baphled/kariya/internal/domain/career"
+
+// Result is the result returned when {Feature} intent completes.
+type Result struct {
+	// Action performed (created, updated, deleted, cancelled)
+	Action string
+
+	// Item involved (if any)
+	Item *career.{Entity}
+
+	// Items involved (for bulk operations)
+	Items []*career.{Entity}
+
+	// Message for user
+	Message string
+}

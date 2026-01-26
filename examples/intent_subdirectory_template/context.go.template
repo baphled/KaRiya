@@ -1,0 +1,121 @@
+// Package {feature} implements the {Feature} intent.
+package {feature}
+
+import (
+	"context"
+	"errors"
+
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career"
+)
+
+// Context holds the state and data for {Feature} intent.
+// ALL business logic must be in this file, NOT in intent.go.
+type Context struct {
+	// Current state
+	CurrentState State
+
+	// Domain data
+	Items             []*career.{Entity}
+	SelectedItem      *career.{Entity}
+	SelectedItemIndex int
+
+	// Filter/Search state
+	FilterText string
+	SearchText string
+	SortBy     string // "name", "date", etc.
+	SortOrder  string // "asc", "desc"
+
+	// Pagination
+	CurrentPage int
+	PageSize    int
+	TotalItems  int
+
+	// UI state
+	ScrollPosition int
+
+	// Services (dependencies)
+	Service    *careerservice.Service
+	Repository career.{Entity}Repository
+	Context    context.Context
+
+	// Metadata
+	PreviousState State
+}
+
+// NewContext creates a new context with dependencies.
+func NewContext(
+	service *careerservice.Service,
+	repository career.{Entity}Repository,
+	ctx context.Context,
+) *Context {
+	return &Context{
+		CurrentState: StateList,
+		Items:        make([]*career.{Entity}, 0),
+		PageSize:     20,
+		Service:      service,
+		Repository:   repository,
+		Context:      ctx,
+	}
+}
+
+// LoadItems loads items from repository.
+// Business logic lives HERE, not in intent.
+func (c *Context) LoadItems() error {
+	items, err := c.Repository.List(c.Context)
+	if err != nil {
+		return err
+	}
+	c.Items = items
+	c.TotalItems = len(items)
+	return nil
+}
+
+// SelectItem selects an item by index.
+func (c *Context) SelectItem(index int) {
+	if index >= 0 && index < len(c.Items) {
+		c.SelectedItemIndex = index
+		c.SelectedItem = c.Items[index]
+	}
+}
+
+// GetSelectedItem returns the currently selected item.
+func (c *Context) GetSelectedItem() *career.{Entity} {
+	return c.SelectedItem
+}
+
+// CreateItem creates a new item.
+func (c *Context) CreateItem(item *career.{Entity}) error {
+	if err := c.Repository.Create(c.Context, item); err != nil {
+		return err
+	}
+	return c.LoadItems() // Refresh list
+}
+
+// UpdateItem updates an existing item.
+func (c *Context) UpdateItem(item *career.{Entity}) error {
+	if err := c.Repository.Update(c.Context, item); err != nil {
+		return err
+	}
+	return c.LoadItems() // Refresh list
+}
+
+// DeleteItem deletes an item by ID.
+func (c *Context) DeleteItem(itemID string) error {
+	if err := c.Repository.Delete(c.Context, itemID); err != nil {
+		return err
+	}
+	return c.LoadItems() // Refresh list
+}
+
+// Validate ensures the context is valid.
+func (c *Context) Validate() error {
+	if c.Service == nil {
+		return errors.New("service is required")
+	}
+	if c.Repository == nil {
+		return errors.New("repository is required")
+	}
+	return nil
+}

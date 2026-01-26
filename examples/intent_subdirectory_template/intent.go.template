@@ -1,0 +1,293 @@
+// Package {feature} implements the {Feature} intent.
+package {feature}
+
+import (
+	"fmt"
+
+	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/screens"
+	{feature}screens "github.com/baphled/kariya/internal/cli/screens/{feature}"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// Ensure interface compliance at compile time.
+var _ intents.ScreenResultHandler = (*Intent)(nil)
+
+// Intent implements the Intent interface for {Feature}.
+// It acts as a BROKER - orchestrates screens and delegates to context.
+//
+// RULES:
+// - This file should be 200-400 lines (broker only)
+// - NO rendering logic (extract to screens/{feature}/)
+// - NO business logic (move to context.go)
+// - Only orchestration and screen management
+type Intent struct {
+	*intents.BaseIntent
+
+	// Context (business logic lives here)
+	context *Context
+
+	// State machine
+	active bool
+	result *intents.IntentResult[*Result]
+
+	// Screens (one per state)
+	listScreen   *{feature}screens.ListScreen
+	detailScreen *{feature}screens.DetailScreen
+	formScreen   *{feature}screens.FormScreen
+
+	// Centralized modals (from uikit/feedback)
+	deleteModal *feedback.ConfirmModal
+
+	// Generic pointer for current screen
+	activeScreen screens.Screen
+}
+
+// NewIntent creates a new {Feature} Intent instance.
+func NewIntent(ctx *Context) (*Intent, error) {
+	if err := ctx.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &Intent{
+		BaseIntent: intents.NewBaseIntent(),
+		context:    ctx,
+		active:     true,
+	}, nil
+}
+
+// Init initializes the intent and creates the initial screen.
+func (i *Intent) Init() tea.Cmd {
+	// Delegate data loading to context
+	if err := i.context.LoadItems(); err != nil {
+		return i.setError(err)
+	}
+
+	// Create initial screen
+	i.listScreen = {feature}screens.NewListScreen(i.context.Items)
+	i.listScreen.SetTerminalInfo(i.GetTerminalInfo())
+	i.listScreen.SetTheme(i.Theme())
+	i.listScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+	i.activeScreen = i.listScreen
+
+	return nil
+}
+
+// Update processes messages - BROKER ONLY, delegates everything.
+func (i *Intent) Update(msg tea.Msg) tea.Cmd {
+	if !i.active {
+		return nil
+	}
+
+	// 1. Handle modals FIRST (priority)
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		cmd, confirmed := i.deleteModal.Update(msg)
+		if confirmed {
+			return i.handleDeleteConfirmed()
+		} else if !i.deleteModal.IsVisible() {
+			i.deleteModal = nil
+		}
+		return cmd
+	}
+
+	// 2. Handle global keys
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch intents.HandleGlobalKeys(keyMsg) {
+		case intents.KeyQuit:
+			return tea.Quit
+		case intents.KeyHelp:
+			i.helpModal.Toggle()
+			return nil
+		}
+	}
+
+	// 3. Delegate to current screen
+	cmd, result := i.activeScreen.Update(msg)
+	if result != nil {
+		return tea.Batch(cmd, i.handleScreenResult(result))
+	}
+	return cmd
+}
+
+// View renders the current state - delegates to screens.
+func (i *Intent) View() string {
+	// 1. Get base view from screen
+	baseView := i.activeScreen.View()
+
+	// 2. Overlay modals (if visible)
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		return behaviors.RenderModalOverlay(i.deleteModal, baseView)
+	}
+
+	return baseView
+}
+
+// Result returns the intent result.
+func (i *Intent) Result() *intents.IntentResult[interface{}] {
+	if i.result == nil {
+		return nil
+	}
+
+	return &intents.IntentResult[interface{}]{
+		Status:   i.result.Status,
+		Data:     i.result.Data,
+		Error:    i.result.Error,
+		Metadata: i.result.Metadata,
+	}
+}
+
+// -----------------------------------------------------------------------------
+// ScreenResultHandler Implementation
+// -----------------------------------------------------------------------------
+
+// handleScreenResult dispatches screen results to typed handlers.
+func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
+	screenResult, ok := result.(screens.ScreenResult)
+	if !ok {
+		return nil
+	}
+	return intents.NewScreenResultDispatcher(i).Dispatch(screenResult)
+}
+
+// HandleCancel handles screen cancellation.
+func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+	switch i.context.CurrentState {
+	case StateList:
+		i.setCancelled()
+	case StateDetail, StateForm:
+		return i.transitionToList()
+	}
+	return nil
+}
+
+// HandleNavigate handles screen navigation.
+func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
+	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
+		action, _ := actionData["action"].(string)
+		switch action {
+		case "view":
+			return i.transitionToDetail()
+		case "add":
+			return i.transitionToForm(nil)
+		case "edit":
+			return i.transitionToForm(i.context.GetSelectedItem())
+		case "delete":
+			return i.openDeleteModal()
+		}
+	}
+	return nil
+}
+
+// HandleSubmit handles form submission.
+func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
+	// Delegate to context for business logic
+	if item, ok := result.ResultData.(*career.{Entity}); ok {
+		var err error
+		if item.ID == "" {
+			err = i.context.CreateItem(item)
+		} else {
+			err = i.context.UpdateItem(item)
+		}
+
+		if err != nil {
+			return i.setError(err)
+		}
+
+		return i.transitionToList()
+	}
+	return nil
+}
+
+// HandleError handles errors from screens.
+func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	return i.setError(result.Err)
+}
+
+// -----------------------------------------------------------------------------
+// State Transitions (screen orchestration)
+// -----------------------------------------------------------------------------
+
+// transitionToList transitions to list screen.
+func (i *Intent) transitionToList() tea.Cmd {
+	i.context.CurrentState = StateList
+	i.listScreen = {feature}screens.NewListScreen(i.context.Items)
+	i.listScreen.SetTerminalInfo(i.GetTerminalInfo())
+	i.listScreen.SetTheme(i.Theme())
+	i.listScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+	i.activeScreen = i.listScreen
+	return nil
+}
+
+// transitionToDetail transitions to detail screen.
+func (i *Intent) transitionToDetail() tea.Cmd {
+	i.context.CurrentState = StateDetail
+	i.detailScreen = {feature}screens.NewDetailScreen(i.context.GetSelectedItem())
+	i.detailScreen.SetTerminalInfo(i.GetTerminalInfo())
+	i.detailScreen.SetTheme(i.Theme())
+	i.detailScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+	i.activeScreen = i.detailScreen
+	return nil
+}
+
+// transitionToForm transitions to form screen.
+func (i *Intent) transitionToForm(item *career.{Entity}) tea.Cmd {
+	i.context.CurrentState = StateForm
+	i.formScreen = {feature}screens.NewFormScreen(item)
+	i.formScreen.SetTerminalInfo(i.GetTerminalInfo())
+	i.formScreen.SetTheme(i.Theme())
+	i.formScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+	i.activeScreen = i.formScreen
+	return nil
+}
+
+// openDeleteModal opens the delete confirmation modal.
+func (i *Intent) openDeleteModal() tea.Cmd {
+	item := i.context.GetSelectedItem()
+	i.deleteModal = feedback.NewConfirmModal(
+		"Delete Item",
+		fmt.Sprintf("Are you sure you want to delete '%s'?", item.Name),
+	).WithVariant(feedback.ConfirmDestructive)
+
+	return i.deleteModal.Init()
+}
+
+// handleDeleteConfirmed processes confirmed deletion.
+func (i *Intent) handleDeleteConfirmed() tea.Cmd {
+	item := i.context.GetSelectedItem()
+
+	// Delegate to context for business logic
+	if err := i.context.DeleteItem(item.ID); err != nil {
+		return i.setError(err)
+	}
+
+	i.deleteModal = nil
+	return i.transitionToList()
+}
+
+// -----------------------------------------------------------------------------
+// Helper Methods
+// -----------------------------------------------------------------------------
+
+// setCancelled marks the intent as cancelled.
+func (i *Intent) setCancelled() {
+	i.result = &intents.IntentResult[*Result]{
+		Status: intents.Cancelled,
+	}
+	i.active = false
+}
+
+// setError sets an error result.
+func (i *Intent) setError(err error) tea.Cmd {
+	i.result = &intents.IntentResult[*Result]{
+		Status: intents.Failed,
+		Error: &intents.IntentError{
+			Code:    "INTERNAL_ERROR",
+			Message: err.Error(),
+			Cause:   err,
+		},
+	}
+	return nil
+}
