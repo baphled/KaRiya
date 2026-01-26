@@ -117,3 +117,9 @@ type BurstProcessingCompleteMsg struct {
 	ConfirmedCount int
 	RejectedCount  int
 }
+
+// SubmitMsg represents a form submission result.
+type SubmitMsg struct {
+	Event *career.CareerEvent
+	Err   error
+}
