@@ -199,10 +199,8 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 // Returns a command (usually nil) if msg is a WindowSizeMsg.
 // Never returns a ScreenResult for WindowSizeMsg (window resize is not a user action).
 func (b *BaseScreen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		b.SetTerminalInfo(msg.Width, msg.Height)
-		return nil
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		b.SetTerminalInfo(wsm.Width, wsm.Height)
 	}
 	return nil
 }

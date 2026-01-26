@@ -114,8 +114,7 @@ func (m *SkillAddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) 
 		return m.form.Init(), false, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		if msg.String() == "esc" {
 			// Close modal without saving
 			m.visible = false
 			return nil, false, nil
