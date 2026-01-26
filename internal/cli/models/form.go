@@ -67,7 +67,7 @@ func NewFormModel(cliService *service.CLIEventService) *FormModel {
 	inputs[0] = textinput.New()
 	inputs[0].Placeholder = "Enter event description (required, max 2000 chars)"
 	inputs[0].Focus()
-	// inputs[0].CharLimit = 2000 // Allow detection of exceeding limit
+
 	inputs[0].Width = 60 // Will be updated dynamically based on terminal size
 
 	// Date input (optional)
@@ -530,7 +530,7 @@ func (m *FormModel) SubmitForm() tea.Cmd {
 
 // parseDate parses a date string into a time.Time
 func (m *FormModel) parseDate(dateStr string) (time.Time, error) {
-	if dateStr == "" || strings.ToLower(dateStr) == "today" {
+	if dateStr == "" || strings.EqualFold(dateStr, "today") {
 		return time.Now(), nil
 	}
 
@@ -851,12 +851,13 @@ func (m *FormModel) renderFormContentWithContainers() string {
 		}
 
 		// Combine side-by-side if both visible
-		if companyPart != "" && projectPart != "" {
+		switch {
+		case companyPart != "" && projectPart != "":
 			combined := lipgloss.JoinHorizontal(lipgloss.Top, companyPart, "    ", projectPart)
 			formParts = append(formParts, combined)
-		} else if companyPart != "" {
+		case companyPart != "":
 			formParts = append(formParts, companyPart)
-		} else if projectPart != "" {
+		case projectPart != "":
 			formParts = append(formParts, projectPart)
 		}
 	}
@@ -912,12 +913,13 @@ func (m *FormModel) renderFormContentWithContainers() string {
 		}
 
 		// Combine side-by-side if both visible
-		if tagsPart != "" && categoriesPart != "" {
+		switch {
+		case tagsPart != "" && categoriesPart != "":
 			combined := lipgloss.JoinHorizontal(lipgloss.Top, tagsPart, "    ", categoriesPart)
 			formParts = append(formParts, combined)
-		} else if tagsPart != "" {
+		case tagsPart != "":
 			formParts = append(formParts, tagsPart)
-		} else if categoriesPart != "" {
+		case categoriesPart != "":
 			formParts = append(formParts, categoriesPart)
 		}
 	}

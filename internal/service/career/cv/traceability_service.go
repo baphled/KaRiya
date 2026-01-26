@@ -89,7 +89,7 @@ func (vr *ValidationReport) IsValid() bool {
 
 // GetEventUsage finds all bullets using a specific event.
 func (ts *TraceabilityService) GetEventUsage(
-	ctx context.Context,
+	_ context.Context,
 	eventID string,
 	allBullets []*career.CVBullet,
 ) []*career.CVBullet {
@@ -111,7 +111,7 @@ func (ts *TraceabilityService) GetEventUsage(
 
 // GetFactUsage finds all bullets using a specific fact.
 func (ts *TraceabilityService) GetFactUsage(
-	ctx context.Context,
+	_ context.Context,
 	factID string,
 	allBullets []*career.CVBullet,
 ) []*career.CVBullet {

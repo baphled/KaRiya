@@ -197,7 +197,7 @@ func FileLogger() *Logger {
 	}
 
 	logDir := homeDir + "/.kariya/logs"
-	if err := os.MkdirAll(logDir, 0750); err != nil {
+	if err := os.MkdirAll(logDir, 0o750); err != nil {
 		// Fallback to console if we can't create directory
 		return ConsoleLogger()
 	}

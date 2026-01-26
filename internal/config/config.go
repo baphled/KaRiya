@@ -409,7 +409,7 @@ func applyDefaults(cfg *Config) {
 // are zero AND ALL thresholds are zero AND role settings are empty, we assume
 // the section is missing and apply all defaults. This means users who want to
 // set some values to zero must set at least one non-zero value in the section.
-func applyScoringDefaults(cfg *Config, defaults *Config) {
+func applyScoringDefaults(cfg, defaults *Config) {
 	// Check if the entire scoring section appears uninitialized:
 	// - All weights are zero
 	// - All thresholds are zero
@@ -454,7 +454,7 @@ func SaveConfig(cfg *Config) error {
 func SaveConfigToPath(cfg *Config, path string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -463,7 +463,7 @@ func SaveConfigToPath(cfg *Config, path string) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0600); err != nil {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write config: %w", err)
 	}
 

@@ -185,7 +185,7 @@ func (b *Box) Render() string {
 
 		for i := range lines {
 			if i > 0 { // Skip first line
-				lines[i] = lines[i] + lipgloss.NewStyle().Foreground(shadowColor).Render(shadowChar)
+				lines[i] += lipgloss.NewStyle().Foreground(shadowColor).Render(shadowChar)
 			}
 		}
 		// Add bottom shadow line

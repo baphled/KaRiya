@@ -978,9 +978,13 @@ func applyProfileChange(prof *config.ProfileConfig, key string, value interface{
 func applyExportChange(exp *config.ExportConfig, key string, value interface{}) error {
 	switch key {
 	case "default_destination":
-		exp.DefaultDestination = value.(string)
+		if v, ok := value.(string); ok {
+			exp.DefaultDestination = v
+		}
 	case "auto_open":
-		exp.AutoOpen = value.(bool)
+		if v, ok := value.(bool); ok {
+			exp.AutoOpen = v
+		}
 	default:
 		return fmt.Errorf("unknown export setting: %s", key)
 	}
@@ -991,9 +995,13 @@ func applyExportChange(exp *config.ExportConfig, key string, value interface{}) 
 func applyDisplayChange(disp *config.DisplayConfig, key string, value interface{}) error {
 	switch key {
 	case "theme":
-		disp.Theme = value.(string)
+		if v, ok := value.(string); ok {
+			disp.Theme = v
+		}
 	case "animations":
-		disp.Animations = value.(bool)
+		if v, ok := value.(bool); ok {
+			disp.Animations = v
+		}
 	default:
 		return fmt.Errorf("unknown display setting: %s", key)
 	}

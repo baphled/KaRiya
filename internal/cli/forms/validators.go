@@ -16,7 +16,7 @@ func ParseDateString(s string) (time.Time, error) {
 	s = strings.TrimSpace(s)
 
 	// Handle "today"
-	if strings.ToLower(s) == "today" {
+	if strings.EqualFold(s, "today") {
 		return time.Now(), nil
 	}
 
@@ -150,7 +150,7 @@ func URL(value string) error {
 		return nil // Allow empty (use Required separately if needed)
 	}
 
-	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].[^\s]*$`)
+	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].\S*$`)
 	if !urlRegex.MatchString(value) {
 		return fmt.Errorf("invalid URL format")
 	}

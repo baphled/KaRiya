@@ -58,7 +58,7 @@ func NewMemoryConfigManager() *MemoryConfigManager {
 }
 
 // LoadConfig loads a configuration by name.
-func (m *MemoryConfigManager) LoadConfig(ctx context.Context, name string) (*career.CVConfig, error) {
+func (m *MemoryConfigManager) LoadConfig(_ context.Context, name string) (*career.CVConfig, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 

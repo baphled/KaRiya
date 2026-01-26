@@ -155,8 +155,7 @@ func (dv *DetailView) Render() string {
 		titleStyle := lipgloss.NewStyle().
 			Bold(true).
 			Foreground(dv.PrimaryColor())
-		parts = append(parts, titleStyle.Render(dv.title))
-		parts = append(parts, "") // Blank line after title
+		parts = append(parts, titleStyle.Render(dv.title), "") // Blank line after title
 	}
 
 	// Track if we need spacing before sections

@@ -237,7 +237,7 @@ func (bg *DefaultBulletGenerator) FilterByAudience(bullets []*Bullet, audience s
 }
 
 // RankByRelevance ranks bullets using multi-factor scoring
-func (bg *DefaultBulletGenerator) RankByRelevance(bullets []*Bullet, role string, audience string) []*Bullet {
+func (bg *DefaultBulletGenerator) RankByRelevance(bullets []*Bullet, _ string, _ string) []*Bullet {
 	// Calculate final scores
 	for _, bullet := range bullets {
 		bullet.FinalScore = bg.calculateFinalScore(bullet)
@@ -609,7 +609,7 @@ func (bg *DefaultBulletGenerator) determineImpactLevel(achievement *Achievement)
 }
 
 // enhanceActionVerb replaces weak verbs with strong action verbs
-func (bg *DefaultBulletGenerator) enhanceActionVerb(text string, role string) string {
+func (bg *DefaultBulletGenerator) enhanceActionVerb(text string, _ string) string {
 	weakVerbs := map[string]string{
 		"worked on":    "led",
 		"helped with":  "contributed to",

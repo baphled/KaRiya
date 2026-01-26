@@ -200,7 +200,7 @@ func (m *CVProgressModal) buildFooter() string {
 
 // tickSpinner returns a command to tick the spinner animation.
 func (m *CVProgressModal) tickSpinner() tea.Cmd {
-	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
+	return tea.Tick(100*time.Millisecond, func(_ time.Time) tea.Msg {
 		return SpinnerTickMsg{}
 	})
 }

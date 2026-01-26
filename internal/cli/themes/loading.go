@@ -122,7 +122,7 @@ func (lv *LoadingView) View() string {
 }
 
 // RenderLoadingBox renders a loading indicator in a styled box.
-func RenderLoadingBox(theme Theme, title, message string, spinnerView string) string {
+func RenderLoadingBox(theme Theme, title, message, spinnerView string) string {
 	if theme == nil {
 		return title + "\n" + spinnerView + " " + message
 	}

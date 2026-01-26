@@ -6,16 +6,16 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// Classifier provides classification and inference for facts
+// Classifier provides classification and inference for facts.
 type Classifier struct{}
 
-// NewClassifier creates a new classifier
+// NewClassifier creates a new classifier.
 func NewClassifier() *Classifier {
 	return &Classifier{}
 }
 
-// ClassifyRoleFit determines the role fit for a fact based on keywords
-// Deprecated: Use ClassifyRoleFitWithCategories instead for more accurate classification
+// ClassifyRoleFit determines the role fit for a fact based on keywords.
+// Deprecated: Use ClassifyRoleFitWithCategories instead for more accurate classification.
 func (c *Classifier) ClassifyRoleFit(text string) career.RoleFit {
 	return c.ClassifyRoleFitWithCategories(text, nil)
 }
@@ -107,7 +107,7 @@ func (c *Classifier) ClassifyRoleFitWithCategories(text string, categories []str
 	return career.RoleFitSeniorIC
 }
 
-// ClassifyAudienceRelevance determines the audience relevance for a fact
+// ClassifyAudienceRelevance determines the audience relevance for a fact.
 func (c *Classifier) ClassifyAudienceRelevance(text string, roleFit career.RoleFit) []string {
 	var audiences []string
 
@@ -130,7 +130,7 @@ func (c *Classifier) ClassifyAudienceRelevance(text string, roleFit career.RoleF
 	return audiences
 }
 
-// ExtractStrengthSignal extracts the strength signal from text
+// ExtractStrengthSignal extracts the strength signal from text.
 func (c *Classifier) ExtractStrengthSignal(text string) string {
 	// Look for impact indicators
 	impactKeywords := map[string]string{

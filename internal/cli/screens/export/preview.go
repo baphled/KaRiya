@@ -231,7 +231,7 @@ func (s *Preview) renderStatsLine(th themes.Theme) string {
 }
 
 // initializeViewport sets up the viewport with content.
-func (s *Preview) initializeViewport(th themes.Theme) {
+func (s *Preview) initializeViewport(_ themes.Theme) {
 	// Calculate viewport dimensions
 	// Account for:
 	// - Header: ~5 lines (title, stats, separator, blank line)

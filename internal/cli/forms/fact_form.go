@@ -31,7 +31,7 @@ func CompetencyCategoryOptions() []huh.Option[string] {
 	for i, cat := range categories {
 		// Capitalize for display
 		displayName := cat
-		if len(cat) > 0 {
+		if cat != "" {
 			displayName = string(cat[0]-32) + cat[1:] // Simple capitalize
 		}
 		options[i] = huh.NewOption(displayName, cat)
