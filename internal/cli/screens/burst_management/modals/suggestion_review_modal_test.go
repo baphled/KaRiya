@@ -40,6 +40,65 @@ var _ = Describe("SuggestionReviewModal", func() {
 		}
 	})
 
+	Describe("Display All Suggestions", func() {
+		BeforeEach(func() {
+			modal = modals.NewSuggestionReviewModal(suggestions, theme)
+			modal.Show()
+		})
+
+		It("should show all suggestion names in the view", func() {
+			view := modal.View()
+			Expect(view).To(ContainSubstring("Backend Development"))
+			Expect(view).To(ContainSubstring("Frontend Updates"))
+			Expect(view).To(ContainSubstring("DevOps Initiative"))
+		})
+
+		It("should show all confidence scores in the view", func() {
+			view := modal.View()
+			// All confidence scores should be visible as progress bars.
+			Expect(view).To(ContainSubstring("85%"))
+			Expect(view).To(ContainSubstring("72%"))
+			Expect(view).To(ContainSubstring("91%"))
+		})
+	})
+
+	Describe("Confidence Sorting", func() {
+		BeforeEach(func() {
+			modal = modals.NewSuggestionReviewModal(suggestions, theme)
+			modal.Show()
+		})
+
+		It("should sort suggestions by confidence (highest first)", func() {
+			// GetAllSuggestions should return sorted by confidence descending.
+			sorted := modal.GetAllSuggestions()
+			Expect(sorted).To(HaveLen(3))
+			Expect(sorted[0].Name).To(Equal("DevOps Initiative"))   // 0.91
+			Expect(sorted[1].Name).To(Equal("Backend Development")) // 0.85
+			Expect(sorted[2].Name).To(Equal("Frontend Updates"))    // 0.72
+		})
+
+		It("should select highest confidence suggestion first", func() {
+			current := modal.GetCurrentSuggestion()
+			Expect(current).NotTo(BeNil())
+			// First selected should be highest confidence.
+			Expect(current.Name).To(Equal("DevOps Initiative"))
+			Expect(current.ConfidenceScore).To(Equal(0.91))
+		})
+
+		It("should navigate to next suggestion in confidence order", func() {
+			// First is DevOps Initiative (highest).
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
+
+			// Navigate to next (second highest).
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
+
+			// Navigate to next (third highest).
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+		})
+	})
+
 	Describe("Creation", func() {
 		It("should create modal with suggestions and theme", func() {
 			modal = modals.NewSuggestionReviewModal(suggestions, theme)
@@ -56,13 +115,14 @@ var _ = Describe("SuggestionReviewModal", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should initialize at first suggestion (index 0)", func() {
+		It("should initialize at first suggestion (highest confidence)", func() {
 			modal = modals.NewSuggestionReviewModal(suggestions, theme)
 			modal.Show()
 
 			current := modal.GetCurrentSuggestion()
 			Expect(current).NotTo(BeNil())
-			Expect(current.Name).To(Equal("Backend Development"))
+			// First is highest confidence after sorting.
+			Expect(current.Name).To(Equal("DevOps Initiative"))
 		})
 
 		It("should initialize accepted list as empty", func() {
@@ -113,88 +173,113 @@ var _ = Describe("SuggestionReviewModal", func() {
 			modal.Show()
 		})
 
-		It("should navigate to next suggestion with 'n' key", func() {
-			// Start at first suggestion.
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
+		It("should navigate to next suggestion with 'j' key", func() {
+			// Start at first suggestion (highest confidence after sorting).
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
 
 			// Navigate to next.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
 		})
 
-		It("should navigate to previous suggestion with 'p' key", func() {
+		It("should navigate to previous suggestion with 'k' key", func() {
 			// Navigate to second first.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
 
 			// Navigate back.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
+		})
+
+		It("should navigate with down arrow key", func() {
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
 			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
 		})
 
-		It("should navigate with right arrow key", func() {
-			modal.Update(tea.KeyMsg{Type: tea.KeyRight})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
-		})
-
-		It("should navigate with left arrow key", func() {
+		It("should navigate with up arrow key", func() {
 			// Go to second first.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRight})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
 
 			// Go back.
-			modal.Update(tea.KeyMsg{Type: tea.KeyLeft})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
+			modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
 		})
 
 		It("should not navigate before first suggestion (boundary)", func() {
 			// Already at first, try to go back.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
 
-			// Try with left arrow.
-			modal.Update(tea.KeyMsg{Type: tea.KeyLeft})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
+			// Try with up arrow.
+			modal.Update(tea.KeyMsg{Type: tea.KeyUp})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
 		})
 
 		It("should not navigate after last suggestion (boundary)", func() {
 			// Go to last suggestion.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
 
 			// Try to go further.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
 
-			// Try with right arrow.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRight})
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
+			// Try with down arrow.
+			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
 		})
 
-		It("should update content correctly when navigating", func() {
+		It("should show selected suggestion details when navigating", func() {
+			// All suggestions visible in table, selected details shown below.
 			view := modal.View()
-			Expect(view).To(ContainSubstring("Backend Development"))
-			Expect(view).To(ContainSubstring("1 of 3"))
-
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			view = modal.View()
-			Expect(view).To(ContainSubstring("Frontend Updates"))
-			Expect(view).To(ContainSubstring("2 of 3"))
-
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			view = modal.View()
 			Expect(view).To(ContainSubstring("DevOps Initiative"))
-			Expect(view).To(ContainSubstring("3 of 3"))
+			Expect(view).To(ContainSubstring("Selected:"))
+
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			view = modal.View()
+			Expect(view).To(ContainSubstring("Backend Development"))
 		})
 
-		It("should show correct X of Y counter", func() {
-			view := modal.View()
-			Expect(view).To(ContainSubstring("1 of 3"))
+		It("should handle pgdown navigation", func() {
+			// With only 3 items and page size 10, pgdown goes to last item.
+			modal.Update(tea.KeyMsg{Type: tea.KeyPgDown})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+		})
 
+		It("should handle pgup navigation", func() {
+			// Navigate to last first.
+			modal.Update(tea.KeyMsg{Type: tea.KeyPgDown})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+
+			// Page up should go back to first.
+			modal.Update(tea.KeyMsg{Type: tea.KeyPgUp})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
+		})
+
+		It("should handle 'n' key for page down", func() {
+			// With only 3 items and page size 10, n goes to last item.
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			view = modal.View()
-			Expect(view).To(ContainSubstring("2 of 3"))
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+		})
+
+		It("should handle 'p' key for page up", func() {
+			// Navigate to last first.
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+
+			// 'p' should go back to first.
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("DevOps Initiative"))
+		})
+
+		It("should show pagination info", func() {
+			view := modal.View()
+			// Should show "Suggestions: X | Page Y of Z".
+			Expect(view).To(ContainSubstring("Suggestions:"))
+			Expect(view).To(ContainSubstring("Page"))
 		})
 	})
 
@@ -209,7 +294,8 @@ var _ = Describe("SuggestionReviewModal", func() {
 
 			accepted := modal.GetAcceptedSuggestions()
 			Expect(accepted).To(HaveLen(1))
-			Expect(accepted[0].Name).To(Equal("Backend Development"))
+			// First suggestion is highest confidence (DevOps Initiative).
+			Expect(accepted[0].Name).To(Equal("DevOps Initiative"))
 		})
 
 		It("should set action to accept", func() {
@@ -225,12 +311,12 @@ var _ = Describe("SuggestionReviewModal", func() {
 		})
 
 		It("should adjust index when accepting non-last suggestion", func() {
-			// Accept first, should show second (now first).
+			// Accept first (DevOps), should show second (Backend, now first).
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			current := modal.GetCurrentSuggestion()
 			Expect(current).NotTo(BeNil())
-			Expect(current.Name).To(Equal("Frontend Updates"))
+			Expect(current.Name).To(Equal("Backend Development"))
 		})
 
 		It("should close modal when last suggestion accepted", func() {
@@ -251,8 +337,9 @@ var _ = Describe("SuggestionReviewModal", func() {
 
 			accepted := modal.GetAcceptedSuggestions()
 			Expect(accepted).To(HaveLen(2))
-			Expect(accepted[0].Name).To(Equal("Backend Development"))
-			Expect(accepted[1].Name).To(Equal("Frontend Updates"))
+			// Sorted order: DevOps (0.91), Backend (0.85), Frontend (0.72).
+			Expect(accepted[0].Name).To(Equal("DevOps Initiative"))
+			Expect(accepted[1].Name).To(Equal("Backend Development"))
 		})
 
 		It("should preserve all accepted suggestions when modal closes", func() {
@@ -279,8 +366,8 @@ var _ = Describe("SuggestionReviewModal", func() {
 			accepted := modal.GetAcceptedSuggestions()
 			Expect(accepted).To(BeEmpty())
 
-			// Should move to next.
-			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Frontend Updates"))
+			// Should move to next (Backend Development, now first after DevOps removed).
+			Expect(modal.GetCurrentSuggestion().Name).To(Equal("Backend Development"))
 		})
 
 		It("should set action to reject", func() {
@@ -298,9 +385,9 @@ var _ = Describe("SuggestionReviewModal", func() {
 		It("should adjust index when rejecting non-last suggestion", func() {
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
 
-			// Should now show second suggestion (originally at index 1).
+			// Should now show Backend Development (was second, now first).
 			current := modal.GetCurrentSuggestion()
-			Expect(current.Name).To(Equal("Frontend Updates"))
+			Expect(current.Name).To(Equal("Backend Development"))
 		})
 
 		It("should close modal when last suggestion rejected", func() {
@@ -329,49 +416,53 @@ var _ = Describe("SuggestionReviewModal", func() {
 		})
 
 		It("should handle accept, reject, accept sequence", func() {
-			// Accept first (Backend Development).
+			// Sorted order: DevOps (0.91), Backend (0.85), Frontend (0.72).
+			// Accept first (DevOps Initiative).
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			// Reject second (Frontend Updates).
+			// Reject second (Backend Development).
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
-			// Accept third (DevOps Initiative).
+			// Accept third (Frontend Updates).
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
 			accepted := modal.GetAcceptedSuggestions()
 			Expect(accepted).To(HaveLen(2))
-			Expect(accepted[0].Name).To(Equal("Backend Development"))
-			Expect(accepted[1].Name).To(Equal("DevOps Initiative"))
+			Expect(accepted[0].Name).To(Equal("DevOps Initiative"))
+			Expect(accepted[1].Name).To(Equal("Frontend Updates"))
 		})
 
 		It("should handle reject, accept, reject sequence", func() {
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+			// Sorted order: DevOps (0.91), Backend (0.85), Frontend (0.72).
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}}) // Reject DevOps
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}) // Accept Backend
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}}) // Reject Frontend
 
 			accepted := modal.GetAcceptedSuggestions()
 			Expect(accepted).To(HaveLen(1))
-			Expect(accepted[0].Name).To(Equal("Frontend Updates"))
+			Expect(accepted[0].Name).To(Equal("Backend Development"))
 		})
 
 		It("should handle navigation between accept/reject", func() {
-			// Navigate to second.
-			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
-			// Accept second (Frontend Updates).
+			// Sorted order: DevOps (0.91), Backend (0.85), Frontend (0.72).
+			// Navigate to second (Backend).
+			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+			// Accept second (Backend Development).
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
-			// Now showing DevOps (was third, now second).
+			// After removing Backend, index stays at 1. Remaining: [DevOps, Frontend].
+			// Index 1 now points to Frontend (was third, now second).
 			current := modal.GetCurrentSuggestion()
-			Expect(current.Name).To(Equal("DevOps Initiative"))
+			Expect(current.Name).To(Equal("Frontend Updates"))
 
-			// Reject DevOps.
+			// Reject Frontend (currently selected).
 			modal.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
 
-			// Now showing Backend (only one left).
+			// Now showing DevOps (only one left).
 			current = modal.GetCurrentSuggestion()
-			Expect(current.Name).To(Equal("Backend Development"))
+			Expect(current.Name).To(Equal("DevOps Initiative"))
 
 			accepted := modal.GetAcceptedSuggestions()
 			Expect(accepted).To(HaveLen(1))
-			Expect(accepted[0].Name).To(Equal("Frontend Updates"))
+			Expect(accepted[0].Name).To(Equal("Backend Development"))
 		})
 	})
 
@@ -423,20 +514,26 @@ var _ = Describe("SuggestionReviewModal", func() {
 			Expect(view).To(ContainSubstring("Backend Development"))
 		})
 
-		It("should display suggestion description", func() {
+		It("should display selected suggestion description", func() {
 			view := modal.View()
-			Expect(view).To(ContainSubstring("API and infrastructure work"))
+			// First selected is DevOps Initiative.
+			Expect(view).To(ContainSubstring("CI/CD and infrastructure automation"))
 		})
 
-		It("should display events count", func() {
+		It("should display events count in table", func() {
 			view := modal.View()
-			Expect(view).To(ContainSubstring("Events:"))
-			Expect(view).To(ContainSubstring("3"))
+			// Events column shows counts.
+			Expect(view).To(ContainSubstring("4")) // DevOps has 4
+			Expect(view).To(ContainSubstring("3")) // Backend has 3
+			Expect(view).To(ContainSubstring("2")) // Frontend has 2
 		})
 
 		It("should display confidence percentage formatted", func() {
 			view := modal.View()
-			Expect(view).To(ContainSubstring("85.0%"))
+			// All confidences visible in table as progress bars.
+			Expect(view).To(ContainSubstring("91%"))
+			Expect(view).To(ContainSubstring("85%"))
+			Expect(view).To(ContainSubstring("72%"))
 		})
 
 		It("should handle empty description", func() {
@@ -470,7 +567,7 @@ var _ = Describe("SuggestionReviewModal", func() {
 			modal.Show()
 
 			view := modal.View()
-			Expect(view).To(ContainSubstring("99.9%"))
+			Expect(view).To(ContainSubstring("99%"))
 		})
 
 		It("should handle low confidence score", func() {
@@ -486,15 +583,16 @@ var _ = Describe("SuggestionReviewModal", func() {
 			modal.Show()
 
 			view := modal.View()
-			Expect(view).To(ContainSubstring("50.0%"))
+			Expect(view).To(ContainSubstring("50%"))
 		})
 
-		It("should show footer badges", func() {
+		It("should show footer badges with correct keys", func() {
 			view := modal.View()
 			// Check for key hints in footer.
 			Expect(view).To(ContainSubstring("Accept"))
 			Expect(view).To(ContainSubstring("Reject"))
-			Expect(view).To(ContainSubstring("Next"))
+			Expect(view).To(ContainSubstring("Navigate"))
+			Expect(view).To(ContainSubstring("Page"))
 			Expect(view).To(ContainSubstring("Cancel"))
 		})
 	})
