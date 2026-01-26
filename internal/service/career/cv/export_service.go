@@ -73,17 +73,17 @@ type ExportResult struct {
 }
 
 // NewExportService creates a new export service
-func NewExportService(logger *logger.Logger) *ExportService {
+func NewExportService(log *logger.Logger) *ExportService {
 	return &ExportService{
-		logger:    logger,
+		logger:    log,
 		clipboard: &SystemClipboard{},
 	}
 }
 
 // NewExportServiceWithClipboard creates a new export service with a custom clipboard implementation
-func NewExportServiceWithClipboard(logger *logger.Logger, clipboard ClipboardWriter) *ExportService {
+func NewExportServiceWithClipboard(log *logger.Logger, clipboard ClipboardWriter) *ExportService {
 	return &ExportService{
-		logger:    logger,
+		logger:    log,
 		clipboard: clipboard,
 	}
 }

@@ -20,12 +20,12 @@ type TraceabilityService struct {
 func NewTraceabilityService(
 	eventRepo careerrepo.Repository,
 	factRepo careerrepo.FactRepository,
-	logger *logger.Logger,
+	log *logger.Logger,
 ) *TraceabilityService {
 	return &TraceabilityService{
 		eventRepo: eventRepo,
 		factRepo:  factRepo,
-		logger:    logger,
+		logger:    log,
 	}
 }
 

@@ -291,8 +291,8 @@ func (s *Preview) renderFooter(th themes.Theme) string {
 // getTheme returns the theme from BaseScreen or a default theme.
 func (s *Preview) getTheme() themes.Theme {
 	if t := s.BaseScreen.Theme(); t != nil {
-		if theme, ok := t.(themes.Theme); ok {
-			return theme
+		if th, ok := t.(themes.Theme); ok {
+			return th
 		}
 	}
 	return themes.NewDefaultTheme()
