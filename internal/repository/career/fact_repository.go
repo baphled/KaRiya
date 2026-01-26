@@ -85,8 +85,8 @@ func NewMemoryFactRepository() *MemoryFactRepository {
 	}
 }
 
-// Create adds a new fact to the in-memory store
-func (r *MemoryFactRepository) Create(ctx context.Context, fact *career.Fact) error {
+// Create adds a new fact to the in-memory store.
+func (r *MemoryFactRepository) Create(_ context.Context, fact *career.Fact) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -129,8 +129,8 @@ func (r *MemoryFactRepository) GetByID(_ context.Context, id string) (*career.Fa
 	return fact, nil
 }
 
-// Update modifies an existing fact
-func (r *MemoryFactRepository) Update(ctx context.Context, fact *career.Fact) error {
+// Update modifies an existing fact.
+func (r *MemoryFactRepository) Update(_ context.Context, fact *career.Fact) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

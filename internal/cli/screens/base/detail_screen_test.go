@@ -317,7 +317,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Data Access", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -340,7 +340,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Screen Interface", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -373,7 +373,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should handle empty breadcrumbs", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen := base.NewBaseDetailScreen([]string{}, renderer, detailData)
@@ -383,7 +383,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should handle very small terminal dimensions", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen := base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -394,7 +394,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should handle renderer returning empty string", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return ""
 			}
 			screen := base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)

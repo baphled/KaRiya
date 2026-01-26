@@ -196,8 +196,7 @@ func (m *SkillFilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillFilterFormD
 		return nil, false, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		if msg.String() == "esc" {
 			// Close modal without applying
 			m.visible = false
 			return nil, false, nil

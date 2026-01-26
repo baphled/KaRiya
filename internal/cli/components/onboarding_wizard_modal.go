@@ -196,8 +196,7 @@ func (m *OnboardingWizardModal) Update(msg tea.Msg) tea.Cmd {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		if msg.String() == "esc" {
 			// Block Esc key - onboarding is mandatory, cannot be cancelled
 			// huh forms use Shift+Tab for back navigation between fields
 			return nil

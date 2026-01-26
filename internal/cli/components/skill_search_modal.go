@@ -94,18 +94,16 @@ func (m *SkillSearchModal) Init() tea.Cmd {
 // Tab and Enter keys correctly. Huh forms require full tea.Msg interface.
 func (m *SkillSearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSearchFormData) {
 	// Handle WindowSizeMsg for responsive sizing
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		m.width = wsm.Width
+		m.height = wsm.Height
 		m.rebuildForm()
 		return m.form.Init(), false, nil
 	}
 
 	// Handle KeyMsg
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "esc":
+		if keyMsg.String() == "esc" {
 			// User cancelled - close modal without applying
 			m.visible = false
 			return nil, false, nil

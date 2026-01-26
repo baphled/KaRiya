@@ -36,8 +36,8 @@ func (r *MemorySkillRepository) SetEventRepository(repo Repository) {
 	r.eventRepo = repo
 }
 
-// Create adds a new skill to the in-memory store
-func (r *MemorySkillRepository) Create(ctx context.Context, skill *career.Skill) error {
+// Create adds a new skill to the in-memory store.
+func (r *MemorySkillRepository) Create(_ context.Context, skill *career.Skill) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -69,8 +69,8 @@ func (r *MemorySkillRepository) Create(ctx context.Context, skill *career.Skill)
 	return nil
 }
 
-// GetByID retrieves a specific skill by its unique identifier
-func (r *MemorySkillRepository) GetByID(ctx context.Context, id string) (*career.Skill, error) {
+// GetByID retrieves a specific skill by its unique identifier.
+func (r *MemorySkillRepository) GetByID(_ context.Context, id string) (*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

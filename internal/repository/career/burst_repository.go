@@ -69,8 +69,8 @@ func NewMemoryBurstRepository() *MemoryBurstRepository {
 	}
 }
 
-// Create adds a new burst to the in-memory store
-func (r *MemoryBurstRepository) Create(ctx context.Context, burst *career.Burst) error {
+// Create adds a new burst to the in-memory store.
+func (r *MemoryBurstRepository) Create(_ context.Context, burst *career.Burst) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
