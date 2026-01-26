@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/forms"
-	"github.com/baphled/kariya/internal/cli/styles"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/cli/uikit/theme"
@@ -274,8 +273,8 @@ func (m *OnboardingWizardModal) View() string {
 		Content(content).
 		Width(modalWidth).
 		MaxHeight(modalHeight).
-		Background(styles.ColorBackground).
-		BorderColor(styles.ColorAccentTeal).
+		Background(th.BackgroundColor()).
+		BorderColor(th.PrimaryColor()).
 		Padding(1)
 
 	return box.Render()
