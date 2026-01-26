@@ -1,16 +1,16 @@
-package components_test
+package selectors_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/uikit/selectors"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("CategorySelector", func() {
-	var selector *components.CategorySelector
+	var selector *selectors.CategorySelector
 
 	BeforeEach(func() {
-		selector = components.NewCategorySelector()
+		selector = selectors.NewCategorySelector()
 	})
 
 	Describe("NewCategorySelector", func() {
@@ -239,42 +239,42 @@ var _ = Describe("CategorySelector", func() {
 
 	Describe("GetCategoryDescription", func() {
 		It("should return description for technical", func() {
-			desc := components.GetCategoryDescription("technical")
+			desc := selectors.GetCategoryDescription("technical")
 			Expect(desc).To(ContainSubstring("Technical skills"))
 		})
 
 		It("should return description for leadership", func() {
-			desc := components.GetCategoryDescription("leadership")
+			desc := selectors.GetCategoryDescription("leadership")
 			Expect(desc).To(ContainSubstring("Leadership"))
 		})
 
 		It("should return description for product", func() {
-			desc := components.GetCategoryDescription("product")
+			desc := selectors.GetCategoryDescription("product")
 			Expect(desc).To(ContainSubstring("Product"))
 		})
 
 		It("should return description for consulting", func() {
-			desc := components.GetCategoryDescription("consulting")
+			desc := selectors.GetCategoryDescription("consulting")
 			Expect(desc).To(ContainSubstring("Consulting"))
 		})
 
 		It("should return description for research", func() {
-			desc := components.GetCategoryDescription("research")
+			desc := selectors.GetCategoryDescription("research")
 			Expect(desc).To(ContainSubstring("Research"))
 		})
 
 		It("should return description for mentoring", func() {
-			desc := components.GetCategoryDescription("mentoring")
+			desc := selectors.GetCategoryDescription("mentoring")
 			Expect(desc).To(ContainSubstring("Mentoring"))
 		})
 
 		It("should handle case-insensitive lookup", func() {
-			desc := components.GetCategoryDescription("TECHNICAL")
+			desc := selectors.GetCategoryDescription("TECHNICAL")
 			Expect(desc).To(ContainSubstring("Technical skills"))
 		})
 
 		It("should return category name for unknown category", func() {
-			desc := components.GetCategoryDescription("unknown")
+			desc := selectors.GetCategoryDescription("unknown")
 			Expect(desc).To(Equal("unknown"))
 		})
 	})

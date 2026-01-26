@@ -54,7 +54,7 @@ var _ = Describe("Generator", func() {
 					StateCount: 2,
 					States: []statematrix.StateInfo{
 						{Constant: "BrowseStateTimeline", Type: "ROOT", EscapeBehavior: "Cancel intent → Main Menu"},
-						{Constant: "BrowseStateEventDetail", Type: "Intermediate", EscapeBehavior: "Back → Previous state"},
+						{Constant: "BrowseStateDeleteConfirm", Type: "Confirmation", EscapeBehavior: "Cancel → Return to list"},
 					},
 				},
 			},
@@ -323,19 +323,21 @@ var _ = Describe("Scanner", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(files).ToNot(BeEmpty())
 
-			// Should find intent files like capture_event.go, browse_timeline.go, etc.
+			// Should find intent files - supports both flat structure (capture_event.go)
+			// and subdirectory structure (browse_timeline/intent.go)
 			foundCaptureEvent := false
 			foundBrowseTimeline := false
 			for _, file := range files {
 				if filepath.Base(file) == "capture_event.go" {
 					foundCaptureEvent = true
 				}
-				if filepath.Base(file) == "browse_timeline.go" {
+				// Check for subdirectory structure: browse_timeline/intent.go
+				if strings.Contains(file, "browse_timeline") && filepath.Base(file) == "intent.go" {
 					foundBrowseTimeline = true
 				}
 			}
 			Expect(foundCaptureEvent).To(BeTrue(), "Should find capture_event.go")
-			Expect(foundBrowseTimeline).To(BeTrue(), "Should find browse_timeline.go")
+			Expect(foundBrowseTimeline).To(BeTrue(), "Should find browse_timeline/intent.go (subdirectory structure)")
 		})
 
 		It("should exclude test files", func() {
@@ -539,7 +541,7 @@ var _ = Describe("Parser", func() {
 			})
 
 			It("should identify detail states as Intermediate", func() {
-				classification := statematrix.ClassifyState("BrowseStateEventDetail")
+				classification := statematrix.ClassifyState("SomeStateDetail")
 				Expect(classification).To(Equal("Intermediate"))
 			})
 		})

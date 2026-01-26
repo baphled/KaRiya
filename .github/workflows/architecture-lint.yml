@@ -18,6 +18,9 @@ on:
       - 'internal/cli/intents/**'
       - 'internal/cli/screens/**'
 
+env:
+  GO_VERSION: '1.25'
+
 jobs:
   intent-architecture:
     name: Intent Architecture Validation
@@ -34,9 +37,10 @@ jobs:
           echo "Fetched origin/next for legacy intent detection"
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
 
       - name: Check Intent Architecture
         run: make check-intent-architecture
@@ -51,22 +55,25 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
 
       - name: Run golangci-lint (PR - changed files only)
         if: github.event_name == 'pull_request'
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.55.2
+          version: v1.63.4
+          install-mode: goinstall
           args: --timeout=5m --new-from-rev=origin/${{ github.base_ref }}
 
       - name: Run golangci-lint (Push - full scan)
         if: github.event_name == 'push'
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.55.2
+          version: v1.63.4
+          install-mode: goinstall
           args: --timeout=5m
 
   pattern-compliance:

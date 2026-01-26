@@ -115,7 +115,10 @@ type MyIntent struct {
 	context      *MyIntentContext
 	items        []*Item
 	selectedItem *Item
-	formData     *FormData
+	// formData holds form input data. The FormData type is defined as a placeholder
+	// at the bottom of this template. Customize it to match the fields required
+	// by your form (e.g., Name, Description, Tags, etc.).
+	formData *FormData
 }
 
 // -----------------------------------------------------------------------------

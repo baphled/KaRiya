@@ -1,16 +1,16 @@
-package components_test
+package selectors_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/uikit/selectors"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("TagSelector", func() {
-	var selector *components.TagSelector
+	var selector *selectors.TagSelector
 
 	BeforeEach(func() {
-		selector = components.NewTagSelector()
+		selector = selectors.NewTagSelector()
 	})
 
 	Describe("Initialization", func() {
