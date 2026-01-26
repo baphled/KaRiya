@@ -215,6 +215,7 @@ func (s *BurstListScreen) View() string {
 	}
 
 	// Build footer using UIKit primitives for consistent styling.
+	// Only show badges for keys that are actually handled by this screen.
 	footer := primitives.RenderHelpFooter(th,
 		primitives.NavigateBadge(th),
 		primitives.PageBadge(th),
@@ -224,8 +225,6 @@ func (s *BurstListScreen) View() string {
 		primitives.DeleteBadge(th),
 		primitives.SuggestBadge(th),
 		primitives.BackBadge(th),
-		primitives.QuitBadge(th),
-		primitives.HelpBadge(th),
 	)
 
 	// Use BaseScreen's CreateView helper for StandardView integration.
