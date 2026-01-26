@@ -77,7 +77,20 @@ internal/cli/
 │   ├── contract.go        # Intent interface definitions
 │   ├── result.go          # IntentResult types
 │   ├── router.go          # Intent routing
-│   └── {name}_intent.go   # Intent implementations
+│   ├── modal_registry.go  # Modal management
+│   ├── {name}_intent.go   # LEGACY: Old flat structure (to migrate)
+│   │
+│   └── {feature}/         # NEW: Subdirectory structure (required)
+│       ├── context.go     # IntentContext + Validate() + domain types
+│       ├── result.go      # Result struct
+│       ├── constants.go   # State enum only
+│       ├── messages.go    # ALL *Msg types
+│       ├── intent.go      # NewIntent, Init, Update, View, Result
+│       ├── types.go       # (optional) Intent struct if large
+│       ├── handlers.go    # (optional) ScreenResultHandler methods
+│       ├── helpers.go     # (optional) Helper methods
+│       ├── filters.go     # (optional) Domain-specific filter logic
+│       └── interfaces.go  # (optional) Service interfaces
 │
 ├── screens/               # Screen implementations
 │   ├── base/              # Base screen types
@@ -90,8 +103,19 @@ internal/cli/
 │   ├── cv/                # GenerateCV screens
 │   ├── skills/            # ManageSkills screens
 │   └── timeline/          # BrowseTimeline screens
+│       ├── event_list.go
+│       ├── event_detail.go
+│       ├── event_delete_confirm.go
+│       └── modals/        # Feature-specific modals
+│           ├── filter_modal.go
+│           ├── search_modal.go
+│           ├── sort_modal.go
+│           ├── edit_modal.go
+│           ├── quick_add_modal.go
+│           ├── detail_modal.go
+│           └── helpers.go
 │
-├── components/            # Modal components
+├── components/            # LEGACY: Modal components (prefer uikit/feedback/)
 │   ├── delete_confirm_modal.go
 │   ├── filter_modal.go
 │   └── {domain}_modal.go
@@ -100,7 +124,7 @@ internal/cli/
 │   ├── primitives/        # Text, Button, Badge, Input
 │   ├── containers/        # Box, Overlay
 │   ├── layout/            # ScreenLayout, Header, Footer
-│   ├── feedback/          # Modal types (Error, Loading, etc.)
+│   ├── feedback/          # Modal types (Error, Loading, Confirm, etc.)
 │   ├── navigation/        # Breadcrumbs
 │   ├── display/           # Logo
 │   └── theme/             # Theme infrastructure
@@ -112,6 +136,8 @@ internal/cli/
 └── themes/                # Theme definitions
     └── default.go         # Catppuccin Macchiato theme
 ```
+
+**Reference Implementation**: `intents/browse_timeline/` demonstrates the new subdirectory pattern.
 
 ### Dependency Rules
 
@@ -166,41 +192,115 @@ func (b *BaseIntent) CreateViewWithBreadcrumbs(breadcrumbs, content, help string
 
 ### Intent States
 
-Each intent defines its own state enum:
+Each intent defines its own state enum in `constants.go`:
 
 ```go
-type BrowseTimelineState string
+// File: intents/browse_timeline/constants.go
+package browse_timeline
+
+type State string
 
 const (
-    StateList    BrowseTimelineState = "list"
-    StateDetail  BrowseTimelineState = "detail"
-    StateDeleting BrowseTimelineState = "deleting"
+    StateTimeline      State = "timeline"
+    StateDeleteConfirm State = "delete_confirm"
 )
 ```
 
-### Intent Model Structure
+### Intent Model Structure (New Subdirectory Pattern)
+
+The intent struct is defined in `types.go` (optional) or `intent.go`:
 
 ```go
-type BrowseTimelineIntent struct {
-    *BaseIntent
+// File: intents/browse_timeline/types.go
+package browse_timeline
+
+type Intent struct {
+    *intents.BaseIntent
     
-    // State machine
-    state  BrowseTimelineState
+    // Context (input parameters)
+    context *IntentContext
+    
+    // State machine (flattened - NOT wrapped)
+    state  State
     active bool
-    result *IntentResult[*BrowseTimelineResult]
+    result *intents.IntentResult[*Result]
     
-    // Screens (one per state that uses screens)
-    listScreen   *timeline.TimelineEventListScreen
-    detailScreen *timeline.EventDetailScreen
+    // Flattened state fields
+    filteredEvents []*career.CareerEvent
+    selectedIndex  int
+    filters        *Filters
+    filterStack    *intents.FilterStack
+    selectedEvent  *career.CareerEvent
     
-    // Modals (shared across states)
-    filterModal     *components.FilterModalModel
-    deleteModal     *components.DeleteConfirmModal
-    quickAddModal   *components.QuickAddEventModal
+    // Screens (explicit typed fields)
+    activeScreen screens.Screen
     
-    // Data
-    events        []*career.CareerEvent
-    selectedEvent *career.CareerEvent
+    // Modals (feature-specific in screens/timeline/modals/)
+    filterModal     *modals.FilterModal
+    searchModal     *modals.SearchModal
+    sortModal       *modals.SortModal
+    deleteModal     *feedback.ConfirmModal  // Centralized from uikit/feedback/
+    quickAddModal   *modals.QuickAddModal
+    editModal       *modals.EditModal
+    viewDetailModal *modals.EventDetailModal
+    errorModal      *feedback.Modal
+    
+    // Modal registry for unified handling
+    modalRegistry *intents.ModalRegistry
+}
+```
+
+### Intent Context (Input Parameters)
+
+The context struct holds all input parameters in `context.go`:
+
+```go
+// File: intents/browse_timeline/context.go
+package browse_timeline
+
+type IntentContext struct {
+    Events          []*career.CareerEvent
+    InitialFilters  *Filters
+    SelectedEventID string
+    CLIEventService EventService  // Interface for dependency injection
+}
+
+func (c *IntentContext) Validate() error {
+    if c.Events == nil {
+        c.Events = make([]*career.CareerEvent, 0)
+    }
+    if c.InitialFilters == nil {
+        c.InitialFilters = &Filters{/* defaults */}
+    }
+    return nil
+}
+
+// Domain types can also be in context.go
+type Filters struct {
+    SearchText string
+    Tags       []string
+    Companies  []string
+    Categories []string
+    Projects   []string
+    SortBy     string
+    SortOrder  string
+}
+```
+
+### Service Interfaces (Dependency Injection)
+
+Service interfaces are defined in `interfaces.go`:
+
+```go
+// File: intents/browse_timeline/interfaces.go
+package browse_timeline
+
+type EventService interface {
+    DeleteEvent(ctx context.Context, eventID string) error
+    ListEvents(ctx context.Context, filters *careerrepo.ListFilters) ([]*career.CareerEvent, error)
+    CaptureEvent(ctx context.Context, text string, date time.Time, mode careerservice.EventCaptureMode, opts ...service.Option) error
+    UpdateEventMetadata(ctx context.Context, event *career.CareerEvent) error
+    GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error)
 }
 ```
 
@@ -631,78 +731,191 @@ Screen                          TableBehavior
 
 ## Creating New Intents
 
-### Decision Tree: Direct Rendering vs Screens
+### Decision Tree: Subdirectory Structure Required
+
+All new intents MUST use the subdirectory structure:
 
 ```
-Is this a simple intent with 1-2 states?
-├── YES → Direct rendering (use BaseIntent helpers)
-└── NO → Does it have reusable UI patterns?
-         ├── YES → Create screens
-         └── NO → Direct rendering with ScreenLayout
+intents/{feature}/
+├── context.go     # REQUIRED: IntentContext + Validate()
+├── result.go      # REQUIRED: Result struct
+├── constants.go   # REQUIRED: State enum
+├── messages.go    # REQUIRED: ALL *Msg types
+├── intent.go      # REQUIRED: NewIntent, Init, Update, View, Result
+├── types.go       # OPTIONAL: Intent struct (if intent.go > 300 lines)
+├── handlers.go    # OPTIONAL: ScreenResultHandler methods
+└── helpers.go     # OPTIONAL: Helper methods
 ```
 
-### Step-by-Step: Screen-Based Intent
+### Step-by-Step: Creating a New Intent
 
-#### 1. Create Screen Package
+#### 1. Create Intent Package
 
 ```bash
+# Create intent subdirectory
+mkdir -p internal/cli/intents/myfeature
+
+# Create screen directory
 mkdir -p internal/cli/screens/myfeature
+mkdir -p internal/cli/screens/myfeature/modals  # If you have >2 modals
 ```
 
-#### 2. Create Screens
+#### 2. Create Core Files (5 Required)
+
+**constants.go** - State enum:
+```go
+// File: intents/myfeature/constants.go
+package myfeature
+
+type State string
+
+const (
+    StateList   State = "list"
+    StateDetail State = "detail"
+)
+```
+
+**messages.go** - ALL message types:
+```go
+// File: intents/myfeature/messages.go
+package myfeature
+
+type ItemSelectedMsg struct {
+    Item *domain.Item
+}
+
+type FilterChangedMsg struct {
+    Filters *Filters
+}
+```
+
+**result.go** - Output type:
+```go
+// File: intents/myfeature/result.go
+package myfeature
+
+type Result struct {
+    SelectedItem *domain.Item
+    FinalFilters *Filters
+}
+```
+
+**context.go** - Input parameters and business logic:
+```go
+// File: intents/myfeature/context.go
+package myfeature
+
+type IntentContext struct {
+    Items   []*domain.Item
+    Service ItemService
+}
+
+func (c *IntentContext) Validate() error {
+    if c.Items == nil {
+        c.Items = make([]*domain.Item, 0)
+    }
+    return nil
+}
+```
+
+**intent.go** - Implementation (broker only):
+```go
+// File: intents/myfeature/intent.go
+package myfeature
+
+var _ intents.ScreenResultHandler = (*Intent)(nil)
+
+func NewIntent(ctx *IntentContext) (*Intent, error) {
+    if err := ctx.Validate(); err != nil {
+        return nil, err
+    }
+    return &Intent{
+        BaseIntent: intents.NewBaseIntent(),
+        context:    ctx,
+        state:      StateList,
+        active:     true,
+    }, nil
+}
+
+func (i *Intent) Init() tea.Cmd {
+    i.transitionToScreen(screens.NewListScreen(i.context.Items))
+    return nil
+}
+
+func (i *Intent) Update(msg tea.Msg) tea.Cmd {
+    // Delegate to screens, handle modals
+}
+
+func (i *Intent) View() string {
+    baseView := i.activeScreen.View()
+    return i.modalRegistry.RenderOverlay(baseView)
+}
+```
+
+#### 3. Create Optional Files (for larger intents)
+
+**types.go** - Intent struct (if intent.go > 300 lines):
+```go
+// File: intents/myfeature/types.go
+package myfeature
+
+type Intent struct {
+    *intents.BaseIntent
+    context      *IntentContext
+    state        State
+    active       bool
+    result       *intents.IntentResult[*Result]
+    activeScreen screens.Screen
+    // ... modal fields
+}
+```
+
+**handlers.go** - ScreenResultHandler methods:
+```go
+// File: intents/myfeature/handlers.go
+package myfeature
+
+func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd { ... }
+func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd { ... }
+func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd { ... }
+func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd { ... }
+```
+
+**helpers.go** - Helper methods:
+```go
+// File: intents/myfeature/helpers.go
+package myfeature
+
+func (i *Intent) openFilterModal() tea.Cmd { ... }
+func (i *Intent) getContextHelp() string { ... }
+func (i *Intent) transitionToScreen(s screens.Screen) { ... }
+```
+
+#### 4. Create Screens
 
 ```go
-// internal/cli/screens/myfeature/list_screen.go
+// File: screens/myfeature/list_screen.go
 package myfeature
 
 type ListScreen struct {
     *base.BaseScreen
-    items []Item
-    table *behaviors.TableBehavior[Item]
+    items []domain.Item
+    table *behaviors.TableBehavior[*domain.Item]
 }
 
-func NewListScreen(items []Item) *ListScreen {
-    s := &ListScreen{
+func NewListScreen(items []*domain.Item) *ListScreen {
+    columns := []behaviors.ColumnDef{
+        {Title: "Name", Width: 30},
+        {Title: "Date", Width: 12},
+    }
+    table := behaviors.NewTableBehavior[*domain.Item](nil, columns, itemRowFormatter)
+    table.SetItems(items)
+    
+    return &ListScreen{
         BaseScreen: base.NewBaseScreen(),
         items:      items,
+        table:      table,
     }
-    s.table = behaviors.NewTableBehavior[Item]().
-        WithItems(items)
-    return s
-}
-```
-
-#### 3. Create Intent
-
-```go
-// internal/cli/intents/myfeature_intent.go
-package intents
-
-type MyFeatureIntent struct {
-    *BaseIntent
-    
-    state      MyFeatureState
-    active     bool
-    result     *IntentResult[*MyFeatureResult]
-    
-    // Screens
-    listScreen   *myfeature.ListScreen
-    detailScreen *myfeature.DetailScreen
-    
-    // Modals
-    filterModal *components.FilterModal
-    
-    // Data
-    items []Item
-}
-
-func NewMyFeatureIntent(ctx context.Context) (*MyFeatureIntent, error) {
-    intent := &MyFeatureIntent{
-        BaseIntent: NewBaseIntent(),
-        state:      StateList,
-        active:     true,
-    }
-    return intent, nil
 }
 ```
 

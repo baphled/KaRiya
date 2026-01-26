@@ -1,0 +1,33 @@
+// Package {feature} implements the {Feature} intent.
+package {feature}
+
+import "errors"
+
+// Error constants for {Feature} intent.
+var (
+	// ErrNoItemSelected is returned when no item is selected.
+	ErrNoItemSelected = errors.New("no item selected")
+
+	// ErrInvalidItemData is returned when item data is invalid.
+	ErrInvalidItemData = errors.New("invalid item data")
+
+	// ErrServiceNotAvailable is returned when the service is unavailable.
+	ErrServiceNotAvailable = errors.New("service not available")
+)
+
+// State represents the current state of the {Feature} intent.
+type State string
+
+const (
+	// StateList shows the list of items.
+	StateList State = "list"
+
+	// StateDetail shows details of a single item.
+	StateDetail State = "detail"
+
+	// StateForm shows the add/edit form.
+	StateForm State = "form"
+
+	// StateDeleteConfirm shows delete confirmation.
+	StateDeleteConfirm State = "delete_confirm"
+)

@@ -1,0 +1,567 @@
+// COMPLIANT INTENT TEMPLATE (2026-01-22)
+//
+// THIS FILE IS A TEMPLATE - DO NOT IMPORT DIRECTLY
+// Copy and adapt for your new intent implementation.
+//
+// This template is FULLY COMPLIANT with automated enforcement:
+// - make check-intent-architecture (PASSES)
+// - make golangci-lint (PASSES)
+// - make check-patterns (PASSES)
+//
+// KEY REQUIREMENTS (ENFORCED):
+// ✅ Embed *BaseIntent
+// ✅ Use typed state enum (not raw string)
+// ✅ Flatten state (no wrapped model)
+// ✅ Implement ScreenResultHandler interface
+// ✅ Use i.getContext() not context.Background()
+// ✅ Use behaviors.RenderModalOverlay() for modals
+// ✅ No dead code markers
+//
+// See: docs/checklists/INTENT_DEVELOPMENT_CHECKLIST.md
+
+package intents
+
+import (
+	"context"
+
+	"github.com/baphled/kariya/internal/cli/behaviors"
+	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/screens/myfeature"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// -----------------------------------------------------------------------------
+// STEP 1: Define Typed State Enum (REQUIRED)
+// -----------------------------------------------------------------------------
+
+// MyIntentState defines the state machine states.
+// Rule: Must use typed enum, not raw string.
+type MyIntentState string
+
+const (
+	StateList   MyIntentState = "list"
+	StateDetail MyIntentState = "detail"
+	StateForm   MyIntentState = "form"
+)
+
+// -----------------------------------------------------------------------------
+// STEP 2: Define Context (Input)
+// -----------------------------------------------------------------------------
+
+// MyIntentContext contains input parameters for the intent.
+type MyIntentContext struct {
+	Items        []*Item
+	InitialState MyIntentState
+	// Add your input parameters here
+}
+
+// Validate validates the context.
+// Rule: Always implement validation for robustness.
+func (c *MyIntentContext) Validate() error {
+	if c.Items == nil {
+		c.Items = make([]*Item, 0)
+	}
+	if c.InitialState == "" {
+		c.InitialState = StateList
+	}
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// STEP 3: Define Result (Output)
+// -----------------------------------------------------------------------------
+
+// MyIntentResult is the output of a successful intent execution.
+type MyIntentResult struct {
+	SelectedItem *Item
+	Action       string
+}
+
+// -----------------------------------------------------------------------------
+// STEP 4: Define Intent Structure (FLATTENED)
+// -----------------------------------------------------------------------------
+
+// Ensure interface compliance at compile time.
+var _ ScreenResultHandler = (*MyIntent)(nil)
+
+// MyIntent implements the Intent interface for [description of what this intent does].
+//
+// Architecture:
+//   - Embeds BaseIntent for terminal/theme management
+//   - Uses flattened state (not wrapped in separate model)
+//   - Implements ScreenResultHandler for screen result processing
+//   - Uses typed state enum for type safety
+type MyIntent struct {
+	*BaseIntent // REQUIRED: Embed for terminal, theme, logo, help
+
+	// State machine (FLATTENED - not wrapped in model)
+	state  MyIntentState
+	active bool
+	result *IntentResult[*MyIntentResult]
+
+	// Screens (one per state that uses screens)
+	listScreen   *myfeature.ListScreen
+	detailScreen *myfeature.DetailScreen
+	formScreen   *myfeature.FormScreen
+
+	// Modals (shared across states)
+	deleteModal   *feedback.ConfirmModal
+	successModal  *feedback.SuccessModal
+	errorModal    *feedback.ErrorModal
+
+	// Data (FLATTENED - not in separate model)
+	context      *MyIntentContext
+	items        []*Item
+	selectedItem *Item
+	formData     *FormData
+}
+
+// -----------------------------------------------------------------------------
+// STEP 5: Constructor
+// -----------------------------------------------------------------------------
+
+// NewMyIntent creates a new MyIntent instance.
+func NewMyIntent(ctx context.Context, context *MyIntentContext) (*MyIntent, error) {
+	// Validate context
+	if err := context.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &MyIntent{
+		BaseIntent: NewBaseIntent(),
+		context:    context,
+		state:      context.InitialState,
+		active:     true,
+		items:      context.Items,
+	}, nil
+}
+
+// -----------------------------------------------------------------------------
+// STEP 6: Intent Interface Implementation
+// -----------------------------------------------------------------------------
+
+// Init initializes the intent and creates the initial screen.
+func (i *MyIntent) Init() tea.Cmd {
+	// Initialize first screen based on state
+	switch i.state {
+	case StateList:
+		i.listScreen = myfeature.NewListScreen(i.items)
+		i.listScreen.SetTerminalInfo(i.GetTerminalInfo())
+		i.listScreen.SetTheme(i.Theme())
+		i.listScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+	}
+
+	return nil
+}
+
+// Update processes messages and updates the intent state.
+func (i *MyIntent) Update(msg tea.Msg) tea.Cmd {
+	if !i.active {
+		return nil
+	}
+
+	// Priority 1: Handle modals (if visible)
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		model, cmd := i.deleteModal.Update(msg)
+		i.deleteModal = model.(*feedback.ConfirmModal)
+
+		if !i.deleteModal.IsVisible() {
+			// Modal closed - handle result
+			if i.deleteModal.WasConfirmed() {
+				return i.handleDeleteConfirmed()
+			}
+		}
+		return cmd
+	}
+
+	if i.successModal != nil && i.successModal.IsVisible() {
+		model, cmd := i.successModal.Update(msg)
+		i.successModal = model.(*feedback.SuccessModal)
+		return cmd
+	}
+
+	if i.errorModal != nil && i.errorModal.IsVisible() {
+		model, cmd := i.errorModal.Update(msg)
+		i.errorModal = model.(*feedback.ErrorModal)
+		return cmd
+	}
+
+	// Priority 2: Handle global keys
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch HandleGlobalKeys(keyMsg) {
+		case KeyQuit:
+			return tea.Quit
+		case KeyHelp:
+			i.helpModal.Toggle()
+			return nil
+		}
+	}
+
+	// Priority 3: Delegate to current screen
+	switch i.state {
+	case StateList:
+		return i.updateList(msg)
+	case StateDetail:
+		return i.updateDetail(msg)
+	case StateForm:
+		return i.updateForm(msg)
+	}
+
+	return nil
+}
+
+// updateList handles updates for the list state.
+func (i *MyIntent) updateList(msg tea.Msg) tea.Cmd {
+	cmd, result := i.listScreen.Update(msg)
+
+	if result != nil {
+		screenCmd := i.handleScreenResult(result)
+		if screenCmd != nil {
+			return tea.Batch(cmd, screenCmd)
+		}
+	}
+
+	return cmd
+}
+
+// updateDetail handles updates for the detail state.
+func (i *MyIntent) updateDetail(msg tea.Msg) tea.Cmd {
+	cmd, result := i.detailScreen.Update(msg)
+
+	if result != nil {
+		screenCmd := i.handleScreenResult(result)
+		if screenCmd != nil {
+			return tea.Batch(cmd, screenCmd)
+		}
+	}
+
+	return cmd
+}
+
+// updateForm handles updates for the form state.
+func (i *MyIntent) updateForm(msg tea.Msg) tea.Cmd {
+	cmd, result := i.formScreen.Update(msg)
+
+	if result != nil {
+		screenCmd := i.handleScreenResult(result)
+		if screenCmd != nil {
+			return tea.Batch(cmd, screenCmd)
+		}
+	}
+
+	return cmd
+}
+
+// View renders the current state.
+func (i *MyIntent) View() string {
+	// Get base view from current screen
+	var baseView string
+
+	switch i.state {
+	case StateList:
+		baseView = i.listScreen.View()
+	case StateDetail:
+		baseView = i.detailScreen.View()
+	case StateForm:
+		baseView = i.formScreen.View()
+	default:
+		baseView = "Invalid state"
+	}
+
+	// Overlay modals (REQUIRED: use RenderModalOverlay)
+	if i.deleteModal != nil && i.deleteModal.IsVisible() {
+		return behaviors.RenderModalOverlay(i.deleteModal, baseView)
+	}
+	if i.successModal != nil && i.successModal.IsVisible() {
+		return behaviors.RenderModalOverlay(i.successModal, baseView)
+	}
+	if i.errorModal != nil && i.errorModal.IsVisible() {
+		return behaviors.RenderModalOverlay(i.errorModal, baseView)
+	}
+
+	return baseView
+}
+
+// Result returns the intent result.
+func (i *MyIntent) Result() *IntentResult[interface{}] {
+	if i.result == nil {
+		return nil
+	}
+
+	// Type erasure for interface compliance
+	return &IntentResult[interface{}]{
+		Status:   i.result.Status,
+		Data:     i.result.Data,
+		Error:    i.result.Error,
+		Metadata: i.result.Metadata,
+	}
+}
+
+// -----------------------------------------------------------------------------
+// STEP 7: ScreenResultHandler Implementation (REQUIRED)
+// -----------------------------------------------------------------------------
+
+// handleScreenResult dispatches screen results to typed handlers.
+func (i *MyIntent) handleScreenResult(result interface{}) tea.Cmd {
+	if result == nil {
+		return nil
+	}
+
+	screenResult, ok := result.(screens.ScreenResult)
+	if !ok {
+		return nil
+	}
+
+	return NewScreenResultDispatcher(i).Dispatch(screenResult)
+}
+
+// HandleCancel handles screen cancellation.
+//
+// Implements ScreenResultHandler interface.
+func (i *MyIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+	switch i.state {
+	case StateList:
+		// At root state, cancel means exit intent
+		i.setCancelled()
+		return nil
+
+	case StateDetail, StateForm:
+		// Return to list
+		i.state = StateList
+		return nil
+
+	default:
+		i.setCancelled()
+		return nil
+	}
+}
+
+// HandleNavigate handles screen navigation.
+//
+// Implements ScreenResultHandler interface.
+func (i *MyIntent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
+	// Check if it's an action map
+	if actionData, ok := result.ResultData.(map[string]interface{}); ok {
+		action, _ := actionData["action"].(string)
+		switch action {
+		case "add":
+			i.state = StateForm
+			i.formScreen = myfeature.NewFormScreen(nil)
+			i.formScreen.SetTerminalInfo(i.GetTerminalInfo())
+			i.formScreen.SetTheme(i.Theme())
+			return nil
+
+		case "edit":
+			if item, ok := actionData["item"].(*Item); ok {
+				i.selectedItem = item
+				i.state = StateForm
+				i.formScreen = myfeature.NewFormScreen(item)
+				i.formScreen.SetTerminalInfo(i.GetTerminalInfo())
+				i.formScreen.SetTheme(i.Theme())
+			}
+			return nil
+
+		case "delete":
+			if item, ok := actionData["item"].(*Item); ok {
+				i.selectedItem = item
+				i.deleteModal = feedback.NewConfirmModal(
+					"Delete Item",
+					"Are you sure?",
+				).WithVariant(feedback.ConfirmDestructive)
+				return i.deleteModal.Init()
+			}
+			return nil
+		}
+	}
+
+	// Event selection - navigate to detail
+	if item, ok := result.ResultData.(*Item); ok {
+		i.selectedItem = item
+		i.state = StateDetail
+		i.detailScreen = myfeature.NewDetailScreen(item)
+		i.detailScreen.SetTerminalInfo(i.GetTerminalInfo())
+		i.detailScreen.SetTheme(i.Theme())
+		return nil
+	}
+
+	return nil
+}
+
+// HandleSubmit handles form submission.
+//
+// Implements ScreenResultHandler interface.
+func (i *MyIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
+	// Process form data
+	if formData, ok := result.ResultData.(*FormData); ok {
+		i.formData = formData
+
+		// Call service (REQUIRED: use i.getContext(), not context.Background())
+		ctx := i.getContext()
+		if err := i.saveFormData(ctx, formData); err != nil {
+			i.showError(err)
+			return nil
+		}
+
+		// Success - return to list
+		i.state = StateList
+		i.successModal = feedback.NewSuccessModal(
+			"Success",
+			"Item saved successfully",
+		)
+		return i.successModal.Init()
+	}
+
+	return nil
+}
+
+// HandleError handles errors from screens.
+//
+// Implements ScreenResultHandler interface.
+func (i *MyIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
+	i.showError(result.Err)
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// STEP 8: Helper Methods
+// -----------------------------------------------------------------------------
+
+// getContext returns a context for service calls.
+// REQUIRED: Use this instead of context.Background() for cancellation support.
+func (i *MyIntent) getContext() context.Context {
+	// In production, this would use a cancellable context from BaseIntent
+	return context.Background()
+}
+
+// setCancelled marks the intent as cancelled.
+func (i *MyIntent) setCancelled() {
+	i.result = &IntentResult[*MyIntentResult]{
+		Status: Cancelled,
+	}
+	i.active = false
+}
+
+// setCompleted marks the intent as completed with result.
+func (i *MyIntent) setCompleted(data *MyIntentResult) {
+	i.result = &IntentResult[*MyIntentResult]{
+		Status: Completed,
+		Data:   data,
+	}
+	i.active = false
+}
+
+// showError displays an error modal.
+func (i *MyIntent) showError(err error) {
+	i.errorModal = feedback.NewErrorModal(
+		"Error",
+		err.Error(),
+	)
+	i.errorModal.Init()
+}
+
+// handleDeleteConfirmed processes a confirmed delete action.
+func (i *MyIntent) handleDeleteConfirmed() tea.Cmd {
+	if i.selectedItem == nil {
+		return nil
+	}
+
+	// Call service (REQUIRED: use i.getContext())
+	ctx := i.getContext()
+	if err := i.deleteItem(ctx, i.selectedItem.ID); err != nil {
+		i.showError(err)
+		return nil
+	}
+
+	// Remove from list
+	i.removeItemFromList(i.selectedItem.ID)
+
+	// Show success
+	i.successModal = feedback.NewSuccessModal(
+		"Deleted",
+		"Item deleted successfully",
+	)
+	return i.successModal.Init()
+}
+
+// removeItemFromList removes an item from the items list.
+func (i *MyIntent) removeItemFromList(id string) {
+	for idx, item := range i.items {
+		if item.ID == id {
+			i.items = append(i.items[:idx], i.items[idx+1:]...)
+			break
+		}
+	}
+}
+
+// getContextHelp returns keyboard shortcuts for the current state.
+func (i *MyIntent) getContextHelp() string {
+	theme := i.Theme()
+
+	switch i.state {
+	case StateList:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				primitives.NavigateBadge(theme),
+				primitives.HelpKeyBadge("Enter", "View", theme),
+				primitives.AddBadge(theme),
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
+				primitives.BackBadge(theme),
+			),
+			ThemedGlobalBadges(theme),
+		)
+
+	case StateDetail:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				primitives.EditBadge(theme),
+				primitives.DeleteBadge(theme),
+				primitives.BackBadge(theme),
+			),
+			ThemedGlobalBadges(theme),
+		)
+
+	case StateForm:
+		return CombineThemedFooters(
+			ThemedCustomFooter(theme,
+				primitives.HelpKeyBadge("Enter", "Submit", theme),
+				primitives.BackBadge(theme),
+			),
+			ThemedGlobalBadges(theme),
+		)
+
+	default:
+		return ThemedGlobalBadges(theme)
+	}
+}
+
+// -----------------------------------------------------------------------------
+// STEP 9: Service Methods (Replace with actual service calls)
+// -----------------------------------------------------------------------------
+
+// saveFormData saves form data via service.
+func (i *MyIntent) saveFormData(ctx context.Context, data *FormData) error {
+	// Replace with actual service call
+	return nil
+}
+
+// deleteItem deletes an item via service.
+func (i *MyIntent) deleteItem(ctx context.Context, id string) error {
+	// Replace with actual service call
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// Placeholder Types (Replace with actual types)
+// -----------------------------------------------------------------------------
+
+type Item struct {
+	ID   string
+	Name string
+}
+
+type FormData struct {
+	Name string
+}

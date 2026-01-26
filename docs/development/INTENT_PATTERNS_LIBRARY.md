@@ -32,9 +32,35 @@
 
 This document catalogs **12 standardized patterns** discovered during the BrowseTimeline intent refactoring. All intents MUST follow these patterns for consistency, maintainability, and correctness.
 
-**Reference Implementation**: `internal/cli/intents/browse_timeline_intent.go`
+**Reference Implementation**: `internal/cli/intents/browse_timeline/` (subdirectory structure)
 
 **Applies To**: All intent implementations in KaRiya TUI
+
+### File Organization (NEW - REQUIRED)
+
+All new intents MUST use the subdirectory structure:
+
+```
+intents/{feature}/
+├── context.go     # IntentContext + Validate() + domain types
+├── result.go      # Result struct
+├── constants.go   # State enum ONLY
+├── messages.go    # ALL *Msg types
+├── intent.go      # NewIntent, Init, Update, View, Result
+├── types.go       # (optional) Intent struct if intent.go > 300 lines
+├── handlers.go    # (optional) ScreenResultHandler methods
+├── helpers.go     # (optional) Helper methods
+└── interfaces.go  # (optional) Service interfaces
+
+screens/{feature}/
+├── list_screen.go
+├── detail_screen.go
+└── modals/        # Feature-specific modals
+    ├── filter_modal.go
+    └── helpers.go
+```
+
+**Reference**: See `intents/browse_timeline/` and `screens/timeline/` for complete example.
 
 ---
 
@@ -825,60 +851,103 @@ var _ = Describe("YourIntent", func() {
 
 ---
 
-## Complete Intent Template
+## Complete Intent Template (Subdirectory Structure)
 
+Use this template for new intents. All types are in separate files per the subdirectory pattern.
+
+### File: intents/myfeature/constants.go
 ```go
-package intents
+package myfeature
 
-import (
-    "context"
-    tea "github.com/charmbracelet/bubbletea"
-    "github.com/baphled/kariya/internal/cli/components"
-    "github.com/baphled/kariya/internal/cli/screens"
-    "github.com/baphled/kariya/internal/cli/themes"
-)
-
-// YourIntentState represents the current state
-type YourIntentState string
+type State string
 
 const (
-    StateList    YourIntentState = "list"
-    StateDetail  YourIntentState = "detail"
-    StateEdit    YourIntentState = "edit"
-    StateConfirm YourIntentState = "confirm"
-    StateLoading YourIntentState = "loading"
-    StateError   YourIntentState = "error"
+    StateList    State = "list"
+    StateDetail  State = "detail"
 )
+```
 
-// YourIntent implements the Intent interface
-type YourIntent struct {
-    *BaseIntent
-    
-    state         YourIntentState
-    currentScreen screens.Screen
-    
-    // Service
-    service YourService
-    
-    // Modals
-    filterModal *components.FilterModal
-    editModal   *components.EditModal
-    
-    // State
-    activeFilters *FilterOptions
-    activeSort    *SortOptions
-    
-    // Error handling
-    lastError error
+### File: intents/myfeature/context.go
+```go
+package myfeature
+
+type IntentContext struct {
+    Items   []*domain.Item
+    Service ItemService
 }
 
-// NewYourIntent creates a new intent
-func NewYourIntent(ctx context.Context, service YourService) *YourIntent {
-    return &YourIntent{
-        BaseIntent: NewBaseIntent(),
-        state:      StateList,
-        service:    service,
+func (c *IntentContext) Validate() error {
+    if c.Items == nil {
+        c.Items = make([]*domain.Item, 0)
     }
+    return nil
+}
+```
+
+### File: intents/myfeature/result.go
+```go
+package myfeature
+
+type Result struct {
+    SelectedItem *domain.Item
+}
+```
+
+### File: intents/myfeature/messages.go
+```go
+package myfeature
+
+type ItemSelectedMsg struct {
+    Item *domain.Item
+}
+```
+
+### File: intents/myfeature/types.go
+```go
+package myfeature
+
+type Intent struct {
+    *intents.BaseIntent
+    
+    context      *IntentContext
+    state        State
+    active       bool
+    result       *intents.IntentResult[*Result]
+    activeScreen screens.Screen
+    
+    // Modals (from screens/myfeature/modals/ or uikit/feedback/)
+    filterModal *modals.FilterModal
+    errorModal  *feedback.Modal
+    
+    // Modal registry for unified handling
+    modalRegistry *intents.ModalRegistry
+}
+```
+
+### File: intents/myfeature/intent.go
+```go
+package myfeature
+
+import (
+    tea "github.com/charmbracelet/bubbletea"
+    "github.com/baphled/kariya/internal/cli/intents"
+    "github.com/baphled/kariya/internal/cli/screens"
+)
+
+var _ intents.ScreenResultHandler = (*Intent)(nil)
+
+// NewIntent creates a new myfeature intent.
+func NewIntent(ctx *IntentContext) (*Intent, error) {
+    if err := ctx.Validate(); err != nil {
+        return nil, err
+    }
+    return &Intent{
+        BaseIntent:    intents.NewBaseIntent(),
+        context:       ctx,
+        state:         StateList,
+        active:        true,
+        modalRegistry: intents.NewModalRegistry(),
+    }, nil
 }
 
 // Init implements Intent.Init
@@ -1236,4 +1305,5 @@ When refactoring an existing intent to use these patterns:
 
 **Status**: ✅ **PRODUCTION STANDARDS - REQUIRED FOR ALL INTENTS**
 
-*Reference implementation: BrowseTimeline intent (2026-01-13)*
+*Reference implementation: `intents/browse_timeline/` subdirectory (2026-01-24)*  
+*Migration guide: `docs/guides/INTENT_MIGRATION_TO_SUBDIRECTORY.md`*
