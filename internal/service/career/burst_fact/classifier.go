@@ -108,7 +108,7 @@ func (c *Classifier) ClassifyRoleFitWithCategories(text string, categories []str
 }
 
 // ClassifyAudienceRelevance determines the audience relevance for a fact.
-func (c *Classifier) ClassifyAudienceRelevance(text string, roleFit career.RoleFit) []string {
+func (c *Classifier) ClassifyAudienceRelevance(text string, _ career.RoleFit) []string {
 	var audiences []string
 
 	// All facts are relevant to peers

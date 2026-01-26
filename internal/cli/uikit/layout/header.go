@@ -194,7 +194,7 @@ func (h *Header) renderBreadcrumbs(theme themes.Theme) string {
 
 // GetClickedBreadcrumbIndex returns the index of the breadcrumb clicked at the given position.
 // Returns -1 if no breadcrumb was clicked.
-func (h *Header) GetClickedBreadcrumbIndex(x, y int) int {
+func (h *Header) GetClickedBreadcrumbIndex(x, _ int) int {
 	if len(h.breadcrumbs) == 0 {
 		return -1
 	}

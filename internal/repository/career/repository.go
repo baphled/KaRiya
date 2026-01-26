@@ -72,8 +72,8 @@ func NewMemoryRepository() *MemoryRepository {
 	}
 }
 
-// Create adds a new career event to the in-memory store
-func (r *MemoryRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+// Create adds a new career event to the in-memory store.
+func (r *MemoryRepository) Create(_ context.Context, event *career.CareerEvent) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -102,8 +102,8 @@ func (r *MemoryRepository) Create(ctx context.Context, event *career.CareerEvent
 	return nil
 }
 
-// GetByID retrieves a career event by its ID
-func (r *MemoryRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+// GetByID retrieves a career event by its ID.
+func (r *MemoryRepository) GetByID(_ context.Context, id string) (*career.CareerEvent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -115,8 +115,8 @@ func (r *MemoryRepository) GetByID(ctx context.Context, id string) (*career.Care
 	return event, nil
 }
 
-// Update modifies an existing career event
-func (r *MemoryRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+// Update modifies an existing career event.
+func (r *MemoryRepository) Update(_ context.Context, event *career.CareerEvent) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

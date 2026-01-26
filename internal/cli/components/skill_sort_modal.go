@@ -35,7 +35,7 @@ type SkillSortModal struct {
 }
 
 // NewSkillSortModal creates a new skill sort modal.
-func NewSkillSortModal(skills []*career.Skill, current *SkillSortConfig, width, height int) *SkillSortModal {
+func NewSkillSortModal(_ []*career.Skill, current *SkillSortConfig, width, height int) *SkillSortModal {
 	formData := &SkillSortFormData{
 		SortBy:    "name",
 		SortOrder: "asc",

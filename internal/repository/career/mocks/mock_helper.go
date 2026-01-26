@@ -84,25 +84,25 @@ func (m *TestMockRepository) SetCountBehavior(count int, err error) {
 }
 
 // Create implements Repository interface.
-func (m *TestMockRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+func (m *TestMockRepository) Create(_ context.Context, _ *career.CareerEvent) error {
 	m.createCalled = true
 	return m.createErr
 }
 
 // Update implements Repository interface.
-func (m *TestMockRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+func (m *TestMockRepository) Update(_ context.Context, _ *career.CareerEvent) error {
 	m.updateCalled = true
 	return m.updateErr
 }
 
 // Delete implements Repository interface.
-func (m *TestMockRepository) Delete(ctx context.Context, eventID string) error {
+func (m *TestMockRepository) Delete(_ context.Context, _ string) error {
 	m.deleteCalled = true
 	return m.deleteErr
 }
 
 // GetByID implements Repository interface.
-func (m *TestMockRepository) GetByID(ctx context.Context, eventID string) (*career.CareerEvent, error) {
+func (m *TestMockRepository) GetByID(_ context.Context, eventID string) (*career.CareerEvent, error) {
 	m.getByIDCalled = true
 
 	// Check for per-ID mocking first
@@ -118,13 +118,13 @@ func (m *TestMockRepository) GetByID(ctx context.Context, eventID string) (*care
 }
 
 // List implements Repository interface.
-func (m *TestMockRepository) List(ctx context.Context, filters repo.ListFilters) ([]*career.CareerEvent, error) {
+func (m *TestMockRepository) List(_ context.Context, _ repo.ListFilters) ([]*career.CareerEvent, error) {
 	m.listCalled = true
 	return m.listEvents, m.listErr
 }
 
 // Count implements Repository interface.
-func (m *TestMockRepository) Count(ctx context.Context, filters repo.ListFilters) (int, error) {
+func (m *TestMockRepository) Count(_ context.Context, _ repo.ListFilters) (int, error) {
 	m.countCalled = true
 	return m.countResult, m.countErr
 }
