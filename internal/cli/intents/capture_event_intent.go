@@ -704,7 +704,7 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 					i.state.reviewState.SelectedItemType = "burst"
 				} else {
 					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex = i.state.reviewState.SelectedIndex - len(i.state.reviewState.InferredBursts)
+					i.state.reviewState.SelectedIndex -= len(i.state.reviewState.InferredBursts)
 				}
 			}
 			return nil
@@ -722,7 +722,7 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 					i.state.reviewState.SelectedItemType = "burst"
 				} else {
 					i.state.reviewState.SelectedItemType = "fact"
-					i.state.reviewState.SelectedIndex = i.state.reviewState.SelectedIndex - len(i.state.reviewState.InferredBursts)
+					i.state.reviewState.SelectedIndex -= len(i.state.reviewState.InferredBursts)
 				}
 			}
 			return nil

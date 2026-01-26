@@ -1455,7 +1455,7 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 }
 
 // getStateContent returns the content for the current state.
-// DEPRECATED: This method routes to legacy view methods and is only used when
+// Deprecated: This method routes to legacy view methods and is only used when
 // useWizardFlow=false (for backward compatibility with tests). The wizard workflow
 // uses wizardView() instead. This method will be removed in a future release.
 func (i *GenerateCVIntent) getStateContent() string {
@@ -1494,7 +1494,7 @@ func (i *GenerateCVIntent) getStateContent() string {
 }
 
 // getContextHelp returns context-aware help text for the current state.
-// DEPRECATED: This method provides help for legacy 17-state workflow and is only used when
+// Deprecated: This method provides help for legacy 17-state workflow and is only used when
 // useWizardFlow=false (for backward compatibility with tests). The wizard workflow
 // uses getWizardContextHelp() instead. This method will be removed in a future release.
 func (i *GenerateCVIntent) getContextHelp() string {

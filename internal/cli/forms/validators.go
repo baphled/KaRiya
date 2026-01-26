@@ -88,14 +88,14 @@ func MaxLength(n int) func(string) error {
 }
 
 // LengthRange validates that a string length is within a range.
-func LengthRange(min, max int) func(string) error {
+func LengthRange(minLen, maxLen int) func(string) error {
 	return func(value string) error {
 		length := len(strings.TrimSpace(value))
-		if length < min {
-			return fmt.Errorf("must be at least %d characters", min)
+		if length < minLen {
+			return fmt.Errorf("must be at least %d characters", minLen)
 		}
-		if length > max {
-			return fmt.Errorf("must be at most %d characters", max)
+		if length > maxLen {
+			return fmt.Errorf("must be at most %d characters", maxLen)
 		}
 		return nil
 	}

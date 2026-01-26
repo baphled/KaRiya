@@ -97,8 +97,8 @@ func (i *Info) GetSafeDimensions(config Config) (width, height int) {
 		return config.DefaultWidth, config.DefaultHeight
 	}
 
-	width = max(i.Width, config.MinWidth)
-	height = max(i.Height, config.MinHeight)
+	width = maxInt(i.Width, config.MinWidth)
+	height = maxInt(i.Height, config.MinHeight)
 	return
 }
 
@@ -119,14 +119,14 @@ func (i *Info) ContentArea(margins Margins) (width, height int) {
 	height = safeHeight - margins.Top - margins.Bottom
 
 	// Ensure minimum content area
-	width = max(width, 20)
-	height = max(height, 5)
+	width = maxInt(width, 20)
+	height = maxInt(height, 5)
 
 	return
 }
 
-// max returns the larger of two integers
-func max(a, b int) int {
+// maxInt returns the larger of two integers.
+func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}

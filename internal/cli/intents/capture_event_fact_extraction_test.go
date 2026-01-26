@@ -187,7 +187,7 @@ var _ = Describe("CaptureEvent Fact Extraction", func() {
 
 // Helper function
 func containsSubstring(s, substr string) bool {
-	return len(s) > 0 && len(substr) > 0 &&
+	return s != "" && substr != "" &&
 		(s == substr || (len(s) >= len(substr) &&
 			(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
 				findSubstring(s, substr))))
