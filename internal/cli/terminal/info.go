@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Info holds terminal dimension information
+// Info holds terminal dimension information.
 type Info struct {
 	Width       int
 	Height      int
@@ -14,7 +14,7 @@ type Info struct {
 	LastUpdated time.Time // Track when last updated
 }
 
-// Config defines terminal size constraints and defaults
+// Config defines terminal size constraints and defaults.
 type Config struct {
 	MinWidth      int // Minimum supported width
 	MinHeight     int // Minimum supported height
@@ -22,7 +22,7 @@ type Config struct {
 	DefaultHeight int // Default height when unknown
 }
 
-// DefaultConfig provides sensible defaults for terminal configuration
+// DefaultConfig provides sensible defaults for terminal configuration.
 var DefaultConfig = Config{
 	MinWidth:      40,
 	MinHeight:     15,
@@ -30,7 +30,7 @@ var DefaultConfig = Config{
 	DefaultHeight: 24,
 }
 
-// Margins represents spacing around content
+// Margins represents spacing around content.
 type Margins struct {
 	Top    int
 	Right  int

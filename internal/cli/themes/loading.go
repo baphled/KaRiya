@@ -5,17 +5,17 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// SpinnerType represents different spinner animation styles
+// SpinnerType represents different spinner animation styles.
 type SpinnerType int
 
 const (
-	// SpinnerDot is a simple dot spinner
+	// SpinnerDot is a simple dot spinner.
 	SpinnerDot SpinnerType = iota
-	// SpinnerLine is a line-based spinner
+	// SpinnerLine is a line-based spinner.
 	SpinnerLine
-	// SpinnerMiniDot is a smaller dot spinner
+	// SpinnerMiniDot is a smaller dot spinner.
 	SpinnerMiniDot
-	// SpinnerJump is a jumping animation
+	// SpinnerJump is a jumping animation.
 	SpinnerJump
 	// SpinnerPulse is a pulsing animation
 	SpinnerPulse
