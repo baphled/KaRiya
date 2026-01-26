@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -31,7 +31,7 @@ func (i *Intent) eventMatchesFilters(evt *career.CareerEvent) bool {
 		if len(evt.Categories) > 0 {
 			categoriesStr = evt.Categories[0]
 		}
-		if !intents.SearchableFields(i.filters.SearchText, evt.Text, evt.Company, categoriesStr, evt.Project) {
+		if !behaviors.SearchableFields(i.filters.SearchText, evt.Text, evt.Company, categoriesStr, evt.Project) {
 			return false
 		}
 	}
@@ -165,17 +165,17 @@ func (i *Intent) ClearFilters() {
 	layer := i.filterStack.Pop()
 
 	switch layer {
-	case intents.FilterLayerSearch:
+	case behaviors.FilterLayerSearch:
 		i.filters.SearchText = ""
-	case intents.FilterLayerCompany:
+	case behaviors.FilterLayerCompany:
 		i.filters.Companies = []string{}
-	case intents.FilterLayerCategory:
+	case behaviors.FilterLayerCategory:
 		i.filters.Categories = []string{}
-	case intents.FilterLayerProject:
+	case behaviors.FilterLayerProject:
 		i.filters.Projects = []string{}
-	case intents.FilterLayerTags:
+	case behaviors.FilterLayerTags:
 		i.filters.Tags = []string{}
-	case intents.FilterLayerSort:
+	case behaviors.FilterLayerSort:
 		i.filters.SortBy = "date"
 		i.filters.SortOrder = "desc"
 	}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
@@ -14,7 +15,7 @@ import (
 )
 
 // Ensure Intent implements ScreenResultHandler interface.
-var _ intents.ScreenResultHandler = (*Intent)(nil)
+var _ behaviors.ScreenResultHandler = (*Intent)(nil)
 
 // NewIntent creates a new BrowseTimeline intent.
 func NewIntent(ctx *IntentContext) (*Intent, error) {
@@ -31,7 +32,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		filteredEvents: ctx.Events,
 		selectedIndex:  0,
 		filters:        ctx.InitialFilters,
-		filterStack:    intents.NewFilterStack(),
+		filterStack:    behaviors.NewFilterStack(),
 		selectedFacts:  make([]*career.Fact, 0),
 		viewedEvents:   make([]*career.CareerEvent, 0),
 		active:         true,
@@ -173,7 +174,7 @@ func (i *Intent) updateSearchModal(msg tea.Msg) tea.Cmd {
 	if applied && searchData != nil {
 		i.filters.SearchText = searchData.SearchText
 		if searchData.SearchText != "" {
-			i.filterStack.Push(intents.FilterLayerSearch)
+			i.filterStack.Push(behaviors.FilterLayerSearch)
 		}
 		i.RefreshData()
 	}
@@ -190,13 +191,13 @@ func (i *Intent) updateFilterModal(msg tea.Msg) tea.Cmd {
 		i.filters.SortBy = filterData.SortBy
 		i.filters.SortOrder = filterData.SortOrder
 		if len(filterData.Companies) > 0 {
-			i.filterStack.Push(intents.FilterLayerCompany)
+			i.filterStack.Push(behaviors.FilterLayerCompany)
 		}
 		if len(filterData.Categories) > 0 {
-			i.filterStack.Push(intents.FilterLayerCategory)
+			i.filterStack.Push(behaviors.FilterLayerCategory)
 		}
 		if len(filterData.Projects) > 0 {
-			i.filterStack.Push(intents.FilterLayerProject)
+			i.filterStack.Push(behaviors.FilterLayerProject)
 		}
 		i.RefreshData()
 	}
@@ -210,7 +211,7 @@ func (i *Intent) updateSortModal(msg tea.Msg) tea.Cmd {
 		i.filters.SortBy = sortData.SortBy
 		i.filters.SortOrder = sortData.SortOrder
 		if sortData.SortBy != "date" || sortData.SortOrder != "desc" {
-			i.filterStack.Push(intents.FilterLayerSort)
+			i.filterStack.Push(behaviors.FilterLayerSort)
 		}
 		i.RefreshData()
 	}

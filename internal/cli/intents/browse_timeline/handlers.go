@@ -3,7 +3,7 @@ package browse_timeline
 import (
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline"
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
@@ -23,7 +23,7 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 		return nil
 	}
 
-	return intents.NewScreenResultDispatcher(i).Dispatch(screenResult)
+	return behaviors.NewScreenResultDispatcher(i).Dispatch(screenResult)
 }
 
 // HandleCancel handles screen cancellation (back/escape).

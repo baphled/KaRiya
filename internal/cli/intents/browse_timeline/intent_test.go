@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/browse_timeline"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -369,7 +370,7 @@ var _ = Describe("Intent", func() {
 		})
 
 		It("should implement FilterBehavior interface", func() {
-			var _ intents.FilterBehavior = intent
+			var _ behaviors.FilterBehavior = intent
 		})
 
 		It("should report no active filters initially", func() {

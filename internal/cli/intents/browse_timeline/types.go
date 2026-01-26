@@ -1,6 +1,7 @@
 package browse_timeline
 
 import (
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/timeline/modals"
@@ -41,7 +42,7 @@ type Intent struct {
 	filters *Filters
 
 	// filterStack tracks active filters in FIFO order for progressive clearing.
-	filterStack *intents.FilterStack
+	filterStack *behaviors.FilterStack
 
 	// selectedEvent is the event currently being viewed.
 	selectedEvent *career.CareerEvent
