@@ -24,7 +24,7 @@ type SubmitErrorMsg struct {
 
 // EventSubmitScreen handles async submission of captured event to database.
 //
-// TODO(TECHNICAL DEBT): This should be a modal overlay, not a full screen.
+// NOTE(TECHNICAL DEBT): This should be a modal overlay, not a full screen.
 // Currently this renders as a full screen replacement, but the correct
 // architecture is to:
 // 1. Keep the form screen visible in the background

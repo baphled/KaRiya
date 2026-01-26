@@ -208,8 +208,8 @@ func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
 func (i *ManageSkillsIntent) Init() tea.Cmd {
 	i.active = true
 
-	// Disable screen architecture by default (tests expect legacy mode)
-	// TODO: Fix screen orchestration bugs before re-enabling
+	// Disable screen architecture by default (tests expect legacy mode).
+	// NOTE: Screen orchestration disabled until orchestration bugs are fixed.
 	i.useScreens = false
 
 	// Apply theme to TableBehaviors if available

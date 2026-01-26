@@ -1,6 +1,8 @@
 package navigation
 
-// NavigationKey represents standardized keyboard shortcuts used throughout the TUI
+// NavigationKey represents standardized keyboard shortcuts used throughout the TUI.
+//
+//nolint:revive // "NavigationKey" name is intentional for clarity in external packages.
 type NavigationKey string
 
 const (

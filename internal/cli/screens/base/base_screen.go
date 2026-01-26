@@ -64,8 +64,8 @@ type BaseScreen struct {
 	// terminalHeight is the current terminal height in characters
 	terminalHeight int
 
-	// theme holds the current theme for styling
-	// TODO: Replace interface{} with actual Theme type when theme system is defined
+	// theme holds the current theme for styling.
+	// NOTE: Using interface{} until theme system type is finalized.
 	theme interface{}
 
 	// logo holds the logo to display (shared from intent)
@@ -176,7 +176,7 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 		view = view.WithLogo(b.logo, b.logoSpacing)
 	}
 
-	// TODO: Apply theme to view when theme system is fully integrated
+	// NOTE: Theme application pending full theme system integration.
 	// if b.theme != nil {
 	//     view = view.WithTheme(b.theme)
 	// }

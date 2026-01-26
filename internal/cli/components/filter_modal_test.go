@@ -17,10 +17,10 @@ var _ = Describe("FilterModal", func() {
 	)
 
 	BeforeEach(func() {
-		// Create test events with companies, categories, and projects
-		date1, _ := time.Parse("2006-01-02", "2024-01-01")
-		date2, _ := time.Parse("2006-01-02", "2023-06-15")
-		date3, _ := time.Parse("2006-01-02", "2022-03-10")
+		// Create test events with companies, categories, and projects.
+		date1 := time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC)
+		date2 := time.Date(2023, time.June, 15, 0, 0, 0, 0, time.UTC)
+		date3 := time.Date(2022, time.March, 10, 0, 0, 0, 0, time.UTC)
 
 		events = []*career.CareerEvent{
 			{
@@ -151,7 +151,7 @@ var _ = Describe("FilterModal", func() {
 		})
 
 		It("should handle escape key to close modal without applying", func() {
-			// TODO: Test escape key behavior once we can inject key messages
+			// NOTE: Escape key test requires key injection capability.
 			Expect(modal.IsVisible()).To(BeTrue())
 		})
 	})

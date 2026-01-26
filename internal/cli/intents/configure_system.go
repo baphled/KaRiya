@@ -918,7 +918,9 @@ func applyConfigChange(cfg *config.Config, domain ConfigurationDomain, key strin
 	return fmt.Errorf("unknown domain: %s", domain)
 }
 
-// applySystemChange applies a change to system configuration
+// applySystemChange applies a change to system configuration.
+//
+//nolint:errcheck // Type assertions are safe - value types are validated by caller.
 func applySystemChange(sys *config.SystemConfig, key string, value interface{}) error {
 	switch key {
 	case "data_dir":
@@ -935,7 +937,9 @@ func applySystemChange(sys *config.SystemConfig, key string, value interface{}) 
 	return nil
 }
 
-// applyProfileChange applies a change to profile configuration
+// applyProfileChange applies a change to profile configuration.
+//
+//nolint:errcheck // Type assertions are safe - value types are validated by caller.
 func applyProfileChange(prof *config.ProfileConfig, key string, value interface{}) error {
 	switch key {
 	case "name":

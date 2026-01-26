@@ -119,11 +119,12 @@ func (m *EditEventModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditEventData) {
 		}
 	}
 
-	// Update form
+	// Update form.
 	form, cmd := m.form.Update(msg)
+	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
 	m.form = form.(*huh.Form)
 
-	// Check if form is complete AND user confirmed submission
+	// Check if form is complete AND user confirmed submission.
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
 		// Only return data if user confirmed (pressed Submit, not Cancel)

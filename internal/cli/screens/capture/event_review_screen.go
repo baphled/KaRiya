@@ -250,9 +250,9 @@ func (s *EventReviewScreen) renderBursts(b *strings.Builder) {
 	}
 
 	for i, burst := range s.bursts {
-		b.WriteString(fmt.Sprintf("  %d. %s\n", i+1, burst.Name))
+		fmt.Fprintf(b, "  %d. %s\n", i+1, burst.Name)
 		if burst.Description != "" {
-			b.WriteString(fmt.Sprintf("     %s\n", burst.Description))
+			fmt.Fprintf(b, "     %s\n", burst.Description)
 		}
 	}
 }

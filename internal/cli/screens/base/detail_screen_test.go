@@ -36,7 +36,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Construction", func() {
 		It("should create a detail screen with content renderer", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(data *TestDetailData, _, _ int) string {
 				return "Title: " + data.Title + "\n" + data.Description
 			}
 
@@ -51,7 +51,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should use default dimensions if not set", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 
@@ -61,7 +61,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should use custom footer if provided", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 
@@ -270,7 +270,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(data *TestDetailData, _, _ int) string {
 				return "Title: " + data.Title + "\n" + data.Description
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test", "Detail"}, renderer, detailData)
@@ -359,7 +359,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Edge Cases", func() {
 		It("should handle nil data gracefully", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(data *TestDetailData, _, _ int) string {
 				if data == nil {
 					return "No data"
 				}

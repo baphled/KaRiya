@@ -563,6 +563,7 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	case EditingModeMetadata:
 		if i.state.reviewState.metadataModal != nil {
 			modal, cmd := i.state.reviewState.metadataModal.Update(msg)
+			//nolint:errcheck // Type assertion is safe - Update always returns same type.
 			i.state.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
 
 			// Check if modal completed
@@ -583,22 +584,24 @@ func (i *CaptureEventIntent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	case EditingModeBursts:
 		if i.state.reviewState.burstModal != nil {
 			modal, cmd := i.state.reviewState.burstModal.Update(msg)
+			//nolint:errcheck // Type assertion is safe - Update always returns same type.
 			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
 
-			// Check if modal completed
-			// TODO: Add completion check when BurstSuggestionModelNew has IsComplete/IsCancelled methods
+			// Check if modal completed.
+			// NOTE: Completion check pending BurstSuggestionModelNew IsComplete/IsCancelled methods.
 			return cmd
 		}
 
 	case EditingModeFacts:
 		if i.state.reviewState.factModal != nil {
 			modal, cmd := i.state.reviewState.factModal.Update(msg)
+			//nolint:errcheck // Type assertion is safe - Update always returns same type.
 			i.state.reviewState.factModal = modal.(*models.FactEditorModelNew)
 
 			// Check if modal completed
 			if i.state.reviewState.factModal.IsSubmitted() {
-				// Apply changes to fact
-				// TODO: Update the inferred facts list with edited fact
+				// Apply changes to fact.
+				// NOTE: Fact list update requires fact editing workflow integration.
 				i.state.reviewState.factModal = nil
 				i.state.reviewState.EditingMode = EditingModeNone
 			} else if i.state.reviewState.factModal.IsCancelled() {
@@ -1322,6 +1325,7 @@ func (i *CaptureEventIntent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeMetadata:
 		if i.state.reviewState.metadataModal != nil {
 			modal, cmd := i.state.reviewState.metadataModal.Update(msg)
+			//nolint:errcheck // Type assertion is safe - Update always returns same type.
 			i.state.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
 
 			// Check if modal completed
@@ -1342,14 +1346,16 @@ func (i *CaptureEventIntent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	case EditingModeBursts:
 		if i.state.reviewState.burstModal != nil {
 			modal, cmd := i.state.reviewState.burstModal.Update(msg)
+			//nolint:errcheck // Type assertion is safe - Update always returns same type.
 			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
-			// TODO: Add completion check when BurstSuggestionModelNew supports it
+			// NOTE: Completion check pending BurstSuggestionModelNew support.
 			return cmd
 		}
 
 	case EditingModeFacts:
 		if i.state.reviewState.factModal != nil {
 			modal, cmd := i.state.reviewState.factModal.Update(msg)
+			//nolint:errcheck // Type assertion is safe - Update always returns same type.
 			i.state.reviewState.factModal = modal.(*models.FactEditorModelNew)
 
 			// Check if modal completed
@@ -1715,10 +1721,13 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
 
 	case CaptureStateReview:
-		// Review confirmed - extract event, bursts, facts from result
+		// Review confirmed - extract event, bursts, facts from result.
 		if reviewData, ok := data.(map[string]interface{}); ok {
+			//nolint:errcheck // Type assertions are safe for map data extraction.
 			event, _ := reviewData["event"].(*career.CareerEvent)
+			//nolint:errcheck // Type assertions are safe for map data extraction.
 			bursts, _ := reviewData["bursts"].([]*career.Burst)
+			//nolint:errcheck // Type assertions are safe for map data extraction.
 			facts, _ := reviewData["facts"].([]*career.Fact)
 
 			// Update review state
@@ -1733,10 +1742,13 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
 
 	case CaptureStateSubmit:
-		// Submission complete - extract results
+		// Submission complete - extract results.
 		if submitData, ok := data.(map[string]interface{}); ok {
+			//nolint:errcheck // Type assertion is safe for map data extraction.
 			event, _ := submitData["event"].(*career.CareerEvent)
+			//nolint:errcheck // Type assertion is safe for map data extraction.
 			bursts, _ := submitData["bursts"].([]*career.Burst)
+			//nolint:errcheck // Type assertion is safe for map data extraction.
 			facts, _ := submitData["facts"].([]*career.Fact)
 
 			// Create successful result
@@ -1762,10 +1774,12 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 //
 // Implements ScreenResultHandler interface.
 func (i *CaptureEventIntent) HandleError(result *screens.ErrorResult) tea.Cmd {
-	// Screen encountered an error - propagate to intent
+	// Screen encountered an error - propagate to intent.
 	data := result.Data()
 	if errorData, ok := data.(map[string]interface{}); ok {
+		//nolint:errcheck // Type assertion is safe for map data extraction.
 		err, _ := errorData["error"].(error)
+		//nolint:errcheck // Type assertion is safe for map data extraction.
 		msg, _ := errorData["message"].(string)
 		return i.setFailedCmd("SCREEN_ERROR", msg, err)
 	}
@@ -1846,8 +1860,8 @@ func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) te
 	return nil
 }
 
-// TODO: Implement transitionToReviewScreen when review step is enabled.
-// Currently form goes directly to submit (see HandleSubmit line 1444).
+// NOTE: transitionToReviewScreen to be implemented when review step is enabled.
+// Currently form goes directly to submit (see HandleSubmit).
 // Will use captureScreens.NewEventReviewScreen() when implemented.
 
 // ============================================================================

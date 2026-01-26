@@ -82,7 +82,7 @@ var _ = Describe("Behaviors Types", func() {
 		Describe("RowFormatter", func() {
 			It("should compile with correct signature", func() {
 				// Compile-time check: this should compile if the type is defined correctly
-				formatter := behaviors.RowFormatter[string](func(item string, index int) []string {
+				formatter := behaviors.RowFormatter[string](func(item string, _ int) []string {
 					return []string{item}
 				})
 
@@ -96,7 +96,7 @@ var _ = Describe("Behaviors Types", func() {
 					Count int
 				}
 
-				formatter := behaviors.RowFormatter[*TestItem](func(item *TestItem, index int) []string {
+				formatter := behaviors.RowFormatter[*TestItem](func(item *TestItem, _ int) []string {
 					return []string{item.Name, string(rune(item.Count))}
 				})
 

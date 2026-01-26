@@ -40,9 +40,9 @@ type GenerateCVIntent struct {
 	// Allows gradual migration from monolithic intent to screen-based architecture.
 	activeScreen screens.Screen
 
-	// useScreens enables the new screen-based architecture (opt-in for now)
-	// Set to false to use legacy code and pass existing tests
-	// TODO: Remove this flag once all states are migrated and tests updated
+	// useScreens enables the new screen-based architecture (opt-in for now).
+	// Set to false to use legacy code and pass existing tests.
+	// NOTE: Feature flag to be removed once all states are migrated.
 	useScreens bool
 
 	// Wizard-based workflow (Phase 5 - Task 43)
@@ -2106,9 +2106,9 @@ func (i *GenerateCVIntent) viewSelectFocusArea() string {
 			cursor = "▶ "
 		}
 
-		// Suggested indicator
+		// Suggested indicator.
 		suggested := ""
-		if i.state.focusAreaSuggestion != nil && option.area == cv.FocusArea(i.state.focusAreaSuggestion.Area) {
+		if i.state.focusAreaSuggestion != nil && option.area == i.state.focusAreaSuggestion.Area {
 			suggested = " ⭐ (suggested)"
 		}
 

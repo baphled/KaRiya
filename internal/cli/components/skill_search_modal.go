@@ -112,12 +112,13 @@ func (m *SkillSearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSearchFormD
 		}
 	}
 
-	// Forward ALL messages to form (not just KeyMsg)
-	// This is CRITICAL for Tab/Enter to work in huh forms
+	// Forward ALL messages to form (not just KeyMsg).
+	// This is CRITICAL for Tab/Enter to work in huh forms.
 	form, cmd := m.form.Update(msg)
+	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
 	m.form = form.(*huh.Form)
 
-	// Check if form just completed
+	// Check if form just completed.
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
 		return cmd, true, m.formData

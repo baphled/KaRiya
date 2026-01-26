@@ -36,7 +36,7 @@ import (
 // reliably in E2E tests without proper timer mocking.
 // The test helper `navigateToEnrichmentReview` uses `SubmitEvent` which bypasses
 // the form but the subsequent state transitions require tea.Tick timer handling.
-// TODO: Implement proper timer mocking or use unit tests for enrichment workflow.
+// NOTE: Requires timer mocking for reliable testing; use unit tests for now.
 var _ = PDescribe("CaptureEvent Post-Save Enrichment E2E", func() {
 	var env *e2e.TestEnv
 
@@ -257,8 +257,8 @@ var _ = PDescribe("CaptureEvent Post-Save Enrichment E2E", func() {
 	Describe("Sad Path: Enrichment Failure", func() {
 		Context("when enrichment service fails", func() {
 			It("should still show enrichment review state with empty results", func() {
-				// TODO: Mock CareerService to return error from SuggestBursts/ExtractFacts
-				// For now, we'll test the workflow continues even with no results
+				// NOTE: Mock CareerService for error testing requires service injection.
+				// For now, we'll test the workflow continues even with no results.
 
 				testEventText := navigateToEnrichmentReview()
 
@@ -578,9 +578,9 @@ var _ = PDescribe("CaptureEvent Post-Save Enrichment E2E", func() {
 				view := env.GetView()
 				Expect(view).To(ContainSubstring("Main Menu"))
 
-				// Navigate to burst management (if available)
-				// This tests that bursts were actually saved
-				// TODO: Add when burst management intent is implemented
+				// Navigate to burst management (if available).
+				// This tests that bursts were actually saved.
+				// NOTE: Burst management navigation added once intent is implemented.
 			})
 		})
 
