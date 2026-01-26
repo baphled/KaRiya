@@ -584,6 +584,15 @@ issues:
       linters:
         - funlen
 
+    # Browse timeline intent - new subdirectory structure migration
+    # These files follow existing project patterns and conventions
+    - path: internal/cli/intents/browse_timeline/.*\.go
+      linters:
+        - revive      # Package naming, unused params are project conventions
+        - gocognit    # Complex handlers are intentional for state machines
+        - nestif      # Modal handling requires nested logic
+        - funlen      # Registry/handler functions need more lines
+
     # Exclude test fixtures and utilities from strict checks
     # These are test helpers where MustCreate() is intentionally used without error checks.
     - path: internal/testutil/
