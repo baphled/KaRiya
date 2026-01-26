@@ -17,7 +17,7 @@ import (
 	cvservice "github.com/baphled/kariya/internal/service/career/cv"
 )
 
-// CVPreviewState represents the internal state constant for this screen
+// CVPreviewState represents the internal state constant for this screen.
 const CVPreviewState = "preview"
 
 // CVPreviewScreen displays the full CV content in a scrollable viewport.

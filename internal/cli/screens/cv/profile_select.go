@@ -12,7 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/types"
 )
 
-// CVProfileSelectState represents the internal state constant for this screen
+// CVProfileSelectState represents the internal state constant for this screen.
 const CVProfileSelectState = "profile_select"
 
 // CVProfileSelectScreen allows users to select a CV profile.
