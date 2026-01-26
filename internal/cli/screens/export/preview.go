@@ -187,7 +187,7 @@ func (s *Preview) renderSummaryHeader(th themes.Theme) string {
 
 	// Separator
 	sepStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
-	b.WriteString(sepStyle.Render(strings.Repeat("─", min(70, s.width-4))))
+	b.WriteString(sepStyle.Render(strings.Repeat("─", minInt(70, s.width-4))))
 	b.WriteString("\n")
 
 	return b.String()
@@ -283,7 +283,7 @@ func (s *Preview) renderFooter(th themes.Theme) string {
 
 	// Render separator line and badges
 	footerStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
-	separator := footerStyle.Render(strings.Repeat("─", min(70, s.width-4)))
+	separator := footerStyle.Render(strings.Repeat("─", minInt(70, s.width-4)))
 
 	return separator + "\n" + primitives.RenderHelpFooter(uikitTheme, badges...)
 }
@@ -329,7 +329,7 @@ func (s *Preview) getCodeBlockTitle() string {
 
 // Helper functions
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

@@ -151,12 +151,12 @@ func (r *IntentResult[T]) GetAllMetadata() map[string]interface{} {
 	if r.Metadata == nil {
 		return make(map[string]interface{})
 	}
-	// Create a copy to prevent external mutation
-	copy := make(map[string]interface{})
+	// Create a copy to prevent external mutation.
+	result := make(map[string]interface{})
 	for k, v := range r.Metadata {
-		copy[k] = v
+		result[k] = v
 	}
-	return copy
+	return result
 }
 
 // WithError sets the error on the result.
