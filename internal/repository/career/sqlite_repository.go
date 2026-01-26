@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	_ "modernc.org/sqlite"
+
+	_ "modernc.org/sqlite" // Register SQLite driver for database/sql.
 
 	domain "github.com/baphled/kariya/internal/domain/career"
 )

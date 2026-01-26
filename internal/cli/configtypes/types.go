@@ -2,7 +2,7 @@
 // This package exists to avoid import cycles between intents and screens.
 package configtypes
 
-// ConfigurationDomain represents a configuration domain (e.g., "system", "profile", "export")
+// ConfigurationDomain represents a configuration domain (e.g., "system", "profile", "export").
 type ConfigurationDomain string
 
 const (
@@ -12,7 +12,7 @@ const (
 	DomainUI      ConfigurationDomain = "ui"
 )
 
-// ConfigurationSetting represents a single configuration setting
+// ConfigurationSetting represents a single configuration setting.
 type ConfigurationSetting struct {
 	Key          string      // e.g., "theme"
 	Label        string      // e.g., "Theme"
@@ -23,7 +23,7 @@ type ConfigurationSetting struct {
 	Description  string      // Help text
 }
 
-// ConfigurationState represents the current state of the configuration
+// ConfigurationState represents the current state of the configuration.
 type ConfigurationState string
 
 const (
@@ -36,7 +36,7 @@ const (
 	ConfigStateFailed        ConfigurationState = "failed"
 )
 
-// ConfigurationChanges tracks all changes made during editing
+// ConfigurationChanges tracks all changes made during editing.
 type ConfigurationChanges struct {
 	Domain   ConfigurationDomain
 	Original map[string]interface{} // Original values

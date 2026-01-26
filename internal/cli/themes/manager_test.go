@@ -237,7 +237,7 @@ var _ = Describe("ThemeManager", func() {
 	})
 })
 
-// Helper to create test themes
+// Helper to create test themes.
 func createTestTheme(name, description string) themes.Theme {
 	palette := &themes.ColorPalette{
 		Background:      lipgloss.Color("#000000"),
