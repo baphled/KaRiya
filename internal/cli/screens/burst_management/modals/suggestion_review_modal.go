@@ -133,11 +133,11 @@ func (m *SuggestionReviewModal) buildFooter() string {
 	theme := m.getTheme()
 
 	badges := []*primitives.Badge{
-		primitives.HelpKeyBadge("a", "Accept", theme),
-		primitives.HelpKeyBadge("r", "Reject", theme),
-		primitives.HelpKeyBadge("j/k", "Navigate", theme),
-		primitives.HelpKeyBadge("n/p", "Page", theme),
-		primitives.HelpKeyBadge("Esc", "Cancel", theme),
+		primitives.AcceptBadge(theme),
+		primitives.RejectBadge(theme),
+		primitives.NavigateBadge(theme),
+		primitives.PageVimBadge(theme),
+		primitives.CancelBadge(theme),
 	}
 
 	return primitives.RenderHelpFooter(theme, badges...)

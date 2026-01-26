@@ -67,12 +67,12 @@ func (m *BurstDetailModal) updateFooterBadges() {
 	}
 
 	badges := []*primitives.Badge{
-		primitives.HelpKeyBadge("v", "View Events", theme),
-		primitives.HelpKeyBadge("f", "View Facts", theme),
-		primitives.HelpKeyBadge("e", "Edit", theme),
-		primitives.HelpKeyBadge("d", "Delete", theme),
-		primitives.HelpKeyBadge("c", "Confirm", theme),
-		primitives.HelpKeyBadge("Enter/Esc", "Close", theme),
+		primitives.ViewEventsBadge(theme),
+		primitives.ViewFactsBadge(theme),
+		primitives.EditBadge(theme),
+		primitives.DeleteBadge(theme),
+		primitives.ConfirmActionBadge(theme),
+		primitives.CloseBadge(theme),
 	}
 
 	m.modal = m.modal.WithFooterBadges(badges...)

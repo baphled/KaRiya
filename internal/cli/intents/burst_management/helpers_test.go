@@ -229,7 +229,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetState(burst_management.StateList)
 			help := intent.GetContextHelp()
 			Expect(help).NotTo(BeEmpty())
-			Expect(help).To(ContainSubstring("View Details"))
+			Expect(help).To(ContainSubstring("View"))
 			Expect(help).To(ContainSubstring("Suggest"))
 		})
 

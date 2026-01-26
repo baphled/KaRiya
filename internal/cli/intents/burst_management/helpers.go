@@ -68,11 +68,11 @@ func (i *Intent) getContextHelp() string {
 	case StateList:
 		badges := []*primitives.Badge{
 			primitives.NavigateBadge(theme),
-			primitives.HelpKeyBadge("Enter", "View Details", theme),
+			primitives.ViewBadge(theme),
 			primitives.AddBadge(theme),
 			primitives.EditBadge(theme),
 			primitives.DeleteBadge(theme),
-			primitives.HelpKeyBadge("s", "Suggest", theme),
+			primitives.SuggestBadge(theme),
 			primitives.BackBadge(theme),
 		}
 
@@ -83,11 +83,11 @@ func (i *Intent) getContextHelp() string {
 
 	case StateDetail:
 		badges := []*primitives.Badge{
-			primitives.HelpKeyBadge("v", "View Events", theme),
-			primitives.HelpKeyBadge("f", "View Facts", theme),
+			primitives.ViewEventsBadge(theme),
+			primitives.ViewFactsBadge(theme),
 			primitives.EditBadge(theme),
 			primitives.DeleteBadge(theme),
-			primitives.HelpKeyBadge("c", "Confirm", theme),
+			primitives.ConfirmActionBadge(theme),
 			primitives.BackBadge(theme),
 		}
 
@@ -656,7 +656,8 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 	// Capture service reference to avoid race conditions.
 	service := i.context.Service
 
-	return func() tea.Msg {
+	// Async work command.
+	asyncCmd := func() tea.Msg {
 		// Check if cancelled before starting.
 		if ctx.Err() != nil {
 			return BurstSuggestionsLoadedMsg{
@@ -721,6 +722,9 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 			Error:       nil,
 		}
 	}
+
+	// Batch async work with spinner init to start animation immediately.
+	return tea.Batch(asyncCmd, i.loadingModal.Init())
 }
 
 // handleBurstSuggestionsLoaded handles the BurstSuggestionsLoadedMsg.
@@ -819,6 +823,8 @@ func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg)
 		i.extractingFacts = true
 		i.state = StateExtractingFacts
 		i.loadingModal = feedback.NewLoadingModal("Extracting facts from accepted bursts...", true).WithTheme(i.Theme())
+		// Include spinner init to start animation immediately.
+		cmds = append(cmds, i.loadingModal.Init())
 		return tea.Batch(cmds...)
 	}
 
