@@ -10,7 +10,7 @@ type MockIntent struct {
 	InitCalled   bool
 	UpdateCalled int
 	ViewCalled   bool
-	Result_      *IntentResult[interface{}]
+	resultValue  *IntentResult[interface{}]
 	Messages     []tea.Msg
 }
 
@@ -42,18 +42,18 @@ func (m *MockIntent) View() string {
 
 // Result implements Intent.Result.
 func (m *MockIntent) Result() *IntentResult[interface{}] {
-	return m.Result_
+	return m.resultValue
 }
 
 // SetResult sets the result for this mock intent.
 func (m *MockIntent) SetResult(result *IntentResult[interface{}]) {
-	m.Result_ = result
+	m.resultValue = result
 }
 
 // ThemeAwareMockIntent is a mock intent that supports theme management.
 type ThemeAwareMockIntent struct {
 	*MockIntent
-	ThemeManager_ *themes.ThemeManager
+	themeManager *themes.ThemeManager
 }
 
 // NewThemeAwareMockIntent creates a new ThemeAwareMockIntent for testing.
@@ -65,12 +65,12 @@ func NewThemeAwareMockIntent() *ThemeAwareMockIntent {
 
 // SetThemeManager implements ThemeAware.SetThemeManager.
 func (m *ThemeAwareMockIntent) SetThemeManager(tm *themes.ThemeManager) {
-	m.ThemeManager_ = tm
+	m.themeManager = tm
 }
 
 // GetThemeManager implements ThemeAware.GetThemeManager.
 func (m *ThemeAwareMockIntent) GetThemeManager() *themes.ThemeManager {
-	return m.ThemeManager_
+	return m.themeManager
 }
 
 // MockIntentWithSelection extends MockIntent with selection state for testing.

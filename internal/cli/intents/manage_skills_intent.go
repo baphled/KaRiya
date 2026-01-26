@@ -1871,11 +1871,11 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 
 	var lines []string
 
-	// Name
-	lines = append(lines, labelStyle.Render("Name:")+valueStyle.Render(skill.Name))
-
-	// Category
-	lines = append(lines, labelStyle.Render("Category:")+valueStyle.Render(skill.Category))
+	// Name and Category
+	lines = append(lines,
+		labelStyle.Render("Name:")+valueStyle.Render(skill.Name),
+		labelStyle.Render("Category:")+valueStyle.Render(skill.Category),
+	)
 
 	// Level (if set)
 	if skill.Level != "" {
@@ -1906,9 +1906,11 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 	}
 
 	// Timestamps using UIKit primitives
-	lines = append(lines, "")
-	lines = append(lines, labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render())
-	lines = append(lines, labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render())
+	lines = append(lines,
+		"",
+		labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render(),
+		labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render(),
+	)
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
 	// Use UIKit Box container for consistent card styling
@@ -1976,12 +1978,11 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 	mutedStyle := lipgloss.NewStyle().
 		Foreground(theme.MutedColor())
 
-	var lines []string
-	lines = append(lines, primitives.Title("Filter Skills", theme).MarginBottom(1).Render())
-	lines = append(lines, "")
-
-	// Category section
-	lines = append(lines, mutedStyle.Render("Category:"))
+	lines := []string{
+		primitives.Title("Filter Skills", theme).MarginBottom(1).Render(),
+		"",
+		mutedStyle.Render("Category:"),
+	}
 	currentIndex := 0
 
 	// All categories option
@@ -2018,8 +2019,7 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 		currentIndex++
 	}
 
-	lines = append(lines, "")
-	lines = append(lines, mutedStyle.Render("Level:"))
+	lines = append(lines, "", mutedStyle.Render("Level:"))
 
 	// All levels option
 	marker = "  "
@@ -2056,8 +2056,7 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 		currentIndex++
 	}
 
-	lines = append(lines, "")
-	lines = append(lines, mutedStyle.Render("Usage:"))
+	lines = append(lines, "", mutedStyle.Render("Usage:"))
 
 	// Used skills only option
 	marker = "  "
@@ -2090,9 +2089,10 @@ func (i *ManageSkillsIntent) renderSortMenu() string {
 	normalStyle := lipgloss.NewStyle().
 		Foreground(theme.ForegroundColor())
 
-	var lines []string
-	lines = append(lines, primitives.Title("Sort Skills", theme).MarginBottom(1).Render())
-	lines = append(lines, "")
+	lines := []string{
+		primitives.Title("Sort Skills", theme).MarginBottom(1).Render(),
+		"",
+	}
 
 	sortOptions := []struct {
 		label     string

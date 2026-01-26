@@ -71,13 +71,12 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		case "--in-memory":
 			inMemory = true
 		case "--import":
-			if i+1 < len(args) {
-				importPath = args[i+1]
-				i++
-			} else {
+			if i+1 >= len(args) {
 				fmt.Fprintf(errOut, "Error: --import flag requires a file path\n")
 				return 1
 			}
+			importPath = args[i+1]
+			i++
 		case "--skip-import-review":
 			importSkip = true
 		case "--review-facts":
@@ -309,16 +308,16 @@ func handleExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 			continue
 		}
 
-		for _, fact := range facts {
-			if err := svc.SaveFact(ctx, &fact); err != nil {
+		for i := range facts {
+			if err := svc.SaveFact(ctx, &facts[i]); err != nil {
 				// Silently skip if fact repository is not configured (expected in some scenarios)
 				if !errors.Is(err, careerservice.ErrFactRepositoryNotConfigured) {
 					fmt.Fprintf(errOut, "Warning: Failed to save fact: %v\n", err)
 				}
 			} else {
 				factCount++
-				if len(fact.CompetencyCategories) > 0 {
-					for _, comp := range fact.CompetencyCategories {
+				if len(facts[i].CompetencyCategories) > 0 {
+					for _, comp := range facts[i].CompetencyCategories {
 						competencyCount[comp]++
 					}
 				}
