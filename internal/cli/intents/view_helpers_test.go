@@ -2,14 +2,12 @@ package intents_test
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
-	"github.com/baphled/kariya/internal/cli/uikit/layout"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -174,188 +172,6 @@ var _ = Describe("View Helpers", func() {
 		})
 	})
 
-	Describe("Manual Modal Helpers", func() {
-		Describe("ShowErrorModal", func() {
-			It("should show error modal", func() {
-				view := layout.NewScreenLayout(terminal.NewInfo())
-				err := errors.New("test error")
-
-				result := intents.ShowErrorModal(view, err)
-
-				Expect(result).To(Equal(view))
-				Expect(view.ShowModal).To(BeTrue())
-				modal, ok := view.Modal.(*feedback.Modal)
-				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
-				Expect(modal.Type).To(Equal(feedback.ModalError))
-			})
-
-			It("should not show modal for nil error", func() {
-				view := layout.NewScreenLayout(terminal.NewInfo())
-				result := intents.ShowErrorModal(view, nil)
-
-				Expect(result).To(Equal(view))
-				Expect(view.ShowModal).To(BeFalse())
-			})
-		})
-
-		Describe("ShowLoadingModal", func() {
-			It("should show loading modal with message", func() {
-				view := layout.NewScreenLayout(terminal.NewInfo())
-				result := intents.ShowLoadingModal(view, "Processing...", true)
-
-				Expect(result).To(Equal(view))
-				Expect(view.ShowModal).To(BeTrue())
-				modal, ok := view.Modal.(*feedback.Modal)
-				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
-				Expect(modal.Type).To(Equal(feedback.ModalLoading))
-				Expect(modal.Message).To(Equal("Processing..."))
-			})
-		})
-
-		Describe("ShowProgressModal", func() {
-			It("should show progress modal", func() {
-				view := layout.NewScreenLayout(terminal.NewInfo())
-				result := intents.ShowProgressModal(view, "Uploading", "50% complete", 0.5)
-
-				Expect(result).To(Equal(view))
-				Expect(view.ShowModal).To(BeTrue())
-				modal, ok := view.Modal.(*feedback.Modal)
-				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
-				Expect(modal.Type).To(Equal(feedback.ModalProgress))
-				Expect(modal.Progress).To(Equal(0.5))
-			})
-		})
-
-		Describe("ShowSuccessModal", func() {
-			It("should show success modal", func() {
-				view := layout.NewScreenLayout(terminal.NewInfo())
-				result := intents.ShowSuccessModal(view, "Operation completed!")
-
-				Expect(result).To(Equal(view))
-				Expect(view.ShowModal).To(BeTrue())
-				modal, ok := view.Modal.(*feedback.Modal)
-				Expect(ok).To(BeTrue(), "Modal should be *feedback.Modal")
-				Expect(modal.Type).To(Equal(feedback.ModalSuccess))
-				Expect(modal.Message).To(Equal("Operation completed!"))
-			})
-		})
-	})
-
-	Describe("Footer Helpers", func() {
-		Describe("StandardHelpFooter", func() {
-			It("should create footer with shortcuts", func() {
-				shortcuts := map[string]string{
-					"Enter": "Select",
-					"Esc":   "Back",
-				}
-				footer := intents.StandardHelpFooter(shortcuts)
-
-				Expect(footer).NotTo(BeEmpty())
-				Expect(footer).To(ContainSubstring("Enter"))
-				Expect(footer).To(ContainSubstring("Select"))
-			})
-
-			It("should return empty for empty shortcuts", func() {
-				footer := intents.StandardHelpFooter(map[string]string{})
-				Expect(footer).To(BeEmpty())
-			})
-		})
-
-		Describe("NavigationFooter", func() {
-			It("should contain standard navigation shortcuts", func() {
-				footer := intents.NavigationFooter()
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Up", "Down", "Enter", "Select", "Esc", "Back"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("FormFooter", func() {
-			It("should contain form navigation shortcuts", func() {
-				footer := intents.FormFooter()
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Tab", "Next", "Enter", "Submit", "Esc", "Cancel"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("ListFooter", func() {
-			It("should contain list shortcuts including search", func() {
-				footer := intents.ListFooter()
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Up", "Down", "Search", "Top", "Bottom"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("DetailViewFooter", func() {
-			It("should contain scroll shortcuts", func() {
-				footer := intents.DetailViewFooter()
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Scroll", "Up", "Down", "Esc", "Back"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("ModalFooter", func() {
-			It("should contain provided actions", func() {
-				actions := []string{"Enter Confirm", "Esc Cancel"}
-				footer := intents.ModalFooter(actions)
-
-				Expect(footer).NotTo(BeEmpty())
-				for _, action := range actions {
-					Expect(footer).To(ContainSubstring(action))
-				}
-			})
-
-			It("should show default close action when empty", func() {
-				footer := intents.ModalFooter([]string{})
-				Expect(footer).To(ContainSubstring("Close"))
-			})
-		})
-
-		Describe("CombineFooters", func() {
-			It("should combine multiple footers with separator", func() {
-				footer1 := "↑/k Up  ↓/j Down"
-				footer2 := "Enter Select"
-				footer3 := "Esc Back"
-
-				combined := intents.CombineFooters(footer1, footer2, footer3)
-
-				Expect(combined).NotTo(BeEmpty())
-				Expect(combined).To(ContainSubstring(footer1))
-				Expect(combined).To(ContainSubstring(footer2))
-				Expect(combined).To(ContainSubstring(footer3))
-				Expect(combined).To(ContainSubstring("|"))
-			})
-
-			It("should return empty for no footers", func() {
-				combined := intents.CombineFooters()
-				Expect(combined).To(BeEmpty())
-			})
-
-			It("should skip empty strings", func() {
-				combined := intents.CombineFooters("Footer 1", "", "Footer 2", "   ")
-
-				Expect(strings.Contains(combined, "||")).To(BeFalse())
-				Expect(combined).To(ContainSubstring("Footer 1"))
-				Expect(combined).To(ContainSubstring("Footer 2"))
-			})
-		})
-	})
-
 	Describe("Themed Footer Helpers", func() {
 		var theme themes.Theme
 
@@ -411,54 +227,6 @@ var _ = Describe("View Helpers", func() {
 
 				Expect(footer).NotTo(BeEmpty())
 				expectedParts := []string{"Scroll", "Back"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("ThemedConfirmFooter", func() {
-			It("should contain confirm and cancel", func() {
-				footer := intents.ThemedConfirmFooter(theme)
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Confirm", "Cancel"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("ThemedEditFooter", func() {
-			It("should contain save and cancel", func() {
-				footer := intents.ThemedEditFooter(theme)
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Save", "Cancel"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("ThemedExportFooter", func() {
-			It("should contain navigate, select, confirm, back", func() {
-				footer := intents.ThemedExportFooter(theme)
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Navigate", "Select", "Confirm", "Back"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
-			})
-		})
-
-		Describe("ThemedMenuFooter", func() {
-			It("should contain menu elements", func() {
-				footer := intents.ThemedMenuFooter(theme)
-
-				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Navigate", "Select", "Help", "Quit"}
 				for _, part := range expectedParts {
 					Expect(footer).To(ContainSubstring(part))
 				}
