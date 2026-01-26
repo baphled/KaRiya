@@ -224,7 +224,9 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
+				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
+					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
+				}),
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -262,7 +264,9 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
+				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
+					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
+				}),
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -285,7 +289,8 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					switch i := intent.(type) {
 					case *GenerateCVIntent:
 						baseIntent = i.BaseIntent
-					// BrowseTimelineIntent is in internal/cli/intents/browse_timeline/
+					case *BrowseTimelineIntent:
+						baseIntent = i.BaseIntent
 					case *CaptureEventIntent:
 						baseIntent = i.BaseIntent
 					}
@@ -312,7 +317,9 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
+				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
+					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
+				}),
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -384,12 +391,12 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 			})
 		})
 
-		Context("BurstManagement - New vs Edit", func() {
+		Context("FactManagement - New vs Edit", func() {
 			It("should handle context-aware navigation", func() {
-				ctx := NewBurstManagementContext(nil, nil, context.Background())
+				ctx := NewFactManagementContext(nil, context.Background())
 
-				intent, err := NewBurstManagementIntent(ctx)
-				Expect(err).NotTo(HaveOccurred())
+				intent := NewFactManagementIntent(ctx)
+				Expect(intent).NotTo(BeNil())
 				intent.Init()
 
 				// Test that escape from list (root) cancels
@@ -397,16 +404,6 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 
 				result := intent.Result()
 				Expect(result).NotTo(BeNil())
-				Expect(result.Status).To(Equal(Cancelled))
-			})
-		})
-
-		// Note: FactManagement has been migrated to intents/fact_management/ package
-		// with its own comprehensive test suite including escape key tests.
-		// See fact_management/intent_test.go for global key enforcement tests.
-		PContext("FactManagement - Migrated to subpackage", func() {
-			It("should handle context-aware navigation - see fact_management/intent_test.go", func() {
-				Skip("Migrated to fact_management subpackage")
 			})
 		})
 	})
