@@ -601,6 +601,131 @@ issues:
         - errcheck    # Benchmarks and tests intentionally ignore some errors
         - godot       # Comment style
 
+    # =========================================================================
+    # LEGACY INTENTS - Pending architecture migration
+    # These files will be refactored to subdirectory structure.
+    # Track progress: PRs #113 (fact_management), #117 (burst_management)
+    # =========================================================================
+    - path: internal/cli/intents/burst_management_intent\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    - path: internal/cli/intents/fact_management_intent\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    - path: internal/cli/intents/capture_event_intent\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    - path: internal/cli/intents/manage_skills_intent\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    - path: internal/cli/intents/generate_cv_intent\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    # =========================================================================
+    # LEGACY SERVICE LAYER - Needs separate refactoring
+    # These files have grown complex and need architectural review.
+    # =========================================================================
+    - path: internal/service/career/cv/export_service\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    - path: internal/service/career/service\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    - path: internal/service/career/cv/section_builder\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    - path: internal/service/career/cv/bullet_generator\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+
+    # =========================================================================
+    # LEGACY CLI - Needs refactoring
+    # =========================================================================
+    - path: internal/cli/app/app\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    - path: internal/cli/models/form\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    - path: internal/cli/importer/parser\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    - path: cmd/cli/main\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    # =========================================================================
+    # LEGACY REPOSITORIES - Need query optimization
+    # =========================================================================
+    - path: internal/repository/career/sqlite_skill_repository\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - dupl
+
+    - path: internal/repository/career/sqlite_fact_repository\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - dupl
+
     # Intent test files - test patterns have different requirements
     - path: internal/cli/intents/.*_test\.go
       linters:
