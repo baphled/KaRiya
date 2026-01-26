@@ -1657,7 +1657,7 @@ func (i *CaptureEventIntent) HandleNavigate(result *screens.NavigateResult) tea.
 // HandleCancel handles cancellation from screens.
 //
 // Implements ScreenResultHandler interface.
-func (i *CaptureEventIntent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+func (i *CaptureEventIntent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	// Determine which screen we're cancelling from based on current state
 	switch i.state.currentState {
 	case CaptureStateChooseStrategy:
@@ -1870,7 +1870,7 @@ func (i *CaptureEventIntent) transitionToFormScreen(strategy CaptureStrategy) te
 
 // overlayModal overlays modal content on top of background content (centered).
 // This follows the StandardView modal overlay pattern for consistent modal rendering.
-func (i *CaptureEventIntent) overlayModal(background, modal string, width, height int) string {
+func (i *CaptureEventIntent) overlayModal(background, modal string, width, _ int) string {
 	bgLines := strings.Split(background, "\n")
 	modalLines := strings.Split(modal, "\n")
 

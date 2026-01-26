@@ -297,14 +297,13 @@ func (c *ConfigureSystemIntent) updateResultModal(msg tea.Msg) tea.Cmd {
 		switch keyMsg.String() {
 		case "enter", "esc", "q", " ":
 			c.resultModal = nil
-			// If success, complete the intent
-			if c.result != nil && c.result.Success {
-				c.active = false
-			} else {
-				// Error - go back to edit
+			// If error, go back to edit
+			if c.result == nil || !c.result.Success {
 				c.openEditModal()
 				return c.editModal.Init()
 			}
+			// Success - complete the intent
+			c.active = false
 		}
 	}
 
