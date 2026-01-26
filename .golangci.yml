@@ -546,6 +546,24 @@ issues:
         - gocyclo     # Test complexity is often higher
         - gocognit    # Test complexity is often higher
 
+    # Allow Ginkgo/Gomega dot imports in test files (standard BDD pattern)
+    - path: _test\.go
+      linters:
+        - revive
+      text: "dot-imports"
+
+    # Allow type assertions without error check in modal Update() methods
+    # This is a standard Bubble Tea pattern where form.Update() always returns *huh.Form
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - errcheck
+      text: "Error return value is not checked"
+
+    # Allow View() function duplication in modals (standard rendering pattern)
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - dupl
+
     # Exclude test fixtures and utilities from strict checks
     # These are test helpers where MustCreate() is intentionally used without error checks.
     - path: internal/testutil/
