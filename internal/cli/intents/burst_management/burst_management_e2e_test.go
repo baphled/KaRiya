@@ -742,8 +742,9 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			modalView := modal.View()
 			Expect(modalView).To(ContainSubstring("Test Burst Name"))
 			Expect(modalView).To(ContainSubstring("Detailed description here"))
-			Expect(modalView).To(ContainSubstring("4"))     // Event count in table
-			Expect(modalView).To(ContainSubstring("85.2%")) // Confidence formatted
+			Expect(modalView).To(ContainSubstring("4")) // Event count in table
+			// Confidence now shown as progress bar with percentage (85% rounded).
+			Expect(modalView).To(ContainSubstring("85%"))
 		})
 
 		It("should handle error in suggestions loaded message", func() {
