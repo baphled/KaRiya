@@ -1,6 +1,7 @@
 package intents
 
 import (
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/domain/career"
 )
@@ -103,7 +104,7 @@ type BrowseTimelineModel struct {
 	filters *TimelineFilters
 
 	// filterStack tracks active filters in FIFO order for progressive clearing.
-	filterStack *FilterStack
+	filterStack *behaviors.FilterStack
 
 	// selectedEvent is the event currently being viewed.
 	selectedEvent *career.CareerEvent

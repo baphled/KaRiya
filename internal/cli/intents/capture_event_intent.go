@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
@@ -76,7 +77,7 @@ type EnrichmentErrorMsg struct {
 type DismissModalMsg struct{}
 
 // Ensure CaptureEventIntent implements ScreenResultHandler interface
-var _ ScreenResultHandler = (*CaptureEventIntent)(nil)
+var _ behaviors.ScreenResultHandler = (*CaptureEventIntent)(nil)
 
 // CaptureEventIntent implements the Intent interface for capturing career events.
 // It owns the complete lifecycle of event capture, including:
@@ -1568,7 +1569,7 @@ func (i *CaptureEventIntent) Result() *IntentResult[interface{}] {
 // Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
 // CaptureEventIntent implements ScreenResultHandler interface for compile-time safety.
 func (i *CaptureEventIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
-	return NewScreenResultDispatcher(i).Dispatch(result)
+	return behaviors.NewScreenResultDispatcher(i).Dispatch(result)
 }
 
 // HandleNavigate handles navigation actions from screens.

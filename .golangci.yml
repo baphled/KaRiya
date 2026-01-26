@@ -546,6 +546,15 @@ issues:
         - gocyclo     # Test complexity is often higher
         - gocognit    # Test complexity is often higher
 
+    # Exclude test fixtures and utilities from strict checks
+    # These are test helpers where MustCreate() is intentionally used without error checks.
+    - path: internal/testutil/
+      linters:
+        - errcheck    # MustCreate() returns are intentionally ignored
+        - revive      # Factory patterns use unused args by design
+        - funlen      # Setup functions can be long
+        - gocritic    # Style suggestions not critical for test utils
+
     # Allow .kariya paths in config.go - this is where the default path is legitimately defined
     - path: internal/config/config\.go
       linters:
@@ -590,6 +599,45 @@ issues:
     - path: _test\.go
       linters:
         - depguard
+
+    # Legacy files that import huh directly - allowed until migrated
+    # The huh-restricted-to-forms rule was added after these files existed.
+    # Migration tracked in: docs/FORMS_GUIDE.md
+    #
+    # NOTE: New code must NOT import huh outside forms/ package.
+    # These exclusions are ONLY for legacy files that predate the rule.
+    - path: internal/cli/models/(burst_suggestion_new|capture_form|fact_editor_new|metadata_editor_new|skill_form)\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    # Legacy components/ package - deprecated, migrate to uikit/
+    - path: internal/cli/components/.*\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    # Legacy intents/modals.go - contains modal helpers that use huh
+    - path: internal/cli/intents/modals\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    # Legacy screens that use huh directly - migrate to use forms/ package
+    - path: internal/cli/screens/base/form_screen\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/screens/configure/(edit_settings|edit_settings_modal)\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/screens/skills/form\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
 
 severity:
   default-severity: warning

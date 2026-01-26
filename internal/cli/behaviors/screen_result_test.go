@@ -1,16 +1,16 @@
-package intents_test
+package behaviors_test
 
 import (
 	"errors"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// Mock handler for testing
+// Mock handler for testing.
 type mockScreenResultHandler struct {
 	navigateCalled bool
 	cancelCalled   bool
@@ -27,7 +27,7 @@ func (m *mockScreenResultHandler) HandleNavigate(result *screens.NavigateResult)
 	return m.cmdToReturn
 }
 
-func (m *mockScreenResultHandler) HandleCancel(result *screens.CancelResult) tea.Cmd {
+func (m *mockScreenResultHandler) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	m.cancelCalled = true
 	return m.cmdToReturn
 }
@@ -102,13 +102,13 @@ var _ = Describe("ScreenResultBehavior", func() {
 
 	Describe("ScreenResultDispatcher", func() {
 		var (
-			dispatcher *intents.ScreenResultDispatcher
+			dispatcher *behaviors.ScreenResultDispatcher
 			handler    *mockScreenResultHandler
 		)
 
 		BeforeEach(func() {
 			handler = &mockScreenResultHandler{}
-			dispatcher = intents.NewScreenResultDispatcher(handler)
+			dispatcher = behaviors.NewScreenResultDispatcher(handler)
 		})
 
 		Context("Dispatch", func() {
@@ -252,7 +252,7 @@ var _ = Describe("ScreenResultBehavior", func() {
 
 				// Reset
 				handler = &mockScreenResultHandler{}
-				dispatcher = intents.NewScreenResultDispatcher(handler)
+				dispatcher = behaviors.NewScreenResultDispatcher(handler)
 
 				// CancelResult
 				cancelResult := &screens.CancelResult{}
@@ -264,7 +264,7 @@ var _ = Describe("ScreenResultBehavior", func() {
 
 				// Reset
 				handler = &mockScreenResultHandler{}
-				dispatcher = intents.NewScreenResultDispatcher(handler)
+				dispatcher = behaviors.NewScreenResultDispatcher(handler)
 
 				// SubmitResult
 				submitResult := &screens.SubmitResult{FormData: "submit"}
@@ -276,7 +276,7 @@ var _ = Describe("ScreenResultBehavior", func() {
 
 				// Reset
 				handler = &mockScreenResultHandler{}
-				dispatcher = intents.NewScreenResultDispatcher(handler)
+				dispatcher = behaviors.NewScreenResultDispatcher(handler)
 
 				// ErrorResult
 				errorResult := &screens.ErrorResult{Err: errors.New("err"), Message: "Error"}
@@ -310,7 +310,7 @@ var _ = Describe("ScreenResultBehavior", func() {
 			// After: 1 line delegation to dispatcher
 
 			handler := &mockScreenResultHandler{}
-			dispatcher := intents.NewScreenResultDispatcher(handler)
+			dispatcher := behaviors.NewScreenResultDispatcher(handler)
 
 			// Simulate various screen results
 			results := []screens.ScreenResult{

@@ -1,4 +1,4 @@
-package intents
+package behaviors
 
 import (
 	"strings"
