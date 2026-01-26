@@ -290,7 +290,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 		It("should pass dimensions to renderer", func() {
 			var capturedWidth, capturedHeight int
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, width, height int) string {
 				capturedWidth = width
 				capturedHeight = height
 				return "content"

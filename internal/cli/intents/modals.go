@@ -82,10 +82,9 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 
 // Update handles user input for burst editing.
 func (m *EditBurstModal) Update(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		m.width = wsm.Width
+		m.height = wsm.Height
 		// Update form dimensions without losing state
 		m.form = m.form.
 			WithHeight(forms.DefaultFormHeight(m.height)).
@@ -292,10 +291,9 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 
 // Update handles user input for fact editing.
 func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		m.width = wsm.Width
+		m.height = wsm.Height
 		// Update form dimensions without losing state
 		m.form = m.form.
 			WithHeight(forms.DefaultFormHeight(m.height)).

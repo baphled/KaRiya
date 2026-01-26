@@ -908,16 +908,16 @@ type MainMenuSelectMsg struct {
 // CompleteIntentMsg signals that the user has completed an intent
 type CompleteIntentMsg struct{}
 
-// SetInitialScreen sets the initial screen to display
-func (m *Model) SetInitialScreen(screen Screen) {
-	// For now, this is a no-op since we always start with menu
-	// In the future, this could be used to navigate directly to a specific intent
+// SetInitialScreen sets the initial screen to display.
+func (m *Model) SetInitialScreen(_ Screen) {
+	// For now, this is a no-op since we always start with menu.
+	// In the future, this could be used to navigate directly to a specific intent.
 }
 
-// SetInitialCaptureMode sets the initial capture mode for CaptureEvent intent
-func (m *Model) SetInitialCaptureMode(mode string) {
-	// This would be used to configure the CaptureEvent intent when activated
-	// For now, it's a placeholder
+// SetInitialCaptureMode sets the initial capture mode for CaptureEvent intent.
+func (m *Model) SetInitialCaptureMode(_ string) {
+	// This would be used to configure the CaptureEvent intent when activated.
+	// For now, it's a placeholder.
 }
 
 // GetState returns the current application state

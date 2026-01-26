@@ -119,8 +119,7 @@ func (s *EventFormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	// Handle key messages
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		if msg.String() == "esc" {
 			// User pressed Escape - cancel and return to previous screen
 			return nil, &screens.CancelResult{}
 		}
