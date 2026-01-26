@@ -142,8 +142,8 @@ const (
 	BurstStateExtractingFacts = "extracting_facts"
 )
 
-// burstRowFormatter formats a burst for table display
-func burstRowFormatter(burst *domain.Burst, index int) []string {
+// burstRowFormatter formats a burst for table display.
+func burstRowFormatter(burst *domain.Burst, _ int) []string {
 	// Column 1: Name (truncate to 27 chars)
 	nameStr := burst.Name
 	if len(nameStr) > 27 {

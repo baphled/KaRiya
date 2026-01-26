@@ -757,7 +757,7 @@ func (i *GenerateCVIntent) handleNavigateResult(result screens.ScreenResult) tea
 }
 
 // handleCancelResult processes a CancelResult from a screen.
-func (i *GenerateCVIntent) handleCancelResult(result screens.ScreenResult) tea.Cmd {
+func (i *GenerateCVIntent) handleCancelResult(_ screens.ScreenResult) tea.Cmd {
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
 		// Root state - cancel the intent
@@ -787,9 +787,9 @@ func (i *GenerateCVIntent) handleCancelResult(result screens.ScreenResult) tea.C
 }
 
 // handleSubmitResult processes a SubmitResult from a screen.
-func (i *GenerateCVIntent) handleSubmitResult(result screens.ScreenResult) tea.Cmd {
-	// Most screens use Navigate instead of Submit for now
-	// This will be used more when we add form-based screens
+func (i *GenerateCVIntent) handleSubmitResult(_ screens.ScreenResult) tea.Cmd {
+	// Most screens use Navigate instead of Submit for now.
+	// This will be used more when we add form-based screens.
 	return nil
 }
 

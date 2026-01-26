@@ -101,9 +101,9 @@ type SkillsFilters struct {
 
 // NewManageSkillsIntent creates a new ManageSkills intent
 
-// skillRowFormatterWithCounts creates a row formatter that includes event counts
+// skillRowFormatterWithCounts creates a row formatter that includes event counts.
 func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormatter[*domain.Skill] {
-	return func(skill *domain.Skill, index int) []string {
+	return func(skill *domain.Skill, _ int) []string {
 		// Name
 		name := skill.Name
 		if len(name) > 22 {
@@ -140,8 +140,8 @@ func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormat
 	}
 }
 
-// eventRowFormatter formats a career event for table display
-func eventRowFormatter(event *domain.CareerEvent, index int) []string {
+// eventRowFormatter formats a career event for table display.
+func eventRowFormatter(event *domain.CareerEvent, _ int) []string {
 	// Date
 	dateStr := event.Date.Format("2006-01-02")
 

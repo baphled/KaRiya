@@ -75,7 +75,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Terminal Info", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -100,7 +100,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Navigation", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -126,7 +126,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should support custom action keys", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -144,7 +144,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should support multiple custom actions", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -166,7 +166,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Scrolling", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				// Generate multi-line content for scrolling
 				content := "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n"
 				content += "Line 6\nLine 7\nLine 8\nLine 9\nLine 10\n"

@@ -273,7 +273,7 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 		// Submission succeeded - show success modal briefly, then complete intent
 		i.state.submitModal = feedback.NewSuccessModal("Event saved!")
 		// Auto-dismiss after 2 seconds
-		return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+		return tea.Tick(2*time.Second, func(_ time.Time) tea.Msg {
 			return DismissModalMsg{}
 		})
 
