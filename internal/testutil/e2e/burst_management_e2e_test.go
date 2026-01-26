@@ -286,22 +286,24 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 				Suggestions: suggestions,
 			})
 
-			// Verify we see the first suggestion (1 of 2).
+			// Verify we see both suggestions in the table view.
 			view := env.GetView()
 			Expect(view).To(ContainSubstring("First Burst"),
 				"Should show first suggestion")
-			Expect(view).To(ContainSubstring("1 of 2"),
-				"Should show suggestion count '1 of 2'")
+			Expect(view).To(ContainSubstring("Second Burst"),
+				"Should show second suggestion")
+			Expect(view).To(ContainSubstring("Suggestions: 2"),
+				"Should show total suggestion count")
 
-			// Accept the first suggestion - should stay on suggestion review and show second.
+			// Accept the first suggestion - should stay on suggestion review and show remaining.
 			env.PressKeyRune('a')
 
-			// Verify we now see the second suggestion (1 of 1 since first was removed).
+			// Verify we now see the second suggestion (1 remaining after accepting first).
 			view = env.GetView()
 			Expect(view).To(ContainSubstring("Second Burst"),
-				"After accepting first, should show second suggestion")
-			Expect(view).To(ContainSubstring("1 of 1"),
-				"Should show suggestion count '1 of 1' after accepting first")
+				"After accepting first, should still show second suggestion")
+			Expect(view).To(ContainSubstring("Suggestions: 1"),
+				"Should show suggestion count '1' after accepting first")
 
 			// Should NOT be on burst list yet.
 			Expect(view).NotTo(ContainSubstring("Burst List"),
@@ -404,6 +406,176 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 			// Should be at main menu now.
 			Expect(env.IsInMenuState()).To(BeTrue(),
 				"Single Esc from burst list should return to main menu")
+		})
+	})
+
+	// Tests for suggestion rejection flow:
+	// - Reject suggestion -> return to burst list
+	// - From burst list, Esc -> return to main menu
+	// - Reject all suggestions -> return to list with no bursts
+	Describe("Burst Suggestion Rejection Flow", func() {
+		BeforeEach(func() {
+			env = e2e.GetSharedEnv(GinkgoT())
+			// Need events that can be grouped into suggestions.
+			env.PopulateTestData(10, 0, 0) // 10 events, 0 bursts, 0 facts
+		})
+
+		AfterEach(func() {
+			env.Cleanup()
+		})
+
+		It("should return to burst list after rejecting last suggestion", func() {
+			// Navigate to burst management.
+			env.SelectIntentByName("burst_management")
+
+			events := env.GetEvents()
+			Expect(len(events)).To(BeNumerically(">=", 2))
+
+			// Press 's' and simulate a single suggestion.
+			env.PressKeyRune('s')
+			suggestion := burst_fact.BurstSuggestion{
+				EventIDs:        []string{events[0].ID, events[1].ID},
+				ConfidenceScore: 0.85,
+				Name:            "Rejected Burst",
+				Description:     "Testing return to list after rejection",
+			}
+			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+			})
+
+			// Verify we're on suggestion review.
+			view := env.GetView()
+			Expect(view).To(ContainSubstring("Rejected Burst"),
+				"Should show the suggestion to review")
+
+			// Reject the suggestion - should return to burst list.
+			env.PressKeyRune('r')
+
+			// Should be at burst list (empty, no bursts created).
+			view = env.GetView()
+			Expect(view).NotTo(ContainSubstring("Rejected Burst"),
+				"After rejecting, should not show rejected burst")
+
+			// Should NOT be at main menu - should be at burst list.
+			Expect(env.IsInMenuState()).To(BeFalse(),
+				"Should be in burst management, not main menu")
+		})
+
+		It("should return to main menu with Esc from burst list after rejecting", func() {
+			// Navigate to burst management.
+			env.SelectIntentByName("burst_management")
+
+			events := env.GetEvents()
+			Expect(len(events)).To(BeNumerically(">=", 2))
+
+			// Press 's' and simulate a single suggestion.
+			env.PressKeyRune('s')
+			suggestion := burst_fact.BurstSuggestion{
+				EventIDs:        []string{events[0].ID, events[1].ID},
+				ConfidenceScore: 0.85,
+				Name:            "Rejected Menu Test",
+				Description:     "Testing return to main menu after rejection",
+			}
+			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
+				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+			})
+
+			// Reject the suggestion - returns to burst list.
+			env.PressKeyRune('r')
+
+			// Verify we're at burst list (not main menu yet).
+			Expect(env.IsInMenuState()).To(BeFalse(),
+				"Should be at burst list, not main menu")
+
+			// Single Esc should return to main menu.
+			env.Cancel()
+
+			// Should be at main menu now.
+			Expect(env.IsInMenuState()).To(BeTrue(),
+				"Single Esc from burst list after rejection should return to main menu")
+		})
+
+		It("should return to main menu after rejecting all multiple suggestions", func() {
+			// Navigate to burst management.
+			env.SelectIntentByName("burst_management")
+
+			events := env.GetEvents()
+			Expect(len(events)).To(BeNumerically(">=", 4))
+
+			// Press 's' and simulate TWO suggestions.
+			env.PressKeyRune('s')
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					EventIDs:        []string{events[0].ID, events[1].ID},
+					ConfidenceScore: 0.85,
+					Name:            "First Rejection",
+					Description:     "First suggestion to reject",
+				},
+				{
+					EventIDs:        []string{events[2].ID, events[3].ID},
+					ConfidenceScore: 0.80,
+					Name:            "Second Rejection",
+					Description:     "Second suggestion to reject",
+				},
+			}
+			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+			})
+
+			// Verify we see the first suggestion.
+			view := env.GetView()
+			Expect(view).To(ContainSubstring("First Rejection"),
+				"Should show first suggestion")
+
+			// Reject the first suggestion - should show second.
+			env.PressKeyRune('r')
+
+			// Verify we now see the second suggestion.
+			view = env.GetView()
+			Expect(view).To(ContainSubstring("Second Rejection"),
+				"After rejecting first, should show second suggestion")
+
+			// Reject the second suggestion - should return to burst list.
+			env.PressKeyRune('r')
+
+			// Should NOT be at main menu - should be at burst list.
+			Expect(env.IsInMenuState()).To(BeFalse(),
+				"Should be at burst list, not main menu")
+
+			// Single Esc should return to main menu.
+			env.Cancel()
+
+			// Should be at main menu now.
+			Expect(env.IsInMenuState()).To(BeTrue(),
+				"Single Esc from burst list after rejecting all should return to main menu")
+		})
+
+		It("should have no bursts after rejecting all suggestions", func() {
+			// Navigate to burst management.
+			env.SelectIntentByName("burst_management")
+
+			events := env.GetEvents()
+			Expect(len(events)).To(BeNumerically(">=", 2))
+
+			// Press 's' and simulate suggestions.
+			env.PressKeyRune('s')
+			suggestions := []burst_fact.BurstSuggestion{
+				{
+					EventIDs:        []string{events[0].ID, events[1].ID},
+					ConfidenceScore: 0.85,
+					Name:            "Rejected Burst",
+					Description:     "This should not be saved",
+				},
+			}
+			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
+				Suggestions: suggestions,
+			})
+
+			// Reject the suggestion.
+			env.PressKeyRune('r')
+
+			// Verify no bursts were created.
+			env.AssertBurstCount(0)
 		})
 	})
 })

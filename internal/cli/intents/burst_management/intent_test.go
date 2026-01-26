@@ -1074,16 +1074,7 @@ var _ = Describe("Intent Methods", func() {
 			intent.Init()
 		})
 
-		It("should handle 'add' action and transition to edit state", func() {
-			actionData := map[string]interface{}{
-				"action": "add",
-			}
-			result := &screens.NavigateResult{
-				ResultData: actionData,
-			}
-			intent.HandleNavigate(result)
-			Expect(intent.GetState()).To(Equal(burst_management.StateEdit))
-		})
+		// Note: "add" action test removed - bursts are created via AI suggestions only.
 
 		It("should handle 'edit' action with burst and open edit modal", func() {
 			actionData := map[string]interface{}{
@@ -1407,11 +1398,9 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should ignore cancel when loadingEvents is true", func() {
 			intent.SetState(burst_management.StateList)
-			// Simulate loading events state by navigating to detail and pressing 'v'.
-			navResult := &screens.NavigateResult{ResultData: burst}
-			intent.HandleNavigate(navResult)
-			// Press 'v' to trigger events loading.
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'v'}})
+			// Directly set loading state for testing.
+			// This simulates the state when events are being loaded asynchronously.
+			intent.SetLoadingEventsForTesting(true)
 
 			// Try to cancel.
 			cancelResult := &screens.CancelResult{}
@@ -1927,8 +1916,17 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should execute startBurstDetection command", func() {
+			// Add extra events that are NOT in any existing burst.
+			extraEvents := []*career.CareerEvent{
+				{ID: "e1", Text: "Event 1"},
+				{ID: "e2", Text: "Event 2"},
+				{ID: "e3", Text: "Event 3"},
+				{ID: "e4", Text: "Event 4"},
+			}
+			mockService.SetEvents(extraEvents)
+
 			suggestions := []burst_fact.BurstSuggestion{
-				{Name: "Suggestion", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.8},
+				{Name: "Suggestion", EventIDs: []string{"e3", "e4"}, ConfidenceScore: 0.8},
 			}
 			mockService.SetSuggestions(suggestions)
 
@@ -1940,7 +1938,7 @@ var _ = Describe("Intent Methods", func() {
 			msg := cmd()
 			Expect(msg).NotTo(BeNil())
 
-			// Should be a BurstSuggestionsLoadedMsg.
+			// Should be a BurstSuggestionsLoadedMsg with suggestions from unassigned events.
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
 			Expect(suggestionsMsg.Suggestions).To(HaveLen(1))
@@ -1989,11 +1987,82 @@ var _ = Describe("Intent Methods", func() {
 			// Execute the command.
 			msg := cmd()
 
-			// Should be error message (no events).
+			// Should be error message (no unassigned events available).
 			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
 			Expect(ok).To(BeTrue())
 			Expect(suggestionsMsg.Error).NotTo(BeNil())
-			Expect(suggestionsMsg.Error.Error()).To(ContainSubstring("no events"))
+			Expect(suggestionsMsg.Error.Error()).To(ContainSubstring("no unassigned events"))
+		})
+
+		It("should filter out events that are already in existing bursts", func() {
+			// Create events where e1 and e2 are already in an existing burst.
+			events := []*career.CareerEvent{
+				{ID: "e1", Text: "Event 1"},
+				{ID: "e2", Text: "Event 2"},
+				{ID: "e3", Text: "Event 3"},
+				{ID: "e4", Text: "Event 4"},
+			}
+			mockService.SetEvents(events)
+
+			// Create an existing burst that uses e1 and e2.
+			existingBurst := &career.Burst{
+				ID:       "existing-burst",
+				Name:     "Existing Burst",
+				EventIDs: []string{"e1", "e2"},
+			}
+
+			// Update context with existing burst.
+			ctx.Bursts = []*career.Burst{existingBurst}
+
+			suggestions := []burst_fact.BurstSuggestion{
+				{Name: "New Suggestion", EventIDs: []string{"e3", "e4"}, ConfidenceScore: 0.8},
+			}
+			mockService.SetSuggestions(suggestions)
+
+			// Press 's' to start detection.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+
+			// Should succeed with suggestions from unassigned events only.
+			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(suggestionsMsg.Error).To(BeNil())
+			Expect(suggestionsMsg.Suggestions).To(HaveLen(1))
+		})
+
+		It("should show error when all events are already in bursts", func() {
+			// All events are already in an existing burst.
+			events := []*career.CareerEvent{
+				{ID: "e1", Text: "Event 1"},
+				{ID: "e2", Text: "Event 2"},
+			}
+			mockService.SetEvents(events)
+
+			// Create an existing burst that uses all events.
+			existingBurst := &career.Burst{
+				ID:       "existing-burst",
+				Name:     "Existing Burst",
+				EventIDs: []string{"e1", "e2"},
+			}
+
+			// Update context with existing burst.
+			ctx.Bursts = []*career.Burst{existingBurst}
+
+			// Press 's' to start detection.
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+			Expect(cmd).NotTo(BeNil())
+
+			// Execute the command.
+			msg := cmd()
+
+			// Should be error message (no unassigned events).
+			suggestionsMsg, ok := msg.(burst_management.BurstSuggestionsLoadedMsg)
+			Expect(ok).To(BeTrue())
+			Expect(suggestionsMsg.Error).NotTo(BeNil())
+			Expect(suggestionsMsg.Error.Error()).To(ContainSubstring("no unassigned events"))
 		})
 	})
 
