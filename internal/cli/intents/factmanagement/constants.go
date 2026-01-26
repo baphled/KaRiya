@@ -1,5 +1,5 @@
 // Package fact_management implements the FactManagement intent for managing career facts.
-package fact_management
+package factmanagement
 
 // State represents the current state of the FactManagement intent.
 type State string

@@ -6,7 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
-	fact_management "github.com/baphled/kariya/internal/cli/intents/fact_management"
+	factmanagement "github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -846,12 +846,12 @@ func registerAllIntents(router *intents.DefaultIntentRouter, cliService *service
 	//nolint:errcheck // duplicate registration cannot happen here
 	router.RegisterIntent("fact_management", func() intents.Intent {
 		factRepo := careerService.GetFactRepository()
-		factCtx := fact_management.NewIntentContext(factRepo, ctx)
+		factCtx := factmanagement.NewIntentContext(ctx, factRepo)
 		if factCtx == nil {
 			log.Error("Failed to create FactManagement context")
 			return nil
 		}
-		intent, err := fact_management.NewIntent(factCtx)
+		intent, err := factmanagement.NewIntent(factCtx)
 		if err != nil {
 			log.Error("Failed to create FactManagement intent: %v", err)
 			return nil

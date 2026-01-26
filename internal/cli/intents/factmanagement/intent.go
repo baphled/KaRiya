@@ -1,5 +1,5 @@
 // Package fact_management implements the FactManagement intent for managing career facts.
-package fact_management
+package factmanagement
 
 import (
 	"fmt"

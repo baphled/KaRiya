@@ -1,4 +1,4 @@
-package fact_management_test
+package factmanagement_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/intents/fact_management"
+	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -25,7 +25,7 @@ import (
 
 var _ = Describe("FactManagement E2E", func() {
 	var (
-		intent   *fact_management.Intent
+		intent   *factmanagement.Intent
 		ctx      context.Context
 		mockRepo *IntentMockFactRepository
 	)
@@ -60,9 +60,9 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("View State Workflow", func() {
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -126,9 +126,9 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("Editor State Workflow", func() {
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -246,9 +246,9 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("Delete Confirm State Workflow", func() {
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -373,9 +373,9 @@ var _ = Describe("FactManagement E2E", func() {
 		// For now, we test the getResultsContent helper is exercised
 
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -400,9 +400,9 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("Global Key Handling", func() {
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -463,9 +463,9 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("Refresh Workflow", func() {
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -504,9 +504,9 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("Complete Workflow - Create, View, Edit, Delete", func() {
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -586,9 +586,9 @@ var _ = Describe("FactManagement E2E", func() {
 
 	Describe("ListNavigator Interface", func() {
 		BeforeEach(func() {
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -624,7 +624,7 @@ var _ = Describe("FactManagement E2E", func() {
 	Describe("Context Methods Edge Cases", func() {
 		Describe("CreateFact", func() {
 			It("should return error when repository is nil", func() {
-				intentCtx := fact_management.NewIntentContext(nil, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, nil)
 				err := intentCtx.CreateFact(&career.Fact{
 					ID:   "test-fact",
 					Text: "Test fact text",
@@ -634,14 +634,14 @@ var _ = Describe("FactManagement E2E", func() {
 			})
 
 			It("should return error when fact validation fails", func() {
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 				// Empty fact should fail validation.
 				err := intentCtx.CreateFact(&career.Fact{})
 				Expect(err).To(HaveOccurred())
 			})
 
 			It("should add fact to list on successful create", func() {
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 				// Load facts to initialize context state.
 				err := intentCtx.LoadFacts()
 				Expect(err).NotTo(HaveOccurred())
@@ -666,7 +666,7 @@ var _ = Describe("FactManagement E2E", func() {
 
 			It("should return repository error on create failure", func() {
 				mockRepo.createErr = errors.New("database error")
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 
 				newFact := &career.Fact{
 					ID:                   "new-fact-2",
@@ -696,7 +696,7 @@ var _ = Describe("FactManagement E2E", func() {
 			})
 
 			It("should return error when repository is nil", func() {
-				intentCtx := fact_management.NewIntentContext(nil, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, nil)
 				err := intentCtx.UpdateFact(&career.Fact{
 					ID:   "fact-1",
 					Text: "Updated text",
@@ -706,14 +706,14 @@ var _ = Describe("FactManagement E2E", func() {
 			})
 
 			It("should return error when fact validation fails", func() {
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 				// Empty text should fail validation.
 				err := intentCtx.UpdateFact(&career.Fact{ID: "fact-1", Text: ""})
 				Expect(err).To(HaveOccurred())
 			})
 
 			It("should update fact in list on successful update", func() {
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 				err := intentCtx.LoadFacts()
 				Expect(err).NotTo(HaveOccurred())
 
@@ -741,7 +741,7 @@ var _ = Describe("FactManagement E2E", func() {
 
 			It("should return repository error on update failure", func() {
 				mockRepo.updateErr = errors.New("update failed")
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 				err := intentCtx.LoadFacts()
 				Expect(err).NotTo(HaveOccurred())
 
@@ -767,7 +767,7 @@ var _ = Describe("FactManagement E2E", func() {
 
 		Describe("GetPageFacts", func() {
 			It("should return empty slice when no facts loaded", func() {
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 				// Don't load facts.
 				pageFacts := intentCtx.GetPageFacts()
 				Expect(pageFacts).To(BeEmpty())
@@ -778,7 +778,7 @@ var _ = Describe("FactManagement E2E", func() {
 					createTestFact("fact-1", "Test 1"),
 					createTestFact("fact-2", "Test 2"),
 				}
-				intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 				err := intentCtx.LoadFacts()
 				Expect(err).NotTo(HaveOccurred())
 
@@ -798,9 +798,9 @@ var _ = Describe("FactManagement E2E", func() {
 				createTestFact("fact-1", "First fact"),
 				createTestFact("fact-2", "Second fact"),
 			}
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -874,8 +874,8 @@ var _ = Describe("FactManagement E2E", func() {
 			It("should show No fact selected when no fact is selected", func() {
 				// Create intent with empty facts.
 				emptyRepo := NewIntentMockFactRepository()
-				intentCtx := fact_management.NewIntentContext(emptyRepo, ctx)
-				emptyIntent, err := fact_management.NewIntent(intentCtx)
+				intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+				emptyIntent, err := factmanagement.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				emptyIntent.Init()
 
@@ -968,9 +968,9 @@ var _ = Describe("FactManagement E2E", func() {
 					UpdatedAt:            time.Now(),
 				},
 			}
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -996,8 +996,8 @@ var _ = Describe("FactManagement E2E", func() {
 	Describe("SyncTableSelection Edge Cases", func() {
 		It("should handle empty table gracefully", func() {
 			emptyRepo := NewIntentMockFactRepository()
-			intentCtx := fact_management.NewIntentContext(emptyRepo, ctx)
-			emptyIntent, err := fact_management.NewIntent(intentCtx)
+			intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+			emptyIntent, err := factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			emptyIntent.Init()
 
@@ -1014,8 +1014,8 @@ var _ = Describe("FactManagement E2E", func() {
 				createTestFact("fact-1", "First"),
 				createTestFact("fact-2", "Second"),
 			}
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
-			intent, err := fact_management.NewIntent(intentCtx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intent, err := factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 
@@ -1037,8 +1037,8 @@ var _ = Describe("FactManagement E2E", func() {
 	Describe("Intent Init Edge Cases", func() {
 		It("should handle init with empty facts", func() {
 			emptyRepo := NewIntentMockFactRepository()
-			intentCtx := fact_management.NewIntentContext(emptyRepo, ctx)
-			intent, err := fact_management.NewIntent(intentCtx)
+			intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+			intent, err := factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 
 			cmd := intent.Init()
@@ -1053,8 +1053,8 @@ var _ = Describe("FactManagement E2E", func() {
 			mockRepo.facts = []*career.Fact{
 				createTestFact("fact-1", "Test"),
 			}
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
-			intent, err := fact_management.NewIntent(intentCtx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intent, err := factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 
@@ -1073,9 +1073,9 @@ var _ = Describe("FactManagement E2E", func() {
 			mockRepo.facts = []*career.Fact{
 				createTestFact("fact-1", "Test fact"),
 			}
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -1104,9 +1104,9 @@ var _ = Describe("FactManagement E2E", func() {
 			mockRepo.facts = []*career.Fact{
 				createTestFact("fact-1", "Test fact"),
 			}
-			intentCtx := fact_management.NewIntentContext(mockRepo, ctx)
+			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = fact_management.NewIntent(intentCtx)
+			intent, err = factmanagement.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})

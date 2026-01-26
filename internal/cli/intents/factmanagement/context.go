@@ -1,5 +1,5 @@
-// Package fact_management implements the FactManagement intent for managing career facts.
-package fact_management
+// Package factmanagement implements the FactManagement intent for managing career facts.
+package factmanagement
 
 import (
 	"context"
@@ -85,7 +85,7 @@ type IntentContext struct {
 }
 
 // NewIntentContext creates a new context with default values.
-func NewIntentContext(factRepo careerrepo.FactRepository, ctx context.Context) *IntentContext {
+func NewIntentContext(ctx context.Context, factRepo careerrepo.FactRepository) *IntentContext {
 	return &IntentContext{
 		Facts:             make([]*domain.Fact, 0),
 		SelectedFactIndex: -1,
