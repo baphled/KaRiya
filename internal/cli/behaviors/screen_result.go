@@ -1,4 +1,4 @@
-package intents
+package behaviors
 
 import (
 	"github.com/baphled/kariya/internal/cli/screens"

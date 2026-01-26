@@ -45,7 +45,7 @@ type EventDeletedMsg struct {
 }
 
 // Ensure BrowseTimelineIntent implements ScreenResultHandler interface
-var _ ScreenResultHandler = (*BrowseTimelineIntent)(nil)
+var _ behaviors.ScreenResultHandler = (*BrowseTimelineIntent)(nil)
 
 // BrowseTimelineIntent implements the Intent interface for browsing career events.
 // It owns the complete lifecycle of timeline browsing, including:
@@ -116,7 +116,7 @@ func NewBrowseTimelineIntent(context *BrowseTimelineContext) (*BrowseTimelineInt
 			filteredEvents: context.Events,
 			selectedIndex:  0,
 			filters:        context.InitialFilters,
-			filterStack:    NewFilterStack(),
+			filterStack:    behaviors.NewFilterStack(),
 			selectedFacts:  make([]*career.Fact, 0),
 			viewedEvents:   make([]*career.CareerEvent, 0),
 		},
@@ -159,7 +159,7 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 			i.state.filters.SearchText = searchData.SearchText
 			// Track search filter in stack for FIFO clearing
 			if searchData.SearchText != "" {
-				i.state.filterStack.Push(FilterLayerSearch)
+				i.state.filterStack.Push(behaviors.FilterLayerSearch)
 			}
 			i.applyFilters()
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.state.filteredEvents))
@@ -180,13 +180,13 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 
 			// Track filters in stack for FIFO clearing
 			if len(filterData.Companies) > 0 {
-				i.state.filterStack.Push(FilterLayerCompany)
+				i.state.filterStack.Push(behaviors.FilterLayerCompany)
 			}
 			if len(filterData.Categories) > 0 {
-				i.state.filterStack.Push(FilterLayerCategory)
+				i.state.filterStack.Push(behaviors.FilterLayerCategory)
 			}
 			if len(filterData.Projects) > 0 {
-				i.state.filterStack.Push(FilterLayerProject)
+				i.state.filterStack.Push(behaviors.FilterLayerProject)
 			}
 
 			i.applyFilters()
@@ -205,7 +205,7 @@ func (i *BrowseTimelineIntent) Update(msg tea.Msg) tea.Cmd {
 
 			// Track sort in stack if it's not default
 			if sortData.SortBy != "date" || sortData.SortOrder != "desc" {
-				i.state.filterStack.Push(FilterLayerSort)
+				i.state.filterStack.Push(behaviors.FilterLayerSort)
 			}
 
 			i.applyFilters()
@@ -514,7 +514,7 @@ func (i *BrowseTimelineIntent) applyFilters() {
 			if len(evt.Categories) > 0 {
 				categoriesStr = evt.Categories[0] // Primary category for search
 			}
-			if !SearchableFields(i.state.filters.SearchText, evt.Text, evt.Company, categoriesStr, evt.Project) {
+			if !behaviors.SearchableFields(i.state.filters.SearchText, evt.Text, evt.Company, categoriesStr, evt.Project) {
 				continue // Skip events that don't match search
 			}
 		}
@@ -655,22 +655,22 @@ func (i *BrowseTimelineIntent) ClearFilters() {
 
 	// Clear the specific filter layer
 	switch layer {
-	case FilterLayerSearch:
+	case behaviors.FilterLayerSearch:
 		i.state.filters.SearchText = ""
 
-	case FilterLayerCompany:
+	case behaviors.FilterLayerCompany:
 		i.state.filters.Companies = []string{}
 
-	case FilterLayerCategory:
+	case behaviors.FilterLayerCategory:
 		i.state.filters.Categories = []string{}
 
-	case FilterLayerProject:
+	case behaviors.FilterLayerProject:
 		i.state.filters.Projects = []string{}
 
-	case FilterLayerTags:
+	case behaviors.FilterLayerTags:
 		i.state.filters.Tags = []string{}
 
-	case FilterLayerSort:
+	case behaviors.FilterLayerSort:
 		// Reset to default sort
 		i.state.filters.SortBy = "date"
 		i.state.filters.SortOrder = "desc"
@@ -784,7 +784,7 @@ func (i *BrowseTimelineIntent) handleScreenResult(result interface{}) tea.Cmd {
 		return nil
 	}
 
-	return NewScreenResultDispatcher(i).Dispatch(screenResult)
+	return behaviors.NewScreenResultDispatcher(i).Dispatch(screenResult)
 }
 
 // HandleCancel handles screen cancellation (back/escape).

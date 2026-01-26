@@ -23,10 +23,10 @@ import (
 )
 
 // Ensure ManageSkillsIntent implements FilterBehavior interface
-var _ FilterBehavior = (*ManageSkillsIntent)(nil)
+var _ behaviors.FilterBehavior = (*ManageSkillsIntent)(nil)
 
 // Ensure ManageSkillsIntent implements ScreenResultHandler interface
-var _ ScreenResultHandler = (*ManageSkillsIntent)(nil)
+var _ behaviors.ScreenResultHandler = (*ManageSkillsIntent)(nil)
 
 // ManageSkillsIntent implements the Intent interface for managing user-defined skills.
 type ManageSkillsIntent struct {
@@ -2167,7 +2167,7 @@ func (i *ManageSkillsIntent) EnableScreens() {
 // Uses ScreenResultDispatcher pattern to eliminate repetitive type switching.
 // ManageSkillsIntent implements ScreenResultHandler interface for compile-time safety.
 func (i *ManageSkillsIntent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
-	return NewScreenResultDispatcher(i).Dispatch(result)
+	return behaviors.NewScreenResultDispatcher(i).Dispatch(result)
 }
 
 // HandleNavigate handles navigation to a new screen.
