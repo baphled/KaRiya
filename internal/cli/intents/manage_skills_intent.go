@@ -2395,21 +2395,21 @@ func (i *ManageSkillsIntent) handleErrorInternal(err error) tea.Cmd {
 
 // NewSkillsListScreenFromIntent creates a SkillsListScreen from intent context.
 // This wrapper avoids import cycles between intents and screens/skills packages.
-func NewSkillsListScreenFromIntent(skills []*domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillsListScreenFromIntent(skills []*domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillsListScreen(skills)
 }
 
 // NewSkillDetailScreenFromIntent creates a SkillDetailScreen from intent context.
-func NewSkillDetailScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillDetailScreenFromIntent(skill *domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillDetailScreen(skill)
 }
 
 // NewSkillFormScreenFromIntent creates a SkillFormScreen from intent context.
-func NewSkillFormScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillFormScreenFromIntent(skill *domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillFormScreen(skill)
 }
 
 // NewSkillDeleteConfirmScreenFromIntent creates a SkillDeleteConfirmScreen from intent context.
-func NewSkillDeleteConfirmScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillDeleteConfirmScreenFromIntent(skill *domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillDeleteConfirmScreen(skill)
 }

@@ -116,8 +116,8 @@ func (r *MemoryFactRepository) Create(ctx context.Context, fact *career.Fact) er
 	return nil
 }
 
-// GetByID retrieves a fact by its ID
-func (r *MemoryFactRepository) GetByID(ctx context.Context, id string) (*career.Fact, error) {
+// GetByID retrieves a fact by its ID.
+func (r *MemoryFactRepository) GetByID(_ context.Context, id string) (*career.Fact, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

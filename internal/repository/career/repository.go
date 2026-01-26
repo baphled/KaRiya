@@ -138,8 +138,8 @@ func (r *MemoryRepository) Update(_ context.Context, event *career.CareerEvent) 
 	return nil
 }
 
-// Delete removes a career event from the repository
-func (r *MemoryRepository) Delete(ctx context.Context, id string) error {
+// Delete removes a career event from the repository.
+func (r *MemoryRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -220,8 +220,8 @@ func (r *MemoryRepository) List(ctx context.Context, filters ListFilters) ([]*ca
 	return filtered[start:end], nil
 }
 
-// Count returns the number of events matching the filters
-func (r *MemoryRepository) Count(ctx context.Context, filters ListFilters) (int, error) {
+// Count returns the number of events matching the filters.
+func (r *MemoryRepository) Count(_ context.Context, filters ListFilters) (int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

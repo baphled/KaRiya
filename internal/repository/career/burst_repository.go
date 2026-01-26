@@ -100,8 +100,8 @@ func (r *MemoryBurstRepository) Create(ctx context.Context, burst *career.Burst)
 	return nil
 }
 
-// GetByID retrieves a burst by its ID
-func (r *MemoryBurstRepository) GetByID(ctx context.Context, id string) (*career.Burst, error) {
+// GetByID retrieves a burst by its ID.
+func (r *MemoryBurstRepository) GetByID(_ context.Context, id string) (*career.Burst, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -113,8 +113,8 @@ func (r *MemoryBurstRepository) GetByID(ctx context.Context, id string) (*career
 	return burst, nil
 }
 
-// Update modifies an existing burst
-func (r *MemoryBurstRepository) Update(ctx context.Context, burst *career.Burst) error {
+// Update modifies an existing burst.
+func (r *MemoryBurstRepository) Update(_ context.Context, burst *career.Burst) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
