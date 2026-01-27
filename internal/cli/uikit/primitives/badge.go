@@ -293,11 +293,6 @@ func FilterBadge(th theme.Theme) *Badge {
 	return HelpKeyBadge("f", "Filter", th)
 }
 
-// MenuBadge returns a badge for returning to main menu.
-func MenuBadge(th theme.Theme) *Badge {
-	return HelpKeyBadge("m", "Main Menu", th)
-}
-
 // YesBadge returns a badge for yes/confirm shortcut.
 func YesBadge(th theme.Theme) *Badge {
 	return HelpKeyBadge("y", "Yes", th)

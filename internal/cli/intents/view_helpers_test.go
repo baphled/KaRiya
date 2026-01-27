@@ -254,14 +254,11 @@ var _ = Describe("View Helpers", func() {
 		})
 
 		Describe("ThemedGlobalBadges", func() {
-			It("should contain quit and main menu", func() {
+			It("should contain quit badge", func() {
 				footer := intents.ThemedGlobalBadges(theme)
 
 				Expect(footer).NotTo(BeEmpty())
-				expectedParts := []string{"Quit", "Main Menu"}
-				for _, part := range expectedParts {
-					Expect(footer).To(ContainSubstring(part))
-				}
+				Expect(footer).To(ContainSubstring("Quit"))
 			})
 		})
 

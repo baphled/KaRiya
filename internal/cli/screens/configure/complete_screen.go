@@ -65,12 +65,6 @@ func (s *CompleteScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 			// Both Enter and Esc dismiss the success screen
 			return nil, &screens.SubmitResult{FormData: true}
 
-		case "m":
-			// Main menu
-			result := &screens.SubmitResult{FormData: true}
-			result.WithMetadata("main_menu", true)
-			return nil, result
-
 		case "q":
 			// Quick exit to menu (same as success dismiss)
 			return nil, &screens.SubmitResult{FormData: true}
@@ -109,7 +103,6 @@ func (s *CompleteScreen) View() string {
 	// Help footer with UIKit badges (ALWAYS use predefined badge constructors)
 	helpFooter := primitives.RenderHelpFooter(theme,
 		primitives.ContinueBadge(theme),
-		primitives.MenuBadge(theme),
 	)
 
 	// Use BaseScreen.CreateView() for StandardView integration

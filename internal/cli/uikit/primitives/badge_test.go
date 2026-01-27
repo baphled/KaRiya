@@ -222,13 +222,6 @@ var _ = Describe("Badge", func() {
 			Expect(rendered).To(ContainSubstring("Filter"))
 		})
 
-		It("MenuBadge should return main menu badge", func() {
-			badge := primitives.MenuBadge(th)
-			rendered := badge.Render()
-			Expect(rendered).To(ContainSubstring("m"))
-			Expect(rendered).To(ContainSubstring("Main Menu"))
-		})
-
 		It("YesBadge should return yes badge", func() {
 			badge := primitives.YesBadge(th)
 			rendered := badge.Render()

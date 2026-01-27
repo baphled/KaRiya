@@ -456,17 +456,6 @@ var _ = Describe("ConfirmScreen", func() {
 			})
 		})
 
-		Context("when pressing 'm' for main menu", func() {
-			It("returns CancelResult with main_menu metadata", func() {
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}}
-				_, result := screen.Update(msg)
-
-				Expect(result).NotTo(BeNil())
-				Expect(result.Type()).To(Equal(screens.ResultCancel))
-				Expect(result.Metadata()["main_menu"]).To(BeTrue())
-			})
-		})
-
 		Context("when pressing Enter", func() {
 			It("returns NavigateResult with current selection", func() {
 				msg := tea.KeyMsg{Type: tea.KeyEnter}
@@ -579,16 +568,6 @@ var _ = Describe("CompleteScreen", func() {
 			})
 		})
 
-		Context("when pressing 'm' for main menu", func() {
-			It("returns SubmitResult with main_menu metadata", func() {
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}}
-				_, result := screen.Update(msg)
-
-				Expect(result).NotTo(BeNil())
-				Expect(result.Type()).To(Equal(screens.ResultSubmit))
-				Expect(result.Metadata()["main_menu"]).To(BeTrue())
-			})
-		})
 	})
 
 	Describe("View", func() {
@@ -641,17 +620,6 @@ var _ = Describe("FailedScreen", func() {
 
 				Expect(result).NotTo(BeNil())
 				Expect(result.Type()).To(Equal(screens.ResultCancel))
-			})
-		})
-
-		Context("when pressing 'm' for main menu", func() {
-			It("returns CancelResult with main_menu metadata", func() {
-				msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}}
-				_, result := screen.Update(msg)
-
-				Expect(result).NotTo(BeNil())
-				Expect(result.Type()).To(Equal(screens.ResultCancel))
-				Expect(result.Metadata()["main_menu"]).To(BeTrue())
 			})
 		})
 

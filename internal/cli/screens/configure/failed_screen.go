@@ -68,12 +68,6 @@ func (s *FailedScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 			// Cancel - go back
 			return nil, &screens.CancelResult{}
 
-		case "m":
-			// Main menu - cancel intent entirely
-			result := &screens.CancelResult{}
-			result.WithMetadata("main_menu", true)
-			return nil, result
-
 		case "enter", "r":
 			// Retry
 			return nil, &screens.NavigateResult{ResultData: "retry"}
@@ -113,7 +107,6 @@ func (s *FailedScreen) View() string {
 	helpFooter := primitives.RenderHelpFooter(theme,
 		primitives.RetryEnterBadge(theme),
 		primitives.BackBadge(theme),
-		primitives.MenuBadge(theme),
 	)
 
 	// Use BaseScreen.CreateView() for StandardView integration
