@@ -5,13 +5,11 @@ import (
 	"strconv"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
-	"github.com/baphled/kariya/internal/cli/navigation"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -92,8 +90,6 @@ type SkillsListScreen struct {
 	skills        []*career.Skill
 	tableBehavior *behaviors.TableBehavior[*career.Skill]
 	eventCounts   map[string]int // Skill ID -> event count
-	keys          navigation.ListKeyMap
-	globalKeys    navigation.GlobalKeyMap
 }
 
 // NewSkillsListScreen creates a new skills list screen.
@@ -129,8 +125,6 @@ func NewSkillsListScreen(skills []*career.Skill) *SkillsListScreen {
 		skills:        skills,
 		tableBehavior: tableBehavior,
 		eventCounts:   eventCounts,
-		keys:          navigation.DefaultListKeyMap(),
-		globalKeys:    navigation.DefaultGlobalKeyMap(),
 	}
 
 	return screen
@@ -153,7 +147,7 @@ func (s *SkillsListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 // handleKeyMsg handles keyboard input and returns appropriate result.
 func (s *SkillsListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
 	// Handle escape/back.
-	if key.Matches(msg, s.globalKeys.Back) {
+	if msg.Type == tea.KeyEsc {
 		return nil, &screens.CancelResult{}
 	}
 
@@ -168,14 +162,18 @@ func (s *SkillsListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.Screen
 
 // handleActionKey handles action-specific key presses.
 func (s *SkillsListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
-	switch {
-	case key.Matches(msg, s.keys.Select):
+	// Handle enter key for view action.
+	if msg.Type == tea.KeyEnter {
 		return s.handleViewAction()
-	case key.Matches(msg, s.keys.Add):
+	}
+
+	// Handle character keys for other actions.
+	switch msg.String() {
+	case "a":
 		return s.handleAddAction()
-	case key.Matches(msg, s.keys.Edit):
+	case "e":
 		return s.handleEditAction()
-	case key.Matches(msg, s.keys.Delete):
+	case "d":
 		return s.handleDeleteAction()
 	}
 	return nil, nil
