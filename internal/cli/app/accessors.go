@@ -1,20 +1,15 @@
 package app
 
-import (
-	"github.com/baphled/kariya/internal/cli/intents"
-)
+import "github.com/baphled/kariya/internal/cli/intents"
 
-// SetInitialScreen sets the initial screen to display.
-// This must be called before Init() to take effect.
-// When set to ListScreen, the app will start in browse_timeline intent.
+// SetInitialScreen sets the screen to navigate to after Init.
+// Must be called before Init.
 func (m *Model) SetInitialScreen(screen Screen) {
 	m.initialScreen = screen
 }
 
-// SetInitialCaptureMode sets the initial capture mode for CaptureEvent intent.
-// This must be called before Init() to take effect.
-// When set, the app will start in capture_event intent with the specified mode.
-// Valid modes: "manual", "burst", "csv".
+// SetInitialCaptureMode sets the capture mode to use when navigating directly
+// to capture_event. Must be called before Init.
 func (m *Model) SetInitialCaptureMode(mode string) {
 	m.initialCaptureMode = mode
 }
@@ -24,7 +19,18 @@ func (m *Model) GetState() AppState {
 	return m.state
 }
 
-// GetActiveIntent returns the currently active intent.
+// GetActiveIntent returns the currently active intent from the router.
 func (m *Model) GetActiveIntent() intents.Intent {
 	return m.intentRouter.GetActiveIntent()
+}
+
+// GetIntentRouter returns the intent router (for testing purposes).
+func (m *Model) GetIntentRouter() *intents.DefaultIntentRouter {
+	return m.intentRouter
+}
+
+// SetStateForTesting allows tests to set the app state directly.
+// This should only be used in tests to trigger edge cases.
+func (m *Model) SetStateForTesting(state AppState) {
+	m.state = state
 }

@@ -15,27 +15,56 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// ModelOption is a functional option for configuring the Model.
+type ModelOption func(*modelOptions)
+
+type modelOptions struct {
+	registrar IntentRegistrar
+}
+
+// WithIntentRegistrar sets a custom intent registrar (useful for testing).
+func WithIntentRegistrar(registrar IntentRegistrar) ModelOption {
+	return func(o *modelOptions) {
+		o.registrar = registrar
+	}
+}
+
 // NewModel creates and initializes a new application model.
 // Bootstrap must be run first to handle onboarding and service initialization.
 func NewModel(
 	cliService *service.CLIEventService,
 	careerService *careerservice.Service,
 	bootstrapResult *bootstrap.Result,
+	opts ...ModelOption,
 ) *Model {
 	ctx := context.Background()
 	log := logger.DefaultLogger()
 
+	// Apply options.
+	options := &modelOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	// Initialize intent router.
 	router := intents.NewDefaultIntentRouter()
-	regCfg := &registrationConfig{
-		router:          router,
-		cliService:      cliService,
-		careerService:   careerService,
-		log:             log,
-		cvGenService:    bootstrapResult.Services.CVGenService,
-		cvExportService: bootstrapResult.Services.CVExportService,
+
+	// Use provided registrar or create default.
+	registrar := options.registrar
+	if registrar == nil {
+		registrar = NewDefaultIntentRegistrar(&RegistrarConfig{
+			CLIService:      cliService,
+			CareerService:   careerService,
+			Log:             log,
+			CVGenService:    bootstrapResult.Services.CVGenService,
+			CVExportService: bootstrapResult.Services.CVExportService,
+		})
 	}
-	registerAllIntents(ctx, regCfg)
+
+	// Register all intents.
+	if err := registrar.RegisterAll(ctx, router); err != nil {
+		log.Error("Failed to register intents: %v", err)
+	}
 
 	// Create menu items for all intents.
 	menuItems := []MenuItem{
