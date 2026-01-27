@@ -38,8 +38,8 @@ type ExportData struct {
 	Location string // "file" | "clipboard"
 }
 
-// NewExportOptionsModal creates a new export options modal.
-// width, height: Terminal dimensions for responsive sizing
+// NewExportOptionsModal creates a new export options modal
+// with the given terminal dimensions for responsive sizing.
 func NewExportOptionsModal(width, height int) *ExportOptionsModal {
 	modal := &ExportOptionsModal{
 		data: &ExportData{

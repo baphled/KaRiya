@@ -2183,6 +2183,7 @@ func (i *ManageSkillsIntent) HandleNavigate(result *screens.NavigateResult) tea.
 		return i.handleErrorInternal(fmt.Errorf("invalid navigation data: expected map, got %T", data))
 	}
 
+	//nolint:errcheck // Type assertion intentionally ignored - empty string will fall through to default case.
 	target, _ := dataMap["target"].(string)
 	skillData := dataMap["data"]
 

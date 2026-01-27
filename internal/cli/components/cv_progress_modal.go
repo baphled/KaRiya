@@ -42,11 +42,8 @@ type SpinnerTickMsg struct{}
 // spinnerFrames defines the 10-frame spinner animation.
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-// NewCVProgressModal creates a new progress modal.
-// title: Main title text
-// subtitle: Descriptive subtitle text
-// cancellable: Whether user can press Esc to cancel
-// width, height: Terminal dimensions
+// NewCVProgressModal creates a new progress modal with the given title,
+// subtitle, cancellable flag, and terminal dimensions.
 func NewCVProgressModal(title, subtitle string, cancellable bool, width, height int) *CVProgressModal {
 	return &CVProgressModal{
 		title:       title,

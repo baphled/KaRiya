@@ -6,7 +6,7 @@ package navigation
 type NavigationKey string
 
 const (
-	// Primary navigation keys
+	// Primary navigation keys.
 	KeyBack   NavigationKey = "Esc"   // Go back to previous screen
 	KeyUp     NavigationKey = "↑/k"   // Navigate up in lists, menus, or forms
 	KeyDown   NavigationKey = "↓/j"   // Navigate down in lists, menus, or forms
@@ -15,7 +15,7 @@ const (
 	KeySelect NavigationKey = "Enter" // Confirm selection or submit form
 	KeyToggle NavigationKey = "Space" // Toggle checkbox, tag, or item selection
 
-	// Action keys
+	// Action keys.
 	KeyFilter   NavigationKey = "f" // Show/toggle filters
 	KeySort     NavigationKey = "s" // Show/toggle sort options
 	KeySearch   NavigationKey = "/" // Show/toggle search
@@ -33,7 +33,7 @@ const (
 	KeyGenerate NavigationKey = "g" // Generate CV from configurations
 )
 
-// AllNavigationKeys returns a slice of all defined navigation keys
+// AllNavigationKeys returns a slice of all defined navigation keys.
 func AllNavigationKeys() []NavigationKey {
 	return []NavigationKey{
 		KeyBack,
@@ -61,7 +61,7 @@ func AllNavigationKeys() []NavigationKey {
 	}
 }
 
-// KeyDescription provides a human-readable description of each navigation key
+// KeyDescription provides a human-readable description of each navigation key.
 var KeyDescription = map[NavigationKey]string{
 	KeyBack:     "Go back to previous screen",
 	KeyUp:       "Navigate up (also j)",

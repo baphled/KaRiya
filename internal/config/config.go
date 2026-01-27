@@ -63,7 +63,7 @@ func requireTestIsolation(operation string) {
 	}
 }
 
-// Config represents the application configuration
+// Config represents the application configuration.
 type Config struct {
 	System  SystemConfig  `yaml:"system"`
 	Profile ProfileConfig `yaml:"profile"`
@@ -73,7 +73,7 @@ type Config struct {
 	Scoring ScoringConfig `yaml:"scoring"`
 }
 
-// SystemConfig contains system-level configuration
+// SystemConfig contains system-level configuration.
 type SystemConfig struct {
 	DataDir     string `yaml:"data_dir"`
 	LogLevel    string `yaml:"log_level"`
@@ -81,7 +81,7 @@ type SystemConfig struct {
 	BackupCount int    `yaml:"backup_count"`
 }
 
-// ProfileConfig contains user profile configuration
+// ProfileConfig contains user profile configuration.
 type ProfileConfig struct {
 	Name            string `yaml:"name"`
 	Email           string `yaml:"email"`
@@ -100,14 +100,14 @@ type ProfileConfig struct {
 	WhatIBring    []string `yaml:"what_i_bring"`   // List of value propositions
 }
 
-// CVConfig contains CV generation configuration
+// CVConfig contains CV generation configuration.
 type CVConfig struct {
 	DefaultFormat   string                `yaml:"default_format"`
 	MaxBullets      int                   `yaml:"max_bullets"`
 	AudienceBullets AudienceBulletsConfig `yaml:"audience_bullets"`
 }
 
-// AudienceBulletsConfig defines bullets per company for each audience type
+// AudienceBulletsConfig defines bullets per company for each audience type.
 type AudienceBulletsConfig struct {
 	Recruiter     int `yaml:"recruiter"`      // Bullets per company for recruiters (default: 4)
 	HiringManager int `yaml:"hiring_manager"` // Bullets per company for hiring managers (default: 6)

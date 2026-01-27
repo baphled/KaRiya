@@ -2,13 +2,13 @@ package selectors
 
 import "fmt"
 
-// AudienceRelevanceSelector manages selection of audience types for facts
+// AudienceRelevanceSelector manages selection of audience types for facts.
 type AudienceRelevanceSelector struct {
 	selected map[string]bool
 	options  []string
 }
 
-// NewAudienceRelevanceSelector creates a new audience relevance selector
+// NewAudienceRelevanceSelector creates a new audience relevance selector.
 func NewAudienceRelevanceSelector() *AudienceRelevanceSelector {
 	return &AudienceRelevanceSelector{
 		selected: make(map[string]bool),
@@ -16,7 +16,7 @@ func NewAudienceRelevanceSelector() *AudienceRelevanceSelector {
 	}
 }
 
-// SetSelected sets the selected audience types
+// SetSelected sets the selected audience types.
 func (a *AudienceRelevanceSelector) SetSelected(audiences []string) {
 	a.selected = make(map[string]bool)
 	for _, aud := range audiences {
@@ -24,7 +24,7 @@ func (a *AudienceRelevanceSelector) SetSelected(audiences []string) {
 	}
 }
 
-// GetSelected returns the list of selected audience types
+// GetSelected returns the list of selected audience types.
 func (a *AudienceRelevanceSelector) GetSelected() []string {
 	var result []string
 	for _, opt := range a.options {
@@ -35,7 +35,7 @@ func (a *AudienceRelevanceSelector) GetSelected() []string {
 	return result
 }
 
-// IsSelected checks if an audience type is selected
+// IsSelected checks if an audience type is selected.
 func (a *AudienceRelevanceSelector) IsSelected(audience string) bool {
 	return a.selected[audience]
 }

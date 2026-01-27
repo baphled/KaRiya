@@ -114,7 +114,7 @@ func (m *MemoryConfigManager) DeleteConfig(_ context.Context, name string) error
 }
 
 // ListConfigs returns all configurations.
-func (m *MemoryConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig, error) {
+func (m *MemoryConfigManager) ListConfigs(_ context.Context) ([]*career.CVConfig, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -133,7 +133,7 @@ func (m *MemoryConfigManager) GetConfigPath(name string) string {
 }
 
 // ConfigExists checks if a configuration exists.
-func (m *MemoryConfigManager) ConfigExists(ctx context.Context, name string) (bool, error) {
+func (m *MemoryConfigManager) ConfigExists(_ context.Context, name string) (bool, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 

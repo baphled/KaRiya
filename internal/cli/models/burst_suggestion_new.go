@@ -18,11 +18,12 @@ import (
 )
 
 // BurstSuggestionModelNew represents the burst suggestion review and confirmation screen using huh forms.
+//
 // This model uses the huh library for the edit mode, providing:
-// - Automatic focus management during editing
-// - Built-in validation
-// - Catppuccin theming
-// - Consistent keyboard navigation
+//   - Automatic focus management during editing
+//   - Built-in validation
+//   - Catppuccin theming
+//   - Consistent keyboard navigation.
 type BurstSuggestionModelNew struct {
 	*BaseStandardModel
 	service       *careerservice.Service
@@ -64,12 +65,12 @@ func NewBurstSuggestionModelNew(
 	}
 }
 
-// Init initializes the model
+// Init initializes the model.
 func (m *BurstSuggestionModelNew) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages
+// Update handles messages.
 func (m *BurstSuggestionModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -84,7 +85,7 @@ func (m *BurstSuggestionModelNew) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleKeyMsg processes keyboard input
+// handleKeyMsg processes keyboard input.
 func (m *BurstSuggestionModelNew) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.editing {
 		return m.handleEditKeyMsg(msg)
@@ -124,7 +125,7 @@ func (m *BurstSuggestionModelNew) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.C
 	return m, nil
 }
 
-// handleEditKeyMsg handles keyboard input while editing name/description using huh form
+// handleEditKeyMsg handles keyboard input while editing name/description using huh form.
 func (m *BurstSuggestionModelNew) handleEditKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.editForm == nil {
 		// Shouldn't happen, but safety check
