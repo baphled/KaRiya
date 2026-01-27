@@ -101,6 +101,14 @@ var _ = Describe("AddEditModal", func() {
 				view := modal.View()
 				Expect(view).To(ContainSubstring("Skill Name"))
 			})
+
+			It("displays keyboard shortcuts in footer (KeyBadge pattern)", func() {
+				view := modal.View()
+				// Verify the footer contains expected keyboard hints.
+				Expect(view).To(ContainSubstring("Tab"))
+				Expect(view).To(ContainSubstring("Enter"))
+				Expect(view).To(ContainSubstring("Esc"))
+			})
 		})
 
 		Context("when not visible", func() {

@@ -7,6 +7,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -150,10 +151,24 @@ func (m *AddEditModal) View() string {
 		return ""
 	}
 
-	// Wrap the form in a styled box with solid background using UIKit
 	theme := themes.NewDefaultTheme()
+
+	// Build footer with primitives showing keyboard shortcuts.
+	footer := primitives.RenderHelpFooter(theme,
+		primitives.NextFieldBadge(theme),
+		primitives.SubmitBadge(theme),
+		primitives.CancelBadge(theme),
+	)
+
+	// Build modal content with form and footer.
+	var content strings.Builder
+	content.WriteString(m.form.View())
+	content.WriteString("\n\n")
+	content.WriteString(footer)
+
+	// Wrap the form in a styled box with solid background using UIKit.
 	return containers.NewBox(theme).
-		Content(m.form.View()).
+		Content(content.String()).
 		Padding(2).
 		Background(theme.BackgroundColor()).
 		Render()
