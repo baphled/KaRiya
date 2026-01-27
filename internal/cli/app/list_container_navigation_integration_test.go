@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -63,8 +65,9 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 		//nolint:errcheck // Test setup - error handling not relevant.
 		factRepo.Create(context.Background(), fixtures.Fact("f1", "e1"))
 
-		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding()
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
 		Expect(model).NotTo(BeNil())
 	})
 

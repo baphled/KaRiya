@@ -86,12 +86,6 @@ func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 			// Cancel - go back
 			return nil, &screens.CancelResult{}
 
-		case "m":
-			// Main menu - cancel intent entirely
-			result := &screens.CancelResult{}
-			result.WithMetadata("main_menu", true)
-			return nil, result
-
 		case "enter":
 			// Confirm current selection
 			// Index 0 = Save Changes (true), Index 1 = Cancel (false)
@@ -149,7 +143,6 @@ func (s *ConfirmScreen) View() string {
 		primitives.ConfirmBadge(theme),
 		primitives.ToggleBadge(theme),
 		primitives.BackBadge(theme),
-		primitives.MenuBadge(theme),
 	)
 
 	// Use BaseScreen.CreateView() for StandardView integration

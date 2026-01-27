@@ -471,22 +471,6 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 			Expect(result.Status).To(Equal(Cancelled))
 		})
 
-		It("should return to main menu on 'm' key", func() {
-			// Start in wizard
-			intent.Init()
-
-			// Press 'm'
-			menuMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}}
-			intent.Update(menuMsg)
-
-			// Should have result indicating navigation
-			result := intent.Result()
-			Expect(result).NotTo(BeNil())
-			Expect(result.Status).To(Or(
-				Equal(Cancelled),
-				Equal(Failed),
-			))
-		})
 	})
 
 	Describe("E2E: Window Resize Handling", func() {
@@ -969,7 +953,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 		})
 	})
 
-	Describe("Global Keys: q, m, Ctrl+C work everywhere", func() {
+	Describe("Global Keys: q, Ctrl+C work everywhere", func() {
 		testGlobalKeys := func(stateName string, setupFunc func()) {
 			Context("in "+stateName+" state", func() {
 				BeforeEach(func() {
@@ -987,14 +971,6 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 
 				It("should cancel on q key", func() {
 					intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-
-					result := intent.Result()
-					Expect(result).NotTo(BeNil())
-					Expect(result.Status).To(Equal(Cancelled))
-				})
-
-				It("should cancel on m key (return to menu)", func() {
-					intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
 
 					result := intent.Result()
 					Expect(result).NotTo(BeNil())

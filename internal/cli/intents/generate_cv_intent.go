@@ -376,10 +376,6 @@ func (i *GenerateCVIntent) updateWizardFlow(msg tea.Msg) tea.Cmd {
 			// Quit with cancellation
 			i.setCancelled()
 			return tea.Quit
-		case "m":
-			// Return to main menu (cancel intent)
-			i.setCancelled()
-			return nil
 		case "?", "h":
 			i.ToggleHelp()
 			return nil

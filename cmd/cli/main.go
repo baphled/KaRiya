@@ -12,8 +12,10 @@ import (
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/importer"
 	cliservice "github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -194,8 +196,20 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		return handleNonInteractiveImport(importPath, importSkip, reviewFacts, svc, out, errOut)
 	}
 
-	// Initialize application model
-	model := app.NewModel(cliSvc, svc)
+	// Run bootstrap (handles onboarding and service initialization)
+	log := logger.DefaultLogger()
+	bootstrapResult, err := bootstrap.Run(svc, log)
+	if err != nil {
+		// User aborted onboarding (Ctrl+C) - exit gracefully.
+		if errors.Is(err, bootstrap.ErrUserAborted) {
+			return 0
+		}
+		fmt.Fprintf(errOut, "Error during bootstrap: %v\n", err)
+		return 1
+	}
+
+	// Initialize application model with bootstrap results
+	model := app.NewModel(cliSvc, svc, bootstrapResult)
 
 	if mode != "" {
 		model.SetInitialCaptureMode(mode)
