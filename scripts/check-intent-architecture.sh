@@ -21,15 +21,27 @@ WARNINGS=0
 
 # Determine which files to check
 if [ $# -gt 0 ]; then
-    # Files passed as arguments - only check those
-    INTENT_FILES="$*"
+    # Files passed as arguments - filter to only intent .go files
+    INTENT_FILES=""
+    for arg in "$@"; do
+        # Only include .go files in intents/ directory (not test files)
+        if [[ "$arg" == internal/cli/intents/*.go && "$arg" != *_test.go ]]; then
+            INTENT_FILES="$INTENT_FILES $arg"
+        fi
+    done
+    INTENT_FILES=$(echo "$INTENT_FILES" | xargs)  # Trim whitespace
+    
     CHECK_MODE="changed"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🏛️  INTENT ARCHITECTURE ENFORCEMENT (Changed Files)"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "Checking ${#} changed files..."
+    if [ -z "$INTENT_FILES" ]; then
+        echo "No intent files in changed files. Running global checks only..."
+    else
+        echo "Checking intent files: $INTENT_FILES"
+    fi
     echo ""
 else
     # No arguments - scan all intent files
@@ -1231,13 +1243,415 @@ fi
 echo ""
 
 # ============================================
+# 24. MODAL STRUCTS IN INTENTS PACKAGE
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "24. MODAL STRUCTS IN INTENTS PACKAGE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check for modal structs defined ANYWHERE in intents/ package (not just *_intent.go)
+INTENTS_ALL_FILES=$(find internal/cli/intents -name "*.go" -not -name "*_test.go" 2>/dev/null || true)
+
+for file in $INTENTS_ALL_FILES; do
+    # Skip subdirectory intent files (they're checked by other rules)
+    FILENAME=$(basename "$file")
+    DIRNAME=$(dirname "$file")
+    
+    # Check for modal struct definitions
+    MODAL_STRUCTS=$(grep "^type.*Modal struct" "$file" 2>/dev/null || true)
+    
+    if [ -n "$MODAL_STRUCTS" ]; then
+        echo -e "${RED}❌ VIOLATION: Modal struct defined in intents package${NC}"
+        echo "   File: $file"
+        echo ""
+        echo "   Found:"
+        echo "$MODAL_STRUCTS" | sed 's/^/   /'
+        echo ""
+        echo "   Rule: Modal structs MUST NOT be in intents/ package"
+        echo ""
+        echo "   Allowed locations:"
+        echo "   - internal/cli/uikit/feedback/    (reusable modals)"
+        echo "   - internal/cli/screens/*/modals/  (feature-specific modals)"
+        echo "   - internal/cli/components/        (legacy, deprecated)"
+        echo ""
+        echo "   Required action:"
+        echo "   1. Create screens/{feature}/modals/ directory"
+        echo "   2. Move modal struct to {action}_modal.go"
+        echo "   3. Update imports in intent"
+        echo "   4. Delete original file if empty"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ No modal structs in intents package${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 25. HUH IMPORT LOCATION
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "25. HUH IMPORT LOCATION"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# huh should ONLY be imported in forms/ package
+# Check intents/ for violations
+HUH_IN_INTENTS=$(grep -l "github.com/charmbracelet/huh" internal/cli/intents/*.go internal/cli/intents/**/*.go 2>/dev/null | grep -v "_test.go" || true)
+
+if [ -n "$HUH_IN_INTENTS" ]; then
+    echo -e "${RED}❌ VIOLATION: Direct huh import in intents package${NC}"
+    echo ""
+    echo "   Files with violation:"
+    echo "$HUH_IN_INTENTS" | sed 's/^/   - /'
+    echo ""
+    echo "   Rule: huh library must ONLY be imported in forms/ package"
+    echo ""
+    echo "   WRONG: import \"github.com/charmbracelet/huh\" (in intents/)"
+    echo "   RIGHT: import \"github.com/baphled/kariya/internal/cli/forms\""
+    echo ""
+    echo "   Use forms package utilities:"
+    echo "   - forms.NewInput(), forms.NewSelect(), etc."
+    echo "   - forms.IsCompleted(form), forms.IsAborted(form)"
+    echo "   - forms.NewForm(groups...)"
+    echo ""
+    VIOLATIONS=$((VIOLATIONS+1))
+fi
+
+# Check screens/ for violations (allowed in screens/*/modals/ for form-based modals)
+HUH_IN_SCREENS=$(grep -l "github.com/charmbracelet/huh" internal/cli/screens/*.go internal/cli/screens/**/*.go 2>/dev/null | grep -v "_test.go" | grep -v "/modals/" || true)
+
+if [ -n "$HUH_IN_SCREENS" ]; then
+    echo -e "${YELLOW}⚠️  WARNING: Direct huh import in screens package${NC}"
+    echo ""
+    echo "   Files:"
+    echo "$HUH_IN_SCREENS" | sed 's/^/   - /'
+    echo ""
+    echo "   Note: huh import is allowed in screens/*/modals/ for form-based modals"
+    echo "   Recommendation: Use forms/ package utilities where possible"
+    echo ""
+    WARNINGS=$((WARNINGS+1))
+fi
+
+if [ -z "$HUH_IN_INTENTS" ] && [ -z "$HUH_IN_SCREENS" ]; then
+    echo -e "${GREEN}✅ huh imports in correct locations${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 26. RENDER METHODS IN HELPERS.GO
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "26. RENDER METHODS IN HELPERS.GO"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check helpers.go files in subdirectory intents for render methods
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        HELPERS_FILE="$intent_dir/helpers.go"
+        INTENT_NAME=$(basename "$intent_dir")
+        
+        if [ -f "$HELPERS_FILE" ]; then
+            # Count render/view content methods
+            RENDER_METHODS=$(grep -E "func.*\) get.*Content|func.*\) render|func.*\) view" "$HELPERS_FILE" 2>/dev/null | wc -l)
+            
+            if [ "$RENDER_METHODS" -gt 2 ]; then
+                echo -e "${RED}❌ VIOLATION: Too many render methods in helpers.go${NC}"
+                echo "   File: $HELPERS_FILE ($RENDER_METHODS render methods)"
+                echo "   Rule: Render logic must be in screens/ package"
+                echo ""
+                echo "   Found methods:"
+                grep -nE "func.*\) get.*Content|func.*\) render|func.*\) view" "$HELPERS_FILE" 2>/dev/null | head -10 | sed 's/^/   /' || true
+                echo ""
+                echo "   Required action:"
+                echo "   1. Create screens/$INTENT_NAME/ directory"
+                echo "   2. Create screen files (list.go, detail.go, form.go)"
+                echo "   3. Move render methods to appropriate screens"
+                echo "   4. Update intent to delegate to screens"
+                echo ""
+                echo "   Naming convention:"
+                echo "   - screens/$INTENT_NAME/list.go    -> {Entity}ListScreen"
+                echo "   - screens/$INTENT_NAME/detail.go  -> {Entity}DetailScreen"
+                echo "   - screens/$INTENT_NAME/form.go    -> {Entity}FormScreen"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        fi
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ No excessive render methods in helpers.go${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 27. SCREENS EXISTENCE FOR MULTI-STATE INTENTS
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "27. SCREENS EXISTENCE FOR MULTI-STATE INTENTS"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Intents with 2+ states MUST have screens extracted
+if [ -n "$SUBDIRS" ]; then
+    for intent_dir in $SUBDIRS; do
+        INTENT_NAME=$(basename "$intent_dir")
+        CONSTANTS_FILE="$intent_dir/constants.go"
+        
+        if [ -f "$CONSTANTS_FILE" ]; then
+            # Count state constants (State... = "...")
+            STATE_COUNT=$(grep -c "State.*=.*\"" "$CONSTANTS_FILE" 2>/dev/null || echo 0)
+            
+            if [ "$STATE_COUNT" -ge 2 ]; then
+                # Multiple states - check for corresponding screens directory
+                # Try various naming conventions
+                FOUND_SCREENS=false
+                
+                # Direct match: fact_management -> screens/fact_management/
+                if [ -d "internal/cli/screens/$INTENT_NAME" ]; then
+                    FOUND_SCREENS=true
+                fi
+                
+                # Without _management suffix: burst_management -> screens/burst/
+                SHORT_NAME=$(echo "$INTENT_NAME" | sed 's/_management$//' | sed 's/_intent$//')
+                if [ -d "internal/cli/screens/$SHORT_NAME" ]; then
+                    FOUND_SCREENS=true
+                fi
+                
+                # browse_timeline -> screens/timeline/
+                BROWSE_NAME=$(echo "$INTENT_NAME" | sed 's/^browse_//')
+                if [ -d "internal/cli/screens/$BROWSE_NAME" ]; then
+                    FOUND_SCREENS=true
+                fi
+                
+                # manage_skills -> screens/skills/
+                MANAGE_NAME=$(echo "$INTENT_NAME" | sed 's/^manage_//')
+                if [ -d "internal/cli/screens/$MANAGE_NAME" ]; then
+                    FOUND_SCREENS=true
+                fi
+                
+                if [ "$FOUND_SCREENS" = false ]; then
+                    echo -e "${RED}❌ VIOLATION: Intent has $STATE_COUNT states but no screens directory${NC}"
+                    echo "   Intent: $INTENT_NAME"
+                    echo "   States: $STATE_COUNT"
+                    echo ""
+                    echo "   Rule: Intents with 2+ states MUST have extracted screens"
+                    echo ""
+                    echo "   Required action:"
+                    echo "   1. Create internal/cli/screens/$INTENT_NAME/"
+                    echo "   2. Create screen files for each state:"
+                    grep "State.*=.*\"" "$CONSTANTS_FILE" 2>/dev/null | head -10 | while read -r line; do
+                        STATE=$(echo "$line" | grep -oP 'State\w+' | head -1)
+                        echo "      - $STATE -> corresponding screen"
+                    done
+                    echo "   3. Extract render methods from helpers.go to screens"
+                    echo "   4. Update intent to orchestrate screens"
+                    echo ""
+                    VIOLATIONS=$((VIOLATIONS+1))
+                fi
+            fi
+        fi
+    done
+fi
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ All multi-state intents have screens${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 28. MODAL AND SCREEN LOCATION VALIDATION
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "28. MODAL AND SCREEN LOCATION VALIDATION"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check for Screen structs in wrong locations
+SCREEN_WRONG_LOCATIONS=$(find internal/cli -name "*.go" -not -path "*/screens/*" -not -name "*_test.go" -exec grep -l "^type.*Screen struct" {} \; 2>/dev/null || true)
+
+if [ -n "$SCREEN_WRONG_LOCATIONS" ]; then
+    echo -e "${RED}❌ VIOLATION: Screen struct defined outside screens/ package${NC}"
+    echo ""
+    echo "   Files with violation:"
+    echo "$SCREEN_WRONG_LOCATIONS" | sed 's/^/   - /'
+    echo ""
+    echo "   Rule: Screen structs MUST be in internal/cli/screens/*/"
+    echo ""
+    echo "   Naming convention:"
+    echo "   - File: screens/{feature}/{type}.go (e.g., screens/facts/list.go)"
+    echo "   - Struct: {Entity}{Type}Screen (e.g., FactListScreen)"
+    echo "   - Constructor: New{Entity}{Type}Screen()"
+    echo ""
+    VIOLATIONS=$((VIOLATIONS+1))
+fi
+
+# Check for Modal structs in wrong locations (excluding allowed locations)
+MODAL_WRONG_LOCATIONS=$(find internal/cli -name "*.go" \
+    -not -path "*/uikit/feedback/*" \
+    -not -path "*/screens/*/modals/*" \
+    -not -path "*/components/*" \
+    -not -name "*_test.go" \
+    -exec grep -l "^type.*Modal struct" {} \; 2>/dev/null || true)
+
+if [ -n "$MODAL_WRONG_LOCATIONS" ]; then
+    echo -e "${RED}❌ VIOLATION: Modal struct defined in wrong location${NC}"
+    echo ""
+    echo "   Files with violation:"
+    echo "$MODAL_WRONG_LOCATIONS" | sed 's/^/   - /'
+    echo ""
+    echo "   Rule: Modal structs must be in allowed locations only"
+    echo ""
+    echo "   Allowed locations:"
+    echo "   - internal/cli/uikit/feedback/     (reusable modals)"
+    echo "   - internal/cli/screens/*/modals/   (feature-specific modals)"
+    echo "   - internal/cli/components/         (legacy, deprecated)"
+    echo ""
+    echo "   Naming convention:"
+    echo "   - File: {action}_modal.go (e.g., edit_modal.go)"
+    echo "   - Struct: {Action}Modal (e.g., EditModal)"
+    echo "   - Constructor: New{Action}Modal()"
+    echo ""
+    VIOLATIONS=$((VIOLATIONS+1))
+fi
+
+if [ -z "$SCREEN_WRONG_LOCATIONS" ] && [ -z "$MODAL_WRONG_LOCATIONS" ]; then
+    echo -e "${GREEN}✅ All screens and modals in correct locations${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 29. NAMING CONVENTION ENFORCEMENT
+# ============================================
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "29. NAMING CONVENTION ENFORCEMENT"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check screen struct naming (must end with "Screen")
+# Exclude: base/, contract.go, helpers.go, modals/, *_modal.go
+SCREEN_FILES=$(find internal/cli/screens -name "*.go" \
+    -not -name "*_test.go" \
+    -not -path "*/modals/*" \
+    -not -path "*/base/*" \
+    -not -name "helpers.go" \
+    -not -name "contract.go" \
+    -not -name "*_modal.go" \
+    2>/dev/null || true)
+
+for screen_file in $SCREEN_FILES; do
+    # Find struct definitions
+    STRUCTS=$(grep "^type.*struct" "$screen_file" 2>/dev/null | grep -v "//" || true)
+    
+    if [ -n "$STRUCTS" ]; then
+        while IFS= read -r struct_line; do
+            STRUCT_NAME=$(echo "$struct_line" | awk '{print $2}')
+            
+            # Skip helper/data types (common suffixes that are NOT screens)
+            if [[ "$STRUCT_NAME" =~ ^Base || \
+                  "$STRUCT_NAME" =~ Config$ || \
+                  "$STRUCT_NAME" =~ Options$ || \
+                  "$STRUCT_NAME" =~ Option$ || \
+                  "$STRUCT_NAME" =~ Data$ || \
+                  "$STRUCT_NAME" =~ Result$ || \
+                  "$STRUCT_NAME" =~ Stats$ || \
+                  "$STRUCT_NAME" =~ Filters$ || \
+                  "$STRUCT_NAME" =~ State$ || \
+                  "$STRUCT_NAME" =~ Context$ || \
+                  "$STRUCT_NAME" =~ Params$ || \
+                  "$STRUCT_NAME" =~ Info$ || \
+                  "$STRUCT_NAME" =~ Item$ || \
+                  "$STRUCT_NAME" =~ Msg$ || \
+                  "$STRUCT_NAME" =~ Modal$ ]]; then
+                continue
+            fi
+            
+            # Check if struct name ends with "Screen"
+            if [[ ! "$STRUCT_NAME" =~ Screen$ ]]; then
+                echo -e "${RED}❌ VIOLATION: Screen struct missing 'Screen' suffix${NC}"
+                echo "   File: $screen_file"
+                echo "   Struct: $STRUCT_NAME"
+                echo "   Rule: Screen structs must end with 'Screen'"
+                echo ""
+                echo "   Required: ${STRUCT_NAME}Screen"
+                echo ""
+                VIOLATIONS=$((VIOLATIONS+1))
+            fi
+        done <<< "$STRUCTS"
+    fi
+done
+
+# Check modal file naming and struct naming
+# Only check *_modal.go files in modals/ directories and uikit/feedback/
+MODAL_FILES=$(find internal/cli/screens -path "*/modals/*" -name "*_modal.go" -not -name "*_test.go" 2>/dev/null || true)
+FEEDBACK_MODAL_FILES=$(find internal/cli/uikit/feedback -name "*_modal.go" -not -name "*_test.go" 2>/dev/null || true)
+
+# Check for multiple MODAL structs in modal files (one modal per file rule)
+# Data structs (Config, Data, Filters, etc.) are allowed alongside the modal
+for modal_file in $MODAL_FILES $FEEDBACK_MODAL_FILES; do
+    if [ -n "$modal_file" ] && [ -f "$modal_file" ]; then
+        FILENAME=$(basename "$modal_file")
+        
+        # Skip helpers.go
+        if [[ "$FILENAME" == "helpers.go" ]]; then
+            continue
+        fi
+        
+        # Count only structs ending with "Modal" (the actual modal structs)
+        MODAL_STRUCT_COUNT=$(grep -c "^type.*Modal struct" "$modal_file" 2>/dev/null || echo 0)
+        
+        if [ "$MODAL_STRUCT_COUNT" -gt 1 ]; then
+            echo -e "${RED}❌ VIOLATION: Multiple modal structs in single file${NC}"
+            echo "   File: $modal_file ($MODAL_STRUCT_COUNT modal structs)"
+            echo "   Rule: One modal struct per file (data structs are allowed)"
+            echo ""
+            echo "   Found modal structs:"
+            grep "^type.*Modal struct" "$modal_file" 2>/dev/null | sed 's/^/   /' || true
+            echo ""
+            echo "   Required action: Split modal structs into separate files"
+            echo "   Note: Helper structs (Config, Data, Filters) can stay"
+            echo ""
+            VIOLATIONS=$((VIOLATIONS+1))
+        fi
+    fi
+done
+
+# Check screen package naming (must use underscore, not hyphen)
+SCREEN_DIRS=$(find internal/cli/screens -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
+
+for screen_dir in $SCREEN_DIRS; do
+    PKG_NAME=$(basename "$screen_dir")
+    
+    if [[ "$PKG_NAME" =~ - ]]; then
+        echo -e "${RED}❌ VIOLATION: Screen package uses hyphen${NC}"
+        echo "   Package: $screen_dir"
+        echo "   Rule: Use underscore for package names (e.g., fact_management/)"
+        echo ""
+        echo "   Found: $PKG_NAME"
+        echo "   Required: $(echo "$PKG_NAME" | tr '-' '_')"
+        echo ""
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+done
+
+if [ $VIOLATIONS -eq 0 ]; then
+    echo -e "${GREEN}✅ Naming conventions followed${NC}"
+fi
+
+echo ""
+
+# ============================================
 # SUMMARY
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📊 SUMMARY"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Total checks run: 23"
+echo "Total checks run: 29"
 echo "Violations: $VIOLATIONS"
 echo "Warnings: $WARNINGS"
 echo ""

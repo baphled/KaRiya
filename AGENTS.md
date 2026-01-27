@@ -347,7 +347,7 @@ screens/{feature}/
 
 Run before every commit:
 ```bash
-make check-intent-architecture  # Checks #17-23 enforce structure
+make check-intent-architecture  # Checks #17-29 enforce structure
 ```
 
 **Automated Checks**:
@@ -358,6 +358,12 @@ make check-intent-architecture  # Checks #17-23 enforce structure
 - **Check #21**: UIKit component usage
 - **Check #22**: Deprecated models package usage
 - **Check #23**: Screens directory structure
+- **Check #24**: Modal structs in intents/ package (blocks any modal in intents)
+- **Check #25**: huh import location (blocks huh import outside forms/)
+- **Check #26**: Render methods in helpers.go (blocks >2 render methods)
+- **Check #27**: Screens existence for multi-state intents (blocks 2+ states without screens)
+- **Check #28**: Modal/Screen location validation (blocks structs in wrong packages)
+- **Check #29**: Naming convention enforcement (blocks non-compliant names)
 
 #### AI Agent Behavior
 
@@ -410,8 +416,50 @@ The AI agent MUST refuse code that:
 - Creates modals without solid background
 - Mutates intent state from screen code
 - Has circular package dependencies
+- **Defines modal structs in `intents/` package** (must be in `screens/*/modals/` or `uikit/feedback/`)
+- **Defines screen structs outside `screens/` package**
+- **Has >2 render methods in helpers.go** (must extract to screens)
+- **Has 2+ states without screens directory** (must extract screens)
+- **Uses wrong naming conventions** (Screen suffix, Modal suffix, underscore packages)
 
 **Reference**: [Intent Architecture Guide](docs/INTENT_ARCHITECTURE_GUIDE.md)
+
+---
+
+### Naming Conventions (STRICTLY ENFORCED)
+
+#### Screen Naming
+
+| Aspect | Convention | Example |
+|--------|------------|---------|
+| Package | `screens/{feature_name}/` (underscore) | `screens/fact_management/` |
+| File | `{type}.go` | `list.go`, `detail.go`, `form.go` |
+| Struct | `{Entity}{Type}Screen` | `FactListScreen`, `FactDetailScreen` |
+| Constructor | `New{StructName}()` | `NewFactListScreen()` |
+
+**Screen Types**: `List`, `Detail`, `Form`, `Delete`, `Select`, `Confirm`, `Preview`, `Review`
+
+#### Modal Naming
+
+| Aspect | Convention | Example |
+|--------|------------|---------|
+| Package | `screens/{feature}/modals/` | `screens/fact_management/modals/` |
+| File | `{action}_modal.go` | `edit_modal.go`, `filter_modal.go` |
+| Struct | `{Action}Modal` | `EditModal`, `FilterModal` |
+| Constructor | `New{StructName}()` | `NewEditModal()` |
+
+**Modal Types**: `Edit`, `Filter`, `Sort`, `Search`, `Confirm`, `Delete`, `Detail`, `QuickAdd`
+
+**Allowed Modal Locations**:
+- `internal/cli/uikit/feedback/` (reusable modals)
+- `internal/cli/screens/{feature}/modals/` (feature-specific)
+- `internal/cli/components/` (legacy, deprecated)
+
+**FORBIDDEN Modal Locations**:
+- `internal/cli/intents/` - **NEVER**
+- `internal/cli/models/` - **NEVER**
+
+**Reference**: [Screen Naming](docs/conventions/SCREEN_NAMING.md), [Modal Naming](docs/conventions/MODAL_NAMING.md)
 
 ---
 
@@ -1100,6 +1148,8 @@ make ai-commit FILE=/tmp/commit.txt
 | Modals | [MODAL_PATTERNS.md](docs/MODAL_PATTERNS.md) |
 | Intent architecture | [INTENT_ARCHITECTURE_GUIDE.md](docs/INTENT_ARCHITECTURE_GUIDE.md) |
 | Error handling | [ERROR_HANDLING_GUIDE.md](docs/guides/ERROR_HANDLING_GUIDE.md) |
+| Screen naming | [SCREEN_NAMING.md](docs/conventions/SCREEN_NAMING.md) |
+| Modal naming | [MODAL_NAMING.md](docs/conventions/MODAL_NAMING.md) |
 
 ### Troubleshooting
 
