@@ -9,7 +9,8 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/google/uuid"
-	_ "modernc.org/sqlite"
+
+	_ "modernc.org/sqlite" // Register SQLite driver for database/sql.
 )
 
 // SQLiteBurstRepository provides a SQLite implementation of BurstRepository

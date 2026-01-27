@@ -48,7 +48,7 @@ func NewBurstDetector() *BurstDetector {
 // 4. Calculate confidence score for each cluster
 // 5. Filter by minimum confidence and return suggestions
 func (bd *BurstDetector) DetectBursts(
-	ctx context.Context,
+	_ context.Context,
 	events []career.CareerEvent,
 	opts *DetectionOptions,
 ) ([]BurstSuggestion, error) {

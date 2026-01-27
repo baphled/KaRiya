@@ -75,7 +75,7 @@ func (r *DefaultIntentRouter) RegisterResultHandler(intentName string, handler f
 
 // ActivateIntent activates an intent by name.
 // This is the ONLY way intents are activated, enforcing strict transition rules.
-func (r *DefaultIntentRouter) ActivateIntent(name string, context map[string]interface{}) (tea.Cmd, error) {
+func (r *DefaultIntentRouter) ActivateIntent(name string, _ map[string]interface{}) (tea.Cmd, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

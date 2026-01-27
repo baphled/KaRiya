@@ -233,10 +233,12 @@ var _ = Describe("ManageSkillsIntent", func() {
 				Service:         service,
 			}
 
-			// Delete all skills
+			// Delete all skills.
+			//nolint:errcheck // Test setup - error handling not relevant.
 			skills, _ := skillRepo.List(ctx, nil)
 			for _, skill := range skills {
-				_ = skillRepo.Delete(ctx, skill.ID)
+				//nolint:errcheck // Test setup - error handling not relevant.
+				skillRepo.Delete(ctx, skill.ID)
 			}
 
 			intent = intents.NewManageSkillsIntent(emptyCtx)
@@ -309,8 +311,8 @@ var _ = Describe("ManageSkillsIntent", func() {
 		})
 
 		It("should show event count for skills with events", func() {
-			// Create an event with a skill
-			eventDate, _ := time.Parse("2006-01-02", "2024-01-15")
+			// Create an event with a skill.
+			eventDate := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
 			testEvent := &domain.CareerEvent{
 				Text:   "Ruby implementation",
 				Date:   eventDate,
@@ -353,8 +355,8 @@ var _ = Describe("ManageSkillsIntent", func() {
 			msg := cmd()
 			intent.Update(msg)
 
-			// Create some events with skills for testing MinEvents filter
-			eventDate, _ := time.Parse("2006-01-02", "2024-01-15")
+			// Create some events with skills for testing MinEvents filter.
+			eventDate := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
 			// Create events associated with Ruby (3 events), Go (2 events)
 			for i := 0; i < 3; i++ {
 				event := &domain.CareerEvent{

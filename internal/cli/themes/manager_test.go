@@ -1,3 +1,4 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package themes_test
 
 import (
@@ -162,10 +163,10 @@ var _ = Describe("ThemeManager", func() {
 		It("should call multiple callbacks", func() {
 			callCount := 0
 
-			manager.OnChange(func(theme themes.Theme) {
+			manager.OnChange(func(_ themes.Theme) {
 				callCount++
 			})
-			manager.OnChange(func(theme themes.Theme) {
+			manager.OnChange(func(_ themes.Theme) {
 				callCount++
 			})
 
@@ -179,7 +180,7 @@ var _ = Describe("ThemeManager", func() {
 		It("should not call callback if SetActive fails", func() {
 			called := false
 
-			manager.OnChange(func(theme themes.Theme) {
+			manager.OnChange(func(_ themes.Theme) {
 				called = true
 			})
 
@@ -191,7 +192,7 @@ var _ = Describe("ThemeManager", func() {
 	Describe("RemoveChangeCallback", func() {
 		It("should remove a callback", func() {
 			callCount := 0
-			id := manager.OnChange(func(theme themes.Theme) {
+			id := manager.OnChange(func(_ themes.Theme) {
 				callCount++
 			})
 
@@ -236,7 +237,7 @@ var _ = Describe("ThemeManager", func() {
 	})
 })
 
-// Helper to create test themes
+// Helper to create test themes.
 func createTestTheme(name, description string) themes.Theme {
 	palette := &themes.ColorPalette{
 		Background:      lipgloss.Color("#000000"),

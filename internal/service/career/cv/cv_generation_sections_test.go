@@ -95,7 +95,7 @@ type TestEventRepository struct {
 	events []*career.CareerEvent
 }
 
-func (r *TestEventRepository) List(ctx context.Context, filters careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+func (r *TestEventRepository) List(_ context.Context, _ careerrepo.ListFilters) ([]*career.CareerEvent, error) {
 	return r.events, nil
 }
 

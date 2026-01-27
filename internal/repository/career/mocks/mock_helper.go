@@ -7,10 +7,10 @@ import (
 	repo "github.com/baphled/kariya/internal/repository/career"
 )
 
-// ListFilters is re-exported for test convenience
+// ListFilters is re-exported for test convenience.
 type ListFilters = repo.ListFilters
 
-// TestMockRepository is a test helper for mocking repository behavior
+// TestMockRepository is a test helper for mocking repository behavior.
 type TestMockRepository struct {
 	createErr     error
 	updateErr     error
@@ -32,7 +32,7 @@ type TestMockRepository struct {
 	countCalled   bool
 }
 
-// NewTestMockRepository creates a new behavior-based mock repository
+// NewTestMockRepository creates a new behavior-based mock repository.
 func NewTestMockRepository() *TestMockRepository {
 	return &TestMockRepository{
 		getByIDEvents: make(map[string]*career.CareerEvent),
@@ -40,28 +40,28 @@ func NewTestMockRepository() *TestMockRepository {
 	}
 }
 
-// SetCreateBehavior sets the error for Create calls
+// SetCreateBehavior sets the error for Create calls.
 func (m *TestMockRepository) SetCreateBehavior(err error) {
 	m.createErr = err
 }
 
-// SetUpdateBehavior sets the error for Update calls
+// SetUpdateBehavior sets the error for Update calls.
 func (m *TestMockRepository) SetUpdateBehavior(err error) {
 	m.updateErr = err
 }
 
-// SetDeleteBehavior sets the error for Delete calls
+// SetDeleteBehavior sets the error for Delete calls.
 func (m *TestMockRepository) SetDeleteBehavior(err error) {
 	m.deleteErr = err
 }
 
-// SetGetByIDBehavior sets the event and error for GetByID calls
+// SetGetByIDBehavior sets the event and error for GetByID calls.
 func (m *TestMockRepository) SetGetByIDBehavior(event *career.CareerEvent, err error) {
 	m.getByIDEvent = event
 	m.getByIDErr = err
 }
 
-// SetEventByID sets a specific event to be returned for a given ID
+// SetEventByID sets a specific event to be returned for a given ID.
 func (m *TestMockRepository) SetEventByID(eventID string, event *career.CareerEvent, err error) {
 	if event != nil {
 		m.getByIDEvents[eventID] = event
@@ -71,38 +71,38 @@ func (m *TestMockRepository) SetEventByID(eventID string, event *career.CareerEv
 	}
 }
 
-// SetListBehavior sets the events and error for List calls
+// SetListBehavior sets the events and error for List calls.
 func (m *TestMockRepository) SetListBehavior(events []*career.CareerEvent, err error) {
 	m.listEvents = events
 	m.listErr = err
 }
 
-// SetCountBehavior sets the count and error for Count calls
+// SetCountBehavior sets the count and error for Count calls.
 func (m *TestMockRepository) SetCountBehavior(count int, err error) {
 	m.countResult = count
 	m.countErr = err
 }
 
-// Create implements Repository interface
-func (m *TestMockRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+// Create implements Repository interface.
+func (m *TestMockRepository) Create(_ context.Context, _ *career.CareerEvent) error {
 	m.createCalled = true
 	return m.createErr
 }
 
-// Update implements Repository interface
-func (m *TestMockRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+// Update implements Repository interface.
+func (m *TestMockRepository) Update(_ context.Context, _ *career.CareerEvent) error {
 	m.updateCalled = true
 	return m.updateErr
 }
 
-// Delete implements Repository interface
-func (m *TestMockRepository) Delete(ctx context.Context, eventID string) error {
+// Delete implements Repository interface.
+func (m *TestMockRepository) Delete(_ context.Context, _ string) error {
 	m.deleteCalled = true
 	return m.deleteErr
 }
 
-// GetByID implements Repository interface
-func (m *TestMockRepository) GetByID(ctx context.Context, eventID string) (*career.CareerEvent, error) {
+// GetByID implements Repository interface.
+func (m *TestMockRepository) GetByID(_ context.Context, eventID string) (*career.CareerEvent, error) {
 	m.getByIDCalled = true
 
 	// Check for per-ID mocking first
@@ -117,44 +117,44 @@ func (m *TestMockRepository) GetByID(ctx context.Context, eventID string) (*care
 	return m.getByIDEvent, m.getByIDErr
 }
 
-// List implements Repository interface
-func (m *TestMockRepository) List(ctx context.Context, filters repo.ListFilters) ([]*career.CareerEvent, error) {
+// List implements Repository interface.
+func (m *TestMockRepository) List(_ context.Context, _ repo.ListFilters) ([]*career.CareerEvent, error) {
 	m.listCalled = true
 	return m.listEvents, m.listErr
 }
 
-// Count implements Repository interface
-func (m *TestMockRepository) Count(ctx context.Context, filters repo.ListFilters) (int, error) {
+// Count implements Repository interface.
+func (m *TestMockRepository) Count(_ context.Context, _ repo.ListFilters) (int, error) {
 	m.countCalled = true
 	return m.countResult, m.countErr
 }
 
-// CreateCalled returns whether Create was called
+// CreateCalled returns whether Create was called.
 func (m *TestMockRepository) CreateCalled() bool {
 	return m.createCalled
 }
 
-// UpdateCalled returns whether Update was called
+// UpdateCalled returns whether Update was called.
 func (m *TestMockRepository) UpdateCalled() bool {
 	return m.updateCalled
 }
 
-// DeleteCalled returns whether Delete was called
+// DeleteCalled returns whether Delete was called.
 func (m *TestMockRepository) DeleteCalled() bool {
 	return m.deleteCalled
 }
 
-// GetByIDCalled returns whether GetByID was called
+// GetByIDCalled returns whether GetByID was called.
 func (m *TestMockRepository) GetByIDCalled() bool {
 	return m.getByIDCalled
 }
 
-// ListCalled returns whether List was called
+// ListCalled returns whether List was called.
 func (m *TestMockRepository) ListCalled() bool {
 	return m.listCalled
 }
 
-// CountCalled returns whether Count was called
+// CountCalled returns whether Count was called.
 func (m *TestMockRepository) CountCalled() bool {
 	return m.countCalled
 }

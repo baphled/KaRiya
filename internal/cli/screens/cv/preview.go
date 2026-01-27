@@ -17,7 +17,7 @@ import (
 	cvservice "github.com/baphled/kariya/internal/service/career/cv"
 )
 
-// CVPreviewState represents the internal state constant for this screen
+// CVPreviewState represents the internal state constant for this screen.
 const CVPreviewState = "preview"
 
 // CVPreviewScreen displays the full CV content in a scrollable viewport.
@@ -128,7 +128,7 @@ func (s *CVPreviewScreen) View() string {
 
 	b.WriteString(titleStyle.Render("📄 CV Preview"))
 	b.WriteString("\n")
-	b.WriteString(strings.Repeat("═", min(60, s.width-4)))
+	b.WriteString(strings.Repeat("═", minInt(60, s.width-4)))
 	b.WriteString("\n\n")
 
 	if s.cv == nil {
@@ -311,7 +311,7 @@ func (s *CVPreviewScreen) renderPersonalDetails(width int) string {
 	b.WriteString("\n")
 
 	// Separator
-	b.WriteString(strings.Repeat("═", min(width, 60)))
+	b.WriteString(strings.Repeat("═", minInt(width, 60)))
 	b.WriteString("\n")
 
 	return b.String()
@@ -372,7 +372,7 @@ func (s *CVPreviewScreen) renderFooter() string {
 		Foreground(theme.SecondaryColor())
 
 	var footer strings.Builder
-	footer.WriteString(strings.Repeat("─", min(60, s.width-4)))
+	footer.WriteString(strings.Repeat("─", minInt(60, s.width-4)))
 	footer.WriteString("\n")
 
 	// Show scroll percentage if viewport is ready and has scrollable content
@@ -402,8 +402,8 @@ func (s *CVPreviewScreen) getTheme() themes.Theme {
 	return themes.NewDefaultTheme()
 }
 
-// min returns the minimum of two integers.
-func min(a, b int) int {
+// minInt returns the minimum of two integers.
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

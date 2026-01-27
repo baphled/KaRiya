@@ -123,8 +123,7 @@ func (l *Logo) Init() tea.Cmd {
 
 // Update handles animation updates.
 func (l *Logo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg.(type) {
-	case TickMsg:
+	if _, ok := msg.(TickMsg); ok {
 		if l.animated && l.fadeProgress < 1.0 {
 			l.fadeProgress += 0.1 // 10 frames to reach 1.0
 			if l.fadeProgress < 1.0 {

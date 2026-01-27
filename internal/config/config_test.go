@@ -1,3 +1,4 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package config_test
 
 import (
@@ -123,7 +124,7 @@ var _ = Describe("Config", func() {
 
 		It("should return error for invalid YAML", func() {
 			// Write invalid YAML
-			err := os.WriteFile(configPath, []byte("invalid: yaml: content: ["), 0600)
+			err := os.WriteFile(configPath, []byte("invalid: yaml: content: ["), 0o600)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = config.LoadConfigFromPath(configPath)
@@ -340,7 +341,7 @@ var _ = Describe("Config", func() {
 profile:
   name: Test User
 `
-			err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+			err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 			Expect(err).NotTo(HaveOccurred())
 
 			cfg, err := config.LoadConfigFromPath(configPath)
@@ -382,7 +383,7 @@ cv:
   audience_bullets:
     recruiter: 10
 `
-			err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+			err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 			Expect(err).NotTo(HaveOccurred())
 
 			cfg, err := config.LoadConfigFromPath(configPath)
@@ -418,7 +419,7 @@ export:
 display:
   theme: light
 `
-			err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+			err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 			Expect(err).NotTo(HaveOccurred())
 
 			cfg, err := config.LoadConfigFromPath(configPath)

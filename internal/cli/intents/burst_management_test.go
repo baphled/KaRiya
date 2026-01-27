@@ -1,3 +1,4 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package intents
 
 import (
@@ -604,7 +605,8 @@ var _ = Describe("BurstManagement Intent", func() {
 				UpdatedAt:   time.Now(),
 			}
 			mockRepo.bursts = append(mockRepo.bursts, anotherBurst)
-			_ = intent.context.LoadBursts()
+			//nolint:errcheck // Test setup - error handling not relevant.
+			intent.context.LoadBursts()
 			intent.state.filteredBursts = intent.context.Bursts
 
 			intent.state.currentState = BurstStateDeleteConfirm
@@ -1138,7 +1140,8 @@ var _ = Describe("BurstManagement Intent", func() {
 					UpdatedAt:   time.Now(),
 				}
 				mockRepo.bursts = append(mockRepo.bursts, anotherBurst)
-				_ = intent.context.LoadBursts()
+				//nolint:errcheck // Test setup - error handling not relevant.
+				intent.context.LoadBursts()
 				intent.state.filteredBursts = intent.context.Bursts
 
 				// Start in detail view with first burst

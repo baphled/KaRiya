@@ -67,26 +67,30 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 			AppContext:      testContext,
 		}
 
-		// Add test skills to repository
-		_ = skillRepo.Create(testContext, &career.Skill{
+		// Add test skills to repository.
+		//nolint:errcheck // Test setup - error handling not relevant.
+		skillRepo.Create(testContext, &career.Skill{
 			ID:       "skill-ruby",
 			Name:     "Ruby",
 			Category: "backend",
 		})
-		_ = skillRepo.Create(testContext, &career.Skill{
+		//nolint:errcheck // Test setup - error handling not relevant.
+		skillRepo.Create(testContext, &career.Skill{
 			ID:       "skill-postgres",
 			Name:     "PostgreSQL",
 			Category: "database",
 		})
-		_ = skillRepo.Create(testContext, &career.Skill{
+		//nolint:errcheck // Test setup - error handling not relevant.
+		skillRepo.Create(testContext, &career.Skill{
 			ID:       "skill-react",
 			Name:     "React",
 			Category: "frontend",
 		})
 
-		// Add events to repository
+		// Add events to repository.
 		for _, event := range ctx.Events {
-			_ = eventRepo.Create(testContext, event)
+			//nolint:errcheck // Test setup - error handling not relevant.
+			eventRepo.Create(testContext, event)
 		}
 
 		// Create intent
@@ -146,7 +150,8 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 						CreatedAt: time.Date(2025, 1, 3+i, 0, 0, 0, 0, time.UTC),
 						UpdatedAt: time.Date(2025, 1, 3+i, 0, 0, 0, 0, time.UTC),
 					}
-					_ = eventRepo.Create(testContext, event)
+					//nolint:errcheck // Test setup - error handling not relevant.
+					eventRepo.Create(testContext, event)
 					ctx.Events = append(ctx.Events, event)
 				}
 

@@ -256,7 +256,7 @@ func TestModal_AdvanceSpinner(t *testing.T) {
 	}
 
 	// Should have cycled back
-	if len(initialFrame) == 0 || len(currentFrame) == 0 {
+	if initialFrame == "" || currentFrame == "" {
 		t.Error("Expected spinner frames to be non-empty")
 	}
 }

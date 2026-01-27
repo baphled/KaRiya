@@ -10,10 +10,10 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/base"
 )
 
-// CVAudienceSelectState represents the internal state constant for this screen
+// CVAudienceSelectState represents the internal state constant for this screen.
 const CVAudienceSelectState = "audience_select"
 
-// AudienceOption represents a target audience option
+// AudienceOption represents a target audience option.
 type AudienceOption struct {
 	ID          string
 	Name        string

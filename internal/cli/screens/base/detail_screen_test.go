@@ -36,7 +36,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Construction", func() {
 		It("should create a detail screen with content renderer", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(data *TestDetailData, _, _ int) string {
 				return "Title: " + data.Title + "\n" + data.Description
 			}
 
@@ -51,7 +51,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should use default dimensions if not set", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 
@@ -61,7 +61,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should use custom footer if provided", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 
@@ -75,7 +75,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Terminal Info", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -100,7 +100,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Navigation", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -126,7 +126,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should support custom action keys", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -144,7 +144,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should support multiple custom actions", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -166,7 +166,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Scrolling", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				// Generate multi-line content for scrolling
 				content := "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n"
 				content += "Line 6\nLine 7\nLine 8\nLine 9\nLine 10\n"
@@ -270,7 +270,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(data *TestDetailData, _, _ int) string {
 				return "Title: " + data.Title + "\n" + data.Description
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test", "Detail"}, renderer, detailData)
@@ -290,7 +290,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 		It("should pass dimensions to renderer", func() {
 			var capturedWidth, capturedHeight int
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, width, height int) string {
 				capturedWidth = width
 				capturedHeight = height
 				return "content"
@@ -317,7 +317,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Data Access", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -340,7 +340,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Screen Interface", func() {
 		BeforeEach(func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen = base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -359,7 +359,7 @@ var _ = Describe("BaseDetailScreen", func() {
 
 	Describe("Edge Cases", func() {
 		It("should handle nil data gracefully", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(data *TestDetailData, _, _ int) string {
 				if data == nil {
 					return "No data"
 				}
@@ -373,7 +373,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should handle empty breadcrumbs", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen := base.NewBaseDetailScreen([]string{}, renderer, detailData)
@@ -383,7 +383,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should handle very small terminal dimensions", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return "content"
 			}
 			screen := base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)
@@ -394,7 +394,7 @@ var _ = Describe("BaseDetailScreen", func() {
 		})
 
 		It("should handle renderer returning empty string", func() {
-			renderer := func(data *TestDetailData, width, height int) string {
+			renderer := func(_ *TestDetailData, _, _ int) string {
 				return ""
 			}
 			screen := base.NewBaseDetailScreen([]string{"Test"}, renderer, detailData)

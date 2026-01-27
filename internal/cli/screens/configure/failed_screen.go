@@ -62,9 +62,8 @@ func (s *FailedScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return cmd, nil
 	}
 
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
 		case "esc":
 			// Cancel - go back
 			return nil, &screens.CancelResult{}

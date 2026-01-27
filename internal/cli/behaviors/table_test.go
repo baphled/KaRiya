@@ -30,7 +30,7 @@ var _ = Describe("TableBehavior", func() {
 			{Title: "Status", Width: 10},
 			{Title: "Count", Width: 8},
 		}
-		formatter = func(item *TestItem, index int) []string {
+		formatter = func(item *TestItem, _ int) []string {
 			return []string{item.Name, item.Status, string(rune(item.Count + '0'))}
 		}
 		items = []*TestItem{
@@ -468,7 +468,7 @@ var _ = Describe("TableBehavior", func() {
 			})
 
 			It("should return false after clearing filter", func() {
-				predicate := func(item *TestItem) bool { return true }
+				predicate := func(_ *TestItem) bool { return true }
 				table.SetFilter(predicate)
 				table.ClearFilter()
 				Expect(table.HasFilter()).To(BeFalse())
@@ -562,7 +562,7 @@ var _ = Describe("TableBehavior", func() {
 			})
 
 			It("should return true when sort active", func() {
-				comparator := func(a, b *TestItem) int { return 0 }
+				comparator := func(_, _ *TestItem) int { return 0 }
 				table.SetSort(comparator, false)
 				Expect(table.HasSort()).To(BeTrue())
 			})

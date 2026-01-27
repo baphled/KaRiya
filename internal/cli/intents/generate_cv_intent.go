@@ -40,9 +40,9 @@ type GenerateCVIntent struct {
 	// Allows gradual migration from monolithic intent to screen-based architecture.
 	activeScreen screens.Screen
 
-	// useScreens enables the new screen-based architecture (opt-in for now)
-	// Set to false to use legacy code and pass existing tests
-	// TODO: Remove this flag once all states are migrated and tests updated
+	// useScreens enables the new screen-based architecture (opt-in for now).
+	// Set to false to use legacy code and pass existing tests.
+	// NOTE: Feature flag to be removed once all states are migrated.
 	useScreens bool
 
 	// Wizard-based workflow (Phase 5 - Task 43)
@@ -757,7 +757,7 @@ func (i *GenerateCVIntent) handleNavigateResult(result screens.ScreenResult) tea
 }
 
 // handleCancelResult processes a CancelResult from a screen.
-func (i *GenerateCVIntent) handleCancelResult(result screens.ScreenResult) tea.Cmd {
+func (i *GenerateCVIntent) handleCancelResult(_ screens.ScreenResult) tea.Cmd {
 	switch i.state.currentState {
 	case GenerateCVStateSelectProfile:
 		// Root state - cancel the intent
@@ -787,9 +787,9 @@ func (i *GenerateCVIntent) handleCancelResult(result screens.ScreenResult) tea.C
 }
 
 // handleSubmitResult processes a SubmitResult from a screen.
-func (i *GenerateCVIntent) handleSubmitResult(result screens.ScreenResult) tea.Cmd {
-	// Most screens use Navigate instead of Submit for now
-	// This will be used more when we add form-based screens
+func (i *GenerateCVIntent) handleSubmitResult(_ screens.ScreenResult) tea.Cmd {
+	// Most screens use Navigate instead of Submit for now.
+	// This will be used more when we add form-based screens.
 	return nil
 }
 
@@ -1455,7 +1455,7 @@ func (i *GenerateCVIntent) updateConfirm(msg tea.Msg) tea.Cmd {
 }
 
 // getStateContent returns the content for the current state.
-// DEPRECATED: This method routes to legacy view methods and is only used when
+// Deprecated: This method routes to legacy view methods and is only used when
 // useWizardFlow=false (for backward compatibility with tests). The wizard workflow
 // uses wizardView() instead. This method will be removed in a future release.
 func (i *GenerateCVIntent) getStateContent() string {
@@ -1494,7 +1494,7 @@ func (i *GenerateCVIntent) getStateContent() string {
 }
 
 // getContextHelp returns context-aware help text for the current state.
-// DEPRECATED: This method provides help for legacy 17-state workflow and is only used when
+// Deprecated: This method provides help for legacy 17-state workflow and is only used when
 // useWizardFlow=false (for backward compatibility with tests). The wizard workflow
 // uses getWizardContextHelp() instead. This method will be removed in a future release.
 func (i *GenerateCVIntent) getContextHelp() string {
@@ -2106,9 +2106,9 @@ func (i *GenerateCVIntent) viewSelectFocusArea() string {
 			cursor = "▶ "
 		}
 
-		// Suggested indicator
+		// Suggested indicator.
 		suggested := ""
-		if i.state.focusAreaSuggestion != nil && option.area == cv.FocusArea(i.state.focusAreaSuggestion.Area) {
+		if i.state.focusAreaSuggestion != nil && option.area == i.state.focusAreaSuggestion.Area {
 			suggested = " ⭐ (suggested)"
 		}
 

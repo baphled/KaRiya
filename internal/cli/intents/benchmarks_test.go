@@ -1,3 +1,4 @@
+//nolint:errcheck // Benchmark tests - error handling not relevant for performance measurement.
 package intents
 
 import (
@@ -111,10 +112,11 @@ func BenchmarkConfigureSystemView(b *testing.B) {
 	}
 }
 
-// BenchmarkIntentRouterActivation benchmarks IntentRouter intent activation
+// BenchmarkIntentRouterActivation benchmarks IntentRouter intent activation.
 func BenchmarkIntentRouterActivation(b *testing.B) {
 	router := NewDefaultIntentRouter()
-	_ = router.RegisterIntent("test", func() Intent {
+	//nolint:errcheck // Benchmark setup - error handling not relevant.
+	router.RegisterIntent("test", func() Intent {
 		ctx := &CaptureEventContext{
 			CaptureStrategy: "manual",
 			PreviousEvent:   nil,
@@ -126,7 +128,8 @@ func BenchmarkIntentRouterActivation(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = router.ActivateIntent("test", make(map[string]interface{}))
+		//nolint:errcheck // Benchmark loop - error handling not relevant.
+		router.ActivateIntent("test", make(map[string]interface{}))
 	}
 }
 

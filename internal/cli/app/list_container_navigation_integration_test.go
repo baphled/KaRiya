@@ -1,3 +1,4 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package app_test
 
 import (
@@ -52,12 +53,15 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 		event3.Categories = []string{"technical"}
 
 		for _, event := range []*career.CareerEvent{event1, event2, event3} {
-			_ = repo.Create(context.Background(), event)
+			//nolint:errcheck // Test setup - error handling not relevant.
+			repo.Create(context.Background(), event)
 		}
 
-		// Pre-populate burst/fact repositories using fixtures
-		_ = burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1", "e2"))
-		_ = factRepo.Create(context.Background(), fixtures.Fact("f1", "e1"))
+		// Pre-populate burst/fact repositories using fixtures.
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(context.Background(), fixtures.Burst("b1", "e1", "e2"))
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(context.Background(), fixtures.Fact("f1", "e1"))
 
 		model = app.NewModel(cliService, svc)
 		model.SkipOnboarding()

@@ -304,7 +304,7 @@ var _ = Describe("BaseFormScreen", func() {
 
 	Describe("Edge Cases", func() {
 		It("should handle nil form data gracefully", func() {
-			builder := func(data *TestFormData, width, height int) *huh.Form {
+			builder := func(_ *TestFormData, width, height int) *huh.Form {
 				group := huh.NewGroup(
 					huh.NewInput().
 						Key("name").
@@ -319,7 +319,7 @@ var _ = Describe("BaseFormScreen", func() {
 		})
 
 		It("should handle empty breadcrumbs", func() {
-			builder := func(data *TestFormData, width, height int) *huh.Form {
+			builder := func(_ *TestFormData, width, height int) *huh.Form {
 				group := huh.NewGroup(
 					huh.NewInput().
 						Key("name").
@@ -335,7 +335,7 @@ var _ = Describe("BaseFormScreen", func() {
 		})
 
 		It("should handle very small terminal dimensions", func() {
-			builder := func(data *TestFormData, width, height int) *huh.Form {
+			builder := func(_ *TestFormData, width, height int) *huh.Form {
 				group := huh.NewGroup(
 					huh.NewInput().
 						Key("name").

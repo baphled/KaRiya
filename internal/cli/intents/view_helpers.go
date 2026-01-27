@@ -2,9 +2,7 @@ package intents
 
 import (
 	"errors"
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -136,138 +134,6 @@ func extractErrorTitle(err error) string {
 
 // Manual Modal Helper Functions
 // These are for cases where intents need direct modal control outside of state management
-
-// ShowErrorModal creates and attaches an error modal to the view.
-// The modal is configured with a bell alert and is cancellable.
-func ShowErrorModal(view *layout.ScreenLayout, err error) *layout.ScreenLayout {
-	if err == nil {
-		return view
-	}
-	title := extractErrorTitle(err)
-	modal := feedback.NewErrorModal(title, err.Error())
-	view.ShowModalOverlay(modal)
-	return view
-}
-
-// ShowLoadingModal creates and attaches a loading modal to the view.
-// The modal displays a spinner and optional loading message.
-func ShowLoadingModal(view *layout.ScreenLayout, message string, cancellable bool) *layout.ScreenLayout {
-	modal := feedback.NewLoadingModal(message, cancellable)
-	view.ShowModalOverlay(modal)
-	return view
-}
-
-// ShowProgressModal creates and attaches a progress modal to the view.
-// The progress value should be between 0.0 and 1.0.
-func ShowProgressModal(view *layout.ScreenLayout, title, message string, progress float64) *layout.ScreenLayout {
-	modal := feedback.NewProgressModal(title, message, progress)
-	view.ShowModalOverlay(modal)
-	return view
-}
-
-// ShowSuccessModal creates and attaches a success modal to the view.
-// The modal auto-dismisses after 3 seconds.
-func ShowSuccessModal(view *layout.ScreenLayout, message string) *layout.ScreenLayout {
-	modal := feedback.NewSuccessModal(message)
-	view.ShowModalOverlay(modal)
-	return view
-}
-
-// Footer Helper Functions
-// These generate standardized help text based on TUI_STANDARDS.md keyboard shortcuts
-
-// StandardHelpFooter formats a map of shortcuts into help text.
-// Keys are the keyboard shortcuts, values are the action descriptions.
-//
-// Example:
-//
-//	shortcuts := map[string]string{
-//	    "↑/k": "Up",
-//	    "↓/j": "Down",
-//	    "Enter": "Select",
-//	}
-//	footer := StandardHelpFooter(shortcuts)
-func StandardHelpFooter(shortcuts map[string]string) string {
-	if len(shortcuts) == 0 {
-		return ""
-	}
-
-	var parts []string
-	for key, action := range shortcuts {
-		parts = append(parts, fmt.Sprintf("%s %s", key, action))
-	}
-	return strings.Join(parts, "  ")
-}
-
-// NavigationFooter returns standard navigation shortcuts.
-// Used for list views, menu selections, and browsing.
-func NavigationFooter() string {
-	return "↑/k Up  ↓/j Down  Enter Select  Esc Back"
-}
-
-// FormFooter returns standard form navigation shortcuts.
-// Used for form inputs and field navigation.
-func FormFooter() string {
-	return "Tab Next  Shift+Tab Previous  Enter Submit  Esc Cancel"
-}
-
-// ListFooter returns standard list view shortcuts including search.
-// Used for lists with search and scroll capabilities.
-func ListFooter() string {
-	return "↑/k Up  ↓/j Down  Enter Select  / Search  g Top  G Bottom  Esc Back"
-}
-
-// DetailViewFooter returns standard detail view shortcuts.
-// Used for viewing detailed content with scrolling.
-func DetailViewFooter() string {
-	return "↑/k Scroll Up  ↓/j Scroll Down  Esc Back"
-}
-
-// ModalFooter returns modal-specific action shortcuts.
-// Actions are custom strings like "Enter Confirm", "Esc Cancel".
-func ModalFooter(actions []string) string {
-	if len(actions) == 0 {
-		return "Esc Close"
-	}
-	return strings.Join(actions, "  ")
-}
-
-// CombineFooters combines multiple footer strings with a separator.
-// Useful for combining standard shortcuts with intent-specific actions.
-//
-// Example:
-//
-//	footer := CombineFooters(NavigationFooter(), "q Quit", "m Main Menu")
-//	// Result: "↑/k Up  ↓/j Down  Enter Select  Esc Back  |  q Quit  |  m Main Menu"
-func CombineFooters(footers ...string) string {
-	var nonEmpty []string
-	for _, footer := range footers {
-		if strings.TrimSpace(footer) != "" {
-			nonEmpty = append(nonEmpty, footer)
-		}
-	}
-	if len(nonEmpty) == 0 {
-		return ""
-	}
-	return strings.Join(nonEmpty, "  |  ")
-}
-
-// UpdateLoadingRotator updates a loading message rotator and returns a tick command.
-// This is a convenience function for intents that use LoadingMessageRotator.
-func UpdateLoadingRotator(rotator *feedback.LoadingMessageRotator) {
-	if rotator != nil {
-		rotator.Rotate()
-	}
-}
-
-// TickEvery returns a command that sends a tick message at the specified interval.
-// Useful for animating loading spinners and rotating messages.
-func TickEvery(d time.Duration) func() time.Duration {
-	return func() time.Duration {
-		return d
-	}
-}
-
 // =============================================================================
 // Theme-Aware KeyBadge Footer Functions
 // =============================================================================
@@ -313,36 +179,6 @@ func ThemedDetailViewFooter(theme themes.Theme) string {
 		primitives.HelpKeyBadge("↑/↓", "Scroll", theme),
 		primitives.BackBadge(theme),
 	)
-}
-
-// ThemedBrowseFooter returns styled browse view shortcuts.
-// Used for browsing lists with edit and delete capabilities.
-func ThemedBrowseFooter(theme themes.Theme) string {
-	return primitives.RenderBrowseFooter(theme)
-}
-
-// ThemedConfirmFooter returns styled confirmation shortcuts.
-// Used for confirmation dialogs.
-func ThemedConfirmFooter(theme themes.Theme) string {
-	return primitives.RenderConfirmFooter(theme)
-}
-
-// ThemedEditFooter returns styled edit shortcuts.
-// Used for edit views.
-func ThemedEditFooter(theme themes.Theme) string {
-	return primitives.RenderEditFooter(theme)
-}
-
-// ThemedExportFooter returns styled export shortcuts.
-// Used for export views.
-func ThemedExportFooter(theme themes.Theme) string {
-	return primitives.RenderExportFooter(theme)
-}
-
-// ThemedMenuFooter returns styled menu shortcuts.
-// Used for main menus.
-func ThemedMenuFooter(theme themes.Theme) string {
-	return primitives.RenderMenuFooter(theme)
 }
 
 // ThemedCustomFooter creates a custom themed footer from badges.
@@ -543,77 +379,6 @@ func (m *MessageInterceptor) InterceptOr(msg tea.Msg, fallback func() tea.Cmd) t
 	return fallback()
 }
 
-// Intercept is similar to InterceptOr but returns nil if no fallback is needed.
-// Use this when you only want to handle global keys without further processing.
-//
-// Returns:
-//   - tea.Cmd from the matched global key handler, OR
-//   - nil if no global keys matched
-func (m *MessageInterceptor) Intercept(msg tea.Msg) tea.Cmd {
-	return m.InterceptOr(msg, func() tea.Cmd { return nil })
-}
-
-// OnContextAwareBack handles the common pattern where back navigation behavior
-// depends on whether the user is editing an existing item or creating a new one.
-//
-// Pattern:
-//   - Edit mode (editing existing item): Cancel intent and return to caller
-//   - New mode (creating new item): Go back to previous state in workflow
-//
-// This is used by intents that support both create and edit operations, such as:
-//   - CaptureEvent: PreviousEvent != nil means editing
-//   - BurstManagement: IsNewBurst determines behavior
-//   - FactManagement: IsNewFact determines behavior
-//
-// Example usage:
-//
-//	interceptor.OnContextAwareBack(
-//	    func() bool { return i.context.PreviousEvent != nil }, // isEditMode
-//	    func() tea.Cmd { i.state = PreviousState; return nil }, // goBack
-//	    func() tea.Cmd { i.setCancelled(); return nil },        // cancel
-//	)
-func (m *MessageInterceptor) OnContextAwareBack(
-	isEditMode func() bool,
-	goBack func() tea.Cmd,
-	cancel func() tea.Cmd,
-) *MessageInterceptor {
-	return m.OnBack(func() tea.Cmd {
-		if isEditMode() {
-			return cancel()
-		}
-		return goBack()
-	})
-}
-
-// OnModalAwareBack handles the pattern where back navigation depends on whether
-// a modal is currently active.
-//
-// Pattern:
-//   - Modal active: Close modal and return to parent state
-//   - No modal: Go back to previous state
-//
-// This is commonly used in review/detail states that can open edit modals.
-//
-// Example usage:
-//
-//	interceptor.OnModalAwareBack(
-//	    func() bool { return i.state.editModal != nil },        // hasActiveModal
-//	    func() tea.Cmd { i.state.editModal = nil; return nil }, // closeModal
-//	    func() tea.Cmd { i.state = PreviousState; return nil }, // goBack
-//	)
-func (m *MessageInterceptor) OnModalAwareBack(
-	hasActiveModal func() bool,
-	closeModal func() tea.Cmd,
-	goBack func() tea.Cmd,
-) *MessageInterceptor {
-	return m.OnBack(func() tea.Cmd {
-		if hasActiveModal() {
-			return closeModal()
-		}
-		return goBack()
-	})
-}
-
 // StandardQuitHandler returns a GlobalKeyHandler that quits the application.
 // This is the standard behavior for the quit key (q or Ctrl+C).
 //
@@ -637,49 +402,4 @@ func StandardHelpHandler(intent *BaseIntent) GlobalKeyHandler {
 		intent.ToggleHelp()
 		return nil
 	}
-}
-
-// HandleListKeys checks if a key message matches any list navigation shortcuts.
-// Returns true if the key was handled by the ListNavigationHandler.
-// This is a convenience wrapper that ensures consistent list navigation.
-//
-// Example usage:
-//
-//	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-//	    if HandleListKeys(keyMsg, i.navHandler) {
-//	        return nil
-//	    }
-//	}
-func HandleListKeys(msg tea.KeyMsg, handler *navigation.ListNavigationHandler) bool {
-	if handler == nil {
-		return false
-	}
-	return handler.HandleKey(msg.String())
-}
-
-// GetCombinedKeyMap returns a combined keymap for help display.
-// Includes global keys and optionally list or form keys.
-func GetCombinedKeyMap(includeList, includeForm bool) navigation.CombinedKeyMap {
-	global := navigation.DefaultGlobalKeyMap()
-	list := navigation.ListKeyMap{}
-	form := navigation.FormKeyMap{}
-
-	if includeList {
-		list = navigation.DefaultListKeyMap()
-	}
-	if includeForm {
-		form = navigation.DefaultFormKeyMap()
-	}
-
-	return navigation.CombinedKeyMap{
-		Global: global,
-		List:   list,
-		Form:   form,
-	}
-}
-
-// GlobalFooter returns the standard global shortcuts footer.
-// Per docs/KEYBOARD_REFERENCE.md: q=quit, ?=help, Esc=back
-func GlobalFooter() string {
-	return "q Quit  ? Help  Esc Back"
 }

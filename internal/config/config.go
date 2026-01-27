@@ -63,7 +63,7 @@ func requireTestIsolation(operation string) {
 	}
 }
 
-// Config represents the application configuration
+// Config represents the application configuration.
 type Config struct {
 	System  SystemConfig  `yaml:"system"`
 	Profile ProfileConfig `yaml:"profile"`
@@ -73,7 +73,7 @@ type Config struct {
 	Scoring ScoringConfig `yaml:"scoring"`
 }
 
-// SystemConfig contains system-level configuration
+// SystemConfig contains system-level configuration.
 type SystemConfig struct {
 	DataDir     string `yaml:"data_dir"`
 	LogLevel    string `yaml:"log_level"`
@@ -81,7 +81,7 @@ type SystemConfig struct {
 	BackupCount int    `yaml:"backup_count"`
 }
 
-// ProfileConfig contains user profile configuration
+// ProfileConfig contains user profile configuration.
 type ProfileConfig struct {
 	Name            string `yaml:"name"`
 	Email           string `yaml:"email"`
@@ -100,14 +100,14 @@ type ProfileConfig struct {
 	WhatIBring    []string `yaml:"what_i_bring"`   // List of value propositions
 }
 
-// CVConfig contains CV generation configuration
+// CVConfig contains CV generation configuration.
 type CVConfig struct {
 	DefaultFormat   string                `yaml:"default_format"`
 	MaxBullets      int                   `yaml:"max_bullets"`
 	AudienceBullets AudienceBulletsConfig `yaml:"audience_bullets"`
 }
 
-// AudienceBulletsConfig defines bullets per company for each audience type
+// AudienceBulletsConfig defines bullets per company for each audience type.
 type AudienceBulletsConfig struct {
 	Recruiter     int `yaml:"recruiter"`      // Bullets per company for recruiters (default: 4)
 	HiringManager int `yaml:"hiring_manager"` // Bullets per company for hiring managers (default: 6)
@@ -409,7 +409,7 @@ func applyDefaults(cfg *Config) {
 // are zero AND ALL thresholds are zero AND role settings are empty, we assume
 // the section is missing and apply all defaults. This means users who want to
 // set some values to zero must set at least one non-zero value in the section.
-func applyScoringDefaults(cfg *Config, defaults *Config) {
+func applyScoringDefaults(cfg, defaults *Config) {
 	// Check if the entire scoring section appears uninitialized:
 	// - All weights are zero
 	// - All thresholds are zero
@@ -454,7 +454,7 @@ func SaveConfig(cfg *Config) error {
 func SaveConfigToPath(cfg *Config, path string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -463,7 +463,7 @@ func SaveConfigToPath(cfg *Config, path string) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0600); err != nil {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write config: %w", err)
 	}
 

@@ -4,7 +4,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
-	"github.com/baphled/kariya/internal/constants"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -20,298 +19,6 @@ func getModalTitleStyle(theme themes.Theme) lipgloss.Style {
 		Bold(true).
 		Foreground(theme.ForegroundColor()).
 		MarginBottom(1)
-}
-
-// EditMetadataModal handles inline editing of event metadata (Company, Project, Tags, Categories).
-// This is a sub-flow of CaptureEventIntent used in the ReviewInferredEvent state.
-//
-// The modal follows the ModalEditResult[T] pattern:
-// - Preserves original data (no mutation)
-// - Returns typed diff on confirmation
-// - Restores original on cancellation
-// - Uses huh library for form handling
-// - Professional styling with Catppuccin theme
-// - Scrollable when content exceeds terminal height
-type EditMetadataModal struct {
-	// original is the unmodified metadata from the event (never mutated)
-	original *MetadataSnapshot
-
-	// modified is the working copy being edited
-	modified *MetadataSnapshot
-
-	// result is the final result returned to parent
-	result *ModalEditResult[*MetadataSnapshot]
-
-	// form is the huh form for editing
-	form *huh.Form
-
-	// formGroup stores the form group for rebuilding with new height
-	formGroup *huh.Group
-
-	// formData holds the form field values (pointers so form binding works)
-	company         *string
-	project         *string
-	tags            []string // MultiSelect uses slice directly
-	categories      []string // MultiSelect uses slice directly
-	submitConfirmed *bool
-
-	// width and height track terminal dimensions for responsive layout
-	width  int
-	height int
-}
-
-// MetadataSnapshot represents a snapshot of event metadata for editing.
-type MetadataSnapshot struct {
-	Company    string
-	Project    string
-	Tags       []string
-	Categories []string
-}
-
-// NewEditMetadataModal creates a new metadata editing modal using huh forms.
-// original: the original metadata to display
-// Returns a new modal ready for interaction.
-func NewEditMetadataModal(company, project string, tags, categories []string) *EditMetadataModal {
-	original := &MetadataSnapshot{
-		Company:    company,
-		Project:    project,
-		Tags:       tags,
-		Categories: categories,
-	}
-
-	// Initialize form field values
-	companyVal := company
-	projectVal := project
-	submitConfirmed := false
-
-	// Copy slices for multi-select binding (ensure not nil)
-	tagsCopy := make([]string, len(tags))
-	copy(tagsCopy, tags)
-	categoriesCopy := make([]string, len(categories))
-	copy(categoriesCopy, categories)
-
-	// Build tag options from constants
-	tagOptions := make([]huh.Option[string], 0)
-	for _, tag := range constants.AllEventTags() {
-		tagStr := string(tag)
-		tagOptions = append(tagOptions, huh.NewOption(tagStr, tagStr))
-	}
-
-	// Build category options from constants
-	categoryOptions := make([]huh.Option[string], 0)
-	for _, cat := range constants.AllCompetencyCategories() {
-		catStr := string(cat)
-		categoryOptions = append(categoryOptions, huh.NewOption(catStr, catStr))
-	}
-
-	modal := &EditMetadataModal{
-		original:        original,
-		modified:        copyMetadataSnapshot(original),
-		result:          nil,
-		form:            nil, // Will be set below
-		formGroup:       nil, // Will be set below
-		company:         &companyVal,
-		project:         &projectVal,
-		tags:            tagsCopy,
-		categories:      categoriesCopy,
-		submitConfirmed: &submitConfirmed,
-		width:           80,
-		height:          24,
-	}
-
-	// Create form group with fields only (confirm button is separate)
-	modal.formGroup = huh.NewGroup(
-		forms.NewInput(forms.FieldConfig{
-			Key:         "company",
-			Title:       "Company",
-			Description: "Company name",
-			Placeholder: "Enter company name...",
-			CharLimit:   100,
-			Validate:    forms.CompanyName,
-		}).Value(modal.company),
-
-		forms.NewInput(forms.FieldConfig{
-			Key:         "project",
-			Title:       "Project",
-			Description: "Project name",
-			Placeholder: "Enter project name...",
-			CharLimit:   100,
-		}).Value(modal.project),
-
-		huh.NewMultiSelect[string]().
-			Key("tags").
-			Title("Tags").
-			Description("Select relevant tags").
-			Options(tagOptions...).
-			Value(&modal.tags).
-			Limit(8),
-
-		huh.NewMultiSelect[string]().
-			Key("categories").
-			Title("Categories").
-			Description("Select relevant categories").
-			Options(categoryOptions...).
-			Value(&modal.categories).
-			Limit(6),
-	)
-
-	// Create form with fixed confirm button at bottom
-	modal.form = forms.NewFormWithFixedConfirm(
-		modal.formGroup,
-		modal.submitConfirmed,
-		modal.width-4, // Leave margin for modal chrome
-		forms.DefaultFormHeight(modal.height),
-	)
-
-	return modal
-}
-
-// Update handles user input for metadata editing.
-func (m *EditMetadataModal) Update(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		// Update form dimensions without losing state
-		m.form = m.form.
-			WithHeight(forms.DefaultFormHeight(m.height)).
-			WithWidth(m.width - 4) // Leave margin for modal chrome
-		return nil
-	}
-
-	// Update the form
-	form, cmd := m.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		m.form = f
-	}
-
-	// Check form state
-	if forms.IsCompleted(m.form) {
-		m.syncModified()
-		m.createResult()
-		return nil
-	}
-
-	if forms.IsAborted(m.form) {
-		m.createCancelledResult()
-		return nil
-	}
-
-	return cmd
-}
-
-// View renders the metadata editing modal with professional styling.
-func (m *EditMetadataModal) View() string {
-	if m.result != nil && m.result.Accepted {
-		return ""
-	}
-
-	// Render the form
-	formView := m.form.View()
-
-	// Wrap in modal container
-	title := getModalTitleStyle(nil).
-		Render("Edit Event Metadata")
-
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		title,
-		"",
-		formView,
-	)
-
-	modal := feedback.NewModalContainer().
-		SetTitle("").
-		SetMessage(content).
-		SetInstructions("Tab: Next  |  Shift+Tab: Prev  |  Enter: Confirm  |  Esc: Cancel").
-		WithWidth(m.width - 4). // Use terminal width minus margin
-		WithScrollHint(true)    // Show scroll indicator
-
-	return modal.Render()
-}
-
-// Result returns the modal result when editing is complete.
-func (m *EditMetadataModal) Result() *ModalEditResult[*MetadataSnapshot] {
-	return m.result
-}
-
-// IsComplete returns true if the modal has finished (accepted or cancelled).
-func (m *EditMetadataModal) IsComplete() bool {
-	return m.result != nil
-}
-
-// GetTitle returns the modal title for overlay rendering.
-func (m *EditMetadataModal) GetTitle() string {
-	return "Edit Event Metadata"
-}
-
-// GetContent returns just the form content without the modal container.
-// This allows parent intents to compose the modal as an overlay.
-func (m *EditMetadataModal) GetContent() string {
-	if m.result != nil && m.result.Accepted {
-		return ""
-	}
-	return m.form.View()
-}
-
-// GetFooter returns the footer instructions for the modal.
-func (m *EditMetadataModal) GetFooter() string {
-	return "Enter: Confirm  |  Esc: Cancel  |  Tab: Next Field  |  Shift+Tab: Previous"
-}
-
-// Private helper methods
-
-func (m *EditMetadataModal) syncModified() {
-	m.modified = &MetadataSnapshot{
-		Company:    *m.company,
-		Project:    *m.project,
-		Tags:       m.tags,       // MultiSelect binds directly to []string
-		Categories: m.categories, // MultiSelect binds directly to []string
-	}
-}
-
-func (m *EditMetadataModal) createResult() {
-	// Check if user confirmed via the submit button
-	// If they selected "Cancel" on the confirm, treat as cancelled
-	if !*m.submitConfirmed {
-		m.createCancelledResult()
-		return
-	}
-
-	m.result = &ModalEditResult[*MetadataSnapshot]{
-		Original: m.original,
-		Modified: m.modified,
-		Accepted: true,
-		Changes:  m.computeChanges(),
-	}
-}
-
-func (m *EditMetadataModal) createCancelledResult() {
-	m.result = &ModalEditResult[*MetadataSnapshot]{
-		Original: m.original,
-		Modified: m.original,
-		Accepted: false,
-		Changes:  make(map[string]interface{}),
-	}
-}
-
-func (m *EditMetadataModal) computeChanges() map[string]interface{} {
-	changes := make(map[string]interface{})
-
-	if m.original.Company != m.modified.Company {
-		changes["company"] = m.modified.Company
-	}
-	if m.original.Project != m.modified.Project {
-		changes["project"] = m.modified.Project
-	}
-	if !slicesEqual(m.original.Tags, m.modified.Tags) {
-		changes["tags"] = m.modified.Tags
-	}
-	if !slicesEqual(m.original.Categories, m.modified.Categories) {
-		changes["categories"] = m.modified.Categories
-	}
-
-	return changes
 }
 
 // ============================================================================
@@ -375,10 +82,9 @@ func NewEditBurstModal(burst *career.Burst) *EditBurstModal {
 
 // Update handles user input for burst editing.
 func (m *EditBurstModal) Update(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		m.width = wsm.Width
+		m.height = wsm.Height
 		// Update form dimensions without losing state
 		m.form = m.form.
 			WithHeight(forms.DefaultFormHeight(m.height)).
@@ -585,10 +291,9 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 
 // Update handles user input for fact editing.
 func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		m.width = wsm.Width
+		m.height = wsm.Height
 		// Update form dimensions without losing state
 		m.form = m.form.
 			WithHeight(forms.DefaultFormHeight(m.height)).
@@ -738,30 +443,6 @@ func (m *EditFactModal) computeChanges() map[string]interface{} {
 	}
 
 	return changes
-}
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-// copyMetadataSnapshot creates a deep copy of a metadata snapshot.
-func copyMetadataSnapshot(original *MetadataSnapshot) *MetadataSnapshot {
-	if original == nil {
-		return nil
-	}
-
-	copy := *original
-	copy.Tags = make([]string, len(original.Tags))
-	copy.Categories = make([]string, len(original.Categories))
-
-	for i, tag := range original.Tags {
-		copy.Tags[i] = tag
-	}
-	for i, cat := range original.Categories {
-		copy.Categories[i] = cat
-	}
-
-	return &copy
 }
 
 // slicesEqual checks if two string slices are equal.

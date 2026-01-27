@@ -334,8 +334,8 @@ func (m *Modal) getStyleForType() (lipgloss.Color, string) {
 	}
 }
 
-// renderProgressBar renders a progress bar for the given width
-func (m *Modal) renderProgressBar(width int, theme themes.Theme) string {
+// renderProgressBar renders a progress bar for the given width.
+func (m *Modal) renderProgressBar(width int, _ themes.Theme) string {
 	percentage := int(m.Progress * 100)
 	barWidth := width - 8 // Leave space for percentage and brackets
 

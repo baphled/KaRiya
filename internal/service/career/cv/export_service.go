@@ -73,23 +73,23 @@ type ExportResult struct {
 }
 
 // NewExportService creates a new export service
-func NewExportService(logger *logger.Logger) *ExportService {
+func NewExportService(log *logger.Logger) *ExportService {
 	return &ExportService{
-		logger:    logger,
+		logger:    log,
 		clipboard: &SystemClipboard{},
 	}
 }
 
 // NewExportServiceWithClipboard creates a new export service with a custom clipboard implementation
-func NewExportServiceWithClipboard(logger *logger.Logger, clipboard ClipboardWriter) *ExportService {
+func NewExportServiceWithClipboard(log *logger.Logger, clipboard ClipboardWriter) *ExportService {
 	return &ExportService{
-		logger:    logger,
+		logger:    log,
 		clipboard: clipboard,
 	}
 }
 
 // ExportToText exports a CV to plain text format
-func (es *ExportService) ExportToText(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
+func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", fmt.Errorf("CV view is nil")
 	}

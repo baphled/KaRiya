@@ -16,7 +16,7 @@ func ParseDateString(s string) (time.Time, error) {
 	s = strings.TrimSpace(s)
 
 	// Handle "today"
-	if strings.ToLower(s) == "today" {
+	if strings.EqualFold(s, "today") {
 		return time.Now(), nil
 	}
 
@@ -88,14 +88,14 @@ func MaxLength(n int) func(string) error {
 }
 
 // LengthRange validates that a string length is within a range.
-func LengthRange(min, max int) func(string) error {
+func LengthRange(minLen, maxLen int) func(string) error {
 	return func(value string) error {
 		length := len(strings.TrimSpace(value))
-		if length < min {
-			return fmt.Errorf("must be at least %d characters", min)
+		if length < minLen {
+			return fmt.Errorf("must be at least %d characters", minLen)
 		}
-		if length > max {
-			return fmt.Errorf("must be at most %d characters", max)
+		if length > maxLen {
+			return fmt.Errorf("must be at most %d characters", maxLen)
 		}
 		return nil
 	}
@@ -150,7 +150,7 @@ func URL(value string) error {
 		return nil // Allow empty (use Required separately if needed)
 	}
 
-	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].[^\s]*$`)
+	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].\S*$`)
 	if !urlRegex.MatchString(value) {
 		return fmt.Errorf("invalid URL format")
 	}

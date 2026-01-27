@@ -1,3 +1,4 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package intents_test
 
 import (
@@ -24,7 +25,8 @@ var _ = Describe("DefaultIntentRouter", func() {
 
 		It("should return error when registering duplicate intent", func() {
 			factory := func() intents.Intent { return intents.NewMockIntent() }
-			_ = router.RegisterIntent("test_intent", factory)
+			//nolint:errcheck // Test setup - first registration expected to succeed.
+			router.RegisterIntent("test_intent", factory)
 			err := router.RegisterIntent("test_intent", factory)
 			Expect(err).To(HaveOccurred())
 		})
@@ -33,7 +35,8 @@ var _ = Describe("DefaultIntentRouter", func() {
 	Describe("ActivateIntent", func() {
 		BeforeEach(func() {
 			factory := func() intents.Intent { return intents.NewMockIntent() }
-			_ = router.RegisterIntent("test_intent", factory)
+			//nolint:errcheck // Test setup - error handling not relevant.
+			router.RegisterIntent("test_intent", factory)
 		})
 
 		It("should activate registered intent", func() {

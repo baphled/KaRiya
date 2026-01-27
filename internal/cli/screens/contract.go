@@ -60,7 +60,7 @@ type Screen interface {
 
 	// SetTheme updates the Screen's theme for styling.
 	// Screens should store this and pass it to StandardView for consistent theming.
-	SetTheme(theme interface{}) // TODO: Replace interface{} with actual Theme type
+	SetTheme(theme interface{}) // NOTE: Using interface{} until theme system type is finalized.
 
 	// SetLogo updates the Screen's logo and spacing.
 	// Screens should store this and pass it to StandardView for consistent branding.

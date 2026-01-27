@@ -132,9 +132,8 @@ func (g *ButtonGroup) FocusLast() {
 // - Home: Focus first button
 // - End: Focus last button
 func (g *ButtonGroup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.Type {
 		case tea.KeyTab:
 			g.FocusNext()
 		case tea.KeyShiftTab:
@@ -149,8 +148,8 @@ func (g *ButtonGroup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			g.FocusLast()
 		case tea.KeyRunes:
 			// Handle vim-style navigation
-			if len(msg.Runes) > 0 {
-				switch msg.Runes[0] {
+			if len(keyMsg.Runes) > 0 {
+				switch keyMsg.Runes[0] {
 				case 'l':
 					g.FocusNext()
 				case 'h':

@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
-// CVConfigFormData holds the wizard configuration data
+// CVConfigFormData holds the wizard configuration data.
 type CVConfigFormData struct {
 	ProfileID       string
 	Audience        string
@@ -20,13 +20,13 @@ type CVConfigFormData struct {
 	SubmitConfirmed bool
 }
 
-// SkillsLimitOption represents a preset option for skills limit
+// SkillsLimitOption represents a preset option for skills limit.
 type SkillsLimitOption struct {
 	Value int
 	Label string
 }
 
-// SkillsLimitOptions returns the preset options for skills limit selection
+// SkillsLimitOptions returns the preset options for skills limit selection.
 func SkillsLimitOptions() []SkillsLimitOption {
 	return []SkillsLimitOption{
 		{Value: 5, Label: "5 per category"},
@@ -37,7 +37,7 @@ func SkillsLimitOptions() []SkillsLimitOption {
 	}
 }
 
-// ProfileOption represents a CV profile option
+// ProfileOption represents a CV profile option.
 type ProfileOption struct {
 	ID   string
 	Name string
@@ -51,7 +51,10 @@ type ExtractedTechnology struct {
 // NewCVConfigForm creates the CV configuration wizard form.
 // singleTechSelect: when true, uses single-select for technologies (specialist mode),
 // when false, uses multi-select (generalist mode).
-func NewCVConfigForm(data *CVConfigFormData, profileOptions []ProfileOption, extractedTechs []ExtractedTechnology, width, height int, singleTechSelect bool) *huh.Form {
+func NewCVConfigForm(
+	data *CVConfigFormData, profileOptions []ProfileOption, extractedTechs []ExtractedTechnology,
+	width, height int, singleTechSelect bool,
+) *huh.Form {
 	// Step 1: WHO - Profile and Audience
 	profileOpts := make([]huh.Option[string], 0, len(profileOptions)+1)
 	profileOpts = append(profileOpts, huh.NewOption("-- Select a profile --", ""))

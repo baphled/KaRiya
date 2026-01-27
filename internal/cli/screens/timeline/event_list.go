@@ -14,7 +14,7 @@ import (
 const TimelineEventListState = "timeline_event_list"
 
 // eventRowFormatter formats a career event for table display
-func eventRowFormatter(event *career.CareerEvent, index int) []string {
+func eventRowFormatter(event *career.CareerEvent, _ int) []string {
 	// Date formatting
 	dateStr := event.Date.Format("2006-01-02")
 
