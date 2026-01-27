@@ -128,30 +128,9 @@ var _ = Describe("E2E Onboarding Wizard Workflow", func() {
 		})
 	})
 
-	Describe("Onboarding Escape Key Behavior", Pending, func() {
-		// These tests need to be rewritten using bootstrap.NewOnboardingTestModel()
-		BeforeEach(func() {
-			env = e2e.GetSharedEnvWithOnboarding(GinkgoT())
-			env.InitModel()
-		})
-
-		AfterEach(func() {
-			env.Cleanup()
-		})
-
-		It("should NOT cancel onboarding on Esc key (mandatory wizard)", func() {
-			env.Cancel()
-			// Onboarding is mandatory - should still show wizard
-			env.AssertViewContains("Profile Setup")
-		})
-
-		It("should NOT allow skipping after entering partial data", func() {
-			env.TypeText("Test User")
-			env.Cancel()
-			// Should still be in wizard
-			env.AssertViewContains("Profile Setup")
-		})
-	})
+	// NOTE: Onboarding escape key behavior tests removed - they need to be rewritten
+	// using bootstrap.NewOnboardingTestModel() since onboarding is now a pre-app phase.
+	// See: bootstrap/testing.go for the new test model approach.
 
 	Describe("Onboarding with Existing E2E Setup", func() {
 		BeforeEach(func() {
