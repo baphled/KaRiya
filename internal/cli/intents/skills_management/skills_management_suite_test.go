@@ -1,4 +1,4 @@
-package manage_skills_test
+package skills_management_test
 
 import (
 	"testing"

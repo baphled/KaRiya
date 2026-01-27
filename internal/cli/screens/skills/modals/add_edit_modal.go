@@ -9,7 +9,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 )
 
 // AddEditModal provides a way to add or edit a skill.
@@ -37,7 +36,7 @@ import (
 //	    // User cancelled (Esc)
 //	}
 type AddEditModal struct {
-	form          *huh.Form
+	form          forms.Form
 	formData      *forms.SkillFormData
 	originalSkill *career.Skill // nil for add mode
 	visible       bool
@@ -120,13 +119,12 @@ func (m *AddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
 		}
 	}
 
-	// Update form.
-	form, cmd := m.form.Update(msg)
-	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
-	m.form = form.(*huh.Form)
+	// Update form using forms package helper.
+	var cmd tea.Cmd
+	m.form, cmd = forms.Update(m.form, msg)
 
 	// Check if form is complete AND user confirmed submission.
-	if m.form.State == huh.StateCompleted {
+	if forms.IsCompleted(m.form) {
 		m.visible = false
 		// Only return data if user confirmed (pressed Submit, not Cancel)
 		if m.formData.SubmitConfirmed {

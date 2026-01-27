@@ -1,9 +1,7 @@
 // Package manage_skills implements the ManageSkills intent for managing user-defined skills.
-package manage_skills
+package skills_management
 
 import (
-	"time"
-
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -37,14 +35,12 @@ type Intent struct {
 
 	// Detail view data.
 	eventCounts  map[string]int
-	lastUsedMap  map[string]time.Time
 	skillEvents  []*domain.CareerEvent
 	eventsLoaded bool
 
 	// EventsTableBehavior provides type-safe table operations for skill events.
-	eventsTableBehavior   *behaviors.TableBehavior[*domain.CareerEvent]
-	eventsSelectedIndex   int
-	selectedEventFromList *domain.CareerEvent
+	eventsTableBehavior *behaviors.TableBehavior[*domain.CareerEvent]
+	eventsSelectedIndex int
 
 	// Form for add/edit.
 	skillForm *models.SkillForm
@@ -61,13 +57,9 @@ type Intent struct {
 	skillEventsModal *modals.EventsModal
 	eventDetailModal *components.ViewEventDetailModal
 
-	// Available categories for filter menu.
-	availableCategories []string
-
 	// Screen orchestration (new architecture).
 	activeScreen screens.Screen
 	listScreen   *skills.SkillsListScreen
-	useScreens   bool
 
 	// Modal registry for unified modal handling.
 	modalRegistry *intents.ModalRegistry

@@ -1,4 +1,4 @@
-package manage_skills_test
+package skills_management_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/intents/manage_skills"
+	"github.com/baphled/kariya/internal/cli/intents/skills_management"
 )
 
 var _ = Describe("Types", func() {
@@ -23,20 +23,20 @@ var _ = Describe("Types", func() {
 
 		Describe("Fields", func() {
 			It("should have context field for input parameters", func() {
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-				intent := &manage_skills.Intent{}
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+				intent := &skills_management.Intent{}
 				intent.SetContext(intentCtx)
 				Expect(intent.GetContext()).To(Equal(intentCtx))
 			})
 
 			It("should have state field for state machine", func() {
-				intent := &manage_skills.Intent{}
-				intent.SetState(manage_skills.StateList)
-				Expect(intent.GetState()).To(Equal(manage_skills.StateList))
+				intent := &skills_management.Intent{}
+				intent.SetState(skills_management.StateList)
+				Expect(intent.GetState()).To(Equal(skills_management.StateList))
 			})
 
 			It("should have active field to track if intent is active", func() {
-				intent := &manage_skills.Intent{}
+				intent := &skills_management.Intent{}
 				intent.SetActive(true)
 				Expect(intent.IsActive()).To(BeTrue())
 			})
@@ -44,48 +44,48 @@ var _ = Describe("Types", func() {
 
 		Describe("State Transitions", func() {
 			It("should allow transition from List to Detail", func() {
-				intent := &manage_skills.Intent{}
-				intent.SetState(manage_skills.StateList)
-				intent.SetState(manage_skills.StateDetail)
-				Expect(intent.GetState()).To(Equal(manage_skills.StateDetail))
+				intent := &skills_management.Intent{}
+				intent.SetState(skills_management.StateList)
+				intent.SetState(skills_management.StateDetail)
+				Expect(intent.GetState()).To(Equal(skills_management.StateDetail))
 			})
 
 			It("should allow transition from List to Add", func() {
-				intent := &manage_skills.Intent{}
-				intent.SetState(manage_skills.StateList)
-				intent.SetState(manage_skills.StateAdd)
-				Expect(intent.GetState()).To(Equal(manage_skills.StateAdd))
+				intent := &skills_management.Intent{}
+				intent.SetState(skills_management.StateList)
+				intent.SetState(skills_management.StateAdd)
+				Expect(intent.GetState()).To(Equal(skills_management.StateAdd))
 			})
 
 			It("should allow transition from Detail to Edit", func() {
-				intent := &manage_skills.Intent{}
-				intent.SetState(manage_skills.StateDetail)
-				intent.SetState(manage_skills.StateEdit)
-				Expect(intent.GetState()).To(Equal(manage_skills.StateEdit))
+				intent := &skills_management.Intent{}
+				intent.SetState(skills_management.StateDetail)
+				intent.SetState(skills_management.StateEdit)
+				Expect(intent.GetState()).To(Equal(skills_management.StateEdit))
 			})
 
 			It("should allow transition from Detail to Delete", func() {
-				intent := &manage_skills.Intent{}
-				intent.SetState(manage_skills.StateDetail)
-				intent.SetState(manage_skills.StateDelete)
-				Expect(intent.GetState()).To(Equal(manage_skills.StateDelete))
+				intent := &skills_management.Intent{}
+				intent.SetState(skills_management.StateDetail)
+				intent.SetState(skills_management.StateDelete)
+				Expect(intent.GetState()).To(Equal(skills_management.StateDelete))
 			})
 		})
 
 		Describe("Active State", func() {
 			It("should be inactive by default", func() {
-				intent := &manage_skills.Intent{}
+				intent := &skills_management.Intent{}
 				Expect(intent.IsActive()).To(BeFalse())
 			})
 
 			It("should be activatable", func() {
-				intent := &manage_skills.Intent{}
+				intent := &skills_management.Intent{}
 				intent.SetActive(true)
 				Expect(intent.IsActive()).To(BeTrue())
 			})
 
 			It("should be deactivatable", func() {
-				intent := &manage_skills.Intent{}
+				intent := &skills_management.Intent{}
 				intent.SetActive(true)
 				intent.SetActive(false)
 				Expect(intent.IsActive()).To(BeFalse())

@@ -6,7 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
 	fact_management "github.com/baphled/kariya/internal/cli/intents/fact_management"
-	manage_skills "github.com/baphled/kariya/internal/cli/intents/manage_skills"
+	manage_skills "github.com/baphled/kariya/internal/cli/intents/skills_management"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"

@@ -1,5 +1,5 @@
 // Package manage_skills implements the ManageSkills intent for managing user-defined skills.
-package manage_skills
+package skills_management
 
 import (
 	"context"

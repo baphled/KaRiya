@@ -1,4 +1,4 @@
-package manage_skills_test
+package skills_management_test
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/intents/manage_skills"
+	"github.com/baphled/kariya/internal/cli/intents/skills_management"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -17,7 +17,7 @@ var _ = Describe("Messages", func() {
 				{ID: "skill-1", Name: "Go"},
 				{ID: "skill-2", Name: "Python"},
 			}
-			msg := manage_skills.SkillsLoadedMsg{
+			msg := skills_management.SkillsLoadedMsg{
 				Skills: skills,
 			}
 			Expect(msg.Skills).To(HaveLen(2))
@@ -26,7 +26,7 @@ var _ = Describe("Messages", func() {
 
 		It("should contain error if load failed", func() {
 			err := errors.New("database error")
-			msg := manage_skills.SkillsLoadedMsg{
+			msg := skills_management.SkillsLoadedMsg{
 				Error: err,
 			}
 			Expect(msg.Error).To(HaveOccurred())
@@ -34,7 +34,7 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should allow nil Skills on error", func() {
-			msg := manage_skills.SkillsLoadedMsg{
+			msg := skills_management.SkillsLoadedMsg{
 				Skills: nil,
 				Error:  errors.New("failed"),
 			}
@@ -45,14 +45,14 @@ var _ = Describe("Messages", func() {
 	Describe("SkillFormCompleteMsg", func() {
 		It("should contain the completed skill", func() {
 			skill := &career.Skill{ID: "skill-1", Name: "Go"}
-			msg := manage_skills.SkillFormCompleteMsg{
+			msg := skills_management.SkillFormCompleteMsg{
 				Skill: skill,
 			}
 			Expect(msg.Skill).To(Equal(skill))
 		})
 
 		It("should indicate if cancelled", func() {
-			msg := manage_skills.SkillFormCompleteMsg{
+			msg := skills_management.SkillFormCompleteMsg{
 				Cancelled: true,
 			}
 			Expect(msg.Cancelled).To(BeTrue())
@@ -60,7 +60,7 @@ var _ = Describe("Messages", func() {
 
 		It("should contain error if form validation failed", func() {
 			err := errors.New("validation error")
-			msg := manage_skills.SkillFormCompleteMsg{
+			msg := skills_management.SkillFormCompleteMsg{
 				Error: err,
 			}
 			Expect(msg.Error).To(HaveOccurred())
@@ -70,7 +70,7 @@ var _ = Describe("Messages", func() {
 	Describe("SkillCreatedMsg", func() {
 		It("should contain the created skill", func() {
 			skill := &career.Skill{ID: "skill-1", Name: "Go"}
-			msg := manage_skills.SkillCreatedMsg{
+			msg := skills_management.SkillCreatedMsg{
 				Skill: skill,
 			}
 			Expect(msg.Skill).To(Equal(skill))
@@ -78,7 +78,7 @@ var _ = Describe("Messages", func() {
 
 		It("should contain error if creation failed", func() {
 			err := errors.New("create failed")
-			msg := manage_skills.SkillCreatedMsg{
+			msg := skills_management.SkillCreatedMsg{
 				Error: err,
 			}
 			Expect(msg.Error).To(HaveOccurred())
@@ -88,7 +88,7 @@ var _ = Describe("Messages", func() {
 	Describe("SkillUpdatedMsg", func() {
 		It("should contain the updated skill", func() {
 			skill := &career.Skill{ID: "skill-1", Name: "Go Updated"}
-			msg := manage_skills.SkillUpdatedMsg{
+			msg := skills_management.SkillUpdatedMsg{
 				Skill: skill,
 			}
 			Expect(msg.Skill).To(Equal(skill))
@@ -96,7 +96,7 @@ var _ = Describe("Messages", func() {
 
 		It("should contain error if update failed", func() {
 			err := errors.New("update failed")
-			msg := manage_skills.SkillUpdatedMsg{
+			msg := skills_management.SkillUpdatedMsg{
 				Error: err,
 			}
 			Expect(msg.Error).To(HaveOccurred())
@@ -105,7 +105,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillDeletedMsg", func() {
 		It("should contain the deleted skill ID", func() {
-			msg := manage_skills.SkillDeletedMsg{
+			msg := skills_management.SkillDeletedMsg{
 				SkillID: "skill-1",
 			}
 			Expect(msg.SkillID).To(Equal("skill-1"))
@@ -113,7 +113,7 @@ var _ = Describe("Messages", func() {
 
 		It("should contain error if deletion failed", func() {
 			err := errors.New("delete failed")
-			msg := manage_skills.SkillDeletedMsg{
+			msg := skills_management.SkillDeletedMsg{
 				Error: err,
 			}
 			Expect(msg.Error).To(HaveOccurred())
@@ -126,7 +126,7 @@ var _ = Describe("Messages", func() {
 				{ID: "event-1", Text: "Built API"},
 				{ID: "event-2", Text: "Led team"},
 			}
-			msg := manage_skills.SkillEventsLoadedMsg{
+			msg := skills_management.SkillEventsLoadedMsg{
 				Events: events,
 			}
 			Expect(msg.Events).To(HaveLen(2))
@@ -134,7 +134,7 @@ var _ = Describe("Messages", func() {
 
 		It("should contain error if load failed", func() {
 			err := errors.New("load events failed")
-			msg := manage_skills.SkillEventsLoadedMsg{
+			msg := skills_management.SkillEventsLoadedMsg{
 				Error: err,
 			}
 			Expect(msg.Error).To(HaveOccurred())
@@ -146,7 +146,7 @@ var _ = Describe("Messages", func() {
 			events := []*career.CareerEvent{
 				{ID: "event-1", Text: "Built API"},
 			}
-			msg := manage_skills.SkillEventsForModalLoadedMsg{
+			msg := skills_management.SkillEventsForModalLoadedMsg{
 				Events: events,
 			}
 			Expect(msg.Events).To(HaveLen(1))
@@ -154,7 +154,7 @@ var _ = Describe("Messages", func() {
 
 		It("should contain error if load failed", func() {
 			err := errors.New("load events failed")
-			msg := manage_skills.SkillEventsForModalLoadedMsg{
+			msg := skills_management.SkillEventsForModalLoadedMsg{
 				Error: err,
 			}
 			Expect(msg.Error).To(HaveOccurred())
@@ -164,7 +164,7 @@ var _ = Describe("Messages", func() {
 	Describe("RequestBrowseEventMsg", func() {
 		It("should contain the event to browse", func() {
 			event := &career.CareerEvent{ID: "event-1", Text: "Built API"}
-			msg := manage_skills.RequestBrowseEventMsg{
+			msg := skills_management.RequestBrowseEventMsg{
 				Event: event,
 			}
 			Expect(msg.Event).To(Equal(event))
@@ -175,14 +175,14 @@ var _ = Describe("Messages", func() {
 				{ID: "event-1", Text: "Built API"},
 				{ID: "event-2", Text: "Led team"},
 			}
-			msg := manage_skills.RequestBrowseEventMsg{
+			msg := skills_management.RequestBrowseEventMsg{
 				AllEvents: events,
 			}
 			Expect(msg.AllEvents).To(HaveLen(2))
 		})
 
 		It("should contain skill name for breadcrumbs", func() {
-			msg := manage_skills.RequestBrowseEventMsg{
+			msg := skills_management.RequestBrowseEventMsg{
 				SkillName: "Go Programming",
 			}
 			Expect(msg.SkillName).To(Equal("Go Programming"))

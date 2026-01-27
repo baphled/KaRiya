@@ -3,12 +3,12 @@ package modals
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
@@ -26,7 +26,7 @@ type SkillSortFormData struct {
 
 // SortModal manages the sort modal form for skill sorting.
 type SortModal struct {
-	form     *huh.Form
+	form     forms.Form
 	formData *SkillSortFormData
 	visible  bool
 	width    int
@@ -41,7 +41,7 @@ func NewSortModal(_ []*career.Skill, current *SortConfig, width, height int) *So
 		SortOrder: "asc",
 	}
 
-	// Pre-populate from current config
+	// Pre-populate from current config.
 	if current != nil {
 		if current.SortBy != "" {
 			formData.SortBy = current.SortBy
@@ -63,33 +63,32 @@ func NewSortModal(_ []*career.Skill, current *SortConfig, width, height int) *So
 	return modal
 }
 
-// buildForm creates the huh form with sort options
+// buildForm creates the huh form with sort options.
 func (m *SortModal) buildForm() {
-	// Create form fields
-	fields := []huh.Field{
-		huh.NewSelect[string]().
-			Title("Sort By").
-			Options(
-				huh.NewOption("Name", "name"),
-				huh.NewOption("Category", "category"),
-				huh.NewOption("Level", "level"),
-				huh.NewOption("Years of Experience", "years"),
-				huh.NewOption("Events Count", "events"),
-			).
-			Value(&m.formData.SortBy),
+	// Create form fields using forms package.
+	sortByOptions := []forms.SelectOption{
+		{Key: "name", Value: "Name"},
+		{Key: "category", Value: "Category"},
+		{Key: "level", Value: "Level"},
+		{Key: "years", Value: "Years of Experience"},
+		{Key: "events", Value: "Events Count"},
+	}
 
-		huh.NewSelect[string]().
-			Title("Sort Order").
-			Options(
-				huh.NewOption("Ascending", "asc"),
-				huh.NewOption("Descending", "desc"),
-			).
+	sortOrderOptions := []forms.SelectOption{
+		{Key: "asc", Value: "Ascending"},
+		{Key: "desc", Value: "Descending"},
+	}
+
+	fields := []forms.Field{
+		forms.NewSelect("sortBy", "Sort By", "", sortByOptions).
+			Value(&m.formData.SortBy),
+		forms.NewSelect("sortOrder", "Sort Order", "", sortOrderOptions).
 			Value(&m.formData.SortOrder),
 	}
 
-	group := huh.NewGroup(fields...)
+	group := forms.NewGroup(fields...)
 
-	// Calculate modal width (60% of screen, max 60 chars for simpler form)
+	// Calculate modal width (60% of screen, max 60 chars for simpler form).
 	modalWidth := m.width * 60 / 100
 	if modalWidth > 60 {
 		modalWidth = 60
@@ -98,9 +97,8 @@ func (m *SortModal) buildForm() {
 		modalWidth = 40
 	}
 
-	// Let Huh use natural height - bubbletea-overlay will handle positioning
-	m.form = huh.NewForm(group).
-		WithWidth(modalWidth)
+	// Create form with dimensions.
+	m.form = forms.NewFormWithDimensions(modalWidth, 0, group)
 }
 
 // Init initializes the sort modal and its form.
@@ -111,7 +109,7 @@ func (m *SortModal) Init() tea.Cmd {
 	return m.form.Init()
 }
 
-// Update handles messages for the sort modal
+// Update handles messages for the sort modal.
 func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
 	if !m.visible {
 		return nil, false, nil
@@ -125,19 +123,18 @@ func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
 
 	case tea.KeyMsg:
 		if msg.String() == "esc" {
-			// Close modal without applying
+			// Close modal without applying.
 			m.visible = false
 			return nil, false, nil
 		}
 	}
 
-	// Update form.
-	form, cmd := m.form.Update(msg)
-	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
-	m.form = form.(*huh.Form)
+	// Update form using forms package helper.
+	var cmd tea.Cmd
+	m.form, cmd = forms.Update(m.form, msg)
 
 	// Check if form is complete.
-	if m.form.State == huh.StateCompleted {
+	if forms.IsCompleted(m.form) {
 		m.visible = false
 		return cmd, true, m.formData
 	}
@@ -145,26 +142,26 @@ func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
 	return cmd, false, nil
 }
 
-// View renders the sort modal with proper chrome (border, background)
+// View renders the sort modal with proper chrome (border, background).
 func (m *SortModal) View() string {
 	if !m.visible {
 		return ""
 	}
 
-	// Build footer with primitives showing keyboard shortcuts
+	// Build footer with primitives showing keyboard shortcuts.
 	footer := primitives.RenderHelpFooter(m.theme,
 		primitives.NextFieldBadge(m.theme),
 		primitives.ApplyBadge(m.theme),
 		primitives.CancelBadge(m.theme),
 	)
 
-	// Build modal content with form and footer
+	// Build modal content with form and footer.
 	var content strings.Builder
 	content.WriteString(m.form.View())
 	content.WriteString("\n\n")
 	content.WriteString(footer)
 
-	// Wrap the form in a styled box with solid background using UIKit
+	// Wrap the form in a styled box with solid background using UIKit.
 	theme := m.theme
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -191,7 +188,7 @@ func (m *SortModal) Hide() {
 	m.visible = false
 }
 
-// ToSortConfig converts form data to SortConfig
+// ToSortConfig converts form data to SortConfig.
 func (m *SortModal) ToSortConfig() *SortConfig {
 	return &SortConfig{
 		SortBy:    m.formData.SortBy,
@@ -206,18 +203,18 @@ func (m *SortModal) RenderOverlay(baseView string) string {
 		return baseView
 	}
 
-	// Create static view model for modal content
+	// Create static view model for modal content.
 	modalContent := staticViewModel{content: m.View()}
 	bgModel := staticViewModel{content: baseView}
 
-	// Use bubbletea-overlay to composite the modal on top of base view
+	// Use bubbletea-overlay to composite the modal on top of base view.
 	overlayModel := overlay.New(
-		modalContent,   // Foreground: the sort form
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (avoid footer overlap)
+		modalContent,   // Foreground: the sort form.
+		bgModel,        // Background: the rendered view.
+		overlay.Center, // X position.
+		overlay.Center, // Y position.
+		0,              // X offset.
+		-2,             // Y offset (avoid footer overlap).
 	)
 
 	return overlayModel.View()

@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
@@ -35,7 +35,7 @@ type FilterFormData struct {
 
 // FilterModal manages the filter modal form for skill filtering.
 type FilterModal struct {
-	form     *huh.Form
+	form     forms.Form
 	formData *FilterFormData
 	visible  bool
 	width    int
@@ -46,19 +46,7 @@ type FilterModal struct {
 // NewFilterModal creates a new skill filter modal.
 // NOTE: Search and Sort are handled by separate modals
 func NewFilterModal(skills []*career.Skill, currentFilter *Filters, width, height int) *FilterModal {
-	formData := &FilterFormData{}
-
-	// Pre-populate from current filters
-	if currentFilter != nil {
-		formData.Categories = currentFilter.Categories
-		formData.Levels = currentFilter.Levels
-		if currentFilter.MinYears > 0 {
-			formData.MinYearsStr = strconv.Itoa(currentFilter.MinYears)
-		}
-		if currentFilter.MaxYears > 0 {
-			formData.MaxYearsStr = strconv.Itoa(currentFilter.MaxYears)
-		}
-	}
+	formData := initFilterFormData(currentFilter)
 
 	modal := &FilterModal{
 		formData: formData,
@@ -72,96 +60,114 @@ func NewFilterModal(skills []*career.Skill, currentFilter *Filters, width, heigh
 	return modal
 }
 
-// buildForm creates the huh form with filter options
+// initFilterFormData creates form data from current filters.
+func initFilterFormData(currentFilter *Filters) *FilterFormData {
+	formData := &FilterFormData{}
+	if currentFilter != nil {
+		formData.Categories = currentFilter.Categories
+		formData.Levels = currentFilter.Levels
+		if currentFilter.MinYears > 0 {
+			formData.MinYearsStr = strconv.Itoa(currentFilter.MinYears)
+		}
+		if currentFilter.MaxYears > 0 {
+			formData.MaxYearsStr = strconv.Itoa(currentFilter.MaxYears)
+		}
+	}
+	return formData
+}
+
+// extractUniqueValues extracts unique non-empty values from skills using the given accessor.
+func extractUniqueValues(skills []*career.Skill, accessor func(*career.Skill) string) []forms.SelectOption {
+	valueMap := make(map[string]bool)
+	for _, skill := range skills {
+		val := accessor(skill)
+		if val != "" {
+			valueMap[val] = true
+		}
+	}
+
+	options := make([]forms.SelectOption, 0, len(valueMap))
+	for val := range valueMap {
+		options = append(options, forms.SelectOption{Key: val, Value: val})
+	}
+	return options
+}
+
+// buildForm creates the huh form with filter options.
 func (m *FilterModal) buildForm(skills []*career.Skill) {
-	// Extract unique categories from skills
-	categoryMap := make(map[string]bool)
-	for _, skill := range skills {
-		if skill.Category != "" {
-			categoryMap[skill.Category] = true
-		}
-	}
-	categoryOptions := make([]huh.Option[string], 0, len(categoryMap))
-	for category := range categoryMap {
-		categoryOptions = append(categoryOptions, huh.NewOption(category, category))
-	}
+	// Extract unique categories and levels.
+	categoryOptions := extractUniqueValues(skills, func(s *career.Skill) string { return s.Category })
+	levelOptions := extractUniqueValues(skills, func(s *career.Skill) string { return s.Level })
 
-	// Extract unique levels from skills
-	levelMap := make(map[string]bool)
-	for _, skill := range skills {
-		if skill.Level != "" {
-			levelMap[skill.Level] = true
-		}
-	}
-	levelOptions := make([]huh.Option[string], 0, len(levelMap))
-	for level := range levelMap {
-		levelOptions = append(levelOptions, huh.NewOption(level, level))
-	}
+	// Build form fields.
+	fields := m.buildFilterFields(categoryOptions, levelOptions)
 
-	// Create form fields
-	// NOTE: Search is handled by separate SearchModal (accessed via `/` key)
-	fields := []huh.Field{}
+	// Create form group.
+	group := forms.NewGroup(fields...)
 
-	// Only add category filter if there are categories
+	// Calculate modal width.
+	modalWidth := m.calculateModalWidth()
+
+	// Create form with dimensions.
+	m.form = forms.NewFormWithDimensions(modalWidth, 0, group)
+}
+
+// buildFilterFields creates the filter form fields.
+func (m *FilterModal) buildFilterFields(categoryOptions, levelOptions []forms.SelectOption) []forms.Field {
+	fields := []forms.Field{}
+
+	// Category filter (if categories exist).
 	if len(categoryOptions) > 0 {
-		fields = append(fields, huh.NewMultiSelect[string]().
-			Title("Filter by Category").
-			Options(categoryOptions...).
-			Value(&m.formData.Categories))
+		fields = append(fields, forms.NewMultiSelect(
+			"categories",
+			"Filter by Category",
+			"",
+			categoryOptions,
+			0,
+		).Value(&m.formData.Categories))
 	}
 
-	// Only add level filter if there are levels
+	// Level filter (if levels exist).
 	if len(levelOptions) > 0 {
-		fields = append(fields, huh.NewMultiSelect[string]().
-			Title("Filter by Level").
-			Options(levelOptions...).
-			Value(&m.formData.Levels))
+		fields = append(fields, forms.NewMultiSelect(
+			"levels",
+			"Filter by Level",
+			"",
+			levelOptions,
+			0,
+		).Value(&m.formData.Levels))
 	}
 
-	// Years range filters
-	fields = append(fields,
-		huh.NewInput().
-			Title("Minimum Years").
-			Placeholder("0").
-			Value(&m.formData.MinYearsStr).
-			Validate(func(s string) error {
-				if s == "" {
-					return nil
-				}
-				years, err := strconv.Atoi(s)
-				if err != nil {
-					return fmt.Errorf("must be a number")
-				}
-				if years < 0 {
-					return fmt.Errorf("must be positive")
-				}
+	// Years range filters.
+	fields = append(fields, m.buildYearsInput("Minimum Years", "0", &m.formData.MinYearsStr))
+	fields = append(fields, m.buildYearsInput("Maximum Years", "100", &m.formData.MaxYearsStr))
+
+	return fields
+}
+
+// buildYearsInput creates a validated years input field.
+func (m *FilterModal) buildYearsInput(title, placeholder string, value *string) forms.Input {
+	return forms.NewInput(forms.FieldConfig{
+		Title:       title,
+		Placeholder: placeholder,
+		Validate: func(s string) error {
+			if s == "" {
 				return nil
-			}),
+			}
+			years, err := strconv.Atoi(s)
+			if err != nil {
+				return fmt.Errorf("must be a number")
+			}
+			if years < 0 {
+				return fmt.Errorf("must be positive")
+			}
+			return nil
+		},
+	}).Value(value)
+}
 
-		huh.NewInput().
-			Title("Maximum Years").
-			Placeholder("100").
-			Value(&m.formData.MaxYearsStr).
-			Validate(func(s string) error {
-				if s == "" {
-					return nil
-				}
-				years, err := strconv.Atoi(s)
-				if err != nil {
-					return fmt.Errorf("must be a number")
-				}
-				if years < 0 {
-					return fmt.Errorf("must be positive")
-				}
-				return nil
-			}),
-	)
-
-	// NOTE: Sort options removed - use SortModal (accessed via `s` key)
-
-	group := huh.NewGroup(fields...)
-
-	// Calculate modal width (60% of screen, max 80 chars)
+// calculateModalWidth calculates the appropriate modal width.
+func (m *FilterModal) calculateModalWidth() int {
 	modalWidth := m.width * 60 / 100
 	if modalWidth > 80 {
 		modalWidth = 80
@@ -169,10 +175,7 @@ func (m *FilterModal) buildForm(skills []*career.Skill) {
 	if modalWidth < 40 {
 		modalWidth = 40
 	}
-
-	// Let Huh use natural height - bubbletea-overlay will handle positioning
-	m.form = huh.NewForm(group).
-		WithWidth(modalWidth)
+	return modalWidth
 }
 
 // Init initializes the filter modal and its form.
@@ -183,7 +186,7 @@ func (m *FilterModal) Init() tea.Cmd {
 	return m.form.Init()
 }
 
-// Update handles messages for the filter modal
+// Update handles messages for the filter modal.
 func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 	if !m.visible {
 		return nil, false, nil
@@ -197,19 +200,17 @@ func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 
 	case tea.KeyMsg:
 		if msg.String() == "esc" {
-			// Close modal without applying
 			m.visible = false
 			return nil, false, nil
 		}
 	}
 
-	// Update form.
-	form, cmd := m.form.Update(msg)
-	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
-	m.form = form.(*huh.Form)
+	// Update form using forms package helper.
+	var cmd tea.Cmd
+	m.form, cmd = forms.Update(m.form, msg)
 
 	// Check if form is complete.
-	if m.form.State == huh.StateCompleted {
+	if forms.IsCompleted(m.form) {
 		m.visible = false
 		return cmd, true, m.formData
 	}
@@ -217,26 +218,26 @@ func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 	return cmd, false, nil
 }
 
-// View renders the filter modal with proper chrome (border, background)
+// View renders the filter modal with proper chrome (border, background).
 func (m *FilterModal) View() string {
 	if !m.visible {
 		return ""
 	}
 
-	// Build footer with primitives showing keyboard shortcuts
+	// Build footer with primitives showing keyboard shortcuts.
 	footer := primitives.RenderHelpFooter(m.theme,
 		primitives.NextFieldBadge(m.theme),
 		primitives.ApplyBadge(m.theme),
 		primitives.CancelBadge(m.theme),
 	)
 
-	// Build modal content with form and footer
+	// Build modal content with form and footer.
 	var content strings.Builder
 	content.WriteString(m.form.View())
 	content.WriteString("\n\n")
 	content.WriteString(footer)
 
-	// Wrap the form in a styled box with solid background using UIKit
+	// Wrap the form in a styled box with solid background using UIKit.
 	theme := m.theme
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -263,7 +264,7 @@ func (m *FilterModal) Hide() {
 	m.visible = false
 }
 
-// ToFilters converts form data to Filters
+// ToFilters converts form data to Filters.
 // NOTE: Search and Sort are handled separately by other modals
 func (m *FilterModal) ToFilters() *Filters {
 	filters := &Filters{
@@ -271,7 +272,7 @@ func (m *FilterModal) ToFilters() *Filters {
 		Levels:     m.formData.Levels,
 	}
 
-	// Parse years (ignore errors, default to 0)
+	// Parse years (ignore errors, default to 0).
 	if m.formData.MinYearsStr != "" {
 		if years, err := strconv.Atoi(m.formData.MinYearsStr); err == nil && years > 0 {
 			filters.MinYears = years
@@ -293,18 +294,18 @@ func (m *FilterModal) RenderOverlay(baseView string) string {
 		return baseView
 	}
 
-	// Create static view model for modal content
+	// Create static view model for modal content.
 	modalContent := staticViewModel{content: m.View()}
 	bgModel := staticViewModel{content: baseView}
 
-	// Use bubbletea-overlay to composite the modal on top of base view
+	// Use bubbletea-overlay to composite the modal on top of base view.
 	overlayModel := overlay.New(
-		modalContent,   // Foreground: the filter form
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (avoid footer overlap)
+		modalContent,   // Foreground: the filter form.
+		bgModel,        // Background: the rendered view.
+		overlay.Center, // X position.
+		overlay.Center, // Y position.
+		0,              // X offset.
+		-2,             // Y offset (avoid footer overlap).
 	)
 
 	return overlayModel.View()

@@ -1,4 +1,4 @@
-package manage_skills_test
+package skills_management_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/intents/manage_skills"
+	"github.com/baphled/kariya/internal/cli/intents/skills_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -26,63 +26,63 @@ var _ = Describe("Intent", func() {
 
 	Describe("NewIntent", func() {
 		It("should create a new intent with valid context", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, err := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, err := skills_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(intent).NotTo(BeNil())
 		})
 
 		It("should set initial state to StateList", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
-			Expect(intent.GetState()).To(Equal(manage_skills.StateList))
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
+			Expect(intent.GetState()).To(Equal(skills_management.StateList))
 		})
 
 		It("should not be active initially", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			Expect(intent.IsActive()).To(BeFalse())
 		})
 
 		It("should store the context", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			Expect(intent.GetContext()).To(Equal(intentCtx))
 		})
 
 		It("should return error with invalid context", func() {
-			intentCtx := &manage_skills.IntentContext{
+			intentCtx := &skills_management.IntentContext{
 				Ctx:             nil,
 				SkillRepository: nil,
 			}
-			_, err := manage_skills.NewIntent(intentCtx)
+			_, err := skills_management.NewIntent(intentCtx)
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("should embed BaseIntent", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			Expect(intent.BaseIntent).NotTo(BeNil())
 		})
 
 		It("should initialize TableBehavior for skills", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			Expect(intent.GetTableBehavior()).NotTo(BeNil())
 		})
 	})
 
 	Describe("Init", func() {
 		It("should set active to true", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			_ = intent.Init()
 			Expect(intent.IsActive()).To(BeTrue())
 		})
 
 		It("should return a command to load skills", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			cmd := intent.Init()
 			Expect(cmd).NotTo(BeNil())
 		})
@@ -96,13 +96,13 @@ var _ = Describe("Intent", func() {
 			})
 
 			It("should populate skills after loading", func() {
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-				intent, _ := manage_skills.NewIntent(intentCtx)
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+				intent, _ := skills_management.NewIntent(intentCtx)
 				cmd := intent.Init()
 
 				// Execute the command to get the message
 				msg := cmd()
-				loadedMsg, ok := msg.(manage_skills.SkillsLoadedMsg)
+				loadedMsg, ok := msg.(skills_management.SkillsLoadedMsg)
 				Expect(ok).To(BeTrue())
 				Expect(loadedMsg.Error).NotTo(HaveOccurred())
 				Expect(loadedMsg.Skills).To(HaveLen(2))
@@ -111,11 +111,11 @@ var _ = Describe("Intent", func() {
 	})
 
 	Describe("Update", func() {
-		var intent *manage_skills.Intent
+		var intent *skills_management.Intent
 
 		BeforeEach(func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ = manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ = skills_management.NewIntent(intentCtx)
 			_ = intent.Init()
 		})
 
@@ -132,14 +132,14 @@ var _ = Describe("Intent", func() {
 				skills := []*career.Skill{
 					{ID: "skill-1", Name: "Go"},
 				}
-				msg := manage_skills.SkillsLoadedMsg{Skills: skills}
+				msg := skills_management.SkillsLoadedMsg{Skills: skills}
 				_ = intent.Update(msg)
 				Expect(intent.GetSkills()).To(HaveLen(1))
 			})
 
 			It("should handle error in loaded message", func() {
-				msg := manage_skills.SkillsLoadedMsg{
-					Error: manage_skills.ErrRepositoryNotAvailable,
+				msg := skills_management.SkillsLoadedMsg{
+					Error: skills_management.ErrRepositoryNotAvailable,
 				}
 				_ = intent.Update(msg)
 				result := intent.Result()
@@ -159,11 +159,11 @@ var _ = Describe("Intent", func() {
 	})
 
 	Describe("View", func() {
-		var intent *manage_skills.Intent
+		var intent *skills_management.Intent
 
 		BeforeEach(func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ = manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ = skills_management.NewIntent(intentCtx)
 			_ = intent.Init()
 		})
 
@@ -189,11 +189,11 @@ var _ = Describe("Intent", func() {
 	})
 
 	Describe("Result", func() {
-		var intent *manage_skills.Intent
+		var intent *skills_management.Intent
 
 		BeforeEach(func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ = manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ = skills_management.NewIntent(intentCtx)
 		})
 
 		It("should return nil when no result is set", func() {
@@ -214,8 +214,8 @@ var _ = Describe("Intent", func() {
 
 	Describe("Interface Compliance", func() {
 		It("should implement FilterBehavior interface", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			var _ interface {
 				HasActiveFilters() bool
 				ClearFilters()
@@ -224,8 +224,8 @@ var _ = Describe("Intent", func() {
 		})
 
 		It("should implement ScreenResultHandler interface", func() {
-			intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
-			intent, _ := manage_skills.NewIntent(intentCtx)
+			intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+			intent, _ := skills_management.NewIntent(intentCtx)
 			// Verify ScreenResultHandler compliance via behaviors package
 			var _ behaviors.ScreenResultHandler = intent
 		})

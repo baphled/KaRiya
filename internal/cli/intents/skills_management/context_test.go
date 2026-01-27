@@ -1,4 +1,4 @@
-package manage_skills_test
+package skills_management_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/intents/manage_skills"
+	"github.com/baphled/kariya/internal/cli/intents/skills_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 )
@@ -131,52 +131,52 @@ func (m *MockSkillRepository) GetEventsUsingSkill(_ context.Context, skillID str
 var _ = Describe("Context", func() {
 	Describe("Errors", func() {
 		It("should define ErrNoSkillSelected", func() {
-			Expect(manage_skills.ErrNoSkillSelected).To(MatchError("no skill selected"))
+			Expect(skills_management.ErrNoSkillSelected).To(MatchError("no skill selected"))
 		})
 
 		It("should define ErrInvalidSkillData", func() {
-			Expect(manage_skills.ErrInvalidSkillData).To(MatchError("invalid skill data"))
+			Expect(skills_management.ErrInvalidSkillData).To(MatchError("invalid skill data"))
 		})
 	})
 
 	Describe("Filters", func() {
 		It("should have Category field for filtering by category", func() {
-			filters := &manage_skills.Filters{
+			filters := &skills_management.Filters{
 				Category: "Programming",
 			}
 			Expect(filters.Category).To(Equal("Programming"))
 		})
 
 		It("should have Level field for filtering by proficiency level", func() {
-			filters := &manage_skills.Filters{
+			filters := &skills_management.Filters{
 				Level: "advanced",
 			}
 			Expect(filters.Level).To(Equal("advanced"))
 		})
 
 		It("should have MinEvents field for filtering by minimum event count", func() {
-			filters := &manage_skills.Filters{
+			filters := &skills_management.Filters{
 				MinEvents: 5,
 			}
 			Expect(filters.MinEvents).To(Equal(5))
 		})
 
 		It("should have SearchText field for text search", func() {
-			filters := &manage_skills.Filters{
+			filters := &skills_management.Filters{
 				SearchText: "golang",
 			}
 			Expect(filters.SearchText).To(Equal("golang"))
 		})
 
 		It("should have SortBy field for sort column", func() {
-			filters := &manage_skills.Filters{
+			filters := &skills_management.Filters{
 				SortBy: "name",
 			}
 			Expect(filters.SortBy).To(Equal("name"))
 		})
 
 		It("should have SortOrder field for sort direction", func() {
-			filters := &manage_skills.Filters{
+			filters := &skills_management.Filters{
 				SortOrder: "asc",
 			}
 			Expect(filters.SortOrder).To(Equal("asc"))
@@ -184,39 +184,39 @@ var _ = Describe("Context", func() {
 
 		Describe("HasActiveFilters", func() {
 			It("should return false when no filters are set", func() {
-				filters := &manage_skills.Filters{}
+				filters := &skills_management.Filters{}
 				Expect(filters.HasActiveFilters()).To(BeFalse())
 			})
 
 			It("should return true when Category is set", func() {
-				filters := &manage_skills.Filters{Category: "Programming"}
+				filters := &skills_management.Filters{Category: "Programming"}
 				Expect(filters.HasActiveFilters()).To(BeTrue())
 			})
 
 			It("should return true when Level is set", func() {
-				filters := &manage_skills.Filters{Level: "advanced"}
+				filters := &skills_management.Filters{Level: "advanced"}
 				Expect(filters.HasActiveFilters()).To(BeTrue())
 			})
 
 			It("should return true when MinEvents is set", func() {
-				filters := &manage_skills.Filters{MinEvents: 1}
+				filters := &skills_management.Filters{MinEvents: 1}
 				Expect(filters.HasActiveFilters()).To(BeTrue())
 			})
 
 			It("should return true when SearchText is set", func() {
-				filters := &manage_skills.Filters{SearchText: "go"}
+				filters := &skills_management.Filters{SearchText: "go"}
 				Expect(filters.HasActiveFilters()).To(BeTrue())
 			})
 
 			It("should return true when SortBy is set", func() {
-				filters := &manage_skills.Filters{SortBy: "name"}
+				filters := &skills_management.Filters{SortBy: "name"}
 				Expect(filters.HasActiveFilters()).To(BeTrue())
 			})
 		})
 
 		Describe("Clear", func() {
 			It("should clear all filter fields in FIFO order - search first", func() {
-				filters := &manage_skills.Filters{
+				filters := &skills_management.Filters{
 					SearchText: "go",
 					Category:   "Programming",
 					SortBy:     "name",
@@ -227,7 +227,7 @@ var _ = Describe("Context", func() {
 			})
 
 			It("should clear category/level filters after search", func() {
-				filters := &manage_skills.Filters{
+				filters := &skills_management.Filters{
 					Category: "Programming",
 					Level:    "advanced",
 					SortBy:   "name",
@@ -239,7 +239,7 @@ var _ = Describe("Context", func() {
 			})
 
 			It("should clear sort last", func() {
-				filters := &manage_skills.Filters{
+				filters := &skills_management.Filters{
 					SortBy:    "name",
 					SortOrder: "asc",
 				}
@@ -263,22 +263,22 @@ var _ = Describe("Context", func() {
 
 		Describe("Construction", func() {
 			It("should create a context with repository", func() {
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx).NotTo(BeNil())
 			})
 
 			It("should store the context", func() {
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx.Ctx).To(Equal(ctx))
 			})
 
 			It("should store the repository", func() {
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx.SkillRepository).To(Equal(mockRepo))
 			})
 
 			It("should initialize empty filters", func() {
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx.Filters).NotTo(BeNil())
 			})
 		})
@@ -286,7 +286,7 @@ var _ = Describe("Context", func() {
 		Describe("Validate", func() {
 			Context("when repository is nil", func() {
 				It("should return error", func() {
-					intentCtx := &manage_skills.IntentContext{
+					intentCtx := &skills_management.IntentContext{
 						Ctx:             ctx,
 						SkillRepository: nil,
 					}
@@ -297,7 +297,7 @@ var _ = Describe("Context", func() {
 
 			Context("when context is nil", func() {
 				It("should return error", func() {
-					intentCtx := &manage_skills.IntentContext{
+					intentCtx := &skills_management.IntentContext{
 						Ctx:             nil,
 						SkillRepository: mockRepo,
 					}
@@ -308,7 +308,7 @@ var _ = Describe("Context", func() {
 
 			Context("when all fields are valid", func() {
 				It("should return no error", func() {
-					intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+					intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 					err := intentCtx.Validate()
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -316,7 +316,7 @@ var _ = Describe("Context", func() {
 
 			Context("when Filters is nil", func() {
 				It("should initialize to empty filters", func() {
-					intentCtx := &manage_skills.IntentContext{
+					intentCtx := &skills_management.IntentContext{
 						Ctx:             ctx,
 						SkillRepository: mockRepo,
 						Filters:         nil,
@@ -343,14 +343,14 @@ var _ = Describe("Context", func() {
 			Context("with valid repository", func() {
 				It("should load skills successfully", func() {
 					mockRepo.skills = []*career.Skill{testSkill}
-					intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+					intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 					skills, err := intentCtx.LoadSkills()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(skills).To(HaveLen(1))
 				})
 
 				It("should return empty slice when no skills", func() {
-					intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+					intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 					skills, err := intentCtx.LoadSkills()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(skills).To(BeEmpty())
@@ -360,7 +360,7 @@ var _ = Describe("Context", func() {
 			Context("when repository returns error", func() {
 				It("should propagate the error", func() {
 					mockRepo.listErr = errors.New("database error")
-					intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+					intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 					_, err := intentCtx.LoadSkills()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("database error"))
@@ -374,7 +374,7 @@ var _ = Describe("Context", func() {
 					"skill-1": 5,
 					"skill-2": 3,
 				}
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 				counts, err := intentCtx.GetEventCounts()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(counts["skill-1"]).To(Equal(5))
@@ -387,7 +387,7 @@ var _ = Describe("Context", func() {
 					{ID: "event-1", Text: "Built API"},
 				}
 				mockRepo.eventsBySkill["skill-1"] = events
-				intentCtx := manage_skills.NewIntentContext(ctx, mockRepo)
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
 				result, err := intentCtx.GetEventsForSkill("skill-1")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(HaveLen(1))

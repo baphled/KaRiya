@@ -3,11 +3,11 @@ package modals
 import (
 	"fmt"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -17,7 +17,7 @@ import (
 const maxEventTextLength = 42
 
 // EventsModal displays events that use a skill in a modal overlay with a data table.
-// This modal uses bubbles/table for consistent table display and navigation.
+// This modal uses TableBehavior for consistent table display and navigation.
 //
 // Features:
 // - Data table display with Date, Event, and Company columns
@@ -52,19 +52,69 @@ type EventsModal struct {
 	visible       bool
 	width         int
 	height        int
-	table         table.Model
-	selectedEvent *career.CareerEvent // Set when user selects an event
+	table         *behaviors.TableBehavior[*career.CareerEvent]
+	selectedEvent *career.CareerEvent // Set when user selects an event.
+}
+
+// eventRowFormatter formats a career event for table display.
+func eventRowFormatter(event *career.CareerEvent, _ int) []string {
+	if event == nil {
+		return []string{"-", "(No event)", "-"}
+	}
+
+	// Date.
+	dateStr := "-"
+	if !event.Date.IsZero() {
+		dateStr = event.Date.Format("2006-01-02")
+	}
+
+	// Event text (truncated to fit column).
+	text := event.Text
+	if text == "" {
+		text = "(No description)"
+	}
+	if len(text) > maxEventTextLength {
+		text = text[:maxEventTextLength] + "..."
+	}
+
+	// Company.
+	company := event.Company
+	if company == "" {
+		company = "-"
+	}
+
+	return []string{dateStr, text, company}
 }
 
 // NewEventsModal creates a new events modal for a skill.
 func NewEventsModal(skillID, skillName string, events []*career.CareerEvent, theme themes.Theme) *EventsModal {
-	// Filter out nil events
+	// Filter out nil events.
 	filteredEvents := make([]*career.CareerEvent, 0, len(events))
 	for _, e := range events {
 		if e != nil {
 			filteredEvents = append(filteredEvents, e)
 		}
 	}
+
+	// Nil theme guard.
+	if theme == nil {
+		theme = themes.NewDefaultTheme()
+	}
+
+	// Define table columns.
+	columns := []behaviors.ColumnDef{
+		{Title: "Date", Width: 12},
+		{Title: "Event", Width: 45},
+		{Title: "Company", Width: 20},
+	}
+
+	// Create table behavior.
+	tableBehavior := behaviors.NewTableBehavior(theme, columns, eventRowFormatter).
+		PageSize(12).
+		EmptyMessage("No events use this skill.").
+		HidePagination()
+
+	tableBehavior.SetItems(filteredEvents)
 
 	m := &EventsModal{
 		skillID:   skillID,
@@ -74,94 +124,9 @@ func NewEventsModal(skillID, skillName string, events []*career.CareerEvent, the
 		visible:   false,
 		width:     100,
 		height:    24,
+		table:     tableBehavior,
 	}
-	m.initTable()
 	return m
-}
-
-// initTable initializes the bubbles/table with columns, rows, and styling
-func (m *EventsModal) initTable() {
-	// Nil theme guard
-	theme := m.theme
-	if theme == nil {
-		theme = themes.NewDefaultTheme()
-	}
-
-	columns := []table.Column{
-		{Title: "Date", Width: 12},
-		{Title: "Event", Width: 45},
-		{Title: "Company", Width: 20},
-	}
-
-	rows := m.buildRows()
-
-	// Calculate table height (modal height - borders - padding - title - footer - spacing)
-	tableHeight := m.height - 14
-	if tableHeight < 5 {
-		tableHeight = 5
-	}
-	if tableHeight > 12 {
-		tableHeight = 12
-	}
-
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows(rows),
-		table.WithFocused(true),
-		table.WithHeight(tableHeight),
-	)
-
-	// Apply theme styling consistent with other tables in the app
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(theme.BorderColor()).
-		BorderBottom(true).
-		Bold(true).
-		Foreground(theme.PrimaryColor())
-	s.Selected = s.Selected.
-		Foreground(theme.PrimaryColor()).
-		Background(theme.AccentColor()).
-		Bold(true)
-	s.Cell = s.Cell.
-		Foreground(theme.SecondaryColor())
-
-	t.SetStyles(s)
-	m.table = t
-}
-
-// buildRows converts events to table rows
-func (m *EventsModal) buildRows() []table.Row {
-	rows := make([]table.Row, 0, len(m.events))
-	for _, event := range m.events {
-		if event == nil {
-			continue
-		}
-
-		// Date
-		dateStr := "-"
-		if !event.Date.IsZero() {
-			dateStr = event.Date.Format("2006-01-02")
-		}
-
-		// Event text (truncated to fit column)
-		text := event.Text
-		if text == "" {
-			text = "(No description)"
-		}
-		if len(text) > maxEventTextLength {
-			text = text[:maxEventTextLength] + "..."
-		}
-
-		// Company
-		company := event.Company
-		if company == "" {
-			company = "-"
-		}
-
-		rows = append(rows, table.Row{dateStr, text, company})
-	}
-	return rows
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
@@ -175,36 +140,50 @@ func (m *EventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	var cmd tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.initTable() // Rebuild table with new dimensions
+		m.updateTableDimensions()
 		return m, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
+		keyStr := msg.String()
+
+		switch keyStr {
 		case "esc", "backspace", "q":
-			// Close modal without selection
+			// Close modal without selection.
 			m.Hide()
 			return m, nil
 
 		case "enter":
-			// Select the current event
-			idx := m.table.Cursor()
-			if len(m.events) > 0 && idx >= 0 && idx < len(m.events) {
-				m.selectedEvent = m.events[idx]
+			// Select the current event.
+			if selected := m.table.GetSelectedItem(); selected != nil {
+				m.selectedEvent = *selected
 				m.Hide()
 			}
 			return m, nil
 		}
+
+		// Handle table navigation.
+		if m.table.HandleNavigation(keyStr) {
+			return m, nil
+		}
 	}
 
-	// Forward other messages to table for navigation (up/down/j/k/pgup/pgdn/home/end/g/G)
-	m.table, cmd = m.table.Update(msg)
-	return m, cmd
+	return m, nil
+}
+
+// updateTableDimensions updates the table dimensions based on modal size.
+func (m *EventsModal) updateTableDimensions() {
+	tableHeight := m.height - 14
+	if tableHeight < 5 {
+		tableHeight = 5
+	}
+	if tableHeight > 12 {
+		tableHeight = 12
+	}
+	m.table.PageSize(tableHeight)
 }
 
 // View renders the modal content with data table.
@@ -213,62 +192,59 @@ func (m *EventsModal) View() string {
 		return ""
 	}
 
-	// Nil theme guard
+	// Nil theme guard.
 	theme := m.theme
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
 	}
 
-	// Calculate modal dimensions
-	// We need space for: border(2) + padding(2) + title(1) + blank(1) + table + blank(1) + footer(1)
-	// Minimum chrome = 8 lines
+	// Calculate modal dimensions.
 	maxModalHeight := 24
-	terminalMaxHeight := int(float64(m.height) * 0.85) // Use 85% of terminal height
+	terminalMaxHeight := int(float64(m.height) * 0.85)
 	if terminalMaxHeight > maxModalHeight {
 		maxModalHeight = terminalMaxHeight
 	}
 	if maxModalHeight < 16 {
-		maxModalHeight = 16 // Minimum usable height
+		maxModalHeight = 16
 	}
 
-	modalWidth := m.width - 8 // Leave margins
+	modalWidth := m.width - 8
 	if modalWidth > 95 {
-		modalWidth = 95 // Max width for table
+		modalWidth = 95
 	}
 	if modalWidth < 60 {
-		modalWidth = 60 // Minimum usable width
+		modalWidth = 60
 	}
 
 	// Build title using UIKit.
 	title := primitives.Title(fmt.Sprintf("Events using %q (%d)", m.skillName, len(m.events)), theme).Render()
 
-	// Build content - either table or empty message
+	// Build content - table or empty message.
 	var content string
-	if len(m.events) == 0 {
-		// Use UIKit Text with margin for empty state
+	if m.table.IsEmpty() {
 		content = primitives.Muted("No events use this skill.", theme).
 			Italic().
 			MarginTop(2).
 			MarginBottom(2).
 			Render()
 	} else {
-		content = m.table.View()
+		content = m.table.Render()
 	}
 
-	// Build footer with pagination info using UIKit
+	// Build footer with navigation info.
 	var footerText string
-	if len(m.events) > 0 {
+	if !m.table.IsEmpty() {
 		footerText = fmt.Sprintf("Enter: View Details | ↑↓/j/k: Navigate | Esc: Close  [%d/%d]",
-			m.table.Cursor()+1, len(m.events))
+			m.table.GetSelectedIndex()+1, m.table.Count())
 	} else {
 		footerText = "Esc: Close"
 	}
 	footer := primitives.Muted(footerText, theme).Render()
 
-	// Build modal content
+	// Build modal content.
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, title, "", content, "", footer)
 
-	// Wrap in styled box with solid background using UIKit (with MaxHeight)
+	// Wrap in styled box with solid background using UIKit.
 	return containers.NewBox(theme).
 		Content(modalContent).
 		Width(modalWidth).
@@ -282,14 +258,14 @@ func (m *EventsModal) View() string {
 func (m *EventsModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
-	m.initTable() // Rebuild table with new dimensions
+	m.updateTableDimensions()
 }
 
 // Show makes the modal visible.
 func (m *EventsModal) Show() {
 	m.visible = true
 	m.selectedEvent = nil
-	m.table.SetCursor(0) // Reset selection
+	m.table.SetSelectedIndex(0)
 }
 
 // Hide hides the modal.
@@ -314,7 +290,7 @@ func (m *EventsModal) GetSkillName() string {
 
 // SetEvents updates the events being displayed.
 func (m *EventsModal) SetEvents(events []*career.CareerEvent) {
-	// Filter out nil events
+	// Filter out nil events.
 	filteredEvents := make([]*career.CareerEvent, 0, len(events))
 	for _, e := range events {
 		if e != nil {
@@ -324,7 +300,7 @@ func (m *EventsModal) SetEvents(events []*career.CareerEvent) {
 
 	m.events = filteredEvents
 	m.selectedEvent = nil
-	m.initTable() // Rebuild table with new data
+	m.table.SetItems(filteredEvents)
 }
 
 // HasSelection returns true if the user selected an event.
@@ -344,5 +320,5 @@ func (m *EventsModal) ClearSelection() {
 
 // GetSelectedIndex returns the current selection index.
 func (m *EventsModal) GetSelectedIndex() int {
-	return m.table.Cursor()
+	return m.table.GetSelectedIndex()
 }

@@ -3,11 +3,11 @@ package modals
 import (
 	"strings"
 
+	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 )
 
 // SearchFormData holds the form field values for skill searching.
@@ -17,7 +17,7 @@ type SearchFormData struct {
 
 // SearchModal manages the search modal form for skill searching.
 type SearchModal struct {
-	form     *huh.Form
+	form     forms.Form
 	formData *SearchFormData
 	visible  bool
 	width    int
@@ -45,18 +45,18 @@ func NewSearchModal(currentSearch string, width, height int) *SearchModal {
 
 // rebuildForm creates a new form instance with current dimensions.
 func (m *SearchModal) rebuildForm() {
-	// Create form fields
-	fields := []huh.Field{
-		huh.NewInput().
-			Title("Search Skills").
-			Description("Search by name, category, or description").
-			Placeholder("Enter search text...").
-			Value(&m.formData.SearchText),
+	// Create form fields using forms package.
+	fields := []forms.Field{
+		forms.NewInput(forms.FieldConfig{
+			Title:       "Search Skills",
+			Description: "Search by name, category, or description",
+			Placeholder: "Enter search text...",
+		}).Value(&m.formData.SearchText),
 	}
 
-	group := huh.NewGroup(fields...)
+	group := forms.NewGroup(fields...)
 
-	// Calculate modal width (60% of screen, max 60 chars for simple search form)
+	// Calculate modal width (60% of screen, max 60 chars for simple search form).
 	modalWidth := m.width * 60 / 100
 	if modalWidth > 60 {
 		modalWidth = 60
@@ -65,9 +65,8 @@ func (m *SearchModal) rebuildForm() {
 		modalWidth = 40
 	}
 
-	// Let Huh use natural height - bubbletea-overlay will handle positioning
-	m.form = huh.NewForm(group).
-		WithWidth(modalWidth)
+	// Create form with dimensions.
+	m.form = forms.NewFormWithDimensions(modalWidth, 0, group)
 }
 
 // Init initializes the modal.
@@ -85,7 +84,7 @@ func (m *SearchModal) Init() tea.Cmd {
 // CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to process
 // Tab and Enter keys correctly. Huh forms require full tea.Msg interface.
 func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
-	// Handle WindowSizeMsg for responsive sizing
+	// Handle WindowSizeMsg for responsive sizing.
 	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
 		m.width = wsm.Width
 		m.height = wsm.Height
@@ -93,10 +92,10 @@ func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
 		return m.form.Init(), false, nil
 	}
 
-	// Handle KeyMsg
+	// Handle KeyMsg.
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		if keyMsg.String() == "esc" {
-			// User cancelled - close modal without applying
+			// User cancelled - close modal without applying.
 			m.visible = false
 			return nil, false, nil
 		}
@@ -104,12 +103,11 @@ func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
 
 	// Forward ALL messages to form (not just KeyMsg).
 	// This is CRITICAL for Tab/Enter to work in huh forms.
-	form, cmd := m.form.Update(msg)
-	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
-	m.form = form.(*huh.Form)
+	var cmd tea.Cmd
+	m.form, cmd = forms.Update(m.form, msg)
 
 	// Check if form just completed.
-	if m.form.State == huh.StateCompleted {
+	if forms.IsCompleted(m.form) {
 		m.visible = false
 		return cmd, true, m.formData
 	}
@@ -123,20 +121,20 @@ func (m *SearchModal) View() string {
 		return ""
 	}
 
-	// Build footer with primitives showing keyboard shortcuts
+	// Build footer with primitives showing keyboard shortcuts.
 	footer := primitives.RenderHelpFooter(m.theme,
 		primitives.NextFieldBadge(m.theme),
 		primitives.SubmitBadge(m.theme),
 		primitives.CancelBadge(m.theme),
 	)
 
-	// Build modal content with form and footer
+	// Build modal content with form and footer.
 	var content strings.Builder
 	content.WriteString(m.form.View())
 	content.WriteString("\n\n")
 	content.WriteString(footer)
 
-	// Wrap the form in a styled box with solid background using UIKit
+	// Wrap the form in a styled box with solid background using UIKit.
 	theme := m.theme
 	if theme == nil {
 		theme = themes.NewDefaultTheme()

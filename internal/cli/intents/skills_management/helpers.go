@@ -1,5 +1,5 @@
 // Package manage_skills implements the ManageSkills intent for managing user-defined skills.
-package manage_skills
+package skills_management
 
 import (
 	"fmt"
@@ -101,18 +101,6 @@ func (i *Intent) getBreadcrumbs() []string {
 	}
 
 	return breadcrumbs
-}
-
-// getStateContent returns the content for the current state.
-// NOTE: Detail and Delete states use modal overlays, not state-based rendering.
-func (i *Intent) getStateContent() string {
-	switch i.state {
-	case StateList:
-		return i.tableBehavior.Render()
-	default:
-		// All other states use modal overlays rendered in View().
-		return i.tableBehavior.Render()
-	}
 }
 
 // getContextHelp returns the help text for the current state.
@@ -313,15 +301,8 @@ func (i *Intent) openViewDetailModal() tea.Cmd {
 		eventCount = i.eventCounts[skill.ID]
 	}
 
-	// Get last used time.
-	var lastUsed *interface{}
-	if i.lastUsedMap != nil {
-		if lu, ok := i.lastUsedMap[skill.ID]; ok {
-			var tmp interface{} = lu
-			lastUsed = &tmp
-		}
-	}
-	_ = lastUsed // TODO: Pass to modal when supported.
+	// Last used time could be computed from events but is not currently displayed.
+	// The DetailModal would need to be extended to accept this parameter.
 
 	width, height := i.getTerminalDimensions()
 
