@@ -24,8 +24,8 @@ if [ $# -gt 0 ]; then
     # Files passed as arguments - filter to only intent .go files
     INTENT_FILES=""
     for arg in "$@"; do
-        # Only include .go files in intents/ directory (not test files)
-        if [[ "$arg" == internal/cli/intents/*.go && "$arg" != *_test.go ]]; then
+        # Only include .go files under intents/ directory (including subdirectories, not test files)
+        if [[ "$arg" == internal/cli/intents/* && "$arg" == *.go && "$arg" != *_test.go ]]; then
             INTENT_FILES="$INTENT_FILES $arg"
         fi
     done
@@ -1355,8 +1355,9 @@ if [ -n "$SUBDIRS" ]; then
         INTENT_NAME=$(basename "$intent_dir")
         
         if [ -f "$HELPERS_FILE" ]; then
-            # Count render/view content methods
-            RENDER_METHODS=$(grep -E "func.*\) get.*Content|func.*\) render|func.*\) view" "$HELPERS_FILE" 2>/dev/null | wc -l)
+            # Count render/view content methods (exclude getContextHelp, getBreadcrumbs, etc.)
+            # Match: getStateContent, getViewContent, getEditorContent, renderX, viewX
+            RENDER_METHODS=$(grep -E "func.*\) (get[A-Z][a-zA-Z]*Content|render[A-Z]|view[A-Z])\(" "$HELPERS_FILE" 2>/dev/null | grep -v "getContextHelp\|getBreadcrumbs" | wc -l)
             
             if [ "$RENDER_METHODS" -gt 2 ]; then
                 echo -e "${RED}❌ VIOLATION: Too many render methods in helpers.go${NC}"
@@ -1364,7 +1365,7 @@ if [ -n "$SUBDIRS" ]; then
                 echo "   Rule: Render logic must be in screens/ package"
                 echo ""
                 echo "   Found methods:"
-                grep -nE "func.*\) get.*Content|func.*\) render|func.*\) view" "$HELPERS_FILE" 2>/dev/null | head -10 | sed 's/^/   /' || true
+                grep -nE "func.*\) (get[A-Z][a-zA-Z]*Content|render[A-Z]|view[A-Z])\(" "$HELPERS_FILE" 2>/dev/null | grep -v "getContextHelp\|getBreadcrumbs" | head -10 | sed 's/^/   /' || true
                 echo ""
                 echo "   Required action:"
                 echo "   1. Create screens/$INTENT_NAME/ directory"
@@ -1445,7 +1446,8 @@ if [ -n "$SUBDIRS" ]; then
                     echo "   1. Create internal/cli/screens/$INTENT_NAME/"
                     echo "   2. Create screen files for each state:"
                     grep "State.*=.*\"" "$CONSTANTS_FILE" 2>/dev/null | head -10 | while read -r line; do
-                        STATE=$(echo "$line" | grep -oP 'State\w+' | head -1)
+                        # Use sed instead of grep -oP for portability (macOS/BSD).
+                        STATE=$(printf '%s\n' "$line" | sed -n 's/.*\(State[[:alnum:]_]*\).*/\1/p' | head -1)
                         echo "      - $STATE -> corresponding screen"
                     done
                     echo "   3. Extract render methods from helpers.go to screens"
