@@ -289,3 +289,20 @@ func WarningText(content string, th theme.Theme) *Text {
 func InfoText(content string, th theme.Theme) *Text {
 	return NewText(content, th).Style(TextInfo)
 }
+
+// Layout helpers
+
+// CenterInTerminal centers content both horizontally and vertically in the terminal.
+func CenterInTerminal(content string, width, height int) string {
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, content)
+}
+
+// JoinVertical joins multiple strings vertically with the specified alignment.
+func JoinVertical(align lipgloss.Position, parts ...string) string {
+	return lipgloss.JoinVertical(align, parts...)
+}
+
+// JoinHorizontal joins multiple strings horizontally with the specified alignment.
+func JoinHorizontal(align lipgloss.Position, parts ...string) string {
+	return lipgloss.JoinHorizontal(align, parts...)
+}

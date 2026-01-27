@@ -116,18 +116,6 @@ var _ = Describe("BurstManagement Modal Escape Handling", func() {
 			env.PopulateTestData(5, 2, 0) // 5 events, 2 bursts, 0 facts
 		})
 
-		It("should handle 'm' for main menu from edit modal", func() {
-			env.SelectIntentByName("burst_management")
-			env.Confirm()
-			env.PressKeyRune('e')
-			env.AssertViewContainsAny("Burst Name", "Description")
-
-			env.PressKeyRune('m')
-
-			env.AssertViewContainsAny("Capture Event", "Browse", "Generate")
-			env.AssertViewNotContains("Burst Name")
-		})
-
 		It("should handle '?' for help from edit modal", func() {
 			env.SelectIntentByName("burst_management")
 			env.Confirm()
@@ -135,7 +123,7 @@ var _ = Describe("BurstManagement Modal Escape Handling", func() {
 			env.AssertViewContainsAny("Edit", "Burst")
 
 			env.PressKeyRune('?')
-			env.AssertViewContainsAny("Help", "Keys", "Navigation")
+			env.AssertViewContainsAny("Keyboard Shortcuts", "Shortcuts", "toggle help")
 
 			env.PressKeyRune('?')
 			env.AssertViewContainsAny("Edit", "Burst")

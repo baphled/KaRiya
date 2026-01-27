@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
@@ -45,8 +47,9 @@ var _ = Describe("App Menu Integration Tests", func() {
 		burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
 		//nolint:errcheck // Test setup - error handling not relevant.
 		factRepo.Create(ctx, fixtures.Fact("f1", "e1"))
-		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding()
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
 		Expect(model).NotTo(BeNil())
 	})
 
@@ -176,8 +179,9 @@ var _ = Describe("Navigation Integration", func() {
 		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
-		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding()
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
 	})
 
 	AfterEach(func() {
@@ -269,8 +273,9 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
-		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding()
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
 	})
 
 	AfterEach(func() {
@@ -354,8 +359,9 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		factRepo.Create(context.Background(), &career.Fact{ID: "f1", Text: "dummy", CompetencyCategories: []string{"leadership"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e1"})
-		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding()
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
 	})
 
 	AfterEach(func() {
@@ -523,8 +529,9 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		factRepo.Create(context.Background(), &career.Fact{ID: "f2", Text: "fact 2", CompetencyCategories: []string{"technical"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e2"})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		factRepo.Create(context.Background(), &career.Fact{ID: "f3", Text: "fact 3", CompetencyCategories: []string{"communication"}, RoleFit: "staff", AudienceRelevance: []string{"peer"}, SourceEventID: "e3"})
-		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding()
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+		model = app.NewModel(cliService, svc, bootstrapResult)
 	})
 
 	AfterEach(func() {
