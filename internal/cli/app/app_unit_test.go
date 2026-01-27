@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
+	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
@@ -72,6 +73,36 @@ var _ = Describe("App Unit Tests", func() {
 		It("should return batch command for window size and logo init", func() {
 			cmd := model.Init()
 			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should navigate to browse_timeline when initial screen is ListScreen", func() {
+			// Create a new model with initial screen set to ListScreen.
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			listModel := app.NewModel(cliService, svc, bootstrapResult)
+			listModel.SetInitialScreen(app.ListScreen)
+
+			cmd := listModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			// After Init, should be in intent state.
+			state := listModel.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+		})
+
+		It("should navigate to capture_event with mode when initial capture mode is set", func() {
+			// Create a new model with initial capture mode set.
+			log := logger.DefaultLogger()
+			bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+			captureModel := app.NewModel(cliService, svc, bootstrapResult)
+			captureModel.SetInitialCaptureMode("manual")
+
+			cmd := captureModel.Init()
+			Expect(cmd).NotTo(BeNil())
+
+			// After Init, should be in intent state.
+			state := captureModel.GetState()
+			Expect(state).To(Equal(app.StateIntent))
 		})
 	})
 
@@ -381,6 +412,43 @@ var _ = Describe("App Unit Tests", func() {
 			msg := app.IntentCompletedMsg{}
 			newModel, _ := model.Update(msg)
 			Expect(newModel).NotTo(BeNil())
+		})
+	})
+
+	Describe("handleEditEventRequest", func() {
+		It("should handle RequestEditEventMsg and transition to intent state", func() {
+			// Create an event to edit.
+			event := &career.CareerEvent{
+				ID:   "test-event-1",
+				Text: "Test Event Description",
+			}
+
+			// Send RequestEditEventMsg via Update (handleDefaultMsg routes it).
+			msg := intents.RequestEditEventMsg{Event: event}
+			newModel, _ := model.Update(msg)
+			Expect(newModel).NotTo(BeNil())
+
+			// Should transition to intent state.
+			model = newModel.(*app.Model)
+			state := model.GetState()
+			Expect(state).To(Equal(app.StateIntent))
+		})
+
+		It("should activate capture_event_edit intent with event context", func() {
+			// Create an event with specific details.
+			event := &career.CareerEvent{
+				ID:   "edit-event-1",
+				Text: "Event to Edit",
+			}
+
+			// Send RequestEditEventMsg.
+			msg := intents.RequestEditEventMsg{Event: event}
+			newModel, _ := model.Update(msg)
+			model = newModel.(*app.Model)
+
+			// Verify intent is active.
+			activeIntent := model.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
 		})
 	})
 
