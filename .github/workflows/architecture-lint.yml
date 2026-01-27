@@ -41,17 +41,52 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Check Intent Architecture (PR - informational)
+      - name: Get changed files
         if: github.event_name == 'pull_request'
-        # For PRs, run full check but don't fail - legacy intents have pre-existing
-        # violations that will be fixed in separate migration PRs.
-        # Violations are displayed but don't block the PR.
+        id: changed-files
+        run: |
+          # Get list of changed files in this PR (intent and screen files only)
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | \
+            grep -E '^internal/cli/(intents|screens)/' | \
+            grep '\.go$' | \
+            grep -v '_test\.go$' || true)
+          
+          echo "Changed intent/screen files:"
+          echo "$CHANGED"
+          
+          # Store as output (space-separated for passing to script)
+          echo "files=$(echo $CHANGED | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          
+          # Check if any relevant files changed
+          if [ -n "$CHANGED" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Intent Architecture (PR - changed files only)
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.has_changes == 'true'
+        # Note: Some checks (#24-28) are global and will find pre-existing violations.
+        # These will be fixed in migration PRs. For now, we show violations but don't block.
         continue-on-error: true
         run: |
-          echo "Running architecture check (informational - violations shown but don't block PR)"
-          echo "Legacy intents have known violations that will be fixed in migration PRs."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Running architecture check on changed files:"
+          echo "${{ steps.changed-files.outputs.files }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          make check-intent-architecture
+          echo "Note: Global checks (#24-28) may show pre-existing violations."
+          echo "These will be fixed in separate migration PRs."
+          echo ""
+          bash scripts/check-intent-architecture.sh ${{ steps.changed-files.outputs.files }}
+
+      - name: Skip Intent Architecture (PR - no relevant changes)
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.has_changes == 'false'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "No intent/screen files changed in this PR."
+          echo "Skipping architecture check."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Check Intent Architecture (Push - enforced)
         if: github.event_name == 'push'
