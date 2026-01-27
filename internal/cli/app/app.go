@@ -114,7 +114,9 @@ func (m *Model) Init() tea.Cmd {
 	if m.initialScreen == ListScreen {
 		// Navigate directly to browse_timeline intent.
 		cmd, err := m.intentRouter.ActivateIntent("browse_timeline", make(map[string]interface{}))
-		if err == nil {
+		if err != nil {
+			m.logger.Error("Failed to navigate to initial list screen: %v", err)
+		} else {
 			m.state = StateIntent
 			cmds = append(cmds, cmd)
 		}
@@ -123,7 +125,9 @@ func (m *Model) Init() tea.Cmd {
 		cmd, err := m.intentRouter.ActivateIntent("capture_event", map[string]interface{}{
 			"mode": m.initialCaptureMode,
 		})
-		if err == nil {
+		if err != nil {
+			m.logger.Error("Failed to navigate to initial capture mode '%s': %v", m.initialCaptureMode, err)
+		} else {
 			m.state = StateIntent
 			cmds = append(cmds, cmd)
 		}
