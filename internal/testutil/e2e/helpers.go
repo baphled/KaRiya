@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -136,12 +138,12 @@ func Setup(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create application model
-	model := app.NewModel(cliService, svc)
+	// Create bootstrap result (skipping onboarding for tests)
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	// Skip onboarding by default for E2E tests
-	// Tests that need to test onboarding should use SetupWithOnboarding
-	model.SkipOnboarding()
+	// Create application model
+	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	cleanup := func() {
 		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
@@ -229,9 +231,12 @@ func SetupShared() {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
+	// Create bootstrap result (skipping onboarding for tests)
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
 	// Create application model
-	model := app.NewModel(cliService, svc)
-	model.SkipOnboarding()
+	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	sharedEnv = &TestEnv{
 		T:          nil, // Set per-test in GetSharedEnv
@@ -283,10 +288,13 @@ func GetSharedEnv(t TestingT) *TestEnv {
 	// Reset database state (truncate all tables)
 	sharedEnv.resetDatabase()
 
+	// Create fresh bootstrap result (skipping onboarding for tests)
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), sharedEnv.Service, log)
+
 	// Create fresh application model (only thing with UI state)
 	// Repositories and services are stateless, so we reuse them
-	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service)
-	model.SkipOnboarding()
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult)
 
 	// Update only what changes per-test
 	sharedEnv.T = t
@@ -296,8 +304,11 @@ func GetSharedEnv(t TestingT) *TestEnv {
 	return sharedEnv
 }
 
-// GetSharedEnvWithOnboarding returns the shared test environment with onboarding enabled.
-// Like GetSharedEnv, it reuses the database but creates a fresh Model with ForceOnboarding().
+// GetSharedEnvWithOnboarding returns the shared test environment for onboarding tests.
+// NOTE: Since onboarding is now a separate pre-app phase, tests that need to test
+// the onboarding UI should use bootstrap.NewOnboardingTestModel() directly.
+// This function returns a normal test environment - use GetOnboardingTestModel()
+// to get the onboarding model for testing.
 //
 // Usage in test file:
 //
@@ -313,9 +324,12 @@ func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
 	// Reset database state (truncate all tables)
 	sharedEnv.resetDatabase()
 
-	// Create fresh application model with onboarding FORCED
-	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service)
-	model.ForceOnboarding()
+	// Create fresh bootstrap result
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), sharedEnv.Service, log)
+
+	// Create fresh application model
+	model := app.NewModel(sharedEnv.CLIService, sharedEnv.Service, bootstrapResult)
 
 	// Update only what changes per-test
 	sharedEnv.T = t
@@ -323,6 +337,12 @@ func GetSharedEnvWithOnboarding(t TestingT) *TestEnv {
 	sharedEnv.Ctx = context.Background()
 
 	return sharedEnv
+}
+
+// GetOnboardingTestModel returns a model for testing the onboarding wizard UI.
+// Use this when you need to test the onboarding flow directly.
+func GetOnboardingTestModel(existingProfile *config.ProfileConfig) *bootstrap.OnboardingTestModel {
+	return bootstrap.NewOnboardingTestModel(existingProfile)
 }
 
 // resetDatabase truncates all tables to reset state between tests.
@@ -397,10 +417,13 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create application model and FORCE onboarding
-	// This ensures onboarding appears regardless of user's config file
-	model := app.NewModel(cliService, svc)
-	model.ForceOnboarding()
+	// Create bootstrap result (skipping onboarding for main app)
+	// NOTE: For testing onboarding UI, use GetOnboardingTestModel() instead
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+	// Create application model
+	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	cleanup := func() {
 		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
@@ -468,11 +491,12 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create application model
-	model := app.NewModel(cliService, svc)
+	// Create bootstrap result (skipping onboarding for tests)
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	// Skip onboarding by default for E2E tests
-	model.SkipOnboarding()
+	// Create application model
+	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	return &TestEnv{
 		T:            t,
@@ -946,13 +970,12 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 	// Create new CLI service
 	cliService := service.NewCLIEventService(svc)
 
-	// Create new application model
-	model := app.NewModel(cliService, svc)
+	// Create bootstrap result (skipping onboarding for tests)
+	log := logger.DefaultLogger()
+	bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
 
-	// Skip onboarding by default for E2E tests (same as Setup)
-	// Without this, tests that use SimulateRestart would show the onboarding wizard
-	// instead of the expected main menu
-	model.SkipOnboarding()
+	// Create new application model
+	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	// Update environment
 	e.EventRepo = eventRepo
@@ -1043,14 +1066,19 @@ func (e *TestEnv) IsInMenuState() bool {
 // ============================================================================
 
 // IsInOnboardingState checks if the application is currently showing the onboarding wizard.
+// NOTE: Since onboarding is now a separate pre-app phase, this always returns false.
+// To test onboarding, use GetOnboardingTestModel() instead.
 func (e *TestEnv) IsInOnboardingState() bool {
-	return e.Model.GetState() == app.StateOnboarding
+	// Onboarding is now a separate program that runs before the main app.
+	// The main app is never in an "onboarding state".
+	return false
 }
 
-// SkipOnboarding skips the onboarding wizard.
-// Use Setup() instead of SetupWithOnboarding() to automatically skip onboarding.
+// SkipOnboarding is deprecated - onboarding is now skipped by default.
+// This method is kept for backward compatibility but does nothing.
+// Deprecated: Onboarding is automatically skipped in test setup.
 func (e *TestEnv) SkipOnboarding() *TestEnv {
-	e.Model.SkipOnboarding()
+	// No-op - onboarding is handled by bootstrap before app creation.
 	return e
 }
 

@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/app"
+	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -55,8 +57,11 @@ var _ = Describe("App Unit Tests", func() {
 			SourceEventID:        "e1",
 		})
 
-		model = app.NewModel(cliService, svc)
-		model.SkipOnboarding() // Skip onboarding for tests
+		// Create bootstrap result (skipping onboarding for tests)
+		log := logger.DefaultLogger()
+		bootstrapResult := bootstrap.SkipOnboarding(config.DefaultConfig(), svc, log)
+
+		model = app.NewModel(cliService, svc, bootstrapResult)
 	})
 
 	AfterEach(func() {

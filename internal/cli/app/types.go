@@ -3,14 +3,12 @@ package app
 import (
 	"context"
 
-	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
-	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/logger"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	cv "github.com/baphled/kariya/internal/service/career/cv"
@@ -20,9 +18,8 @@ import (
 type AppState string
 
 const (
-	StateMenu       AppState = "menu"
-	StateIntent     AppState = "intent"
-	StateOnboarding AppState = "onboarding"
+	StateMenu   AppState = "menu"
+	StateIntent AppState = "intent"
 )
 
 // MenuItem represents a menu option.
@@ -62,10 +59,6 @@ type Model struct {
 
 	// Context for intent creation.
 	ctx context.Context
-
-	// Onboarding wizard for first-run profile setup.
-	onboardingWizard *components.OnboardingWizardModal
-	appConfig        *config.Config
 
 	// Info modal for blocking user feedback (empty state, etc.).
 	// See BUG-004: Shows warning when user tries to generate CV without events.
