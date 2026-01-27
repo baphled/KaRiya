@@ -1,4 +1,4 @@
-package factmanagement_test
+package fact_management_test
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
+	"github.com/baphled/kariya/internal/cli/intents/fact_management"
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
@@ -14,7 +14,7 @@ var _ = Describe("Messages", func() {
 	Describe("FactSelectedMsg", func() {
 		It("should store fact and index", func() {
 			fact := &career.Fact{ID: "fact-1", Text: "Test fact"}
-			msg := factmanagement.FactSelectedMsg{
+			msg := fact_management.FactSelectedMsg{
 				Fact:  fact,
 				Index: 5,
 			}
@@ -23,7 +23,7 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should allow nil fact", func() {
-			msg := factmanagement.FactSelectedMsg{
+			msg := fact_management.FactSelectedMsg{
 				Fact:  nil,
 				Index: -1,
 			}
@@ -35,7 +35,7 @@ var _ = Describe("Messages", func() {
 	Describe("FactSavedMsg", func() {
 		It("should store fact and metadata", func() {
 			fact := &career.Fact{ID: "fact-1", Text: "Test fact"}
-			msg := factmanagement.FactSavedMsg{
+			msg := fact_management.FactSavedMsg{
 				Fact:    fact,
 				IsNew:   true,
 				Message: "Fact created successfully",
@@ -47,7 +47,7 @@ var _ = Describe("Messages", func() {
 
 		It("should indicate update when not new", func() {
 			fact := &career.Fact{ID: "fact-1", Text: "Updated fact"}
-			msg := factmanagement.FactSavedMsg{
+			msg := fact_management.FactSavedMsg{
 				Fact:    fact,
 				IsNew:   false,
 				Message: "Fact updated successfully",
@@ -58,7 +58,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("FactDeletedMsg", func() {
 		It("should store deleted fact ID", func() {
-			msg := factmanagement.FactDeletedMsg{
+			msg := fact_management.FactDeletedMsg{
 				FactID: "fact-123",
 			}
 			Expect(msg.FactID).To(Equal("fact-123"))
@@ -71,7 +71,7 @@ var _ = Describe("Messages", func() {
 				{ID: "fact-1", Text: "Fact 1"},
 				{ID: "fact-2", Text: "Fact 2"},
 			}
-			msg := factmanagement.FactsLoadedMsg{
+			msg := fact_management.FactsLoadedMsg{
 				Facts: facts,
 				Total: 100,
 			}
@@ -80,7 +80,7 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should allow empty facts", func() {
-			msg := factmanagement.FactsLoadedMsg{
+			msg := fact_management.FactsLoadedMsg{
 				Facts: []*career.Fact{},
 				Total: 0,
 			}
@@ -92,7 +92,7 @@ var _ = Describe("Messages", func() {
 	Describe("ErrorMsg", func() {
 		It("should store error details", func() {
 			err := errors.New("database connection failed")
-			msg := factmanagement.ErrorMsg{
+			msg := fact_management.ErrorMsg{
 				Code:    "DB_ERROR",
 				Message: "Failed to connect to database",
 				Err:     err,
@@ -103,7 +103,7 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should allow nil error", func() {
-			msg := factmanagement.ErrorMsg{
+			msg := fact_management.ErrorMsg{
 				Code:    "VALIDATION_ERROR",
 				Message: "Invalid input",
 				Err:     nil,

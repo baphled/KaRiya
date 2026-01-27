@@ -5,7 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
-	factmanagement "github.com/baphled/kariya/internal/cli/intents/factmanagement"
+	fact_management "github.com/baphled/kariya/internal/cli/intents/fact_management"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -217,12 +217,12 @@ func (r *DefaultIntentRegistrar) registerFactManagement(ctx context.Context, rou
 			return nil
 		}
 		factRepo := r.config.CareerService.GetFactRepository()
-		factCtx := factmanagement.NewIntentContext(ctx, factRepo)
+		factCtx := fact_management.NewIntentContext(ctx, factRepo)
 		if factCtx == nil {
 			r.config.Log.Error("Failed to create FactManagement context")
 			return nil
 		}
-		intent, err := factmanagement.NewIntent(factCtx)
+		intent, err := fact_management.NewIntent(factCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create FactManagement intent: %v", err)
 			return nil

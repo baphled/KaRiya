@@ -1,5 +1,5 @@
 // Package fact_management implements the FactManagement intent for managing career facts.
-package factmanagement
+package fact_management
 
 import "github.com/baphled/kariya/internal/domain/career"
 
