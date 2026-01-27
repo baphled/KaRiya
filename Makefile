@@ -1,4 +1,4 @@
-.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
+.PHONY: test test-race coverage test-suite individual-test review-commit pre-commit build fmt vet check-compliance check-patterns check-patterns-quiet check-patterns-strict check-intent-architecture check-intent-architecture-files golangci-lint install-git-hooks check-ai-attribution audit-ai-commits list-ai-commits ai-commit ci-local ci-install-tools gosec session-start session-end session-reset check-session verify-hooks tdd-check tdd-red tdd-green tdd-refactor tdd-document pre-task what-to-use generate-diagrams generate-state-matrix generate-docs diagrams new-feature new-bug new-intent
 
 # Run all tests in verbose mode (race detection in CI only)
 test:
@@ -508,6 +508,14 @@ check-patterns-quiet:
 # Intent architecture enforcement (strict validation)
 check-intent-architecture:
 	@bash scripts/check-intent-architecture.sh
+
+# Intent architecture enforcement for specific files (used in PR checks)
+check-intent-architecture-files:
+	@if [ -n "$$INTENT_FILES" ]; then \
+		bash scripts/check-intent-architecture.sh $$INTENT_FILES; \
+	else \
+		echo "No INTENT_FILES specified"; \
+	fi
 
 # Run golangci-lint (comprehensive static analysis)
 golangci-lint:

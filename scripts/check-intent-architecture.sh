@@ -3,6 +3,10 @@
 # Intent Architecture Enforcement
 # This script enforces strict architectural rules for intent implementations.
 # It catches violations that would otherwise slip through code review.
+#
+# Usage:
+#   ./check-intent-architecture.sh              # Check all intents
+#   ./check-intent-architecture.sh file1 file2  # Check specific files only
 
 set -e
 
@@ -15,11 +19,28 @@ NC='\033[0m'
 VIOLATIONS=0
 WARNINGS=0
 
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🏛️  INTENT ARCHITECTURE ENFORCEMENT"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
+# Determine which files to check
+if [ $# -gt 0 ]; then
+    # Files passed as arguments - only check those
+    INTENT_FILES="$*"
+    CHECK_MODE="changed"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🏛️  INTENT ARCHITECTURE ENFORCEMENT (Changed Files)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "Checking ${#} changed files..."
+    echo ""
+else
+    # No arguments - scan all intent files
+    INTENT_FILES=$(find internal/cli/intents -name '*_intent.go' -not -name '*_test.go' 2>/dev/null || true)
+    CHECK_MODE="full"
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🏛️  INTENT ARCHITECTURE ENFORCEMENT"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+fi
 
 # ============================================
 # 1. TYPED STATE ENUM CHECK
@@ -27,8 +48,6 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "1. TYPED STATE ENUM"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-INTENT_FILES=$(find internal/cli/intents -name '*_intent.go' -not -name '*_test.go' 2>/dev/null || true)
 
 for file in $INTENT_FILES; do
     INTENT_NAME=$(basename "$file" _intent.go)
