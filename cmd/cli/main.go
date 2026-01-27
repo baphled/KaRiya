@@ -200,13 +200,12 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	log := logger.DefaultLogger()
 	bootstrapResult, err := bootstrap.Run(svc, log)
 	if err != nil {
+		// User aborted onboarding (Ctrl+C) - exit gracefully.
+		if errors.Is(err, bootstrap.ErrUserAborted) {
+			return 0
+		}
 		fmt.Fprintf(errOut, "Error during bootstrap: %v\n", err)
 		return 1
-	}
-
-	// User aborted onboarding (Ctrl+C)
-	if bootstrapResult == nil {
-		return 0
 	}
 
 	// Initialize application model with bootstrap results

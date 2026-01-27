@@ -60,8 +60,7 @@ type Model struct {
 	// Context for intent creation.
 	ctx context.Context
 
-	// Info modal for blocking user feedback (empty state, etc.).
-	// See BUG-004: Shows warning when user tries to generate CV without events.
+	// Info modal for blocking user feedback (empty state warnings).
 	infoModal *feedback.InfoModal
 
 	// Initial navigation settings (set before Init).

@@ -77,7 +77,7 @@ func (m *onboardingModel) Result() *config.ProfileConfig {
 }
 
 // runOnboarding runs the onboarding wizard as a standalone Bubble Tea program.
-// Returns the completed profile config, or nil if the user aborted (Ctrl+C).
+// Returns the completed profile config, or ErrUserAborted if user cancelled.
 func runOnboarding(existingProfile *config.ProfileConfig) (*config.ProfileConfig, error) {
 	model := newOnboardingModel(existingProfile)
 
@@ -89,8 +89,12 @@ func runOnboarding(existingProfile *config.ProfileConfig) (*config.ProfileConfig
 
 	// Extract result from final model.
 	if m, ok := finalModel.(*onboardingModel); ok {
-		return m.Result(), nil
+		result := m.Result()
+		if result == nil {
+			return nil, ErrUserAborted
+		}
+		return result, nil
 	}
 
-	return nil, nil
+	return nil, ErrUserAborted
 }

@@ -27,15 +27,15 @@ func NewModel(
 
 	// Initialize intent router.
 	router := intents.NewDefaultIntentRouter()
-	registerAllIntents(
-		router,
-		cliService,
-		careerService,
-		log,
-		ctx,
-		bootstrapResult.Services.CVGenService,
-		bootstrapResult.Services.CVExportService,
-	)
+	regCfg := &registrationConfig{
+		router:          router,
+		cliService:      cliService,
+		careerService:   careerService,
+		log:             log,
+		cvGenService:    bootstrapResult.Services.CVGenService,
+		cvExportService: bootstrapResult.Services.CVExportService,
+	}
+	registerAllIntents(ctx, regCfg)
 
 	// Create menu items for all intents.
 	menuItems := []MenuItem{
@@ -133,7 +133,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // handleKeyMsg processes keyboard input.
 func (m *Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Handle info modal dismissal first (highest priority).
-	// BUG-004: Info modal shows when user tries to generate CV without events.
 	if m.infoModal != nil && m.infoModal.IsVisible() {
 		if m.infoModal.Update(msg) {
 			m.infoModal = nil
@@ -246,7 +245,6 @@ func (m *Model) View() string {
 	if m.state == StateMenu {
 		menuView := m.viewMenu()
 
-		// BUG-004: Overlay info modal if active.
 		if m.infoModal != nil && m.infoModal.IsVisible() {
 			modalView := m.infoModal.View()
 			return primitives.CenterInTerminal(modalView, m.width, m.height)

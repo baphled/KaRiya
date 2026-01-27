@@ -3,10 +3,15 @@
 package bootstrap
 
 import (
+	"errors"
+
 	"github.com/baphled/kariya/internal/config"
 	"github.com/baphled/kariya/internal/logger"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
+
+// ErrUserAborted is returned when the user aborts onboarding (e.g., Ctrl+C).
+var ErrUserAborted = errors.New("user aborted onboarding")
 
 // Result contains everything needed to start the main application.
 type Result struct {
@@ -34,24 +39,15 @@ func Run(careerService *careerservice.Service, log *logger.Logger) (*Result, err
 	if !IsProfileComplete(cfg) {
 		log.Info("Profile incomplete, starting onboarding wizard")
 
-		// Run onboarding as a separate Bubble Tea program.
 		profile, err := runOnboarding(&cfg.Profile)
 		if err != nil {
 			return nil, err
 		}
 
-		// User aborted onboarding (Ctrl+C).
-		if profile == nil {
-			return nil, nil
-		}
-
-		// Update config with new profile.
 		cfg.Profile = *profile
 
-		// Save updated config.
 		if err := config.SaveConfig(cfg); err != nil {
 			log.Error("Failed to save config after onboarding: %v", err)
-			// Continue anyway - user can still use the app.
 		} else {
 			log.Info("Profile saved successfully")
 		}
@@ -76,10 +72,6 @@ func RunWithConfig(cfg *config.Config, careerService *careerservice.Service, log
 		profile, err := runOnboarding(&cfg.Profile)
 		if err != nil {
 			return nil, err
-		}
-
-		if profile == nil {
-			return nil, nil
 		}
 
 		cfg.Profile = *profile

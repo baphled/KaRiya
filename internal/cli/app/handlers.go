@@ -31,7 +31,6 @@ func (m *Model) handleMenuInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m *Model) handleMenuSelection() (tea.Model, tea.Cmd) {
 	selectedItem := m.menuItems[m.selectedMenuIndex]
 
-	// BUG-004: Check for empty state conditions before activating certain intents.
 	// Generate CV requires at least one career event to be meaningful.
 	if selectedItem.Intent == "generate_cv" {
 		events, err := m.careerService.GetEventRepository().List(m.ctx, careerrepo.ListFilters{Limit: 1})

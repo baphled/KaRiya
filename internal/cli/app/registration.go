@@ -17,6 +17,16 @@ import (
 	cv "github.com/baphled/kariya/internal/service/career/cv"
 )
 
+// registrationConfig bundles the services needed for intent registration.
+type registrationConfig struct {
+	router          *intents.DefaultIntentRouter
+	cliService      *service.CLIEventService
+	careerService   *careerservice.Service
+	log             *logger.Logger
+	cvGenService    cv.CVGenerationService
+	cvExportService *cv.ExportService
+}
+
 // createDefaultCVProfiles creates a set of default CV profiles for the GenerateCV intent.
 func createDefaultCVProfiles() []*intents.CVProfile {
 	return []*intents.CVProfile{
@@ -52,131 +62,99 @@ func createDefaultCVProfiles() []*intents.CVProfile {
 }
 
 // registerAllIntents registers all intents with the router.
-// All RegisterIntent calls below use nolint:errcheck because RegisterIntent only returns
-// an error on duplicate registration, which cannot happen in this initialization code.
 func registerAllIntents(
-	router *intents.DefaultIntentRouter,
-	cliService *service.CLIEventService,
-	careerService *careerservice.Service,
-	log *logger.Logger,
 	ctx context.Context,
-	cvGenService cv.CVGenerationService,
-	cvExportService *cv.ExportService,
+	cfg *registrationConfig,
 ) {
-	registerCaptureEventIntent(router, cliService, careerService, log)
-	registerBrowseTimelineIntent(router, cliService, careerService, log, ctx)
-	registerManageSkillsIntent(router, careerService, log, ctx)
-	registerGenerateCVIntent(router, careerService, log, ctx, cvGenService, cvExportService)
-	registerConfigureSystemIntent(router, log, ctx)
-	registerBurstManagementIntent(router, careerService, log, ctx)
-	registerFactManagementIntent(router, careerService, log, ctx)
+	registerCaptureEventIntent(cfg)
+	registerBrowseTimelineIntent(ctx, cfg)
+	registerManageSkillsIntent(ctx, cfg)
+	registerGenerateCVIntent(ctx, cfg)
+	registerConfigureSystemIntent(ctx, cfg)
+	registerBurstManagementIntent(ctx, cfg)
+	registerFactManagementIntent(ctx, cfg)
 }
 
-func registerCaptureEventIntent(
-	router *intents.DefaultIntentRouter,
-	cliService *service.CLIEventService,
-	careerService *careerservice.Service,
-	log *logger.Logger,
-) {
-	err := router.RegisterIntent("capture_event", func() intents.Intent {
+func registerCaptureEventIntent(cfg *registrationConfig) {
+	err := cfg.router.RegisterIntent("capture_event", func() intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
 			CaptureStrategy: "manual",
 			Metadata:        make(map[string]string),
-			CLIEventService: cliService,
-			CareerService:   careerService,
+			CLIEventService: cfg.cliService,
+			CareerService:   cfg.careerService,
 		}
 		intent, err := intents.NewCaptureEventIntent(captureCtx)
 		if err != nil {
-			log.Error("Failed to create CaptureEvent intent: %v", err)
+			cfg.log.Error("Failed to create CaptureEvent intent: %v", err)
 			return nil
 		}
 		return intent
 	})
 	if err != nil {
-		log.Error("Failed to register capture_event intent: %v", err)
+		cfg.log.Error("Failed to register capture_event intent: %v", err)
 	}
 }
 
-func registerBrowseTimelineIntent(
-	router *intents.DefaultIntentRouter,
-	cliService *service.CLIEventService,
-	careerService *careerservice.Service,
-	log *logger.Logger,
-	ctx context.Context,
-) {
-	err := router.RegisterIntent("browse_timeline", func() intents.Intent {
-		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{
+func registerBrowseTimelineIntent(ctx context.Context, cfg *registrationConfig) {
+	err := cfg.router.RegisterIntent("browse_timeline", func() intents.Intent {
+		events, err := cfg.careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{
 			Limit:     1000,
 			SortBy:    "date",
 			SortOrder: "desc",
 		})
 		if err != nil {
-			log.Error("Failed to load events: %v", err)
+			cfg.log.Error("Failed to load events: %v", err)
 			events = make([]*career.CareerEvent, 0)
 		}
 		browserCtx := &browse_timeline.IntentContext{
 			Events:          events,
-			CLIEventService: cliService,
+			CLIEventService: cfg.cliService,
 		}
 		intent, err := browse_timeline.NewIntent(browserCtx)
 		if err != nil {
-			log.Error("Failed to create BrowseTimeline intent: %v", err)
+			cfg.log.Error("Failed to create BrowseTimeline intent: %v", err)
 			return nil
 		}
 		return intent
 	})
 	if err != nil {
-		log.Error("Failed to register browse_timeline intent: %v", err)
+		cfg.log.Error("Failed to register browse_timeline intent: %v", err)
 	}
 }
 
-func registerManageSkillsIntent(
-	router *intents.DefaultIntentRouter,
-	careerService *careerservice.Service,
-	log *logger.Logger,
-	ctx context.Context,
-) {
-	err := router.RegisterIntent("manage_skills", func() intents.Intent {
+func registerManageSkillsIntent(ctx context.Context, cfg *registrationConfig) {
+	err := cfg.router.RegisterIntent("manage_skills", func() intents.Intent {
 		skillsCtx := &intents.ManageSkillsContext{
 			Ctx:             ctx,
-			SkillRepository: careerService.GetSkillRepository(),
-			Service:         careerService,
+			SkillRepository: cfg.careerService.GetSkillRepository(),
+			Service:         cfg.careerService,
 		}
 		return intents.NewManageSkillsIntent(skillsCtx)
 	})
 	if err != nil {
-		log.Error("Failed to register manage_skills intent: %v", err)
+		cfg.log.Error("Failed to register manage_skills intent: %v", err)
 	}
 }
 
-func registerGenerateCVIntent(
-	router *intents.DefaultIntentRouter,
-	careerService *careerservice.Service,
-	log *logger.Logger,
-	ctx context.Context,
-	cvGenService cv.CVGenerationService,
-	cvExportService *cv.ExportService,
-) {
-	// BUG-004: Removed stub data fallback - empty state is now handled by showing
-	// an info modal in handleMenuInput before this intent is activated.
-	err := router.RegisterIntent("generate_cv", func() intents.Intent {
-		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 100})
+func registerGenerateCVIntent(ctx context.Context, cfg *registrationConfig) {
+	err := cfg.router.RegisterIntent("generate_cv", func() intents.Intent {
+		events, err := cfg.careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 100})
 		if err != nil {
-			log.Error("Failed to load events for CV generation: %v", err)
+			cfg.log.Error("Failed to load events for CV generation: %v", err)
 			events = []*career.CareerEvent{}
 		}
-		facts, err := careerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 100})
+		facts, err := cfg.careerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 100})
 		if err != nil {
-			log.Error("Failed to load facts for CV generation: %v", err)
+			cfg.log.Error("Failed to load facts for CV generation: %v", err)
 			facts = []*career.Fact{}
 		}
 
 		// Load user's profile and scoring config for CV generation.
 		var profileCfg *config.ProfileConfig
 		var scoringCfg *config.ScoringConfig
-		if cfg, err := config.LoadConfig(); err == nil {
-			profileCfg = &cfg.Profile
-			scoringCfg = &cfg.Scoring
+		if appCfg, err := config.LoadConfig(); err == nil {
+			profileCfg = &appCfg.Profile
+			scoringCfg = &appCfg.Scoring
 		}
 
 		cvCtx := &intents.GenerateCVContext{
@@ -184,10 +162,10 @@ func registerGenerateCVIntent(
 			Facts:                 facts,
 			AvailableProfiles:     createDefaultCVProfiles(),
 			DefaultProfile:        createDefaultCVProfiles()[0],
-			CVGenerationService:   cvGenService,
-			DataProcessingService: cv.NewDataProcessingService(log),
-			BulletGenerator:       cv.NewBulletGenerator(log, scoringCfg),
-			ExportService:         cvExportService,
+			CVGenerationService:   cfg.cvGenService,
+			DataProcessingService: cv.NewDataProcessingService(cfg.log),
+			BulletGenerator:       cv.NewBulletGenerator(cfg.log, scoringCfg),
+			ExportService:         cfg.cvExportService,
 			ProfileConfig:         profileCfg,
 			AppContext:            ctx,
 			ReviewScreenFactory: func(cvView *career.CVView) screens.Screen {
@@ -199,7 +177,7 @@ func registerGenerateCVIntent(
 		}
 		intent, err := intents.NewGenerateCVIntent(cvCtx)
 		if err != nil {
-			log.Error("Failed to create GenerateCV intent: %v", err)
+			cfg.log.Error("Failed to create GenerateCV intent: %v", err)
 			return nil
 		}
 		// Enable wizard flow by default (Phase 7 - Full Integration).
@@ -207,74 +185,60 @@ func registerGenerateCVIntent(
 		return intent
 	})
 	if err != nil {
-		log.Error("Failed to register generate_cv intent: %v", err)
+		cfg.log.Error("Failed to register generate_cv intent: %v", err)
 	}
 }
 
-func registerConfigureSystemIntent(
-	router *intents.DefaultIntentRouter,
-	log *logger.Logger,
-	ctx context.Context,
-) {
-	err := router.RegisterIntent("configure_system", func() intents.Intent {
+func registerConfigureSystemIntent(ctx context.Context, cfg *registrationConfig) {
+	err := cfg.router.RegisterIntent("configure_system", func() intents.Intent {
 		intent, err := intents.NewConfigureSystemIntent(ctx)
 		if err != nil {
-			log.Error("Failed to create ConfigureSystem intent: %v", err)
+			cfg.log.Error("Failed to create ConfigureSystem intent: %v", err)
 			return nil
 		}
 		return intent
 	})
 	if err != nil {
-		log.Error("Failed to register configure_system intent: %v", err)
+		cfg.log.Error("Failed to register configure_system intent: %v", err)
 	}
 }
 
-func registerBurstManagementIntent(
-	router *intents.DefaultIntentRouter,
-	careerService *careerservice.Service,
-	log *logger.Logger,
-	ctx context.Context,
-) {
-	err := router.RegisterIntent("burst_management", func() intents.Intent {
-		burstRepo := careerService.GetBurstRepository()
-		burstCtx := intents.NewBurstManagementContext(careerService, burstRepo, ctx)
+func registerBurstManagementIntent(ctx context.Context, cfg *registrationConfig) {
+	err := cfg.router.RegisterIntent("burst_management", func() intents.Intent {
+		burstRepo := cfg.careerService.GetBurstRepository()
+		burstCtx := intents.NewBurstManagementContext(cfg.careerService, burstRepo, ctx)
 		if burstCtx == nil {
-			log.Error("Failed to create BurstManagement context")
+			cfg.log.Error("Failed to create BurstManagement context")
 			return nil
 		}
 		intent, err := intents.NewBurstManagementIntent(burstCtx)
 		if err != nil || intent == nil {
-			log.Error("Failed to create BurstManagement intent: %v", err)
+			cfg.log.Error("Failed to create BurstManagement intent: %v", err)
 			return nil
 		}
 		return intent
 	})
 	if err != nil {
-		log.Error("Failed to register burst_management intent: %v", err)
+		cfg.log.Error("Failed to register burst_management intent: %v", err)
 	}
 }
 
-func registerFactManagementIntent(
-	router *intents.DefaultIntentRouter,
-	careerService *careerservice.Service,
-	log *logger.Logger,
-	ctx context.Context,
-) {
-	err := router.RegisterIntent("fact_management", func() intents.Intent {
-		factRepo := careerService.GetFactRepository()
+func registerFactManagementIntent(ctx context.Context, cfg *registrationConfig) {
+	err := cfg.router.RegisterIntent("fact_management", func() intents.Intent {
+		factRepo := cfg.careerService.GetFactRepository()
 		factCtx := factmanagement.NewIntentContext(ctx, factRepo)
 		if factCtx == nil {
-			log.Error("Failed to create FactManagement context")
+			cfg.log.Error("Failed to create FactManagement context")
 			return nil
 		}
 		intent, err := factmanagement.NewIntent(factCtx)
 		if err != nil {
-			log.Error("Failed to create FactManagement intent: %v", err)
+			cfg.log.Error("Failed to create FactManagement intent: %v", err)
 			return nil
 		}
 		return intent
 	})
 	if err != nil {
-		log.Error("Failed to register fact_management intent: %v", err)
+		cfg.log.Error("Failed to register fact_management intent: %v", err)
 	}
 }

@@ -14,7 +14,7 @@ func (m *Model) SetInitialScreen(screen Screen) {
 // SetInitialCaptureMode sets the initial capture mode for CaptureEvent intent.
 // This must be called before Init() to take effect.
 // When set, the app will start in capture_event intent with the specified mode.
-// Valid modes: "manual", "burst", "csv"
+// Valid modes: "manual", "burst", "csv".
 func (m *Model) SetInitialCaptureMode(mode string) {
 	m.initialCaptureMode = mode
 }
