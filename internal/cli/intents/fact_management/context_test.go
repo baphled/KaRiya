@@ -1,4 +1,4 @@
-package factmanagement_test
+package fact_management_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
+	"github.com/baphled/kariya/internal/cli/intents/fact_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 )
@@ -107,26 +107,26 @@ var _ = Describe("Context", func() {
 
 		Describe("Construction", func() {
 			It("should create a context with default values", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx).NotTo(BeNil())
 				Expect(intentCtx.Facts).NotTo(BeNil())
 				Expect(intentCtx.Facts).To(BeEmpty())
 			})
 
 			It("should set default sort options", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx.SortBy).To(Equal("date"))
 				Expect(intentCtx.SortOrder).To(Equal("desc"))
 			})
 
 			It("should set default quality range", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx.MinQuality).To(Equal(0.0))
 				Expect(intentCtx.MaxQuality).To(Equal(1.0))
 			})
 
 			It("should initialize empty maps", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 				Expect(intentCtx.FormErrors).NotTo(BeNil())
 				Expect(intentCtx.ExpandedRows).NotTo(BeNil())
 			})
@@ -135,7 +135,7 @@ var _ = Describe("Context", func() {
 		Describe("Validate", func() {
 			Context("when all fields are valid", func() {
 				It("should return no error", func() {
-					intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+					intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 					err := intentCtx.Validate()
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -143,7 +143,7 @@ var _ = Describe("Context", func() {
 
 			Context("when Facts is nil", func() {
 				It("should initialize to empty slice", func() {
-					intentCtx := &factmanagement.IntentContext{
+					intentCtx := &fact_management.IntentContext{
 						Facts: nil,
 					}
 					err := intentCtx.Validate()
@@ -154,7 +154,7 @@ var _ = Describe("Context", func() {
 
 			Context("when FormErrors is nil", func() {
 				It("should initialize to empty map", func() {
-					intentCtx := &factmanagement.IntentContext{
+					intentCtx := &fact_management.IntentContext{
 						FormErrors: nil,
 					}
 					err := intentCtx.Validate()
@@ -165,7 +165,7 @@ var _ = Describe("Context", func() {
 
 			Context("when ExpandedRows is nil", func() {
 				It("should initialize to empty map", func() {
-					intentCtx := &factmanagement.IntentContext{
+					intentCtx := &fact_management.IntentContext{
 						ExpandedRows: nil,
 					}
 					err := intentCtx.Validate()
@@ -191,20 +191,20 @@ var _ = Describe("Context", func() {
 
 			Context("with nil repository", func() {
 				It("should return service not available error", func() {
-					intentCtx := &factmanagement.IntentContext{
+					intentCtx := &fact_management.IntentContext{
 						FactRepository: nil,
 						Context:        ctx,
 					}
 					err := intentCtx.LoadFacts()
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(Equal(factmanagement.ErrServiceNotAvailable))
+					Expect(err).To(Equal(fact_management.ErrServiceNotAvailable))
 				})
 			})
 
 			Context("with valid repository", func() {
 				It("should load facts successfully", func() {
 					mockRepo.facts = []*career.Fact{testFact}
-					intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+					intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 					err := intentCtx.LoadFacts()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(intentCtx.Facts).To(HaveLen(1))
@@ -212,21 +212,21 @@ var _ = Describe("Context", func() {
 
 				It("should set total facts count", func() {
 					mockRepo.facts = []*career.Fact{testFact}
-					intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+					intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 					_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 					Expect(intentCtx.TotalFacts).To(Equal(1))
 				})
 
 				It("should select first fact when available", func() {
 					mockRepo.facts = []*career.Fact{testFact}
-					intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+					intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 					_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 					Expect(intentCtx.SelectedFact).To(Equal(testFact))
 					Expect(intentCtx.SelectedFactIndex).To(Equal(0))
 				})
 
 				It("should handle empty fact list", func() {
-					intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+					intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 					err := intentCtx.LoadFacts()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(intentCtx.Facts).To(BeEmpty())
@@ -237,7 +237,7 @@ var _ = Describe("Context", func() {
 			Context("when repository returns error", func() {
 				It("should propagate the error", func() {
 					mockRepo.listErr = errors.New("database error")
-					intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+					intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 					err := intentCtx.LoadFacts()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("database error"))
@@ -259,14 +259,14 @@ var _ = Describe("Context", func() {
 			})
 
 			It("should return empty slice when no facts", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 				pageFacts := intentCtx.GetPageFacts()
 				Expect(pageFacts).To(BeEmpty())
 			})
 
 			It("should return first page of facts", func() {
 				mockRepo.facts = testFacts
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 				pageFacts := intentCtx.GetPageFacts()
 				Expect(pageFacts).To(HaveLen(20))
@@ -274,7 +274,7 @@ var _ = Describe("Context", func() {
 
 			It("should return partial page at end", func() {
 				mockRepo.facts = testFacts
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 				intentCtx.CurrentPage = 1
 				pageFacts := intentCtx.GetPageFacts()
@@ -283,10 +283,10 @@ var _ = Describe("Context", func() {
 		})
 
 		Describe("Form Error Handling", func() {
-			var intentCtx *factmanagement.IntentContext
+			var intentCtx *fact_management.IntentContext
 
 			BeforeEach(func() {
-				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx = fact_management.NewIntentContext(ctx, mockRepo)
 			})
 
 			It("should set form error", func() {
@@ -306,10 +306,10 @@ var _ = Describe("Context", func() {
 		})
 
 		Describe("Row Expansion", func() {
-			var intentCtx *factmanagement.IntentContext
+			var intentCtx *fact_management.IntentContext
 
 			BeforeEach(func() {
-				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx = fact_management.NewIntentContext(ctx, mockRepo)
 			})
 
 			It("should toggle row expansion", func() {
@@ -326,7 +326,7 @@ var _ = Describe("Context", func() {
 
 		Describe("Edit Operations", func() {
 			var (
-				intentCtx *factmanagement.IntentContext
+				intentCtx *fact_management.IntentContext
 				testFact  *career.Fact
 			)
 
@@ -340,7 +340,7 @@ var _ = Describe("Context", func() {
 					UpdatedAt:            time.Now(),
 				}
 				mockRepo.facts = []*career.Fact{testFact}
-				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx = fact_management.NewIntentContext(ctx, mockRepo)
 			})
 
 			Describe("StartNewFact", func() {
@@ -390,7 +390,7 @@ var _ = Describe("Context", func() {
 				Context("with no editing fact", func() {
 					It("should return invalid state error", func() {
 						err := intentCtx.SaveEdit()
-						Expect(err).To(Equal(factmanagement.ErrInvalidState))
+						Expect(err).To(Equal(fact_management.ErrInvalidState))
 					})
 				})
 
@@ -425,7 +425,7 @@ var _ = Describe("Context", func() {
 
 		Describe("Delete Operations", func() {
 			var (
-				intentCtx *factmanagement.IntentContext
+				intentCtx *fact_management.IntentContext
 				testFact  *career.Fact
 			)
 
@@ -435,7 +435,7 @@ var _ = Describe("Context", func() {
 					Text: "Test fact",
 				}
 				mockRepo.facts = []*career.Fact{testFact}
-				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx = fact_management.NewIntentContext(ctx, mockRepo)
 				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 			})
 
@@ -460,14 +460,14 @@ var _ = Describe("Context", func() {
 				It("should return service not available error", func() {
 					intentCtx.FactRepository = nil
 					err := intentCtx.DeleteFact(testFact.ID)
-					Expect(err).To(Equal(factmanagement.ErrServiceNotAvailable))
+					Expect(err).To(Equal(fact_management.ErrServiceNotAvailable))
 				})
 			})
 		})
 
 		Describe("Selection", func() {
 			var (
-				intentCtx *factmanagement.IntentContext
+				intentCtx *fact_management.IntentContext
 				testFacts []*career.Fact
 			)
 
@@ -477,7 +477,7 @@ var _ = Describe("Context", func() {
 					{ID: "fact-2", Text: "Second fact"},
 				}
 				mockRepo.facts = testFacts
-				intentCtx = factmanagement.NewIntentContext(ctx, mockRepo)
+				intentCtx = fact_management.NewIntentContext(ctx, mockRepo)
 				_ = intentCtx.LoadFacts() //nolint:errcheck // test setup
 			})
 

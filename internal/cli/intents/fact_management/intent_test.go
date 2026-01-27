@@ -1,4 +1,4 @@
-package factmanagement_test
+package fact_management_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
+	"github.com/baphled/kariya/internal/cli/intents/fact_management"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -97,7 +97,7 @@ func (m *IntentMockFactRepository) GetBySourceBurstID(_ context.Context, _ strin
 
 var _ = Describe("Intent", func() {
 	var (
-		intent   *factmanagement.Intent
+		intent   *fact_management.Intent
 		ctx      context.Context
 		mockRepo *IntentMockFactRepository
 		testFact *career.Fact
@@ -123,15 +123,15 @@ var _ = Describe("Intent", func() {
 	Describe("Construction", func() {
 		Context("with valid context", func() {
 			It("should create an intent successfully", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
-				intent, err := factmanagement.NewIntent(intentCtx)
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
+				intent, err := fact_management.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(intent).NotTo(BeNil())
 			})
 
 			It("should embed BaseIntent", func() {
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
-				intent, _ := factmanagement.NewIntent(intentCtx) //nolint:errcheck // test setup
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
+				intent, _ := fact_management.NewIntent(intentCtx) //nolint:errcheck // test setup
 				Expect(intent.BaseIntent).NotTo(BeNil())
 			})
 		})
@@ -139,8 +139,8 @@ var _ = Describe("Intent", func() {
 		Context("with empty facts", func() {
 			It("should create an intent with empty fact list", func() {
 				emptyRepo := NewIntentMockFactRepository()
-				intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
-				intent, err := factmanagement.NewIntent(intentCtx)
+				intentCtx := fact_management.NewIntentContext(ctx, emptyRepo)
+				intent, err := fact_management.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(intent).NotTo(BeNil())
 			})
@@ -149,9 +149,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("Initialization", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -181,8 +181,8 @@ var _ = Describe("Intent", func() {
 		Context("when load fails", func() {
 			It("should set failed result", func() {
 				mockRepo.listErr = errors.New("database error")
-				intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
-				intent, _ = factmanagement.NewIntent(intentCtx) //nolint:errcheck // test setup
+				intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
+				intent, _ = fact_management.NewIntent(intentCtx) //nolint:errcheck // test setup
 				cmd := intent.Init()
 				Expect(cmd).NotTo(BeNil())
 				result := intent.Result()
@@ -194,9 +194,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("View Rendering", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -219,9 +219,9 @@ var _ = Describe("Intent", func() {
 		Context("with empty facts", func() {
 			BeforeEach(func() {
 				emptyRepo := NewIntentMockFactRepository()
-				intentCtx := factmanagement.NewIntentContext(ctx, emptyRepo)
+				intentCtx := fact_management.NewIntentContext(ctx, emptyRepo)
 				var err error
-				intent, err = factmanagement.NewIntent(intentCtx)
+				intent, err = fact_management.NewIntent(intentCtx)
 				Expect(err).NotTo(HaveOccurred())
 				intent.Init()
 			})
@@ -246,9 +246,9 @@ var _ = Describe("Intent", func() {
 					SourceEventID:        "event-1",
 				})
 			}
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -298,9 +298,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("Cancellation", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -317,9 +317,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("Fact Selection", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -340,9 +340,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("Modal Interactions", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -380,9 +380,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("Window Resize", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -403,9 +403,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("Result Handling", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
@@ -425,9 +425,9 @@ var _ = Describe("Intent", func() {
 
 	Describe("ListNavigator Interface", func() {
 		BeforeEach(func() {
-			intentCtx := factmanagement.NewIntentContext(ctx, mockRepo)
+			intentCtx := fact_management.NewIntentContext(ctx, mockRepo)
 			var err error
-			intent, err = factmanagement.NewIntent(intentCtx)
+			intent, err = fact_management.NewIntent(intentCtx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})
