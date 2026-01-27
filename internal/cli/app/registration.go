@@ -65,7 +65,7 @@ func registerAllIntents(
 ) {
 	registerCaptureEventIntent(router, cliService, careerService, log)
 	registerBrowseTimelineIntent(router, cliService, careerService, log, ctx)
-	registerManageSkillsIntent(router, careerService, ctx)
+	registerManageSkillsIntent(router, careerService, log, ctx)
 	registerGenerateCVIntent(router, careerService, log, ctx, cvGenService, cvExportService)
 	registerConfigureSystemIntent(router, log, ctx)
 	registerBurstManagementIntent(router, careerService, log, ctx)
@@ -78,8 +78,7 @@ func registerCaptureEventIntent(
 	careerService *careerservice.Service,
 	log *logger.Logger,
 ) {
-	//nolint:errcheck // duplicate registration cannot happen here
-	router.RegisterIntent("capture_event", func() intents.Intent {
+	err := router.RegisterIntent("capture_event", func() intents.Intent {
 		captureCtx := &intents.CaptureEventContext{
 			CaptureStrategy: "manual",
 			Metadata:        make(map[string]string),
@@ -93,6 +92,9 @@ func registerCaptureEventIntent(
 		}
 		return intent
 	})
+	if err != nil {
+		log.Error("Failed to register capture_event intent: %v", err)
+	}
 }
 
 func registerBrowseTimelineIntent(
@@ -102,8 +104,7 @@ func registerBrowseTimelineIntent(
 	log *logger.Logger,
 	ctx context.Context,
 ) {
-	//nolint:errcheck // duplicate registration cannot happen here
-	router.RegisterIntent("browse_timeline", func() intents.Intent {
+	err := router.RegisterIntent("browse_timeline", func() intents.Intent {
 		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{
 			Limit:     1000,
 			SortBy:    "date",
@@ -124,15 +125,18 @@ func registerBrowseTimelineIntent(
 		}
 		return intent
 	})
+	if err != nil {
+		log.Error("Failed to register browse_timeline intent: %v", err)
+	}
 }
 
 func registerManageSkillsIntent(
 	router *intents.DefaultIntentRouter,
 	careerService *careerservice.Service,
+	log *logger.Logger,
 	ctx context.Context,
 ) {
-	//nolint:errcheck // duplicate registration cannot happen here
-	router.RegisterIntent("manage_skills", func() intents.Intent {
+	err := router.RegisterIntent("manage_skills", func() intents.Intent {
 		skillsCtx := &intents.ManageSkillsContext{
 			Ctx:             ctx,
 			SkillRepository: careerService.GetSkillRepository(),
@@ -140,6 +144,9 @@ func registerManageSkillsIntent(
 		}
 		return intents.NewManageSkillsIntent(skillsCtx)
 	})
+	if err != nil {
+		log.Error("Failed to register manage_skills intent: %v", err)
+	}
 }
 
 func registerGenerateCVIntent(
@@ -152,8 +159,7 @@ func registerGenerateCVIntent(
 ) {
 	// BUG-004: Removed stub data fallback - empty state is now handled by showing
 	// an info modal in handleMenuInput before this intent is activated.
-	//nolint:errcheck // duplicate registration cannot happen here
-	router.RegisterIntent("generate_cv", func() intents.Intent {
+	err := router.RegisterIntent("generate_cv", func() intents.Intent {
 		events, err := careerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 100})
 		if err != nil {
 			log.Error("Failed to load events for CV generation: %v", err)
@@ -200,6 +206,9 @@ func registerGenerateCVIntent(
 		intent.EnableWizardFlow()
 		return intent
 	})
+	if err != nil {
+		log.Error("Failed to register generate_cv intent: %v", err)
+	}
 }
 
 func registerConfigureSystemIntent(
@@ -207,8 +216,7 @@ func registerConfigureSystemIntent(
 	log *logger.Logger,
 	ctx context.Context,
 ) {
-	//nolint:errcheck // duplicate registration cannot happen here
-	router.RegisterIntent("configure_system", func() intents.Intent {
+	err := router.RegisterIntent("configure_system", func() intents.Intent {
 		intent, err := intents.NewConfigureSystemIntent(ctx)
 		if err != nil {
 			log.Error("Failed to create ConfigureSystem intent: %v", err)
@@ -216,6 +224,9 @@ func registerConfigureSystemIntent(
 		}
 		return intent
 	})
+	if err != nil {
+		log.Error("Failed to register configure_system intent: %v", err)
+	}
 }
 
 func registerBurstManagementIntent(
@@ -224,8 +235,7 @@ func registerBurstManagementIntent(
 	log *logger.Logger,
 	ctx context.Context,
 ) {
-	//nolint:errcheck // duplicate registration cannot happen here
-	router.RegisterIntent("burst_management", func() intents.Intent {
+	err := router.RegisterIntent("burst_management", func() intents.Intent {
 		burstRepo := careerService.GetBurstRepository()
 		burstCtx := intents.NewBurstManagementContext(careerService, burstRepo, ctx)
 		if burstCtx == nil {
@@ -239,6 +249,9 @@ func registerBurstManagementIntent(
 		}
 		return intent
 	})
+	if err != nil {
+		log.Error("Failed to register burst_management intent: %v", err)
+	}
 }
 
 func registerFactManagementIntent(
@@ -247,8 +260,7 @@ func registerFactManagementIntent(
 	log *logger.Logger,
 	ctx context.Context,
 ) {
-	//nolint:errcheck // duplicate registration cannot happen here
-	router.RegisterIntent("fact_management", func() intents.Intent {
+	err := router.RegisterIntent("fact_management", func() intents.Intent {
 		factRepo := careerService.GetFactRepository()
 		factCtx := factmanagement.NewIntentContext(ctx, factRepo)
 		if factCtx == nil {
@@ -262,4 +274,7 @@ func registerFactManagementIntent(
 		}
 		return intent
 	})
+	if err != nil {
+		log.Error("Failed to register fact_management intent: %v", err)
+	}
 }
