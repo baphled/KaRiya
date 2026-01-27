@@ -112,7 +112,7 @@ func (m *AddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
 		return m.form.Init(), false, nil
 
 	case tea.KeyMsg:
-		if msg.String() == "esc" {
+		if msg.Type == tea.KeyEsc {
 			// Close modal without saving
 			m.visible = false
 			return nil, false, nil

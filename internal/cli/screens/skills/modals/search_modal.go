@@ -94,7 +94,7 @@ func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
 
 	// Handle KeyMsg.
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		if keyMsg.String() == "esc" {
+		if keyMsg.Type == tea.KeyEsc {
 			// User cancelled - close modal without applying.
 			m.visible = false
 			return nil, false, nil

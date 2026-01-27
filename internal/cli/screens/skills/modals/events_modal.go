@@ -148,15 +148,14 @@ func (m *EventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		keyStr := msg.String()
-
-		switch keyStr {
-		case "esc", "backspace", "q":
+		// Handle special keys.
+		switch msg.Type {
+		case tea.KeyEsc, tea.KeyBackspace:
 			// Close modal without selection.
 			m.Hide()
 			return m, nil
 
-		case "enter":
+		case tea.KeyEnter:
 			// Select the current event.
 			if selected := m.table.GetSelectedItem(); selected != nil {
 				m.selectedEvent = *selected
@@ -165,8 +164,14 @@ func (m *EventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Handle character keys.
+		if msg.String() == "q" {
+			m.Hide()
+			return m, nil
+		}
+
 		// Handle table navigation.
-		if m.table.HandleNavigation(keyStr) {
+		if m.table.HandleNavigation(msg.String()) {
 			return m, nil
 		}
 	}

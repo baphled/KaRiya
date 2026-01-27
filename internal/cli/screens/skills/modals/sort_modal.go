@@ -122,7 +122,7 @@ func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
 		return nil, false, nil
 
 	case tea.KeyMsg:
-		if msg.String() == "esc" {
+		if msg.Type == tea.KeyEsc {
 			// Close modal without applying.
 			m.visible = false
 			return nil, false, nil

@@ -199,7 +199,7 @@ func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 		return nil, false, nil
 
 	case tea.KeyMsg:
-		if msg.String() == "esc" {
+		if msg.Type == tea.KeyEsc {
 			m.visible = false
 			return nil, false, nil
 		}

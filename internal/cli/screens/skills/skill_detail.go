@@ -66,15 +66,19 @@ func (s *SkillDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		return nil, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle special keys.
+		switch msg.Type {
+		case tea.KeyEsc:
 			return nil, &screens.CancelResult{}
 
-		case "enter":
+		case tea.KeyEnter:
 			return nil, &screens.NavigateResult{
 				ResultData: "back",
 			}
+		}
 
+		// Handle character keys.
+		switch msg.String() {
 		case "e":
 			return nil, &screens.NavigateResult{
 				ResultData: "edit",
