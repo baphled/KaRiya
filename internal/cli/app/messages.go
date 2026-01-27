@@ -21,3 +21,6 @@ type FormSubmittedMsg struct {
 const (
 	ListScreen Screen = "list"
 )
+
+// IntentCompletedMsg signals the completion of an intent.
+type IntentCompletedMsg struct{}
