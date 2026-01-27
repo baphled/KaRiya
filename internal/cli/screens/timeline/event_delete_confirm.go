@@ -61,7 +61,7 @@ func NewEventDeleteConfirmScreen(event *career.CareerEvent) *EventDeleteConfirmS
 	}
 
 	message := fmt.Sprintf(
-		"Are you sure you want to delete this event?\n\n\"%s\"\n\nThis action cannot be undone.",
+		"Are you sure you want to delete this event?\n\n%q\n\nThis action cannot be undone.",
 		eventText,
 	)
 

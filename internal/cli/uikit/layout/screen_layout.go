@@ -80,7 +80,7 @@ func NewScreenLayout(info *terminal.Info) *ScreenLayout {
 	}
 }
 
-// getTheme returns the theme or default if nil
+// getTheme returns the theme or default if nil.
 func (sl *ScreenLayout) getTheme() themes.Theme {
 	if sl.theme != nil {
 		return sl.theme
@@ -88,7 +88,7 @@ func (sl *ScreenLayout) getTheme() themes.Theme {
 	return themes.NewDefaultTheme()
 }
 
-// WithLogo sets the logo to display at the top with optional spacing before it
+// WithLogo sets the logo to display at the top with optional spacing before it.
 func (sl *ScreenLayout) WithLogo(logo LogoRenderer, spacing int) *ScreenLayout {
 	sl.ShowLogo = true
 	sl.Logo = logo
@@ -96,14 +96,14 @@ func (sl *ScreenLayout) WithLogo(logo LogoRenderer, spacing int) *ScreenLayout {
 	return sl
 }
 
-// WithBreadcrumbs sets breadcrumbs for the header
+// WithBreadcrumbs sets breadcrumbs for the header.
 func (sl *ScreenLayout) WithBreadcrumbs(crumbs ...string) *ScreenLayout {
 	sl.ShowHeader = true
 	sl.Breadcrumbs = crumbs
 	return sl
 }
 
-// WithTitle sets the title and subtitle for the header
+// WithTitle sets the title and subtitle for the header.
 func (sl *ScreenLayout) WithTitle(title, subtitle string) *ScreenLayout {
 	sl.ShowHeader = true
 	sl.Title = title
@@ -111,7 +111,7 @@ func (sl *ScreenLayout) WithTitle(title, subtitle string) *ScreenLayout {
 	return sl
 }
 
-// WithContent sets the main content to display
+// WithContent sets the main content to display.
 func (sl *ScreenLayout) WithContent(content string) *ScreenLayout {
 	sl.Content = content
 	return sl

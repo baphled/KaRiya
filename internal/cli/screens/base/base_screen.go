@@ -64,8 +64,8 @@ type BaseScreen struct {
 	// terminalHeight is the current terminal height in characters
 	terminalHeight int
 
-	// theme holds the current theme for styling
-	// TODO: Replace interface{} with actual Theme type when theme system is defined
+	// theme holds the current theme for styling.
+	// NOTE: Using interface{} until theme system type is finalized.
 	theme interface{}
 
 	// logo holds the logo to display (shared from intent)
@@ -176,7 +176,7 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 		view = view.WithLogo(b.logo, b.logoSpacing)
 	}
 
-	// TODO: Apply theme to view when theme system is fully integrated
+	// NOTE: Theme application pending full theme system integration.
 	// if b.theme != nil {
 	//     view = view.WithTheme(b.theme)
 	// }
@@ -199,10 +199,8 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 // Returns a command (usually nil) if msg is a WindowSizeMsg.
 // Never returns a ScreenResult for WindowSizeMsg (window resize is not a user action).
 func (b *BaseScreen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		b.SetTerminalInfo(msg.Width, msg.Height)
-		return nil
+	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
+		b.SetTerminalInfo(wsm.Width, wsm.Height)
 	}
 	return nil
 }

@@ -101,9 +101,9 @@ type SkillsFilters struct {
 
 // NewManageSkillsIntent creates a new ManageSkills intent
 
-// skillRowFormatterWithCounts creates a row formatter that includes event counts
+// skillRowFormatterWithCounts creates a row formatter that includes event counts.
 func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormatter[*domain.Skill] {
-	return func(skill *domain.Skill, index int) []string {
+	return func(skill *domain.Skill, _ int) []string {
 		// Name
 		name := skill.Name
 		if len(name) > 22 {
@@ -140,8 +140,8 @@ func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormat
 	}
 }
 
-// eventRowFormatter formats a career event for table display
-func eventRowFormatter(event *domain.CareerEvent, index int) []string {
+// eventRowFormatter formats a career event for table display.
+func eventRowFormatter(event *domain.CareerEvent, _ int) []string {
 	// Date
 	dateStr := event.Date.Format("2006-01-02")
 
@@ -208,8 +208,8 @@ func NewManageSkillsIntent(ctx *ManageSkillsContext) *ManageSkillsIntent {
 func (i *ManageSkillsIntent) Init() tea.Cmd {
 	i.active = true
 
-	// Disable screen architecture by default (tests expect legacy mode)
-	// TODO: Fix screen orchestration bugs before re-enabling
+	// Disable screen architecture by default (tests expect legacy mode).
+	// NOTE: Screen orchestration disabled until orchestration bugs are fixed.
 	i.useScreens = false
 
 	// Apply theme to TableBehaviors if available
@@ -1871,11 +1871,11 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 
 	var lines []string
 
-	// Name
-	lines = append(lines, labelStyle.Render("Name:")+valueStyle.Render(skill.Name))
-
-	// Category
-	lines = append(lines, labelStyle.Render("Category:")+valueStyle.Render(skill.Category))
+	// Name and Category
+	lines = append(lines,
+		labelStyle.Render("Name:")+valueStyle.Render(skill.Name),
+		labelStyle.Render("Category:")+valueStyle.Render(skill.Category),
+	)
 
 	// Level (if set)
 	if skill.Level != "" {
@@ -1906,9 +1906,11 @@ func (i *ManageSkillsIntent) renderSkillDetail() string {
 	}
 
 	// Timestamps using UIKit primitives
-	lines = append(lines, "")
-	lines = append(lines, labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render())
-	lines = append(lines, labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render())
+	lines = append(lines,
+		"",
+		labelStyle.Render("Created:")+primitives.Muted(skill.CreatedAt.Format("2006-01-02 15:04"), theme).Render(),
+		labelStyle.Render("Updated:")+primitives.Muted(skill.UpdatedAt.Format("2006-01-02 15:04"), theme).Render(),
+	)
 
 	content := lipgloss.JoinVertical(lipgloss.Left, lines...)
 	// Use UIKit Box container for consistent card styling
@@ -1976,12 +1978,11 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 	mutedStyle := lipgloss.NewStyle().
 		Foreground(theme.MutedColor())
 
-	var lines []string
-	lines = append(lines, primitives.Title("Filter Skills", theme).MarginBottom(1).Render())
-	lines = append(lines, "")
-
-	// Category section
-	lines = append(lines, mutedStyle.Render("Category:"))
+	lines := []string{
+		primitives.Title("Filter Skills", theme).MarginBottom(1).Render(),
+		"",
+		mutedStyle.Render("Category:"),
+	}
 	currentIndex := 0
 
 	// All categories option
@@ -2018,8 +2019,7 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 		currentIndex++
 	}
 
-	lines = append(lines, "")
-	lines = append(lines, mutedStyle.Render("Level:"))
+	lines = append(lines, "", mutedStyle.Render("Level:"))
 
 	// All levels option
 	marker = "  "
@@ -2056,8 +2056,7 @@ func (i *ManageSkillsIntent) renderFilterMenu() string {
 		currentIndex++
 	}
 
-	lines = append(lines, "")
-	lines = append(lines, mutedStyle.Render("Usage:"))
+	lines = append(lines, "", mutedStyle.Render("Usage:"))
 
 	// Used skills only option
 	marker = "  "
@@ -2090,9 +2089,10 @@ func (i *ManageSkillsIntent) renderSortMenu() string {
 	normalStyle := lipgloss.NewStyle().
 		Foreground(theme.ForegroundColor())
 
-	var lines []string
-	lines = append(lines, primitives.Title("Sort Skills", theme).MarginBottom(1).Render())
-	lines = append(lines, "")
+	lines := []string{
+		primitives.Title("Sort Skills", theme).MarginBottom(1).Render(),
+		"",
+	}
 
 	sortOptions := []struct {
 		label     string
@@ -2183,6 +2183,7 @@ func (i *ManageSkillsIntent) HandleNavigate(result *screens.NavigateResult) tea.
 		return i.handleErrorInternal(fmt.Errorf("invalid navigation data: expected map, got %T", data))
 	}
 
+	//nolint:errcheck // Type assertion intentionally ignored - empty string will fall through to default case.
 	target, _ := dataMap["target"].(string)
 	skillData := dataMap["data"]
 
@@ -2395,21 +2396,21 @@ func (i *ManageSkillsIntent) handleErrorInternal(err error) tea.Cmd {
 
 // NewSkillsListScreenFromIntent creates a SkillsListScreen from intent context.
 // This wrapper avoids import cycles between intents and screens/skills packages.
-func NewSkillsListScreenFromIntent(skills []*domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillsListScreenFromIntent(skills []*domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillsListScreen(skills)
 }
 
 // NewSkillDetailScreenFromIntent creates a SkillDetailScreen from intent context.
-func NewSkillDetailScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillDetailScreenFromIntent(skill *domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillDetailScreen(skill)
 }
 
 // NewSkillFormScreenFromIntent creates a SkillFormScreen from intent context.
-func NewSkillFormScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillFormScreenFromIntent(skill *domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillFormScreen(skill)
 }
 
 // NewSkillDeleteConfirmScreenFromIntent creates a SkillDeleteConfirmScreen from intent context.
-func NewSkillDeleteConfirmScreenFromIntent(skill *domain.Skill, themeManager interface{}) screens.Screen {
+func NewSkillDeleteConfirmScreenFromIntent(skill *domain.Skill, _ interface{}) screens.Screen {
 	return skills_screens.NewSkillDeleteConfirmScreen(skill)
 }

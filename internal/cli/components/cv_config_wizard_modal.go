@@ -83,8 +83,8 @@ type ExtractedTechnology struct {
 	Confidence float64
 }
 
-// NewCVConfigWizardModal creates a new CV configuration wizard modal.
-// width, height: terminal dimensions for responsive sizing
+// NewCVConfigWizardModal creates a new CV configuration wizard modal
+// with the given terminal dimensions for responsive sizing.
 func NewCVConfigWizardModal(width, height int) *CVConfigWizardModal {
 	return NewCVConfigWizardModalWithProfiles(width, height, nil)
 }

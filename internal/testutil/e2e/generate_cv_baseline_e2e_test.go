@@ -28,7 +28,7 @@ import (
 // - docs/workflows/CV_GENERATION_WORKFLOW.md
 // - tasks/tasks-42-tui-architecture-refactor.md
 
-// NOTE: This test suite is skipped because the wizard flow is now enabled by default (Task 43).
+// This test suite is skipped because the wizard flow is now enabled by default (Task 43).
 // The legacy 10-state workflow is preserved for backward compatibility but no longer the default.
 // For wizard flow E2E tests, see: generate_cv_wizard_e2e_test.go
 var _ = Describe("E2E GenerateCV Baseline (Pre-Refactor)", Pending, func() {

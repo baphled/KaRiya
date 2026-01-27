@@ -160,10 +160,11 @@ func (m *Model) Init() tea.Cmd {
 
 // Update handles messages - FIXED: Using correct Bubble Tea v1.3.10 signature
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// Update logo animation if in menu state
+	// Update logo animation if in menu state.
 	if m.state == StateMenu {
 		if _, ok := msg.(display.TickMsg); ok {
 			updatedLogo, cmd := m.logo.Update(msg)
+			//nolint:errcheck // Type assertion is safe - Logo.Update always returns *display.Logo.
 			m.logo = updatedLogo.(*display.Logo)
 			return m, cmd
 		}
@@ -871,8 +872,13 @@ func initConfigManager(log *logger.Logger) cv.ConfigManager {
 	return configMgr
 }
 
-// initCVGenerationService initializes the CV generation service
-func initCVGenerationService(careerService *careerservice.Service, configMgr cv.ConfigManager, scoringCfg *config.ScoringConfig, log *logger.Logger) cv.CVGenerationService {
+// initCVGenerationService initializes the CV generation service.
+func initCVGenerationService(
+	careerService *careerservice.Service,
+	configMgr cv.ConfigManager,
+	scoringCfg *config.ScoringConfig,
+	log *logger.Logger,
+) cv.CVGenerationService {
 	// BUG-008: Use BulletGenerator for role-based scoring with config
 	bulletGenerator := cv.NewBulletGenerator(log, scoringCfg)
 	dataProcessor := cv.NewDataProcessingService(log)
@@ -902,16 +908,16 @@ type MainMenuSelectMsg struct {
 // CompleteIntentMsg signals that the user has completed an intent
 type CompleteIntentMsg struct{}
 
-// SetInitialScreen sets the initial screen to display
-func (m *Model) SetInitialScreen(screen Screen) {
-	// For now, this is a no-op since we always start with menu
-	// In the future, this could be used to navigate directly to a specific intent
+// SetInitialScreen sets the initial screen to display.
+func (m *Model) SetInitialScreen(_ Screen) {
+	// For now, this is a no-op since we always start with menu.
+	// In the future, this could be used to navigate directly to a specific intent.
 }
 
-// SetInitialCaptureMode sets the initial capture mode for CaptureEvent intent
-func (m *Model) SetInitialCaptureMode(mode string) {
-	// This would be used to configure the CaptureEvent intent when activated
-	// For now, it's a placeholder
+// SetInitialCaptureMode sets the initial capture mode for CaptureEvent intent.
+func (m *Model) SetInitialCaptureMode(_ string) {
+	// This would be used to configure the CaptureEvent intent when activated.
+	// For now, it's a placeholder.
 }
 
 // GetState returns the current application state

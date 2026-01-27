@@ -16,7 +16,7 @@ import (
 const SkillsListState = "skills_list"
 
 // skillRowFormatter formats a skill for table display.
-func skillRowFormatter(skill *career.Skill, index int, eventCounts map[string]int) []string {
+func skillRowFormatter(skill *career.Skill, _ int, eventCounts map[string]int) []string {
 	// Name with selection indicator (handled by TableBehavior)
 	name := skill.Name
 

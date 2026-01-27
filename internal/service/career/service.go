@@ -361,8 +361,8 @@ func (s *Service) DeleteBurst(ctx context.Context, burstID string) error {
 	return nil
 }
 
-// RejectBurstSuggestion records rejection of burst suggestion
-func (s *Service) RejectBurstSuggestion(ctx context.Context, eventIDs []string) error {
+// RejectBurstSuggestion records rejection of burst suggestion.
+func (s *Service) RejectBurstSuggestion(_ context.Context, eventIDs []string) error {
 	if len(eventIDs) == 0 {
 		return nil
 	}
@@ -515,8 +515,8 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 	return facts, nil
 }
 
-// ValidateFact checks if a fact meets all validation criteria
-func (s *Service) ValidateFact(ctx context.Context, fact *domain.Fact) error {
+// ValidateFact checks if a fact meets all validation criteria.
+func (s *Service) ValidateFact(_ context.Context, fact *domain.Fact) error {
 	if fact == nil {
 		s.logger.Warn("Cannot validate nil fact")
 		return fmt.Errorf("fact cannot be nil")

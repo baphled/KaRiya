@@ -32,12 +32,12 @@ var _ = Describe("ConfigureSystem Intent", func() {
 		})
 
 		It("should initialize with correct default state", func() {
-			intent, _ := NewConfigureSystemIntent(ctx)
+			intent, _ := NewConfigureSystemIntent(ctx) //nolint:errcheck // test helper
 			Expect(intent.GetState()).To(Equal(ConfigStateSelectDomain))
 		})
 
 		It("should initialize with settings for all domains", func() {
-			intent, _ := NewConfigureSystemIntent(ctx)
+			intent, _ := NewConfigureSystemIntent(ctx) //nolint:errcheck // test helper
 			Expect(intent.settings).NotTo(BeNil())
 			Expect(intent.settings).To(HaveKey(DomainSystem))
 			Expect(intent.settings).To(HaveKey(DomainProfile))
@@ -307,7 +307,7 @@ var _ = Describe("ConfigureSystem Intent", func() {
 		})
 
 		It("should return settings from loaded config", func() {
-			intent, _ := NewConfigureSystemIntent(ctx)
+			intent, _ := NewConfigureSystemIntent(ctx) //nolint:errcheck // test helper
 
 			// Get system settings
 			settings := intent.getSettingsForDomain(DomainSystem)

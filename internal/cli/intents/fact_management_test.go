@@ -90,7 +90,8 @@ var _ = Describe("FactManagement Intent", func() {
 
 		It("should delete fact", func() {
 			data := NewFactManagementContext(mockRepo, ctx)
-			_ = data.LoadFacts()
+			//nolint:errcheck // Test setup - error handling not relevant.
+			data.LoadFacts()
 			initialCount := len(data.Facts)
 			err := data.DeleteFact(testFact.ID)
 			Expect(err).To(BeNil())
@@ -99,7 +100,8 @@ var _ = Describe("FactManagement Intent", func() {
 
 		It("should handle pagination", func() {
 			data := NewFactManagementContext(mockRepo, ctx)
-			_ = data.LoadFacts()
+			//nolint:errcheck // Test setup - error handling not relevant.
+			data.LoadFacts()
 			pageFacts := data.GetPageFacts()
 			Expect(pageFacts).NotTo(BeNil())
 		})

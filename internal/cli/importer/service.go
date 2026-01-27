@@ -160,12 +160,13 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 			}
 
 			// Persist each extracted fact
-			for _, fact := range facts {
+			for i := range facts {
+				fact := &facts[i]
 				// Set source event ID
 				fact.SourceEventID = event.ID
 
 				// Save fact to repository
-				if err := is.careerService.SaveFact(ctx, &fact); err != nil {
+				if err := is.careerService.SaveFact(ctx, fact); err != nil {
 					// Silently skip if fact repository is not configured (expected in some test scenarios)
 					if !errors.Is(err, careerservice.ErrFactRepositoryNotConfigured) {
 						fmt.Printf("Warning: Failed to save fact: %v\n", err)
@@ -175,7 +176,7 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 
 				// Track the fact
 				result.ExtractedFactsCount++
-				result.FactsByEventID[event.ID] = append(result.FactsByEventID[event.ID], &fact)
+				result.FactsByEventID[event.ID] = append(result.FactsByEventID[event.ID], fact)
 
 				// Count by competency
 				for _, competency := range fact.CompetencyCategories {
@@ -211,11 +212,12 @@ func (is *ImportService) GetImportSummary(parsedRows []*ParsedRow) map[string]in
 	}
 
 	for _, row := range parsedRows {
-		if row.IsDuplicate {
+		switch {
+		case row.IsDuplicate:
 			summary["duplicate"]++
-		} else if row.IsValid {
+		case row.IsValid:
 			summary["valid"]++
-		} else {
+		default:
 			summary["invalid"]++
 		}
 	}

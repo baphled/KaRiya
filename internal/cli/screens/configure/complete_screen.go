@@ -59,9 +59,8 @@ func (s *CompleteScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return cmd, nil
 	}
 
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		switch keyMsg.String() {
 		case "enter", "esc":
 			// Both Enter and Esc dismiss the success screen
 			return nil, &screens.SubmitResult{FormData: true}

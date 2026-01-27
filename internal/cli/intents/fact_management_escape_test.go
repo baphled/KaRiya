@@ -25,13 +25,15 @@ var _ = Describe("FactManagement - Escape Key Behavior", func() {
 		mockRepo = intents.NewMockFactRepository()
 
 		now := time.Now()
-		_ = mockRepo.Create(ctx, &career.Fact{
+		//nolint:errcheck // Test setup - error handling not relevant.
+		mockRepo.Create(ctx, &career.Fact{
 			ID:        "fact-1",
 			Text:      "Improved API performance by 40%",
 			CreatedAt: now,
 			UpdatedAt: now,
 		})
-		_ = mockRepo.Create(ctx, &career.Fact{
+		//nolint:errcheck // Test setup - error handling not relevant.
+		mockRepo.Create(ctx, &career.Fact{
 			ID:        "fact-2",
 			Text:      "Led team of 5 engineers",
 			CreatedAt: now,

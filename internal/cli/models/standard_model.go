@@ -201,7 +201,7 @@ func (b *BaseStandardModel) PushNavigationHistory(label string, state interface{
 	})
 }
 
-func (b *BaseStandardModel) PopNavigationHistory() (string, interface{}, error) {
+func (b *BaseStandardModel) PopNavigationHistory() (label string, state interface{}, err error) {
 	if len(b.navigationHistory) == 0 {
 		return "", nil, ErrEmptyNavigationHistory
 	}

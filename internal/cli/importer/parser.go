@@ -175,8 +175,8 @@ func getColumnNames(columnMap map[string]int) []string {
 	return names
 }
 
-// parseRow parses a single row and creates a CareerEvent
-func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, columnMap map[string]int) *ParsedRow {
+// parseRow parses a single row and creates a CareerEvent.
+func (p *CSVParser) parseRow(rowNumber int, rawData map[string]string, _ map[string]int) *ParsedRow {
 	parsedRow := &ParsedRow{
 		RowNumber:        rowNumber,
 		RawData:          rawData,

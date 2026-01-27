@@ -269,7 +269,7 @@ func (s *EditSettingsScreen) SetTheme(theme interface{}) {
 }
 
 // SetLogo updates the logo.
-func (s *EditSettingsScreen) SetLogo(logo interface{}, spacing int) {
+func (s *EditSettingsScreen) SetLogo(logo interface{}, _ int) {
 	if l, ok := logo.(layout.LogoRenderer); ok {
 		s.logo = l
 	}

@@ -185,7 +185,7 @@ func (b *Box) Render() string {
 
 		for i := range lines {
 			if i > 0 { // Skip first line
-				lines[i] = lines[i] + lipgloss.NewStyle().Foreground(shadowColor).Render(shadowChar)
+				lines[i] += lipgloss.NewStyle().Foreground(shadowColor).Render(shadowChar)
 			}
 		}
 		// Add bottom shadow line
@@ -212,8 +212,8 @@ func (b *Box) getBorderStyle() lipgloss.Border {
 
 // getBorderColor returns the border color for the current variant.
 func (b *Box) getBorderColor() lipgloss.Color {
-	theme := b.Theme()
-	if theme == nil {
+	th := b.Theme()
+	if th == nil {
 		// Fallback colors if theme is not available
 		switch b.variant {
 		case BoxDestructive:
@@ -234,18 +234,18 @@ func (b *Box) getBorderColor() lipgloss.Color {
 	// Use theme colors
 	switch b.variant {
 	case BoxDestructive:
-		return theme.ErrorColor()
+		return th.ErrorColor()
 	case BoxSuccess:
-		return theme.SuccessColor()
+		return th.SuccessColor()
 	case BoxWarning:
-		return theme.WarningColor()
+		return th.WarningColor()
 	case BoxInfo:
-		return theme.InfoColor()
+		return th.InfoColor()
 	case BoxSubtle:
-		return theme.MutedColor()
+		return th.MutedColor()
 	case BoxEmphasized:
-		return theme.PrimaryColor()
+		return th.PrimaryColor()
 	default:
-		return theme.BorderColor()
+		return th.BorderColor()
 	}
 }

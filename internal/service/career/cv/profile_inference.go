@@ -170,7 +170,7 @@ func (s *ProfileInferenceService) InferValuePropositions(
 // InferTechnologies extracts technology information from skills.
 // Returns structured technology strings for Languages, Frontend, and Systems.
 func (s *ProfileInferenceService) InferTechnologies(
-	events []*career.CareerEvent,
+	_ []*career.CareerEvent,
 	skills []*career.Skill,
 ) TechnologyInference {
 	result := TechnologyInference{}

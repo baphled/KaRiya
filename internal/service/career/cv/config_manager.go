@@ -58,7 +58,7 @@ func NewMemoryConfigManager() *MemoryConfigManager {
 }
 
 // LoadConfig loads a configuration by name.
-func (m *MemoryConfigManager) LoadConfig(ctx context.Context, name string) (*career.CVConfig, error) {
+func (m *MemoryConfigManager) LoadConfig(_ context.Context, name string) (*career.CVConfig, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -73,7 +73,7 @@ func (m *MemoryConfigManager) LoadConfig(ctx context.Context, name string) (*car
 }
 
 // SaveConfig saves or updates a configuration.
-func (m *MemoryConfigManager) SaveConfig(ctx context.Context, config *career.CVConfig) error {
+func (m *MemoryConfigManager) SaveConfig(_ context.Context, config *career.CVConfig) error {
 	if config == nil {
 		return ErrInvalidConfigName
 	}
@@ -101,7 +101,7 @@ func (m *MemoryConfigManager) SaveConfig(ctx context.Context, config *career.CVC
 }
 
 // DeleteConfig deletes a configuration by name.
-func (m *MemoryConfigManager) DeleteConfig(ctx context.Context, name string) error {
+func (m *MemoryConfigManager) DeleteConfig(_ context.Context, name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -114,7 +114,7 @@ func (m *MemoryConfigManager) DeleteConfig(ctx context.Context, name string) err
 }
 
 // ListConfigs returns all configurations.
-func (m *MemoryConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig, error) {
+func (m *MemoryConfigManager) ListConfigs(_ context.Context) ([]*career.CVConfig, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -133,7 +133,7 @@ func (m *MemoryConfigManager) GetConfigPath(name string) string {
 }
 
 // ConfigExists checks if a configuration exists.
-func (m *MemoryConfigManager) ConfigExists(ctx context.Context, name string) (bool, error) {
+func (m *MemoryConfigManager) ConfigExists(_ context.Context, name string) (bool, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 

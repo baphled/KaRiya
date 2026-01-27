@@ -45,10 +45,9 @@ type SkillAddEditModal struct {
 	height        int
 }
 
-// NewSkillAddEditModal creates a new skill add/edit modal.
-// If skill is nil, creates form for adding a new skill.
-// If skill is provided, creates form for editing with pre-populated fields.
-// width, height: terminal dimensions for responsive sizing
+// NewSkillAddEditModal creates a new skill add/edit modal with the given
+// terminal dimensions. If skill is nil, creates a form for adding a new skill.
+// If skill is provided, creates a form for editing with pre-populated fields.
 func NewSkillAddEditModal(skill *career.Skill, width, height int) *SkillAddEditModal {
 	// Initialize form data from existing skill or empty
 	formData := &forms.SkillFormData{}
@@ -68,7 +67,7 @@ func NewSkillAddEditModal(skill *career.Skill, width, height int) *SkillAddEditM
 	return modal
 }
 
-// buildForm creates the huh form with proper dimensions
+// buildForm creates the huh form with proper dimensions.
 func (m *SkillAddEditModal) buildForm() {
 	// Calculate form width
 	modalWidth := m.width - 10
@@ -114,19 +113,19 @@ func (m *SkillAddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) 
 		return m.form.Init(), false, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		if msg.String() == "esc" {
 			// Close modal without saving
 			m.visible = false
 			return nil, false, nil
 		}
 	}
 
-	// Update form
+	// Update form.
 	form, cmd := m.form.Update(msg)
+	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
 	m.form = form.(*huh.Form)
 
-	// Check if form is complete AND user confirmed submission
+	// Check if form is complete AND user confirmed submission.
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
 		// Only return data if user confirmed (pressed Submit, not Cancel)

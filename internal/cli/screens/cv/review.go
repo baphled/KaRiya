@@ -12,7 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// CVReviewState represents the internal state constant for this screen
+// CVReviewState represents the internal state constant for this screen.
 const CVReviewState = "review"
 
 // CVReviewScreen displays a summary review of the generated CV.

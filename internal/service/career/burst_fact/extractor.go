@@ -21,8 +21,8 @@ func NewExtractor(classifier *Classifier) *Extractor {
 	}
 }
 
-// ExtractFromEvent extracts facts from a single career event
-func (e *Extractor) ExtractFromEvent(ctx context.Context, event *career.CareerEvent) []career.Fact {
+// ExtractFromEvent extracts facts from a single career event.
+func (e *Extractor) ExtractFromEvent(_ context.Context, event *career.CareerEvent) []career.Fact {
 	if event == nil || event.Text == "" {
 		return []career.Fact{}
 	}
@@ -240,13 +240,11 @@ func (e *Extractor) inferBurstCompetencies(events []*career.CareerEvent) []strin
 	return result
 }
 
-// extractTagSpecificFacts creates additional facts from event tags
-func (e *Extractor) extractTagSpecificFacts(event *career.CareerEvent) []career.Fact {
-	facts := []career.Fact{}
-
-	// Don't create duplicate facts for every tag, only meaningful ones
-	// For now, return empty - tag context already captured in main fact
-	return facts
+// extractTagSpecificFacts creates additional facts from event tags.
+func (e *Extractor) extractTagSpecificFacts(_ *career.CareerEvent) []career.Fact {
+	// Don't create duplicate facts for every tag, only meaningful ones.
+	// For now, return empty - tag context already captured in main fact.
+	return []career.Fact{}
 }
 
 // aggregateBurstCategories collects unique categories from all burst events

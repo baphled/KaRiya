@@ -173,9 +173,8 @@ func (s *BaseDetailScreen[T]) RenderContent() string {
 		content = s.contentRenderer(s.data, s.Width(), s.Height())
 	}
 
-	// TODO: Apply scroll offset to content
-	// For now, just render the full content
-	// In future, we can slice by lines based on scrollOffset
+	// NOTE: Scroll offset to be applied when content slicing is implemented.
+	// For now, just render the full content.
 
 	return content
 }

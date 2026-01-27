@@ -239,8 +239,8 @@ func (m *ViewSkillEventsModal) View() string {
 		modalWidth = 60 // Minimum usable width
 	}
 
-	// Build title using UIKit
-	title := primitives.Title(fmt.Sprintf("Events using \"%s\" (%d)", m.skillName, len(m.events)), theme).Render()
+	// Build title using UIKit.
+	title := primitives.Title(fmt.Sprintf("Events using %q (%d)", m.skillName, len(m.events)), theme).Render()
 
 	// Build content - either table or empty message
 	var content string

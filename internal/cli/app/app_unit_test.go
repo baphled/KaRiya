@@ -1,3 +1,4 @@
+//nolint:errcheck // Test file - error handling for test setup is not relevant.
 package app_test
 
 import (
@@ -37,13 +38,15 @@ var _ = Describe("App Unit Tests", func() {
 		svc.SetFactRepository(factRepo)
 		cliService = service.NewCLIEventService(svc)
 
-		// Pre-populate repositories to avoid nil panics
-		_ = burstRepo.Create(ctx, &career.Burst{
+		// Pre-populate repositories to avoid nil panics.
+		//nolint:errcheck // Test setup - error handling not relevant.
+		burstRepo.Create(ctx, &career.Burst{
 			ID:       "b1",
 			Name:     "dummy",
 			EventIDs: []string{"e1", "e2"},
 		})
-		_ = factRepo.Create(ctx, &career.Fact{
+		//nolint:errcheck // Test setup - error handling not relevant.
+		factRepo.Create(ctx, &career.Fact{
 			ID:                   "f1",
 			Text:                 "dummy",
 			CompetencyCategories: []string{"leadership"},

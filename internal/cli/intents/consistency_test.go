@@ -133,7 +133,7 @@ var _ = Describe("All Intents Initialization", func() {
 					Metadata:        make(map[string]string),
 				})
 			},
-			func(i interface{}) { i.(*CaptureEventIntent).Init() },
+			func(i interface{}) { _ = i.(*CaptureEventIntent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
 			func(i interface{}) string { return i.(*CaptureEventIntent).View() },
 		),
 		// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
@@ -154,13 +154,13 @@ var _ = Describe("All Intents Initialization", func() {
 					},
 				})
 			},
-			func(i interface{}) { i.(*GenerateCVIntent).Init() },
+			func(i interface{}) { _ = i.(*GenerateCVIntent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
 			func(i interface{}) string { return i.(*GenerateCVIntent).View() },
 		),
 		Entry("ConfigureSystem",
 			"ConfigureSystem",
 			func() (interface{}, error) { return NewConfigureSystemIntent(context.Background()) },
-			func(i interface{}) { i.(*ConfigureSystemIntent).Init() },
+			func(i interface{}) { _ = i.(*ConfigureSystemIntent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
 			func(i interface{}) string { return i.(*ConfigureSystemIntent).View() },
 		),
 	)

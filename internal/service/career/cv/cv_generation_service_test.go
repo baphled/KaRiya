@@ -613,24 +613,24 @@ func NewMockConfigManager() *MockConfigManager {
 	}
 }
 
-func (m *MockConfigManager) LoadConfig(ctx context.Context, name string) (*career.CVConfig, error) {
+func (m *MockConfigManager) LoadConfig(_ context.Context, name string) (*career.CVConfig, error) {
 	if config, ok := m.configs[name]; ok {
 		return config, nil
 	}
 	return nil, ErrConfigNotFound
 }
 
-func (m *MockConfigManager) SaveConfig(ctx context.Context, config *career.CVConfig) error {
+func (m *MockConfigManager) SaveConfig(_ context.Context, config *career.CVConfig) error {
 	m.configs[config.Name] = config
 	return nil
 }
 
-func (m *MockConfigManager) DeleteConfig(ctx context.Context, name string) error {
+func (m *MockConfigManager) DeleteConfig(_ context.Context, name string) error {
 	delete(m.configs, name)
 	return nil
 }
 
-func (m *MockConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig, error) {
+func (m *MockConfigManager) ListConfigs(_ context.Context) ([]*career.CVConfig, error) {
 	configs := make([]*career.CVConfig, 0, len(m.configs))
 	for _, config := range m.configs {
 		configs = append(configs, config)
@@ -813,23 +813,23 @@ func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*ca
 	return []*Bullet{}, nil
 }
 
-func (g *EmptyBulletGenerator) FilterByRole(bullets []*Bullet, role string) []*Bullet {
+func (g *EmptyBulletGenerator) FilterByRole(bullets []*Bullet, _ string) []*Bullet {
 	return bullets
 }
 
-func (g *EmptyBulletGenerator) FilterByAudience(bullets []*Bullet, audience string) []*Bullet {
+func (g *EmptyBulletGenerator) FilterByAudience(bullets []*Bullet, _ string) []*Bullet {
 	return bullets
 }
 
-func (g *EmptyBulletGenerator) RankByRelevance(bullets []*Bullet, role string, audience string) []*Bullet {
+func (g *EmptyBulletGenerator) RankByRelevance(bullets []*Bullet, _ string, _ string) []*Bullet {
 	return bullets
 }
 
-func (g *EmptyBulletGenerator) EnhanceWording(bullet *Bullet, role string) (*Bullet, error) {
+func (g *EmptyBulletGenerator) EnhanceWording(bullet *Bullet, _ string) (*Bullet, error) {
 	return bullet, nil
 }
 
-func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*Bullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*Bullet {
+func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.CareerEvent, _ TechnologyFocus, _ []string) []*Bullet {
 	return bullets // No-op for tests
 }
 
@@ -932,22 +932,22 @@ func (g *MockBulletGenerator) GenerateBullets(ctx context.Context, events []*car
 	return []*Bullet{}, nil
 }
 
-func (g *MockBulletGenerator) FilterByRole(bullets []*Bullet, role string) []*Bullet {
+func (g *MockBulletGenerator) FilterByRole(bullets []*Bullet, _ string) []*Bullet {
 	return bullets
 }
 
-func (g *MockBulletGenerator) FilterByAudience(bullets []*Bullet, audience string) []*Bullet {
+func (g *MockBulletGenerator) FilterByAudience(bullets []*Bullet, _ string) []*Bullet {
 	return bullets
 }
 
-func (g *MockBulletGenerator) RankByRelevance(bullets []*Bullet, role string, audience string) []*Bullet {
+func (g *MockBulletGenerator) RankByRelevance(bullets []*Bullet, _ string, _ string) []*Bullet {
 	return bullets
 }
 
-func (g *MockBulletGenerator) EnhanceWording(bullet *Bullet, role string) (*Bullet, error) {
+func (g *MockBulletGenerator) EnhanceWording(bullet *Bullet, _ string) (*Bullet, error) {
 	return bullet, nil
 }
 
-func (g *MockBulletGenerator) FilterByTechnologies(bullets []*Bullet, events []*career.CareerEvent, techFocus TechnologyFocus, technologies []string) []*Bullet {
+func (g *MockBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.CareerEvent, _ TechnologyFocus, _ []string) []*Bullet {
 	return bullets
 }

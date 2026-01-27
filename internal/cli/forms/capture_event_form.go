@@ -32,8 +32,9 @@ func NewCaptureEventFormData() *CaptureEventFormData {
 }
 
 // NewCaptureEventForm creates a huh-based form for capturing career events.
-// strategy: "quick" (text+date only) or "manual" (all fields)
-// width, height: terminal dimensions for proper sizing
+// Parameters:
+//   - strategy: "quick" (text+date only) or "manual" (all fields).
+//   - width, height: terminal dimensions for proper sizing.
 func NewCaptureEventForm(data *CaptureEventFormData, strategy string, width, height int) *huh.Form {
 	var fieldsGroup *huh.Group
 

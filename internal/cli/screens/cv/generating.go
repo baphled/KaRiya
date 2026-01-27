@@ -11,7 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/base"
 )
 
-// CVGeneratingState represents the internal state constant for this screen
+// CVGeneratingState represents the internal state constant for this screen.
 const CVGeneratingState = "generating"
 
 // CVGeneratingScreen shows progress while generating a CV.

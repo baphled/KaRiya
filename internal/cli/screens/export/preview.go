@@ -187,7 +187,7 @@ func (s *Preview) renderSummaryHeader(th themes.Theme) string {
 
 	// Separator
 	sepStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
-	b.WriteString(sepStyle.Render(strings.Repeat("─", min(70, s.width-4))))
+	b.WriteString(sepStyle.Render(strings.Repeat("─", minInt(70, s.width-4))))
 	b.WriteString("\n")
 
 	return b.String()
@@ -231,7 +231,7 @@ func (s *Preview) renderStatsLine(th themes.Theme) string {
 }
 
 // initializeViewport sets up the viewport with content.
-func (s *Preview) initializeViewport(th themes.Theme) {
+func (s *Preview) initializeViewport(_ themes.Theme) {
 	// Calculate viewport dimensions
 	// Account for:
 	// - Header: ~5 lines (title, stats, separator, blank line)
@@ -283,7 +283,7 @@ func (s *Preview) renderFooter(th themes.Theme) string {
 
 	// Render separator line and badges
 	footerStyle := lipgloss.NewStyle().Foreground(th.SecondaryColor())
-	separator := footerStyle.Render(strings.Repeat("─", min(70, s.width-4)))
+	separator := footerStyle.Render(strings.Repeat("─", minInt(70, s.width-4)))
 
 	return separator + "\n" + primitives.RenderHelpFooter(uikitTheme, badges...)
 }
@@ -291,8 +291,8 @@ func (s *Preview) renderFooter(th themes.Theme) string {
 // getTheme returns the theme from BaseScreen or a default theme.
 func (s *Preview) getTheme() themes.Theme {
 	if t := s.BaseScreen.Theme(); t != nil {
-		if theme, ok := t.(themes.Theme); ok {
-			return theme
+		if th, ok := t.(themes.Theme); ok {
+			return th
 		}
 	}
 	return themes.NewDefaultTheme()
@@ -329,7 +329,7 @@ func (s *Preview) getCodeBlockTitle() string {
 
 // Helper functions
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

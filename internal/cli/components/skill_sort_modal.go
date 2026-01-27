@@ -35,7 +35,7 @@ type SkillSortModal struct {
 }
 
 // NewSkillSortModal creates a new skill sort modal.
-func NewSkillSortModal(skills []*career.Skill, current *SkillSortConfig, width, height int) *SkillSortModal {
+func NewSkillSortModal(_ []*career.Skill, current *SkillSortConfig, width, height int) *SkillSortModal {
 	formData := &SkillSortFormData{
 		SortBy:    "name",
 		SortOrder: "asc",
@@ -124,19 +124,19 @@ func (m *SkillSortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData)
 		return nil, false, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		if msg.String() == "esc" {
 			// Close modal without applying
 			m.visible = false
 			return nil, false, nil
 		}
 	}
 
-	// Update form
+	// Update form.
 	form, cmd := m.form.Update(msg)
+	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
 	m.form = form.(*huh.Form)
 
-	// Check if form is complete
+	// Check if form is complete.
 	if m.form.State == huh.StateCompleted {
 		m.visible = false
 		return cmd, true, m.formData

@@ -20,12 +20,12 @@ type TraceabilityService struct {
 func NewTraceabilityService(
 	eventRepo careerrepo.Repository,
 	factRepo careerrepo.FactRepository,
-	logger *logger.Logger,
+	log *logger.Logger,
 ) *TraceabilityService {
 	return &TraceabilityService{
 		eventRepo: eventRepo,
 		factRepo:  factRepo,
-		logger:    logger,
+		logger:    log,
 	}
 }
 
@@ -89,7 +89,7 @@ func (vr *ValidationReport) IsValid() bool {
 
 // GetEventUsage finds all bullets using a specific event.
 func (ts *TraceabilityService) GetEventUsage(
-	ctx context.Context,
+	_ context.Context,
 	eventID string,
 	allBullets []*career.CVBullet,
 ) []*career.CVBullet {
@@ -111,7 +111,7 @@ func (ts *TraceabilityService) GetEventUsage(
 
 // GetFactUsage finds all bullets using a specific fact.
 func (ts *TraceabilityService) GetFactUsage(
-	ctx context.Context,
+	_ context.Context,
 	factID string,
 	allBullets []*career.CVBullet,
 ) []*career.CVBullet {
@@ -133,7 +133,7 @@ func (ts *TraceabilityService) GetFactUsage(
 
 // ValidateTraceability validates all bullets have sources.
 func (ts *TraceabilityService) ValidateTraceability(
-	ctx context.Context,
+	_ context.Context,
 	bullets []*career.CVBullet,
 ) *ValidationReport {
 	ts.logger.Info("Validating traceability for %d bullets", len(bullets))
@@ -163,7 +163,7 @@ func (ts *TraceabilityService) ValidateTraceability(
 
 // GetEventBulletMapping returns a mapping of events to bullets.
 func (ts *TraceabilityService) GetEventBulletMapping(
-	ctx context.Context,
+	_ context.Context,
 	bullets []*career.CVBullet,
 ) map[string][]*career.CVBullet {
 	ts.logger.Info("Creating event-to-bullet mapping for %d bullets", len(bullets))
@@ -181,7 +181,7 @@ func (ts *TraceabilityService) GetEventBulletMapping(
 
 // GetFactBulletMapping returns a mapping of facts to bullets.
 func (ts *TraceabilityService) GetFactBulletMapping(
-	ctx context.Context,
+	_ context.Context,
 	bullets []*career.CVBullet,
 ) map[string][]*career.CVBullet {
 	ts.logger.Info("Creating fact-to-bullet mapping for %d bullets", len(bullets))

@@ -142,8 +142,8 @@ const (
 	BurstStateExtractingFacts = "extracting_facts"
 )
 
-// burstRowFormatter formats a burst for table display
-func burstRowFormatter(burst *domain.Burst, index int) []string {
+// burstRowFormatter formats a burst for table display.
+func burstRowFormatter(burst *domain.Burst, _ int) []string {
 	// Column 1: Name (truncate to 27 chars)
 	nameStr := burst.Name
 	if len(nameStr) > 27 {
@@ -611,12 +611,10 @@ func (i *BurstManagementIntent) updateEditView(msg tea.Msg) tea.Cmd {
 				}
 				i.context.IsNewBurst = false
 			}
-		} else {
+		} else if i.context.IsNewBurst {
 			// User cancelled - clear new burst state if applicable
-			if i.context.IsNewBurst {
-				i.context.CancelEdit()
-				i.state.selectedBurst = nil
-			}
+			i.context.CancelEdit()
+			i.state.selectedBurst = nil
 		}
 
 		// Clear modal and return to appropriate view
@@ -756,14 +754,11 @@ func (i *BurstManagementIntent) updateConfirmView(msg tea.Msg) tea.Cmd {
 			i.state.extractionComplete = false
 			i.state.extractedFactsCount = 0
 			return nil
-		} else {
-			// Handle back (esc)
-			if HandleGlobalKeys(msg) == KeyBack {
-				// Go back to detail
-				i.state.currentState = BurstStateDetail
-				i.state.confirmError = nil
-				return nil
-			}
+		} else if HandleGlobalKeys(msg) == KeyBack {
+			// Handle back (esc) - Go back to detail
+			i.state.currentState = BurstStateDetail
+			i.state.confirmError = nil
+			return nil
 		}
 	}
 

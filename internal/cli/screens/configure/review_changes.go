@@ -205,7 +205,7 @@ func (s *ReviewChangesScreen) SetTheme(theme interface{}) {
 }
 
 // SetLogo updates the logo.
-func (s *ReviewChangesScreen) SetLogo(logo interface{}, spacing int) {
+func (s *ReviewChangesScreen) SetLogo(logo interface{}, _ int) {
 	if l, ok := logo.(layout.LogoRenderer); ok {
 		s.logo = l
 	}

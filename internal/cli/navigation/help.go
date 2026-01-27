@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// HelpText represents formatted help information for a set of navigation keys
+// HelpText represents formatted help information for a set of navigation keys.
 type HelpText struct {
 	Keys     []NavigationKey
 	Template string

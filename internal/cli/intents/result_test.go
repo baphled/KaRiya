@@ -180,7 +180,8 @@ var _ = Describe("IntentError", func() {
 			}
 
 			cause := errors.New("cause error")
-			_ = err.WithCause(cause)
+			//nolint:errcheck // Test - intentionally ignoring return.
+			err.WithCause(cause)
 
 			Expect(err.Cause).To(Equal(cause))
 		})
@@ -193,7 +194,8 @@ var _ = Describe("IntentError", func() {
 				Message: "original message",
 			}
 
-			_ = err.WithMessage("updated message")
+			//nolint:errcheck // Test - intentionally ignoring return.
+			err.WithMessage("updated message")
 
 			Expect(err.Message).To(Equal("updated message"))
 		})
