@@ -82,17 +82,12 @@ var _ = Describe("StandardView Consistency", func() {
 		})
 	})
 
-	Describe("FactManagement", func() {
-		It("should use StandardView patterns", func() {
-			ctx := NewFactManagementContext(nil, context.Background())
-
-			intent := NewFactManagementIntent(ctx)
-			Expect(intent).NotTo(BeNil())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("FactManagement", view)
+	// Note: FactManagement has been migrated to intents/fact_management/ package
+	// with its own comprehensive test suite. See fact_management/intent_test.go
+	// for StandardView consistency tests.
+	PDescribe("FactManagement (migrated to subpackage)", func() {
+		It("should use StandardView patterns - see fact_management/intent_test.go", func() {
+			Skip("Migrated to fact_management subpackage")
 		})
 	})
 

@@ -289,6 +289,12 @@ func NewEditFactModal(fact *career.Fact) *EditFactModal {
 	}
 }
 
+// Init initializes the modal's form and returns the init command.
+// This must be called when creating the modal to properly start the huh form.
+func (m *EditFactModal) Init() tea.Cmd {
+	return m.form.Init()
+}
+
 // Update handles user input for fact editing.
 func (m *EditFactModal) Update(msg tea.Msg) tea.Cmd {
 	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
