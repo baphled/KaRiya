@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"fmt"
@@ -14,39 +14,39 @@ import (
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
-// SkillFilters represents the current filter state for skills.
-// NOTE: Search is handled by SkillSearchModal (`/` key)
-// NOTE: Sort is handled by SkillSortModal (`s` key)
-type SkillFilters struct {
+// Filters represents the current filter state for skills.
+// NOTE: Search is handled by SearchModal (`/` key)
+// NOTE: Sort is handled by SortModal (`s` key)
+type Filters struct {
 	Categories []string
 	Levels     []string
 	MinYears   int
 	MaxYears   int
 }
 
-// SkillFilterFormData holds the form field values for skill filtering.
+// FilterFormData holds the form field values for skill filtering.
 // NOTE: Search and Sort are handled by separate modals
-type SkillFilterFormData struct {
+type FilterFormData struct {
 	Categories  []string
 	Levels      []string
 	MinYearsStr string
 	MaxYearsStr string
 }
 
-// SkillFilterModal manages the filter modal form for skill filtering.
-type SkillFilterModal struct {
+// FilterModal manages the filter modal form for skill filtering.
+type FilterModal struct {
 	form     *huh.Form
-	formData *SkillFilterFormData
+	formData *FilterFormData
 	visible  bool
 	width    int
 	height   int
 	theme    themes.Theme
 }
 
-// NewSkillFilterModal creates a new skill filter modal.
+// NewFilterModal creates a new skill filter modal.
 // NOTE: Search and Sort are handled by separate modals
-func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, width, height int) *SkillFilterModal {
-	formData := &SkillFilterFormData{}
+func NewFilterModal(skills []*career.Skill, currentFilter *Filters, width, height int) *FilterModal {
+	formData := &FilterFormData{}
 
 	// Pre-populate from current filters
 	if currentFilter != nil {
@@ -60,7 +60,7 @@ func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, wi
 		}
 	}
 
-	modal := &SkillFilterModal{
+	modal := &FilterModal{
 		formData: formData,
 		visible:  true,
 		width:    width,
@@ -73,7 +73,7 @@ func NewSkillFilterModal(skills []*career.Skill, currentFilter *SkillFilters, wi
 }
 
 // buildForm creates the huh form with filter options
-func (m *SkillFilterModal) buildForm(skills []*career.Skill) {
+func (m *FilterModal) buildForm(skills []*career.Skill) {
 	// Extract unique categories from skills
 	categoryMap := make(map[string]bool)
 	for _, skill := range skills {
@@ -99,7 +99,7 @@ func (m *SkillFilterModal) buildForm(skills []*career.Skill) {
 	}
 
 	// Create form fields
-	// NOTE: Search is handled by separate SkillSearchModal (accessed via `/` key)
+	// NOTE: Search is handled by separate SearchModal (accessed via `/` key)
 	fields := []huh.Field{}
 
 	// Only add category filter if there are categories
@@ -157,7 +157,7 @@ func (m *SkillFilterModal) buildForm(skills []*career.Skill) {
 			}),
 	)
 
-	// NOTE: Sort options removed - use SkillSortModal (accessed via `s` key)
+	// NOTE: Sort options removed - use SortModal (accessed via `s` key)
 
 	group := huh.NewGroup(fields...)
 
@@ -176,7 +176,7 @@ func (m *SkillFilterModal) buildForm(skills []*career.Skill) {
 }
 
 // Init initializes the filter modal and its form.
-func (m *SkillFilterModal) Init() tea.Cmd {
+func (m *FilterModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
 	}
@@ -184,7 +184,7 @@ func (m *SkillFilterModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the filter modal
-func (m *SkillFilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillFilterFormData) {
+func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 	if !m.visible {
 		return nil, false, nil
 	}
@@ -218,7 +218,7 @@ func (m *SkillFilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillFilterFormD
 }
 
 // View renders the filter modal with proper chrome (border, background)
-func (m *SkillFilterModal) View() string {
+func (m *FilterModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -249,24 +249,24 @@ func (m *SkillFilterModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
-func (m *SkillFilterModal) IsVisible() bool {
+func (m *FilterModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
-func (m *SkillFilterModal) Show() {
+func (m *FilterModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
-func (m *SkillFilterModal) Hide() {
+func (m *FilterModal) Hide() {
 	m.visible = false
 }
 
-// ToSkillFilters converts form data to SkillFilters
+// ToFilters converts form data to Filters
 // NOTE: Search and Sort are handled separately by other modals
-func (m *SkillFilterModal) ToSkillFilters() *SkillFilters {
-	filters := &SkillFilters{
+func (m *FilterModal) ToFilters() *Filters {
+	filters := &Filters{
 		Categories: m.formData.Categories,
 		Levels:     m.formData.Levels,
 	}
@@ -288,7 +288,7 @@ func (m *SkillFilterModal) ToSkillFilters() *SkillFilters {
 
 // RenderOverlay renders the filter modal as an overlay on top of the base view.
 // This follows the bubbletea-overlay pattern used in BrowseTimeline modals.
-func (m *SkillFilterModal) RenderOverlay(baseView string) string {
+func (m *FilterModal) RenderOverlay(baseView string) string {
 	if !m.visible {
 		return baseView
 	}

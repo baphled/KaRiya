@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ViewSkillDetailModal displays skill details in a modal overlay.
+// DetailModal displays skill details in a modal overlay.
 // Unlike the full-screen detail view, this shows the skill info over the skills list.
 //
 // Features:
@@ -25,7 +25,7 @@ import (
 //
 // Usage:
 //
-//	modal := NewViewSkillDetailModal(skill, theme, eventCount, lastUsed)
+//	modal := NewDetailModal(skill, theme, eventCount, lastUsed)
 //	modal.SetDimensions(width, height)
 //	modal.Show()
 //
@@ -39,7 +39,7 @@ import (
 //	if modal.IsVisible() {
 //	    return renderModalOverlay(modal, background)
 //	}
-type ViewSkillDetailModal struct {
+type DetailModal struct {
 	skill      *career.Skill
 	theme      themes.Theme
 	visible    bool
@@ -50,9 +50,9 @@ type ViewSkillDetailModal struct {
 	lastUsed   *time.Time
 }
 
-// NewViewSkillDetailModal creates a new skill detail modal.
-func NewViewSkillDetailModal(skill *career.Skill, theme themes.Theme, eventCount int, lastUsed *time.Time) *ViewSkillDetailModal {
-	return &ViewSkillDetailModal{
+// NewDetailModal creates a new skill detail modal.
+func NewDetailModal(skill *career.Skill, theme themes.Theme, eventCount int, lastUsed *time.Time) *DetailModal {
+	return &DetailModal{
 		skill:      skill,
 		theme:      theme,
 		visible:    false,
@@ -65,12 +65,12 @@ func NewViewSkillDetailModal(skill *career.Skill, theme themes.Theme, eventCount
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
-func (m *ViewSkillDetailModal) Init() tea.Cmd {
+func (m *DetailModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input and window sizing.
-func (m *ViewSkillDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *DetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.visible {
 		return m, nil
 	}
@@ -121,7 +121,7 @@ func (m *ViewSkillDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the modal content with solid background.
-func (m *ViewSkillDetailModal) View() string {
+func (m *DetailModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -161,7 +161,7 @@ func (m *ViewSkillDetailModal) View() string {
 }
 
 // renderSkillDetails renders the skill information as a card using UIKit KeyValue.
-func (m *ViewSkillDetailModal) renderSkillDetails(th themes.Theme) string {
+func (m *DetailModal) renderSkillDetails(th themes.Theme) string {
 	skill := m.skill
 
 	// Use UIKit KeyValue for consistent label-value layout
@@ -211,35 +211,35 @@ func (m *ViewSkillDetailModal) renderSkillDetails(th themes.Theme) string {
 }
 
 // SetDimensions updates the modal's available dimensions.
-func (m *ViewSkillDetailModal) SetDimensions(width, height int) {
+func (m *DetailModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
 }
 
 // Show makes the modal visible.
-func (m *ViewSkillDetailModal) Show() {
+func (m *DetailModal) Show() {
 	m.visible = true
 	m.action = ""
 }
 
 // Hide hides the modal.
-func (m *ViewSkillDetailModal) Hide() {
+func (m *DetailModal) Hide() {
 	m.visible = false
 }
 
 // IsVisible returns whether the modal is currently visible.
-func (m *ViewSkillDetailModal) IsVisible() bool {
+func (m *DetailModal) IsVisible() bool {
 	return m.visible
 }
 
 // GetAction returns the action selected by the user.
 // Returns "events", "edit", "delete", or "" for simple close.
-func (m *ViewSkillDetailModal) GetAction() string {
+func (m *DetailModal) GetAction() string {
 	return m.action
 }
 
 // SetSkill updates the skill being displayed (useful for reusing the modal).
-func (m *ViewSkillDetailModal) SetSkill(skill *career.Skill, eventCount int, lastUsed *time.Time) {
+func (m *DetailModal) SetSkill(skill *career.Skill, eventCount int, lastUsed *time.Time) {
 	m.skill = skill
 	m.eventCount = eventCount
 	m.lastUsed = lastUsed

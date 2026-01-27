@@ -36,9 +36,11 @@ var _ = Describe("App Unit Tests", func() {
 		repo = careerrepo.NewMemoryRepository()
 		burstRepo := careerrepo.NewMemoryBurstRepository()
 		factRepo := careerrepo.NewMemoryFactRepository()
+		skillRepo := careerrepo.NewMemorySkillRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)
+		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 
 		// Pre-populate repositories to avoid nil panics.

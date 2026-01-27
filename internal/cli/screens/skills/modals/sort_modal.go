@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"strings"
@@ -12,8 +12,8 @@ import (
 	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
-// SkillSortConfig represents the current sort configuration for skills.
-type SkillSortConfig struct {
+// SortConfig represents the current sort configuration for skills.
+type SortConfig struct {
 	SortBy    string
 	SortOrder string
 }
@@ -24,8 +24,8 @@ type SkillSortFormData struct {
 	SortOrder string
 }
 
-// SkillSortModal manages the sort modal form for skill sorting.
-type SkillSortModal struct {
+// SortModal manages the sort modal form for skill sorting.
+type SortModal struct {
 	form     *huh.Form
 	formData *SkillSortFormData
 	visible  bool
@@ -34,8 +34,8 @@ type SkillSortModal struct {
 	theme    themes.Theme
 }
 
-// NewSkillSortModal creates a new skill sort modal.
-func NewSkillSortModal(_ []*career.Skill, current *SkillSortConfig, width, height int) *SkillSortModal {
+// NewSortModal creates a new skill sort modal.
+func NewSortModal(_ []*career.Skill, current *SortConfig, width, height int) *SortModal {
 	formData := &SkillSortFormData{
 		SortBy:    "name",
 		SortOrder: "asc",
@@ -51,7 +51,7 @@ func NewSkillSortModal(_ []*career.Skill, current *SkillSortConfig, width, heigh
 		}
 	}
 
-	modal := &SkillSortModal{
+	modal := &SortModal{
 		formData: formData,
 		visible:  true,
 		width:    width,
@@ -64,7 +64,7 @@ func NewSkillSortModal(_ []*career.Skill, current *SkillSortConfig, width, heigh
 }
 
 // buildForm creates the huh form with sort options
-func (m *SkillSortModal) buildForm() {
+func (m *SortModal) buildForm() {
 	// Create form fields
 	fields := []huh.Field{
 		huh.NewSelect[string]().
@@ -104,7 +104,7 @@ func (m *SkillSortModal) buildForm() {
 }
 
 // Init initializes the sort modal and its form.
-func (m *SkillSortModal) Init() tea.Cmd {
+func (m *SortModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
 	}
@@ -112,7 +112,7 @@ func (m *SkillSortModal) Init() tea.Cmd {
 }
 
 // Update handles messages for the sort modal
-func (m *SkillSortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
+func (m *SortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData) {
 	if !m.visible {
 		return nil, false, nil
 	}
@@ -146,7 +146,7 @@ func (m *SkillSortModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSortFormData)
 }
 
 // View renders the sort modal with proper chrome (border, background)
-func (m *SkillSortModal) View() string {
+func (m *SortModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -177,23 +177,23 @@ func (m *SkillSortModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
-func (m *SkillSortModal) IsVisible() bool {
+func (m *SortModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
-func (m *SkillSortModal) Show() {
+func (m *SortModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
-func (m *SkillSortModal) Hide() {
+func (m *SortModal) Hide() {
 	m.visible = false
 }
 
-// ToSkillSortConfig converts form data to SkillSortConfig
-func (m *SkillSortModal) ToSkillSortConfig() *SkillSortConfig {
-	return &SkillSortConfig{
+// ToSortConfig converts form data to SortConfig
+func (m *SortModal) ToSortConfig() *SortConfig {
+	return &SortConfig{
 		SortBy:    m.formData.SortBy,
 		SortOrder: m.formData.SortOrder,
 	}
@@ -201,7 +201,7 @@ func (m *SkillSortModal) ToSkillSortConfig() *SkillSortConfig {
 
 // RenderOverlay renders the sort modal as an overlay on top of the base view.
 // This follows the bubbletea-overlay pattern used in BrowseTimeline modals.
-func (m *SkillSortModal) RenderOverlay(baseView string) string {
+func (m *SortModal) RenderOverlay(baseView string) string {
 	if !m.visible {
 		return baseView
 	}

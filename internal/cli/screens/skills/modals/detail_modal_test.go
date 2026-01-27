@@ -1,7 +1,7 @@
-package components_test
+package modals_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,9 +9,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ViewSkillDetailModal", func() {
+var _ = Describe("DetailModal", func() {
 	var (
-		modal *components.ViewSkillDetailModal
+		modal *modals.DetailModal
 		skill *career.Skill
 		theme themes.Theme
 	)
@@ -28,27 +28,27 @@ var _ = Describe("ViewSkillDetailModal", func() {
 		theme = themes.NewDefaultTheme()
 	})
 
-	Describe("NewViewSkillDetailModal", func() {
+	Describe("NewDetailModal", func() {
 		It("creates a modal with the skill and theme", func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeFalse())
 		})
 
 		It("creates a modal with event count", func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 25, nil)
+			modal = modals.NewDetailModal(skill, theme, 25, nil)
 			Expect(modal).NotTo(BeNil())
 		})
 
 		It("creates a modal with last used date", func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 			Expect(modal).NotTo(BeNil())
 		})
 	})
 
 	Describe("Show/Hide", func() {
 		BeforeEach(func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 		})
 
 		It("shows the modal", func() {
@@ -65,7 +65,7 @@ var _ = Describe("ViewSkillDetailModal", func() {
 
 	Describe("SetDimensions", func() {
 		BeforeEach(func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 		})
 
 		It("updates dimensions", func() {
@@ -79,7 +79,7 @@ var _ = Describe("ViewSkillDetailModal", func() {
 
 	Describe("Update", func() {
 		BeforeEach(func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 			modal.SetDimensions(120, 40)
 			modal.Show()
 		})
@@ -133,7 +133,7 @@ var _ = Describe("ViewSkillDetailModal", func() {
 
 	Describe("View", func() {
 		BeforeEach(func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 			modal.SetDimensions(120, 40)
 		})
 
@@ -188,7 +188,7 @@ var _ = Describe("ViewSkillDetailModal", func() {
 					Category: "Languages",
 					Level:    "Intermediate",
 				}
-				modal = components.NewViewSkillDetailModal(skillWithoutYears, theme, 5, nil)
+				modal = modals.NewDetailModal(skillWithoutYears, theme, 5, nil)
 				modal.SetDimensions(120, 40)
 				modal.Show()
 			})
@@ -204,7 +204,7 @@ var _ = Describe("ViewSkillDetailModal", func() {
 
 	Describe("GetAction", func() {
 		BeforeEach(func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 			modal.SetDimensions(120, 40)
 		})
 
@@ -238,7 +238,7 @@ var _ = Describe("ViewSkillDetailModal", func() {
 
 	Describe("SetSkill", func() {
 		BeforeEach(func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 			modal.SetDimensions(120, 40)
 		})
 
@@ -260,7 +260,7 @@ var _ = Describe("ViewSkillDetailModal", func() {
 
 	Describe("Init", func() {
 		It("returns nil command", func() {
-			modal = components.NewViewSkillDetailModal(skill, theme, 10, nil)
+			modal = modals.NewDetailModal(skill, theme, 10, nil)
 			cmd := modal.Init()
 			Expect(cmd).To(BeNil())
 		})

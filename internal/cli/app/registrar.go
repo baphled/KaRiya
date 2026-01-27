@@ -6,6 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
 	fact_management "github.com/baphled/kariya/internal/cli/intents/fact_management"
+	manage_skills "github.com/baphled/kariya/internal/cli/intents/manage_skills"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -117,12 +118,16 @@ func (r *DefaultIntentRegistrar) registerManageSkills(ctx context.Context, route
 			r.config.Log.Error("Failed to create ManageSkills intent: missing CareerService")
 			return nil
 		}
-		skillsCtx := &intents.ManageSkillsContext{
-			Ctx:             ctx,
-			SkillRepository: r.config.CareerService.GetSkillRepository(),
-			Service:         r.config.CareerService,
+		skillsCtx := manage_skills.NewIntentContext(
+			ctx,
+			r.config.CareerService.GetSkillRepository(),
+		)
+		intent, err := manage_skills.NewIntent(skillsCtx)
+		if err != nil {
+			r.config.Log.Error("Failed to create ManageSkills intent: %v", err)
+			return nil
 		}
-		return intents.NewManageSkillsIntent(skillsCtx)
+		return intent
 	})
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -199,17 +200,47 @@ func (s *SkillsListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return nil, nil
 }
 
+// RenderContent returns just the content (table) without StandardView wrapper.
+// This allows intents to apply their own StandardView with custom breadcrumbs.
+func (s *SkillsListScreen) RenderContent() string {
+	return s.tableBehavior.Render()
+}
+
 // View renders the skills list screen.
 func (s *SkillsListScreen) View() string {
-	// Render table via behavior
-	content := s.tableBehavior.Render()
+	// Render table via behavior.
+	content := s.RenderContent()
 
-	// Footer with actions (matching legacy)
-	footer := "Enter: View  a: Add  e: Edit  d: Delete  ↑↓/jk: Navigate  g/G: Top/Bottom  Esc: Back"
+	// Get theme for UIKit primitives (fall back to default if not set).
+	var th themes.Theme
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if t, ok := screenTheme.(themes.Theme); ok {
+			th = t
+		}
+	}
+	if th == nil {
+		th = themes.NewDefaultTheme()
+	}
 
-	// Handle empty state footer
+	// Build footer using UIKit primitives for consistent styling.
+	var footer string
 	if len(s.skills) == 0 {
-		footer = "a: Add skill  Esc: Back"
+		footer = primitives.RenderHelpFooter(th,
+			primitives.AddBadge(th),
+			primitives.BackBadge(th),
+		)
+	} else {
+		footer = primitives.RenderHelpFooter(th,
+			primitives.NavigateBadge(th),
+			primitives.HelpKeyBadge("Enter", "View", th),
+			primitives.AddBadge(th),
+			primitives.EditBadge(th),
+			primitives.DeleteBadge(th),
+			primitives.HelpKeyBadge("f", "Filter", th),
+			primitives.HelpKeyBadge("s", "Sort", th),
+			primitives.HelpKeyBadge("/", "Search", th),
+			primitives.BackBadge(th),
+		)
 	}
 
 	return s.CreateView([]string{"Main Menu", "Manage Skills"}, content, footer)

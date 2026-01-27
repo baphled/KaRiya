@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"strings"
@@ -8,38 +8,30 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
-// staticViewModel implements overlay.Viewable for rendering static content.
-type staticViewModel struct {
-	content string
-}
-
-func (m staticViewModel) View() string { return m.content }
-
-// SkillSearchFormData holds the form field values for skill searching.
-type SkillSearchFormData struct {
+// SearchFormData holds the form field values for skill searching.
+type SearchFormData struct {
 	SearchText string
 }
 
-// SkillSearchModal manages the search modal form for skill searching.
-type SkillSearchModal struct {
+// SearchModal manages the search modal form for skill searching.
+type SearchModal struct {
 	form     *huh.Form
-	formData *SkillSearchFormData
+	formData *SearchFormData
 	visible  bool
 	width    int
 	height   int
 	theme    themes.Theme
 }
 
-// NewSkillSearchModal creates a new skill search modal.
-func NewSkillSearchModal(currentSearch string, width, height int) *SkillSearchModal {
-	formData := &SkillSearchFormData{
+// NewSearchModal creates a new skill search modal.
+func NewSearchModal(currentSearch string, width, height int) *SearchModal {
+	formData := &SearchFormData{
 		SearchText: currentSearch,
 	}
 
-	m := &SkillSearchModal{
+	m := &SearchModal{
 		formData: formData,
 		visible:  false,
 		width:    width,
@@ -52,7 +44,7 @@ func NewSkillSearchModal(currentSearch string, width, height int) *SkillSearchMo
 }
 
 // rebuildForm creates a new form instance with current dimensions.
-func (m *SkillSearchModal) rebuildForm() {
+func (m *SearchModal) rebuildForm() {
 	// Create form fields
 	fields := []huh.Field{
 		huh.NewInput().
@@ -79,7 +71,7 @@ func (m *SkillSearchModal) rebuildForm() {
 }
 
 // Init initializes the modal.
-func (m *SkillSearchModal) Init() tea.Cmd {
+func (m *SearchModal) Init() tea.Cmd {
 	m.visible = true
 	return m.form.Init()
 }
@@ -92,7 +84,7 @@ func (m *SkillSearchModal) Init() tea.Cmd {
 //
 // CRITICAL: Takes tea.Msg (not tea.KeyMsg) to allow huh forms to process
 // Tab and Enter keys correctly. Huh forms require full tea.Msg interface.
-func (m *SkillSearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSearchFormData) {
+func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
 	// Handle WindowSizeMsg for responsive sizing
 	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
 		m.width = wsm.Width
@@ -126,7 +118,7 @@ func (m *SkillSearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillSearchFormD
 }
 
 // View renders the search modal.
-func (m *SkillSearchModal) View() string {
+func (m *SearchModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -157,52 +149,38 @@ func (m *SkillSearchModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
-func (m *SkillSearchModal) IsVisible() bool {
+func (m *SearchModal) IsVisible() bool {
 	return m.visible
 }
 
 // Show makes the modal visible.
-func (m *SkillSearchModal) Show() {
+func (m *SearchModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
-func (m *SkillSearchModal) Hide() {
+func (m *SearchModal) Hide() {
 	m.visible = false
 }
 
 // SetSize updates the modal's dimensions and rebuilds the form.
-func (m *SkillSearchModal) SetSize(width, height int) {
+func (m *SearchModal) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	m.rebuildForm()
 }
 
 // GetSearchText returns the current search text.
-func (m *SkillSearchModal) GetSearchText() string {
+func (m *SearchModal) GetSearchText() string {
 	return m.formData.SearchText
 }
 
 // RenderOverlay renders the search modal as an overlay on top of the base view.
 // This follows the bubbletea-overlay pattern used in BrowseTimeline modals.
-func (m *SkillSearchModal) RenderOverlay(baseView string) string {
+func (m *SearchModal) RenderOverlay(baseView string) string {
 	if !m.visible {
 		return baseView
 	}
 
-	// Create static view model for modal content
-	modalContent := staticViewModel{content: m.View()}
-	bgModel := staticViewModel{content: baseView}
-
-	// Use bubbletea-overlay to composite the modal on top of base view
-	overlayModel := overlay.New(
-		modalContent,   // Foreground: the search form
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		0,              // Y offset
-	)
-
-	return overlayModel.View()
+	return RenderOverlayModal(m.View(), baseView)
 }

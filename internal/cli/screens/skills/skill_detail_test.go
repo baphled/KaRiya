@@ -125,8 +125,9 @@ var _ = Describe("SkillDetailScreen", func() {
 
 		It("should show help text in footer", func() {
 			view := screen.View()
-			Expect(view).To(ContainSubstring("e: Edit"))
-			Expect(view).To(ContainSubstring("d: Delete"))
+			// UIKit badges render as "[key] action" without colon.
+			Expect(view).To(ContainSubstring("Edit"))
+			Expect(view).To(ContainSubstring("Delete"))
 			Expect(view).To(ContainSubstring("Esc"))
 		})
 

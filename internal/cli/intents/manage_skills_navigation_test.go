@@ -32,7 +32,8 @@ var _ = Describe("ManageSkills Navigation", func() {
 
 		It("should show context help for skills list", func() {
 			env.SelectIntentByName("manage_skills")
-			env.AssertViewContainsAny("Enter", "Esc", "n", "New skill")
+			// UIKit uses 'a' for Add badge.
+			env.AssertViewContainsAny("Enter", "Esc", "Add")
 		})
 
 		It("should allow navigation back from skills list", func() {
@@ -65,7 +66,8 @@ var _ = Describe("ManageSkills Navigation", func() {
 
 		It("should allow adding skill from empty list", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			// Modal shows form with Category field (modal overlay)
 			env.AssertViewContainsAny("Category", "Proficiency Level")
 		})
@@ -83,7 +85,8 @@ var _ = Describe("ManageSkills Navigation", func() {
 		It("should open filter menu with 'f'", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			env.AssertViewContainsAny("Filter", "Category")
+			// Filter modal shows filter fields (Category, Level, Years).
+			env.AssertViewContainsAny("Category", "Level", "Years", "Minimum")
 		})
 
 		It("should navigate back from filter menu", func() {
@@ -111,15 +114,15 @@ var _ = Describe("ManageSkills Navigation", func() {
 		It("should open filter modal on 'f' key", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			// Modal should be visible - check for any filter-related content
-			env.AssertViewContainsAny("Category", "Level", "Sort", "Filter")
+			// Modal should be visible - check for any filter-related content.
+			env.AssertViewContainsAny("Category", "Level", "Years", "Minimum")
 		})
 
 		It("should show filter modal with form fields", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			// Modal should show filter options (huh forms show fields progressively)
-			env.AssertViewContainsAny("Category", "Level", "Sort")
+			// Modal should show filter options (huh forms show fields progressively).
+			env.AssertViewContainsAny("Category", "Level", "Years", "Minimum")
 		})
 	})
 
@@ -184,16 +187,18 @@ var _ = Describe("ManageSkills Navigation", func() {
 			env.Cleanup()
 		})
 
-		It("should open add form modal with 'n'", func() {
+		It("should open add form modal with 'a'", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			// Modal shows form with Category field (first field after Name)
 			env.AssertViewContainsAny("Category", "Proficiency Level")
 		})
 
 		It("should navigate back from add form modal", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			env.Cancel()
 			// Back to list view (Skills header visible, modal closed)
 			env.AssertViewContains("Skills")
@@ -201,13 +206,15 @@ var _ = Describe("ManageSkills Navigation", func() {
 
 		It("should show category options in modal", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			env.AssertViewContainsAny("backend", "frontend", "devops")
 		})
 
 		It("should navigate through form fields with Tab in modal", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			env.Tab()
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
@@ -230,14 +237,16 @@ var _ = Describe("ManageSkills Navigation", func() {
 
 		It("should navigate from list to add form modal", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			// Modal shows form with Category field
 			env.AssertViewContainsAny("Category", "Proficiency Level")
 		})
 
 		It("should navigate from add form back to list", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			env.Cancel()
 			env.AssertViewContains("Skills")
 		})
@@ -245,7 +254,8 @@ var _ = Describe("ManageSkills Navigation", func() {
 		It("should navigate to filter and back", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			env.AssertViewContains("Filter")
+			// Filter modal is visible.
+			env.AssertViewContainsAny("Category", "Level", "Years", "Minimum")
 			env.Cancel()
 			env.AssertViewContains("Skills")
 		})
@@ -288,10 +298,10 @@ var _ = Describe("ManageSkills Navigation", func() {
 		It("should close filter modal with Esc key", func() {
 			env.SelectIntentByName("manage_skills")
 			env.PressKeyRune('f')
-			// Modal should be visible
-			env.AssertViewContainsAny("Category", "Level", "Sort")
+			// Modal should be visible.
+			env.AssertViewContainsAny("Category", "Level", "Years", "Minimum")
 			env.Cancel() // Esc key
-			// Should return to skills list
+			// Should return to skills list.
 			env.AssertViewContains("Skills")
 		})
 
@@ -341,7 +351,8 @@ var _ = Describe("ManageSkills Navigation", func() {
 
 		It("should render add form without errors", func() {
 			env.SelectIntentByName("manage_skills")
-			env.PressKeyRune('n')
+			// Screen uses 'a' for add (matches UIKit AddBadge).
+			env.PressKeyRune('a')
 			view := env.GetView()
 			Expect(view).NotTo(BeEmpty())
 			Expect(view).NotTo(ContainSubstring("error"))

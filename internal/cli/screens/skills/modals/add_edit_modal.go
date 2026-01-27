@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"strconv"
@@ -12,16 +12,16 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
-// SkillAddEditModal provides a way to add or edit a skill.
+// AddEditModal provides a way to add or edit a skill.
 // It shows a form with fields for name, category, level, and years of experience.
 //
 // Usage:
 //
 //	// For adding a new skill:
-//	modal := components.NewSkillAddEditModal(nil, width, height)
+//	modal := components.NewAddEditModal(nil, width, height)
 //
 //	// For editing an existing skill:
-//	modal := components.NewSkillAddEditModal(existingSkill, width, height)
+//	modal := components.NewAddEditModal(existingSkill, width, height)
 //
 //	cmd := modal.Init()
 //	// In Update:
@@ -36,7 +36,7 @@ import (
 //	} else if !modal.IsVisible() {
 //	    // User cancelled (Esc)
 //	}
-type SkillAddEditModal struct {
+type AddEditModal struct {
 	form          *huh.Form
 	formData      *forms.SkillFormData
 	originalSkill *career.Skill // nil for add mode
@@ -45,17 +45,17 @@ type SkillAddEditModal struct {
 	height        int
 }
 
-// NewSkillAddEditModal creates a new skill add/edit modal with the given
+// NewAddEditModal creates a new skill add/edit modal with the given
 // terminal dimensions. If skill is nil, creates a form for adding a new skill.
 // If skill is provided, creates a form for editing with pre-populated fields.
-func NewSkillAddEditModal(skill *career.Skill, width, height int) *SkillAddEditModal {
+func NewAddEditModal(skill *career.Skill, width, height int) *AddEditModal {
 	// Initialize form data from existing skill or empty
 	formData := &forms.SkillFormData{}
 	if skill != nil {
 		formData = forms.GetSkillFormData(skill)
 	}
 
-	modal := &SkillAddEditModal{
+	modal := &AddEditModal{
 		formData:      formData,
 		originalSkill: skill,
 		visible:       true,
@@ -68,7 +68,7 @@ func NewSkillAddEditModal(skill *career.Skill, width, height int) *SkillAddEditM
 }
 
 // buildForm creates the huh form with proper dimensions.
-func (m *SkillAddEditModal) buildForm() {
+func (m *AddEditModal) buildForm() {
 	// Calculate form width
 	modalWidth := m.width - 10
 	if modalWidth > 90 {
@@ -86,7 +86,7 @@ func (m *SkillAddEditModal) buildForm() {
 }
 
 // Init initializes the modal and its form.
-func (m *SkillAddEditModal) Init() tea.Cmd {
+func (m *AddEditModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
 	}
@@ -99,7 +99,7 @@ func (m *SkillAddEditModal) Init() tea.Cmd {
 //   - tea.Cmd: command to execute
 //   - bool: true if form completed successfully
 //   - *SkillEditData: skill data if completed, nil otherwise
-func (m *SkillAddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
+func (m *AddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
 	if !m.visible {
 		return nil, false, nil
 	}
@@ -147,7 +147,7 @@ func (m *SkillAddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) 
 
 // View renders the skill add/edit modal with proper chrome (border, background)
 // for overlay compositing.
-func (m *SkillAddEditModal) View() string {
+func (m *AddEditModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -162,27 +162,27 @@ func (m *SkillAddEditModal) View() string {
 }
 
 // IsVisible returns whether the modal is currently visible.
-func (m *SkillAddEditModal) IsVisible() bool {
+func (m *AddEditModal) IsVisible() bool {
 	return m.visible
 }
 
 // IsEditMode returns true if editing an existing skill, false if adding new.
-func (m *SkillAddEditModal) IsEditMode() bool {
+func (m *AddEditModal) IsEditMode() bool {
 	return m.originalSkill != nil
 }
 
 // Show makes the modal visible.
-func (m *SkillAddEditModal) Show() {
+func (m *AddEditModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
-func (m *SkillAddEditModal) Hide() {
+func (m *AddEditModal) Hide() {
 	m.visible = false
 }
 
 // GetOriginalSkill returns the original skill being edited (nil for add mode).
-func (m *SkillAddEditModal) GetOriginalSkill() *career.Skill {
+func (m *AddEditModal) GetOriginalSkill() *career.Skill {
 	return m.originalSkill
 }
 

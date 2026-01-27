@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 // This ensures event descriptions fit within the table column width.
 const maxEventTextLength = 42
 
-// ViewSkillEventsModal displays events that use a skill in a modal overlay with a data table.
+// EventsModal displays events that use a skill in a modal overlay with a data table.
 // This modal uses bubbles/table for consistent table display and navigation.
 //
 // Features:
@@ -27,7 +27,7 @@ const maxEventTextLength = 42
 //
 // Usage:
 //
-//	modal := NewViewSkillEventsModal(skillID, skillName, events, theme)
+//	modal := NewEventsModal(skillID, skillName, events, theme)
 //	modal.SetDimensions(width, height)
 //	modal.Show()
 //
@@ -44,7 +44,7 @@ const maxEventTextLength = 42
 //	if modal.IsVisible() {
 //	    return renderModalOverlay(modal, background)
 //	}
-type ViewSkillEventsModal struct {
+type EventsModal struct {
 	skillID       string
 	skillName     string
 	events        []*career.CareerEvent
@@ -56,8 +56,8 @@ type ViewSkillEventsModal struct {
 	selectedEvent *career.CareerEvent // Set when user selects an event
 }
 
-// NewViewSkillEventsModal creates a new events modal for a skill.
-func NewViewSkillEventsModal(skillID, skillName string, events []*career.CareerEvent, theme themes.Theme) *ViewSkillEventsModal {
+// NewEventsModal creates a new events modal for a skill.
+func NewEventsModal(skillID, skillName string, events []*career.CareerEvent, theme themes.Theme) *EventsModal {
 	// Filter out nil events
 	filteredEvents := make([]*career.CareerEvent, 0, len(events))
 	for _, e := range events {
@@ -66,7 +66,7 @@ func NewViewSkillEventsModal(skillID, skillName string, events []*career.CareerE
 		}
 	}
 
-	m := &ViewSkillEventsModal{
+	m := &EventsModal{
 		skillID:   skillID,
 		skillName: skillName,
 		events:    filteredEvents,
@@ -80,7 +80,7 @@ func NewViewSkillEventsModal(skillID, skillName string, events []*career.CareerE
 }
 
 // initTable initializes the bubbles/table with columns, rows, and styling
-func (m *ViewSkillEventsModal) initTable() {
+func (m *EventsModal) initTable() {
 	// Nil theme guard
 	theme := m.theme
 	if theme == nil {
@@ -131,7 +131,7 @@ func (m *ViewSkillEventsModal) initTable() {
 }
 
 // buildRows converts events to table rows
-func (m *ViewSkillEventsModal) buildRows() []table.Row {
+func (m *EventsModal) buildRows() []table.Row {
 	rows := make([]table.Row, 0, len(m.events))
 	for _, event := range m.events {
 		if event == nil {
@@ -165,12 +165,12 @@ func (m *ViewSkillEventsModal) buildRows() []table.Row {
 }
 
 // Init initializes the modal (implements tea.Model for bubbletea-overlay).
-func (m *ViewSkillEventsModal) Init() tea.Cmd {
+func (m *EventsModal) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles keyboard input and window sizing.
-func (m *ViewSkillEventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *EventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.visible {
 		return m, nil
 	}
@@ -208,7 +208,7 @@ func (m *ViewSkillEventsModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the modal content with data table.
-func (m *ViewSkillEventsModal) View() string {
+func (m *EventsModal) View() string {
 	if !m.visible {
 		return ""
 	}
@@ -279,41 +279,41 @@ func (m *ViewSkillEventsModal) View() string {
 }
 
 // SetDimensions updates the modal's available dimensions.
-func (m *ViewSkillEventsModal) SetDimensions(width, height int) {
+func (m *EventsModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
 	m.initTable() // Rebuild table with new dimensions
 }
 
 // Show makes the modal visible.
-func (m *ViewSkillEventsModal) Show() {
+func (m *EventsModal) Show() {
 	m.visible = true
 	m.selectedEvent = nil
 	m.table.SetCursor(0) // Reset selection
 }
 
 // Hide hides the modal.
-func (m *ViewSkillEventsModal) Hide() {
+func (m *EventsModal) Hide() {
 	m.visible = false
 }
 
 // IsVisible returns whether the modal is currently visible.
-func (m *ViewSkillEventsModal) IsVisible() bool {
+func (m *EventsModal) IsVisible() bool {
 	return m.visible
 }
 
 // GetSkillID returns the skill ID this modal is showing events for.
-func (m *ViewSkillEventsModal) GetSkillID() string {
+func (m *EventsModal) GetSkillID() string {
 	return m.skillID
 }
 
 // GetSkillName returns the skill name this modal is showing events for.
-func (m *ViewSkillEventsModal) GetSkillName() string {
+func (m *EventsModal) GetSkillName() string {
 	return m.skillName
 }
 
 // SetEvents updates the events being displayed.
-func (m *ViewSkillEventsModal) SetEvents(events []*career.CareerEvent) {
+func (m *EventsModal) SetEvents(events []*career.CareerEvent) {
 	// Filter out nil events
 	filteredEvents := make([]*career.CareerEvent, 0, len(events))
 	for _, e := range events {
@@ -328,21 +328,21 @@ func (m *ViewSkillEventsModal) SetEvents(events []*career.CareerEvent) {
 }
 
 // HasSelection returns true if the user selected an event.
-func (m *ViewSkillEventsModal) HasSelection() bool {
+func (m *EventsModal) HasSelection() bool {
 	return m.selectedEvent != nil
 }
 
 // GetSelectedEvent returns the selected event (nil if none selected).
-func (m *ViewSkillEventsModal) GetSelectedEvent() *career.CareerEvent {
+func (m *EventsModal) GetSelectedEvent() *career.CareerEvent {
 	return m.selectedEvent
 }
 
 // ClearSelection clears any previous selection.
-func (m *ViewSkillEventsModal) ClearSelection() {
+func (m *EventsModal) ClearSelection() {
 	m.selectedEvent = nil
 }
 
 // GetSelectedIndex returns the current selection index.
-func (m *ViewSkillEventsModal) GetSelectedIndex() int {
+func (m *EventsModal) GetSelectedIndex() int {
 	return m.table.Cursor()
 }

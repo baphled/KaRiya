@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	skills_screens "github.com/baphled/kariya/internal/cli/screens/skills"
+	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
@@ -67,15 +68,15 @@ type ManageSkillsIntent struct {
 	availableCategories []string       // Categories extracted from skills for filter menu
 
 	// modals (new architecture with bubbletea-overlay)
-	filterModal *components.SkillFilterModal
-	sortModal   *components.SkillSortModal
-	searchModal *components.SkillSearchModal
+	filterModal *modals.FilterModal
+	sortModal   *modals.SortModal
+	searchModal *modals.SearchModal
 
 	// view/edit modals (modal overlay architecture like BrowseTimelineIntent)
-	viewDetailModal  *components.ViewSkillDetailModal
-	addEditModal     *components.SkillAddEditModal
+	viewDetailModal  *modals.DetailModal
+	addEditModal     *modals.AddEditModal
 	deleteModal      *feedback.ConfirmModal
-	skillEventsModal *components.ViewSkillEventsModal // Modal to show events using a skill
+	skillEventsModal *modals.EventsModal              // Modal to show events using a skill
 	eventDetailModal *components.ViewEventDetailModal // Modal to show event details from events list
 
 	// screen orchestration (new architecture)
@@ -516,8 +517,8 @@ func (i *ManageSkillsIntent) handleFilterModalUpdate(msg tea.Msg) tea.Cmd {
 	cmd, applied, filterData := i.filterModal.Update(msg)
 
 	if applied && filterData != nil {
-		// User confirmed filters - convert to SkillFilters and apply
-		newFilters := i.filterModal.ToSkillFilters()
+		// User confirmed filters - convert to Filters and apply
+		newFilters := i.filterModal.ToFilters()
 
 		// Update internal filter state
 		if i.filters == nil {
@@ -552,7 +553,7 @@ func (i *ManageSkillsIntent) handleSortModalUpdate(msg tea.Msg) tea.Cmd {
 
 	if applied && sortData != nil {
 		// User confirmed sort - apply it
-		sortConfig := i.sortModal.ToSkillSortConfig()
+		sortConfig := i.sortModal.ToSortConfig()
 
 		// Update internal filter state
 		if i.filters == nil {
@@ -582,9 +583,9 @@ func (i *ManageSkillsIntent) openFilterModal() tea.Cmd {
 	}
 
 	// Build current filters for pre-population
-	var currentFilters *components.SkillFilters
+	var currentFilters *modals.Filters
 	if i.filters != nil {
-		currentFilters = &components.SkillFilters{
+		currentFilters = &modals.Filters{
 			Categories: []string{},
 			Levels:     []string{},
 			MinYears:   i.filters.MinEvents, // Map events to years for now
@@ -599,7 +600,7 @@ func (i *ManageSkillsIntent) openFilterModal() tea.Cmd {
 	}
 
 	// Create filter modal
-	i.filterModal = components.NewSkillFilterModal(
+	i.filterModal = modals.NewFilterModal(
 		i.skills,
 		currentFilters,
 		width,
@@ -623,16 +624,16 @@ func (i *ManageSkillsIntent) openSortModal() tea.Cmd {
 	}
 
 	// Build current sort config for pre-population
-	var currentSort *components.SkillSortConfig
+	var currentSort *modals.SortConfig
 	if i.filters != nil {
-		currentSort = &components.SkillSortConfig{
+		currentSort = &modals.SortConfig{
 			SortBy:    i.filters.SortBy,
 			SortOrder: i.filters.SortOrder,
 		}
 	}
 
 	// Create sort modal
-	i.sortModal = components.NewSkillSortModal(
+	i.sortModal = modals.NewSortModal(
 		i.skills,
 		currentSort,
 		width,
@@ -662,7 +663,7 @@ func (i *ManageSkillsIntent) openSearchModal() tea.Cmd {
 	}
 
 	// Create search modal
-	i.searchModal = components.NewSkillSearchModal(
+	i.searchModal = modals.NewSearchModal(
 		searchText,
 		width,
 		height,
@@ -817,7 +818,7 @@ func (i *ManageSkillsIntent) openSkillEventsModal(events []*domain.CareerEvent) 
 		width, height = termInfo.Width, termInfo.Height
 	}
 
-	i.skillEventsModal = components.NewViewSkillEventsModal(
+	i.skillEventsModal = modals.NewEventsModal(
 		i.selectedSkill.ID,
 		i.selectedSkill.Name,
 		events,
@@ -879,7 +880,7 @@ func (i *ManageSkillsIntent) openViewDetailModal() tea.Cmd {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
-	i.viewDetailModal = components.NewViewSkillDetailModal(skill, i.Theme(), eventCount, lastUsed)
+	i.viewDetailModal = modals.NewDetailModal(skill, i.Theme(), eventCount, lastUsed)
 	i.viewDetailModal.SetDimensions(width, height)
 	i.viewDetailModal.Show()
 
@@ -895,7 +896,7 @@ func (i *ManageSkillsIntent) openAddEditModal(skill *domain.Skill) tea.Cmd {
 		width, height = termInfo.Width, termInfo.Height
 	}
 
-	i.addEditModal = components.NewSkillAddEditModal(skill, width, height)
+	i.addEditModal = modals.NewAddEditModal(skill, width, height)
 	return i.addEditModal.Init()
 }
 
