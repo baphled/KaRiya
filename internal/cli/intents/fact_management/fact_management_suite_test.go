@@ -1,4 +1,4 @@
-package factmanagement
+package fact_management
 
 import (
 	"testing"
