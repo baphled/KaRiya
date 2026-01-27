@@ -27,7 +27,7 @@ func RenderOverlayModal(modalView, backgroundView string) string {
 		overlay.Center, // X position
 		overlay.Center, // Y position
 		0,              // X offset
-		-2,             // Y offset (avoid footer overlap)
+		-2,             // Y offset: shift modal slightly up to leave space for footer
 	)
 
 	return overlayModel.View()

@@ -1,4 +1,4 @@
-// Package manage_skills implements the ManageSkills intent for managing user-defined skills.
+// Package skills_management implements the ManageSkills intent for managing user-defined skills.
 package skills_management
 
 import (
@@ -39,7 +39,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 	tableBehavior := behaviors.NewTableBehavior[*domain.Skill](nil, skillsColumns, skillRowFormatterWithCounts(nil)).
 		PageSize(15).
 		PaginationPrefix("Skills").
-		EmptyMessage("No skills found. Press 'n' to add a new skill.")
+		EmptyMessage("No skills found. Press 'a' to add a new skill.")
 
 	// Create column definitions for events TableBehavior.
 	eventsColumns := []behaviors.ColumnDef{
@@ -90,8 +90,8 @@ func (i *Intent) Init() tea.Cmd {
 	return func() tea.Msg {
 		if i.context == nil || i.context.SkillRepository == nil {
 			return SkillsLoadedMsg{
-				Skills: nil,
-				Error:  nil,
+				Skills: []*domain.Skill{},
+				Error:  ErrRepositoryNotAvailable,
 			}
 		}
 		loadedSkills, err := i.context.LoadSkills()

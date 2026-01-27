@@ -9,7 +9,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	overlay "github.com/rmhubbert/bubbletea-overlay"
 )
 
 // SortConfig represents the current sort configuration for skills.
@@ -203,19 +202,5 @@ func (m *SortModal) RenderOverlay(baseView string) string {
 		return baseView
 	}
 
-	// Create static view model for modal content.
-	modalContent := staticViewModel{content: m.View()}
-	bgModel := staticViewModel{content: baseView}
-
-	// Use bubbletea-overlay to composite the modal on top of base view.
-	overlayModel := overlay.New(
-		modalContent,   // Foreground: the sort form.
-		bgModel,        // Background: the rendered view.
-		overlay.Center, // X position.
-		overlay.Center, // Y position.
-		0,              // X offset.
-		-2,             // Y offset (avoid footer overlap).
-	)
-
-	return overlayModel.View()
+	return RenderOverlayModal(m.View(), baseView)
 }

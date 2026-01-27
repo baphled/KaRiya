@@ -1,4 +1,3 @@
-// Package manage_skills implements the ManageSkills intent for managing user-defined skills.
 package skills_management
 
 import "github.com/baphled/kariya/internal/domain/career"

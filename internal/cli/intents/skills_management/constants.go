@@ -1,4 +1,3 @@
-// Package manage_skills implements the ManageSkills intent for managing user-defined skills.
 package skills_management
 
 // State represents the current state of the ManageSkills intent.
