@@ -104,11 +104,15 @@ func renderEventsContent(events []*career.CareerEvent, theme themes.Theme) strin
 
 	for idx, event := range events {
 		b.WriteString(fmt.Sprintf("%d. %s\n", idx+1, event.Text))
-		b.WriteString(primitives.NewText(fmt.Sprintf("   Date: %s", event.Date.Format("2006-01-02")), theme).Foreground(theme.SecondaryColor()).Render())
+		dateText := fmt.Sprintf("   Date: %s", event.Date.Format("2006-01-02"))
+		b.WriteString(primitives.NewText(dateText, theme).
+			Foreground(theme.SecondaryColor()).Render())
 		b.WriteString("\n")
 
 		if len(event.Tags) > 0 {
-			b.WriteString(primitives.NewText(fmt.Sprintf("   Tags: %s", strings.Join(event.Tags, ", ")), theme).Foreground(theme.SecondaryColor()).Render())
+			tagsText := fmt.Sprintf("   Tags: %s", strings.Join(event.Tags, ", "))
+			b.WriteString(primitives.NewText(tagsText, theme).
+				Foreground(theme.SecondaryColor()).Render())
 			b.WriteString("\n")
 		}
 

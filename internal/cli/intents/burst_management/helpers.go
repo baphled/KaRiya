@@ -3,6 +3,7 @@ package burst_management
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -725,7 +726,7 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 
 	if msg.Error != nil {
 		// Silently ignore cancelled operations - user already knows they cancelled.
-		if msg.Error == context.Canceled {
+		if errors.Is(msg.Error, context.Canceled) {
 			i.state = StateList
 			return nil
 		}
@@ -737,7 +738,9 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 
 	if len(msg.Suggestions) == 0 {
 		// No suggestions found - show message and return to list.
-		i.ShowErrorModal("No Suggestions Found", "No suggestions were generated from your events. Try adding more events or adjusting detection settings.")
+		i.ShowErrorModal("No Suggestions Found",
+			"No suggestions were generated from your events. "+
+				"Try adding more events or adjusting detection settings.")
 		i.state = StateList
 		return nil
 	}

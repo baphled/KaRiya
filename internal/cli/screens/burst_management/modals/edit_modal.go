@@ -6,7 +6,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 )
 
 // EditBurstModal provides a way to edit an existing burst.
@@ -24,7 +23,7 @@ import (
 //	    // User cancelled (Esc)
 //	}
 type EditBurstModal struct {
-	form          *huh.Form
+	form          forms.Form
 	formData      *forms.BurstFormData
 	originalBurst *career.Burst
 	visible       bool
@@ -111,12 +110,12 @@ func (m *EditBurstModal) Update(msg tea.Msg) (tea.Cmd, bool, *EditBurstData) {
 		}
 	}
 
-	// Update form.
-	form, cmd := m.form.Update(msg)
-	m.form = form.(*huh.Form)
+	// Update form using forms package helper.
+	var cmd tea.Cmd
+	m.form, cmd = forms.Update(m.form, msg)
 
 	// Check if form is complete AND user confirmed submission.
-	if m.form.State == huh.StateCompleted {
+	if forms.IsCompleted(m.form) {
 		m.visible = false
 		// Only return data if user confirmed (pressed Submit, not Cancel).
 		if m.formData.SubmitConfirmed {

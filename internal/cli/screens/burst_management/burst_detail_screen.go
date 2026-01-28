@@ -82,7 +82,6 @@ func (s *BurstDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 
 		// Handle rune-based keys.
 		switch msg.String() {
-
 		case "v":
 			// View events in burst
 			return nil, &screens.NavigateResult{

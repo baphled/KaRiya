@@ -106,12 +106,17 @@ func renderFactsContent(facts []*career.Fact, theme themes.Theme) string {
 		b.WriteString(fmt.Sprintf("%d. %s\n", idx+1, fact.Text))
 
 		if len(fact.CompetencyCategories) > 0 {
-			b.WriteString(primitives.NewText(fmt.Sprintf("   Categories: %s", strings.Join(fact.CompetencyCategories, ", ")), theme).Foreground(theme.SecondaryColor()).Render())
+			catText := fmt.Sprintf("   Categories: %s",
+				strings.Join(fact.CompetencyCategories, ", "))
+			b.WriteString(primitives.NewText(catText, theme).
+				Foreground(theme.SecondaryColor()).Render())
 			b.WriteString("\n")
 		}
 
 		if fact.StrengthSignal != "" {
-			b.WriteString(primitives.NewText(fmt.Sprintf("   Strength: %s", fact.StrengthSignal), theme).Foreground(theme.SecondaryColor()).Render())
+			strengthText := fmt.Sprintf("   Strength: %s", fact.StrengthSignal)
+			b.WriteString(primitives.NewText(strengthText, theme).
+				Foreground(theme.SecondaryColor()).Render())
 			b.WriteString("\n")
 		}
 

@@ -3,6 +3,7 @@ package burst_management
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -325,8 +326,7 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 
 // handleKeyShortcuts handles keyboard shortcuts when no modal is active.
 func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
-	switch keyMsg.String() {
-	case "s":
+	if keyMsg.String() == "s" {
 		// Trigger burst suggestion detection.
 		i.state = StateSuggesting
 		return i.startBurstDetection()
@@ -341,7 +341,7 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 
 	if msg.Error != nil {
 		// Silently ignore cancelled operations - user already knows they cancelled.
-		if msg.Error == context.Canceled {
+		if errors.Is(msg.Error, context.Canceled) {
 			i.state = StateList
 			return nil
 		}

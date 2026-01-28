@@ -17,7 +17,7 @@ import (
 const BurstListState = "burst_list"
 
 // burstRowFormatter formats a burst for table display.
-func burstRowFormatter(burst *career.Burst, index int) []string {
+func burstRowFormatter(burst *career.Burst, _ int) []string {
 	// Column 1: Name (truncate to 27 chars).
 	nameStr := burst.Name
 	if len(nameStr) > 27 {
@@ -175,9 +175,8 @@ func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 			return nil, nil
 		}
 
-		// Handle special keys by type.
-		switch msg.Type {
-		case tea.KeyEnter:
+		// Handle enter key for viewing details.
+		if msg.Type == tea.KeyEnter {
 			// View burst details.
 			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
@@ -189,7 +188,6 @@ func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 		// Handle action keys.
 		switch msg.String() {
-
 		case "a":
 			// Add new burst.
 			return nil, &screens.NavigateResult{

@@ -31,7 +31,10 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 }
 
 // HandleCancel handles screen cancellation (back/escape).
+//
+//nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
+	_ = result // Satisfy interface - result data not needed for cancel handling
 	switch i.state {
 	case StateList:
 		// Check if any modal is visible - if so, Esc should close the modal, not cancel the intent.
@@ -85,9 +88,10 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 }
 
 // HandleSubmit handles form submission results.
+//
+//nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
-	// Form submissions will be implemented when modals are added.
-	// This will handle edit burst form, create burst form, etc.
+	_ = result // Not yet implemented - form submissions handled via modals
 	return nil
 }
 
@@ -100,7 +104,10 @@ func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 }
 
 // handleActionData processes action data from navigation results.
+//
+//nolint:funlen // Action routing requires handling multiple action types in one function
 func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
+	//nolint:errcheck // Type assertion ok value intentionally ignored - empty string is acceptable default
 	action, _ := actionData["action"].(string)
 	switch action {
 	case "edit":
