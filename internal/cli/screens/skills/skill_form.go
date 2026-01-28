@@ -4,7 +4,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/charmbracelet/huh"
 )
 
 // State constant for state matrix tracking (REQUIRED)
@@ -82,12 +81,8 @@ func NewSkillFormScreen(skill *career.Skill) *SkillFormScreen {
 		formData = forms.GetSkillFormData(skill)
 	}
 
-	// Form builder function
-	builder := func(data *forms.SkillFormData, width, height int) *huh.Form {
-		return forms.NewSkillFormWithDataAndDimensions(data, width, height)
-	}
-
-	baseScreen := base.NewBaseFormScreen(breadcrumbs, builder, formData)
+	// Use forms.NewSkillFormWithDataAndDimensions directly as the builder.
+	baseScreen := base.NewBaseFormScreen(breadcrumbs, forms.NewSkillFormWithDataAndDimensions, formData)
 
 	return &SkillFormScreen{
 		BaseFormScreen: baseScreen,

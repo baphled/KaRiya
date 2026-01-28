@@ -4,10 +4,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/screens"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 )
 
-// FormBuilder is a function type that creates a huh.Form for given dimensions.
+// FormBuilder is a function type that creates a form for given dimensions.
 //
 // Parameters:
 //   - data: The form data structure to bind to
@@ -15,7 +14,8 @@ import (
 //   - height: Terminal height for the form
 //
 // The builder should create form groups and fields that bind to the data structure.
-type FormBuilder[T any] func(data T, width, height int) *huh.Form
+// Use forms.Form (which is an alias for *huh.Form) to avoid direct huh imports.
+type FormBuilder[T any] func(data T, width, height int) forms.Form
 
 // BaseFormScreen provides a reusable screen for forms using the huh library.
 //
@@ -68,8 +68,8 @@ type BaseFormScreen[T any] struct {
 	// formData is the data structure bound to the form
 	formData T
 
-	// form is the current huh.Form instance
-	form *huh.Form
+	// form is the current form instance.
+	form forms.Form
 
 	// footer is the help text shown at the bottom
 	footer string
@@ -147,16 +147,14 @@ func (s *BaseFormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 			return nil, &screens.CancelResult{}
 		}
 
-		// Delegate other keys to huh form
-		form, cmd := s.form.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			s.form = f
-		}
+		// Delegate other keys to form using forms package helper.
+		var cmd tea.Cmd
+		s.form, cmd = forms.Update(s.form, msg)
 
-		// Check if form is completed
+		// Check if form is completed.
 		// Note: The form data's SubmitConfirmed field must be set to true by a confirm field
 		// for the submission to occur. This prevents accidental submissions.
-		if s.form.State == huh.StateCompleted {
+		if forms.IsCompleted(s.form) {
 			// Check if the form data has SubmitConfirmed set to true
 			// This requires using reflection or a type assertion
 			// For now, we return SubmitResult when form is completed
@@ -169,11 +167,9 @@ func (s *BaseFormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		return cmd, nil
 	}
 
-	// Delegate other messages to form
-	form, cmd := s.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		s.form = f
-	}
+	// Delegate other messages to form using forms package helper.
+	var cmd tea.Cmd
+	s.form, cmd = forms.Update(s.form, msg)
 
 	return cmd, nil
 }

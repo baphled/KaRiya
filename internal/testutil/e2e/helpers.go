@@ -482,11 +482,13 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	eventRepo := careerrepo.NewMemoryRepository()
 	burstRepo := careerrepo.NewMemoryBurstRepository()
 	factRepo := careerrepo.NewMemoryFactRepository()
+	skillRepo := careerrepo.NewMemorySkillRepository()
 
 	// Create service
 	svc := careerservice.NewService(eventRepo)
 	svc.SetBurstRepository(burstRepo)
 	svc.SetFactRepository(factRepo)
+	svc.SetSkillRepository(skillRepo)
 
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)

@@ -1,4 +1,4 @@
-package components_test
+package modals_test
 
 import (
 	"time"
@@ -6,15 +6,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-var _ = Describe("ViewSkillEventsModal", func() {
+var _ = Describe("EventsModal", func() {
 	var (
-		modal     *components.ViewSkillEventsModal
+		modal     *modals.EventsModal
 		theme     themes.Theme
 		testEvent *career.CareerEvent
 		events    []*career.CareerEvent
@@ -30,10 +30,10 @@ var _ = Describe("ViewSkillEventsModal", func() {
 			Project: "Project Alpha",
 		}
 		events = []*career.CareerEvent{testEvent}
-		modal = components.NewViewSkillEventsModal("skill-1", "Go Programming", events, theme)
+		modal = modals.NewEventsModal("skill-1", "Go Programming", events, theme)
 	})
 
-	Describe("NewViewSkillEventsModal", func() {
+	Describe("NewEventsModal", func() {
 		It("creates a new modal with correct initial state", func() {
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeFalse())
@@ -133,7 +133,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 		})
 
 		It("shows empty state message when no events", func() {
-			emptyModal := components.NewViewSkillEventsModal("skill-1", "Go", nil, theme)
+			emptyModal := modals.NewEventsModal("skill-1", "Go", nil, theme)
 			emptyModal.Show()
 			view := emptyModal.View()
 			Expect(view).To(ContainSubstring("No events use this skill"))
@@ -152,7 +152,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 				Text: "This is a very long event description that should be truncated when displayed in the modal to prevent layout issues",
 				Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
 			}
-			longModal := components.NewViewSkillEventsModal("skill-1", "Go", []*career.CareerEvent{longEvent}, theme)
+			longModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{longEvent}, theme)
 			longModal.SetDimensions(60, 24) // Small width to force truncation
 			longModal.Show()
 			view := longModal.View()
@@ -161,7 +161,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 	})
 
 	Describe("Navigation", func() {
-		var multiEventModal *components.ViewSkillEventsModal
+		var multiEventModal *modals.EventsModal
 
 		BeforeEach(func() {
 			events := []*career.CareerEvent{
@@ -169,7 +169,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 				{ID: "event-2", Text: "Second event", Date: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)},
 				{ID: "event-3", Text: "Third event", Date: time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC)},
 			}
-			multiEventModal = components.NewViewSkillEventsModal("skill-1", "Go", events, theme)
+			multiEventModal = modals.NewEventsModal("skill-1", "Go", events, theme)
 			multiEventModal.Show()
 		})
 
@@ -248,7 +248,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 		})
 
 		It("does not select when no events", func() {
-			emptyModal := components.NewViewSkillEventsModal("skill-1", "Go", nil, theme)
+			emptyModal := modals.NewEventsModal("skill-1", "Go", nil, theme)
 			emptyModal.Show()
 			emptyModal.Update(tea.KeyMsg{Type: tea.KeyEnter})
 
@@ -368,7 +368,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 				nil,
 				{ID: "event-3", Text: "Third event", Date: time.Now()},
 			}
-			nilModal := components.NewViewSkillEventsModal("skill-1", "Go", eventsWithNil, theme)
+			nilModal := modals.NewEventsModal("skill-1", "Go", eventsWithNil, theme)
 			nilModal.Show()
 			view := nilModal.View()
 			Expect(view).To(ContainSubstring("First event"))
@@ -383,7 +383,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 				Text: "Event without company",
 				Date: time.Now(),
 			}
-			simpleModal := components.NewViewSkillEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("Event without company"))
@@ -396,7 +396,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 				Date:    time.Now(),
 				Company: "Company",
 			}
-			simpleModal := components.NewViewSkillEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("Event without project"))
@@ -408,7 +408,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 				ID:   "event-1",
 				Text: "Event without date",
 			}
-			simpleModal := components.NewViewSkillEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("Event without date"))
@@ -420,7 +420,7 @@ var _ = Describe("ViewSkillEventsModal", func() {
 				Text: "",
 				Date: time.Now(),
 			}
-			simpleModal := components.NewViewSkillEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("No description"))

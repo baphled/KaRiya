@@ -1,4 +1,4 @@
-package components
+package modals
 
 import (
 	"strconv"
@@ -7,21 +7,21 @@ import (
 	"github.com/baphled/kariya/internal/cli/forms"
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 )
 
-// SkillAddEditModal provides a way to add or edit a skill.
+// AddEditModal provides a way to add or edit a skill.
 // It shows a form with fields for name, category, level, and years of experience.
 //
 // Usage:
 //
 //	// For adding a new skill:
-//	modal := components.NewSkillAddEditModal(nil, width, height)
+//	modal := components.NewAddEditModal(nil, width, height)
 //
 //	// For editing an existing skill:
-//	modal := components.NewSkillAddEditModal(existingSkill, width, height)
+//	modal := components.NewAddEditModal(existingSkill, width, height)
 //
 //	cmd := modal.Init()
 //	// In Update:
@@ -36,8 +36,8 @@ import (
 //	} else if !modal.IsVisible() {
 //	    // User cancelled (Esc)
 //	}
-type SkillAddEditModal struct {
-	form          *huh.Form
+type AddEditModal struct {
+	form          forms.Form
 	formData      *forms.SkillFormData
 	originalSkill *career.Skill // nil for add mode
 	visible       bool
@@ -45,17 +45,17 @@ type SkillAddEditModal struct {
 	height        int
 }
 
-// NewSkillAddEditModal creates a new skill add/edit modal with the given
+// NewAddEditModal creates a new skill add/edit modal with the given
 // terminal dimensions. If skill is nil, creates a form for adding a new skill.
 // If skill is provided, creates a form for editing with pre-populated fields.
-func NewSkillAddEditModal(skill *career.Skill, width, height int) *SkillAddEditModal {
+func NewAddEditModal(skill *career.Skill, width, height int) *AddEditModal {
 	// Initialize form data from existing skill or empty
 	formData := &forms.SkillFormData{}
 	if skill != nil {
 		formData = forms.GetSkillFormData(skill)
 	}
 
-	modal := &SkillAddEditModal{
+	modal := &AddEditModal{
 		formData:      formData,
 		originalSkill: skill,
 		visible:       true,
@@ -68,7 +68,7 @@ func NewSkillAddEditModal(skill *career.Skill, width, height int) *SkillAddEditM
 }
 
 // buildForm creates the huh form with proper dimensions.
-func (m *SkillAddEditModal) buildForm() {
+func (m *AddEditModal) buildForm() {
 	// Calculate form width
 	modalWidth := m.width - 10
 	if modalWidth > 90 {
@@ -86,7 +86,7 @@ func (m *SkillAddEditModal) buildForm() {
 }
 
 // Init initializes the modal and its form.
-func (m *SkillAddEditModal) Init() tea.Cmd {
+func (m *AddEditModal) Init() tea.Cmd {
 	if m.form == nil {
 		return nil
 	}
@@ -99,7 +99,7 @@ func (m *SkillAddEditModal) Init() tea.Cmd {
 //   - tea.Cmd: command to execute
 //   - bool: true if form completed successfully
 //   - *SkillEditData: skill data if completed, nil otherwise
-func (m *SkillAddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
+func (m *AddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) {
 	if !m.visible {
 		return nil, false, nil
 	}
@@ -113,20 +113,19 @@ func (m *SkillAddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) 
 		return m.form.Init(), false, nil
 
 	case tea.KeyMsg:
-		if msg.String() == "esc" {
+		if msg.Type == tea.KeyEsc {
 			// Close modal without saving
 			m.visible = false
 			return nil, false, nil
 		}
 	}
 
-	// Update form.
-	form, cmd := m.form.Update(msg)
-	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
-	m.form = form.(*huh.Form)
+	// Update form using forms package helper.
+	var cmd tea.Cmd
+	m.form, cmd = forms.Update(m.form, msg)
 
 	// Check if form is complete AND user confirmed submission.
-	if m.form.State == huh.StateCompleted {
+	if forms.IsCompleted(m.form) {
 		m.visible = false
 		// Only return data if user confirmed (pressed Submit, not Cancel)
 		if m.formData.SubmitConfirmed {
@@ -147,42 +146,56 @@ func (m *SkillAddEditModal) Update(msg tea.Msg) (tea.Cmd, bool, *SkillEditData) 
 
 // View renders the skill add/edit modal with proper chrome (border, background)
 // for overlay compositing.
-func (m *SkillAddEditModal) View() string {
+func (m *AddEditModal) View() string {
 	if !m.visible {
 		return ""
 	}
 
-	// Wrap the form in a styled box with solid background using UIKit
 	theme := themes.NewDefaultTheme()
+
+	// Build footer with primitives showing keyboard shortcuts.
+	footer := primitives.RenderHelpFooter(theme,
+		primitives.NextFieldBadge(theme),
+		primitives.SubmitBadge(theme),
+		primitives.CancelBadge(theme),
+	)
+
+	// Build modal content with form and footer.
+	var content strings.Builder
+	content.WriteString(m.form.View())
+	content.WriteString("\n\n")
+	content.WriteString(footer)
+
+	// Wrap the form in a styled box with solid background using UIKit.
 	return containers.NewBox(theme).
-		Content(m.form.View()).
+		Content(content.String()).
 		Padding(2).
 		Background(theme.BackgroundColor()).
 		Render()
 }
 
 // IsVisible returns whether the modal is currently visible.
-func (m *SkillAddEditModal) IsVisible() bool {
+func (m *AddEditModal) IsVisible() bool {
 	return m.visible
 }
 
 // IsEditMode returns true if editing an existing skill, false if adding new.
-func (m *SkillAddEditModal) IsEditMode() bool {
+func (m *AddEditModal) IsEditMode() bool {
 	return m.originalSkill != nil
 }
 
 // Show makes the modal visible.
-func (m *SkillAddEditModal) Show() {
+func (m *AddEditModal) Show() {
 	m.visible = true
 }
 
 // Hide hides the modal.
-func (m *SkillAddEditModal) Hide() {
+func (m *AddEditModal) Hide() {
 	m.visible = false
 }
 
 // GetOriginalSkill returns the original skill being edited (nil for add mode).
-func (m *SkillAddEditModal) GetOriginalSkill() *career.Skill {
+func (m *AddEditModal) GetOriginalSkill() *career.Skill {
 	return m.originalSkill
 }
 

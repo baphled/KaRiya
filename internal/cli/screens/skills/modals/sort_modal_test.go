@@ -1,17 +1,17 @@
-package components_test
+package modals_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SkillSortModal", func() {
+var _ = Describe("SortModal", func() {
 	var (
 		skills  []*career.Skill
-		current *components.SkillSortConfig
-		modal   *components.SkillSortModal
+		current *modals.SortConfig
+		modal   *modals.SortModal
 	)
 
 	BeforeEach(func() {
@@ -44,15 +44,15 @@ var _ = Describe("SkillSortModal", func() {
 			},
 		}
 
-		current = &components.SkillSortConfig{
+		current = &modals.SortConfig{
 			SortBy:    "name",
 			SortOrder: "asc",
 		}
 	})
 
-	Describe("NewSkillSortModal", func() {
+	Describe("NewSortModal", func() {
 		It("should create a new skill sort modal", func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeTrue())
@@ -62,14 +62,14 @@ var _ = Describe("SkillSortModal", func() {
 			current.SortBy = "years"
 			current.SortOrder = "desc"
 
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 
 			Expect(modal).NotTo(BeNil())
 			// Form should be pre-populated with current values
 		})
 
 		It("should default to name asc when no config provided", func() {
-			modal = components.NewSkillSortModal(skills, nil, 120, 40)
+			modal = modals.NewSortModal(skills, nil, 120, 40)
 
 			Expect(modal).NotTo(BeNil())
 		})
@@ -77,7 +77,7 @@ var _ = Describe("SkillSortModal", func() {
 
 	Describe("Sort Options", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 		})
 
 		It("should include name sort option", func() {
@@ -108,7 +108,7 @@ var _ = Describe("SkillSortModal", func() {
 
 	Describe("Sort Order Options", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 		})
 
 		It("should include ascending option", func() {
@@ -124,7 +124,7 @@ var _ = Describe("SkillSortModal", func() {
 
 	Describe("View", func() {
 		It("should return empty string when not visible", func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 			modal.Hide()
 
 			view := modal.View()
@@ -132,7 +132,7 @@ var _ = Describe("SkillSortModal", func() {
 		})
 
 		It("should render form when visible", func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
@@ -141,7 +141,7 @@ var _ = Describe("SkillSortModal", func() {
 		})
 
 		It("should display keyboard shortcuts in footer (KeyBadge pattern)", func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 
 			view := modal.View()
 			// Modal should show keyboard shortcuts for user guidance
@@ -169,7 +169,7 @@ var _ = Describe("SkillSortModal", func() {
 
 	Describe("Update", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 		})
 
 		It("should handle escape key to close without applying", func() {
@@ -178,14 +178,14 @@ var _ = Describe("SkillSortModal", func() {
 		})
 
 		It("should return sort config when form completed", func() {
-			// Form completion should return SkillSortConfig
+			// Form completion should return SortConfig
 			Expect(modal).NotTo(BeNil())
 		})
 	})
 
 	Describe("Visibility", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillSortModal(skills, current, 120, 40)
+			modal = modals.NewSortModal(skills, current, 120, 40)
 		})
 
 		It("should start visible", func() {
