@@ -88,240 +88,291 @@ func noopCmd() tea.Msg { return nil }
 // handleModalUpdates handles updates for all modals in priority order.
 // Returns a command (possibly noopCmd) if a modal consumed the message.
 func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
-	// Error modal has special handling (highest priority).
-	if i.errorModal != nil {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
-			i.errorModal = nil
+	// Process modals in priority order - first match handles the message.
+	if cmd := i.handleErrorModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleLoadingModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleDeleteModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleConfirmModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleSuggestionModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleDetailModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleEventsModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleFactsModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleEditModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	return nil
+}
+
+// handleErrorModalUpdate handles error modal updates (highest priority).
+func (i *Intent) handleErrorModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.errorModal == nil {
+		return nil
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
+		i.errorModal = nil
+	}
+	return noopCmd
+}
+
+// handleLoadingModalUpdate handles loading modal updates (cancellable with Esc).
+func (i *Intent) handleLoadingModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.loadingModal == nil {
+		return nil
+	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyEsc {
+			i.cancelAsyncOperation()
 			return noopCmd
+		}
+		return i.loadingModal.Init()
+	case feedback.ModalSpinnerTickMsg:
+		return i.loadingModal.Update(msg)
+	default:
+		return i.loadingModal.Init()
+	}
+}
+
+// cancelAsyncOperation cancels the current async operation and resets state.
+func (i *Intent) cancelAsyncOperation() {
+	if i.cancelFunc != nil {
+		i.cancelFunc()
+		i.cancelFunc = nil
+	}
+	i.loadingModal = nil
+	i.suggestionsLoading = false
+	i.extractingFacts = false
+	i.state = StateList
+}
+
+// handleDeleteModalUpdate handles delete confirmation modal updates.
+func (i *Intent) handleDeleteModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.deleteModal == nil || !i.deleteModal.IsVisible() {
+		return nil
+	}
+	cmd, confirmed := i.deleteModal.Update(msg)
+	if !i.deleteModal.IsVisible() {
+		if confirmed && i.selectedBurst != nil {
+			i.deleteBurst(i.selectedBurst)
+			return cmd
+		}
+		i.deleteModal = nil
+		i.selectedBurst = nil
+		i.state = StateList
+		return noopCmd
+	}
+	return cmd
+}
+
+// handleConfirmModalUpdate handles burst confirmation modal updates.
+func (i *Intent) handleConfirmModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.confirmModal == nil || !i.confirmModal.IsVisible() {
+		return nil
+	}
+	cmd, confirmed := i.confirmModal.Update(msg)
+	if !i.confirmModal.IsVisible() {
+		if confirmed && i.selectedBurst != nil {
+			return tea.Batch(cmd, i.confirmBurst())
+		}
+		i.confirmModal = nil
+		if i.selectedBurst != nil {
+			return i.showBurstDetailModal(i.selectedBurst)
 		}
 		return noopCmd
 	}
+	return cmd
+}
 
-	// Loading modal - cancellable with Esc, advances spinner on tick.
-	if i.loadingModal != nil {
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			if msg.Type == tea.KeyEsc {
-				// Cancel the async operation.
-				if i.cancelFunc != nil {
-					i.cancelFunc()
-					i.cancelFunc = nil
-				}
-				i.loadingModal = nil
-				i.suggestionsLoading = false
-				i.extractingFacts = false
-				i.state = StateList
-				return noopCmd
-			}
-			// Other keys: start spinner tick and consume message.
-			return i.loadingModal.Init()
-		case feedback.ModalSpinnerTickMsg:
-			// Forward tick to loading modal to advance spinner.
-			return i.loadingModal.Update(msg)
-		default:
-			// For any other message, ensure spinner tick is running.
-			return i.loadingModal.Init()
+// handleSuggestionModalUpdate handles suggestion review modal updates.
+func (i *Intent) handleSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.suggestionModal == nil || !i.suggestionModal.IsVisible() {
+		return nil
+	}
+
+	// Handle accept key specially.
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "a" {
+		return i.handleSuggestionAccept(msg)
+	}
+
+	// Handle other keys normally.
+	_, cmd := i.suggestionModal.Update(msg)
+	if !i.suggestionModal.IsVisible() {
+		return i.handleSuggestionModalClosed(cmd)
+	}
+	return cmd
+}
+
+// handleSuggestionAccept handles accepting a suggestion via 'a' key.
+func (i *Intent) handleSuggestionAccept(msg tea.Msg) tea.Cmd {
+	currentSuggestion := i.suggestionModal.GetCurrentSuggestion()
+	if currentSuggestion == nil {
+		return noopCmd
+	}
+
+	cmd := i.saveAndExtractBurst(*currentSuggestion)
+	i.suggestionModal.Update(msg)
+
+	if !i.suggestionModal.IsVisible() {
+		i.clearSuggestionState()
+		i.state = StateList
+		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+	}
+	return cmd
+}
+
+// handleSuggestionModalClosed handles suggestion modal closure.
+func (i *Intent) handleSuggestionModalClosed(cmd tea.Cmd) tea.Cmd {
+	accepted := i.suggestionModal.GetAcceptedSuggestions()
+	cancelled := i.suggestionModal.GetAction() == burstmodals.SuggestionActionCancel
+	i.clearSuggestionState()
+
+	if len(accepted) > 0 && !cancelled {
+		completeMsg := SuggestionReviewCompleteMsg{
+			AcceptedSuggestions: accepted,
+			Cancelled:           false,
+		}
+		return tea.Batch(cmd, func() tea.Msg { return completeMsg })
+	}
+
+	i.state = StateList
+	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+	return noopCmd
+}
+
+// handleDetailModalUpdate handles detail modal updates with keyboard shortcuts.
+func (i *Intent) handleDetailModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.detailModal == nil || !i.detailModal.IsVisible() {
+		return nil
+	}
+
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if cmd := i.handleDetailModalKeypress(keyMsg); cmd != nil {
+			return cmd
 		}
 	}
 
-	// Delete confirmation modal.
-	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-		cmd, confirmed := i.deleteModal.Update(msg)
-		if !i.deleteModal.IsVisible() {
-			// Modal was closed.
-			if confirmed && i.selectedBurst != nil {
-				// User confirmed deletion - delete the burst.
-				return tea.Batch(cmd, i.deleteBurst(i.selectedBurst))
-			}
-			// User cancelled or modal closed without confirmation.
-			// Return noopCmd to prevent esc from propagating to screen.
-			i.deleteModal = nil
-			i.selectedBurst = nil
-			i.state = StateList
-			return noopCmd
-		}
-		return cmd
+	_, cmd := i.detailModal.Update(msg)
+	return cmd
+}
+
+// handleDetailModalKeypress handles keyboard shortcuts in detail modal.
+func (i *Intent) handleDetailModalKeypress(keyMsg tea.KeyMsg) tea.Cmd {
+	switch keyMsg.String() {
+	case "v":
+		i.detailModal.Hide()
+		return i.showBurstEventsModal()
+	case "f":
+		i.detailModal.Hide()
+		return i.showBurstFactsModal()
+	case "e":
+		i.detailModal.Hide()
+		return i.openEditModal(i.selectedBurst)
+	case "d":
+		i.detailModal.Hide()
+		return i.openDeleteModal(i.selectedBurst)
+	case "c":
+		i.detailModal.Hide()
+		return i.showConfirmBurstModal()
 	}
 
-	// Confirm burst modal.
-	if i.confirmModal != nil && i.confirmModal.IsVisible() {
-		cmd, confirmed := i.confirmModal.Update(msg)
-		if !i.confirmModal.IsVisible() {
-			// Modal was closed.
-			if confirmed && i.selectedBurst != nil {
-				// User confirmed - mark burst as confirmed.
-				return tea.Batch(cmd, i.confirmBurst())
-			}
-			// User cancelled - show detail modal again.
-			i.confirmModal = nil
-			if i.selectedBurst != nil {
-				return i.showBurstDetailModal(i.selectedBurst)
-			}
-			return noopCmd
-		}
-		return cmd
+	if keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter {
+		i.detailModal = nil
+		return noopCmd
 	}
+	return nil
+}
 
-	// Suggestion review modal.
-	if i.suggestionModal != nil && i.suggestionModal.IsVisible() {
-		// Intercept 'a' key to save burst and extract facts immediately.
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "a" {
-			// Get current suggestion BEFORE modal removes it from the list.
-			currentSuggestion := i.suggestionModal.GetCurrentSuggestion()
-			if currentSuggestion != nil {
-				// Save burst and trigger fact extraction immediately.
-				cmd := i.saveAndExtractBurst(*currentSuggestion)
-
-				// Now let modal update its internal state.
-				i.suggestionModal.Update(msg)
-
-				// If modal closed (no more suggestions), return to list view.
-				if !i.suggestionModal.IsVisible() {
-					// Clear suggestion-related state to prevent race conditions.
-					i.clearSuggestionState()
-					i.state = StateList
-					i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
-				}
-
-				return cmd
-			}
-		}
-
-		// Handle other keys normally.
-		_, cmd := i.suggestionModal.Update(msg)
-		if !i.suggestionModal.IsVisible() {
-			// Modal was closed (Esc or rejected all).
-			accepted := i.suggestionModal.GetAcceptedSuggestions()
-			cancelled := i.suggestionModal.GetAction() == burstmodals.SuggestionActionCancel
-
-			// Clear suggestion-related state to prevent race conditions with async operations.
-			// This ensures that background fact extraction won't interfere with navigation.
-			i.clearSuggestionState()
-
-			// If user accepted some suggestions before cancelling, create them.
-			if len(accepted) > 0 && !cancelled {
-				completeMsg := SuggestionReviewCompleteMsg{
-					AcceptedSuggestions: accepted,
-					Cancelled:           false,
-				}
-				return tea.Batch(cmd, func() tea.Msg { return completeMsg })
-			}
-
-			// No suggestions or cancelled - return to list.
-			// Return noopCmd to prevent the esc key from propagating to the list screen.
-			i.state = StateList
-			i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
-			return noopCmd
-		}
-		return cmd
+// showConfirmBurstModal shows the confirmation modal for the selected burst.
+func (i *Intent) showConfirmBurstModal() tea.Cmd {
+	existingFacts := i.loadBurstFacts(i.selectedBurst)
+	if len(existingFacts) > 0 {
+		i.confirmModal = feedback.NewConfirmModal(
+			"Re-extract Facts",
+			fmt.Sprintf("This burst already has %d facts. Re-extract and add more?", len(existingFacts)),
+		).WithVariant(feedback.ConfirmDefault)
+	} else {
+		i.confirmModal = feedback.NewConfirmModal(
+			"Confirm Burst",
+			"Mark this burst as confirmed and extract facts?",
+		).WithVariant(feedback.ConfirmDefault)
 	}
+	return i.confirmModal.Init()
+}
 
-	// Detail modals (detail, events, facts) - handle keyboard shortcuts.
-	if i.detailModal != nil && i.detailModal.IsVisible() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			switch keyMsg.String() {
-			case "v":
-				// View events - show events modal.
-				i.detailModal.Hide()
-				return i.showBurstEventsModal()
-			case "f":
-				// View facts - show facts modal.
-				i.detailModal.Hide()
-				return i.showBurstFactsModal()
-			case "e":
-				// Edit burst.
-				i.detailModal.Hide()
-				return i.openEditModal(i.selectedBurst)
-			case "d":
-				// Delete burst.
-				i.detailModal.Hide()
-				return i.openDeleteModal(i.selectedBurst)
-			case "c":
-				// Confirm burst.
-				i.detailModal.Hide()
-
-				existingFacts := i.loadBurstFacts(i.selectedBurst)
-				if len(existingFacts) > 0 {
-					i.confirmModal = feedback.NewConfirmModal(
-						"Re-extract Facts",
-						fmt.Sprintf("This burst already has %d facts. Re-extract and add more?", len(existingFacts)),
-					).WithVariant(feedback.ConfirmDefault)
-				} else {
-					i.confirmModal = feedback.NewConfirmModal(
-						"Confirm Burst",
-						"Mark this burst as confirmed and extract facts?",
-					).WithVariant(feedback.ConfirmDefault)
-				}
-				return i.confirmModal.Init()
-			}
-			// Handle special keys by type.
-			switch keyMsg.Type {
-			case tea.KeyEsc, tea.KeyEnter:
-				// Close detail modal.
-				i.detailModal = nil
-				return noopCmd
-			}
-		}
-		// Update the modal.
-		_, cmd := i.detailModal.Update(msg)
-		return cmd
+// handleEventsModalUpdate handles events modal updates.
+func (i *Intent) handleEventsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.eventsModal == nil || !i.eventsModal.IsVisible() {
+		return nil
 	}
-
-	// Events modal.
-	if i.eventsModal != nil && i.eventsModal.IsVisible() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter) {
-			// Close events modal and show detail modal again.
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter {
 			i.eventsModal = nil
 			if i.selectedBurst != nil {
 				return i.showBurstDetailModal(i.selectedBurst)
 			}
 			return noopCmd
 		}
-		// Update the modal.
-		_, cmd := i.eventsModal.Update(msg)
-		return cmd
 	}
+	_, cmd := i.eventsModal.Update(msg)
+	return cmd
+}
 
-	// Facts modal.
-	if i.factsModal != nil && i.factsModal.IsVisible() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter) {
-			// Close facts modal and show detail modal again.
+// handleFactsModalUpdate handles facts modal updates.
+func (i *Intent) handleFactsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.factsModal == nil || !i.factsModal.IsVisible() {
+		return nil
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter {
 			i.factsModal = nil
 			if i.selectedBurst != nil {
 				return i.showBurstDetailModal(i.selectedBurst)
 			}
 			return noopCmd
 		}
-		// Update the modal.
-		_, cmd := i.factsModal.Update(msg)
-		return cmd
 	}
+	_, cmd := i.factsModal.Update(msg)
+	return cmd
+}
 
-	// Edit burst modal (editing existing bursts only - new bursts are created via AI suggestions).
-	if i.editModal != nil && i.editModal.IsVisible() {
-		cmd, completed, formData := i.editModal.Update(msg)
-		if !i.editModal.IsVisible() {
-			// Modal was closed.
-			if completed && formData != nil && i.selectedBurst != nil {
-				// Editing existing burst - send EditBurstMsg.
-				editMsg := EditBurstMsg{
-					BurstID:     i.selectedBurst.ID,
-					Name:        formData.Name,
-					Description: formData.Description,
-				}
-				i.editModal = nil
-				return tea.Batch(cmd, func() tea.Msg { return editMsg })
+// handleEditModalUpdate handles edit modal updates.
+func (i *Intent) handleEditModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.editModal == nil || !i.editModal.IsVisible() {
+		return nil
+	}
+	cmd, completed, formData := i.editModal.Update(msg)
+	if !i.editModal.IsVisible() {
+		if completed && formData != nil && i.selectedBurst != nil {
+			editMsg := EditBurstMsg{
+				BurstID:     i.selectedBurst.ID,
+				Name:        formData.Name,
+				Description: formData.Description,
 			}
-			// User cancelled - return to list view.
 			i.editModal = nil
-			i.state = StateList
-			i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
-			return noopCmd
+			return tea.Batch(cmd, func() tea.Msg { return editMsg })
 		}
-		return cmd
+		i.editModal = nil
+		i.state = StateList
+		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+		return noopCmd
 	}
-
-	return nil
+	return cmd
 }
 
 // handleKeyShortcuts handles keyboard shortcuts when no modal is active.

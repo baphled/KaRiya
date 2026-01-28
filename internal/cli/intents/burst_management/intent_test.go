@@ -27,56 +27,64 @@ func executeBatchCmd(cmd tea.Cmd) []tea.Msg {
 		return nil
 	}
 
-	// Call the command - for batches, this starts goroutines
 	msg := cmd()
-
-	// Check if it's a batch message (slice of commands)
 	if batchMsg, ok := msg.(tea.BatchMsg); ok {
-		var wg sync.WaitGroup
-		var mu sync.Mutex
-		var messages []tea.Msg
+		return executeBatchCommands(batchMsg)
+	}
+	return filterTickMessage(msg)
+}
 
-		for _, batchCmd := range batchMsg {
-			if batchCmd == nil {
-				continue
-			}
-			wg.Add(1)
-			go func(c tea.Cmd) {
-				defer wg.Done()
-				result := c()
-				if result != nil {
-					// Filter out spinner tick messages
-					if _, isTick := result.(feedback.ModalSpinnerTickMsg); !isTick {
-						mu.Lock()
-						messages = append(messages, result)
-						mu.Unlock()
-					}
+// executeBatchCommands executes all commands in a batch and collects results.
+func executeBatchCommands(batchMsg tea.BatchMsg) []tea.Msg {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var messages []tea.Msg
+
+	for _, batchCmd := range batchMsg {
+		if batchCmd == nil {
+			continue
+		}
+		wg.Add(1)
+		go func(c tea.Cmd) {
+			defer wg.Done()
+			if result := c(); result != nil {
+				if filtered := filterTickMessage(result); len(filtered) > 0 {
+					mu.Lock()
+					messages = append(messages, filtered...)
+					mu.Unlock()
 				}
-			}(batchCmd)
-		}
-
-		// Wait with timeout
-		done := make(chan struct{})
-		go func() {
-			wg.Wait()
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			return messages
-		case <-time.After(5 * time.Second):
-			return messages // Return what we have on timeout
-		}
+			}
+		}(batchCmd)
 	}
 
-	// Single command - return message directly (filter tick messages)
-	if msg != nil {
-		if _, isTick := msg.(feedback.ModalSpinnerTickMsg); !isTick {
-			return []tea.Msg{msg}
-		}
+	return waitForBatchCompletion(&wg, messages)
+}
+
+// waitForBatchCompletion waits for all goroutines with a timeout.
+func waitForBatchCompletion(wg *sync.WaitGroup, messages []tea.Msg) []tea.Msg {
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return messages
+	case <-time.After(5 * time.Second):
+		return messages
 	}
-	return nil
+}
+
+// filterTickMessage returns the message if it's not a spinner tick.
+func filterTickMessage(msg tea.Msg) []tea.Msg {
+	if msg == nil {
+		return nil
+	}
+	if _, isTick := msg.(feedback.ModalSpinnerTickMsg); isTick {
+		return nil
+	}
+	return []tea.Msg{msg}
 }
 
 // executeAsyncCmd is a convenience wrapper that returns the first non-tick message.

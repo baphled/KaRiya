@@ -139,84 +139,74 @@ func (i *Intent) clearSuggestionState() {
 // This uses IsVisible() checks rather than nil checks to handle
 // cases where modals are created but not yet shown or already hidden.
 func (i *Intent) hasVisibleModal() bool {
-	if i.detailModal != nil && i.detailModal.IsVisible() {
-		return true
-	}
-	if i.eventsModal != nil && i.eventsModal.IsVisible() {
-		return true
-	}
-	if i.factsModal != nil && i.factsModal.IsVisible() {
-		return true
-	}
-	if i.editModal != nil && i.editModal.IsVisible() {
-		return true
-	}
-	if i.deleteModal != nil && i.deleteModal.IsVisible() {
-		return true
-	}
-	if i.confirmModal != nil && i.confirmModal.IsVisible() {
-		return true
-	}
-	if i.errorModal != nil {
-		return true
-	}
-	if i.loadingModal != nil {
-		return true
-	}
+	return i.hasVisibleContentModal() ||
+		i.hasVisibleActionModal() ||
+		i.hasVisibleFeedbackModal() ||
+		i.isLoadingAsync()
+}
 
-	// Check loading flags (these indicate async operations in progress).
-	if i.loadingEvents || i.loadingFacts {
-		return true
-	}
+// hasVisibleContentModal checks if content display modals are visible.
+func (i *Intent) hasVisibleContentModal() bool {
+	return (i.detailModal != nil && i.detailModal.IsVisible()) ||
+		(i.eventsModal != nil && i.eventsModal.IsVisible()) ||
+		(i.factsModal != nil && i.factsModal.IsVisible())
+}
 
-	return false
+// hasVisibleActionModal checks if action modals (edit, delete, confirm) are visible.
+func (i *Intent) hasVisibleActionModal() bool {
+	return (i.editModal != nil && i.editModal.IsVisible()) ||
+		(i.deleteModal != nil && i.deleteModal.IsVisible()) ||
+		(i.confirmModal != nil && i.confirmModal.IsVisible())
+}
+
+// hasVisibleFeedbackModal checks if feedback modals (error, loading) are active.
+func (i *Intent) hasVisibleFeedbackModal() bool {
+	return i.errorModal != nil || i.loadingModal != nil
+}
+
+// isLoadingAsync returns true if any async loading operation is in progress.
+func (i *Intent) isLoadingAsync() bool {
+	return i.loadingEvents || i.loadingFacts
 }
 
 // deleteBurst deletes a burst and refreshes the list.
-func (i *Intent) deleteBurst(burst *career.Burst) tea.Cmd {
+func (i *Intent) deleteBurst(burst *career.Burst) {
 	if burst == nil {
-		return nil
+		return
 	}
 
 	ctx := i.getContext()
 	if i.context.BurstRepository != nil {
-		err := i.context.BurstRepository.Delete(ctx, burst.ID)
-		if err != nil {
+		if err := i.context.BurstRepository.Delete(ctx, burst.ID); err != nil {
 			i.deleteError = err
 			i.errorModal = feedback.NewErrorModal("Delete Failed", err.Error())
 			i.deleteModal = nil
 			i.selectedBurst = nil
 			i.state = StateList
-			return nil
+			return
 		}
 	}
 
-	// Remove burst from lists.
-	deletedID := burst.ID
-	newBursts := make([]*career.Burst, 0, len(i.context.Bursts)-1)
-	for _, b := range i.context.Bursts {
-		if b.ID != deletedID {
-			newBursts = append(newBursts, b)
-		}
-	}
-	i.context.Bursts = newBursts
-
-	// Remove from filtered list.
-	newFiltered := make([]*career.Burst, 0, len(i.filteredBursts)-1)
-	for _, b := range i.filteredBursts {
-		if b.ID != deletedID {
-			newFiltered = append(newFiltered, b)
-		}
-	}
-	i.filteredBursts = newFiltered
+	// Remove burst from context and filtered lists.
+	i.context.Bursts = i.removeBurstFromSlice(i.context.Bursts, burst.ID)
+	i.filteredBursts = i.removeBurstFromSlice(i.filteredBursts, burst.ID)
 
 	// Reset state and refresh list screen.
 	i.deleteModal = nil
 	i.selectedBurst = nil
 	i.state = StateList
 	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
+}
 
-	return nil
+// removeBurstFromSlice removes a burst with the given ID from the slice.
+func (i *Intent) removeBurstFromSlice(bursts []*career.Burst, id string) []*career.Burst {
+	result := make([]*career.Burst, 0, len(bursts))
+	for _, b := range bursts {
+		if b.ID != id {
+			result = append(result, b)
+		}
+	}
+	return result
 }
 
 // RefreshData reloads/refreshes the filtered data.
@@ -565,60 +555,50 @@ func (i *Intent) rebuildModalRegistry() {
 	}
 }
 
+// modalWithDimensions is an interface for modals that support dimensions.
+type modalWithDimensions interface {
+	SetDimensions(width, height int)
+	Show()
+}
+
 // handleBurstEventsLoaded handles the BurstEventsLoadedMsg.
 func (i *Intent) handleBurstEventsLoaded(msg BurstEventsLoadedMsg) tea.Cmd {
 	i.loadingEvents = false
-
-	if msg.Error != nil {
-		i.ShowErrorModal("Load Events Failed", msg.Error.Error())
+	if !i.handleLoadError(msg.Error, "Load Events Failed") {
 		return nil
 	}
-
-	if i.selectedBurst == nil {
-		return nil
-	}
-
-	// Show events modal.
-	width, height := i.getTerminalDimensions()
-	theme := i.Theme()
 	i.eventsModal = burstmodals.NewBurstEventsModal(
-		i.selectedBurst.ID,
-		i.selectedBurst.Name,
-		msg.Events,
-		theme,
-	)
-	i.eventsModal.SetDimensions(width, height)
-	i.eventsModal.Show()
-
+		i.selectedBurst.ID, i.selectedBurst.Name, msg.Events, i.Theme())
+	i.showModalWithDimensions(i.eventsModal)
 	return nil
 }
 
 // handleBurstFactsLoaded handles the BurstFactsLoadedMsg.
 func (i *Intent) handleBurstFactsLoaded(msg BurstFactsLoadedMsg) tea.Cmd {
 	i.loadingFacts = false
-
-	if msg.Error != nil {
-		i.ShowErrorModal("Load Facts Failed", msg.Error.Error())
+	if !i.handleLoadError(msg.Error, "Load Facts Failed") {
 		return nil
 	}
-
-	if i.selectedBurst == nil {
-		return nil
-	}
-
-	// Show facts modal.
-	width, height := i.getTerminalDimensions()
-	theme := i.Theme()
 	i.factsModal = burstmodals.NewBurstFactsModal(
-		i.selectedBurst.ID,
-		i.selectedBurst.Name,
-		msg.Facts,
-		theme,
-	)
-	i.factsModal.SetDimensions(width, height)
-	i.factsModal.Show()
-
+		i.selectedBurst.ID, i.selectedBurst.Name, msg.Facts, i.Theme())
+	i.showModalWithDimensions(i.factsModal)
 	return nil
+}
+
+// handleLoadError handles load errors and returns false if processing should stop.
+func (i *Intent) handleLoadError(err error, title string) bool {
+	if err != nil {
+		i.ShowErrorModal(title, err.Error())
+		return false
+	}
+	return i.selectedBurst != nil
+}
+
+// showModalWithDimensions sets dimensions and shows a modal.
+func (i *Intent) showModalWithDimensions(modal modalWithDimensions) {
+	width, height := i.getTerminalDimensions()
+	modal.SetDimensions(width, height)
+	modal.Show()
 }
 
 // startBurstDetection loads all events and triggers AI burst detection.
@@ -629,94 +609,86 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 		return nil
 	}
 
-	// Cancel any previous async operation.
-	if i.cancelFunc != nil {
-		i.cancelFunc()
-	}
-
-	// Create cancellable context for this operation.
+	i.cancelPreviousOperation()
 	ctx, cancel := context.WithCancel(context.Background())
 	i.cancelFunc = cancel
 
-	// Mark as loading and create loading modal.
 	i.suggestionsLoading = true
 	i.loadingModal = feedback.NewLoadingModal("Detecting burst patterns...", true).WithTheme(i.Theme())
 
-	// Capture existing bursts before async operation.
-	existingBursts := i.context.Bursts
+	asyncCmd := i.createBurstDetectionCmd(ctx, i.context.Service, i.context.Bursts)
+	return tea.Batch(asyncCmd, i.loadingModal.Init())
+}
 
-	// Capture service reference to avoid race conditions.
-	service := i.context.Service
+// cancelPreviousOperation cancels any in-progress async operation.
+func (i *Intent) cancelPreviousOperation() {
+	if i.cancelFunc != nil {
+		i.cancelFunc()
+	}
+}
 
-	// Async work command.
-	asyncCmd := func() tea.Msg {
-		// Check if cancelled before starting.
+// createBurstDetectionCmd creates the async command for burst detection.
+func (i *Intent) createBurstDetectionCmd(
+	ctx context.Context,
+	service BurstService,
+	existingBursts []*career.Burst,
+) func() tea.Msg {
+	return func() tea.Msg {
 		if ctx.Err() != nil {
-			return BurstSuggestionsLoadedMsg{
-				Suggestions: nil,
-				Error:       ctx.Err(),
-			}
+			return BurstSuggestionsLoadedMsg{Error: ctx.Err()}
 		}
 
-		// Get all events from the service.
-		// List all events to get their IDs (use Limit=-1 for no limit).
-		events, err := service.ListEvents(ctx, careerrepo.ListFilters{Limit: -1})
+		eventIDs, err := i.getUnassignedEventIDs(ctx, service, existingBursts)
 		if err != nil {
-			return BurstSuggestionsLoadedMsg{
-				Suggestions: nil,
-				Error:       fmt.Errorf("failed to load events: %w", err),
-			}
+			return BurstSuggestionsLoadedMsg{Error: err}
 		}
 
-		// Check if cancelled after loading events.
-		if ctx.Err() != nil {
-			return BurstSuggestionsLoadedMsg{
-				Suggestions: nil,
-				Error:       ctx.Err(),
-			}
-		}
-
-		// Build a set of event IDs that are already in confirmed bursts.
-		usedEventIDs := make(map[string]bool)
-		for _, burst := range existingBursts {
-			for _, eventID := range burst.EventIDs {
-				usedEventIDs[eventID] = true
-			}
-		}
-
-		// Extract event IDs, excluding those already in bursts.
-		var eventIDs []string
-		for _, event := range events {
-			if !usedEventIDs[event.ID] {
-				eventIDs = append(eventIDs, event.ID)
-			}
-		}
-
-		// If no events available for detection, return appropriate message.
 		if len(eventIDs) == 0 {
 			return BurstSuggestionsLoadedMsg{
-				Suggestions: nil,
-				Error:       fmt.Errorf("no unassigned events available for burst detection"),
+				Error: fmt.Errorf("no unassigned events available for burst detection"),
 			}
 		}
 
-		// Call the service to detect bursts from unassigned events only.
 		suggestions, err := service.SuggestBursts(ctx, eventIDs)
-		if err != nil {
-			return BurstSuggestionsLoadedMsg{
-				Suggestions: nil,
-				Error:       err,
-			}
-		}
+		return BurstSuggestionsLoadedMsg{Suggestions: suggestions, Error: err}
+	}
+}
 
-		return BurstSuggestionsLoadedMsg{
-			Suggestions: suggestions,
-			Error:       nil,
-		}
+// getUnassignedEventIDs returns event IDs not already assigned to bursts.
+func (i *Intent) getUnassignedEventIDs(
+	ctx context.Context,
+	service BurstService,
+	existingBursts []*career.Burst,
+) ([]string, error) {
+	events, err := service.ListEvents(ctx, careerrepo.ListFilters{Limit: -1})
+	if err != nil {
+		return nil, fmt.Errorf("failed to load events: %w", err)
 	}
 
-	// Batch async work with spinner init to start animation immediately.
-	return tea.Batch(asyncCmd, i.loadingModal.Init())
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	usedEventIDs := i.buildUsedEventIDSet(existingBursts)
+
+	var eventIDs []string
+	for _, event := range events {
+		if !usedEventIDs[event.ID] {
+			eventIDs = append(eventIDs, event.ID)
+		}
+	}
+	return eventIDs, nil
+}
+
+// buildUsedEventIDSet builds a set of event IDs already in bursts.
+func (i *Intent) buildUsedEventIDSet(bursts []*career.Burst) map[string]bool {
+	usedEventIDs := make(map[string]bool)
+	for _, burst := range bursts {
+		for _, eventID := range burst.EventIDs {
+			usedEventIDs[eventID] = true
+		}
+	}
+	return usedEventIDs
 }
 
 // handleBurstSuggestionsLoaded handles the BurstSuggestionsLoadedMsg.
@@ -759,72 +731,77 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 
 // handleSuggestionReviewComplete handles the SuggestionReviewCompleteMsg.
 func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg) tea.Cmd {
-	// Guard: Only process if we're in suggestion review state.
-	// This prevents double-processing when the modal close triggers direct handling
-	// and a subsequent message is sent.
-	if i.state != StateSuggestionReview && i.state != StateSuggesting {
+	if !i.isInSuggestionState() {
 		return nil
 	}
 
 	if len(msg.AcceptedSuggestions) == 0 {
-		// No suggestions accepted - return to list.
-		// Note: We don't check msg.Cancelled here because user may have accepted
-		// some suggestions and then pressed Esc to close. Those should still be saved.
 		i.state = StateList
 		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 		return nil
 	}
 
-	// Track successfully created bursts for fact extraction.
-	createdBursts := make([]*career.Burst, 0, len(msg.AcceptedSuggestions))
-
-	// Create bursts from accepted suggestions.
-	for _, suggestion := range msg.AcceptedSuggestions {
-		burst := &career.Burst{
-			ID:          "", // Will be generated by repository
-			Name:        suggestion.Name,
-			Description: suggestion.Description,
-			EventIDs:    suggestion.EventIDs,
-			Confirmed:   true, // Auto-confirm accepted suggestions
-		}
-
-		// Save to repository if available.
-		if i.context.BurstRepository != nil {
-			ctx := i.getContext()
-			err := i.context.BurstRepository.Create(ctx, burst)
-			if err != nil {
-				i.ShowErrorModal("Create Failed", fmt.Sprintf("Failed to create burst: %v", err))
-				continue
-			}
-		}
-
-		// Add to filtered bursts list and track for fact extraction.
-		i.filteredBursts = append(i.filteredBursts, burst)
-		i.context.Bursts = append(i.context.Bursts, burst)
-		createdBursts = append(createdBursts, burst)
-	}
-
-	// Refresh list screen with new bursts.
+	createdBursts := i.createBurstsFromSuggestions(msg.AcceptedSuggestions)
 	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
 
-	// Trigger fact extraction only for successfully created bursts.
+	return i.startFactExtractionForBursts(createdBursts)
+}
+
+// isInSuggestionState returns true if currently in suggestion review state.
+func (i *Intent) isInSuggestionState() bool {
+	return i.state == StateSuggestionReview || i.state == StateSuggesting
+}
+
+// createBurstsFromSuggestions creates bursts from accepted suggestions.
+func (i *Intent) createBurstsFromSuggestions(suggestions []burst_fact.BurstSuggestion) []*career.Burst {
+	createdBursts := make([]*career.Burst, 0, len(suggestions))
+	for _, suggestion := range suggestions {
+		burst := i.createBurstFromSuggestion(suggestion)
+		if burst != nil {
+			createdBursts = append(createdBursts, burst)
+		}
+	}
+	return createdBursts
+}
+
+// createBurstFromSuggestion creates and saves a single burst from a suggestion.
+func (i *Intent) createBurstFromSuggestion(suggestion burst_fact.BurstSuggestion) *career.Burst {
+	burst := &career.Burst{
+		Name:        suggestion.Name,
+		Description: suggestion.Description,
+		EventIDs:    suggestion.EventIDs,
+		Confirmed:   true,
+	}
+
+	if i.context.BurstRepository != nil {
+		if err := i.context.BurstRepository.Create(i.getContext(), burst); err != nil {
+			i.ShowErrorModal("Create Failed", fmt.Sprintf("Failed to create burst: %v", err))
+			return nil
+		}
+	}
+
+	i.filteredBursts = append(i.filteredBursts, burst)
+	i.context.Bursts = append(i.context.Bursts, burst)
+	return burst
+}
+
+// startFactExtractionForBursts starts fact extraction for multiple bursts.
+func (i *Intent) startFactExtractionForBursts(bursts []*career.Burst) tea.Cmd {
+	if len(bursts) == 0 {
+		i.state = StateList
+		return nil
+	}
+
 	var cmds []tea.Cmd
-	for _, burst := range createdBursts {
+	for _, burst := range bursts {
 		cmds = append(cmds, i.extractFactsForBurst(burst))
 	}
 
-	if len(cmds) > 0 {
-		i.extractingFacts = true
-		i.state = StateExtractingFacts
-		i.loadingModal = feedback.NewLoadingModal("Extracting facts from accepted bursts...", true).WithTheme(i.Theme())
-		// Include spinner init to start animation immediately.
-		cmds = append(cmds, i.loadingModal.Init())
-		return tea.Batch(cmds...)
-	}
-
-	// No bursts created (all failed) - stay on list.
-	i.state = StateList
-	return nil
+	i.extractingFacts = true
+	i.state = StateExtractingFacts
+	i.loadingModal = feedback.NewLoadingModal("Extracting facts from accepted bursts...", true).WithTheme(i.Theme())
+	cmds = append(cmds, i.loadingModal.Init())
+	return tea.Batch(cmds...)
 }
 
 // saveAndExtractBurst saves a burst immediately and triggers fact extraction.
