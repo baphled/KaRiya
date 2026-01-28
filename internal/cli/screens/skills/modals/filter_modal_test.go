@@ -1,17 +1,17 @@
-package components_test
+package modals_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SkillFilterModal", func() {
+var _ = Describe("FilterModal", func() {
 	var (
 		skills        []*career.Skill
-		currentFilter *components.SkillFilters
-		modal         *components.SkillFilterModal
+		currentFilter *modals.Filters
+		modal         *modals.FilterModal
 	)
 
 	BeforeEach(func() {
@@ -44,7 +44,7 @@ var _ = Describe("SkillFilterModal", func() {
 			},
 		}
 
-		currentFilter = &components.SkillFilters{
+		currentFilter = &modals.Filters{
 			Categories: []string{},
 			Levels:     []string{},
 			MinYears:   0,
@@ -52,16 +52,16 @@ var _ = Describe("SkillFilterModal", func() {
 		}
 	})
 
-	Describe("NewSkillFilterModal", func() {
+	Describe("NewFilterModal", func() {
 		It("should create a new skill filter modal", func() {
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeTrue())
 		})
 
 		It("should extract unique categories from skills", func() {
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 
 			// Modal should include Backend, Frontend, DevOps categories
 			Expect(modal).NotTo(BeNil())
@@ -73,7 +73,7 @@ var _ = Describe("SkillFilterModal", func() {
 			currentFilter.MinYears = 2
 			currentFilter.MaxYears = 10
 
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 
 			Expect(modal).NotTo(BeNil())
 			// Form data should be pre-populated (internal state)
@@ -82,7 +82,7 @@ var _ = Describe("SkillFilterModal", func() {
 
 	Describe("Filtering Options", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 		})
 
 		It("should include category filter", func() {
@@ -103,7 +103,7 @@ var _ = Describe("SkillFilterModal", func() {
 
 		It("should handle empty categories gracefully", func() {
 			emptySkills := []*career.Skill{}
-			modal = components.NewSkillFilterModal(emptySkills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(emptySkills, currentFilter, 120, 40)
 
 			Expect(modal).NotTo(BeNil())
 		})
@@ -111,7 +111,7 @@ var _ = Describe("SkillFilterModal", func() {
 
 	Describe("Sorting Options", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 		})
 
 		It("should include sort by options", func() {
@@ -127,7 +127,7 @@ var _ = Describe("SkillFilterModal", func() {
 
 	Describe("View", func() {
 		It("should return empty string when not visible", func() {
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 			modal.Hide()
 
 			view := modal.View()
@@ -135,7 +135,7 @@ var _ = Describe("SkillFilterModal", func() {
 		})
 
 		It("should render form when visible", func() {
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 
 			view := modal.View()
 			Expect(view).NotTo(BeEmpty())
@@ -144,7 +144,7 @@ var _ = Describe("SkillFilterModal", func() {
 		})
 
 		It("should display keyboard shortcuts in footer (KeyBadge pattern)", func() {
-			modal = components.NewSkillFilterModal(skills, currentFilter, 120, 40)
+			modal = modals.NewFilterModal(skills, currentFilter, 120, 40)
 
 			view := modal.View()
 			// Modal should show keyboard shortcuts for user guidance

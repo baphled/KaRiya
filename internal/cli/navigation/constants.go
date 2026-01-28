@@ -16,6 +16,7 @@ const (
 	KeyToggle NavigationKey = "Space" // Toggle checkbox, tag, or item selection
 
 	// Action keys.
+	KeyAdd      NavigationKey = "a" // Add new item
 	KeyFilter   NavigationKey = "f" // Show/toggle filters
 	KeySort     NavigationKey = "s" // Show/toggle sort options
 	KeySearch   NavigationKey = "/" // Show/toggle search
@@ -43,6 +44,7 @@ func AllNavigationKeys() []NavigationKey {
 		KeyRight,
 		KeySelect,
 		KeyToggle,
+		KeyAdd,
 		KeyFilter,
 		KeySort,
 		KeySearch,
@@ -70,6 +72,7 @@ var KeyDescription = map[NavigationKey]string{
 	KeyRight:    "Navigate right (also l)",
 	KeySelect:   "Confirm selection or submit",
 	KeyToggle:   "Toggle selection or expansion",
+	KeyAdd:      "Add new item",
 	KeyFilter:   "Show or toggle filters",
 	KeySort:     "Show or toggle sort options",
 	KeySearch:   "Show search functionality",

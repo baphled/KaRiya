@@ -1,4 +1,4 @@
-package components_test
+package modals_test
 
 import (
 	"strings"
@@ -8,12 +8,12 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 )
 
-var _ = Describe("SkillSearchModal", func() {
+var _ = Describe("SearchModal", func() {
 	var (
-		modal  *components.SkillSearchModal
+		modal  *modals.SearchModal
 		width  int
 		height int
 	)
@@ -21,10 +21,10 @@ var _ = Describe("SkillSearchModal", func() {
 	BeforeEach(func() {
 		width = 80
 		height = 24
-		modal = components.NewSkillSearchModal("", width, height)
+		modal = modals.NewSearchModal("", width, height)
 	})
 
-	Describe("NewSkillSearchModal", func() {
+	Describe("NewSearchModal", func() {
 		It("should create a new search modal", func() {
 			Expect(modal).NotTo(BeNil())
 		})
@@ -34,7 +34,7 @@ var _ = Describe("SkillSearchModal", func() {
 		})
 
 		It("should accept pre-populated search text", func() {
-			modal = components.NewSkillSearchModal("test search", width, height)
+			modal = modals.NewSearchModal("test search", width, height)
 			Expect(modal.GetSearchText()).To(Equal("test search"))
 		})
 	})
@@ -233,7 +233,7 @@ var _ = Describe("SkillSearchModal", func() {
 
 	Describe("GetSearchText", func() {
 		It("should return current search text", func() {
-			modal = components.NewSkillSearchModal("initial", width, height)
+			modal = modals.NewSearchModal("initial", width, height)
 			Expect(modal.GetSearchText()).To(Equal("initial"))
 		})
 
@@ -244,7 +244,7 @@ var _ = Describe("SkillSearchModal", func() {
 
 	Describe("Modal Styling", func() {
 		It("should have solid background styling in View output", func() {
-			modal := components.NewSkillSearchModal("test", 80, 24)
+			modal := modals.NewSearchModal("test", 80, 24)
 			modal.Show()
 
 			view := modal.View()
@@ -255,7 +255,7 @@ var _ = Describe("SkillSearchModal", func() {
 		})
 
 		It("should display keyboard shortcuts in footer (KeyBadge pattern)", func() {
-			modal := components.NewSkillSearchModal("test", 80, 24)
+			modal := modals.NewSearchModal("test", 80, 24)
 			modal.Show()
 
 			view := modal.View()
@@ -283,7 +283,7 @@ var _ = Describe("SkillSearchModal", func() {
 
 	Describe("Modal Width", func() {
 		It("should calculate width as 60% of terminal width", func() {
-			modal := components.NewSkillSearchModal("test", 100, 24)
+			modal := modals.NewSearchModal("test", 100, 24)
 			modal.Show()
 			view := modal.View()
 
@@ -310,7 +310,7 @@ var _ = Describe("SkillSearchModal", func() {
 
 		It("should enforce max width of 60 chars", func() {
 			// 200 chars terminal should still result in max 60 char modal
-			modal := components.NewSkillSearchModal("test", 200, 24)
+			modal := modals.NewSearchModal("test", 200, 24)
 			modal.Show()
 			view := modal.View()
 
@@ -330,7 +330,7 @@ var _ = Describe("SkillSearchModal", func() {
 
 		It("should enforce min width of 40 chars", func() {
 			// Very small terminal should still have min 40 char modal
-			modal := components.NewSkillSearchModal("test", 50, 24)
+			modal := modals.NewSearchModal("test", 50, 24)
 			modal.Show()
 			view := modal.View()
 

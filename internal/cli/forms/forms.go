@@ -1,12 +1,79 @@
 // Package forms provides common form utilities and configurations for the KaRiya TUI.
 // It uses Charm's huh library for consistent, accessible form handling.
+//
+// # Architecture
+//
+// This package serves as the ONLY allowed import point for huh in the codebase.
+// Screens, modals, and intents should import forms/ instead of huh directly.
+//
+// # Type Aliases
+//
+// The package provides type aliases for common huh types:
+//   - forms.Form = *huh.Form
+//   - forms.Group = *huh.Group
+//   - forms.Field = huh.Field
+//
+// # Usage in Modals
+//
+//	modal := &MyModal{
+//	    form: forms.NewFormWithDimensions(width, height, group),
+//	}
+//
+//	// In Update:
+//	updatedForm, cmd := forms.Update(m.form, msg)
+//	m.form = updatedForm
+//	if forms.IsCompleted(m.form) { ... }
 package forms
 
 import (
-	"github.com/baphled/kariya/internal/cli/themes"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/baphled/kariya/internal/cli/themes"
 )
+
+// Form is the form type used throughout KaRiya.
+// This is an alias for *huh.Form to avoid direct huh imports in screens/modals.
+type Form = *huh.Form
+
+// Group is a group of form fields.
+// This is an alias for *huh.Group to avoid direct huh imports.
+type Group = *huh.Group
+
+// Field is a form field interface.
+// This is an alias for huh.Field to avoid direct huh imports.
+type Field = huh.Field
+
+// Input is a text input field.
+type Input = *huh.Input
+
+// Text is a text area field.
+type Text = *huh.Text
+
+// Select is a single-select field.
+type Select = *huh.Select[string]
+
+// MultiSelect is a multi-select field.
+type MultiSelect = *huh.MultiSelect[string]
+
+// Confirm is a confirmation field.
+type Confirm = *huh.Confirm
+
+// NewGroup creates a new form group from fields.
+// Use this instead of huh.NewGroup.
+func NewGroup(fields ...Field) Group {
+	return huh.NewGroup(fields...)
+}
+
+// Update handles form message updates.
+// Returns the updated form and any command to execute.
+// Use this instead of calling form.Update directly.
+func Update(form Form, msg tea.Msg) (Form, tea.Cmd) {
+	model, cmd := form.Update(msg)
+	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
+	return model.(*huh.Form), cmd
+}
 
 // Theme returns the Catppuccin theme configured for KaRiya forms.
 // Deprecated: Use ThemedForm or themes.GenerateHuhTheme for theme-aware forms.

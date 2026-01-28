@@ -58,6 +58,7 @@ func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 //   - up/k: Move up
 //   - down/j: Move down
 //   - enter: Select item
+//   - a: Add item
 //   - d: Delete item
 //   - e: Edit item
 //   - f: Filter
@@ -70,6 +71,7 @@ type ListKeyMap struct {
 	Up        key.Binding
 	Down      key.Binding
 	Select    key.Binding
+	Add       key.Binding
 	Delete    key.Binding
 	Edit      key.Binding
 	Filter    key.Binding
@@ -94,6 +96,10 @@ func DefaultListKeyMap() ListKeyMap {
 		Select: key.NewBinding(
 			key.WithKeys("enter"),
 			key.WithHelp("enter", "select"),
+		),
+		Add: key.NewBinding(
+			key.WithKeys("a"),
+			key.WithHelp("a", "add"),
 		),
 		Delete: key.NewBinding(
 			key.WithKeys("d"),
@@ -141,7 +147,7 @@ func (k ListKeyMap) ShortHelp() []key.Binding {
 func (k ListKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.PageUp, k.PageDown, k.GoToStart, k.GoToEnd},
-		{k.Select, k.Edit, k.Delete, k.Filter, k.Search},
+		{k.Select, k.Add, k.Edit, k.Delete, k.Filter, k.Search},
 	}
 }
 

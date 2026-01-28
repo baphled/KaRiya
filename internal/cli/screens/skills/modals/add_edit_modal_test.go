@@ -1,16 +1,16 @@
-package components_test
+package modals_test
 
 import (
-	"github.com/baphled/kariya/internal/cli/components"
+	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SkillAddEditModal", func() {
+var _ = Describe("AddEditModal", func() {
 	var (
-		modal *components.SkillAddEditModal
+		modal *modals.AddEditModal
 		skill *career.Skill
 	)
 
@@ -25,18 +25,18 @@ var _ = Describe("SkillAddEditModal", func() {
 		}
 	})
 
-	Describe("NewSkillAddEditModal (Add mode)", func() {
+	Describe("NewAddEditModal (Add mode)", func() {
 		It("creates a modal for adding a new skill", func() {
-			modal = components.NewSkillAddEditModal(nil, 120, 40)
+			modal = modals.NewAddEditModal(nil, 120, 40)
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeTrue())
 			Expect(modal.IsEditMode()).To(BeFalse())
 		})
 	})
 
-	Describe("NewSkillAddEditModal (Edit mode)", func() {
+	Describe("NewAddEditModal (Edit mode)", func() {
 		It("creates a modal for editing an existing skill", func() {
-			modal = components.NewSkillAddEditModal(skill, 120, 40)
+			modal = modals.NewAddEditModal(skill, 120, 40)
 			Expect(modal).NotTo(BeNil())
 			Expect(modal.IsVisible()).To(BeTrue())
 			Expect(modal.IsEditMode()).To(BeTrue())
@@ -45,7 +45,7 @@ var _ = Describe("SkillAddEditModal", func() {
 
 	Describe("Init", func() {
 		It("returns a command", func() {
-			modal = components.NewSkillAddEditModal(nil, 120, 40)
+			modal = modals.NewAddEditModal(nil, 120, 40)
 			cmd := modal.Init()
 			// Form Init returns a command
 			Expect(cmd).NotTo(BeNil())
@@ -54,7 +54,7 @@ var _ = Describe("SkillAddEditModal", func() {
 
 	Describe("Update", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillAddEditModal(skill, 120, 40)
+			modal = modals.NewAddEditModal(skill, 120, 40)
 		})
 
 		Context("when visible", func() {
@@ -89,7 +89,7 @@ var _ = Describe("SkillAddEditModal", func() {
 	Describe("View", func() {
 		Context("when visible", func() {
 			BeforeEach(func() {
-				modal = components.NewSkillAddEditModal(skill, 120, 40)
+				modal = modals.NewAddEditModal(skill, 120, 40)
 			})
 
 			It("renders the form", func() {
@@ -101,11 +101,19 @@ var _ = Describe("SkillAddEditModal", func() {
 				view := modal.View()
 				Expect(view).To(ContainSubstring("Skill Name"))
 			})
+
+			It("displays keyboard shortcuts in footer (KeyBadge pattern)", func() {
+				view := modal.View()
+				// Verify the footer contains expected keyboard hints.
+				Expect(view).To(ContainSubstring("Tab"))
+				Expect(view).To(ContainSubstring("Enter"))
+				Expect(view).To(ContainSubstring("Esc"))
+			})
 		})
 
 		Context("when not visible", func() {
 			BeforeEach(func() {
-				modal = components.NewSkillAddEditModal(nil, 120, 40)
+				modal = modals.NewAddEditModal(nil, 120, 40)
 				modal.Hide()
 			})
 
@@ -118,7 +126,7 @@ var _ = Describe("SkillAddEditModal", func() {
 
 	Describe("Show/Hide", func() {
 		BeforeEach(func() {
-			modal = components.NewSkillAddEditModal(nil, 120, 40)
+			modal = modals.NewAddEditModal(nil, 120, 40)
 		})
 
 		It("hides the modal", func() {
@@ -136,7 +144,7 @@ var _ = Describe("SkillAddEditModal", func() {
 	Describe("GetOriginalSkill", func() {
 		Context("in edit mode", func() {
 			BeforeEach(func() {
-				modal = components.NewSkillAddEditModal(skill, 120, 40)
+				modal = modals.NewAddEditModal(skill, 120, 40)
 			})
 
 			It("returns the original skill", func() {
@@ -146,7 +154,7 @@ var _ = Describe("SkillAddEditModal", func() {
 
 		Context("in add mode", func() {
 			BeforeEach(func() {
-				modal = components.NewSkillAddEditModal(nil, 120, 40)
+				modal = modals.NewAddEditModal(nil, 120, 40)
 			})
 
 			It("returns nil", func() {
@@ -158,7 +166,7 @@ var _ = Describe("SkillAddEditModal", func() {
 	Describe("SkillEditData", func() {
 		Describe("ToSkill", func() {
 			It("converts form data to a new skill", func() {
-				data := &components.SkillEditData{
+				data := &modals.SkillEditData{
 					Name:      "TypeScript",
 					Category:  "frontend",
 					Level:     "intermediate",
@@ -173,7 +181,7 @@ var _ = Describe("SkillAddEditModal", func() {
 			})
 
 			It("preserves skill ID when updating", func() {
-				data := &components.SkillEditData{
+				data := &modals.SkillEditData{
 					Name:     "Go",
 					Category: "backend",
 				}
@@ -182,7 +190,7 @@ var _ = Describe("SkillAddEditModal", func() {
 			})
 
 			It("handles empty years", func() {
-				data := &components.SkillEditData{
+				data := &modals.SkillEditData{
 					Name:      "Rust",
 					Category:  "systems",
 					YearsUsed: "",
@@ -192,7 +200,7 @@ var _ = Describe("SkillAddEditModal", func() {
 			})
 
 			It("handles invalid years", func() {
-				data := &components.SkillEditData{
+				data := &modals.SkillEditData{
 					Name:      "Haskell",
 					Category:  "functional",
 					YearsUsed: "abc",

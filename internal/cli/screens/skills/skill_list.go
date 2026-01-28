@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -137,79 +138,136 @@ func (s *SkillsListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return nil, nil
 
 	case tea.KeyMsg:
-		key := msg.String()
-
-		// Handle escape
-		if key == "esc" {
-			return nil, &screens.CancelResult{}
-		}
-
-		// Handle navigation keys - delegate to TableBehavior
-		if key == "down" || key == "j" || key == "up" || key == "k" ||
-			key == "g" || key == "G" || key == "pgup" || key == "pgdown" ||
-			key == "home" || key == "end" {
-			s.tableBehavior.HandleNavigation(key)
-			return nil, nil
-		}
-
-		// Handle action keys
-		switch key {
-		case "enter":
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: map[string]interface{}{
-						"action": "view",
-						"skill":  *selected,
-					},
-				}
-			}
-			return nil, nil
-
-		case "a":
-			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "add",
-				},
-			}
-
-		case "e":
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: map[string]interface{}{
-						"action": "edit",
-						"skill":  *selected,
-					},
-				}
-			}
-			return nil, nil
-
-		case "d":
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: map[string]interface{}{
-						"action": "delete",
-						"skill":  *selected,
-					},
-				}
-			}
-			return nil, nil
-		}
+		return s.handleKeyMsg(msg)
 	}
 
 	return nil, nil
 }
 
+// handleKeyMsg handles keyboard input and returns appropriate result.
+func (s *SkillsListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	// Handle escape/back.
+	if msg.Type == tea.KeyEsc {
+		return nil, &screens.CancelResult{}
+	}
+
+	// Handle navigation keys - delegate to TableBehavior.
+	if s.tableBehavior.HandleNavigation(msg.String()) {
+		return nil, nil
+	}
+
+	// Handle action keys.
+	return s.handleActionKey(msg)
+}
+
+// handleActionKey handles action-specific key presses.
+func (s *SkillsListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	// Handle enter key for view action.
+	if msg.Type == tea.KeyEnter {
+		return s.handleViewAction()
+	}
+
+	// Handle character keys for other actions.
+	switch msg.String() {
+	case "a":
+		return s.handleAddAction()
+	case "e":
+		return s.handleEditAction()
+	case "d":
+		return s.handleDeleteAction()
+	}
+	return nil, nil
+}
+
+// handleViewAction handles viewing a selected skill.
+func (s *SkillsListScreen) handleViewAction() (tea.Cmd, screens.ScreenResult) {
+	if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "view",
+				"skill":  *selected,
+			},
+		}
+	}
+	return nil, nil
+}
+
+// handleAddAction handles adding a new skill.
+func (s *SkillsListScreen) handleAddAction() (tea.Cmd, screens.ScreenResult) {
+	return nil, &screens.NavigateResult{
+		ResultData: map[string]interface{}{
+			"action": "add",
+		},
+	}
+}
+
+// handleEditAction handles editing a selected skill.
+func (s *SkillsListScreen) handleEditAction() (tea.Cmd, screens.ScreenResult) {
+	if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "edit",
+				"skill":  *selected,
+			},
+		}
+	}
+	return nil, nil
+}
+
+// handleDeleteAction handles deleting a selected skill.
+func (s *SkillsListScreen) handleDeleteAction() (tea.Cmd, screens.ScreenResult) {
+	if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{
+				"action": "delete",
+				"skill":  *selected,
+			},
+		}
+	}
+	return nil, nil
+}
+
+// RenderContent returns just the content (table) without StandardView wrapper.
+// This allows intents to apply their own StandardView with custom breadcrumbs.
+func (s *SkillsListScreen) RenderContent() string {
+	return s.tableBehavior.Render()
+}
+
 // View renders the skills list screen.
 func (s *SkillsListScreen) View() string {
-	// Render table via behavior
-	content := s.tableBehavior.Render()
+	// Render table via behavior.
+	content := s.RenderContent()
 
-	// Footer with actions (matching legacy)
-	footer := "Enter: View  a: Add  e: Edit  d: Delete  ↑↓/jk: Navigate  g/G: Top/Bottom  Esc: Back"
+	// Get theme for UIKit primitives (fall back to default if not set).
+	var th themes.Theme
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if t, ok := screenTheme.(themes.Theme); ok {
+			th = t
+		}
+	}
+	if th == nil {
+		th = themes.NewDefaultTheme()
+	}
 
-	// Handle empty state footer
+	// Build footer using UIKit primitives for consistent styling.
+	var footer string
 	if len(s.skills) == 0 {
-		footer = "a: Add skill  Esc: Back"
+		footer = primitives.RenderHelpFooter(th,
+			primitives.AddBadge(th),
+			primitives.BackBadge(th),
+		)
+	} else {
+		footer = primitives.RenderHelpFooter(th,
+			primitives.NavigateBadge(th),
+			primitives.HelpKeyBadge("Enter", "View", th),
+			primitives.AddBadge(th),
+			primitives.EditBadge(th),
+			primitives.DeleteBadge(th),
+			primitives.HelpKeyBadge("f", "Filter", th),
+			primitives.HelpKeyBadge("s", "Sort", th),
+			primitives.HelpKeyBadge("/", "Search", th),
+			primitives.BackBadge(th),
+		)
 	}
 
 	return s.CreateView([]string{"Main Menu", "Manage Skills"}, content, footer)

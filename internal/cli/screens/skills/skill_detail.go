@@ -6,6 +6,8 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -64,15 +66,19 @@ func (s *SkillDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		return nil, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle special keys.
+		switch msg.Type {
+		case tea.KeyEsc:
 			return nil, &screens.CancelResult{}
 
-		case "enter":
+		case tea.KeyEnter:
 			return nil, &screens.NavigateResult{
 				ResultData: "back",
 			}
+		}
 
+		// Handle character keys.
+		switch msg.String() {
 		case "e":
 			return nil, &screens.NavigateResult{
 				ResultData: "edit",
@@ -90,50 +96,68 @@ func (s *SkillDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 
 // View renders the skill detail screen.
 func (s *SkillDetailScreen) View() string {
+	// Get theme for styling (fall back to default if not set).
+	var th themes.Theme
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if t, ok := screenTheme.(themes.Theme); ok {
+			th = t
+		}
+	}
+	if th == nil {
+		th = themes.NewDefaultTheme()
+	}
+
 	var b strings.Builder
 
-	// Title
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
+	// Title using theme colors.
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(th.PrimaryColor())
 	b.WriteString(titleStyle.Render(s.skill.Name))
 	b.WriteString("\n\n")
 
-	// Category badge
+	// Category badge using theme.
 	categoryStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("0")).
+		Foreground(th.BackgroundColor()).
 		Background(s.getCategoryColor(s.skill.Category)).
 		Padding(0, 1)
 	b.WriteString(categoryStyle.Render(s.skill.Category))
 	b.WriteString("\n\n")
 
-	// Details section
-	s.renderField(&b, "Level", s.skill.Level)
+	// Details section.
+	s.renderField(&b, "Level", s.skill.Level, th)
 
 	if s.skill.YearsUsed != nil {
-		s.renderField(&b, "Years of Experience", fmt.Sprintf("%d years", *s.skill.YearsUsed))
+		s.renderField(&b, "Years of Experience", fmt.Sprintf("%d years", *s.skill.YearsUsed), th)
 	}
 
 	if s.skill.LastUsed != nil {
-		s.renderField(&b, "Last Used", s.skill.LastUsed.Format("2006-01-02"))
+		s.renderField(&b, "Last Used", s.skill.LastUsed.Format("2006-01-02"), th)
 	}
 
 	b.WriteString("\n")
-	s.renderField(&b, "Created", s.skill.CreatedAt.Format("2006-01-02 15:04:05"))
-	s.renderField(&b, "Updated", s.skill.UpdatedAt.Format("2006-01-02 15:04:05"))
+	s.renderField(&b, "Created", s.skill.CreatedAt.Format("2006-01-02 15:04:05"), th)
+	s.renderField(&b, "Updated", s.skill.UpdatedAt.Format("2006-01-02 15:04:05"), th)
 
 	content := b.String()
-	footer := "Enter/Esc: Back  e: Edit  d: Delete"
+
+	// Build footer using UIKit primitives for consistent styling.
+	footer := primitives.RenderHelpFooter(th,
+		primitives.BackBadge(th),
+		primitives.EditBadge(th),
+		primitives.DeleteBadge(th),
+		primitives.HelpKeyBadge("Ctrl+E", "Events", th),
+	)
 
 	return s.CreateView([]string{"Main Menu", "Manage Skills", "Skill Details"}, content, footer)
 }
 
-// renderField renders a labeled field.
-func (s *SkillDetailScreen) renderField(b *strings.Builder, label, value string) {
+// renderField renders a labeled field using theme colors.
+func (s *SkillDetailScreen) renderField(b *strings.Builder, label, value string, th themes.Theme) {
 	if value == "" {
 		return
 	}
 
 	labelStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("8")).
+		Foreground(th.MutedColor()).
 		Bold(true)
 
 	b.WriteString(labelStyle.Render(label + ":"))
