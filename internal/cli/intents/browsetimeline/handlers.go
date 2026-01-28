@@ -63,7 +63,10 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 
 // handleActionData processes action data from navigation results.
 func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
-	action, _ := actionData["action"].(string)
+	action, ok := actionData["action"].(string)
+	if !ok {
+		return nil
+	}
 	switch action {
 	case "add":
 		return i.openQuickAddModal()

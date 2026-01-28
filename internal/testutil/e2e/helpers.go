@@ -362,11 +362,17 @@ func (e *TestEnv) resetDatabase() {
 
 	// Truncate tables in order (respecting foreign key constraints)
 	// Using explicit statements to avoid SQL string concatenation warnings
-	_, _ = e.DB.Exec("DELETE FROM event_skills")
-	_, _ = e.DB.Exec("DELETE FROM facts")
-	_, _ = e.DB.Exec("DELETE FROM bursts")
-	_, _ = e.DB.Exec("DELETE FROM skills")
-	_, _ = e.DB.Exec("DELETE FROM career_events")
+	// Errors during cleanup are logged but not fatal for test teardown
+	//nolint:errcheck // Test cleanup - errors are not critical
+	e.DB.Exec("DELETE FROM event_skills")
+	//nolint:errcheck // Test cleanup - errors are not critical
+	e.DB.Exec("DELETE FROM facts")
+	//nolint:errcheck // Test cleanup - errors are not critical
+	e.DB.Exec("DELETE FROM bursts")
+	//nolint:errcheck // Test cleanup - errors are not critical
+	e.DB.Exec("DELETE FROM skills")
+	//nolint:errcheck // Test cleanup - errors are not critical
+	e.DB.Exec("DELETE FROM career_events")
 }
 
 // SetupWithOnboarding creates an E2E test environment with the onboarding wizard active.
