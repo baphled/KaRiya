@@ -3,7 +3,7 @@ package e2e_test
 import (
 	burstmgmt "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/e2e"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -268,7 +268,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate TWO suggestions.
 			env.PressKeyRune('s')
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					EventIDs:        []string{events[0].ID, events[1].ID},
 					ConfidenceScore: 0.85,
@@ -319,14 +319,14 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate suggestions.
 			env.PressKeyRune('s')
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				EventIDs:        []string{events[0].ID, events[1].ID},
 				ConfidenceScore: 0.85,
 				Name:            "Accepted Burst",
 				Description:     "Testing return to list after acceptance",
 			}
 			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Accept the suggestion - should return to burst list (not detail modal).
@@ -351,14 +351,14 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate suggestions.
 			env.PressKeyRune('s')
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				EventIDs:        []string{events[0].ID, events[1].ID},
 				ConfidenceScore: 0.85,
 				Name:            "Edit Test Burst",
 				Description:     "Testing edit from list after acceptance",
 			}
 			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Accept the suggestion - returns to burst list.
@@ -382,14 +382,14 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate suggestions.
 			env.PressKeyRune('s')
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				EventIDs:        []string{events[0].ID, events[1].ID},
 				ConfidenceScore: 0.85,
 				Name:            "Menu Test Burst",
 				Description:     "Testing return to main menu",
 			}
 			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Accept the suggestion - returns to burst list.
@@ -433,14 +433,14 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate a single suggestion.
 			env.PressKeyRune('s')
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				EventIDs:        []string{events[0].ID, events[1].ID},
 				ConfidenceScore: 0.85,
 				Name:            "Rejected Burst",
 				Description:     "Testing return to list after rejection",
 			}
 			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Verify we're on suggestion review.
@@ -470,14 +470,14 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate a single suggestion.
 			env.PressKeyRune('s')
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				EventIDs:        []string{events[0].ID, events[1].ID},
 				ConfidenceScore: 0.85,
 				Name:            "Rejected Menu Test",
 				Description:     "Testing return to main menu after rejection",
 			}
 			env.SendMessage(burstmgmt.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Reject the suggestion - returns to burst list.
@@ -504,7 +504,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate TWO suggestions.
 			env.PressKeyRune('s')
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					EventIDs:        []string{events[0].ID, events[1].ID},
 					ConfidenceScore: 0.85,
@@ -559,7 +559,7 @@ var _ = Describe("E2E Burst Management Workflow", func() {
 
 			// Press 's' and simulate suggestions.
 			env.PressKeyRune('s')
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					EventIDs:        []string{events[0].ID, events[1].ID},
 					ConfidenceScore: 0.85,

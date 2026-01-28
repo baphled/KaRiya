@@ -8,7 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/service/career/classification"
 )
 
-// AllowedCategories defines the set of valid competency categories
+// AllowedCategories defines the set of valid competency categories.
 var AllowedCategories = map[string]bool{
 	"technical":  true,
 	"leadership": true,
@@ -18,19 +18,19 @@ var AllowedCategories = map[string]bool{
 	"mentoring":  true,
 }
 
-// CategorySelector manages category selection for career events
+// CategorySelector manages category selection for career events.
 type CategorySelector struct {
 	selected map[string]bool
 }
 
-// NewCategorySelector creates a new category selector
+// NewCategorySelector creates a new category selector.
 func NewCategorySelector() *CategorySelector {
 	return &CategorySelector{
 		selected: make(map[string]bool),
 	}
 }
 
-// SelectedCategories returns a sorted list of currently selected categories
+// SelectedCategories returns a sorted list of currently selected categories.
 func (cs *CategorySelector) SelectedCategories() []string {
 	categories := make([]string, 0, len(cs.selected))
 	for category := range cs.selected {

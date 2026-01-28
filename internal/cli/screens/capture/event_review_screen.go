@@ -199,14 +199,14 @@ func (s *EventReviewScreen) renderEventDetails(b *strings.Builder) {
 		return
 	}
 
-	b.WriteString(fmt.Sprintf("  %s\n", s.event.Text))
-	b.WriteString(fmt.Sprintf("  Date: %s\n", s.event.Date.Format("2006-01-02")))
+	fmt.Fprintf(b, "  %s\n", s.event.Text)
+	fmt.Fprintf(b, "  Date: %s\n", s.event.Date.Format("2006-01-02"))
 
 	if s.event.Company != "" {
-		b.WriteString(fmt.Sprintf("  Company: %s\n", s.event.Company))
+		fmt.Fprintf(b, "  Company: %s\n", s.event.Company)
 	}
 	if s.event.Project != "" {
-		b.WriteString(fmt.Sprintf("  Project: %s\n", s.event.Project))
+		fmt.Fprintf(b, "  Project: %s\n", s.event.Project)
 	}
 }
 
@@ -270,7 +270,7 @@ func (s *EventReviewScreen) renderFacts(b *strings.Builder) {
 	}
 
 	for i, fact := range s.facts {
-		b.WriteString(fmt.Sprintf("  %d. %s\n", i+1, fact.Text))
+		fmt.Fprintf(b, "  %d. %s\n", i+1, fact.Text)
 	}
 }
 

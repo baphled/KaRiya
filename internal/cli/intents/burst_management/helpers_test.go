@@ -10,7 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -298,7 +298,7 @@ var _ = Describe("Helper Methods", func() {
 
 			// Create completion message with accepted suggestions.
 			msg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+				AcceptedSuggestions: []burstfact.BurstSuggestion{
 					{
 						Name:            "Accepted Burst 1",
 						Description:     "First accepted suggestion",
@@ -359,7 +359,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetState(burst_management.StateSuggestionReview)
 
 			msg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{},
+				AcceptedSuggestions: []burstfact.BurstSuggestion{},
 				Cancelled:           false,
 			}
 
@@ -380,7 +380,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetState(burst_management.StateSuggestionReview)
 
 			msg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+				AcceptedSuggestions: []burstfact.BurstSuggestion{
 					{
 						Name:            "New Burst",
 						Description:     "New burst description",
@@ -403,7 +403,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetState(burst_management.StateSuggestionReview)
 
 			msg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+				AcceptedSuggestions: []burstfact.BurstSuggestion{
 					{
 						Name:        "New Burst",
 						Description: "Description",
@@ -424,7 +424,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetState(burst_management.StateSuggestionReview)
 
 			msg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+				AcceptedSuggestions: []burstfact.BurstSuggestion{
 					{
 						Name:        "Burst With Loading",
 						Description: "Should show loading modal",
@@ -449,7 +449,7 @@ var _ = Describe("Helper Methods", func() {
 
 			// First accept a suggestion to create a burst.
 			acceptMsg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{
+				AcceptedSuggestions: []burstfact.BurstSuggestion{
 					{
 						Name:        "New Burst For Refresh",
 						Description: "Testing list refresh",
@@ -532,7 +532,7 @@ var _ = Describe("Helper Methods", func() {
 	Describe("BUG: State transition after suggestion modal shown", func() {
 		It("should transition to StateSuggestionReview when suggestions are loaded", func() {
 			msg := burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{
+				Suggestions: []burstfact.BurstSuggestion{
 					{Name: "Test", EventIDs: []string{"e1"}, ConfidenceScore: 0.8},
 				},
 			}
@@ -552,7 +552,7 @@ var _ = Describe("Helper Methods", func() {
 			// Set state to suggestion review so the handler will process the message.
 			intent.SetState(burst_management.StateSuggestionReview)
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Burst 1", EventIDs: []string{"e1"}, ConfidenceScore: 0.9},
 				{Name: "Burst 2", EventIDs: []string{"e2"}, ConfidenceScore: 0.85},
 			}
@@ -574,7 +574,7 @@ var _ = Describe("Helper Methods", func() {
 			// Set state to suggestion review so the handler will process the message.
 			intent.SetState(burst_management.StateSuggestionReview)
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Tracked Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 			}
 

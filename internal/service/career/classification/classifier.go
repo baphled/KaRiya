@@ -22,13 +22,13 @@ const (
 	MentoringCompetency  = constants.CompetencyMentoring
 )
 
-// Classifier provides methods for classifying career events
+// Classifier provides methods for classifying career events.
 type Classifier struct {
 	// Keywords for different competency categories
 	categoryKeywords map[CompetencyCategory][]string
 }
 
-// NewClassifier creates a new event classifier
+// NewClassifier creates a new event classifier.
 func NewClassifier() *Classifier {
 	return &Classifier{
 		categoryKeywords: map[CompetencyCategory][]string{
@@ -61,7 +61,7 @@ func NewClassifier() *Classifier {
 	}
 }
 
-// Classify determines the primary competency category for a career event
+// Classify determines the primary competency category for a career event.
 func (c *Classifier) Classify(event *career.CareerEvent) CompetencyCategory {
 	// First, check explicit tags
 	for _, tag := range event.Tags {
@@ -127,7 +127,7 @@ func (c *Classifier) Classify(event *career.CareerEvent) CompetencyCategory {
 	}
 }
 
-// ClassifyMulti returns multiple potential competency categories
+// ClassifyMulti returns multiple potential competency categories.
 func (c *Classifier) ClassifyMulti(event *career.CareerEvent) []CompetencyCategory {
 	// If explicit tags are present, use them first
 	var categories []CompetencyCategory

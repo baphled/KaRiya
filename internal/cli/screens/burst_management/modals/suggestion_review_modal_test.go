@@ -3,7 +3,7 @@ package modals_test
 import (
 	"github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/themes"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -12,13 +12,13 @@ import (
 var _ = Describe("SuggestionReviewModal", func() {
 	var (
 		modal       *modals.SuggestionReviewModal
-		suggestions []burst_fact.BurstSuggestion
+		suggestions []burstfact.BurstSuggestion
 		theme       themes.Theme
 	)
 
 	BeforeEach(func() {
 		theme = themes.NewDefaultTheme()
-		suggestions = []burst_fact.BurstSuggestion{
+		suggestions = []burstfact.BurstSuggestion{
 			{
 				Name:            "Backend Development",
 				Description:     "API and infrastructure work",
@@ -132,14 +132,14 @@ var _ = Describe("SuggestionReviewModal", func() {
 		})
 
 		It("should handle empty suggestions list", func() {
-			modal = modals.NewSuggestionReviewModal([]burst_fact.BurstSuggestion{}, theme)
+			modal = modals.NewSuggestionReviewModal([]burstfact.BurstSuggestion{}, theme)
 			Expect(modal.HasSuggestions()).To(BeFalse())
 			Expect(modal.GetSuggestionsCount()).To(Equal(0))
 			Expect(modal.GetCurrentSuggestion()).To(BeNil())
 		})
 
 		It("should handle single suggestion", func() {
-			singleSuggestion := []burst_fact.BurstSuggestion{suggestions[0]}
+			singleSuggestion := []burstfact.BurstSuggestion{suggestions[0]}
 			modal = modals.NewSuggestionReviewModal(singleSuggestion, theme)
 			Expect(modal.HasSuggestions()).To(BeTrue())
 			Expect(modal.GetSuggestionsCount()).To(Equal(1))
@@ -537,7 +537,7 @@ var _ = Describe("SuggestionReviewModal", func() {
 		})
 
 		It("should handle empty description", func() {
-			emptyDescSuggestions := []burst_fact.BurstSuggestion{
+			emptyDescSuggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "No Description",
 					Description:     "",
@@ -555,7 +555,7 @@ var _ = Describe("SuggestionReviewModal", func() {
 		})
 
 		It("should handle high confidence score", func() {
-			highConfSuggestions := []burst_fact.BurstSuggestion{
+			highConfSuggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "High Confidence",
 					Description:     "Very confident",
@@ -571,7 +571,7 @@ var _ = Describe("SuggestionReviewModal", func() {
 		})
 
 		It("should handle low confidence score", func() {
-			lowConfSuggestions := []burst_fact.BurstSuggestion{
+			lowConfSuggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Low Confidence",
 					Description:     "Less confident",

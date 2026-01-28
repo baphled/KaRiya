@@ -84,22 +84,22 @@ type FilterStack struct {
 type FilterLayer string
 
 const (
-	// FilterLayerSearch represents search text filtering
+	// FilterLayerSearch represents search text filtering.
 	FilterLayerSearch FilterLayer = "search"
 
-	// FilterLayerCategory represents category-based filtering
+	// FilterLayerCategory represents category-based filtering.
 	FilterLayerCategory FilterLayer = "category"
 
-	// FilterLayerCompany represents company-based filtering
+	// FilterLayerCompany represents company-based filtering.
 	FilterLayerCompany FilterLayer = "company"
 
-	// FilterLayerProject represents project-based filtering
+	// FilterLayerProject represents project-based filtering.
 	FilterLayerProject FilterLayer = "project"
 
-	// FilterLayerTags represents tag-based filtering
+	// FilterLayerTags represents tag-based filtering.
 	FilterLayerTags FilterLayer = "tags"
 
-	// FilterLayerSort represents custom sort (non-default)
+	// FilterLayerSort represents custom sort (non-default).
 	FilterLayerSort FilterLayer = "sort"
 )
 

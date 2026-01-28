@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -13,16 +13,16 @@ import (
 var _ = Describe("CaptureEvent Fact Extraction", func() {
 	var (
 		ctx           context.Context
-		classifier    *burst_fact.Classifier
-		extractor     *burst_fact.Extractor
+		classifier    *burstfact.Classifier
+		extractor     *burstfact.Extractor
 		sampleEvent   *career.CareerEvent
 		extractedFact career.Fact
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		classifier = burst_fact.NewClassifier()
-		extractor = burst_fact.NewExtractor(classifier)
+		classifier = burstfact.NewClassifier()
+		extractor = burstfact.NewExtractor(classifier)
 
 		// Create a sample event similar to what user would enter
 		sampleEvent = &career.CareerEvent{

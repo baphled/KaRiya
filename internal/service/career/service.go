@@ -11,7 +11,7 @@ import (
 	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	repo "github.com/baphled/kariya/internal/repository/career"
-	burst_fact "github.com/baphled/kariya/internal/service/career/burst_fact"
+	burst_fact "github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
 // EventCaptureMode defines the different ways events can be captured

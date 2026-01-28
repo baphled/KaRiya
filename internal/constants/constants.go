@@ -273,7 +273,7 @@ func IsValidImpactLevel(s string) bool {
 // InclusionReason represents the reason a bullet is included in a CV.
 type InclusionReason string
 
-// Semantic reasons (manual categorization)
+// Semantic reasons (manual categorization).
 const (
 	InclusionReasonOwnership    InclusionReason = "ownership"
 	InclusionReasonContribution InclusionReason = "contribution"
@@ -283,7 +283,7 @@ const (
 	InclusionReasonActivity     InclusionReason = "activity"
 )
 
-// Source-based reasons (used by BulletGenerator)
+// Source-based reasons (used by BulletGenerator).
 const (
 	InclusionReasonFactExtraction        InclusionReason = "fact_extraction"
 	InclusionReasonEventDirect           InclusionReason = "event_direct"

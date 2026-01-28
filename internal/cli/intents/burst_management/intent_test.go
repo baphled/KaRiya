@@ -16,7 +16,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/mocks"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -818,7 +818,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Load suggestions.
 			msg := burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{
+				Suggestions: []burstfact.BurstSuggestion{
 					{
 						Name:            "Suggestion 1",
 						Description:     "First suggestion",
@@ -846,7 +846,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Load suggestions.
 			msg := burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{
+				Suggestions: []burstfact.BurstSuggestion{
 					{Name: "Test", EventIDs: []string{"e1"}},
 				},
 				Error: nil,
@@ -873,7 +873,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Load suggestions.
 			loadMsg := burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{
+				Suggestions: []burstfact.BurstSuggestion{
 					{
 						Name:        "Accepted Burst",
 						Description: "Test burst",
@@ -889,7 +889,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Process the completion message (in tests, we need to send it manually).
 			completeMsg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{loadMsg.Suggestions[0]},
+				AcceptedSuggestions: []burstfact.BurstSuggestion{loadMsg.Suggestions[0]},
 				Cancelled:           false,
 			}
 			intent.Update(completeMsg)
@@ -909,7 +909,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Load suggestions.
 			msg := burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{
+				Suggestions: []burstfact.BurstSuggestion{
 					{Name: "Test", EventIDs: []string{"e1"}},
 				},
 				Error: nil,
@@ -935,7 +935,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Load suggestions.
 			msg := burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{
+				Suggestions: []burstfact.BurstSuggestion{
 					{Name: "Test", EventIDs: []string{"e1"}},
 				},
 				Error: nil,
@@ -1605,7 +1605,7 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should start burst detection with service and return suggestions", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Suggested Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 			}
 			mockService.SetSuggestions(suggestions)
@@ -2023,7 +2023,7 @@ var _ = Describe("Intent Methods", func() {
 			}
 			mockService.SetEvents(extraEvents)
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Suggestion", EventIDs: []string{"e3", "e4"}, ConfidenceScore: 0.8},
 			}
 			mockService.SetSuggestions(suggestions)
@@ -2112,7 +2112,7 @@ var _ = Describe("Intent Methods", func() {
 			// Update context with existing burst.
 			ctx.Bursts = []*career.Burst{existingBurst}
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "New Suggestion", EventIDs: []string{"e3", "e4"}, ConfidenceScore: 0.8},
 			}
 			mockService.SetSuggestions(suggestions)
@@ -2383,12 +2383,12 @@ var _ = Describe("Intent Methods", func() {
 			mockService.SetExtractedFacts(extractedFacts)
 
 			// Create a suggestion and accept it - this triggers fact extraction.
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				Name:     "Test Suggestion",
 				EventIDs: []string{"e1", "e2"},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Press 'a' to accept - this saves burst and triggers fact extraction.
@@ -2410,12 +2410,12 @@ var _ = Describe("Intent Methods", func() {
 			mockService.SetExtractError(errors.New("extraction failed"))
 
 			// Create a suggestion and accept it.
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				Name:     "Test Suggestion",
 				EventIDs: []string{"e1", "e2"},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Press 'a' to accept.
@@ -2439,12 +2439,12 @@ var _ = Describe("Intent Methods", func() {
 			mockService.SetSaveFactError(errors.New("save failed"))
 
 			// Create a suggestion and accept it.
-			suggestion := burst_fact.BurstSuggestion{
+			suggestion := burstfact.BurstSuggestion{
 				Name:     "Test Suggestion",
 				EventIDs: []string{"e1", "e2"},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{suggestion},
+				Suggestions: []burstfact.BurstSuggestion{suggestion},
 			})
 
 			// Press 'a' to accept.

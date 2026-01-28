@@ -40,7 +40,7 @@ var _ = Describe("StandardView Consistency", func() {
 		})
 	})
 
-	// BrowseTimeline consistency tests are in internal/cli/intents/browse_timeline/
+	// BrowseTimeline consistency tests are in internal/cli/intents/browsetimeline/
 
 	Describe("GenerateCV", func() {
 		It("should use StandardView patterns", func() {
@@ -82,7 +82,7 @@ var _ = Describe("StandardView Consistency", func() {
 		})
 	})
 
-	// Note: FactManagement has been migrated to intents/fact_management/ package
+	// Note: FactManagement has been migrated to intents/facts/ package
 	// with its own comprehensive test suite. See fact_management/intent_test.go
 	// for StandardView consistency tests.
 	PDescribe("FactManagement (migrated to subpackage)", func() {
@@ -116,7 +116,7 @@ var _ = Describe("All Intents Initialization", func() {
 			func(i interface{}) { _ = i.(*CaptureEventIntent).Init() }, //nolint:errcheck // Init returns tea.Cmd which is intentionally discarded in tests
 			func(i interface{}) string { return i.(*CaptureEventIntent).View() },
 		),
-		// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
+		// BrowseTimeline Entry is in internal/cli/intents/browsetimeline/
 		Entry("GenerateCV",
 			"GenerateCV",
 			func() (interface{}, error) {

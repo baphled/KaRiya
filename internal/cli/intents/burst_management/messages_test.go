@@ -9,7 +9,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
 var (
@@ -201,7 +201,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("BurstSuggestionsLoadedMsg", func() {
 		It("should store burst suggestions", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					EventIDs:        []string{"event-1", "event-2"},
 					ConfidenceScore: 0.85,
@@ -229,7 +229,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SuggestionReviewCompleteMsg", func() {
 		It("should store accepted suggestions", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					EventIDs:        []string{"event-1", "event-2"},
 					ConfidenceScore: 0.9,
@@ -261,7 +261,7 @@ var _ = Describe("Messages", func() {
 
 		It("should handle completion with no accepted suggestions", func() {
 			msg := burst_management.SuggestionReviewCompleteMsg{
-				AcceptedSuggestions: []burst_fact.BurstSuggestion{},
+				AcceptedSuggestions: []burstfact.BurstSuggestion{},
 				Cancelled:           false,
 			}
 			Expect(msg.AcceptedSuggestions).To(HaveLen(0))

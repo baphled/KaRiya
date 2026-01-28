@@ -418,7 +418,7 @@ func (svc *DefaultDataProcessingService) CalculateMetrics(ctx context.Context, t
 	}
 
 	// Currency pattern: "$1M", "$50,000", "£100k"
-	currencyPattern := regexp.MustCompile(`[\$£€][\d,]+(?:\.?\d{2})?(?:[KMB])?`)
+	currencyPattern := regexp.MustCompile(`[\$£€][\d,]+(?:\.?\d{2})?[KMB]?`)
 	currencyMatches := currencyPattern.FindAllString(text, -1)
 	for _, match := range currencyMatches {
 		metrics = append(metrics, &Metric{
@@ -617,7 +617,7 @@ func (svc *DefaultDataProcessingService) enhanceBulletText(text string) string {
 	}
 
 	// Capitalize first letter
-	if len(result) > 0 {
+	if result != "" {
 		result = strings.ToUpper(result[:1]) + result[1:]
 	}
 

@@ -40,7 +40,7 @@ func NewYAMLConfigManager(log *logger.Logger) (*YAMLConfigManager, error) {
 	configDir := filepath.Join(homeDir, ".kariya", "cv_configs")
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(configDir, 0750); err != nil {
+	if err := os.MkdirAll(configDir, 0o750); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -120,7 +120,7 @@ func (m *YAMLConfigManager) SaveConfig(ctx context.Context, config *career.CVCon
 	}
 
 	// Ensure directory exists
-	if err := os.MkdirAll(m.configDir, 0750); err != nil {
+	if err := os.MkdirAll(m.configDir, 0o750); err != nil {
 		m.logger.Error("Failed to create config directory: %v at path %s", err, m.configDir)
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
@@ -338,7 +338,7 @@ func (m *YAMLConfigManager) VerifyDirectory() error {
 				m.logger.Warn("Config directory does not exist: %s, attempting to create", m.configDir)
 			}
 			// Try to create it
-			if err := os.MkdirAll(m.configDir, 0750); err != nil {
+			if err := os.MkdirAll(m.configDir, 0o750); err != nil {
 				if m.logger != nil {
 					m.logger.Error("Failed to create config directory: %v", err)
 				}
@@ -362,7 +362,7 @@ func (m *YAMLConfigManager) VerifyDirectory() error {
 
 	// Try to write a test file to verify permissions
 	testFile := filepath.Join(m.configDir, ".write-test")
-	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		if m.logger != nil {
 			m.logger.Error("Config directory is not writable: %v", err)
 		}

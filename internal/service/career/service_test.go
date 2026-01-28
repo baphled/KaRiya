@@ -743,6 +743,6 @@ var _ = Describe("Career Service", func() {
 
 	// NOTE: Competency classification is handled by:
 	// - internal/service/career/classification/classifier.go (with comprehensive tests)
-	// - internal/service/career/burst_fact/extractor.go (with comprehensive tests)
+	// - internal/service/career/burstfact/extractor.go (with comprehensive tests)
 	// See those packages for competency-related tests.
 })

@@ -9,14 +9,14 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-// Re-export types for backward compatibility
+// Re-export types for backward compatibility.
 type CaptureStrategy = types.CaptureStrategy
 
 const (
-	// StrategyQuick captures only required fields (event text), date defaults to today
+	// StrategyQuick captures only required fields (event text), date defaults to today.
 	StrategyQuick = types.StrategyQuick
 
-	// StrategyManual shows all fields with optional field toggle
+	// StrategyManual shows all fields with optional field toggle.
 	StrategyManual = types.StrategyManual
 )
 

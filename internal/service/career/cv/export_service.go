@@ -247,7 +247,7 @@ func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format E
 	exportDir := filepath.Join(homeDir, ".kariya", "cv_exports")
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(exportDir, 0750); err != nil {
+	if err := os.MkdirAll(exportDir, 0o750); err != nil {
 		return "", fmt.Errorf("failed to create export directory: %w", err)
 	}
 
@@ -258,7 +258,7 @@ func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format E
 	filePath := filepath.Join(exportDir, filename)
 
 	// Write file
-	if err := os.WriteFile(filePath, []byte(content), 0600); err != nil {
+	if err := os.WriteFile(filePath, []byte(content), 0o600); err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
