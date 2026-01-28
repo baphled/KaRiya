@@ -12,8 +12,8 @@ import (
 // State constant for state matrix tracking (REQUIRED)
 const FactListState = "fact_list"
 
-// factRowFormatter formats a fact for table display
-func factRowFormatter(fact *career.Fact, index int) []string {
+// factRowFormatter formats a fact for table display.
+func factRowFormatter(fact *career.Fact, _ int) []string {
 	// Truncate text to 80 chars for display
 	text := fact.Text
 	if len(text) > 80 {
@@ -99,56 +99,73 @@ func (s *FactListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return nil, nil
 
 	case tea.KeyMsg:
-		// Handle special keys by type (use tea.Key* constants).
-		switch msg.Type {
-		case tea.KeyEsc, tea.KeyBackspace:
-			// Back to previous screen.
-			// Note: 'q' (quit) is handled by the intent before delegation.
-			return nil, &screens.CancelResult{}
-		case tea.KeyUp:
-			s.tableBehavior.HandleNavigation("up")
-			return nil, nil
-		case tea.KeyDown:
-			s.tableBehavior.HandleNavigation("down")
-			return nil, nil
-		case tea.KeyPgDown:
-			s.tableBehavior.HandleNavigation("pgdn")
-			return nil, nil
-		case tea.KeyPgUp:
-			s.tableBehavior.HandleNavigation("pgup")
-			return nil, nil
-		case tea.KeyHome:
-			s.tableBehavior.HandleNavigation("home")
-			return nil, nil
-		case tea.KeyEnd:
-			s.tableBehavior.HandleNavigation("end")
-			return nil, nil
-		case tea.KeyCtrlD:
-			s.tableBehavior.HandleNavigation("ctrl+d")
-			return nil, nil
-		case tea.KeyCtrlU:
-			s.tableBehavior.HandleNavigation("ctrl+u")
-			return nil, nil
-		}
-
-		// Handle vim-style keys (rune-based).
-		switch msg.String() {
-		case "k":
-			s.tableBehavior.HandleNavigation("up")
-			return nil, nil
-		case "j":
-			s.tableBehavior.HandleNavigation("down")
-			return nil, nil
-		case "g":
-			s.tableBehavior.HandleNavigation("home")
-			return nil, nil
-		case "G":
-			s.tableBehavior.HandleNavigation("end")
-			return nil, nil
-		}
+		return s.handleKeyMsg(msg)
 	}
 
 	return nil, nil
+}
+
+// handleKeyMsg processes keyboard input for navigation and actions.
+func (s *FactListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	// Handle special keys by type (use tea.Key* constants).
+	if nav := s.handleKeyType(msg.Type); nav != "" {
+		if nav == "cancel" {
+			return nil, &screens.CancelResult{}
+		}
+		s.tableBehavior.HandleNavigation(nav)
+		return nil, nil
+	}
+
+	// Handle vim-style keys (rune-based).
+	if nav := s.handleVimKey(msg.String()); nav != "" {
+		s.tableBehavior.HandleNavigation(nav)
+		return nil, nil
+	}
+
+	return nil, nil
+}
+
+// handleKeyType maps key types to navigation commands.
+// Returns "cancel" for exit keys, navigation string for nav keys, or empty for unhandled.
+func (s *FactListScreen) handleKeyType(keyType tea.KeyType) string {
+	switch keyType {
+	case tea.KeyEsc, tea.KeyBackspace:
+		return "cancel"
+	case tea.KeyUp:
+		return "up"
+	case tea.KeyDown:
+		return "down"
+	case tea.KeyPgDown:
+		return "pgdn"
+	case tea.KeyPgUp:
+		return "pgup"
+	case tea.KeyHome:
+		return "home"
+	case tea.KeyEnd:
+		return "end"
+	case tea.KeyCtrlD:
+		return "ctrl+d"
+	case tea.KeyCtrlU:
+		return "ctrl+u"
+	default:
+		return ""
+	}
+}
+
+// handleVimKey maps vim-style key strings to navigation commands.
+func (s *FactListScreen) handleVimKey(key string) string {
+	switch key {
+	case "k":
+		return "up"
+	case "j":
+		return "down"
+	case "g":
+		return "home"
+	case "G":
+		return "end"
+	default:
+		return ""
+	}
 }
 
 // RenderContent returns just the table content without StandardView wrapper.

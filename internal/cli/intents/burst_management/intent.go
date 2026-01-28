@@ -131,6 +131,8 @@ func (i *Intent) handleErrorModalUpdate(msg tea.Msg) tea.Cmd {
 }
 
 // handleLoadingModalUpdate handles loading modal updates (cancellable with Esc).
+// Only forwards spinner tick messages to the modal; other messages are consumed
+// without restarting the spinner to avoid multiple concurrent tick loops.
 func (i *Intent) handleLoadingModalUpdate(msg tea.Msg) tea.Cmd {
 	if i.loadingModal == nil {
 		return nil
@@ -141,11 +143,14 @@ func (i *Intent) handleLoadingModalUpdate(msg tea.Msg) tea.Cmd {
 			i.cancelAsyncOperation()
 			return noopCmd
 		}
-		return i.loadingModal.Init()
+		// Consume other keys without restarting spinner ticks.
+		return noopCmd
 	case feedback.ModalSpinnerTickMsg:
+		// Forward tick to loading modal to advance spinner.
 		return i.loadingModal.Update(msg)
 	default:
-		return i.loadingModal.Init()
+		// Ignore unrelated messages while loading modal is active.
+		return noopCmd
 	}
 }
 

@@ -104,7 +104,7 @@ func Setup(t TestingT) *TestEnv {
 	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
@@ -146,7 +146,7 @@ func Setup(t TestingT) *TestEnv {
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	cleanup := func() {
-		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 		// This allows nested isolation without breaking suite-level isolation
 		config.SetConfigPathForTesting(prevConfigPath)
 		// Close database connection
@@ -199,7 +199,7 @@ func SetupShared() {
 		panic("failed to create temp dir: " + err.Error())
 	}
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	configPath := filepath.Join(sharedTmpDir, "config.yaml")
 	config.SetConfigPathForTesting(configPath)
 
@@ -238,7 +238,7 @@ func SetupShared() {
 	// Create application model
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
-	// BUG FIX: Set terminal dimensions to ensure modals render correctly.
+	// Set terminal dimensions to ensure modals render correctly.
 	// Without this, viewport calculations may use 0 height, showing only last lines.
 	model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
@@ -264,7 +264,7 @@ func CleanupShared() {
 	if sharedEnv != nil && sharedEnv.DB != nil {
 		_ = sharedEnv.DB.Close()
 	}
-	// BUG-007 FIX: Reset config path override
+	// Issue-007 fix: Reset config path override
 	config.ResetConfigPath()
 	if sharedTmpDir != "" {
 		_ = os.RemoveAll(sharedTmpDir)
@@ -385,7 +385,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
@@ -430,7 +430,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	cleanup := func() {
-		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 		config.SetConfigPathForTesting(prevConfigPath)
 		// Close database connection
 		if err := db.Close(); err != nil {
@@ -477,7 +477,7 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
@@ -516,7 +516,7 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		CLIService:   cliService,
 		Ctx:          ctx,
 		cleanup: func() {
-			// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+			// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 			config.SetConfigPathForTesting(prevConfigPath)
 			// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
 			_ = os.RemoveAll(tmpDir)

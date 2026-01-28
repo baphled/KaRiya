@@ -801,63 +801,92 @@ func TestLoadingModal_BoxIntegrity(t *testing.T) {
 
 	// Test at typical terminal width.
 	output := modal.Render(120, 40)
-
 	lines := strings.Split(output, "\n")
 
-	// Find lines with border characters (rounded border uses ╭╮╰╯│─).
-	var topBorderLine, bottomBorderLine int
-	topBorderLine = -1
-	bottomBorderLine = -1
+	// Find border lines.
+	topBorderLine, bottomBorderLine := findBorderLines(lines)
 
+	// Verify borders.
+	verifyTopBorder(t, lines, topBorderLine, output)
+	verifyBottomBorder(t, lines, bottomBorderLine, output)
+	verifySideBorders(t, lines, topBorderLine, bottomBorderLine)
+
+	// Verify message content is present.
+	verifyMessageContent(t, output)
+
+	// Log modal dimensions for debugging.
+	logModalDimensions(t, lines)
+}
+
+// findBorderLines locates the top and bottom border line indices.
+func findBorderLines(lines []string) (top, bottom int) {
+	top, bottom = -1, -1
 	for i, line := range lines {
 		if strings.Contains(line, "╭") && strings.Contains(line, "╮") {
-			topBorderLine = i
+			top = i
 		}
 		if strings.Contains(line, "╰") && strings.Contains(line, "╯") {
-			bottomBorderLine = i
+			bottom = i
 		}
 	}
+	return top, bottom
+}
 
-	// Verify top border is complete (has both corners).
+// verifyTopBorder checks that the top border is complete.
+func verifyTopBorder(t *testing.T, lines []string, topBorderLine int, output string) {
+	t.Helper()
 	if topBorderLine == -1 {
 		t.Error("Top border not found - modal box may be incomplete")
 		t.Logf("Modal output:\n%s", output)
-	} else {
-		topLine := lines[topBorderLine]
-		if !strings.Contains(topLine, "╭") || !strings.Contains(topLine, "╮") {
-			t.Errorf("Top border incomplete: %q", topLine)
-		}
+		return
 	}
+	topLine := lines[topBorderLine]
+	if !strings.Contains(topLine, "╭") || !strings.Contains(topLine, "╮") {
+		t.Errorf("Top border incomplete: %q", topLine)
+	}
+}
 
-	// Verify bottom border is complete (has both corners).
+// verifyBottomBorder checks that the bottom border is complete.
+func verifyBottomBorder(t *testing.T, lines []string, bottomBorderLine int, output string) {
+	t.Helper()
 	if bottomBorderLine == -1 {
 		t.Error("Bottom border not found - modal box may be incomplete")
 		t.Logf("Modal output:\n%s", output)
-	} else {
-		bottomLine := lines[bottomBorderLine]
-		if !strings.Contains(bottomLine, "╰") || !strings.Contains(bottomLine, "╯") {
-			t.Errorf("Bottom border incomplete: %q", bottomLine)
+		return
+	}
+	bottomLine := lines[bottomBorderLine]
+	if !strings.Contains(bottomLine, "╰") || !strings.Contains(bottomLine, "╯") {
+		t.Errorf("Bottom border incomplete: %q", bottomLine)
+	}
+}
+
+// verifySideBorders checks that all lines between borders have side borders.
+func verifySideBorders(t *testing.T, lines []string, topBorderLine, bottomBorderLine int) {
+	t.Helper()
+	if topBorderLine < 0 || bottomBorderLine <= topBorderLine {
+		return
+	}
+	for i := topBorderLine + 1; i < bottomBorderLine; i++ {
+		line := lines[i]
+		pipeCount := strings.Count(line, "│")
+		if pipeCount < 2 {
+			t.Errorf("Line %d missing side borders (found %d '│'): %q", i, pipeCount, line)
 		}
 	}
+}
 
-	// Verify all lines between borders have side borders.
-	if topBorderLine >= 0 && bottomBorderLine > topBorderLine {
-		for i := topBorderLine + 1; i < bottomBorderLine; i++ {
-			line := lines[i]
-			pipeCount := strings.Count(line, "│")
-			if pipeCount < 2 {
-				t.Errorf("Line %d missing side borders (found %d '│'): %q", i, pipeCount, line)
-			}
-		}
-	}
-
-	// Verify message content is present.
+// verifyMessageContent checks that the modal message is fully visible.
+func verifyMessageContent(t *testing.T, output string) {
+	t.Helper()
 	if !strings.Contains(output, "Detecting") || !strings.Contains(output, "burst") {
 		t.Error("Modal content appears truncated - message not fully visible")
 		t.Logf("Modal output:\n%s", output)
 	}
+}
 
-	// Log modal dimensions for debugging.
+// logModalDimensions logs the modal dimensions for debugging.
+func logModalDimensions(t *testing.T, lines []string) {
+	t.Helper()
 	maxWidth := 0
 	for _, line := range lines {
 		w := lipgloss.Width(line)

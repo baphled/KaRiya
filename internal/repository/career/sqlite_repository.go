@@ -289,12 +289,10 @@ func (r *SQLiteRepository) List(ctx context.Context, filters ListFilters) ([]*do
 		}
 	}
 
-	// Pagination: -1 means no limit, 0 defaults to 100.
+	// Pagination: 0 or -1 means no limit (consistent with other repositories).
+	// Callers that want default limits should set them explicitly.
 	limit := filters.Limit
-	if limit == 0 {
-		limit = 100 // Default limit
-	}
-	if limit < 0 {
+	if limit <= 0 {
 		// No limit - just add offset.
 		query += " LIMIT -1 OFFSET ?"
 		args = append(args, filters.Offset)
