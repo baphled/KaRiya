@@ -3,7 +3,7 @@ package burst_management
 import (
 	"fmt"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens/facts"
@@ -14,7 +14,7 @@ import (
 )
 
 // Ensure Intent implements ScreenResultHandler interface.
-var _ intents.ScreenResultHandler = (*Intent)(nil)
+var _ behaviors.ScreenResultHandler = (*Intent)(nil)
 
 // handleScreenResult processes a screen result and determines next action.
 func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
@@ -27,7 +27,7 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 		return nil
 	}
 
-	return intents.NewScreenResultDispatcher(i).Dispatch(screenResult)
+	return behaviors.NewScreenResultDispatcher(i).Dispatch(screenResult)
 }
 
 // HandleCancel handles screen cancellation (back/escape).

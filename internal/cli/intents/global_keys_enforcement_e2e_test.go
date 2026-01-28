@@ -1,7 +1,6 @@
 package intents
 
 import (
-	"context"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -224,9 +223,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
-					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
-				}),
+				// BrowseTimeline moved to browse_timeline subpackage - has own tests
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -264,9 +261,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
-					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
-				}),
+				// BrowseTimeline moved to browse_timeline subpackage - has own tests
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -288,8 +283,6 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					var baseIntent *BaseIntent
 					switch i := intent.(type) {
 					case *GenerateCVIntent:
-						baseIntent = i.BaseIntent
-					case *BrowseTimelineIntent:
 						baseIntent = i.BaseIntent
 					case *CaptureEventIntent:
 						baseIntent = i.BaseIntent
@@ -317,9 +310,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				Entry("BrowseTimeline", "BrowseTimeline", func() (Intent, error) {
-					return NewBrowseTimelineIntent(&BrowseTimelineContext{})
-				}),
+				// BrowseTimeline moved to browse_timeline subpackage - has own tests
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -391,21 +382,8 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 			})
 		})
 
-		Context("FactManagement - New vs Edit", func() {
-			It("should handle context-aware navigation", func() {
-				ctx := NewFactManagementContext(nil, context.Background())
-
-				intent := NewFactManagementIntent(ctx)
-				Expect(intent).NotTo(BeNil())
-				intent.Init()
-
-				// Test that escape from list (root) cancels
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				result := intent.Result()
-				Expect(result).NotTo(BeNil())
-			})
-		})
+		// FactManagement moved to fact_management subpackage - has own tests
+		// See: internal/cli/intents/fact_management/intent_test.go
 	})
 
 	// =========================================================================
