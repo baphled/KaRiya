@@ -57,11 +57,7 @@ func executeBatchCommands(batchMsg tea.BatchMsg) []tea.Msg {
 		}(batchCmd)
 	}
 
-	return waitForBatchCompletion(&wg, messages)
-}
-
-// waitForBatchCompletion waits for all goroutines with a timeout.
-func waitForBatchCompletion(wg *sync.WaitGroup, messages []tea.Msg) []tea.Msg {
+	// Wait for all goroutines to complete with timeout.
 	done := make(chan struct{})
 	go func() {
 		wg.Wait()
@@ -70,10 +66,12 @@ func waitForBatchCompletion(wg *sync.WaitGroup, messages []tea.Msg) []tea.Msg {
 
 	select {
 	case <-done:
-		return messages
+		// All goroutines completed, messages slice is now populated.
 	case <-time.After(5 * time.Second):
-		return messages
+		// Timeout - return what we have.
 	}
+
+	return messages
 }
 
 // filterTickMessage returns the message if it's not a spinner tick.
@@ -2012,7 +2010,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Press 's' to start detection.
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
-			Expect(cmd).NotTo(BeNil())
+			Expect(cmd).NotTo(BeNil(), "Command should not be nil - 's' key should trigger startBurstDetection")
 
 			// Execute the command to get the message (handles batch commands).
 			msg := executeAsyncCmd(cmd)
