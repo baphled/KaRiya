@@ -173,8 +173,11 @@ func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		case "G":
 			s.tableBehavior.HandleNavigation("end")
 			return nil, nil
+		}
 
-		case "enter":
+		// Handle special keys by type.
+		switch msg.Type {
+		case tea.KeyEnter:
 			// View burst details.
 			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
@@ -182,6 +185,10 @@ func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 				}
 			}
 			return nil, nil
+		}
+
+		// Handle action keys.
+		switch msg.String() {
 
 		case "a":
 			// Add new burst.

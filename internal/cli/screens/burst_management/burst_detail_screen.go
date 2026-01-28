@@ -72,11 +72,16 @@ func (s *BurstDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		return nil, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc", "backspace":
-			// Back to burst list
-			// Note: 'q' (quit) is handled by the intent before delegation
+		// Handle special keys by type.
+		switch msg.Type {
+		case tea.KeyEsc, tea.KeyBackspace:
+			// Back to burst list.
+			// Note: 'q' (quit) is handled by the intent before delegation.
 			return nil, &screens.CancelResult{}
+		}
+
+		// Handle rune-based keys.
+		switch msg.String() {
 
 		case "v":
 			// View events in burst

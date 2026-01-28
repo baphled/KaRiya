@@ -252,7 +252,10 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 					).WithVariant(feedback.ConfirmDefault)
 				}
 				return i.confirmModal.Init()
-			case "esc", "enter":
+			}
+			// Handle special keys by type.
+			switch keyMsg.Type {
+			case tea.KeyEsc, tea.KeyEnter:
 				// Close detail modal.
 				i.detailModal = nil
 				return noopCmd
@@ -265,7 +268,7 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 
 	// Events modal.
 	if i.eventsModal != nil && i.eventsModal.IsVisible() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.String() == "esc" || keyMsg.String() == "enter") {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter) {
 			// Close events modal and show detail modal again.
 			i.eventsModal = nil
 			if i.selectedBurst != nil {
@@ -280,7 +283,7 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 
 	// Facts modal.
 	if i.factsModal != nil && i.factsModal.IsVisible() {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.String() == "esc" || keyMsg.String() == "enter") {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && (keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter) {
 			// Close facts modal and show detail modal again.
 			i.factsModal = nil
 			if i.selectedBurst != nil {

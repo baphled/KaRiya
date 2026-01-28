@@ -322,7 +322,7 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 	if i.state.submitModal != nil {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
-			if msg.String() == "esc" {
+			if msg.Type == tea.KeyEsc {
 				// Dismiss error modal and stay in current state
 				i.state.submitModal = nil
 				return nil
