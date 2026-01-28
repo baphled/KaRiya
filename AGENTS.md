@@ -149,6 +149,61 @@ func (s *MyScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 ```
 
+### Keyboard Handling (MANDATORY)
+
+**ALWAYS use `tea.Key*` constants for special keys** - never use string comparison for special keys.
+
+```go
+// GOOD - Use tea.Key* constants for special keys
+switch msg.Type {
+case tea.KeyEsc:
+    return nil, &screens.CancelResult{}
+case tea.KeyUp:
+    s.table.HandleNavigation("up")
+case tea.KeyDown:
+    s.table.HandleNavigation("down")
+case tea.KeyPgDown:
+    s.table.HandleNavigation("pgdn")  // Note: pgdn not pgdown
+case tea.KeyPgUp:
+    s.table.HandleNavigation("pgup")
+case tea.KeyHome:
+    s.table.HandleNavigation("home")
+case tea.KeyEnd:
+    s.table.HandleNavigation("end")
+case tea.KeyCtrlD:
+    s.table.HandleNavigation("ctrl+d")
+case tea.KeyCtrlU:
+    s.table.HandleNavigation("ctrl+u")
+case tea.KeyEnter:
+    // Handle enter
+case tea.KeyBackspace:
+    // Handle backspace
+}
+
+// String comparison ONLY for vim keys and runes
+switch msg.String() {
+case "j":
+    s.table.HandleNavigation("down")
+case "k":
+    s.table.HandleNavigation("up")
+case "g":
+    s.table.HandleNavigation("home")
+case "G":
+    s.table.HandleNavigation("end")
+case "q":
+    // Quit
+}
+
+// BAD - String comparison for special keys (will fail for some keys)
+switch msg.String() {
+case "esc":        // Use tea.KeyEsc instead
+case "pgdown":     // Use tea.KeyPgDown instead (also: pgdown != pgdn)
+case "up", "down": // Use tea.KeyUp, tea.KeyDown instead
+}
+```
+
+**Why**: `msg.String()` returns inconsistent values for special keys across terminals. `tea.Key*` constants work reliably everywhere.
+
 ### Modal Requirements
 
 All modals MUST:

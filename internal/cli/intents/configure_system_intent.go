@@ -291,8 +291,8 @@ func (c *ConfigureSystemIntent) updateSavingModal(msg tea.Msg) tea.Cmd {
 		return c.savingModal.Update(msg)
 
 	default:
-		// For any other message, ensure spinner tick is running.
-		return c.savingModal.Init()
+		// Ignore unrelated messages while saving.
+		return nil
 	}
 }
 

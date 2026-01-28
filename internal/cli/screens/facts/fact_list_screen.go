@@ -4,6 +4,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -98,15 +99,51 @@ func (s *FactListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return nil, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc", "backspace":
-			// Back to previous screen
-			// Note: 'q' (quit) is handled by the intent before delegation
+		// Handle special keys by type (use tea.Key* constants).
+		switch msg.Type {
+		case tea.KeyEsc, tea.KeyBackspace:
+			// Back to previous screen.
+			// Note: 'q' (quit) is handled by the intent before delegation.
 			return nil, &screens.CancelResult{}
+		case tea.KeyUp:
+			s.tableBehavior.HandleNavigation("up")
+			return nil, nil
+		case tea.KeyDown:
+			s.tableBehavior.HandleNavigation("down")
+			return nil, nil
+		case tea.KeyPgDown:
+			s.tableBehavior.HandleNavigation("pgdn")
+			return nil, nil
+		case tea.KeyPgUp:
+			s.tableBehavior.HandleNavigation("pgup")
+			return nil, nil
+		case tea.KeyHome:
+			s.tableBehavior.HandleNavigation("home")
+			return nil, nil
+		case tea.KeyEnd:
+			s.tableBehavior.HandleNavigation("end")
+			return nil, nil
+		case tea.KeyCtrlD:
+			s.tableBehavior.HandleNavigation("ctrl+d")
+			return nil, nil
+		case tea.KeyCtrlU:
+			s.tableBehavior.HandleNavigation("ctrl+u")
+			return nil, nil
+		}
 
-		case "up", "k", "down", "j", "ctrl+d", "ctrl+u", "pgup", "pgdown", "home", "end", "g", "G":
-			// Delegate navigation to TableBehavior
-			s.tableBehavior.HandleNavigation(msg.String())
+		// Handle vim-style keys (rune-based).
+		switch msg.String() {
+		case "k":
+			s.tableBehavior.HandleNavigation("up")
+			return nil, nil
+		case "j":
+			s.tableBehavior.HandleNavigation("down")
+			return nil, nil
+		case "g":
+			s.tableBehavior.HandleNavigation("home")
+			return nil, nil
+		case "G":
+			s.tableBehavior.HandleNavigation("end")
 			return nil, nil
 		}
 	}
@@ -129,6 +166,8 @@ func (s *FactListScreen) View() string {
 // SetTheme sets the theme for the screen and its table behavior.
 func (s *FactListScreen) SetTheme(theme interface{}) {
 	s.BaseScreen.SetTheme(theme)
-	// TableBehavior theme is set via its own SetTheme method when rendering
-	// The theme is passed during rendering, not stored
+	// Propagate theme to TableBehavior for consistent styling.
+	if t, ok := theme.(themes.Theme); ok && t != nil {
+		s.tableBehavior.SetTheme(t)
+	}
 }

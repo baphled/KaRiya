@@ -327,20 +327,17 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 				i.state.submitModal = nil
 				return nil
 			}
-			// Other keys: start spinner tick and consume message (for loading modals).
-			if i.state.submitModal.Type == feedback.ModalLoading {
-				return i.state.submitModal.Init()
-			}
+			// Consume other keys while modal is visible without restarting spinner ticks.
+			return nil
 		case feedback.ModalSpinnerTickMsg:
 			// Forward tick to loading modal to advance spinner.
 			if i.state.submitModal.Type == feedback.ModalLoading {
 				return i.state.submitModal.Update(msg)
 			}
+			return nil
 		default:
-			// For any other message, ensure spinner tick is running for loading modals.
-			if i.state.submitModal.Type == feedback.ModalLoading {
-				return i.state.submitModal.Init()
-			}
+			// For any other message while the modal is visible, do not re-init the spinner.
+			return nil
 		}
 	}
 

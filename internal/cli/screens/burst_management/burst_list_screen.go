@@ -128,14 +128,50 @@ func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return nil, nil
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		// Handle special keys by type (use tea.Key* constants).
+		switch msg.Type {
+		case tea.KeyEsc:
 			// Cancel and return to main menu.
 			return nil, &screens.CancelResult{}
+		case tea.KeyUp:
+			s.tableBehavior.HandleNavigation("up")
+			return nil, nil
+		case tea.KeyDown:
+			s.tableBehavior.HandleNavigation("down")
+			return nil, nil
+		case tea.KeyPgDown:
+			s.tableBehavior.HandleNavigation("pgdn")
+			return nil, nil
+		case tea.KeyPgUp:
+			s.tableBehavior.HandleNavigation("pgup")
+			return nil, nil
+		case tea.KeyHome:
+			s.tableBehavior.HandleNavigation("home")
+			return nil, nil
+		case tea.KeyEnd:
+			s.tableBehavior.HandleNavigation("end")
+			return nil, nil
+		case tea.KeyCtrlD:
+			s.tableBehavior.HandleNavigation("ctrl+d")
+			return nil, nil
+		case tea.KeyCtrlU:
+			s.tableBehavior.HandleNavigation("ctrl+u")
+			return nil, nil
+		}
 
-		case "up", "k", "down", "j", "ctrl+d", "ctrl+u", "pgup", "pgdown", "home", "end", "g", "G":
-			// Delegate navigation to TableBehavior.
-			s.tableBehavior.HandleNavigation(msg.String())
+		// Handle vim-style and action keys (rune-based).
+		switch msg.String() {
+		case "k":
+			s.tableBehavior.HandleNavigation("up")
+			return nil, nil
+		case "j":
+			s.tableBehavior.HandleNavigation("down")
+			return nil, nil
+		case "g":
+			s.tableBehavior.HandleNavigation("home")
+			return nil, nil
+		case "G":
+			s.tableBehavior.HandleNavigation("end")
 			return nil, nil
 
 		case "enter":
