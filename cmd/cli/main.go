@@ -106,11 +106,15 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		return 0
 	}
 
-	// Set up repository
+	// Set up repository and service
 	var repo career.Repository
+	var svc *careerservice.Service
 
 	if inMemory {
 		repo = career.NewMemoryRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetFactRepository(career.NewMemoryFactRepository())
+		svc.SetBurstRepository(career.NewMemoryBurstRepository())
 	} else {
 		if dbPath == "" {
 			homeDir, err := os.UserHomeDir()
@@ -140,36 +144,17 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			return 1
 		}
 
-		// Create repository with existing connection
-		repo = career.NewSQLiteRepositoryWithDB(db)
-	}
-
-	svc := careerservice.NewService(repo)
-
-	// Initialize fact and burst repositories
-	if inMemory {
-		// Use in-memory repositories for facts and bursts
-		factRepo := career.NewMemoryFactRepository()
-		svc.SetFactRepository(factRepo)
-
-		burstRepo := career.NewMemoryBurstRepository()
-		svc.SetBurstRepository(burstRepo)
-	} else {
-		// Use SQLite repositories for facts and bursts (migrations already run)
-		sqliteRepo, ok := repo.(*career.SQLiteRepository)
-		if ok && sqliteRepo != nil {
-			db := sqliteRepo.GetDB()
-
-			// Use the *WithDB constructors since migrations are already applied
-			factRepo := career.NewSQLiteFactRepositoryWithDB(db)
-			svc.SetFactRepository(factRepo)
-
-			burstRepo := career.NewSQLiteBurstRepositoryWithDB(db)
-			svc.SetBurstRepository(burstRepo)
-
-			skillRepo := career.NewSQLiteSkillRepositoryWithDB(db)
-			svc.SetSkillRepository(skillRepo)
+		// Create GORM repositories from existing connection
+		repos, err := career.NewRepositoriesFromSQL(db)
+		if err != nil {
+			fmt.Fprintf(errOut, "Error initializing GORM repositories: %v\n", err)
+			return 1
 		}
+		repo = repos.Event
+		svc = careerservice.NewService(repo)
+		svc.SetFactRepository(repos.Fact)
+		svc.SetBurstRepository(repos.Burst)
+		svc.SetSkillRepository(repos.Skill)
 	}
 
 	cliSvc := cliservice.NewCLIEventService(svc)

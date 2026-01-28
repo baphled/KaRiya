@@ -1,0 +1,214 @@
+// Package career provides repository implementations for career domain entities.
+package career
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/repository/models"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+// Compile-time interface check.
+var _ Repository = (*Event)(nil)
+
+// Event implements Repository using GORM.
+type Event struct {
+	db *gorm.DB
+}
+
+// NewEvent creates a new event repository.
+func NewEvent(db *gorm.DB) *Event {
+	return &Event{db: db}
+}
+
+// Create adds a new career event to the database.
+func (r *Event) Create(ctx context.Context, event *career.CareerEvent) error {
+	if event.ID == "" {
+		event.ID = uuid.New().String()
+	}
+
+	now := time.Now()
+	event.CreatedAt = now
+	event.UpdatedAt = now
+
+	model := models.EventFromDomain(event)
+	if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
+		return err
+	}
+
+	// Save skill associations.
+	if err := r.saveSkillAssociations(ctx, event.ID, event.Skills); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetByID retrieves a career event by its ID.
+func (r *Event) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+	var model models.Event
+	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrEventNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	event := model.ToDomain()
+
+	// Load skill IDs.
+	skillIDs, err := r.loadSkillIDs(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	event.Skills = skillIDs
+
+	return event, nil
+}
+
+// Update modifies an existing career event.
+func (r *Event) Update(ctx context.Context, event *career.CareerEvent) error {
+	// Check if record exists first.
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.Event{}).Where("id = ?", event.ID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		return ErrEventNotFound
+	}
+
+	event.UpdatedAt = time.Now()
+	model := models.EventFromDomain(event)
+	if err := r.db.WithContext(ctx).Save(model).Error; err != nil {
+		return err
+	}
+
+	// Update skill associations.
+	if err := r.saveSkillAssociations(ctx, event.ID, event.Skills); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Delete removes a career event from the database.
+func (r *Event) Delete(ctx context.Context, id string) error {
+	result := r.db.WithContext(ctx).Delete(&models.Event{}, "id = ?", id)
+	if result.RowsAffected == 0 {
+		return ErrEventNotFound
+	}
+	return result.Error
+}
+
+// List retrieves career events with optional filtering.
+func (r *Event) List(ctx context.Context, filters ListFilters) ([]*career.CareerEvent, error) {
+	query := r.db.WithContext(ctx).Model(&models.Event{})
+	query = r.applyFilters(query, filters)
+	query = r.applySorting(query, filters)
+	query = r.applyPagination(query, filters)
+
+	var results []models.Event
+	if err := query.Find(&results).Error; err != nil {
+		return nil, err
+	}
+
+	events := make([]*career.CareerEvent, len(results))
+	for i, m := range results {
+		events[i] = m.ToDomain()
+
+		// Load skill IDs for each event.
+		skillIDs, err := r.loadSkillIDs(ctx, m.ID)
+		if err != nil {
+			return nil, err
+		}
+		events[i].Skills = skillIDs
+	}
+	return events, nil
+}
+
+// Count returns the number of events matching the given filters.
+func (r *Event) Count(ctx context.Context, filters ListFilters) (int, error) {
+	query := r.db.WithContext(ctx).Model(&models.Event{})
+	query = r.applyFilters(query, filters)
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (r *Event) applyFilters(query *gorm.DB, filters ListFilters) *gorm.DB {
+	// Tag filtering.
+	if len(filters.Tags) > 0 {
+		for _, tag := range filters.Tags {
+			query = query.Where("tags LIKE ?", "%"+tag+"%")
+		}
+	}
+
+	// Date range filtering.
+	if filters.StartDate != nil {
+		query = query.Where("date >= ?", filters.StartDate)
+	}
+	if filters.EndDate != nil {
+		query = query.Where("date <= ?", filters.EndDate)
+	}
+
+	return query
+}
+
+func (r *Event) applySorting(query *gorm.DB, filters ListFilters) *gorm.DB {
+	order := "ASC"
+	if filters.SortOrder == "desc" {
+		order = "DESC"
+	}
+
+	switch filters.SortBy {
+	case "date":
+		return query.Order("date " + order + ", created_at " + order)
+	default:
+		return query.Order("created_at " + order)
+	}
+}
+
+func (r *Event) applyPagination(query *gorm.DB, filters ListFilters) *gorm.DB {
+	limit := filters.Limit
+	if limit == 0 {
+		limit = 100 // Default limit.
+	}
+	return query.Limit(limit).Offset(filters.Offset)
+}
+
+func (r *Event) saveSkillAssociations(ctx context.Context, eventID string, skillIDs []string) error {
+	// Delete existing associations.
+	if err := r.db.WithContext(ctx).Exec("DELETE FROM event_skills WHERE event_id = ?", eventID).Error; err != nil {
+		return err
+	}
+
+	// Insert new associations.
+	for _, skillID := range skillIDs {
+		if err := r.db.WithContext(ctx).Exec(
+			"INSERT INTO event_skills (event_id, skill_id) VALUES (?, ?)",
+			eventID, skillID,
+		).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *Event) loadSkillIDs(ctx context.Context, eventID string) ([]string, error) {
+	var ids []string
+	err := r.db.WithContext(ctx).
+		Table("event_skills").
+		Where("event_id = ?", eventID).
+		Order("skill_id").
+		Pluck("skill_id", &ids).Error
+	return ids, err
+}

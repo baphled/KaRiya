@@ -2,7 +2,6 @@ package cv
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -23,10 +22,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		log          *logger.Logger
 		ctx          context.Context
 		tempDir      string
-		dbPath       string
-		eventRepo    *careerrepo.SQLiteRepository
-		factRepo     *careerrepo.SQLiteFactRepository
-		db           *sql.DB
+		repos        *careerrepo.Repositories
 		cvGenService CVGenerationService
 	)
 
@@ -39,16 +35,10 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		tempDir, err = os.MkdirTemp("", "kariya-cv-integration-test-")
 		Expect(err).NotTo(HaveOccurred())
 
-		dbPath = filepath.Join(tempDir, "test_events.db")
+		dbPath := filepath.Join(tempDir, "test_events.db")
 
-		// Create the repositories
-		eventRepo, err = careerrepo.NewSQLiteRepository(dbPath)
-		Expect(err).NotTo(HaveOccurred())
-
-		db, err = sql.Open("sqlite", dbPath)
-		Expect(err).NotTo(HaveOccurred())
-
-		factRepo, err = careerrepo.NewSQLiteFactRepository(db)
+		// Create ORM repositories
+		repos, err = careerrepo.NewRepositoriesFromPath(dbPath)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Create CV services with role-based scoring.
@@ -58,8 +48,8 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		dataProcessor := NewDataProcessingService(log)
 
 		cvGenService = NewCVGenerationService(
-			eventRepo,
-			factRepo,
+			repos.Event,
+			repos.Fact,
 			configManager,
 			bulletGenerator,
 			dataProcessor,
@@ -69,11 +59,8 @@ var _ = Describe("CV Generation Integration Tests", func() {
 	})
 
 	AfterEach(func() {
-		if eventRepo != nil {
-			eventRepo.Close()
-		}
-		if db != nil {
-			db.Close()
+		if repos != nil {
+			repos.Close()
 		}
 		if tempDir != "" {
 			os.RemoveAll(tempDir)
@@ -91,7 +78,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 				Company:    "Test Company",
 				Categories: []string{category},
 			}
-			err := eventRepo.Create(ctx, event)
+			err := repos.Event.Create(ctx, event)
 			Expect(err).NotTo(HaveOccurred())
 			events[i] = event
 		}
@@ -160,7 +147,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedTestEvents(2, "leadership")
 
 			// Retrieve all events first
-			allEvents, err := eventRepo.List(ctx, careerrepo.ListFilters{})
+			allEvents, err := repos.Event.List(ctx, careerrepo.ListFilters{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(allEvents)).To(Equal(7))
 
@@ -308,7 +295,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 					event.Tags = []string{"technical", "project"}
 					event.Categories = []string{"technical"}
 					event.Date = time.Now().AddDate(0, 0, -i)
-					err := eventRepo.Create(ctx, event)
+					err := repos.Event.Create(ctx, event)
 					Expect(err).NotTo(HaveOccurred())
 					events[i] = event
 				}
@@ -350,7 +337,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedMultiCompanyEvents(companies, 10)
 
 			// Verify all events were created
-			allEvents, err := eventRepo.List(ctx, careerrepo.ListFilters{})
+			allEvents, err := repos.Event.List(ctx, careerrepo.ListFilters{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(allEvents)).To(Equal(50))
 

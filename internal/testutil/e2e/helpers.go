@@ -59,11 +59,11 @@ type TestEnv struct {
 	// DBPath is the path to the SQLite database file
 	DBPath string
 
-	// Repositories (SQLite versions)
-	EventRepo *careerrepo.SQLiteRepository
-	BurstRepo *careerrepo.SQLiteBurstRepository
-	FactRepo  *careerrepo.SQLiteFactRepository
-	SkillRepo *careerrepo.SQLiteSkillRepository
+	// Repositories (interface types for flexibility)
+	EventRepo careerrepo.Repository
+	BurstRepo careerrepo.BurstRepository
+	FactRepo  careerrepo.FactRepository
+	SkillRepo careerrepo.SkillRepository
 
 	// Memory repositories (for fast tests)
 	MemEventRepo *careerrepo.MemoryRepository
@@ -123,17 +123,19 @@ func Setup(t TestingT) *TestEnv {
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
-	// Create repositories with SQLite
-	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(db)
-	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(db)
-	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(db)
-	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(db)
+	// Create GORM repositories
+	repos, err := careerrepo.NewRepositoriesFromSQL(db)
+	if err != nil {
+		config.SetConfigPathForTesting(prevConfigPath)
+		_ = db.Close()
+		t.Fatalf("failed to create GORM repositories: %v", err)
+	}
 
 	// Create service
-	svc := careerservice.NewService(eventRepo)
-	svc.SetBurstRepository(burstRepo)
-	svc.SetFactRepository(factRepo)
-	svc.SetSkillRepository(skillRepo)
+	svc := careerservice.NewService(repos.Event)
+	svc.SetBurstRepository(repos.Burst)
+	svc.SetFactRepository(repos.Fact)
+	svc.SetSkillRepository(repos.Skill)
 
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
@@ -168,10 +170,10 @@ func Setup(t TestingT) *TestEnv {
 		Model:      model,
 		DB:         db,
 		DBPath:     dbPath,
-		EventRepo:  eventRepo,
-		BurstRepo:  burstRepo,
-		FactRepo:   factRepo,
-		SkillRepo:  skillRepo,
+		EventRepo:  repos.Event,
+		BurstRepo:  repos.Burst,
+		FactRepo:   repos.Fact,
+		SkillRepo:  repos.Skill,
 		Service:    svc,
 		CLIService: cliService,
 		Ctx:        ctx,
@@ -216,17 +218,18 @@ func SetupShared() {
 		panic("failed to run migrations: " + err.Error())
 	}
 
-	// Create repositories
-	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(db)
-	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(db)
-	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(db)
-	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(db)
+	// Create ORM repositories
+	repos, err := careerrepo.NewRepositoriesFromSQL(db)
+	if err != nil {
+		_ = db.Close()
+		panic("failed to create repositories: " + err.Error())
+	}
 
 	// Create service
-	svc := careerservice.NewService(eventRepo)
-	svc.SetBurstRepository(burstRepo)
-	svc.SetFactRepository(factRepo)
-	svc.SetSkillRepository(skillRepo)
+	svc := careerservice.NewService(repos.Event)
+	svc.SetBurstRepository(repos.Burst)
+	svc.SetFactRepository(repos.Fact)
+	svc.SetSkillRepository(repos.Skill)
 
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
@@ -247,10 +250,10 @@ func SetupShared() {
 		Model:      model,
 		DB:         db,
 		DBPath:     dbPath,
-		EventRepo:  eventRepo,
-		BurstRepo:  burstRepo,
-		FactRepo:   factRepo,
-		SkillRepo:  skillRepo,
+		EventRepo:  repos.Event,
+		BurstRepo:  repos.Burst,
+		FactRepo:   repos.Fact,
+		SkillRepo:  repos.Skill,
 		Service:    svc,
 		CLIService: cliService,
 		Ctx:        context.Background(),
@@ -406,17 +409,20 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
-	// Create repositories with SQLite
-	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(db)
-	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(db)
-	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(db)
-	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(db)
+	// Create ORM repositories
+	repos, err := careerrepo.NewRepositoriesFromSQL(db)
+	if err != nil {
+		config.SetConfigPathForTesting(prevConfigPath)
+		_ = db.Close()
+		_ = os.RemoveAll(tmpDir)
+		t.Fatalf("failed to create repositories: %v", err)
+	}
 
 	// Create service
-	svc := careerservice.NewService(eventRepo)
-	svc.SetBurstRepository(burstRepo)
-	svc.SetFactRepository(factRepo)
-	svc.SetSkillRepository(skillRepo)
+	svc := careerservice.NewService(repos.Event)
+	svc.SetBurstRepository(repos.Burst)
+	svc.SetFactRepository(repos.Fact)
+	svc.SetSkillRepository(repos.Skill)
 
 	// Create CLI service
 	cliService := service.NewCLIEventService(svc)
@@ -451,10 +457,10 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 		Model:      model,
 		DB:         db,
 		DBPath:     dbPath,
-		EventRepo:  eventRepo,
-		BurstRepo:  burstRepo,
-		FactRepo:   factRepo,
-		SkillRepo:  skillRepo,
+		EventRepo:  repos.Event,
+		BurstRepo:  repos.Burst,
+		FactRepo:   repos.Fact,
+		SkillRepo:  repos.Skill,
 		Service:    svc,
 		CLIService: cliService,
 		Ctx:        ctx,
@@ -971,11 +977,15 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 		e.T.Fatal("SimulateRestart requires SQLite persistence (use Setup, not SetupWithMemory)")
 	}
 
-	// Create new repositories pointing to the same database
-	eventRepo := careerrepo.NewSQLiteRepositoryWithDB(e.DB)
-	burstRepo := careerrepo.NewSQLiteBurstRepositoryWithDB(e.DB)
-	factRepo := careerrepo.NewSQLiteFactRepositoryWithDB(e.DB)
-	skillRepo := careerrepo.NewSQLiteSkillRepositoryWithDB(e.DB)
+	// Create new repositories pointing to the same database using ORM
+	repos, err := careerrepo.NewRepositoriesFromSQL(e.DB)
+	if err != nil {
+		e.T.Fatalf("failed to create repositories: %v", err)
+	}
+	eventRepo := repos.Event
+	burstRepo := repos.Burst
+	factRepo := repos.Fact
+	skillRepo := repos.Skill
 
 	// Create new service
 	svc := careerservice.NewService(eventRepo)

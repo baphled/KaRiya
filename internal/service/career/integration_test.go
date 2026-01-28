@@ -18,8 +18,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 		service *Service
 		ctx     context.Context
 		tempDir string
-		dbPath  string
-		sqlRepo *repo.SQLiteRepository
+		repos   *repo.Repositories
 	)
 
 	BeforeEach(func() {
@@ -28,21 +27,21 @@ var _ = Describe("Career Service Integration Tests", func() {
 		tempDir, err = os.MkdirTemp("", "kariya-service-test-")
 		Expect(err).NotTo(HaveOccurred())
 
-		// Create SQLite repository
-		dbPath = filepath.Join(tempDir, "test_events.db")
-		sqlRepo, err = repo.NewSQLiteRepository(dbPath)
+		// Create ORM repositories
+		dbPath := filepath.Join(tempDir, "test_events.db")
+		repos, err = repo.NewRepositoriesFromPath(dbPath)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Create service with the repository
-		service = NewService(sqlRepo)
+		service = NewService(repos.Event)
 
 		ctx = context.Background()
 	})
 
 	AfterEach(func() {
 		// Clean up: close repository and remove temporary files
-		if sqlRepo != nil {
-			sqlRepo.Close()
+		if repos != nil {
+			repos.Close()
 		}
 		os.RemoveAll(tempDir)
 	})

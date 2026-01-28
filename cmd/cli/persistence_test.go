@@ -14,21 +14,21 @@ import (
 )
 
 var _ = Describe("Data Persistence", func() {
-	Context("when capturing events with SQLite", func() {
+	Context("when capturing events with ORM repository", func() {
 		It("should persist events to SQLite database", func() {
 			// Create a temporary database
 			tmpDir := GinkgoT().TempDir()
 			dbPath := filepath.Join(tmpDir, "test-events.db")
 
-			// Create SQLite repository
-			repo, err := careerrepo.NewSQLiteRepository(dbPath)
+			// Create ORM repositories
+			repos, err := careerrepo.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
-				repo.Close()
+				repos.Close()
 			})
 
 			// Create service
-			svc := careerservice.NewService(repo)
+			svc := careerservice.NewService(repos.Event)
 			cliSvc := service.NewCLIEventService(svc)
 
 			// Capture an event
@@ -55,19 +55,19 @@ var _ = Describe("Data Persistence", func() {
 			Expect(events[0].Tags).To(ContainElements("technical", "leadership"))
 		})
 
-		It("should survive application restart with SQLite", func() {
+		It("should survive application restart with ORM repository", func() {
 			// Create a temporary database
 			tmpDir := GinkgoT().TempDir()
 			dbPath := filepath.Join(tmpDir, "persistent-events.db")
 
 			// Create first repository instance and add event
-			repo1, err := careerrepo.NewSQLiteRepository(dbPath)
+			repos1, err := careerrepo.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
-				repo1.Close()
+				repos1.Close()
 			})
 
-			svc1 := careerservice.NewService(repo1)
+			svc1 := careerservice.NewService(repos1.Event)
 			cliSvc1 := service.NewCLIEventService(svc1)
 
 			ctx := context.Background()
@@ -88,14 +88,17 @@ var _ = Describe("Data Persistence", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events1).To(HaveLen(1))
 
+			// Close first instance
+			repos1.Close()
+
 			// Create second repository instance pointing to same database
-			repo2, err := careerrepo.NewSQLiteRepository(dbPath)
+			repos2, err := careerrepo.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
-				repo2.Close()
+				repos2.Close()
 			})
 
-			svc2 := careerservice.NewService(repo2)
+			svc2 := careerservice.NewService(repos2.Event)
 
 			// Verify event persists across instances
 			events2, err := svc2.ListEvents(ctx, careerrepo.ListFilters{})
@@ -110,17 +113,17 @@ var _ = Describe("Data Persistence", func() {
 			tmpDir := GinkgoT().TempDir()
 			dbPath := filepath.Join(tmpDir, "custom-location.db")
 
-			// Create SQLite repository at custom path
-			repo, err := careerrepo.NewSQLiteRepository(dbPath)
+			// Create ORM repository at custom path
+			repos, err := careerrepo.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
-				repo.Close()
+				repos.Close()
 			})
 
 			// Verify database file was created
 			Expect(dbPath).To(BeAnExistingFile())
 
-			svc := careerservice.NewService(repo)
+			svc := careerservice.NewService(repos.Event)
 			cliSvc := service.NewCLIEventService(svc)
 
 			ctx := context.Background()

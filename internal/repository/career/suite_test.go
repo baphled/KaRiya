@@ -2,8 +2,6 @@ package career
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -21,65 +19,6 @@ func TestCareerRepositorySuite(t *testing.T) {
 }
 
 var _ = Describe("Repository Test Suite", func() {
-	// SQLite Repository Tests
-	Context("SQLite Repository", func() {
-		var (
-			repo    *SQLiteRepository
-			cleanup func()
-			ctx     context.Context
-		)
-
-		BeforeEach(func() {
-			// Create a temporary directory
-			tempDir, err := os.MkdirTemp("", "kariya-sqlite-test-")
-			Expect(err).NotTo(HaveOccurred())
-
-			// Create a temporary database path
-			dbPath := filepath.Join(tempDir, "test_events.db")
-
-			// Create SQLite repository
-			repo, err = NewSQLiteRepository(dbPath)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Cleanup function to remove temporary files
-			cleanup = func() {
-				repo.Close()
-				os.RemoveAll(tempDir)
-			}
-
-			ctx = context.Background()
-		})
-
-		AfterEach(func() {
-			cleanup()
-		})
-
-		Describe("Create Event", func() {
-			It("should create an event and retrieve it successfully", func() {
-				event := &career.CareerEvent{
-					Text:    "Test Career Event",
-					Date:    time.Now(),
-					Tags:    []string{"project", "technical"},
-					Company: "Test Company",
-				}
-
-				// Create event
-				err := repo.Create(ctx, event)
-				Expect(err).NotTo(HaveOccurred())
-
-				// Retrieve event
-				retrievedEvent, err := repo.GetByID(ctx, event.ID)
-				Expect(err).NotTo(HaveOccurred())
-
-				// Validate retrieved event
-				Expect(retrievedEvent.Text).To(Equal(event.Text))
-				Expect(retrievedEvent.Date.Unix()).To(Equal(event.Date.Unix()))
-				Expect(retrievedEvent.Tags).To(Equal(event.Tags))
-				Expect(retrievedEvent.Company).To(Equal(event.Company))
-			})
-		})
-	})
-
 	// Memory Repository Integration Tests
 	Context("Memory Repository Integration", func() {
 		var (
