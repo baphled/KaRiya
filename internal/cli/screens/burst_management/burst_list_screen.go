@@ -128,105 +128,116 @@ func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return nil, nil
 
 	case tea.KeyMsg:
-		// Handle special keys by type (use tea.Key* constants).
-		switch msg.Type {
-		case tea.KeyEsc:
-			// Cancel and return to main menu.
-			return nil, &screens.CancelResult{}
-		case tea.KeyUp:
-			s.tableBehavior.HandleNavigation("up")
-			return nil, nil
-		case tea.KeyDown:
-			s.tableBehavior.HandleNavigation("down")
-			return nil, nil
-		case tea.KeyPgDown:
-			s.tableBehavior.HandleNavigation("pgdn")
-			return nil, nil
-		case tea.KeyPgUp:
-			s.tableBehavior.HandleNavigation("pgup")
-			return nil, nil
-		case tea.KeyHome:
-			s.tableBehavior.HandleNavigation("home")
-			return nil, nil
-		case tea.KeyEnd:
-			s.tableBehavior.HandleNavigation("end")
-			return nil, nil
-		case tea.KeyCtrlD:
-			s.tableBehavior.HandleNavigation("ctrl+d")
-			return nil, nil
-		case tea.KeyCtrlU:
-			s.tableBehavior.HandleNavigation("ctrl+u")
-			return nil, nil
+		return s.handleKeyMsg(msg)
+	}
+
+	return nil, nil
+}
+
+// handleKeyMsg processes all keyboard input for the list screen.
+func (s *BurstListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	// Handle special keys by type (use tea.Key* constants).
+	if result := s.handleSpecialKey(msg); result != nil {
+		return nil, result
+	}
+
+	// Handle navigation keys.
+	if s.handleNavigationKey(msg) {
+		return nil, nil
+	}
+
+	// Handle action keys.
+	return s.handleActionKey(msg)
+}
+
+// handleSpecialKey handles escape and enter keys.
+func (s *BurstListScreen) handleSpecialKey(msg tea.KeyMsg) screens.ScreenResult {
+	switch msg.Type {
+	case tea.KeyEsc:
+		return &screens.CancelResult{}
+	case tea.KeyEnter:
+		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
+			return &screens.NavigateResult{ResultData: *selected}
+		}
+	}
+	return nil
+}
+
+// handleNavigationKey handles arrow keys and vim-style navigation.
+// Returns true if a navigation key was handled.
+func (s *BurstListScreen) handleNavigationKey(msg tea.KeyMsg) bool {
+	// Handle special navigation keys by type.
+	switch msg.Type {
+	case tea.KeyUp:
+		s.tableBehavior.HandleNavigation("up")
+		return true
+	case tea.KeyDown:
+		s.tableBehavior.HandleNavigation("down")
+		return true
+	case tea.KeyPgDown:
+		s.tableBehavior.HandleNavigation("pgdn")
+		return true
+	case tea.KeyPgUp:
+		s.tableBehavior.HandleNavigation("pgup")
+		return true
+	case tea.KeyHome:
+		s.tableBehavior.HandleNavigation("home")
+		return true
+	case tea.KeyEnd:
+		s.tableBehavior.HandleNavigation("end")
+		return true
+	case tea.KeyCtrlD:
+		s.tableBehavior.HandleNavigation("ctrl+d")
+		return true
+	case tea.KeyCtrlU:
+		s.tableBehavior.HandleNavigation("ctrl+u")
+		return true
+	}
+
+	// Handle vim-style navigation keys (rune-based).
+	switch msg.String() {
+	case "k":
+		s.tableBehavior.HandleNavigation("up")
+		return true
+	case "j":
+		s.tableBehavior.HandleNavigation("down")
+		return true
+	case "g":
+		s.tableBehavior.HandleNavigation("home")
+		return true
+	case "G":
+		s.tableBehavior.HandleNavigation("end")
+		return true
+	}
+
+	return false
+}
+
+// handleActionKey handles action keys (a, e, d, s).
+func (s *BurstListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	switch msg.String() {
+	case "a":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{"action": "add"},
 		}
 
-		// Handle vim-style and action keys (rune-based).
-		switch msg.String() {
-		case "k":
-			s.tableBehavior.HandleNavigation("up")
-			return nil, nil
-		case "j":
-			s.tableBehavior.HandleNavigation("down")
-			return nil, nil
-		case "g":
-			s.tableBehavior.HandleNavigation("home")
-			return nil, nil
-		case "G":
-			s.tableBehavior.HandleNavigation("end")
-			return nil, nil
-		}
-
-		// Handle enter key for viewing details.
-		if msg.Type == tea.KeyEnter {
-			// View burst details.
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: *selected, // Dereference **T to get *T
-				}
-			}
-			return nil, nil
-		}
-
-		// Handle action keys.
-		switch msg.String() {
-		case "a":
-			// Add new burst.
+	case "e":
+		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "add",
-				},
+				ResultData: map[string]interface{}{"action": "edit", "burst": *selected},
 			}
+		}
 
-		case "e":
-			// Edit selected burst.
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: map[string]interface{}{
-						"action": "edit",
-						"burst":  *selected, // Dereference **T to get *T
-					},
-				}
-			}
-			return nil, nil
-
-		case "d":
-			// Delete selected burst.
-			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
-				return nil, &screens.NavigateResult{
-					ResultData: map[string]interface{}{
-						"action": "delete",
-						"burst":  *selected, // Dereference **T to get *T
-					},
-				}
-			}
-			return nil, nil
-
-		case "s":
-			// Trigger burst suggestion (AI detection).
+	case "d":
+		if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "suggest",
-				},
+				ResultData: map[string]interface{}{"action": "delete", "burst": *selected},
 			}
+		}
+
+	case "s":
+		return nil, &screens.NavigateResult{
+			ResultData: map[string]interface{}{"action": "suggest"},
 		}
 	}
 

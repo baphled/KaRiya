@@ -72,64 +72,61 @@ func (s *BurstDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		return nil, nil
 
 	case tea.KeyMsg:
-		// Handle special keys by type.
-		switch msg.Type {
-		case tea.KeyEsc, tea.KeyBackspace:
-			// Back to burst list.
-			// Note: 'q' (quit) is handled by the intent before delegation.
-			return nil, &screens.CancelResult{}
-		}
-
-		// Handle rune-based keys.
-		switch msg.String() {
-		case "v":
-			// View events in burst
-			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "view_events",
-					"burst":  s.burst,
-				},
-			}
-
-		case "f":
-			// View facts extracted from burst
-			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "view_facts",
-					"burst":  s.burst,
-				},
-			}
-
-		case "e":
-			// Edit burst
-			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "edit",
-					"burst":  s.burst,
-				},
-			}
-
-		case "d":
-			// Delete burst
-			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "delete",
-					"burst":  s.burst,
-				},
-			}
-
-		case "c":
-			// Confirm burst (mark as confirmed)
-			return nil, &screens.NavigateResult{
-				ResultData: map[string]interface{}{
-					"action": "confirm",
-					"burst":  s.burst,
-				},
-			}
-		}
+		return s.handleKeyMsg(msg)
 	}
 
 	return nil, nil
+}
+
+// handleKeyMsg processes keyboard input for detail screen actions.
+func (s *BurstDetailScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
+	// Handle special keys by type.
+	switch msg.Type {
+	case tea.KeyEsc, tea.KeyBackspace:
+		// Back to burst list.
+		// Note: 'q' (quit) is handled by the intent before delegation.
+		return nil, &screens.CancelResult{}
+	}
+
+	// Handle rune-based action keys.
+	return s.handleActionKey(msg.String())
+}
+
+// handleActionKey processes action keys (v, f, e, d, c).
+func (s *BurstDetailScreen) handleActionKey(key string) (tea.Cmd, screens.ScreenResult) {
+	switch key {
+	case "v":
+		// View events in burst.
+		return nil, s.actionResult("view_events")
+
+	case "f":
+		// View facts extracted from burst.
+		return nil, s.actionResult("view_facts")
+
+	case "e":
+		// Edit burst.
+		return nil, s.actionResult("edit")
+
+	case "d":
+		// Delete burst.
+		return nil, s.actionResult("delete")
+
+	case "c":
+		// Confirm burst (mark as confirmed).
+		return nil, s.actionResult("confirm")
+	}
+
+	return nil, nil
+}
+
+// actionResult creates a NavigateResult for the given action.
+func (s *BurstDetailScreen) actionResult(action string) *screens.NavigateResult {
+	return &screens.NavigateResult{
+		ResultData: map[string]interface{}{
+			"action": action,
+			"burst":  s.burst,
+		},
+	}
 }
 
 // RenderContent returns just the content (burst detail card) without StandardView wrapper.

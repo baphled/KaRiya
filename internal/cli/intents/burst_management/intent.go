@@ -192,7 +192,10 @@ func (i *Intent) handleConfirmModalUpdate(msg tea.Msg) tea.Cmd {
 		}
 		i.confirmModal = nil
 		if i.selectedBurst != nil {
-			return i.showBurstDetailModal(i.selectedBurst)
+			// Show detail modal and return noopCmd to prevent message propagation.
+			// The message (e.g., Esc) was already consumed by the confirm modal.
+			i.showBurstDetailModal(i.selectedBurst)
+			return noopCmd
 		}
 		return noopCmd
 	}
