@@ -255,7 +255,7 @@ func (s *Service) SuggestBursts(ctx context.Context, eventIDs []string) ([]burst
 		MinConfidence:       0.6,
 		TemporalWindow:      6 * 30 * 24 * time.Hour,
 		MinEventCount:       2,
-		MaxSuggestionsCount: 10,
+		MaxSuggestionsCount: 0, // No limit - return all suggestions.
 	}
 	return s.SuggestBurstsWithOptions(ctx, eventIDs, opts)
 }

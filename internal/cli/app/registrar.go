@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
+	burst_management "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	fact_management "github.com/baphled/kariya/internal/cli/intents/fact_management"
 	manage_skills "github.com/baphled/kariya/internal/cli/intents/skills_management"
 	"github.com/baphled/kariya/internal/cli/screens"
@@ -201,12 +202,12 @@ func (r *DefaultIntentRegistrar) registerBurstManagement(ctx context.Context, ro
 			return nil
 		}
 		burstRepo := r.config.CareerService.GetBurstRepository()
-		burstCtx := intents.NewBurstManagementContext(r.config.CareerService, burstRepo, ctx)
-		if burstCtx == nil {
-			r.config.Log.Error("Failed to create BurstManagement context")
-			return nil
+		burstCtx := &burst_management.IntentContext{
+			Service:         r.config.CareerService,
+			BurstRepository: burstRepo,
+			Context:         ctx,
 		}
-		intent, err := intents.NewBurstManagementIntent(burstCtx)
+		intent, err := burst_management.NewIntent(burstCtx)
 		if err != nil || intent == nil {
 			r.config.Log.Error("Failed to create BurstManagement intent: %v", err)
 			return nil

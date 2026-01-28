@@ -323,6 +323,56 @@ func ContinueBadge(th theme.Theme) *Badge {
 	return HelpKeyBadge("Enter", "Continue", th)
 }
 
+// ViewBadge returns a badge for viewing item details.
+func ViewBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("Enter", "View", th)
+}
+
+// PageBadge returns a badge for page navigation (Ctrl+D/U).
+func PageBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("Ctrl+D/U", "Page", th)
+}
+
+// PageVimBadge returns a badge for vim-style pagination (n/p).
+func PageVimBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("n/p", "Page", th)
+}
+
+// SuggestBadge returns a badge for AI suggestion action.
+func SuggestBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("s", "Suggest", th)
+}
+
+// ViewEventsBadge returns a badge for viewing events.
+func ViewEventsBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("v", "View Events", th)
+}
+
+// ViewFactsBadge returns a badge for viewing facts.
+func ViewFactsBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("f", "View Facts", th)
+}
+
+// ConfirmActionBadge returns a badge for confirm action (c key).
+func ConfirmActionBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("c", "Confirm", th)
+}
+
+// AcceptBadge returns a badge for accepting suggestions/items.
+func AcceptBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("a", "Accept", th)
+}
+
+// RejectBadge returns a badge for rejecting suggestions/items.
+func RejectBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("r", "Reject", th)
+}
+
+// CloseBadge returns a badge for closing modals/views.
+func CloseBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("Enter/Esc", "Close", th)
+}
+
 // =============================================================================
 // Help Footer Rendering
 // =============================================================================

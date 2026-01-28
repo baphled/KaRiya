@@ -90,21 +90,6 @@ var _ = Describe("StandardView Consistency", func() {
 			Skip("Migrated to fact_management subpackage")
 		})
 	})
-
-	Describe("BurstManagement", func() {
-		It("should use StandardView patterns", func() {
-			ctx := NewBurstManagementContext(nil, nil, context.Background())
-
-			intent, err := NewBurstManagementIntent(ctx)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(intent).NotTo(BeNil())
-
-			intent.Init()
-			view := intent.View()
-
-			testStandardViewConsistency("BurstManagement", view)
-		})
-	})
 })
 
 var _ = Describe("All Intents Initialization", func() {

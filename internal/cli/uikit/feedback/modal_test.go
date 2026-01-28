@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestNewErrorModal(t *testing.T) {
@@ -677,4 +679,220 @@ func TestRenderOverlayWithDefaultTheme(t *testing.T) {
 	if output == "" {
 		t.Error("Expected non-empty output from RenderOverlayWithDefaultTheme")
 	}
+}
+
+func TestLoadingModal_IncreasedWidth(t *testing.T) {
+	// Test that loading modal supports wider content (up to 100 chars).
+	// This test verifies the modal renders correctly with longer messages.
+	longMessage := strings.Repeat("X", 90) // Message longer than old max (76)
+	modal := NewLoadingModal(longMessage, false)
+
+	output := modal.Render(120, 40)
+
+	if output == "" {
+		t.Error("Expected non-empty output for wide loading modal")
+	}
+
+	// The modal should contain the full message without excessive wrapping.
+	// With the old maxWidth of 76, this 90-char message would wrap.
+	// With the new maxWidth of 96, it should fit on one line.
+	lines := strings.Split(output, "\n")
+	messageFound := false
+	for _, line := range lines {
+		// Check if any line contains a large portion of our X's (accounting for spinner).
+		xCount := strings.Count(line, "X")
+		if xCount >= 85 {
+			messageFound = true
+			break
+		}
+	}
+
+	if !messageFound {
+		t.Error("Expected long message to render without excessive line wrapping (max width should be 100)")
+	}
+}
+
+func TestLoadingModal_RespectsTerminalWidth(t *testing.T) {
+	// Test that modal width adapts to narrow terminals to prevent cutoff.
+	longMessage := strings.Repeat("Y", 90)
+	modal := NewLoadingModal(longMessage, false)
+
+	// Render in a narrow terminal (80 chars wide).
+	output := modal.Render(80, 40)
+
+	if output == "" {
+		t.Error("Expected non-empty output for narrow terminal")
+	}
+
+	// Check that modal visual width doesn't exceed terminal width.
+	// Use lipgloss.Width to measure visual width (ignores ANSI codes).
+	lines := strings.Split(output, "\n")
+	for i, line := range lines {
+		lineWidth := lipgloss.Width(line)
+		if lineWidth > 80 {
+			t.Errorf("Line %d exceeds terminal width: visual width %d > 80", i, lineWidth)
+		}
+	}
+}
+
+func TestModal_Init_LoadingModalReturnsTickCommand(t *testing.T) {
+	modal := NewLoadingModal("Loading...", false)
+
+	cmd := modal.Init()
+
+	// Loading modal should return a tick command to animate spinner.
+	if cmd == nil {
+		t.Error("Expected Init() to return a tick command for loading modal")
+	}
+}
+
+func TestModal_Init_NonLoadingModalReturnsNil(t *testing.T) {
+	// Error modals don't need spinner animation.
+	modal := NewErrorModal("Error", "Something went wrong")
+
+	cmd := modal.Init()
+
+	if cmd != nil {
+		t.Error("Expected Init() to return nil for non-loading modal")
+	}
+}
+
+func TestModal_Update_SpinnerTickAdvancesSpinner(t *testing.T) {
+	modal := NewLoadingModal("Loading...", false)
+
+	// Get initial spinner frame.
+	initialFrame := modal.spinner.GetFrame()
+
+	// Send a SpinnerTickMsg to advance the spinner.
+	cmd := modal.Update(ModalSpinnerTickMsg{})
+
+	// Spinner should have advanced.
+	newFrame := modal.spinner.GetFrame()
+	if newFrame == initialFrame {
+		t.Error("Expected spinner to advance after SpinnerTickMsg")
+	}
+
+	// Should return another tick command to continue animation.
+	if cmd == nil {
+		t.Error("Expected Update() to return a tick command to continue animation")
+	}
+}
+
+func TestModal_Update_SpinnerTickRotatesMessage(t *testing.T) {
+	modal := NewLoadingModal("Initial", false)
+	rotator := NewLoadingMessageRotator([]string{"Msg1", "Msg2", "Msg3"})
+	modal.SetMessageRotator(rotator)
+
+	// First tick should rotate to Msg2.
+	modal.Update(ModalSpinnerTickMsg{})
+
+	// GetCurrent after rotate should now be at the next index.
+	current := rotator.GetCurrent()
+	if current != "Msg2" {
+		t.Errorf("Expected message to rotate to 'Msg2', got '%s'", current)
+	}
+}
+
+func TestLoadingModal_BoxIntegrity(t *testing.T) {
+	// Diagnostic test to verify the modal box renders completely.
+	// Tests that borders are intact and content is not truncated.
+	message := "Detecting burst patterns and analyzing data..."
+	modal := NewLoadingModal(message, true)
+
+	// Test at typical terminal width.
+	output := modal.Render(120, 40)
+	lines := strings.Split(output, "\n")
+
+	// Find border lines.
+	topBorderLine, bottomBorderLine := findBorderLines(lines)
+
+	// Verify borders.
+	verifyTopBorder(t, lines, topBorderLine, output)
+	verifyBottomBorder(t, lines, bottomBorderLine, output)
+	verifySideBorders(t, lines, topBorderLine, bottomBorderLine)
+
+	// Verify message content is present.
+	verifyMessageContent(t, output)
+
+	// Log modal dimensions for debugging.
+	logModalDimensions(t, lines)
+}
+
+// findBorderLines locates the top and bottom border line indices.
+func findBorderLines(lines []string) (top, bottom int) {
+	top, bottom = -1, -1
+	for i, line := range lines {
+		if strings.Contains(line, "╭") && strings.Contains(line, "╮") {
+			top = i
+		}
+		if strings.Contains(line, "╰") && strings.Contains(line, "╯") {
+			bottom = i
+		}
+	}
+	return top, bottom
+}
+
+// verifyTopBorder checks that the top border is complete.
+func verifyTopBorder(t *testing.T, lines []string, topBorderLine int, output string) {
+	t.Helper()
+	if topBorderLine == -1 {
+		t.Error("Top border not found - modal box may be incomplete")
+		t.Logf("Modal output:\n%s", output)
+		return
+	}
+	topLine := lines[topBorderLine]
+	if !strings.Contains(topLine, "╭") || !strings.Contains(topLine, "╮") {
+		t.Errorf("Top border incomplete: %q", topLine)
+	}
+}
+
+// verifyBottomBorder checks that the bottom border is complete.
+func verifyBottomBorder(t *testing.T, lines []string, bottomBorderLine int, output string) {
+	t.Helper()
+	if bottomBorderLine == -1 {
+		t.Error("Bottom border not found - modal box may be incomplete")
+		t.Logf("Modal output:\n%s", output)
+		return
+	}
+	bottomLine := lines[bottomBorderLine]
+	if !strings.Contains(bottomLine, "╰") || !strings.Contains(bottomLine, "╯") {
+		t.Errorf("Bottom border incomplete: %q", bottomLine)
+	}
+}
+
+// verifySideBorders checks that all lines between borders have side borders.
+func verifySideBorders(t *testing.T, lines []string, topBorderLine, bottomBorderLine int) {
+	t.Helper()
+	if topBorderLine < 0 || bottomBorderLine <= topBorderLine {
+		return
+	}
+	for i := topBorderLine + 1; i < bottomBorderLine; i++ {
+		line := lines[i]
+		pipeCount := strings.Count(line, "│")
+		if pipeCount < 2 {
+			t.Errorf("Line %d missing side borders (found %d '│'): %q", i, pipeCount, line)
+		}
+	}
+}
+
+// verifyMessageContent checks that the modal message is fully visible.
+func verifyMessageContent(t *testing.T, output string) {
+	t.Helper()
+	if !strings.Contains(output, "Detecting") || !strings.Contains(output, "burst") {
+		t.Error("Modal content appears truncated - message not fully visible")
+		t.Logf("Modal output:\n%s", output)
+	}
+}
+
+// logModalDimensions logs the modal dimensions for debugging.
+func logModalDimensions(t *testing.T, lines []string) {
+	t.Helper()
+	maxWidth := 0
+	for _, line := range lines {
+		w := lipgloss.Width(line)
+		if w > maxWidth {
+			maxWidth = w
+		}
+	}
+	t.Logf("Modal rendered: %d lines, max width %d", len(lines), maxWidth)
 }

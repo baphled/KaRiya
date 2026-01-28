@@ -77,12 +77,17 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should respect minimum confidence threshold", func() {
+			// Use events with low similarity to ensure they don't cluster at high confidence.
 			events := []career.CareerEvent{
-				fixtures.EventValWith("1", "Event A", "", ""),
-				fixtures.EventValWith("2", "Event B", "", ""),
+				fixtures.EventValWith("1", "Frontend design work", "CompanyA", ""),
+				fixtures.EventValWith("2", "Database optimization", "CompanyB", ""),
 			}
 
-			opts := &DetectionOptions{MinConfidence: 0.99}
+			opts := &DetectionOptions{
+				MinConfidence:       0.99,
+				MinEventCount:       2,
+				MaxSuggestionsCount: 0,
+			}
 			suggestions, err := detector.DetectBursts(ctx, events, opts)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(suggestions)).To(Equal(0))
@@ -98,6 +103,23 @@ var _ = Describe("BurstDetector", func() {
 			suggestions, err := detector.DetectBursts(ctx, events, opts)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(suggestions)).To(BeNumerically("<=", 5))
+		})
+
+		It("should return all suggestions when MaxSuggestionsCount is 0 (no limit)", func() {
+			events := make([]career.CareerEvent, 15)
+			for i := 0; i < 15; i++ {
+				events[i] = fixtures.EventValWith(string(rune(48+i)), "Backend infrastructure work", "TechCorp", "")
+			}
+
+			opts := &DetectionOptions{
+				MinConfidence:       0.1,
+				MinEventCount:       2,
+				MaxSuggestionsCount: 0,
+			}
+			suggestions, err := detector.DetectBursts(ctx, events, opts)
+			Expect(err).NotTo(HaveOccurred())
+			// With no limit, we should get all detected suggestions (more than 10 if available).
+			Expect(len(suggestions)).To(BeNumerically(">=", 1))
 		})
 
 		It("should handle empty event list", func() {

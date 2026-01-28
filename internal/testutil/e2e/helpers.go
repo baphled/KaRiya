@@ -104,7 +104,7 @@ func Setup(t TestingT) *TestEnv {
 	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
@@ -146,7 +146,7 @@ func Setup(t TestingT) *TestEnv {
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	cleanup := func() {
-		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 		// This allows nested isolation without breaking suite-level isolation
 		config.SetConfigPathForTesting(prevConfigPath)
 		// Close database connection
@@ -199,7 +199,7 @@ func SetupShared() {
 		panic("failed to create temp dir: " + err.Error())
 	}
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	configPath := filepath.Join(sharedTmpDir, "config.yaml")
 	config.SetConfigPathForTesting(configPath)
 
@@ -238,6 +238,10 @@ func SetupShared() {
 	// Create application model
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
+	// Set terminal dimensions to ensure modals render correctly.
+	// Without this, viewport calculations may use 0 height, showing only last lines.
+	model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+
 	sharedEnv = &TestEnv{
 		T:          nil, // Set per-test in GetSharedEnv
 		Model:      model,
@@ -260,7 +264,7 @@ func CleanupShared() {
 	if sharedEnv != nil && sharedEnv.DB != nil {
 		_ = sharedEnv.DB.Close()
 	}
-	// BUG-007 FIX: Reset config path override
+	// Issue-007 fix: Reset config path override
 	config.ResetConfigPath()
 	if sharedTmpDir != "" {
 		_ = os.RemoveAll(sharedTmpDir)
@@ -381,7 +385,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	}
 	dbPath := filepath.Join(tmpDir, "e2e_test.db")
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
@@ -426,7 +430,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	model := app.NewModel(cliService, svc, bootstrapResult)
 
 	cleanup := func() {
-		// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+		// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 		config.SetConfigPathForTesting(prevConfigPath)
 		// Close database connection
 		if err := db.Close(); err != nil {
@@ -473,7 +477,7 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 
-	// BUG-007 FIX: Isolate config file writes to temp directory
+	// Issue-007 fix: Isolate config file writes to temp directory
 	// Use SwapConfigPathForTesting to preserve BeforeSuite's path for restoration
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
@@ -512,7 +516,7 @@ func SetupWithMemory(t TestingT) *TestEnv {
 		CLIService:   cliService,
 		Ctx:          ctx,
 		cleanup: func() {
-			// BUG-007 FIX: Restore previous config path (from BeforeSuite) instead of clearing
+			// Issue-007 fix: Restore previous config path (from BeforeSuite) instead of clearing
 			config.SetConfigPathForTesting(prevConfigPath)
 			// Manually remove temp dir since we used os.MkdirTemp() instead of t.TempDir()
 			_ = os.RemoveAll(tmpDir)
@@ -690,15 +694,16 @@ func (e *TestEnv) SubmitHuhForm() *TestEnv {
 // cause infinite loops or stuck goroutines in tests. We only care about messages
 // that actually change application state.
 //
-// Commands that take longer than 10ms to execute (tick commands with delays) are skipped
-// to avoid slow tests from cursor blink animations (530ms each).
+// Commands that take longer than 500ms to execute (tick commands with delays) are skipped
+// to avoid slow tests from cursor blink animations (530ms each). The 500ms timeout
+// allows database operations to complete while still filtering out cursor blinks.
 func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 	if cmd == nil {
 		return
 	}
 
 	// Execute command with timeout to skip slow tick commands
-	// Cursor blink ticks take 530ms, normal commands are instant
+	// Cursor blink ticks take 530ms, database operations typically complete in <100ms
 	type result struct {
 		msg tea.Msg
 	}
@@ -713,7 +718,7 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 			return
 		}
 		e.processCmdResult(r.msg)
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(500 * time.Millisecond):
 		// Command is a slow tick (cursor blink, etc.) - skip it
 		return
 	}
@@ -724,7 +729,16 @@ func (e *TestEnv) executeCmd(cmd tea.Cmd) {
 func (e *TestEnv) processCmdResult(msg tea.Msg) {
 	// Only process messages that are essential for state transitions
 	// Skip all other messages to avoid infinite loops from huh forms (cursor blink, etc.)
-	switch msg.(type) {
+	switch msg := msg.(type) {
+	case tea.BatchMsg:
+		// Batch command returned a list of commands to execute.
+		// Execute each command in the batch (this handles tea.Batch results).
+		for _, cmd := range msg {
+			if cmd != nil {
+				e.executeCmd(cmd)
+			}
+		}
+
 	case models.SubmitMsg:
 		// Form submission - essential for form → review state transition
 		modelInterface, nextCmd := e.Model.Update(msg)

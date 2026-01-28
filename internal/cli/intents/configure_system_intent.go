@@ -285,9 +285,15 @@ func (c *ConfigureSystemIntent) updateSavingModal(msg tea.Msg) tea.Cmd {
 		c.savingModal = nil
 		c.resultModal = feedback.NewErrorModal("Save Failed", msg.Error.Message)
 		return nil
-	}
 
-	return nil
+	case feedback.ModalSpinnerTickMsg:
+		// Forward tick to loading modal to advance spinner.
+		return c.savingModal.Update(msg)
+
+	default:
+		// Ignore unrelated messages while saving.
+		return nil
+	}
 }
 
 // updateResultModal handles updates to the result modal (success/error).
@@ -360,7 +366,7 @@ func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
 		pendingChanges[k] = v
 	}
 
-	return func() tea.Msg {
+	asyncCmd := func() tea.Msg {
 		// Apply changes to config
 		for key, value := range pendingChanges {
 			if err := applyConfigChange(cfg, selectedDomain, key, value); err != nil {
@@ -394,6 +400,9 @@ func (c *ConfigureSystemIntent) startSaving() tea.Cmd {
 			},
 		}
 	}
+
+	// Batch async save with spinner init to start animation immediately.
+	return tea.Batch(asyncCmd, c.savingModal.Init())
 }
 
 // getDimensions returns the current terminal dimensions.
