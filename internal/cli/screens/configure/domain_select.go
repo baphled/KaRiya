@@ -15,11 +15,6 @@ type DomainSelectScreen struct {
 
 // NewDomainSelectScreen creates a new domain selection screen
 func NewDomainSelectScreen(domains []configtypes.ConfigurationDomain) *DomainSelectScreen {
-	// Domain renderer - formats domain for display
-	renderer := func(domain configtypes.ConfigurationDomain) string {
-		return formatDomainLabel(domain)
-	}
-
 	// Breadcrumbs
 	breadcrumbs := []string{"Main Menu", "Configure System"}
 
@@ -28,7 +23,7 @@ func NewDomainSelectScreen(domains []configtypes.ConfigurationDomain) *DomainSel
 
 	baseScreen := base.NewBaseSelectScreen(
 		domains,
-		renderer,
+		formatDomainLabel,
 		breadcrumbs,
 		title,
 	)

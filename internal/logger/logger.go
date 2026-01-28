@@ -204,7 +204,7 @@ func FileLogger() *Logger {
 
 	// Create log file with timestamp
 	logFile := logDir + "/kariya.log"
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600) // #nosec G304 -- path constructed from user home dir
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600) // #nosec G304 -- path constructed from user home dir
 	if err != nil {
 		// Fallback to console if we can't open file
 		return ConsoleLogger()

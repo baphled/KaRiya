@@ -8,14 +8,14 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
 // BurstServiceMock provides a configurable mock for BurstService interface.
 type BurstServiceMock struct {
 	events           []*career.CareerEvent
 	facts            map[string][]*career.Fact
-	suggestions      []burst_fact.BurstSuggestion
+	suggestions      []burstfact.BurstSuggestion
 	suggestError     error
 	extractedFacts   []career.Fact
 	extractError     error
@@ -42,7 +42,7 @@ func (m *BurstServiceMock) SetEvents(events []*career.CareerEvent) *BurstService
 }
 
 // SetSuggestions configures the suggestions returned by SuggestBursts.
-func (m *BurstServiceMock) SetSuggestions(suggestions []burst_fact.BurstSuggestion) *BurstServiceMock {
+func (m *BurstServiceMock) SetSuggestions(suggestions []burstfact.BurstSuggestion) *BurstServiceMock {
 	m.suggestions = suggestions
 	return m
 }
@@ -165,7 +165,7 @@ func (m *BurstServiceMock) SaveFact(_ context.Context, fact *career.Fact) error 
 }
 
 // SuggestBursts implements BurstService.
-func (m *BurstServiceMock) SuggestBursts(_ context.Context, _ []string) ([]burst_fact.BurstSuggestion, error) {
+func (m *BurstServiceMock) SuggestBursts(_ context.Context, _ []string) ([]burstfact.BurstSuggestion, error) {
 	if m.suggestError != nil {
 		return nil, m.suggestError
 	}

@@ -56,7 +56,7 @@ func BenchmarkCaptureEventUpdate(b *testing.B) {
 	}
 }
 
-// BrowseTimeline benchmarks have been moved to internal/cli/intents/browse_timeline/benchmarks_test.go
+// BrowseTimeline benchmarks have been moved to internal/cli/intents/browsetimeline/benchmarks_test.go
 
 // BenchmarkGenerateCVInit benchmarks GenerateCV intent initialization
 func BenchmarkGenerateCVInit(b *testing.B) {

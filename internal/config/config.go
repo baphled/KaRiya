@@ -115,13 +115,13 @@ type AudienceBulletsConfig struct {
 	Default       int `yaml:"default"`        // Default bullets per company (default: 5)
 }
 
-// ExportConfig contains export configuration
+// ExportConfig contains export configuration.
 type ExportConfig struct {
 	DefaultDestination string `yaml:"default_destination"`
 	AutoOpen           bool   `yaml:"auto_open"`
 }
 
-// DisplayConfig contains display/UI configuration
+// DisplayConfig contains display/UI configuration.
 type DisplayConfig struct {
 	Theme      string `yaml:"theme"`
 	Animations bool   `yaml:"animations"`
@@ -171,7 +171,7 @@ func (s *ScoringConfig) ValidateWeights() error {
 	return nil
 }
 
-// DefaultConfig returns the default configuration
+// DefaultConfig returns the default configuration.
 func DefaultConfig() *Config {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -310,7 +310,7 @@ func LoadConfig() (*Config, error) {
 	return LoadConfigFromPath(path)
 }
 
-// LoadConfigFromPath loads configuration from a specific file path
+// LoadConfigFromPath loads configuration from a specific file path.
 func LoadConfigFromPath(path string) (*Config, error) {
 	// Clean path to prevent path traversal attacks
 	cleanPath := filepath.Clean(path)

@@ -25,14 +25,14 @@ type HelpModal struct {
 	theme      theme.Theme
 }
 
-// HelpModalKeyMap defines the keys for controlling the help modal itself
+// HelpModalKeyMap defines the keys for controlling the help modal itself.
 type HelpModalKeyMap struct {
 	Toggle   key.Binding
 	Close    key.Binding
 	FullHelp key.Binding
 }
 
-// DefaultHelpModalKeyMap returns the default key bindings for the help modal
+// DefaultHelpModalKeyMap returns the default key bindings for the help modal.
 func DefaultHelpModalKeyMap() HelpModalKeyMap {
 	return HelpModalKeyMap{
 		Toggle: key.NewBinding(
@@ -50,7 +50,7 @@ func DefaultHelpModalKeyMap() HelpModalKeyMap {
 	}
 }
 
-// NewHelpModal creates a new help modal with the given keymap
+// NewHelpModal creates a new help modal with the given keymap.
 func NewHelpModal(keyMap help.KeyMap) *HelpModal {
 	h := help.New()
 	h.ShowAll = false
@@ -68,7 +68,7 @@ func NewHelpModal(keyMap help.KeyMap) *HelpModal {
 	}
 }
 
-// getTheme returns the theme or default if nil
+// getTheme returns the theme or default if nil.
 func (m *HelpModal) getTheme() theme.Theme {
 	if m.theme != nil {
 		return m.theme

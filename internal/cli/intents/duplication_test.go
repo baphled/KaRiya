@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
+	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browsetimeline"
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

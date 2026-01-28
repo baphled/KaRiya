@@ -127,7 +127,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			kariyaDir := filepath.Join(homeDir, ".kariya")
 			dbPath = filepath.Join(kariyaDir, "events.db")
 
-			if err := os.MkdirAll(kariyaDir, 0750); err != nil {
+			if err := os.MkdirAll(kariyaDir, 0o750); err != nil {
 				fmt.Fprintf(errOut, "Error creating kariya directory: %v\n", err)
 				return 1
 			}

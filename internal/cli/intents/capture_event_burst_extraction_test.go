@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -13,14 +13,14 @@ import (
 var _ = Describe("CaptureEvent Burst Extraction", func() {
 	var (
 		ctx      context.Context
-		detector *burst_fact.BurstDetector
-		opts     *burst_fact.DetectionOptions
+		detector *burstfact.BurstDetector
+		opts     *burstfact.DetectionOptions
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		detector = burst_fact.NewBurstDetector()
-		opts = &burst_fact.DetectionOptions{
+		detector = burstfact.NewBurstDetector()
+		opts = &burstfact.DetectionOptions{
 			MinConfidence:       0.6,
 			TemporalWindow:      6 * 30 * 24 * time.Hour, // 6 months
 			MinEventCount:       2,

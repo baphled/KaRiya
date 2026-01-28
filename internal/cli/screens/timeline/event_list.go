@@ -51,7 +51,7 @@ func eventRowFormatter(event *career.CareerEvent, _ int) []string {
 //
 // Usage:
 //
-//	screen := timeline.NewTimelineEventListScreen(events)
+//	screen := browsetimeline.NewTimelineEventListScreen(events)
 //	cmd, result := screen.Update(msg)
 //	if result != nil && result.Type() == screens.ResultNavigate {
 //	    navResult := result.(*screens.NavigateResult)

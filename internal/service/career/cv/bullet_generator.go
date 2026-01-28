@@ -27,7 +27,7 @@ const (
 	impactLevelMediumBonus           = 0.05 // Bonus for medium impact level
 )
 
-// BulletGenerator generates professionally ranked CV bullets
+// BulletGenerator generates professionally ranked CV bullets.
 type BulletGenerator interface {
 	// GenerateBullets generates bullets from events and facts
 	GenerateBullets(ctx context.Context,
@@ -54,7 +54,7 @@ type BulletGenerator interface {
 		techFocus TechnologyFocus, technologies []string) []*Bullet
 }
 
-// Bullet represents a CV bullet with scoring metadata
+// Bullet represents a CV bullet with scoring metadata.
 type Bullet struct {
 	ID                string
 	Text              string
@@ -285,7 +285,7 @@ func (bg *DefaultBulletGenerator) EnhanceWording(bullet *Bullet, role string) (*
 	enhanced = bg.structureForImpact(enhanced)
 
 	// Capitalize first letter
-	if len(enhanced) > 0 {
+	if enhanced != "" {
 		enhanced = strings.ToUpper(enhanced[:1]) + enhanced[1:]
 	}
 

@@ -3,7 +3,7 @@ package burst_management
 
 import (
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
 // Custom message types for BurstManagement state transitions.
@@ -54,13 +54,13 @@ type FactExtractionCompleteMsg struct {
 
 // BurstSuggestionsLoadedMsg is sent when burst detection completes.
 type BurstSuggestionsLoadedMsg struct {
-	Suggestions []burst_fact.BurstSuggestion
+	Suggestions []burstfact.BurstSuggestion
 	Error       error
 }
 
 // SuggestionReviewCompleteMsg is sent when the suggestion review modal closes.
 type SuggestionReviewCompleteMsg struct {
-	AcceptedSuggestions []burst_fact.BurstSuggestion
+	AcceptedSuggestions []burstfact.BurstSuggestion
 	Cancelled           bool
 }
 

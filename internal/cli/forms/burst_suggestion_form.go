@@ -1,7 +1,7 @@
 package forms
 
 import (
-	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/charmbracelet/huh"
 )
 

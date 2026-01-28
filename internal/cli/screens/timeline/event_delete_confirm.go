@@ -19,7 +19,7 @@ const EventDeleteConfirmState = "event_delete_confirm"
 //
 // Usage:
 //
-//	screen := timeline.NewEventDeleteConfirmScreen(event)
+//	screen := browsetimeline.NewEventDeleteConfirmScreen(event)
 //	cmd, result := screen.Update(msg)
 //	if result != nil && result.Type() == screens.ResultNavigate {
 //	    confirmed := result.Data().(bool)

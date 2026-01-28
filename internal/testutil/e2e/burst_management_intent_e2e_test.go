@@ -12,7 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/baphled/kariya/internal/testutil/mocks"
 	tea "github.com/charmbracelet/bubbletea"
@@ -118,7 +118,7 @@ var _ = Describe("Accepting a Burst Suggestion", func() {
 
 	It("should save the burst and return to list after accepting", func() {
 		// Given: A burst suggestion
-		suggestion := burst_fact.BurstSuggestion{
+		suggestion := burstfact.BurstSuggestion{
 			Name:            "API Development",
 			Description:     "Built REST endpoints",
 			EventIDs:        []string{"e1", "e2"},
@@ -127,7 +127,7 @@ var _ = Describe("Accepting a Burst Suggestion", func() {
 
 		// When: User accepts the suggestion
 		intent.Update(burst_management.BurstSuggestionsLoadedMsg{
-			Suggestions: []burst_fact.BurstSuggestion{suggestion},
+			Suggestions: []burstfact.BurstSuggestion{suggestion},
 		})
 		intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
 
@@ -148,7 +148,7 @@ var _ = Describe("Accepting a Burst Suggestion", func() {
 	Context("when accepting multiple suggestions one by one", func() {
 		It("should save each accepted burst", func() {
 			// Given: Multiple suggestions (each with at least 2 events as required by repository)
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "First Project", EventIDs: []string{"e1", "e2"}},
 				{Name: "Second Project", EventIDs: []string{"e3", "e4"}},
 				{Name: "Third Project", EventIDs: []string{"e5", "e6"}},
@@ -540,7 +540,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 		It("should navigate through suggestions with j/k keys", func() {
 			// Simulate suggestions loaded
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Backend Work",
 					Description:     "API development",
@@ -600,7 +600,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 		It("should navigate through suggestions with arrow keys", func() {
 			// Simulate suggestions loaded.
 			// Sorted by confidence: First (0.80), Second (0.70).
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "First",
 					Description:     "First suggestion",
@@ -647,7 +647,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			initialBurstCount := len(intent.GetFilteredBursts())
 
 			// Simulate suggestions loaded.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Accepted Burst",
 					Description:     "This will be accepted",
@@ -686,7 +686,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 		It("should reject suggestion and move to next", func() {
 			// Simulate suggestions loaded
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "First - Will Reject",
 					Description:     "First suggestion",
@@ -726,7 +726,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 		It("should return to list when all suggestions are rejected", func() {
 			// Simulate suggestions loaded with only one
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Only One",
 					Description:     "Only suggestion",
@@ -760,7 +760,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 			initialBurstCount := len(intent.GetFilteredBursts())
 
 			// Simulate suggestions loaded
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Will Cancel",
 					Description:     "Not accepting this",
@@ -794,7 +794,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 		It("should display suggestion details correctly", func() {
 			// Simulate suggestion with specific values
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Test Burst Name",
 					Description:     "Detailed description here",
@@ -842,7 +842,7 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 		It("should handle empty suggestions list", func() {
 			// Simulate no suggestions found
 			msg := burst_management.BurstSuggestionsLoadedMsg{
-				Suggestions: []burst_fact.BurstSuggestion{},
+				Suggestions: []burstfact.BurstSuggestion{},
 				Error:       nil,
 			}
 
@@ -864,7 +864,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		mockService *mocks.BurstServiceMock
 		burstRepo   *careermemory.BurstRepository
 		events      []*career.CareerEvent
-		suggestions []burst_fact.BurstSuggestion
+		suggestions []burstfact.BurstSuggestion
 	)
 
 	BeforeEach(func() {
@@ -880,7 +880,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		}
 
 		// Create suggestions (each must have at least 2 events for validation).
-		suggestions = []burst_fact.BurstSuggestion{
+		suggestions = []burstfact.BurstSuggestion{
 			{
 				Name:            "Backend Development",
 				Description:     "API and microservices work",
@@ -1135,10 +1135,10 @@ var _ = Describe("Fact Extraction from Accepted Burst Suggestions", func() {
 	})
 
 	Context("when user accepts a burst suggestion", func() {
-		var suggestions []burst_fact.BurstSuggestion
+		var suggestions []burstfact.BurstSuggestion
 
 		BeforeEach(func() {
-			suggestions = []burst_fact.BurstSuggestion{
+			suggestions = []burstfact.BurstSuggestion{
 				{
 					Name:            "Backend Development",
 					Description:     "Built microservices",
@@ -1181,7 +1181,7 @@ var _ = Describe("Fact Extraction from Accepted Burst Suggestions", func() {
 
 	Context("when user accepts multiple burst suggestions", func() {
 		It("triggers fact extraction for each burst", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Burst 1", EventIDs: []string{"e1"}, ConfidenceScore: 0.9},
 				{Name: "Burst 2", EventIDs: []string{"e2"}, ConfidenceScore: 0.85},
 			}
@@ -1328,7 +1328,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 
 		mockService = mocks.NewBurstServiceMock().
 			SetEvents(events).
-			SetSuggestions([]burst_fact.BurstSuggestion{
+			SetSuggestions([]burstfact.BurstSuggestion{
 				{
 					Name:            "Backend Development",
 					Description:     "API work",
@@ -1362,7 +1362,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 
 		It("should not panic when fact extraction completes after accepting suggestions", func() {
 			// Setup: Accept a suggestion (selectedBurst is never set in this flow)
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Test Burst",
 					Description:     "Test description",
@@ -1408,7 +1408,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		})
 
 		It("should stay on list view after fact extraction completes from suggestion flow", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Created Burst",
 					Description:     "From suggestions",
@@ -1448,7 +1448,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			// 5. User is unexpectedly taken off the suggestion modal
 
 			// Given: Multiple suggestions (2+)
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "First Burst",
 					Description:     "First suggestion",
@@ -1506,7 +1506,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			// 3. List screen returns CancelResult which takes user to main menu
 			// EXPECTED: User should stay on burst list after pressing esc on suggestion modal
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Test Burst",
 					Description:     "Test description",
@@ -1567,7 +1567,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			Expect(intent.GetSelectedBurst()).NotTo(BeNil(), "Setup: selectedBurst should be set")
 
 			// Load suggestions
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "New Suggestion",
 					Description:     "From suggestion flow",
@@ -1624,7 +1624,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		// state stays as StateSuggesting instead of StateSuggestionReview.
 
 		It("should transition to StateSuggestionReview when modal is shown", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Test",
 					Description:     "Test",
@@ -1650,7 +1650,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		// reset to StateList.
 
 		It("should reset to StateList after cancelling suggestion review", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Test",
 					Description:     "Test",
@@ -1681,7 +1681,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			initialCount := len(intent.GetFilteredBursts())
 			Expect(initialCount).To(Equal(0))
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Visible Burst",
 					Description:     "Should appear in list",
@@ -1719,7 +1719,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		})
 
 		It("should show multiple created bursts after accepting multiple suggestions", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Burst One", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 				{Name: "Burst Two", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.8},
 			}
@@ -1747,7 +1747,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 
 	Describe("BUG: Fact extraction error handling after suggestion acceptance", func() {
 		It("should show error but keep created bursts when fact extraction fails", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Burst With Failed Extraction",
 					EventIDs:        []string{"e1", "e2"},
@@ -1782,7 +1782,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 			// This test verifies that GetAcceptedSuggestions() returns the correct
 			// suggestions after the user presses 'a' to accept.
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Accepted Suggestion",
 					Description:     "Should be in accepted list",
@@ -1822,7 +1822,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		It("should create burst via full command execution flow", func() {
 			// This test properly simulates the Bubble Tea command execution
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Full Flow Burst",
 					Description:     "Created via command execution",
@@ -1865,7 +1865,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		})
 
 		It("should trigger fact extraction immediately after accepting suggestion", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Burst With Immediate Extraction",
 					Description:     "Fact extraction starts immediately",
@@ -1893,7 +1893,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		})
 
 		It("should refresh list view and show burst name after fact extraction completes", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Refreshed Burst View",
 					Description:     "Should appear in list after refresh",
@@ -1923,7 +1923,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		})
 
 		It("should show burst in view immediately after accepting but before extraction completes", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Immediate Visibility Burst",
 					Description:     "Should be visible before extraction",
@@ -1988,7 +1988,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 	Describe("Burst persistence to repository", func() {
 		It("should save accepted burst to repository with generated ID", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Persisted Burst",
 					Description:     "Should be saved to repo",
@@ -2011,7 +2011,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		})
 
 		It("should have burst ID populated in memory after repository save", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Burst With ID",
 					EventIDs:        []string{"e1", "e2"},
@@ -2033,7 +2033,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 	Describe("Fact persistence with correct burst linkage", func() {
 		It("should save facts with correct SourceBurstID", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Burst For Facts",
 					EventIDs:        []string{"e1", "e2"},
@@ -2070,7 +2070,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 		It("should not save facts with empty SourceBurstID", func() {
 			// This tests that created bursts have IDs before fact extraction
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Burst Test",
 					EventIDs:        []string{"e1", "e2"},
@@ -2109,7 +2109,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			// Start with empty list
 			Expect(intent.GetFilteredBursts()).To(BeEmpty())
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "New Visible Burst",
 					Description:     "Should appear in refreshed list",
@@ -2141,7 +2141,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		})
 
 		It("should show all accepted bursts in list after accepting multiple", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "First Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 				{Name: "Second Burst", EventIDs: []string{"e2", "e3"}, ConfidenceScore: 0.85},
 				{Name: "Third Burst", EventIDs: []string{"e1", "e3"}, ConfidenceScore: 0.8},
@@ -2183,7 +2183,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 			// If 3 suggestions are accepted but only 2 successfully create,
 			// the slice calculation will be wrong
 
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Will Succeed 1", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 				{Name: "Will Succeed 2", EventIDs: []string{"e2", "e3"}, ConfidenceScore: 0.85},
 			}
@@ -2205,7 +2205,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		})
 
 		It("should track which bursts were actually created vs requested", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Burst A", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 			}
 
@@ -2227,7 +2227,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 	Describe("Complete Suggestion to Visible Burst E2E Flow", func() {
 		// This tests the complete user flow: accept suggestion -> burst visible in list view
 		It("should display accepted burst name in list view after acceptance", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "My New Project Burst",
 					Description:     "Working on amazing features",
@@ -2268,7 +2268,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		// and events are properly linked to the burst.
 
 		It("should persist burst with linked events and extracted facts", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Backend API Development",
 					Description:     "Built REST API endpoints",
@@ -2311,7 +2311,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		})
 
 		It("should persist multiple bursts with their respective events and facts", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:     "Frontend Work",
 					EventIDs: []string{"e1", "e2"},
@@ -2963,7 +2963,7 @@ var _ = Describe("User Journey: All Burst Saves Fail During Suggestion Acceptanc
 			mockRepo.SetCreateError(fmt.Errorf("database unavailable"))
 
 			// And: I have suggestions to accept.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Suggestion 1", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 				{Name: "Suggestion 2", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.8},
 			}
@@ -2987,7 +2987,7 @@ var _ = Describe("User Journey: All Burst Saves Fail During Suggestion Acceptanc
 			mockRepo.SetCreateError(fmt.Errorf("storage full"))
 
 			// And: I accept a suggestion.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Failed Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.95},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
@@ -3012,7 +3012,7 @@ var _ = Describe("User Journey: All Burst Saves Fail During Suggestion Acceptanc
 			// For now, test that partial success is handled properly.
 
 			// Given: Suggestions to accept.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Will Succeed", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
@@ -3065,7 +3065,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 	Describe("When fact extraction is triggered", func() {
 		It("should return a fact extraction command", func() {
 			// Given: A suggestion to accept.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "New Burst", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
@@ -3082,7 +3082,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 
 		It("should handle fact extraction completion with extracted facts", func() {
 			// Given: I've accepted a suggestion and fact extraction started.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Burst With Facts", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.85},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
@@ -3105,7 +3105,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 			mockService.SetExtractError(fmt.Errorf("AI service unavailable"))
 
 			// And: I've accepted a suggestion.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Burst Will Fail Extraction", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions})
@@ -3129,7 +3129,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 	Describe("When checking if fact extraction is in progress", func() {
 		It("should report extraction state correctly during StateExtractingFacts", func() {
 			// Given: Multiple suggestions that will trigger batch extraction.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Burst 1", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 				{Name: "Burst 2", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.8},
 			}
@@ -3141,7 +3141,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 
 			// And: Send the completion message with accepted suggestions.
 			modal := intent.GetSuggestionModal()
-			accepted := []burst_fact.BurstSuggestion{}
+			accepted := []burstfact.BurstSuggestion{}
 			if modal != nil {
 				accepted = modal.GetAcceptedSuggestions()
 			}
@@ -3208,7 +3208,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 			Expect(intent.GetState()).To(Equal(burst_management.StateSuggesting))
 
 			// And: Suggestions are loaded.
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Backend API Project",
 					Description:     "Led development of REST API",
@@ -3316,7 +3316,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 	Describe("When I manage multiple bursts in one session", func() {
 		It("should handle creating, viewing, and managing multiple bursts", func() {
 			// Create first burst.
-			suggestions1 := []burst_fact.BurstSuggestion{
+			suggestions1 := []burstfact.BurstSuggestion{
 				{Name: "First Project", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions1})
@@ -3324,7 +3324,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 			Expect(intent.GetFilteredBursts()).To(HaveLen(1))
 
 			// Create second burst.
-			suggestions2 := []burst_fact.BurstSuggestion{
+			suggestions2 := []burstfact.BurstSuggestion{
 				{Name: "Second Project", EventIDs: []string{"e2", "e3"}, ConfidenceScore: 0.85},
 			}
 			intent.Update(burst_management.BurstSuggestionsLoadedMsg{Suggestions: suggestions2})
@@ -3778,7 +3778,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 		It("should correctly save only accepted suggestions", func() {
 			// Suggestions will be sorted by confidence (highest first):
 			// First: "Accept This" (0.9), Second: "Accept This Too" (0.8), Third: "Reject This" (0.7)
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Accept This", EventIDs: []string{"e1", "e2"}, ConfidenceScore: 0.9},
 				{Name: "Reject This", EventIDs: []string{"e2", "e3"}, ConfidenceScore: 0.7},
 				{Name: "Accept This Too", EventIDs: []string{"e1", "e3"}, ConfidenceScore: 0.8},
@@ -3809,7 +3809,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 
 		It("should allow navigating between suggestions before deciding", func() {
 			// Sorted by confidence: First (0.9), Second (0.8), Third (0.7)
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "First", EventIDs: []string{"e1"}, ConfidenceScore: 0.9},
 				{Name: "Second", EventIDs: []string{"e2"}, ConfidenceScore: 0.8},
 				{Name: "Third", EventIDs: []string{"e3"}, ConfidenceScore: 0.7},
@@ -3844,7 +3844,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 
 	Describe("When I reject all suggestions", func() {
 		It("should return to list with no new bursts", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{Name: "Reject 1", EventIDs: []string{"e1"}, ConfidenceScore: 0.5},
 				{Name: "Reject 2", EventIDs: []string{"e2"}, ConfidenceScore: 0.4},
 			}

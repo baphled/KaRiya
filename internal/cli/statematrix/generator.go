@@ -226,5 +226,5 @@ func GenerateJSON(matrix *StateMatrix, path string) error {
 	}
 
 	// #nosec G306 - JSON file permissions are appropriate for generated documentation
-	return os.WriteFile(path, data, 0600)
+	return os.WriteFile(path, data, 0o600)
 }

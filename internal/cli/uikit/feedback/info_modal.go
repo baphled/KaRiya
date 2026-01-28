@@ -232,8 +232,6 @@ func (m *InfoModal) getBorderColor() lipgloss.Color {
 		return theme.WarningColor()
 	case InfoModalSuccess:
 		return theme.SuccessColor()
-	case InfoModalInfo:
-		fallthrough
 	default:
 		return theme.InfoColor()
 	}

@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/baphled/kariya/internal/domain/career"
-	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
 // ViewEventMsg is sent when the user wants to view event details

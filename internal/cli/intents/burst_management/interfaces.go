@@ -6,7 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
 // BurstService defines the interface for burst and fact operations.
@@ -27,5 +27,5 @@ type BurstService interface {
 	SaveFact(ctx context.Context, fact *career.Fact) error
 
 	// Suggestion operations.
-	SuggestBursts(ctx context.Context, eventIDs []string) ([]burst_fact.BurstSuggestion, error)
+	SuggestBursts(ctx context.Context, eventIDs []string) ([]burstfact.BurstSuggestion, error)
 }

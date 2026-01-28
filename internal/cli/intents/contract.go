@@ -22,19 +22,20 @@ type LogoModel interface {
 }
 
 // Intent defines the contract for all intent implementations.
+//
 // Each intent MUST:
-// - Own local navigation state
-// - Call domain services
-// - Emit artifacts
-// - Return a type-safe IntentResult
+//   - Own local navigation state
+//   - Call domain services
+//   - Emit artifacts
+//   - Return a type-safe IntentResult
 //
 // Intents MUST NOT:
-// - Mutate global UI state
-// - Navigate into another intent
-// - Assume prior context unless explicitly passed
-// - Dispatch Bubble Tea commands affecting other intents
-// - Use runtime type assertions
-// - Pass arbitrary data between intents
+//   - Mutate global UI state
+//   - Navigate into another intent
+//   - Assume prior context unless explicitly passed
+//   - Dispatch Bubble Tea commands affecting other intents
+//   - Use runtime type assertions
+//   - Pass arbitrary data between intents
 type Intent interface {
 	// Init is called when the intent is first activated.
 	// It may emit commands (e.g., fetch data, start async operations).
@@ -241,7 +242,7 @@ type BaseIntent struct {
 	helpModal *feedback.HelpModal
 }
 
-// NewBaseIntent creates a new BaseIntent with default terminal configuration
+// NewBaseIntent creates a new BaseIntent with default terminal configuration.
 func NewBaseIntent() *BaseIntent {
 	return &BaseIntent{
 		terminalInfo:   terminal.NewInfo(),

@@ -10,7 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	themes2 "github.com/baphled/kariya/internal/cli/uikit/theme"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -28,11 +28,11 @@ const (
 // Suggestions are sorted by confidence (highest first).
 // User can navigate through suggestions and accept/reject them.
 type SuggestionReviewModal struct {
-	table       *behaviors.TableBehavior[burst_fact.BurstSuggestion]
-	suggestions []burst_fact.BurstSuggestion
+	table       *behaviors.TableBehavior[burstfact.BurstSuggestion]
+	suggestions []burstfact.BurstSuggestion
 	theme       themes.Theme
 	action      SuggestionAction
-	accepted    []burst_fact.BurstSuggestion
+	accepted    []burstfact.BurstSuggestion
 	visible     bool
 	width       int
 	height      int
@@ -40,13 +40,13 @@ type SuggestionReviewModal struct {
 
 // NewSuggestionReviewModal creates a new suggestion review modal.
 // Suggestions are automatically sorted by confidence (highest first).
-func NewSuggestionReviewModal(suggestions []burst_fact.BurstSuggestion, theme themes.Theme) *SuggestionReviewModal {
+func NewSuggestionReviewModal(suggestions []burstfact.BurstSuggestion, theme themes.Theme) *SuggestionReviewModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
 	}
 
 	// Sort suggestions by confidence (highest first).
-	sortedSuggestions := make([]burst_fact.BurstSuggestion, len(suggestions))
+	sortedSuggestions := make([]burstfact.BurstSuggestion, len(suggestions))
 	copy(sortedSuggestions, suggestions)
 	sort.Slice(sortedSuggestions, func(i, j int) bool {
 		return sortedSuggestions[i].ConfidenceScore > sortedSuggestions[j].ConfidenceScore
@@ -61,7 +61,7 @@ func NewSuggestionReviewModal(suggestions []burst_fact.BurstSuggestion, theme th
 
 	// Row formatter for suggestions.
 	// Use width 15 for bar to show meaningful differences between confidence levels.
-	formatter := func(s burst_fact.BurstSuggestion, _ int) []string {
+	formatter := func(s burstfact.BurstSuggestion, _ int) []string {
 		confidenceBar := primitives.CompactBar(s.ConfidenceScore, 15, nil).
 			ShowPercentage(true).
 			Render()
@@ -84,7 +84,7 @@ func NewSuggestionReviewModal(suggestions []burst_fact.BurstSuggestion, theme th
 		table:       table,
 		suggestions: sortedSuggestions,
 		theme:       theme,
-		accepted:    []burst_fact.BurstSuggestion{},
+		accepted:    []burstfact.BurstSuggestion{},
 		visible:     true,
 		width:       80,
 		height:      24,
@@ -334,12 +334,12 @@ func (m *SuggestionReviewModal) ClearAction() {
 }
 
 // GetAcceptedSuggestions returns all accepted suggestions.
-func (m *SuggestionReviewModal) GetAcceptedSuggestions() []burst_fact.BurstSuggestion {
+func (m *SuggestionReviewModal) GetAcceptedSuggestions() []burstfact.BurstSuggestion {
 	return m.accepted
 }
 
 // GetCurrentSuggestion returns the currently selected suggestion.
-func (m *SuggestionReviewModal) GetCurrentSuggestion() *burst_fact.BurstSuggestion {
+func (m *SuggestionReviewModal) GetCurrentSuggestion() *burstfact.BurstSuggestion {
 	return m.table.GetSelectedItem()
 }
 
@@ -354,6 +354,6 @@ func (m *SuggestionReviewModal) GetSuggestionsCount() int {
 }
 
 // GetAllSuggestions returns all suggestions in their current order (sorted by confidence).
-func (m *SuggestionReviewModal) GetAllSuggestions() []burst_fact.BurstSuggestion {
+func (m *SuggestionReviewModal) GetAllSuggestions() []burstfact.BurstSuggestion {
 	return m.suggestions
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
-	burst_fact "github.com/baphled/kariya/internal/service/career/burst_fact"
+	burst_fact "github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
 // ImportResult represents the result of an import operation

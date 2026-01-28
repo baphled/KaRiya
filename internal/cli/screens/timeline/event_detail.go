@@ -26,7 +26,7 @@ const TimelineEventDetailState = "timeline_event_detail"
 //
 // Usage:
 //
-//	screen := timeline.NewTimelineEventDetailScreen(event)
+//	screen := browsetimeline.NewTimelineEventDetailScreen(event)
 //	cmd, result := screen.Update(msg)
 //	if result != nil && result.Type() == screens.ResultNavigate {
 //	    navResult := result.(*screens.NavigateResult)
