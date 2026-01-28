@@ -115,6 +115,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		svc = careerservice.NewService(repo)
 		svc.SetFactRepository(career.NewMemoryFactRepository())
 		svc.SetBurstRepository(career.NewMemoryBurstRepository())
+		svc.SetSkillRepository(career.NewMemorySkillRepository())
 	} else {
 		if dbPath == "" {
 			homeDir, err := os.UserHomeDir()

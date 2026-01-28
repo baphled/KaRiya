@@ -3,6 +3,7 @@ package models
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"strings"
 	"time"
 
@@ -25,7 +26,7 @@ func (s *StringSlice) Scan(value interface{}) error {
 	case string:
 		str = v
 	default:
-		return nil
+		return fmt.Errorf("unsupported type for StringSlice: %T", value)
 	}
 	if str == "" {
 		*s = nil

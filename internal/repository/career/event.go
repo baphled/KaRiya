@@ -4,6 +4,7 @@ package career
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -117,16 +118,25 @@ func (r *Event) List(ctx context.Context, filters ListFilters) ([]*career.Career
 		return nil, err
 	}
 
+	// Collect event IDs to batch-load associated skill IDs.
+	eventIDs := make([]string, 0, len(results))
+	for _, m := range results {
+		eventIDs = append(eventIDs, m.ID)
+	}
+
+	// Batch load all skill associations in a single query.
+	eventSkills, err := r.loadSkillIDsForEvents(ctx, eventIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	events := make([]*career.CareerEvent, len(results))
 	for i, m := range results {
 		events[i] = m.ToDomain()
-
-		// Load skill IDs for each event.
-		skillIDs, err := r.loadSkillIDs(ctx, m.ID)
-		if err != nil {
-			return nil, err
+		// Assign preloaded skill IDs from the batched lookup.
+		if skills, ok := eventSkills[m.ID]; ok {
+			events[i].Skills = skills
 		}
-		events[i].Skills = skillIDs
 	}
 	return events, nil
 }
@@ -144,11 +154,16 @@ func (r *Event) Count(ctx context.Context, filters ListFilters) (int, error) {
 }
 
 func (r *Event) applyFilters(query *gorm.DB, filters ListFilters) *gorm.DB {
-	// Tag filtering.
+	// Tag filtering - use OR logic (match any tag).
 	if len(filters.Tags) > 0 {
-		for _, tag := range filters.Tags {
-			query = query.Where("tags LIKE ?", "%"+tag+"%")
+		tagConditions := make([]string, len(filters.Tags))
+		tagArgs := make([]interface{}, len(filters.Tags))
+		for i, tag := range filters.Tags {
+			tagConditions[i] = "tags LIKE ?"
+			tagArgs[i] = "%" + tag + "%"
 		}
+		// Join conditions with OR to match original behavior.
+		query = query.Where("("+strings.Join(tagConditions, " OR ")+")", tagArgs...)
 	}
 
 	// Date range filtering.
@@ -211,4 +226,35 @@ func (r *Event) loadSkillIDs(ctx context.Context, eventID string) ([]string, err
 		Order("skill_id").
 		Pluck("skill_id", &ids).Error
 	return ids, err
+}
+
+// loadSkillIDsForEvents batch loads skill IDs for multiple events in a single query.
+func (r *Event) loadSkillIDsForEvents(ctx context.Context, eventIDs []string) (map[string][]string, error) {
+	if len(eventIDs) == 0 {
+		return make(map[string][]string), nil
+	}
+
+	// Struct to scan event-skill associations.
+	type eventSkillRow struct {
+		EventID string `gorm:"column:event_id"`
+		SkillID string `gorm:"column:skill_id"`
+	}
+
+	var rows []eventSkillRow
+	if err := r.db.WithContext(ctx).
+		Table("event_skills").
+		Select("event_id, skill_id").
+		Where("event_id IN ?", eventIDs).
+		Order("event_id, skill_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	// Build map from event ID to skill IDs.
+	eventSkills := make(map[string][]string, len(eventIDs))
+	for _, row := range rows {
+		eventSkills[row.EventID] = append(eventSkills[row.EventID], row.SkillID)
+	}
+
+	return eventSkills, nil
 }

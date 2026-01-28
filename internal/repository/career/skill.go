@@ -124,6 +124,8 @@ func (r *Skill) applyFilters(query *gorm.DB, filters *SkillFilters) *gorm.DB {
 		query = query.Where("level = ?", filters.Level)
 	}
 	if filters.MinEvents > 0 {
+		// Note: Using subquery for clarity and correctness. A JOIN with GROUP BY/HAVING
+		// could be more efficient for large datasets but would complicate other filters.
 		query = query.Where(
 			"(SELECT COUNT(*) FROM event_skills WHERE skill_id = skills.id) >= ?",
 			filters.MinEvents,
@@ -153,9 +155,11 @@ func (r *Skill) applySorting(query *gorm.DB, filters *SkillFilters) *gorm.DB {
 			order,
 		))
 	case "last_used":
+		// SQLite doesn't support NULLS LAST directly, use CASE statement instead.
+		subquery := "(SELECT MAX(date) FROM career_events ce JOIN event_skills es ON ce.id = es.event_id WHERE es.skill_id = skills.id)"
 		return query.Order(fmt.Sprintf(
-			"(SELECT MAX(date) FROM career_events ce JOIN event_skills es ON ce.id = es.event_id WHERE es.skill_id = skills.id) %s NULLS LAST, name ASC",
-			order,
+			"CASE WHEN %s IS NULL THEN 1 ELSE 0 END, %s %s, name ASC",
+			subquery, subquery, order,
 		))
 	default:
 		return query.Order("name ASC")

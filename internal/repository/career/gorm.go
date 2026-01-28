@@ -80,14 +80,14 @@ func NewRepositoriesFromPath(dbPath string) (*Repositories, error) {
 
 	// Run migrations
 	if err := RunMigrations(sqlDB); err != nil {
-		sqlDB.Close()
+		_ = sqlDB.Close() // Best effort close on error path
 		return nil, err
 	}
 
 	// Create ORM connection
 	gormDB, err := NewGormDB(sqlDB)
 	if err != nil {
-		sqlDB.Close()
+		_ = sqlDB.Close() // Best effort close on error path
 		return nil, err
 	}
 

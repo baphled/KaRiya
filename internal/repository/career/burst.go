@@ -132,8 +132,8 @@ func (r *Burst) applySorting(query *gorm.DB, filters BurstListFilters) *gorm.DB 
 	case "name":
 		return query.Order("name " + order)
 	case "event_count":
-		// Count commas in event_ids to estimate event count.
-		return query.Order("LENGTH(event_ids) - LENGTH(REPLACE(event_ids, ',', '')) + 1 " + order)
+		// Count commas in event_ids to estimate event count, handling empty strings correctly.
+		return query.Order("CASE WHEN event_ids = '' THEN 0 ELSE LENGTH(event_ids) - LENGTH(REPLACE(event_ids, ',', '')) + 1 END " + order)
 	default:
 		return query.Order("created_at " + order)
 	}
