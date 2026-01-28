@@ -1,7 +1,6 @@
 package intents
 
 import (
-	"context"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -224,7 +223,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
+				// BrowseTimeline moved to browse_timeline subpackage - has own tests
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -262,7 +261,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
+				// BrowseTimeline moved to browse_timeline subpackage - has own tests
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -285,7 +284,6 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 					switch i := intent.(type) {
 					case *GenerateCVIntent:
 						baseIntent = i.BaseIntent
-					// BrowseTimelineIntent is in internal/cli/intents/browse_timeline/
 					case *CaptureEventIntent:
 						baseIntent = i.BaseIntent
 					}
@@ -312,7 +310,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 						}},
 					})
 				}),
-				// BrowseTimeline Entry is in internal/cli/intents/browse_timeline/
+				// BrowseTimeline moved to browse_timeline subpackage - has own tests
 				Entry("CaptureEvent", "CaptureEvent", func() (Intent, error) {
 					return NewCaptureEventIntent(&CaptureEventContext{
 						CaptureStrategy: "manual",
@@ -384,31 +382,8 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 			})
 		})
 
-		Context("BurstManagement - New vs Edit", func() {
-			It("should handle context-aware navigation", func() {
-				ctx := NewBurstManagementContext(nil, nil, context.Background())
-
-				intent, err := NewBurstManagementIntent(ctx)
-				Expect(err).NotTo(HaveOccurred())
-				intent.Init()
-
-				// Test that escape from list (root) cancels
-				intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
-
-				result := intent.Result()
-				Expect(result).NotTo(BeNil())
-				Expect(result.Status).To(Equal(Cancelled))
-			})
-		})
-
-		// Note: FactManagement has been migrated to intents/fact_management/ package
-		// with its own comprehensive test suite including escape key tests.
-		// See fact_management/intent_test.go for global key enforcement tests.
-		PContext("FactManagement - Migrated to subpackage", func() {
-			It("should handle context-aware navigation - see fact_management/intent_test.go", func() {
-				Skip("Migrated to fact_management subpackage")
-			})
-		})
+		// FactManagement moved to fact_management subpackage - has own tests
+		// See: internal/cli/intents/fact_management/intent_test.go
 	})
 
 	// =========================================================================

@@ -108,7 +108,8 @@ func (bd *BurstDetector) DetectBursts(
 		return suggestions[i].ConfidenceScore > suggestions[j].ConfidenceScore
 	})
 
-	if len(suggestions) > opts.MaxSuggestionsCount {
+	// Only limit results if MaxSuggestionsCount > 0 (0 means no limit).
+	if opts.MaxSuggestionsCount > 0 && len(suggestions) > opts.MaxSuggestionsCount {
 		suggestions = suggestions[:opts.MaxSuggestionsCount]
 	}
 

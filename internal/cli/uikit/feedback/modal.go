@@ -5,11 +5,15 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 )
+
+// ModalSpinnerTickMsg is sent periodically to advance the spinner animation.
+type ModalSpinnerTickMsg struct{}
 
 // ModalType defines the type of modal
 type ModalType int
@@ -222,26 +226,40 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 		}
 	}
 
-	// Wrap message to fit modal width
-	maxWidth := 76 // max width minus padding and borders
-	wrappedMessage := wrapText(message, maxWidth)
+	// Calculate maximum modal width based on terminal size.
+	// Reserve 6 chars for border (2) + margin (4) to prevent cutoff.
+	maxModalWidth := 100
+	if terminalWidth > 0 && terminalWidth-6 < maxModalWidth {
+		maxModalWidth = terminalWidth - 6
+	}
+	if maxModalWidth < 40 {
+		maxModalWidth = 40
+	}
+
+	// Calculate text wrap width: modal width minus padding (4 chars).
+	maxTextWidth := maxModalWidth - 4
+	if maxTextWidth < 20 {
+		maxTextWidth = 20
+	}
+
+	wrappedMessage := wrapText(message, maxTextWidth)
 	contentParts = append(contentParts, wrappedMessage)
 
-	// Add progress bar if progress modal
+	// Add progress bar if progress modal.
 	if m.Type == ModalProgress {
 		contentParts = append(contentParts, "")
-		progressBar := m.renderProgressBar(maxWidth, theme)
+		progressBar := m.renderProgressBar(maxTextWidth, theme)
 		contentParts = append(contentParts, progressBar)
 	}
 
-	// Add actions if present
+	// Add actions if present.
 	if len(m.Actions) > 0 {
 		contentParts = append(contentParts, "")
 		actionsLine := strings.Join(m.Actions, "  ")
 		contentParts = append(contentParts, actionsLine)
 	}
 
-	// Add dismissal hint
+	// Add dismissal hint.
 	if m.Cancellable {
 		contentParts = append(contentParts, "")
 		if m.Type == ModalError {
@@ -262,10 +280,10 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 		}
 	}
 
-	// Join content
+	// Join content.
 	content := strings.Join(contentParts, "\n")
 
-	// Calculate adaptive modal size
+	// Calculate adaptive modal size based on actual content.
 	contentLines := strings.Split(content, "\n")
 	contentWidth := 0
 	for _, line := range contentLines {
@@ -275,22 +293,24 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 		}
 	}
 
-	// Apply min/max constraints
+	// Apply min/max constraints.
+	// modalWidth is the lipgloss Width which includes padding but not border.
 	modalWidth := contentWidth + 4 // Add padding
 	if modalWidth < 40 {
 		modalWidth = 40
 	}
-	if modalWidth > 80 {
-		modalWidth = 80
+	if modalWidth > maxModalWidth {
+		modalWidth = maxModalWidth
 	}
 
-	// Create modal box style
+	// Create modal box style.
+	// Note: Width sets the content+padding width. Border is added outside.
+	// We don't use MaxWidth as it would truncate the border characters.
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(borderColor).
 		Padding(1, 2).
-		Width(modalWidth).
-		MaxWidth(modalWidth)
+		Width(modalWidth)
 
 	// Apply fade-in effect
 	if opacity < 1.0 {
@@ -408,6 +428,37 @@ func (m *Modal) RotateMessage() string {
 		return m.messageRotator.Rotate()
 	}
 	return m.Message
+}
+
+// Init initializes the modal and starts spinner animation for loading modals.
+// Returns a tick command for loading modals, nil for other modal types.
+func (m *Modal) Init() tea.Cmd {
+	if m.Type == ModalLoading && m.spinner != nil {
+		return m.tickSpinner()
+	}
+	return nil
+}
+
+// Update handles messages for the modal, advancing the spinner on tick.
+func (m *Modal) Update(msg tea.Msg) tea.Cmd {
+	switch msg.(type) {
+	case ModalSpinnerTickMsg:
+		if m.Type == ModalLoading && m.spinner != nil {
+			m.spinner.Advance()
+			if m.messageRotator != nil {
+				m.messageRotator.Rotate()
+			}
+			return m.tickSpinner()
+		}
+	}
+	return nil
+}
+
+// tickSpinner returns a command to tick the spinner animation.
+func (m *Modal) tickSpinner() tea.Cmd {
+	return tea.Tick(100*time.Millisecond, func(t time.Time) tea.Msg {
+		return ModalSpinnerTickMsg{}
+	})
 }
 
 // ============================================================================

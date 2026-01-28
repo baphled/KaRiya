@@ -318,14 +318,26 @@ func (i *CaptureEventIntent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// Handle Esc key when error modal is showing (allows dismissing error and returning to form)
+	// Handle modal updates when submitModal is showing (loading/success/error).
 	if i.state.submitModal != nil {
-		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			if keyMsg.String() == "esc" {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			if msg.Type == tea.KeyEsc {
 				// Dismiss error modal and stay in current state
 				i.state.submitModal = nil
 				return nil
 			}
+			// Consume other keys while modal is visible without restarting spinner ticks.
+			return nil
+		case feedback.ModalSpinnerTickMsg:
+			// Forward tick to loading modal to advance spinner.
+			if i.state.submitModal.Type == feedback.ModalLoading {
+				return i.state.submitModal.Update(msg)
+			}
+			return nil
+		default:
+			// For any other message while the modal is visible, do not re-init the spinner.
+			return nil
 		}
 	}
 
@@ -1716,7 +1728,8 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 
 			// Show loading modal and perform async submit
 			i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
-			return i.performSubmit()
+			// Batch async submit with spinner init to start animation immediately.
+			return tea.Batch(i.performSubmit(), i.state.submitModal.Init())
 		}
 		return i.setFailedCmd("INVALID_FORM_DATA", fmt.Sprintf("Invalid form data type: %T", data), nil)
 
@@ -1737,7 +1750,8 @@ func (i *CaptureEventIntent) HandleSubmit(result *screens.SubmitResult) tea.Cmd 
 
 			// Show loading modal and perform async submit
 			i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
-			return i.performSubmit()
+			// Batch async submit with spinner init to start animation immediately.
+			return tea.Batch(i.performSubmit(), i.state.submitModal.Init())
 		}
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
 

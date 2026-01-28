@@ -149,6 +149,61 @@ func (s *MyScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 ```
 
+### Keyboard Handling (MANDATORY)
+
+**ALWAYS use `tea.Key*` constants for special keys** - never use string comparison for special keys.
+
+```go
+// GOOD - Use tea.Key* constants for special keys
+switch msg.Type {
+case tea.KeyEsc:
+    return nil, &screens.CancelResult{}
+case tea.KeyUp:
+    s.table.HandleNavigation("up")
+case tea.KeyDown:
+    s.table.HandleNavigation("down")
+case tea.KeyPgDown:
+    s.table.HandleNavigation("pgdn")  // Note: pgdn not pgdown
+case tea.KeyPgUp:
+    s.table.HandleNavigation("pgup")
+case tea.KeyHome:
+    s.table.HandleNavigation("home")
+case tea.KeyEnd:
+    s.table.HandleNavigation("end")
+case tea.KeyCtrlD:
+    s.table.HandleNavigation("ctrl+d")
+case tea.KeyCtrlU:
+    s.table.HandleNavigation("ctrl+u")
+case tea.KeyEnter:
+    // Handle enter
+case tea.KeyBackspace:
+    // Handle backspace
+}
+
+// String comparison ONLY for vim keys and runes
+switch msg.String() {
+case "j":
+    s.table.HandleNavigation("down")
+case "k":
+    s.table.HandleNavigation("up")
+case "g":
+    s.table.HandleNavigation("home")
+case "G":
+    s.table.HandleNavigation("end")
+case "q":
+    // Quit
+}
+
+// BAD - String comparison for special keys (will fail for some keys)
+switch msg.String() {
+case "esc":        // Use tea.KeyEsc instead
+case "pgdown":     // Use tea.KeyPgDown instead (also: pgdown != pgdn)
+case "up", "down": // Use tea.KeyUp, tea.KeyDown instead
+}
+```
+
+**Why**: `msg.String()` returns inconsistent values for special keys across terminals. `tea.Key*` constants work reliably everywhere.
+
 ### Modal Requirements
 
 All modals MUST:
@@ -279,8 +334,8 @@ intents/{feature}/
 ```
 intents/{feature}/
 ├── types.go      # Intent struct definition (if intent.go > 300 lines)
-├── handlers.go   # ScreenResultHandler methods (HandleCancel, HandleNavigate, etc.)
-├── helpers.go    # Helper methods (modal openers, view helpers, etc.)
+├── handlers.go   # ALL handle* functions (see Handler Organization Rules below)
+├── helpers.go    # Utilities, async operations, state management (NO handle* functions)
 ├── filters.go    # Domain-specific filter/sort logic
 └── interfaces.go # Service interfaces for dependency injection
 ```
@@ -309,8 +364,8 @@ screens/{feature}/
 | **messages.go** | ALL *Msg types | 30-100 | Guideline |
 | **intent.go** | NewIntent, Init, Update, View, Result | 200-400 | **BLOCKED at 600** (Check #18) |
 | **types.go** | Intent struct definition (optional) | 50-150 | Guideline |
-| **handlers.go** | ScreenResultHandler methods (optional) | 50-200 | Guideline |
-| **helpers.go** | Helper methods (optional) | 100-300 | Guideline |
+| **handlers.go** | ALL `handle*` functions (optional) | 200-800 | Guideline |
+| **helpers.go** | Utilities, async ops (NO `handle*`) (optional) | 100-500 | Guideline |
 
 #### Intent Rules (ENFORCED)
 
@@ -340,8 +395,34 @@ screens/{feature}/
 | `const (...)` | `constants.go` | State constants |
 | `*Msg struct` | `messages.go` | **ALL message types** |
 | `*Intent struct` | `intent.go` OR `types.go` | Struct definition |
-| Handler methods | `handlers.go` (optional) | HandleCancel, HandleNavigate, etc. |
-| Helper methods | `helpers.go` (optional) | Modal openers, view helpers |
+| ALL `handle*` methods | `handlers.go` (optional) | **ALL handlers must be here** |
+| Utility methods | `helpers.go` (optional) | NO `handle*` functions allowed |
+
+#### Handler Organization Rules (MANDATORY)
+
+**ALL functions named `handle*` MUST live in `handlers.go`**. This includes:
+
+| Handler Type | Examples | Location |
+|--------------|----------|----------|
+| Screen Result Handlers | `HandleCancel`, `HandleNavigate`, `HandleSubmit`, `HandleError` | `handlers.go` |
+| Modal Update Handlers | `handleModalUpdates`, `handleDeleteModalUpdate`, `handleEditModalUpdate` | `handlers.go` |
+| Message Handlers | `handleBurstSuggestionsLoaded`, `handleFactExtractionComplete` | `handlers.go` |
+| Keyboard Handlers | `handleKeyShortcuts`, `handleDetailModalKeypress` | `handlers.go` |
+| Internal Dispatchers | `handleScreenResult`, `handleActionData` | `handlers.go` |
+
+**helpers.go MUST NOT contain any `handle*` functions**. It should contain:
+- Utility functions (e.g., `loadBurstEvents`, `showBurstDetailModal`)
+- Async command builders (e.g., `startBurstDetection`, `createBurstDetectionCmd`)
+- State management helpers (e.g., `clearSuggestionState`, `transitionToScreen`)
+- View helpers (e.g., `getStateName`, `getContextHelp`, `rebuildModalRegistry`)
+
+**Rationale**: Consolidating all handlers in one file makes it easy to:
+1. Find how any message/event is handled
+2. Understand the intent's interaction model
+3. Ensure consistent handler patterns
+4. Review handler logic in code reviews
+
+**Reference Implementation**: `intents/burst_management/handlers.go`
 
 #### Enforcement
 
@@ -374,6 +455,7 @@ make check-intent-architecture  # Checks #17-29 enforce structure
 4. ✅ USE `types.go`, `handlers.go`, `helpers.go` if intent.go > 300 lines
 5. ✅ ALWAYS put `*Msg` types in `messages.go`
 6. ✅ CREATE `screens/{feature}/modals/` if >2 modals
+7. ✅ PUT ALL `handle*` functions in `handlers.go` (NEVER in helpers.go)
 
 **When modifying existing intents**:
 - If adding >50 lines → **REFUSE**, suggest migration first
@@ -391,7 +473,8 @@ This intent must be migrated first:
 1. Create intents/burst_management/ subdirectory
 2. Create 5 core files: context.go, result.go, constants.go, messages.go, intent.go
 3. (Optional) Create types.go, handlers.go, helpers.go to keep intent.go small
-4. Extract views to screens/burst_management/
+4. (Optional) Create handlers.go to keep intent.go small
+5. Extract views to screens/burst_management/
 5. Move modals to screens/burst_management/modals/
 6. Reduce intent.go to 200-400 lines (broker only)
 
