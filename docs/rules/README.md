@@ -54,6 +54,19 @@ This directory contains all development standards, guidelines, and workflows for
   - **Test Fixtures (factory-go/gofakeit)** - Factory pattern for test data
   - LSP setup
 
+### 5. Conventions (see docs/conventions/)
+
+#### [GO_DOCUMENTATION_RULES.md](../conventions/GO_DOCUMENTATION_RULES.md) (~300 lines)
+- **Type**: Mandatory Rules
+- **Purpose**: Go documentation and comment standards
+- **Key Topics**:
+  - Package-level documentation (mandatory)
+  - Exported identifier documentation (mandatory)
+  - Inline comments prohibition
+  - Self-explanatory code principles
+  - Interface documentation
+  - Enforcement via golangci-lint (stylecheck, revive, godot)
+
 ### 2. Quick References (4 files)
 
 #### [AI_COMMIT_CHECKLIST.md](AI_COMMIT_CHECKLIST.md) (182 lines)
@@ -188,6 +201,7 @@ This directory contains all development standards, guidelines, and workflows for
 | Make a commit | [COMMIT_QUICK_REFERENCE.md](COMMIT_QUICK_REFERENCE.md) |
 | Attribute AI work | [AI_COMMIT_ATTRIBUTION.md](AI_COMMIT_ATTRIBUTION.md) |
 | Write Go code | [go-guidelines.md](go-guidelines.md) |
+| Document Go code | [GO_DOCUMENTATION_RULES.md](../conventions/GO_DOCUMENTATION_RULES.md) |
 | Create test data | [go-guidelines.md](go-guidelines.md) (Test Fixtures section) |
 | Check compliance | [COMPLIANCE_QUICK_REF.md](COMPLIANCE_QUICK_REF.md) |
 | Save tokens | [token-efficiency.md](token-efficiency.md) |

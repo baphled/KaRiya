@@ -290,3 +290,5 @@ See `AGENTS.md` section "E2E Test Structure" for detailed examples.
 
 Use Go’s standard documentation comments for packages, types, and functions. Begin each comment with the name of the item it describes (for example, `// Add adds two numbers.` above an `Add` function). These comments are processed by Go’s documentation tools (like `godoc` or displayed on pkg.go.dev) to produce user-facing docs. In general, comment any exported function or type with a brief description. Non-exported code can have comments if the intent or logic is complex. Avoid writing comments that restate the code – instead, explain the rationale or important details that aren’t obvious from the code itself.
 
+
+> **Important**: For detailed, mandatory documentation rules including package comments, exported identifiers, and inline comment prohibitions, see **[GO_DOCUMENTATION_RULES.md](../conventions/GO_DOCUMENTATION_RULES.md)**. These rules are enforced by `golangci-lint` (stylecheck, revive, godot).
