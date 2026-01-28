@@ -3,7 +3,6 @@ package burst_management
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -289,52 +288,6 @@ func (i *Intent) confirmBurst() tea.Cmd {
 	return i.showBurstDetailModal(i.selectedBurst)
 }
 
-// handleEditBurstMsg handles the EditBurstMsg sent by the edit modal.
-func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
-	if i.selectedBurst == nil || i.selectedBurst.ID != msg.BurstID {
-		// Burst mismatch or nil - show error.
-		i.errorModal = feedback.NewErrorModal("Edit Failed", "Burst not found")
-		i.state = StateDetail
-		return nil
-	}
-
-	// Validate the name is not empty.
-	if msg.Name == "" {
-		// Name is required - keep modal open and show error.
-		// Re-open the edit modal with an error indication.
-		i.state = StateEdit
-		return nil
-	}
-
-	// Clear the edit modal (it's already been closed by handleModalUpdates or test).
-	i.editModal = nil
-
-	// Save original values in case we need to rollback.
-	originalName := i.selectedBurst.Name
-	originalDescription := i.selectedBurst.Description
-
-	// Update burst with new values.
-	i.selectedBurst.Name = msg.Name
-	i.selectedBurst.Description = msg.Description
-
-	// Save to repository if available.
-	if i.context.BurstRepository != nil {
-		ctx := i.getContext()
-		err := i.context.BurstRepository.Update(ctx, i.selectedBurst)
-		if err != nil {
-			// Rollback in-memory changes on failure.
-			i.selectedBurst.Name = originalName
-			i.selectedBurst.Description = originalDescription
-			i.editError = err
-			i.errorModal = feedback.NewErrorModal("Update Failed", err.Error())
-			return nil
-		}
-	}
-
-	// Return to detail modal showing updated burst.
-	return i.showBurstDetailModal(i.selectedBurst)
-}
-
 // HasVisibleErrorModal returns true if the error modal is visible.
 func (i *Intent) HasVisibleErrorModal() bool {
 	return i.errorModal != nil
@@ -561,39 +514,6 @@ type modalWithDimensions interface {
 	Show()
 }
 
-// handleBurstEventsLoaded handles the BurstEventsLoadedMsg.
-func (i *Intent) handleBurstEventsLoaded(msg BurstEventsLoadedMsg) tea.Cmd {
-	i.loadingEvents = false
-	if !i.handleLoadError(msg.Error, "Load Events Failed") {
-		return nil
-	}
-	i.eventsModal = burstmodals.NewBurstEventsModal(
-		i.selectedBurst.ID, i.selectedBurst.Name, msg.Events, i.Theme())
-	i.showModalWithDimensions(i.eventsModal)
-	return nil
-}
-
-// handleBurstFactsLoaded handles the BurstFactsLoadedMsg.
-func (i *Intent) handleBurstFactsLoaded(msg BurstFactsLoadedMsg) tea.Cmd {
-	i.loadingFacts = false
-	if !i.handleLoadError(msg.Error, "Load Facts Failed") {
-		return nil
-	}
-	i.factsModal = burstmodals.NewBurstFactsModal(
-		i.selectedBurst.ID, i.selectedBurst.Name, msg.Facts, i.Theme())
-	i.showModalWithDimensions(i.factsModal)
-	return nil
-}
-
-// handleLoadError handles load errors and returns false if processing should stop.
-func (i *Intent) handleLoadError(err error, title string) bool {
-	if err != nil {
-		i.ShowErrorModal(title, err.Error())
-		return false
-	}
-	return i.selectedBurst != nil
-}
-
 // showModalWithDimensions sets dimensions and shows a modal.
 func (i *Intent) showModalWithDimensions(modal modalWithDimensions) {
 	width, height := i.getTerminalDimensions()
@@ -689,62 +609,6 @@ func (i *Intent) buildUsedEventIDSet(bursts []*career.Burst) map[string]bool {
 		}
 	}
 	return usedEventIDs
-}
-
-// handleBurstSuggestionsLoaded handles the BurstSuggestionsLoadedMsg.
-func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea.Cmd {
-	i.suggestionsLoading = false
-	i.loadingModal = nil
-
-	if msg.Error != nil {
-		// Silently ignore cancelled operations - user already knows they cancelled.
-		if errors.Is(msg.Error, context.Canceled) {
-			i.state = StateList
-			return nil
-		}
-		i.suggestionsError = msg.Error
-		i.ShowErrorModal("Burst Detection Failed", msg.Error.Error())
-		i.state = StateList
-		return nil
-	}
-
-	if len(msg.Suggestions) == 0 {
-		// No suggestions found - show message and return to list.
-		i.ShowErrorModal("No Suggestions Found",
-			"No suggestions were generated from your events. "+
-				"Try adding more events or adjusting detection settings.")
-		i.state = StateList
-		return nil
-	}
-
-	// Show suggestion review modal and update state.
-	// Clear selectedBurst since we're entering suggestion review mode, not viewing a specific burst.
-	// This prevents handleFactExtractionComplete from showing the detail modal for an old burst.
-	i.selectedBurst = nil
-	i.suggestionModal = burstmodals.NewSuggestionReviewModal(msg.Suggestions, i.Theme())
-	width, height := i.getTerminalDimensions()
-	i.suggestionModal.SetDimensions(width, height)
-	i.suggestionModal.Show()
-	i.state = StateSuggestionReview
-	return nil
-}
-
-// handleSuggestionReviewComplete handles the SuggestionReviewCompleteMsg.
-func (i *Intent) handleSuggestionReviewComplete(msg SuggestionReviewCompleteMsg) tea.Cmd {
-	if !i.isInSuggestionState() {
-		return nil
-	}
-
-	if len(msg.AcceptedSuggestions) == 0 {
-		i.state = StateList
-		i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
-		return nil
-	}
-
-	createdBursts := i.createBurstsFromSuggestions(msg.AcceptedSuggestions)
-	i.transitionToScreen(burstscreens.NewBurstListScreen(i.filteredBursts))
-
-	return i.startFactExtractionForBursts(createdBursts)
 }
 
 // isInSuggestionState returns true if currently in suggestion review state.
