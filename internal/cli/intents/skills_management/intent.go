@@ -41,28 +41,14 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		PaginationPrefix("Skills").
 		EmptyMessage("No skills found. Press 'a' to add a new skill.")
 
-	// Create column definitions for events TableBehavior.
-	eventsColumns := []behaviors.ColumnDef{
-		{Title: "Date", Width: 12},
-		{Title: "Event", Width: 50},
-		{Title: "Company", Width: 20},
-	}
-
-	// Create TableBehavior for skill events list.
-	eventsTableBehavior := behaviors.NewTableBehavior[*domain.CareerEvent](nil, eventsColumns, eventRowFormatter).
-		PageSize(15).
-		PaginationPrefix("Events").
-		EmptyMessage("No events found for this skill.")
-
 	intent := &Intent{
-		BaseIntent:          baseIntent,
-		context:             ctx,
-		state:               StateList,
-		skills:              []*domain.Skill{},
-		active:              false,
-		tableBehavior:       tableBehavior,
-		eventsTableBehavior: eventsTableBehavior,
-		modalRegistry:       intents.NewModalRegistry(),
+		BaseIntent:    baseIntent,
+		context:       ctx,
+		state:         StateList,
+		skills:        []*domain.Skill{},
+		active:        false,
+		tableBehavior: tableBehavior,
+		modalRegistry: intents.NewModalRegistry(),
 	}
 
 	return intent, nil

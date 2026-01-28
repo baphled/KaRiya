@@ -46,26 +46,6 @@ func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormat
 	}
 }
 
-// eventRowFormatter formats a career event for table display.
-func eventRowFormatter(event *domain.CareerEvent, _ int) []string {
-	// Date.
-	dateStr := event.Date.Format("2006-01-02")
-
-	// Truncate text to first 47 chars (50 - 3 for "...").
-	text := event.Text
-	if len(text) > 47 {
-		text = text[:47] + "..."
-	}
-
-	// Company.
-	company := event.Company
-	if company == "" {
-		company = "-"
-	}
-
-	return []string{dateStr, text, company}
-}
-
 // syncTableSelection syncs the TableBehavior selection with the intent's data.
 func (i *Intent) syncTableSelection() {
 	i.selectedIndex = i.tableBehavior.GetSelectedIndex()

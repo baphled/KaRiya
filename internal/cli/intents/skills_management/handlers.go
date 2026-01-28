@@ -76,7 +76,6 @@ func (i *Intent) handleSkillCreated(msg SkillCreatedMsg) tea.Cmd {
 	}
 
 	i.state = StateList
-	i.skillForm = nil
 	return i.Init()
 }
 
@@ -95,7 +94,6 @@ func (i *Intent) handleSkillUpdated(msg SkillUpdatedMsg) tea.Cmd {
 	}
 
 	i.state = StateList
-	i.skillForm = nil
 	return i.Init()
 }
 
@@ -125,7 +123,6 @@ func (i *Intent) handleSkillEventsLoaded(msg SkillEventsLoadedMsg) tea.Cmd {
 
 	i.skillEvents = msg.Events
 	i.eventsLoaded = true
-	i.eventsSelectedIndex = 0
 
 	return nil
 }

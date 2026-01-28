@@ -4,7 +4,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
-	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
@@ -36,13 +35,6 @@ type Intent struct {
 	eventCounts  map[string]int
 	skillEvents  []*domain.CareerEvent
 	eventsLoaded bool
-
-	// EventsTableBehavior provides type-safe table operations for skill events.
-	eventsTableBehavior *behaviors.TableBehavior[*domain.CareerEvent]
-	eventsSelectedIndex int
-
-	// Form for add/edit.
-	skillForm *models.SkillForm
 
 	// Modals (new architecture with bubbletea-overlay).
 	filterModal *modals.FilterModal
