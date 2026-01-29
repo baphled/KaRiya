@@ -652,4 +652,138 @@ var _ = Describe("DataProcessingService", func() {
 			})
 		})
 	})
+
+	// BUG-012: Project-only events should not split tenures
+	Describe("hasInterveningCompanyEvents", func() {
+		Context("BUG-012: project-only events (empty Company)", func() {
+			It("should return false when only project-only events exist between dates", func() {
+				// Project-only event (Company="") between two dates should NOT count
+				// as an intervening company event.
+				projectEvent := fixtures.EventWith("p1", "n-vyro.io work", "", "n-vyro.io")
+				projectEvent.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
+
+				allEvents := []*career.CareerEvent{projectEvent}
+				sort.Slice(allEvents, func(i, j int) bool {
+					return allEvents[i].Date.Before(allEvents[j].Date)
+				})
+
+				startDate := time.Date(2024, 2, 15, 0, 0, 0, 0, time.UTC)
+				endDate := time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC)
+
+				result := hasInterveningCompanyEvents(
+					startDate,
+					endDate,
+					"Mindful Chef",
+					allEvents,
+				)
+
+				Expect(result).To(BeFalse())
+			})
+
+			It("should still return true when real company events intervene", func() {
+				realCompanyEvent := fixtures.EventWith("c1", "Work at Other Corp", "Other Corp", "")
+				realCompanyEvent.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
+
+				allEvents := []*career.CareerEvent{realCompanyEvent}
+				sort.Slice(allEvents, func(i, j int) bool {
+					return allEvents[i].Date.Before(allEvents[j].Date)
+				})
+
+				startDate := time.Date(2024, 2, 15, 0, 0, 0, 0, time.UTC)
+				endDate := time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC)
+
+				result := hasInterveningCompanyEvents(
+					startDate,
+					endDate,
+					"Mindful Chef",
+					allEvents,
+				)
+
+				Expect(result).To(BeTrue())
+			})
+
+			It("should return false when mix of project-only and same-company events exist", func() {
+				projectEvent := fixtures.EventWith("p1", "n-vyro.io work", "", "n-vyro.io")
+				projectEvent.Date = time.Date(2024, 3, 10, 0, 0, 0, 0, time.UTC)
+
+				sameCompanyEvent := fixtures.EventWith("mc1", "Mindful Chef work", "Mindful Chef", "")
+				sameCompanyEvent.Date = time.Date(2024, 3, 20, 0, 0, 0, 0, time.UTC)
+
+				allEvents := []*career.CareerEvent{projectEvent, sameCompanyEvent}
+				sort.Slice(allEvents, func(i, j int) bool {
+					return allEvents[i].Date.Before(allEvents[j].Date)
+				})
+
+				startDate := time.Date(2024, 2, 15, 0, 0, 0, 0, time.UTC)
+				endDate := time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC)
+
+				result := hasInterveningCompanyEvents(
+					startDate,
+					endDate,
+					"Mindful Chef",
+					allEvents,
+				)
+
+				Expect(result).To(BeFalse())
+			})
+		})
+	})
+
+	// BUG-012: Integration-level tenure detection with project-only events
+	Describe("GroupEventsByCompany with project-only events", func() {
+		It("BUG-012: should not split tenure when only project-only events fill the gap", func() {
+			// Mindful Chef: Feb 2024 and Apr 2024 with n-vyro.io (project-only) at Mar 2024
+			// Should produce ONE Mindful Chef tenure, not two.
+			mcEvent1 := fixtures.EventWith("mc1", "Work at Mindful Chef", "Mindful Chef", "")
+			mcEvent1.Date = time.Date(2024, 2, 15, 0, 0, 0, 0, time.UTC)
+
+			mcEvent2 := fixtures.EventWith("mc2", "More at Mindful Chef", "Mindful Chef", "")
+			mcEvent2.Date = time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC)
+
+			// Project-only event (no company, just a project)
+			projectEvent := fixtures.EventWith("p1", "n-vyro.io development", "", "n-vyro.io")
+			projectEvent.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{mcEvent1, projectEvent, mcEvent2}
+
+			result, err := dps.GroupEventsByCompany(svc, events)
+			Expect(err).NotTo(HaveOccurred())
+
+			mcCount := 0
+			for _, group := range result {
+				if group.Company == "Mindful Chef" {
+					mcCount++
+				}
+			}
+
+			// Mindful Chef should appear as ONE tenure, not split into two.
+			Expect(mcCount).To(Equal(1), "Mindful Chef should be a single tenure, not split by project-only events")
+		})
+
+		It("BUG-012: should still split tenure when real company events intervene", func() {
+			// Ensure the existing BUG-009 behavior is preserved:
+			// Company A -> Company B -> Company A should still produce two tenures for A.
+			eventA1 := fixtures.EventWith("a1", "First at A", "Company A", "")
+			eventA1.Date = time.Date(2022, 3, 15, 0, 0, 0, 0, time.UTC)
+
+			eventB := fixtures.EventWith("b1", "Work at B", "Company B", "")
+			eventB.Date = time.Date(2022, 8, 15, 0, 0, 0, 0, time.UTC)
+
+			eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
+			eventA2.Date = time.Date(2023, 7, 15, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{eventA1, eventB, eventA2}
+
+			result, err := dps.GroupEventsByCompany(svc, events)
+			Expect(err).NotTo(HaveOccurred())
+
+			companyACount := 0
+			for key := range result {
+				if key == "Company A" || strings.HasPrefix(key, "Company A"+constants.TenureSeparator) {
+					companyACount++
+				}
+			}
+			Expect(companyACount).To(Equal(2), "Real company events should still split tenures")
+		})
+	})
 })

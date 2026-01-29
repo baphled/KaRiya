@@ -252,13 +252,14 @@ func hasInterveningCompanyEvents(
 	allEventsSorted []*career.CareerEvent,
 ) bool {
 	for _, event := range allEventsSorted {
-		eventCompany := event.Company
-		if eventCompany == "" {
-			eventCompany = constants.DefaultCompanyName
+		// BUG-012: Skip project-only events (empty Company) — they run
+		// concurrently with employment and are not intervening work.
+		if event.Company == "" {
+			continue
 		}
 
 		// Skip events at the same company.
-		if eventCompany == currentCompany {
+		if event.Company == currentCompany {
 			continue
 		}
 
