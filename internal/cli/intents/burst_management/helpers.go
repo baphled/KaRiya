@@ -4,6 +4,7 @@ package burst_management
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -274,7 +275,10 @@ func (i *Intent) confirmBurst() tea.Cmd {
 			return nil
 		}
 	} else {
+		now := time.Now()
 		i.selectedBurst.Confirmed = true
+		i.selectedBurst.ConfirmedAt = &now
+		i.selectedBurst.UpdatedAt = now
 	}
 
 	// Trigger fact extraction for the confirmed burst.
