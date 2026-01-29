@@ -4,6 +4,7 @@ package mocks
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
@@ -104,13 +105,17 @@ func (m *BurstServiceMock) GetSavedFacts() []*career.Fact {
 }
 
 // ConfirmBurst implements BurstService.
+// Mirrors the real service: sets Confirmed, ConfirmedAt, and UpdatedAt.
 func (m *BurstServiceMock) ConfirmBurst(_ context.Context, burst *career.Burst) error {
 	m.confirmCallCount++
 	if m.confirmError != nil {
 		return m.confirmError
 	}
 	if burst != nil {
+		now := time.Now()
 		burst.Confirmed = true
+		burst.ConfirmedAt = &now
+		burst.UpdatedAt = now
 	}
 	return nil
 }
