@@ -204,6 +204,7 @@ func FileLogger() *Logger {
 
 	// Create log file with timestamp
 	logFile := logDir + "/kariya.log"
+	// #nosec G304 -- logFile is constructed from config directory, safe for logging
 	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		// Fallback to console if we can't open file

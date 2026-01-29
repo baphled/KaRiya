@@ -453,6 +453,7 @@ func handleNonInteractiveImport(filePath string, _ bool, _ bool, svc *careerserv
 
 	importService := importer.NewImportService(svc)
 
+	// #nosec G304 -- filePath is user-provided CLI argument for import
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error opening import file: %v\n", err)

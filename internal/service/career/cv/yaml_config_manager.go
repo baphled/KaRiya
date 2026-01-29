@@ -68,6 +68,7 @@ func (m *YAMLConfigManager) LoadConfig(ctx context.Context, name string) (*caree
 	}
 
 	// Read file
+	// #nosec G304 -- configPath is validated above to be within configDir
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
