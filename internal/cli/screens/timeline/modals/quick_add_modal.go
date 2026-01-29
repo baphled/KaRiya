@@ -108,7 +108,9 @@ func (m *QuickAddModal) Update(msg tea.Msg) (tea.Cmd, bool, *QuickAddData) {
 
 	// Update form.
 	form, cmd := m.form.Update(msg)
-	m.form = form.(*huh.Form)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+	}
 
 	// Check if form is complete AND user confirmed submission.
 	if m.form.State == huh.StateCompleted {

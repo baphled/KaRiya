@@ -71,8 +71,11 @@ func NewGroup(fields ...Field) Group {
 // Use this instead of calling form.Update directly.
 func Update(form Form, msg tea.Msg) (Form, tea.Cmd) {
 	model, cmd := form.Update(msg)
-	//nolint:errcheck // Type assertion is safe - form.Update always returns *huh.Form.
-	return model.(*huh.Form), cmd
+	f, ok := model.(*huh.Form)
+	if !ok {
+		return form, cmd
+	}
+	return f, cmd
 }
 
 // Theme returns the Catppuccin theme configured for KaRiya forms.

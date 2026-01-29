@@ -34,7 +34,7 @@ const (
 //
 //	// In Update:
 //	if modal.Update(msg) {
-//	    // User dismissed the modal
+//	    // User dismissed it.
 //	    modal = nil
 //	}
 //

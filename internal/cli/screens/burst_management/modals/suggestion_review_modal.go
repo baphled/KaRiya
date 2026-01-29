@@ -1,8 +1,8 @@
 package modals
 
 import (
-	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -80,7 +80,7 @@ func NewSuggestionReviewModal(suggestions []burstfact.BurstSuggestion, theme the
 			Render()
 		return []string{
 			s.Name,
-			fmt.Sprintf("%d", len(s.EventIDs)),
+			strconv.Itoa(len(s.EventIDs)),
 			confidenceBar,
 		}
 	}

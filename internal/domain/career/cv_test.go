@@ -467,7 +467,6 @@ var _ = Describe("CVBullet", func() {
 			validReasons := []string{"ownership", "contribution", "strategy", "execution", "outcome", "activity"}
 
 			for _, reason := range validReasons {
-				reason := reason // capture for closure
 				It("should pass for "+reason, func() {
 					cvBullet.InclusionReason = reason
 					err := cvBullet.Validate()
@@ -482,7 +481,6 @@ var _ = Describe("CVBullet", func() {
 			generatorReasons := []string{"fact_extraction", "event_direct", "achievement_extraction"}
 
 			for _, reason := range generatorReasons {
-				reason := reason // capture for closure
 				It("should pass for "+reason, func() {
 					cvBullet.InclusionReason = reason
 					err := cvBullet.Validate()
@@ -664,7 +662,6 @@ var _ = Describe("CVConfig", func() {
 			invalidChars := []string{"/", "\\", ":", "*", "?", "\"", "<", ">", "|"}
 
 			for _, char := range invalidChars {
-				char := char // capture for closure
 				It("should fail with character "+char, func() {
 					cvConfig.Name = "test" + char + "config"
 					err := cvConfig.Validate()

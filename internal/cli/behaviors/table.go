@@ -359,7 +359,7 @@ func (tb *TableBehavior[T]) RenderPaginationInfo() string {
 
 	totalItems := len(tb.displayItems)
 	if totalItems == 0 {
-		return fmt.Sprintf("%s: 0", tb.paginationPrefix)
+		return tb.paginationPrefix + ": 0"
 	}
 
 	currentPage := (tb.selectedIndex / tb.pageSize) + 1

@@ -2,6 +2,7 @@ package skillsmanagement
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/components"
@@ -32,7 +33,7 @@ func skillRowFormatterWithCounts(eventCounts map[string]int) behaviors.RowFormat
 
 		years := "-"
 		if skill.YearsUsed != nil {
-			years = fmt.Sprintf("%d", *skill.YearsUsed)
+			years = strconv.Itoa(*skill.YearsUsed)
 		}
 
 		eventCount := "-"

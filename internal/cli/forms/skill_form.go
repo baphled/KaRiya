@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -216,16 +217,16 @@ func SkillYearsUsed(value string) error {
 	// Must be a valid integer
 	years, err := strconv.Atoi(trimmed)
 	if err != nil {
-		return fmt.Errorf("must be a valid number")
+		return errors.New("must be a valid number")
 	}
 
 	// Range check
 	if years < 0 {
-		return fmt.Errorf("must be 0 or greater")
+		return errors.New("must be 0 or greater")
 	}
 
 	if years > 50 {
-		return fmt.Errorf("must be 50 or less")
+		return errors.New("must be 50 or less")
 	}
 
 	return nil
