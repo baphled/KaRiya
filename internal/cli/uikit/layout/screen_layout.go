@@ -156,24 +156,22 @@ func (sl *ScreenLayout) WithTheme(theme themes.Theme) *ScreenLayout {
 	return sl
 }
 
-// Render renders the complete view with all components
+// Render renders the complete view with all components.
+// Layout strategy: pin logo to top (line 0), footer to bottom, content flows after header.
 func (sl *ScreenLayout) Render() string {
 	theme := sl.getTheme()
-	var parts []string
+	var headerParts []string
+	var contentParts []string
+	var footerParts []string
 
-	// Add logo spacing (blank lines before logo)
+	// === HEADER SECTION (pinned to top) ===
+	// Logo at line 0 (no spacing before it)
 	if sl.ShowLogo && sl.Logo != nil {
-		for range sl.LogoSpacing {
-			parts = append(parts, "")
-		}
-
-		// Render logo (logo will be centered by JoinVertical)
 		sl.Logo.SetWidth(sl.TerminalInfo.Width)
 		logoOutput := sl.Logo.ViewStatic()
-		parts = append(parts, logoOutput)
-
+		headerParts = append(headerParts, logoOutput)
 		// Add one blank line after logo
-		parts = append(parts, "")
+		headerParts = append(headerParts, "")
 	}
 
 	// Add header (breadcrumbs or title/subtitle)
@@ -193,8 +191,8 @@ func (sl *ScreenLayout) Render() string {
 				WithTheme(theme)
 			bar.SetCrumbs(crumbs)
 			breadcrumbOutput := bar.View()
-			parts = append(parts, breadcrumbOutput)
-			parts = append(parts, "") // Blank line after breadcrumbs
+			headerParts = append(headerParts, breadcrumbOutput)
+			headerParts = append(headerParts, "") // Blank line after breadcrumbs
 		}
 
 		if sl.Title != "" {
@@ -202,20 +200,20 @@ func (sl *ScreenLayout) Render() string {
 				Foreground(theme.ForegroundColor()).
 				Bold(true)
 			styledTitle := titleStyle.Render(sl.Title)
-			parts = append(parts, styledTitle)
+			headerParts = append(headerParts, styledTitle)
 
 			if sl.Subtitle != "" {
 				subtitleStyle := lipgloss.NewStyle().
 					Foreground(theme.MutedColor())
 				styledSubtitle := subtitleStyle.Render(sl.Subtitle)
-				parts = append(parts, styledSubtitle)
+				headerParts = append(headerParts, styledSubtitle)
 			}
 
-			parts = append(parts, "") // Blank line after title
+			headerParts = append(headerParts, "") // Blank line after title
 		}
 	}
 
-	// Add content
+	// === CONTENT SECTION (flows after header) ===
 	if sl.Content != "" {
 		contentToRender := sl.Content
 		// Check if custom style has been applied
@@ -223,10 +221,10 @@ func (sl *ScreenLayout) Render() string {
 		if hasStyle {
 			contentToRender = sl.ContentStyle.Render(sl.Content)
 		}
-		parts = append(parts, contentToRender)
+		contentParts = append(contentParts, contentToRender)
 	}
 
-	// Add footer
+	// === FOOTER SECTION (pinned to bottom) ===
 	if sl.ShowFooter && sl.HelpText != "" {
 		// Add visual separator if enabled
 		if sl.ShowFooterSeparator {
@@ -234,24 +232,62 @@ func (sl *ScreenLayout) Render() string {
 			separator := strings.Repeat("─", 100)
 			separatorStyle := lipgloss.NewStyle().
 				Foreground(theme.BorderColor())
-			parts = append(parts, "", separatorStyle.Render(separator))
+			footerParts = append(footerParts, "", separatorStyle.Render(separator))
 		} else {
-			parts = append(parts, "") // Just blank line
+			footerParts = append(footerParts, "") // Just blank line
 		}
 
 		// Render help text
 		helpStyle := lipgloss.NewStyle().
 			Foreground(theme.MutedColor())
 		styledHelp := helpStyle.Render(sl.HelpText)
-		parts = append(parts, styledHelp)
+		footerParts = append(footerParts, styledHelp)
 	}
 
-	// Join all parts with center alignment - aligns to widest line
-	combined := lipgloss.JoinVertical(lipgloss.Center, parts...)
+	// === ASSEMBLE WITH SPACER ===
+	// Build each section
+	header := lipgloss.JoinVertical(lipgloss.Center, headerParts...)
+	content := lipgloss.JoinVertical(lipgloss.Center, contentParts...)
+	footer := lipgloss.JoinVertical(lipgloss.Center, footerParts...)
 
-	// Center within terminal (both horizontal and vertical)
+	// Calculate heights
+	headerHeight := lipgloss.Height(header)
+	contentHeight := lipgloss.Height(content)
+	footerHeight := lipgloss.Height(footer)
+
+	// Calculate spacer to fill the gap
+	spacerHeight := sl.TerminalInfo.Height - headerHeight - contentHeight - footerHeight
+	if spacerHeight < 0 {
+		spacerHeight = 0 // Graceful: don't go negative
+	}
+
+	// Build spacer (empty lines)
+	var spacerParts []string
+	for i := 0; i < spacerHeight; i++ {
+		spacerParts = append(spacerParts, "")
+	}
+	spacer := strings.Join(spacerParts, "\n")
+
+	// Combine all sections
+	var allParts []string
+	if header != "" {
+		allParts = append(allParts, header)
+	}
+	if content != "" {
+		allParts = append(allParts, content)
+	}
+	if spacer != "" {
+		allParts = append(allParts, spacer)
+	}
+	if footer != "" {
+		allParts = append(allParts, footer)
+	}
+
+	combined := lipgloss.JoinVertical(lipgloss.Center, allParts...)
+
+	// Place with Top vertical alignment (pins to top)
 	rendered := lipgloss.Place(sl.TerminalInfo.Width, sl.TerminalInfo.Height,
-		lipgloss.Center, lipgloss.Center, combined)
+		lipgloss.Center, lipgloss.Top, combined)
 
 	// Add modal overlay if needed
 	if sl.ShowModal && sl.Modal != nil {
