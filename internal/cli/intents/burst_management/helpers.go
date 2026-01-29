@@ -580,7 +580,7 @@ func (i *Intent) getUnassignedEventIDs(
 	service BurstService,
 	existingBursts []*career.Burst,
 ) ([]string, error) {
-	events, err := service.ListEvents(ctx, careerrepo.ListFilters{Limit: -1})
+	events, err := service.ListEvents(ctx, careerrepo.EventListFilters{Limit: -1})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load events: %w", err)
 	}

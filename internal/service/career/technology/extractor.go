@@ -19,11 +19,11 @@ type ExtractedTechnology struct {
 // Extractor aggregates and filters user skills with event associations.
 type Extractor struct {
 	skillRepo careerRepo.SkillRepository
-	eventRepo careerRepo.Repository
+	eventRepo careerRepo.EventRepository
 }
 
 // NewExtractor creates a new technology extractor.
-func NewExtractor(skillRepo careerRepo.SkillRepository, eventRepo careerRepo.Repository) *Extractor {
+func NewExtractor(skillRepo careerRepo.SkillRepository, eventRepo careerRepo.EventRepository) *Extractor {
 	return &Extractor{
 		skillRepo: skillRepo,
 		eventRepo: eventRepo,
@@ -33,7 +33,7 @@ func NewExtractor(skillRepo careerRepo.SkillRepository, eventRepo careerRepo.Rep
 // ExtractFromUser aggregates user's defined skills with event associations.
 func (e *Extractor) ExtractFromUser(ctx context.Context) ([]*ExtractedTechnology, error) {
 	// 1. Load all user-defined skills
-	skills, err := e.skillRepo.List(ctx, &careerRepo.SkillFilters{})
+	skills, err := e.skillRepo.List(ctx, &careerRepo.SkillListFilters{})
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (e *Extractor) ExtractFromUser(ctx context.Context) ([]*ExtractedTechnology
 	}
 
 	// 2. Load all events
-	events, err := e.eventRepo.List(ctx, careerRepo.ListFilters{})
+	events, err := e.eventRepo.List(ctx, careerRepo.EventListFilters{})
 	if err != nil {
 		return nil, err
 	}

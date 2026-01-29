@@ -6,7 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
 	career "github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -24,9 +24,9 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 
 	BeforeEach(func() {
 		// Setup repositories and services
-		repo := careerrepo.NewMemoryRepository()
-		burstRepo := careerrepo.NewMemoryBurstRepository()
-		factRepo := careerrepo.NewMemoryFactRepository()
+		repo := careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
 		svc := careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)

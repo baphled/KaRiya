@@ -14,7 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
@@ -24,7 +24,7 @@ import (
 var _ = Describe("App Unit Tests", func() {
 	var (
 		model      *app.Model
-		repo       *careerrepo.MemoryRepository
+		repo       *careermemory.EventRepository
 		svc        *careerservice.Service
 		cliService *service.CLIEventService
 		ctx        context.Context
@@ -33,10 +33,10 @@ var _ = Describe("App Unit Tests", func() {
 	BeforeEach(func() {
 		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
 		ctx = context.Background()
-		repo = careerrepo.NewMemoryRepository()
-		burstRepo := careerrepo.NewMemoryBurstRepository()
-		factRepo := careerrepo.NewMemoryFactRepository()
-		skillRepo := careerrepo.NewMemorySkillRepository()
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
+		skillRepo := careermemory.NewSkillRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)
@@ -1059,16 +1059,16 @@ func (m *mockIntent) Result() *intents.IntentResult[interface{}] { return nil }
 
 var _ = Describe("IntentRegistrar DI Tests", func() {
 	var (
-		repo       *careerrepo.MemoryRepository
+		repo       *careermemory.EventRepository
 		svc        *careerservice.Service
 		cliService *service.CLIEventService
 	)
 
 	BeforeEach(func() {
 		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
-		repo = careerrepo.NewMemoryRepository()
-		burstRepo := careerrepo.NewMemoryBurstRepository()
-		factRepo := careerrepo.NewMemoryFactRepository()
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)

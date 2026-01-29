@@ -30,7 +30,7 @@ const (
 
 // Service provides business logic for career event management
 type Service struct {
-	repo      repo.Repository
+	repo      repo.EventRepository
 	factRepo  repo.FactRepository
 	burstRepo repo.BurstRepository
 	skillRepo repo.SkillRepository
@@ -38,7 +38,7 @@ type Service struct {
 }
 
 // NewService creates a new career event service
-func NewService(repository repo.Repository) *Service {
+func NewService(repository repo.EventRepository) *Service {
 	return &Service{
 		repo:   repository,
 		logger: logger.DefaultLogger(),
@@ -208,7 +208,7 @@ func (s *Service) DeleteEvent(ctx context.Context, eventID string) error {
 }
 
 // ListEvents retrieves career events with optional filtering
-func (s *Service) ListEvents(ctx context.Context, filters repo.ListFilters) ([]*domain.CareerEvent, error) {
+func (s *Service) ListEvents(ctx context.Context, filters repo.EventListFilters) ([]*domain.CareerEvent, error) {
 	events, err := s.repo.List(ctx, filters)
 	if err != nil {
 		s.logger.
@@ -222,7 +222,7 @@ func (s *Service) ListEvents(ctx context.Context, filters repo.ListFilters) ([]*
 }
 
 // CountEvents returns the total number of events matching filters
-func (s *Service) CountEvents(ctx context.Context, filters repo.ListFilters) (int, error) {
+func (s *Service) CountEvents(ctx context.Context, filters repo.EventListFilters) (int, error) {
 	count, err := s.repo.Count(ctx, filters)
 	if err != nil {
 		s.logger.
@@ -725,7 +725,7 @@ func (s *Service) GetFactRepository() repo.FactRepository {
 }
 
 // GetEventRepository returns the event repository
-func (s *Service) GetEventRepository() repo.Repository {
+func (s *Service) GetEventRepository() repo.EventRepository {
 	return s.repo
 }
 

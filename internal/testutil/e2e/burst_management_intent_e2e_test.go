@@ -1,14 +1,17 @@
-package burst_management_test
+package e2e_test
 
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/baphled/kariya/internal/testutil/mocks"
@@ -17,16 +20,87 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// executeBatchCmd executes a tea.Cmd and returns all non-tick messages.
+func executeBatchCmd(cmd tea.Cmd) []tea.Msg {
+	if cmd == nil {
+		return nil
+	}
+
+	msg := cmd()
+	if batchMsg, ok := msg.(tea.BatchMsg); ok {
+		return executeBatchCommands(batchMsg)
+	}
+
+	return filterTickMessage(msg)
+}
+
+// executeBatchCommands executes all commands in a batch and collects results.
+func executeBatchCommands(batchMsg tea.BatchMsg) []tea.Msg {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var messages []tea.Msg
+
+	for _, batchCmd := range batchMsg {
+		if batchCmd == nil {
+			continue
+		}
+		wg.Add(1)
+		go func(c tea.Cmd) {
+			defer wg.Done()
+			if result := c(); result != nil {
+				if filtered := filterTickMessage(result); len(filtered) > 0 {
+					mu.Lock()
+					messages = append(messages, filtered...)
+					mu.Unlock()
+				}
+			}
+		}(batchCmd)
+	}
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+	}
+
+	return messages
+}
+
+// filterTickMessage returns the message if it's not a spinner tick.
+func filterTickMessage(msg tea.Msg) []tea.Msg {
+	if msg == nil {
+		return nil
+	}
+	if _, isTick := msg.(feedback.ModalSpinnerTickMsg); isTick {
+		return nil
+	}
+	return []tea.Msg{msg}
+}
+
+// executeAsyncCmd is a convenience wrapper that returns the first non-tick message.
+func executeAsyncCmd(cmd tea.Cmd) tea.Msg {
+	messages := executeBatchCmd(cmd)
+	if len(messages) > 0 {
+		return messages[0]
+	}
+	return nil
+}
+
 var _ = Describe("Accepting a Burst Suggestion", func() {
 	var (
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 		mockService *mocks.BurstServiceMock
 	)
 
 	BeforeEach(func() {
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 		mockService = mocks.NewBurstServiceMock()
 
 		ctx = &burst_management.IntentContext{
@@ -788,7 +862,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 		events      []*career.CareerEvent
 		suggestions []burst_fact.BurstSuggestion
 	)
@@ -837,7 +911,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			})
 
 		// Create burst repository.
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		// Create context with service and repository.
 		ctx = &burst_management.IntentContext{
@@ -1234,7 +1308,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -1259,7 +1333,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 				{ID: "f1", Text: "Built scalable API"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -1871,7 +1945,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -1890,7 +1964,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				{ID: "f2", Text: "Improved performance by 40%"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -2273,7 +2347,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		var (
 			intent    *burst_management.Intent
 			ctx       *burst_management.IntentContext
-			burstRepo *careerrepo.MemoryBurstRepository
+			burstRepo *careermemory.BurstRepository
 			burst     *career.Burst
 		)
 
@@ -2285,7 +2359,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				EventIDs:    []string{"e1", "e2"},
 			}
 
-			burstRepo = careerrepo.NewMemoryBurstRepository()
+			burstRepo = careermemory.NewBurstRepository()
 			_ = burstRepo.Create(context.Background(), burst)
 
 			ctx = &burst_management.IntentContext{
@@ -2950,7 +3024,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -2963,7 +3037,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 				{ID: "f1", Text: "Extracted fact"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -3082,7 +3156,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -3097,7 +3171,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 				{ID: "f2", Text: "Reduced latency by 50%"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -3661,7 +3735,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -3675,7 +3749,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 				{ID: "f1", Text: "Fact 1"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},

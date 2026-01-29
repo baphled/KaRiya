@@ -1,7 +1,7 @@
 package career_test
 
 import (
-	"github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -9,17 +9,17 @@ import (
 
 var _ = Describe("Repository Setters", func() {
 	var (
-		repo      *career.MemoryRepository
+		repo      *careermemory.EventRepository
 		svc       *careerservice.Service
-		factRepo  *career.MemoryFactRepository
-		burstRepo *career.MemoryBurstRepository
+		factRepo  *careermemory.FactRepository
+		burstRepo *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
-		repo = career.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		svc = careerservice.NewService(repo)
-		factRepo = career.NewMemoryFactRepository()
-		burstRepo = career.NewMemoryBurstRepository()
+		factRepo = careermemory.NewFactRepository()
+		burstRepo = careermemory.NewBurstRepository()
 	})
 
 	Describe("SetFactRepository", func() {

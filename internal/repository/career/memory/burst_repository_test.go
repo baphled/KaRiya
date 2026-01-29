@@ -1,5 +1,5 @@
 //nolint:errcheck // Test file - error handling for test setup is not relevant.
-package career_test
+package memory
 
 import (
 	"context"
@@ -9,18 +9,18 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	repo "github.com/baphled/kariya/internal/repository/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("BurstRepository", func() {
 	var (
-		repository repo.BurstRepository
+		repository career_repo.BurstRepository
 		ctx        context.Context
 	)
 
 	BeforeEach(func() {
-		repository = repo.NewMemoryBurstRepository()
+		repository = NewBurstRepository()
 		ctx = context.Background()
 	})
 
@@ -46,7 +46,7 @@ var _ = Describe("BurstRepository", func() {
 			duplicate := fixtures.Burst("burst-1", "event-3", "event-4")
 
 			err = repository.Create(ctx, duplicate)
-			Expect(err).To(MatchError(repo.ErrDuplicateBurst))
+			Expect(err).To(MatchError(career_repo.ErrDuplicateBurst))
 		})
 
 		It("should generate unique ID if not provided", func() {
@@ -85,7 +85,7 @@ var _ = Describe("BurstRepository", func() {
 
 		It("should return error for non-existent burst", func() {
 			_, err := repository.GetByID(ctx, "non-existent-id")
-			Expect(err).To(MatchError(repo.ErrBurstNotFound))
+			Expect(err).To(MatchError(career_repo.ErrBurstNotFound))
 		})
 	})
 
@@ -118,7 +118,7 @@ var _ = Describe("BurstRepository", func() {
 			burst := fixtures.Burst("non-existent-id", "event-1", "event-2")
 
 			err := repository.Update(ctx, burst)
-			Expect(err).To(MatchError(repo.ErrBurstNotFound))
+			Expect(err).To(MatchError(career_repo.ErrBurstNotFound))
 		})
 	})
 
@@ -134,12 +134,12 @@ var _ = Describe("BurstRepository", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			_, err = repository.GetByID(ctx, burst.ID)
-			Expect(err).To(MatchError(repo.ErrBurstNotFound))
+			Expect(err).To(MatchError(career_repo.ErrBurstNotFound))
 		})
 
 		It("should return error for non-existent burst", func() {
 			err := repository.Delete(ctx, "non-existent-id")
-			Expect(err).To(MatchError(repo.ErrBurstNotFound))
+			Expect(err).To(MatchError(career_repo.ErrBurstNotFound))
 		})
 	})
 
@@ -165,13 +165,13 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should list all bursts with no filters", func() {
-			bursts, err := repository.List(ctx, repo.BurstListFilters{})
+			bursts, err := repository.List(ctx, career_repo.BurstListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
 		})
 
 		It("should sort bursts by name ascending", func() {
-			filters := repo.BurstListFilters{
+			filters := career_repo.BurstListFilters{
 				SortBy:    "name",
 				SortOrder: "asc",
 			}
@@ -185,7 +185,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should sort bursts by name descending", func() {
-			filters := repo.BurstListFilters{
+			filters := career_repo.BurstListFilters{
 				SortBy:    "name",
 				SortOrder: "desc",
 			}
@@ -199,7 +199,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should sort bursts by event count descending", func() {
-			filters := repo.BurstListFilters{
+			filters := career_repo.BurstListFilters{
 				SortBy:    "event_count",
 				SortOrder: "desc",
 			}
@@ -213,7 +213,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should apply pagination with limit", func() {
-			filters := repo.BurstListFilters{
+			filters := career_repo.BurstListFilters{
 				Limit:     2,
 				SortBy:    "name",
 				SortOrder: "asc",
@@ -225,7 +225,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should apply pagination with offset", func() {
-			filters := repo.BurstListFilters{
+			filters := career_repo.BurstListFilters{
 				Offset:    1,
 				SortBy:    "name",
 				SortOrder: "asc",
@@ -238,7 +238,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should apply pagination with both limit and offset", func() {
-			filters := repo.BurstListFilters{
+			filters := career_repo.BurstListFilters{
 				Offset:    1,
 				Limit:     1,
 				SortBy:    "name",
@@ -264,7 +264,7 @@ var _ = Describe("BurstRepository", func() {
 		})
 
 		It("should count all bursts with no filters", func() {
-			count, err := repository.Count(ctx, repo.BurstListFilters{})
+			count, err := repository.Count(ctx, career_repo.BurstListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(3))
 		})

@@ -33,7 +33,7 @@ func (m *Model) handleMenuSelection() (tea.Model, tea.Cmd) {
 
 	// Generate CV requires at least one career event to be meaningful.
 	if selectedItem.Intent == "generate_cv" {
-		events, err := m.careerService.GetEventRepository().List(m.ctx, careerrepo.ListFilters{Limit: 1})
+		events, err := m.careerService.GetEventRepository().List(m.ctx, careerrepo.EventListFilters{Limit: 1})
 		if err != nil || len(events) == 0 {
 			// Show informational modal instead of activating intent.
 			m.infoModal = feedback.NewWarningInfoModal(

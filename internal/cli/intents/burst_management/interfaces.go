@@ -16,7 +16,7 @@ import (
 type BurstService interface {
 	// Event operations.
 	GetEventByID(ctx context.Context, eventID string) (*career.CareerEvent, error)
-	ListEvents(ctx context.Context, filters careerrepo.ListFilters) ([]*career.CareerEvent, error)
+	ListEvents(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error)
 
 	// Fact operations.
 	GetFactsBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error)

@@ -15,7 +15,7 @@ import (
 // This allows for mocking in tests.
 type EventService interface {
 	DeleteEvent(ctx context.Context, eventID string) error
-	ListEvents(ctx context.Context, filters *careerrepo.ListFilters) ([]*career.CareerEvent, error)
+	ListEvents(ctx context.Context, filters *careerrepo.EventListFilters) ([]*career.CareerEvent, error)
 	CaptureEvent(ctx context.Context, text string, date time.Time, mode careerservice.EventCaptureMode, opts ...service.Option) error
 	UpdateEventMetadata(ctx context.Context, event *career.CareerEvent) error
 	GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error)

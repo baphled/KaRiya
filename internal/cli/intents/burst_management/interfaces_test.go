@@ -41,7 +41,7 @@ var _ = Describe("Interfaces", func() {
 				mock := mocks.NewBurstServiceMock()
 				var service burst_management.BurstService = mock
 
-				events, err := service.ListEvents(context.TODO(), careerrepo.ListFilters{})
+				events, err := service.ListEvents(context.TODO(), careerrepo.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(events).NotTo(BeNil())
 			})

@@ -379,6 +379,9 @@ linters-settings:
           # Test fixtures and data generation
           - github.com/bluele/factory-go/factory
           - github.com/brianvoe/gofakeit/v7
+          # ORM (used in repository/career/sql/)
+          - gorm.io/gorm
+          - gorm.io/driver/sqlite
 
   # =============================================================================
   # IMPORT ALIASES (Consistent naming)
@@ -1067,73 +1070,64 @@ issues:
         - revive      # CLI main has complex argument parsing
 
     # =========================================================================
-    # LEGACY REPOSITORIES - Need query optimization
+    # REPOSITORIES - Career domain persistence
     # =========================================================================
-    - path: internal/repository/career/sqlite_skill_repository\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - dupl
-        - nestif
-        - revive      # Complex List() function
-
-    - path: internal/repository/career/sqlite_fact_repository\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - dupl
-        - revive      # Complex List() function
-        - gocritic    # equalFold, emptyFallthrough
-
-    - path: internal/repository/career/memory_skill_repository\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - dupl
-        - nestif
-        - revive      # Complex List() function
-
-    - path: internal/repository/career/repository\.go
-      linters:
-        - gocognit    # List() function complexity
-        - gocyclo
-        - funlen
-        - dupl        # Repository interface duplication
-        - interfacebloat  # Repository interface design
-        - revive      # Context param in interface implementations
-
-    - path: internal/repository/career/migrator\.go
-      linters:
-        - funlen      # handleBaselineMigration
-
-    - path: internal/repository/career/sqlite_repository\.go
-      linters:
-        - gocognit    # List() function complexity
-        - gocyclo
-        - funlen
-        - revive      # Complex List() function
-
+    # Repository interface files (package root) - structural duplication
+    # across CRUD interfaces is inherent to Go's type system.
     - path: internal/repository/career/burst_repository\.go
       linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - dupl        # Memory repos share similar patterns
-        - gocritic    # emptyFallthrough intentional
-        - revive      # unused-parameter in interface implementations
-        - interfacebloat  # Repository interface design
+        - dupl           # CRUD interface duplication across entity types
+        - interfacebloat # Repository interface design
+
+    - path: internal/repository/career/event_repository\.go
+      linters:
+        - dupl           # CRUD interface duplication across entity types
+        - interfacebloat # Repository interface design
 
     - path: internal/repository/career/fact_repository\.go
       linters:
+        - dupl           # CRUD interface duplication across entity types
+        - interfacebloat # Repository interface design
+
+    - path: internal/repository/career/skill_repository\.go
+      linters:
+        - dupl           # CRUD interface duplication across entity types
+        - interfacebloat # Repository interface design
+
+    - path: internal/repository/career/migrator\.go
+      linters:
+        - funlen         # handleBaselineMigration
+
+    # SQL (GORM) repositories - structural duplication across entity-specific
+    # CRUD/List/Update methods is inherent to Go's type system.
+    - path: internal/repository/career/sql/burst_repository\.go
+      linters:
+        - dupl           # Update/List pattern shared with fact repo
+
+    - path: internal/repository/career/sql/skill_repository\.go
+      linters:
         - gocognit
         - gocyclo
         - funlen
-        - dupl        # Memory repos share similar patterns
-        - gocritic    # emptyFallthrough intentional
-        - revive      # unused-parameter in interface implementations
+        - dupl
+        - nestif
+        - revive         # Complex List() function
+
+    - path: internal/repository/career/sql/fact_repository\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - dupl
+        - revive         # Complex List() function
+        - gocritic       # equalFold, emptyFallthrough
+
+    - path: internal/repository/career/sql/event_repository\.go
+      linters:
+        - gocognit       # List() function complexity
+        - gocyclo
+        - funlen
+        - revive         # Complex List() function
 
     # =========================================================================
     # LEGACY UIKIT WIDGETS - Complex rendering components

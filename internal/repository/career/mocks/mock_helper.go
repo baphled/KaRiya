@@ -7,8 +7,8 @@ import (
 	repo "github.com/baphled/kariya/internal/repository/career"
 )
 
-// ListFilters is re-exported for test convenience.
-type ListFilters = repo.ListFilters
+// EventListFilters is re-exported for test convenience.
+type EventListFilters = repo.EventListFilters
 
 // TestMockRepository is a test helper for mocking repository behavior.
 type TestMockRepository struct {
@@ -83,25 +83,25 @@ func (m *TestMockRepository) SetCountBehavior(count int, err error) {
 	m.countErr = err
 }
 
-// Create implements Repository interface.
+// Create implements EventRepository interface.
 func (m *TestMockRepository) Create(_ context.Context, _ *career.CareerEvent) error {
 	m.createCalled = true
 	return m.createErr
 }
 
-// Update implements Repository interface.
+// Update implements EventRepository interface.
 func (m *TestMockRepository) Update(_ context.Context, _ *career.CareerEvent) error {
 	m.updateCalled = true
 	return m.updateErr
 }
 
-// Delete implements Repository interface.
+// Delete implements EventRepository interface.
 func (m *TestMockRepository) Delete(_ context.Context, _ string) error {
 	m.deleteCalled = true
 	return m.deleteErr
 }
 
-// GetByID implements Repository interface.
+// GetByID implements EventRepository interface.
 func (m *TestMockRepository) GetByID(_ context.Context, eventID string) (*career.CareerEvent, error) {
 	m.getByIDCalled = true
 
@@ -117,14 +117,14 @@ func (m *TestMockRepository) GetByID(_ context.Context, eventID string) (*career
 	return m.getByIDEvent, m.getByIDErr
 }
 
-// List implements Repository interface.
-func (m *TestMockRepository) List(_ context.Context, _ repo.ListFilters) ([]*career.CareerEvent, error) {
+// List implements EventRepository interface.
+func (m *TestMockRepository) List(_ context.Context, _ repo.EventListFilters) ([]*career.CareerEvent, error) {
 	m.listCalled = true
 	return m.listEvents, m.listErr
 }
 
-// Count implements Repository interface.
-func (m *TestMockRepository) Count(_ context.Context, _ repo.ListFilters) (int, error) {
+// Count implements EventRepository interface.
+func (m *TestMockRepository) Count(_ context.Context, _ repo.EventListFilters) (int, error) {
 	m.countCalled = true
 	return m.countResult, m.countErr
 }

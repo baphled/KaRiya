@@ -47,9 +47,9 @@ func (c *CLIEventService) CaptureEvent(
 }
 
 // ListEvents retrieves a list of events with optional filtering
-func (c *CLIEventService) ListEvents(ctx context.Context, filters *careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+func (c *CLIEventService) ListEvents(ctx context.Context, filters *careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
 	if filters == nil {
-		filters = &careerrepo.ListFilters{}
+		filters = &careerrepo.EventListFilters{}
 	}
 	return c.service.ListEvents(ctx, *filters)
 }
