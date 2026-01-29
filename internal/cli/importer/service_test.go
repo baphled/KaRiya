@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/internal/cli/importer"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
@@ -131,6 +132,48 @@ Mentored junior engineers on best practices,2024-02-10,Mentoring,mentoring,Train
 			// Note: ExtractedFactsCount will be 0 if fact repository is not configured
 			// which is expected in tests without database setup
 			Expect(result.ExtractedFactsCount).To(BeNumerically(">=", 0))
+		})
+
+		It("should link facts to their parent bursts via SourceBurstID", func() {
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+			svc.SetBurstRepository(burstRepo)
+			svc.SetFactRepository(factRepo)
+
+			// Events designed to cluster into a burst (same company, project, close dates).
+			csv := `Text,Date,Categories,Tags,Project,Company
+Implemented cloud migration phase 1,2024-01-15,Technical,technical,CloudMigration,TechCorp
+Completed cloud migration phase 2,2024-01-20,Technical,technical,CloudMigration,TechCorp
+Optimized cloud infrastructure performance,2024-01-25,Technical,technical,CloudMigration,TechCorp`
+
+			reader := bytes.NewReader([]byte(csv))
+			rows, err := importSvc.PrepareImport(ctx, reader)
+			Expect(err).NotTo(HaveOccurred())
+
+			selectedRows := []int{1, 2, 3}
+			result, err := importSvc.ImportRows(ctx, rows, selectedRows)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.SuccessCount).To(Equal(3))
+
+			// Get all saved bursts.
+			allBursts, err := burstRepo.List(ctx, careerrepo.BurstListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+
+			if len(allBursts) > 0 {
+				// If bursts were detected, verify facts are linked.
+				allFacts, err := factRepo.List(ctx, careerrepo.FactListFilters{})
+				Expect(err).NotTo(HaveOccurred())
+
+				// At least some facts should have SourceBurstID set.
+				factsWithBurstID := 0
+				for _, fact := range allFacts {
+					if fact.SourceBurstID != "" {
+						factsWithBurstID++
+					}
+				}
+				Expect(factsWithBurstID).To(BeNumerically(">", 0),
+					"facts belonging to burst events should have SourceBurstID set")
+			}
 		})
 
 		It("should track facts by competency category during import", func() {

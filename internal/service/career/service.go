@@ -297,19 +297,18 @@ func (s *Service) SuggestBurstsWithOptions(
 	return suggestions, nil
 }
 
-// ConfirmBurst validates and saves a burst suggestion
-func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
+// SaveBurst validates and persists a burst without setting confirmation state.
+// Use ConfirmBurst to mark an existing burst as confirmed.
+func (s *Service) SaveBurst(ctx context.Context, burst *domain.Burst) error {
 	if burst == nil {
 		return fmt.Errorf("burst cannot be nil")
 	}
 
-	// Validate burst
 	if err := burst.Validate(); err != nil {
 		s.logger.WithFields(map[string]string{"error": err.Error()}).Warn("Burst validation failed")
 		return err
 	}
 
-	// Save burst to repository if available
 	if s.burstRepo != nil {
 		if err := s.burstRepo.Create(ctx, burst); err != nil {
 			s.logger.WithFields(map[string]string{
@@ -322,9 +321,47 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 		s.logger.WithFields(map[string]string{
 			"burst_id": burst.ID,
 			"name":     burst.Name,
-		}).Info("Burst confirmed and saved")
+		}).Info("Burst saved")
 	} else {
-		s.logger.Info("Burst confirmed (no repository configured)")
+		s.logger.Info("Burst saved (no repository configured)")
+	}
+
+	return nil
+}
+
+// ConfirmBurst marks an existing burst as confirmed and updates the repository.
+// The burst must already exist in the repository.
+func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
+	if burst == nil {
+		return fmt.Errorf("burst cannot be nil")
+	}
+
+	if err := burst.Validate(); err != nil {
+		s.logger.WithFields(map[string]string{"error": err.Error()}).Warn("Burst validation failed")
+		return err
+	}
+
+	now := time.Now()
+	burst.Confirmed = true
+	burst.ConfirmedAt = &now
+	burst.UpdatedAt = now
+
+	if s.burstRepo != nil {
+		if err := s.burstRepo.Update(ctx, burst); err != nil {
+			// Rollback in-memory changes on failure.
+			burst.Confirmed = false
+			burst.ConfirmedAt = nil
+			s.logger.WithFields(map[string]string{
+				"burst_id": burst.ID,
+				"error":    err.Error(),
+			}).Warn("Failed to confirm burst")
+			return fmt.Errorf("failed to confirm burst: %w", err)
+		}
+
+		s.logger.WithFields(map[string]string{
+			"burst_id": burst.ID,
+			"name":     burst.Name,
+		}).Info("Burst confirmed")
 	}
 
 	return nil
@@ -390,8 +427,8 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 			UpdatedAt:   time.Now(),
 		}
 
-		// Save to repository
-		if err := s.ConfirmBurst(ctx, burst); err != nil {
+		// Save to repository (unconfirmed - user must review and confirm).
+		if err := s.SaveBurst(ctx, burst); err != nil {
 			s.logger.WithFields(map[string]string{
 				"suggestion_name": suggestion.Name,
 				"error":           err.Error(),

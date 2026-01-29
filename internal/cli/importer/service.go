@@ -120,7 +120,9 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 		result.CreatedEvents = append(result.CreatedEvents, event)
 	}
 
-	// Detect bursts from new events (Task 2.0: Post-import burst detection)
+	// Detect bursts from new events (Task 2.0: Post-import burst detection).
+	// Build event-to-burst mapping for linking facts to bursts later.
+	eventToBurstID := make(map[string]string)
 	if len(result.CreatedEvents) > 0 {
 		eventIDs := make([]string, len(result.CreatedEvents))
 		for i, event := range result.CreatedEvents {
@@ -129,7 +131,6 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 
 		suggestions, err := is.careerService.SuggestBursts(ctx, eventIDs)
 		if err != nil {
-			// Log warning but continue - burst detection is an optional enhancement
 			fmt.Printf("Warning: Failed to suggest bursts: %v\n", err)
 		} else {
 			result.BurstSuggestions = suggestions
@@ -137,55 +138,55 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 				fmt.Printf("Detected %d burst suggestions from %d events\n",
 					len(suggestions), len(result.CreatedEvents))
 
-				// Automatically save burst suggestions as persistent bursts
 				savedBursts, saveErr := is.careerService.SaveBurstSuggestions(ctx, suggestions)
 				if saveErr != nil {
 					fmt.Printf("Warning: Failed to save burst suggestions: %v\n", saveErr)
 				} else if len(savedBursts) > 0 {
 					fmt.Printf("Saved %d bursts to database\n", len(savedBursts))
+
+					for _, burst := range savedBursts {
+						for _, eid := range burst.EventIDs {
+							eventToBurstID[eid] = burst.ID
+						}
+					}
 				}
 			}
 		}
 	}
 
-	// Extract facts from new events (Task 3.0: Post-import fact extraction)
+	// Extract facts from new events (Task 3.0: Post-import fact extraction).
 	if len(result.CreatedEvents) > 0 {
 		for _, event := range result.CreatedEvents {
-			// Extract facts from this event
 			facts, err := is.careerService.ExtractFactsFromEvent(ctx, event)
 			if err != nil {
-				// Log warning but continue - fact extraction is an optional enhancement
 				fmt.Printf("Warning: Failed to extract facts from event %s: %v\n", event.ID, err)
 				continue
 			}
 
-			// Persist each extracted fact
 			for i := range facts {
 				fact := &facts[i]
-				// Set source event ID
 				fact.SourceEventID = event.ID
 
-				// Save fact to repository
+				if burstID, ok := eventToBurstID[event.ID]; ok {
+					fact.SourceBurstID = burstID
+				}
+
 				if err := is.careerService.SaveFact(ctx, fact); err != nil {
-					// Silently skip if fact repository is not configured (expected in some test scenarios)
 					if !errors.Is(err, careerservice.ErrFactRepositoryNotConfigured) {
 						fmt.Printf("Warning: Failed to save fact: %v\n", err)
 					}
 					continue
 				}
 
-				// Track the fact
 				result.ExtractedFactsCount++
 				result.FactsByEventID[event.ID] = append(result.FactsByEventID[event.ID], fact)
 
-				// Count by competency
 				for _, competency := range fact.CompetencyCategories {
 					result.FactsByCompetency[competency]++
 				}
 			}
 		}
 
-		// Log summary
 		if result.ExtractedFactsCount > 0 {
 			fmt.Printf("Extracted %d facts from %d events\n",
 				result.ExtractedFactsCount, len(result.CreatedEvents))
