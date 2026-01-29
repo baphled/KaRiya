@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -134,8 +133,8 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			}
 		}
 
-		// Open database connection
-		db, err := sql.Open("sqlite", dbPath)
+		// Open database connection with WAL mode and busy timeout.
+		db, err := careersql.OpenDB(dbPath)
 		if err != nil {
 			fmt.Fprintf(errOut, "Error opening database at '%s': %v\n", dbPath, err)
 			return 1
