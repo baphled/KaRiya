@@ -3,6 +3,7 @@ package cv
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"strings"
 
@@ -1147,5 +1148,88 @@ var _ = Describe("BUG-008: ScoringConfig integration", func() {
 			Expect(technicalBullet).NotTo(BeNil())
 			Expect(technicalBullet.Category).To(Equal(constants.CompetencyTechnical))
 		})
+	})
+})
+
+// BUG-013: Bullet deduplication must be company-aware.
+var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
+	var (
+		generator BulletGenerator
+		log       *logger.Logger
+		ctx       context.Context
+	)
+
+	BeforeEach(func() {
+		log = logger.New(io.Discard, logger.InfoLevel)
+		generator = NewBulletGenerator(log, nil)
+		ctx = context.Background()
+	})
+
+	It("should NOT merge bullets with identical text from different companies", func() {
+		events := []*career.CareerEvent{
+			fixtures.EventWith("e-friday", "Acted as senior stabilising engineer during late-stage delivery pressure", "We Are Friday", ""),
+			fixtures.EventWith("e-beis", "Acted as senior stabilising engineer during late-stage delivery pressure", "BEIS", ""),
+		}
+
+		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "", "")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(bullets).To(HaveLen(2), "identical text at different companies must produce separate bullets")
+	})
+
+	It("should merge bullets with identical text from the same company", func() {
+		events := []*career.CareerEvent{
+			fixtures.EventWith("e1", "Built scalable backend services", "Acme Corp", "Project A"),
+			fixtures.EventWith("e2", "Built scalable backend services", "Acme Corp", "Project B"),
+		}
+
+		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "", "")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(bullets).To(HaveLen(1), "identical text at the same company should be merged")
+	})
+
+	It("should produce separate bullets for cross-cutting entries across many companies", func() {
+		companies := []string{"Company A", "Company B", "Company C", "Company D", "Company E"}
+		events := make([]*career.CareerEvent, len(companies))
+		for i, company := range companies {
+			events[i] = fixtures.EventWith(
+				fmt.Sprintf("e-%d", i+1),
+				"Designed and delivered scalable backend services using Ruby on Rails",
+				company,
+				"",
+			)
+		}
+
+		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "", "")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(bullets).To(HaveLen(len(companies)),
+			"cross-cutting entries across %d companies must produce %d separate bullets", len(companies), len(companies))
+	})
+
+	It("should keep SourceEventIDs scoped to the same company after dedup", func() {
+		events := []*career.CareerEvent{
+			fixtures.EventWith("e-friday-1", "Led delivery of key features", "We Are Friday", ""),
+			fixtures.EventWith("e-friday-2", "Led delivery of key features", "We Are Friday", ""),
+			fixtures.EventWith("e-beis-1", "Led delivery of key features", "BEIS", ""),
+		}
+
+		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "", "")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(bullets).To(HaveLen(2), "should produce one bullet per company")
+
+		// Build a lookup of company per event for verification.
+		eventCompany := map[string]string{
+			"e-friday-1": "We Are Friday",
+			"e-friday-2": "We Are Friday",
+			"e-beis-1":   "BEIS",
+		}
+
+		for _, bullet := range bullets {
+			companies := map[string]bool{}
+			for _, eid := range bullet.SourceEventIDs {
+				companies[eventCompany[eid]] = true
+			}
+			Expect(companies).To(HaveLen(1),
+				"SourceEventIDs should only reference events from one company, got %v", bullet.SourceEventIDs)
+		}
 	})
 })

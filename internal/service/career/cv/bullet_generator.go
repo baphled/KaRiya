@@ -167,8 +167,14 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context,
 	// Filter by audience
 	bullets = bg.FilterByAudience(bullets, targetAudience)
 
-	// Deduplicate bullets with identical text (keeps highest confidence)
-	bullets = bg.deduplicateBullets(bullets)
+	// Build event map for company-aware deduplication (BUG-013).
+	eventMap := make(map[string]*career.CareerEvent, len(events))
+	for _, event := range events {
+		eventMap[event.ID] = event
+	}
+
+	// Deduplicate bullets with identical text at the same company (keeps highest confidence).
+	bullets = bg.deduplicateBullets(bullets, eventMap)
 
 	// Calculate scores
 	bullets = bg.calculateScores(bullets, targetRole, targetAudience)
@@ -398,38 +404,44 @@ func (bg *DefaultBulletGenerator) extractPrimaryCategory(categories []string) co
 	return ""
 }
 
-// deduplicateBullets removes bullets with identical text, keeping the one with highest confidence
-// When merging, it combines source IDs to preserve lineage information
-func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet) []*Bullet {
+// deduplicateBullets removes bullets with identical text at the same company,
+// keeping the one with highest confidence. Bullets at different companies with
+// identical text are kept separate (BUG-013). When merging, it combines source
+// IDs to preserve lineage information.
+func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap map[string]*career.CareerEvent) []*Bullet {
 	if len(bullets) <= 1 {
 		return bullets
 	}
 
-	// Map to track unique bullets by normalized text
+	// Map to track unique bullets by normalized text + company (BUG-013).
 	seen := make(map[string]*Bullet)
 
 	for _, bullet := range bullets {
-		// Normalize text for comparison (lowercase, trim spaces)
+		// Normalize text for comparison (lowercase, trim spaces).
 		normalizedText := strings.ToLower(strings.TrimSpace(bullet.Text))
 
-		if existing, exists := seen[normalizedText]; exists {
-			// Merge: keep the one with higher confidence, combine source IDs
+		// Resolve primary company from source events (BUG-013).
+		company := resolvePrimaryCompany(bullet.SourceEventIDs, eventMap)
+		key := normalizedText + "|" + company
+
+		if existing, exists := seen[key]; exists {
+			// Merge: keep the one with higher confidence, combine source IDs.
 			if bullet.Confidence > existing.Confidence {
-				// Keep new bullet but merge source IDs from existing
+				// Keep new bullet but merge source IDs from existing.
 				bullet.SourceEventIDs = mergeUniqueStrings(bullet.SourceEventIDs, existing.SourceEventIDs)
 				bullet.SourceFactIDs = mergeUniqueStrings(bullet.SourceFactIDs, existing.SourceFactIDs)
-				seen[normalizedText] = bullet
+				seen[key] = bullet
 			} else {
-				// Keep existing but merge source IDs from new
+				// Keep existing but merge source IDs from new.
 				existing.SourceEventIDs = mergeUniqueStrings(existing.SourceEventIDs, bullet.SourceEventIDs)
 				existing.SourceFactIDs = mergeUniqueStrings(existing.SourceFactIDs, bullet.SourceFactIDs)
 			}
 		} else {
-			seen[normalizedText] = bullet
+			seen[key] = bullet
 		}
 	}
 
-	// Convert back to slice
+	// Convert back to slice.
 	result := make([]*Bullet, 0, len(seen))
 	for _, bullet := range seen {
 		result = append(result, bullet)
@@ -437,6 +449,32 @@ func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet) []*Bulle
 
 	bg.logger.Info("Deduplicated bullets: %d -> %d", len(bullets), len(result))
 	return result
+}
+
+// resolvePrimaryCompany determines the primary company for a bullet by counting
+// which company appears most frequently across its source events (BUG-013).
+func resolvePrimaryCompany(sourceEventIDs []string, eventMap map[string]*career.CareerEvent) string {
+	if len(sourceEventIDs) == 0 || len(eventMap) == 0 {
+		return ""
+	}
+
+	companyCounts := make(map[string]int)
+	for _, eid := range sourceEventIDs {
+		if event, ok := eventMap[eid]; ok && event.Company != "" {
+			companyCounts[event.Company]++
+		}
+	}
+
+	primaryCompany := ""
+	maxCount := 0
+	for company, count := range companyCounts {
+		if count > maxCount {
+			maxCount = count
+			primaryCompany = company
+		}
+	}
+
+	return primaryCompany
 }
 
 // mergeUniqueStrings merges two string slices, removing duplicates
