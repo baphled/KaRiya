@@ -1,12 +1,14 @@
-package burst_management_test
+package e2e_test
 
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents/burst_management"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
@@ -17,6 +19,77 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+// executeBatchCmd executes a tea.Cmd and returns all non-tick messages.
+func executeBatchCmd(cmd tea.Cmd) []tea.Msg {
+	if cmd == nil {
+		return nil
+	}
+
+	msg := cmd()
+	if batchMsg, ok := msg.(tea.BatchMsg); ok {
+		return executeBatchCommands(batchMsg)
+	}
+
+	return filterTickMessage(msg)
+}
+
+// executeBatchCommands executes all commands in a batch and collects results.
+func executeBatchCommands(batchMsg tea.BatchMsg) []tea.Msg {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var messages []tea.Msg
+
+	for _, batchCmd := range batchMsg {
+		if batchCmd == nil {
+			continue
+		}
+		wg.Add(1)
+		go func(c tea.Cmd) {
+			defer wg.Done()
+			if result := c(); result != nil {
+				if filtered := filterTickMessage(result); len(filtered) > 0 {
+					mu.Lock()
+					messages = append(messages, filtered...)
+					mu.Unlock()
+				}
+			}
+		}(batchCmd)
+	}
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+	}
+
+	return messages
+}
+
+// filterTickMessage returns the message if it's not a spinner tick.
+func filterTickMessage(msg tea.Msg) []tea.Msg {
+	if msg == nil {
+		return nil
+	}
+	if _, isTick := msg.(feedback.ModalSpinnerTickMsg); isTick {
+		return nil
+	}
+	return []tea.Msg{msg}
+}
+
+// executeAsyncCmd is a convenience wrapper that returns the first non-tick message.
+func executeAsyncCmd(cmd tea.Cmd) tea.Msg {
+	messages := executeBatchCmd(cmd)
+	if len(messages) > 0 {
+		return messages[0]
+	}
+	return nil
+}
 
 var _ = Describe("Accepting a Burst Suggestion", func() {
 	var (
