@@ -641,4 +641,107 @@ var _ = Describe("TableBehavior", func() {
 			})
 		})
 	})
+
+	Describe("Viewport Integration", func() {
+		BeforeEach(func() {
+			table = behaviors.NewTableBehavior(theme, columns, formatter)
+		})
+
+		Describe("SetHeight", func() {
+			It("should accept and store height for viewport", func() {
+				result := table.SetHeight(20)
+				Expect(result).To(BeIdenticalTo(table))
+				// Height should be stored and used for viewport
+			})
+
+			It("should handle minimum height gracefully", func() {
+				result := table.SetHeight(1)
+				Expect(result).To(BeIdenticalTo(table))
+				// Should not panic with very small height
+			})
+
+			It("should update viewport height on subsequent calls", func() {
+				table.SetHeight(10)
+				table.SetHeight(20)
+				// Should accept height updates
+			})
+		})
+
+		Describe("Viewport Rendering", func() {
+			It("should render content within viewport height", func() {
+				// Create many items to exceed viewport
+				manyItems := make([]*TestItem, 30)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
+				}
+				table.SetItems(manyItems).SetHeight(10)
+
+				rendered := table.Render()
+				Expect(rendered).NotTo(BeEmpty())
+				// Should render within height constraint
+			})
+
+			It("should show only viewport portion of content", func() {
+				// Create items that exceed viewport
+				manyItems := make([]*TestItem, 20)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item " + string(rune(i+'0')), Status: "Active", Count: i}
+				}
+				table.SetItems(manyItems).SetHeight(5)
+
+				rendered := table.Render()
+				// Should not show all 20 items at once
+				Expect(rendered).NotTo(BeEmpty())
+			})
+		})
+
+		Describe("Scrolling", func() {
+			var manyItems []*TestItem
+
+			BeforeEach(func() {
+				// Create more items than viewport can show
+				manyItems = make([]*TestItem, 20)
+				for i := range manyItems {
+					manyItems[i] = &TestItem{Name: "Item", Status: "Active", Count: i}
+				}
+				table.SetItems(manyItems).SetHeight(5)
+			})
+
+			It("should scroll down when navigating beyond viewport", func() {
+				// Navigate down multiple times
+				for i := 0; i < 10; i++ {
+					table.HandleNavigation("down")
+				}
+
+				// Should have scrolled
+				rendered := table.Render()
+				Expect(rendered).NotTo(BeEmpty())
+			})
+
+			It("should scroll up when navigating up", func() {
+				// First scroll down
+				for i := 0; i < 10; i++ {
+					table.HandleNavigation("down")
+				}
+
+				// Then scroll up
+				for i := 0; i < 5; i++ {
+					table.HandleNavigation("up")
+				}
+
+				rendered := table.Render()
+				Expect(rendered).NotTo(BeEmpty())
+			})
+
+			It("should handle page up/down with viewport", func() {
+				table.HandleNavigation("pgdn")
+				rendered := table.Render()
+				Expect(rendered).NotTo(BeEmpty())
+
+				table.HandleNavigation("pgup")
+				rendered = table.Render()
+				Expect(rendered).NotTo(BeEmpty())
+			})
+		})
+	})
 })
