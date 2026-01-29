@@ -343,4 +343,51 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 			Expect(len(lines)).To(Equal(10))
 		})
 	})
+
+	Describe("Available Content Height Calculation", func() {
+		It("should calculate available content height correctly", func() {
+			logo := NewMockLogo("LOGO\nLINE2\nLINE3") // 3 lines
+			view := layout.NewScreenLayout(termInfo).
+				WithLogo(logo, 0).
+				WithBreadcrumbs("Home", "Settings").
+				WithTheme(theme).
+				WithHelp("Help text")
+
+			// Expected calculation:
+			// Terminal height: 24
+			// Header: 2 (blank) + 3 (logo) + 1 (blank) + 1 (breadcrumbs) + 1 (blank) = 8 lines
+			// Footer: 1 (blank) + 1 (help) = 2 lines
+			// Available content: 24 - 8 - 2 = 14 lines
+			availableHeight := view.GetAvailableContentHeight()
+
+			Expect(availableHeight).To(BeNumerically(">=", 10), "Should have at least 10 lines for content")
+			Expect(availableHeight).To(BeNumerically("<=", 18), "Should not exceed reasonable content height")
+		})
+
+		It("should return full height when no header or footer", func() {
+			view := layout.NewScreenLayout(termInfo).
+				WithTheme(theme)
+			// No logo, no help = minimal header/footer
+
+			availableHeight := view.GetAvailableContentHeight()
+
+			// Should be close to terminal height (24) minus minimal margins
+			Expect(availableHeight).To(BeNumerically(">", 20), "Should use most of terminal for content")
+		})
+
+		It("should handle small terminals gracefully", func() {
+			smallTerm := &terminal.Info{Width: 40, Height: 10, IsValid: true}
+			logo := NewMockLogo("LOGO")
+			view := layout.NewScreenLayout(smallTerm).
+				WithLogo(logo, 0).
+				WithTheme(theme).
+				WithHelp("Help")
+
+			availableHeight := view.GetAvailableContentHeight()
+
+			// Even in small terminal, should return positive height
+			Expect(availableHeight).To(BeNumerically(">", 0), "Should always return positive content height")
+			Expect(availableHeight).To(BeNumerically("<", 10), "Should be less than terminal height")
+		})
+	})
 })

@@ -156,6 +156,101 @@ func (sl *ScreenLayout) WithTheme(theme themes.Theme) *ScreenLayout {
 	return sl
 }
 
+// GetAvailableContentHeight calculates the height available for content between header and footer.
+// This is useful for screens that need to size their content (tables, viewports) to fill available space.
+//
+// Returns: terminalHeight - headerHeight - footerHeight
+//
+// Example:
+//
+//	contentHeight := screenLayout.GetAvailableContentHeight()
+//	viewport := viewport.New(width, contentHeight)
+func (sl *ScreenLayout) GetAvailableContentHeight() int {
+	theme := sl.getTheme()
+	var headerParts []string
+	var footerParts []string
+
+	// Calculate header height (same logic as Render)
+	if sl.ShowLogo && sl.Logo != nil {
+		headerParts = append(headerParts, "", "") // 2 blank lines before logo
+		sl.Logo.SetWidth(sl.TerminalInfo.Width)
+		logoOutput := sl.Logo.ViewStatic()
+		headerParts = append(headerParts, logoOutput)
+		headerParts = append(headerParts, "") // Blank line after logo
+	}
+
+	if sl.ShowHeader {
+		if len(sl.Breadcrumbs) > 0 {
+			crumbs := make([]navigation.Breadcrumb, len(sl.Breadcrumbs))
+			for i, label := range sl.Breadcrumbs {
+				intent := strings.ToLower(strings.ReplaceAll(label, " ", "_"))
+				crumbs[i] = navigation.Breadcrumb{
+					Label:  label,
+					Icon:   navigation.GetIconForIntent(intent),
+					Intent: intent,
+				}
+			}
+			bar := navigation.NewBreadcrumbBar(sl.TerminalInfo.Width, false).
+				WithTheme(theme)
+			bar.SetCrumbs(crumbs)
+			breadcrumbOutput := bar.View()
+			headerParts = append(headerParts, breadcrumbOutput)
+			headerParts = append(headerParts, "") // Blank line after breadcrumbs
+		}
+
+		if sl.Title != "" {
+			titleStyle := lipgloss.NewStyle().
+				Foreground(theme.ForegroundColor()).
+				Bold(true)
+			styledTitle := titleStyle.Render(sl.Title)
+			headerParts = append(headerParts, styledTitle)
+
+			if sl.Subtitle != "" {
+				subtitleStyle := lipgloss.NewStyle().
+					Foreground(theme.MutedColor())
+				styledSubtitle := subtitleStyle.Render(sl.Subtitle)
+				headerParts = append(headerParts, styledSubtitle)
+			}
+
+			headerParts = append(headerParts, "") // Blank line after title
+		}
+	}
+
+	// Calculate footer height
+	if sl.ShowFooter && sl.HelpText != "" {
+		if sl.ShowFooterSeparator {
+			separator := strings.Repeat("─", 100)
+			separatorStyle := lipgloss.NewStyle().
+				Foreground(theme.BorderColor())
+			footerParts = append(footerParts, "", separatorStyle.Render(separator))
+		} else {
+			footerParts = append(footerParts, "") // Just blank line
+		}
+
+		helpStyle := lipgloss.NewStyle().
+			Foreground(theme.MutedColor())
+		styledHelp := helpStyle.Render(sl.HelpText)
+		footerParts = append(footerParts, styledHelp)
+	}
+
+	// Get heights
+	header := lipgloss.JoinVertical(lipgloss.Center, headerParts...)
+	footer := lipgloss.JoinVertical(lipgloss.Center, footerParts...)
+
+	headerHeight := lipgloss.Height(header)
+	footerHeight := lipgloss.Height(footer)
+
+	// Calculate available content height
+	availableHeight := sl.TerminalInfo.Height - headerHeight - footerHeight
+
+	// Ensure minimum height of 1
+	if availableHeight < 1 {
+		availableHeight = 1
+	}
+
+	return availableHeight
+}
+
 // Render renders the complete view with all components.
 // Layout strategy: pin logo to top (line 0), footer to bottom, content flows after header.
 func (sl *ScreenLayout) Render() string {
