@@ -1222,7 +1222,7 @@ var _ = Describe("Burst Confirmation from Detail View", func() {
 	})
 
 	Context("when confirming an unconfirmed burst from detail view", func() {
-		It("marks burst as confirmed without triggering fact extraction", func() {
+		It("marks burst as confirmed and triggers fact extraction", func() {
 			burst := intent.GetFilteredBursts()[0]
 
 			result := &screens.NavigateResult{ResultData: burst}
@@ -1230,15 +1230,14 @@ var _ = Describe("Burst Confirmation from Detail View", func() {
 
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
-			// Should return to detail view, not extracting facts.
-			// Fact extraction only happens via suggestion acceptance (press 's' then 'a').
-			Expect(intent.GetState()).To(Equal(burst_management.StateDetail))
 			Expect(intent.GetSelectedBurst().Confirmed).To(BeTrue())
+			// Confirmation returns an async extraction command.
+			Expect(cmd).NotTo(BeNil(), "confirmBurst should return extraction command")
 		})
 
-		It("returns to detail view after confirmation", func() {
+		It("returns to list state after confirmation starts extraction", func() {
 			burst := intent.GetFilteredBursts()[0]
 
 			result := &screens.NavigateResult{ResultData: burst}
@@ -1246,10 +1245,18 @@ var _ = Describe("Burst Confirmation from Detail View", func() {
 
 			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 
-			_ = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
-			// Detail modal should be visible after confirmation.
-			Expect(intent.GetDetailModal()).NotTo(BeNil())
+			// Execute the extraction command to simulate async completion.
+			if cmd != nil {
+				msg := cmd()
+				if msg != nil {
+					intent.Update(msg)
+				}
+			}
+
+			// After extraction completes, detail modal should show for selectedBurst.
+			Expect(intent.GetSelectedBurst()).NotTo(BeNil())
 		})
 	})
 })

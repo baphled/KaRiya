@@ -60,21 +60,65 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 	})
 
-	Describe("ConfirmBurst", func() {
+	Describe("SaveBurst", func() {
 		It("should reject burst with fewer than 2 events", func() {
-			// Create burst manually with only 1 event (fixtures.Burst enforces min 2)
+			// Create burst manually with only 1 event (fixtures.Burst enforces min 2).
 			burst := fixtures.BurstFactory.MustCreate().(*career.Burst)
-			burst.EventIDs = []string{"1"} // Override to have only 1 event
+			burst.EventIDs = []string{"1"}
 
-			err := service.ConfirmBurst(ctx, burst)
+			err := service.SaveBurst(ctx, burst)
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("should accept valid burst", func() {
+		It("should accept valid burst without setting Confirmed", func() {
+			burstRepo := careermemory.NewBurstRepository()
+			service.SetBurstRepository(burstRepo)
 			burst := fixtures.Burst("burst1", "1", "2")
 
-			err := service.ConfirmBurst(ctx, burst)
+			err := service.SaveBurst(ctx, burst)
 			Expect(err).NotTo(HaveOccurred())
+
+			// SaveBurst should NOT set Confirmed.
+			retrieved, err := burstRepo.GetByID(ctx, burst.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrieved.Confirmed).To(BeFalse())
+			Expect(retrieved.ConfirmedAt).To(BeNil())
+		})
+	})
+
+	Describe("ConfirmBurst", func() {
+		var burstRepo *careermemory.BurstRepository
+
+		BeforeEach(func() {
+			burstRepo = careermemory.NewBurstRepository()
+			service.SetBurstRepository(burstRepo)
+		})
+
+		It("should set Confirmed to true and ConfirmedAt", func() {
+			burst := fixtures.Burst("burst1", "1", "2")
+			// First save the burst.
+			err := burstRepo.Create(ctx, burst)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = service.ConfirmBurst(ctx, burst)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify confirmation state.
+			retrieved, err := burstRepo.GetByID(ctx, burst.ID)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(retrieved.Confirmed).To(BeTrue())
+			Expect(retrieved.ConfirmedAt).NotTo(BeNil())
+		})
+
+		It("should reject nil burst", func() {
+			err := service.ConfirmBurst(ctx, nil)
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("should reject burst with empty ID", func() {
+			burst := fixtures.Burst("", "1", "2")
+			err := service.ConfirmBurst(ctx, burst)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
@@ -145,7 +189,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 			service.SetBurstRepository(burstRepo)
 		})
 
-		It("should save valid burst suggestions", func() {
+		It("should save valid burst suggestions as unconfirmed", func() {
 			suggestions := []burst_fact.BurstSuggestion{
 				{
 					Name:            "Backend Platform Initiative",
@@ -165,12 +209,13 @@ var _ = Describe("Career Service - Burst Methods", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(savedBursts).To(HaveLen(2))
 
-			// Verify bursts were saved to repository
 			for _, burst := range savedBursts {
 				retrieved, err := burstRepo.GetByID(ctx, burst.ID)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(retrieved.Name).To(Equal(burst.Name))
 				Expect(retrieved.EventIDs).To(Equal(burst.EventIDs))
+				Expect(retrieved.Confirmed).To(BeFalse(), "saved burst suggestions should be unconfirmed")
+				Expect(retrieved.ConfirmedAt).To(BeNil(), "saved burst suggestions should not have ConfirmedAt")
 			}
 		})
 
