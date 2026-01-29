@@ -651,12 +651,11 @@ var _ = Describe("Intent Methods", func() {
 			Expect(intent.HasVisibleConfirmModal()).To(BeTrue())
 
 			// Press 'y' to confirm.
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
 			// Burst should now be confirmed.
 			Expect(intent.GetSelectedBurst().Confirmed).To(BeTrue())
-			// Should return to detail view (fact extraction only happens via suggestion acceptance).
-			Expect(intent.GetState()).To(Equal(burst_management.StateDetail))
+			Expect(cmd).NotTo(BeNil(), "confirmBurst should return extraction command")
 		})
 
 		It("should cancel confirmation when 'n' is pressed", func() {
@@ -1878,24 +1877,43 @@ var _ = Describe("Intent Methods", func() {
 			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
 		})
 
-		It("should confirm burst and extract facts", func() {
-			// Set up extracted facts.
+		It("should confirm burst and trigger fact extraction", func() {
 			extractedFacts := []career.Fact{
-				{ID: "f1", Text: "Extracted fact"},
+				{ID: "f1", Text: "Extracted fact", SourceBurstID: burst.ID,
+					CompetencyCategories: []string{"technical"},
+					RoleFit:              "senior_ic", AudienceRelevance: []string{"peer"},
+					StrengthSignal: "technical"},
 			}
 			mockService.SetExtractedFacts(extractedFacts)
 
 			// Navigate to detail and confirm.
 			navResult := &screens.NavigateResult{ResultData: burst}
 			intent.HandleNavigate(navResult)
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			_ = cmd
 
-			// Confirm with 'y'.
-			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
+			// Confirm with 'y' - this should trigger both confirmation AND fact extraction.
+			cmd = intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'y'}})
 
-			// Burst should be confirmed (updated in repo).
+			// Burst should be confirmed.
 			confirmed, _ := repo.GetByID(ctx.Context, burst.ID)
 			Expect(confirmed.Confirmed).To(BeTrue())
+
+			// Fact extraction should have been triggered (cmd returned).
+			Expect(cmd).NotTo(BeNil(), "confirmBurst should return a command for fact extraction")
+
+			// Execute the returned command to trigger fact extraction.
+			if cmd != nil {
+				msg := cmd()
+				if msg != nil {
+					// Process the extraction result message.
+					intent.Update(msg)
+				}
+			}
+
+			// Verify extraction was called.
+			Expect(mockService.GetExtractCallCount()).To(BeNumerically(">=", 1),
+				"fact extraction should be triggered when confirming a burst")
 		})
 
 		It("should handle confirm error gracefully", func() {

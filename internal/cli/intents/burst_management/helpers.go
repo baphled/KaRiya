@@ -258,8 +258,7 @@ func (i *Intent) loadBurstFacts(burst *career.Burst) []*career.Fact {
 	return facts
 }
 
-// confirmBurst marks the selected burst as confirmed and saves it.
-// Note: Fact extraction happens when accepting suggestions, not here.
+// confirmBurst marks the selected burst as confirmed and triggers fact extraction.
 func (i *Intent) confirmBurst() tea.Cmd {
 	if i.selectedBurst == nil {
 		return nil
@@ -267,7 +266,6 @@ func (i *Intent) confirmBurst() tea.Cmd {
 
 	// Save to repository first (if available) BEFORE modifying in-memory state.
 	if i.context.BurstRepository != nil {
-		// Create a copy with Confirmed=true for the update.
 		ctx := i.getContext()
 		i.selectedBurst.Confirmed = true
 		err := i.context.BurstRepository.Update(ctx, i.selectedBurst)
@@ -283,9 +281,8 @@ func (i *Intent) confirmBurst() tea.Cmd {
 		i.selectedBurst.Confirmed = true
 	}
 
-	// Stay on detail view - just update the confirmed status visually.
-	i.state = StateDetail
-	return i.showBurstDetailModal(i.selectedBurst)
+	// Trigger fact extraction for the confirmed burst.
+	return i.extractFactsForBurst(i.selectedBurst)
 }
 
 // HasVisibleErrorModal returns true if the error modal is visible.
