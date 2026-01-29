@@ -130,7 +130,7 @@ func (g *ButtonGroup) FocusLast() {
 // - Tab / Right / 'l': Focus next button
 // - Shift+Tab / Left / 'h': Focus previous button
 // - Home: Focus first button
-// - End: Focus last button
+// - End: Focus last button.
 func (g *ButtonGroup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.Type {

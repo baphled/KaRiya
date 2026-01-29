@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// CVGenerationService orchestrates the CV generation workflow
+// CVGenerationService orchestrates the CV generation workflow.
 type CVGenerationService interface {
 	// GenerateCV generates a CV from a saved configuration by name
 	GenerateCV(ctx context.Context, configName string) (*career.CVView, error)
@@ -20,7 +20,7 @@ type CVGenerationService interface {
 	GenerateCVFromConfig(ctx context.Context, config *career.CVConfig) (*career.CVView, error)
 }
 
-// DefaultCVGenerationService is the default implementation of CVGenerationService
+// DefaultCVGenerationService is the default implementation of CVGenerationService.
 type DefaultCVGenerationService struct {
 	eventRepo       careerrepo.EventRepository
 	factRepo        careerrepo.FactRepository
@@ -31,7 +31,7 @@ type DefaultCVGenerationService struct {
 	logger          *logger.Logger
 }
 
-// NewCVGenerationService creates a new CVGenerationService instance
+// NewCVGenerationService creates a new CVGenerationService instance.
 func NewCVGenerationService(
 	eventRepo careerrepo.EventRepository,
 	factRepo careerrepo.FactRepository,
@@ -55,7 +55,7 @@ func NewCVGenerationService(
 	}
 }
 
-// GenerateCV generates a CV from a saved configuration by name
+// GenerateCV generates a CV from a saved configuration by name.
 func (svc *DefaultCVGenerationService) GenerateCV(ctx context.Context, configName string) (*career.CVView, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -71,7 +71,7 @@ func (svc *DefaultCVGenerationService) GenerateCV(ctx context.Context, configNam
 	return svc.GenerateCVFromConfig(ctx, config)
 }
 
-// GenerateCVFromConfig generates a CV from a configuration object
+// GenerateCVFromConfig generates a CV from a configuration object.
 func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context, config *career.CVConfig) (*career.CVView, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -101,7 +101,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		lengthConfig := GetLengthFormatConfig(LengthFormat(config.LengthFormat))
 		if lengthConfig.MaxYearsHistory != nil {
 			originalCount := len(events)
-			filteredEvents := make([]*career.CareerEvent, 0, len(events))
+			filteredEvents := make([]*career.Event, 0, len(events))
 			for _, event := range events {
 				if lengthConfig.ShouldIncludeEvent(event.Date) {
 					filteredEvents = append(filteredEvents, event)
@@ -206,7 +206,7 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 		GeneratedAt:      time.Now(),
 		SourceEventCount: len(events),
 		SourceFactCount:  len(facts),
-		Sections:         sections, // Include generated sections in the CV view
+		Sections:         sections,
 	}
 
 	svc.logger.Info("CV generated successfully: %s (role: %s, sections: %d)", config.Name, config.TargetRole, len(sections))
@@ -214,14 +214,14 @@ func (svc *DefaultCVGenerationService) GenerateCVFromConfig(ctx context.Context,
 	return cvView, nil
 }
 
-// retrieveEventsWithFilters retrieves events based on filter criteria
+// retrieveEventsWithFilters retrieves events based on filter criteria.
 func (svc *DefaultCVGenerationService) retrieveEventsWithFilters(
 	ctx context.Context, filters map[string]interface{},
-) ([]*career.CareerEvent, error) {
+) ([]*career.Event, error) {
 	// Return all events for CV generation
 	// Use a high limit to ensure we get all events (repository defaults to 100)
 	events, err := svc.eventRepo.List(ctx, careerrepo.EventListFilters{
-		Limit: 10000, // High enough to get all events
+		Limit: 10000,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list events: %w", err)
@@ -235,11 +235,11 @@ func (svc *DefaultCVGenerationService) retrieveEventsWithFilters(
 	return events, nil
 }
 
-// applyEventFilters applies filter criteria to events
+// applyEventFilters applies filter criteria to events.
 func (svc *DefaultCVGenerationService) applyEventFilters(
-	events []*career.CareerEvent, filters map[string]interface{},
-) []*career.CareerEvent {
-	var filtered []*career.CareerEvent
+	events []*career.Event, filters map[string]interface{},
+) []*career.Event {
+	var filtered []*career.Event
 
 	for _, event := range events {
 		if svc.eventMatchesFilters(event, filters) {
@@ -250,8 +250,8 @@ func (svc *DefaultCVGenerationService) applyEventFilters(
 	return filtered
 }
 
-// eventMatchesFilters checks if an event matches all filter criteria
-func (svc *DefaultCVGenerationService) eventMatchesFilters(event *career.CareerEvent, filters map[string]interface{}) bool {
+// eventMatchesFilters checks if an event matches all filter criteria.
+func (svc *DefaultCVGenerationService) eventMatchesFilters(event *career.Event, filters map[string]interface{}) bool {
 	// Check date range filters
 	if minDate, ok := filters["minDate"].(time.Time); ok {
 		if event.Date.Before(minDate) {
@@ -339,7 +339,7 @@ func (svc *DefaultCVGenerationService) eventMatchesFilters(event *career.CareerE
 	return true
 }
 
-// retrieveFacts retrieves all facts from the repository
+// retrieveFacts retrieves all facts from the repository.
 func (svc *DefaultCVGenerationService) retrieveFacts(ctx context.Context) ([]*career.Fact, error) {
 	if svc.factRepo == nil {
 		return []*career.Fact{}, nil
@@ -353,7 +353,7 @@ func (svc *DefaultCVGenerationService) retrieveFacts(ctx context.Context) ([]*ca
 	return facts, nil
 }
 
-// filterFactsForEvent returns facts that originated from a specific event
+// filterFactsForEvent returns facts that originated from a specific event.
 func (svc *DefaultCVGenerationService) filterFactsForEvent(facts []*career.Fact, eventID string) []*career.Fact {
 	var result []*career.Fact
 	for _, fact := range facts {

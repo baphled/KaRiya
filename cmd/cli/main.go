@@ -127,7 +127,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			kariyaDir := filepath.Join(homeDir, ".kariya")
 			dbPath = filepath.Join(kariyaDir, "events.db")
 
-			if err := os.MkdirAll(kariyaDir, 0750); err != nil {
+			if err := os.MkdirAll(kariyaDir, 0o750); err != nil {
 				fmt.Fprintf(errOut, "Error creating kariya directory: %v\n", err)
 				return 1
 			}
@@ -214,7 +214,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	return 0
 }
 
-// handleDetectBursts re-runs burst detection on all events
+// handleDetectBursts re-runs burst detection on all events.
 func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
@@ -282,7 +282,7 @@ func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 	return 0
 }
 
-// handleExtractFacts re-runs fact extraction on all events
+// handleExtractFacts re-runs fact extraction on all events.
 func handleExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
@@ -352,7 +352,7 @@ func handleExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 	return 0
 }
 
-// handleShowBursts displays all existing bursts
+// handleShowBursts displays all existing bursts.
 func handleShowBursts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
@@ -398,7 +398,7 @@ func handleShowBursts(svc *careerservice.Service, out io.Writer, errOut io.Write
 	return 0
 }
 
-// handleShowFacts displays all existing facts
+// handleShowFacts displays all existing facts.
 func handleShowFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
@@ -453,7 +453,7 @@ func handleNonInteractiveImport(filePath string, _ bool, _ bool, svc *careerserv
 
 	importService := importer.NewImportService(svc)
 
-	file, err := os.Open(filePath) // #nosec G304 -- user-provided import file path (intentional)
+	file, err := os.Open(filePath) // #nosec G304 -- User-provided import file path is intentional
 	if err != nil {
 		fmt.Fprintf(errOut, "Error opening import file: %v\n", err)
 		return 1

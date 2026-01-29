@@ -18,16 +18,16 @@ import (
 
 // PreviewStats contains statistics about the preview content.
 type PreviewStats struct {
-	ItemCount     int   // Number of items being exported (shown in preview)
-	TotalCount    int   // Total items available in database
-	EstimatedSize int64 // Estimated file size in bytes
-	ContentLines  int   // Number of lines in content
-	IsTruncated   bool  // Whether preview was truncated
+	ItemCount     int
+	TotalCount    int
+	EstimatedSize int64
+	ContentLines  int
+	IsTruncated   bool
 }
 
 // Preview displays a preview of the export content with a scrollable viewport.
 type Preview struct {
-	*base.BaseScreen
+	*base.Screen
 
 	content      string
 	artifactType types.ExportArtifactType
@@ -44,11 +44,11 @@ type Preview struct {
 // NewPreview creates a new preview screen with viewport support.
 func NewPreview(content string, artifactType types.ExportArtifactType, format types.ExportFormat, breadcrumbs []string) *Preview {
 	return &Preview{
-		BaseScreen:   base.NewBaseScreen(),
+		Screen:       base.NewBaseScreen(),
 		content:      content,
 		artifactType: artifactType,
 		format:       format,
-		destination:  types.ExportDestinationFile, // Default
+		destination:  types.ExportDestinationFile,
 		breadcrumbs:  breadcrumbs,
 		width:        80,
 		height:       24,
@@ -60,7 +60,7 @@ func NewPreview(content string, artifactType types.ExportArtifactType, format ty
 // NewPreviewWithStats creates a new preview screen with statistics.
 func NewPreviewWithStats(content string, artifactType types.ExportArtifactType, format types.ExportFormat, destination types.ExportDestination, breadcrumbs []string, stats *PreviewStats) *Preview {
 	return &Preview{
-		BaseScreen:   base.NewBaseScreen(),
+		Screen:       base.NewBaseScreen(),
 		content:      content,
 		artifactType: artifactType,
 		format:       format,
@@ -84,10 +84,10 @@ func (s *Preview) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		s.BaseScreen.HandleWindowSizeMsg(msg)
+		s.Screen.HandleWindowSizeMsg(msg)
 		s.width = msg.Width
 		s.height = msg.Height
-		s.ready = false // Force viewport recreation on resize
+		s.ready = false
 		return nil, nil
 
 	case tea.KeyMsg:
@@ -238,7 +238,7 @@ func (s *Preview) initializeViewport(_ themes.Theme) {
 	// - Footer: 2 lines (separator, help badges)
 	// - Box wrapper: 2 (border) + 2 (padding) = 4 lines vertical, 6 chars horizontal
 	//   (border=1 each side, padding=1 each side, plus padding internal spacing)
-	viewportHeight := s.height - 11 // 5 header + 2 footer + 4 box
+	viewportHeight := s.height - 11
 	if viewportHeight < 5 {
 		viewportHeight = 5
 	}
@@ -288,9 +288,9 @@ func (s *Preview) renderFooter(th themes.Theme) string {
 	return separator + "\n" + primitives.RenderHelpFooter(uikitTheme, badges...)
 }
 
-// getTheme returns the theme from BaseScreen or a default theme.
+// getTheme returns the theme from Screen or a default theme.
 func (s *Preview) getTheme() themes.Theme {
-	if t := s.BaseScreen.Theme(); t != nil {
+	if t := s.Screen.Theme(); t != nil {
 		if th, ok := t.(themes.Theme); ok {
 			return th
 		}
@@ -301,7 +301,7 @@ func (s *Preview) getTheme() themes.Theme {
 // SetStats sets the preview statistics.
 func (s *Preview) SetStats(stats *PreviewStats) {
 	s.stats = stats
-	s.ready = false // Force re-render
+	s.ready = false
 }
 
 // SetDestination sets the export destination.

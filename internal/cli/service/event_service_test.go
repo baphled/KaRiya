@@ -67,7 +67,7 @@ var _ = Describe("CLI Event Service", func() {
 			ctx := context.Background()
 
 			// Create a test event directly via repository
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text: "Test event",
 				Date: time.Now(),
 			}
@@ -89,7 +89,7 @@ var _ = Describe("CLI Event Service", func() {
 			ctx := context.Background()
 
 			// Create a test event
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text: "Completed important milestone",
 				Date: time.Now(),
 			}
@@ -126,7 +126,7 @@ var _ = Describe("UpdateEventMetadata", func() {
 
 	It("should update event metadata without changing text or date", func() {
 		// Create an event
-		originalEvent := &career.CareerEvent{
+		originalEvent := &career.Event{
 			ID:   "test-event-1",
 			Text: "Original text",
 			Date: time.Now().Add(-24 * time.Hour),
@@ -135,7 +135,7 @@ var _ = Describe("UpdateEventMetadata", func() {
 		Expect(err).To(BeNil())
 
 		// Update metadata
-		updatedEvent := &career.CareerEvent{
+		updatedEvent := &career.Event{
 			ID:         "test-event-1",
 			Text:       "This should be ignored",
 			Date:       time.Now(), // This should be ignored
@@ -167,7 +167,7 @@ var _ = Describe("UpdateEventMetadata", func() {
 	})
 
 	It("should return error when event ID is empty", func() {
-		event := &career.CareerEvent{
+		event := &career.Event{
 			ID:      "",
 			Text:    "Test",
 			Company: "Company",
@@ -178,7 +178,7 @@ var _ = Describe("UpdateEventMetadata", func() {
 	})
 
 	It("should return error when event does not exist", func() {
-		event := &career.CareerEvent{
+		event := &career.Event{
 			ID:      "non-existent",
 			Company: "Company",
 		}

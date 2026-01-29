@@ -156,7 +156,7 @@ func FieldsHeight(terminalHeight int) int {
 // The confirm button remains visible at the bottom while fields scroll above it.
 // fieldsGroup: the form fields that can scroll
 // confirmValue: pointer to bool for submit confirmation
-// width, height: dimensions for the form
+// width, height: dimensions for the form.
 func NewFormWithFixedConfirm(fieldsGroup *huh.Group, confirmValue *bool, width, height int) *huh.Form {
 	// Calculate height for fields group (reserve space for confirm)
 	fieldsHeight := height - ConfirmButtonHeight
@@ -211,6 +211,7 @@ func NewThemedFormWithAccessible(theme themes.Theme, groups ...*huh.Group) *huh.
 }
 
 // FormColors defines the color scheme for form elements.
+// Currently uses hardcoded hex values; tracked for refactoring in issue #136.
 var FormColors = struct {
 	Title       lipgloss.Color
 	Description lipgloss.Color
@@ -218,11 +219,11 @@ var FormColors = struct {
 	Success     lipgloss.Color
 	Placeholder lipgloss.Color
 }{
-	Title:       lipgloss.Color("#89B4FA"), // Catppuccin Blue
-	Description: lipgloss.Color("#94E2D5"), // Catppuccin Teal
-	Error:       lipgloss.Color("#F38BA8"), // Catppuccin Red
-	Success:     lipgloss.Color("#A6E3A1"), // Catppuccin Green
-	Placeholder: lipgloss.Color("#6C7086"), // Catppuccin Overlay0
+	Title:       lipgloss.Color("#89B4FA"),
+	Description: lipgloss.Color("#94E2D5"),
+	Error:       lipgloss.Color("#F38BA8"),
+	Success:     lipgloss.Color("#A6E3A1"),
+	Placeholder: lipgloss.Color("#6C7086"),
 }
 
 // Common form helper functions
@@ -295,7 +296,7 @@ func NewInput(config FieldConfig) *huh.Input {
 	input := huh.NewInput().
 		Key(config.Key).
 		Title(config.Title).
-		Prompt("> ") // Explicit prompt fixes placeholder display issue
+		Prompt("> ")
 
 	if config.Description != "" {
 		input = input.Description(config.Description)

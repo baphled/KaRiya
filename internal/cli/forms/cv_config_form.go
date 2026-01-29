@@ -11,11 +11,11 @@ type CVConfigFormData struct {
 	ProfileID       string
 	Audience        string
 	TechFocus       string
-	Technologies    []string // For multi-select (generalist mode)
-	Technology      string   // For single-select (specialist mode)
+	Technologies    []string
+	Technology      string
 	FocusArea       string
 	SkillsFormat    string
-	SkillsLimit     int // max skills per category/total (0 = no limit)
+	SkillsLimit     int
 	CVLength        string
 	SubmitConfirmed bool
 }
@@ -43,7 +43,7 @@ type ProfileOption struct {
 	Name string
 }
 
-// ExtractedTechnology represents a technology extracted from events
+// ExtractedTechnology represents a technology extracted from events.
 type ExtractedTechnology struct {
 	Name string
 }
@@ -145,7 +145,7 @@ func NewCVConfigForm(
 
 	// Set default skills limit if not already set
 	if data.SkillsLimit == 0 {
-		data.SkillsLimit = 5 // Default to 5 per category
+		data.SkillsLimit = 5
 	}
 
 	// Build skills limit options for the select

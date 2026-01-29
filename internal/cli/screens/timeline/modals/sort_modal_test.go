@@ -12,11 +12,11 @@ import (
 var _ = Describe("SortModal", func() {
 	var (
 		modal  *modals.SortModal
-		events []*career.CareerEvent
+		events []*career.Event
 	)
 
 	BeforeEach(func() {
-		events = []*career.CareerEvent{
+		events = []*career.Event{
 			{ID: "1", Text: "Event 1", Company: "Company A"},
 			{ID: "2", Text: "Event 2", Company: "Company B"},
 		}
@@ -53,7 +53,7 @@ var _ = Describe("SortModal", func() {
 		})
 
 		It("handles empty events list", func() {
-			modal = modals.NewSortModal([]*career.CareerEvent{}, nil, 80, 24)
+			modal = modals.NewSortModal([]*career.Event{}, nil, 80, 24)
 
 			Expect(modal).NotTo(BeNil())
 		})

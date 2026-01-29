@@ -8,19 +8,19 @@ import (
 	"github.com/baphled/kariya/internal/constants"
 )
 
-// TagSelector manages tag selection for career events
+// TagSelector manages tag selection for career events.
 type TagSelector struct {
 	selected map[string]bool
 }
 
-// NewTagSelector creates a new tag selector
+// NewTagSelector creates a new tag selector.
 func NewTagSelector() *TagSelector {
 	return &TagSelector{
 		selected: make(map[string]bool),
 	}
 }
 
-// SelectedTags returns a sorted list of currently selected tags
+// SelectedTags returns a sorted list of currently selected tags.
 func (ts *TagSelector) SelectedTags() []string {
 	tags := make([]string, 0, len(ts.selected))
 	for tag := range ts.selected {
@@ -31,7 +31,7 @@ func (ts *TagSelector) SelectedTags() []string {
 	return tags
 }
 
-// AvailableTags returns all available tags from the domain in alphabetical order
+// AvailableTags returns all available tags from the domain in alphabetical order.
 func (ts *TagSelector) AvailableTags() []string {
 	allTags := constants.AllEventTags()
 	tags := make([]string, 0, len(allTags))
@@ -43,7 +43,7 @@ func (ts *TagSelector) AvailableTags() []string {
 	return tags
 }
 
-// SelectTag adds a tag to the selected list
+// SelectTag adds a tag to the selected list.
 func (ts *TagSelector) SelectTag(tag string) error {
 	// Validate tag is allowed
 	if !constants.IsValidEventTag(tag) {
@@ -64,7 +64,7 @@ func (ts *TagSelector) SelectTag(tag string) error {
 	return nil
 }
 
-// DeselectTag removes a tag from the selected list
+// DeselectTag removes a tag from the selected list.
 func (ts *TagSelector) DeselectTag(tag string) error {
 	if !ts.selected[tag] {
 		return fmt.Errorf("tag %s is not selected", tag)
@@ -74,7 +74,7 @@ func (ts *TagSelector) DeselectTag(tag string) error {
 	return nil
 }
 
-// FilterTags returns tags that match the given prefix in alphabetical order
+// FilterTags returns tags that match the given prefix in alphabetical order.
 func (ts *TagSelector) FilterTags(prefix string) []string {
 	if prefix == "" {
 		return ts.AvailableTags()
@@ -95,7 +95,7 @@ func (ts *TagSelector) FilterTags(prefix string) []string {
 	return filtered
 }
 
-// ToggleTag selects the tag if not selected, deselects if already selected
+// ToggleTag selects the tag if not selected, deselects if already selected.
 func (ts *TagSelector) ToggleTag(tag string) error {
 	if ts.selected[tag] {
 		return ts.DeselectTag(tag)
@@ -103,17 +103,17 @@ func (ts *TagSelector) ToggleTag(tag string) error {
 	return ts.SelectTag(tag)
 }
 
-// IsSelected returns true if the tag is currently selected
+// IsSelected returns true if the tag is currently selected.
 func (ts *TagSelector) IsSelected(tag string) bool {
 	return ts.selected[tag]
 }
 
-// Reset clears all selected tags
+// Reset clears all selected tags.
 func (ts *TagSelector) Reset() {
 	ts.selected = make(map[string]bool)
 }
 
-// SetSelectedTags sets the selected tags directly (useful for editing)
+// SetSelectedTags sets the selected tags directly (useful for editing).
 func (ts *TagSelector) SetSelectedTags(tags []string) {
 	ts.selected = make(map[string]bool)
 	for _, tag := range tags {

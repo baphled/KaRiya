@@ -22,8 +22,8 @@ var _ = Describe("TraceabilityService", func() {
 		factRepo       careerrepo.FactRepository
 		testLogger     *logger.Logger
 		ctx            context.Context
-		testEvent1     *career.CareerEvent
-		testEvent2     *career.CareerEvent
+		testEvent1     *career.Event
+		testEvent2     *career.Event
 		testFact1      *career.Fact
 		testFact2      *career.Fact
 		testBullet1    *career.CVBullet

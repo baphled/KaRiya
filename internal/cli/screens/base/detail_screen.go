@@ -16,7 +16,7 @@ import (
 // appropriate for the given dimensions.
 type ContentRenderer[T any] func(data T, width, height int) string
 
-// BaseDetailScreen provides a reusable screen for displaying detail views.
+// DetailScreen provides a reusable screen for displaying detail views.
 //
 // This screen handles:
 // - Content rendering with proper dimensions
@@ -55,9 +55,9 @@ type ContentRenderer[T any] func(data T, width, height int) string
 // Related:
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
 // - docs/TUI_STANDARDS.md (Keyboard shortcuts)
-// - internal/cli/screens/cv/preview.go (Example detail screen)
-type BaseDetailScreen[T any] struct {
-	*BaseScreen
+// - internal/cli/screens/cv/preview.go (Example detail screen).
+type DetailScreen[T any] struct {
+	*Screen
 
 	// breadcrumbs for navigation context
 	breadcrumbs []string
@@ -95,9 +95,9 @@ func NewBaseDetailScreen[T any](
 	breadcrumbs []string,
 	renderer ContentRenderer[T],
 	data T,
-) *BaseDetailScreen[T] {
-	return &BaseDetailScreen[T]{
-		BaseScreen:      NewBaseScreen(),
+) *DetailScreen[T] {
+	return &DetailScreen[T]{
+		Screen:          NewBaseScreen(),
 		breadcrumbs:     breadcrumbs,
 		contentRenderer: renderer,
 		data:            data,
@@ -108,7 +108,7 @@ func NewBaseDetailScreen[T any](
 }
 
 // Update handles messages and returns result when user takes action.
-func (s *BaseDetailScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *DetailScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Handle window resize
@@ -166,7 +166,7 @@ func (s *BaseDetailScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult
 
 // RenderContent returns the detail content without StandardView wrapper.
 // This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
-func (s *BaseDetailScreen[T]) RenderContent() string {
+func (s *DetailScreen[T]) RenderContent() string {
 	// Render content with current dimensions
 	content := ""
 	if s.contentRenderer != nil {
@@ -180,32 +180,32 @@ func (s *BaseDetailScreen[T]) RenderContent() string {
 }
 
 // View renders the detail screen using StandardView.
-func (s *BaseDetailScreen[T]) View() string {
-	// Use BaseScreen's CreateView helper for StandardView integration
+func (s *DetailScreen[T]) View() string {
+	// Use Screen's CreateView helper for StandardView integration
 	return s.CreateView(s.breadcrumbs, s.RenderContent(), s.footer)
 }
 
 // SetFooter updates the footer help text.
-func (s *BaseDetailScreen[T]) SetFooter(footer string) {
+func (s *DetailScreen[T]) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetData returns the data structure being displayed.
 //
 // This allows the intent to access the data after the screen completes.
-func (s *BaseDetailScreen[T]) GetData() T {
+func (s *DetailScreen[T]) GetData() T {
 	return s.data
 }
 
 // GetScrollOffset returns the current scroll offset.
-func (s *BaseDetailScreen[T]) GetScrollOffset() int {
+func (s *DetailScreen[T]) GetScrollOffset() int {
 	return s.scrollOffset
 }
 
 // SetScrollOffset sets the scroll offset.
 //
 // This is useful for restoring scroll position when navigating back.
-func (s *BaseDetailScreen[T]) SetScrollOffset(offset int) {
+func (s *DetailScreen[T]) SetScrollOffset(offset int) {
 	if offset < 0 {
 		offset = 0
 	}
@@ -233,7 +233,7 @@ func (s *BaseDetailScreen[T]) SetScrollOffset(offset int) {
 //	        // Show delete confirmation
 //	    }
 //	}
-func (s *BaseDetailScreen[T]) AddAction(key, action string) {
+func (s *DetailScreen[T]) AddAction(key, action string) {
 	s.actions[key] = action
 }
 
@@ -241,7 +241,7 @@ func (s *BaseDetailScreen[T]) AddAction(key, action string) {
 //
 // This is useful when navigating back to this screen from another screen.
 // The metadata should contain the scroll_offset key.
-func (s *BaseDetailScreen[T]) RestoreFromMetadata(metadata map[string]interface{}) {
+func (s *DetailScreen[T]) RestoreFromMetadata(metadata map[string]interface{}) {
 	if offset, ok := metadata["scroll_offset"]; ok {
 		if offsetInt, ok := offset.(int); ok {
 			s.SetScrollOffset(offsetInt)

@@ -14,7 +14,7 @@ import (
 var _ = Describe("ProfileInferenceService", func() {
 	var (
 		service *cv.ProfileInferenceService
-		events  []*career.CareerEvent
+		events  []*career.Event
 		facts   []*career.Fact
 		skills  []*career.Skill
 	)
@@ -29,7 +29,7 @@ var _ = Describe("ProfileInferenceService", func() {
 	Describe("InferCoreStrengths", func() {
 		Context("when events have technical categories", func() {
 			BeforeEach(func() {
-				events = []*career.CareerEvent{
+				events = []*career.Event{
 					{
 						ID:         "ev-1",
 						Text:       "Led migration of monolith to microservices",
@@ -56,7 +56,7 @@ var _ = Describe("ProfileInferenceService", func() {
 
 		Context("when events have leadership categories", func() {
 			BeforeEach(func() {
-				events = []*career.CareerEvent{
+				events = []*career.Event{
 					{
 						ID:         "ev-1",
 						Text:       "Mentored 5 junior engineers to senior level",
@@ -145,7 +145,7 @@ var _ = Describe("ProfileInferenceService", func() {
 
 		Context("when data is empty", func() {
 			It("should return generic core strengths", func() {
-				strengths := service.InferCoreStrengths([]*career.CareerEvent{}, []*career.Fact{}, []*career.Skill{})
+				strengths := service.InferCoreStrengths([]*career.Event{}, []*career.Fact{}, []*career.Skill{})
 				Expect(strengths).NotTo(BeEmpty())
 			})
 		})
@@ -154,7 +154,7 @@ var _ = Describe("ProfileInferenceService", func() {
 	Describe("InferValuePropositions", func() {
 		Context("when events show cross-functional work", func() {
 			BeforeEach(func() {
-				events = []*career.CareerEvent{
+				events = []*career.Event{
 					{
 						ID:         "ev-1",
 						Text:       "Collaborated with product, design, and engineering teams",

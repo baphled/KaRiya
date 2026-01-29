@@ -52,7 +52,7 @@ func (mr *MockEventRepositoryMockRecorder) Count(arg0, arg1 interface{}) *gomock
 }
 
 // Create mocks base method.
-func (m *MockEventRepository) Create(arg0 context.Context, arg1 *career.CareerEvent) error {
+func (m *MockEventRepository) Create(arg0 context.Context, arg1 *career.Event) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -80,10 +80,10 @@ func (mr *MockEventRepositoryMockRecorder) Delete(arg0, arg1 interface{}) *gomoc
 }
 
 // GetByID mocks base method.
-func (m *MockEventRepository) GetByID(arg0 context.Context, arg1 string) (*career.CareerEvent, error) {
+func (m *MockEventRepository) GetByID(arg0 context.Context, arg1 string) (*career.Event, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
-	ret0, _ := ret[0].(*career.CareerEvent)
+	ret0, _ := ret[0].(*career.Event)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -95,10 +95,10 @@ func (mr *MockEventRepositoryMockRecorder) GetByID(arg0, arg1 interface{}) *gomo
 }
 
 // List mocks base method.
-func (m *MockEventRepository) List(arg0 context.Context, arg1 career0.EventListFilters) ([]*career.CareerEvent, error) {
+func (m *MockEventRepository) List(arg0 context.Context, arg1 career0.EventListFilters) ([]*career.Event, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", arg0, arg1)
-	ret0, _ := ret[0].([]*career.CareerEvent)
+	ret0, _ := ret[0].([]*career.Event)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -110,7 +110,7 @@ func (mr *MockEventRepositoryMockRecorder) List(arg0, arg1 interface{}) *gomock.
 }
 
 // Update mocks base method.
-func (m *MockEventRepository) Update(arg0 context.Context, arg1 *career.CareerEvent) error {
+func (m *MockEventRepository) Update(arg0 context.Context, arg1 *career.Event) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", arg0, arg1)
 	ret0, _ := ret[0].(error)

@@ -41,7 +41,7 @@ func isTestEnvironment() bool {
 // writing to the user's real config file (BUG-007 prevention).
 func requireTestIsolation(operation string) {
 	if !isTestEnvironment() {
-		return // Production code can use real paths
+		return
 	}
 
 	configPathMu.RLock()
@@ -89,15 +89,15 @@ type ProfileConfig struct {
 	DefaultAudience string `yaml:"default_audience"`
 
 	// Narrative CV profile fields
-	Title         string   `yaml:"title"`          // e.g., "Senior Software Engineer / Technical Consultant"
-	Location      string   `yaml:"location"`       // e.g., "Remote (UK)"
-	GitHub        string   `yaml:"github"`         // GitHub username only, e.g., "baphled" (not full URL)
-	Portfolio     string   `yaml:"portfolio"`      // e.g., "http://portfolio.example.com"
-	CoreStrengths []string `yaml:"core_strengths"` // List of core strengths
-	Languages     []string `yaml:"languages"`      // e.g., "Ruby, Go, PHP, C/C++, JavaScript, Shell"
-	Frontend      []string `yaml:"frontend"`       // e.g., "Vue.js, React"
-	Systems       []string `yaml:"systems"`        // e.g., "Linux, SQL, APIs, CI/CD, automation"
-	WhatIBring    []string `yaml:"what_i_bring"`   // List of value propositions
+	Title         string   `yaml:"title"`
+	Location      string   `yaml:"location"`
+	GitHub        string   `yaml:"github"`
+	Portfolio     string   `yaml:"portfolio"`
+	CoreStrengths []string `yaml:"core_strengths"`
+	Languages     []string `yaml:"languages"`
+	Frontend      []string `yaml:"frontend"`
+	Systems       []string `yaml:"systems"`
+	WhatIBring    []string `yaml:"what_i_bring"`
 }
 
 // CVConfig contains CV generation configuration.
@@ -109,19 +109,19 @@ type CVConfig struct {
 
 // AudienceBulletsConfig defines bullets per company for each audience type.
 type AudienceBulletsConfig struct {
-	Recruiter     int `yaml:"recruiter"`      // Bullets per company for recruiters (default: 4)
-	HiringManager int `yaml:"hiring_manager"` // Bullets per company for hiring managers (default: 6)
-	Peer          int `yaml:"peer"`           // Bullets per company for peers (default: 8)
-	Default       int `yaml:"default"`        // Default bullets per company (default: 5)
+	Recruiter     int `yaml:"recruiter"`
+	HiringManager int `yaml:"hiring_manager"`
+	Peer          int `yaml:"peer"`
+	Default       int `yaml:"default"`
 }
 
-// ExportConfig contains export configuration
+// ExportConfig contains export configuration.
 type ExportConfig struct {
 	DefaultDestination string `yaml:"default_destination"`
 	AutoOpen           bool   `yaml:"auto_open"`
 }
 
-// DisplayConfig contains display/UI configuration
+// DisplayConfig contains display/UI configuration.
 type DisplayConfig struct {
 	Theme      string `yaml:"theme"`
 	Animations bool   `yaml:"animations"`
@@ -138,25 +138,25 @@ type ScoringConfig struct {
 // ScoringWeights defines the weights for each scoring component.
 // All weights must sum to 1.0.
 type ScoringWeights struct {
-	RoleScore     float64 `yaml:"role_score"`     // Weight for role relevance (default: 0.25)
-	AudienceScore float64 `yaml:"audience_score"` // Weight for audience fit (default: 0.20)
-	MetricScore   float64 `yaml:"metric_score"`   // Weight for metric presence (default: 0.20)
-	ImpactScore   float64 `yaml:"impact_score"`   // Weight for impact level (default: 0.20)
-	Confidence    float64 `yaml:"confidence"`     // Weight for confidence (default: 0.15)
+	RoleScore     float64 `yaml:"role_score"`
+	AudienceScore float64 `yaml:"audience_score"`
+	MetricScore   float64 `yaml:"metric_score"`
+	ImpactScore   float64 `yaml:"impact_score"`
+	Confidence    float64 `yaml:"confidence"`
 }
 
 // ScoringThresholds defines confidence and scoring thresholds.
 type ScoringThresholds struct {
-	FactDefaultConfidence  float64 `yaml:"fact_default_confidence"`  // Default confidence for facts (default: 0.85)
-	EventDefaultConfidence float64 `yaml:"event_default_confidence"` // Default confidence for events (default: 0.80)
-	HighConfidence         float64 `yaml:"high_confidence"`          // Threshold for "high" confidence (default: 0.80)
-	HighImpactConfidence   float64 `yaml:"high_impact_confidence"`   // Confidence for "high" impact (default: 0.85)
+	FactDefaultConfidence  float64 `yaml:"fact_default_confidence"`
+	EventDefaultConfidence float64 `yaml:"event_default_confidence"`
+	HighConfidence         float64 `yaml:"high_confidence"`
+	HighImpactConfidence   float64 `yaml:"high_impact_confidence"`
 }
 
 // RoleScoringCfg defines scoring settings for a specific role.
 type RoleScoringCfg struct {
-	MinConfidence        float64 `yaml:"min_confidence"`          // Minimum confidence for bullets
-	MaxBulletsPerCompany int     `yaml:"max_bullets_per_company"` // Max bullets per company/project
+	MinConfidence        float64 `yaml:"min_confidence"`
+	MaxBulletsPerCompany int     `yaml:"max_bullets_per_company"`
 }
 
 // ValidateWeights checks that scoring weights sum to 1.0 within tolerance.
@@ -171,7 +171,7 @@ func (s *ScoringConfig) ValidateWeights() error {
 	return nil
 }
 
-// DefaultConfig returns the default configuration
+// DefaultConfig returns the default configuration.
 func DefaultConfig() *Config {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -279,7 +279,7 @@ func ResetConfigPath() {
 
 // GetConfigPath returns the path to the config file.
 // If SetConfigPathForTesting was called, returns the overridden path.
-// Otherwise, returns the default path: ~/.kariya/config.yaml
+// Otherwise, returns the default path: ~/.kariya/config.yaml.
 func GetConfigPath() (string, error) {
 	configPathMu.RLock()
 	override := configPathOverride
@@ -310,7 +310,7 @@ func LoadConfig() (*Config, error) {
 	return LoadConfigFromPath(path)
 }
 
-// LoadConfigFromPath loads configuration from a specific file path
+// LoadConfigFromPath loads configuration from a specific file path.
 func LoadConfigFromPath(path string) (*Config, error) {
 	// Clean path to prevent path traversal attacks
 	cleanPath := filepath.Clean(path)
@@ -321,7 +321,7 @@ func LoadConfigFromPath(path string) (*Config, error) {
 		return DefaultConfig(), nil
 	}
 
-	data, err := os.ReadFile(cleanPath) // #nosec G304 - path is cleaned above
+	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config: %w", err)
 	}
@@ -450,7 +450,7 @@ func SaveConfig(cfg *Config) error {
 	return SaveConfigToPath(cfg, path)
 }
 
-// SaveConfigToPath saves configuration to a specific file path
+// SaveConfigToPath saves configuration to a specific file path.
 func SaveConfigToPath(cfg *Config, path string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(path)

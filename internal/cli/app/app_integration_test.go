@@ -42,7 +42,7 @@ var _ = Describe("App Menu Integration Tests", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(ctx, &career.CareerEvent{ID: "e1", Text: "Test event", Date: time.Now()})
+		repo.Create(ctx, &career.Event{ID: "e1", Text: "Test event", Date: time.Now()})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		burstRepo.Create(ctx, fixtures.Burst("b1", "e1", "e2"))
 		//nolint:errcheck // Test setup - error handling not relevant.
@@ -174,7 +174,7 @@ var _ = Describe("Navigation Integration", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
+		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "test event", Date: time.Now()})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		//nolint:errcheck // Test setup - error handling not relevant.
@@ -268,7 +268,7 @@ var _ = Describe("Intent Navigation - All Intents", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
+		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "test event", Date: time.Now()})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		//nolint:errcheck // Test setup - error handling not relevant.
@@ -354,7 +354,7 @@ var _ = Describe("Intent Navigation - Detailed", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "test event", Date: time.Now()})
+		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "test event", Date: time.Now()})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "dummy", EventIDs: []string{"e1"}})
 		//nolint:errcheck // Test setup - error handling not relevant.
@@ -512,11 +512,11 @@ var _ = Describe("Intent List Navigation - Specific", func() {
 		svc.SetSkillRepository(skillRepo)
 		cliService = service.NewCLIEventService(svc)
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.CareerEvent{ID: "e1", Text: "event 1", Date: time.Now()})
+		repo.Create(context.Background(), &career.Event{ID: "e1", Text: "event 1", Date: time.Now()})
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.CareerEvent{ID: "e2", Text: "event 2", Date: time.Now()})
+		repo.Create(context.Background(), &career.Event{ID: "e2", Text: "event 2", Date: time.Now()})
 		//nolint:errcheck // Test setup - error handling not relevant.
-		repo.Create(context.Background(), &career.CareerEvent{ID: "e3", Text: "event 3", Date: time.Now()})
+		repo.Create(context.Background(), &career.Event{ID: "e3", Text: "event 3", Date: time.Now()})
 		//nolint:errcheck // Test setup - error handling not relevant.
 		burstRepo.Create(context.Background(), &career.Burst{ID: "b1", Name: "burst 1", EventIDs: []string{"e1"}})
 		//nolint:errcheck // Test setup - error handling not relevant.

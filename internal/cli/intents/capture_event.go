@@ -9,14 +9,19 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-// Re-export types for backward compatibility
+// CaptureStrategy defines the event capture approach and controls which form fields
+// are presented during the capture workflow. Two strategies exist: StrategyQuick
+// captures only the event text and defaults the date to today, while StrategyManual
+// presents the full form with optional fields such as date, company, project, and
+// tags. This type alias re-exports types.CaptureStrategy so that the intents
+// package can reference it without requiring callers to import the types package.
 type CaptureStrategy = types.CaptureStrategy
 
 const (
-	// StrategyQuick captures only required fields (event text), date defaults to today
+	// StrategyQuick captures only required fields (event text), date defaults to today.
 	StrategyQuick = types.StrategyQuick
 
-	// StrategyManual shows all fields with optional field toggle
+	// StrategyManual shows all fields with optional field toggle.
 	StrategyManual = types.StrategyManual
 )
 
@@ -27,7 +32,7 @@ type CaptureEventContext struct {
 	CaptureStrategy string
 
 	// PreviousEvent is an optional existing event to edit (nil for new capture).
-	PreviousEvent *career.CareerEvent
+	PreviousEvent *career.Event
 
 	// Metadata is the initial metadata for the event (may be empty).
 	Metadata map[string]string
@@ -58,7 +63,7 @@ func (c *CaptureEventContext) Validate() error {
 // CaptureEventResult is the output of a successful CaptureEvent intent.
 type CaptureEventResult struct {
 	// Event is the captured or edited event.
-	Event *career.CareerEvent
+	Event *career.Event
 
 	// Bursts are the inferred bursts from the event (may be empty).
 	Bursts []*career.Burst
@@ -71,13 +76,13 @@ type CaptureEventResult struct {
 	AcceptedFields map[string]bool
 
 	// RejectedFields tracks which inferred fields were rejected.
-	RejectedFields map[string]string // field -> rejection reason
+	RejectedFields map[string]string
 }
 
 // ReviewInferredEventState represents the state of the ReviewInferredEvent sub-flow.
 type ReviewInferredEventState struct {
 	// Event being reviewed.
-	Event *career.CareerEvent
+	Event *career.Event
 
 	// InferredBursts are the bursts suggested by enrichment.
 	InferredBursts []*career.Burst
@@ -98,7 +103,7 @@ type ReviewInferredEventState struct {
 	AcceptedFacts []*career.Fact
 
 	// RejectedItems tracks items rejected by the user.
-	RejectedItems map[string]string // item_id -> rejection reason
+	RejectedItems map[string]string
 
 	// Modal sub-components for editing
 	metadataModal *models.MetadataEditorModelNew
@@ -106,8 +111,8 @@ type ReviewInferredEventState struct {
 	factModal     *models.FactEditorModelNew
 
 	// Selection tracking for accept/reject workflow
-	SelectedItemType string // "burst" or "fact"
-	SelectedIndex    int    // Which item is selected (0-based)
+	SelectedItemType string
+	SelectedIndex    int
 }
 
 // EditingModes for ReviewInferredEvent sub-flows.
@@ -125,7 +130,7 @@ type CaptureEventModel struct {
 	context *CaptureEventContext
 
 	// currentState tracks which sub-flow is active.
-	currentState string // ChooseCaptureStrategy, CaptureForm, ReviewInferredEvent, Submit
+	currentState string
 
 	// captureForm is the form for capturing event details.
 	captureForm *models.CaptureForm

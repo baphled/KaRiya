@@ -26,10 +26,10 @@ var _ = Describe("Career Service", func() {
 	})
 
 	Describe("CaptureEvent", func() {
-		var testEvent *career.CareerEvent
+		var testEvent *career.Event
 
 		BeforeEach(func() {
-			testEvent = &career.CareerEvent{
+			testEvent = &career.Event{
 				Text:    "Developed a high-performance backend service",
 				Date:    time.Now().AddDate(0, 0, -10),
 				Tags:    []string{"technical", "project"},
@@ -216,11 +216,11 @@ var _ = Describe("Career Service", func() {
 	})
 
 	Describe("UpdateEvent", func() {
-		var testEvent *career.CareerEvent
-		var existingEvent *career.CareerEvent
+		var testEvent *career.Event
+		var existingEvent *career.Event
 
 		BeforeEach(func() {
-			existingEvent = &career.CareerEvent{
+			existingEvent = &career.Event{
 				ID:        "existing-id",
 				Text:      "Original event text",
 				Date:      time.Now().AddDate(0, 0, -10),
@@ -230,7 +230,7 @@ var _ = Describe("Career Service", func() {
 				UpdatedAt: time.Now().AddDate(0, 0, -5),
 			}
 
-			testEvent = &career.CareerEvent{
+			testEvent = &career.Event{
 				ID:      "existing-id",
 				Text:    "Updated event text",
 				Date:    time.Now().AddDate(0, 0, -10),
@@ -368,10 +368,10 @@ var _ = Describe("Career Service", func() {
 	})
 
 	Describe("GetEventByID", func() {
-		var testEvent *career.CareerEvent
+		var testEvent *career.Event
 
 		BeforeEach(func() {
-			testEvent = &career.CareerEvent{
+			testEvent = &career.Event{
 				ID:        "event-id-123",
 				Text:      "Test event",
 				Date:      time.Now().AddDate(0, 0, -10),
@@ -439,10 +439,10 @@ var _ = Describe("Career Service", func() {
 	})
 
 	Describe("ListEvents", func() {
-		var testEvents []*career.CareerEvent
+		var testEvents []*career.Event
 
 		BeforeEach(func() {
-			testEvents = []*career.CareerEvent{
+			testEvents = []*career.Event{
 				{
 					ID:   "event-1",
 					Text: "Technical event",
@@ -474,7 +474,7 @@ var _ = Describe("Career Service", func() {
 
 		Context("with tag filters", func() {
 			It("should list events matching tags", func() {
-				filteredEvents := []*career.CareerEvent{testEvents[0]}
+				filteredEvents := []*career.Event{testEvents[0]}
 				filters := mocks.EventListFilters{
 					Tags: []string{"technical"},
 				}
@@ -490,7 +490,7 @@ var _ = Describe("Career Service", func() {
 
 		Context("with pagination", func() {
 			It("should list events with limit and offset", func() {
-				paginatedEvents := []*career.CareerEvent{testEvents[0], testEvents[1]}
+				paginatedEvents := []*career.Event{testEvents[0], testEvents[1]}
 				filters := mocks.EventListFilters{
 					Limit:  2,
 					Offset: 0,
@@ -506,7 +506,7 @@ var _ = Describe("Career Service", func() {
 
 		Context("when no events match filters", func() {
 			It("should return empty list", func() {
-				mockRepo.SetListBehavior([]*career.CareerEvent{}, nil)
+				mockRepo.SetListBehavior([]*career.Event{}, nil)
 
 				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
@@ -643,7 +643,7 @@ var _ = Describe("Career Service", func() {
 		Context("when capturing events", func() {
 			It("should set CreatedAt and UpdatedAt to same time", func() {
 				mockRepo.SetCreateBehavior(nil)
-				testEvent := &career.CareerEvent{
+				testEvent := &career.Event{
 					Text: "Test event",
 					Date: time.Now().AddDate(0, 0, -5),
 				}
@@ -661,7 +661,7 @@ var _ = Describe("Career Service", func() {
 
 		Context("when updating events", func() {
 			It("should preserve CreatedAt but update UpdatedAt", func() {
-				existingEvent := &career.CareerEvent{
+				existingEvent := &career.Event{
 					ID:        "event-id",
 					Text:      "Original",
 					Date:      time.Now().AddDate(0, 0, -10),
@@ -671,7 +671,7 @@ var _ = Describe("Career Service", func() {
 				mockRepo.SetGetByIDBehavior(existingEvent, nil)
 				mockRepo.SetUpdateBehavior(nil)
 
-				updateEvent := &career.CareerEvent{
+				updateEvent := &career.Event{
 					ID:   "event-id",
 					Text: "Updated",
 					Date: time.Now().AddDate(0, 0, -10),
@@ -693,7 +693,7 @@ var _ = Describe("Career Service", func() {
 		Context("TimelineJournaling mode", func() {
 			It("should accept events within 30 days", func() {
 				mockRepo.SetCreateBehavior(nil)
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Recent event",
 					Date: time.Now().AddDate(0, 0, -15),
 				}
@@ -703,7 +703,7 @@ var _ = Describe("Career Service", func() {
 			})
 
 			It("should reject events older than 30 days", func() {
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Old event",
 					Date: time.Now().AddDate(0, 0, -40),
 				}
@@ -717,7 +717,7 @@ var _ = Describe("Career Service", func() {
 		Context("CVBackfill mode", func() {
 			It("should accept very old events", func() {
 				mockRepo.SetCreateBehavior(nil)
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Very old event",
 					Date: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 				}
@@ -730,7 +730,7 @@ var _ = Describe("Career Service", func() {
 		Context("ManualEntry mode", func() {
 			It("should accept any valid date", func() {
 				mockRepo.SetCreateBehavior(nil)
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Event from any time",
 					Date: time.Date(1990, 6, 15, 0, 0, 0, 0, time.UTC),
 				}
@@ -743,6 +743,6 @@ var _ = Describe("Career Service", func() {
 
 	// NOTE: Competency classification is handled by:
 	// - internal/service/career/classification/classifier.go (with comprehensive tests)
-	// - internal/service/career/burst_fact/extractor.go (with comprehensive tests)
+	// - internal/service/career/burstfact/extractor.go (with comprehensive tests)
 	// See those packages for competency-related tests.
 })

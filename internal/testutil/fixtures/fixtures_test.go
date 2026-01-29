@@ -17,10 +17,10 @@ func TestFixtures(t *testing.T) {
 var _ = Describe("Reproducibility", func() {
 	It("should produce same data with same seed", func() {
 		fixtures.SetSeed(12345)
-		event1 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+		event1 := fixtures.EventFactory.MustCreate().(*career.Event)
 
 		fixtures.SetSeed(12345)
-		event2 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+		event2 := fixtures.EventFactory.MustCreate().(*career.Event)
 
 		// With same seed, random parts should match
 		// Note: IDs are sequential so they reset with new factory

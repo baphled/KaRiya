@@ -2,7 +2,7 @@ package forms_test
 
 import (
 	"github.com/baphled/kariya/internal/cli/forms"
-	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

@@ -13,10 +13,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// TimelineEventDetailState identifies the timeline event detail view in the
+// state matrix. On this screen the user sees a DetailView card displaying
+// the event date, company, project, and full text body, followed by
+// optional lists of tags, categories, and an associated skills count.
+// Pressing e opens the event editor, d starts the delete confirmation, and
+// Escape or Backspace returns to the event list.
 const TimelineEventDetailState = "timeline_event_detail"
 
-// TimelineEventDetailScreen displays detailed information about a career event.
+// EventDetailScreen displays detailed information about a career event.
 //
 // This screen provides:
 // - Detailed view of event date, text, company, project
@@ -26,7 +31,7 @@ const TimelineEventDetailState = "timeline_event_detail"
 //
 // Usage:
 //
-//	screen := timeline.NewTimelineEventDetailScreen(event)
+//	screen := browsetimeline.NewTimelineEventDetailScreen(event)
 //	cmd, result := screen.Update(msg)
 //	if result != nil && result.Type() == screens.ResultNavigate {
 //	    navResult := result.(*screens.NavigateResult)
@@ -36,12 +41,12 @@ const TimelineEventDetailState = "timeline_event_detail"
 //	}
 //
 // Related:
-// - BaseScreen provides the foundation
+// - Screen provides the foundation
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
-type TimelineEventDetailScreen struct {
-	*base.BaseScreen
-	event *career.CareerEvent
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
+type EventDetailScreen struct {
+	*base.Screen
+	event *career.Event
 }
 
 // NewTimelineEventDetailScreen creates a new event detail screen.
@@ -54,15 +59,15 @@ type TimelineEventDetailScreen struct {
 //
 // Parameters:
 //   - event: The career event to display
-func NewTimelineEventDetailScreen(event *career.CareerEvent) *TimelineEventDetailScreen {
-	return &TimelineEventDetailScreen{
-		BaseScreen: base.NewBaseScreen(),
-		event:      event,
+func NewTimelineEventDetailScreen(event *career.Event) *EventDetailScreen {
+	return &EventDetailScreen{
+		Screen: base.NewBaseScreen(),
+		event:  event,
 	}
 }
 
 // Update handles messages and actions.
-func (s *TimelineEventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *EventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		s.SetTerminalInfo(msg.Width, msg.Height)
@@ -71,12 +76,9 @@ func (s *TimelineEventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.Screen
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc", "backspace":
-			// Back to event list
-			// Note: 'q' (quit) is handled by the intent before delegation
 			return nil, &screens.CancelResult{}
 
 		case "e":
-			// Edit event
 			return nil, &screens.NavigateResult{
 				ResultData: map[string]interface{}{
 					"action": "edit",
@@ -85,7 +87,6 @@ func (s *TimelineEventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.Screen
 			}
 
 		case "d":
-			// Delete event
 			return nil, &screens.NavigateResult{
 				ResultData: map[string]interface{}{
 					"action": "delete",
@@ -100,13 +101,11 @@ func (s *TimelineEventDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.Screen
 
 // RenderContent returns just the content (event detail card) without StandardView wrapper.
 // This allows the intent to wrap it with proper breadcrumbs and themed footer.
-func (s *TimelineEventDetailScreen) RenderContent() string {
+func (s *EventDetailScreen) RenderContent() string {
 	if s.event == nil {
 		return "No event selected."
 	}
 
-	// Use screen's theme if available, otherwise fall back to default.
-	// This ensures the intent's theme is used when set via SetTheme().
 	var th theme.Theme
 	if screenTheme := s.Theme(); screenTheme != nil {
 		if t, ok := screenTheme.(theme.Theme); ok {
@@ -124,7 +123,6 @@ func (s *TimelineEventDetailScreen) RenderContent() string {
 		FieldIf("Project", s.event.Project).
 		Field("Text", s.event.Text)
 
-	// Add optional fields
 	if len(s.event.Tags) > 0 {
 		dv.List("Tags", s.event.Tags)
 	}
@@ -132,7 +130,6 @@ func (s *TimelineEventDetailScreen) RenderContent() string {
 		dv.List("Categories", s.event.Categories)
 	}
 	if len(s.event.Skills) > 0 {
-		// Skills are IDs
 		dv.Field("Skills", fmt.Sprintf("%d associated", len(s.event.Skills)))
 	}
 
@@ -140,10 +137,9 @@ func (s *TimelineEventDetailScreen) RenderContent() string {
 }
 
 // View renders the event detail screen using StandardView.
-func (s *TimelineEventDetailScreen) View() string {
+func (s *EventDetailScreen) View() string {
 	content := s.RenderContent()
 
-	// Get theme for UIKit primitives (fall back to default if not set).
 	var th themes.Theme
 	if screenTheme := s.Theme(); screenTheme != nil {
 		if t, ok := screenTheme.(themes.Theme); ok {
@@ -154,7 +150,6 @@ func (s *TimelineEventDetailScreen) View() string {
 		th = themes.NewDefaultTheme()
 	}
 
-	// Build footer using UIKit primitives for consistent styling.
 	footer := primitives.RenderHelpFooter(th,
 		primitives.EditBadge(th),
 		primitives.DeleteBadge(th),
@@ -163,12 +158,11 @@ func (s *TimelineEventDetailScreen) View() string {
 		primitives.HelpBadge(th),
 	)
 
-	// Use BaseScreen's CreateView helper for StandardView integration.
 	breadcrumbs := []string{"Main Menu", "Timeline", "Event Details"}
 	return s.CreateView(breadcrumbs, content, footer)
 }
 
 // GetEvent returns the event being displayed.
-func (s *TimelineEventDetailScreen) GetEvent() *career.CareerEvent {
+func (s *EventDetailScreen) GetEvent() *career.Event {
 	return s.event
 }

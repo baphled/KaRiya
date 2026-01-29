@@ -20,13 +20,13 @@ type AudienceOption struct {
 	Description string
 }
 
-// CVAudienceSelectScreen allows users to select a target audience.
-type CVAudienceSelectScreen struct {
-	*base.BaseSelectScreen[*AudienceOption]
+// AudienceSelectScreen allows users to select a target audience.
+type AudienceSelectScreen struct {
+	*base.SelectScreen[*AudienceOption]
 }
 
 // NewCVAudienceSelectScreen creates a new CV audience selection screen.
-func NewCVAudienceSelectScreen(audiences []*AudienceOption) *CVAudienceSelectScreen {
+func NewCVAudienceSelectScreen(audiences []*AudienceOption) *AudienceSelectScreen {
 	// Create item renderer for audiences
 	renderer := func(item *AudienceOption) string {
 		return fmt.Sprintf("%s\n  %s", item.Name, item.Description)
@@ -42,22 +42,22 @@ func NewCVAudienceSelectScreen(audiences []*AudienceOption) *CVAudienceSelectScr
 		title,
 	)
 
-	return &CVAudienceSelectScreen{
-		BaseSelectScreen: baseScreen,
+	return &AudienceSelectScreen{
+		SelectScreen: baseScreen,
 	}
 }
 
 // Init initializes the screen.
-func (s *CVAudienceSelectScreen) Init() tea.Cmd {
+func (s *AudienceSelectScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
-func (s *CVAudienceSelectScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	return s.BaseSelectScreen.Update(msg)
+func (s *AudienceSelectScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+	return s.SelectScreen.Update(msg)
 }
 
 // View renders the screen.
-func (s *CVAudienceSelectScreen) View() string {
-	return s.BaseSelectScreen.View()
+func (s *AudienceSelectScreen) View() string {
+	return s.SelectScreen.View()
 }

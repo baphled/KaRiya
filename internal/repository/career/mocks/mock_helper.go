@@ -18,10 +18,10 @@ type TestMockRepository struct {
 	getByIDErr    error
 	listErr       error
 	countErr      error
-	getByIDEvent  *career.CareerEvent
-	getByIDEvents map[string]*career.CareerEvent // Per-ID event mapping
-	getByIDErrors map[string]error               // Per-ID error mapping
-	listEvents    []*career.CareerEvent
+	getByIDEvent  *career.Event
+	getByIDEvents map[string]*career.Event
+	getByIDErrors map[string]error
+	listEvents    []*career.Event
 	countResult   int
 
 	createCalled  bool
@@ -35,7 +35,7 @@ type TestMockRepository struct {
 // NewTestMockRepository creates a new behavior-based mock repository.
 func NewTestMockRepository() *TestMockRepository {
 	return &TestMockRepository{
-		getByIDEvents: make(map[string]*career.CareerEvent),
+		getByIDEvents: make(map[string]*career.Event),
 		getByIDErrors: make(map[string]error),
 	}
 }
@@ -56,13 +56,13 @@ func (m *TestMockRepository) SetDeleteBehavior(err error) {
 }
 
 // SetGetByIDBehavior sets the event and error for GetByID calls.
-func (m *TestMockRepository) SetGetByIDBehavior(event *career.CareerEvent, err error) {
+func (m *TestMockRepository) SetGetByIDBehavior(event *career.Event, err error) {
 	m.getByIDEvent = event
 	m.getByIDErr = err
 }
 
 // SetEventByID sets a specific event to be returned for a given ID.
-func (m *TestMockRepository) SetEventByID(eventID string, event *career.CareerEvent, err error) {
+func (m *TestMockRepository) SetEventByID(eventID string, event *career.Event, err error) {
 	if event != nil {
 		m.getByIDEvents[eventID] = event
 	}
@@ -72,7 +72,7 @@ func (m *TestMockRepository) SetEventByID(eventID string, event *career.CareerEv
 }
 
 // SetListBehavior sets the events and error for List calls.
-func (m *TestMockRepository) SetListBehavior(events []*career.CareerEvent, err error) {
+func (m *TestMockRepository) SetListBehavior(events []*career.Event, err error) {
 	m.listEvents = events
 	m.listErr = err
 }
@@ -84,13 +84,13 @@ func (m *TestMockRepository) SetCountBehavior(count int, err error) {
 }
 
 // Create implements EventRepository interface.
-func (m *TestMockRepository) Create(_ context.Context, _ *career.CareerEvent) error {
+func (m *TestMockRepository) Create(_ context.Context, _ *career.Event) error {
 	m.createCalled = true
 	return m.createErr
 }
 
 // Update implements EventRepository interface.
-func (m *TestMockRepository) Update(_ context.Context, _ *career.CareerEvent) error {
+func (m *TestMockRepository) Update(_ context.Context, _ *career.Event) error {
 	m.updateCalled = true
 	return m.updateErr
 }
@@ -102,7 +102,7 @@ func (m *TestMockRepository) Delete(_ context.Context, _ string) error {
 }
 
 // GetByID implements EventRepository interface.
-func (m *TestMockRepository) GetByID(_ context.Context, eventID string) (*career.CareerEvent, error) {
+func (m *TestMockRepository) GetByID(_ context.Context, eventID string) (*career.Event, error) {
 	m.getByIDCalled = true
 
 	// Check for per-ID mocking first
@@ -118,7 +118,7 @@ func (m *TestMockRepository) GetByID(_ context.Context, eventID string) (*career
 }
 
 // List implements EventRepository interface.
-func (m *TestMockRepository) List(_ context.Context, _ repo.EventListFilters) ([]*career.CareerEvent, error) {
+func (m *TestMockRepository) List(_ context.Context, _ repo.EventListFilters) ([]*career.Event, error) {
 	m.listCalled = true
 	return m.listEvents, m.listErr
 }

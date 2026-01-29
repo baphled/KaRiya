@@ -67,7 +67,7 @@ func (m *CaptureForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// This allows the parent intent to handle back navigation
 		if msg.String() == "esc" {
 			// Signal back navigation to parent intent
-			return m, nil // Parent intent will check for escape via HandleGlobalKeys
+			return m, nil
 		}
 
 		if msg.String() == "ctrl+s" {
@@ -109,7 +109,7 @@ func (m *CaptureForm) submitForm() tea.Cmd {
 			}
 		}
 
-		event := &career.CareerEvent{
+		event := &career.Event{
 			Text:       m.formData.Text,
 			Date:       eventDate,
 			Company:    m.formData.Company,
@@ -131,7 +131,7 @@ func (m *CaptureForm) SetStrategy(strategy string) {
 }
 
 // LoadEventForEditing populates the form with existing event data.
-func (m *CaptureForm) LoadEventForEditing(event *career.CareerEvent) {
+func (m *CaptureForm) LoadEventForEditing(event *career.Event) {
 	if event == nil {
 		return
 	}

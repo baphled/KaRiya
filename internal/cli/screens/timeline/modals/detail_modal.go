@@ -29,14 +29,14 @@ import (
 //	}
 type EventDetailModal struct {
 	modal            *feedback.DetailModal
-	event            *career.CareerEvent
+	event            *career.Event
 	theme            themes.Theme
 	showSkillsOption bool
 }
 
 // NewEventDetailModal creates a new event detail modal.
 // By default, shows the "s: Skills" option in the footer.
-func NewEventDetailModal(event *career.CareerEvent, theme themes.Theme) *EventDetailModal {
+func NewEventDetailModal(event *career.Event, theme themes.Theme) *EventDetailModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
 	}
@@ -124,14 +124,14 @@ func (m *EventDetailModal) SetDimensions(width, height int) {
 }
 
 // SetEvent updates the event being displayed.
-func (m *EventDetailModal) SetEvent(event *career.CareerEvent) {
+func (m *EventDetailModal) SetEvent(event *career.Event) {
 	m.event = event
 	content := RenderEventDetailContent(event, m.theme)
 	m.modal.SetContent(content)
 }
 
 // GetEvent returns the event being displayed.
-func (m *EventDetailModal) GetEvent() *career.CareerEvent {
+func (m *EventDetailModal) GetEvent() *career.Event {
 	return m.event
 }
 

@@ -44,7 +44,7 @@ func (i *Intent) handleScreenResult(result interface{}) tea.Cmd {
 //
 //nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleCancel(result *screens.CancelResult) tea.Cmd {
-	_ = result // Satisfy interface - result data not needed for cancel handling
+	_ = result
 	switch i.state {
 	case StateList:
 		// Check if any modal is visible - if so, Esc should close the modal, not cancel the intent.
@@ -101,7 +101,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 //
 //nolint:revive // result parameter required by ScreenResultHandler interface
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
-	_ = result // Not yet implemented - form submissions handled via modals
+	_ = result
 	return nil
 }
 
@@ -165,7 +165,7 @@ func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 			i.state = StateDetailEvents
 			// Load events for this burst.
 			i.burstEvents = i.loadBurstEvents(burst)
-			// Use timeline.TimelineEventListScreen to display burst events.
+			// Use timeline.EventListScreen to display burst events.
 			i.transitionToScreen(timeline.NewTimelineEventListScreen(i.burstEvents))
 		}
 		return nil

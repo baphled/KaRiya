@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// FindIntentFiles finds all Go source files in the intents directory (excluding tests)
+// FindIntentFiles finds all Go source files in the intents directory (excluding tests).
 func FindIntentFiles(intentsDir string) ([]string, error) {
 	var files []string
 
@@ -27,7 +27,7 @@ func FindIntentFiles(intentsDir string) ([]string, error) {
 	return files, err
 }
 
-// FindScreenFiles finds all Go source files in the screens directory (excluding tests)
+// FindScreenFiles finds all Go source files in the screens directory (excluding tests).
 func FindScreenFiles(screensDir string) ([]string, error) {
 	// Check if directory exists
 	if _, err := os.Stat(screensDir); os.IsNotExist(err) {
@@ -53,7 +53,7 @@ func FindScreenFiles(screensDir string) ([]string, error) {
 	return files, err
 }
 
-// ScanAll scans both intents and screens directories and returns a complete StateMatrix
+// ScanAll scans both intents and screens directories and returns a complete StateMatrix.
 func ScanAll(intentsDir, screensDir string) (*StateMatrix, error) {
 	matrix := &StateMatrix{
 		Intents: []ComponentInfo{},

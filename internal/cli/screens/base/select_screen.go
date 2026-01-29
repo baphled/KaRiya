@@ -16,28 +16,27 @@ import (
 //	}
 type ItemRenderer[T any] func(T) string
 
-// BaseSelectScreen[T] provides a reusable list selection screen.
+// SelectScreen provides a reusable list selection screen for any item type.
 //
-// This generic screen handles:
-// - List navigation (↑/↓/j/k/g/G)
-// - Item selection (Enter)
-// - Cancellation (Esc)
-// - Large list handling (scrolling)
-// - Empty list handling
+// The generic type parameter T is the element type displayed in the list
+// (e.g., string, *CVProfile, or any domain struct). T must satisfy the
+// "any" constraint. An ItemRenderer[T] function converts each T value to a
+// display string shown as one row in the list.
 //
-// Type parameter T can be any type (string, int, struct, pointer to struct, etc.)
+// The screen handles list navigation (arrow keys and j/k for single-step
+// movement, g/G for jump-to-top and jump-to-bottom), item selection via
+// Enter, cancellation via Esc, and automatic scrolling when the list is
+// larger than the visible area.
+//
+// SelectScreen communicates results back to the parent intent through the
+// ScreenResult interface returned from Update. On Enter it returns a
+// NavigateResult whose Data field holds the selected T value and whose
+// metadata map includes the "selected_index" key. On Esc it returns a
+// CancelResult with "selected_index" metadata preserving the cursor
+// position. The parent intent inspects these results in its Update loop to
+// drive state transitions.
 //
 // Example usage:
-//
-//	type CVProfile struct {
-//	    Name string
-//	    Role string
-//	}
-//
-//	profiles := []*CVProfile{...}
-//	renderer := func(p *CVProfile) string {
-//	    return fmt.Sprintf("%s (%s)", p.Name, p.Role)
-//	}
 //
 //	screen := base.NewBaseSelectScreen[*CVProfile](
 //	    profiles,
@@ -46,42 +45,23 @@ type ItemRenderer[T any] func(T) string
 //	    "Select CV Profile",
 //	)
 //
-//	// In intent's Update:
 //	cmd, result := screen.Update(msg)
 //	if result != nil && result.Type() == screens.ResultNavigate {
 //	    selectedProfile := result.Data().(*CVProfile)
-//	    // ... use selected profile
 //	}
-//
-// Related:
-// - internal/cli/screens/contract.go (Screen interface, ScreenResult types)
-// - internal/cli/screens/base/base_screen.go (BaseScreen)
-type BaseSelectScreen[T any] struct {
-	*BaseScreen
+type SelectScreen[T any] struct {
+	*Screen
 
-	// items is the list of items to select from
-	items []T
-
-	// renderer converts items to display strings
-	renderer ItemRenderer[T]
-
-	// breadcrumbs for the view header
-	breadcrumbs []string
-
-	// title for the view (e.g., "Select CV Profile")
-	title string
-
-	// selectedIndex is the currently selected item index
+	items         []T
+	renderer      ItemRenderer[T]
+	breadcrumbs   []string
+	title         string
 	selectedIndex int
-
-	// scrollOffset for large lists (top visible item index)
-	scrollOffset int
-
-	// visibleItems is how many items can be shown at once
-	visibleItems int
+	scrollOffset  int
+	visibleItems  int
 }
 
-// NewBaseSelectScreen creates a new BaseSelectScreen with the given items.
+// NewBaseSelectScreen creates a new SelectScreen with the given items.
 //
 // Parameters:
 //   - items: The list of items to select from
@@ -89,22 +69,22 @@ type BaseSelectScreen[T any] struct {
 //   - breadcrumbs: Breadcrumb trail for header (e.g., ["Main Menu", "Select Profile"])
 //   - title: Title for the screen (e.g., "Select CV Profile")
 //
-// Returns a BaseSelectScreen with selection at index 0 (if items exist).
+// Returns a SelectScreen with selection at index 0 (if items exist).
 func NewBaseSelectScreen[T any](
 	items []T,
 	renderer ItemRenderer[T],
 	breadcrumbs []string,
 	title string,
-) *BaseSelectScreen[T] {
-	return &BaseSelectScreen[T]{
-		BaseScreen:    NewBaseScreen(),
+) *SelectScreen[T] {
+	return &SelectScreen[T]{
+		Screen:        NewBaseScreen(),
 		items:         items,
 		renderer:      renderer,
 		breadcrumbs:   breadcrumbs,
 		title:         title,
 		selectedIndex: 0,
 		scrollOffset:  0,
-		visibleItems:  10, // Default to showing 10 items
+		visibleItems:  10,
 	}
 }
 
@@ -112,7 +92,7 @@ func NewBaseSelectScreen[T any](
 //
 // This is useful for restoring state when navigating back.
 // If the index is out of bounds, it will be clamped to valid range.
-func (s *BaseSelectScreen[T]) WithInitialSelection(index int) *BaseSelectScreen[T] {
+func (s *SelectScreen[T]) WithInitialSelection(index int) *SelectScreen[T] {
 	if index < 0 {
 		index = 0
 	}
@@ -133,42 +113,34 @@ func (s *BaseSelectScreen[T]) WithInitialSelection(index int) *BaseSelectScreen[
 // - Navigation keys (↑/↓/j/k/g/G)
 // - Selection (Enter) → returns NavigateResult with selected item
 // - Cancellation (Esc) → returns CancelResult
-// - Window resize → updates dimensions
-func (s *BaseSelectScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via BaseScreen
-	if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+// - Window resize → updates dimensions.
+func (s *SelectScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		s.updateVisibleItems()
 		return cmd, nil
 	}
 
-	// Handle key messages
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
-		// Navigation - Down
 		case "down", "j":
 			s.navigateDown()
 			return nil, nil
 
-		// Navigation - Up
 		case "up", "k":
 			s.navigateUp()
 			return nil, nil
 
-		// Navigation - Jump to top
 		case "g":
 			s.jumpToTop()
 			return nil, nil
 
-		// Navigation - Jump to bottom
 		case "G":
 			s.jumpToBottom()
 			return nil, nil
 
-		// Selection
 		case "enter":
 			return nil, s.handleSelection()
 
-		// Cancellation
 		case "esc":
 			return nil, s.handleCancellation()
 		}
@@ -182,8 +154,8 @@ func (s *BaseSelectScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult
 // Renders the list with:
 // - StandardView layout (logo, breadcrumbs, footer)
 // - Selection indicator (▶) on current item
-// - Scroll indicator if list is larger than visible area
-func (s *BaseSelectScreen[T]) View() string {
+// - Scroll indicator if list is larger than visible area.
+func (s *SelectScreen[T]) View() string {
 	content := s.RenderContent()
 	footer := s.RenderFooter()
 
@@ -191,7 +163,7 @@ func (s *BaseSelectScreen[T]) View() string {
 }
 
 // navigateDown moves selection down by one item.
-func (s *BaseSelectScreen[T]) navigateDown() {
+func (s *SelectScreen[T]) navigateDown() {
 	if len(s.items) == 0 {
 		return
 	}
@@ -203,7 +175,7 @@ func (s *BaseSelectScreen[T]) navigateDown() {
 }
 
 // navigateUp moves selection up by one item.
-func (s *BaseSelectScreen[T]) navigateUp() {
+func (s *SelectScreen[T]) navigateUp() {
 	if len(s.items) == 0 {
 		return
 	}
@@ -215,7 +187,7 @@ func (s *BaseSelectScreen[T]) navigateUp() {
 }
 
 // jumpToTop moves selection to the first item.
-func (s *BaseSelectScreen[T]) jumpToTop() {
+func (s *SelectScreen[T]) jumpToTop() {
 	if len(s.items) == 0 {
 		return
 	}
@@ -225,7 +197,7 @@ func (s *BaseSelectScreen[T]) jumpToTop() {
 }
 
 // jumpToBottom moves selection to the last item.
-func (s *BaseSelectScreen[T]) jumpToBottom() {
+func (s *SelectScreen[T]) jumpToBottom() {
 	if len(s.items) == 0 {
 		return
 	}
@@ -235,22 +207,18 @@ func (s *BaseSelectScreen[T]) jumpToBottom() {
 }
 
 // updateScrollOffset adjusts scroll position to keep selection visible.
-func (s *BaseSelectScreen[T]) updateScrollOffset() {
-	// If selected item is above visible window, scroll up
+func (s *SelectScreen[T]) updateScrollOffset() {
 	if s.selectedIndex < s.scrollOffset {
 		s.scrollOffset = s.selectedIndex
 	}
 
-	// If selected item is below visible window, scroll down
 	if s.selectedIndex >= s.scrollOffset+s.visibleItems {
 		s.scrollOffset = s.selectedIndex - s.visibleItems + 1
 	}
 }
 
 // updateVisibleItems recalculates how many items can be shown based on terminal height.
-func (s *BaseSelectScreen[T]) updateVisibleItems() {
-	// Reserve space for logo, header, footer, spacing
-	// Rough estimate: 10 lines for header/footer, rest for content
+func (s *SelectScreen[T]) updateVisibleItems() {
 	availableHeight := s.Height() - 15
 	if availableHeight < 5 {
 		availableHeight = 5
@@ -259,8 +227,7 @@ func (s *BaseSelectScreen[T]) updateVisibleItems() {
 }
 
 // handleSelection returns a NavigateResult with the selected item.
-func (s *BaseSelectScreen[T]) handleSelection() screens.ScreenResult {
-	// Handle empty list
+func (s *SelectScreen[T]) handleSelection() screens.ScreenResult {
 	if len(s.items) == 0 {
 		return nil
 	}
@@ -271,17 +238,15 @@ func (s *BaseSelectScreen[T]) handleSelection() screens.ScreenResult {
 		ResultData: selectedItem,
 	}
 
-	// Store selection index in metadata for state preservation
 	result.WithMetadata("selected_index", s.selectedIndex)
 
 	return result
 }
 
 // handleCancellation returns a CancelResult with current state in metadata.
-func (s *BaseSelectScreen[T]) handleCancellation() screens.ScreenResult {
+func (s *SelectScreen[T]) handleCancellation() screens.ScreenResult {
 	result := &screens.CancelResult{}
 
-	// Store current index so it can be restored if user comes back
 	result.WithMetadata("selected_index", s.selectedIndex)
 
 	return result
@@ -289,29 +254,25 @@ func (s *BaseSelectScreen[T]) handleCancellation() screens.ScreenResult {
 
 // RenderContent renders the list of items with selection indicator.
 // This is public so intents can get raw content for custom layouts.
-func (s *BaseSelectScreen[T]) RenderContent() string {
-	// Handle empty list
+func (s *SelectScreen[T]) RenderContent() string {
 	if len(s.items) == 0 {
 		return "\n  No items available\n"
 	}
 
 	var b strings.Builder
 
-	// Add title if provided
 	if s.title != "" {
 		b.WriteString("\n  ")
 		b.WriteString(s.title)
 		b.WriteString("\n\n")
 	}
 
-	// Calculate visible range
 	start := s.scrollOffset
 	end := s.scrollOffset + s.visibleItems
 	if end > len(s.items) {
 		end = len(s.items)
 	}
 
-	// Render visible items
 	for i := start; i < end; i++ {
 		prefix := "  "
 		if i == s.selectedIndex {
@@ -324,7 +285,6 @@ func (s *BaseSelectScreen[T]) RenderContent() string {
 		b.WriteString("\n")
 	}
 
-	// Add scroll indicators if needed
 	if s.scrollOffset > 0 {
 		b.WriteString("\n  ↑ More items above")
 	}
@@ -337,7 +297,7 @@ func (s *BaseSelectScreen[T]) RenderContent() string {
 
 // RenderFooter renders footer with navigation hints.
 // This is public so intents can get raw footer for custom layouts.
-func (s *BaseSelectScreen[T]) RenderFooter() string {
+func (s *SelectScreen[T]) RenderFooter() string {
 	if len(s.items) == 0 {
 		return "Esc: Back  q: Quit"
 	}

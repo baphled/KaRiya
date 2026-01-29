@@ -16,12 +16,12 @@ import (
 type BurstEventsModal struct {
 	modal   *feedback.DetailModal
 	burstID string
-	events  []*career.CareerEvent
+	events  []*career.Event
 	theme   themes.Theme
 }
 
 // NewBurstEventsModal creates a new burst events modal.
-func NewBurstEventsModal(burstID string, burstName string, events []*career.CareerEvent, theme themes.Theme) *BurstEventsModal {
+func NewBurstEventsModal(burstID string, burstName string, events []*career.Event, theme themes.Theme) *BurstEventsModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
 	}
@@ -78,7 +78,7 @@ func (m *BurstEventsModal) SetDimensions(width, height int) {
 }
 
 // SetEvents updates the events being displayed.
-func (m *BurstEventsModal) SetEvents(events []*career.CareerEvent) {
+func (m *BurstEventsModal) SetEvents(events []*career.Event) {
 	m.events = events
 	content := renderEventsContent(events, m.theme)
 	m.modal.SetContent(content)
@@ -91,7 +91,7 @@ func (m *BurstEventsModal) GetBurstID() string {
 }
 
 // renderEventsContent renders the events as formatted text.
-func renderEventsContent(events []*career.CareerEvent, theme themes.Theme) string {
+func renderEventsContent(events []*career.Event, theme themes.Theme) string {
 	if theme == nil {
 		theme = themes2.Default()
 	}

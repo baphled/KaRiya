@@ -27,7 +27,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 	Describe("BuildSections with selected technologies", func() {
 		var (
 			bullets []*career.CVBullet
-			events  []*career.CareerEvent
+			events  []*career.Event
 			facts   []*career.Fact
 		)
 
@@ -42,7 +42,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 				},
 			}
 
-			events = []*career.CareerEvent{
+			events = []*career.Event{
 				{
 					ID:      "event1",
 					Text:    "Built API",
@@ -174,7 +174,7 @@ var _ = Describe("DefaultSectionBuilder - Skills Section", func() {
 
 		Context("Multiple events with same skill", func() {
 			BeforeEach(func() {
-				events = append(events, &career.CareerEvent{
+				events = append(events, &career.Event{
 					ID:      "event2",
 					Text:    "Developed service",
 					Company: "StartupCo",

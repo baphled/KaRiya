@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
-	burst_management "github.com/baphled/kariya/internal/cli/intents/burst_management"
-	fact_management "github.com/baphled/kariya/internal/cli/intents/fact_management"
-	manage_skills "github.com/baphled/kariya/internal/cli/intents/skills_management"
+	"github.com/baphled/kariya/internal/cli/intents/browsetimeline"
+	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
+	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
+	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
 	cvscreens "github.com/baphled/kariya/internal/cli/screens/cv"
 	"github.com/baphled/kariya/internal/cli/service"
@@ -98,13 +98,13 @@ func (r *DefaultIntentRegistrar) registerBrowseTimeline(ctx context.Context, rou
 		})
 		if err != nil {
 			r.config.Log.Error("Failed to load events: %v", err)
-			events = make([]*career.CareerEvent, 0)
+			events = make([]*career.Event, 0)
 		}
-		browserCtx := &browse_timeline.IntentContext{
+		browserCtx := &browsetimeline.IntentContext{
 			Events:          events,
 			CLIEventService: r.config.CLIService,
 		}
-		intent, err := browse_timeline.NewIntent(browserCtx)
+		intent, err := browsetimeline.NewIntent(browserCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create BrowseTimeline intent: %v", err)
 			return nil
@@ -119,11 +119,11 @@ func (r *DefaultIntentRegistrar) registerManageSkills(ctx context.Context, route
 			r.config.Log.Error("Failed to create ManageSkills intent: missing CareerService")
 			return nil
 		}
-		skillsCtx := manage_skills.NewIntentContext(
+		skillsCtx := skillsmanagement.NewIntentContext(
 			ctx,
 			r.config.CareerService.GetSkillRepository(),
 		)
-		intent, err := manage_skills.NewIntent(skillsCtx)
+		intent, err := skillsmanagement.NewIntent(skillsCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create ManageSkills intent: %v", err)
 			return nil
@@ -141,7 +141,7 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 		events, err := r.config.CareerService.GetEventRepository().List(ctx, careerrepo.EventListFilters{Limit: 100})
 		if err != nil {
 			r.config.Log.Error("Failed to load events for CV generation: %v", err)
-			events = []*career.CareerEvent{}
+			events = []*career.Event{}
 		}
 		facts, err := r.config.CareerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 100})
 		if err != nil {
@@ -202,12 +202,12 @@ func (r *DefaultIntentRegistrar) registerBurstManagement(ctx context.Context, ro
 			return nil
 		}
 		burstRepo := r.config.CareerService.GetBurstRepository()
-		burstCtx := &burst_management.IntentContext{
+		burstCtx := &burstmanagement.IntentContext{
 			Service:         r.config.CareerService,
 			BurstRepository: burstRepo,
 			Context:         ctx,
 		}
-		intent, err := burst_management.NewIntent(burstCtx)
+		intent, err := burstmanagement.NewIntent(burstCtx)
 		if err != nil || intent == nil {
 			r.config.Log.Error("Failed to create BurstManagement intent: %v", err)
 			return nil
@@ -223,12 +223,12 @@ func (r *DefaultIntentRegistrar) registerFactManagement(ctx context.Context, rou
 			return nil
 		}
 		factRepo := r.config.CareerService.GetFactRepository()
-		factCtx := fact_management.NewIntentContext(ctx, factRepo)
+		factCtx := factmanagement.NewIntentContext(ctx, factRepo)
 		if factCtx == nil {
 			r.config.Log.Error("Failed to create FactManagement context")
 			return nil
 		}
-		intent, err := fact_management.NewIntent(factCtx)
+		intent, err := factmanagement.NewIntent(factCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create FactManagement intent: %v", err)
 			return nil

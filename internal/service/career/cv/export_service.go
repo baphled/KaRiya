@@ -17,23 +17,23 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ClipboardWriter defines the interface for clipboard operations
+// ClipboardWriter defines the interface for clipboard operations.
 type ClipboardWriter interface {
 	WriteAll(text string) error
 	IsUnsupported() bool
 }
 
-// SystemClipboard implements ClipboardWriter using the system clipboard
+// SystemClipboard implements ClipboardWriter using the system clipboard.
 type SystemClipboard struct{}
 
-// WriteAll writes text to the system clipboard
+// WriteAll writes text to the system clipboard.
 func (s *SystemClipboard) WriteAll(text string) error {
 	return clipboard.WriteAll(text)
 }
 
-// IsUnsupported returns true if clipboard is not available in this environment
+// IsUnsupported returns true if clipboard is not available in this environment.
 // This performs an actual write test because clipboard.Unsupported is unreliable
-// (it checks if utilities exist, not if they actually work)
+// (it checks if utilities exist, not if they actually work).
 func (s *SystemClipboard) IsUnsupported() bool {
 	// First check the library's flag
 	if clipboard.Unsupported {
@@ -46,25 +46,25 @@ func (s *SystemClipboard) IsUnsupported() bool {
 	return testErr != nil
 }
 
-// ExportService handles exporting CVs to various formats
+// ExportService handles exporting CVs to various formats.
 type ExportService struct {
 	logger    *logger.Logger
 	clipboard ClipboardWriter
 }
 
-// ExportFormat defines the export format type
+// ExportFormat defines the export format type.
 type ExportFormat string
 
 const (
-	// ExportFormatText exports CV as plain text
+	// ExportFormatText exports CV as plain text.
 	ExportFormatText ExportFormat = "text"
-	// ExportFormatMarkdown exports CV as markdown
+	// ExportFormatMarkdown exports CV as markdown.
 	ExportFormatMarkdown ExportFormat = "markdown"
-	// ExportFormatYAML exports CV as YAML
+	// ExportFormatYAML exports CV as YAML.
 	ExportFormatYAML ExportFormat = "yaml"
 )
 
-// ExportResult contains the result of an export operation
+// ExportResult contains the result of an export operation.
 type ExportResult struct {
 	Format   ExportFormat
 	Content  string
@@ -72,7 +72,7 @@ type ExportResult struct {
 	SavedAt  time.Time
 }
 
-// NewExportService creates a new export service
+// NewExportService creates a new export service.
 func NewExportService(log *logger.Logger) *ExportService {
 	return &ExportService{
 		logger:    log,
@@ -80,7 +80,7 @@ func NewExportService(log *logger.Logger) *ExportService {
 	}
 }
 
-// NewExportServiceWithClipboard creates a new export service with a custom clipboard implementation
+// NewExportServiceWithClipboard creates a new export service with a custom clipboard implementation.
 func NewExportServiceWithClipboard(log *logger.Logger, clipboard ClipboardWriter) *ExportService {
 	return &ExportService{
 		logger:    log,
@@ -88,7 +88,7 @@ func NewExportServiceWithClipboard(log *logger.Logger, clipboard ClipboardWriter
 	}
 }
 
-// ExportToText exports a CV to plain text format
+// ExportToText exports a CV to plain text format.
 func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", fmt.Errorf("CV view is nil")
@@ -149,7 +149,7 @@ func (es *ExportService) ExportToText(_ context.Context, cv *career.CVView, sect
 	return buf.String(), nil
 }
 
-// ExportToMarkdown exports a CV to markdown format
+// ExportToMarkdown exports a CV to markdown format.
 func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", fmt.Errorf("CV view is nil")
@@ -207,7 +207,7 @@ func (es *ExportService) ExportToMarkdown(ctx context.Context, cv *career.CVView
 	return buf.String(), nil
 }
 
-// ExportToYAML exports a CV to YAML format
+// ExportToYAML exports a CV to YAML format.
 func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet) (string, error) {
 	if cv == nil {
 		return "", fmt.Errorf("CV view is nil")
@@ -236,7 +236,7 @@ func (es *ExportService) ExportToYAML(ctx context.Context, cv *career.CVView, se
 	return string(data), nil
 }
 
-// SaveToFile saves exported CV content to a file
+// SaveToFile saves exported CV content to a file.
 func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format ExportFormat, content string) (string, error) {
 	// Determine export directory
 	homeDir, err := os.UserHomeDir()
@@ -247,7 +247,7 @@ func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format E
 	exportDir := filepath.Join(homeDir, ".kariya", "cv_exports")
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(exportDir, 0750); err != nil {
+	if err := os.MkdirAll(exportDir, 0o750); err != nil {
 		return "", fmt.Errorf("failed to create export directory: %w", err)
 	}
 
@@ -258,7 +258,7 @@ func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format E
 	filePath := filepath.Join(exportDir, filename)
 
 	// Write file
-	if err := os.WriteFile(filePath, []byte(content), 0600); err != nil {
+	if err := os.WriteFile(filePath, []byte(content), 0o600); err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -266,7 +266,7 @@ func (es *ExportService) SaveToFile(ctx context.Context, cvName string, format E
 	return filePath, nil
 }
 
-// getFileExtension returns the file extension for a given format
+// getFileExtension returns the file extension for a given format.
 func getFileExtension(format ExportFormat) string {
 	switch format {
 	case ExportFormatText:
@@ -280,7 +280,7 @@ func getFileExtension(format ExportFormat) string {
 	}
 }
 
-// sanitizeFilename removes invalid filename characters
+// sanitizeFilename removes invalid filename characters.
 func sanitizeFilename(name string) string {
 	// Replace spaces with underscores
 	name = strings.ReplaceAll(name, " ", "_")
@@ -299,7 +299,7 @@ func sanitizeFilename(name string) string {
 	return name
 }
 
-// GetExportPath returns the default export directory path
+// GetExportPath returns the default export directory path.
 func (es *ExportService) GetExportPath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -314,7 +314,7 @@ func (es *ExportService) GetExportPath() (string, error) {
 // On macOS and Windows, clipboard support is built-in and this error should not occur.
 var ErrClipboardUnsupported = fmt.Errorf("clipboard not available in headless environment (SSH/no display). Use 'Save to file' instead")
 
-// CopyToClipboard copies the given content to the system clipboard
+// CopyToClipboard copies the given content to the system clipboard.
 func (es *ExportService) CopyToClipboard(ctx context.Context, content string) error {
 	if content == "" {
 		return fmt.Errorf("content is empty")
@@ -335,14 +335,14 @@ func (es *ExportService) CopyToClipboard(ctx context.Context, content string) er
 // Export exports a CV using the specified structure and format.
 // For YAML format, always uses standard structure (it's a data format).
 // Uses default profile for narrative structure.
-func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure CVStructure, format ExportFormat) (string, error) {
+func (es *ExportService) Export(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat) (string, error) {
 	return es.ExportWithProfile(ctx, cv, sections, bullets, structure, format, nil)
 }
 
 // ExportWithProfile exports a CV using the specified structure, format, and profile config.
 // For YAML format, always uses standard structure (it's a data format).
 // If profileCfg is nil, uses default profile.
-func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure CVStructure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
+func (es *ExportService) ExportWithProfile(ctx context.Context, cv *career.CVView, sections []*career.CVSection, bullets map[string][]*career.CVBullet, structure Structure, format ExportFormat, profileCfg *config.ProfileConfig) (string, error) {
 	if cv == nil {
 		return "", fmt.Errorf("CV view is nil")
 	}

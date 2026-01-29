@@ -15,23 +15,23 @@ import (
 
 // Role scoring constants for calculateRoleScore.
 const (
-	roleScoreBase                    = 0.50 // Base score for all bullets
-	roleScorePrimaryCategoryBoost    = 0.30 // Boost for primary category match
-	roleScoreSecondaryCategoryBoost  = 0.15 // Boost for secondary category match
-	roleScoreAchievementBonus        = 0.10 // Bonus for achievement-based bullets
-	roleScoreFactBonus               = 0.05 // Bonus for fact-based bullets
-	roleScoreHighConfidenceBonus     = 0.05 // Bonus for high confidence bullets
-	roleScoreHighConfidenceThreshold = 0.80 // Threshold for high confidence
-	technologySkillMatchBonus        = 0.15 // Bonus for matching selected technologies
-	impactLevelHighBonus             = 0.15 // Bonus for high impact level
-	impactLevelMediumBonus           = 0.05 // Bonus for medium impact level
+	roleScoreBase                    = 0.50
+	roleScorePrimaryCategoryBoost    = 0.30
+	roleScoreSecondaryCategoryBoost  = 0.15
+	roleScoreAchievementBonus        = 0.10
+	roleScoreFactBonus               = 0.05
+	roleScoreHighConfidenceBonus     = 0.05
+	roleScoreHighConfidenceThreshold = 0.80
+	technologySkillMatchBonus        = 0.15
+	impactLevelHighBonus             = 0.15
+	impactLevelMediumBonus           = 0.05
 )
 
-// BulletGenerator generates professionally ranked CV bullets
+// BulletGenerator generates professionally ranked CV bullets.
 type BulletGenerator interface {
 	// GenerateBullets generates bullets from events and facts
 	GenerateBullets(ctx context.Context,
-		events []*career.CareerEvent,
+		events []*career.Event,
 		facts []*career.Fact,
 		achievements []*Achievement,
 		targetRole string,
@@ -50,27 +50,27 @@ type BulletGenerator interface {
 	EnhanceWording(bullet *Bullet, role string) (*Bullet, error)
 
 	// FilterByTechnologies filters and boosts bullets based on selected technologies
-	FilterByTechnologies(bullets []*Bullet, events []*career.CareerEvent,
+	FilterByTechnologies(bullets []*Bullet, events []*career.Event,
 		techFocus TechnologyFocus, technologies []string) []*Bullet
 }
 
-// Bullet represents a CV bullet with scoring metadata
+// Bullet represents a CV bullet with scoring metadata.
 type Bullet struct {
 	ID                string
 	Text              string
 	EnhancedText      string
 	SourceEventIDs    []string
 	SourceFactIDs     []string
-	AudienceRelevance []string                     // Audience types this bullet is relevant to
-	Category          constants.CompetencyCategory // Primary competency category (BUG-008)
+	AudienceRelevance []string
+	Category          constants.CompetencyCategory
 	Metrics           []*Metric
 	Confidence        float64
-	RoleScore         float64 // 0.0-1.0
-	AudienceScore     float64 // 0.0-1.0
-	MetricScore       float64 // 0.0-1.0
-	ImpactScore       float64 // 0.0-1.0
-	FinalScore        float64 // Weighted combination
-	ImpactLevel       string  // "low", "medium", "high"
+	RoleScore         float64
+	AudienceScore     float64
+	MetricScore       float64
+	ImpactScore       float64
+	FinalScore        float64
+	ImpactLevel       string
 	KeywordMatches    []string
 	InclusionReason   string
 	Rank              float64
@@ -92,7 +92,7 @@ func (eb *Bullet) ToCVBullet() *career.CVBullet {
 		Rank:            eb.Rank,
 		InclusionReason: eb.InclusionReason,
 		Confidence:      eb.Confidence,
-		Category:        eb.Category, // BUG-008: propagate category
+		Category:        eb.Category,
 		RoleScore:       eb.RoleScore,
 		AudienceScore:   eb.AudienceScore,
 		MetricScore:     eb.MetricScore,
@@ -138,7 +138,7 @@ type RoleFilter struct {
 
 // GenerateBullets generates bullets from events and facts
 func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context,
-	events []*career.CareerEvent,
+	events []*career.Event,
 	facts []*career.Fact,
 	achievements []*Achievement,
 	targetRole string,
@@ -168,7 +168,7 @@ func (bg *DefaultBulletGenerator) GenerateBullets(ctx context.Context,
 	bullets = bg.FilterByAudience(bullets, targetAudience)
 
 	// Build event map for company-aware deduplication (BUG-013).
-	eventMap := make(map[string]*career.CareerEvent, len(events))
+	eventMap := make(map[string]*career.Event, len(events))
 	for _, event := range events {
 		eventMap[event.ID] = event
 	}
@@ -285,7 +285,7 @@ func (bg *DefaultBulletGenerator) EnhanceWording(bullet *Bullet, role string) (*
 	enhanced = bg.structureForImpact(enhanced)
 
 	// Capitalize first letter
-	if len(enhanced) > 0 {
+	if enhanced != "" {
 		enhanced = strings.ToUpper(enhanced[:1]) + enhanced[1:]
 	}
 
@@ -307,7 +307,7 @@ func (bg *DefaultBulletGenerator) createBulletsFromAchievements(achievements []*
 			SourceEventIDs:  []string{achievement.EventID},
 			SourceFactIDs:   achievement.FactIDs,
 			Metrics:         achievement.Metrics,
-			Category:        achievement.Category, // BUG-008: propagate from achievement
+			Category:        achievement.Category,
 			Confidence:      achievement.Confidence,
 			InclusionReason: string(constants.InclusionReasonAchievementExtraction),
 			ImpactLevel:     bg.determineImpactLevel(achievement),
@@ -341,7 +341,7 @@ func (bg *DefaultBulletGenerator) createBulletsFromFacts(facts []*career.Fact, t
 			SourceFactIDs:     []string{fact.ID},
 			SourceEventIDs:    sourceEventIDs,
 			AudienceRelevance: fact.AudienceRelevance,
-			Category:          bg.extractPrimaryCategory(fact.CompetencyCategories), // BUG-008
+			Category:          bg.extractPrimaryCategory(fact.CompetencyCategories),
 			Confidence:        0.85,
 			InclusionReason:   string(constants.InclusionReasonFactExtraction),
 			ImpactLevel:       "medium",
@@ -356,7 +356,7 @@ func (bg *DefaultBulletGenerator) createBulletsFromFacts(facts []*career.Fact, t
 // Uses the Fact.AudienceRelevance field to filter facts based on target audience
 func (bg *DefaultBulletGenerator) isFactRelevantToAudience(fact *career.Fact, audience string) bool {
 	if audience == "" {
-		return true // All audiences relevant if not specified
+		return true
 	}
 
 	// Check if the requested audience is in the fact's relevance list
@@ -370,7 +370,7 @@ func (bg *DefaultBulletGenerator) isFactRelevantToAudience(fact *career.Fact, au
 }
 
 // createBulletsFromEvents creates bullets from events
-func (bg *DefaultBulletGenerator) createBulletsFromEvents(events []*career.CareerEvent) []*Bullet {
+func (bg *DefaultBulletGenerator) createBulletsFromEvents(events []*career.Event) []*Bullet {
 	var bullets []*Bullet
 
 	for _, event := range events {
@@ -379,7 +379,7 @@ func (bg *DefaultBulletGenerator) createBulletsFromEvents(events []*career.Caree
 			Text:            event.Text,
 			EnhancedText:    event.Text,
 			SourceEventIDs:  []string{event.ID},
-			Category:        bg.extractPrimaryCategory(event.Categories), // BUG-008
+			Category:        bg.extractPrimaryCategory(event.Categories),
 			Confidence:      0.80,
 			InclusionReason: string(constants.InclusionReasonEventDirect),
 			ImpactLevel:     "low",
@@ -415,7 +415,7 @@ type dedupKey struct {
 // keeping the one with highest confidence. Bullets at different companies with
 // identical text are kept separate (BUG-013). When merging, it combines source
 // IDs to preserve lineage information.
-func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap map[string]*career.CareerEvent) []*Bullet {
+func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap map[string]*career.Event) []*Bullet {
 	if len(bullets) <= 1 {
 		return bullets
 	}
@@ -475,7 +475,7 @@ func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap
 // which company appears most frequently across its source events (BUG-013).
 // When multiple companies are tied, the lexicographically smallest name wins
 // to ensure deterministic results across runs.
-func resolvePrimaryCompany(sourceEventIDs []string, eventMap map[string]*career.CareerEvent) string {
+func resolvePrimaryCompany(sourceEventIDs []string, eventMap map[string]*career.Event) string {
 	if len(sourceEventIDs) == 0 || len(eventMap) == 0 {
 		return ""
 	}
@@ -615,7 +615,7 @@ func (bg *DefaultBulletGenerator) calculateAudienceScore(bullet *Bullet, audienc
 	// Bonus for matching audience relevance
 	for _, relevantAudience := range bullet.AudienceRelevance {
 		if relevantAudience == audience {
-			score += 0.3 // Strong match
+			score += 0.3
 			break
 		}
 	}
@@ -633,7 +633,7 @@ func (bg *DefaultBulletGenerator) calculateAudienceScore(bullet *Bullet, audienc
 // calculateMetricScore calculates metric presence and quality score
 func (bg *DefaultBulletGenerator) calculateMetricScore(bullet *Bullet) float64 {
 	if len(bullet.Metrics) == 0 {
-		return 0.3 // Lower score for no metrics
+		return 0.3
 	}
 
 	score := 0.6 + float64(len(bullet.Metrics))*0.1
@@ -798,7 +798,7 @@ func (bg *DefaultBulletGenerator) getMinConfidenceForRole(role string) float64 {
 // Applies technology-based scoring adjustments and sorts by final rank.
 func (bg *DefaultBulletGenerator) FilterByTechnologies(
 	bullets []*Bullet,
-	events []*career.CareerEvent,
+	events []*career.Event,
 	techFocus TechnologyFocus,
 	technologies []string,
 ) []*Bullet {
@@ -808,7 +808,7 @@ func (bg *DefaultBulletGenerator) FilterByTechnologies(
 	}
 
 	// Build event map for skill lookup
-	eventMap := make(map[string]*career.CareerEvent)
+	eventMap := make(map[string]*career.Event)
 	for _, event := range events {
 		eventMap[event.ID] = event
 	}

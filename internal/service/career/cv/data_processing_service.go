@@ -14,37 +14,37 @@ import (
 	"github.com/google/uuid"
 )
 
-// DataProcessingService handles extraction and organization of career data
+// DataProcessingService handles extraction and organization of career data.
 type DataProcessingService interface {
 	// GroupEventsByCompany organizes events into company-based structure
-	GroupEventsByCompany(ctx context.Context, events []*career.CareerEvent) (map[string]*CompanyGroup, error)
+	GroupEventsByCompany(ctx context.Context, events []*career.Event) (map[string]*CompanyGroup, error)
 
 	// ExtractAchievements identifies key achievements from events and facts
-	ExtractAchievements(ctx context.Context, event *career.CareerEvent, facts []*career.Fact) ([]*Achievement, error)
+	ExtractAchievements(ctx context.Context, event *career.Event, facts []*career.Fact) ([]*Achievement, error)
 
 	// ExtractSkills identifies skills from events and facts
-	ExtractSkills(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact) (map[string]*SkillCategory, error)
+	ExtractSkills(ctx context.Context, events []*career.Event, facts []*career.Fact) (map[string]*SkillCategory, error)
 
 	// CalculateMetrics extracts quantifiable metrics from event descriptions
 	CalculateMetrics(ctx context.Context, text string) ([]*Metric, error)
 
 	// ExtractProjectsFromEvents identifies unique projects within events
-	ExtractProjectsFromEvents(ctx context.Context, events []*career.CareerEvent) ([]*ProjectGroup, error)
+	ExtractProjectsFromEvents(ctx context.Context, events []*career.Event) ([]*ProjectGroup, error)
 }
 
-// DefaultDataProcessingService is the default implementation
+// DefaultDataProcessingService is the default implementation.
 type DefaultDataProcessingService struct {
 	logger *logger.Logger
 }
 
-// NewDataProcessingService creates a new data processing service
+// NewDataProcessingService creates a new data processing service.
 func NewDataProcessingService(log *logger.Logger) DataProcessingService {
 	return &DefaultDataProcessingService{
 		logger: log,
 	}
 }
 
-// CompanyGroup represents work at a specific company
+// CompanyGroup represents work at a specific company.
 type CompanyGroup struct {
 	ID           string
 	Company      string
@@ -55,10 +55,10 @@ type CompanyGroup struct {
 	Projects     []*ProjectGroup
 	Achievements []*Achievement
 	Skills       []*Skill
-	EventIDs     []string // Reference to source events
+	EventIDs     []string
 }
 
-// ProjectGroup represents a specific project
+// ProjectGroup represents a specific project.
 type ProjectGroup struct {
 	ID           string
 	Name         string
@@ -68,10 +68,10 @@ type ProjectGroup struct {
 	Role         string
 	Achievements []*Achievement
 	Skills       []*Skill
-	EventIDs     []string // Reference to source events
+	EventIDs     []string
 }
 
-// Achievement represents a measurable accomplishment
+// Achievement represents a measurable accomplishment.
 type Achievement struct {
 	ID          string
 	Description string
@@ -80,27 +80,27 @@ type Achievement struct {
 	FactIDs     []string
 	Confidence  float64
 	ActionVerb  string
-	Category    constants.CompetencyCategory // Primary competency category (BUG-008)
+	Category    constants.CompetencyCategory
 }
 
-// Metric represents a quantifiable measure
+// Metric represents a quantifiable measure.
 type Metric struct {
-	Type    string // "percentage", "count", "currency", "time", "ratio"
+	Type    string
 	Value   string
 	Unit    string
 	Context string
 }
 
-// Skill represents a professional capability
+// Skill represents a professional capability.
 type Skill struct {
 	Name         string
-	Level        string // "beginner", "intermediate", "advanced", "expert"
+	Level        string
 	Projects     int
 	Endorsements int
 	Categories   []string
 }
 
-// SkillCategory groups related skills
+// SkillCategory groups related skills.
 type SkillCategory struct {
 	Name   string
 	Skills []*Skill
@@ -110,7 +110,7 @@ type SkillCategory struct {
 // It detects separate tenures when events at OTHER companies exist between
 // two periods at the same company (BUG-009 fix).
 func (svc *DefaultDataProcessingService) GroupEventsByCompany(
-	ctx context.Context, events []*career.CareerEvent,
+	ctx context.Context, events []*career.Event,
 ) (map[string]*CompanyGroup, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -123,14 +123,14 @@ func (svc *DefaultDataProcessingService) GroupEventsByCompany(
 	groups := make(map[string]*CompanyGroup)
 
 	// Sort ALL events chronologically (oldest first) for tenure detection.
-	sortedEvents := make([]*career.CareerEvent, len(events))
+	sortedEvents := make([]*career.Event, len(events))
 	copy(sortedEvents, events)
 	sort.Slice(sortedEvents, func(i, j int) bool {
 		return sortedEvents[i].Date.Before(sortedEvents[j].Date)
 	})
 
 	// Group events by company.
-	eventsByCompany := make(map[string][]*career.CareerEvent)
+	eventsByCompany := make(map[string][]*career.Event)
 	for _, event := range events {
 		company := event.Company
 		if company == "" {
@@ -191,11 +191,11 @@ func (svc *DefaultDataProcessingService) GroupEventsByCompany(
 // A new tenure is detected when events at OTHER companies fall between
 // two consecutive events at this company (BUG-009).
 func (svc *DefaultDataProcessingService) detectTenures(
-	companyEvents []*career.CareerEvent,
-	allEventsSorted []*career.CareerEvent,
-) [][]*career.CareerEvent {
+	companyEvents []*career.Event,
+	allEventsSorted []*career.Event,
+) [][]*career.Event {
 	if len(companyEvents) <= 1 {
-		return [][]*career.CareerEvent{companyEvents}
+		return [][]*career.Event{companyEvents}
 	}
 
 	// Get the company name from first event.
@@ -205,15 +205,15 @@ func (svc *DefaultDataProcessingService) detectTenures(
 	}
 
 	// Sort company events chronologically (oldest first).
-	sortedCompanyEvents := make([]*career.CareerEvent, len(companyEvents))
+	sortedCompanyEvents := make([]*career.Event, len(companyEvents))
 	copy(sortedCompanyEvents, companyEvents)
 	sort.Slice(sortedCompanyEvents, func(i, j int) bool {
 		return sortedCompanyEvents[i].Date.Before(sortedCompanyEvents[j].Date)
 	})
 
 	// Detect tenure boundaries by checking for intervening work at other companies.
-	var tenures [][]*career.CareerEvent
-	currentTenure := []*career.CareerEvent{sortedCompanyEvents[0]}
+	var tenures [][]*career.Event
+	currentTenure := []*career.Event{sortedCompanyEvents[0]}
 
 	for i := 1; i < len(sortedCompanyEvents); i++ {
 		prevEvent := sortedCompanyEvents[i-1]
@@ -230,7 +230,7 @@ func (svc *DefaultDataProcessingService) detectTenures(
 		if hasIntervening {
 			// Start a new tenure.
 			tenures = append(tenures, currentTenure)
-			currentTenure = []*career.CareerEvent{currEvent}
+			currentTenure = []*career.Event{currEvent}
 		} else {
 			// Continue current tenure.
 			currentTenure = append(currentTenure, currEvent)
@@ -249,7 +249,7 @@ func (svc *DefaultDataProcessingService) detectTenures(
 func hasInterveningCompanyEvents(
 	startDate, endDate time.Time,
 	currentCompany string,
-	allEventsSorted []*career.CareerEvent,
+	allEventsSorted []*career.Event,
 ) bool {
 	for _, event := range allEventsSorted {
 		// BUG-012: Skip project-only events (empty Company) — they run
@@ -271,9 +271,9 @@ func hasInterveningCompanyEvents(
 	return false
 }
 
-// ExtractAchievements identifies key achievements from events and facts
+// ExtractAchievements identifies key achievements from events and facts.
 func (svc *DefaultDataProcessingService) ExtractAchievements(
-	ctx context.Context, event *career.CareerEvent, facts []*career.Fact,
+	ctx context.Context, event *career.Event, facts []*career.Fact,
 ) ([]*Achievement, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -288,7 +288,7 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(
 		EventID:     event.ID,
 		Confidence:  0.8,
 		ActionVerb:  svc.extractActionVerb(event.Text),
-		Category:    svc.extractPrimaryCategory(event.Categories), // BUG-008
+		Category:    svc.extractPrimaryCategory(event.Categories),
 	}
 
 	// Extract metrics from event text
@@ -308,9 +308,9 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(
 				Description: fact.Text,
 				EventID:     event.ID,
 				FactIDs:     []string{fact.ID},
-				Confidence:  0.9, // Facts are higher confidence
+				Confidence:  0.9,
 				ActionVerb:  svc.extractActionVerb(fact.Text),
-				Category:    svc.extractPrimaryCategory(fact.CompetencyCategories), // BUG-008
+				Category:    svc.extractPrimaryCategory(fact.CompetencyCategories),
 			}
 			achievements = append(achievements, achievement)
 		}
@@ -319,9 +319,9 @@ func (svc *DefaultDataProcessingService) ExtractAchievements(
 	return achievements, nil
 }
 
-// ExtractSkills identifies skills from events and facts
+// ExtractSkills identifies skills from events and facts.
 func (svc *DefaultDataProcessingService) ExtractSkills(
-	ctx context.Context, events []*career.CareerEvent, facts []*career.Fact,
+	ctx context.Context, events []*career.Event, facts []*career.Fact,
 ) (map[string]*SkillCategory, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -381,7 +381,7 @@ func (svc *DefaultDataProcessingService) ExtractSkills(
 	return categories, nil
 }
 
-// CalculateMetrics extracts quantifiable metrics from text
+// CalculateMetrics extracts quantifiable metrics from text.
 func (svc *DefaultDataProcessingService) CalculateMetrics(ctx context.Context, text string) ([]*Metric, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -418,7 +418,7 @@ func (svc *DefaultDataProcessingService) CalculateMetrics(ctx context.Context, t
 	}
 
 	// Currency pattern: "$1M", "$50,000", "£100k"
-	currencyPattern := regexp.MustCompile(`[\$£€][\d,]+(?:\.?\d{2})?(?:[KMB])?`)
+	currencyPattern := regexp.MustCompile(`[\$£€][\d,]+(?:\.?\d{2})?[KMB]?`)
 	currencyMatches := currencyPattern.FindAllString(text, -1)
 	for _, match := range currencyMatches {
 		metrics = append(metrics, &Metric{
@@ -456,15 +456,15 @@ func (svc *DefaultDataProcessingService) CalculateMetrics(ctx context.Context, t
 	return metrics, nil
 }
 
-// ExtractProjectsFromEvents identifies unique projects within events
+// ExtractProjectsFromEvents identifies unique projects within events.
 func (svc *DefaultDataProcessingService) ExtractProjectsFromEvents(
-	ctx context.Context, events []*career.CareerEvent,
+	ctx context.Context, events []*career.Event,
 ) ([]*ProjectGroup, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
 
-	projectMap := make(map[string][]*career.CareerEvent)
+	projectMap := make(map[string][]*career.Event)
 
 	// Group events by project
 	for _, event := range events {
@@ -507,8 +507,8 @@ func (svc *DefaultDataProcessingService) ExtractProjectsFromEvents(
 
 // Helper functions
 
-// extractPosition determines the position from events
-func (svc *DefaultDataProcessingService) extractPosition(events []*career.CareerEvent) string {
+// extractPosition determines the position from events.
+func (svc *DefaultDataProcessingService) extractPosition(events []*career.Event) string {
 	// Count position mentions in event text
 	positionCount := make(map[string]int)
 
@@ -545,8 +545,8 @@ func (svc *DefaultDataProcessingService) extractPosition(events []*career.Career
 	return position
 }
 
-// calculateDateRange determines start and end dates
-func (svc *DefaultDataProcessingService) calculateDateRange(events []*career.CareerEvent) (time.Time, time.Time) {
+// calculateDateRange determines start and end dates.
+func (svc *DefaultDataProcessingService) calculateDateRange(events []*career.Event) (time.Time, time.Time) {
 	if len(events) == 0 {
 		return time.Now(), time.Now()
 	}
@@ -566,9 +566,9 @@ func (svc *DefaultDataProcessingService) calculateDateRange(events []*career.Car
 	return startDate, endDate
 }
 
-// extractProjects creates project groups from events
-func (svc *DefaultDataProcessingService) extractProjects(events []*career.CareerEvent) []*ProjectGroup {
-	projectMap := make(map[string][]*career.CareerEvent)
+// extractProjects creates project groups from events.
+func (svc *DefaultDataProcessingService) extractProjects(events []*career.Event) []*ProjectGroup {
+	projectMap := make(map[string][]*career.Event)
 
 	for _, event := range events {
 		project := event.Project
@@ -598,8 +598,8 @@ func (svc *DefaultDataProcessingService) extractProjects(events []*career.Career
 	return projects
 }
 
-// extractEventIDs gets IDs from events
-func extractEventIDs(events []*career.CareerEvent) []string {
+// extractEventIDs gets IDs from events.
+func extractEventIDs(events []*career.Event) []string {
 	var ids []string
 	for _, event := range events {
 		ids = append(ids, event.ID)
@@ -607,7 +607,7 @@ func extractEventIDs(events []*career.CareerEvent) []string {
 	return ids
 }
 
-// enhanceBulletText improves bullet point wording
+// enhanceBulletText improves bullet point wording.
 func (svc *DefaultDataProcessingService) enhanceBulletText(text string) string {
 	// Remove weak phrases
 	weakPhrases := []string{"worked on", "was involved in", "helped with", "participated in"}
@@ -617,14 +617,14 @@ func (svc *DefaultDataProcessingService) enhanceBulletText(text string) string {
 	}
 
 	// Capitalize first letter
-	if len(result) > 0 {
+	if result != "" {
 		result = strings.ToUpper(result[:1]) + result[1:]
 	}
 
 	return strings.TrimSpace(result)
 }
 
-// extractActionVerb extracts the primary action verb
+// extractActionVerb extracts the primary action verb.
 func (svc *DefaultDataProcessingService) extractActionVerb(text string) string {
 	actionVerbs := []string{
 		"led", "managed", "developed", "designed", "implemented", "built",
@@ -645,7 +645,7 @@ func (svc *DefaultDataProcessingService) extractActionVerb(text string) string {
 	return "accomplished"
 }
 
-// determineSkillLevel determines skill level from tag
+// determineSkillLevel determines skill level from tag.
 func (svc *DefaultDataProcessingService) determineSkillLevel(tag string) string {
 	switch strings.ToLower(tag) {
 	case "technical":
@@ -659,7 +659,7 @@ func (svc *DefaultDataProcessingService) determineSkillLevel(tag string) string 
 	}
 }
 
-// determineSkillLevelFromFact determines skill level from fact
+// determineSkillLevelFromFact determines skill level from fact.
 func (svc *DefaultDataProcessingService) determineSkillLevelFromFact(fact *career.Fact) string {
 	switch fact.RoleFit {
 	case career.RoleFitPrincipal:
@@ -675,7 +675,7 @@ func (svc *DefaultDataProcessingService) determineSkillLevelFromFact(fact *caree
 	}
 }
 
-// extractSkillNameFromFact extracts a skill name from fact text
+// extractSkillNameFromFact extracts a skill name from fact text.
 func (svc *DefaultDataProcessingService) extractSkillNameFromFact(text string) string {
 	// Extract first few words as skill name
 	words := strings.Fields(text)
@@ -685,7 +685,7 @@ func (svc *DefaultDataProcessingService) extractSkillNameFromFact(text string) s
 	return text
 }
 
-// mergeSkills combines duplicate skills
+// mergeSkills combines duplicate skills.
 func (svc *DefaultDataProcessingService) mergeSkills(skills []*Skill) *Skill {
 	if len(skills) == 0 {
 		return &Skill{}
@@ -710,7 +710,7 @@ func (svc *DefaultDataProcessingService) mergeSkills(skills []*Skill) *Skill {
 	return merged
 }
 
-// determineSkillCategory determines the category for a skill
+// determineSkillCategory determines the category for a skill.
 func (svc *DefaultDataProcessingService) determineSkillCategory(skill *Skill) string {
 	if len(skill.Categories) > 0 {
 		return skill.Categories[0]
@@ -731,7 +731,7 @@ func (svc *DefaultDataProcessingService) determineSkillCategory(skill *Skill) st
 	return "Other"
 }
 
-// extractContext extracts surrounding context from text
+// extractContext extracts surrounding context from text.
 func extractContext(text string, match string) string {
 	idx := strings.Index(text, match)
 	if idx == -1 {
@@ -750,7 +750,7 @@ func extractContext(text string, match string) string {
 	return strings.TrimSpace(text[start:end])
 }
 
-// removeDuplicates removes duplicate strings from a slice
+// removeDuplicates removes duplicate strings from a slice.
 func removeDuplicates(items []string) []string {
 	seen := make(map[string]bool)
 	var result []string
@@ -763,8 +763,8 @@ func removeDuplicates(items []string) []string {
 	return result
 }
 
-// extractPrimaryCategory extracts the primary (first) category from a list of categories
-// and converts it to the type-safe CompetencyCategory constant (BUG-008)
+// extractPrimaryCategory extracts the primary (first) category from a list of categories.
+// and converts it to the type-safe CompetencyCategory constant (BUG-008).
 func (svc *DefaultDataProcessingService) extractPrimaryCategory(categories []string) constants.CompetencyCategory {
 	if len(categories) == 0 {
 		return ""

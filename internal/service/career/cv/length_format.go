@@ -2,22 +2,22 @@ package cv
 
 import "time"
 
-// LengthFormatConfig defines length-specific filtering and configuration
+// LengthFormatConfig defines length-specific filtering and configuration.
 type LengthFormatConfig struct {
 	ID               LengthFormat
 	Name             string
 	Description      string
-	MaxYearsHistory  *int    // Max years of career history to include (nil = no limit)
-	MaxCompanies     *int    // Max companies to include (nil = no limit)
-	MaxBulletsPerJob *int    // Max bullets per job/company (nil = use default)
-	MinConfidence    float64 // Minimum confidence threshold for bullets
-	TargetPages      string  // Target page count description
-	IncludeSummary   bool    // Whether to include career summary section
-	IncludeEducation bool    // Whether to include education section
-	IncludeSkills    bool    // Whether to include detailed skills section
+	MaxYearsHistory  *int
+	MaxCompanies     *int
+	MaxBulletsPerJob *int
+	MinConfidence    float64
+	TargetPages      string
+	IncludeSummary   bool
+	IncludeEducation bool
+	IncludeSkills    bool
 }
 
-// GetLengthFormatConfig returns the configuration for a length format
+// GetLengthFormatConfig returns the configuration for a length format.
 func GetLengthFormatConfig(format LengthFormat) *LengthFormatConfig {
 	configs := getLengthFormatConfigMap()
 	if config, exists := configs[format]; exists {
@@ -39,7 +39,7 @@ func GetLengthFormatConfig(format LengthFormat) *LengthFormatConfig {
 	}
 }
 
-// ListLengthFormatConfigs returns all length format configurations
+// ListLengthFormatConfigs returns all length format configurations.
 func ListLengthFormatConfigs() []*LengthFormatConfig {
 	return []*LengthFormatConfig{
 		GetLengthFormatConfig(LengthFull),
@@ -49,20 +49,20 @@ func ListLengthFormatConfigs() []*LengthFormatConfig {
 	}
 }
 
-// ShouldIncludeEvent returns true if an event date falls within the MaxYearsHistory limit
+// ShouldIncludeEvent returns true if an event date falls within the MaxYearsHistory limit.
 func (c *LengthFormatConfig) ShouldIncludeEvent(eventDate time.Time) bool {
 	if c.MaxYearsHistory == nil {
-		return true // No limit
+		return true
 	}
 
 	cutoffDate := time.Now().AddDate(-*c.MaxYearsHistory, 0, 0)
 	return !eventDate.Before(cutoffDate)
 }
 
-// ShouldIncludeEventByYear returns true if an event year falls within the MaxYearsHistory limit
+// ShouldIncludeEventByYear returns true if an event year falls within the MaxYearsHistory limit.
 func (c *LengthFormatConfig) ShouldIncludeEventByYear(year int) bool {
 	if c.MaxYearsHistory == nil {
-		return true // No limit
+		return true
 	}
 
 	currentYear := time.Now().Year()
@@ -70,8 +70,8 @@ func (c *LengthFormatConfig) ShouldIncludeEventByYear(year int) bool {
 	return year >= cutoffYear
 }
 
-// FilterCompaniesByLimit returns companies limited to MaxCompanies
-// Companies should be pre-sorted by relevance/recency before calling
+// FilterCompaniesByLimit returns companies limited to MaxCompanies.
+// Companies should be pre-sorted by relevance/recency before calling.
 func (c *LengthFormatConfig) FilterCompaniesByLimit(companies []string) []string {
 	if c.MaxCompanies == nil || len(companies) <= *c.MaxCompanies {
 		return companies
@@ -79,7 +79,7 @@ func (c *LengthFormatConfig) FilterCompaniesByLimit(companies []string) []string
 	return companies[:*c.MaxCompanies]
 }
 
-// GetEffectiveBulletLimit returns the bullet limit per job, using default if not specified
+// GetEffectiveBulletLimit returns the bullet limit per job, using default if not specified.
 func (c *LengthFormatConfig) GetEffectiveBulletLimit(defaultLimit int) int {
 	if c.MaxBulletsPerJob == nil {
 		return defaultLimit
@@ -87,7 +87,7 @@ func (c *LengthFormatConfig) GetEffectiveBulletLimit(defaultLimit int) int {
 	return *c.MaxBulletsPerJob
 }
 
-// MeetsConfidenceThreshold returns true if a bullet's confidence meets the minimum threshold
+// MeetsConfidenceThreshold returns true if a bullet's confidence meets the minimum threshold.
 func (c *LengthFormatConfig) MeetsConfidenceThreshold(confidence float64) bool {
 	return confidence >= c.MinConfidence
 }
@@ -98,16 +98,16 @@ func intPtr(i int) *int {
 	return &i
 }
 
-// getLengthFormatConfigMap returns the map of all length format configurations
+// getLengthFormatConfigMap returns the map of all length format configurations.
 func getLengthFormatConfigMap() map[LengthFormat]*LengthFormatConfig {
 	return map[LengthFormat]*LengthFormatConfig{
 		LengthFull: {
 			ID:               LengthFull,
 			Name:             "Full",
 			Description:      "Complete career history with all relevant details",
-			MaxYearsHistory:  nil, // No limit
-			MaxCompanies:     nil, // No limit
-			MaxBulletsPerJob: nil, // Use default
+			MaxYearsHistory:  nil,
+			MaxCompanies:     nil,
+			MaxBulletsPerJob: nil,
 			MinConfidence:    0.50,
 			TargetPages:      "3+",
 			IncludeSummary:   true,
@@ -119,7 +119,7 @@ func getLengthFormatConfigMap() map[LengthFormat]*LengthFormatConfig {
 			Name:             "Standard",
 			Description:      "Balanced format with recent 10 years emphasis",
 			MaxYearsHistory:  intPtr(10),
-			MaxCompanies:     nil, // No limit
+			MaxCompanies:     nil,
 			MaxBulletsPerJob: intPtr(5),
 			MinConfidence:    0.65,
 			TargetPages:      "2-3",
@@ -137,7 +137,7 @@ func getLengthFormatConfigMap() map[LengthFormat]*LengthFormatConfig {
 			MinConfidence:    0.75,
 			TargetPages:      "1-2",
 			IncludeSummary:   true,
-			IncludeEducation: false, // Skip for brevity
+			IncludeEducation: false,
 			IncludeSkills:    true,
 		},
 		LengthUltraShort: {
@@ -150,8 +150,8 @@ func getLengthFormatConfigMap() map[LengthFormat]*LengthFormatConfig {
 			MinConfidence:    0.85,
 			TargetPages:      "1",
 			IncludeSummary:   true,
-			IncludeEducation: false, // Skip for brevity
-			IncludeSkills:    false, // Skip for brevity
+			IncludeEducation: false,
+			IncludeSkills:    false,
 		},
 	}
 }

@@ -34,7 +34,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 	Describe("Reference Implementation: GenerateCV", func() {
 		var intent *GenerateCVIntent
 		var profiles []*CVProfile
-		var events []*career.CareerEvent
+		var events []*career.Event
 
 		BeforeEach(func() {
 			profiles = []*CVProfile{
@@ -46,7 +46,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 				},
 			}
 
-			events = []*career.CareerEvent{
+			events = []*career.Event{
 				{
 					ID:        uuid.New().String(),
 					Text:      "Test event for CV generation",
@@ -216,7 +216,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 							TargetRole:     "staff",
 							TargetAudience: "hiring_manager",
 						}},
-						Events: []*career.CareerEvent{{
+						Events: []*career.Event{{
 							ID:   uuid.New().String(),
 							Text: "Test",
 							Date: time.Now(),
@@ -254,7 +254,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 							TargetRole:     "staff",
 							TargetAudience: "hiring_manager",
 						}},
-						Events: []*career.CareerEvent{{
+						Events: []*career.Event{{
 							ID:   uuid.New().String(),
 							Text: "Test",
 							Date: time.Now(),
@@ -303,7 +303,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 							TargetRole:     "staff",
 							TargetAudience: "hiring_manager",
 						}},
-						Events: []*career.CareerEvent{{
+						Events: []*career.Event{{
 							ID:   uuid.New().String(),
 							Text: "Test",
 							Date: time.Now(),
@@ -333,7 +333,7 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 
 		Context("CaptureEvent - Edit vs New", func() {
 			It("should cancel when editing existing event (PreviousEvent != nil)", func() {
-				existingEvent := &career.CareerEvent{
+				existingEvent := &career.Event{
 					ID:   uuid.New().String(),
 					Text: "Existing event",
 					Date: time.Now(),

@@ -131,7 +131,7 @@ var _ = Describe("Career Service - Missing Coverage", func() {
 			eventRepo := service.GetEventRepository()
 
 			// Create an event using returned repository
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:        "test-event-1",
 				Text:      "Test event via GetEventRepository",
 				Date:      time.Now(),

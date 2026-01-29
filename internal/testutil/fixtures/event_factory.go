@@ -10,10 +10,10 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// EventFactory creates CareerEvent fixtures with realistic fake data.
+// EventFactory creates Event fixtures with realistic fake data.
 // Each call generates unique IDs and varied content.
 var EventFactory = factory.NewFactory(
-	&career.CareerEvent{},
+	&career.Event{},
 ).SeqInt("ID", func(n int) (interface{}, error) {
 	return fmt.Sprintf("event-%d", n), nil
 }).Attr("Text", func(args factory.Args) (interface{}, error) {
@@ -78,11 +78,11 @@ var EventFactory = factory.NewFactory(
 	return time.Now(), nil
 })
 
-// Event creates a minimal valid CareerEvent with the given ID.
+// Event creates a minimal valid Event with the given ID.
 // Use this for simple tests that just need a valid event.
-func Event(id string) *career.CareerEvent {
+func Event(id string) *career.Event {
 	now := time.Now()
-	return &career.CareerEvent{
+	return &career.Event{
 		ID:        id,
 		Text:      "Test event " + id,
 		Date:      now,
@@ -91,11 +91,11 @@ func Event(id string) *career.CareerEvent {
 	}
 }
 
-// EventWith creates a CareerEvent with custom fields.
+// EventWith creates a Event with custom fields.
 // Unspecified fields get sensible defaults.
-func EventWith(id, text, company, project string) *career.CareerEvent {
+func EventWith(id, text, company, project string) *career.Event {
 	now := time.Now()
-	return &career.CareerEvent{
+	return &career.Event{
 		ID:        id,
 		Text:      text,
 		Company:   company,
@@ -107,39 +107,39 @@ func EventWith(id, text, company, project string) *career.CareerEvent {
 }
 
 // Events creates n events with sequential IDs (event-1, event-2, etc.)
-func Events(n int) []*career.CareerEvent {
-	events := make([]*career.CareerEvent, n)
+func Events(n int) []*career.Event {
+	events := make([]*career.Event, n)
 	for i := 0; i < n; i++ {
-		events[i] = EventFactory.MustCreate().(*career.CareerEvent)
+		events[i] = EventFactory.MustCreate().(*career.Event)
 	}
 	return events
 }
 
-// EventVal creates a minimal valid CareerEvent value (not pointer) with the given ID.
+// EventVal creates a minimal valid Event value (not pointer) with the given ID.
 // Use this for tests that require value types rather than pointers.
-func EventVal(id string) career.CareerEvent {
+func EventVal(id string) career.Event {
 	return *Event(id)
 }
 
-// EventValWith creates a CareerEvent value with custom fields.
-func EventValWith(id, text, company, project string) career.CareerEvent {
+// EventValWith creates a Event value with custom fields.
+func EventValWith(id, text, company, project string) career.Event {
 	return *EventWith(id, text, company, project)
 }
 
 // EventVals creates n events as values with sequential IDs.
-func EventVals(n int) []career.CareerEvent {
-	events := make([]career.CareerEvent, n)
+func EventVals(n int) []career.Event {
+	events := make([]career.Event, n)
 	for i := 0; i < n; i++ {
-		events[i] = *EventFactory.MustCreate().(*career.CareerEvent)
+		events[i] = *EventFactory.MustCreate().(*career.Event)
 	}
 	return events
 }
 
-// EventWithCategories creates a CareerEvent with specified categories.
+// EventWithCategories creates a Event with specified categories.
 // Use for tests that need specific category assignments (e.g., role-based scoring).
-func EventWithCategories(id, text string, categories []string) *career.CareerEvent {
+func EventWithCategories(id, text string, categories []string) *career.Event {
 	now := time.Now()
-	return &career.CareerEvent{
+	return &career.Event{
 		ID:         id,
 		Text:       text,
 		Categories: categories,

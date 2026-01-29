@@ -40,7 +40,7 @@ func (a *AudienceRelevanceSelector) IsSelected(audience string) bool {
 	return a.selected[audience]
 }
 
-// Render renders the selector
+// Render renders the selector.
 func (a *AudienceRelevanceSelector) Render() string {
 	var result string
 	for _, opt := range a.options {

@@ -67,7 +67,7 @@ func BurstConfirmed(id string, eventIDs ...string) *career.Burst {
 // Bursts creates n bursts with sequential IDs, linked to the provided events.
 // If events is empty or has fewer than 2 elements, bursts will have placeholder event IDs.
 // Events are distributed using wrap-around to ensure each burst has exactly 2 event IDs.
-func Bursts(n int, events []*career.CareerEvent) []*career.Burst {
+func Bursts(n int, events []*career.Event) []*career.Burst {
 	bursts := make([]*career.Burst, n)
 	for i := 0; i < n; i++ {
 		burst := BurstFactory.MustCreate().(*career.Burst)

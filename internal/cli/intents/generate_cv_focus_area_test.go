@@ -41,7 +41,7 @@ var _ = Describe("GenerateCV Focus Area Selection", func() {
 					Description: "Test profile",
 				},
 			},
-			Events: []*career.CareerEvent{
+			Events: []*career.Event{
 				{
 					ID:        "event-1",
 					Text:      "Test event",

@@ -20,7 +20,7 @@ import (
 var _ = Describe("EventReviewScreen", func() {
 	var (
 		screen      *capture.EventReviewScreen
-		testEvent   *career.CareerEvent
+		testEvent   *career.Event
 		testBursts  []*career.Burst
 		testFacts   []*career.Fact
 		breadcrumbs []string
@@ -29,7 +29,7 @@ var _ = Describe("EventReviewScreen", func() {
 	BeforeEach(func() {
 		now := time.Now()
 
-		testEvent = &career.CareerEvent{
+		testEvent = &career.Event{
 			ID:      "evt-1",
 			Text:    "Implemented authentication system",
 			Date:    now,

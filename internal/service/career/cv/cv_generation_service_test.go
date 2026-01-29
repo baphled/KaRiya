@@ -486,19 +486,19 @@ var _ = Describe("DefaultCVGenerationService", func() {
 				}
 
 				// Create test events
-				event1 := &career.CareerEvent{
+				event1 := &career.Event{
 					ID:   uuid.New().String(),
 					Text: "Led API improvements, reducing latency by 40%",
 					Date: time.Now(),
 				}
-				event2 := &career.CareerEvent{
+				event2 := &career.Event{
 					ID:   uuid.New().String(),
 					Text: "Mentored 5 junior engineers",
 					Date: time.Now(),
 				}
 
 				// Create repository that returns test events
-				eventRepo := NewMockEventRepository([]*career.CareerEvent{event1, event2})
+				eventRepo := NewMockEventRepository([]*career.Event{event1, event2})
 
 				service := NewCVGenerationService(
 					eventRepo,
@@ -538,13 +538,13 @@ var _ = Describe("DefaultCVGenerationService", func() {
 					EventFilters:   make(map[string]interface{}),
 				}
 
-				event := &career.CareerEvent{
+				event := &career.Event{
 					ID:   uuid.New().String(),
 					Text: "Test event",
 					Date: time.Now(),
 				}
 
-				eventRepo := NewMockEventRepository([]*career.CareerEvent{event})
+				eventRepo := NewMockEventRepository([]*career.Event{event})
 
 				service := NewCVGenerationService(
 					eventRepo,
@@ -575,13 +575,13 @@ var _ = Describe("DefaultCVGenerationService", func() {
 					EventFilters:   make(map[string]interface{}),
 				}
 
-				event := &career.CareerEvent{
+				event := &career.Event{
 					ID:   uuid.New().String(),
 					Text: "Test event",
 					Date: time.Now(),
 				}
 
-				eventRepo := NewMockEventRepository([]*career.CareerEvent{event})
+				eventRepo := NewMockEventRepository([]*career.Event{event})
 
 				service := NewCVGenerationService(
 					eventRepo,
@@ -653,19 +653,19 @@ func NewEmptyRepository() *EmptyRepository {
 	return &EmptyRepository{}
 }
 
-func (r *EmptyRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
-	return []*career.CareerEvent{}, nil
+func (r *EmptyRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.Event, error) {
+	return []*career.Event{}, nil
 }
 
-func (r *EmptyRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+func (r *EmptyRepository) GetByID(ctx context.Context, id string) (*career.Event, error) {
 	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
-func (r *EmptyRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+func (r *EmptyRepository) Create(ctx context.Context, event *career.Event) error {
 	return nil
 }
 
-func (r *EmptyRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+func (r *EmptyRepository) Update(ctx context.Context, event *career.Event) error {
 	return nil
 }
 
@@ -685,10 +685,10 @@ func NewCountingRepository(count int) *CountingRepository {
 	return &CountingRepository{count: count}
 }
 
-func (r *CountingRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
-	events := make([]*career.CareerEvent, r.count)
+func (r *CountingRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.Event, error) {
+	events := make([]*career.Event, r.count)
 	for i := 0; i < r.count; i++ {
-		events[i] = &career.CareerEvent{
+		events[i] = &career.Event{
 			ID:   uuid.New().String(),
 			Text: "Sample event",
 			Date: time.Now(),
@@ -697,15 +697,15 @@ func (r *CountingRepository) List(ctx context.Context, filters careerrepo.EventL
 	return events, nil
 }
 
-func (r *CountingRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+func (r *CountingRepository) GetByID(ctx context.Context, id string) (*career.Event, error) {
 	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
-func (r *CountingRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+func (r *CountingRepository) Create(ctx context.Context, event *career.Event) error {
 	return nil
 }
 
-func (r *CountingRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+func (r *CountingRepository) Update(ctx context.Context, event *career.Event) error {
 	return nil
 }
 
@@ -809,7 +809,7 @@ func NewEmptyBulletGenerator() *EmptyBulletGenerator {
 	return &EmptyBulletGenerator{}
 }
 
-func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*Bullet, error) {
+func (g *EmptyBulletGenerator) GenerateBullets(ctx context.Context, events []*career.Event, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*Bullet, error) {
 	return []*Bullet{}, nil
 }
 
@@ -829,7 +829,7 @@ func (g *EmptyBulletGenerator) EnhanceWording(bullet *Bullet, _ string) (*Bullet
 	return bullet, nil
 }
 
-func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.CareerEvent, _ TechnologyFocus, _ []string) []*Bullet {
+func (g *EmptyBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.Event, _ TechnologyFocus, _ []string) []*Bullet {
 	return bullets // No-op for tests
 }
 
@@ -839,7 +839,7 @@ func NewEmptySectionBuilder() *EmptySectionBuilder {
 	return &EmptySectionBuilder{}
 }
 
-func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
+func (b *EmptySectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.Event, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
 	return []*career.CVSection{}, nil
 }
 
@@ -856,7 +856,7 @@ func NewMockDataProcessingService() *MockDataProcessingService {
 	}
 }
 
-func (m *MockDataProcessingService) ExtractAchievements(ctx context.Context, event *career.CareerEvent, facts []*career.Fact) ([]*Achievement, error) {
+func (m *MockDataProcessingService) ExtractAchievements(ctx context.Context, event *career.Event, facts []*career.Fact) ([]*Achievement, error) {
 	m.ExtractAchievementsCalls++
 	if m.ShouldReturnError {
 		return nil, ErrConfigNotFound // reuse existing error for test
@@ -864,11 +864,11 @@ func (m *MockDataProcessingService) ExtractAchievements(ctx context.Context, eve
 	return m.AchievementsToReturn, nil
 }
 
-func (m *MockDataProcessingService) GroupEventsByCompany(ctx context.Context, events []*career.CareerEvent) (map[string]*CompanyGroup, error) {
+func (m *MockDataProcessingService) GroupEventsByCompany(ctx context.Context, events []*career.Event) (map[string]*CompanyGroup, error) {
 	return nil, nil //nolint:nilnil // test stub
 }
 
-func (m *MockDataProcessingService) ExtractSkills(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact) (map[string]*SkillCategory, error) {
+func (m *MockDataProcessingService) ExtractSkills(ctx context.Context, events []*career.Event, facts []*career.Fact) (map[string]*SkillCategory, error) {
 	return nil, nil //nolint:nilnil // test stub
 }
 
@@ -876,24 +876,24 @@ func (m *MockDataProcessingService) CalculateMetrics(ctx context.Context, text s
 	return nil, nil //nolint:nilnil // test stub
 }
 
-func (m *MockDataProcessingService) ExtractProjectsFromEvents(ctx context.Context, events []*career.CareerEvent) ([]*ProjectGroup, error) {
+func (m *MockDataProcessingService) ExtractProjectsFromEvents(ctx context.Context, events []*career.Event) ([]*ProjectGroup, error) {
 	return nil, nil //nolint:nilnil // test stub
 }
 
 // MockEventRepository for testing with specific events
 type MockEventRepository struct {
-	events []*career.CareerEvent
+	events []*career.Event
 }
 
-func NewMockEventRepository(events []*career.CareerEvent) *MockEventRepository {
+func NewMockEventRepository(events []*career.Event) *MockEventRepository {
 	return &MockEventRepository{events: events}
 }
 
-func (r *MockEventRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
+func (r *MockEventRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.Event, error) {
 	return r.events, nil
 }
 
-func (r *MockEventRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+func (r *MockEventRepository) GetByID(ctx context.Context, id string) (*career.Event, error) {
 	for _, event := range r.events {
 		if event.ID == id {
 			return event, nil
@@ -902,11 +902,11 @@ func (r *MockEventRepository) GetByID(ctx context.Context, id string) (*career.C
 	return nil, nil //nolint:nilnil // test stub
 }
 
-func (r *MockEventRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+func (r *MockEventRepository) Create(ctx context.Context, event *career.Event) error {
 	return nil
 }
 
-func (r *MockEventRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+func (r *MockEventRepository) Update(ctx context.Context, event *career.Event) error {
 	return nil
 }
 
@@ -927,7 +927,7 @@ func NewMockBulletGenerator() *MockBulletGenerator {
 	return &MockBulletGenerator{}
 }
 
-func (g *MockBulletGenerator) GenerateBullets(ctx context.Context, events []*career.CareerEvent, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*Bullet, error) {
+func (g *MockBulletGenerator) GenerateBullets(ctx context.Context, events []*career.Event, facts []*career.Fact, achievements []*Achievement, targetRole string, targetAudience string) ([]*Bullet, error) {
 	g.ReceivedAchievements = achievements
 	return []*Bullet{}, nil
 }
@@ -948,6 +948,6 @@ func (g *MockBulletGenerator) EnhanceWording(bullet *Bullet, _ string) (*Bullet,
 	return bullet, nil
 }
 
-func (g *MockBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.CareerEvent, _ TechnologyFocus, _ []string) []*Bullet {
+func (g *MockBulletGenerator) FilterByTechnologies(bullets []*Bullet, _ []*career.Event, _ TechnologyFocus, _ []string) []*Bullet {
 	return bullets
 }

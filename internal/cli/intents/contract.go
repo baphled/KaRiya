@@ -22,19 +22,20 @@ type LogoModel interface {
 }
 
 // Intent defines the contract for all intent implementations.
+//
 // Each intent MUST:
-// - Own local navigation state
-// - Call domain services
-// - Emit artifacts
-// - Return a type-safe IntentResult
+//   - Own local navigation state
+//   - Call domain services
+//   - Emit artifacts
+//   - Return a type-safe IntentResult
 //
 // Intents MUST NOT:
-// - Mutate global UI state
-// - Navigate into another intent
-// - Assume prior context unless explicitly passed
-// - Dispatch Bubble Tea commands affecting other intents
-// - Use runtime type assertions
-// - Pass arbitrary data between intents
+//   - Mutate global UI state
+//   - Navigate into another intent
+//   - Assume prior context unless explicitly passed
+//   - Dispatch Bubble Tea commands affecting other intents
+//   - Use runtime type assertions
+//   - Pass arbitrary data between intents
 type Intent interface {
 	// Init is called when the intent is first activated.
 	// It may emit commands (e.g., fetch data, start async operations).
@@ -96,22 +97,31 @@ type IntentContext interface {
 	Validate() error
 }
 
-// ModalEditResult[T] is the result of a modal sub-flow (inline editing).
-// It captures both the original and modified values, allowing the parent intent
-// to decide whether to accept or discard changes.
+// ModalEditResult captures the outcome of a modal inline-editing sub-flow.
+//
+// The generic type parameter T is the domain object being edited (e.g.,
+// *career.Event or *career.Fact). T must satisfy the "any" constraint.
+//
+// The Original field holds the value of T before the edit began. The
+// Modified field holds the value of T after the user finished editing; when
+// the user cancels, Modified equals Original. The Accepted field is true
+// when the user confirmed the edit and false when the user cancelled or
+// dismissed the modal. The Changes field is a map[string]interface{} keyed
+// by field name whose values are the new field values; only fields that
+// were actually modified appear in the map and an empty map means no
+// fields changed.
+//
+// The parent intent inspects Accepted first: if false it discards
+// Modified and takes no persistence action. If true it checks Changes to
+// determine which fields need updating and commits the Modified value.
+//
+// Construct with NewModalEditResult for confirmed edits or
+// NewCancelledModalEditResult for user cancellation.
 type ModalEditResult[T any] struct {
-	// Original is the value before editing.
 	Original T
-
-	// Modified is the value after editing.
 	Modified T
-
-	// Accepted indicates whether the user confirmed the changes.
 	Accepted bool
-
-	// Changes is a map of field names to their new values.
-	// Only includes fields that were actually changed.
-	Changes map[string]interface{}
+	Changes  map[string]interface{}
 }
 
 // HasChanges returns true if any fields were modified.
@@ -241,27 +251,27 @@ type BaseIntent struct {
 	helpModal *feedback.HelpModal
 }
 
-// NewBaseIntent creates a new BaseIntent with default terminal configuration
+// NewBaseIntent creates a new BaseIntent with default terminal configuration.
 func NewBaseIntent() *BaseIntent {
 	return &BaseIntent{
 		terminalInfo:   terminal.NewInfo(),
 		terminalConfig: terminal.DefaultConfig,
-		logoSpacing:    2, // Default spacing
+		logoSpacing:    2,
 		helpModal:      feedback.NewHelpModal(nil),
 	}
 }
 
-// UpdateTerminalInfo updates the terminal information
+// UpdateTerminalInfo updates the terminal information.
 func (b *BaseIntent) UpdateTerminalInfo(info *terminal.Info) {
 	b.terminalInfo = info
 }
 
-// GetTerminalInfo returns the current terminal information
+// GetTerminalInfo returns the current terminal information.
 func (b *BaseIntent) GetTerminalInfo() *terminal.Info {
 	return b.terminalInfo
 }
 
-// GetMinimumSize returns the default minimum terminal size
+// GetMinimumSize returns the default minimum terminal size.
 func (b *BaseIntent) GetMinimumSize() (width, height int) {
 	return b.terminalConfig.MinWidth, b.terminalConfig.MinHeight
 }
@@ -273,44 +283,40 @@ func (b *BaseIntent) GetModalDimensions() (width, height int) {
 	if b.terminalInfo != nil && b.terminalInfo.Width > 0 && b.terminalInfo.Height > 0 {
 		return b.terminalInfo.Width, b.terminalInfo.Height
 	}
-	return 120, 40 // Default dimensions
+	return 120, 40
 }
 
-// Logo Management Methods
-
-// SetLogo sets the shared logo instance (accepts any LogoModel implementation)
+// SetLogo sets the shared logo instance (accepts any LogoModel implementation).
 func (b *BaseIntent) SetLogo(logo LogoModel) {
 	b.logo = logo
 }
 
-// GetLogo returns the logo instance
+// GetLogo returns the logo instance.
 func (b *BaseIntent) GetLogo() LogoModel {
 	return b.logo
 }
 
-// SetLogoSpacing sets the spacing before the logo
+// SetLogoSpacing sets the spacing before the logo.
 func (b *BaseIntent) SetLogoSpacing(spacing int) {
 	b.logoSpacing = spacing
 }
 
-// GetLogoSpacing returns the spacing before the logo
+// GetLogoSpacing returns the spacing before the logo.
 func (b *BaseIntent) GetLogoSpacing() int {
 	return b.logoSpacing
 }
 
-// Theme Management Methods
-
-// SetThemeManager sets the theme manager for the intent
+// SetThemeManager sets the theme manager for the intent.
 func (b *BaseIntent) SetThemeManager(tm *themes.ThemeManager) {
 	b.themeManager = tm
 }
 
-// GetThemeManager returns the theme manager
+// GetThemeManager returns the theme manager.
 func (b *BaseIntent) GetThemeManager() *themes.ThemeManager {
 	return b.themeManager
 }
 
-// Theme returns the currently active theme, or nil if no theme manager is set
+// Theme returns the currently active theme, or nil if no theme manager is set.
 func (b *BaseIntent) Theme() themes.Theme {
 	if b.themeManager == nil {
 		return nil
@@ -318,73 +324,67 @@ func (b *BaseIntent) Theme() themes.Theme {
 	return b.themeManager.Active()
 }
 
-// Loading State Methods
-
-// SetLoading sets the loading state with a message
+// SetLoading sets the loading state with a message.
 func (b *BaseIntent) SetLoading(message string) {
 	b.isLoading = true
 	b.loadingMessage = message
 }
 
-// ClearLoading clears the loading state
+// ClearLoading clears the loading state.
 func (b *BaseIntent) ClearLoading() {
 	b.isLoading = false
 	b.loadingMessage = ""
 }
 
-// IsLoading returns whether the intent is in loading state
+// IsLoading returns whether the intent is in loading state.
 func (b *BaseIntent) IsLoading() bool {
 	return b.isLoading
 }
 
-// GetLoadingMessage returns the current loading message
+// GetLoadingMessage returns the current loading message.
 func (b *BaseIntent) GetLoadingMessage() string {
 	return b.loadingMessage
 }
 
-// Error State Methods
-
-// SetError sets the error state
+// SetError sets the error state.
 func (b *BaseIntent) SetError(err error) {
 	b.errorState = err
 }
 
-// ClearError clears the error state
+// ClearError clears the error state.
 func (b *BaseIntent) ClearError() {
 	b.errorState = nil
 }
 
-// GetError returns the current error state
+// GetError returns the current error state.
 func (b *BaseIntent) GetError() error {
 	return b.errorState
 }
 
-// HasError returns whether the intent has an error
+// HasError returns whether the intent has an error.
 func (b *BaseIntent) HasError() bool {
 	return b.errorState != nil
 }
 
-// Success State Methods
-
-// SetSuccess sets a success message with timestamp
+// SetSuccess sets a success message with timestamp.
 func (b *BaseIntent) SetSuccess(message string) {
 	b.successMessage = message
 	b.successTime = time.Now()
 }
 
-// ClearSuccess clears the success state
+// ClearSuccess clears the success state.
 func (b *BaseIntent) ClearSuccess() {
 	b.successMessage = ""
 	b.successTime = time.Time{}
 }
 
-// GetSuccessMessage returns the current success message
+// GetSuccessMessage returns the current success message.
 func (b *BaseIntent) GetSuccessMessage() string {
 	return b.successMessage
 }
 
-// ShouldShowSuccess returns true if success message should be displayed
-// Success messages are shown for 3 seconds after being set
+// ShouldShowSuccess returns true if success message should be displayed.
+// Success messages are shown for 3 seconds after being set.
 func (b *BaseIntent) ShouldShowSuccess() bool {
 	if b.successMessage == "" {
 		return false
@@ -392,9 +392,7 @@ func (b *BaseIntent) ShouldShowSuccess() bool {
 	return time.Since(b.successTime) < 3*time.Second
 }
 
-// Progress State Methods
-
-// SetProgress sets the progress state with title, message, and value (0.0 to 1.0)
+// SetProgress sets the progress state with title, message, and value (0.0 to 1.0).
 func (b *BaseIntent) SetProgress(title, message string, value float64) {
 	b.progressEnabled = true
 	b.progressTitle = title
@@ -402,7 +400,7 @@ func (b *BaseIntent) SetProgress(title, message string, value float64) {
 	b.progressValue = value
 }
 
-// ClearProgress clears the progress state
+// ClearProgress clears the progress state.
 func (b *BaseIntent) ClearProgress() {
 	b.progressEnabled = false
 	b.progressTitle = ""
@@ -410,22 +408,19 @@ func (b *BaseIntent) ClearProgress() {
 	b.progressValue = 0.0
 }
 
-// IsProgressEnabled returns whether progress tracking is enabled
+// IsProgressEnabled returns whether progress tracking is enabled.
 func (b *BaseIntent) IsProgressEnabled() bool {
 	return b.progressEnabled
 }
 
-// GetProgress returns the current progress state
+// GetProgress returns the current progress state.
 func (b *BaseIntent) GetProgress() (title, message string, value float64) {
 	return b.progressTitle, b.progressMessage, b.progressValue
 }
 
-// Help Modal Methods
-
-// ShowHelp shows the help modal
+// ShowHelp shows the help modal.
 func (b *BaseIntent) ShowHelp() {
 	if b.helpModal != nil {
-		// Update size based on terminal dimensions
 		if b.terminalInfo != nil && b.terminalInfo.IsValid {
 			b.helpModal.SetSize(b.terminalInfo.Width, b.terminalInfo.Height)
 		}
@@ -433,17 +428,16 @@ func (b *BaseIntent) ShowHelp() {
 	}
 }
 
-// HideHelp hides the help modal
+// HideHelp hides the help modal.
 func (b *BaseIntent) HideHelp() {
 	if b.helpModal != nil {
 		b.helpModal.Hide()
 	}
 }
 
-// ToggleHelp toggles the help modal visibility
+// ToggleHelp toggles the help modal visibility.
 func (b *BaseIntent) ToggleHelp() {
 	if b.helpModal != nil {
-		// Update size based on terminal dimensions
 		if b.terminalInfo != nil && b.terminalInfo.IsValid {
 			b.helpModal.SetSize(b.terminalInfo.Width, b.terminalInfo.Height)
 		}
@@ -451,7 +445,7 @@ func (b *BaseIntent) ToggleHelp() {
 	}
 }
 
-// IsHelpVisible returns whether the help modal is currently visible
+// IsHelpVisible returns whether the help modal is currently visible.
 func (b *BaseIntent) IsHelpVisible() bool {
 	if b.helpModal != nil {
 		return b.helpModal.IsVisible()
@@ -459,26 +453,22 @@ func (b *BaseIntent) IsHelpVisible() bool {
 	return false
 }
 
-// GetHelpModal returns the help modal instance
+// GetHelpModal returns the help modal instance.
 func (b *BaseIntent) GetHelpModal() *feedback.HelpModal {
 	return b.helpModal
 }
 
-// SetHelpKeyMap sets the keymap for the help modal
+// SetHelpKeyMap sets the keymap for the help modal.
 func (b *BaseIntent) SetHelpKeyMap(keyMap interface{}) {
 	if b.helpModal != nil {
-		// Type assert to help.KeyMap if needed
 		if km, ok := keyMap.(interface {
 			ShortHelp() []interface{}
 			FullHelp() [][]interface{}
 		}); ok {
-			// Cast through interface for compatibility
-			_ = km // Used for type check
+			_ = km
 		}
 	}
 }
-
-// View Creation Convenience Methods
 
 // CreateView creates a standardized view with logo and automatic state modals.
 // This is a convenience wrapper around CreateStandardView.

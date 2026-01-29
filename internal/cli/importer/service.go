@@ -8,37 +8,37 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
-	burst_fact "github.com/baphled/kariya/internal/service/career/burst_fact"
+	burst_fact "github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
-// ImportResult represents the result of an import operation
+// ImportResult represents the result of an import operation.
 type ImportResult struct {
 	TotalRows           int
 	SuccessCount        int
 	SkippedCount        int
 	FailedCount         int
-	CreatedEvents       []*career.CareerEvent
+	CreatedEvents       []*career.Event
 	FailedRows          []*ParsedRow
-	BurstSuggestions    []burst_fact.BurstSuggestion // Burst suggestions detected from imported events
-	ExtractedFactsCount int                          // Number of facts extracted from imported events
-	FactsByEventID      map[string][]*career.Fact    // Facts keyed by source event ID
-	FactsByCompetency   map[string]int               // Count of facts by competency category
+	BurstSuggestions    []burst_fact.BurstSuggestion
+	ExtractedFactsCount int
+	FactsByEventID      map[string][]*career.Fact
+	FactsByCompetency   map[string]int
 }
 
-// ImportService handles the import workflow
+// ImportService handles the import workflow.
 type ImportService struct {
 	careerService *careerservice.Service
 	parser        *CSVParser
 }
 
-// NewImportService creates a new import service
+// NewImportService creates a new import service.
 func NewImportService(careerService *careerservice.Service) *ImportService {
 	return &ImportService{
 		careerService: careerService,
 	}
 }
 
-// PrepareImport parses CSV and returns parsed rows for review
+// PrepareImport parses CSV and returns parsed rows for review.
 func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) ([]*ParsedRow, error) {
 	// Get existing events to check for duplicates
 	filters := &repo.EventListFilters{}
@@ -68,11 +68,11 @@ func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) 
 	return parsedRows, nil
 }
 
-// ImportRows imports the parsed rows into the database
+// ImportRows imports the parsed rows into the database.
 func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow, selectedRows []int) (*ImportResult, error) {
 	result := &ImportResult{
 		TotalRows:         len(selectedRows),
-		CreatedEvents:     []*career.CareerEvent{},
+		CreatedEvents:     []*career.Event{},
 		FailedRows:        []*ParsedRow{},
 		FactsByEventID:    make(map[string][]*career.Fact),
 		FactsByCompetency: make(map[string]int),
@@ -203,7 +203,7 @@ func (is *ImportService) ImportRows(ctx context.Context, parsedRows []*ParsedRow
 	return result, nil
 }
 
-// GetImportSummary returns a summary of the import preparation
+// GetImportSummary returns a summary of the import preparation.
 func (is *ImportService) GetImportSummary(parsedRows []*ParsedRow) map[string]int {
 	summary := map[string]int{
 		"total":     len(parsedRows),

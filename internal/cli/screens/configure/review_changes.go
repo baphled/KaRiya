@@ -14,17 +14,27 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// ReviewChangesState identifies the configuration review screen in the state
+// matrix. On this screen the user sees a summary count of modified settings
+// followed by a three-column table listing each setting name, its original
+// value, and the proposed new value. Pressing Enter, c, or y advances to
+// the confirmation step. Escape returns to the editing form. When no
+// changes exist the table is replaced with a muted notice.
 const ReviewChangesState = "review_changes"
 
 // ReviewChangesScreen displays a summary of configuration changes for user review.
 type ReviewChangesScreen struct {
-	domain   configtypes.ConfigurationDomain
-	changes  map[string]interface{} // key -> new value
-	original map[string]interface{} // key -> original value
-	labels   map[string]string      // key -> human-readable label
+	domain configtypes.ConfigurationDomain
 
-	// Terminal and theme
+	// changes maps setting key to proposed new value.
+	changes map[string]interface{}
+
+	// original maps setting key to its value before editing.
+	original map[string]interface{}
+
+	// labels maps setting key to a human-readable label.
+	labels map[string]string
+
 	termInfo *terminal.Info
 	theme    themes.Theme
 	logo     layout.LogoRenderer
@@ -65,13 +75,11 @@ func (s *ReviewChangesScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult
 			return nil, &screens.CancelResult{}
 
 		case tea.KeyEnter:
-			// Proceed to confirmation
 			return nil, &screens.NavigateResult{ResultData: "confirm"}
 		}
 
 		switch msg.String() {
 		case "c", "y":
-			// Confirm shortcut
 			return nil, &screens.NavigateResult{ResultData: "confirm"}
 		}
 	}
@@ -83,24 +91,20 @@ func (s *ReviewChangesScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult
 func (s *ReviewChangesScreen) View() string {
 	domainLabel := formatDomainLabel(s.domain)
 
-	// Build changes content
 	var content strings.Builder
 
 	if len(s.changes) == 0 {
 		noChanges := primitives.Muted("No changes to review.", s.theme).Render()
 		content.WriteString(noChanges)
 	} else {
-		// Summary header
 		countText := fmt.Sprintf("%d setting(s) changed", len(s.changes))
 		summary := primitives.Body(countText, s.theme).Render()
 		content.WriteString(summary)
 		content.WriteString("\n\n")
 
-		// Table of changes
 		content.WriteString(s.renderChangesTable())
 	}
 
-	// Build help footer
 	var helpFooter string
 	if len(s.changes) == 0 {
 		helpFooter = primitives.RenderHelpFooter(s.theme,
@@ -113,7 +117,6 @@ func (s *ReviewChangesScreen) View() string {
 		)
 	}
 
-	// Use UIKit ScreenLayout
 	screenLayout := layout.NewScreenLayout(s.termInfo).
 		WithTheme(s.theme).
 		WithBreadcrumbs("Main Menu", "Configure System", domainLabel, "Review Changes").
@@ -132,7 +135,6 @@ func (s *ReviewChangesScreen) View() string {
 func (s *ReviewChangesScreen) renderChangesTable() string {
 	var rows []string
 
-	// Header row
 	headerStyle := lipgloss.NewStyle().
 		Foreground(s.theme.MutedColor()).
 		Bold(true)
@@ -144,11 +146,9 @@ func (s *ReviewChangesScreen) renderChangesTable() string {
 	header := labelCol + " │ " + fromCol + " │ " + toCol
 	rows = append(rows, header)
 
-	// Separator
 	separator := strings.Repeat("─", 20) + "─┼─" + strings.Repeat("─", 25) + "─┼─" + strings.Repeat("─", 25)
 	rows = append(rows, separator)
 
-	// Data rows
 	labelStyle := lipgloss.NewStyle().
 		Foreground(s.theme.ForegroundColor()).
 		Width(20)

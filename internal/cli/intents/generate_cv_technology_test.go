@@ -42,7 +42,7 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 					Description: "Test profile",
 				},
 			},
-			Events: []*career.CareerEvent{
+			Events: []*career.Event{
 				{
 					ID:        "event-1",
 					Text:      "Implemented API",
@@ -142,7 +142,7 @@ var _ = Describe("GenerateCV Technology Extraction", func() {
 			It("should provide focus area suggestion", func() {
 				// Add more events to meet threshold
 				for i := 0; i < 5; i++ {
-					event := &career.CareerEvent{
+					event := &career.Event{
 						ID:        "event-extra-" + string(rune(i+'0')),
 						Text:      "Extra Event",
 						Date:      time.Date(2025, 1, 3+i, 0, 0, 0, 0, time.UTC),

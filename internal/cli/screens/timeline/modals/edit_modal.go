@@ -29,7 +29,7 @@ import (
 type EditModal struct {
 	form          *huh.Form
 	formData      *forms.CaptureEventFormData
-	originalEvent *career.CareerEvent
+	originalEvent *career.Event
 	visible       bool
 	width         int
 	height        int
@@ -38,7 +38,7 @@ type EditModal struct {
 // NewEditModal creates a new edit event modal with fields pre-populated from the existing event.
 // event: the existing event to edit
 // width, height: terminal dimensions for responsive sizing
-func NewEditModal(event *career.CareerEvent, width, height int) *EditModal {
+func NewEditModal(event *career.Event, width, height int) *EditModal {
 	// Pre-populate form data from existing event.
 	formData := &forms.CaptureEventFormData{
 		Text:            event.Text,
@@ -175,7 +175,7 @@ func (m *EditModal) Hide() {
 }
 
 // GetOriginalEvent returns the original event being edited (useful for comparison).
-func (m *EditModal) GetOriginalEvent() *career.CareerEvent {
+func (m *EditModal) GetOriginalEvent() *career.Event {
 	return m.originalEvent
 }
 
@@ -189,10 +189,10 @@ type EditData struct {
 	Categories []string
 }
 
-// ToCareerEvent converts the form data to a CareerEvent domain object.
+// ToCareerEvent converts the form data to a Event domain object.
 // eventID: the ID of the event being updated (preserved from original)
-// Returns an updated CareerEvent ready to be saved.
-func (d *EditData) ToCareerEvent(eventID string, createdAt, updatedAt interface{}) *career.CareerEvent {
+// Returns an updated Event ready to be saved.
+func (d *EditData) ToCareerEvent(eventID string, createdAt, updatedAt interface{}) *career.Event {
 	// Parse date or default to original.
 	eventDate, err := forms.ParseDateString(d.Date)
 	if err != nil {
@@ -204,7 +204,7 @@ func (d *EditData) ToCareerEvent(eventID string, createdAt, updatedAt interface{
 		}
 	}
 
-	event := &career.CareerEvent{
+	event := &career.Event{
 		ID:         eventID,
 		Text:       d.Text,
 		Date:       eventDate,
@@ -212,7 +212,7 @@ func (d *EditData) ToCareerEvent(eventID string, createdAt, updatedAt interface{
 		Project:    d.Project,
 		Tags:       d.Tags,
 		Categories: d.Categories,
-		Skills:     []string{}, // Skills managed separately.
+		Skills:     []string{},
 	}
 
 	// Preserve CreatedAt, update UpdatedAt.

@@ -39,22 +39,22 @@ import (
 //	    return renderModalOverlay(modal, background)
 //	}
 type ViewEventDetailModal struct {
-	event            *career.CareerEvent
+	event            *career.Event
 	theme            themes.Theme
 	visible          bool
 	width            int
 	height           int
-	action           string // Always empty for read-only modal (kept for API compatibility)
+	action           string
 	viewport         viewport.Model
 	ready            bool
 	hasContent       bool
-	showSkillsOption bool // Whether to show "s: Skills" in footer (default: true)
+	showSkillsOption bool
 }
 
 // NewViewEventDetailModal creates a new event detail modal.
 // By default, shows the "s: Skills" option in the footer.
 // Use WithShowSkillsOption(false) to hide this option.
-func NewViewEventDetailModal(event *career.CareerEvent, theme themes.Theme) *ViewEventDetailModal {
+func NewViewEventDetailModal(event *career.Event, theme themes.Theme) *ViewEventDetailModal {
 	// Ensure theme is not nil at initialization (UIKit pattern)
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -66,7 +66,7 @@ func NewViewEventDetailModal(event *career.CareerEvent, theme themes.Theme) *Vie
 		width:            80,
 		height:           24,
 		action:           "",
-		showSkillsOption: true, // Default: show skills option
+		showSkillsOption: true,
 	}
 }
 
@@ -95,7 +95,7 @@ func (m *ViewEventDetailModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.ready = false // Force viewport recreation on resize
+		m.ready = false
 		return m, nil
 
 	case tea.KeyMsg:
@@ -134,15 +134,15 @@ func (m *ViewEventDetailModal) View() string {
 		maxModalHeight = terminalMaxHeight
 	}
 	if maxModalHeight < 10 {
-		maxModalHeight = 10 // Minimum usable height
+		maxModalHeight = 10
 	}
 
-	modalWidth := m.width - 12 // Leave margins
+	modalWidth := m.width - 12
 	if modalWidth < 60 {
-		modalWidth = 60 // Ensure minimum readable width
+		modalWidth = 60
 	}
 	if modalWidth > 80 {
-		modalWidth = 80 // Max width for readability
+		modalWidth = 80
 	}
 
 	// Render event details
@@ -151,19 +151,19 @@ func (m *ViewEventDetailModal) View() string {
 	contentHeight := len(contentLines)
 
 	// Calculate viewport height (modal height - borders - padding - footer)
-	viewportHeight := maxModalHeight - 4 // Account for border (2), footer (2)
+	viewportHeight := maxModalHeight - 4
 	if viewportHeight < 10 {
-		viewportHeight = 10 // Ensure minimum usable height
+		viewportHeight = 10
 	}
 
 	// Initialize viewport if needed
 	if !m.ready {
 		vpWidth := modalWidth - 4
 		if vpWidth < 10 {
-			vpWidth = 10 // Minimum viewport width
+			vpWidth = 10
 		}
 		if viewportHeight < 5 {
-			viewportHeight = 5 // Minimum viewport height
+			viewportHeight = 5
 		}
 		m.viewport = viewport.New(vpWidth, viewportHeight)
 		m.viewport.SetContent(content)
@@ -211,7 +211,7 @@ func (m *ViewEventDetailModal) SetDimensions(width, height int) {
 func (m *ViewEventDetailModal) Show() {
 	m.visible = true
 	m.action = ""
-	m.ready = false // Reset viewport when showing
+	m.ready = false
 }
 
 // Hide hides the modal.
@@ -231,7 +231,7 @@ func (m *ViewEventDetailModal) GetAction() string {
 }
 
 // SetEvent updates the event being displayed (useful for reusing the modal).
-func (m *ViewEventDetailModal) SetEvent(event *career.CareerEvent) {
+func (m *ViewEventDetailModal) SetEvent(event *career.Event) {
 	m.event = event
 	m.action = ""
 }
