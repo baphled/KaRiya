@@ -1234,23 +1234,23 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 	})
 
 	It("should resolve primary company deterministically when counts are tied", func() {
-		// Two companies each appear once - tie must be broken deterministically.
-		events := []*career.CareerEvent{
-			fixtures.EventWith("e-zebra", "Implemented CI/CD pipelines", "Zebra Inc", ""),
-			fixtures.EventWith("e-alpha", "Implemented CI/CD pipelines", "Alpha Corp", ""),
+		// Build an event map where a bullet has source events from two
+		// companies with equal counts - a genuine tie scenario.
+		eventMap := map[string]*career.CareerEvent{
+			"e-zebra": fixtures.EventWith("e-zebra", "work", "Zebra Inc", ""),
+			"e-alpha": fixtures.EventWith("e-alpha", "work", "Alpha Corp", ""),
 		}
+		sourceIDs := []string{"e-zebra", "e-alpha"}
 
 		// Run multiple times to verify determinism.
-		var firstResult string
-		for i := 0; i < 10; i++ {
-			bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "", "")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(bullets).To(HaveLen(2), "different companies must produce separate bullets")
-			if i == 0 {
-				firstResult = bullets[0].Text
-			}
-			Expect(bullets[0].Text).To(Equal(firstResult),
-				"iteration %d: primary company resolution must be deterministic", i)
+		first := resolvePrimaryCompany(sourceIDs, eventMap)
+		Expect(first).To(Equal("Alpha Corp"),
+			"lexicographically smallest company should win on tie")
+
+		for i := 0; i < 20; i++ {
+			result := resolvePrimaryCompany(sourceIDs, eventMap)
+			Expect(result).To(Equal(first),
+				"iteration %d: tie-breaking must be deterministic", i)
 		}
 	})
 
@@ -1266,5 +1266,20 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(bullets).To(HaveLen(2),
 			"bullets from events with no company should not merge under an empty key")
+	})
+
+	It("should not merge orphaned bullets with no SourceEventIDs", func() {
+		// Bullets with no SourceEventIDs and no company should use their
+		// bullet ID as fallback key to prevent incorrect merging.
+		bg := generator.(*DefaultBulletGenerator)
+		bullets := []*Bullet{
+			{ID: "b1", Text: "Identical orphaned text", SourceEventIDs: nil},
+			{ID: "b2", Text: "Identical orphaned text", SourceEventIDs: nil},
+		}
+		eventMap := map[string]*career.CareerEvent{}
+
+		result := bg.deduplicateBullets(bullets, eventMap)
+		Expect(result).To(HaveLen(2),
+			"orphaned bullets with distinct IDs must not merge under an empty key")
 	})
 })

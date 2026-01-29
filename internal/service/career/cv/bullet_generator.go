@@ -433,8 +433,13 @@ func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap
 		// When company cannot be resolved (no company on source events),
 		// fall back to the first SourceEventID to prevent unrelated bullets
 		// from merging under an empty key (BUG-015 defence-in-depth).
-		if company == "" && len(bullet.SourceEventIDs) > 0 {
-			company = bullet.SourceEventIDs[0]
+		// If SourceEventIDs is also empty, use bullet ID as last resort.
+		if company == "" {
+			if len(bullet.SourceEventIDs) > 0 {
+				company = bullet.SourceEventIDs[0]
+			} else {
+				company = bullet.ID
+			}
 		}
 
 		key := dedupKey{text: normalizedText, company: company}
