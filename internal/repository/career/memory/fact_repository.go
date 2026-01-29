@@ -29,33 +29,19 @@ func NewFactRepository() *FactRepository {
 
 // Create adds a new fact to the in-memory store.
 func (r *FactRepository) Create(_ context.Context, fact *career.Fact) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	// Generate a unique ID if not provided
 	if fact.ID == "" {
 		fact.ID = uuid.New().String()
 	}
 
-	// Validate the fact
 	if err := fact.Validate(); err != nil {
 		return err
 	}
 
-	// Check for duplicates
-	if _, exists := r.facts[fact.ID]; exists {
-		return career_repo.ErrDuplicateFact
-	}
-
-	// Set timestamps
 	now := time.Now()
 	fact.CreatedAt = now
 	fact.UpdatedAt = now
 
-	// Store the fact
-	r.facts[fact.ID] = fact
-
-	return nil
+	return storeNew(&r.mu, r.facts, fact.ID, fact, career_repo.ErrDuplicateFact)
 }
 
 // GetByID retrieves a fact by its ID.
@@ -153,21 +139,7 @@ func (r *FactRepository) applyFilters(facts []*career.Fact, filters career_repo.
 }
 
 func (r *FactRepository) applyDateFilter(facts []*career.Fact, filters career_repo.FactListFilters) []*career.Fact {
-	if filters.StartDate == nil && filters.EndDate == nil {
-		return facts
-	}
-
-	var filtered []*career.Fact
-	for _, fact := range facts {
-		if filters.StartDate != nil && fact.CreatedAt.Before(*filters.StartDate) {
-			continue
-		}
-		if filters.EndDate != nil && fact.CreatedAt.After(*filters.EndDate) {
-			continue
-		}
-		filtered = append(filtered, fact)
-	}
-	return filtered
+	return filterByDateRange(facts, func(f *career.Fact) time.Time { return f.CreatedAt }, filters.StartDate, filters.EndDate)
 }
 
 // filterBySliceContains filters facts where a slice field contains the target value.
@@ -209,20 +181,7 @@ func (r *FactRepository) applySorting(facts []*career.Fact, filters career_repo.
 }
 
 func (r *FactRepository) applyPagination(facts []*career.Fact, filters career_repo.FactListFilters) []*career.Fact {
-	offset := filters.Offset
-	if offset > len(facts) {
-		return []*career.Fact{}
-	}
-
-	if filters.Limit == 0 {
-		return facts[offset:]
-	}
-
-	end := offset + filters.Limit
-	if end > len(facts) {
-		end = len(facts)
-	}
-	return facts[offset:end]
+	return paginate(facts, filters.Offset, filters.Limit)
 }
 
 // Count returns the total number of facts matching the given filters.

@@ -30,32 +30,19 @@ func NewEventRepository() *EventRepository {
 
 // Create adds a new career event to the in-memory store.
 func (r *EventRepository) Create(_ context.Context, event *career.CareerEvent) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	// Validate the event before storing
 	if err := event.Validate(); err != nil {
 		return err
 	}
 
-	// Generate a unique ID if not provided
 	if event.ID == "" {
 		event.ID = uuid.New().String()
 	}
 
-	// Check for duplicates
-	if _, exists := r.events[event.ID]; exists {
-		return career_repo.ErrDuplicateEvent
-	}
-
-	// Set timestamps
 	now := time.Now()
 	event.CreatedAt = now
 	event.UpdatedAt = now
 
-	// Store the event
-	r.events[event.ID] = event
-	return nil
+	return storeNew(&r.mu, r.events, event.ID, event, career_repo.ErrDuplicateEvent)
 }
 
 // GetByID retrieves a career event by its ID.
@@ -123,20 +110,17 @@ func (r *EventRepository) List(_ context.Context, filters career_repo.EventListF
 }
 
 func (r *EventRepository) applyFilters(events []*career.CareerEvent, filters career_repo.EventListFilters) []*career.CareerEvent {
-	var filtered []*career.CareerEvent
-	for _, event := range events {
-		if len(filters.Tags) > 0 && !containsAnyTag(event.Tags, filters.Tags) {
-			continue
+	if len(filters.Tags) > 0 {
+		var tagged []*career.CareerEvent
+		for _, event := range events {
+			if containsAnyTag(event.Tags, filters.Tags) {
+				tagged = append(tagged, event)
+			}
 		}
-		if filters.StartDate != nil && event.Date.Before(*filters.StartDate) {
-			continue
-		}
-		if filters.EndDate != nil && event.Date.After(*filters.EndDate) {
-			continue
-		}
-		filtered = append(filtered, event)
+		events = tagged
 	}
-	return filtered
+
+	return filterByDateRange(events, func(e *career.CareerEvent) time.Time { return e.Date }, filters.StartDate, filters.EndDate)
 }
 
 func (r *EventRepository) applySorting(events []*career.CareerEvent, filters career_repo.EventListFilters) {
@@ -165,20 +149,7 @@ func (r *EventRepository) applySorting(events []*career.CareerEvent, filters car
 }
 
 func (r *EventRepository) applyPagination(events []*career.CareerEvent, filters career_repo.EventListFilters) []*career.CareerEvent {
-	start := filters.Offset
-	if start > len(events) {
-		return []*career.CareerEvent{}
-	}
-
-	if filters.Limit == 0 {
-		return events[start:]
-	}
-
-	end := start + filters.Limit
-	if end > len(events) {
-		end = len(events)
-	}
-	return events[start:end]
+	return paginate(events, filters.Offset, filters.Limit)
 }
 
 // Count returns the number of events matching the filters.

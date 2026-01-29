@@ -29,33 +29,19 @@ func NewBurstRepository() *BurstRepository {
 
 // Create adds a new burst to the in-memory store.
 func (r *BurstRepository) Create(_ context.Context, burst *career.Burst) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	// Generate a unique ID if not provided
 	if burst.ID == "" {
 		burst.ID = uuid.New().String()
 	}
 
-	// Validate the burst before storing
 	if err := burst.Validate(); err != nil {
 		return err
 	}
 
-	// Check for duplicates
-	if _, exists := r.bursts[burst.ID]; exists {
-		return career_repo.ErrDuplicateBurst
-	}
-
-	// Set timestamps
 	now := time.Now()
 	burst.CreatedAt = now
 	burst.UpdatedAt = now
 
-	// Store the burst
-	r.bursts[burst.ID] = burst
-
-	return nil
+	return storeNew(&r.mu, r.bursts, burst.ID, burst, career_repo.ErrDuplicateBurst)
 }
 
 // GetByID retrieves a burst by its ID.
@@ -127,21 +113,7 @@ func (r *BurstRepository) List(_ context.Context, filters career_repo.BurstListF
 }
 
 func (r *BurstRepository) applyFilters(bursts []*career.Burst, filters career_repo.BurstListFilters) []*career.Burst {
-	if filters.StartDate == nil && filters.EndDate == nil {
-		return bursts
-	}
-
-	var filtered []*career.Burst
-	for _, burst := range bursts {
-		if filters.StartDate != nil && burst.CreatedAt.Before(*filters.StartDate) {
-			continue
-		}
-		if filters.EndDate != nil && burst.CreatedAt.After(*filters.EndDate) {
-			continue
-		}
-		filtered = append(filtered, burst)
-	}
-	return filtered
+	return filterByDateRange(bursts, func(b *career.Burst) time.Time { return b.CreatedAt }, filters.StartDate, filters.EndDate)
 }
 
 func (r *BurstRepository) applySorting(bursts []*career.Burst, filters career_repo.BurstListFilters) {
@@ -171,20 +143,7 @@ func (r *BurstRepository) applySorting(bursts []*career.Burst, filters career_re
 }
 
 func (r *BurstRepository) applyPagination(bursts []*career.Burst, filters career_repo.BurstListFilters) []*career.Burst {
-	offset := filters.Offset
-	if offset > len(bursts) {
-		return []*career.Burst{}
-	}
-
-	if filters.Limit == 0 {
-		return bursts[offset:]
-	}
-
-	end := offset + filters.Limit
-	if end > len(bursts) {
-		end = len(bursts)
-	}
-	return bursts[offset:end]
+	return paginate(bursts, filters.Offset, filters.Limit)
 }
 
 // Count returns the total number of bursts matching the given filters.

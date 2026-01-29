@@ -42,32 +42,27 @@ func (r *SkillRepository) SetEventRepository(repo career_repo.EventRepository) {
 
 // Create adds a new skill to the in-memory store.
 func (r *SkillRepository) Create(_ context.Context, skill *career.Skill) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	// Generate a unique ID if not provided
 	if skill.ID == "" {
 		skill.ID = uuid.New().String()
 	}
 
-	// Validate the skill
 	if err := skill.Validate(); err != nil {
 		return err
 	}
 
-	// Check for duplicate name
+	now := time.Now()
+	skill.CreatedAt = now
+	skill.UpdatedAt = now
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	for _, s := range r.skills {
 		if s.Name == skill.Name {
 			return career_repo.ErrDuplicateSkill
 		}
 	}
 
-	// Set timestamps
-	now := time.Now()
-	skill.CreatedAt = now
-	skill.UpdatedAt = now
-
-	// Store the skill
 	r.skills[skill.ID] = skill
 
 	return nil
@@ -266,17 +261,7 @@ func (r *SkillRepository) applyPagination(skills []*career.Skill, filters *caree
 		return skills
 	}
 
-	if filters.Offset > 0 {
-		if filters.Offset >= len(skills) {
-			return []*career.Skill{}
-		}
-		skills = skills[filters.Offset:]
-	}
-
-	if filters.Limit > 0 && filters.Limit < len(skills) {
-		skills = skills[:filters.Limit]
-	}
-	return skills
+	return paginate(skills, filters.Offset, filters.Limit)
 }
 
 // Update modifies an existing skill

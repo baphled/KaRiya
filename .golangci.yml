@@ -1129,20 +1129,6 @@ issues:
         - funlen
         - revive         # Complex List() function
 
-    # In-memory repositories - structural duplication across entity-specific
-    # Create/filter methods is inherent to Go's type system (no shared generic base).
-    - path: internal/repository/career/memory/burst_repository\.go
-      linters:
-        - dupl           # Create/applyFilters pattern shared with fact repo
-
-    - path: internal/repository/career/memory/fact_repository\.go
-      linters:
-        - dupl           # Create/applyDateFilter pattern shared with burst repo
-
-    - path: internal/repository/career/memory/skill_repository\.go
-      linters:
-        - nestif
-
     # =========================================================================
     # LEGACY UIKIT WIDGETS - Complex rendering components
     # =========================================================================
