@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/internal/cli/importer"
+	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
@@ -134,8 +135,8 @@ Mentored junior engineers on best practices,2024-02-10,Mentoring,mentoring,Train
 		})
 
 		It("should link facts to their parent bursts via SourceBurstID", func() {
-			burstRepo := careerepo.NewMemoryBurstRepository()
-			factRepo := careerepo.NewMemoryFactRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
 			svc.SetBurstRepository(burstRepo)
 			svc.SetFactRepository(factRepo)
 
@@ -155,12 +156,12 @@ Optimized cloud infrastructure performance,2024-01-25,Technical,technical,CloudM
 			Expect(result.SuccessCount).To(Equal(3))
 
 			// Get all saved bursts.
-			allBursts, err := burstRepo.List(ctx, careerepo.BurstListFilters{})
+			allBursts, err := burstRepo.List(ctx, careerrepo.BurstListFilters{})
 			Expect(err).NotTo(HaveOccurred())
 
 			if len(allBursts) > 0 {
 				// If bursts were detected, verify facts are linked.
-				allFacts, err := factRepo.List(ctx, careerepo.FactListFilters{})
+				allFacts, err := factRepo.List(ctx, careerrepo.FactListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 
 				// At least some facts should have SourceBurstID set.

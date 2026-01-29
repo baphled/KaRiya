@@ -71,7 +71,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 
 		It("should accept valid burst without setting Confirmed", func() {
-			burstRepo := careerrepo.NewMemoryBurstRepository()
+			burstRepo := careermemory.NewBurstRepository()
 			service.SetBurstRepository(burstRepo)
 			burst := fixtures.Burst("burst1", "1", "2")
 
@@ -87,10 +87,10 @@ var _ = Describe("Career Service - Burst Methods", func() {
 	})
 
 	Describe("ConfirmBurst", func() {
-		var burstRepo *careerrepo.MemoryBurstRepository
+		var burstRepo *careermemory.BurstRepository
 
 		BeforeEach(func() {
-			burstRepo = careerrepo.NewMemoryBurstRepository()
+			burstRepo = careermemory.NewBurstRepository()
 			service.SetBurstRepository(burstRepo)
 		})
 
