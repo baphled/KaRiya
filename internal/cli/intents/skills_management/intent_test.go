@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/skills_management"
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -208,6 +209,84 @@ var _ = Describe("Intent", func() {
 				result := intent.Result()
 				Expect(result).NotTo(BeNil())
 				Expect(result.Status).To(Equal(intents.Cancelled))
+			})
+		})
+	})
+
+	Describe("Bug Regressions", func() {
+		Describe("BUG-016: view detail modal uses correctly-passed skill, not stale index", func() {
+			var (
+				intent    *skills_management.Intent
+				allSkills []*career.Skill
+			)
+
+			BeforeEach(func() {
+				// Setup 3 skills so index mismatch is detectable.
+				allSkills = []*career.Skill{
+					{ID: "skill-1", Name: "Go", Category: "Programming"},
+					{ID: "skill-2", Name: "Python", Category: "Programming"},
+					{ID: "skill-3", Name: "Rust", Category: "Programming"},
+				}
+				mockRepo.skills = allSkills
+
+				intentCtx := skills_management.NewIntentContext(ctx, mockRepo)
+				intent, _ = skills_management.NewIntent(intentCtx)
+
+				// Init and process the loaded message to populate the intent.
+				cmd := intent.Init()
+				msg := cmd()
+				_ = intent.Update(msg)
+			})
+
+			It("should set selectedSkill to the navigated skill, not the first skill", func() {
+				// Simulate the screen returning a NavigateResult for the 3rd skill.
+				// This is what happens when the user presses Enter on skill-3 in the list.
+				thirdSkill := allSkills[2]
+				navigateResult := &screens.NavigateResult{
+					ResultData: map[string]interface{}{
+						"action": "view",
+						"skill":  thirdSkill,
+					},
+				}
+
+				_ = intent.HandleNavigate(navigateResult)
+
+				// The selected skill must be the 3rd skill, not the 1st.
+				Expect(intent.GetSelectedSkill()).NotTo(BeNil())
+				Expect(intent.GetSelectedSkill().ID).To(Equal("skill-3"))
+				Expect(intent.GetSelectedSkill().Name).To(Equal("Rust"))
+			})
+
+			It("should set selectedSkill correctly for edit action", func() {
+				// Edit action passes skill directly - should not be affected.
+				secondSkill := allSkills[1]
+				navigateResult := &screens.NavigateResult{
+					ResultData: map[string]interface{}{
+						"action": "edit",
+						"skill":  secondSkill,
+					},
+				}
+
+				_ = intent.HandleNavigate(navigateResult)
+
+				Expect(intent.GetSelectedSkill()).NotTo(BeNil())
+				Expect(intent.GetSelectedSkill().ID).To(Equal("skill-2"))
+			})
+
+			It("should set selectedSkill correctly for delete action", func() {
+				// Delete action passes skill directly - should not be affected.
+				thirdSkill := allSkills[2]
+				navigateResult := &screens.NavigateResult{
+					ResultData: map[string]interface{}{
+						"action": "delete",
+						"skill":  thirdSkill,
+					},
+				}
+
+				_ = intent.HandleNavigate(navigateResult)
+
+				Expect(intent.GetSelectedSkill()).NotTo(BeNil())
+				Expect(intent.GetSelectedSkill().ID).To(Equal("skill-3"))
 			})
 		})
 	})
