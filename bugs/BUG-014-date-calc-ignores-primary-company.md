@@ -81,7 +81,7 @@ against any future scenario where SourceEventIDs span multiple companies.
 - Date range computed using only events from the primary company
 - Bullet with SourceEventIDs from BEIS (2019) and We Are Friday (2012) assigned to
   BEIS produces dates Jun-Dec 2019 (not Nov 2012 - Dec 2019)
-- Cross-cutting bullet with 16 source companies produces dates for winning company only
+- Cross-cutting bullet with multiple source companies produces dates for winning company only
 
 ## Related
 
