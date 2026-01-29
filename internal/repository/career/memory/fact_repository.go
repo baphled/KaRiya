@@ -192,8 +192,6 @@ func (r *FactRepository) List(_ context.Context, filters career_repo.FactListFil
 		switch sortBy {
 		case "text":
 			less = facts[i].Text < facts[j].Text
-		case "created_at":
-			fallthrough
 		default:
 			less = facts[i].CreatedAt.Before(facts[j].CreatedAt)
 		}

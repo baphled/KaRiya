@@ -87,7 +87,7 @@ func (r *SkillRepository) GetByID(_ context.Context, id string) (*career.Skill, 
 }
 
 // GetByName retrieves a skill by its name (case-sensitive)
-func (r *SkillRepository) GetByName(ctx context.Context, name string) (*career.Skill, error) {
+func (r *SkillRepository) GetByName(_ context.Context, name string) (*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -251,7 +251,7 @@ func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillLi
 }
 
 // Update modifies an existing skill
-func (r *SkillRepository) Update(ctx context.Context, skill *career.Skill) error {
+func (r *SkillRepository) Update(_ context.Context, skill *career.Skill) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -282,7 +282,7 @@ func (r *SkillRepository) Update(ctx context.Context, skill *career.Skill) error
 }
 
 // Delete removes a skill from the repository
-func (r *SkillRepository) Delete(ctx context.Context, id string) error {
+func (r *SkillRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -304,7 +304,7 @@ func (r *SkillRepository) Delete(ctx context.Context, id string) error {
 }
 
 // GetByCategory retrieves all skills in a specific category
-func (r *SkillRepository) GetByCategory(ctx context.Context, category string) ([]*career.Skill, error) {
+func (r *SkillRepository) GetByCategory(_ context.Context, category string) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -325,7 +325,7 @@ func (r *SkillRepository) GetByCategory(ctx context.Context, category string) ([
 }
 
 // GetSkillsForEvent retrieves all skills associated with an event
-func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
+func (r *SkillRepository) GetSkillsForEvent(_ context.Context, eventID string) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -345,7 +345,7 @@ func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string)
 }
 
 // GetEventCountsForSkills returns a map of skill IDs to event counts
-func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[string]int, error) {
+func (r *SkillRepository) GetEventCountsForSkills(_ context.Context) (map[string]int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -359,7 +359,7 @@ func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[stri
 }
 
 // GetLastUsedForSkills returns a map of skill IDs to their last used dates (from events)
-func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
+func (r *SkillRepository) GetLastUsedForSkills(_ context.Context) (map[string]time.Time, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

@@ -97,8 +97,8 @@ func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillLi
 	}
 
 	skills := make([]*career.Skill, len(results))
-	for i, m := range results {
-		skills[i] = m.ToDomain()
+	for i := range results {
+		skills[i] = results[i].ToDomain()
 	}
 	return skills, nil
 }
@@ -220,8 +220,8 @@ func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string)
 	}
 
 	skills := make([]*career.Skill, len(results))
-	for i, m := range results {
-		skills[i] = m.ToDomain()
+	for i := range results {
+		skills[i] = results[i].ToDomain()
 	}
 	return skills, nil
 }
@@ -286,8 +286,8 @@ func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID strin
 	}
 
 	events := make([]*career.CareerEvent, len(results))
-	for i, m := range results {
-		events[i] = m.ToDomain()
+	for i := range results {
+		events[i] = results[i].ToDomain()
 	}
 	return events, nil
 }

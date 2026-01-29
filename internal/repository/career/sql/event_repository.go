@@ -121,8 +121,8 @@ func (r *EventRepository) List(ctx context.Context, filters career_repo.EventLis
 
 	// Collect event IDs to batch-load associated skill IDs.
 	eventIDs := make([]string, 0, len(results))
-	for _, m := range results {
-		eventIDs = append(eventIDs, m.ID)
+	for i := range results {
+		eventIDs = append(eventIDs, results[i].ID)
 	}
 
 	// Batch load all skill associations in a single query.
@@ -132,10 +132,10 @@ func (r *EventRepository) List(ctx context.Context, filters career_repo.EventLis
 	}
 
 	events := make([]*career.CareerEvent, len(results))
-	for i, m := range results {
-		events[i] = m.ToDomain()
+	for i := range results {
+		events[i] = results[i].ToDomain()
 		// Assign preloaded skill IDs from the batched lookup.
-		if skills, ok := eventSkills[m.ID]; ok {
+		if skills, ok := eventSkills[results[i].ID]; ok {
 			events[i].Skills = skills
 		}
 	}

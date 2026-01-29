@@ -102,8 +102,8 @@ func (Event) TableName() string { return "career_events" }
 
 func (m *Event) ToDomain() *career.CareerEvent {
 	skillIDs := make([]string, len(m.Skills))
-	for i, s := range m.Skills {
-		skillIDs[i] = s.ID
+	for i := range m.Skills {
+		skillIDs[i] = m.Skills[i].ID
 	}
 	return &career.CareerEvent{
 		ID:         m.ID,

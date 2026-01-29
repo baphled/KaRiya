@@ -379,6 +379,9 @@ linters-settings:
           # Test fixtures and data generation
           - github.com/bluele/factory-go/factory
           - github.com/brianvoe/gofakeit/v7
+          # ORM (used in repository/career/sql/)
+          - gorm.io/gorm
+          - gorm.io/driver/sqlite
 
   # =============================================================================
   # IMPORT ALIASES (Consistent naming)

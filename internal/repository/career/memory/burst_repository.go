@@ -155,8 +155,6 @@ func (r *BurstRepository) List(_ context.Context, filters career_repo.BurstListF
 			less = bursts[i].Name < bursts[j].Name
 		case "event_count":
 			less = len(bursts[i].EventIDs) < len(bursts[j].EventIDs)
-		case "created_at":
-			fallthrough
 		default:
 			less = bursts[i].CreatedAt.Before(bursts[j].CreatedAt)
 		}

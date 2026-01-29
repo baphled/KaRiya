@@ -90,8 +90,8 @@ func (r *FactRepository) List(ctx context.Context, filters career_repo.FactListF
 	}
 
 	facts := make([]*career.Fact, len(results))
-	for i, m := range results {
-		facts[i] = m.ToDomain()
+	for i := range results {
+		facts[i] = results[i].ToDomain()
 	}
 	return facts, nil
 }
@@ -117,8 +117,8 @@ func (r *FactRepository) GetBySourceEventID(ctx context.Context, eventID string)
 	}
 
 	facts := make([]*career.Fact, len(results))
-	for i, m := range results {
-		facts[i] = m.ToDomain()
+	for i := range results {
+		facts[i] = results[i].ToDomain()
 	}
 	return facts, nil
 }
@@ -132,8 +132,8 @@ func (r *FactRepository) GetBySourceBurstID(ctx context.Context, burstID string)
 	}
 
 	facts := make([]*career.Fact, len(results))
-	for i, m := range results {
-		facts[i] = m.ToDomain()
+	for i := range results {
+		facts[i] = results[i].ToDomain()
 	}
 	return facts, nil
 }
@@ -164,7 +164,7 @@ func (r *FactRepository) applySorting(query *gorm.DB, filters career_repo.FactLi
 	}
 
 	order := "DESC"
-	if strings.ToLower(filters.SortOrder) == "asc" {
+	if strings.EqualFold(filters.SortOrder, "asc") {
 		order = "ASC"
 	}
 

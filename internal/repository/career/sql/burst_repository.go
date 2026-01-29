@@ -90,8 +90,8 @@ func (r *BurstRepository) List(ctx context.Context, filters career_repo.BurstLis
 	}
 
 	bursts := make([]*career.Burst, len(results))
-	for i, m := range results {
-		bursts[i] = m.ToDomain()
+	for i := range results {
+		bursts[i] = results[i].ToDomain()
 	}
 	return bursts, nil
 }
@@ -125,7 +125,7 @@ func (r *BurstRepository) applySorting(query *gorm.DB, filters career_repo.Burst
 	}
 
 	order := "DESC"
-	if strings.ToLower(filters.SortOrder) == "asc" {
+	if strings.EqualFold(filters.SortOrder, "asc") {
 		order = "ASC"
 	}
 
