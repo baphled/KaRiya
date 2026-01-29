@@ -266,22 +266,21 @@ func (i *Intent) openSearchModal() tea.Cmd {
 }
 
 // openViewDetailModal opens the view detail modal for the selected skill.
+// BUG-016: Uses i.selectedSkill (set by handleNavigateData) instead of
+// indexing i.skills[i.selectedIndex], which was stale and pointed to
+// the wrong skill.
 func (i *Intent) openViewDetailModal() tea.Cmd {
-	if len(i.skills) == 0 || i.selectedIndex >= len(i.skills) {
+	if i.selectedSkill == nil {
 		return nil
 	}
 
-	skill := i.skills[i.selectedIndex]
-	i.selectedSkill = skill
+	skill := i.selectedSkill
 
 	// Get event count for this skill.
 	eventCount := 0
 	if i.eventCounts != nil {
 		eventCount = i.eventCounts[skill.ID]
 	}
-
-	// Last used time could be computed from events but is not currently displayed.
-	// The DetailModal would need to be extended to accept this parameter.
 
 	width, height := i.getTerminalDimensions()
 
