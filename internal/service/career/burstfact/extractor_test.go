@@ -77,7 +77,7 @@ var _ = Describe("Extractor", func() {
 			burst := fixtures.Burst("burst-1", event1.ID, event2.ID)
 			burst.Name = "Platform Modernization"
 
-			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{event1, event2})
+			facts := extractor.ExtractFromBurst(ctx, burst, []*career.Event{event1, event2})
 
 			// Should have burst-level fact + individual event facts
 			Expect(len(facts)).To(BeNumerically(">=", 3))
@@ -92,7 +92,7 @@ var _ = Describe("Extractor", func() {
 			burst := fixtures.Burst("burst-1", event1.ID, "event-2")
 			burst.Name = "Platform Initiative"
 
-			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{event1})
+			facts := extractor.ExtractFromBurst(ctx, burst, []*career.Event{event1})
 
 			Expect(facts).NotTo(BeEmpty())
 			Expect(facts[0].Text).To(Equal("Platform Initiative"))
@@ -101,7 +101,7 @@ var _ = Describe("Extractor", func() {
 		It("returns empty list for nil burst", func() {
 			event := fixtures.Event("1")
 
-			facts := extractor.ExtractFromBurst(ctx, nil, []*career.CareerEvent{event})
+			facts := extractor.ExtractFromBurst(ctx, nil, []*career.Event{event})
 			Expect(facts).To(BeEmpty())
 		})
 
@@ -110,7 +110,7 @@ var _ = Describe("Extractor", func() {
 			burst.EventIDs = []string{}
 			burst.Name = "Empty Burst"
 
-			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{})
+			facts := extractor.ExtractFromBurst(ctx, burst, []*career.Event{})
 			Expect(facts).To(BeEmpty())
 		})
 
@@ -120,7 +120,7 @@ var _ = Describe("Extractor", func() {
 			burst := fixtures.Burst("burst-1", event1.ID, "event-2")
 			burst.Name = "Initiative"
 
-			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{event1})
+			facts := extractor.ExtractFromBurst(ctx, burst, []*career.Event{event1})
 
 			// Should have at least burst fact + event fact
 			Expect(len(facts)).To(BeNumerically(">=", 2))
@@ -189,7 +189,7 @@ var _ = Describe("Extractor", func() {
 			burst := fixtures.Burst("burst-1", event.ID, "event-2")
 			burst.Name = "Enterprise Platform Initiative"
 
-			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{event})
+			facts := extractor.ExtractFromBurst(ctx, burst, []*career.Event{event})
 			Expect(facts[0].Text).To(Equal("Enterprise Platform Initiative"))
 		})
 	})

@@ -16,9 +16,9 @@ type TestFormData struct {
 	SubmitConfirmed bool
 }
 
-var _ = Describe("BaseFormScreen", func() {
+var _ = Describe("FormScreen", func() {
 	var (
-		screen   *base.BaseFormScreen[*TestFormData]
+		screen   *base.FormScreen[*TestFormData]
 		formData *TestFormData
 	)
 

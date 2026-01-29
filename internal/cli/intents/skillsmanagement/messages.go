@@ -38,20 +38,20 @@ type SkillDeletedMsg struct {
 
 // SkillEventsLoadedMsg is sent when events for a skill are loaded (state-based flow).
 type SkillEventsLoadedMsg struct {
-	Events []*domain.CareerEvent
+	Events []*domain.Event
 	Error  error
 }
 
 // SkillEventsForModalLoadedMsg is sent when events for a skill are loaded (modal flow).
 type SkillEventsForModalLoadedMsg struct {
-	Events []*domain.CareerEvent
+	Events []*domain.Event
 	Error  error
 }
 
 // RequestBrowseEventMsg requests that the app route to BrowseTimeline intent.
 // This is sent to the app router which will activate BrowseTimeline with the selected event.
 type RequestBrowseEventMsg struct {
-	Event     *domain.CareerEvent
-	AllEvents []*domain.CareerEvent
-	SkillName string // For context in breadcrumbs.
+	Event     *domain.Event
+	AllEvents []*domain.Event
+	SkillName string
 }

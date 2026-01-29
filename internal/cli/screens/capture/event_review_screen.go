@@ -32,12 +32,12 @@ import (
 //
 // Related:
 // - internal/cli/intents/capture_event.go (ReviewInferredEventState)
-// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration)
+// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type EventReviewScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	// event being reviewed
-	event *career.CareerEvent
+	event *career.Event
 
 	// bursts inferred from event
 	bursts []*career.Burst
@@ -60,12 +60,12 @@ type EventReviewScreen struct {
 // Returns a EventReviewScreen displaying event details with bursts and facts.
 func NewEventReviewScreen(
 	breadcrumbs []string,
-	event *career.CareerEvent,
+	event *career.Event,
 	bursts []*career.Burst,
 	facts []*career.Fact,
 ) *EventReviewScreen {
 	return &EventReviewScreen{
-		BaseScreen:  base.NewBaseScreen(),
+		Screen:      base.NewBaseScreen(),
 		event:       event,
 		bursts:      bursts,
 		facts:       facts,
@@ -79,10 +79,10 @@ func NewEventReviewScreen(
 // - Enter → returns SubmitResult with event, bursts, facts
 // - e/b/f → returns NavigateResult with edit action
 // - Esc → returns CancelResult
-// - WindowSizeMsg → updates dimensions
+// - WindowSizeMsg → updates dimensions.
 func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via BaseScreen
-	if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+	// Handle window size via Screen
+	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 

@@ -863,7 +863,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
 		burstRepo   *careermemory.BurstRepository
-		events      []*career.CareerEvent
+		events      []*career.Event
 		suggestions []burstfact.BurstSuggestion
 	)
 
@@ -871,7 +871,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		now := time.Now()
 
 		// Create test events.
-		events = []*career.CareerEvent{
+		events = []*career.Event{
 			{ID: "e1", Text: "Led backend project", Date: now.AddDate(0, -1, 0), Company: "TechCorp", Project: "Platform"},
 			{ID: "e2", Text: "Built microservices", Date: now.AddDate(0, -2, 0), Company: "TechCorp", Project: "Platform"},
 			{ID: "e3", Text: "Frontend redesign", Date: now.AddDate(0, -3, 0), Company: "TechCorp", Project: "UI"},
@@ -1321,7 +1321,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 	BeforeEach(func() {
 		now := time.Now()
 
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			{ID: "e1", Text: "Led backend project", Date: now.AddDate(0, -1, 0)},
 			{ID: "e2", Text: "Built microservices", Date: now.AddDate(0, -2, 0)},
 		}
@@ -1958,7 +1958,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 	BeforeEach(func() {
 		now := time.Now()
 
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			{ID: "e1", Text: "Led backend project", Date: now.AddDate(0, -1, 0)},
 			{ID: "e2", Text: "Built microservices", Date: now.AddDate(0, -2, 0)},
 			{ID: "e3", Text: "Deployed to production", Date: now.AddDate(0, -3, 0)},
@@ -2564,7 +2564,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 
 				// Simulate events loaded.
 				intent.Update(burst_management.BurstEventsLoadedMsg{
-					Events: []*career.CareerEvent{},
+					Events: []*career.Event{},
 				})
 
 				// Press Escape to close events modal.
@@ -2937,7 +2937,7 @@ var _ = Describe("User Journey: All Burst Saves Fail During Suggestion Acceptanc
 
 	BeforeEach(func() {
 		mockService = mocks.NewBurstServiceMock().
-			SetEvents([]*career.CareerEvent{
+			SetEvents([]*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 			})
@@ -3039,7 +3039,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 
 	BeforeEach(func() {
 		mockService = mocks.NewBurstServiceMock().
-			SetEvents([]*career.CareerEvent{
+			SetEvents([]*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 			}).
@@ -3171,7 +3171,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 
 	BeforeEach(func() {
 		mockService = mocks.NewBurstServiceMock().
-			SetEvents([]*career.CareerEvent{
+			SetEvents([]*career.Event{
 				{ID: "e1", Text: "Led API development", Company: "TechCorp"},
 				{ID: "e2", Text: "Built microservices", Company: "TechCorp"},
 				{ID: "e3", Text: "Deployed to production", Company: "TechCorp"},
@@ -3624,10 +3624,10 @@ var _ = Describe("User Journey: Edge Cases and Boundary Conditions", func() {
 		BeforeEach(func() {
 			// Create many event IDs.
 			eventIDs := make([]string, 50)
-			events := make([]*career.CareerEvent, 50)
+			events := make([]*career.Event, 50)
 			for i := 0; i < 50; i++ {
 				eventIDs[i] = fmt.Sprintf("e%d", i+1)
-				events[i] = &career.CareerEvent{
+				events[i] = &career.Event{
 					ID:   eventIDs[i],
 					Text: fmt.Sprintf("Event %d description", i+1),
 				}
@@ -3750,7 +3750,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 
 	BeforeEach(func() {
 		mockService = mocks.NewBurstServiceMock().
-			SetEvents([]*career.CareerEvent{
+			SetEvents([]*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 				{ID: "e3", Text: "Event 3"},

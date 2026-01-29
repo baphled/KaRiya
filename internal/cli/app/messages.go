@@ -9,7 +9,7 @@ type Screen string
 
 // FormSubmittedMsg is sent when a form is successfully submitted.
 type FormSubmittedMsg struct {
-	Event *career.CareerEvent
+	Event *career.Event
 	Err   error
 }
 

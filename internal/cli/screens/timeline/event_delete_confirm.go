@@ -7,12 +7,18 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// EventDeleteConfirmState identifies the event deletion confirmation view
+// in the state matrix. On this screen the user sees the event summary and
+// a yes/no prompt to confirm permanent deletion. The event text is
+// truncated to 60 characters inside a confirmation dialog with Delete and
+// Cancel buttons. A warning states the action cannot be undone. The Cancel
+// button is focused by default for safety. Left/right arrows or h/l
+// toggle selection, y/n submit directly, and Escape cancels.
 const EventDeleteConfirmState = "event_delete_confirm"
 
 // EventDeleteConfirmScreen provides a confirmation dialog for deleting a career event.
 //
-// This screen wraps BaseConfirmScreen with event-specific context:
+// This screen wraps ConfirmScreen with event-specific context:
 // - Shows event text (truncated) in confirmation message
 // - Customizes button text ("Delete" / "Cancel")
 // - Preserves event data for the caller
@@ -32,12 +38,12 @@ const EventDeleteConfirmState = "event_delete_confirm"
 //	}
 //
 // Related:
-// - BaseConfirmScreen provides the confirmation UI
+// - ConfirmScreen provides the confirmation UI
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
 type EventDeleteConfirmScreen struct {
-	*base.BaseConfirmScreen
-	event *career.CareerEvent
+	*base.ConfirmScreen
+	event *career.Event
 }
 
 // NewEventDeleteConfirmScreen creates a new event deletion confirmation screen.
@@ -50,11 +56,10 @@ type EventDeleteConfirmScreen struct {
 //
 // Parameters:
 //   - event: The event to delete
-func NewEventDeleteConfirmScreen(event *career.CareerEvent) *EventDeleteConfirmScreen {
+func NewEventDeleteConfirmScreen(event *career.Event) *EventDeleteConfirmScreen {
 	breadcrumbs := []string{"Main Menu", "Timeline", "Delete Confirmation"}
 	title := "Delete Event"
 
-	// Truncate event text for display
 	eventText := event.Text
 	if len(eventText) > 60 {
 		eventText = eventText[:60] + "..."
@@ -70,12 +75,12 @@ func NewEventDeleteConfirmScreen(event *career.CareerEvent) *EventDeleteConfirmS
 	confirmScreen.SetNoText("Cancel")
 
 	return &EventDeleteConfirmScreen{
-		BaseConfirmScreen: confirmScreen,
-		event:             event,
+		ConfirmScreen: confirmScreen,
+		event:         event,
 	}
 }
 
 // GetEvent returns the event being considered for deletion.
-func (s *EventDeleteConfirmScreen) GetEvent() *career.CareerEvent {
+func (s *EventDeleteConfirmScreen) GetEvent() *career.Event {
 	return s.event
 }

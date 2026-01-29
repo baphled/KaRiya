@@ -11,7 +11,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// BurstDetailState identifies the burst detail screen in the state matrix.
+// On this screen the user sees a single burst's name, description, event
+// count, confirmation status, and created/updated timestamps rendered inside
+// a UIKit DetailView card. Action keys allow viewing associated events (v),
+// viewing extracted facts (f), editing the burst (e), deleting it (d), or
+// marking it as confirmed (c). Pressing Escape or Backspace returns to the
+// burst list.
 const BurstDetailState = "burst_detail"
 
 // BurstDetailScreen displays detailed information about a career burst.
@@ -34,11 +40,11 @@ const BurstDetailState = "burst_detail"
 //	}
 //
 // Related:
-// - BaseScreen provides the foundation
+// - Screen provides the foundation
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
 type BurstDetailScreen struct {
-	*base.BaseScreen
+	*base.Screen
 	burst *career.Burst
 }
 
@@ -54,8 +60,8 @@ type BurstDetailScreen struct {
 //   - burst: The career burst to display (can be nil)
 func NewBurstDetailScreen(burst *career.Burst) *BurstDetailScreen {
 	return &BurstDetailScreen{
-		BaseScreen: base.NewBaseScreen(),
-		burst:      burst,
+		Screen: base.NewBaseScreen(),
+		burst:  burst,
 	}
 }
 
@@ -80,15 +86,11 @@ func (s *BurstDetailScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 
 // handleKeyMsg processes keyboard input for detail screen actions.
 func (s *BurstDetailScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
-	// Handle special keys by type.
 	switch msg.Type {
 	case tea.KeyEsc, tea.KeyBackspace:
-		// Back to burst list.
-		// Note: 'q' (quit) is handled by the intent before delegation.
 		return nil, &screens.CancelResult{}
 	}
 
-	// Handle rune-based action keys.
 	return s.handleActionKey(msg.String())
 }
 
@@ -96,23 +98,18 @@ func (s *BurstDetailScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.Scree
 func (s *BurstDetailScreen) handleActionKey(key string) (tea.Cmd, screens.ScreenResult) {
 	switch key {
 	case "v":
-		// View events in burst.
 		return nil, s.actionResult("view_events")
 
 	case "f":
-		// View facts extracted from burst.
 		return nil, s.actionResult("view_facts")
 
 	case "e":
-		// Edit burst.
 		return nil, s.actionResult("edit")
 
 	case "d":
-		// Delete burst.
 		return nil, s.actionResult("delete")
 
 	case "c":
-		// Confirm burst (mark as confirmed).
 		return nil, s.actionResult("confirm")
 	}
 
@@ -136,21 +133,18 @@ func (s *BurstDetailScreen) RenderContent() string {
 		return "No burst selected."
 	}
 
-	// Use UIKit DetailView for consistent styling.
 	th := theme.Default()
 	dv := widgets.NewDetailView(th).
 		Title(s.burst.Name).
 		FieldIf("Description", s.burst.Description).
 		Field("Events", fmt.Sprintf("%d", len(s.burst.EventIDs)))
 
-	// Confirmation status.
 	confirmedStatus := "No"
 	if s.burst.Confirmed {
 		confirmedStatus = "Yes"
 	}
 	dv.Field("Confirmed", confirmedStatus)
 
-	// Created and updated dates.
 	dv.Field("Created", s.burst.CreatedAt.Format("2006-01-02 15:04:05")).
 		Field("Updated", s.burst.UpdatedAt.Format("2006-01-02 15:04:05"))
 

@@ -54,7 +54,7 @@ var _ = Describe("List Container Navigation Integration - From Main Menu", func(
 		event3.Tags = []string{"product", "technical"}
 		event3.Categories = []string{"technical"}
 
-		for _, event := range []*career.CareerEvent{event1, event2, event3} {
+		for _, event := range []*career.Event{event1, event2, event3} {
 			//nolint:errcheck // Test setup - error handling not relevant.
 			repo.Create(context.Background(), event)
 		}

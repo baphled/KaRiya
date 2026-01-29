@@ -69,10 +69,10 @@ var _ = Describe("CV Generation Integration Tests", func() {
 	})
 
 	// Helper function to seed test events
-	seedTestEvents := func(count int, category string) []*career.CareerEvent {
-		events := make([]*career.CareerEvent, count)
+	seedTestEvents := func(count int, category string) []*career.Event {
+		events := make([]*career.Event, count)
 		for i := 0; i < count; i++ {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:       "Test event for " + category,
 				Date:       time.Now().AddDate(0, 0, -i),
 				Tags:       []string{category, "project"},
@@ -281,10 +281,10 @@ var _ = Describe("CV Generation Integration Tests", func() {
 	// by company, causing later companies to be completely excluded from the CV.
 	Describe("BUG-003: Multi-Company CV Generation", func() {
 		// Helper to seed events for multiple companies using fixtures
-		seedMultiCompanyEvents := func(companies []string, eventsPerCompany int) map[string][]*career.CareerEvent {
-			result := make(map[string][]*career.CareerEvent)
+		seedMultiCompanyEvents := func(companies []string, eventsPerCompany int) map[string][]*career.Event {
+			result := make(map[string][]*career.Event)
 			for _, company := range companies {
-				events := make([]*career.CareerEvent, eventsPerCompany)
+				events := make([]*career.Event, eventsPerCompany)
 				for i := 0; i < eventsPerCompany; i++ {
 					eventID := fmt.Sprintf("%s-event-%d", company, i)
 					event := fixtures.EventWith(

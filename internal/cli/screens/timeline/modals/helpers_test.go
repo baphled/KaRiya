@@ -51,7 +51,7 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("renders event with all fields", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:         "test-id",
 				Text:       "Test event description",
 				Date:       time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
@@ -75,7 +75,7 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("renders event with minimal fields", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "test-id",
 				Text: "Minimal event",
 				Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
@@ -91,7 +91,7 @@ var _ = Describe("Helpers", func() {
 		})
 
 		It("omits empty company and project", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:      "test-id",
 				Text:    "Event text",
 				Date:    time.Now(),

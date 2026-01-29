@@ -19,7 +19,7 @@ var _ = Describe("Extractor", func() {
 		eventRepo  careerRepo.EventRepository
 		ctx        context.Context
 		testSkills []*career.Skill
-		testEvents []*career.CareerEvent
+		testEvents []*career.Event
 	)
 
 	BeforeEach(func() {
@@ -58,8 +58,8 @@ var _ = Describe("Extractor", func() {
 			},
 		}
 
-		// Create test events (using correct CareerEvent fields)
-		testEvents = []*career.CareerEvent{
+		// Create test events (using correct Event fields)
+		testEvents = []*career.Event{
 			{
 				ID:        "event-1",
 				Text:      "Backend Developer at Company A - Worked with Ruby and PostgreSQL",

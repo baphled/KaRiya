@@ -29,7 +29,7 @@ var _ = Describe("GenerateCV Clipboard Export Error Handling", func() {
 		}
 
 		// Create minimal events for testing (required by NewGenerateCVIntent)
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			{
 				ID:      "event-1",
 				Text:    "Test event for clipboard export tests",

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Burst represents a grouping of related CareerEvents
+// Burst represents a grouping of related CareerEvents.
 type Burst struct {
 	ID          string     `json:"id"`
 	Name        string     `json:"name"`
@@ -18,7 +18,7 @@ type Burst struct {
 	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
-// Validate checks if the Burst meets all defined criteria
+// Validate checks if the Burst meets all defined criteria.
 func (b *Burst) Validate() error {
 	// Validate ID
 	if err := b.validateID(); err != nil {
@@ -43,7 +43,7 @@ func (b *Burst) Validate() error {
 	return nil
 }
 
-// validateID ensures ID is not empty
+// validateID ensures ID is not empty.
 func (b *Burst) validateID() error {
 	if strings.TrimSpace(b.ID) == "" {
 		return errors.New("ID cannot be empty")
@@ -51,7 +51,7 @@ func (b *Burst) validateID() error {
 	return nil
 }
 
-// validateName ensures name is not empty and within length constraints
+// validateName ensures name is not empty and within length constraints.
 func (b *Burst) validateName() error {
 	trimmedName := strings.TrimSpace(b.Name)
 	if trimmedName == "" {
@@ -63,7 +63,7 @@ func (b *Burst) validateName() error {
 	return nil
 }
 
-// validateEventIDs ensures at least 2 event IDs with no duplicates
+// validateEventIDs ensures at least 2 event IDs with no duplicates.
 func (b *Burst) validateEventIDs() error {
 	if len(b.EventIDs) < 2 {
 		return errors.New("burst must contain at least 2 events required for a burst")
@@ -84,10 +84,10 @@ func (b *Burst) validateEventIDs() error {
 	return nil
 }
 
-// validateDescription ensures description is within length constraints (optional field)
+// validateDescription ensures description is within length constraints (optional field).
 func (b *Burst) validateDescription() error {
 	if b.Description == "" {
-		return nil // Description is optional
+		return nil
 	}
 	if len(b.Description) > 1000 {
 		return errors.New("description cannot exceed 1000 characters")

@@ -9,12 +9,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// Extractor handles fact extraction from events and bursts
+// Extractor handles fact extraction from events and bursts.
 type Extractor struct {
 	classifier *Classifier
 }
 
-// NewExtractor creates a new fact extractor
+// NewExtractor creates a new fact extractor.
 func NewExtractor(classifier *Classifier) *Extractor {
 	return &Extractor{
 		classifier: classifier,
@@ -22,7 +22,7 @@ func NewExtractor(classifier *Classifier) *Extractor {
 }
 
 // ExtractFromEvent extracts facts from a single career event.
-func (e *Extractor) ExtractFromEvent(_ context.Context, event *career.CareerEvent) []career.Fact {
+func (e *Extractor) ExtractFromEvent(_ context.Context, event *career.Event) []career.Fact {
 	if event == nil || event.Text == "" {
 		return []career.Fact{}
 	}
@@ -76,8 +76,8 @@ func (e *Extractor) ExtractFromEvent(_ context.Context, event *career.CareerEven
 	return facts
 }
 
-// ExtractFromBurst extracts facts from a burst (multiple related events)
-func (e *Extractor) ExtractFromBurst(ctx context.Context, burst *career.Burst, events []*career.CareerEvent) []career.Fact {
+// ExtractFromBurst extracts facts from a burst (multiple related events).
+func (e *Extractor) ExtractFromBurst(ctx context.Context, burst *career.Burst, events []*career.Event) []career.Fact {
 	if burst == nil || len(events) == 0 {
 		return []career.Fact{}
 	}
@@ -124,8 +124,8 @@ func (e *Extractor) ExtractFromBurst(ctx context.Context, burst *career.Burst, e
 	return facts
 }
 
-// generateFactTextFromEvent creates a fact statement from an event
-func (e *Extractor) generateFactTextFromEvent(event *career.CareerEvent) string {
+// generateFactTextFromEvent creates a fact statement from an event.
+func (e *Extractor) generateFactTextFromEvent(event *career.Event) string {
 	// If event text is already concise and statement-like, use it as-is
 	if len(event.Text) <= 200 {
 		return event.Text
@@ -142,8 +142,8 @@ func (e *Extractor) generateFactTextFromEvent(event *career.CareerEvent) string 
 	return event.Text
 }
 
-// generateFactTextFromBurst creates a fact statement from a burst
-func (e *Extractor) generateFactTextFromBurst(burst *career.Burst, events []*career.CareerEvent) string {
+// generateFactTextFromBurst creates a fact statement from a burst.
+func (e *Extractor) generateFactTextFromBurst(burst *career.Burst, events []*career.Event) string {
 	// Start with burst name/description if available
 	if burst.Name != "" {
 		return burst.Name
@@ -164,8 +164,8 @@ func (e *Extractor) generateFactTextFromBurst(burst *career.Burst, events []*car
 	return fmt.Sprintf("Related achievements (%d events)", len(events))
 }
 
-// inferCompetencies infers competency categories from event text and tags
-func (e *Extractor) inferCompetencies(event *career.CareerEvent) []string {
+// inferCompetencies infers competency categories from event text and tags.
+func (e *Extractor) inferCompetencies(event *career.Event) []string {
 	competencies := make(map[string]bool)
 
 	// Use existing event categories if available
@@ -214,8 +214,8 @@ func (e *Extractor) inferCompetencies(event *career.CareerEvent) []string {
 	return result
 }
 
-// inferBurstCompetencies infers competencies from multiple burst events
-func (e *Extractor) inferBurstCompetencies(events []*career.CareerEvent) []string {
+// inferBurstCompetencies infers competencies from multiple burst events.
+func (e *Extractor) inferBurstCompetencies(events []*career.Event) []string {
 	competencies := make(map[string]bool)
 
 	// Collect competencies from all events
@@ -241,14 +241,14 @@ func (e *Extractor) inferBurstCompetencies(events []*career.CareerEvent) []strin
 }
 
 // extractTagSpecificFacts creates additional facts from event tags.
-func (e *Extractor) extractTagSpecificFacts(_ *career.CareerEvent) []career.Fact {
+func (e *Extractor) extractTagSpecificFacts(_ *career.Event) []career.Fact {
 	// Don't create duplicate facts for every tag, only meaningful ones.
 	// For now, return empty - tag context already captured in main fact.
 	return []career.Fact{}
 }
 
-// aggregateBurstCategories collects unique categories from all burst events
-func (e *Extractor) aggregateBurstCategories(events []*career.CareerEvent) []string {
+// aggregateBurstCategories collects unique categories from all burst events.
+func (e *Extractor) aggregateBurstCategories(events []*career.Event) []string {
 	categories := make(map[string]bool)
 	for _, event := range events {
 		for _, cat := range event.Categories {

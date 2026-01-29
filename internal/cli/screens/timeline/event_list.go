@@ -10,27 +10,30 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// TimelineEventListState identifies the timeline event list view in the
+// state matrix. On this screen the user sees a paginated table of career
+// events with columns for date, truncated event text, company, and
+// project. Arrow keys or j/k navigate the highlighted row, and Ctrl+D/U
+// or PgDn/PgUp page through larger lists. Pressing Enter opens the
+// selected event detail view. Action keys allow adding an event (a),
+// editing the selected event (e), deleting it (d), or opening the filter
+// screen (f). Escape returns to the main menu.
 const TimelineEventListState = "timeline_event_list"
 
-// eventRowFormatter formats a career event for table display
-func eventRowFormatter(event *career.CareerEvent, _ int) []string {
-	// Date formatting
+// eventRowFormatter formats a career event for table display.
+func eventRowFormatter(event *career.Event, _ int) []string {
 	dateStr := event.Date.Format("2006-01-02")
 
-	// Truncate text to 40 chars (reduced to make room for project)
 	text := event.Text
 	if len(text) > 40 {
 		text = text[:40] + "..."
 	}
 
-	// Company (or dash if empty)
 	company := event.Company
 	if company == "" {
 		company = "-"
 	}
 
-	// Project (or dash if empty)
 	project := event.Project
 	if project == "" {
 		project = "-"
@@ -39,7 +42,7 @@ func eventRowFormatter(event *career.CareerEvent, _ int) []string {
 	return []string{dateStr, text, company, project}
 }
 
-// TimelineEventListScreen displays a list of career events in chronological order.
+// EventListScreen displays a list of career events in chronological order.
 //
 // This screen provides:
 // - List navigation with ↑/↓ or j/k (vim-style)
@@ -57,19 +60,19 @@ func eventRowFormatter(event *career.CareerEvent, _ int) []string {
 //	    navResult := result.(*screens.NavigateResult)
 //	    if action, ok := navResult.ResultData.(map[string]interface{}); ok {
 //	        // Handle action (add, edit, delete)
-//	    } else if event, ok := navResult.ResultData.(*career.CareerEvent); ok {
+//	    } else if event, ok := navResult.ResultData.(*career.Event); ok {
 //	        // User selected an event to view details
 //	    }
 //	}
 //
 // Related:
-// - BaseScreen provides the foundation
+// - Screen provides the foundation
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
-type TimelineEventListScreen struct {
-	*base.BaseScreen
-	events        []*career.CareerEvent
-	tableBehavior *behaviors.TableBehavior[*career.CareerEvent]
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
+type EventListScreen struct {
+	*base.Screen
+	events        []*career.Event
+	tableBehavior *behaviors.TableBehavior[*career.Event]
 }
 
 // NewTimelineEventListScreen creates a new timeline event list screen.
@@ -82,8 +85,7 @@ type TimelineEventListScreen struct {
 //
 // Parameters:
 //   - events: List of career events to display (can be empty)
-func NewTimelineEventListScreen(events []*career.CareerEvent) *TimelineEventListScreen {
-	// Create table columns
+func NewTimelineEventListScreen(events []*career.Event) *EventListScreen {
 	columns := []behaviors.ColumnDef{
 		{Title: "Date", Width: 12},
 		{Title: "Event", Width: 40},
@@ -91,17 +93,15 @@ func NewTimelineEventListScreen(events []*career.CareerEvent) *TimelineEventList
 		{Title: "Project", Width: 15},
 	}
 
-	// Create TableBehavior for events list (theme set later via SetTheme)
-	tableBehavior := behaviors.NewTableBehavior[*career.CareerEvent](nil, columns, eventRowFormatter).
+	tableBehavior := behaviors.NewTableBehavior[*career.Event](nil, columns, eventRowFormatter).
 		PageSize(15).
 		PaginationPrefix("Events").
 		EmptyMessage("No events found.")
 
-	// Set items after creation
 	tableBehavior.SetItems(events)
 
-	screen := &TimelineEventListScreen{
-		BaseScreen:    base.NewBaseScreen(),
+	screen := &EventListScreen{
+		Screen:        base.NewBaseScreen(),
 		events:        events,
 		tableBehavior: tableBehavior,
 	}
@@ -110,7 +110,7 @@ func NewTimelineEventListScreen(events []*career.CareerEvent) *TimelineEventList
 }
 
 // Update handles messages and navigation.
-func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		s.SetTerminalInfo(msg.Width, msg.Height)
@@ -119,26 +119,21 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
-			// Cancel and return to main menu
-			// Note: 'q' (quit) is handled by the intent before delegation
 			return nil, &screens.CancelResult{}
 
 		case "up", "k", "down", "j", "ctrl+d", "ctrl+u", "pgup", "pgdown", "home", "end", "g", "G":
-			// Delegate navigation to TableBehavior
 			s.tableBehavior.HandleNavigation(msg.String())
 			return nil, nil
 
 		case "enter":
-			// View event details
 			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
-					ResultData: *selected, // Dereference **T to get *T
+					ResultData: *selected,
 				}
 			}
 			return nil, nil
 
 		case "a":
-			// Add new event
 			return nil, &screens.NavigateResult{
 				ResultData: map[string]interface{}{
 					"action": "add",
@@ -146,31 +141,28 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 			}
 
 		case "e":
-			// Edit selected event
 			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
 					ResultData: map[string]interface{}{
 						"action": "edit",
-						"event":  *selected, // Dereference **T to get *T
+						"event":  *selected,
 					},
 				}
 			}
 			return nil, nil
 
 		case "d":
-			// Delete selected event
 			if selected := s.tableBehavior.GetSelectedItem(); selected != nil {
 				return nil, &screens.NavigateResult{
 					ResultData: map[string]interface{}{
 						"action": "delete",
-						"event":  *selected, // Dereference **T to get *T
+						"event":  *selected,
 					},
 				}
 			}
 			return nil, nil
 
 		case "f":
-			// Open filter screen
 			return nil, &screens.NavigateResult{
 				ResultData: map[string]interface{}{
 					"action": "filter",
@@ -184,16 +176,14 @@ func (s *TimelineEventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenRe
 
 // RenderContent returns just the content (table) without StandardView wrapper.
 // This allows the intent to wrap it with proper breadcrumbs and themed footer.
-func (s *TimelineEventListScreen) RenderContent() string {
-	// TableBehavior handles empty state and pagination internally
+func (s *EventListScreen) RenderContent() string {
 	return s.tableBehavior.Render()
 }
 
 // View renders the event list screen using StandardView with table.
-func (s *TimelineEventListScreen) View() string {
+func (s *EventListScreen) View() string {
 	content := s.RenderContent()
 
-	// Get theme for UIKit primitives (fall back to default if not set).
 	var th themes.Theme
 	if screenTheme := s.Theme(); screenTheme != nil {
 		if t, ok := screenTheme.(themes.Theme); ok {
@@ -204,7 +194,6 @@ func (s *TimelineEventListScreen) View() string {
 		th = themes.NewDefaultTheme()
 	}
 
-	// Build footer using UIKit primitives for consistent styling.
 	footer := primitives.RenderHelpFooter(th,
 		primitives.NavigateBadge(th),
 		primitives.HelpKeyBadge("Ctrl+D/U", "Page", th),
@@ -217,26 +206,24 @@ func (s *TimelineEventListScreen) View() string {
 		primitives.HelpBadge(th),
 	)
 
-	// Use BaseScreen's CreateView helper for StandardView integration.
 	breadcrumbs := []string{"Main Menu", "Timeline"}
 	return s.CreateView(breadcrumbs, content, footer)
 }
 
-// SetTheme applies theme to the table (override BaseScreen).
-func (s *TimelineEventListScreen) SetTheme(theme interface{}) {
-	s.BaseScreen.SetTheme(theme)
-	// Apply themed table styles if theme is available
+// SetTheme applies theme to the table (override Screen).
+func (s *EventListScreen) SetTheme(theme interface{}) {
+	s.Screen.SetTheme(theme)
 	if t, ok := theme.(themes.Theme); ok && t != nil {
 		s.tableBehavior.SetTheme(t)
 	}
 }
 
 // GetEvents returns the list of events.
-func (s *TimelineEventListScreen) GetEvents() []*career.CareerEvent {
+func (s *EventListScreen) GetEvents() []*career.Event {
 	return s.events
 }
 
 // GetSelectedIndex returns the currently selected index.
-func (s *TimelineEventListScreen) GetSelectedIndex() int {
+func (s *EventListScreen) GetSelectedIndex() int {
 	return s.tableBehavior.GetSelectedIndex()
 }

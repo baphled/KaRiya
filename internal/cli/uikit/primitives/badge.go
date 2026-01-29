@@ -93,7 +93,7 @@ func (b *Badge) Render() string {
 	return style.Render(content)
 }
 
-// renderHelpKey renders a two-part help key badge: "[Key] Hint"
+// renderHelpKey renders a two-part help key badge: "[Key] Hint".
 func (b *Badge) renderHelpKey() string {
 	th := b.Theme()
 

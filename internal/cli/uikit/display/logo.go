@@ -23,7 +23,7 @@ import (
 //	rendered := logo.View()
 type Logo struct {
 	animated     bool
-	fadeProgress float64 // 0.0 to 1.0
+	fadeProgress float64
 	width        int
 	tagline      string
 	showTagline  bool
@@ -33,7 +33,7 @@ type Logo struct {
 }
 
 const (
-	// Bold ASCII art logo for KaRiya
+	// Bold ASCII art logo for KaRiya.
 	logoArt = `██╗  ██╗ █████╗ ██████╗ ██╗██╗   ██╗ █████╗ 
 ██║ ██╔╝██╔══██╗██╔══██╗██║╚██╗ ██╔╝██╔══██╗
 █████╔╝ ███████║██████╔╝██║ ╚████╔╝ ███████║
@@ -41,7 +41,7 @@ const (
 ██║  ██╗██║  ██║██║  ██║██║   ██║   ██║  ██║
 ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝   ╚═╝   ╚═╝  ╚═╝`
 
-	// Animation settings
+	// Animation settings.
 	frameInterval = 30 * time.Millisecond
 
 	// LogoArtHeight is the number of lines in the ASCII logo art.
@@ -125,7 +125,7 @@ func (l *Logo) Init() tea.Cmd {
 func (l *Logo) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if _, ok := msg.(TickMsg); ok {
 		if l.animated && l.fadeProgress < 1.0 {
-			l.fadeProgress += 0.1 // 10 frames to reach 1.0
+			l.fadeProgress += 0.1
 			if l.fadeProgress < 1.0 {
 				return l, l.tick() //nolint:gocritic // evalOrder false positive - tick() doesn't modify l
 			}
@@ -220,11 +220,11 @@ func (l *Logo) GetHeight() int {
 	height := LogoArtHeight
 
 	if l.showTagline {
-		height += 2 // Empty line + tagline
+		height += 2
 	}
 
 	if l.showVersion {
-		height += 1 // Version line
+		height += 1
 	}
 
 	return height

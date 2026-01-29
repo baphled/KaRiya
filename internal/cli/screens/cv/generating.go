@@ -14,9 +14,9 @@ import (
 // CVGeneratingState represents the internal state constant for this screen.
 const CVGeneratingState = "generating"
 
-// CVGeneratingScreen shows progress while generating a CV.
-type CVGeneratingScreen struct {
-	*base.BaseScreen
+// GeneratingScreen shows progress while generating a CV.
+type GeneratingScreen struct {
+	*base.Screen
 
 	profile  string
 	audience string
@@ -24,25 +24,25 @@ type CVGeneratingScreen struct {
 }
 
 // NewCVGeneratingScreen creates a new CV generating screen.
-func NewCVGeneratingScreen(profile, audience string) *CVGeneratingScreen {
-	return &CVGeneratingScreen{
-		BaseScreen: base.NewBaseScreen(),
-		profile:    profile,
-		audience:   audience,
-		spinner:    0,
+func NewCVGeneratingScreen(profile, audience string) *GeneratingScreen {
+	return &GeneratingScreen{
+		Screen:   base.NewBaseScreen(),
+		profile:  profile,
+		audience: audience,
+		spinner:  0,
 	}
 }
 
 // Init initializes the screen.
-func (s *CVGeneratingScreen) Init() tea.Cmd {
+func (s *GeneratingScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
-func (s *CVGeneratingScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *GeneratingScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		s.BaseScreen.HandleWindowSizeMsg(msg)
+		s.Screen.HandleWindowSizeMsg(msg)
 		return nil, nil
 
 	case tea.KeyMsg:
@@ -56,7 +56,7 @@ func (s *CVGeneratingScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult)
 }
 
 // View renders the screen.
-func (s *CVGeneratingScreen) View() string {
+func (s *GeneratingScreen) View() string {
 	var b strings.Builder
 
 	spinnerChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}

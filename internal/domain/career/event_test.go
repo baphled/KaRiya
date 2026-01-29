@@ -7,10 +7,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("CareerEvent", func() {
+var _ = Describe("Event", func() {
 	Context("Validation", func() {
 		It("should pass for a valid event", func() {
-			event := &CareerEvent{
+			event := &Event{
 				Text: "Developed a high-performance backend service",
 				Date: time.Now().AddDate(0, 0, -10),
 				Tags: []string{"technical", "project"},
@@ -19,7 +19,7 @@ var _ = Describe("CareerEvent", func() {
 		})
 
 		It("should fail for empty text", func() {
-			event := &CareerEvent{
+			event := &Event{
 				Text: "   ",
 				Date: time.Now(),
 			}
@@ -28,7 +28,7 @@ var _ = Describe("CareerEvent", func() {
 
 		It("should fail for overly long text", func() {
 			longText := string(make([]byte, 2001))
-			event := &CareerEvent{
+			event := &Event{
 				Text: longText,
 				Date: time.Now(),
 			}
@@ -36,7 +36,7 @@ var _ = Describe("CareerEvent", func() {
 		})
 
 		It("should fail for future dates", func() {
-			event := &CareerEvent{
+			event := &Event{
 				Text: "Future project",
 				Date: time.Now().AddDate(0, 0, 1),
 			}
@@ -44,7 +44,7 @@ var _ = Describe("CareerEvent", func() {
 		})
 
 		It("should fail for invalid tags", func() {
-			event := &CareerEvent{
+			event := &Event{
 				Text: "Some event",
 				Date: time.Now(),
 				Tags: []string{"invalid_tag"},

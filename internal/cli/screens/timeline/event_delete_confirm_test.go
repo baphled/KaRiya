@@ -13,11 +13,11 @@ import (
 var _ = Describe("EventDeleteConfirmScreen", func() {
 	var (
 		screen *timeline.EventDeleteConfirmScreen
-		event  *career.CareerEvent
+		event  *career.Event
 	)
 
 	BeforeEach(func() {
-		event = &career.CareerEvent{
+		event = &career.Event{
 			ID:        "test-event-id",
 			Text:      "Test event for deletion",
 			Date:      time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),
@@ -48,7 +48,7 @@ var _ = Describe("EventDeleteConfirmScreen", func() {
 		})
 
 		It("truncates long event text in confirmation message", func() {
-			longTextEvent := &career.CareerEvent{
+			longTextEvent := &career.Event{
 				ID:   "long-text-id",
 				Text: "This is a very long event text that exceeds sixty characters and should be truncated in the confirmation message for better display",
 				Date: time.Now(),
@@ -63,7 +63,7 @@ var _ = Describe("EventDeleteConfirmScreen", func() {
 		})
 
 		It("handles short event text without truncation", func() {
-			shortTextEvent := &career.CareerEvent{
+			shortTextEvent := &career.Event{
 				ID:   "short-text-id",
 				Text: "Short text",
 				Date: time.Now(),
@@ -76,7 +76,7 @@ var _ = Describe("EventDeleteConfirmScreen", func() {
 		})
 
 		It("handles exactly 60 character text", func() {
-			exactTextEvent := &career.CareerEvent{
+			exactTextEvent := &career.Event{
 				ID:   "exact-text-id",
 				Text: "This is exactly sixty characters long for testing purposes!!", // 60 chars
 				Date: time.Now(),
@@ -103,7 +103,7 @@ var _ = Describe("EventDeleteConfirmScreen", func() {
 		})
 
 		It("returns event with all fields preserved", func() {
-			fullEvent := &career.CareerEvent{
+			fullEvent := &career.Event{
 				ID:         "full-event",
 				Text:       "Full event",
 				Date:       time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),

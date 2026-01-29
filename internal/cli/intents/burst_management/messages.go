@@ -17,7 +17,7 @@ type BurstSelectedMsg struct {
 
 // BurstEventsLoadedMsg is sent when events for a burst are loaded.
 type BurstEventsLoadedMsg struct {
-	Events []*career.CareerEvent
+	Events []*career.Event
 	Error  error
 }
 

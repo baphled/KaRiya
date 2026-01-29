@@ -27,10 +27,10 @@ import (
 // - MultiSelect for tags and categories
 type MetadataEditorModelNew struct {
 	*BaseStandardModel
-	event            *career.CareerEvent
-	originalEvent    *career.CareerEvent // For reverting changes
+	event            *career.Event
+	originalEvent    *career.Event
 	service          *careerservice.Service
-	cliService       *cliservice.CLIEventService // For persisting metadata changes
+	cliService       *cliservice.CLIEventService
 	ctx              context.Context
 	form             *huh.Form
 	formData         *forms.MetadataFormData
@@ -47,7 +47,7 @@ type MetadataEditorModelNew struct {
 
 // NewMetadataEditorModelNew creates a new metadata editor model using huh forms.
 func NewMetadataEditorModelNew(
-	event *career.CareerEvent, service *careerservice.Service,
+	event *career.Event, service *careerservice.Service,
 	cliSvc *cliservice.CLIEventService, ctx context.Context,
 ) *MetadataEditorModelNew {
 	// Create a copy of the event for reverting
@@ -68,7 +68,7 @@ func NewMetadataEditorModelNew(
 	// Load all available skills from repository
 	allSkills, err := service.GetSkillRepository().List(ctx, nil)
 	if err != nil {
-		allSkills = []*career.Skill{} // If error, use empty list
+		allSkills = []*career.Skill{}
 	}
 
 	skillSelector := selectors.NewSkillSelector(allSkills)
@@ -192,7 +192,7 @@ func (m *MetadataEditorModelNew) handleFormCompletion() (tea.Model, tea.Cmd) {
 }
 
 // GetEvent returns the edited event
-func (m *MetadataEditorModelNew) GetEvent() *career.CareerEvent {
+func (m *MetadataEditorModelNew) GetEvent() *career.Event {
 	return m.event
 }
 

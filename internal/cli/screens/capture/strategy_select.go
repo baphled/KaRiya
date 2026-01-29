@@ -13,7 +13,7 @@ import (
 // - Quick: Minimal fields (event text only), date defaults to today
 // - Manual: Full form with optional fields (date, company, project, tags)
 //
-// The screen uses BaseSelectScreen[T] for list navigation and selection.
+// The screen uses SelectScreen[T] for list navigation and selection.
 //
 // Keyboard Shortcuts:
 // - ↑/↓/j/k: Navigate between strategies
@@ -22,10 +22,10 @@ import (
 //
 // Related:
 // - internal/cli/intents/capture_event.go (CaptureStrategy constants)
-// - internal/cli/screens/base/select_screen.go (BaseSelectScreen[T])
-// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration)
+// - internal/cli/screens/base/select_screen.go (SelectScreen[T])
+// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type StrategySelectScreen struct {
-	*base.BaseSelectScreen[types.CaptureStrategy]
+	*base.SelectScreen[types.CaptureStrategy]
 }
 
 // NewStrategySelectScreen creates a new StrategySelectScreen.
@@ -67,7 +67,7 @@ func NewStrategySelectScreen(breadcrumbs []string) *StrategySelectScreen {
 	)
 
 	return &StrategySelectScreen{
-		BaseSelectScreen: baseScreen,
+		SelectScreen: baseScreen,
 	}
 }
 
@@ -78,6 +78,6 @@ func NewStrategySelectScreen(breadcrumbs []string) *StrategySelectScreen {
 //
 // Returns the screen for method chaining.
 func (s *StrategySelectScreen) WithInitialSelection(index int) *StrategySelectScreen {
-	s.BaseSelectScreen.WithInitialSelection(index)
+	s.SelectScreen.WithInitialSelection(index)
 	return s
 }

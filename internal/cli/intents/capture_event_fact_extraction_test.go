@@ -15,7 +15,7 @@ var _ = Describe("CaptureEvent Fact Extraction", func() {
 		ctx           context.Context
 		classifier    *burstfact.Classifier
 		extractor     *burstfact.Extractor
-		sampleEvent   *career.CareerEvent
+		sampleEvent   *career.Event
 		extractedFact career.Fact
 	)
 
@@ -25,7 +25,7 @@ var _ = Describe("CaptureEvent Fact Extraction", func() {
 		extractor = burstfact.NewExtractor(classifier)
 
 		// Create a sample event similar to what user would enter
-		sampleEvent = &career.CareerEvent{
+		sampleEvent = &career.Event{
 			ID:      "test-event-123",
 			Text:    "Led migration of legacy monolith to microservices architecture, reducing deployment time by 60%",
 			Date:    time.Now(),
@@ -161,7 +161,7 @@ var _ = Describe("CaptureEvent Fact Extraction", func() {
 			// - Fact.Text is what gets displayed to the user
 
 			eventText := "Optimized database queries reducing load time from 3s to 200ms"
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "evt-123",
 				Text: eventText,
 			}

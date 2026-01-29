@@ -13,14 +13,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("TimelineEventListScreen", func() {
+var _ = Describe("EventListScreen", func() {
 	var (
-		screen *timeline.TimelineEventListScreen
-		events []*career.CareerEvent
+		screen *timeline.EventListScreen
+		events []*career.Event
 	)
 
 	BeforeEach(func() {
-		events = []*career.CareerEvent{
+		events = []*career.Event{
 			{
 				ID:      "event-1",
 				Date:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -54,7 +54,7 @@ var _ = Describe("TimelineEventListScreen", func() {
 		})
 
 		It("should handle empty event list", func() {
-			screen = timeline.NewTimelineEventListScreen([]*career.CareerEvent{})
+			screen = timeline.NewTimelineEventListScreen([]*career.Event{})
 			Expect(screen).NotTo(BeNil())
 			Expect(screen.GetEvents()).To(BeEmpty())
 		})
@@ -237,7 +237,7 @@ var _ = Describe("TimelineEventListScreen", func() {
 
 		Context("with empty event list", func() {
 			BeforeEach(func() {
-				screen = timeline.NewTimelineEventListScreen([]*career.CareerEvent{})
+				screen = timeline.NewTimelineEventListScreen([]*career.Event{})
 				screen.SetTerminalInfo(120, 40)
 			})
 
@@ -351,7 +351,7 @@ var _ = Describe("TimelineEventListScreen", func() {
 
 		Context("when list is empty", func() {
 			BeforeEach(func() {
-				screen = timeline.NewTimelineEventListScreen([]*career.CareerEvent{})
+				screen = timeline.NewTimelineEventListScreen([]*career.Event{})
 				screen.SetTerminalInfo(120, 40)
 			})
 

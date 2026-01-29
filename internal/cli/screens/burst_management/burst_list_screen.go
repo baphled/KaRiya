@@ -13,18 +13,23 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// State constant for state matrix tracking (REQUIRED).
+// BurstListState identifies the burst list screen in the state matrix.
+// On this screen the user sees a paginated table of career bursts with
+// columns for name, description preview, confirmation status, event count,
+// and creation date. Arrow keys or j/k navigate the highlighted row.
+// Pressing Enter opens the selected burst's detail view. Action keys
+// allow adding a burst (a), editing the selected burst (e), deleting
+// it (d), or triggering burst suggestions (s). Escape returns to the
+// parent menu.
 const BurstListState = "burst_list"
 
 // burstRowFormatter formats a burst for table display.
 func burstRowFormatter(burst *career.Burst, _ int) []string {
-	// Column 1: Name (truncate to 27 chars).
 	nameStr := burst.Name
 	if len(nameStr) > 27 {
 		nameStr = nameStr[:27] + "..."
 	}
 
-	// Column 2: Description (truncated preview, max 32 chars).
 	descStr := strings.TrimSpace(burst.Description)
 	descStr = strings.ReplaceAll(descStr, "\n", " ")
 	descStr = strings.ReplaceAll(descStr, "\r", " ")
@@ -34,16 +39,13 @@ func burstRowFormatter(burst *career.Burst, _ int) []string {
 		descStr = descStr[:32] + "..."
 	}
 
-	// Column 3: Confirmed Status.
 	confirmedStr := "✗ No"
 	if burst.Confirmed {
 		confirmedStr = "✓ Yes"
 	}
 
-	// Column 4: Event Count.
 	eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
 
-	// Column 5: Created Date (YYYY-MM-DD).
 	createdStr := burst.CreatedAt.Format("2006-01-02")
 
 	return []string{nameStr, descStr, confirmedStr, eventCount, createdStr}
@@ -73,11 +75,11 @@ func burstRowFormatter(burst *career.Burst, _ int) []string {
 //	}
 //
 // Related:
-// - BaseScreen provides the foundation
+// - Screen provides the foundation
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
 type BurstListScreen struct {
-	*base.BaseScreen
+	*base.Screen
 	bursts        []*career.Burst
 	tableBehavior *behaviors.TableBehavior[*career.Burst]
 }
@@ -93,7 +95,6 @@ type BurstListScreen struct {
 // Parameters:
 //   - bursts: List of career bursts to display (can be empty)
 func NewBurstListScreen(bursts []*career.Burst) *BurstListScreen {
-	// Create table columns.
 	columns := []behaviors.ColumnDef{
 		{Title: "Name", Width: 30},
 		{Title: "Description", Width: 35},
@@ -102,17 +103,15 @@ func NewBurstListScreen(bursts []*career.Burst) *BurstListScreen {
 		{Title: "Created", Width: 12},
 	}
 
-	// Create TableBehavior for bursts list (theme set later via SetTheme).
 	tableBehavior := behaviors.NewTableBehavior[*career.Burst](nil, columns, burstRowFormatter).
 		PageSize(15).
 		PaginationPrefix("Bursts").
 		EmptyMessage("No bursts found. Press 'a' to add or 's' to suggest.")
 
-	// Set items after creation.
 	tableBehavior.SetItems(bursts)
 
 	screen := &BurstListScreen{
-		BaseScreen:    base.NewBaseScreen(),
+		Screen:        base.NewBaseScreen(),
 		bursts:        bursts,
 		tableBehavior: tableBehavior,
 	}
@@ -136,17 +135,14 @@ func (s *BurstListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 // handleKeyMsg processes all keyboard input for the list screen.
 func (s *BurstListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
-	// Handle special keys by type (use tea.Key* constants).
 	if result := s.handleSpecialKey(msg); result != nil {
 		return nil, result
 	}
 
-	// Handle navigation keys.
 	if s.handleNavigationKey(msg) {
 		return nil, nil
 	}
 
-	// Handle action keys.
 	return s.handleActionKey(msg)
 }
 
@@ -166,7 +162,6 @@ func (s *BurstListScreen) handleSpecialKey(msg tea.KeyMsg) screens.ScreenResult 
 // handleNavigationKey handles arrow keys and vim-style navigation.
 // Returns true if a navigation key was handled.
 func (s *BurstListScreen) handleNavigationKey(msg tea.KeyMsg) bool {
-	// Handle special navigation keys by type.
 	switch msg.Type {
 	case tea.KeyUp:
 		s.tableBehavior.HandleNavigation("up")
@@ -194,7 +189,6 @@ func (s *BurstListScreen) handleNavigationKey(msg tea.KeyMsg) bool {
 		return true
 	}
 
-	// Handle vim-style navigation keys (rune-based).
 	switch msg.String() {
 	case "k":
 		s.tableBehavior.HandleNavigation("up")
@@ -247,7 +241,6 @@ func (s *BurstListScreen) handleActionKey(msg tea.KeyMsg) (tea.Cmd, screens.Scre
 // RenderContent returns just the content (table) without StandardView wrapper.
 // This allows the intent to wrap it with proper breadcrumbs and themed footer.
 func (s *BurstListScreen) RenderContent() string {
-	// TableBehavior handles empty state and pagination internally.
 	return s.tableBehavior.Render()
 }
 
@@ -255,7 +248,6 @@ func (s *BurstListScreen) RenderContent() string {
 func (s *BurstListScreen) View() string {
 	content := s.RenderContent()
 
-	// Get theme for UIKit primitives (fall back to default if not set).
 	var th themes.Theme
 	if screenTheme := s.Theme(); screenTheme != nil {
 		if t, ok := screenTheme.(themes.Theme); ok {
@@ -266,8 +258,6 @@ func (s *BurstListScreen) View() string {
 		th = themes.NewDefaultTheme()
 	}
 
-	// Build footer using UIKit primitives for consistent styling.
-	// Only show badges for keys that are actually handled by this screen.
 	footer := primitives.RenderHelpFooter(th,
 		primitives.NavigateBadge(th),
 		primitives.PageBadge(th),
@@ -279,15 +269,13 @@ func (s *BurstListScreen) View() string {
 		primitives.BackBadge(th),
 	)
 
-	// Use BaseScreen's CreateView helper for StandardView integration.
 	breadcrumbs := []string{"Main Menu", "Burst Management"}
 	return s.CreateView(breadcrumbs, content, footer)
 }
 
-// SetTheme applies theme to the table (override BaseScreen).
+// SetTheme applies theme to the table (override Screen).
 func (s *BurstListScreen) SetTheme(theme interface{}) {
-	s.BaseScreen.SetTheme(theme)
-	// Apply themed table styles if theme is available.
+	s.Screen.SetTheme(theme)
 	if t, ok := theme.(themes.Theme); ok && t != nil {
 		s.tableBehavior.SetTheme(t)
 	}

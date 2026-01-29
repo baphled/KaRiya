@@ -43,7 +43,7 @@ const (
 //	    return modal.View()
 //	}
 //
-// Dismisses on: Enter, Space, Esc
+// Dismisses on: Enter, Space, Esc.
 type InfoModal struct {
 	title   string
 	message string
@@ -206,7 +206,7 @@ func (m *InfoModal) View() string {
 		Width(modalWidth).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(borderColor).
-		Background(theme.BackgroundColor()). // Solid background for overlay
+		Background(theme.BackgroundColor()).
 		Padding(1, 2).
 		Align(lipgloss.Center)
 

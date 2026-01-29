@@ -12,41 +12,41 @@ import (
 	"github.com/google/uuid"
 )
 
-// SkillsFormatConfig configures how the skills section is formatted
+// SkillsFormatConfig configures how the skills section is formatted.
 type SkillsFormatConfig struct {
-	Format               string   // "flat" or "grouped"
-	Limit                int      // max skills per section/group (0 = no limit)
-	SelectedTechnologies []string // skill IDs to prioritize
+	Format               string
+	Limit                int
+	SelectedTechnologies []string
 }
 
-// skillInfo holds skill data for formatting
+// skillInfo holds skill data for formatting.
 type skillInfo struct {
 	ID       string
 	Name     string
 	Category string
 }
 
-// SectionBuilder organizes CV bullets into logical sections
+// SectionBuilder organizes CV bullets into logical sections.
 type SectionBuilder interface {
 	// BuildSections organizes bullets into CV sections
 	// skillsConfig: optional configuration for skills section formatting (Phase 11 - Task 40)
 	BuildSections(
 		ctx context.Context,
 		bullets []*career.CVBullet,
-		events []*career.CareerEvent,
+		events []*career.Event,
 		facts []*career.Fact,
 		targetRole string,
 		skillsConfig *SkillsFormatConfig,
 	) ([]*career.CVSection, error)
 }
 
-// DefaultSectionBuilder is the default implementation of SectionBuilder
+// DefaultSectionBuilder is the default implementation of SectionBuilder.
 type DefaultSectionBuilder struct {
 	skillRepo careerrepo.SkillRepository
 	logger    *logger.Logger
 }
 
-// NewSectionBuilder creates a new SectionBuilder instance
+// NewSectionBuilder creates a new SectionBuilder instance.
 func NewSectionBuilder(skillRepo careerrepo.SkillRepository, log *logger.Logger) *DefaultSectionBuilder {
 	return &DefaultSectionBuilder{
 		skillRepo: skillRepo,
@@ -54,8 +54,8 @@ func NewSectionBuilder(skillRepo careerrepo.SkillRepository, log *logger.Logger)
 	}
 }
 
-// BuildSections organizes bullets into CV sections
-func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.CareerEvent, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
+// BuildSections organizes bullets into CV sections.
+func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*career.CVBullet, events []*career.Event, facts []*career.Fact, targetRole string, skillsConfig *SkillsFormatConfig) ([]*career.CVSection, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -99,9 +99,9 @@ func (sb *DefaultSectionBuilder) BuildSections(ctx context.Context, bullets []*c
 	return sections, nil
 }
 
-// buildExperienceSection creates the experience section
+// buildExperienceSection creates the experience section.
 func (sb *DefaultSectionBuilder) buildExperienceSection(
-	bullets []*career.CVBullet, events []*career.CareerEvent,
+	bullets []*career.CVBullet, events []*career.Event,
 	order int, targetRole string,
 ) *career.CVSection {
 	if len(bullets) == 0 {
@@ -151,9 +151,9 @@ func (sb *DefaultSectionBuilder) buildExperienceSection(
 	}
 }
 
-// buildProjectsSection creates the projects section
+// buildProjectsSection creates the projects section.
 func (sb *DefaultSectionBuilder) buildProjectsSection(
-	bullets []*career.CVBullet, events []*career.CareerEvent,
+	bullets []*career.CVBullet, events []*career.Event,
 	order int, targetRole string,
 ) *career.CVSection {
 	if len(bullets) == 0 {
@@ -199,9 +199,9 @@ func (sb *DefaultSectionBuilder) buildProjectsSection(
 	}
 }
 
-// buildSkillsSection creates the technical skills section from event skills (Phase 11 - Task 40)
-// Looks up skill names from IDs, supports flat/grouped formatting with limits
-func (sb *DefaultSectionBuilder) buildSkillsSection(ctx context.Context, events []*career.CareerEvent, config *SkillsFormatConfig, order int) *career.CVSection {
+// buildSkillsSection creates the technical skills section from event skills (Phase 11 - Task 40).
+// Looks up skill names from IDs, supports flat/grouped formatting with limits.
+func (sb *DefaultSectionBuilder) buildSkillsSection(ctx context.Context, events []*career.Event, config *SkillsFormatConfig, order int) *career.CVSection {
 	// Collect unique skill IDs from all events
 	skillIDSet := make(map[string]bool)
 	for _, event := range events {
@@ -295,7 +295,7 @@ func (sb *DefaultSectionBuilder) buildSkillsSection(ctx context.Context, events 
 	}
 }
 
-// buildFlatSkills creates a flat list of skills (one bullet per skill)
+// buildFlatSkills creates a flat list of skills (one bullet per skill).
 func (sb *DefaultSectionBuilder) buildFlatSkills(skills []skillInfo) []*career.SectionContentGroup {
 	bullets := make([]*career.CVBullet, 0, len(skills))
 	for _, skill := range skills {
@@ -313,7 +313,7 @@ func (sb *DefaultSectionBuilder) buildFlatSkills(skills []skillInfo) []*career.S
 	}
 }
 
-// buildGroupedSkills creates grouped skills by category (comma-separated per group)
+// buildGroupedSkills creates grouped skills by category (comma-separated per group).
 func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPerGroup int) []*career.SectionContentGroup {
 	// Group skills by category
 	categoryMap := make(map[string][]string)
@@ -361,7 +361,7 @@ func (sb *DefaultSectionBuilder) buildGroupedSkills(skills []skillInfo, limitPer
 	return groups
 }
 
-// buildSummarySection creates a brief professional summary
+// buildSummarySection creates a brief professional summary.
 func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet, order int) *career.CVSection {
 	if len(bullets) == 0 {
 		return nil
@@ -391,22 +391,22 @@ func (sb *DefaultSectionBuilder) buildSummarySection(bullets []*career.CVBullet,
 		Title:       "Professional Summary",
 		Order:       order,
 		Summary:     content.String(),
-		Content:     nil, // No content groups for summary
+		Content:     nil,
 	}
 }
 
 // groupBulletsByCompany groups bullets by company from source events.
 // It detects separate tenures when events at OTHER companies exist between
 // two periods at the same company (BUG-009 fix).
-func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBullet, events []*career.CareerEvent) []*bulletGroup {
+func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBullet, events []*career.Event) []*bulletGroup {
 	// Create map of event ID to event.
-	eventMap := make(map[string]*career.CareerEvent)
+	eventMap := make(map[string]*career.Event)
 	for _, event := range events {
 		eventMap[event.ID] = event
 	}
 
 	// Sort ALL events chronologically (oldest first) for tenure detection.
-	sortedEvents := make([]*career.CareerEvent, len(events))
+	sortedEvents := make([]*career.Event, len(events))
 	copy(sortedEvents, events)
 	sort.Slice(sortedEvents, func(i, j int) bool {
 		return sortedEvents[i].Date.Before(sortedEvents[j].Date)
@@ -522,7 +522,7 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 func (sb *DefaultSectionBuilder) detectBulletTenures(
 	companyBullets []bulletInfo,
 	company string,
-	allEventsSorted []*career.CareerEvent,
+	allEventsSorted []*career.Event,
 ) [][]bulletInfo {
 	if len(companyBullets) <= 1 {
 		return [][]bulletInfo{companyBullets}
@@ -559,10 +559,10 @@ func (sb *DefaultSectionBuilder) detectBulletTenures(
 	return tenures
 }
 
-// groupBulletsByProject groups bullets by project from source events (where Company is empty)
-func (sb *DefaultSectionBuilder) groupBulletsByProject(bullets []*career.CVBullet, events []*career.CareerEvent) []*bulletGroup {
+// groupBulletsByProject groups bullets by project from source events (where Company is empty).
+func (sb *DefaultSectionBuilder) groupBulletsByProject(bullets []*career.CVBullet, events []*career.Event) []*bulletGroup {
 	// Create map of event ID to event
-	eventMap := make(map[string]*career.CareerEvent)
+	eventMap := make(map[string]*career.Event)
 	for _, event := range events {
 		eventMap[event.ID] = event
 	}
@@ -631,7 +631,7 @@ func (sb *DefaultSectionBuilder) groupBulletsByProject(bullets []*career.CVBulle
 	return groupSlice
 }
 
-// extractKeyTerms extracts key terms from bullets for summary
+// extractKeyTerms extracts key terms from bullets for summary.
 func (sb *DefaultSectionBuilder) extractKeyTerms(bullets []*career.CVBullet) []string {
 	terms := make(map[string]bool)
 
@@ -669,7 +669,7 @@ func (sb *DefaultSectionBuilder) extractKeyTerms(bullets []*career.CVBullet) []s
 	return result
 }
 
-// shouldIncludeSummary determines if a summary section should be included
+// shouldIncludeSummary determines if a summary section should be included.
 func (sb *DefaultSectionBuilder) shouldIncludeSummary(targetRole string) bool {
 	// Include summary for higher-level roles
 	switch strings.ToLower(targetRole) {
@@ -680,11 +680,11 @@ func (sb *DefaultSectionBuilder) shouldIncludeSummary(targetRole string) bool {
 	}
 }
 
-// bulletGroup represents a group of bullets under a company/project
+// bulletGroup represents a group of bullets under a company/project.
 type bulletGroup struct {
-	header    string    // Company or Project name
-	startDate time.Time // Earliest event date in group
-	endDate   time.Time // Latest event date in group
+	header    string
+	startDate time.Time
+	endDate   time.Time
 	bullets   []*career.CVBullet
 }
 
@@ -696,7 +696,7 @@ type bulletInfo struct {
 	latestDate   time.Time
 }
 
-// formatMonthYear formats a time.Time as "Jan 2006"
+// formatMonthYear formats a time.Time as "Jan 2006".
 func formatMonthYear(t time.Time) string {
 	if t.IsZero() {
 		return ""
@@ -704,7 +704,7 @@ func formatMonthYear(t time.Time) string {
 	return t.Format("Jan 2006")
 }
 
-// isCommonWord checks if a word is a common word to skip
+// isCommonWord checks if a word is a common word to skip.
 func isCommonWord(word string) bool {
 	commonWords := map[string]bool{
 		"and":     true,
@@ -789,23 +789,23 @@ func isCommonWord(word string) bool {
 	return commonWords[word]
 }
 
-// getBulletsPerCompanyForRole returns the maximum bullets per company for a role
+// getBulletsPerCompanyForRole returns the maximum bullets per company for a role.
 // Based on documented role-specific caps:
 // - Principal: 3-4 bullets max
 // - Staff: 4-5 bullets max
 // - EM: 3-4 bullets max
-// - Senior IC: 4-5 bullets max
+// - Senior IC: 4-5 bullets max.
 func (sb *DefaultSectionBuilder) getBulletsPerCompanyForRole(targetRole string) int {
 	switch strings.ToLower(targetRole) {
 	case "principal":
-		return 4 // 3-4 per docs, using upper bound
+		return 4
 	case "staff":
-		return 5 // 4-5 per docs, using upper bound
+		return 5
 	case "em":
-		return 4 // 3-4 per docs, using upper bound
+		return 4
 	case "senior_ic":
-		return 5 // 4-5 per docs, using upper bound
+		return 5
 	default:
-		return 4 // Conservative default
+		return 4
 	}
 }

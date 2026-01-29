@@ -19,6 +19,9 @@ type staticViewModel struct {
 	content string
 }
 
+// View returns the pre-rendered string content stored in this model. It satisfies the
+// overlay.Viewable interface so that static markup (such as a modal or background view)
+// can be composed via bubbletea-overlay without requiring a full Bubble Tea model.
 func (m staticViewModel) View() string { return m.content }
 
 // RenderOverlayModal renders a modal view over a background using bubbletea-overlay.
@@ -28,12 +31,12 @@ func RenderOverlayModal(modalView, backgroundView string) string {
 	bgModel := staticViewModel{content: backgroundView}
 
 	overlayModel := overlay.New(
-		modalContent,   // Foreground: the modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset (avoid footer overlap)
+		modalContent,
+		bgModel,
+		overlay.Center,
+		overlay.Center,
+		0,
+		-2,
 	)
 
 	return overlayModel.View()
@@ -41,7 +44,7 @@ func RenderOverlayModal(modalView, backgroundView string) string {
 
 // RenderEventDetailContent renders career event details as formatted content.
 // This is used by the DetailModal for event viewing.
-func RenderEventDetailContent(event *career.CareerEvent, theme themes.Theme) string {
+func RenderEventDetailContent(event *career.Event, theme themes.Theme) string {
 	if event == nil {
 		return "No event selected."
 	}
@@ -49,7 +52,6 @@ func RenderEventDetailContent(event *career.CareerEvent, theme themes.Theme) str
 	var content strings.Builder
 	content.WriteString("\nEvent Details\n\n")
 
-	// Event header.
 	content.WriteString(fmt.Sprintf("Date: %s\n", event.Date.Format("2006-01-02")))
 
 	if event.Company != "" {
@@ -61,7 +63,6 @@ func RenderEventDetailContent(event *career.CareerEvent, theme themes.Theme) str
 
 	content.WriteString(fmt.Sprintf("\nText:\n%s\n", event.Text))
 
-	// Tags and categories.
 	if len(event.Tags) > 0 {
 		content.WriteString(fmt.Sprintf("\nTags: %s\n", strings.Join(event.Tags, ", ")))
 	}
@@ -69,7 +70,6 @@ func RenderEventDetailContent(event *career.CareerEvent, theme themes.Theme) str
 		content.WriteString(fmt.Sprintf("Categories: %s\n", strings.Join(event.Categories, ", ")))
 	}
 
-	// Skills (just show count, as we only have IDs).
 	if len(event.Skills) > 0 {
 		content.WriteString(fmt.Sprintf("Skills: %d associated\n", len(event.Skills)))
 	}
@@ -86,7 +86,6 @@ func RenderSkillsContent(skills []*career.Skill, theme themes.Theme) string {
 
 	var content strings.Builder
 
-	// Separator using UIKit Muted text for consistent theming.
 	separator := primitives.Muted(" | ", theme).Render()
 
 	for i, skill := range skills {
@@ -94,11 +93,9 @@ func RenderSkillsContent(skills []*career.Skill, theme themes.Theme) string {
 			continue
 		}
 
-		// Skill name with bullet (bold primary text).
 		content.WriteString(primitives.NewText(fmt.Sprintf("- %s", skill.Name), theme).Bold().Render())
 		content.WriteString("\n")
 
-		// Details line: category | level | years.
 		var details []string
 
 		if skill.Category != "" {
@@ -123,7 +120,6 @@ func RenderSkillsContent(skills []*career.Skill, theme themes.Theme) string {
 			content.WriteString("\n")
 		}
 
-		// Add spacing between skills (except after last).
 		if i < len(skills)-1 {
 			content.WriteString("\n")
 		}

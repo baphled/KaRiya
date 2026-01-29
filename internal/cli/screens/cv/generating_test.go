@@ -9,8 +9,8 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/cv"
 )
 
-var _ = Describe("CVGeneratingScreen", func() {
-	var screen *cv.CVGeneratingScreen
+var _ = Describe("GeneratingScreen", func() {
+	var screen *cv.GeneratingScreen
 
 	BeforeEach(func() {
 		screen = cv.NewCVGeneratingScreen("Senior Engineer", "Hiring Manager")

@@ -15,33 +15,33 @@ import (
 // CVReviewState represents the internal state constant for this screen.
 const CVReviewState = "review"
 
-// CVReviewScreen displays a summary review of the generated CV.
+// ReviewScreen displays a summary review of the generated CV.
 // This screen shows metadata, statistics, and section overview before
 // allowing the user to view the full CV preview with scrolling.
-type CVReviewScreen struct {
-	*base.BaseScreen
+type ReviewScreen struct {
+	*base.Screen
 
 	cv *career.CVView
 }
 
 // NewCVReviewScreen creates a new CV review screen.
-func NewCVReviewScreen(cv *career.CVView) *CVReviewScreen {
-	return &CVReviewScreen{
-		BaseScreen: base.NewBaseScreen(),
-		cv:         cv,
+func NewCVReviewScreen(cv *career.CVView) *ReviewScreen {
+	return &ReviewScreen{
+		Screen: base.NewBaseScreen(),
+		cv:     cv,
 	}
 }
 
 // Init initializes the screen.
-func (s *CVReviewScreen) Init() tea.Cmd {
+func (s *ReviewScreen) Init() tea.Cmd {
 	return nil
 }
 
 // Update handles messages.
-func (s *CVReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *ReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		s.BaseScreen.HandleWindowSizeMsg(msg)
+		s.Screen.HandleWindowSizeMsg(msg)
 		return nil, nil
 
 	case tea.KeyMsg:
@@ -74,7 +74,7 @@ func (s *CVReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 }
 
 // View renders the review screen with CV metadata and section summary.
-func (s *CVReviewScreen) View() string {
+func (s *ReviewScreen) View() string {
 	var b strings.Builder
 
 	b.WriteString("📋 CV Review\n")
@@ -159,6 +159,6 @@ func (s *CVReviewScreen) View() string {
 }
 
 // GetCV returns the CV data.
-func (s *CVReviewScreen) GetCV() *career.CVView {
+func (s *ReviewScreen) GetCV() *career.CVView {
 	return s.cv
 }

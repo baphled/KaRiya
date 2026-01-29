@@ -26,7 +26,7 @@ var _ = Describe("GenerateCV - Escape Key Behavior", func() {
 		}
 
 		// Create minimal test event (required by validation)
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			{
 				ID:        "event1",
 				Text:      "Test event",

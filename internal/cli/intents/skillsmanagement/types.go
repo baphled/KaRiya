@@ -33,7 +33,7 @@ type Intent struct {
 
 	// Detail view data.
 	eventCounts  map[string]int
-	skillEvents  []*domain.CareerEvent
+	skillEvents  []*domain.Event
 	eventsLoaded bool
 
 	// Modals (new architecture with bubbletea-overlay).

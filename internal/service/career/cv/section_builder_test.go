@@ -26,7 +26,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 	})
 
 	It("should return empty sections for no bullets", func() {
-		sections, err := builder.BuildSections(ctx, []*career.CVBullet{}, []*career.CareerEvent{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+		sections, err := builder.BuildSections(ctx, []*career.CVBullet{}, []*career.Event{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(len(sections)).To(Equal(0))
 	})
@@ -43,7 +43,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		event := fixtures.EventWith("event1", "Implemented authentication system", "TechCorp", "")
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -77,7 +77,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 		event := fixtures.Event("event1")
 		event.Skills = []string{"Go", "PostgreSQL"}
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -119,7 +119,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -142,7 +142,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		event := fixtures.EventWith("event1", "Led architecture implementation", "TechCorp", "")
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -173,7 +173,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -196,7 +196,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		event := fixtures.EventWith("event1", "Implemented feature", "TechCorp", "")
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -231,7 +231,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 
 		event1 := fixtures.EventWith("event1", "Feature A", "CompanyA", "")
 		event2 := fixtures.EventWith("event2", "Feature B", "CompanyB", "")
-		events := []*career.CareerEvent{event1, event2}
+		events := []*career.Event{event1, event2}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -273,7 +273,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		cancelCtx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		_, err := builder.BuildSections(cancelCtx, bullets, []*career.CareerEvent{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
+		_, err := builder.BuildSections(cancelCtx, bullets, []*career.Event{}, []*career.Fact{}, "principal", &SkillsFormatConfig{Format: "flat", Limit: 0, SelectedTechnologies: nil})
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -288,7 +288,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		event := fixtures.EventWith("event1", "Feature", "", "MyProject") // Has project instead of company
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -327,7 +327,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 		}
 
 		event := fixtures.EventWith("event1", "Feature A", "TechCorp", "")
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "principal", nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -357,7 +357,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
 			eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{eventA1, eventB, eventA2}
+			events := []*career.Event{eventA1, eventB, eventA2}
 
 			// Bullets for each event
 			bullets := []*career.CVBullet{
@@ -404,7 +404,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
 			eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{eventA1, eventF, eventA2}
+			events := []*career.Event{eventA1, eventF, eventA2}
 
 			bullets := []*career.CVBullet{
 				{ID: "b1", Text: "Work 1", SourceEventIDs: []string{"a1"}, Rank: 0.8},
@@ -437,7 +437,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			eventNew := fixtures.EventWith("new", "New work", "NewCorp", "")
 			eventNew.Date = time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{eventOld, eventNew}
+			events := []*career.Event{eventOld, eventNew}
 
 			bullets := []*career.CVBullet{
 				{ID: "b1", Text: "Old achievement", SourceEventIDs: []string{"old"}, Rank: 0.8},
@@ -482,7 +482,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			wafEvent := fixtures.EventWith("waf1", "Old project", "We Are Friday", "")
 			wafEvent.Date = time.Date(2012, 11, 15, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{beisEvent1, beisEvent2, wafEvent}
+			events := []*career.Event{beisEvent1, beisEvent2, wafEvent}
 
 			// Bullet references all three events (cross-company SourceEventIDs from BUG-013).
 			bullet := &career.CVBullet{
@@ -534,7 +534,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			eventC := fixtures.EventWith("c1", "Work C", "CompanyC", "")
 			eventC.Date = time.Date(2018, 5, 1, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{eventA1, eventA2, eventA3, eventB, eventC}
+			events := []*career.Event{eventA1, eventA2, eventA3, eventB, eventC}
 
 			bullet := &career.CVBullet{
 				ID:             "bullet-multi",
@@ -575,7 +575,7 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			event2 := fixtures.EventWith("e2", "Work 2", "SingleCo", "")
 			event2.Date = time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{event1, event2}
+			events := []*career.Event{event1, event2}
 
 			bullet := &career.CVBullet{
 				ID:             "bullet-single",

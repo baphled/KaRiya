@@ -39,7 +39,7 @@ var _ = Describe("Result", func() {
 		})
 
 		It("should store viewed events", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				fixtures.Event("event-1"),
 				fixtures.Event("event-2"),
 				fixtures.Event("event-3"),
@@ -97,7 +97,7 @@ var _ = Describe("Result", func() {
 	Describe("Empty Slices", func() {
 		It("should handle empty viewed events", func() {
 			result := &browsetimeline.Result{
-				ViewedEvents: []*career.CareerEvent{},
+				ViewedEvents: []*career.Event{},
 			}
 			Expect(result.ViewedEvents).NotTo(BeNil())
 			Expect(result.ViewedEvents).To(BeEmpty())
@@ -121,7 +121,7 @@ var _ = Describe("Result", func() {
 				SortBy:     "date",
 				SortOrder:  "desc",
 			}
-			viewedEvents := []*career.CareerEvent{
+			viewedEvents := []*career.Event{
 				fixtures.Event("viewed-1"),
 				fixtures.Event("viewed-2"),
 			}
@@ -162,7 +162,7 @@ var _ = Describe("Result", func() {
 			// ViewedEvents supports tracking which events were viewed during session.
 			event := fixtures.Event("event-1")
 			result := &browsetimeline.Result{
-				ViewedEvents: []*career.CareerEvent{
+				ViewedEvents: []*career.Event{
 					event,
 					fixtures.Event("event-2"),
 					event, // Can have duplicates (viewed same event twice).

@@ -319,7 +319,7 @@ func (i *Intent) openDeleteModal(skill *domain.Skill) tea.Cmd {
 }
 
 // openSkillEventsModal opens the skill events modal for the selected skill.
-func (i *Intent) openSkillEventsModal(events []*domain.CareerEvent) tea.Cmd {
+func (i *Intent) openSkillEventsModal(events []*domain.Event) tea.Cmd {
 	if i.selectedSkill == nil {
 		return nil
 	}
@@ -339,7 +339,7 @@ func (i *Intent) openSkillEventsModal(events []*domain.CareerEvent) tea.Cmd {
 }
 
 // openEventDetailModal opens the event detail modal for a selected event.
-func (i *Intent) openEventDetailModal(event *domain.CareerEvent) tea.Cmd {
+func (i *Intent) openEventDetailModal(event *domain.Event) tea.Cmd {
 	if event == nil {
 		return nil
 	}
@@ -347,7 +347,7 @@ func (i *Intent) openEventDetailModal(event *domain.CareerEvent) tea.Cmd {
 	width, height := i.getTerminalDimensions()
 
 	i.eventDetailModal = components.NewViewEventDetailModal(event, i.Theme()).
-		WithShowSkillsOption(false) // Hide "s: Skills" - we're already in skills context.
+		WithShowSkillsOption(false)
 	i.eventDetailModal.SetDimensions(width, height)
 	i.eventDetailModal.Show()
 

@@ -34,7 +34,7 @@ func (ts *TraceabilityService) GetBulletSources(
 	ctx context.Context,
 	bulletID string,
 	bullet *career.CVBullet,
-) ([]*career.CareerEvent, []*career.Fact, error) {
+) ([]*career.Event, []*career.Fact, error) {
 	if bullet == nil {
 		return nil, nil, fmt.Errorf("bullet cannot be nil")
 	}
@@ -44,7 +44,7 @@ func (ts *TraceabilityService) GetBulletSources(
 		bulletID, len(bullet.SourceEventIDs), len(bullet.SourceFactIDs),
 	)
 
-	sourceEvents := make([]*career.CareerEvent, 0, len(bullet.SourceEventIDs))
+	sourceEvents := make([]*career.Event, 0, len(bullet.SourceEventIDs))
 	for _, eventID := range bullet.SourceEventIDs {
 		event, err := ts.eventRepo.GetByID(ctx, eventID)
 		if err != nil {

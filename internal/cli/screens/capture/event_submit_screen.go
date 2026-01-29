@@ -12,7 +12,7 @@ import (
 
 // SubmitCompleteMsg indicates submission completed successfully.
 type SubmitCompleteMsg struct {
-	Event  *career.CareerEvent
+	Event  *career.Event
 	Bursts []*career.Burst
 	Facts  []*career.Fact
 }
@@ -56,12 +56,12 @@ type SubmitErrorMsg struct {
 //
 // Related:
 // - internal/cli/intents/capture_event.go (performSubmit)
-// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration)
+// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type EventSubmitScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	// event being submitted
-	event *career.CareerEvent
+	event *career.Event
 
 	// bursts to submit
 	bursts []*career.Burst
@@ -96,12 +96,12 @@ type EventSubmitScreen struct {
 // Returns a EventSubmitScreen that will submit on Init().
 func NewEventSubmitScreen(
 	breadcrumbs []string,
-	event *career.CareerEvent,
+	event *career.Event,
 	bursts []*career.Burst,
 	facts []*career.Fact,
 ) *EventSubmitScreen {
 	return &EventSubmitScreen{
-		BaseScreen:  base.NewBaseScreen(),
+		Screen:      base.NewBaseScreen(),
 		event:       event,
 		bursts:      bursts,
 		facts:       facts,
@@ -116,7 +116,7 @@ func NewEventSubmitScreen(
 // This is used for testing error handling.
 func NewEventSubmitScreenWithError(
 	breadcrumbs []string,
-	event *career.CareerEvent,
+	event *career.Event,
 	bursts []*career.Burst,
 	facts []*career.Fact,
 	err error,
@@ -160,10 +160,10 @@ func (s *EventSubmitScreen) performSubmit() tea.Cmd {
 // - SubmitCompleteMsg → returns SubmitResult
 // - SubmitErrorMsg → returns ErrorResult
 // - WindowSizeMsg → updates dimensions
-// - Esc → ignored during submission (prevents accidental cancel)
+// - Esc → ignored during submission (prevents accidental cancel).
 func (s *EventSubmitScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via BaseScreen
-	if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+	// Handle window size via Screen
+	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 

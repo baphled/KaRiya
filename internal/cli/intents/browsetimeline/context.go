@@ -9,7 +9,7 @@ import (
 // It contains only what's necessary to start the intent.
 type IntentContext struct {
 	// Events is the list of events to browse.
-	Events []*career.CareerEvent
+	Events []*career.Event
 
 	// InitialFilters is the initial filter state (may be empty).
 	InitialFilters *Filters
@@ -24,7 +24,7 @@ type IntentContext struct {
 // Validate ensures the context is complete.
 func (c *IntentContext) Validate() error {
 	if c.Events == nil {
-		c.Events = make([]*career.CareerEvent, 0)
+		c.Events = make([]*career.Event, 0)
 	}
 	if c.InitialFilters == nil {
 		c.InitialFilters = &Filters{

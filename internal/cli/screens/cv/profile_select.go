@@ -15,13 +15,13 @@ import (
 // CVProfileSelectState represents the internal state constant for this screen.
 const CVProfileSelectState = "profile_select"
 
-// CVProfileSelectScreen allows users to select a CV profile.
-type CVProfileSelectScreen struct {
-	*base.BaseSelectScreen[*types.CVProfile]
+// ProfileSelectScreen allows users to select a CV profile.
+type ProfileSelectScreen struct {
+	*base.SelectScreen[*types.CVProfile]
 }
 
 // NewCVProfileSelectScreen creates a new CV profile selection screen.
-func NewCVProfileSelectScreen(profiles []*types.CVProfile) *CVProfileSelectScreen {
+func NewCVProfileSelectScreen(profiles []*types.CVProfile) *ProfileSelectScreen {
 	// Create item renderer for CV profiles
 	renderer := func(item *types.CVProfile) string {
 		// Build profile display
@@ -47,22 +47,22 @@ func NewCVProfileSelectScreen(profiles []*types.CVProfile) *CVProfileSelectScree
 		title,
 	)
 
-	return &CVProfileSelectScreen{
-		BaseSelectScreen: baseScreen,
+	return &ProfileSelectScreen{
+		SelectScreen: baseScreen,
 	}
 }
 
 // Init initializes the screen.
-func (s *CVProfileSelectScreen) Init() tea.Cmd {
-	return nil // BaseSelectScreen doesn't need initialization
+func (s *ProfileSelectScreen) Init() tea.Cmd {
+	return nil
 }
 
 // Update handles messages.
-func (s *CVProfileSelectScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	return s.BaseSelectScreen.Update(msg)
+func (s *ProfileSelectScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+	return s.SelectScreen.Update(msg)
 }
 
 // View renders the screen.
-func (s *CVProfileSelectScreen) View() string {
-	return s.BaseSelectScreen.View()
+func (s *ProfileSelectScreen) View() string {
+	return s.SelectScreen.View()
 }

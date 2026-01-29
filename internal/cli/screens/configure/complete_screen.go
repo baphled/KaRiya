@@ -12,24 +12,28 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// CompleteState identifies the configuration completion screen in the state
+// matrix. On this screen the user sees a bold success title, the name of
+// the configuration domain that was modified, and the count of settings
+// saved. If no changes were made the screen shows a muted notice instead.
+// Pressing Enter, Escape, or q dismisses the screen and returns to the
+// configuration menu.
 const CompleteState = "complete"
 
 // CompleteScreen displays a success message after configuration is saved.
 //
-// Embeds BaseScreen for common functionality (terminal dimensions, theme, CreateView).
+// Embeds Screen for common functionality (terminal dimensions, theme, CreateView).
 //
 // Related:
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
 // - docs/UIKIT_GUIDE.md (Text primitives)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
 type CompleteScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	domain      configtypes.ConfigurationDomain
 	changeCount int
 
-	// Theme for rendering (nil-safe via getTheme())
 	theme themes.Theme
 }
 
@@ -40,7 +44,7 @@ type CompleteScreen struct {
 //   - changeCount: Number of settings that were changed
 func NewCompleteScreen(domain configtypes.ConfigurationDomain, changeCount int) *CompleteScreen {
 	return &CompleteScreen{
-		BaseScreen:  base.NewBaseScreen(),
+		Screen:      base.NewBaseScreen(),
 		domain:      domain,
 		changeCount: changeCount,
 		theme:       themes.NewDefaultTheme(),
@@ -54,19 +58,16 @@ func (s *CompleteScreen) Init() tea.Cmd {
 
 // Update handles messages.
 func (s *CompleteScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window resize via BaseScreen
-	if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
 		case "enter", "esc":
-			// Both Enter and Esc dismiss the success screen
 			return nil, &screens.SubmitResult{FormData: true}
 
 		case "q":
-			// Quick exit to menu (same as success dismiss)
 			return nil, &screens.SubmitResult{FormData: true}
 		}
 	}
@@ -74,24 +75,20 @@ func (s *CompleteScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return nil, nil
 }
 
-// View renders the screen using UIKit layout and BaseScreen.CreateView().
+// View renders the screen using UIKit layout and Screen.CreateView().
 func (s *CompleteScreen) View() string {
 	theme := s.getTheme()
 	domainLabel := formatDomainLabel(s.domain)
 
-	// Build content using UIKit primitives
 	var content strings.Builder
 
-	// Success icon and title
 	content.WriteString(primitives.SuccessText("Configuration Updated!", theme).Bold().Render())
 	content.WriteString("\n\n")
 
-	// Domain info
 	domainText := fmt.Sprintf("Domain: %s", domainLabel)
 	content.WriteString(primitives.Body(domainText, theme).Render())
 	content.WriteString("\n")
 
-	// Change count
 	if s.changeCount > 0 {
 		changesText := fmt.Sprintf("%d setting(s) saved successfully.", s.changeCount)
 		content.WriteString(primitives.Body(changesText, theme).Render())
@@ -100,12 +97,10 @@ func (s *CompleteScreen) View() string {
 	}
 	content.WriteString("\n")
 
-	// Help footer with UIKit badges (ALWAYS use predefined badge constructors)
 	helpFooter := primitives.RenderHelpFooter(theme,
 		primitives.ContinueBadge(theme),
 	)
 
-	// Use BaseScreen.CreateView() for StandardView integration
 	breadcrumbs := []string{"Main Menu", "Configure System", domainLabel, "Complete"}
 	return s.CreateView(breadcrumbs, content.String(), helpFooter)
 }

@@ -50,7 +50,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("BurstEventsLoadedMsg", func() {
 		It("should store loaded events", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "event-1", Text: "Event 1"},
 				{ID: "event-2", Text: "Event 2"},
 			}

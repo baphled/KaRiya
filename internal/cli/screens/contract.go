@@ -60,11 +60,11 @@ type Screen interface {
 
 	// SetTheme updates the Screen's theme for styling.
 	// Screens should store this and pass it to StandardView for consistent theming.
-	SetTheme(theme interface{}) // NOTE: Using interface{} until theme system type is finalized.
+	SetTheme(theme interface{})
 
 	// SetLogo updates the Screen's logo and spacing.
 	// Screens should store this and pass it to StandardView for consistent branding.
-	SetLogo(logo interface{}, spacing int) // interface{} allows LogoModel implementations (display.Logo, etc.)
+	SetLogo(logo interface{}, spacing int)
 }
 
 // ScreenResultType indicates the type of result a Screen is returning.
@@ -136,14 +136,23 @@ type NavigateResult struct {
 	Meta       map[string]interface{}
 }
 
+// Type returns ResultNavigate, identifying this result as a forward
+// navigation signal that carries a destination or selected item.
 func (r *NavigateResult) Type() ScreenResultType {
 	return ResultNavigate
 }
 
+// Data returns the navigation payload stored in ResultData. The caller
+// should type-assert the returned interface{} to the expected domain
+// type. Returns nil when no payload was set.
 func (r *NavigateResult) Data() interface{} {
 	return r.ResultData
 }
 
+// Metadata returns the key-value metadata map attached to this result.
+// The map is lazily initialised on first access, so the returned value
+// is never nil. Intents use metadata to pass auxiliary context between
+// screens without altering the primary data payload.
 func (r *NavigateResult) Metadata() map[string]interface{} {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})
@@ -151,6 +160,9 @@ func (r *NavigateResult) Metadata() map[string]interface{} {
 	return r.Meta
 }
 
+// WithMetadata stores a key-value pair in the result metadata and returns
+// the result itself for method chaining. The metadata map is lazily
+// initialised on first call.
 func (r *NavigateResult) WithMetadata(key string, value interface{}) ScreenResult {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})
@@ -171,14 +183,22 @@ type CancelResult struct {
 	Meta map[string]interface{}
 }
 
+// Type returns ResultCancel, identifying this result as a backward
+// navigation or abort signal that carries no primary payload.
 func (r *CancelResult) Type() ScreenResultType {
 	return ResultCancel
 }
 
+// Data always returns nil because cancellation carries no payload.
+// The caller can safely ignore the return value.
 func (r *CancelResult) Data() interface{} {
 	return nil
 }
 
+// Metadata returns the key-value metadata map attached to this result.
+// The map is lazily initialised on first access, so the returned value
+// is never nil. Intents use metadata to pass auxiliary context between
+// screens without altering the primary data payload.
 func (r *CancelResult) Metadata() map[string]interface{} {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})
@@ -186,6 +206,9 @@ func (r *CancelResult) Metadata() map[string]interface{} {
 	return r.Meta
 }
 
+// WithMetadata stores a key-value pair in the result metadata and returns
+// the result itself for method chaining. The metadata map is lazily
+// initialised on first call.
 func (r *CancelResult) WithMetadata(key string, value interface{}) ScreenResult {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})
@@ -209,14 +232,23 @@ type SubmitResult struct {
 	Meta     map[string]interface{}
 }
 
+// Type returns ResultSubmit, identifying this result as a form
+// submission signal that carries validated user input.
 func (r *SubmitResult) Type() ScreenResultType {
 	return ResultSubmit
 }
 
+// Data returns FormData, the submitted form values. The caller should
+// type-assert the returned interface{} to the expected form data struct.
+// Returns nil when no form data was attached.
 func (r *SubmitResult) Data() interface{} {
 	return r.FormData
 }
 
+// Metadata returns the key-value metadata map attached to this result.
+// The map is lazily initialised on first access, so the returned value
+// is never nil. Intents use metadata to pass auxiliary context between
+// screens without altering the primary data payload.
 func (r *SubmitResult) Metadata() map[string]interface{} {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})
@@ -224,6 +256,9 @@ func (r *SubmitResult) Metadata() map[string]interface{} {
 	return r.Meta
 }
 
+// WithMetadata stores a key-value pair in the result metadata and returns
+// the result itself for method chaining. The metadata map is lazily
+// initialised on first call.
 func (r *SubmitResult) WithMetadata(key string, value interface{}) ScreenResult {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})
@@ -244,17 +279,22 @@ func (r *SubmitResult) WithMetadata(key string, value interface{}) ScreenResult 
 // The Intent receives this result and can:
 // - Display the error in a modal
 // - Transition to an error state
-// - Log the error and retry
+// - Log the error and retry.
 type ErrorResult struct {
 	Err     error
 	Message string
 	Meta    map[string]interface{}
 }
 
+// Type returns ResultError, identifying this result as a failure
+// signal that carries diagnostic information for the intent.
 func (r *ErrorResult) Type() ScreenResultType {
 	return ResultError
 }
 
+// Data returns a map with "error" and "message" keys. The "error" value
+// holds the underlying error instance and "message" holds the
+// user-facing description string. Returns a non-nil map.
 func (r *ErrorResult) Data() interface{} {
 	return map[string]interface{}{
 		"error":   r.Err,
@@ -262,6 +302,10 @@ func (r *ErrorResult) Data() interface{} {
 	}
 }
 
+// Metadata returns the key-value metadata map attached to this result.
+// The map is lazily initialised on first access, so the returned value
+// is never nil. Intents use metadata to pass auxiliary context between
+// screens without altering the primary data payload.
 func (r *ErrorResult) Metadata() map[string]interface{} {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})
@@ -269,6 +313,9 @@ func (r *ErrorResult) Metadata() map[string]interface{} {
 	return r.Meta
 }
 
+// WithMetadata stores a key-value pair in the result metadata and returns
+// the result itself for method chaining. The metadata map is lazily
+// initialised on first call.
 func (r *ErrorResult) WithMetadata(key string, value interface{}) ScreenResult {
 	if r.Meta == nil {
 		r.Meta = make(map[string]interface{})

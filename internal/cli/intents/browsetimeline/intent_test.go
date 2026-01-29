@@ -16,11 +16,11 @@ var _ = Describe("Intent", func() {
 	var (
 		intent *browsetimeline.Intent
 		ctx    *browsetimeline.IntentContext
-		events []*career.CareerEvent
+		events []*career.Event
 	)
 
 	BeforeEach(func() {
-		events = []*career.CareerEvent{
+		events = []*career.Event{
 			fixtures.EventWith("event-1", "Backend Developer at TechCorp", "TechCorp", "Platform"),
 			fixtures.EventWith("event-2", "DevOps Engineer at CloudInc", "CloudInc", "Infrastructure"),
 		}
@@ -46,7 +46,7 @@ var _ = Describe("Intent", func() {
 		Context("with empty events", func() {
 			It("should create an intent with empty event list", func() {
 				emptyCtx := &browsetimeline.IntentContext{
-					Events: []*career.CareerEvent{},
+					Events: []*career.Event{},
 				}
 				intent, err := browsetimeline.NewIntent(emptyCtx)
 				Expect(err).NotTo(HaveOccurred())
@@ -124,7 +124,7 @@ var _ = Describe("Intent", func() {
 		Context("with empty events", func() {
 			BeforeEach(func() {
 				emptyCtx := &browsetimeline.IntentContext{
-					Events: []*career.CareerEvent{},
+					Events: []*career.Event{},
 				}
 				var err error
 				intent, err = browsetimeline.NewIntent(emptyCtx)

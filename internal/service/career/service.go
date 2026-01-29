@@ -14,21 +14,21 @@ import (
 	burst_fact "github.com/baphled/kariya/internal/service/career/burstfact"
 )
 
-// EventCaptureMode defines the different ways events can be captured
+// EventCaptureMode defines the different ways events can be captured.
 type EventCaptureMode string
 
 const (
-	// TimelineJournaling is for logging events in real-time
+	// TimelineJournaling is for logging events in real-time.
 	TimelineJournaling EventCaptureMode = "timeline"
 
-	// CVBackfill is for importing events from existing CVs
+	// CVBackfill is for importing events from existing CVs.
 	CVBackfill EventCaptureMode = "cv_backfill"
 
-	// ManualEntry is for manually adding individual events
+	// ManualEntry is for manually adding individual events.
 	ManualEntry EventCaptureMode = "manual"
 )
 
-// Service provides business logic for career event management
+// Service provides business logic for career event management.
 type Service struct {
 	repo      repo.EventRepository
 	factRepo  repo.FactRepository
@@ -37,7 +37,7 @@ type Service struct {
 	logger    *logger.Logger
 }
 
-// NewService creates a new career event service
+// NewService creates a new career event service.
 func NewService(repository repo.EventRepository) *Service {
 	return &Service{
 		repo:   repository,
@@ -45,23 +45,23 @@ func NewService(repository repo.EventRepository) *Service {
 	}
 }
 
-// SetFactRepository sets the fact repository (optional, for fact extraction features)
+// SetFactRepository sets the fact repository (optional, for fact extraction features).
 func (s *Service) SetFactRepository(factRepo repo.FactRepository) {
 	s.factRepo = factRepo
 }
 
-// SetBurstRepository sets the burst repository (optional, for burst detection features)
+// SetBurstRepository sets the burst repository (optional, for burst detection features).
 func (s *Service) SetBurstRepository(burstRepo repo.BurstRepository) {
 	s.burstRepo = burstRepo
 }
 
-// SetSkillRepository sets the skill repository (optional, for user-defined skills features)
+// SetSkillRepository sets the skill repository (optional, for user-defined skills features).
 func (s *Service) SetSkillRepository(skillRepo repo.SkillRepository) {
 	s.skillRepo = skillRepo
 }
 
-// CaptureEvent adds a new career event with specified capture mode
-func (s *Service) CaptureEvent(ctx context.Context, event *domain.CareerEvent, mode EventCaptureMode) error {
+// CaptureEvent adds a new career event with specified capture mode.
+func (s *Service) CaptureEvent(ctx context.Context, event *domain.Event, mode EventCaptureMode) error {
 	// Validate the event
 	if err := event.Validate(); err != nil {
 		s.logger.
@@ -150,8 +150,8 @@ func (s *Service) CaptureEvent(ctx context.Context, event *domain.CareerEvent, m
 	return nil
 }
 
-// UpdateEvent modifies an existing career event
-func (s *Service) UpdateEvent(ctx context.Context, event *domain.CareerEvent) error {
+// UpdateEvent modifies an existing career event.
+func (s *Service) UpdateEvent(ctx context.Context, event *domain.Event) error {
 	// Validate the updated event
 	if err := event.Validate(); err != nil {
 		s.logger.
@@ -193,7 +193,7 @@ func (s *Service) UpdateEvent(ctx context.Context, event *domain.CareerEvent) er
 	return updateErr
 }
 
-// DeleteEvent removes a career event
+// DeleteEvent removes a career event.
 func (s *Service) DeleteEvent(ctx context.Context, eventID string) error {
 	deleteErr := s.repo.Delete(ctx, eventID)
 	if deleteErr != nil {
@@ -207,8 +207,8 @@ func (s *Service) DeleteEvent(ctx context.Context, eventID string) error {
 	return deleteErr
 }
 
-// ListEvents retrieves career events with optional filtering
-func (s *Service) ListEvents(ctx context.Context, filters repo.EventListFilters) ([]*domain.CareerEvent, error) {
+// ListEvents retrieves career events with optional filtering.
+func (s *Service) ListEvents(ctx context.Context, filters repo.EventListFilters) ([]*domain.Event, error) {
 	events, err := s.repo.List(ctx, filters)
 	if err != nil {
 		s.logger.
@@ -221,7 +221,7 @@ func (s *Service) ListEvents(ctx context.Context, filters repo.EventListFilters)
 	return events, err
 }
 
-// CountEvents returns the total number of events matching filters
+// CountEvents returns the total number of events matching filters.
 func (s *Service) CountEvents(ctx context.Context, filters repo.EventListFilters) (int, error) {
 	count, err := s.repo.Count(ctx, filters)
 	if err != nil {
@@ -235,8 +235,8 @@ func (s *Service) CountEvents(ctx context.Context, filters repo.EventListFilters
 	return count, err
 }
 
-// GetEventByID retrieves a specific event
-func (s *Service) GetEventByID(ctx context.Context, eventID string) (*domain.CareerEvent, error) {
+// GetEventByID retrieves a specific event.
+func (s *Service) GetEventByID(ctx context.Context, eventID string) (*domain.Event, error) {
 	event, err := s.repo.GetByID(ctx, eventID)
 	if err != nil {
 		s.logger.
@@ -249,18 +249,18 @@ func (s *Service) GetEventByID(ctx context.Context, eventID string) (*domain.Car
 	return event, err
 }
 
-// SuggestBursts detects and suggests bursts for provided event IDs
+// SuggestBursts detects and suggests bursts for provided event IDs.
 func (s *Service) SuggestBursts(ctx context.Context, eventIDs []string) ([]burst_fact.BurstSuggestion, error) {
 	opts := &burst_fact.DetectionOptions{
 		MinConfidence:       0.6,
 		TemporalWindow:      6 * 30 * 24 * time.Hour,
 		MinEventCount:       2,
-		MaxSuggestionsCount: 0, // No limit - return all suggestions.
+		MaxSuggestionsCount: 0,
 	}
 	return s.SuggestBurstsWithOptions(ctx, eventIDs, opts)
 }
 
-// SuggestBurstsWithOptions detects bursts with custom detection options
+// SuggestBurstsWithOptions detects bursts with custom detection options.
 func (s *Service) SuggestBurstsWithOptions(
 	ctx context.Context,
 	eventIDs []string,
@@ -271,7 +271,7 @@ func (s *Service) SuggestBurstsWithOptions(
 	}
 
 	// Retrieve events from repository
-	var events []domain.CareerEvent
+	var events []domain.Event
 	for _, id := range eventIDs {
 		event, err := s.repo.GetByID(ctx, id)
 		if err != nil {
@@ -373,7 +373,7 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 	return nil
 }
 
-// DeleteBurst removes a burst from the repository
+// DeleteBurst removes a burst from the repository.
 func (s *Service) DeleteBurst(ctx context.Context, burstID string) error {
 	if s.burstRepo == nil {
 		// Burst repository is optional - return sentinel error without logging
@@ -413,7 +413,7 @@ func (s *Service) RejectBurstSuggestion(_ context.Context, eventIDs []string) er
 	return nil
 }
 
-// SaveBurstSuggestions converts burst suggestions to actual bursts and saves them
+// SaveBurstSuggestions converts burst suggestions to actual bursts and saves them.
 func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_fact.BurstSuggestion) ([]*domain.Burst, error) {
 	if s.burstRepo == nil {
 		s.logger.Debug("No burst repository configured - suggestions not saved")
@@ -455,8 +455,8 @@ func (s *Service) SaveBurstSuggestions(ctx context.Context, suggestions []burst_
 	return savedBursts, nil
 }
 
-// ExtractFactsFromEvent extracts facts from a single career event
-func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.CareerEvent) ([]domain.Fact, error) {
+// ExtractFactsFromEvent extracts facts from a single career event.
+func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.Event) ([]domain.Fact, error) {
 	if event == nil {
 		s.logger.Warn("Cannot extract facts from nil event")
 		return nil, fmt.Errorf("event cannot be nil")
@@ -490,7 +490,7 @@ func (s *Service) ExtractFactsFromEvent(ctx context.Context, event *domain.Caree
 	return facts, nil
 }
 
-// ExtractFactsFromBurst extracts facts from a burst (multiple related events)
+// ExtractFactsFromBurst extracts facts from a burst (multiple related events).
 func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst) ([]domain.Fact, error) {
 	if burst == nil {
 		s.logger.Warn("Cannot extract facts from nil burst")
@@ -508,7 +508,7 @@ func (s *Service) ExtractFactsFromBurst(ctx context.Context, burst *domain.Burst
 	}
 
 	// Retrieve all events in burst
-	var events []*domain.CareerEvent
+	var events []*domain.Event
 	for _, eventID := range burst.EventIDs {
 		event, err := s.repo.GetByID(ctx, eventID)
 		if err != nil {
@@ -588,7 +588,7 @@ func (s *Service) ValidateFact(_ context.Context, fact *domain.Fact) error {
 	return nil
 }
 
-// GetFactsBySourceEventID retrieves all facts extracted from a specific event
+// GetFactsBySourceEventID retrieves all facts extracted from a specific event.
 func (s *Service) GetFactsBySourceEventID(ctx context.Context, eventID string) ([]*domain.Fact, error) {
 	if s.factRepo == nil {
 		s.logger.Debug("Fact repository not configured")
@@ -621,7 +621,7 @@ func (s *Service) GetFactsBySourceEventID(ctx context.Context, eventID string) (
 	return facts, nil
 }
 
-// GetFactsBySourceBurstID retrieves all facts extracted from a specific burst
+// GetFactsBySourceBurstID retrieves all facts extracted from a specific burst.
 func (s *Service) GetFactsBySourceBurstID(ctx context.Context, burstID string) ([]*domain.Fact, error) {
 	if s.factRepo == nil {
 		s.logger.Debug("Fact repository not configured")
@@ -654,7 +654,7 @@ func (s *Service) GetFactsBySourceBurstID(ctx context.Context, burstID string) (
 	return facts, nil
 }
 
-// SaveFact persists a fact to the repository
+// SaveFact persists a fact to the repository.
 func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 	if s.factRepo == nil {
 		// Fact repository is optional - return sentinel error without logging
@@ -726,7 +726,7 @@ func (s *Service) SaveFact(ctx context.Context, fact *domain.Fact) error {
 	return nil
 }
 
-// DeleteFact removes a fact from the repository
+// DeleteFact removes a fact from the repository.
 func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 	if s.factRepo == nil {
 		// Fact repository is optional - return sentinel error without logging
@@ -757,22 +757,22 @@ func (s *Service) DeleteFact(ctx context.Context, factID string) error {
 	return nil
 }
 
-// GetBurstRepository returns the burst repository
+// GetBurstRepository returns the burst repository.
 func (s *Service) GetBurstRepository() repo.BurstRepository {
 	return s.burstRepo
 }
 
-// GetFactRepository returns the fact repository
+// GetFactRepository returns the fact repository.
 func (s *Service) GetFactRepository() repo.FactRepository {
 	return s.factRepo
 }
 
-// GetEventRepository returns the event repository
+// GetEventRepository returns the event repository.
 func (s *Service) GetEventRepository() repo.EventRepository {
 	return s.repo
 }
 
-// GetSkillRepository returns the skill repository
+// GetSkillRepository returns the skill repository.
 func (s *Service) GetSkillRepository() repo.SkillRepository {
 	return s.skillRepo
 }

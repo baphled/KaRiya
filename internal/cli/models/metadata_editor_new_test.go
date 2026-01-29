@@ -21,7 +21,7 @@ import (
 var _ = Describe("MetadataEditorModelNew", func() {
 	var (
 		model      *models.MetadataEditorModelNew
-		event      *career.CareerEvent
+		event      *career.Event
 		service    *careerservice.Service
 		cliService *cliservice.CLIEventService
 		ctx        context.Context
@@ -36,7 +36,7 @@ var _ = Describe("MetadataEditorModelNew", func() {
 		cliService = nil // Can be nil for these tests
 
 		// Create a test event
-		event = &career.CareerEvent{
+		event = &career.Event{
 			ID:         "test-event-1",
 			Text:       "Test event",
 			Date:       time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),

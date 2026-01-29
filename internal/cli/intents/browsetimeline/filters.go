@@ -10,7 +10,7 @@ import (
 
 // applyFilters filters the events based on current filter state.
 func (i *Intent) applyFilters() {
-	filtered := make([]*career.CareerEvent, 0)
+	filtered := make([]*career.Event, 0)
 
 	for _, evt := range i.context.Events {
 		if !i.eventMatchesFilters(evt) {
@@ -24,7 +24,7 @@ func (i *Intent) applyFilters() {
 }
 
 // eventMatchesFilters checks if an event passes all current filters.
-func (i *Intent) eventMatchesFilters(evt *career.CareerEvent) bool {
+func (i *Intent) eventMatchesFilters(evt *career.Event) bool {
 	// Apply text search (if specified).
 	if i.filters.SearchText != "" {
 		categoriesStr := ""
@@ -74,7 +74,7 @@ func (i *Intent) eventMatchesFilters(evt *career.CareerEvent) bool {
 }
 
 // eventHasAnyTag checks if event has any of the filter tags.
-func (i *Intent) eventHasAnyTag(evt *career.CareerEvent) bool {
+func (i *Intent) eventHasAnyTag(evt *career.Event) bool {
 	for _, filterTag := range i.filters.Tags {
 		for _, evtTag := range evt.Tags {
 			if evtTag == filterTag {
@@ -86,7 +86,7 @@ func (i *Intent) eventHasAnyTag(evt *career.CareerEvent) bool {
 }
 
 // eventHasAnyCompany checks if event matches any filter company.
-func (i *Intent) eventHasAnyCompany(evt *career.CareerEvent) bool {
+func (i *Intent) eventHasAnyCompany(evt *career.Event) bool {
 	for _, filterCompany := range i.filters.Companies {
 		if evt.Company == filterCompany {
 			return true
@@ -96,7 +96,7 @@ func (i *Intent) eventHasAnyCompany(evt *career.CareerEvent) bool {
 }
 
 // eventHasAnyCategory checks if event has any of the filter categories.
-func (i *Intent) eventHasAnyCategory(evt *career.CareerEvent) bool {
+func (i *Intent) eventHasAnyCategory(evt *career.Event) bool {
 	for _, filterCat := range i.filters.Categories {
 		for _, evtCat := range evt.Categories {
 			if evtCat == filterCat {
@@ -108,7 +108,7 @@ func (i *Intent) eventHasAnyCategory(evt *career.CareerEvent) bool {
 }
 
 // eventHasAnyProject checks if event matches any filter project.
-func (i *Intent) eventHasAnyProject(evt *career.CareerEvent) bool {
+func (i *Intent) eventHasAnyProject(evt *career.Event) bool {
 	for _, filterProject := range i.filters.Projects {
 		if evt.Project == filterProject {
 			return true
@@ -118,7 +118,7 @@ func (i *Intent) eventHasAnyProject(evt *career.CareerEvent) bool {
 }
 
 // sortEvents sorts the filtered events based on current sort settings.
-func (i *Intent) sortEvents(filtered []*career.CareerEvent) {
+func (i *Intent) sortEvents(filtered []*career.Event) {
 	switch i.filters.SortBy {
 	case "date":
 		sort.Slice(filtered, func(a, b int) bool {

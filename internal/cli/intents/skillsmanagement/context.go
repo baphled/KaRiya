@@ -126,6 +126,6 @@ func (c *IntentContext) GetEventCounts() (map[string]int, error) {
 }
 
 // GetEventsForSkill returns the events associated with a specific skill.
-func (c *IntentContext) GetEventsForSkill(skillID string) ([]*domain.CareerEvent, error) {
+func (c *IntentContext) GetEventsForSkill(skillID string) ([]*domain.Event, error) {
 	return c.SkillRepository.GetEventsUsingSkill(c.Ctx, skillID)
 }

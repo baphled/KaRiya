@@ -9,11 +9,11 @@ import (
 )
 
 // createBenchmarkEvents creates n test events for benchmarking.
-func createBenchmarkEvents(n int) []*career.CareerEvent {
-	events := make([]*career.CareerEvent, n)
+func createBenchmarkEvents(n int) []*career.Event {
+	events := make([]*career.Event, n)
 	now := time.Now()
 	for i := 0; i < n; i++ {
-		events[i] = &career.CareerEvent{
+		events[i] = &career.Event{
 			ID:        fmt.Sprintf("event-%d", i),
 			Text:      "Benchmark event",
 			Company:   "BenchCorp",

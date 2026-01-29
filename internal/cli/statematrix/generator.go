@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// generateMermaidDiagram creates a Mermaid state diagram for a component
+// generateMermaidDiagram creates a Mermaid state diagram for a component.
 func generateMermaidDiagram(component ComponentInfo) string {
 	if len(component.States) == 0 {
 		return ""
@@ -101,7 +101,7 @@ func generateMermaidDiagram(component ComponentInfo) string {
 	return sb.String()
 }
 
-// GenerateMarkdown generates the STATE_MATRIX.md file
+// GenerateMarkdown generates the STATE_MATRIX.md file.
 func GenerateMarkdown(matrix *StateMatrix, path string) error {
 	// Ensure matrix has timestamp
 	if matrix.GeneratedAt.IsZero() {
@@ -213,7 +213,7 @@ func GenerateMarkdown(matrix *StateMatrix, path string) error {
 	return t.Execute(f, matrix)
 }
 
-// GenerateJSON generates the state_matrix.json file
+// GenerateJSON generates the state_matrix.json file.
 func GenerateJSON(matrix *StateMatrix, path string) error {
 	// Ensure matrix has timestamp
 	if matrix.GeneratedAt.IsZero() {

@@ -29,8 +29,8 @@ import (
 // The huh library requires command chaining that doesn't work well in E2E tests.
 
 // createTestEvent creates a test event with the given text and date.
-func createTestEvent(text string) *career.CareerEvent {
-	return &career.CareerEvent{
+func createTestEvent(text string) *career.Event {
+	return &career.Event{
 		Text:      text,
 		Date:      time.Now(),
 		CreatedAt: time.Now(),
@@ -39,8 +39,8 @@ func createTestEvent(text string) *career.CareerEvent {
 }
 
 // createTestEventWithDetails creates a test event with full metadata.
-func createTestEventWithDetails(text, company, project string, tags, categories []string) *career.CareerEvent {
-	return &career.CareerEvent{
+func createTestEventWithDetails(text, company, project string, tags, categories []string) *career.Event {
+	return &career.Event{
 		Text:       text,
 		Date:       time.Now(),
 		Company:    company,

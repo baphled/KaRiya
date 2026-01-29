@@ -10,29 +10,29 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// BurstSuggestion represents a suggested burst with confidence score and related events
+// BurstSuggestion represents a suggested burst with confidence score and related events.
 type BurstSuggestion struct {
-	EventIDs        []string // IDs of related events
-	ConfidenceScore float64  // 0.0-1.0 confidence score
-	Name            string   // Suggested burst name (optional)
-	Description     string   // Suggested burst description (optional)
+	EventIDs        []string
+	ConfidenceScore float64
+	Name            string
+	Description     string
 }
 
-// DetectionOptions controls burst detection behavior
+// DetectionOptions controls burst detection behavior.
 type DetectionOptions struct {
-	MinConfidence       float64       // Minimum confidence score to suggest burst (default 0.6)
-	TemporalWindow      time.Duration // Time window for grouping (default 6 months)
-	MinEventCount       int           // Minimum events for burst (default 2)
-	MaxSuggestionsCount int           // Maximum suggestions to return (default 10)
+	MinConfidence       float64
+	TemporalWindow      time.Duration
+	MinEventCount       int
+	MaxSuggestionsCount int
 }
 
-// BurstDetector detects related events and suggests bursts
+// BurstDetector detects related events and suggests bursts.
 type BurstDetector struct {
 	similarityScorer *SimilarityScorer
 	temporalGrouper  *TemporalGrouper
 }
 
-// NewBurstDetector creates a new burst detector
+// NewBurstDetector creates a new burst detector.
 func NewBurstDetector() *BurstDetector {
 	return &BurstDetector{
 		similarityScorer: NewSimilarityScorer(),
@@ -40,22 +40,22 @@ func NewBurstDetector() *BurstDetector {
 	}
 }
 
-// DetectBursts finds related event groups and returns burst suggestions
+// DetectBursts finds related event groups and returns burst suggestions.
 // Algorithm:
 // 1. Group events by temporal proximity (6-month window)
 // 2. Within each temporal group, score event pairs for similarity
 // 3. Build clusters of similar events (connected components)
 // 4. Calculate confidence score for each cluster
-// 5. Filter by minimum confidence and return suggestions
+// 5. Filter by minimum confidence and return suggestions.
 func (bd *BurstDetector) DetectBursts(
 	_ context.Context,
-	events []career.CareerEvent,
+	events []career.Event,
 	opts *DetectionOptions,
 ) ([]BurstSuggestion, error) {
 	if opts == nil {
 		opts = &DetectionOptions{
 			MinConfidence:       0.6,
-			TemporalWindow:      6 * 30 * 24 * time.Hour, // ~6 months
+			TemporalWindow:      6 * 30 * 24 * time.Hour,
 			MinEventCount:       2,
 			MaxSuggestionsCount: 10,
 		}
@@ -67,7 +67,7 @@ func (bd *BurstDetector) DetectBursts(
 
 	// Step 1: Group events by temporal proximity using dates
 	dates := make([]time.Time, len(events))
-	eventsByDate := make(map[time.Time][]career.CareerEvent)
+	eventsByDate := make(map[time.Time][]career.Event)
 	for i := range events {
 		dates[i] = events[i].Date
 		eventsByDate[events[i].Date] = append(eventsByDate[events[i].Date], events[i])
@@ -79,7 +79,7 @@ func (bd *BurstDetector) DetectBursts(
 	suggestions := []BurstSuggestion{}
 	for _, dateGroup := range temporalDateGroups {
 		// Reconstruct event group from dates
-		var eventGroup []career.CareerEvent
+		var eventGroup []career.Event
 		for _, date := range dateGroup {
 			eventGroup = append(eventGroup, eventsByDate[date]...)
 		}
@@ -116,9 +116,9 @@ func (bd *BurstDetector) DetectBursts(
 	return suggestions, nil
 }
 
-// buildSimilarityMatrix creates a matrix of similarity scores between events
+// buildSimilarityMatrix creates a matrix of similarity scores between events.
 func (bd *BurstDetector) buildSimilarityMatrix(
-	events []career.CareerEvent,
+	events []career.Event,
 ) map[string]map[string]float64 {
 	matrix := make(map[string]map[string]float64)
 
@@ -155,15 +155,15 @@ func (bd *BurstDetector) buildSimilarityMatrix(
 	return matrix
 }
 
-// findClusters identifies groups of similar events using connected components
-// An edge exists between two events if their similarity score >= minConfidence
+// findClusters identifies groups of similar events using connected components.
+// An edge exists between two events if their similarity score >= minConfidence.
 func (bd *BurstDetector) findClusters(
-	events []career.CareerEvent,
+	events []career.Event,
 	similarityMatrix map[string]map[string]float64,
 	minConfidence float64,
-) [][]career.CareerEvent {
+) [][]career.Event {
 	visited := make(map[string]bool)
-	clusters := [][]career.CareerEvent{}
+	clusters := [][]career.Event{}
 
 	for i := range events {
 		if visited[events[i].ID] {
@@ -171,7 +171,7 @@ func (bd *BurstDetector) findClusters(
 		}
 
 		// BFS to find connected component
-		cluster := []career.CareerEvent{}
+		cluster := []career.Event{}
 		queue := []string{events[i].ID}
 		visited[events[i].ID] = true
 
@@ -180,7 +180,7 @@ func (bd *BurstDetector) findClusters(
 			queue = queue[1:]
 
 			// Find original event
-			var currentEvent *career.CareerEvent
+			var currentEvent *career.Event
 			for i := range events {
 				if events[i].ID == current {
 					currentEvent = &events[i]
@@ -200,7 +200,7 @@ func (bd *BurstDetector) findClusters(
 			}
 		}
 
-		if len(cluster) >= 2 { // Only keep clusters with 2+ events
+		if len(cluster) >= 2 {
 			clusters = append(clusters, cluster)
 		}
 	}
@@ -208,9 +208,9 @@ func (bd *BurstDetector) findClusters(
 	return clusters
 }
 
-// clusterToSuggestion converts an event cluster to a burst suggestion
+// clusterToSuggestion converts an event cluster to a burst suggestion.
 func (bd *BurstDetector) clusterToSuggestion(
-	cluster []career.CareerEvent,
+	cluster []career.Event,
 	similarityMatrix map[string]map[string]float64,
 ) BurstSuggestion {
 	// Extract event IDs
@@ -229,7 +229,7 @@ func (bd *BurstDetector) clusterToSuggestion(
 		}
 	}
 
-	confidenceScore := 0.5 // default if no pairs
+	confidenceScore := 0.5
 	if pairCount > 0 {
 		confidenceScore = totalScore / float64(pairCount)
 	}
@@ -250,7 +250,7 @@ func (bd *BurstDetector) clusterToSuggestion(
 	}
 }
 
-// ValidateSuggestion checks if a burst suggestion is valid
+// ValidateSuggestion checks if a burst suggestion is valid.
 func (bd *BurstDetector) ValidateSuggestion(suggestion BurstSuggestion) error {
 	if len(suggestion.EventIDs) < 2 {
 		return fmt.Errorf("burst must have at least 2 events")
@@ -272,8 +272,8 @@ func (bd *BurstDetector) ValidateSuggestion(suggestion BurstSuggestion) error {
 	return nil
 }
 
-// generateBurstName creates a meaningful name for a burst based on the events
-func (bd *BurstDetector) generateBurstName(cluster []career.CareerEvent) string {
+// generateBurstName creates a meaningful name for a burst based on the events.
+func (bd *BurstDetector) generateBurstName(cluster []career.Event) string {
 	if len(cluster) == 0 {
 		return "Unnamed Burst"
 	}
@@ -295,8 +295,8 @@ func (bd *BurstDetector) generateBurstName(cluster []career.CareerEvent) string 
 	return fmt.Sprintf("%d-Event Burst", len(cluster))
 }
 
-// generateBurstDescription creates a description for a burst based on the events
-func (bd *BurstDetector) generateBurstDescription(cluster []career.CareerEvent) string {
+// generateBurstDescription creates a description for a burst based on the events.
+func (bd *BurstDetector) generateBurstDescription(cluster []career.Event) string {
 	if len(cluster) == 0 {
 		return "A collection of related career events"
 	}
@@ -329,8 +329,8 @@ func (bd *BurstDetector) generateBurstDescription(cluster []career.CareerEvent) 
 	return fmt.Sprintf("A burst of %d related career events", len(cluster))
 }
 
-// extractCommonWords finds common meaningful words across event texts
-func (bd *BurstDetector) extractCommonWords(cluster []career.CareerEvent) []string {
+// extractCommonWords finds common meaningful words across event texts.
+func (bd *BurstDetector) extractCommonWords(cluster []career.Event) []string {
 	wordCount := make(map[string]int)
 
 	for i := range cluster {
@@ -364,8 +364,8 @@ func (bd *BurstDetector) extractCommonWords(cluster []career.CareerEvent) []stri
 	return commonWords
 }
 
-// extractProjects extracts unique project names from the cluster
-func (bd *BurstDetector) extractProjects(cluster []career.CareerEvent) []string {
+// extractProjects extracts unique project names from the cluster.
+func (bd *BurstDetector) extractProjects(cluster []career.Event) []string {
 	projectSet := make(map[string]bool)
 	var projects []string
 
@@ -381,8 +381,8 @@ func (bd *BurstDetector) extractProjects(cluster []career.CareerEvent) []string 
 	return projects
 }
 
-// extractCompanies extracts unique company names from the cluster
-func (bd *BurstDetector) extractCompanies(cluster []career.CareerEvent) []string {
+// extractCompanies extracts unique company names from the cluster.
+func (bd *BurstDetector) extractCompanies(cluster []career.Event) []string {
 	companySet := make(map[string]bool)
 	var companies []string
 
@@ -398,7 +398,7 @@ func (bd *BurstDetector) extractCompanies(cluster []career.CareerEvent) []string
 	return companies
 }
 
-// isMeaningfulWord filters out common words to focus on meaningful terms
+// isMeaningfulWord filters out common words to focus on meaningful terms.
 func (bd *BurstDetector) isMeaningfulWord(word string) bool {
 	// Remove punctuation
 	word = strings.Trim(word, ".,!?;:")

@@ -45,9 +45,9 @@ var _ = Describe("CaptureEvent Review Enrichment Editing", func() {
 	})
 
 	// Helper to navigate to enrichment review state
-	navigateToEnrichmentReview := func() *career.CareerEvent {
+	navigateToEnrichmentReview := func() *career.Event {
 		// Create and save event
-		event := &career.CareerEvent{
+		event := &career.Event{
 			Text:    "Built REST API with Go",
 			Date:    time.Now(),
 			Company: "Test Corp",

@@ -1,40 +1,86 @@
 package navigation
 
-// NavigationKey represents standardized keyboard shortcuts used throughout the TUI.
+// NavigationKey maps a user-facing keyboard shortcut label to the action it
+// triggers throughout the TUI. Components display the string value in help
+// bars and badges so the user knows which key to press.
 //
 //nolint:revive // "NavigationKey" name is intentional for clarity in external packages.
 type NavigationKey string
 
 const (
-	// Primary navigation keys.
-	KeyBack   NavigationKey = "Esc"   // Go back to previous screen
-	KeyUp     NavigationKey = "↑/k"   // Navigate up in lists, menus, or forms
-	KeyDown   NavigationKey = "↓/j"   // Navigate down in lists, menus, or forms
-	KeyLeft   NavigationKey = "←/h"   // Navigate left in forms or menus
-	KeyRight  NavigationKey = "→/l"   // Navigate right in forms or menus
-	KeySelect NavigationKey = "Enter" // Confirm selection or submit form
-	KeyToggle NavigationKey = "Space" // Toggle checkbox, tag, or item selection
+	// KeyBack dismisses the current screen and returns to its parent, such as
+	// closing a modal or navigating from a detail view back to a list.
+	KeyBack NavigationKey = "Esc"
+	// KeyUp moves the cursor or highlight one row upward in a list, menu, or
+	// form field group.
+	KeyUp NavigationKey = "↑/k"
+	// KeyDown moves the cursor or highlight one row downward in a list, menu,
+	// or form field group.
+	KeyDown NavigationKey = "↓/j"
+	// KeyLeft moves focus one column or tab to the left in multi-column
+	// layouts and form navigation.
+	KeyLeft NavigationKey = "←/h"
+	// KeyRight moves focus one column or tab to the right in multi-column
+	// layouts and form navigation.
+	KeyRight NavigationKey = "→/l"
+	// KeySelect confirms the currently highlighted item or submits the active
+	// form, advancing the intent to the next state.
+	KeySelect NavigationKey = "Enter"
+	// KeyToggle flips the checked state of a checkbox, tag, or multi-select
+	// option without advancing the cursor.
+	KeyToggle NavigationKey = "Space"
 
-	// Action keys.
-	KeyAdd      NavigationKey = "a" // Add new item
-	KeyFilter   NavigationKey = "f" // Show/toggle filters
-	KeySort     NavigationKey = "s" // Show/toggle sort options
-	KeySearch   NavigationKey = "/" // Show/toggle search
-	KeyEdit     NavigationKey = "e" // Edit selected item
-	KeyDelete   NavigationKey = "d" // Delete selected item
-	KeyBulk     NavigationKey = "b" // Enter bulk operations mode
-	KeyCapture  NavigationKey = "c" // Capture new event
-	KeyList     NavigationKey = "l" // List events
-	KeyMetadata NavigationKey = "m" // Open metadata review
-	KeyHelp     NavigationKey = "?" // Show help
-	KeyQuit     NavigationKey = "q" // Quit application
-	KeyPending  NavigationKey = "p" // Review pending items
-	KeyFacts    NavigationKey = "t" // View all facts
-	KeyCV       NavigationKey = "v" // Manage CV configurations
-	KeyGenerate NavigationKey = "g" // Generate CV from configurations
+	// KeyAdd opens the creation form for a new item in the current context,
+	// such as a new career event or skill entry.
+	KeyAdd NavigationKey = "a"
+	// KeyFilter opens or toggles the filter modal, allowing the user to
+	// narrow the visible items by tag, date, or category.
+	KeyFilter NavigationKey = "f"
+	// KeySort opens or cycles the sort modal, allowing the user to reorder
+	// items by date, name, or relevance.
+	KeySort NavigationKey = "s"
+	// KeySearch activates the search input overlay, enabling incremental
+	// text matching against the current item list.
+	KeySearch NavigationKey = "/"
+	// KeyEdit opens the edit form for the currently selected item, loading
+	// its existing values into the form fields.
+	KeyEdit NavigationKey = "e"
+	// KeyDelete initiates deletion of the currently selected item, typically
+	// showing a confirmation modal before removing it.
+	KeyDelete NavigationKey = "d"
+	// KeyBulk enters bulk operations mode, enabling multi-select actions
+	// such as batch tagging or batch deletion.
+	KeyBulk NavigationKey = "b"
+	// KeyCapture opens the event capture form for recording a new career
+	// timeline entry with text, date, and metadata.
+	KeyCapture NavigationKey = "c"
+	// KeyList switches to the event list view, displaying all career
+	// timeline entries in a scrollable table.
+	KeyList NavigationKey = "l"
+	// KeyMetadata opens the metadata review screen where the user can
+	// inspect and edit tags, categories, and enrichment data.
+	KeyMetadata NavigationKey = "m"
+	// KeyHelp toggles the help overlay that displays all available keyboard
+	// shortcuts for the current screen.
+	KeyHelp NavigationKey = "?"
+	// KeyQuit exits the application, returning control to the terminal.
+	KeyQuit NavigationKey = "q"
+	// KeyPending opens the pending review queue showing items that need
+	// user confirmation, such as extracted facts awaiting approval.
+	KeyPending NavigationKey = "p"
+	// KeyFacts switches to the facts management view listing all curated
+	// career facts extracted from timeline events.
+	KeyFacts NavigationKey = "t"
+	// KeyCV opens the CV configuration manager where the user can create,
+	// edit, and select CV generation profiles.
+	KeyCV NavigationKey = "v"
+	// KeyGenerate triggers CV generation using the currently active
+	// configuration profile and launches the output preview.
+	KeyGenerate NavigationKey = "g"
 )
 
-// AllNavigationKeys returns a slice of all defined navigation keys.
+// AllNavigationKeys returns every defined NavigationKey value. The returned
+// slice is safe to range over for building help screens or validation checks.
 func AllNavigationKeys() []NavigationKey {
 	return []NavigationKey{
 		KeyBack,
@@ -63,7 +109,8 @@ func AllNavigationKeys() []NavigationKey {
 	}
 }
 
-// KeyDescription provides a human-readable description of each navigation key.
+// KeyDescription maps each NavigationKey to a concise human-readable label
+// displayed in help overlays and tooltip badges.
 var KeyDescription = map[NavigationKey]string{
 	KeyBack:     "Go back to previous screen",
 	KeyUp:       "Navigate up (also j)",

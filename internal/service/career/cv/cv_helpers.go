@@ -5,21 +5,21 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// CVStructure represents the structure/format of a CV.
-type CVStructure string
+// Structure represents the structure/format of a CV.
+type Structure string
 
 const (
 	// CVStructureStandard is the traditional CV structure with Experience, Projects, Skills sections.
-	CVStructureStandard CVStructure = "standard"
+	CVStructureStandard Structure = "standard"
 
 	// CVStructureNarrative is a language-agnostic professional format with Core Strengths, Technologies, What I Bring sections.
-	CVStructureNarrative CVStructure = "narrative"
+	CVStructureNarrative Structure = "narrative"
 
 	// CVStructureConsulting emphasizes client engagements and technical capabilities for consulting roles.
-	CVStructureConsulting CVStructure = "consulting"
+	CVStructureConsulting Structure = "consulting"
 
 	// CVStructureHighlights is a condensed 1-page format with key capabilities and selected highlights.
-	CVStructureHighlights CVStructure = "highlights"
+	CVStructureHighlights Structure = "highlights"
 )
 
 // MinConfidenceForNarrative is the minimum confidence score for bullets to appear in narrative CV.

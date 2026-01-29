@@ -18,13 +18,13 @@ var _ career_repo.SkillRepository = (*SkillRepository)(nil)
 // SkillRepository provides an in-memory implementation of the SkillRepository interface.
 type SkillRepository struct {
 	skills      map[string]*career.Skill
-	eventSkills map[string][]string         // eventID -> []skillID
-	skillEvents map[string][]string         // skillID -> []eventID
-	eventRepo   career_repo.EventRepository // Reference to event repository for GetEventsUsingSkill
+	eventSkills map[string][]string
+	skillEvents map[string][]string
+	eventRepo   career_repo.EventRepository
 	mu          sync.RWMutex
 }
 
-// NewSkillRepository creates a new in-memory skill repository
+// NewSkillRepository creates a new in-memory skill repository.
 func NewSkillRepository() *SkillRepository {
 	return &SkillRepository{
 		skills:      make(map[string]*career.Skill),
@@ -33,7 +33,7 @@ func NewSkillRepository() *SkillRepository {
 	}
 }
 
-// SetEventRepository sets the event repository for cross-repository queries
+// SetEventRepository sets the event repository for cross-repository queries.
 func (r *SkillRepository) SetEventRepository(repo career_repo.EventRepository) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -81,7 +81,7 @@ func (r *SkillRepository) GetByID(_ context.Context, id string) (*career.Skill, 
 	return skill, nil
 }
 
-// GetByName retrieves a skill by its name (case-sensitive)
+// GetByName retrieves a skill by its name (case-sensitive).
 func (r *SkillRepository) GetByName(_ context.Context, name string) (*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -264,7 +264,7 @@ func (r *SkillRepository) applyPagination(skills []*career.Skill, filters *caree
 	return paginate(skills, filters.Offset, filters.Limit)
 }
 
-// Update modifies an existing skill
+// Update modifies an existing skill.
 func (r *SkillRepository) Update(_ context.Context, skill *career.Skill) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -295,7 +295,7 @@ func (r *SkillRepository) Update(_ context.Context, skill *career.Skill) error {
 	return nil
 }
 
-// Delete removes a skill from the repository
+// Delete removes a skill from the repository.
 func (r *SkillRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -317,7 +317,7 @@ func (r *SkillRepository) Delete(_ context.Context, id string) error {
 	return nil
 }
 
-// GetByCategory retrieves all skills in a specific category
+// GetByCategory retrieves all skills in a specific category.
 func (r *SkillRepository) GetByCategory(_ context.Context, category string) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -338,7 +338,7 @@ func (r *SkillRepository) GetByCategory(_ context.Context, category string) ([]*
 	return result, nil
 }
 
-// GetSkillsForEvent retrieves all skills associated with an event
+// GetSkillsForEvent retrieves all skills associated with an event.
 func (r *SkillRepository) GetSkillsForEvent(_ context.Context, eventID string) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -358,7 +358,7 @@ func (r *SkillRepository) GetSkillsForEvent(_ context.Context, eventID string) (
 	return result, nil
 }
 
-// GetEventCountsForSkills returns a map of skill IDs to event counts
+// GetEventCountsForSkills returns a map of skill IDs to event counts.
 func (r *SkillRepository) GetEventCountsForSkills(_ context.Context) (map[string]int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -372,7 +372,7 @@ func (r *SkillRepository) GetEventCountsForSkills(_ context.Context) (map[string
 	return counts, nil
 }
 
-// GetLastUsedForSkills returns a map of skill IDs to their last used dates (from events)
+// GetLastUsedForSkills returns a map of skill IDs to their last used dates (from events).
 func (r *SkillRepository) GetLastUsedForSkills(_ context.Context) (map[string]time.Time, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -386,24 +386,24 @@ func (r *SkillRepository) GetLastUsedForSkills(_ context.Context) (map[string]ti
 	return lastUsed, nil
 }
 
-// GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC
-func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error) {
+// GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC.
+func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.Event, error) {
 	r.mu.RLock()
 	eventIDs := r.skillEvents[skillID]
 	eventRepo := r.eventRepo
 	r.mu.RUnlock()
 
 	if len(eventIDs) == 0 {
-		return []*career.CareerEvent{}, nil
+		return []*career.Event{}, nil
 	}
 
 	// If we don't have an event repository, return empty list
 	if eventRepo == nil {
-		return []*career.CareerEvent{}, nil
+		return []*career.Event{}, nil
 	}
 
 	// Fetch events
-	var events []*career.CareerEvent
+	var events []*career.Event
 	for _, eventID := range eventIDs {
 		event, err := eventRepo.GetByID(ctx, eventID)
 		if err == nil {
@@ -419,7 +419,7 @@ func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID strin
 	return events, nil
 }
 
-// AssociateSkillWithEvent associates a skill with an event (for test setup)
+// AssociateSkillWithEvent associates a skill with an event (for test setup).
 func (r *SkillRepository) AssociateSkillWithEvent(skillID, eventID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -441,7 +441,7 @@ func (r *SkillRepository) AssociateSkillWithEvent(skillID, eventID string) {
 	}
 }
 
-// Helper functions
+// Helper functions.
 func removeString(slice []string, s string) []string {
 	var result []string
 	for _, item := range slice {

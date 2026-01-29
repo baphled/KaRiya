@@ -18,7 +18,7 @@ var _ = Describe("CSV Parser", func() {
 	)
 
 	BeforeEach(func() {
-		parser = importer.NewCSVParser([]*career.CareerEvent{}, nil, context.Background())
+		parser = importer.NewCSVParser([]*career.Event{}, nil, context.Background())
 
 	})
 
@@ -230,7 +230,7 @@ Test event,,Technical,technical,,`
 	Describe("Duplicate Detection", func() {
 		It("should detect duplicates with existing events", func() {
 			// Create an existing event
-			existingEvent := &career.CareerEvent{
+			existingEvent := &career.Event{
 				ID:        "123",
 				Text:      "Existing event",
 				Date:      time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
@@ -239,7 +239,7 @@ Test event,,Technical,technical,,`
 				UpdatedAt: time.Now(),
 			}
 
-			parserWithExisting := importer.NewCSVParser([]*career.CareerEvent{existingEvent}, nil, context.Background())
+			parserWithExisting := importer.NewCSVParser([]*career.Event{existingEvent}, nil, context.Background())
 
 			csv := `Text,Date,Categories,Tags,Project,Company
 Existing event,2024-01,Technical,technical,,MyCompany`
@@ -470,7 +470,7 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
 		BeforeEach(func() {
 			ctx = context.Background()
 			skillRepo = careermemory.NewSkillRepository()
-			parserWithSkill = importer.NewCSVParser([]*career.CareerEvent{}, skillRepo, ctx)
+			parserWithSkill = importer.NewCSVParser([]*career.Event{}, skillRepo, ctx)
 		})
 
 		It("should create new skills when not found in repository", func() {

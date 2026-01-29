@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("BaseConfirmScreen", func() {
-	var screen *base.BaseConfirmScreen
+var _ = Describe("ConfirmScreen", func() {
+	var screen *base.ConfirmScreen
 
 	Describe("Construction", func() {
 		It("should create a confirm screen with title and message", func() {

@@ -7,10 +7,28 @@ import (
 	"github.com/baphled/kariya/internal/config"
 )
 
-// Re-export types from configtypes for backward compatibility.
+// ConfigurationDomain re-exports configtypes.ConfigurationDomain, a string enum that
+// identifies which section of the application configuration is being edited (e.g.,
+// "system", "profile", "export", or "ui"). The alias lets the intents package use
+// the type without forcing callers to import configtypes directly.
 type ConfigurationDomain = configtypes.ConfigurationDomain
+
+// ConfigurationSetting re-exports configtypes.ConfigurationSetting, which describes a
+// single editable configuration entry including its key, display label, current and
+// default values, data type (string, bool, int, or select), and optional list of
+// valid choices. The edit settings modal renders one ConfigurationSetting per form
+// field.
 type ConfigurationSetting = configtypes.ConfigurationSetting
+
+// ConfigurationState re-exports configtypes.ConfigurationState, a string enum that
+// tracks the current step in the configuration workflow: domain selection, settings
+// editing, change review, confirmation, saving, completion, or failure.
 type ConfigurationState = configtypes.ConfigurationState
+
+// ConfigurationChanges re-exports configtypes.ConfigurationChanges, which records the
+// domain being modified along with maps of original and modified key-value pairs. The
+// review modal uses this to display a diff of pending changes before the user confirms
+// the save.
 type ConfigurationChanges = configtypes.ConfigurationChanges
 
 // Re-export constants.
@@ -21,6 +39,10 @@ const (
 	DomainUI      = configtypes.DomainUI
 )
 
+// ConfigStateSelectDomain and related constants re-export the configuration workflow
+// state machine values from configtypes. They progress sequentially: the user first
+// selects a domain, edits its settings, reviews the diff, confirms, waits for the
+// save, and lands on either a success or failure terminal state.
 const (
 	ConfigStateSelectDomain  = configtypes.ConfigStateSelectDomain
 	ConfigStateEditSettings  = configtypes.ConfigStateEditSettings

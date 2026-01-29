@@ -54,7 +54,7 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 
 			// Step 3: Submit form with event data
 			// Create event that will be saved
-			testEvent := &career.CareerEvent{
+			testEvent := &career.Event{
 				Text: "Built REST API with Go and PostgreSQL for data processing",
 				Date: time.Now(),
 			}
@@ -74,7 +74,7 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			// Note: We need to wait for async operation to complete
 
 			// For now, let's manually create a saved event and send SubmitCompleteMsg
-			savedEvent := &career.CareerEvent{
+			savedEvent := &career.Event{
 				Text: testEvent.Text,
 				Date: testEvent.Date,
 			}
@@ -138,7 +138,7 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			// Simplified test: Just check if event ID survives the workflow
 
 			// Create and save event
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text: "Test event",
 				Date: time.Now(),
 			}
@@ -187,7 +187,7 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			// We can't call buildReviewBaseView directly since it's unexported
 			// So we test via the full workflow and check the view output
 
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text: "Event for buildReviewBaseView test",
 				Date: time.Now(),
 			}

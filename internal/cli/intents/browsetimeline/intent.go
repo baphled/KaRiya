@@ -34,7 +34,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		filters:        ctx.InitialFilters,
 		filterStack:    behaviors.NewFilterStack(),
 		selectedFacts:  make([]*career.Fact, 0),
-		viewedEvents:   make([]*career.CareerEvent, 0),
+		viewedEvents:   make([]*career.Event, 0),
 		active:         true,
 		modalRegistry:  intents.NewModalRegistry(),
 	}
@@ -280,7 +280,7 @@ func (i *Intent) updateDeleteModal(msg tea.Msg) tea.Cmd {
 				return cmd
 			}
 			deletedID := i.selectedEvent.ID
-			newEvents := make([]*career.CareerEvent, 0, len(i.context.Events)-1)
+			newEvents := make([]*career.Event, 0, len(i.context.Events)-1)
 			for _, evt := range i.context.Events {
 				if evt.ID != deletedID {
 					newEvents = append(newEvents, evt)
@@ -365,7 +365,7 @@ func (i *Intent) View() string {
 	}
 
 	switch screen := i.activeScreen.(type) {
-	case *timeline.TimelineEventListScreen:
+	case *timeline.EventListScreen:
 		return i.renderTimelineView(screen)
 	case *timeline.EventDeleteConfirmScreen:
 		return screen.View()
@@ -375,7 +375,7 @@ func (i *Intent) View() string {
 }
 
 // renderTimelineView renders the timeline list view with modal overlays.
-func (i *Intent) renderTimelineView(screen *timeline.TimelineEventListScreen) string {
+func (i *Intent) renderTimelineView(screen *timeline.EventListScreen) string {
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
 	view.WithContent(screen.RenderContent())
 	view.WithHelp(i.getContextHelp())

@@ -15,7 +15,7 @@ func (m *Model) SetInitialCaptureMode(mode string) {
 }
 
 // GetState returns the current application state.
-func (m *Model) GetState() AppState {
+func (m *Model) GetState() State {
 	return m.state
 }
 
@@ -31,6 +31,6 @@ func (m *Model) GetIntentRouter() *intents.DefaultIntentRouter {
 
 // SetStateForTesting allows tests to set the app state directly.
 // This should only be used in tests to trigger edge cases.
-func (m *Model) SetStateForTesting(state AppState) {
+func (m *Model) SetStateForTesting(state State) {
 	m.state = state
 }

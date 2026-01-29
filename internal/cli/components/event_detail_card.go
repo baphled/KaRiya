@@ -12,12 +12,12 @@ import (
 // EventDetailCard renders a career event in a styled card format.
 // This is a reusable component that can be used across different intents.
 type EventDetailCard struct {
-	event *career.CareerEvent
+	event *career.Event
 	theme themes.Theme
 }
 
 // NewEventDetailCard creates a new EventDetailCard component.
-func NewEventDetailCard(event *career.CareerEvent, theme themes.Theme) *EventDetailCard {
+func NewEventDetailCard(event *career.Event, theme themes.Theme) *EventDetailCard {
 	return &EventDetailCard{
 		event: event,
 		theme: theme,
@@ -74,7 +74,7 @@ func (c *EventDetailCard) Render() string {
 
 // RenderEventDetailCard is a helper function that creates and renders an event detail card.
 // This is a convenience function for quick usage without creating a struct instance.
-func RenderEventDetailCard(event *career.CareerEvent, theme themes.Theme) string {
+func RenderEventDetailCard(event *career.Event, theme themes.Theme) string {
 	card := NewEventDetailCard(event, theme)
 	return card.Render()
 }

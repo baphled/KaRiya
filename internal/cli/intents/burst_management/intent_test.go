@@ -1539,11 +1539,11 @@ var _ = Describe("Intent Methods", func() {
 			ctx         *burst_management.IntentContext
 			mockService *mocks.BurstServiceMock
 			burst       *career.Burst
-			events      []*career.CareerEvent
+			events      []*career.Event
 		)
 
 		BeforeEach(func() {
-			events = []*career.CareerEvent{
+			events = []*career.Event{
 				{ID: "e1", Text: "First event text"},
 				{ID: "e2", Text: "Second event text"},
 			}
@@ -1940,11 +1940,11 @@ var _ = Describe("Intent Methods", func() {
 			ctx         *burst_management.IntentContext
 			mockService *mocks.BurstServiceMock
 			burst       *career.Burst
-			events      []*career.CareerEvent
+			events      []*career.Event
 		)
 
 		BeforeEach(func() {
-			events = []*career.CareerEvent{
+			events = []*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 			}
@@ -2015,7 +2015,7 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should execute startBurstDetection command", func() {
 			// Add extra events that are NOT in any existing burst.
-			extraEvents := []*career.CareerEvent{
+			extraEvents := []*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 				{ID: "e3", Text: "Event 3"},
@@ -2076,7 +2076,7 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should handle startBurstDetection with no events", func() {
-			mockService.SetEvents([]*career.CareerEvent{})
+			mockService.SetEvents([]*career.Event{})
 
 			// Press 's' to start detection.
 			cmd := intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
@@ -2094,7 +2094,7 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should filter out events that are already in existing bursts", func() {
 			// Create events where e1 and e2 are already in an existing burst.
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 				{ID: "e3", Text: "Event 3"},
@@ -2133,7 +2133,7 @@ var _ = Describe("Intent Methods", func() {
 
 		It("should show error when all events are already in bursts", func() {
 			// All events are already in an existing burst.
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 			}
@@ -2241,7 +2241,7 @@ var _ = Describe("Intent Methods", func() {
 
 			// Simulate events loaded.
 			eventsMsg := burst_management.BurstEventsLoadedMsg{
-				Events: []*career.CareerEvent{},
+				Events: []*career.Event{},
 			}
 			intent.Update(eventsMsg)
 

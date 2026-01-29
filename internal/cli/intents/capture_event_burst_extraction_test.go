@@ -32,7 +32,7 @@ var _ = Describe("CaptureEvent Burst Extraction", func() {
 		Context("when there is only ONE event", func() {
 			It("should return NO burst suggestions", func() {
 				// This is EXPECTED behavior - bursts require patterns across multiple events
-				events := []career.CareerEvent{
+				events := []career.Event{
 					{
 						ID:      "evt-1",
 						Text:    "Led microservices migration",
@@ -51,7 +51,7 @@ var _ = Describe("CaptureEvent Burst Extraction", func() {
 		Context("when there are TWO related events", func() {
 			It("should detect burst if events are similar and within temporal window", func() {
 				baseDate := time.Now().Add(-30 * 24 * time.Hour) // 30 days ago
-				events := []career.CareerEvent{
+				events := []career.Event{
 					{
 						ID:      "evt-1",
 						Text:    "Implemented OAuth2 authentication for API",
@@ -75,7 +75,7 @@ var _ = Describe("CaptureEvent Burst Extraction", func() {
 
 		Context("when events are temporally distant", func() {
 			It("should NOT detect burst if events are > 6 months apart", func() {
-				events := []career.CareerEvent{
+				events := []career.Event{
 					{
 						ID:      "evt-1",
 						Text:    "Implemented caching with Redis",
@@ -100,7 +100,7 @@ var _ = Describe("CaptureEvent Burst Extraction", func() {
 		Context("when there are THREE similar events in temporal window", func() {
 			It("should detect burst with higher confidence", func() {
 				baseDate := time.Now().Add(-60 * 24 * time.Hour) // 60 days ago
-				events := []career.CareerEvent{
+				events := []career.Event{
 					{
 						ID:      "evt-1",
 						Text:    "Optimized database queries for user service",
@@ -132,7 +132,7 @@ var _ = Describe("CaptureEvent Burst Extraction", func() {
 		Context("when burst is detected from similar events", func() {
 			It("should have valid burst properties when detection succeeds", func() {
 				baseDate := time.Now().Add(-45 * 24 * time.Hour)
-				events := []career.CareerEvent{
+				events := []career.Event{
 					{
 						ID:      "evt-1",
 						Text:    "Migrated authentication service to Kubernetes",

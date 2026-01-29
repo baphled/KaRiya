@@ -11,23 +11,23 @@ import (
 	"time"
 )
 
-// LogLevel defines the severity of log messages
+// LogLevel defines the severity of log messages.
 type LogLevel int
 
 const (
-	// DebugLevel is the lowest logging level, used for detailed debugging information
+	// DebugLevel is the lowest logging level, used for detailed debugging information.
 	DebugLevel LogLevel = iota
-	// InfoLevel is used for general information about system operations
+	// InfoLevel is used for general information about system operations.
 	InfoLevel
-	// WarnLevel is used for potentially harmful situations
+	// WarnLevel is used for potentially harmful situations.
 	WarnLevel
-	// ErrorLevel is used for error events that might still allow the application to continue running
+	// ErrorLevel is used for error events that might still allow the application to continue running.
 	ErrorLevel
-	// FatalLevel is used for severe errors that cause the application to terminate
+	// FatalLevel is used for severe errors that cause the application to terminate.
 	FatalLevel
 )
 
-// Logger provides a structured and configurable logging mechanism
+// Logger provides a structured and configurable logging mechanism.
 type Logger struct {
 	logger     *log.Logger
 	level      LogLevel
@@ -36,7 +36,7 @@ type Logger struct {
 	contextMap map[string]string
 }
 
-// New creates a new Logger with default configuration
+// New creates a new Logger with default configuration.
 func New(output io.Writer, level LogLevel) *Logger {
 	return &Logger{
 		logger:     log.New(output, "", log.LstdFlags|log.Lmicroseconds),
@@ -46,19 +46,19 @@ func New(output io.Writer, level LogLevel) *Logger {
 	}
 }
 
-// DefaultLogger creates a logger that writes to a file in the user's home directory
-// This is the recommended way to create a logger for production use
+// DefaultLogger creates a logger that writes to a file in the user's home directory.
+// This is the recommended way to create a logger for production use.
 func DefaultLogger() *Logger {
 	return FileLogger()
 }
 
-// ConsoleLogger creates a logger that writes to stdout
-// Use this only for debugging or when console output is explicitly needed
+// ConsoleLogger creates a logger that writes to stdout.
+// Use this only for debugging or when console output is explicitly needed.
 func ConsoleLogger() *Logger {
 	return New(os.Stdout, InfoLevel)
 }
 
-// SetContext adds a key-value pair to the logger's context
+// SetContext adds a key-value pair to the logger's context.
 func (l *Logger) SetContext(key, value string) *Logger {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -66,7 +66,7 @@ func (l *Logger) SetContext(key, value string) *Logger {
 	return l
 }
 
-// ClearContext removes all context from the logger
+// ClearContext removes all context from the logger.
 func (l *Logger) ClearContext() *Logger {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -74,7 +74,7 @@ func (l *Logger) ClearContext() *Logger {
 	return l
 }
 
-// formatContext converts the context map to a formatted string
+// formatContext converts the context map to a formatted string.
 func (l *Logger) formatContext() string {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -85,7 +85,7 @@ func (l *Logger) formatContext() string {
 	return strings.Join(contextParts, " ")
 }
 
-// getCallerInfo retrieves the file, line, and function name of the caller
+// getCallerInfo retrieves the file, line, and function name of the caller.
 func getCallerInfo(skip int) (file string, line int, function string) {
 	pc, file, line, ok := runtime.Caller(skip)
 	if !ok {
@@ -95,7 +95,7 @@ func getCallerInfo(skip int) (file string, line int, function string) {
 	return file, line, function
 }
 
-// log writes a log message with the specified level and format
+// log writes a log message with the specified level and format.
 func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 	if level < l.level {
 		return
@@ -121,33 +121,33 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 	l.logger.Println(logEntry)
 }
 
-// Debug logs a message at Debug level
+// Debug logs a message at Debug level.
 func (l *Logger) Debug(format string, args ...interface{}) {
 	l.log(DebugLevel, format, args...)
 }
 
-// Info logs a message at Info level
+// Info logs a message at Info level.
 func (l *Logger) Info(format string, args ...interface{}) {
 	l.log(InfoLevel, format, args...)
 }
 
-// Warn logs a message at Warn level
+// Warn logs a message at Warn level.
 func (l *Logger) Warn(format string, args ...interface{}) {
 	l.log(WarnLevel, format, args...)
 }
 
-// Error logs a message at Error level
+// Error logs a message at Error level.
 func (l *Logger) Error(format string, args ...interface{}) {
 	l.log(ErrorLevel, format, args...)
 }
 
-// Fatal logs a message at Fatal level and terminates the program
+// Fatal logs a message at Fatal level and terminates the program.
 func (l *Logger) Fatal(format string, args ...interface{}) {
 	l.log(FatalLevel, format, args...)
 	os.Exit(1)
 }
 
-// String returns the string representation of a LogLevel
+// String returns the string representation of a LogLevel.
 func (l LogLevel) String() string {
 	switch l {
 	case DebugLevel:
@@ -165,7 +165,7 @@ func (l LogLevel) String() string {
 	}
 }
 
-// WithFields creates a new logger with additional context
+// WithFields creates a new logger with additional context.
 func (l *Logger) WithFields(fields map[string]string) *Logger {
 	newLogger := &Logger{
 		logger:     l.logger,
@@ -187,7 +187,7 @@ func (l *Logger) WithFields(fields map[string]string) *Logger {
 	return newLogger
 }
 
-// FileLogger creates a logger that writes to a file in the user's home directory
+// FileLogger creates a logger that writes to a file in the user's home directory.
 func FileLogger() *Logger {
 	// Create logs directory in home
 	homeDir, err := os.UserHomeDir()
@@ -204,7 +204,7 @@ func FileLogger() *Logger {
 
 	// Create log file with timestamp
 	logFile := logDir + "/kariya.log"
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600) // #nosec G304 -- path constructed from user home dir
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		// Fallback to console if we can't open file
 		return ConsoleLogger()
