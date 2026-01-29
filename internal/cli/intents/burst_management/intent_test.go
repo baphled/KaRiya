@@ -3,6 +3,7 @@ package burst_management_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -1917,8 +1918,8 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should handle confirm error gracefully", func() {
-			// Remove burst from repo to simulate update error.
-			_ = repo.Delete(ctx.Context, burst.ID)
+			// Configure service to fail on confirm.
+			mockService.SetConfirmError(fmt.Errorf("database unavailable"))
 
 			// Navigate to detail and confirm.
 			navResult := &screens.NavigateResult{ResultData: burst}

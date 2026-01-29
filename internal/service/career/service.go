@@ -341,6 +341,11 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 		return err
 	}
 
+	// Capture original state for rollback on failure.
+	origConfirmed := burst.Confirmed
+	origConfirmedAt := burst.ConfirmedAt
+	origUpdatedAt := burst.UpdatedAt
+
 	now := time.Now()
 	burst.Confirmed = true
 	burst.ConfirmedAt = &now
@@ -349,8 +354,9 @@ func (s *Service) ConfirmBurst(ctx context.Context, burst *domain.Burst) error {
 	if s.burstRepo != nil {
 		if err := s.burstRepo.Update(ctx, burst); err != nil {
 			// Rollback in-memory changes on failure.
-			burst.Confirmed = false
-			burst.ConfirmedAt = nil
+			burst.Confirmed = origConfirmed
+			burst.ConfirmedAt = origConfirmedAt
+			burst.UpdatedAt = origUpdatedAt
 			s.logger.WithFields(map[string]string{
 				"burst_id": burst.ID,
 				"error":    err.Error(),
