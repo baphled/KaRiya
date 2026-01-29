@@ -377,6 +377,11 @@ func (i *Intent) View() string {
 // renderTimelineView renders the timeline list view with modal overlays.
 func (i *Intent) renderTimelineView(screen *timeline.EventListScreen) string {
 	view := i.CreateViewWithBreadcrumbs("Main Menu", "Browse Timeline", i.getStateName())
+
+	// Set content height for viewport scrolling
+	contentHeight := view.GetAvailableContentHeight()
+	screen.SetContentHeight(contentHeight)
+
 	view.WithContent(screen.RenderContent())
 	view.WithHelp(i.getContextHelp())
 	baseView := view.Render()
