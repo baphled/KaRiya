@@ -111,8 +111,8 @@ func Setup(t TestingT) *TestEnv {
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
 
-	// Open database connection
-	db, err := sql.Open("sqlite", dbPath)
+	// Open database connection with WAL mode and busy timeout.
+	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		t.Fatalf("failed to open test db: %v", err)
@@ -209,8 +209,8 @@ func SetupShared() {
 
 	dbPath := filepath.Join(sharedTmpDir, "e2e_shared.db")
 
-	// Open database connection
-	db, err := sql.Open("sqlite", dbPath)
+	// Open database connection with WAL mode and busy timeout.
+	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
 		panic("failed to open shared test db: " + err.Error())
 	}
@@ -395,8 +395,8 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	configPath := filepath.Join(tmpDir, "config.yaml")
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
 
-	// Open database connection
-	db, err := sql.Open("sqlite", dbPath)
+	// Open database connection with WAL mode and busy timeout.
+	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
 		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
 		_ = os.RemoveAll(tmpDir)                       // Clean up temp dir on failure

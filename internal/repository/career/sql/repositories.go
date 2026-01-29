@@ -41,11 +41,27 @@ func NewRepositories(sqlDB *sql.DB) (*career.Repositories, error) {
 	return repos, nil
 }
 
+// OpenDB opens a SQLite database with WAL journal mode, a 5-second busy
+// timeout, and a single-connection pool. These settings prevent
+// SQLITE_BUSY errors on Windows where file locking is stricter.
+func OpenDB(dbPath string) (*sql.DB, error) {
+	dsn := dbPath + "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)"
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	// SQLite does not support concurrent writers; serialise all access.
+	db.SetMaxOpenConns(1)
+
+	return db, nil
+}
+
 // NewRepositoriesFromPath creates all SQL repositories from a database file path.
 // This opens a new database connection and runs migrations.
 // The caller should call Close() when done.
 func NewRepositoriesFromPath(dbPath string) (*career.Repositories, error) {
-	sqlDB, err := sql.Open("sqlite", dbPath)
+	sqlDB, err := OpenDB(dbPath)
 	if err != nil {
 		return nil, err
 	}
