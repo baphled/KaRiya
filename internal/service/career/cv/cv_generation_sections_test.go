@@ -95,7 +95,7 @@ type TestEventRepository struct {
 	events []*career.CareerEvent
 }
 
-func (r *TestEventRepository) List(_ context.Context, _ careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+func (r *TestEventRepository) List(_ context.Context, _ careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
 	return r.events, nil
 }
 
@@ -115,7 +115,7 @@ func (r *TestEventRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *TestEventRepository) Count(ctx context.Context, filters careerrepo.ListFilters) (int, error) {
+func (r *TestEventRepository) Count(ctx context.Context, filters careerrepo.EventListFilters) (int, error) {
 	return len(r.events), nil
 }
 

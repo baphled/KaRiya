@@ -6,31 +6,32 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Career Service - Missing Coverage", func() {
 	var (
-		repo    careerrepo.Repository
+		repo    careerrepo.EventRepository
 		service *Service
 		ctx     context.Context
 	)
 
 	BeforeEach(func() {
-		repo = careerrepo.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		service = NewService(repo)
 		ctx = context.Background()
 	})
 
 	Describe("DeleteBurst", func() {
 		var (
-			burstRepo *careerrepo.MemoryBurstRepository
+			burstRepo *careermemory.BurstRepository
 			testBurst *career.Burst
 		)
 
 		BeforeEach(func() {
-			burstRepo = careerrepo.NewMemoryBurstRepository()
+			burstRepo = careermemory.NewBurstRepository()
 			service.SetBurstRepository(burstRepo)
 
 			// Create a test burst
@@ -151,10 +152,10 @@ var _ = Describe("Career Service - Missing Coverage", func() {
 	})
 
 	Describe("GetFactsBySourceEventID", func() {
-		var factRepo *careerrepo.MemoryFactRepository
+		var factRepo *careermemory.FactRepository
 
 		BeforeEach(func() {
-			factRepo = careerrepo.NewMemoryFactRepository()
+			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 		})
 
@@ -180,10 +181,10 @@ var _ = Describe("Career Service - Missing Coverage", func() {
 	})
 
 	Describe("GetFactsBySourceBurstID", func() {
-		var factRepo *careerrepo.MemoryFactRepository
+		var factRepo *careermemory.FactRepository
 
 		BeforeEach(func() {
-			factRepo = careerrepo.NewMemoryFactRepository()
+			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 		})
 

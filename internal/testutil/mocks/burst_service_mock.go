@@ -109,7 +109,7 @@ func (m *BurstServiceMock) GetEventByID(_ context.Context, id string) (*career.C
 }
 
 // ListEvents implements BurstService.
-func (m *BurstServiceMock) ListEvents(_ context.Context, _ careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+func (m *BurstServiceMock) ListEvents(_ context.Context, _ careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
 	if m.listEventsError != nil {
 		return nil, m.listEventsError
 	}

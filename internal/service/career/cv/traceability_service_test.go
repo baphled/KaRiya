@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,7 +18,7 @@ import (
 var _ = Describe("TraceabilityService", func() {
 	var (
 		service        *TraceabilityService
-		eventRepo      careerrepo.Repository
+		eventRepo      careerrepo.EventRepository
 		factRepo       careerrepo.FactRepository
 		testLogger     *logger.Logger
 		ctx            context.Context
@@ -33,8 +34,8 @@ var _ = Describe("TraceabilityService", func() {
 	BeforeEach(func() {
 		ctx = context.Background()
 		testLogger = logger.New(io.Discard, logger.DebugLevel)
-		eventRepo = careerrepo.NewMemoryRepository()
-		factRepo = careerrepo.NewMemoryFactRepository()
+		eventRepo = careermemory.NewEventRepository()
+		factRepo = careermemory.NewFactRepository()
 		service = NewTraceabilityService(eventRepo, factRepo, testLogger)
 
 		// Create test events

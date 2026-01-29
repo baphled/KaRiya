@@ -653,7 +653,7 @@ func NewEmptyRepository() *EmptyRepository {
 	return &EmptyRepository{}
 }
 
-func (r *EmptyRepository) List(ctx context.Context, filters careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+func (r *EmptyRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
 	return []*career.CareerEvent{}, nil
 }
 
@@ -673,7 +673,7 @@ func (r *EmptyRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *EmptyRepository) Count(ctx context.Context, filters careerrepo.ListFilters) (int, error) {
+func (r *EmptyRepository) Count(ctx context.Context, filters careerrepo.EventListFilters) (int, error) {
 	return 0, nil
 }
 
@@ -685,7 +685,7 @@ func NewCountingRepository(count int) *CountingRepository {
 	return &CountingRepository{count: count}
 }
 
-func (r *CountingRepository) List(ctx context.Context, filters careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+func (r *CountingRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
 	events := make([]*career.CareerEvent, r.count)
 	for i := 0; i < r.count; i++ {
 		events[i] = &career.CareerEvent{
@@ -713,7 +713,7 @@ func (r *CountingRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *CountingRepository) Count(ctx context.Context, filters careerrepo.ListFilters) (int, error) {
+func (r *CountingRepository) Count(ctx context.Context, filters careerrepo.EventListFilters) (int, error) {
 	return r.count, nil
 }
 
@@ -889,7 +889,7 @@ func NewMockEventRepository(events []*career.CareerEvent) *MockEventRepository {
 	return &MockEventRepository{events: events}
 }
 
-func (r *MockEventRepository) List(ctx context.Context, filters careerrepo.ListFilters) ([]*career.CareerEvent, error) {
+func (r *MockEventRepository) List(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
 	return r.events, nil
 }
 
@@ -914,7 +914,7 @@ func (r *MockEventRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *MockEventRepository) Count(ctx context.Context, filters careerrepo.ListFilters) (int, error) {
+func (r *MockEventRepository) Count(ctx context.Context, filters careerrepo.EventListFilters) (int, error) {
 	return len(r.events), nil
 }
 

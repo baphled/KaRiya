@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -16,13 +17,13 @@ import (
 
 var _ = Describe("Career Service - Fact Methods", func() {
 	var (
-		repo    careerrepo.Repository
+		repo    careerrepo.EventRepository
 		service *Service
 		ctx     context.Context
 	)
 
 	BeforeEach(func() {
-		repo = careerrepo.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		service = NewService(repo)
 		ctx = context.Background()
 	})
@@ -430,7 +431,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 	Describe("SetFactRepository", func() {
 		It("should set the fact repository", func() {
-			factRepo := careerrepo.NewMemoryFactRepository()
+			factRepo := careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
 			// Verify by creating and retrieving a fact
@@ -453,11 +454,11 @@ var _ = Describe("Career Service - Fact Methods", func() {
 	})
 
 	Describe("GetFactsBySourceEventID", func() {
-		var factRepo *careerrepo.MemoryFactRepository
+		var factRepo *careermemory.FactRepository
 		var event *career.CareerEvent
 
 		BeforeEach(func() {
-			factRepo = careerrepo.NewMemoryFactRepository()
+			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
 			event = &career.CareerEvent{
@@ -501,11 +502,11 @@ var _ = Describe("Career Service - Fact Methods", func() {
 	})
 
 	Describe("GetFactsBySourceBurstID", func() {
-		var factRepo *careerrepo.MemoryFactRepository
+		var factRepo *careermemory.FactRepository
 		var burst *career.Burst
 
 		BeforeEach(func() {
-			factRepo = careerrepo.NewMemoryFactRepository()
+			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
 			event1 := &career.CareerEvent{
@@ -569,10 +570,10 @@ var _ = Describe("Career Service - Fact Methods", func() {
 	})
 
 	Describe("SaveFact", func() {
-		var factRepo *careerrepo.MemoryFactRepository
+		var factRepo *careermemory.FactRepository
 
 		BeforeEach(func() {
-			factRepo = careerrepo.NewMemoryFactRepository()
+			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 		})
 
@@ -670,11 +671,11 @@ var _ = Describe("Career Service - Fact Methods", func() {
 	})
 
 	Describe("DeleteFact", func() {
-		var factRepo *careerrepo.MemoryFactRepository
+		var factRepo *careermemory.FactRepository
 		var fact *career.Fact
 
 		BeforeEach(func() {
-			factRepo = careerrepo.NewMemoryFactRepository()
+			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
 			fact = &career.Fact{
@@ -723,7 +724,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should return the configured fact repository", func() {
-			memoryFactRepo := careerrepo.NewMemoryFactRepository()
+			memoryFactRepo := careermemory.NewFactRepository()
 			service.SetFactRepository(memoryFactRepo)
 
 			factRepo := service.GetFactRepository()

@@ -17,6 +17,8 @@ import (
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -106,11 +108,16 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		return 0
 	}
 
-	// Set up repository
-	var repo career.Repository
+	// Set up repository and service
+	var repo career.EventRepository
+	var svc *careerservice.Service
 
 	if inMemory {
-		repo = career.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
+		svc = careerservice.NewService(repo)
+		svc.SetFactRepository(careermemory.NewFactRepository())
+		svc.SetBurstRepository(careermemory.NewBurstRepository())
+		svc.SetSkillRepository(careermemory.NewSkillRepository())
 	} else {
 		if dbPath == "" {
 			homeDir, err := os.UserHomeDir()
@@ -140,36 +147,17 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 			return 1
 		}
 
-		// Create repository with existing connection
-		repo = career.NewSQLiteRepositoryWithDB(db)
-	}
-
-	svc := careerservice.NewService(repo)
-
-	// Initialize fact and burst repositories
-	if inMemory {
-		// Use in-memory repositories for facts and bursts
-		factRepo := career.NewMemoryFactRepository()
-		svc.SetFactRepository(factRepo)
-
-		burstRepo := career.NewMemoryBurstRepository()
-		svc.SetBurstRepository(burstRepo)
-	} else {
-		// Use SQLite repositories for facts and bursts (migrations already run)
-		sqliteRepo, ok := repo.(*career.SQLiteRepository)
-		if ok && sqliteRepo != nil {
-			db := sqliteRepo.GetDB()
-
-			// Use the *WithDB constructors since migrations are already applied
-			factRepo := career.NewSQLiteFactRepositoryWithDB(db)
-			svc.SetFactRepository(factRepo)
-
-			burstRepo := career.NewSQLiteBurstRepositoryWithDB(db)
-			svc.SetBurstRepository(burstRepo)
-
-			skillRepo := career.NewSQLiteSkillRepositoryWithDB(db)
-			svc.SetSkillRepository(skillRepo)
+		// Create GORM repositories from existing connection
+		repos, err := careersql.NewRepositories(db)
+		if err != nil {
+			fmt.Fprintf(errOut, "Error initializing GORM repositories: %v\n", err)
+			return 1
 		}
+		repo = repos.Event
+		svc = careerservice.NewService(repo)
+		svc.SetFactRepository(repos.Fact)
+		svc.SetBurstRepository(repos.Burst)
+		svc.SetSkillRepository(repos.Skill)
 	}
 
 	cliSvc := cliservice.NewCLIEventService(svc)
@@ -231,7 +219,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
-	events, err := svc.ListEvents(ctx, career.ListFilters{Limit: 10000})
+	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
 	if err != nil {
 		fmt.Fprintf(errOut, "Error retrieving events: %v\n", err)
 		return 1
@@ -299,7 +287,7 @@ func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 func handleExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
-	events, err := svc.ListEvents(ctx, career.ListFilters{Limit: 10000})
+	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
 	if err != nil {
 		fmt.Fprintf(errOut, "Error retrieving events: %v\n", err)
 		return 1

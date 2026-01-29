@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
 	"github.com/baphled/kariya/internal/testutil/mocks"
 	tea "github.com/charmbracelet/bubbletea"
@@ -1681,7 +1682,7 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should handle EditBurstMsg with valid update", func() {
-			mockRepo := careerrepo.NewMemoryBurstRepository()
+			mockRepo := careermemory.NewBurstRepository()
 			// Add the burst to the repo first.
 			_ = mockRepo.Create(ctx.Context, burst)
 
@@ -1712,11 +1713,11 @@ var _ = Describe("Intent Methods", func() {
 	Describe("Context CRUD with Repository", func() {
 		var (
 			ctx  *burst_management.IntentContext
-			repo *careerrepo.MemoryBurstRepository
+			repo *careermemory.BurstRepository
 		)
 
 		BeforeEach(func() {
-			repo = careerrepo.NewMemoryBurstRepository()
+			repo = careermemory.NewBurstRepository()
 			ctx = &burst_management.IntentContext{
 				Bursts:          []*career.Burst{},
 				BurstRepository: repo,
@@ -1817,7 +1818,7 @@ var _ = Describe("Intent Methods", func() {
 			intent      *burst_management.Intent
 			ctx         *burst_management.IntentContext
 			mockService *mocks.BurstServiceMock
-			repo        *careerrepo.MemoryBurstRepository
+			repo        *careermemory.BurstRepository
 			burst       *career.Burst
 		)
 
@@ -1829,7 +1830,7 @@ var _ = Describe("Intent Methods", func() {
 				EventIDs:    []string{"e1", "e2"},
 			}
 
-			repo = careerrepo.NewMemoryBurstRepository()
+			repo = careermemory.NewBurstRepository()
 			_ = repo.Create(context.Background(), burst)
 
 			mockService = mocks.NewBurstServiceMock()
@@ -2266,7 +2267,7 @@ var _ = Describe("Intent Methods", func() {
 		})
 
 		It("should handle edit burst msg with burst ID not found", func() {
-			repo := careerrepo.NewMemoryBurstRepository()
+			repo := careermemory.NewBurstRepository()
 			_ = repo.Create(ctx.Context, burst)
 			ctx.BurstRepository = repo
 
@@ -2324,7 +2325,7 @@ var _ = Describe("Intent Methods", func() {
 			intent      *burst_management.Intent
 			ctx         *burst_management.IntentContext
 			mockService *mocks.BurstServiceMock
-			repo        *careerrepo.MemoryBurstRepository
+			repo        *careermemory.BurstRepository
 			burst       *career.Burst
 		)
 
@@ -2336,7 +2337,7 @@ var _ = Describe("Intent Methods", func() {
 				EventIDs:    []string{"e1", "e2"},
 			}
 
-			repo = careerrepo.NewMemoryBurstRepository()
+			repo = careermemory.NewBurstRepository()
 			_ = repo.Create(context.Background(), burst)
 
 			mockService = mocks.NewBurstServiceMock()

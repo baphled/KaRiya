@@ -6,7 +6,7 @@ import (
 	"time"
 
 	career "github.com/baphled/kariya/internal/domain/career"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,18 +15,18 @@ import (
 var _ = Describe("CLI Command Handlers", func() {
 	var (
 		svc         *careerservice.Service
-		repo        *careerrepo.MemoryRepository
-		burstRepo   *careerrepo.MemoryBurstRepository
-		factRepo    *careerrepo.MemoryFactRepository
+		repo        *careermemory.EventRepository
+		burstRepo   *careermemory.BurstRepository
+		factRepo    *careermemory.FactRepository
 		ctx         context.Context
 		out, errOut bytes.Buffer
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		repo = careerrepo.NewMemoryRepository()
-		burstRepo = careerrepo.NewMemoryBurstRepository()
-		factRepo = careerrepo.NewMemoryFactRepository()
+		repo = careermemory.NewEventRepository()
+		burstRepo = careermemory.NewBurstRepository()
+		factRepo = careermemory.NewFactRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)

@@ -7,7 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/importer"
 	"github.com/baphled/kariya/internal/domain/career"
-	repo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -460,16 +460,16 @@ Test event,2024-01,Technical,technical,MyProject,MyCompany,Go;Ruby`
 		})
 	})
 
-	Describe("Skills Import with MemorySkillRepository", func() {
+	Describe("Skills Import with memory.SkillRepository", func() {
 		var (
-			skillRepo       *repo.MemorySkillRepository
+			skillRepo       *careermemory.SkillRepository
 			parserWithSkill *importer.CSVParser
 			ctx             context.Context
 		)
 
 		BeforeEach(func() {
 			ctx = context.Background()
-			skillRepo = repo.NewMemorySkillRepository()
+			skillRepo = careermemory.NewSkillRepository()
 			parserWithSkill = importer.NewCSVParser([]*career.CareerEvent{}, skillRepo, ctx)
 		})
 

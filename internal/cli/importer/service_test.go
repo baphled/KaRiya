@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/baphled/kariya/internal/cli/importer"
-	careerepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -14,13 +14,13 @@ import (
 var _ = Describe("Import Service", func() {
 	var (
 		importSvc *importer.ImportService
-		repo      *careerepo.MemoryRepository
+		repo      *careermemory.EventRepository
 		svc       *careerservice.Service
 		ctx       context.Context
 	)
 
 	BeforeEach(func() {
-		repo = careerepo.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		svc = careerservice.NewService(repo)
 		importSvc = importer.NewImportService(svc)
 		ctx = context.Background()

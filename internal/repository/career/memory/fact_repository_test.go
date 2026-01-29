@@ -1,5 +1,5 @@
 //nolint:errcheck // Test file - error handling for test setup is not relevant.
-package career_test
+package memory
 
 import (
 	"context"
@@ -9,18 +9,18 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	repo "github.com/baphled/kariya/internal/repository/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
 var _ = Describe("FactRepository", func() {
 	var (
-		repository repo.FactRepository
+		repository career_repo.FactRepository
 		ctx        context.Context
 	)
 
 	BeforeEach(func() {
-		repository = repo.NewMemoryFactRepository()
+		repository = NewFactRepository()
 		ctx = context.Background()
 	})
 
@@ -46,7 +46,7 @@ var _ = Describe("FactRepository", func() {
 			duplicate := fixtures.Fact("fact-1", "event-2")
 
 			err = repository.Create(ctx, duplicate)
-			Expect(err).To(MatchError(repo.ErrDuplicateFact))
+			Expect(err).To(MatchError(career_repo.ErrDuplicateFact))
 		})
 
 		It("should generate unique ID if not provided", func() {
@@ -97,7 +97,7 @@ var _ = Describe("FactRepository", func() {
 
 		It("should return error for non-existent fact", func() {
 			_, err := repository.GetByID(ctx, "non-existent-id")
-			Expect(err).To(MatchError(repo.ErrFactNotFound))
+			Expect(err).To(MatchError(career_repo.ErrFactNotFound))
 		})
 	})
 
@@ -134,7 +134,7 @@ var _ = Describe("FactRepository", func() {
 			fact := fixtures.Fact("non-existent-id", "event-1")
 
 			err := repository.Update(ctx, fact)
-			Expect(err).To(MatchError(repo.ErrFactNotFound))
+			Expect(err).To(MatchError(career_repo.ErrFactNotFound))
 		})
 	})
 
@@ -150,12 +150,12 @@ var _ = Describe("FactRepository", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			_, err = repository.GetByID(ctx, fact.ID)
-			Expect(err).To(MatchError(repo.ErrFactNotFound))
+			Expect(err).To(MatchError(career_repo.ErrFactNotFound))
 		})
 
 		It("should return error for non-existent fact", func() {
 			err := repository.Delete(ctx, "non-existent-id")
-			Expect(err).To(MatchError(repo.ErrFactNotFound))
+			Expect(err).To(MatchError(career_repo.ErrFactNotFound))
 		})
 	})
 
@@ -190,13 +190,13 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should list all facts with no filters", func() {
-			facts, err := repository.List(ctx, repo.FactListFilters{})
+			facts, err := repository.List(ctx, career_repo.FactListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(facts).To(HaveLen(3))
 		})
 
 		It("should filter facts by competency category", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				CompetencyCategory: "mentoring",
 			}
 
@@ -207,7 +207,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should filter facts by role fit", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				RoleFit: string(career.RoleFitEM),
 			}
 
@@ -218,7 +218,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should filter facts by audience relevance", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				AudienceRelevance: "peer",
 			}
 
@@ -228,7 +228,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should sort facts by creation date descending", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				SortBy:    "created_at",
 				SortOrder: "desc",
 			}
@@ -243,7 +243,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should apply pagination with limit", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				Limit: 2,
 			}
 
@@ -253,7 +253,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should apply pagination with offset", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				Offset: 1,
 			}
 
@@ -263,7 +263,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should apply pagination with both limit and offset", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				Offset: 1,
 				Limit:  1,
 			}
@@ -296,13 +296,13 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should count all facts with no filters", func() {
-			count, err := repository.Count(ctx, repo.FactListFilters{})
+			count, err := repository.Count(ctx, career_repo.FactListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(count).To(Equal(3))
 		})
 
 		It("should count facts matching competency filter", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				CompetencyCategory: "technical",
 			}
 
@@ -312,7 +312,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should count facts matching role fit filter", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				RoleFit: string(career.RoleFitEM),
 			}
 
@@ -322,7 +322,7 @@ var _ = Describe("FactRepository", func() {
 		})
 
 		It("should return zero for no matches", func() {
-			filters := repo.FactListFilters{
+			filters := career_repo.FactListFilters{
 				CompetencyCategory: "non-existent",
 			}
 
