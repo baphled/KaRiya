@@ -9,72 +9,104 @@ import (
 )
 
 var (
-	// ErrSkillNotFound is returned when a requested skill cannot be found
+	// ErrSkillNotFound is returned when a requested skill cannot be found.
 	ErrSkillNotFound = errors.New("skill not found")
 
-	// ErrDuplicateSkill is returned when attempting to create a skill that already exists
+	// ErrDuplicateSkill is returned when attempting to create a skill that already exists.
 	ErrDuplicateSkill = errors.New("skill already exists")
 )
 
-// SkillEventRepository defines the interface for skill persistence
+// SkillRepository defines the persistence contract for career skills.
+//
+// It covers full CRUD operations, category-based lookups, event-skill
+// relationship queries, and aggregate statistics such as event counts and
+// last-used dates. Implementations back the skill management intent and the
+// timeline detail view where associated skills are displayed. The interface
+// follows the repository pattern to decouple domain logic from storage
+// details.
+//
+// Every method accepts a ctx parameter that carries request-scoped deadlines
+// and cancellation signals.
+//
+// Methods:
+//
+//   - Create persists a new skill. The skill parameter is the domain object
+//     to store. Returns nil on success or an error if the write fails.
+//
+//   - GetByID looks up a single skill by its UUID. The id parameter is the
+//     unique identifier string. Returns the matching *career.Skill and nil
+//     on success, or nil and ErrSkillNotFound when no record exists.
+//
+//   - GetByName looks up a skill by its exact, case-sensitive name. The name
+//     parameter is the display name to match. Returns the matching
+//     *career.Skill and nil on success, or nil and ErrSkillNotFound when no
+//     record exists.
+//
+//   - List returns all skills that match the optional filters. The filters
+//     parameter may be nil for unfiltered results. Returns the matching
+//     []*career.Skill slice and nil, or nil and an error on failure.
+//
+//   - Update replaces the stored skill with the supplied version. The skill
+//     parameter is the updated domain object whose ID must already exist.
+//     Returns nil on success or an error if the skill does not exist.
+//
+//   - Delete removes a skill by its unique identifier. The id parameter is
+//     the skill UUID. Returns nil on success or an error if the skill does
+//     not exist.
+//
+//   - GetByCategory returns every skill whose Category field equals the
+//     category parameter string. Returns the matching []*career.Skill slice
+//     and nil, or nil and an error on failure.
+//
+//   - GetSkillsForEvent returns all skills linked to the given event. The
+//     eventID parameter is the event UUID. Returns the matching
+//     []*career.Skill slice and nil, or nil and an error on failure.
+//
+//   - GetEventCountsForSkills returns a map[string]int keyed by skill ID
+//     whose values are the number of events associated with each skill.
+//     The ctx parameter is the only input. Returns the map and nil, or nil
+//     and an error on failure.
+//
+//   - GetLastUsedForSkills returns a map[string]time.Time keyed by skill ID
+//     whose values are the most recent event date for each skill. The ctx
+//     parameter is the only input. Returns the map and nil, or nil and an
+//     error on failure.
+//
+//   - GetEventsUsingSkill returns all events linked to the given skill,
+//     ordered by date descending. The skillID parameter is the skill UUID.
+//     Returns the matching []*career.Event slice and nil, or nil and an
+//     error on failure.
 //
 //nolint:interfacebloat // Repository interfaces require CRUD + query + relation methods
 type SkillRepository interface {
-	// Create adds a new skill to the repository
 	Create(ctx context.Context, skill *career.Skill) error
-
-	// GetByID retrieves a specific skill by its unique identifier
 	GetByID(ctx context.Context, id string) (*career.Skill, error)
-
-	// GetByName retrieves a skill by its name (case-sensitive)
 	GetByName(ctx context.Context, name string) (*career.Skill, error)
-
-	// List retrieves skills with optional filtering
 	List(ctx context.Context, filters *SkillListFilters) ([]*career.Skill, error)
-
-	// Update modifies an existing skill
 	Update(ctx context.Context, skill *career.Skill) error
-
-	// Delete removes a skill from the repository
 	Delete(ctx context.Context, id string) error
-
-	// GetByCategory retrieves all skills in a specific category
 	GetByCategory(ctx context.Context, category string) ([]*career.Skill, error)
-
-	// GetSkillsForEvent retrieves all skills associated with an event
 	GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error)
-
-	// GetEventCountsForSkills returns a map of skill IDs to event counts
 	GetEventCountsForSkills(ctx context.Context) (map[string]int, error)
-
-	// GetLastUsedForSkills returns a map of skill IDs to their last used dates (from events)
 	GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error)
-
-	// GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC
-	GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error)
+	GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.Event, error)
 }
 
-// SkillListFilters provides flexible filtering options for skills
+// SkillListFilters provides flexible filtering options for skill queries.
+//
+// Category restricts results to a single category string. Level restricts
+// results to a proficiency tier (beginner, intermediate, advanced, expert).
+// MinEvents filters to skills with at least that many event associations;
+// set to 1 to show only skills that have been used. SortBy selects the
+// ordering field ("name", "events", "last_used", or "category"); the default
+// is "name". SortOrder is "asc" or "desc"; the default is "asc". Offset and
+// Limit control pagination.
 type SkillListFilters struct {
-	// Category to filter by
-	Category string
-
-	// Level to filter by (beginner, intermediate, advanced, expert)
-	Level string
-
-	// MinEvents filters to skills with at least this many event associations
-	// Use MinEvents=1 to show only "used" skills
+	Category  string
+	Level     string
 	MinEvents int
-
-	// SortBy specifies the field to sort by: "name", "events", "last_used", "category"
-	// Default is "name"
-	SortBy string
-
-	// SortOrder specifies ascending ("asc") or descending ("desc")
-	// Default is "asc"
+	SortBy    string
 	SortOrder string
-
-	// Pagination
-	Offset int
-	Limit  int
+	Offset    int
+	Limit     int
 }

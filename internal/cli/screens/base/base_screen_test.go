@@ -15,17 +15,17 @@ func TestBase(t *testing.T) {
 	RunSpecs(t, "Base Screens Suite")
 }
 
-// BaseScreen Tests
+// Screen Tests
 //
-// These tests define the behavior of the BaseScreen helper,
+// These tests define the behavior of the Screen helper,
 // which provides common functionality to all screens.
 //
 // Related:
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1.1)
-// - docs/TUI_DEVELOPER_GUIDE.md (BaseScreen usage)
+// - docs/TUI_DEVELOPER_GUIDE.md (Screen usage)
 
-var _ = Describe("BaseScreen", func() {
-	var bs *base.BaseScreen
+var _ = Describe("Screen", func() {
+	var bs *base.Screen
 
 	BeforeEach(func() {
 		bs = base.NewBaseScreen()
@@ -46,7 +46,7 @@ var _ = Describe("BaseScreen", func() {
 		})
 
 		It("should handle nil terminal info gracefully", func() {
-			// BaseScreen always has defaults, so calling Width/Height never panics
+			// Screen always has defaults, so calling Width/Height never panics
 			newScreen := base.NewBaseScreen()
 			Expect(newScreen.Width()).To(BeNumerically(">", 0))
 			Expect(newScreen.Height()).To(BeNumerically(">", 0))
@@ -193,30 +193,30 @@ var _ = Describe("BaseScreen", func() {
 
 	Describe("Composition", func() {
 		It("should be embeddable in concrete screen implementations", func() {
-			// Create a mock screen that embeds BaseScreen
+			// Create a mock screen that embeds Screen
 			type MockScreen struct {
-				*base.BaseScreen
+				*base.Screen
 				customField string
 			}
 
 			mock := &MockScreen{
-				BaseScreen:  base.NewBaseScreen(),
+				Screen:      base.NewBaseScreen(),
 				customField: "test",
 			}
 
-			// Should be able to access BaseScreen methods
+			// Should be able to access Screen methods
 			mock.SetTerminalInfo(100, 50)
 			Expect(mock.Width()).To(Equal(100))
 			Expect(mock.customField).To(Equal("test"))
 		})
 
-		It("should allow concrete screens to use BaseScreen methods", func() {
+		It("should allow concrete screens to use Screen methods", func() {
 			type MockScreen struct {
-				*base.BaseScreen
+				*base.Screen
 			}
 
 			mock := &MockScreen{
-				BaseScreen: base.NewBaseScreen(),
+				Screen: base.NewBaseScreen(),
 			}
 
 			// Use HandleWindowSizeMsg

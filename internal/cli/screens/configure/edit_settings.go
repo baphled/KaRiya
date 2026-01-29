@@ -14,7 +14,13 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// EditSettingsState identifies the settings editing screen in the state
+// matrix. On this screen the user sees an interactive huh form listing
+// every configuration setting for the selected domain. String and integer
+// settings appear as text inputs, booleans as Yes/No confirm fields, and
+// enumerations as select dropdowns. Tab moves between fields, Ctrl+S saves
+// immediately, and Escape cancels. On completion the screen computes a diff
+// of changed values and returns it as the submit result.
 const EditSettingsState = "edit_settings"
 
 // SettingsFormData holds the form values for configuration settings.
@@ -37,18 +43,15 @@ type EditSettingsScreen struct {
 	formData *SettingsFormData
 	form     *huh.Form
 
-	// Terminal and theme
 	termInfo *terminal.Info
 	theme    themes.Theme
 	logo     layout.LogoRenderer
 
-	// Original values for change detection
 	originalValues map[string]string
 }
 
 // NewEditSettingsScreen creates a new edit settings screen.
 func NewEditSettingsScreen(domain configtypes.ConfigurationDomain, settings []*configtypes.ConfigurationSetting) *EditSettingsScreen {
-	// Initialize form data from settings
 	formData := &SettingsFormData{
 		Values:          make(map[string]*string),
 		BoolValues:      make(map[string]*bool),
@@ -85,7 +88,7 @@ func NewEditSettingsScreen(domain configtypes.ConfigurationDomain, settings []*c
 // rebuildForm creates the huh form based on current settings.
 func (s *EditSettingsScreen) rebuildForm() {
 	if len(s.settings) == 0 {
-		s.form = nil // Don't create empty form - it panics on View()
+		s.form = nil
 		return
 	}
 
@@ -99,9 +102,8 @@ func (s *EditSettingsScreen) rebuildForm() {
 
 	group := huh.NewGroup(fields...)
 
-	// Use theme-aware form
 	huhTheme := themes.GenerateHuhTheme(s.theme)
-	formHeight := s.termInfo.Height - 20 // Reserve space for layout
+	formHeight := s.termInfo.Height - 20
 	if formHeight < 10 {
 		formHeight = 10
 	}
@@ -201,14 +203,12 @@ func (s *EditSettingsScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult)
 		}
 	}
 
-	// Delegate to form
 	if s.form != nil {
 		model, cmd := s.form.Update(msg)
 		if f, ok := model.(*huh.Form); ok {
 			s.form = f
 		}
 
-		// Check if form completed
 		if s.form.State == huh.StateCompleted {
 			s.formData.SubmitConfirmed = true
 			return cmd, &screens.SubmitResult{FormData: s.GetChanges()}
@@ -224,7 +224,6 @@ func (s *EditSettingsScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult)
 func (s *EditSettingsScreen) View() string {
 	domainLabel := formatDomainLabel(s.domain)
 
-	// Build form content
 	var formContent string
 	if s.form != nil {
 		formContent = s.form.View()
@@ -232,14 +231,12 @@ func (s *EditSettingsScreen) View() string {
 		formContent = primitives.Muted("No settings available for this domain.", s.theme).Render()
 	}
 
-	// Build help footer
 	helpFooter := primitives.RenderHelpFooter(s.theme,
 		primitives.NextFieldBadge(s.theme),
 		primitives.SaveBadge(s.theme),
 		primitives.CancelBadge(s.theme),
 	)
 
-	// Use UIKit ScreenLayout
 	screenLayout := layout.NewScreenLayout(s.termInfo).
 		WithTheme(s.theme).
 		WithBreadcrumbs("Main Menu", "Configure System", domainLabel).
@@ -295,7 +292,6 @@ func (s *EditSettingsScreen) GetChanges() map[string]interface{} {
 		originalVal := s.originalValues[setting.Key]
 
 		if newStrVal != originalVal {
-			// Convert to appropriate type
 			switch setting.Type {
 			case "int":
 				if val, err := strconv.Atoi(newStrVal); err == nil {

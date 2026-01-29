@@ -36,7 +36,7 @@ var _ = Describe("BulletGenerator", func() {
 	})
 
 	It("should generate bullets from events", func() {
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			fixtures.EventWith("e1", "Led team to deliver microservices", "", ""),
 		}
 
@@ -95,7 +95,7 @@ var _ = Describe("BulletGenerator", func() {
 					},
 				}
 
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, nil, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// Should only include fact1 (relevant to hiring_manager)
 				// fact2 is only relevant to peer, should be excluded
@@ -119,7 +119,7 @@ var _ = Describe("BulletGenerator", func() {
 					},
 				}
 
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, nil, "principal", "recruiter")
+				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "recruiter")
 				Expect(err).NotTo(HaveOccurred())
 				// Should only include fact1 (relevant to recruiter)
 				Expect(len(bullets)).To(Equal(1))
@@ -142,7 +142,7 @@ var _ = Describe("BulletGenerator", func() {
 					},
 				}
 
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, nil, "principal", "peer")
+				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "peer")
 				Expect(err).NotTo(HaveOccurred())
 				// Should only include fact1 (relevant to peer)
 				Expect(len(bullets)).To(Equal(1))
@@ -165,7 +165,7 @@ var _ = Describe("BulletGenerator", func() {
 					},
 				}
 
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, nil, "principal", "")
+				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "")
 				Expect(err).NotTo(HaveOccurred())
 				// Should include both facts when no audience filter
 				Expect(len(bullets)).To(Equal(2))
@@ -181,7 +181,7 @@ var _ = Describe("BulletGenerator", func() {
 					},
 				}
 
-				bullets, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, nil, "principal", "hiring_manager")
+				bullets, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				// fact1 is only relevant to peer, not hiring_manager
 				Expect(len(bullets)).To(Equal(0))
@@ -198,12 +198,12 @@ var _ = Describe("BulletGenerator", func() {
 				}
 
 				// Should be included for hiring_manager
-				bulletsMgr, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, nil, "principal", "hiring_manager")
+				bulletsMgr, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "hiring_manager")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bulletsMgr)).To(Equal(1))
 
 				// Should also be included for peer
-				bulletsPeer, err := generator.GenerateBullets(ctx, []*career.CareerEvent{}, facts, nil, "principal", "peer")
+				bulletsPeer, err := generator.GenerateBullets(ctx, []*career.Event{}, facts, nil, "principal", "peer")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(len(bulletsPeer)).To(Equal(1))
 			})
@@ -319,9 +319,9 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 	})
 
 	Describe("Category propagation", func() {
-		Context("from CareerEvent to Bullet", func() {
+		Context("from Event to Bullet", func() {
 			It("should propagate primary category from event", func() {
-				events := []*career.CareerEvent{
+				events := []*career.Event{
 					fixtures.EventWithCategories("evt-1", "Led team migration to Kubernetes", []string{"leadership", "technical"}),
 				}
 
@@ -333,7 +333,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 			})
 
 			It("should propagate technical category from event", func() {
-				events := []*career.CareerEvent{
+				events := []*career.Event{
 					fixtures.EventWithCategories("evt-2", "Built real-time data pipeline", []string{"technical"}),
 				}
 
@@ -446,7 +446,7 @@ var _ = Describe("BUG-008: Role-based scoring", func() {
 
 		Context("end-to-end role differentiation", func() {
 			It("should produce different rankings for different roles", func() {
-				events := []*career.CareerEvent{
+				events := []*career.Event{
 					fixtures.EventWithCategories("1", "Built data pipeline", []string{"technical"}),
 					fixtures.EventWithCategories("2", "Led architecture redesign", []string{"leadership"}),
 					fixtures.EventWithCategories("3", "Mentored junior engineers", []string{"mentoring"}),
@@ -1166,7 +1166,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 	})
 
 	It("should NOT merge bullets with identical text from different companies", func() {
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			fixtures.EventWith("e-friday", "Acted as senior stabilising engineer during late-stage delivery pressure", "We Are Friday", ""),
 			fixtures.EventWith("e-beis", "Acted as senior stabilising engineer during late-stage delivery pressure", "BEIS", ""),
 		}
@@ -1177,7 +1177,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 	})
 
 	It("should merge bullets with identical text from the same company", func() {
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			fixtures.EventWith("e1", "Built scalable backend services", "Acme Corp", "Project A"),
 			fixtures.EventWith("e2", "Built scalable backend services", "Acme Corp", "Project B"),
 		}
@@ -1189,7 +1189,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 
 	It("should produce separate bullets for cross-cutting entries across many companies", func() {
 		companies := []string{"Company A", "Company B", "Company C", "Company D", "Company E"}
-		events := make([]*career.CareerEvent, len(companies))
+		events := make([]*career.Event, len(companies))
 		for i, company := range companies {
 			events[i] = fixtures.EventWith(
 				fmt.Sprintf("e-%d", i+1),
@@ -1206,7 +1206,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 	})
 
 	It("should keep SourceEventIDs scoped to the same company after dedup", func() {
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			fixtures.EventWith("e-friday-1", "Led delivery of key features", "We Are Friday", ""),
 			fixtures.EventWith("e-friday-2", "Led delivery of key features", "We Are Friday", ""),
 			fixtures.EventWith("e-beis-1", "Led delivery of key features", "BEIS", ""),
@@ -1236,7 +1236,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 	It("should resolve primary company deterministically when counts are tied", func() {
 		// Build an event map where a bullet has source events from two
 		// companies with equal counts - a genuine tie scenario.
-		eventMap := map[string]*career.CareerEvent{
+		eventMap := map[string]*career.Event{
 			"e-zebra": fixtures.EventWith("e-zebra", "work", "Zebra Inc", ""),
 			"e-alpha": fixtures.EventWith("e-alpha", "work", "Alpha Corp", ""),
 		}
@@ -1257,7 +1257,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 	It("should not merge bullets from events missing from the event map", func() {
 		// Events with IDs that won't resolve to a company should not merge
 		// with each other under an empty key (BUG-015 defence-in-depth).
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			fixtures.EventWith("e1", "Built monitoring dashboards", "", "Project X"),
 			fixtures.EventWith("e2", "Built monitoring dashboards", "", "Project Y"),
 		}
@@ -1276,7 +1276,7 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 			{ID: "b1", Text: "Identical orphaned text", SourceEventIDs: nil},
 			{ID: "b2", Text: "Identical orphaned text", SourceEventIDs: nil},
 		}
-		eventMap := map[string]*career.CareerEvent{}
+		eventMap := map[string]*career.Event{}
 
 		result := bg.deduplicateBullets(bullets, eventMap)
 		Expect(result).To(HaveLen(2),

@@ -20,7 +20,7 @@ type MetadataFormData struct {
 // The form has 6 fields: Date, Company, Project, Tags, Categories, Skills,
 // plus a Submit confirmation button.
 func NewMetadataEditorForm(
-	event *career.CareerEvent, availableTags, availableCategories []string, availableSkills []*career.Skill,
+	event *career.Event, availableTags, availableCategories []string, availableSkills []*career.Skill,
 ) *huh.Form {
 	data := GetMetadataFormData(event)
 	data.SubmitConfirmed = false
@@ -191,7 +191,7 @@ func NewMetadataEditorFormWithData(
 }
 
 // ApplyMetadataFormData applies the form data to an event domain object.
-func ApplyMetadataFormData(event *career.CareerEvent, data *MetadataFormData) error {
+func ApplyMetadataFormData(event *career.Event, data *MetadataFormData) error {
 	// Parse date string
 	parsedDate, err := ParseDateString(data.Date)
 	if err != nil {
@@ -209,7 +209,7 @@ func ApplyMetadataFormData(event *career.CareerEvent, data *MetadataFormData) er
 }
 
 // GetMetadataFormData extracts form data from an event domain object.
-func GetMetadataFormData(event *career.CareerEvent) *MetadataFormData {
+func GetMetadataFormData(event *career.Event) *MetadataFormData {
 	return &MetadataFormData{
 		Date:       event.Date.Format("2006-01-02"),
 		Company:    event.Company,

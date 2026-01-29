@@ -18,7 +18,7 @@ var _ = Describe("Context", func() {
 			})
 
 			It("should create a context with events", func() {
-				events := []*career.CareerEvent{
+				events := []*career.Event{
 					fixtures.Event("event-1"),
 					fixtures.Event("event-2"),
 				}
@@ -94,7 +94,7 @@ var _ = Describe("Context", func() {
 
 			Context("when Events already exist", func() {
 				It("should preserve existing Events", func() {
-					events := []*career.CareerEvent{
+					events := []*career.Event{
 						fixtures.Event("event-1"),
 					}
 					ctx := &browsetimeline.IntentContext{

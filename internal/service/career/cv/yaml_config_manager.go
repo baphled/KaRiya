@@ -68,7 +68,7 @@ func (m *YAMLConfigManager) LoadConfig(ctx context.Context, name string) (*caree
 	}
 
 	// Read file
-	data, err := os.ReadFile(configPath) // #nosec G304 -- path constructed from validated config directory
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			m.logger.Info("Config not found: %s at path %s", name, configPath)
@@ -246,7 +246,7 @@ func (m *YAMLConfigManager) ListConfigs(ctx context.Context) ([]*career.CVConfig
 		config, err := m.LoadConfig(ctx, configName)
 		if err != nil {
 			m.logger.Warn("Failed to load config during list: %v for config %s", err, configName)
-			continue // Skip configs that fail to load
+			continue
 		}
 
 		configs = append(configs, config)
@@ -323,12 +323,12 @@ func sanitizeFileName(name string) string {
 	return replacer.Replace(name)
 }
 
-// GetConfigDirectory returns the configuration directory path
+// GetConfigDirectory returns the configuration directory path.
 func (m *YAMLConfigManager) GetConfigDirectory() string {
 	return m.configDir
 }
 
-// VerifyDirectory checks if the config directory exists and is writable
+// VerifyDirectory checks if the config directory exists and is writable.
 func (m *YAMLConfigManager) VerifyDirectory() error {
 	// Check if directory exists
 	info, err := os.Stat(m.configDir)

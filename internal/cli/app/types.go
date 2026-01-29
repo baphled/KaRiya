@@ -14,24 +14,35 @@ import (
 	cv "github.com/baphled/kariya/internal/service/career/cv"
 )
 
-// AppState represents the current state of the application.
-type AppState string
+// State identifies which top-level phase the application is in, controlling
+// whether the root Model renders the main menu or delegates to an active intent.
+type State string
 
 const (
-	StateMenu   AppState = "menu"
-	StateIntent AppState = "intent"
+	// StateMenu is the landing state where the user sees the application logo and a
+	// selectable list of available intents such as Browse Timeline, Capture Event, and
+	// Manage Skills. Keyboard input is handled by the menu navigation logic.
+	StateMenu State = "menu"
+	// StateIntent is the active state entered after the user selects a menu item. All
+	// input and rendering are forwarded to the intent returned by the IntentRouter. The
+	// application returns to StateMenu when the intent completes or the user presses Escape.
+	StateIntent State = "intent"
 )
 
-// MenuItem represents a menu option.
+// MenuItem holds the display label, intent identifier, and help text for a
+// single entry in the main menu. The IntentRouter uses the Intent field to
+// resolve the corresponding workflow when the user confirms their selection.
 type MenuItem struct {
 	Name   string
 	Intent string
 	Help   string
 }
 
-// Model is the root Bubble Tea model for the KaRiya application.
+// Model is the root Bubble Tea model for the KaRiya application. It owns the
+// top-level state machine, service dependencies, and visual chrome such as
+// the logo and help modal. All keyboard and resize events flow through its
+// Update method before being dispatched to either the menu or the active intent.
 type Model struct {
-	// Core services.
 	cliService      *service.CLIEventService
 	careerService   *careerservice.Service
 	logger          *logger.Logger
@@ -40,30 +51,23 @@ type Model struct {
 	cvGenService    cv.CVGenerationService
 	cvExportService *cv.ExportService
 
-	// Theme for consistent styling.
 	theme themes.Theme
 
-	// UI state.
-	state       AppState
+	state       State
 	width       int
 	height      int
 	showingHelp bool
 
-	// Menu state.
 	selectedMenuIndex int
 	menuItems         []MenuItem
 	logo              *display.Logo
 
-	// Terminal info for responsive rendering.
 	terminalInfo *terminal.Info
 
-	// Context for intent creation.
 	ctx context.Context
 
-	// Info modal for blocking user feedback (empty state warnings).
 	infoModal *feedback.InfoModal
 
-	// Initial navigation settings (set before Init).
 	initialScreen      Screen
 	initialCaptureMode string
 }

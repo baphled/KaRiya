@@ -16,9 +16,9 @@ type LogoModel interface {
 	SetWidth(width int)
 }
 
-// BaseScreen provides common functionality for all Screen implementations.
+// Screen provides common functionality for all Screen implementations.
 //
-// Screens should embed BaseScreen to get:
+// Screens should embed Screen to get:
 // - Terminal dimension management (width, height)
 // - Theme management
 // - StandardView creation helpers
@@ -27,19 +27,19 @@ type LogoModel interface {
 // Example usage:
 //
 //	type MyScreen struct {
-//	    *base.BaseScreen
+//	    *base.Screen
 //	    // ... screen-specific fields
 //	}
 //
 //	func NewMyScreen() *MyScreen {
 //	    return &MyScreen{
-//	        BaseScreen: base.NewBaseScreen(),
+//	        Screen: base.NewBaseScreen(),
 //	    }
 //	}
 //
 //	func (s *MyScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 //	    // Handle WindowSizeMsg automatically
-//	    if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+//	    if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 //	        return cmd, nil
 //	    }
 //
@@ -56,8 +56,8 @@ type LogoModel interface {
 //
 // Related:
 // - internal/cli/screens/contract.go (Screen interface)
-// - internal/cli/components/standard_view.go (StandardView)
-type BaseScreen struct {
+// - internal/cli/components/standard_view.go (StandardView).
+type Screen struct {
 	// terminalWidth is the current terminal width in characters
 	terminalWidth int
 
@@ -75,14 +75,14 @@ type BaseScreen struct {
 	logoSpacing int
 }
 
-// NewBaseScreen creates a new BaseScreen with default dimensions.
+// NewBaseScreen creates a new Screen with default dimensions.
 //
 // Default dimensions (120x40) are used until SetTerminalInfo is called
 // with actual terminal dimensions.
-func NewBaseScreen() *BaseScreen {
-	return &BaseScreen{
-		terminalWidth:  120, // Default width
-		terminalHeight: 40,  // Default height
+func NewBaseScreen() *Screen {
+	return &Screen{
+		terminalWidth:  120,
+		terminalHeight: 40,
 	}
 }
 
@@ -90,7 +90,7 @@ func NewBaseScreen() *BaseScreen {
 //
 // This should be called when the screen receives a WindowSizeMsg,
 // or when the screen is initialized with known dimensions.
-func (b *BaseScreen) SetTerminalInfo(width, height int) {
+func (b *Screen) SetTerminalInfo(width, height int) {
 	b.terminalWidth = width
 	b.terminalHeight = height
 }
@@ -99,7 +99,7 @@ func (b *BaseScreen) SetTerminalInfo(width, height int) {
 //
 // This should be called when the intent sets up the screen,
 // passing the global or intent-specific theme.
-func (b *BaseScreen) SetTheme(theme interface{}) {
+func (b *Screen) SetTheme(theme interface{}) {
 	b.theme = theme
 }
 
@@ -108,7 +108,7 @@ func (b *BaseScreen) SetTheme(theme interface{}) {
 // This should be called when the intent sets up the screen,
 // passing the shared logo instance and optional spacing.
 // Accepts any LogoModel implementation (typically display.Logo).
-func (b *BaseScreen) SetLogo(logo interface{}, spacing int) {
+func (b *Screen) SetLogo(logo interface{}, spacing int) {
 	// Type assert to LogoModel interface
 	if logoModel, ok := logo.(LogoModel); ok {
 		b.logo = logoModel
@@ -117,27 +117,27 @@ func (b *BaseScreen) SetLogo(logo interface{}, spacing int) {
 }
 
 // GetLogo returns the currently set logo.
-func (b *BaseScreen) GetLogo() LogoModel {
+func (b *Screen) GetLogo() LogoModel {
 	return b.logo
 }
 
 // GetLogoSpacing returns the logo spacing.
-func (b *BaseScreen) GetLogoSpacing() int {
+func (b *Screen) GetLogoSpacing() int {
 	return b.logoSpacing
 }
 
 // Width returns the current terminal width.
-func (b *BaseScreen) Width() int {
+func (b *Screen) Width() int {
 	return b.terminalWidth
 }
 
 // Height returns the current terminal height.
-func (b *BaseScreen) Height() int {
+func (b *Screen) Height() int {
 	return b.terminalHeight
 }
 
 // Theme returns the current theme.
-func (b *BaseScreen) Theme() interface{} {
+func (b *Screen) Theme() interface{} {
 	return b.theme
 }
 
@@ -157,7 +157,7 @@ func (b *BaseScreen) Theme() interface{} {
 //	)
 //
 // This automatically uses the current terminal dimensions and theme.
-func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) string {
+func (b *Screen) CreateView(breadcrumbs []string, content, footer string) string {
 	// Create terminal info from current dimensions
 	termInfo := &terminal.Info{
 		Width:  b.terminalWidth,
@@ -189,7 +189,7 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 // Call this at the start of your screen's Update method:
 //
 //	func (s *MyScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-//	    if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+//	    if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 //	        return cmd, nil
 //	    }
 //	    // ... rest of update logic
@@ -198,7 +198,7 @@ func (b *BaseScreen) CreateView(breadcrumbs []string, content, footer string) st
 // Returns nil if msg is not a WindowSizeMsg.
 // Returns a command (usually nil) if msg is a WindowSizeMsg.
 // Never returns a ScreenResult for WindowSizeMsg (window resize is not a user action).
-func (b *BaseScreen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
+func (b *Screen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
 	if wsm, ok := msg.(tea.WindowSizeMsg); ok {
 		b.SetTerminalInfo(wsm.Width, wsm.Height)
 	}
@@ -210,6 +210,6 @@ func (b *BaseScreen) HandleWindowSizeMsg(msg tea.Msg) tea.Cmd {
 //
 // This method allows intents to get just the content without StandardView wrapper,
 // enabling them to apply their own StandardView with custom breadcrumbs and help.
-func (b *BaseScreen) RenderContent() string {
+func (b *Screen) RenderContent() string {
 	return ""
 }

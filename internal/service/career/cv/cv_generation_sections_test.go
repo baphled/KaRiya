@@ -30,7 +30,7 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 		event.Date = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 		event.Tags = []string{"architecture"}
 		event.Categories = []string{"technical"}
-		events := []*career.CareerEvent{event}
+		events := []*career.Event{event}
 
 		fact := fixtures.Fact("fact-1", event.ID)
 		fact.Text = "Expert in distributed systems"
@@ -92,22 +92,22 @@ var _ = Describe("CVGenerationService - Sections Should Be Populated", func() {
 
 // TestEventRepository provides test events
 type TestEventRepository struct {
-	events []*career.CareerEvent
+	events []*career.Event
 }
 
-func (r *TestEventRepository) List(_ context.Context, _ careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
+func (r *TestEventRepository) List(_ context.Context, _ careerrepo.EventListFilters) ([]*career.Event, error) {
 	return r.events, nil
 }
 
-func (r *TestEventRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+func (r *TestEventRepository) GetByID(ctx context.Context, id string) (*career.Event, error) {
 	return nil, nil //nolint:nilnil // test stub - method not used in these tests
 }
 
-func (r *TestEventRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+func (r *TestEventRepository) Create(ctx context.Context, event *career.Event) error {
 	return nil
 }
 
-func (r *TestEventRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+func (r *TestEventRepository) Update(ctx context.Context, event *career.Event) error {
 	return nil
 }
 

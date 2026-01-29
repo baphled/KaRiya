@@ -47,7 +47,7 @@ type ConfigureSystemIntent struct {
 	selectedDomain configtypes.ConfigurationDomain
 	pendingChanges map[string]interface{}
 	active         bool
-	saving         bool // Prevents concurrent save operations
+	saving         bool
 	result         *ConfigureSystemResult
 }
 
@@ -463,6 +463,11 @@ type editModalAdapter struct {
 	width, height int
 }
 
+// Render renders the edit settings modal as a form overlay showing the editable
+// fields for the currently selected configuration domain. It delegates to the
+// underlying EditSettingsModal, using the adapter's captured terminal dimensions
+// because the ScreenLayout's ShowModalOverlay interface discards its own size
+// arguments for these custom configure modals.
 func (a editModalAdapter) Render(_, _ int) string {
 	return a.modal.Render(a.width, a.height)
 }
@@ -472,6 +477,10 @@ type reviewModalAdapter struct {
 	width, height int
 }
 
+// Render renders the review changes modal as a diff overlay that displays the
+// original and modified values for each changed setting, allowing the user to
+// verify pending modifications before proceeding to confirmation. It delegates
+// to the underlying ReviewChangesModal with the adapter's captured dimensions.
 func (a reviewModalAdapter) Render(_, _ int) string {
 	return a.modal.Render(a.width, a.height)
 }
@@ -481,6 +490,9 @@ type confirmModalAdapter struct {
 	width, height int
 }
 
+// Render renders the confirmation modal as a yes/no prompt overlay asking the
+// user to authorize saving the reviewed configuration changes. It delegates to
+// the underlying ConfirmModal with the adapter's captured dimensions.
 func (a confirmModalAdapter) Render(_, _ int) string {
 	return a.modal.Render(a.width, a.height)
 }

@@ -17,19 +17,19 @@ const (
 	SpinnerMiniDot
 	// SpinnerJump is a jumping animation.
 	SpinnerJump
-	// SpinnerPulse is a pulsing animation
+	// SpinnerPulse is a pulsing animation.
 	SpinnerPulse
-	// SpinnerPoints is an ellipsis-style spinner
+	// SpinnerPoints is an ellipsis-style spinner.
 	SpinnerPoints
-	// SpinnerGlobe is a globe spinning animation
+	// SpinnerGlobe is a globe spinning animation.
 	SpinnerGlobe
-	// SpinnerMoon is a moon phase animation
+	// SpinnerMoon is a moon phase animation.
 	SpinnerMoon
-	// SpinnerMonkey is a monkey animation
+	// SpinnerMonkey is a monkey animation.
 	SpinnerMonkey
-	// SpinnerMeter is a meter-style animation
+	// SpinnerMeter is a meter-style animation.
 	SpinnerMeter
-	// SpinnerHamburger is a hamburger menu animation
+	// SpinnerHamburger is a hamburger menu animation.
 	SpinnerHamburger
 )
 

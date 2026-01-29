@@ -13,7 +13,7 @@ import (
 // It owns the complete lifecycle of timeline browsing, including:
 // - Displaying a filtered and sorted timeline of events
 // - Selecting and viewing event details
-// - Returning the selected event or cancelling
+// - Returning the selected event or cancelling.
 type Intent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management.
 	*intents.BaseIntent
@@ -33,7 +33,7 @@ type Intent struct {
 	// --- Flattened state fields ---
 
 	// filteredEvents are the events after applying current filters.
-	filteredEvents []*career.CareerEvent
+	filteredEvents []*career.Event
 
 	// selectedIndex is the index of the currently selected event.
 	selectedIndex int
@@ -45,13 +45,13 @@ type Intent struct {
 	filterStack *behaviors.FilterStack
 
 	// selectedEvent is the event currently being viewed.
-	selectedEvent *career.CareerEvent
+	selectedEvent *career.Event
 
 	// selectedFacts are facts selected from the event.
 	selectedFacts []*career.Fact
 
 	// viewedEvents tracks events viewed during the session.
-	viewedEvents []*career.CareerEvent
+	viewedEvents []*career.Event
 
 	// deleteError stores any error from delete operation.
 	deleteError error

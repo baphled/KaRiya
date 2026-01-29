@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	// ErrConfigNotFound is returned when a configuration is not found
+	// ErrConfigNotFound is returned when a configuration is not found.
 	ErrConfigNotFound = errors.New("configuration not found")
 
-	// ErrInvalidConfigName is returned when configuration name is invalid
+	// ErrInvalidConfigName is returned when configuration name is invalid.
 	ErrInvalidConfigName = errors.New("invalid configuration name")
 )
 

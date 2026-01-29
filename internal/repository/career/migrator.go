@@ -77,7 +77,7 @@ func handleBaselineMigration(db *sql.DB) error {
 	}
 
 	// This is a pre-goose database - determine what migrations to mark as applied
-	baselineVersion := int64(1) // At minimum, career_events exists
+	baselineVersion := int64(1)
 
 	// Check for categories column (migration 002)
 	if hasColumn(db, "career_events", "categories") {
@@ -122,7 +122,7 @@ func handleBaselineMigration(db *sql.DB) error {
 	return nil
 }
 
-// hasTable checks if a table exists in the database
+// hasTable checks if a table exists in the database.
 func hasTable(db *sql.DB, tableName string) bool {
 	var count int
 	err := db.QueryRow(`
@@ -132,7 +132,7 @@ func hasTable(db *sql.DB, tableName string) bool {
 	return err == nil && count > 0
 }
 
-// hasColumn checks if a column exists in a table using PRAGMA table_info
+// hasColumn checks if a column exists in a table using PRAGMA table_info.
 func hasColumn(db *sql.DB, tableName, columnName string) bool {
 	rows, err := db.Query(fmt.Sprintf("PRAGMA table_info(%s)", tableName))
 	if err != nil {
@@ -165,12 +165,12 @@ func MigrationStatus(db *sql.DB) (int64, error) {
 	return goose.GetDBVersion(db)
 }
 
-// RunMigrationsForTests is a fast-path migration function for tests that skips
+// RunMigrationsForTests is a fast-path migration function for tests that skips.
 // all baseline detection checks. Use this only for fresh test databases.
 // This is significantly faster than RunMigrations() because it:
 // - Skips checking for pre-goose databases
 // - Skips detecting existing tables/columns
-// - Just runs the migrations directly on a known-fresh database
+// - Just runs the migrations directly on a known-fresh database.
 func RunMigrationsForTests(db *sql.DB) error {
 	goose.SetBaseFS(migrations)
 

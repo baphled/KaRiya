@@ -21,7 +21,7 @@ import (
 var _ = Describe("EventSubmitScreen", func() {
 	var (
 		screen      *capture.EventSubmitScreen
-		testEvent   *career.CareerEvent
+		testEvent   *career.Event
 		testBursts  []*career.Burst
 		testFacts   []*career.Fact
 		breadcrumbs []string
@@ -30,7 +30,7 @@ var _ = Describe("EventSubmitScreen", func() {
 	BeforeEach(func() {
 		now := time.Now()
 
-		testEvent = &career.CareerEvent{
+		testEvent = &career.Event{
 			ID:      "evt-1",
 			Text:    "Test event",
 			Date:    now,

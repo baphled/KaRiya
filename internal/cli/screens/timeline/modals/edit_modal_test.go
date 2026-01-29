@@ -14,11 +14,11 @@ import (
 var _ = Describe("EditModal", func() {
 	var (
 		modal *modals.EditModal
-		event *career.CareerEvent
+		event *career.Event
 	)
 
 	BeforeEach(func() {
-		event = &career.CareerEvent{
+		event = &career.Event{
 			ID:         "test-event-id",
 			Text:       "Original event text",
 			Date:       time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),

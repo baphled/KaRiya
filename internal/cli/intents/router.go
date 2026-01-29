@@ -218,8 +218,8 @@ func (r *DefaultIntentRouter) GetHistoryDepth() int {
 	return len(r.intentHistory) + 1
 }
 
-// UpdateTerminalInfo updates the router's terminal information
-// This should be called by the root app when it receives WindowSizeMsg
+// UpdateTerminalInfo updates the router's terminal information.
+// This should be called by the root app when it receives WindowSizeMsg.
 func (r *DefaultIntentRouter) UpdateTerminalInfo(info *terminal.Info) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -234,7 +234,7 @@ func (r *DefaultIntentRouter) UpdateTerminalInfo(info *terminal.Info) {
 	}
 }
 
-// GetTerminalInfo returns the current terminal information
+// GetTerminalInfo returns the current terminal information.
 func (r *DefaultIntentRouter) GetTerminalInfo() *terminal.Info {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -242,7 +242,7 @@ func (r *DefaultIntentRouter) GetTerminalInfo() *terminal.Info {
 	return r.terminalInfo
 }
 
-// SetLogo sets the shared logo instance for all intents
+// SetLogo sets the shared logo instance for all intents.
 func (r *DefaultIntentRouter) SetLogo(logo LogoModel) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -257,7 +257,7 @@ func (r *DefaultIntentRouter) SetLogo(logo LogoModel) {
 	}
 }
 
-// GetLogo returns the shared logo instance
+// GetLogo returns the shared logo instance.
 func (r *DefaultIntentRouter) GetLogo() LogoModel {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -265,7 +265,7 @@ func (r *DefaultIntentRouter) GetLogo() LogoModel {
 	return r.logo
 }
 
-// SetThemeManager sets the theme manager for the router
+// SetThemeManager sets the theme manager for the router.
 func (r *DefaultIntentRouter) SetThemeManager(tm *themes.ThemeManager) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -280,7 +280,7 @@ func (r *DefaultIntentRouter) SetThemeManager(tm *themes.ThemeManager) {
 	}
 }
 
-// GetThemeManager returns the theme manager
+// GetThemeManager returns the theme manager.
 func (r *DefaultIntentRouter) GetThemeManager() *themes.ThemeManager {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -288,7 +288,7 @@ func (r *DefaultIntentRouter) GetThemeManager() *themes.ThemeManager {
 	return r.themeManager
 }
 
-// Theme returns the currently active theme for convenience
+// Theme returns the currently active theme for convenience.
 func (r *DefaultIntentRouter) Theme() themes.Theme {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

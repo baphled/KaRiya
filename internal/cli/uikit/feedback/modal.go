@@ -15,29 +15,29 @@ import (
 // ModalSpinnerTickMsg is sent periodically to advance the spinner animation.
 type ModalSpinnerTickMsg struct{}
 
-// ModalType defines the type of modal
+// ModalType defines the type of modal.
 type ModalType int
 
 const (
-	// ModalError displays an error message
+	// ModalError displays an error message.
 	ModalError ModalType = iota
-	// ModalLoading displays a loading message with spinner
+	// ModalLoading displays a loading message with spinner.
 	ModalLoading
-	// ModalProgress displays progress with a progress bar
+	// ModalProgress displays progress with a progress bar.
 	ModalProgress
-	// ModalSuccess displays a success message
+	// ModalSuccess displays a success message.
 	ModalSuccess
-	// ModalWarning displays a warning message
+	// ModalWarning displays a warning message.
 	ModalWarning
 )
 
-// SimpleSpinner provides a simple text-based spinner animation
+// SimpleSpinner provides a simple text-based spinner animation.
 type SimpleSpinner struct {
 	frames []string
 	index  int
 }
 
-// NewSimpleSpinner creates a new simple spinner
+// NewSimpleSpinner creates a new simple spinner.
 func NewSimpleSpinner() *SimpleSpinner {
 	return &SimpleSpinner{
 		frames: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
@@ -45,23 +45,23 @@ func NewSimpleSpinner() *SimpleSpinner {
 	}
 }
 
-// GetFrame returns the current spinner frame
+// GetFrame returns the current spinner frame.
 func (s *SimpleSpinner) GetFrame() string {
 	return s.frames[s.index]
 }
 
-// Advance advances the spinner to the next frame
+// Advance advances the spinner to the next frame.
 func (s *SimpleSpinner) Advance() {
 	s.index = (s.index + 1) % len(s.frames)
 }
 
-// LoadingMessageRotator rotates through a list of loading messages
+// LoadingMessageRotator rotates through a list of loading messages.
 type LoadingMessageRotator struct {
 	messages []string
 	index    int
 }
 
-// NewLoadingMessageRotator creates a new message rotator
+// NewLoadingMessageRotator creates a new message rotator.
 func NewLoadingMessageRotator(messages []string) *LoadingMessageRotator {
 	if len(messages) == 0 {
 		messages = []string{"Loading..."}
@@ -72,12 +72,12 @@ func NewLoadingMessageRotator(messages []string) *LoadingMessageRotator {
 	}
 }
 
-// GetCurrent returns the current message
+// GetCurrent returns the current message.
 func (r *LoadingMessageRotator) GetCurrent() string {
 	return r.messages[r.index]
 }
 
-// Rotate advances to the next message and returns it
+// Rotate advances to the next message and returns it.
 func (r *LoadingMessageRotator) Rotate() string {
 	r.index = (r.index + 1) % len(r.messages)
 	return r.messages[r.index]
@@ -89,7 +89,7 @@ type Modal struct {
 	Type           ModalType
 	Title          string
 	Message        string
-	Progress       float64 // 0.0 to 1.0
+	Progress       float64
 	Actions        []string
 	FadeInDuration time.Duration
 	AutoDismiss    time.Duration
@@ -101,7 +101,7 @@ type Modal struct {
 	theme          themes.Theme
 }
 
-// getTheme returns the theme or default if nil
+// getTheme returns the theme or default if nil.
 func (m *Modal) getTheme() themes.Theme {
 	if m.theme != nil {
 		return m.theme
@@ -109,7 +109,7 @@ func (m *Modal) getTheme() themes.Theme {
 	return themes.NewDefaultTheme()
 }
 
-// NewErrorModal creates a new error modal
+// NewErrorModal creates a new error modal.
 func NewErrorModal(title, message string) *Modal {
 	return &Modal{
 		Type:           ModalError,
@@ -123,7 +123,7 @@ func NewErrorModal(title, message string) *Modal {
 	}
 }
 
-// NewLoadingModal creates a new loading modal with optional spinner
+// NewLoadingModal creates a new loading modal with optional spinner.
 func NewLoadingModal(message string, cancellable bool) *Modal {
 	return &Modal{
 		Type:           ModalLoading,
@@ -137,7 +137,7 @@ func NewLoadingModal(message string, cancellable bool) *Modal {
 	}
 }
 
-// NewProgressModal creates a new progress modal
+// NewProgressModal creates a new progress modal.
 func NewProgressModal(title, message string, progress float64) *Modal {
 	return &Modal{
 		Type:           ModalProgress,
@@ -150,7 +150,7 @@ func NewProgressModal(title, message string, progress float64) *Modal {
 	}
 }
 
-// NewSuccessModal creates a new success modal with auto-dismiss
+// NewSuccessModal creates a new success modal with auto-dismiss.
 func NewSuccessModal(message string) *Modal {
 	return &Modal{
 		Type:           ModalSuccess,
@@ -163,7 +163,7 @@ func NewSuccessModal(message string) *Modal {
 	}
 }
 
-// NewWarningModal creates a new warning modal
+// NewWarningModal creates a new warning modal.
 func NewWarningModal(title, message string) *Modal {
 	return &Modal{
 		Type:           ModalWarning,
@@ -177,19 +177,19 @@ func NewWarningModal(title, message string) *Modal {
 	}
 }
 
-// SetMessageRotator sets a loading message rotator for dynamic messages
+// SetMessageRotator sets a loading message rotator for dynamic messages.
 func (m *Modal) SetMessageRotator(rotator *LoadingMessageRotator) *Modal {
 	m.messageRotator = rotator
 	return m
 }
 
-// WithTheme sets the theme for the modal
+// WithTheme sets the theme for the modal.
 func (m *Modal) WithTheme(theme themes.Theme) *Modal {
 	m.theme = theme
 	return m
 }
 
-// Render renders the modal centered in the given terminal dimensions
+// Render renders the modal centered in the given terminal dimensions.
 func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 	theme := m.getTheme()
 
@@ -295,7 +295,7 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 
 	// Apply min/max constraints.
 	// modalWidth is the lipgloss Width which includes padding but not border.
-	modalWidth := contentWidth + 4 // Add padding
+	modalWidth := contentWidth + 4
 	if modalWidth < 40 {
 		modalWidth = 40
 	}
@@ -320,7 +320,7 @@ func (m *Modal) Render(terminalWidth, terminalHeight int) string {
 	return boxStyle.Render(content)
 }
 
-// calculateOpacity calculates the current opacity based on fade-in duration
+// calculateOpacity calculates the current opacity based on fade-in duration.
 func (m *Modal) calculateOpacity() float64 {
 	if m.FadeInDuration == 0 {
 		return 1.0
@@ -334,7 +334,7 @@ func (m *Modal) calculateOpacity() float64 {
 	return float64(elapsed) / float64(m.FadeInDuration)
 }
 
-// getStyleForType returns border color and icon for the modal type
+// getStyleForType returns border color and icon for the modal type.
 func (m *Modal) getStyleForType() (lipgloss.Color, string) {
 	theme := m.getTheme()
 
@@ -357,7 +357,7 @@ func (m *Modal) getStyleForType() (lipgloss.Color, string) {
 // renderProgressBar renders a progress bar for the given width.
 func (m *Modal) renderProgressBar(width int, _ themes.Theme) string {
 	percentage := int(m.Progress * 100)
-	barWidth := width - 8 // Leave space for percentage and brackets
+	barWidth := width - 8
 
 	filled := int(float64(barWidth) * m.Progress)
 	if filled > barWidth {
@@ -370,7 +370,7 @@ func (m *Modal) renderProgressBar(width int, _ themes.Theme) string {
 	return fmt.Sprintf("[%s%s] %d%%", filledBar, emptyBar, percentage)
 }
 
-// wrapText wraps text to fit within the specified width
+// wrapText wraps text to fit within the specified width.
 func wrapText(text string, width int) string {
 	words := strings.Fields(text)
 	if len(words) == 0 {
@@ -404,7 +404,7 @@ func wrapText(text string, width int) string {
 	return strings.Join(lines, "\n")
 }
 
-// UpdateProgress updates the progress value (0.0 to 1.0)
+// UpdateProgress updates the progress value (0.0 to 1.0).
 func (m *Modal) UpdateProgress(progress float64) {
 	if progress < 0.0 {
 		progress = 0.0
@@ -415,14 +415,14 @@ func (m *Modal) UpdateProgress(progress float64) {
 	m.Progress = progress
 }
 
-// AdvanceSpinner advances the spinner to the next frame
+// AdvanceSpinner advances the spinner to the next frame.
 func (m *Modal) AdvanceSpinner() {
 	if m.spinner != nil {
 		m.spinner.Advance()
 	}
 }
 
-// RotateMessage advances to the next message if a rotator is set
+// RotateMessage advances to the next message if a rotator is set.
 func (m *Modal) RotateMessage() string {
 	if m.messageRotator != nil {
 		return m.messageRotator.Rotate()
@@ -466,11 +466,11 @@ func (m *Modal) tickSpinner() tea.Cmd {
 // ============================================================================
 
 const (
-	// MinOverlayWidth is the minimum width for overlay modals
+	// MinOverlayWidth is the minimum width for overlay modals.
 	MinOverlayWidth = 40
-	// MaxOverlayWidth is the maximum width for overlay modals
+	// MaxOverlayWidth is the maximum width for overlay modals.
 	MaxOverlayWidth = 120
-	// DefaultOverlayWidth is the default width for overlay modals
+	// DefaultOverlayWidth is the default width for overlay modals.
 	DefaultOverlayWidth = 60
 )
 
@@ -494,7 +494,7 @@ func NewOverlayModal(title, content string) *OverlayModal {
 	}
 }
 
-// getTheme returns the theme or default if nil
+// getTheme returns the theme or default if nil.
 func (o *OverlayModal) getTheme() themes.Theme {
 	if o.theme != nil {
 		return o.theme
@@ -502,7 +502,7 @@ func (o *OverlayModal) getTheme() themes.Theme {
 	return themes.NewDefaultTheme()
 }
 
-// WithTheme sets the theme for the overlay modal
+// WithTheme sets the theme for the overlay modal.
 func (o *OverlayModal) WithTheme(theme themes.Theme) *OverlayModal {
 	o.theme = theme
 	return o
@@ -581,7 +581,7 @@ func DimContent(content string) string {
 // The modal is overlaid by:
 // 1. Dimming the entire background
 // 2. Placing the modal box centered in the terminal
-// 3. Replacing the lines where the modal appears with the centered modal
+// 3. Replacing the lines where the modal appears with the centered modal.
 func RenderOverlay(background, modalContent string, termWidth, termHeight int, theme themes.Theme) string {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
@@ -608,7 +608,7 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int, t
 	// Position modal to start just below the logo.
 	modalHeight := len(modalLines)
 	logoHeight := display.DefaultLogoHeight
-	startY := logoHeight + 1 // Start 1 line below logo
+	startY := logoHeight + 1
 
 	// Handle very small terminals gracefully
 	if termHeight < 15 {
@@ -620,7 +620,7 @@ func RenderOverlay(background, modalContent string, termWidth, termHeight int, t
 	}
 
 	// If modal is too tall to fit below logo, constrain it
-	availableHeight := termHeight - startY - 2 // Leave 2 lines at bottom for footer
+	availableHeight := termHeight - startY - 2
 	if availableHeight <= 0 {
 		// Terminal too small - use all available space
 		availableHeight = termHeight - 2

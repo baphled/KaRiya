@@ -167,16 +167,16 @@ type QuickAddData struct {
 	Date string
 }
 
-// ToCareerEvent converts the form data to a CareerEvent domain object.
-// Returns a new CareerEvent ready to be saved.
-func (d *QuickAddData) ToCareerEvent() *career.CareerEvent {
+// ToCareerEvent converts the form data to a Event domain object.
+// Returns a new Event ready to be saved.
+func (d *QuickAddData) ToCareerEvent() *career.Event {
 	// Parse date or default to today.
 	eventDate, err := forms.ParseDateString(d.Date)
 	if err != nil {
 		eventDate = time.Now()
 	}
 
-	return &career.CareerEvent{
+	return &career.Event{
 		Text:       d.Text,
 		Date:       eventDate,
 		Company:    "",

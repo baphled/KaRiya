@@ -14,13 +14,13 @@ import (
 var _ = Describe("ViewEventDetailModal", func() {
 	var (
 		testTheme themes.Theme
-		testEvent *career.CareerEvent
+		testEvent *career.Event
 		modal     *components.ViewEventDetailModal
 	)
 
 	BeforeEach(func() {
 		testTheme = themes.NewDefaultTheme()
-		testEvent = &career.CareerEvent{
+		testEvent = &career.Event{
 			ID:         "test-123",
 			Text:       "Implemented new feature for the product",
 			Date:       time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
@@ -192,7 +192,7 @@ var _ = Describe("ViewEventDetailModal", func() {
 
 	Describe("Event Management", func() {
 		It("can update the event", func() {
-			newEvent := &career.CareerEvent{
+			newEvent := &career.Event{
 				ID:   "new-123",
 				Text: "New event text",
 				Date: time.Date(2024, 2, 20, 0, 0, 0, 0, time.UTC),

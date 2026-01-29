@@ -55,7 +55,7 @@ type GenerateCVIntent struct {
 	exportModal   *components.ExportOptionsModal
 
 	// Screens for wizard workflow (using base Screen interface to avoid import cycle)
-	// Will be *cvscreens.CVReviewScreen and *cvscreens.CVPreviewScreen at runtime
+	// Will be *cvscreens.ReviewScreen and *cvscreens.CVPreviewScreen at runtime
 	wizardReviewScreen  screens.Screen
 	wizardPreviewScreen screens.Screen
 }
@@ -85,7 +85,7 @@ func NewGenerateCVIntent(context *GenerateCVContext) (*GenerateCVIntent, error) 
 		},
 		active:     true,
 		logger:     nil,
-		useScreens: false, // Disabled by default to maintain backward compatibility
+		useScreens: false,
 		// Disabled by default for test compatibility.
 		// PRODUCTION: Enable via EnableWizardFlow() (see app.go line 616).
 		useWizardFlow: false,
@@ -182,7 +182,7 @@ func (i *GenerateCVIntent) transitionToScreen(state GenerateCVState) {
 }
 
 // NewCVProfileSelectScreenFromIntent creates a CV profile select screen.
-// This avoids import cycle by creating BaseSelectScreen directly here.
+// This avoids import cycle by creating SelectScreen directly here.
 func NewCVProfileSelectScreenFromIntent(profiles []*CVProfile) screens.Screen {
 	// Create item renderer for CV profiles
 	renderer := func(item *CVProfile) string {
@@ -718,7 +718,7 @@ func (i *GenerateCVIntent) handleNavigateResult(result screens.ScreenResult) tea
 		if profile, ok := data.(*CVProfile); ok {
 			i.state.selectedProfile = profile
 			i.state.currentState = GenerateCVStateSelectAudience
-			i.activeScreen = nil // Clear screen to use legacy code for now
+			i.activeScreen = nil
 		}
 		return nil
 
@@ -1133,7 +1133,7 @@ func (i *GenerateCVIntent) updateSelectTechnologies(msg tea.Msg) tea.Cmd {
 				i.state.technologyCursor++
 			}
 			return nil
-		case " ": // Space to toggle
+		case " ":
 			// Determine if multi-select or single-select
 			if i.state.selectedTechnologyFocus == cv.TechnologyFocusSpecialist {
 				// Single-select: clear all others, select current
@@ -1244,7 +1244,7 @@ func (i *GenerateCVIntent) updateSelectFocusArea(msg tea.Msg) tea.Cmd {
 				i.state.selectedSkillsFormat = "flat"
 			}
 			if i.state.selectedSkillsLimit == 0 {
-				i.state.selectedSkillsLimit = 0 // 0 = no limit (show all)
+				i.state.selectedSkillsLimit = 0
 			}
 
 			return nil
@@ -1728,10 +1728,10 @@ func (i *GenerateCVIntent) getWizardBreadcrumbs() []string {
 func (i *GenerateCVIntent) getWizardContextHelp() string {
 	// If modal is visible, it provides its own help
 	if i.wizardModal != nil && i.wizardModal.IsVisible() {
-		return "" // Modal has its own footer
+		return ""
 	}
 	if i.exportModal != nil && i.exportModal.IsVisible() {
-		return "" // Modal has its own footer
+		return ""
 	}
 	if i.progressModal != nil && i.progressModal.IsVisible() {
 		return "⏳ Please wait   q Quit   m Main Menu"
@@ -2087,7 +2087,7 @@ func (i *GenerateCVIntent) viewSelectFocusArea() string {
 		area         cv.FocusArea
 		name         string
 		description  string
-		evidenceKeys []string // Categories that map to this area
+		evidenceKeys []string
 	}{
 		{cv.FocusAreaBackend, "Backend", "Server-side, databases, APIs, infrastructure", []string{"backend", "database"}},
 		{cv.FocusAreaFrontend, "Frontend", "UI/UX, web apps, client-side frameworks", []string{"frontend", "ui"}},
@@ -2468,7 +2468,7 @@ func (i *GenerateCVIntent) updateExporting(msg tea.Msg) tea.Cmd {
 		i.state.isExporting = false
 		if msg.Error != nil {
 			i.state.exportError = msg.Error
-			i.state.currentState = GenerateCVStateExportComplete // Show error in complete view, not selection view
+			i.state.currentState = GenerateCVStateExportComplete
 			return nil
 		}
 		i.state.exportedPath = msg.Path

@@ -15,8 +15,18 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 )
 
-// Type aliases for convenience
+// ExtractedTechnology re-exports technology.ExtractedTechnology so that the intents
+// package can reference extracted skill data without importing the technology service
+// package directly. Each ExtractedTechnology holds a skill's identity, category, and
+// the set of career events that reference it, enabling the CV generation wizard to
+// offer technology-focus choices based on the user's actual skill distribution.
 type ExtractedTechnology = technology.ExtractedTechnology
+
+// FocusAreaSuggestion re-exports technology.FocusAreaSuggestion so that intents can
+// consume AI-generated focus area recommendations without a direct dependency on the
+// technology service package. A FocusAreaSuggestion pairs a recommended focus area
+// (e.g., Backend, Frontend) with a confidence score and the category-count evidence
+// that supports the recommendation.
 type FocusAreaSuggestion = technology.FocusAreaSuggestion
 
 // GenerateCVState represents the state of the GenerateCV intent.
@@ -71,32 +81,32 @@ const (
 	// GenerateCVStateExportComplete - Export is complete.
 	GenerateCVStateExportComplete GenerateCVState = "export_complete"
 
-	// NEW: Wizard-based workflow states (Phase 5 - Task 43)
-	// These 5 states replace the 17 states above when useWizardFlow=true
+	// NEW: Wizard-based workflow states (Phase 5 - Task 43).
+	// These 5 states replace the 17 states above when useWizardFlow=true.
 
 	// CVStateConfiguring - User configures CV via wizard modal
 	// Replaces: SelectProfile, SelectAudience, SelectTechnologyFocus,
 	//           SelectTechnologies, SelectFocusArea, SelectSkillsConfig
 	CVStateConfiguring GenerateCVState = "configuring"
 
-	// CVStateExtracting - Extracting technologies from user skills
-	// Replaces: ExtractingTechnologies
+	// CVStateExtracting - Extracting technologies from user skills.
+	// Replaces: ExtractingTechnologies.
 	CVStateExtracting GenerateCVState = "extracting"
 
-	// CVStateGenerating - CV is being generated
-	// Replaces: Generating
+	// CVStateGenerating - CV is being generated.
+	// Replaces: Generating.
 	CVStateGenerating GenerateCVState = "generating"
 
-	// CVStateReview - User reviews CV metadata and statistics via CVReviewScreen
-	// Shows metadata, section summary, and bullet counts before full preview
+	// CVStateReview - User reviews CV metadata and statistics via ReviewScreen.
+	// Shows metadata, section summary, and bullet counts before full preview.
 	CVStateReview GenerateCVState = "review"
 
-	// CVStatePreview - User previews full CV content via CVPreviewScreen
-	// Shows scrollable full CV content with all bullets
+	// CVStatePreview - User previews full CV content via CVPreviewScreen.
+	// Shows scrollable full CV content with all bullets.
 	CVStatePreview GenerateCVState = "preview"
 
-	// CVStateExporting - User exports CV via export modal
-	// Replaces: ExportSelectFormat, ExportSelectLocation, Exporting, ExportComplete
+	// CVStateExporting - User exports CV via export modal.
+	// Replaces: ExportSelectFormat, ExportSelectLocation, Exporting, ExportComplete.
 	CVStateExporting GenerateCVState = "exporting"
 )
 
@@ -106,7 +116,7 @@ type GenerateCVContext struct {
 	AvailableProfiles []*CVProfile
 
 	// Events are the career events to use for CV generation.
-	Events []*career.CareerEvent
+	Events []*career.Event
 
 	// Facts are the career facts to use for CV generation.
 	Facts []*career.Fact
@@ -138,7 +148,7 @@ type GenerateCVContext struct {
 	// AppContext is the background context for operations
 	AppContext context.Context
 
-	// ReviewScreenFactory creates a CVReviewScreen (avoids import cycle)
+	// ReviewScreenFactory creates a ReviewScreen (avoids import cycle)
 	// Signature: func(cv *career.CVView) screens.Screen
 	ReviewScreenFactory func(cv *career.CVView) screens.Screen
 
@@ -226,30 +236,30 @@ type GenerateCVModel struct {
 	previewViewport viewport.Model
 
 	// Technology extraction fields (NEW)
-	extractedTechnologies []*ExtractedTechnology // Technologies extracted from user skills
-	technologiesAvailable bool                   // true if 3+ technologies found
-	focusAreaSuggestion   *FocusAreaSuggestion   // AI-suggested focus area
+	extractedTechnologies []*ExtractedTechnology
+	technologiesAvailable bool
+	focusAreaSuggestion   *FocusAreaSuggestion
 
 	// Technology Focus selection fields (NEW)
-	selectedTechnologyFocus cv.TechnologyFocus // Language Agnostic / Generalist / Specialist
-	technologyFocusIndex    int                // Cursor position for technology focus selection
+	selectedTechnologyFocus cv.TechnologyFocus
+	technologyFocusIndex    int
 
 	// Technology selection fields (NEW - for Generalist/Specialist)
-	selectedTechnologies []string     // Selected skill IDs
-	technologyCursor     int          // Cursor position for technology list
-	technologySelected   map[int]bool // Multi-select state
+	selectedTechnologies []string
+	technologyCursor     int
+	technologySelected   map[int]bool
 
 	// Focus area selection fields (NEW)
-	selectedFocusArea cv.FocusArea // Backend / Frontend / Fullstack / DevOps
-	focusAreaCursor   int          // Cursor position for focus area selection
+	selectedFocusArea cv.FocusArea
+	focusAreaCursor   int
 
 	// Skills configuration fields (NEW - Phase 11 UI)
-	selectedSkillsFormat string // "flat" or "grouped"
-	selectedSkillsLimit  int    // max skills to show (0 = no limit)
-	skillsConfigCursor   int    // cursor position: 0=format, 1=limit
+	selectedSkillsFormat string
+	selectedSkillsLimit  int
+	skillsConfigCursor   int
 
 	// CV Length selection (Phase 8 - Task 43 wizard integration)
-	selectedCVLength string // "1_page" | "2_page" | "detailed"
+	selectedCVLength string
 
 	// Export-related fields
 	selectedExportFormat CVExportFormat
@@ -303,7 +313,7 @@ type TechnologyFocusSelectedMsg struct {
 
 // TechnologiesSelectedMsg indicates the user selected specific technologies (Generalist/Specialist).
 type TechnologiesSelectedMsg struct {
-	Technologies []string // Skill IDs
+	Technologies []string
 }
 
 // FocusAreaSelectedMsg indicates the user selected a focus area.
@@ -322,18 +332,18 @@ type LengthFormatSelectedMsg struct {
 // Contains all configuration data from the 3-step wizard (WHO → TECH → FORMAT).
 type WizardCompleteMsg struct {
 	// Step 1: WHO
-	ProfileID string // Selected profile ID
-	Audience  string // "hiring_manager" | "recruiter" | "peer"
+	ProfileID string
+	Audience  string
 
 	// Step 2: TECH
-	TechFocus    string   // "language_agnostic" | "generalist" | "specialist"
-	Technologies []string // Selected technology names (for generalist/specialist)
-	FocusArea    string   // "backend" | "frontend" | "fullstack" | "devops"
+	TechFocus    string
+	Technologies []string
+	FocusArea    string
 
 	// Step 3: FORMAT
-	SkillsFormat string // "grouped" | "flat"
-	SkillsLimit  int    // max skills per category/total (0 = no limit, default 5)
-	CVLength     string // "1_page" | "2_page" | "detailed"
+	SkillsFormat string
+	SkillsLimit  int
+	CVLength     string
 
 	// Pre-extracted data (optional, from async extraction)
 	TechnologiesExtracted []*ExtractedTechnology
@@ -341,41 +351,41 @@ type WizardCompleteMsg struct {
 
 // Export-related types
 
-// CVExportFormat defines the export format type
+// CVExportFormat defines the export format type.
 type CVExportFormat string
 
 const (
-	// CVExportFormatText exports CV as plain text
+	// CVExportFormatText exports CV as plain text.
 	CVExportFormatText CVExportFormat = "text"
-	// CVExportFormatMarkdown exports CV as markdown
+	// CVExportFormatMarkdown exports CV as markdown.
 	CVExportFormatMarkdown CVExportFormat = "markdown"
-	// CVExportFormatYAML exports CV as YAML
+	// CVExportFormatYAML exports CV as YAML.
 	CVExportFormatYAML CVExportFormat = "yaml"
 )
 
-// CVExportOption defines where to save the CV
+// CVExportOption defines where to save the CV.
 type CVExportOption string
 
 const (
-	// CVExportOptionSaveToFile saves CV to file
+	// CVExportOptionSaveToFile saves CV to file.
 	CVExportOptionSaveToFile CVExportOption = "save_to_file"
-	// CVExportOptionClipboard copies CV to clipboard
+	// CVExportOptionClipboard copies CV to clipboard.
 	CVExportOptionClipboard CVExportOption = "clipboard"
-	// CVExportOptionCancel cancels export
+	// CVExportOptionCancel cancels export.
 	CVExportOptionCancel CVExportOption = "cancel"
 )
 
-// CVExportFormatSelectedMsg indicates the user selected an export format
+// CVExportFormatSelectedMsg indicates the user selected an export format.
 type CVExportFormatSelectedMsg struct {
 	Format CVExportFormat
 }
 
-// CVExportOptionSelectedMsg indicates the user selected an export option
+// CVExportOptionSelectedMsg indicates the user selected an export option.
 type CVExportOptionSelectedMsg struct {
 	Option CVExportOption
 }
 
-// CVExportCompleteMsg indicates export is complete
+// CVExportCompleteMsg indicates export is complete.
 type CVExportCompleteMsg struct {
 	Path  string
 	Error error

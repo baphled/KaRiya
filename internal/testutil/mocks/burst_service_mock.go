@@ -13,7 +13,7 @@ import (
 
 // BurstServiceMock provides a configurable mock for BurstService interface.
 type BurstServiceMock struct {
-	events           []*career.CareerEvent
+	events           []*career.Event
 	facts            map[string][]*career.Fact
 	suggestions      []burstfact.BurstSuggestion
 	suggestError     error
@@ -30,13 +30,13 @@ type BurstServiceMock struct {
 // NewBurstServiceMock creates a new configurable BurstService mock.
 func NewBurstServiceMock() *BurstServiceMock {
 	return &BurstServiceMock{
-		events: []*career.CareerEvent{},
+		events: []*career.Event{},
 		facts:  make(map[string][]*career.Fact),
 	}
 }
 
 // SetEvents configures the events returned by GetEventByID and ListEvents.
-func (m *BurstServiceMock) SetEvents(events []*career.CareerEvent) *BurstServiceMock {
+func (m *BurstServiceMock) SetEvents(events []*career.Event) *BurstServiceMock {
 	m.events = events
 	return m
 }
@@ -129,7 +129,7 @@ func (m *BurstServiceMock) GetFactsBySourceBurstID(_ context.Context, burstID st
 }
 
 // GetEventByID implements BurstService.
-func (m *BurstServiceMock) GetEventByID(_ context.Context, id string) (*career.CareerEvent, error) {
+func (m *BurstServiceMock) GetEventByID(_ context.Context, id string) (*career.Event, error) {
 	for _, e := range m.events {
 		if e.ID == id {
 			return e, nil
@@ -139,7 +139,7 @@ func (m *BurstServiceMock) GetEventByID(_ context.Context, id string) (*career.C
 }
 
 // ListEvents implements BurstService.
-func (m *BurstServiceMock) ListEvents(_ context.Context, _ careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
+func (m *BurstServiceMock) ListEvents(_ context.Context, _ careerrepo.EventListFilters) ([]*career.Event, error) {
 	if m.listEventsError != nil {
 		return nil, m.listEventsError
 	}

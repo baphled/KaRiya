@@ -114,14 +114,14 @@ func Setup(t TestingT) *TestEnv {
 	// Open database connection with WAL mode and busy timeout.
 	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
-		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
+		config.SetConfigPathForTesting(prevConfigPath)
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
 	if err := careerrepo.RunMigrationsForTests(db); err != nil {
-		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
-		_ = db.Close()                                 // Ignore error as we're already in failure path
+		config.SetConfigPathForTesting(prevConfigPath)
+		_ = db.Close()
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -248,7 +248,7 @@ func SetupShared() {
 	model.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 
 	sharedEnv = &TestEnv{
-		T:          nil, // Set per-test in GetSharedEnv
+		T:          nil,
 		Model:      model,
 		DB:         db,
 		DBPath:     dbPath,
@@ -259,7 +259,7 @@ func SetupShared() {
 		Service:    svc,
 		CLIService: cliService,
 		Ctx:        context.Background(),
-		cleanup:    nil, // Managed by CleanupShared
+		cleanup:    nil,
 	}
 }
 
@@ -404,16 +404,16 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	// Open database connection with WAL mode and busy timeout.
 	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
-		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
-		_ = os.RemoveAll(tmpDir)                       // Clean up temp dir on failure
+		config.SetConfigPathForTesting(prevConfigPath)
+		_ = os.RemoveAll(tmpDir)
 		t.Fatalf("failed to open test db: %v", err)
 	}
 
 	// Run migrations
 	if err := careerrepo.RunMigrationsForTests(db); err != nil {
-		config.SetConfigPathForTesting(prevConfigPath) // Restore on failure
-		_ = db.Close()                                 // Ignore error as we're already in failure path
-		_ = os.RemoveAll(tmpDir)                       // Clean up temp dir on failure
+		config.SetConfigPathForTesting(prevConfigPath)
+		_ = db.Close()
+		_ = os.RemoveAll(tmpDir)
 		t.Fatalf("failed to run migrations: %v", err)
 	}
 
@@ -573,7 +573,7 @@ func (e *TestEnv) SelectIntent(index int) *TestEnv {
 // Valid names: "capture_event", "browse_timeline", "manage_skills", "generate_cv",
 // "configure_system", "burst_management", "fact_management"
 //
-// NOTE: This order must match the menu items defined in internal/cli/app/app.go
+// NOTE: This order must match the menu items defined in internal/cli/app/app.go.
 func (e *TestEnv) SelectIntentByName(name string) *TestEnv {
 	e.T.Helper()
 
@@ -808,7 +808,7 @@ func (e *TestEnv) SendMessage(msg tea.Msg) *TestEnv {
 // SubmitEvent sends a SubmitMsg directly to the model with the given event.
 // This bypasses huh form navigation issues in E2E tests.
 // Use this when you need to test the workflow after form submission.
-func (e *TestEnv) SubmitEvent(event *career.CareerEvent) *TestEnv {
+func (e *TestEnv) SubmitEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
 	return e.SendMessage(models.SubmitMsg{Event: event, Err: nil})
@@ -927,7 +927,7 @@ func (e *TestEnv) AssertFactCount(expected int) *TestEnv {
 }
 
 // GetEvents returns all events from the database.
-func (e *TestEnv) GetEvents() []*career.CareerEvent {
+func (e *TestEnv) GetEvents() []*career.Event {
 	e.T.Helper()
 
 	events, err := e.Service.ListEvents(e.Ctx, careerrepo.EventListFilters{})
@@ -1028,7 +1028,7 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 // ============================================================================
 
 // AddEvent creates an event in the database.
-func (e *TestEnv) AddEvent(event *career.CareerEvent) *TestEnv {
+func (e *TestEnv) AddEvent(event *career.Event) *TestEnv {
 	e.T.Helper()
 
 	eventRepo := e.Service.GetEventRepository()
@@ -1149,7 +1149,7 @@ func (e *TestEnv) PressEnterWithFormProcessing() *TestEnv {
 
 	// Process all resulting messages (including internal form messages)
 	// This allows huh's group transitions to complete
-	e.processFormCmds(cmd, 10) // max 10 iterations for safety
+	e.processFormCmds(cmd, 10)
 
 	return e
 }
@@ -1216,9 +1216,9 @@ func (e *TestEnv) CompleteOnboarding(name, email string) *TestEnv {
 
 	// Step 3: Professional Details - 3 optional fields (Title, GitHub, Portfolio)
 	// Press Enter 3 times to accept all empty fields and complete
-	e.PressEnterWithFormProcessing() // Title (optional)
-	e.PressEnterWithFormProcessing() // GitHub (optional)
-	e.PressEnterWithFormProcessing() // Portfolio (optional) - completes form
+	e.PressEnterWithFormProcessing()
+	e.PressEnterWithFormProcessing()
+	e.PressEnterWithFormProcessing()
 
 	return e
 }

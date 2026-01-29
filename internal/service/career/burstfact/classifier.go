@@ -46,11 +46,11 @@ func (c *Classifier) ClassifyRoleFitWithCategories(text string, categories []str
 	// Category-based role determination (primary signal)
 	var categoryBasedRole career.RoleFit
 	if hasLeadership && hasTechnical {
-		categoryBasedRole = career.RoleFitStaff // Technical leadership
+		categoryBasedRole = career.RoleFitStaff
 	} else if hasLeadership {
-		categoryBasedRole = career.RoleFitEM // People management focus
+		categoryBasedRole = career.RoleFitEM
 	} else {
-		categoryBasedRole = career.RoleFitSeniorIC // Default: individual contributor
+		categoryBasedRole = career.RoleFitSeniorIC
 	}
 
 	// Only elevate to principal if STRONG principal indicators in text
@@ -174,7 +174,7 @@ func (c *Classifier) ExtractStrengthSignal(text string) string {
 	return "professional accomplishment"
 }
 
-// InferCompetencies infers competency categories from event/burst
+// InferCompetencies infers competency categories from event/burst.
 func (c *Classifier) InferCompetencies(text string, tags []string) []string {
 	lowerText := strings.ToLower(text)
 	competencies := make(map[string]bool)
@@ -250,7 +250,7 @@ func (c *Classifier) InferCompetencies(text string, tags []string) []string {
 	return result
 }
 
-// scoreText returns a score based on keyword matches
+// scoreText returns a score based on keyword matches.
 func scoreText(text string, keywords []string) int {
 	score := 0
 	for _, keyword := range keywords {

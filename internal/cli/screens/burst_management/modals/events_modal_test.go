@@ -17,14 +17,14 @@ var _ = Describe("BurstEventsModal", func() {
 		modal     *modals.BurstEventsModal
 		burstID   string
 		burstName string
-		events    []*career.CareerEvent
+		events    []*career.Event
 		theme     themes.Theme
 	)
 
 	BeforeEach(func() {
 		burstID = "test-burst-id"
 		burstName = "Backend Development"
-		events = []*career.CareerEvent{
+		events = []*career.Event{
 			{
 				ID:      "e1",
 				Text:    "Built microservices architecture",
@@ -65,7 +65,7 @@ var _ = Describe("BurstEventsModal", func() {
 		})
 
 		It("handles empty events list", func() {
-			modal = modals.NewBurstEventsModal(burstID, burstName, []*career.CareerEvent{}, theme)
+			modal = modals.NewBurstEventsModal(burstID, burstName, []*career.Event{}, theme)
 
 			Expect(modal).NotTo(BeNil())
 			modal.Show()
@@ -228,7 +228,7 @@ var _ = Describe("BurstEventsModal", func() {
 	Describe("SetEvents", func() {
 		It("updates the displayed events", func() {
 			modal = modals.NewBurstEventsModal(burstID, burstName, events, theme)
-			newEvents := []*career.CareerEvent{
+			newEvents := []*career.Event{
 				{ID: "new-1", Text: "New event one", Date: time.Now()},
 				{ID: "new-2", Text: "New event two", Date: time.Now()},
 			}
@@ -249,7 +249,7 @@ var _ = Describe("BurstEventsModal", func() {
 			Expect(view).To(ContainSubstring("3"))
 
 			// Update to 1 event.
-			modal.SetEvents([]*career.CareerEvent{
+			modal.SetEvents([]*career.Event{
 				{ID: "single", Text: "Single event", Date: time.Now()},
 			})
 			view = modal.View()

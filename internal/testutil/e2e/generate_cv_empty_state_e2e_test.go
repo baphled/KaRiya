@@ -109,7 +109,7 @@ var _ = Describe("E2E Generate CV Empty State (BUG-004)", func() {
 			env = e2e.GetSharedEnv(GinkgoT())
 
 			// Add a real career event
-			env.AddEvent(&career.CareerEvent{
+			env.AddEvent(&career.Event{
 				ID:      "event-real-1",
 				Text:    "Led team of 5 engineers on microservices migration project",
 				Date:    time.Now().AddDate(0, -1, 0), // 1 month ago

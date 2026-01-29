@@ -24,13 +24,13 @@ var _ = Describe("BurstDetector", func() {
 		It("should return empty list for fewer than minimum events", func() {
 			event := fixtures.EventValWith("1", "Single event", "", "")
 
-			suggestions, err := detector.DetectBursts(ctx, []career.CareerEvent{event}, nil)
+			suggestions, err := detector.DetectBursts(ctx, []career.Event{event}, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(suggestions).To(BeEmpty())
 		})
 
 		It("should build similarity matrix for event pairs", func() {
-			events := []career.CareerEvent{
+			events := []career.Event{
 				fixtures.EventValWith("1", "Backend work", "", ""),
 				fixtures.EventValWith("2", "Backend platform", "", ""),
 			}
@@ -42,7 +42,7 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should find clusters of similar events", func() {
-			events := []career.CareerEvent{
+			events := []career.Event{
 				fixtures.EventValWith("1", "Backend infrastructure work", "", ""),
 				fixtures.EventValWith("2", "Backend platform architecture", "", ""),
 			}
@@ -53,7 +53,7 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should convert cluster to suggestion with confidence score", func() {
-			events := []career.CareerEvent{
+			events := []career.Event{
 				fixtures.EventValWith("1", "Backend work", "", ""),
 				fixtures.EventValWith("2", "Backend platform", "", ""),
 			}
@@ -78,7 +78,7 @@ var _ = Describe("BurstDetector", func() {
 
 		It("should respect minimum confidence threshold", func() {
 			// Use events with low similarity to ensure they don't cluster at high confidence.
-			events := []career.CareerEvent{
+			events := []career.Event{
 				fixtures.EventValWith("1", "Frontend design work", "CompanyA", ""),
 				fixtures.EventValWith("2", "Database optimization", "CompanyB", ""),
 			}
@@ -94,7 +94,7 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should limit results to MaxSuggestionsCount", func() {
-			events := make([]career.CareerEvent, 15)
+			events := make([]career.Event, 15)
 			for i := 0; i < 15; i++ {
 				events[i] = fixtures.EventValWith(string(rune(48+i)), "Backend infrastructure work", "TechCorp", "")
 			}
@@ -106,7 +106,7 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should return all suggestions when MaxSuggestionsCount is 0 (no limit)", func() {
-			events := make([]career.CareerEvent, 15)
+			events := make([]career.Event, 15)
 			for i := 0; i < 15; i++ {
 				events[i] = fixtures.EventValWith(string(rune(48+i)), "Backend infrastructure work", "TechCorp", "")
 			}
@@ -123,13 +123,13 @@ var _ = Describe("BurstDetector", func() {
 		})
 
 		It("should handle empty event list", func() {
-			suggestions, err := detector.DetectBursts(ctx, []career.CareerEvent{}, nil)
+			suggestions, err := detector.DetectBursts(ctx, []career.Event{}, nil)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(suggestions).To(BeEmpty())
 		})
 
 		It("should sort suggestions by confidence", func() {
-			events := []career.CareerEvent{
+			events := []career.Event{
 				fixtures.EventValWith("1", "Backend infrastructure work", "TechCorp", ""),
 				fixtures.EventValWith("2", "Backend platform", "TechCorp", ""),
 				fixtures.EventValWith("3", "Unrelated event", "OtherCorp", ""),

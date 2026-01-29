@@ -122,7 +122,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillEventsLoadedMsg", func() {
 		It("should contain events for a skill (state-based flow)", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "event-1", Text: "Built API"},
 				{ID: "event-2", Text: "Led team"},
 			}
@@ -143,7 +143,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("SkillEventsForModalLoadedMsg", func() {
 		It("should contain events for modal display", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "event-1", Text: "Built API"},
 			}
 			msg := skillsmanagement.SkillEventsForModalLoadedMsg{
@@ -163,7 +163,7 @@ var _ = Describe("Messages", func() {
 
 	Describe("RequestBrowseEventMsg", func() {
 		It("should contain the event to browse", func() {
-			event := &career.CareerEvent{ID: "event-1", Text: "Built API"}
+			event := &career.Event{ID: "event-1", Text: "Built API"}
 			msg := skillsmanagement.RequestBrowseEventMsg{
 				Event: event,
 			}
@@ -171,7 +171,7 @@ var _ = Describe("Messages", func() {
 		})
 
 		It("should contain all events for context", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "event-1", Text: "Built API"},
 				{ID: "event-2", Text: "Led team"},
 			}

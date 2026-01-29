@@ -163,7 +163,7 @@ var _ = Describe("EventFormScreen", func() {
 
 	Describe("Event Editing", func() {
 		It("should support loading existing event", func() {
-			existingEvent := &career.CareerEvent{
+			existingEvent := &career.Event{
 				Text:    "Existing event text",
 				Company: "ACME Corp",
 				Project: "Project X",

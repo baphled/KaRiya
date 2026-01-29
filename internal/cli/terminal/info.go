@@ -10,16 +10,16 @@ import (
 type Info struct {
 	Width       int
 	Height      int
-	IsValid     bool      // Has received at least one size update
-	LastUpdated time.Time // Track when last updated
+	IsValid     bool
+	LastUpdated time.Time
 }
 
 // Config defines terminal size constraints and defaults.
 type Config struct {
-	MinWidth      int // Minimum supported width
-	MinHeight     int // Minimum supported height
-	DefaultWidth  int // Default width when unknown
-	DefaultHeight int // Default height when unknown
+	MinWidth      int
+	MinHeight     int
+	DefaultWidth  int
+	DefaultHeight int
 }
 
 // DefaultConfig provides sensible defaults for terminal configuration.
@@ -38,23 +38,23 @@ type Margins struct {
 	Left   int
 }
 
-// SizeCategory represents the terminal size category for responsive design
+// SizeCategory represents the terminal size category for responsive design.
 type SizeCategory int
 
 const (
-	// SizeTiny represents terminals < 60 columns
+	// SizeTiny represents terminals < 60 columns.
 	SizeTiny SizeCategory = iota
-	// SizeCompact represents terminals 60-79 columns
+	// SizeCompact represents terminals 60-79 columns.
 	SizeCompact
-	// SizeNormal represents terminals 80-119 columns
+	// SizeNormal represents terminals 80-119 columns.
 	SizeNormal
-	// SizeLarge represents terminals 120-159 columns
+	// SizeLarge represents terminals 120-159 columns.
 	SizeLarge
-	// SizeXLarge represents terminals >= 160 columns
+	// SizeXLarge represents terminals >= 160 columns.
 	SizeXLarge
 )
 
-// NewInfo creates a new Info instance with default values
+// NewInfo creates a new Info instance with default values.
 func NewInfo() *Info {
 	return &Info{
 		Width:   0,
@@ -63,7 +63,7 @@ func NewInfo() *Info {
 	}
 }
 
-// Update updates the terminal info from a WindowSizeMsg
+// Update updates the terminal info from a WindowSizeMsg.
 func (i *Info) Update(msg tea.WindowSizeMsg) {
 	i.Width = msg.Width
 	i.Height = msg.Height
@@ -71,10 +71,10 @@ func (i *Info) Update(msg tea.WindowSizeMsg) {
 	i.LastUpdated = time.Now()
 }
 
-// GetCategory returns the size category based on terminal width
+// GetCategory returns the size category based on terminal width.
 func (i *Info) GetCategory() SizeCategory {
 	if !i.IsValid {
-		return SizeNormal // Safe default
+		return SizeNormal
 	}
 
 	switch {
@@ -91,7 +91,7 @@ func (i *Info) GetCategory() SizeCategory {
 	}
 }
 
-// GetSafeDimensions returns dimensions with enforced minimums and fallback to defaults
+// GetSafeDimensions returns dimensions with enforced minimums and fallback to defaults.
 func (i *Info) GetSafeDimensions(config Config) (width, height int) {
 	if !i.IsValid {
 		return config.DefaultWidth, config.DefaultHeight
@@ -102,16 +102,16 @@ func (i *Info) GetSafeDimensions(config Config) (width, height int) {
 	return
 }
 
-// CanRender returns true if the terminal can render content at minimum size
+// CanRender returns true if the terminal can render content at minimum size.
 func (i *Info) CanRender(config Config) bool {
 	if !i.IsValid {
-		return true // Assume we can render with defaults
+		return true
 	}
 	return i.Width >= config.MinWidth && i.Height >= config.MinHeight
 }
 
-// ContentArea calculates available space after accounting for margins
-// Returns width and height with enforced minimums
+// ContentArea calculates available space after accounting for margins.
+// Returns width and height with enforced minimums.
 func (i *Info) ContentArea(margins Margins) (width, height int) {
 	safeWidth, safeHeight := i.GetSafeDimensions(DefaultConfig)
 

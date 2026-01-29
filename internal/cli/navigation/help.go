@@ -12,15 +12,15 @@ type HelpText struct {
 	Compact  bool
 }
 
-// GetHelpText returns a formatted string displaying navigation keys with descriptions
-// When compact is true, returns abbreviated format suitable for footers
+// GetHelpText returns a formatted string displaying navigation keys with descriptions.
+// When compact is true, returns abbreviated format suitable for footers.
 func GetHelpText(keys []NavigationKey) string {
 	return GetHelpTextCompact(keys, false)
 }
 
-// GetHelpTextCompact returns formatted help text with optional compact formatting
-// If compact is true, returns short format (Key: Description | Key: Description)
-// If compact is false, returns full format with one key per line
+// GetHelpTextCompact returns formatted help text with optional compact formatting.
+// If compact is true, returns short format (Key: Description | Key: Description).
+// If compact is false, returns full format with one key per line.
 func GetHelpTextCompact(keys []NavigationKey, compact bool) string {
 	if len(keys) == 0 {
 		return ""
@@ -118,17 +118,17 @@ func GetContextualHelp(context string) string {
 	return GetHelpTextCompact(keys, true)
 }
 
-// GetFullHelp returns comprehensive help text for all navigation keys
+// GetFullHelp returns comprehensive help text for all navigation keys.
 func GetFullHelp() string {
 	return GetHelpTextCompact(AllNavigationKeys(), false)
 }
 
-// GetCompactHelp returns compact help text for all navigation keys (suitable for footers)
+// GetCompactHelp returns compact help text for all navigation keys (suitable for footers).
 func GetCompactHelp() string {
 	return GetHelpTextCompact(AllNavigationKeys(), true)
 }
 
-// GetGroupedHelp returns help text organized by key groups
+// GetGroupedHelp returns help text organized by key groups.
 func GetGroupedHelp() string {
 	groups := map[string][]NavigationKey{
 		"Navigation": {KeyUp, KeyDown, KeyLeft, KeyRight},

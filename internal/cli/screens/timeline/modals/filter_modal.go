@@ -43,7 +43,7 @@ type TimelineFilters struct {
 // events: list of career events to extract filter options from
 // currentFilters: current filter state to pre-populate form
 // width, height: terminal dimensions for responsive sizing
-func NewFilterModal(events []*career.CareerEvent, currentFilters *TimelineFilters, width, height int) *FilterModal {
+func NewFilterModal(events []*career.Event, currentFilters *TimelineFilters, width, height int) *FilterModal {
 	formData := &FilterFormData{
 		SortBy:    "date",
 		SortOrder: "desc",
@@ -74,7 +74,7 @@ func NewFilterModal(events []*career.CareerEvent, currentFilters *TimelineFilter
 }
 
 // buildForm creates the huh form with filter options.
-func (m *FilterModal) buildForm(events []*career.CareerEvent) {
+func (m *FilterModal) buildForm(events []*career.Event) {
 	// Extract unique companies from events.
 	companyMap := make(map[string]bool)
 	for _, evt := range events {

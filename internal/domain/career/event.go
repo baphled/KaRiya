@@ -8,8 +8,8 @@ import (
 	"github.com/baphled/kariya/internal/constants"
 )
 
-// CareerEvent represents a professional event or milestone
-type CareerEvent struct {
+// Event represents a professional event or milestone.
+type Event struct {
 	ID         string    `json:"id"`
 	Text       string    `json:"text"`
 	Date       time.Time `json:"date"`
@@ -17,13 +17,13 @@ type CareerEvent struct {
 	Project    string    `json:"project,omitempty"`
 	Tags       []string  `json:"tags"`
 	Categories []string  `json:"categories,omitempty"`
-	Skills     []string  `json:"skills,omitempty"` // Skill IDs associated with this event
+	Skills     []string  `json:"skills,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
-// Validate checks if the CareerEvent meets all defined criteria
-func (ce *CareerEvent) Validate() error {
+// Validate checks if the Event meets all defined criteria.
+func (ce *Event) Validate() error {
 	// Validate text
 	if err := ce.validateText(); err != nil {
 		return err
@@ -47,8 +47,8 @@ func (ce *CareerEvent) Validate() error {
 	return nil
 }
 
-// validateText ensures text is not empty and within length constraints
-func (ce *CareerEvent) validateText() error {
+// validateText ensures text is not empty and within length constraints.
+func (ce *Event) validateText() error {
 	trimmedText := strings.TrimSpace(ce.Text)
 	if trimmedText == "" {
 		return errors.New("text cannot be empty")
@@ -59,8 +59,8 @@ func (ce *CareerEvent) validateText() error {
 	return nil
 }
 
-// validateDate ensures date is not in the future
-func (ce *CareerEvent) validateDate() error {
+// validateDate ensures date is not in the future.
+func (ce *Event) validateDate() error {
 	now := time.Now()
 	if ce.Date.After(now) {
 		return errors.New("date cannot be in the future")
@@ -68,8 +68,8 @@ func (ce *CareerEvent) validateDate() error {
 	return nil
 }
 
-// validateTags checks that all tags are from the allowed set
-func (ce *CareerEvent) validateTags() error {
+// validateTags checks that all tags are from the allowed set.
+func (ce *Event) validateTags() error {
 	for _, tag := range ce.Tags {
 		if !constants.IsValidEventTag(tag) {
 			return errors.New("invalid tag: " + tag)
@@ -78,8 +78,8 @@ func (ce *CareerEvent) validateTags() error {
 	return nil
 }
 
-// validateCategories checks that all categories are from the allowed set
-func (ce *CareerEvent) validateCategories() error {
+// validateCategories checks that all categories are from the allowed set.
+func (ce *Event) validateCategories() error {
 	for _, category := range ce.Categories {
 		if !constants.IsValidCompetencyCategory(strings.ToLower(category)) {
 			return errors.New("invalid category: " + category)

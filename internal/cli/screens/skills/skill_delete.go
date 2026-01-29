@@ -7,12 +7,18 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// SkillDeleteConfirmState identifies the skill deletion confirmation view
+// in the state matrix. On this screen the user sees the skill name and a
+// yes/no prompt to confirm permanent deletion. The skill name appears
+// inside a confirmation dialog with Delete and Cancel buttons. A warning
+// states the action cannot be undone. The Cancel button is focused by
+// default for safety. Left/right arrows or h/l toggle selection, y/n
+// submit directly, and Escape cancels.
 const SkillDeleteConfirmState = "skill_delete_confirm"
 
 // SkillDeleteConfirmScreen provides a confirmation dialog for deleting a skill.
 //
-// This screen wraps BaseConfirmScreen with skill-specific context:
+// This screen wraps ConfirmScreen with skill-specific context:
 // - Shows skill name in confirmation message
 // - Customizes button text ("Delete" / "Cancel")
 // - Preserves skill data for the caller
@@ -32,11 +38,11 @@ const SkillDeleteConfirmState = "skill_delete_confirm"
 //	}
 //
 // Related:
-// - BaseConfirmScreen provides the confirmation UI
+// - ConfirmScreen provides the confirmation UI
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
 type SkillDeleteConfirmScreen struct {
-	*base.BaseConfirmScreen
+	*base.ConfirmScreen
 	skill *career.Skill
 }
 
@@ -63,8 +69,8 @@ func NewSkillDeleteConfirmScreen(skill *career.Skill) *SkillDeleteConfirmScreen 
 	confirmScreen.SetNoText("Cancel")
 
 	return &SkillDeleteConfirmScreen{
-		BaseConfirmScreen: confirmScreen,
-		skill:             skill,
+		ConfirmScreen: confirmScreen,
+		skill:         skill,
 	}
 }
 

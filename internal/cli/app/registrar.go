@@ -98,7 +98,7 @@ func (r *DefaultIntentRegistrar) registerBrowseTimeline(ctx context.Context, rou
 		})
 		if err != nil {
 			r.config.Log.Error("Failed to load events: %v", err)
-			events = make([]*career.CareerEvent, 0)
+			events = make([]*career.Event, 0)
 		}
 		browserCtx := &browsetimeline.IntentContext{
 			Events:          events,
@@ -141,7 +141,7 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 		events, err := r.config.CareerService.GetEventRepository().List(ctx, careerrepo.EventListFilters{Limit: 100})
 		if err != nil {
 			r.config.Log.Error("Failed to load events for CV generation: %v", err)
-			events = []*career.CareerEvent{}
+			events = []*career.Event{}
 		}
 		facts, err := r.config.CareerService.GetFactRepository().List(ctx, careerrepo.FactListFilters{Limit: 100})
 		if err != nil {

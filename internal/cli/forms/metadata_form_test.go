@@ -12,7 +12,7 @@ import (
 )
 
 var _ = Describe("MetadataForm", func() {
-	var testEvent *career.CareerEvent
+	var testEvent *career.Event
 
 	BeforeEach(func() {
 		testEvent = fixtures.EventWith("event-123", "Test event", "Test Company", "Test Project")
@@ -47,7 +47,7 @@ var _ = Describe("MetadataForm", func() {
 		})
 
 		It("should apply data to event", func() {
-			newEvent := &career.CareerEvent{}
+			newEvent := &career.Event{}
 			data := &forms.MetadataFormData{
 				Date:       "2024-01-15",
 				Company:    "New Company",

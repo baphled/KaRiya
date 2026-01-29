@@ -17,19 +17,19 @@ var _ career_repo.EventRepository = (*EventRepository)(nil)
 // EventRepository provides an in-memory implementation of the EventRepository interface.
 // This is primarily useful for testing and development.
 type EventRepository struct {
-	events map[string]*career.CareerEvent
+	events map[string]*career.Event
 	mu     sync.RWMutex
 }
 
 // NewEventRepository creates a new in-memory event repository.
 func NewEventRepository() *EventRepository {
 	return &EventRepository{
-		events: make(map[string]*career.CareerEvent),
+		events: make(map[string]*career.Event),
 	}
 }
 
 // Create adds a new career event to the in-memory store.
-func (r *EventRepository) Create(_ context.Context, event *career.CareerEvent) error {
+func (r *EventRepository) Create(_ context.Context, event *career.Event) error {
 	if err := event.Validate(); err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (r *EventRepository) Create(_ context.Context, event *career.CareerEvent) e
 }
 
 // GetByID retrieves a career event by its ID.
-func (r *EventRepository) GetByID(_ context.Context, id string) (*career.CareerEvent, error) {
+func (r *EventRepository) GetByID(_ context.Context, id string) (*career.Event, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -59,7 +59,7 @@ func (r *EventRepository) GetByID(_ context.Context, id string) (*career.CareerE
 }
 
 // Update modifies an existing career event.
-func (r *EventRepository) Update(_ context.Context, event *career.CareerEvent) error {
+func (r *EventRepository) Update(_ context.Context, event *career.Event) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -95,11 +95,11 @@ func (r *EventRepository) Delete(_ context.Context, id string) error {
 }
 
 // List retrieves career events with optional filtering.
-func (r *EventRepository) List(_ context.Context, filters career_repo.EventListFilters) ([]*career.CareerEvent, error) {
+func (r *EventRepository) List(_ context.Context, filters career_repo.EventListFilters) ([]*career.Event, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var events []*career.CareerEvent
+	var events []*career.Event
 	for _, event := range r.events {
 		events = append(events, event)
 	}
@@ -109,9 +109,9 @@ func (r *EventRepository) List(_ context.Context, filters career_repo.EventListF
 	return r.applyPagination(events, filters), nil
 }
 
-func (r *EventRepository) applyFilters(events []*career.CareerEvent, filters career_repo.EventListFilters) []*career.CareerEvent {
+func (r *EventRepository) applyFilters(events []*career.Event, filters career_repo.EventListFilters) []*career.Event {
 	if len(filters.Tags) > 0 {
-		var tagged []*career.CareerEvent
+		var tagged []*career.Event
 		for _, event := range events {
 			if containsAnyTag(event.Tags, filters.Tags) {
 				tagged = append(tagged, event)
@@ -120,10 +120,10 @@ func (r *EventRepository) applyFilters(events []*career.CareerEvent, filters car
 		events = tagged
 	}
 
-	return filterByDateRange(events, func(e *career.CareerEvent) time.Time { return e.Date }, filters.StartDate, filters.EndDate)
+	return filterByDateRange(events, func(e *career.Event) time.Time { return e.Date }, filters.StartDate, filters.EndDate)
 }
 
-func (r *EventRepository) applySorting(events []*career.CareerEvent, filters career_repo.EventListFilters) {
+func (r *EventRepository) applySorting(events []*career.Event, filters career_repo.EventListFilters) {
 	desc := filters.SortOrder == "desc"
 
 	sort.Slice(events, func(i, j int) bool {
@@ -148,7 +148,7 @@ func (r *EventRepository) applySorting(events []*career.CareerEvent, filters car
 	})
 }
 
-func (r *EventRepository) applyPagination(events []*career.CareerEvent, filters career_repo.EventListFilters) []*career.CareerEvent {
+func (r *EventRepository) applyPagination(events []*career.Event, filters career_repo.EventListFilters) []*career.Event {
 	return paginate(events, filters.Offset, filters.Limit)
 }
 
@@ -157,7 +157,7 @@ func (r *EventRepository) Count(_ context.Context, filters career_repo.EventList
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var events []*career.CareerEvent
+	var events []*career.Event
 	for _, event := range r.events {
 		events = append(events, event)
 	}

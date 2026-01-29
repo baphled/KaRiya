@@ -12,29 +12,32 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// ConfirmState identifies the configuration save confirmation screen in the
+// state matrix. On this screen the user sees a title asking to confirm
+// changes, the configuration domain name, the number of modified settings,
+// and a two-button group (Save Changes / Cancel) rendered via UIKit
+// ButtonGroup. Left/right arrows or h/l toggle between buttons, Enter
+// submits the focused choice, y/n act as direct shortcuts, and Escape
+// cancels without saving.
 const ConfirmState = "confirm"
 
 // ConfirmScreen displays a confirmation dialog for saving configuration changes.
 //
 // Uses UIKit ButtonGroup for yes/no selection with keyboard navigation.
-// Embeds BaseScreen for common functionality (terminal dimensions, theme, CreateView).
+// Embeds Screen for common functionality (terminal dimensions, theme, CreateView).
 //
 // Related:
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
 // - docs/UIKIT_GUIDE.md (ButtonGroup usage)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
 type ConfirmScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	domain      configtypes.ConfigurationDomain
 	changeCount int
 
-	// Button group for yes/no selection
 	buttonGroup *primitives.ButtonGroup
-
-	// Theme for rendering (nil-safe via getTheme())
-	theme themes.Theme
+	theme       themes.Theme
 }
 
 // NewConfirmScreen creates a new confirmation screen.
@@ -53,14 +56,13 @@ type ConfirmScreen struct {
 func NewConfirmScreen(domain configtypes.ConfigurationDomain, changeCount int) *ConfirmScreen {
 	theme := themes.NewDefaultTheme()
 
-	// Create button group with Cancel as default (index 1)
 	buttonGroup := primitives.NewButtonGroup(theme).
 		AddPrimary("Save Changes").
 		AddSecondary("Cancel")
-	buttonGroup.FocusLast() // Default to Cancel (safer)
+	buttonGroup.FocusLast()
 
 	return &ConfirmScreen{
-		BaseScreen:  base.NewBaseScreen(),
+		Screen:      base.NewBaseScreen(),
 		domain:      domain,
 		changeCount: changeCount,
 		buttonGroup: buttonGroup,
@@ -75,33 +77,26 @@ func (s *ConfirmScreen) Init() tea.Cmd {
 
 // Update handles messages.
 func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window resize via BaseScreen
-	if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch keyMsg.String() {
 		case "esc":
-			// Cancel - go back
 			return nil, &screens.CancelResult{}
 
 		case "enter":
-			// Confirm current selection
-			// Index 0 = Save Changes (true), Index 1 = Cancel (false)
 			confirmed := s.buttonGroup.FocusIndex() == 0
 			return nil, &screens.NavigateResult{ResultData: confirmed}
 
 		case "y", "Y":
-			// Direct Yes
 			return nil, &screens.NavigateResult{ResultData: true}
 
 		case "n", "N":
-			// Direct No
 			return nil, &screens.NavigateResult{ResultData: false}
 
 		case "left", "right", "h", "l", "tab":
-			// Delegate navigation to ButtonGroup
 			s.buttonGroup.Update(keyMsg)
 			return nil, nil
 		}
@@ -110,33 +105,27 @@ func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	return nil, nil
 }
 
-// View renders the screen using UIKit layout and BaseScreen.CreateView().
+// View renders the screen using UIKit layout and Screen.CreateView().
 func (s *ConfirmScreen) View() string {
 	theme := s.getTheme()
 	domainLabel := formatDomainLabel(s.domain)
 
-	// Build content using UIKit primitives
 	var content strings.Builder
 
-	// Title
 	content.WriteString(primitives.Title("Confirm Configuration Changes?", theme).Render())
 	content.WriteString("\n\n")
 
-	// Domain info
 	domainText := fmt.Sprintf("Domain: %s", domainLabel)
 	content.WriteString(primitives.Body(domainText, theme).Render())
 	content.WriteString("\n")
 
-	// Change count
 	changesText := fmt.Sprintf("Changes: %d setting(s) modified", s.changeCount)
 	content.WriteString(primitives.Body(changesText, theme).Render())
 	content.WriteString("\n\n")
 
-	// Buttons via ButtonGroup
 	content.WriteString(s.buttonGroup.Render())
 	content.WriteString("\n")
 
-	// Help footer with UIKit badges (ALWAYS use predefined badge constructors)
 	helpFooter := primitives.RenderHelpFooter(theme,
 		primitives.YesBadge(theme),
 		primitives.NoBadge(theme),
@@ -145,7 +134,6 @@ func (s *ConfirmScreen) View() string {
 		primitives.BackBadge(theme),
 	)
 
-	// Use BaseScreen.CreateView() for StandardView integration
 	breadcrumbs := []string{"Main Menu", "Configure System", domainLabel, "Confirm"}
 	return s.CreateView(breadcrumbs, content.String(), helpFooter)
 }
@@ -162,7 +150,6 @@ func (s *ConfirmScreen) getTheme() themes.Theme {
 func (s *ConfirmScreen) SetTheme(theme interface{}) {
 	if t, ok := theme.(themes.Theme); ok {
 		s.theme = t
-		// Update button group theme
 		if s.buttonGroup != nil {
 			s.buttonGroup.SetTheme(t)
 		}

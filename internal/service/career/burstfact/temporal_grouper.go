@@ -5,17 +5,17 @@ import (
 	"time"
 )
 
-// TemporalGrouper provides methods to group events based on temporal proximity
-// Events within 6 months are considered temporally related
+// TemporalGrouper provides methods to group events based on temporal proximity.
+// Events within 6 months are considered temporally related.
 type TemporalGrouper struct{}
 
-// NewTemporalGrouper creates a new TemporalGrouper instance
+// NewTemporalGrouper creates a new TemporalGrouper instance.
 func NewTemporalGrouper() *TemporalGrouper {
 	return &TemporalGrouper{}
 }
 
-// IsTemporallyRelated checks if two events are within 6 months of each other
-// Returns true if the absolute difference between dates is ≤ 6 months
+// IsTemporallyRelated checks if two events are within 6 months of each other.
+// Returns true if the absolute difference between dates is ≤ 6 months.
 func (tg *TemporalGrouper) IsTemporallyRelated(date1, date2 time.Time) bool {
 	if date1.IsZero() || date2.IsZero() {
 		return false
@@ -25,10 +25,10 @@ func (tg *TemporalGrouper) IsTemporallyRelated(date1, date2 time.Time) bool {
 	return monthsDiff <= 6
 }
 
-// MonthsDifference calculates the absolute number of months between two dates
+// MonthsDifference calculates the absolute number of months between two dates.
 // Returns the difference as an integer number of months (always positive)
 // If date2 has remaining days after reaching the month anniversary from date1,
-// those days are counted as requiring an additional month (ceiling semantics)
+// those days are counted as requiring an additional month (ceiling semantics).
 func (tg *TemporalGrouper) MonthsDifference(date1, date2 time.Time) int {
 	// Ensure date1 is earlier than date2 for consistent calculation
 	if date1.After(date2) {
@@ -58,8 +58,8 @@ func (tg *TemporalGrouper) MonthsDifference(date1, date2 time.Time) int {
 	return months
 }
 
-// addMonths adds a specified number of months to a date, handling day-of-month overflow
-// For example, Jan 31 + 1 month = Feb 28 (or Feb 29 in leap years)
+// addMonths adds a specified number of months to a date, handling day-of-month overflow.
+// For example, Jan 31 + 1 month = Feb 28 (or Feb 29 in leap years).
 func (tg *TemporalGrouper) addMonths(date time.Time, months int) time.Time {
 	newMonth := int(date.Month()) + months
 	newYear := date.Year()
@@ -80,7 +80,7 @@ func (tg *TemporalGrouper) addMonths(date time.Time, months int) time.Time {
 	return time.Date(newYear, time.Month(newMonth), day, date.Hour(), date.Minute(), date.Second(), date.Nanosecond(), date.Location())
 }
 
-// daysInMonth returns the number of days in a given month
+// daysInMonth returns the number of days in a given month.
 func (tg *TemporalGrouper) daysInMonth(year int, month time.Month) int {
 	// Use the fact that time.Date with day=0 gives the last day of the previous month
 	return time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()

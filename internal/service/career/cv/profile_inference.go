@@ -8,9 +8,9 @@ import (
 
 // TechnologyInference holds inferred technology slices for CV profile.
 type TechnologyInference struct {
-	Languages []string // Programming languages
-	Frontend  []string // Frontend technologies
-	Systems   []string // Systems, databases, infrastructure
+	Languages []string
+	Frontend  []string
+	Systems   []string
 }
 
 // ProfileInferenceService infers profile data (CoreStrengths, ValuePropositions, Technologies)
@@ -59,7 +59,7 @@ var genericValuePropositions = []string{
 // InferCoreStrengths analyzes career data to infer core strengths.
 // Returns a list of 3-5 strengths based on the user's competency categories.
 func (s *ProfileInferenceService) InferCoreStrengths(
-	events []*career.CareerEvent,
+	events []*career.Event,
 	facts []*career.Fact,
 	skills []*career.Skill,
 ) []string {
@@ -106,7 +106,7 @@ func (s *ProfileInferenceService) InferCoreStrengths(
 // InferValuePropositions analyzes career data to infer value propositions.
 // Returns a list of 3-5 value propositions based on the user's work style and competencies.
 func (s *ProfileInferenceService) InferValuePropositions(
-	events []*career.CareerEvent,
+	events []*career.Event,
 	facts []*career.Fact,
 	skills []*career.Skill,
 ) []string {
@@ -170,7 +170,7 @@ func (s *ProfileInferenceService) InferValuePropositions(
 // InferTechnologies extracts technology information from skills.
 // Returns structured technology strings for Languages, Frontend, and Systems.
 func (s *ProfileInferenceService) InferTechnologies(
-	_ []*career.CareerEvent,
+	_ []*career.Event,
 	skills []*career.Skill,
 ) TechnologyInference {
 	result := TechnologyInference{}
@@ -203,7 +203,7 @@ func (s *ProfileInferenceService) InferTechnologies(
 
 // countCategories counts category occurrences from events and facts.
 func (s *ProfileInferenceService) countCategories(
-	events []*career.CareerEvent,
+	events []*career.Event,
 	facts []*career.Fact,
 ) map[string]int {
 	counts := make(map[string]int)
@@ -254,7 +254,7 @@ func (s *ProfileInferenceService) hasExpertiseIn(skills []*career.Skill, categor
 
 // hasCollaborationIndicators checks for collaboration-related content in events/facts.
 func (s *ProfileInferenceService) hasCollaborationIndicators(
-	events []*career.CareerEvent,
+	events []*career.Event,
 	facts []*career.Fact,
 ) bool {
 	collaborationKeywords := []string{"collaborat", "cross-functional", "team", "stakeholder", "partner"}

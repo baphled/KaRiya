@@ -8,12 +8,12 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/base"
 )
 
-// DomainSelectScreen allows users to select a configuration domain
+// DomainSelectScreen allows users to select a configuration domain.
 type DomainSelectScreen struct {
-	*base.BaseSelectScreen[configtypes.ConfigurationDomain]
+	*base.SelectScreen[configtypes.ConfigurationDomain]
 }
 
-// NewDomainSelectScreen creates a new domain selection screen
+// NewDomainSelectScreen creates a new domain selection screen.
 func NewDomainSelectScreen(domains []configtypes.ConfigurationDomain) *DomainSelectScreen {
 	// Breadcrumbs
 	breadcrumbs := []string{"Main Menu", "Configure System"}
@@ -29,11 +29,11 @@ func NewDomainSelectScreen(domains []configtypes.ConfigurationDomain) *DomainSel
 	)
 
 	return &DomainSelectScreen{
-		BaseSelectScreen: baseScreen,
+		SelectScreen: baseScreen,
 	}
 }
 
-// formatDomainLabel converts a domain to a display label
+// formatDomainLabel converts a domain to a display label.
 func formatDomainLabel(domain configtypes.ConfigurationDomain) string {
 	switch domain {
 	case configtypes.DomainSystem:
@@ -49,18 +49,18 @@ func formatDomainLabel(domain configtypes.ConfigurationDomain) string {
 	}
 }
 
-// Init initializes the screen
+// Init initializes the screen.
 func (s *DomainSelectScreen) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages
+// Update handles messages.
 func (s *DomainSelectScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	// Delegate to base - it handles navigation and selection
-	return s.BaseSelectScreen.Update(msg)
+	return s.SelectScreen.Update(msg)
 }
 
-// View renders the screen
+// View renders the screen.
 func (s *DomainSelectScreen) View() string {
-	return s.BaseSelectScreen.View()
+	return s.SelectScreen.View()
 }

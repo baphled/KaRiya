@@ -8,18 +8,18 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// BaseSelectScreen Tests
+// SelectScreen Tests
 //
-// BaseSelectScreen[T] is a generic screen for selecting items from a list.
+// SelectScreen[T] is a generic screen for selecting items from a list.
 // It handles navigation (↑/↓/j/k/g/G), selection (Enter), and cancellation (Esc).
 //
 // Related:
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1.2)
 // - docs/KEYBOARD_SHORTCUTS_GUIDE.md (navigation keys)
 
-var _ = Describe("BaseSelectScreen", func() {
+var _ = Describe("SelectScreen", func() {
 	var (
-		screen *base.BaseSelectScreen[string]
+		screen *base.SelectScreen[string]
 		items  []string
 	)
 
@@ -345,7 +345,7 @@ var _ = Describe("BaseSelectScreen", func() {
 	})
 
 	Describe("Window Size Handling", func() {
-		It("should handle WindowSizeMsg via BaseScreen", func() {
+		It("should handle WindowSizeMsg via Screen", func() {
 			msg := tea.WindowSizeMsg{Width: 100, Height: 50}
 
 			cmd, result := screen.Update(msg)
@@ -372,7 +372,7 @@ var _ = Describe("BaseSelectScreen", func() {
 	})
 
 	Describe("Empty List Handling", func() {
-		var emptyScreen *base.BaseSelectScreen[string]
+		var emptyScreen *base.SelectScreen[string]
 
 		BeforeEach(func() {
 			emptyScreen = base.NewBaseSelectScreen[string](
@@ -418,7 +418,7 @@ var _ = Describe("BaseSelectScreen", func() {
 	})
 
 	Describe("Single Item List", func() {
-		var singleItemScreen *base.BaseSelectScreen[string]
+		var singleItemScreen *base.SelectScreen[string]
 
 		BeforeEach(func() {
 			singleItemScreen = base.NewBaseSelectScreen[string](
@@ -456,7 +456,7 @@ var _ = Describe("BaseSelectScreen", func() {
 	})
 
 	Describe("Large List Handling", func() {
-		var largeScreen *base.BaseSelectScreen[string]
+		var largeScreen *base.SelectScreen[string]
 
 		BeforeEach(func() {
 			// Create a list with 50 items
@@ -601,8 +601,8 @@ var _ = Describe("BaseSelectScreen", func() {
 		})
 	})
 
-	Describe("Integration with BaseScreen", func() {
-		It("should embed BaseScreen for common functionality", func() {
+	Describe("Integration with Screen", func() {
+		It("should embed Screen for common functionality", func() {
 			// Verify SetTerminalInfo works
 			screen.SetTerminalInfo(80, 24)
 
@@ -614,7 +614,7 @@ var _ = Describe("BaseSelectScreen", func() {
 			Expect(view).NotTo(BeEmpty())
 		})
 
-		It("should use BaseScreen.CreateView", func() {
+		It("should use Screen.CreateView", func() {
 			// View should have StandardView structure
 			view := screen.View()
 
@@ -628,7 +628,7 @@ var _ = Describe("BaseSelectScreen", func() {
 			Expect(view).To(ContainSubstring("Back"))
 		})
 
-		It("should use BaseScreen.HandleWindowSizeMsg", func() {
+		It("should use Screen.HandleWindowSizeMsg", func() {
 			msg := tea.WindowSizeMsg{Width: 100, Height: 50}
 
 			cmd, result := screen.Update(msg)

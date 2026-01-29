@@ -4,13 +4,13 @@
 // Usage:
 //
 //	// Simple creation with defaults
-//	event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+//	event := fixtures.EventFactory.MustCreate().(*career.Event)
 //
 //	// With overrides
 //	event := fixtures.EventFactory.MustCreateWithOption(map[string]interface{}{
 //	    "Company": "TechCorp",
 //	    "Project": "Platform",
-//	}).(*career.CareerEvent)
+//	}).(*career.Event)
 //
 //	// Quick helpers for minimal valid objects
 //	event := fixtures.Event("my-id")

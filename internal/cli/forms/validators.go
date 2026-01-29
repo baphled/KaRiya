@@ -11,7 +11,7 @@ import (
 // Supports:
 // - YYYY-MM-DD format
 // - "today"
-// - Relative dates like "1 week ago", "2 days ago"
+// - Relative dates like "1 week ago", "2 days ago".
 func ParseDateString(s string) (time.Time, error) {
 	s = strings.TrimSpace(s)
 
@@ -31,7 +31,7 @@ func ParseDateString(s string) (time.Time, error) {
 	if matches := relativeRegex.FindStringSubmatch(strings.ToLower(s)); len(matches) == 3 {
 		var amount int
 		if _, err := fmt.Sscanf(matches[1], "%d", &amount); err != nil {
-			amount = 0 // Fallback to 0 if parsing fails
+			amount = 0
 		}
 		unit := matches[2]
 
@@ -49,7 +49,7 @@ func ParseDateString(s string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("invalid date format: %s", s)
 }
 
-// Common validation errors
+// Common validation errors.
 var (
 	ErrRequired         = fmt.Errorf("this field is required")
 	ErrInvalidDate      = fmt.Errorf("invalid date format (expected YYYY-MM-DD)")
@@ -104,7 +104,7 @@ func LengthRange(minLen, maxLen int) func(string) error {
 // DateFormat validates that a date string matches YYYY-MM-DD format.
 func DateFormat(value string) error {
 	if strings.TrimSpace(value) == "" {
-		return nil // Allow empty dates (use Required separately if needed)
+		return nil
 	}
 
 	// Check format with regex
@@ -133,7 +133,7 @@ func DateFormatRequired(value string) error {
 // Email validates basic email format.
 func Email(value string) error {
 	if strings.TrimSpace(value) == "" {
-		return nil // Allow empty (use Required separately if needed)
+		return nil
 	}
 
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
@@ -147,7 +147,7 @@ func Email(value string) error {
 // URL validates basic URL format.
 func URL(value string) error {
 	if strings.TrimSpace(value) == "" {
-		return nil // Allow empty (use Required separately if needed)
+		return nil
 	}
 
 	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].\S*$`)
@@ -225,7 +225,7 @@ func EventTextOptional(value string) error {
 // CompanyName validates company name (reasonable length, no special chars).
 func CompanyName(value string) error {
 	if strings.TrimSpace(value) == "" {
-		return nil // Optional field
+		return nil
 	}
 	return Compose(
 		MinLength(2),
@@ -257,7 +257,7 @@ func Title(value string) error {
 // Description validates a description field.
 func Description(value string) error {
 	if strings.TrimSpace(value) == "" {
-		return nil // Optional
+		return nil
 	}
 	return Compose(
 		MinLength(10),
@@ -305,7 +305,7 @@ func Custom(validate func(string) bool, errorMsg string) func(string) error {
 	}
 }
 
-// GitHub username validation errors
+// GitHub username validation errors.
 var (
 	ErrGitHubUsernameURL         = fmt.Errorf("enter username only, not full URL (e.g., 'baphled' not 'github.com/baphled')")
 	ErrGitHubUsernameHyphenPos   = fmt.Errorf("username cannot start or end with a hyphen")
@@ -319,7 +319,7 @@ var (
 // - May only contain alphanumeric characters or hyphens
 // - Cannot have consecutive hyphens
 // - Cannot begin or end with a hyphen
-// - Maximum 39 characters
+// - Maximum 39 characters.
 func GitHubUsername(value string) error {
 	value = strings.TrimSpace(value)
 

@@ -54,7 +54,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 		return i.handleDeleteConfirmation(confirmed)
 	}
 
-	if event, ok := result.ResultData.(*career.CareerEvent); ok {
+	if event, ok := result.ResultData.(*career.Event); ok {
 		return i.showEventDetailModal(event)
 	}
 
@@ -72,13 +72,13 @@ func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 		return i.openQuickAddModal()
 
 	case "edit":
-		if event, ok := actionData["event"].(*career.CareerEvent); ok {
+		if event, ok := actionData["event"].(*career.Event); ok {
 			return i.openEditModalForEvent(event)
 		}
 		return nil
 
 	case "delete":
-		if event, ok := actionData["event"].(*career.CareerEvent); ok {
+		if event, ok := actionData["event"].(*career.Event); ok {
 			return i.openDeleteModalForEvent(event)
 		}
 		return nil
@@ -99,14 +99,14 @@ func (i *Intent) openQuickAddModal() tea.Cmd {
 }
 
 // openEditModalForEvent creates and shows the edit modal for an event.
-func (i *Intent) openEditModalForEvent(event *career.CareerEvent) tea.Cmd {
+func (i *Intent) openEditModalForEvent(event *career.Event) tea.Cmd {
 	width, height := i.getTerminalDimensions()
 	i.editModal = modals.NewEditModal(event, width, height)
 	return i.editModal.Init()
 }
 
 // openDeleteModalForEvent creates and shows the delete confirmation modal.
-func (i *Intent) openDeleteModalForEvent(event *career.CareerEvent) tea.Cmd {
+func (i *Intent) openDeleteModalForEvent(event *career.Event) tea.Cmd {
 	eventText := event.Text
 	if len(eventText) > 50 {
 		eventText = eventText[:47] + "..."
@@ -120,7 +120,7 @@ func (i *Intent) openDeleteModalForEvent(event *career.CareerEvent) tea.Cmd {
 }
 
 // showEventDetailModal creates and shows the event detail modal.
-func (i *Intent) showEventDetailModal(event *career.CareerEvent) tea.Cmd {
+func (i *Intent) showEventDetailModal(event *career.Event) tea.Cmd {
 	i.selectedEvent = event
 	i.viewedEvents = append(i.viewedEvents, event)
 	width, height := i.getTerminalDimensions()

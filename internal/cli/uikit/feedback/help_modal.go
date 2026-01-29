@@ -83,30 +83,30 @@ func (m *HelpModal) WithTheme(t theme.Theme) *HelpModal {
 	return m
 }
 
-// SetKeyMap updates the keymap displayed in the help modal
+// SetKeyMap updates the keymap displayed in the help modal.
 func (m *HelpModal) SetKeyMap(keyMap help.KeyMap) {
 	m.keyMap = keyMap
 }
 
-// SetSize sets the available size for the help modal
+// SetSize sets the available size for the help modal.
 func (m *HelpModal) SetSize(width, height int) {
 	m.width = width
 	m.height = height
-	m.help.Width = width - 8 // Account for padding/borders
+	m.help.Width = width - 8
 }
 
-// Show makes the help modal visible
+// Show makes the help modal visible.
 func (m *HelpModal) Show() {
 	m.visible = true
 }
 
-// Hide makes the help modal invisible
+// Hide makes the help modal invisible.
 func (m *HelpModal) Hide() {
 	m.visible = false
 	m.showingAll = false
 }
 
-// Toggle toggles the help modal visibility
+// Toggle toggles the help modal visibility.
 func (m *HelpModal) Toggle() {
 	if m.visible {
 		m.Hide()
@@ -115,19 +115,19 @@ func (m *HelpModal) Toggle() {
 	}
 }
 
-// IsVisible returns whether the help modal is currently visible
+// IsVisible returns whether the help modal is currently visible.
 func (m *HelpModal) IsVisible() bool {
 	return m.visible
 }
 
-// ToggleFullHelp toggles between short and full help display
+// ToggleFullHelp toggles between short and full help display.
 func (m *HelpModal) ToggleFullHelp() {
 	m.showingAll = !m.showingAll
 	m.help.ShowAll = m.showingAll
 }
 
-// Update handles key events for the help modal
-// Returns true if the event was consumed by the modal
+// Update handles key events for the help modal.
+// Returns true if the event was consumed by the modal.
 func (m *HelpModal) Update(msg tea.Msg) (consumed bool, cmd tea.Cmd) {
 	if !m.visible {
 		// Check if help key was pressed to open
@@ -152,10 +152,10 @@ func (m *HelpModal) Update(msg tea.Msg) (consumed bool, cmd tea.Cmd) {
 		}
 	}
 
-	return true, nil // Consume all events when modal is visible
+	return true, nil
 }
 
-// View renders the help modal
+// View renders the help modal.
 func (m *HelpModal) View() string {
 	if !m.visible || m.keyMap == nil {
 		return ""
@@ -211,7 +211,7 @@ func (m *HelpModal) View() string {
 		Render()
 }
 
-// ShortHelp returns a short help string for display in footer
+// ShortHelp returns a short help string for display in footer.
 func (m *HelpModal) ShortHelp() string {
 	if m.keyMap == nil {
 		return ""
@@ -219,7 +219,7 @@ func (m *HelpModal) ShortHelp() string {
 	return m.help.ShortHelpView(m.keyMap.ShortHelp())
 }
 
-// RenderOverlay renders the help modal as an overlay on top of existing content
+// RenderOverlay renders the help modal as an overlay on top of existing content.
 func (m *HelpModal) RenderOverlay(baseContent string) string {
 	if !m.visible {
 		return baseContent

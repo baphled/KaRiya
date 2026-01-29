@@ -5,7 +5,7 @@ import (
 	"unicode"
 )
 
-// EventSimilarityInput represents event data used for similarity scoring
+// EventSimilarityInput represents event data used for similarity scoring.
 type EventSimilarityInput struct {
 	Text     string
 	Keywords []string
@@ -13,17 +13,17 @@ type EventSimilarityInput struct {
 	Project  string
 }
 
-// SimilarityScorer provides methods to compute event similarity for burst detection
+// SimilarityScorer provides methods to compute event similarity for burst detection.
 type SimilarityScorer struct{}
 
-// NewSimilarityScorer creates a new SimilarityScorer instance
+// NewSimilarityScorer creates a new SimilarityScorer instance.
 func NewSimilarityScorer() *SimilarityScorer {
 	return &SimilarityScorer{}
 }
 
-// TextSimilarity computes similarity between two event texts using token overlap
+// TextSimilarity computes similarity between two event texts using token overlap.
 // Returns a score from 0.0 (completely different) to 1.0 (identical)
-// Algorithm: Jaccard similarity on word tokens
+// Algorithm: Jaccard similarity on word tokens.
 func (s *SimilarityScorer) TextSimilarity(text1, text2 string) float64 {
 	if text1 == text2 {
 		return 1.0
@@ -53,9 +53,9 @@ func (s *SimilarityScorer) TextSimilarity(text1, text2 string) float64 {
 	return float64(intersection) / float64(union)
 }
 
-// KeywordOverlapScore computes similarity based on shared keywords/tags
+// KeywordOverlapScore computes similarity based on shared keywords/tags.
 // Returns a score from 0.0 (no overlap) to 1.0 (identical keywords)
-// Algorithm: Jaccard similarity on keyword sets
+// Algorithm: Jaccard similarity on keyword sets.
 func (s *SimilarityScorer) KeywordOverlapScore(keywords1, keywords2 []string) float64 {
 	if len(keywords1) == 0 && len(keywords2) == 0 {
 		return 1.0
@@ -88,8 +88,8 @@ func (s *SimilarityScorer) KeywordOverlapScore(keywords1, keywords2 []string) fl
 	return float64(intersection) / float64(union)
 }
 
-// CompanyMatchScore returns 1.0 if companies match (case-insensitive), 0.0 otherwise
-// Treats empty companies as matching (no company specified)
+// CompanyMatchScore returns 1.0 if companies match (case-insensitive), 0.0 otherwise.
+// Treats empty companies as matching (no company specified).
 func (s *SimilarityScorer) CompanyMatchScore(company1, company2 string) float64 {
 	if company1 == "" && company2 == "" {
 		return 1.0
@@ -106,8 +106,8 @@ func (s *SimilarityScorer) CompanyMatchScore(company1, company2 string) float64 
 	return 0.0
 }
 
-// ProjectMatchScore returns 1.0 if projects match (case-insensitive), 0.0 otherwise
-// Treats empty projects as matching (no project specified)
+// ProjectMatchScore returns 1.0 if projects match (case-insensitive), 0.0 otherwise.
+// Treats empty projects as matching (no project specified).
 func (s *SimilarityScorer) ProjectMatchScore(project1, project2 string) float64 {
 	if project1 == "" && project2 == "" {
 		return 1.0
@@ -124,14 +124,14 @@ func (s *SimilarityScorer) ProjectMatchScore(project1, project2 string) float64 
 	return 0.0
 }
 
-// CombinedSimilarityScore computes weighted similarity across all event components
+// CombinedSimilarityScore computes weighted similarity across all event components.
 // Weights:
 //   - Text similarity: 50% (most important for semantic relevance)
 //   - Keyword overlap: 20% (tag-based classification)
 //   - Company match: 15% (organizational context)
 //   - Project match: 15% (project scope)
 //
-// Returns a score from 0.0 to 1.0
+// Returns a score from 0.0 to 1.0.
 func (s *SimilarityScorer) CombinedSimilarityScore(event1, event2 EventSimilarityInput) float64 {
 	textScore := s.TextSimilarity(event1.Text, event2.Text)
 	keywordScore := s.KeywordOverlapScore(event1.Keywords, event2.Keywords)
@@ -154,7 +154,7 @@ func (s *SimilarityScorer) CombinedSimilarityScore(event1, event2 EventSimilarit
 	return combined
 }
 
-// tokenize splits text into lowercase word tokens, filtering out empty strings
+// tokenize splits text into lowercase word tokens, filtering out empty strings.
 func (s *SimilarityScorer) tokenize(text string) []string {
 	text = strings.ToLower(text)
 
@@ -173,7 +173,7 @@ func (s *SimilarityScorer) tokenize(text string) []string {
 	return filtered
 }
 
-// countIntersection counts matching tokens between two slices
+// countIntersection counts matching tokens between two slices.
 func (s *SimilarityScorer) countIntersection(tokens1, tokens2 []string) int {
 	count := 0
 	for _, t1 := range tokens1 {
@@ -187,7 +187,7 @@ func (s *SimilarityScorer) countIntersection(tokens1, tokens2 []string) int {
 	return count
 }
 
-// normalizeStringSlice converts all strings to lowercase
+// normalizeStringSlice converts all strings to lowercase.
 func (s *SimilarityScorer) normalizeStringSlice(strs []string) []string {
 	normalized := make([]string, len(strs))
 	for i, str := range strs {

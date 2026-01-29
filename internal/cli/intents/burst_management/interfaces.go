@@ -15,8 +15,8 @@ import (
 //nolint:interfacebloat // Service interface groups cohesive burst operations (events, facts, suggestions).
 type BurstService interface {
 	// Event operations.
-	GetEventByID(ctx context.Context, eventID string) (*career.CareerEvent, error)
-	ListEvents(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error)
+	GetEventByID(ctx context.Context, eventID string) (*career.Event, error)
+	ListEvents(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.Event, error)
 
 	// Burst confirmation.
 	ConfirmBurst(ctx context.Context, burst *career.Burst) error

@@ -72,7 +72,7 @@ var _ = Describe("Extractor Integration Tests", func() {
 			burst := fixtures.Burst("burst-1", event1.ID, event2.ID, event3.ID)
 			burst.Name = "Platform Modernization Initiative"
 
-			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{event1, event2, event3})
+			facts := extractor.ExtractFromBurst(ctx, burst, []*career.Event{event1, event2, event3})
 
 			// Should have multiple facts (burst-level + individual event facts)
 			Expect(len(facts)).To(BeNumerically(">=", 4))
@@ -93,7 +93,7 @@ var _ = Describe("Extractor Integration Tests", func() {
 		})
 
 		It("extracts facts demonstrating competency accumulation", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				fixtures.EventWith("1", "Led architectural review", "TechCorp", ""),
 				fixtures.EventWith("2", "Mentored junior developers", "TechCorp", ""),
 				fixtures.EventWith("3", "Designed product feature", "TechCorp", ""),
@@ -120,7 +120,7 @@ var _ = Describe("Extractor Integration Tests", func() {
 
 	Describe("Fact Extraction Quality Assurance", func() {
 		It("ensures all extracted facts pass domain validation", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				fixtures.EventWith("1", "Implemented critical performance optimization", "TechCorp", ""),
 				fixtures.EventWith("2", "Led migration to cloud infrastructure", "TechCorp", ""),
 			}
@@ -160,7 +160,7 @@ var _ = Describe("Extractor Integration Tests", func() {
 			burst.CreatedAt = oldEvent.CreatedAt
 			burst.UpdatedAt = recentEvent.UpdatedAt
 
-			facts := extractor.ExtractFromBurst(ctx, burst, []*career.CareerEvent{oldEvent, recentEvent})
+			facts := extractor.ExtractFromBurst(ctx, burst, []*career.Event{oldEvent, recentEvent})
 
 			// Burst fact should preserve timeline from oldest to newest
 			Expect(facts[0].CreatedAt).To(Equal(oldEvent.CreatedAt))

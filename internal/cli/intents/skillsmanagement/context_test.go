@@ -17,20 +17,20 @@ import (
 type MockSkillRepository struct {
 	skills        []*career.Skill
 	eventCounts   map[string]int
-	events        []*career.CareerEvent
+	events        []*career.Event
 	createErr     error
 	updateErr     error
 	deleteErr     error
 	listErr       error
 	eventsErr     error
-	eventsBySkill map[string][]*career.CareerEvent
+	eventsBySkill map[string][]*career.Event
 }
 
 func NewMockSkillRepository() *MockSkillRepository {
 	return &MockSkillRepository{
 		skills:        make([]*career.Skill, 0),
 		eventCounts:   make(map[string]int),
-		eventsBySkill: make(map[string][]*career.CareerEvent),
+		eventsBySkill: make(map[string][]*career.Event),
 	}
 }
 
@@ -118,7 +118,7 @@ func (m *MockSkillRepository) GetLastUsedForSkills(_ context.Context) (map[strin
 	return make(map[string]time.Time), nil
 }
 
-func (m *MockSkillRepository) GetEventsUsingSkill(_ context.Context, skillID string) ([]*career.CareerEvent, error) {
+func (m *MockSkillRepository) GetEventsUsingSkill(_ context.Context, skillID string) ([]*career.Event, error) {
 	if m.eventsErr != nil {
 		return nil, m.eventsErr
 	}
@@ -383,7 +383,7 @@ var _ = Describe("Context", func() {
 
 		Describe("GetEventsForSkill", func() {
 			It("should return events for a specific skill", func() {
-				events := []*career.CareerEvent{
+				events := []*career.Event{
 					{ID: "event-1", Text: "Built API"},
 				}
 				mockRepo.eventsBySkill["skill-1"] = events

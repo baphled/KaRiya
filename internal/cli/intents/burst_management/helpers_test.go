@@ -597,7 +597,7 @@ var _ = Describe("Helper Methods", func() {
 		It("should show events modal on successful load", func() {
 			intent.SetSelectedBurst(ctx.Bursts[0])
 
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "e1", Text: "Event 1"},
 				{ID: "e2", Text: "Event 2"},
 			}
@@ -631,7 +631,7 @@ var _ = Describe("Helper Methods", func() {
 			intent.SetSelectedBurst(nil)
 
 			msg := burst_management.BurstEventsLoadedMsg{
-				Events: []*career.CareerEvent{{ID: "e1"}},
+				Events: []*career.Event{{ID: "e1"}},
 				Error:  nil,
 			}
 

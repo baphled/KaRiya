@@ -24,7 +24,7 @@ const CVPreviewState = "preview"
 // This screen shows the actual CV content with bullet points and allows
 // the user to scroll through the entire document.
 type CVPreviewScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	cv            *career.CVView
 	profileConfig *config.ProfileConfig
@@ -43,7 +43,7 @@ func NewCVPreviewScreen(cv *career.CVView) *CVPreviewScreen {
 // If profileConfig is nil, falls back to default narrative profile.
 func NewCVPreviewScreenWithProfile(cv *career.CVView, profileConfig *config.ProfileConfig) *CVPreviewScreen {
 	return &CVPreviewScreen{
-		BaseScreen:    base.NewBaseScreen(),
+		Screen:        base.NewBaseScreen(),
 		cv:            cv,
 		profileConfig: profileConfig,
 		width:         80,
@@ -63,10 +63,10 @@ func (s *CVPreviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		s.BaseScreen.HandleWindowSizeMsg(msg)
+		s.Screen.HandleWindowSizeMsg(msg)
 		s.width = msg.Width
 		s.height = msg.Height
-		s.ready = false // Force viewport recreation on resize
+		s.ready = false
 		return nil, nil
 
 	case tea.KeyMsg:
@@ -243,7 +243,7 @@ func (s *CVPreviewScreen) renderCVContent() string {
 			}
 
 			// Bullets with word wrapping
-			bulletWidth := contentWidth - 6 // Account for "    • " prefix
+			bulletWidth := contentWidth - 6
 			for _, bullet := range group.Bullets {
 				wrapped := wordWrap(bullet.Text, bulletWidth)
 				lines := strings.Split(wrapped, "\n")
@@ -251,7 +251,7 @@ func (s *CVPreviewScreen) renderCVContent() string {
 					if i == 0 {
 						b.WriteString(bulletStyle.Render("    • " + line))
 					} else {
-						b.WriteString(bulletStyle.Render("      " + line)) // Indent continuation
+						b.WriteString(bulletStyle.Render("      " + line))
 					}
 					b.WriteString("\n")
 				}
@@ -392,9 +392,9 @@ func (s *CVPreviewScreen) GetCV() *career.CVView {
 	return s.cv
 }
 
-// getTheme returns the theme from BaseScreen or a default theme.
+// getTheme returns the theme from Screen or a default theme.
 func (s *CVPreviewScreen) getTheme() themes.Theme {
-	if t := s.BaseScreen.Theme(); t != nil {
+	if t := s.Screen.Theme(); t != nil {
 		if theme, ok := t.(themes.Theme); ok {
 			return theme
 		}

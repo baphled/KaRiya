@@ -61,7 +61,7 @@ func CreateStandardViewWithBreadcrumbs(b *BaseIntent, crumbs ...string) *layout.
 // 1. Error (most critical, with bell)
 // 2. Loading (ongoing operation)
 // 3. Progress (specific progress tracking)
-// 4. Success (least critical, auto-dismiss)
+// 4. Success (least critical, auto-dismiss).
 func applyStateModals(view *layout.ScreenLayout, base *BaseIntent) {
 	// Only show the highest priority modal
 	if base.HasError() {
@@ -226,17 +226,17 @@ func CombineThemedFooters(footers ...string) string {
 // These helpers provide standardized key handling across all intents,
 // implementing the keyboard shortcuts defined in docs/KEYBOARD_REFERENCE.md
 
-// GlobalKeyResult represents the result of handling a global key
+// GlobalKeyResult represents the result of handling a global key.
 type GlobalKeyResult int
 
 const (
-	// KeyNotHandled indicates the key was not a global key
+	// KeyNotHandled indicates the key was not a global key.
 	KeyNotHandled GlobalKeyResult = iota
-	// KeyQuit indicates the user wants to quit the application
+	// KeyQuit indicates the user wants to quit the application.
 	KeyQuit
-	// KeyHelp indicates the user wants to see help
+	// KeyHelp indicates the user wants to see help.
 	KeyHelp
-	// KeyBack indicates the user wants to go back
+	// KeyBack indicates the user wants to go back.
 	KeyBack
 )
 

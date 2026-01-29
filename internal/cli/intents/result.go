@@ -21,9 +21,9 @@ const (
 
 // IntentError provides debug and logging information without violating type safety.
 type IntentError struct {
-	Code    string // Machine-readable error code
-	Message string // Human-readable error message
-	Cause   error  // Underlying error for debugging
+	Code    string
+	Message string
+	Cause   error
 }
 
 func (e *IntentError) Error() string {
@@ -45,20 +45,37 @@ func (e *IntentError) WithMessage(message string) *IntentError {
 	return e
 }
 
-// IntentResult[T] is the type-safe boundary contract for intent communication.
-// Each intent MUST return a strongly-typed IntentResult.
-// Results are the ONLY mechanism for intent communication.
+// IntentResult wraps the outcome of an intent execution into a type-safe
+// envelope that the intent router uses to determine what happened.
+//
+// The generic type parameter T specifies the concrete payload type the
+// intent produces on success (e.g., *CaptureEventResult or
+// *GenerateCVResult). T must satisfy the "any" constraint.
+//
+// The Status field is one of the following ResultStatus values:
+//
+//   - Completed: the intent finished successfully. The Data field of type T
+//     holds the intent output. The Error field is nil.
+//   - Partial: the intent succeeded for some inputs but not all. The Data
+//     field holds accepted output and the Error field contains an
+//     IntentError describing what was rejected.
+//   - Failed: the intent encountered an unrecoverable error. The Error
+//     field contains an IntentError with a machine-readable Code, a
+//     human-readable Message, and an optional Cause. The Data field is
+//     zero-valued.
+//   - Cancelled: the user explicitly aborted the intent. Both Data and
+//     Error are zero-valued.
+//
+// The Metadata field is a map[string]interface{} carrying auxiliary
+// key-value pairs such as breadcrumbs, timestamps, or diagnostic hints.
+//
+// Every intent must return an IntentResult as the sole communication
+// channel back to the intent router; direct state mutation across intent
+// boundaries is forbidden.
 type IntentResult[T any] struct {
-	// Status indicates how the intent completed.
-	Status ResultStatus
-
-	// Data contains the intent's output, only valid when Status is Completed or Partial.
-	Data T
-
-	// Error provides debug/logging information without violating type safety.
-	Error *IntentError
-
-	// Metadata is for additional context (e.g., breadcrumbs, timestamps).
+	Status   ResultStatus
+	Data     T
+	Error    *IntentError
 	Metadata map[string]interface{}
 }
 
@@ -151,7 +168,6 @@ func (r *IntentResult[T]) GetAllMetadata() map[string]interface{} {
 	if r.Metadata == nil {
 		return make(map[string]interface{})
 	}
-	// Create a copy to prevent external mutation.
 	result := make(map[string]interface{})
 	for k, v := range r.Metadata {
 		result[k] = v
@@ -185,30 +201,25 @@ func (r *IntentResult[T]) WithData(data T) *IntentResult[T] {
 // - Completed results have data
 // - Failed results have an error
 // - Cancelled results have no data or error
-// - Partial results have data and an error
+// - Partial results have data and an error.
 func (r *IntentResult[T]) IsValid() error {
 	switch r.Status {
 	case Completed:
-		// Completed results should have data (but we can't check if T is zero value)
-		// So we just verify the status is set
 		return nil
 
 	case Cancelled:
-		// Cancelled results should not have error
 		if r.Error != nil {
 			return fmt.Errorf("cancelled result should not have error")
 		}
 		return nil
 
 	case Failed:
-		// Failed results must have error
 		if r.Error == nil {
 			return fmt.Errorf("failed result must have error")
 		}
 		return nil
 
 	case Partial:
-		// Partial results must have error
 		if r.Error == nil {
 			return fmt.Errorf("partial result must have error")
 		}

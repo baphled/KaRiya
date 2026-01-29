@@ -28,7 +28,7 @@ var _ = Describe("DataProcessingService", func() {
 
 	Describe("GroupEventsByCompany", func() {
 		It("should group empty events", func() {
-			result, err := dps.GroupEventsByCompany(svc, []*career.CareerEvent{})
+			result, err := dps.GroupEventsByCompany(svc, []*career.Event{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(BeEmpty())
 		})
@@ -42,7 +42,7 @@ var _ = Describe("DataProcessingService", func() {
 			event2.Date = time.Now().AddDate(0, -2, 0)
 			event2.Tags = []string{"technical"}
 
-			events := []*career.CareerEvent{event1, event2}
+			events := []*career.Event{event1, event2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -59,7 +59,7 @@ var _ = Describe("DataProcessingService", func() {
 			event2 := fixtures.EventWith("2", "Worked at TechCo", "TechCo", "")
 			event2.Date = time.Now().AddDate(0, -6, 0)
 
-			events := []*career.CareerEvent{event1, event2}
+			events := []*career.Event{event1, event2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -71,7 +71,7 @@ var _ = Describe("DataProcessingService", func() {
 		It("should handle events with no company", func() {
 			event := fixtures.EventWith("1", "Personal project", "", "") // No company
 
-			events := []*career.CareerEvent{event}
+			events := []*career.Event{event}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -87,7 +87,7 @@ var _ = Describe("DataProcessingService", func() {
 			event2 := fixtures.EventWith("2", "Old event", "Acme", "")
 			event2.Date = now.AddDate(-1, 0, 0)
 
-			events := []*career.CareerEvent{event1, event2}
+			events := []*career.Event{event1, event2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -306,7 +306,7 @@ var _ = Describe("DataProcessingService", func() {
 
 	Describe("ExtractSkills", func() {
 		It("should extract empty skills", func() {
-			result, err := dps.ExtractSkills(svc, []*career.CareerEvent{}, []*career.Fact{})
+			result, err := dps.ExtractSkills(svc, []*career.Event{}, []*career.Fact{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(BeEmpty())
 		})
@@ -315,7 +315,7 @@ var _ = Describe("DataProcessingService", func() {
 			event := fixtures.EventWith("1", "Event", "Acme", "")
 			event.Tags = []string{"technical", "leadership"}
 
-			events := []*career.CareerEvent{event}
+			events := []*career.Event{event}
 
 			result, err := dps.ExtractSkills(svc, events, []*career.Fact{})
 			Expect(err).NotTo(HaveOccurred())
@@ -329,7 +329,7 @@ var _ = Describe("DataProcessingService", func() {
 			event2 := fixtures.EventWith("2", "Event", "Acme", "")
 			event2.Tags = []string{"technical"}
 
-			events := []*career.CareerEvent{event1, event2}
+			events := []*career.Event{event1, event2}
 
 			result, err := dps.ExtractSkills(svc, events, []*career.Fact{})
 			Expect(err).NotTo(HaveOccurred())
@@ -428,7 +428,7 @@ var _ = Describe("DataProcessingService", func() {
 		It("should extract no projects from events without projects", func() {
 			event := fixtures.EventWith("1", "Event", "Acme", "")
 
-			events := []*career.CareerEvent{event}
+			events := []*career.Event{event}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -438,7 +438,7 @@ var _ = Describe("DataProcessingService", func() {
 		It("should extract single project", func() {
 			event := fixtures.EventWith("1", "Event", "Acme", "ProjectX")
 
-			events := []*career.CareerEvent{event}
+			events := []*career.Event{event}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -458,7 +458,7 @@ var _ = Describe("DataProcessingService", func() {
 			event1 := fixtures.EventWith("1", "Event", "Acme", "ProjectX")
 			event2 := fixtures.EventWith("2", "Event", "Acme", "ProjectY")
 
-			events := []*career.CareerEvent{event1, event2}
+			events := []*career.Event{event1, event2}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -474,7 +474,7 @@ var _ = Describe("DataProcessingService", func() {
 			event2 := fixtures.EventWith("2", "Event", "Acme", "ProjectX")
 			event2.Date = now.AddDate(0, -3, 0)
 
-			events := []*career.CareerEvent{event1, event2}
+			events := []*career.Event{event1, event2}
 
 			result, err := dps.ExtractProjectsFromEvents(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -498,7 +498,7 @@ var _ = Describe("DataProcessingService", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
 
-			_, err := dps.GroupEventsByCompany(ctx, []*career.CareerEvent{})
+			_, err := dps.GroupEventsByCompany(ctx, []*career.Event{})
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -516,7 +516,7 @@ var _ = Describe("DataProcessingService", func() {
 				event2 := fixtures.EventWith("2", "More work at Acme", "Acme Corp", "")
 				event2.Date = now.AddDate(0, -1, 0) // 1 month ago
 
-				events := []*career.CareerEvent{event1, event2}
+				events := []*career.Event{event1, event2}
 
 				result, err := dps.GroupEventsByCompany(svc, events)
 				Expect(err).NotTo(HaveOccurred())
@@ -550,7 +550,7 @@ var _ = Describe("DataProcessingService", func() {
 				eventA4 := fixtures.EventWith("a4", "Still at A", "Company A", "")
 				eventA4.Date = time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC)
 
-				events := []*career.CareerEvent{eventA1, eventA2, eventB1, eventB2, eventA3, eventA4}
+				events := []*career.Event{eventA1, eventA2, eventB1, eventB2, eventA3, eventA4}
 
 				result, err := dps.GroupEventsByCompany(svc, events)
 				Expect(err).NotTo(HaveOccurred())
@@ -580,7 +580,7 @@ var _ = Describe("DataProcessingService", func() {
 				eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
 				eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
 
-				events := []*career.CareerEvent{eventA1, eventF, eventA2}
+				events := []*career.Event{eventA1, eventF, eventA2}
 
 				result, err := dps.GroupEventsByCompany(svc, events)
 				Expect(err).NotTo(HaveOccurred())
@@ -609,7 +609,7 @@ var _ = Describe("DataProcessingService", func() {
 				eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
 				eventA2.Date = time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC)
 
-				events := []*career.CareerEvent{eventA1, eventB, eventA2}
+				events := []*career.Event{eventA1, eventB, eventA2}
 
 				result, err := dps.GroupEventsByCompany(svc, events)
 				Expect(err).NotTo(HaveOccurred())
@@ -642,7 +642,7 @@ var _ = Describe("DataProcessingService", func() {
 				eventA3 := fixtures.EventWith("a3", "Even more", "Company A", "")
 				eventA3.Date = time.Date(2022, 3, 15, 0, 0, 0, 0, time.UTC)
 
-				events := []*career.CareerEvent{eventA1, eventA2, eventA3}
+				events := []*career.Event{eventA1, eventA2, eventA3}
 
 				result, err := dps.GroupEventsByCompany(svc, events)
 				Expect(err).NotTo(HaveOccurred())
@@ -662,7 +662,7 @@ var _ = Describe("DataProcessingService", func() {
 				projectEvent := fixtures.EventWith("p1", "n-vyro.io work", "", "n-vyro.io")
 				projectEvent.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
 
-				allEvents := []*career.CareerEvent{projectEvent}
+				allEvents := []*career.Event{projectEvent}
 				sort.Slice(allEvents, func(i, j int) bool {
 					return allEvents[i].Date.Before(allEvents[j].Date)
 				})
@@ -684,7 +684,7 @@ var _ = Describe("DataProcessingService", func() {
 				realCompanyEvent := fixtures.EventWith("c1", "Work at Other Corp", "Other Corp", "")
 				realCompanyEvent.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
 
-				allEvents := []*career.CareerEvent{realCompanyEvent}
+				allEvents := []*career.Event{realCompanyEvent}
 				sort.Slice(allEvents, func(i, j int) bool {
 					return allEvents[i].Date.Before(allEvents[j].Date)
 				})
@@ -709,7 +709,7 @@ var _ = Describe("DataProcessingService", func() {
 				sameCompanyEvent := fixtures.EventWith("mc1", "Mindful Chef work", "Mindful Chef", "")
 				sameCompanyEvent.Date = time.Date(2024, 3, 20, 0, 0, 0, 0, time.UTC)
 
-				allEvents := []*career.CareerEvent{projectEvent, sameCompanyEvent}
+				allEvents := []*career.Event{projectEvent, sameCompanyEvent}
 				sort.Slice(allEvents, func(i, j int) bool {
 					return allEvents[i].Date.Before(allEvents[j].Date)
 				})
@@ -744,7 +744,7 @@ var _ = Describe("DataProcessingService", func() {
 			projectEvent := fixtures.EventWith("p1", "n-vyro.io development", "", "n-vyro.io")
 			projectEvent.Date = time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{mcEvent1, projectEvent, mcEvent2}
+			events := []*career.Event{mcEvent1, projectEvent, mcEvent2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())
@@ -772,7 +772,7 @@ var _ = Describe("DataProcessingService", func() {
 			eventA2 := fixtures.EventWith("a2", "Back at A", "Company A", "")
 			eventA2.Date = time.Date(2023, 7, 15, 0, 0, 0, 0, time.UTC)
 
-			events := []*career.CareerEvent{eventA1, eventB, eventA2}
+			events := []*career.Event{eventA1, eventB, eventA2}
 
 			result, err := dps.GroupEventsByCompany(svc, events)
 			Expect(err).NotTo(HaveOccurred())

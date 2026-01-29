@@ -12,7 +12,7 @@ import "github.com/baphled/kariya/internal/domain/career"
 
 // EventSelectedMsg indicates the user selected an event.
 type EventSelectedMsg struct {
-	Event *career.CareerEvent
+	Event *career.Event
 	Index int
 }
 

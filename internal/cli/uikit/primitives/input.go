@@ -39,7 +39,7 @@ func NewInput(th theme.Theme) *Input {
 		textInput: ti,
 		label:     "",
 		errorMsg:  "",
-		width:     40, // Default width
+		width:     40,
 	}
 
 	if th != nil {
@@ -125,7 +125,7 @@ func (i *Input) Init() tea.Cmd {
 // The input is rendered with:
 // - Label above (if set)
 // - The input field with themed border
-// - Error message below (if set)
+// - Error message below (if set).
 func (i *Input) Render() string {
 	var parts []string
 

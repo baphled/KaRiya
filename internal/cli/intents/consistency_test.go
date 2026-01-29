@@ -53,7 +53,7 @@ var _ = Describe("StandardView Consistency", func() {
 						TargetAudience: "hiring_manager",
 					},
 				},
-				Events: []*career.CareerEvent{
+				Events: []*career.Event{
 					fixtures.EventWith(uuid.New().String(), "Implemented test feature for CV generation", "TechCorp", "Platform"),
 				},
 			}
@@ -129,7 +129,7 @@ var _ = Describe("All Intents Initialization", func() {
 							TargetAudience: "hiring_manager",
 						},
 					},
-					Events: []*career.CareerEvent{
+					Events: []*career.Event{
 						fixtures.EventWith(uuid.New().String(), "Implemented test feature for CV generation", "TechCorp", "Platform"),
 					},
 				})

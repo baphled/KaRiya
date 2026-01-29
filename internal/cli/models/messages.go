@@ -7,19 +7,19 @@ import (
 
 // ViewEventMsg is sent when the user wants to view event details
 type ViewEventMsg struct {
-	Event *career.CareerEvent
+	Event *career.Event
 }
 
 // EventActionMenuMsg is sent when an event is selected to show its action menu
 type EventActionMenuMsg struct {
-	Event *career.CareerEvent
+	Event *career.Event
 }
 
 // ConfirmBurstSuggestionMsg is sent when user confirms a burst suggestion
 type ConfirmBurstSuggestionMsg struct {
 	Suggestion burstfact.BurstSuggestion
-	EditedName string // Optional: user-edited burst name
-	EditedDesc string // Optional: user-edited burst description
+	EditedName string
+	EditedDesc string
 }
 
 // RejectBurstSuggestionMsg is sent when user rejects a burst suggestion
@@ -101,7 +101,7 @@ type MainMenuMsg struct{}
 
 // EditEventMsg is sent to edit a specific event
 type EditEventMsg struct {
-	Event *career.CareerEvent
+	Event *career.Event
 }
 
 // QuitMsg is sent when user wants to quit the application
@@ -120,6 +120,6 @@ type BurstProcessingCompleteMsg struct {
 
 // SubmitMsg represents a form submission result.
 type SubmitMsg struct {
-	Event *career.CareerEvent
+	Event *career.Event
 	Err   error
 }

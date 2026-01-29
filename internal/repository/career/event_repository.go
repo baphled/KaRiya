@@ -19,19 +19,19 @@ var (
 // EventRepository defines the interface for career event persistence.
 type EventRepository interface {
 	// Create adds a new career event to the repository.
-	Create(ctx context.Context, event *career.CareerEvent) error
+	Create(ctx context.Context, event *career.Event) error
 
 	// GetByID retrieves a specific career event by its unique identifier.
-	GetByID(ctx context.Context, id string) (*career.CareerEvent, error)
+	GetByID(ctx context.Context, id string) (*career.Event, error)
 
 	// Update modifies an existing career event.
-	Update(ctx context.Context, event *career.CareerEvent) error
+	Update(ctx context.Context, event *career.Event) error
 
 	// Delete removes a career event from the repository.
 	Delete(ctx context.Context, id string) error
 
 	// List retrieves career events with optional filtering.
-	List(ctx context.Context, filters EventListFilters) ([]*career.CareerEvent, error)
+	List(ctx context.Context, filters EventListFilters) ([]*career.Event, error)
 
 	// Count returns the total number of career events matching the given filters.
 	Count(ctx context.Context, filters EventListFilters) (int, error)

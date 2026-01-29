@@ -15,11 +15,11 @@ var _ = Describe("View Duplication Prevention", func() {
 	Describe("BrowseTimeline", func() {
 		var (
 			intent *browse_timeline.Intent
-			events []*career.CareerEvent
+			events []*career.Event
 		)
 
 		BeforeEach(func() {
-			events = []*career.CareerEvent{
+			events = []*career.Event{
 				{
 					ID:        "event1",
 					Text:      "Test event",
@@ -81,7 +81,7 @@ var _ = Describe("View Duplication Prevention", func() {
 				},
 			}
 
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{
 					ID:        "event1",
 					Text:      "Test achievement",

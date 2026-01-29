@@ -35,7 +35,7 @@ type SortModal struct {
 
 // NewSortModal creates a new event sort modal.
 // The events parameter is reserved for future use (e.g., dynamic sort options based on data).
-func NewSortModal(_ []*career.CareerEvent, current *SortConfig, width, height int) *SortModal {
+func NewSortModal(_ []*career.Event, current *SortConfig, width, height int) *SortModal {
 	formData := &SortFormData{
 		SortBy:    "date",
 		SortOrder: "desc",
