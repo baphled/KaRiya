@@ -417,19 +417,12 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 	skippedCount := 0
 
 	for _, bullet := range bullets {
+		// First pass: count events per company to determine the primary company.
 		companyCounts := make(map[string]int)
-		var earliestDate, latestDate time.Time
-
 		for _, eventID := range bullet.SourceEventIDs {
 			if event, exists := eventMap[eventID]; exists {
 				if event.Company != "" {
 					companyCounts[event.Company]++
-					if earliestDate.IsZero() || event.Date.Before(earliestDate) {
-						earliestDate = event.Date
-					}
-					if latestDate.IsZero() || event.Date.After(latestDate) {
-						latestDate = event.Date
-					}
 				}
 			}
 		}
@@ -447,6 +440,23 @@ func (sb *DefaultSectionBuilder) groupBulletsByCompany(bullets []*career.CVBulle
 		if primaryCompany == "" {
 			skippedCount++
 			continue
+		}
+
+		// Second pass: compute dates using only events from the primary company.
+		// BUG-014: Previously dates were computed across ALL companies in a single
+		// pass, which corrupted date ranges when SourceEventIDs spanned companies.
+		var earliestDate, latestDate time.Time
+		for _, eventID := range bullet.SourceEventIDs {
+			if event, exists := eventMap[eventID]; exists {
+				if event.Company == primaryCompany {
+					if earliestDate.IsZero() || event.Date.Before(earliestDate) {
+						earliestDate = event.Date
+					}
+					if latestDate.IsZero() || event.Date.After(latestDate) {
+						latestDate = event.Date
+					}
+				}
+			}
 		}
 
 		bulletInfos = append(bulletInfos, bulletInfo{
