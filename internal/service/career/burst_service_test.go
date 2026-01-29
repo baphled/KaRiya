@@ -3,6 +3,7 @@ package career
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
@@ -119,6 +120,32 @@ var _ = Describe("Career Service - Burst Methods", func() {
 			burst := fixtures.Burst("", "1", "2")
 			err := service.ConfirmBurst(ctx, burst)
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("should restore original state on repository update failure", func() {
+			// Create an already-confirmed burst.
+			burst := fixtures.Burst("burst-rollback", "1", "2")
+			confirmedAt := time.Now().Add(-24 * time.Hour)
+			burst.Confirmed = true
+			burst.ConfirmedAt = &confirmedAt
+			err := burstRepo.Create(ctx, burst)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Capture state after Create (which sets its own UpdatedAt).
+			origUpdatedAt := burst.UpdatedAt
+
+			// Use a failing repo to trigger rollback.
+			failRepo := &failingBurstRepo{inner: burstRepo}
+			service.SetBurstRepository(failRepo)
+
+			err = service.ConfirmBurst(ctx, burst)
+			Expect(err).To(HaveOccurred())
+
+			// Original state must be fully preserved after rollback.
+			Expect(burst.Confirmed).To(BeTrue(), "rollback should restore original Confirmed")
+			Expect(burst.ConfirmedAt).To(Equal(&confirmedAt), "rollback should restore original ConfirmedAt")
+			Expect(burst.UpdatedAt).To(BeTemporally("~", origUpdatedAt, time.Millisecond),
+				"rollback should restore original UpdatedAt")
 		})
 	})
 
@@ -279,3 +306,32 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 	})
 })
+
+// failingBurstRepo wraps a real repository but forces Update to fail.
+type failingBurstRepo struct {
+	inner careerrepo.BurstRepository
+}
+
+func (f *failingBurstRepo) Create(ctx context.Context, burst *career.Burst) error {
+	return f.inner.Create(ctx, burst)
+}
+
+func (f *failingBurstRepo) GetByID(ctx context.Context, id string) (*career.Burst, error) {
+	return f.inner.GetByID(ctx, id)
+}
+
+func (f *failingBurstRepo) Update(_ context.Context, _ *career.Burst) error {
+	return errors.New("forced update failure")
+}
+
+func (f *failingBurstRepo) Delete(ctx context.Context, id string) error {
+	return f.inner.Delete(ctx, id)
+}
+
+func (f *failingBurstRepo) List(ctx context.Context, filters careerrepo.BurstListFilters) ([]*career.Burst, error) {
+	return f.inner.List(ctx, filters)
+}
+
+func (f *failingBurstRepo) Count(ctx context.Context, filters careerrepo.BurstListFilters) (int, error) {
+	return f.inner.Count(ctx, filters)
+}

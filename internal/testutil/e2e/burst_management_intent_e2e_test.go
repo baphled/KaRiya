@@ -2687,10 +2687,11 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 // These test what happens when database operations fail during user workflows.
 var _ = Describe("User Journey: Database Failure Handling", func() {
 	var (
-		intent   *burst_management.Intent
-		ctx      *burst_management.IntentContext
-		mockRepo *mocks.BurstRepositoryMock
-		burst    *career.Burst
+		intent      *burst_management.Intent
+		ctx         *burst_management.IntentContext
+		mockRepo    *mocks.BurstRepositoryMock
+		mockService *mocks.BurstServiceMock
+		burst       *career.Burst
 	)
 
 	BeforeEach(func() {
@@ -2703,10 +2704,12 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 		}
 
 		mockRepo = mocks.NewBurstRepositoryMock().AddBurst(burst)
+		mockService = mocks.NewBurstServiceMock()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{burst},
 			BurstRepository: mockRepo,
+			Service:         mockService,
 		}
 		ctx.Validate()
 
@@ -2768,8 +2771,8 @@ var _ = Describe("User Journey: Database Failure Handling", func() {
 
 	Describe("When I confirm a burst but the database fails", func() {
 		It("should show an error and leave the burst unconfirmed", func() {
-			// Given: A database that will fail on update.
-			mockRepo.SetUpdateError(fmt.Errorf("write permission denied"))
+			// Given: A service that will fail on confirm.
+			mockService.SetConfirmError(fmt.Errorf("write permission denied"))
 
 			// And: I'm viewing an unconfirmed burst.
 			result := &screens.NavigateResult{ResultData: burst}

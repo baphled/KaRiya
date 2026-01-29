@@ -155,24 +155,29 @@ Optimized cloud infrastructure performance,2024-01-25,Technical,technical,CloudM
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.SuccessCount).To(Equal(3))
 
-			// Get all saved bursts.
+			// Bursts must have been detected from these clustered events.
 			allBursts, err := burstRepo.List(ctx, careerrepo.BurstListFilters{})
 			Expect(err).NotTo(HaveOccurred())
+			Expect(allBursts).NotTo(BeEmpty(),
+				"clustered events with same project/company should produce at least one burst")
 
-			if len(allBursts) > 0 {
-				// If bursts were detected, verify facts are linked.
-				allFacts, err := factRepo.List(ctx, careerrepo.FactListFilters{})
-				Expect(err).NotTo(HaveOccurred())
-
-				// At least some facts should have SourceBurstID set.
-				factsWithBurstID := 0
-				for _, fact := range allFacts {
-					if fact.SourceBurstID != "" {
-						factsWithBurstID++
-					}
+			// Build set of event IDs belonging to bursts.
+			burstEventIDs := make(map[string]bool)
+			for _, burst := range allBursts {
+				for _, eid := range burst.EventIDs {
+					burstEventIDs[eid] = true
 				}
-				Expect(factsWithBurstID).To(BeNumerically(">", 0),
-					"facts belonging to burst events should have SourceBurstID set")
+			}
+
+			// Every fact whose event belongs to a burst must have SourceBurstID set.
+			allFacts, err := factRepo.List(ctx, careerrepo.FactListFilters{})
+			Expect(err).NotTo(HaveOccurred())
+
+			for _, fact := range allFacts {
+				if burstEventIDs[fact.SourceEventID] {
+					Expect(fact.SourceBurstID).NotTo(BeEmpty(),
+						"fact for burst event %s should have SourceBurstID set", fact.SourceEventID)
+				}
 			}
 		})
 

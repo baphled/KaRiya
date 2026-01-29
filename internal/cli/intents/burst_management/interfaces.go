@@ -18,6 +18,9 @@ type BurstService interface {
 	GetEventByID(ctx context.Context, eventID string) (*career.CareerEvent, error)
 	ListEvents(ctx context.Context, filters careerrepo.EventListFilters) ([]*career.CareerEvent, error)
 
+	// Burst confirmation.
+	ConfirmBurst(ctx context.Context, burst *career.Burst) error
+
 	// Fact operations.
 	GetFactsBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error)
 	ExtractFactsFromBurst(ctx context.Context, burst *career.Burst) ([]career.Fact, error)
