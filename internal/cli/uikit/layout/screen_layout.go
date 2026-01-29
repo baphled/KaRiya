@@ -165,8 +165,9 @@ func (sl *ScreenLayout) Render() string {
 	var footerParts []string
 
 	// === HEADER SECTION (pinned to top) ===
-	// Logo at line 0 (no spacing before it)
+	// Add 2 blank lines before logo for breathing room
 	if sl.ShowLogo && sl.Logo != nil {
+		headerParts = append(headerParts, "", "") // 2 blank lines before logo
 		sl.Logo.SetWidth(sl.TerminalInfo.Width)
 		logoOutput := sl.Logo.ViewStatic()
 		headerParts = append(headerParts, logoOutput)
@@ -261,14 +262,7 @@ func (sl *ScreenLayout) Render() string {
 		spacerHeight = 0 // Graceful: don't go negative
 	}
 
-	// Build spacer (empty lines)
-	var spacerParts []string
-	for i := 0; i < spacerHeight; i++ {
-		spacerParts = append(spacerParts, "")
-	}
-	spacer := strings.Join(spacerParts, "\n")
-
-	// Combine all sections
+	// Combine all sections with spacer lines added individually
 	var allParts []string
 	if header != "" {
 		allParts = append(allParts, header)
@@ -276,8 +270,9 @@ func (sl *ScreenLayout) Render() string {
 	if content != "" {
 		allParts = append(allParts, content)
 	}
-	if spacer != "" {
-		allParts = append(allParts, spacer)
+	// Add spacer lines individually (not as a joined string)
+	for i := 0; i < spacerHeight; i++ {
+		allParts = append(allParts, "")
 	}
 	if footer != "" {
 		allParts = append(allParts, footer)

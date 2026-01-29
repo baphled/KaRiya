@@ -68,26 +68,23 @@ func (m *Model) viewMenu() string {
 	helpHeight := lipgloss.Height(helpText)
 
 	// Calculate spacer to push help to bottom
-	spacerHeight := m.height - logoHeight - contentHeight - helpHeight
+	// Account for 2 blank lines before logo
+	spacerHeight := m.height - 2 - logoHeight - contentHeight - helpHeight
 	if spacerHeight < 0 {
 		spacerHeight = 0
 	}
 
-	// Build spacer
-	var spacerParts []string
+	// Combine all sections with spacer lines added individually
+	// Start with 2 blank lines before logo for breathing room
+	allParts := []string{"", "", logoView, content}
+	// Add spacer lines individually (not as a joined string)
 	for i := 0; i < spacerHeight; i++ {
-		spacerParts = append(spacerParts, "")
+		allParts = append(allParts, "")
 	}
-	spacer := primitives.JoinVertical(primitives.AlignCenter, spacerParts...)
+	allParts = append(allParts, "") // Blank line before help
+	allParts = append(allParts, helpText)
 
-	// Combine all sections
-	combined := primitives.JoinVertical(primitives.AlignCenter,
-		logoView,
-		content,
-		spacer,
-		"", // Blank line before help
-		helpText,
-	)
+	combined := primitives.JoinVertical(primitives.AlignCenter, allParts...)
 
 	// Place at top-center (pinned layout)
 	return primitives.PlaceInTerminal(combined, m.width, m.height)
