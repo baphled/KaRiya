@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/baphled/kariya/internal/repository/career"
-	_ "modernc.org/sqlite"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 )
 
 // SetupTestDB creates a test database with all migrations applied.
@@ -25,7 +25,7 @@ func SetupTestDB(t testing.TB) (*sql.DB, func()) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
-	db, err := sql.Open("sqlite", dbPath)
+	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
@@ -65,7 +65,7 @@ func SetupTestDBWithPath(t testing.TB) (string, *sql.DB, func()) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
-	db, err := sql.Open("sqlite", dbPath)
+	db, err := careersql.OpenDB(dbPath)
 	if err != nil {
 		t.Fatalf("failed to open test db at %s: %v", dbPath, err)
 	}
