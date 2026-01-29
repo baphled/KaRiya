@@ -404,6 +404,13 @@ func (bg *DefaultBulletGenerator) extractPrimaryCategory(categories []string) co
 	return ""
 }
 
+// dedupKey is a struct-based key for bullet deduplication, avoiding string
+// delimiter collisions (e.g. company names containing "|").
+type dedupKey struct {
+	text    string
+	company string
+}
+
 // deduplicateBullets removes bullets with identical text at the same company,
 // keeping the one with highest confidence. Bullets at different companies with
 // identical text are kept separate (BUG-013). When merging, it combines source
@@ -414,7 +421,7 @@ func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap
 	}
 
 	// Map to track unique bullets by normalized text + company (BUG-013).
-	seen := make(map[string]*Bullet)
+	seen := make(map[dedupKey]*Bullet)
 
 	for _, bullet := range bullets {
 		// Normalize text for comparison (lowercase, trim spaces).
@@ -422,7 +429,15 @@ func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap
 
 		// Resolve primary company from source events (BUG-013).
 		company := resolvePrimaryCompany(bullet.SourceEventIDs, eventMap)
-		key := normalizedText + "|" + company
+
+		// When company cannot be resolved (no company on source events),
+		// fall back to the first SourceEventID to prevent unrelated bullets
+		// from merging under an empty key (BUG-015 defence-in-depth).
+		if company == "" && len(bullet.SourceEventIDs) > 0 {
+			company = bullet.SourceEventIDs[0]
+		}
+
+		key := dedupKey{text: normalizedText, company: company}
 
 		if existing, exists := seen[key]; exists {
 			// Merge: keep the one with higher confidence, combine source IDs.
@@ -453,6 +468,8 @@ func (bg *DefaultBulletGenerator) deduplicateBullets(bullets []*Bullet, eventMap
 
 // resolvePrimaryCompany determines the primary company for a bullet by counting
 // which company appears most frequently across its source events (BUG-013).
+// When multiple companies are tied, the lexicographically smallest name wins
+// to ensure deterministic results across runs.
 func resolvePrimaryCompany(sourceEventIDs []string, eventMap map[string]*career.CareerEvent) string {
 	if len(sourceEventIDs) == 0 || len(eventMap) == 0 {
 		return ""
@@ -465,11 +482,18 @@ func resolvePrimaryCompany(sourceEventIDs []string, eventMap map[string]*career.
 		}
 	}
 
+	// Sort company names for deterministic tie-breaking.
+	companies := make([]string, 0, len(companyCounts))
+	for company := range companyCounts {
+		companies = append(companies, company)
+	}
+	sort.Strings(companies)
+
 	primaryCompany := ""
 	maxCount := 0
-	for company, count := range companyCounts {
-		if count > maxCount {
-			maxCount = count
+	for _, company := range companies {
+		if companyCounts[company] > maxCount {
+			maxCount = companyCounts[company]
 			primaryCompany = company
 		}
 	}

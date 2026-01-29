@@ -1232,4 +1232,39 @@ var _ = Describe("BUG-013: Company-aware bullet deduplication", func() {
 				"SourceEventIDs should only reference events from one company, got %v", bullet.SourceEventIDs)
 		}
 	})
+
+	It("should resolve primary company deterministically when counts are tied", func() {
+		// Two companies each appear once - tie must be broken deterministically.
+		events := []*career.CareerEvent{
+			fixtures.EventWith("e-zebra", "Implemented CI/CD pipelines", "Zebra Inc", ""),
+			fixtures.EventWith("e-alpha", "Implemented CI/CD pipelines", "Alpha Corp", ""),
+		}
+
+		// Run multiple times to verify determinism.
+		var firstResult string
+		for i := 0; i < 10; i++ {
+			bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "", "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(bullets).To(HaveLen(2), "different companies must produce separate bullets")
+			if i == 0 {
+				firstResult = bullets[0].Text
+			}
+			Expect(bullets[0].Text).To(Equal(firstResult),
+				"iteration %d: primary company resolution must be deterministic", i)
+		}
+	})
+
+	It("should not merge bullets from events missing from the event map", func() {
+		// Events with IDs that won't resolve to a company should not merge
+		// with each other under an empty key (BUG-015 defence-in-depth).
+		events := []*career.CareerEvent{
+			fixtures.EventWith("e1", "Built monitoring dashboards", "", "Project X"),
+			fixtures.EventWith("e2", "Built monitoring dashboards", "", "Project Y"),
+		}
+
+		bullets, err := generator.GenerateBullets(ctx, events, nil, nil, "", "")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(bullets).To(HaveLen(2),
+			"bullets from events with no company should not merge under an empty key")
+	})
 })
