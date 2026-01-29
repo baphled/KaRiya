@@ -264,20 +264,16 @@ func (i *Intent) confirmBurst() tea.Cmd {
 		return nil
 	}
 
-	// Save to repository first (if available) BEFORE modifying in-memory state.
-	if i.context.BurstRepository != nil {
+	// Delegate to the service which handles Confirmed, ConfirmedAt, UpdatedAt,
+	// and rolls back correctly on failure.
+	if i.context.Service != nil {
 		ctx := i.getContext()
-		i.selectedBurst.Confirmed = true
-		err := i.context.BurstRepository.Update(ctx, i.selectedBurst)
-		if err != nil {
-			// Rollback in-memory change on failure.
-			i.selectedBurst.Confirmed = false
+		if err := i.context.Service.ConfirmBurst(ctx, i.selectedBurst); err != nil {
 			i.confirmError = err
 			i.errorModal = feedback.NewErrorModal("Confirmation Failed", err.Error())
 			return nil
 		}
 	} else {
-		// No repository - just update in memory.
 		i.selectedBurst.Confirmed = true
 	}
 

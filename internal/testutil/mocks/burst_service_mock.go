@@ -22,6 +22,8 @@ type BurstServiceMock struct {
 	listEventsError  error
 	extractCallCount int
 	saveFactError    error
+	confirmError     error
+	confirmCallCount int
 }
 
 // NewBurstServiceMock creates a new configurable BurstService mock.
@@ -74,6 +76,17 @@ func (m *BurstServiceMock) SetSaveFactError(err error) *BurstServiceMock {
 	return m
 }
 
+// SetConfirmError configures an error to be returned by ConfirmBurst.
+func (m *BurstServiceMock) SetConfirmError(err error) *BurstServiceMock {
+	m.confirmError = err
+	return m
+}
+
+// GetConfirmCallCount returns how many times ConfirmBurst was called.
+func (m *BurstServiceMock) GetConfirmCallCount() int {
+	return m.confirmCallCount
+}
+
 // SetFactsForBurst configures facts to be returned for a specific burst ID.
 func (m *BurstServiceMock) SetFactsForBurst(burstID string, facts []*career.Fact) *BurstServiceMock {
 	m.facts[burstID] = facts
@@ -88,6 +101,18 @@ func (m *BurstServiceMock) GetExtractCallCount() int {
 // GetSavedFacts returns all facts that were saved via SaveFact.
 func (m *BurstServiceMock) GetSavedFacts() []*career.Fact {
 	return m.savedFacts
+}
+
+// ConfirmBurst implements BurstService.
+func (m *BurstServiceMock) ConfirmBurst(_ context.Context, burst *career.Burst) error {
+	m.confirmCallCount++
+	if m.confirmError != nil {
+		return m.confirmError
+	}
+	if burst != nil {
+		burst.Confirmed = true
+	}
+	return nil
 }
 
 // GetFactsBySourceBurstID implements BurstService.
