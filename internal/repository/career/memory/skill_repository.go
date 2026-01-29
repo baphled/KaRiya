@@ -100,154 +100,183 @@ func (r *SkillRepository) GetByName(_ context.Context, name string) (*career.Ski
 	return nil, career_repo.ErrSkillNotFound
 }
 
-// List retrieves skills with optional filtering
+// List retrieves skills with optional filtering.
 func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillListFilters) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	// Get event counts for MinEvents filtering
-	eventCounts := make(map[string]int)
-	for skillID, eventIDs := range r.skillEvents {
-		eventCounts[skillID] = len(eventIDs)
-	}
+	eventCounts := r.buildEventCounts()
 
-	var result []*career.Skill
-
-	// Collect all skills that match the filters
+	var skills []*career.Skill
 	for _, skill := range r.skills {
-		if filters != nil {
-			// Filter by category
-			if filters.Category != "" && skill.Category != filters.Category {
-				continue
-			}
-
-			// Filter by level
-			if filters.Level != "" && skill.Level != filters.Level {
-				continue
-			}
-
-			// Filter by minimum events
-			if filters.MinEvents > 0 && eventCounts[skill.ID] < filters.MinEvents {
-				continue
-			}
-		}
-
-		result = append(result, skill)
+		skills = append(skills, skill)
 	}
 
-	// Determine sort order and field
-	sortOrder := "asc"
-	sortBy := "name"
-	if filters != nil {
-		if filters.SortOrder == "desc" {
-			sortOrder = "desc"
+	skills = r.applyFilters(skills, filters, eventCounts)
+	r.applySorting(ctx, skills, filters, eventCounts)
+	return r.applyPagination(skills, filters), nil
+}
+
+func (r *SkillRepository) buildEventCounts() map[string]int {
+	counts := make(map[string]int, len(r.skillEvents))
+	for skillID, eventIDs := range r.skillEvents {
+		counts[skillID] = len(eventIDs)
+	}
+	return counts
+}
+
+func (r *SkillRepository) applyFilters(
+	skills []*career.Skill, filters *career_repo.SkillListFilters, eventCounts map[string]int,
+) []*career.Skill {
+	if filters == nil {
+		return skills
+	}
+
+	var filtered []*career.Skill
+	for _, skill := range skills {
+		if filters.Category != "" && skill.Category != filters.Category {
+			continue
 		}
+		if filters.Level != "" && skill.Level != filters.Level {
+			continue
+		}
+		if filters.MinEvents > 0 && eventCounts[skill.ID] < filters.MinEvents {
+			continue
+		}
+		filtered = append(filtered, skill)
+	}
+	return filtered
+}
+
+func (r *SkillRepository) applySorting(
+	ctx context.Context, skills []*career.Skill, filters *career_repo.SkillListFilters, eventCounts map[string]int,
+) {
+	sortBy := "name"
+	desc := false
+	if filters != nil {
 		if filters.SortBy != "" {
 			sortBy = filters.SortBy
 		}
+		desc = filters.SortOrder == "desc"
 	}
 
-	// Sort based on sortBy and sortOrder
 	switch sortBy {
 	case "name":
-		sort.Slice(result, func(i, j int) bool {
-			cmp := strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
-			if sortOrder == "desc" {
-				return !cmp
-			}
-			return cmp
-		})
+		r.sortByName(skills, desc)
 	case "events":
-		sort.Slice(result, func(i, j int) bool {
-			countI := eventCounts[result[i].ID]
-			countJ := eventCounts[result[j].ID]
-			if countI == countJ {
-				// Secondary sort by name ascending
-				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
-			}
-			if sortOrder == "desc" {
-				return countI > countJ
-			}
-			return countI < countJ
-		})
+		r.sortByEventCount(skills, desc, eventCounts)
 	case "last_used":
-		// Get last used dates from event repository if available
-		lastUsedDates := make(map[string]time.Time)
-		if r.eventRepo != nil {
-			for skillID, eventIDs := range r.skillEvents {
-				var maxDate time.Time
-				for _, eventID := range eventIDs {
-					if event, err := r.eventRepo.GetByID(ctx, eventID); err == nil {
-						if event.Date.After(maxDate) {
-							maxDate = event.Date
-						}
-					}
-				}
-				if !maxDate.IsZero() {
-					lastUsedDates[skillID] = maxDate
-				}
-			}
-		}
-
-		sort.Slice(result, func(i, j int) bool {
-			dateI, hasI := lastUsedDates[result[i].ID]
-			dateJ, hasJ := lastUsedDates[result[j].ID]
-
-			// Skills without dates should sort last for DESC, first for ASC
-			if !hasI && !hasJ {
-				// Both have no date, sort by name
-				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
-			}
-			if !hasI {
-				return sortOrder == "asc"
-			}
-			if !hasJ {
-				return sortOrder == "desc"
-			}
-
-			// Both have dates
-			if dateI.Equal(dateJ) {
-				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
-			}
-			if sortOrder == "desc" {
-				return dateI.After(dateJ)
-			}
-			return dateI.Before(dateJ)
-		})
+		r.sortByLastUsed(ctx, skills, desc)
 	case "category":
-		sort.Slice(result, func(i, j int) bool {
-			cmp := result[i].Category < result[j].Category
-			if result[i].Category == result[j].Category {
-				// Secondary sort by name
-				return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
-			}
-			if sortOrder == "desc" {
-				return !cmp
-			}
-			return cmp
-		})
+		r.sortByCategory(skills, desc)
 	default:
-		// Default to name sort
-		sort.Slice(result, func(i, j int) bool {
-			return strings.ToLower(result[i].Name) < strings.ToLower(result[j].Name)
-		})
+		r.sortByName(skills, false)
+	}
+}
+
+func (r *SkillRepository) sortByName(skills []*career.Skill, desc bool) {
+	sort.Slice(skills, func(i, j int) bool {
+		less := strings.ToLower(skills[i].Name) < strings.ToLower(skills[j].Name)
+		if desc {
+			return !less
+		}
+		return less
+	})
+}
+
+func (r *SkillRepository) sortByEventCount(skills []*career.Skill, desc bool, eventCounts map[string]int) {
+	sort.Slice(skills, func(i, j int) bool {
+		countI := eventCounts[skills[i].ID]
+		countJ := eventCounts[skills[j].ID]
+		if countI == countJ {
+			return strings.ToLower(skills[i].Name) < strings.ToLower(skills[j].Name)
+		}
+		if desc {
+			return countI > countJ
+		}
+		return countI < countJ
+	})
+}
+
+func (r *SkillRepository) sortByLastUsed(ctx context.Context, skills []*career.Skill, desc bool) {
+	lastUsedDates := r.buildLastUsedDates(ctx)
+
+	sort.Slice(skills, func(i, j int) bool {
+		dateI, hasI := lastUsedDates[skills[i].ID]
+		dateJ, hasJ := lastUsedDates[skills[j].ID]
+
+		// Skills without dates sort last for DESC, first for ASC.
+		if !hasI && !hasJ {
+			return strings.ToLower(skills[i].Name) < strings.ToLower(skills[j].Name)
+		}
+		if !hasI {
+			return !desc
+		}
+		if !hasJ {
+			return desc
+		}
+
+		if dateI.Equal(dateJ) {
+			return strings.ToLower(skills[i].Name) < strings.ToLower(skills[j].Name)
+		}
+		if desc {
+			return dateI.After(dateJ)
+		}
+		return dateI.Before(dateJ)
+	})
+}
+
+func (r *SkillRepository) buildLastUsedDates(ctx context.Context) map[string]time.Time {
+	lastUsedDates := make(map[string]time.Time)
+	if r.eventRepo == nil {
+		return lastUsedDates
 	}
 
-	// Apply pagination
-	if filters != nil {
-		if filters.Offset > 0 {
-			if filters.Offset >= len(result) {
-				return []*career.Skill{}, nil
+	for skillID, eventIDs := range r.skillEvents {
+		var maxDate time.Time
+		for _, eventID := range eventIDs {
+			if event, err := r.eventRepo.GetByID(ctx, eventID); err == nil {
+				if event.Date.After(maxDate) {
+					maxDate = event.Date
+				}
 			}
-			result = result[filters.Offset:]
 		}
-
-		if filters.Limit > 0 && filters.Limit < len(result) {
-			result = result[:filters.Limit]
+		if !maxDate.IsZero() {
+			lastUsedDates[skillID] = maxDate
 		}
 	}
+	return lastUsedDates
+}
 
-	return result, nil
+func (r *SkillRepository) sortByCategory(skills []*career.Skill, desc bool) {
+	sort.Slice(skills, func(i, j int) bool {
+		if skills[i].Category == skills[j].Category {
+			return strings.ToLower(skills[i].Name) < strings.ToLower(skills[j].Name)
+		}
+		less := skills[i].Category < skills[j].Category
+		if desc {
+			return !less
+		}
+		return less
+	})
+}
+
+func (r *SkillRepository) applyPagination(skills []*career.Skill, filters *career_repo.SkillListFilters) []*career.Skill {
+	if filters == nil {
+		return skills
+	}
+
+	if filters.Offset > 0 {
+		if filters.Offset >= len(skills) {
+			return []*career.Skill{}
+		}
+		skills = skills[filters.Offset:]
+	}
+
+	if filters.Limit > 0 && filters.Limit < len(skills) {
+		skills = skills[:filters.Limit]
+	}
+	return skills
 }
 
 // Update modifies an existing skill

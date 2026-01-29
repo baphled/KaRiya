@@ -116,37 +116,41 @@ func (r *BurstRepository) List(_ context.Context, filters career_repo.BurstListF
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	// Collect all bursts
 	var bursts []*career.Burst
 	for _, burst := range r.bursts {
 		bursts = append(bursts, burst)
 	}
 
-	// Apply filters
-	if filters.StartDate != nil || filters.EndDate != nil {
-		var filtered []*career.Burst
-		for _, burst := range bursts {
-			if filters.StartDate != nil && burst.CreatedAt.Before(*filters.StartDate) {
-				continue
-			}
-			if filters.EndDate != nil && burst.CreatedAt.After(*filters.EndDate) {
-				continue
-			}
-			filtered = append(filtered, burst)
-		}
-		bursts = filtered
+	bursts = r.applyFilters(bursts, filters)
+	r.applySorting(bursts, filters)
+	return r.applyPagination(bursts, filters), nil
+}
+
+func (r *BurstRepository) applyFilters(bursts []*career.Burst, filters career_repo.BurstListFilters) []*career.Burst {
+	if filters.StartDate == nil && filters.EndDate == nil {
+		return bursts
 	}
 
-	// Apply sorting
+	var filtered []*career.Burst
+	for _, burst := range bursts {
+		if filters.StartDate != nil && burst.CreatedAt.Before(*filters.StartDate) {
+			continue
+		}
+		if filters.EndDate != nil && burst.CreatedAt.After(*filters.EndDate) {
+			continue
+		}
+		filtered = append(filtered, burst)
+	}
+	return filtered
+}
+
+func (r *BurstRepository) applySorting(bursts []*career.Burst, filters career_repo.BurstListFilters) {
 	sortBy := filters.SortBy
 	if sortBy == "" {
 		sortBy = "created_at"
 	}
 
-	sortOrder := filters.SortOrder
-	if sortOrder == "" {
-		sortOrder = "desc"
-	}
+	asc := filters.SortOrder == "asc"
 
 	sort.Slice(bursts, func(i, j int) bool {
 		var less bool
@@ -159,30 +163,28 @@ func (r *BurstRepository) List(_ context.Context, filters career_repo.BurstListF
 			less = bursts[i].CreatedAt.Before(bursts[j].CreatedAt)
 		}
 
-		if sortOrder == "asc" {
+		if asc {
 			return less
 		}
 		return !less
 	})
+}
 
-	// Apply pagination
+func (r *BurstRepository) applyPagination(bursts []*career.Burst, filters career_repo.BurstListFilters) []*career.Burst {
 	offset := filters.Offset
-	limit := filters.Limit
-
 	if offset > len(bursts) {
-		return []*career.Burst{}, nil
+		return []*career.Burst{}
 	}
 
-	end := offset + limit
+	if filters.Limit == 0 {
+		return bursts[offset:]
+	}
+
+	end := offset + filters.Limit
 	if end > len(bursts) {
 		end = len(bursts)
 	}
-
-	if limit == 0 {
-		return bursts[offset:], nil
-	}
-
-	return bursts[offset:end], nil
+	return bursts[offset:end]
 }
 
 // Count returns the total number of bursts matching the given filters.

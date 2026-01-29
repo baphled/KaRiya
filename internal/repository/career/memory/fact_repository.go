@@ -116,27 +116,23 @@ func (r *FactRepository) List(_ context.Context, filters career_repo.FactListFil
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	// Collect all facts
 	var facts []*career.Fact
 	for _, fact := range r.facts {
 		facts = append(facts, fact)
 	}
 
-	// Apply competency category filter
+	facts = r.applyFilters(facts, filters)
+	r.applySorting(facts, filters)
+	return r.applyPagination(facts, filters), nil
+}
+
+func (r *FactRepository) applyFilters(facts []*career.Fact, filters career_repo.FactListFilters) []*career.Fact {
 	if filters.CompetencyCategory != "" {
-		var filtered []*career.Fact
-		for _, fact := range facts {
-			for _, cat := range fact.CompetencyCategories {
-				if cat == filters.CompetencyCategory {
-					filtered = append(filtered, fact)
-					break
-				}
-			}
-		}
-		facts = filtered
+		facts = filterBySliceContains(facts, func(f *career.Fact) []string {
+			return f.CompetencyCategories
+		}, filters.CompetencyCategory)
 	}
 
-	// Apply role fit filter
 	if filters.RoleFit != "" {
 		var filtered []*career.Fact
 		for _, fact := range facts {
@@ -147,45 +143,54 @@ func (r *FactRepository) List(_ context.Context, filters career_repo.FactListFil
 		facts = filtered
 	}
 
-	// Apply audience relevance filter
 	if filters.AudienceRelevance != "" {
-		var filtered []*career.Fact
-		for _, fact := range facts {
-			for _, aud := range fact.AudienceRelevance {
-				if aud == filters.AudienceRelevance {
-					filtered = append(filtered, fact)
-					break
-				}
-			}
-		}
-		facts = filtered
+		facts = filterBySliceContains(facts, func(f *career.Fact) []string {
+			return f.AudienceRelevance
+		}, filters.AudienceRelevance)
 	}
 
-	// Apply date range filters
-	if filters.StartDate != nil || filters.EndDate != nil {
-		var filtered []*career.Fact
-		for _, fact := range facts {
-			if filters.StartDate != nil && fact.CreatedAt.Before(*filters.StartDate) {
-				continue
-			}
-			if filters.EndDate != nil && fact.CreatedAt.After(*filters.EndDate) {
-				continue
-			}
-			filtered = append(filtered, fact)
-		}
-		facts = filtered
+	return r.applyDateFilter(facts, filters)
+}
+
+func (r *FactRepository) applyDateFilter(facts []*career.Fact, filters career_repo.FactListFilters) []*career.Fact {
+	if filters.StartDate == nil && filters.EndDate == nil {
+		return facts
 	}
 
-	// Apply sorting
+	var filtered []*career.Fact
+	for _, fact := range facts {
+		if filters.StartDate != nil && fact.CreatedAt.Before(*filters.StartDate) {
+			continue
+		}
+		if filters.EndDate != nil && fact.CreatedAt.After(*filters.EndDate) {
+			continue
+		}
+		filtered = append(filtered, fact)
+	}
+	return filtered
+}
+
+// filterBySliceContains filters facts where a slice field contains the target value.
+func filterBySliceContains(facts []*career.Fact, getSlice func(*career.Fact) []string, target string) []*career.Fact {
+	var filtered []*career.Fact
+	for _, fact := range facts {
+		for _, val := range getSlice(fact) {
+			if val == target {
+				filtered = append(filtered, fact)
+				break
+			}
+		}
+	}
+	return filtered
+}
+
+func (r *FactRepository) applySorting(facts []*career.Fact, filters career_repo.FactListFilters) {
 	sortBy := filters.SortBy
 	if sortBy == "" {
 		sortBy = "created_at"
 	}
 
-	sortOrder := filters.SortOrder
-	if sortOrder == "" {
-		sortOrder = "desc"
-	}
+	asc := filters.SortOrder == "asc"
 
 	sort.Slice(facts, func(i, j int) bool {
 		var less bool
@@ -196,30 +201,28 @@ func (r *FactRepository) List(_ context.Context, filters career_repo.FactListFil
 			less = facts[i].CreatedAt.Before(facts[j].CreatedAt)
 		}
 
-		if sortOrder == "asc" {
+		if asc {
 			return less
 		}
 		return !less
 	})
+}
 
-	// Apply pagination
+func (r *FactRepository) applyPagination(facts []*career.Fact, filters career_repo.FactListFilters) []*career.Fact {
 	offset := filters.Offset
-	limit := filters.Limit
-
 	if offset > len(facts) {
-		return []*career.Fact{}, nil
+		return []*career.Fact{}
 	}
 
-	end := offset + limit
+	if filters.Limit == 0 {
+		return facts[offset:]
+	}
+
+	end := offset + filters.Limit
 	if end > len(facts) {
 		end = len(facts)
 	}
-
-	if limit == 0 {
-		return facts[offset:], nil
-	}
-
-	return facts[offset:end], nil
+	return facts[offset:end]
 }
 
 // Count returns the total number of facts matching the given filters.

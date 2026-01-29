@@ -112,68 +112,73 @@ func (r *EventRepository) List(_ context.Context, filters career_repo.EventListF
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var filtered []*career.CareerEvent
-
+	var events []*career.CareerEvent
 	for _, event := range r.events {
-		// Apply tag filter
-		if len(filters.Tags) > 0 {
-			if !containsAnyTag(event.Tags, filters.Tags) {
-				continue
-			}
-		}
+		events = append(events, event)
+	}
 
-		// Apply date range filter
+	events = r.applyFilters(events, filters)
+	r.applySorting(events, filters)
+	return r.applyPagination(events, filters), nil
+}
+
+func (r *EventRepository) applyFilters(events []*career.CareerEvent, filters career_repo.EventListFilters) []*career.CareerEvent {
+	var filtered []*career.CareerEvent
+	for _, event := range events {
+		if len(filters.Tags) > 0 && !containsAnyTag(event.Tags, filters.Tags) {
+			continue
+		}
 		if filters.StartDate != nil && event.Date.Before(*filters.StartDate) {
 			continue
 		}
 		if filters.EndDate != nil && event.Date.After(*filters.EndDate) {
 			continue
 		}
-
 		filtered = append(filtered, event)
 	}
+	return filtered
+}
 
-	// Apply sorting with secondary sort
-	sort.Slice(filtered, func(i, j int) bool {
+func (r *EventRepository) applySorting(events []*career.CareerEvent, filters career_repo.EventListFilters) {
+	desc := filters.SortOrder == "desc"
+
+	sort.Slice(events, func(i, j int) bool {
 		switch filters.SortBy {
 		case "date":
-			if filtered[i].Date.Equal(filtered[j].Date) {
-				// Secondary sort by CreatedAt
-				if filters.SortOrder == "desc" {
-					return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
+			if events[i].Date.Equal(events[j].Date) {
+				if desc {
+					return events[i].CreatedAt.After(events[j].CreatedAt)
 				}
-				return filtered[i].CreatedAt.Before(filtered[j].CreatedAt)
+				return events[i].CreatedAt.Before(events[j].CreatedAt)
 			}
-			if filters.SortOrder == "desc" {
-				return filtered[i].Date.After(filtered[j].Date)
+			if desc {
+				return events[i].Date.After(events[j].Date)
 			}
-			return filtered[i].Date.Before(filtered[j].Date)
+			return events[i].Date.Before(events[j].Date)
 		default:
-			if filters.SortOrder == "desc" {
-				return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
+			if desc {
+				return events[i].CreatedAt.After(events[j].CreatedAt)
 			}
-			return filtered[i].CreatedAt.Before(filtered[j].CreatedAt)
+			return events[i].CreatedAt.Before(events[j].CreatedAt)
 		}
 	})
+}
 
-	// Apply pagination
+func (r *EventRepository) applyPagination(events []*career.CareerEvent, filters career_repo.EventListFilters) []*career.CareerEvent {
 	start := filters.Offset
-	end := start + filters.Limit
+	if start > len(events) {
+		return []*career.CareerEvent{}
+	}
 
-	// If Limit is 0, return all results (no pagination limit)
 	if filters.Limit == 0 {
-		end = len(filtered)
+		return events[start:]
 	}
 
-	if start > len(filtered) {
-		return []*career.CareerEvent{}, nil
+	end := start + filters.Limit
+	if end > len(events) {
+		end = len(events)
 	}
-
-	if end > len(filtered) {
-		end = len(filtered)
-	}
-
-	return filtered[start:end], nil
+	return events[start:end]
 }
 
 // Count returns the number of events matching the filters.
@@ -181,27 +186,12 @@ func (r *EventRepository) Count(_ context.Context, filters career_repo.EventList
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var count int
+	var events []*career.CareerEvent
 	for _, event := range r.events {
-		// Apply tag filter
-		if len(filters.Tags) > 0 {
-			if !containsAnyTag(event.Tags, filters.Tags) {
-				continue
-			}
-		}
-
-		// Apply date range filter
-		if filters.StartDate != nil && event.Date.Before(*filters.StartDate) {
-			continue
-		}
-		if filters.EndDate != nil && event.Date.After(*filters.EndDate) {
-			continue
-		}
-
-		count++
+		events = append(events, event)
 	}
 
-	return count, nil
+	return len(r.applyFilters(events, filters)), nil
 }
 
 // containsAnyTag checks if any tags match.
