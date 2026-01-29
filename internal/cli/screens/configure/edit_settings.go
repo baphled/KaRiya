@@ -281,7 +281,7 @@ func (s *EditSettingsScreen) GetChanges() map[string]interface{} {
 
 		if setting.Type == "bool" {
 			if boolPtr, ok := s.formData.BoolValues[setting.Key]; ok && boolPtr != nil {
-				newStrVal = fmt.Sprintf("%v", *boolPtr)
+				newStrVal = strconv.FormatBool(*boolPtr)
 			}
 		} else {
 			if strPtr, ok := s.formData.Values[setting.Key]; ok && strPtr != nil {

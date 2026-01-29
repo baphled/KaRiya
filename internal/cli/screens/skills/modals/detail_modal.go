@@ -2,6 +2,7 @@ package modals
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -195,7 +196,7 @@ func (m *DetailModal) renderSkillDetails(th themes.Theme) string {
 	}
 
 	// Event Count
-	kv.Add("Event Count:", fmt.Sprintf("%d", m.eventCount))
+	kv.Add("Event Count:", strconv.Itoa(m.eventCount))
 
 	// Last Used (if available)
 	if m.lastUsed != nil {

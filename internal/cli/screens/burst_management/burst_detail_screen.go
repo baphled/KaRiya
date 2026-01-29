@@ -1,7 +1,7 @@
 package burst_management
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
@@ -137,7 +137,7 @@ func (s *BurstDetailScreen) RenderContent() string {
 	dv := widgets.NewDetailView(th).
 		Title(s.burst.Name).
 		FieldIf("Description", s.burst.Description).
-		Field("Events", fmt.Sprintf("%d", len(s.burst.EventIDs)))
+		Field("Events", strconv.Itoa(len(s.burst.EventIDs)))
 
 	confirmedStatus := "No"
 	if s.burst.Confirmed {

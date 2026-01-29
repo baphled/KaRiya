@@ -250,7 +250,7 @@ func (m *Model) handleEditEventRequest(editMsg intents.RequestEditEventMsg) (tea
 		CareerService:   m.careerService,
 	}
 
-	//nolint:errcheck // RegisterIntent only errors on duplicate registration which cannot happen here
+	// #nosec G104 -- RegisterIntent only errors on duplicate registration which cannot happen here
 	m.intentRouter.RegisterIntent("capture_event_edit", func() intents.Intent {
 		intent, err := intents.NewCaptureEventIntent(captureCtx)
 		if err != nil {

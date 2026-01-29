@@ -389,7 +389,7 @@ func (p *CSVParser) detectDuplicates(parsedRows []*ParsedRow) {
 		}
 
 		// Check against other parsed rows
-		for j := 0; j < i; j++ {
+		for j := range i {
 			otherRow := parsedRows[j]
 			if !otherRow.IsValid || otherRow.Event == nil {
 				continue

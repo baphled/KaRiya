@@ -52,6 +52,11 @@ linters:
     - whitespace        # Unnecessary whitespace
     - godot             # Comments end with period
     - nakedret          # Naked returns in long functions
+    - dupword           # Duplicate words in comments
+    - copyloopvar       # Unnecessary loop variable copies (Go 1.22+)
+    - intrange          # Use integer ranges in for loops (Go 1.22+)
+    - perfsprint        # Replace fmt.Sprintf with faster alternatives
+    - recvcheck         # Receiver type consistency (all pointer or all value)
 
     # ---------------------------------------------------------------------------
     # Error Handling (MANDATORY)
@@ -59,6 +64,8 @@ linters:
     - nilerr            # nil return when err != nil
     - errorlint         # Error wrapping issues
     - nilnil            # (nil, nil) returns
+    - errname           # Sentinel errors prefixed Err, error types suffixed Error
+    - errchkjson        # JSON encoding type safety
 
     # ---------------------------------------------------------------------------
     # Code Quality & Complexity
@@ -72,6 +79,11 @@ linters:
     - unconvert         # Unnecessary conversions
     - unparam           # Unused parameters
     - dupl              # Code duplication
+    - wastedassign      # Dead variable assignments
+    - dogsled           # Too many blank identifiers
+    - predeclared       # Shadowing Go predeclared identifiers
+    - forcetypeassert   # Unchecked type assertions (panic risk)
+    - usestdlibvars     # Use stdlib constants instead of literals
 
     # ---------------------------------------------------------------------------
     # Security
@@ -85,23 +97,30 @@ linters:
     - gomoddirectives   # go.mod directives
     - importas          # Import aliases
     - interfacebloat    # Interface size
+    - reassign          # Package variable reassignment
+    - gocheckcompilerdirectives  # Valid //go: directives
 
     # ---------------------------------------------------------------------------
     # Testing
     # ---------------------------------------------------------------------------
     - tparallel         # t.Parallel() usage
     - testifylint       # testify usage
+    - ginkgolinter      # Ginkgo/Gomega best practices
+    - thelper           # Test helpers must call t.Helper()
+    - usetesting        # Use testing package replacements
 
     # ---------------------------------------------------------------------------
     # Comment Hygiene
     # ---------------------------------------------------------------------------
     - godox             # TODO, FIXME, HACK markers
     - forbidigo         # Forbidden function calls
+    - nolintlint        # Stale/unused //nolint directives
 
     # ---------------------------------------------------------------------------
     # Context
     # ---------------------------------------------------------------------------
     - contextcheck      # context.Context usage
+    - fatcontext        # Nested contexts in loops
 
 # =============================================================================
 # SECTION A: GO IDIOMS & BEST PRACTICES
@@ -343,6 +362,22 @@ linters-settings:
   testifylint:
     enable-all: true
 
+  ginkgolinter:
+    suppress-len-assertion: false
+    suppress-nil-assertion: false
+    suppress-err-assertion: false
+    suppress-compare-assertion: false
+    suppress-async-assertion: false
+    suppress-type-compare-assertion: false
+
+  # ---------------------------------------------------------------------------
+  # A11. Nolint Directive Hygiene
+  # ---------------------------------------------------------------------------
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+    allow-unused: false
+
 # =============================================================================
 # SECTION B: PROJECT ARCHITECTURE RULES
 # =============================================================================
@@ -509,6 +544,12 @@ issues:
         - lll
         - stylecheck
         - godot
+        - forcetypeassert
+        - perfsprint
+        - wastedassign
+        - nolintlint
+        - thelper
+        - recvcheck
 
     - path: _test\.go
       linters:
@@ -633,6 +674,12 @@ issues:
         - nestif
         - dupl
         - gocritic
+        - perfsprint
+
+    # GORM models intentionally mix pointer/value receivers (TableName is value, ToDomain/FromDomain are pointer).
+    - path: internal/repository/models/career\.go
+      linters:
+        - recvcheck
 
     # =========================================================================
     # C7. LEGACY: OLD SINGLE-FILE INTENTS (migration tracked)

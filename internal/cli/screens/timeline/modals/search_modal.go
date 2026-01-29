@@ -105,7 +105,9 @@ func (m *SearchModal) Update(msg tea.Msg) (tea.Cmd, bool, *SearchFormData) {
 	// Forward ALL messages to form (not just KeyMsg).
 	// This is CRITICAL for Tab/Enter to work in huh forms.
 	form, cmd := m.form.Update(msg)
-	m.form = form.(*huh.Form)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+	}
 
 	// Check if form just completed.
 	if m.form.State == huh.StateCompleted {

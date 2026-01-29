@@ -2142,8 +2142,7 @@ func (i *GenerateCVIntent) viewSelectSkillsConfig() string {
 		cursor1 = "▶ "
 	}
 
-	formatCheckmark := ""
-	formatDesc := ""
+	var formatCheckmark, formatDesc string
 	if i.state.selectedSkillsFormat == "flat" {
 		formatCheckmark = " ✓"
 		formatDesc = " (one skill per line)"
@@ -2163,7 +2162,7 @@ func (i *GenerateCVIntent) viewSelectSkillsConfig() string {
 		cursor2 = "▶ "
 	}
 
-	limitDesc := ""
+	var limitDesc string
 	if i.state.selectedSkillsLimit == 0 {
 		limitDesc = " (no limit - show all skills)"
 	} else {

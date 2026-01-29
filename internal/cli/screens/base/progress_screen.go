@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -42,7 +41,7 @@ func TickCmd() tea.Cmd {
 //
 // Example usage:
 //
-//	// Create progress screen
+//	// Create a progress view.
 //	screen := base.NewBaseProgressScreen(
 //	    []string{"Main Menu", "Generate CV"},
 //	    "Generating CV",
@@ -177,7 +176,7 @@ func (s *ProgressScreen) RenderContent() string {
 	// Spinner + Message
 	spinner := s.spinnerChars[s.spinnerFrame%len(s.spinnerChars)]
 	spinnerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
-	b.WriteString(spinnerStyle.Render(fmt.Sprintf("%s ", spinner)))
+	b.WriteString(spinnerStyle.Render(spinner + " "))
 	b.WriteString(s.message)
 	b.WriteString("\n\n")
 
