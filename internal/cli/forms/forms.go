@@ -211,6 +211,7 @@ func NewThemedFormWithAccessible(theme themes.Theme, groups ...*huh.Group) *huh.
 }
 
 // FormColors defines the color scheme for form elements.
+// TODO: Refactor to source colors from theme system instead of hardcoded hex values
 var FormColors = struct {
 	Title       lipgloss.Color
 	Description lipgloss.Color

@@ -167,7 +167,7 @@ type QuickAddData struct {
 	Date string
 }
 
-// ToCareerEvent converts the form data to a Event domain object.
+// ToCareerEvent converts the form data to an Event domain object.
 // Returns a new Event ready to be saved.
 func (d *QuickAddData) ToCareerEvent() *career.Event {
 	// Parse date or default to today.

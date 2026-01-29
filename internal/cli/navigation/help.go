@@ -13,7 +13,7 @@ type HelpText struct {
 }
 
 // GetHelpText returns a formatted string displaying navigation keys with descriptions.
-// When compact is true, returns abbreviated format suitable for footers.
+// Returns full format with one key per line.
 func GetHelpText(keys []NavigationKey) string {
 	return GetHelpTextCompact(keys, false)
 }

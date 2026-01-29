@@ -167,6 +167,7 @@ func (s *SkillDetailScreen) renderField(b *strings.Builder, label, value string,
 }
 
 // getCategoryColor returns a color for the skill category.
+// TODO: Refactor to use theme system instead of hardcoded ANSI color indices
 func (s *SkillDetailScreen) getCategoryColor(category string) lipgloss.Color {
 	colors := map[string]lipgloss.Color{
 		"backend":  lipgloss.Color("10"),

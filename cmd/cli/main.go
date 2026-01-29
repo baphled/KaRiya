@@ -453,7 +453,7 @@ func handleNonInteractiveImport(filePath string, _ bool, _ bool, svc *careerserv
 
 	importService := importer.NewImportService(svc)
 
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304 -- User-provided import file path is intentional
 	if err != nil {
 		fmt.Fprintf(errOut, "Error opening import file: %v\n", err)
 		return 1

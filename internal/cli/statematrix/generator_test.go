@@ -49,7 +49,7 @@ var _ = Describe("Generator", func() {
 				},
 				{
 					Name:       "BrowseTimeline",
-					File:       "/path/to/browse_browsetimeline.go",
+					File:       "/path/to/browsetimeline.go",
 					Kind:       "intent",
 					StateCount: 2,
 					States: []statematrix.StateInfo{
