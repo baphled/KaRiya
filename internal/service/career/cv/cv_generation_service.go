@@ -22,7 +22,7 @@ type CVGenerationService interface {
 
 // DefaultCVGenerationService is the default implementation of CVGenerationService
 type DefaultCVGenerationService struct {
-	eventRepo       careerrepo.Repository
+	eventRepo       careerrepo.EventRepository
 	factRepo        careerrepo.FactRepository
 	configManager   ConfigManager
 	bulletGenerator BulletGenerator
@@ -33,7 +33,7 @@ type DefaultCVGenerationService struct {
 
 // NewCVGenerationService creates a new CVGenerationService instance
 func NewCVGenerationService(
-	eventRepo careerrepo.Repository,
+	eventRepo careerrepo.EventRepository,
 	factRepo careerrepo.FactRepository,
 	configManager ConfigManager,
 	bulletGenerator BulletGenerator,
@@ -220,7 +220,7 @@ func (svc *DefaultCVGenerationService) retrieveEventsWithFilters(
 ) ([]*career.CareerEvent, error) {
 	// Return all events for CV generation
 	// Use a high limit to ensure we get all events (repository defaults to 100)
-	events, err := svc.eventRepo.List(ctx, careerrepo.ListFilters{
+	events, err := svc.eventRepo.List(ctx, careerrepo.EventListFilters{
 		Limit: 10000, // High enough to get all events
 	})
 	if err != nil {

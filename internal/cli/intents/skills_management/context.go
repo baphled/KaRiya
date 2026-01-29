@@ -106,9 +106,9 @@ func (c *IntentContext) Validate() error {
 
 // LoadSkills loads skills from the repository with current filters.
 func (c *IntentContext) LoadSkills() ([]*domain.Skill, error) {
-	var repoFilters *career.SkillFilters
+	var repoFilters *career.SkillListFilters
 	if c.Filters != nil {
-		repoFilters = &career.SkillFilters{
+		repoFilters = &career.SkillListFilters{
 			Category:  c.Filters.Category,
 			Level:     c.Filters.Level,
 			MinEvents: c.Filters.MinEvents,

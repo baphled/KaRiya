@@ -465,7 +465,7 @@ var _ = Describe("Career Service", func() {
 			It("should list all events", func() {
 				mockRepo.SetListBehavior(testEvents, nil)
 
-				events, err := service.ListEvents(ctx, mocks.ListFilters{})
+				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(len(events)).To(Equal(3))
@@ -475,7 +475,7 @@ var _ = Describe("Career Service", func() {
 		Context("with tag filters", func() {
 			It("should list events matching tags", func() {
 				filteredEvents := []*career.CareerEvent{testEvents[0]}
-				filters := mocks.ListFilters{
+				filters := mocks.EventListFilters{
 					Tags: []string{"technical"},
 				}
 				mockRepo.SetListBehavior(filteredEvents, nil)
@@ -491,7 +491,7 @@ var _ = Describe("Career Service", func() {
 		Context("with pagination", func() {
 			It("should list events with limit and offset", func() {
 				paginatedEvents := []*career.CareerEvent{testEvents[0], testEvents[1]}
-				filters := mocks.ListFilters{
+				filters := mocks.EventListFilters{
 					Limit:  2,
 					Offset: 0,
 				}
@@ -508,7 +508,7 @@ var _ = Describe("Career Service", func() {
 			It("should return empty list", func() {
 				mockRepo.SetListBehavior([]*career.CareerEvent{}, nil)
 
-				events, err := service.ListEvents(ctx, mocks.ListFilters{})
+				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(len(events)).To(Equal(0))
@@ -519,7 +519,7 @@ var _ = Describe("Career Service", func() {
 			It("should return error when list fails", func() {
 				mockRepo.SetListBehavior(nil, errors.New("database error"))
 
-				events, err := service.ListEvents(ctx, mocks.ListFilters{})
+				events, err := service.ListEvents(ctx, mocks.EventListFilters{})
 				Expect(err).To(HaveOccurred())
 				Expect(events).To(BeNil())
 			})
@@ -529,7 +529,7 @@ var _ = Describe("Career Service", func() {
 			It("should list events within date range", func() {
 				startDate := time.Now().AddDate(0, 0, -20)
 				endDate := time.Now()
-				filters := mocks.ListFilters{
+				filters := mocks.EventListFilters{
 					StartDate: &startDate,
 					EndDate:   &endDate,
 				}
@@ -544,7 +544,7 @@ var _ = Describe("Career Service", func() {
 
 		Context("with sorting options", func() {
 			It("should list events with sort options", func() {
-				filters := mocks.ListFilters{
+				filters := mocks.EventListFilters{
 					SortBy:    "date",
 					SortOrder: "desc",
 				}
@@ -563,7 +563,7 @@ var _ = Describe("Career Service", func() {
 			It("should return total event count", func() {
 				mockRepo.SetCountBehavior(42, nil)
 
-				count, err := service.CountEvents(ctx, mocks.ListFilters{})
+				count, err := service.CountEvents(ctx, mocks.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(42))
@@ -572,7 +572,7 @@ var _ = Describe("Career Service", func() {
 
 		Context("with tag filters", func() {
 			It("should return count of events matching tags", func() {
-				filters := mocks.ListFilters{
+				filters := mocks.EventListFilters{
 					Tags: []string{"technical"},
 				}
 				mockRepo.SetCountBehavior(10, nil)
@@ -588,7 +588,7 @@ var _ = Describe("Career Service", func() {
 			It("should return zero count", func() {
 				mockRepo.SetCountBehavior(0, nil)
 
-				count, err := service.CountEvents(ctx, mocks.ListFilters{})
+				count, err := service.CountEvents(ctx, mocks.EventListFilters{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(count).To(Equal(0))
@@ -599,7 +599,7 @@ var _ = Describe("Career Service", func() {
 			It("should return error when count fails", func() {
 				mockRepo.SetCountBehavior(0, errors.New("database error"))
 
-				count, err := service.CountEvents(ctx, mocks.ListFilters{})
+				count, err := service.CountEvents(ctx, mocks.EventListFilters{})
 				Expect(err).To(HaveOccurred())
 
 				Expect(count).To(Equal(0))
@@ -610,7 +610,7 @@ var _ = Describe("Career Service", func() {
 			It("should count events within date range", func() {
 				startDate := time.Now().AddDate(0, 0, -30)
 				endDate := time.Now()
-				filters := mocks.ListFilters{
+				filters := mocks.EventListFilters{
 					StartDate: &startDate,
 					EndDate:   &endDate,
 				}

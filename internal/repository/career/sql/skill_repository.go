@@ -1,5 +1,5 @@
-// Package career provides repository implementations for career domain entities.
-package career
+// Package sql provides SQL-backed repository implementations for career domain entities.
+package sql
 
 import (
 	"context"
@@ -8,25 +8,26 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // Compile-time interface check.
-var _ SkillRepository = (*Skill)(nil)
+var _ career_repo.SkillRepository = (*SkillRepository)(nil)
 
-// Skill implements SkillRepository using GORM.
-type Skill struct {
+// SkillRepository implements career.SkillRepository using GORM.
+type SkillRepository struct {
 	db *gorm.DB
 }
 
-// NewSkill creates a new skill repository.
-func NewSkill(db *gorm.DB) *Skill {
-	return &Skill{db: db}
+// NewSkillRepository creates a new SQL skill repository.
+func NewSkillRepository(db *gorm.DB) *SkillRepository {
+	return &SkillRepository{db: db}
 }
 
-func (r *Skill) Create(ctx context.Context, skill *career.Skill) error {
+func (r *SkillRepository) Create(ctx context.Context, skill *career.Skill) error {
 	if skill.ID == "" {
 		skill.ID = uuid.New().String()
 	}
@@ -38,11 +39,11 @@ func (r *Skill) Create(ctx context.Context, skill *career.Skill) error {
 	return r.db.WithContext(ctx).Create(models.SkillFromDomain(skill)).Error
 }
 
-func (r *Skill) GetByID(ctx context.Context, id string) (*career.Skill, error) {
+func (r *SkillRepository) GetByID(ctx context.Context, id string) (*career.Skill, error) {
 	var model models.Skill
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrSkillNotFound
+		return nil, career_repo.ErrSkillNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -50,11 +51,11 @@ func (r *Skill) GetByID(ctx context.Context, id string) (*career.Skill, error) {
 	return model.ToDomain(), nil
 }
 
-func (r *Skill) GetByName(ctx context.Context, name string) (*career.Skill, error) {
+func (r *SkillRepository) GetByName(ctx context.Context, name string) (*career.Skill, error) {
 	var model models.Skill
 	err := r.db.WithContext(ctx).First(&model, "name = ?", name).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrSkillNotFound
+		return nil, career_repo.ErrSkillNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -62,29 +63,29 @@ func (r *Skill) GetByName(ctx context.Context, name string) (*career.Skill, erro
 	return model.ToDomain(), nil
 }
 
-func (r *Skill) Update(ctx context.Context, skill *career.Skill) error {
+func (r *SkillRepository) Update(ctx context.Context, skill *career.Skill) error {
 	// Check if record exists first.
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&models.Skill{}).Where("id = ?", skill.ID).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
-		return ErrSkillNotFound
+		return career_repo.ErrSkillNotFound
 	}
 
 	skill.UpdatedAt = time.Now()
 	return r.db.WithContext(ctx).Save(models.SkillFromDomain(skill)).Error
 }
 
-func (r *Skill) Delete(ctx context.Context, id string) error {
+func (r *SkillRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Delete(&models.Skill{}, "id = ?", id)
 	if result.RowsAffected == 0 {
-		return ErrSkillNotFound
+		return career_repo.ErrSkillNotFound
 	}
 	return result.Error
 }
 
-func (r *Skill) List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error) {
+func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillListFilters) ([]*career.Skill, error) {
 	query := r.db.WithContext(ctx).Model(&models.Skill{})
 	query = r.applyFilters(query, filters)
 	query = r.applySorting(query, filters)
@@ -102,7 +103,7 @@ func (r *Skill) List(ctx context.Context, filters *SkillFilters) ([]*career.Skil
 	return skills, nil
 }
 
-func (r *Skill) Count(ctx context.Context, filters *SkillFilters) (int, error) {
+func (r *SkillRepository) Count(ctx context.Context, filters *career_repo.SkillListFilters) (int, error) {
 	query := r.db.WithContext(ctx).Model(&models.Skill{})
 	query = r.applyFilters(query, filters)
 
@@ -113,7 +114,7 @@ func (r *Skill) Count(ctx context.Context, filters *SkillFilters) (int, error) {
 	return int(count), nil
 }
 
-func (r *Skill) applyFilters(query *gorm.DB, filters *SkillFilters) *gorm.DB {
+func (r *SkillRepository) applyFilters(query *gorm.DB, filters *career_repo.SkillListFilters) *gorm.DB {
 	if filters == nil {
 		return query
 	}
@@ -134,7 +135,7 @@ func (r *Skill) applyFilters(query *gorm.DB, filters *SkillFilters) *gorm.DB {
 	return query
 }
 
-func (r *Skill) applySorting(query *gorm.DB, filters *SkillFilters) *gorm.DB {
+func (r *SkillRepository) applySorting(query *gorm.DB, filters *career_repo.SkillListFilters) *gorm.DB {
 	if filters == nil || filters.SortBy == "" {
 		return query.Order("name ASC")
 	}
@@ -166,7 +167,7 @@ func (r *Skill) applySorting(query *gorm.DB, filters *SkillFilters) *gorm.DB {
 	}
 }
 
-func (r *Skill) applyPagination(query *gorm.DB, filters *SkillFilters) *gorm.DB {
+func (r *SkillRepository) applyPagination(query *gorm.DB, filters *career_repo.SkillListFilters) *gorm.DB {
 	if filters == nil {
 		return query
 	}
@@ -179,21 +180,21 @@ func (r *Skill) applyPagination(query *gorm.DB, filters *SkillFilters) *gorm.DB 
 	return query
 }
 
-func (r *Skill) LinkToEvent(ctx context.Context, skillID, eventID string) error {
+func (r *SkillRepository) LinkToEvent(ctx context.Context, skillID, eventID string) error {
 	return r.db.WithContext(ctx).Exec(
 		"INSERT OR IGNORE INTO event_skills (skill_id, event_id) VALUES (?, ?)",
 		skillID, eventID,
 	).Error
 }
 
-func (r *Skill) UnlinkFromEvent(ctx context.Context, skillID, eventID string) error {
+func (r *SkillRepository) UnlinkFromEvent(ctx context.Context, skillID, eventID string) error {
 	return r.db.WithContext(ctx).Exec(
 		"DELETE FROM event_skills WHERE skill_id = ? AND event_id = ?",
 		skillID, eventID,
 	).Error
 }
 
-func (r *Skill) GetEventIDs(ctx context.Context, skillID string) ([]string, error) {
+func (r *SkillRepository) GetEventIDs(ctx context.Context, skillID string) ([]string, error) {
 	var ids []string
 	err := r.db.WithContext(ctx).
 		Table("event_skills").
@@ -203,12 +204,12 @@ func (r *Skill) GetEventIDs(ctx context.Context, skillID string) ([]string, erro
 }
 
 // GetByCategory retrieves all skills in a specific category.
-func (r *Skill) GetByCategory(ctx context.Context, category string) ([]*career.Skill, error) {
-	return r.List(ctx, &SkillFilters{Category: category})
+func (r *SkillRepository) GetByCategory(ctx context.Context, category string) ([]*career.Skill, error) {
+	return r.List(ctx, &career_repo.SkillListFilters{Category: category})
 }
 
 // GetSkillsForEvent retrieves all skills associated with an event.
-func (r *Skill) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
+func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
 	var results []models.Skill
 	err := r.db.WithContext(ctx).
 		Joins("JOIN event_skills ON event_skills.skill_id = skills.id").
@@ -226,7 +227,7 @@ func (r *Skill) GetSkillsForEvent(ctx context.Context, eventID string) ([]*caree
 }
 
 // GetEventCountsForSkills returns a map of skill IDs to event counts.
-func (r *Skill) GetEventCountsForSkills(ctx context.Context) (map[string]int, error) {
+func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[string]int, error) {
 	type result struct {
 		SkillID string
 		Count   int
@@ -249,7 +250,7 @@ func (r *Skill) GetEventCountsForSkills(ctx context.Context) (map[string]int, er
 }
 
 // GetLastUsedForSkills returns a map of skill IDs to their last used dates.
-func (r *Skill) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
+func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
 	type result struct {
 		SkillID  string
 		LastUsed time.Time
@@ -273,7 +274,7 @@ func (r *Skill) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time,
 }
 
 // GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC.
-func (r *Skill) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error) {
+func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error) {
 	var results []models.Event
 	err := r.db.WithContext(ctx).
 		Joins("JOIN event_skills ON event_skills.event_id = career_events.id").

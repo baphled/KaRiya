@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerRepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/technology"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,7 @@ var _ = Describe("Extractor", func() {
 	var (
 		extractor  *technology.Extractor
 		skillRepo  careerRepo.SkillRepository
-		eventRepo  careerRepo.Repository
+		eventRepo  careerRepo.EventRepository
 		ctx        context.Context
 		testSkills []*career.Skill
 		testEvents []*career.CareerEvent
@@ -25,8 +26,8 @@ var _ = Describe("Extractor", func() {
 		ctx = context.Background()
 
 		// Create in-memory repositories
-		skillRepo = careerRepo.NewMemorySkillRepository()
-		eventRepo = careerRepo.NewMemoryRepository()
+		skillRepo = careermemory.NewSkillRepository()
+		eventRepo = careermemory.NewEventRepository()
 
 		// Create test skills
 		now := time.Now()
@@ -192,8 +193,8 @@ var _ = Describe("Extractor", func() {
 		Context("when user has no skills", func() {
 			It("should return empty list", func() {
 				// Create empty repositories
-				emptySkillRepo := careerRepo.NewMemorySkillRepository()
-				emptyEventRepo := careerRepo.NewMemoryRepository()
+				emptySkillRepo := careermemory.NewSkillRepository()
+				emptyEventRepo := careermemory.NewEventRepository()
 				emptyExtractor := technology.NewExtractor(emptySkillRepo, emptyEventRepo)
 
 				techs, err := emptyExtractor.ExtractFromUser(ctx)

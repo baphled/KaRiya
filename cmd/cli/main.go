@@ -17,6 +17,8 @@ import (
 	cliservice "github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/logger"
 	"github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -107,15 +109,15 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 	}
 
 	// Set up repository and service
-	var repo career.Repository
+	var repo career.EventRepository
 	var svc *careerservice.Service
 
 	if inMemory {
-		repo = career.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		svc = careerservice.NewService(repo)
-		svc.SetFactRepository(career.NewMemoryFactRepository())
-		svc.SetBurstRepository(career.NewMemoryBurstRepository())
-		svc.SetSkillRepository(career.NewMemorySkillRepository())
+		svc.SetFactRepository(careermemory.NewFactRepository())
+		svc.SetBurstRepository(careermemory.NewBurstRepository())
+		svc.SetSkillRepository(careermemory.NewSkillRepository())
 	} else {
 		if dbPath == "" {
 			homeDir, err := os.UserHomeDir()
@@ -146,7 +148,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 		}
 
 		// Create GORM repositories from existing connection
-		repos, err := career.NewRepositoriesFromSQL(db)
+		repos, err := careersql.NewRepositories(db)
 		if err != nil {
 			fmt.Fprintf(errOut, "Error initializing GORM repositories: %v\n", err)
 			return 1
@@ -217,7 +219,7 @@ func run(args []string, out io.Writer, errOut io.Writer) int {
 func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
-	events, err := svc.ListEvents(ctx, career.ListFilters{Limit: 10000})
+	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
 	if err != nil {
 		fmt.Fprintf(errOut, "Error retrieving events: %v\n", err)
 		return 1
@@ -285,7 +287,7 @@ func handleDetectBursts(svc *careerservice.Service, out io.Writer, errOut io.Wri
 func handleExtractFacts(svc *careerservice.Service, out io.Writer, errOut io.Writer) int {
 	ctx := context.Background()
 
-	events, err := svc.ListEvents(ctx, career.ListFilters{Limit: 10000})
+	events, err := svc.ListEvents(ctx, career.EventListFilters{Limit: 10000})
 	if err != nil {
 		fmt.Fprintf(errOut, "Error retrieving events: %v\n", err)
 		return 1

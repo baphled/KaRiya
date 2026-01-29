@@ -1,79 +1,35 @@
-package career
+package memory
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"sync"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/google/uuid"
 )
 
-var (
-	// ErrEventNotFound is returned when a requested event cannot be found
-	ErrEventNotFound = errors.New("career event not found")
+// Compile-time interface check.
+var _ career_repo.EventRepository = (*EventRepository)(nil)
 
-	// ErrDuplicateEvent is returned when attempting to create an event that already exists
-	ErrDuplicateEvent = errors.New("career event already exists")
-)
-
-// Repository defines the interface for career event persistence
-type Repository interface {
-	// Create adds a new career event to the repository
-	Create(ctx context.Context, event *career.CareerEvent) error
-
-	// GetByID retrieves a specific career event by its unique identifier
-	GetByID(ctx context.Context, id string) (*career.CareerEvent, error)
-
-	// Update modifies an existing career event
-	Update(ctx context.Context, event *career.CareerEvent) error
-
-	// Delete removes a career event from the repository
-	Delete(ctx context.Context, id string) error
-
-	// List retrieves career events with optional filtering
-	List(ctx context.Context, filters ListFilters) ([]*career.CareerEvent, error)
-
-	// Count returns the total number of career events matching the given filters
-	Count(ctx context.Context, filters ListFilters) (int, error)
-}
-
-// ListFilters provides flexible filtering options for career events
-type ListFilters struct {
-	// Tags to filter events by
-	Tags []string
-
-	// Date range filters
-	StartDate *time.Time
-	EndDate   *time.Time
-
-	// Pagination
-	Offset int
-	Limit  int
-
-	// Sorting
-	SortBy    string
-	SortOrder string
-}
-
-// MemoryRepository provides an in-memory implementation of the Repository interface
-// This is primarily useful for testing and development
-type MemoryRepository struct {
+// EventRepository provides an in-memory implementation of the EventRepository interface.
+// This is primarily useful for testing and development.
+type EventRepository struct {
 	events map[string]*career.CareerEvent
 	mu     sync.RWMutex
 }
 
-// NewMemoryRepository creates a new in-memory repository
-func NewMemoryRepository() *MemoryRepository {
-	return &MemoryRepository{
+// NewEventRepository creates a new in-memory event repository.
+func NewEventRepository() *EventRepository {
+	return &EventRepository{
 		events: make(map[string]*career.CareerEvent),
 	}
 }
 
 // Create adds a new career event to the in-memory store.
-func (r *MemoryRepository) Create(_ context.Context, event *career.CareerEvent) error {
+func (r *EventRepository) Create(_ context.Context, event *career.CareerEvent) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -89,7 +45,7 @@ func (r *MemoryRepository) Create(_ context.Context, event *career.CareerEvent) 
 
 	// Check for duplicates
 	if _, exists := r.events[event.ID]; exists {
-		return ErrDuplicateEvent
+		return career_repo.ErrDuplicateEvent
 	}
 
 	// Set timestamps
@@ -103,20 +59,20 @@ func (r *MemoryRepository) Create(_ context.Context, event *career.CareerEvent) 
 }
 
 // GetByID retrieves a career event by its ID.
-func (r *MemoryRepository) GetByID(_ context.Context, id string) (*career.CareerEvent, error) {
+func (r *EventRepository) GetByID(_ context.Context, id string) (*career.CareerEvent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	event, exists := r.events[id]
 	if !exists {
-		return nil, ErrEventNotFound
+		return nil, career_repo.ErrEventNotFound
 	}
 
 	return event, nil
 }
 
 // Update modifies an existing career event.
-func (r *MemoryRepository) Update(_ context.Context, event *career.CareerEvent) error {
+func (r *EventRepository) Update(_ context.Context, event *career.CareerEvent) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -127,7 +83,7 @@ func (r *MemoryRepository) Update(_ context.Context, event *career.CareerEvent) 
 
 	// Check if event exists
 	if _, exists := r.events[event.ID]; !exists {
-		return ErrEventNotFound
+		return career_repo.ErrEventNotFound
 	}
 
 	// Update timestamp
@@ -139,20 +95,20 @@ func (r *MemoryRepository) Update(_ context.Context, event *career.CareerEvent) 
 }
 
 // Delete removes a career event from the repository.
-func (r *MemoryRepository) Delete(_ context.Context, id string) error {
+func (r *EventRepository) Delete(_ context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if _, exists := r.events[id]; !exists {
-		return ErrEventNotFound
+		return career_repo.ErrEventNotFound
 	}
 
 	delete(r.events, id)
 	return nil
 }
 
-// List retrieves career events with optional filtering
-func (r *MemoryRepository) List(ctx context.Context, filters ListFilters) ([]*career.CareerEvent, error) {
+// List retrieves career events with optional filtering.
+func (r *EventRepository) List(_ context.Context, filters career_repo.EventListFilters) ([]*career.CareerEvent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -221,7 +177,7 @@ func (r *MemoryRepository) List(ctx context.Context, filters ListFilters) ([]*ca
 }
 
 // Count returns the number of events matching the filters.
-func (r *MemoryRepository) Count(_ context.Context, filters ListFilters) (int, error) {
+func (r *EventRepository) Count(_ context.Context, filters career_repo.EventListFilters) (int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -248,7 +204,7 @@ func (r *MemoryRepository) Count(_ context.Context, filters ListFilters) (int, e
 	return count, nil
 }
 
-// Helper function to check if any tags match
+// containsAnyTag checks if any tags match.
 func containsAnyTag(eventTags, filterTags []string) bool {
 	tagSet := make(map[string]bool)
 	for _, tag := range eventTags {

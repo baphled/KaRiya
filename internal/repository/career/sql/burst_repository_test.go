@@ -1,11 +1,12 @@
-package career
+package sql
 
 import (
 	"context"
-	"database/sql"
+	stdsql "database/sql"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,7 @@ import (
 )
 
 func setupBurstTestDB() *gorm.DB {
-	sqlDB, err := sql.Open("sqlite", ":memory:")
+	sqlDB, err := stdsql.Open("sqlite", ":memory:")
 	Expect(err).NotTo(HaveOccurred())
 
 	db, err := gorm.Open(sqlite.New(sqlite.Config{
@@ -31,14 +32,14 @@ func setupBurstTestDB() *gorm.DB {
 
 var _ = Describe("Burst Repository", func() {
 	var (
-		repo *Burst
+		repo *BurstRepository
 		db   *gorm.DB
 		ctx  context.Context
 	)
 
 	BeforeEach(func() {
 		db = setupBurstTestDB()
-		repo = NewBurst(db)
+		repo = NewBurstRepository(db)
 		ctx = context.Background()
 	})
 
@@ -90,7 +91,7 @@ var _ = Describe("Burst Repository", func() {
 		It("returns ErrBurstNotFound for missing burst", func() {
 			_, err := repo.GetByID(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrBurstNotFound))
+			Expect(err).To(Equal(career_repo.ErrBurstNotFound))
 		})
 	})
 
@@ -122,7 +123,7 @@ var _ = Describe("Burst Repository", func() {
 
 			err := repo.Update(ctx, burst)
 
-			Expect(err).To(Equal(ErrBurstNotFound))
+			Expect(err).To(Equal(career_repo.ErrBurstNotFound))
 		})
 	})
 
@@ -139,13 +140,13 @@ var _ = Describe("Burst Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.GetByID(ctx, burst.ID)
-			Expect(err).To(Equal(ErrBurstNotFound))
+			Expect(err).To(Equal(career_repo.ErrBurstNotFound))
 		})
 
 		It("returns ErrBurstNotFound for missing burst", func() {
 			err := repo.Delete(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrBurstNotFound))
+			Expect(err).To(Equal(career_repo.ErrBurstNotFound))
 		})
 	})
 
@@ -163,28 +164,28 @@ var _ = Describe("Burst Repository", func() {
 		})
 
 		It("returns all bursts without filters", func() {
-			bursts, err := repo.List(ctx, BurstListFilters{})
+			bursts, err := repo.List(ctx, career_repo.BurstListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts).To(HaveLen(3))
 		})
 
 		It("sorts by created_at descending by default", func() {
-			bursts, err := repo.List(ctx, BurstListFilters{})
+			bursts, err := repo.List(ctx, career_repo.BurstListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts[0].Name).To(Equal("Burst C")) // Most recent first.
 		})
 
 		It("sorts by name ascending", func() {
-			bursts, err := repo.List(ctx, BurstListFilters{SortBy: "name", SortOrder: "asc"})
+			bursts, err := repo.List(ctx, career_repo.BurstListFilters{SortBy: "name", SortOrder: "asc"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts[0].Name).To(Equal("Burst A"))
 		})
 
 		It("applies pagination", func() {
-			bursts, err := repo.List(ctx, BurstListFilters{Limit: 2})
+			bursts, err := repo.List(ctx, career_repo.BurstListFilters{Limit: 2})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(bursts).To(HaveLen(2))
@@ -203,7 +204,7 @@ var _ = Describe("Burst Repository", func() {
 		})
 
 		It("counts all bursts", func() {
-			count, err := repo.Count(ctx, BurstListFilters{})
+			count, err := repo.Count(ctx, career_repo.BurstListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))

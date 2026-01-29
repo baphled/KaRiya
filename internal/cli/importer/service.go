@@ -41,7 +41,7 @@ func NewImportService(careerService *careerservice.Service) *ImportService {
 // PrepareImport parses CSV and returns parsed rows for review
 func (is *ImportService) PrepareImport(ctx context.Context, reader interface{}) ([]*ParsedRow, error) {
 	// Get existing events to check for duplicates
-	filters := &repo.ListFilters{}
+	filters := &repo.EventListFilters{}
 	existingEvents, err := is.careerService.ListEvents(ctx, *filters)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load existing events: %w", err)

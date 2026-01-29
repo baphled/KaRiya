@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	"github.com/baphled/kariya/internal/testutil/mocks"
@@ -21,12 +22,12 @@ var _ = Describe("Accepting a Burst Suggestion", func() {
 	var (
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 		mockService *mocks.BurstServiceMock
 	)
 
 	BeforeEach(func() {
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 		mockService = mocks.NewBurstServiceMock()
 
 		ctx = &burst_management.IntentContext{
@@ -788,7 +789,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 		events      []*career.CareerEvent
 		suggestions []burst_fact.BurstSuggestion
 	)
@@ -837,7 +838,7 @@ var _ = Describe("Burst Suggestion Integration E2E", func() {
 			})
 
 		// Create burst repository.
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		// Create context with service and repository.
 		ctx = &burst_management.IntentContext{
@@ -1234,7 +1235,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -1259,7 +1260,7 @@ var _ = Describe("Burst Suggestion Workflow Bug Regressions", func() {
 				{ID: "f1", Text: "Built scalable API"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -1871,7 +1872,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -1890,7 +1891,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				{ID: "f2", Text: "Improved performance by 40%"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -2273,7 +2274,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 		var (
 			intent    *burst_management.Intent
 			ctx       *burst_management.IntentContext
-			burstRepo *careerrepo.MemoryBurstRepository
+			burstRepo *careermemory.BurstRepository
 			burst     *career.Burst
 		)
 
@@ -2285,7 +2286,7 @@ var _ = Describe("Burst Suggestion Persistence Tests", func() {
 				EventIDs:    []string{"e1", "e2"},
 			}
 
-			burstRepo = careerrepo.NewMemoryBurstRepository()
+			burstRepo = careermemory.NewBurstRepository()
 			_ = burstRepo.Create(context.Background(), burst)
 
 			ctx = &burst_management.IntentContext{
@@ -2950,7 +2951,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -2963,7 +2964,7 @@ var _ = Describe("User Journey: Fact Extraction In Progress", func() {
 				{ID: "f1", Text: "Extracted fact"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -3082,7 +3083,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -3097,7 +3098,7 @@ var _ = Describe("User Journey: Complete Burst Lifecycle", func() {
 				{ID: "f2", Text: "Reduced latency by 50%"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},
@@ -3661,7 +3662,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 		intent      *burst_management.Intent
 		ctx         *burst_management.IntentContext
 		mockService *mocks.BurstServiceMock
-		burstRepo   *careerrepo.MemoryBurstRepository
+		burstRepo   *careermemory.BurstRepository
 	)
 
 	BeforeEach(func() {
@@ -3675,7 +3676,7 @@ var _ = Describe("User Journey: Suggestion Review Workflow", func() {
 				{ID: "f1", Text: "Fact 1"},
 			})
 
-		burstRepo = careerrepo.NewMemoryBurstRepository()
+		burstRepo = careermemory.NewBurstRepository()
 
 		ctx = &burst_management.IntentContext{
 			Bursts:          []*career.Burst{},

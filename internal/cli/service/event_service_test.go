@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,12 +16,12 @@ var _ = Describe("CLI Event Service", func() {
 	var (
 		cliEventService *CLIEventService
 		careerSvc       *careerservice.Service
-		repo            careerrepo.Repository
+		repo            careerrepo.EventRepository
 	)
 
 	BeforeEach(func() {
 		// Set up in-memory repository for testing
-		repo = careerrepo.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		careerSvc = careerservice.NewService(repo)
 		cliEventService = NewCLIEventService(careerSvc)
 	})
@@ -74,7 +75,7 @@ var _ = Describe("CLI Event Service", func() {
 			Expect(err).To(BeNil())
 
 			// List events using CLI service
-			filters := &careerrepo.ListFilters{}
+			filters := &careerrepo.EventListFilters{}
 			events, err := cliEventService.ListEvents(ctx, filters)
 
 			// Assertions
@@ -110,7 +111,7 @@ var _ = Describe("CLI Event Service", func() {
 
 var _ = Describe("UpdateEventMetadata", func() {
 	var (
-		repo   *careerrepo.MemoryRepository
+		repo   *careermemory.EventRepository
 		svc    *careerservice.Service
 		cliSvc *CLIEventService
 		ctx    context.Context
@@ -118,7 +119,7 @@ var _ = Describe("UpdateEventMetadata", func() {
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		repo = careerrepo.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		svc = careerservice.NewService(repo)
 		cliSvc = NewCLIEventService(svc)
 	})

@@ -1,11 +1,12 @@
-package career
+package sql
 
 import (
 	"context"
-	"database/sql"
+	stdsql "database/sql"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,7 +17,7 @@ import (
 
 func setupTestDB() *gorm.DB {
 	// Use existing modernc.org/sqlite driver with GORM.
-	sqlDB, err := sql.Open("sqlite", ":memory:")
+	sqlDB, err := stdsql.Open("sqlite", ":memory:")
 	Expect(err).NotTo(HaveOccurred())
 
 	db, err := gorm.Open(sqlite.New(sqlite.Config{
@@ -39,14 +40,14 @@ func setupTestDB() *gorm.DB {
 
 var _ = Describe("Skill Repository", func() {
 	var (
-		repo *Skill
+		repo *SkillRepository
 		db   *gorm.DB
 		ctx  context.Context
 	)
 
 	BeforeEach(func() {
 		db = setupTestDB()
-		repo = NewSkill(db)
+		repo = NewSkillRepository(db)
 		ctx = context.Background()
 	})
 
@@ -105,7 +106,7 @@ var _ = Describe("Skill Repository", func() {
 		It("returns ErrSkillNotFound for missing skill", func() {
 			_, err := repo.GetByID(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrSkillNotFound))
+			Expect(err).To(Equal(career_repo.ErrSkillNotFound))
 		})
 	})
 
@@ -123,7 +124,7 @@ var _ = Describe("Skill Repository", func() {
 		It("returns ErrSkillNotFound for missing skill", func() {
 			_, err := repo.GetByName(ctx, "Nonexistent")
 
-			Expect(err).To(Equal(ErrSkillNotFound))
+			Expect(err).To(Equal(career_repo.ErrSkillNotFound))
 		})
 	})
 
@@ -149,7 +150,7 @@ var _ = Describe("Skill Repository", func() {
 
 			err := repo.Update(ctx, skill)
 
-			Expect(err).To(Equal(ErrSkillNotFound))
+			Expect(err).To(Equal(career_repo.ErrSkillNotFound))
 		})
 	})
 
@@ -163,13 +164,13 @@ var _ = Describe("Skill Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.GetByID(ctx, skill.ID)
-			Expect(err).To(Equal(ErrSkillNotFound))
+			Expect(err).To(Equal(career_repo.ErrSkillNotFound))
 		})
 
 		It("returns ErrSkillNotFound for missing skill", func() {
 			err := repo.Delete(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrSkillNotFound))
+			Expect(err).To(Equal(career_repo.ErrSkillNotFound))
 		})
 	})
 
@@ -195,7 +196,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("filters by category", func() {
-			skills, err := repo.List(ctx, &SkillFilters{Category: "backend"})
+			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Category: "backend"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -205,7 +206,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("filters by level", func() {
-			skills, err := repo.List(ctx, &SkillFilters{Level: "advanced"})
+			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Level: "advanced"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -223,7 +224,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("sorts by name descending", func() {
-			skills, err := repo.List(ctx, &SkillFilters{SortBy: "name", SortOrder: "desc"})
+			skills, err := repo.List(ctx, &career_repo.SkillListFilters{SortBy: "name", SortOrder: "desc"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills[0].Name).To(Equal("Vue"))
@@ -231,7 +232,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("sorts by category", func() {
-			skills, err := repo.List(ctx, &SkillFilters{SortBy: "category"})
+			skills, err := repo.List(ctx, &career_repo.SkillListFilters{SortBy: "category"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills[0].Category).To(Equal("backend"))
@@ -239,7 +240,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("applies pagination with limit", func() {
-			skills, err := repo.List(ctx, &SkillFilters{Limit: 2})
+			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Limit: 2})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -247,7 +248,7 @@ var _ = Describe("Skill Repository", func() {
 
 		It("applies pagination with offset", func() {
 			allSkills, _ := repo.List(ctx, nil)
-			skills, err := repo.List(ctx, &SkillFilters{Limit: 2, Offset: 2})
+			skills, err := repo.List(ctx, &career_repo.SkillListFilters{Limit: 2, Offset: 2})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(2))
@@ -275,7 +276,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("counts with filters", func() {
-			count, err := repo.Count(ctx, &SkillFilters{Category: "backend"})
+			count, err := repo.Count(ctx, &career_repo.SkillListFilters{Category: "backend"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))
@@ -342,7 +343,7 @@ var _ = Describe("Skill Repository", func() {
 		})
 
 		It("filters by minimum event count", func() {
-			skills, err := repo.List(ctx, &SkillFilters{MinEvents: 2})
+			skills, err := repo.List(ctx, &career_repo.SkillListFilters{MinEvents: 2})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(skills).To(HaveLen(1))

@@ -1,11 +1,12 @@
-package career
+package sql
 
 import (
 	"context"
-	"database/sql"
+	stdsql "database/sql"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,7 @@ import (
 )
 
 func setupEventTestDB() *gorm.DB {
-	sqlDB, err := sql.Open("sqlite", ":memory:")
+	sqlDB, err := stdsql.Open("sqlite", ":memory:")
 	Expect(err).NotTo(HaveOccurred())
 
 	db, err := gorm.Open(sqlite.New(sqlite.Config{
@@ -38,14 +39,14 @@ func setupEventTestDB() *gorm.DB {
 
 var _ = Describe("Event Repository", func() {
 	var (
-		repo *Event
+		repo *EventRepository
 		db   *gorm.DB
 		ctx  context.Context
 	)
 
 	BeforeEach(func() {
 		db = setupEventTestDB()
-		repo = NewEvent(db)
+		repo = NewEventRepository(db)
 		ctx = context.Background()
 	})
 
@@ -97,7 +98,7 @@ var _ = Describe("Event Repository", func() {
 
 		It("saves skill associations", func() {
 			// Create skills first.
-			skillRepo := NewSkill(db)
+			skillRepo := NewSkillRepository(db)
 			skill1 := &career.Skill{Name: "Go", Category: "backend"}
 			skill2 := &career.Skill{Name: "Docker", Category: "devops"}
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
@@ -138,7 +139,7 @@ var _ = Describe("Event Repository", func() {
 		It("returns ErrEventNotFound for missing event", func() {
 			_, err := repo.GetByID(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrEventNotFound))
+			Expect(err).To(Equal(career_repo.ErrEventNotFound))
 		})
 	})
 
@@ -160,7 +161,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("updates skill associations", func() {
-			skillRepo := NewSkill(db)
+			skillRepo := NewSkillRepository(db)
 			skill1 := &career.Skill{Name: "Go", Category: "backend"}
 			skill2 := &career.Skill{Name: "Python", Category: "backend"}
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
@@ -186,7 +187,7 @@ var _ = Describe("Event Repository", func() {
 
 			err := repo.Update(ctx, event)
 
-			Expect(err).To(Equal(ErrEventNotFound))
+			Expect(err).To(Equal(career_repo.ErrEventNotFound))
 		})
 	})
 
@@ -200,13 +201,13 @@ var _ = Describe("Event Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.GetByID(ctx, event.ID)
-			Expect(err).To(Equal(ErrEventNotFound))
+			Expect(err).To(Equal(career_repo.ErrEventNotFound))
 		})
 
 		It("returns ErrEventNotFound for missing event", func() {
 			err := repo.Delete(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrEventNotFound))
+			Expect(err).To(Equal(career_repo.ErrEventNotFound))
 		})
 	})
 
@@ -224,14 +225,14 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("returns all events without filters", func() {
-			events, err := repo.List(ctx, ListFilters{})
+			events, err := repo.List(ctx, career_repo.EventListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(3))
 		})
 
 		It("filters by tag", func() {
-			events, err := repo.List(ctx, ListFilters{Tags: []string{"tag1"}})
+			events, err := repo.List(ctx, career_repo.EventListFilters{Tags: []string{"tag1"}})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(2))
@@ -240,14 +241,14 @@ var _ = Describe("Event Repository", func() {
 		It("filters by date range", func() {
 			// Use start of yesterday to ensure Event 2 and Event 3 are included.
 			start := time.Now().AddDate(0, 0, -1).Truncate(24 * time.Hour)
-			events, err := repo.List(ctx, ListFilters{StartDate: &start})
+			events, err := repo.List(ctx, career_repo.EventListFilters{StartDate: &start})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(2))
 		})
 
 		It("sorts by date ascending", func() {
-			events, err := repo.List(ctx, ListFilters{SortBy: "date", SortOrder: "asc"})
+			events, err := repo.List(ctx, career_repo.EventListFilters{SortBy: "date", SortOrder: "asc"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events[0].Text).To(Equal("Event 1"))
@@ -255,7 +256,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("sorts by date descending", func() {
-			events, err := repo.List(ctx, ListFilters{SortBy: "date", SortOrder: "desc"})
+			events, err := repo.List(ctx, career_repo.EventListFilters{SortBy: "date", SortOrder: "desc"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events[0].Text).To(Equal("Event 3"))
@@ -263,7 +264,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("applies pagination", func() {
-			events, err := repo.List(ctx, ListFilters{Limit: 2, Offset: 1})
+			events, err := repo.List(ctx, career_repo.EventListFilters{Limit: 2, Offset: 1})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(2))
@@ -284,14 +285,14 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("counts all events", func() {
-			count, err := repo.Count(ctx, ListFilters{})
+			count, err := repo.Count(ctx, career_repo.EventListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(3))
 		})
 
 		It("counts with tag filter", func() {
-			count, err := repo.Count(ctx, ListFilters{Tags: []string{"tag1"}})
+			count, err := repo.Count(ctx, career_repo.EventListFilters{Tags: []string{"tag1"}})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))

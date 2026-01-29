@@ -91,7 +91,7 @@ func (r *DefaultIntentRegistrar) registerBrowseTimeline(ctx context.Context, rou
 			r.config.Log.Error("Failed to create BrowseTimeline intent: missing CareerService")
 			return nil
 		}
-		events, err := r.config.CareerService.GetEventRepository().List(ctx, careerrepo.ListFilters{
+		events, err := r.config.CareerService.GetEventRepository().List(ctx, careerrepo.EventListFilters{
 			Limit:     1000,
 			SortBy:    "date",
 			SortOrder: "desc",
@@ -138,7 +138,7 @@ func (r *DefaultIntentRegistrar) registerGenerateCV(ctx context.Context, router 
 			r.config.Log.Error("Failed to create GenerateCV intent: missing CareerService")
 			return nil
 		}
-		events, err := r.config.CareerService.GetEventRepository().List(ctx, careerrepo.ListFilters{Limit: 100})
+		events, err := r.config.CareerService.GetEventRepository().List(ctx, careerrepo.EventListFilters{Limit: 100})
 		if err != nil {
 			r.config.Log.Error("Failed to load events for CV generation: %v", err)
 			events = []*career.CareerEvent{}

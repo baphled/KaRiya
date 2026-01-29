@@ -18,6 +18,8 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	_ "modernc.org/sqlite"
@@ -60,15 +62,15 @@ type TestEnv struct {
 	DBPath string
 
 	// Repositories (interface types for flexibility)
-	EventRepo careerrepo.Repository
+	EventRepo careerrepo.EventRepository
 	BurstRepo careerrepo.BurstRepository
 	FactRepo  careerrepo.FactRepository
 	SkillRepo careerrepo.SkillRepository
 
 	// Memory repositories (for fast tests)
-	MemEventRepo *careerrepo.MemoryRepository
-	MemBurstRepo *careerrepo.MemoryBurstRepository
-	MemFactRepo  *careerrepo.MemoryFactRepository
+	MemEventRepo *careermemory.EventRepository
+	MemBurstRepo *careermemory.BurstRepository
+	MemFactRepo  *careermemory.FactRepository
 
 	// Services
 	Service    *careerservice.Service
@@ -124,7 +126,7 @@ func Setup(t TestingT) *TestEnv {
 	}
 
 	// Create GORM repositories
-	repos, err := careerrepo.NewRepositoriesFromSQL(db)
+	repos, err := careersql.NewRepositories(db)
 	if err != nil {
 		config.SetConfigPathForTesting(prevConfigPath)
 		_ = db.Close()
@@ -219,7 +221,7 @@ func SetupShared() {
 	}
 
 	// Create ORM repositories
-	repos, err := careerrepo.NewRepositoriesFromSQL(db)
+	repos, err := careersql.NewRepositories(db)
 	if err != nil {
 		_ = db.Close()
 		panic("failed to create repositories: " + err.Error())
@@ -410,7 +412,7 @@ func SetupWithOnboarding(t TestingT) *TestEnv {
 	}
 
 	// Create ORM repositories
-	repos, err := careerrepo.NewRepositoriesFromSQL(db)
+	repos, err := careersql.NewRepositories(db)
 	if err != nil {
 		config.SetConfigPathForTesting(prevConfigPath)
 		_ = db.Close()
@@ -489,10 +491,10 @@ func SetupWithMemory(t TestingT) *TestEnv {
 	prevConfigPath := config.SwapConfigPathForTesting(configPath)
 
 	// Create in-memory repositories
-	eventRepo := careerrepo.NewMemoryRepository()
-	burstRepo := careerrepo.NewMemoryBurstRepository()
-	factRepo := careerrepo.NewMemoryFactRepository()
-	skillRepo := careerrepo.NewMemorySkillRepository()
+	eventRepo := careermemory.NewEventRepository()
+	burstRepo := careermemory.NewBurstRepository()
+	factRepo := careermemory.NewFactRepository()
+	skillRepo := careermemory.NewSkillRepository()
 
 	// Create service
 	svc := careerservice.NewService(eventRepo)
@@ -864,7 +866,7 @@ func (e *TestEnv) AssertViewContainsAny(substrs ...string) *TestEnv {
 func (e *TestEnv) AssertEventCount(expected int) *TestEnv {
 	e.T.Helper()
 
-	events, err := e.Service.ListEvents(e.Ctx, careerrepo.ListFilters{})
+	events, err := e.Service.ListEvents(e.Ctx, careerrepo.EventListFilters{})
 	if err != nil {
 		e.T.Fatalf("failed to get events: %v", err)
 	}
@@ -922,7 +924,7 @@ func (e *TestEnv) AssertFactCount(expected int) *TestEnv {
 func (e *TestEnv) GetEvents() []*career.CareerEvent {
 	e.T.Helper()
 
-	events, err := e.Service.ListEvents(e.Ctx, careerrepo.ListFilters{})
+	events, err := e.Service.ListEvents(e.Ctx, careerrepo.EventListFilters{})
 	if err != nil {
 		e.T.Fatalf("failed to get events: %v", err)
 	}
@@ -978,7 +980,7 @@ func (e *TestEnv) SimulateRestart() *TestEnv {
 	}
 
 	// Create new repositories pointing to the same database using ORM
-	repos, err := careerrepo.NewRepositoriesFromSQL(e.DB)
+	repos, err := careersql.NewRepositories(e.DB)
 	if err != nil {
 		e.T.Fatalf("failed to create repositories: %v", err)
 	}

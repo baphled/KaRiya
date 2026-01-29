@@ -11,6 +11,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	repo "github.com/baphled/kariya/internal/repository/career"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 )
 
 var _ = Describe("Career Service Integration Tests", func() {
@@ -29,7 +30,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 
 		// Create ORM repositories
 		dbPath := filepath.Join(tempDir, "test_events.db")
-		repos, err = repo.NewRepositoriesFromPath(dbPath)
+		repos, err = careersql.NewRepositoriesFromPath(dbPath)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Create service with the repository
@@ -167,7 +168,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 		})
 
 		It("should filter events by tag", func() {
-			events, err := service.ListEvents(ctx, repo.ListFilters{
+			events, err := service.ListEvents(ctx, repo.EventListFilters{
 				Tags: []string{"technical"},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -179,7 +180,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 			startDate := time.Now().AddDate(0, 0, -20)
 			endDate := time.Now()
 
-			events, err := service.ListEvents(ctx, repo.ListFilters{
+			events, err := service.ListEvents(ctx, repo.EventListFilters{
 				StartDate: &startDate,
 				EndDate:   &endDate,
 			})
@@ -189,7 +190,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 		})
 
 		It("should return all events when no filters applied", func() {
-			events, err := service.ListEvents(ctx, repo.ListFilters{})
+			events, err := service.ListEvents(ctx, repo.EventListFilters{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(events).To(HaveLen(3))
 		})
@@ -279,7 +280,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 
-			count, err := service.CountEvents(ctx, repo.ListFilters{
+			count, err := service.CountEvents(ctx, repo.EventListFilters{
 				Tags: []string{"technical"},
 			})
 			Expect(err).NotTo(HaveOccurred())

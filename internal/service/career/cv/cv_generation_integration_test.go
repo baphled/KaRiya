@@ -14,6 +14,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 )
 
@@ -38,7 +39,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 		dbPath := filepath.Join(tempDir, "test_events.db")
 
 		// Create ORM repositories
-		repos, err = careerrepo.NewRepositoriesFromPath(dbPath)
+		repos, err = careersql.NewRepositoriesFromPath(dbPath)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Create CV services with role-based scoring.
@@ -147,7 +148,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedTestEvents(2, "leadership")
 
 			// Retrieve all events first
-			allEvents, err := repos.Event.List(ctx, careerrepo.ListFilters{})
+			allEvents, err := repos.Event.List(ctx, careerrepo.EventListFilters{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(allEvents)).To(Equal(7))
 
@@ -337,7 +338,7 @@ var _ = Describe("CV Generation Integration Tests", func() {
 			seedMultiCompanyEvents(companies, 10)
 
 			// Verify all events were created
-			allEvents, err := repos.Event.List(ctx, careerrepo.ListFilters{})
+			allEvents, err := repos.Event.List(ctx, careerrepo.EventListFilters{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(len(allEvents)).To(Equal(50))
 

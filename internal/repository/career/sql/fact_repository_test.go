@@ -1,11 +1,12 @@
-package career
+package sql
 
 import (
 	"context"
-	"database/sql"
+	stdsql "database/sql"
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,7 +16,7 @@ import (
 )
 
 func setupFactTestDB() *gorm.DB {
-	sqlDB, err := sql.Open("sqlite", ":memory:")
+	sqlDB, err := stdsql.Open("sqlite", ":memory:")
 	Expect(err).NotTo(HaveOccurred())
 
 	db, err := gorm.Open(sqlite.New(sqlite.Config{
@@ -31,14 +32,14 @@ func setupFactTestDB() *gorm.DB {
 
 var _ = Describe("Fact Repository", func() {
 	var (
-		repo *Fact
+		repo *FactRepository
 		db   *gorm.DB
 		ctx  context.Context
 	)
 
 	BeforeEach(func() {
 		db = setupFactTestDB()
-		repo = NewFact(db)
+		repo = NewFactRepository(db)
 		ctx = context.Background()
 	})
 
@@ -94,7 +95,7 @@ var _ = Describe("Fact Repository", func() {
 		It("returns ErrFactNotFound for missing fact", func() {
 			_, err := repo.GetByID(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrFactNotFound))
+			Expect(err).To(Equal(career_repo.ErrFactNotFound))
 		})
 	})
 
@@ -128,7 +129,7 @@ var _ = Describe("Fact Repository", func() {
 
 			err := repo.Update(ctx, fact)
 
-			Expect(err).To(Equal(ErrFactNotFound))
+			Expect(err).To(Equal(career_repo.ErrFactNotFound))
 		})
 	})
 
@@ -147,13 +148,13 @@ var _ = Describe("Fact Repository", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = repo.GetByID(ctx, fact.ID)
-			Expect(err).To(Equal(ErrFactNotFound))
+			Expect(err).To(Equal(career_repo.ErrFactNotFound))
 		})
 
 		It("returns ErrFactNotFound for missing fact", func() {
 			err := repo.Delete(ctx, "nonexistent")
 
-			Expect(err).To(Equal(ErrFactNotFound))
+			Expect(err).To(Equal(career_repo.ErrFactNotFound))
 		})
 	})
 
@@ -171,21 +172,21 @@ var _ = Describe("Fact Repository", func() {
 		})
 
 		It("returns all facts without filters", func() {
-			facts, err := repo.List(ctx, FactListFilters{})
+			facts, err := repo.List(ctx, career_repo.FactListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(3))
 		})
 
 		It("filters by competency category", func() {
-			facts, err := repo.List(ctx, FactListFilters{CompetencyCategory: "leadership"})
+			facts, err := repo.List(ctx, career_repo.FactListFilters{CompetencyCategory: "leadership"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(2))
 		})
 
 		It("filters by role fit", func() {
-			facts, err := repo.List(ctx, FactListFilters{RoleFit: string(career.RoleFitEM)})
+			facts, err := repo.List(ctx, career_repo.FactListFilters{RoleFit: string(career.RoleFitEM)})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(1))
@@ -193,21 +194,21 @@ var _ = Describe("Fact Repository", func() {
 		})
 
 		It("sorts by created_at descending by default", func() {
-			facts, err := repo.List(ctx, FactListFilters{})
+			facts, err := repo.List(ctx, career_repo.FactListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts[0].Text).To(Equal("Fact 3")) // Most recent first.
 		})
 
 		It("sorts by text ascending", func() {
-			facts, err := repo.List(ctx, FactListFilters{SortBy: "text", SortOrder: "asc"})
+			facts, err := repo.List(ctx, career_repo.FactListFilters{SortBy: "text", SortOrder: "asc"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts[0].Text).To(Equal("Fact 1"))
 		})
 
 		It("applies pagination", func() {
-			facts, err := repo.List(ctx, FactListFilters{Limit: 2})
+			facts, err := repo.List(ctx, career_repo.FactListFilters{Limit: 2})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(facts).To(HaveLen(2))
@@ -226,14 +227,14 @@ var _ = Describe("Fact Repository", func() {
 		})
 
 		It("counts all facts", func() {
-			count, err := repo.Count(ctx, FactListFilters{})
+			count, err := repo.Count(ctx, career_repo.FactListFilters{})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(2))
 		})
 
 		It("counts with filters", func() {
-			count, err := repo.Count(ctx, FactListFilters{CompetencyCategory: "leadership"})
+			count, err := repo.Count(ctx, career_repo.FactListFilters{CompetencyCategory: "leadership"})
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(count).To(Equal(1))

@@ -7,6 +7,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/burst_fact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
@@ -15,13 +16,13 @@ import (
 
 var _ = Describe("Career Service - Burst Methods", func() {
 	var (
-		repo    careerrepo.Repository
+		repo    careerrepo.EventRepository
 		service *Service
 		ctx     context.Context
 	)
 
 	BeforeEach(func() {
-		repo = careerrepo.NewMemoryRepository()
+		repo = careermemory.NewEventRepository()
 		service = NewService(repo)
 		ctx = context.Background()
 	})
@@ -137,10 +138,10 @@ var _ = Describe("Career Service - Burst Methods", func() {
 	})
 
 	Describe("SaveBurstSuggestions", func() {
-		var burstRepo *careerrepo.MemoryBurstRepository
+		var burstRepo *careermemory.BurstRepository
 
 		BeforeEach(func() {
-			burstRepo = careerrepo.NewMemoryBurstRepository()
+			burstRepo = careermemory.NewBurstRepository()
 			service.SetBurstRepository(burstRepo)
 		})
 
@@ -225,7 +226,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 
 		It("should return the configured burst repository", func() {
-			memoryBurstRepo := careerrepo.NewMemoryBurstRepository()
+			memoryBurstRepo := careermemory.NewBurstRepository()
 			service.SetBurstRepository(memoryBurstRepo)
 
 			burstRepo := service.GetBurstRepository()

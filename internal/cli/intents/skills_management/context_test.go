@@ -80,7 +80,7 @@ func (m *MockSkillRepository) Delete(_ context.Context, id string) error {
 	return errors.New("not found")
 }
 
-func (m *MockSkillRepository) List(_ context.Context, _ *careerrepo.SkillFilters) ([]*career.Skill, error) {
+func (m *MockSkillRepository) List(_ context.Context, _ *careerrepo.SkillListFilters) ([]*career.Skill, error) {
 	if m.listErr != nil {
 		return nil, m.listErr
 	}

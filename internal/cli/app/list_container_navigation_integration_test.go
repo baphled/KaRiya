@@ -12,7 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/config"
 	career "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/logger"
-	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	tea "github.com/charmbracelet/bubbletea"
@@ -23,16 +23,16 @@ import (
 var _ = Describe("List Container Navigation Integration - From Main Menu", func() {
 	var (
 		model      *app.Model
-		repo       *careerrepo.MemoryRepository
+		repo       *careermemory.EventRepository
 		svc        *careerservice.Service
 		cliService *service.CLIEventService
 	)
 
 	BeforeEach(func() {
 		config.SetConfigPathForTesting(filepath.Join(GinkgoT().TempDir(), "config.yaml"))
-		repo = careerrepo.NewMemoryRepository()
-		burstRepo := careerrepo.NewMemoryBurstRepository()
-		factRepo := careerrepo.NewMemoryFactRepository()
+		repo = careermemory.NewEventRepository()
+		burstRepo := careermemory.NewBurstRepository()
+		factRepo := careermemory.NewFactRepository()
 		svc = careerservice.NewService(repo)
 		svc.SetBurstRepository(burstRepo)
 		svc.SetFactRepository(factRepo)

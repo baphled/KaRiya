@@ -1,4 +1,4 @@
-package career
+package memory
 
 import (
 	"context"
@@ -8,21 +8,25 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/google/uuid"
 )
 
-// MemorySkillRepository provides an in-memory implementation of the SkillRepository interface
-type MemorySkillRepository struct {
+// Compile-time interface check.
+var _ career_repo.SkillRepository = (*SkillRepository)(nil)
+
+// SkillRepository provides an in-memory implementation of the SkillRepository interface.
+type SkillRepository struct {
 	skills      map[string]*career.Skill
-	eventSkills map[string][]string // eventID -> []skillID
-	skillEvents map[string][]string // skillID -> []eventID
-	eventRepo   Repository          // Reference to event repository for GetEventsUsingSkill
+	eventSkills map[string][]string         // eventID -> []skillID
+	skillEvents map[string][]string         // skillID -> []eventID
+	eventRepo   career_repo.EventRepository // Reference to event repository for GetEventsUsingSkill
 	mu          sync.RWMutex
 }
 
-// NewMemorySkillRepository creates a new in-memory skill repository
-func NewMemorySkillRepository() *MemorySkillRepository {
-	return &MemorySkillRepository{
+// NewSkillRepository creates a new in-memory skill repository
+func NewSkillRepository() *SkillRepository {
+	return &SkillRepository{
 		skills:      make(map[string]*career.Skill),
 		eventSkills: make(map[string][]string),
 		skillEvents: make(map[string][]string),
@@ -30,14 +34,14 @@ func NewMemorySkillRepository() *MemorySkillRepository {
 }
 
 // SetEventRepository sets the event repository for cross-repository queries
-func (r *MemorySkillRepository) SetEventRepository(repo Repository) {
+func (r *SkillRepository) SetEventRepository(repo career_repo.EventRepository) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.eventRepo = repo
 }
 
 // Create adds a new skill to the in-memory store.
-func (r *MemorySkillRepository) Create(_ context.Context, skill *career.Skill) error {
+func (r *SkillRepository) Create(_ context.Context, skill *career.Skill) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -54,7 +58,7 @@ func (r *MemorySkillRepository) Create(_ context.Context, skill *career.Skill) e
 	// Check for duplicate name
 	for _, s := range r.skills {
 		if s.Name == skill.Name {
-			return ErrDuplicateSkill
+			return career_repo.ErrDuplicateSkill
 		}
 	}
 
@@ -70,20 +74,20 @@ func (r *MemorySkillRepository) Create(_ context.Context, skill *career.Skill) e
 }
 
 // GetByID retrieves a specific skill by its unique identifier.
-func (r *MemorySkillRepository) GetByID(_ context.Context, id string) (*career.Skill, error) {
+func (r *SkillRepository) GetByID(_ context.Context, id string) (*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	skill, exists := r.skills[id]
 	if !exists {
-		return nil, ErrSkillNotFound
+		return nil, career_repo.ErrSkillNotFound
 	}
 
 	return skill, nil
 }
 
 // GetByName retrieves a skill by its name (case-sensitive)
-func (r *MemorySkillRepository) GetByName(ctx context.Context, name string) (*career.Skill, error) {
+func (r *SkillRepository) GetByName(ctx context.Context, name string) (*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -93,11 +97,11 @@ func (r *MemorySkillRepository) GetByName(ctx context.Context, name string) (*ca
 		}
 	}
 
-	return nil, ErrSkillNotFound
+	return nil, career_repo.ErrSkillNotFound
 }
 
 // List retrieves skills with optional filtering
-func (r *MemorySkillRepository) List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error) {
+func (r *SkillRepository) List(ctx context.Context, filters *career_repo.SkillListFilters) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -247,13 +251,13 @@ func (r *MemorySkillRepository) List(ctx context.Context, filters *SkillFilters)
 }
 
 // Update modifies an existing skill
-func (r *MemorySkillRepository) Update(ctx context.Context, skill *career.Skill) error {
+func (r *SkillRepository) Update(ctx context.Context, skill *career.Skill) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// Check if skill exists
 	if _, exists := r.skills[skill.ID]; !exists {
-		return ErrSkillNotFound
+		return career_repo.ErrSkillNotFound
 	}
 
 	// Validate the skill
@@ -264,7 +268,7 @@ func (r *MemorySkillRepository) Update(ctx context.Context, skill *career.Skill)
 	// Check for duplicate name (excluding current skill)
 	for id, s := range r.skills {
 		if id != skill.ID && s.Name == skill.Name {
-			return ErrDuplicateSkill
+			return career_repo.ErrDuplicateSkill
 		}
 	}
 
@@ -278,13 +282,13 @@ func (r *MemorySkillRepository) Update(ctx context.Context, skill *career.Skill)
 }
 
 // Delete removes a skill from the repository
-func (r *MemorySkillRepository) Delete(ctx context.Context, id string) error {
+func (r *SkillRepository) Delete(ctx context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// Check if skill exists
 	if _, exists := r.skills[id]; !exists {
-		return ErrSkillNotFound
+		return career_repo.ErrSkillNotFound
 	}
 
 	// Remove the skill
@@ -300,7 +304,7 @@ func (r *MemorySkillRepository) Delete(ctx context.Context, id string) error {
 }
 
 // GetByCategory retrieves all skills in a specific category
-func (r *MemorySkillRepository) GetByCategory(ctx context.Context, category string) ([]*career.Skill, error) {
+func (r *SkillRepository) GetByCategory(ctx context.Context, category string) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -321,7 +325,7 @@ func (r *MemorySkillRepository) GetByCategory(ctx context.Context, category stri
 }
 
 // GetSkillsForEvent retrieves all skills associated with an event
-func (r *MemorySkillRepository) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
+func (r *SkillRepository) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -341,7 +345,7 @@ func (r *MemorySkillRepository) GetSkillsForEvent(ctx context.Context, eventID s
 }
 
 // GetEventCountsForSkills returns a map of skill IDs to event counts
-func (r *MemorySkillRepository) GetEventCountsForSkills(ctx context.Context) (map[string]int, error) {
+func (r *SkillRepository) GetEventCountsForSkills(ctx context.Context) (map[string]int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -355,7 +359,7 @@ func (r *MemorySkillRepository) GetEventCountsForSkills(ctx context.Context) (ma
 }
 
 // GetLastUsedForSkills returns a map of skill IDs to their last used dates (from events)
-func (r *MemorySkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
+func (r *SkillRepository) GetLastUsedForSkills(ctx context.Context) (map[string]time.Time, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -363,13 +367,13 @@ func (r *MemorySkillRepository) GetLastUsedForSkills(ctx context.Context) (map[s
 
 	// Note: This requires access to events, which we don't have in this simple implementation
 	// For now, return empty map. In real usage with SetEventRepository, this would work.
-	// The SQLite implementation handles this properly with JOINs.
+	// The SQL/GORM implementation handles this properly with JOINs.
 
 	return lastUsed, nil
 }
 
 // GetEventsUsingSkill returns all events that use a specific skill, ordered by date DESC
-func (r *MemorySkillRepository) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error) {
+func (r *SkillRepository) GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error) {
 	r.mu.RLock()
 	eventIDs := r.skillEvents[skillID]
 	eventRepo := r.eventRepo
@@ -402,7 +406,7 @@ func (r *MemorySkillRepository) GetEventsUsingSkill(ctx context.Context, skillID
 }
 
 // AssociateSkillWithEvent associates a skill with an event (for test setup)
-func (r *MemorySkillRepository) AssociateSkillWithEvent(skillID, eventID string) {
+func (r *SkillRepository) AssociateSkillWithEvent(skillID, eventID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

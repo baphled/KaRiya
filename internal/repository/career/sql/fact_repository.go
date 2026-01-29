@@ -1,5 +1,5 @@
-// Package career provides repository implementations for career domain entities.
-package career
+// Package sql provides SQL-backed repository implementations for career domain entities.
+package sql
 
 import (
 	"context"
@@ -8,26 +8,27 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
+	career_repo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/repository/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // Compile-time interface check.
-var _ FactRepository = (*Fact)(nil)
+var _ career_repo.FactRepository = (*FactRepository)(nil)
 
-// Fact implements FactRepository using GORM.
-type Fact struct {
+// FactRepository implements career.FactRepository using GORM.
+type FactRepository struct {
 	db *gorm.DB
 }
 
-// NewFact creates a new fact repository.
-func NewFact(db *gorm.DB) *Fact {
-	return &Fact{db: db}
+// NewFactRepository creates a new SQL fact repository.
+func NewFactRepository(db *gorm.DB) *FactRepository {
+	return &FactRepository{db: db}
 }
 
 // Create adds a new fact to the database.
-func (r *Fact) Create(ctx context.Context, fact *career.Fact) error {
+func (r *FactRepository) Create(ctx context.Context, fact *career.Fact) error {
 	if fact.ID == "" {
 		fact.ID = uuid.New().String()
 	}
@@ -40,11 +41,11 @@ func (r *Fact) Create(ctx context.Context, fact *career.Fact) error {
 }
 
 // GetByID retrieves a fact by its ID.
-func (r *Fact) GetByID(ctx context.Context, id string) (*career.Fact, error) {
+func (r *FactRepository) GetByID(ctx context.Context, id string) (*career.Fact, error) {
 	var model models.Fact
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrFactNotFound
+		return nil, career_repo.ErrFactNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -53,14 +54,14 @@ func (r *Fact) GetByID(ctx context.Context, id string) (*career.Fact, error) {
 }
 
 // Update modifies an existing fact.
-func (r *Fact) Update(ctx context.Context, fact *career.Fact) error {
+func (r *FactRepository) Update(ctx context.Context, fact *career.Fact) error {
 	// Check if record exists first.
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&models.Fact{}).Where("id = ?", fact.ID).Count(&count).Error; err != nil {
 		return err
 	}
 	if count == 0 {
-		return ErrFactNotFound
+		return career_repo.ErrFactNotFound
 	}
 
 	fact.UpdatedAt = time.Now()
@@ -68,16 +69,16 @@ func (r *Fact) Update(ctx context.Context, fact *career.Fact) error {
 }
 
 // Delete removes a fact from the database.
-func (r *Fact) Delete(ctx context.Context, id string) error {
+func (r *FactRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Delete(&models.Fact{}, "id = ?", id)
 	if result.RowsAffected == 0 {
-		return ErrFactNotFound
+		return career_repo.ErrFactNotFound
 	}
 	return result.Error
 }
 
 // List retrieves facts with optional filtering.
-func (r *Fact) List(ctx context.Context, filters FactListFilters) ([]*career.Fact, error) {
+func (r *FactRepository) List(ctx context.Context, filters career_repo.FactListFilters) ([]*career.Fact, error) {
 	query := r.db.WithContext(ctx).Model(&models.Fact{})
 	query = r.applyFilters(query, filters)
 	query = r.applySorting(query, filters)
@@ -96,7 +97,7 @@ func (r *Fact) List(ctx context.Context, filters FactListFilters) ([]*career.Fac
 }
 
 // Count returns the number of facts matching the given filters.
-func (r *Fact) Count(ctx context.Context, filters FactListFilters) (int, error) {
+func (r *FactRepository) Count(ctx context.Context, filters career_repo.FactListFilters) (int, error) {
 	query := r.db.WithContext(ctx).Model(&models.Fact{})
 	query = r.applyFilters(query, filters)
 
@@ -108,7 +109,7 @@ func (r *Fact) Count(ctx context.Context, filters FactListFilters) (int, error) 
 }
 
 // GetBySourceEventID retrieves all facts for a specific event.
-func (r *Fact) GetBySourceEventID(ctx context.Context, eventID string) ([]*career.Fact, error) {
+func (r *FactRepository) GetBySourceEventID(ctx context.Context, eventID string) ([]*career.Fact, error) {
 	var results []models.Fact
 	err := r.db.WithContext(ctx).Where("source_event_id = ?", eventID).Find(&results).Error
 	if err != nil {
@@ -123,7 +124,7 @@ func (r *Fact) GetBySourceEventID(ctx context.Context, eventID string) ([]*caree
 }
 
 // GetBySourceBurstID retrieves all facts for a specific burst.
-func (r *Fact) GetBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error) {
+func (r *FactRepository) GetBySourceBurstID(ctx context.Context, burstID string) ([]*career.Fact, error) {
 	var results []models.Fact
 	err := r.db.WithContext(ctx).Where("source_burst_id = ?", burstID).Find(&results).Error
 	if err != nil {
@@ -137,7 +138,7 @@ func (r *Fact) GetBySourceBurstID(ctx context.Context, burstID string) ([]*caree
 	return facts, nil
 }
 
-func (r *Fact) applyFilters(query *gorm.DB, filters FactListFilters) *gorm.DB {
+func (r *FactRepository) applyFilters(query *gorm.DB, filters career_repo.FactListFilters) *gorm.DB {
 	if filters.CompetencyCategory != "" {
 		query = query.Where("competencies LIKE ?", "%"+filters.CompetencyCategory+"%")
 	}
@@ -156,7 +157,7 @@ func (r *Fact) applyFilters(query *gorm.DB, filters FactListFilters) *gorm.DB {
 	return query
 }
 
-func (r *Fact) applySorting(query *gorm.DB, filters FactListFilters) *gorm.DB {
+func (r *FactRepository) applySorting(query *gorm.DB, filters career_repo.FactListFilters) *gorm.DB {
 	sortBy := filters.SortBy
 	if sortBy == "" {
 		sortBy = "created_at"
@@ -175,7 +176,7 @@ func (r *Fact) applySorting(query *gorm.DB, filters FactListFilters) *gorm.DB {
 	}
 }
 
-func (r *Fact) applyPagination(query *gorm.DB, filters FactListFilters) *gorm.DB {
+func (r *FactRepository) applyPagination(query *gorm.DB, filters career_repo.FactListFilters) *gorm.DB {
 	if filters.Limit > 0 {
 		query = query.Limit(filters.Limit)
 	}

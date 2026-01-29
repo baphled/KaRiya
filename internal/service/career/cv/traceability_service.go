@@ -11,14 +11,14 @@ import (
 
 // TraceabilityService provides traceability functionality for CV bullets.
 type TraceabilityService struct {
-	eventRepo careerrepo.Repository
+	eventRepo careerrepo.EventRepository
 	factRepo  careerrepo.FactRepository
 	logger    *logger.Logger
 }
 
 // NewTraceabilityService creates a new TraceabilityService.
 func NewTraceabilityService(
-	eventRepo careerrepo.Repository,
+	eventRepo careerrepo.EventRepository,
 	factRepo careerrepo.FactRepository,
 	log *logger.Logger,
 ) *TraceabilityService {

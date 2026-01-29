@@ -130,7 +130,7 @@ type GenerateCVContext struct {
 	SkillRepository careerRepo.SkillRepository
 
 	// EventRepository provides access to career events (for technology extraction)
-	EventRepository careerRepo.Repository
+	EventRepository careerRepo.EventRepository
 
 	// ProfileConfig is the user's profile configuration for narrative CVs
 	ProfileConfig *config.ProfileConfig

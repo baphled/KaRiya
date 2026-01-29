@@ -16,7 +16,7 @@ var (
 	ErrDuplicateSkill = errors.New("skill already exists")
 )
 
-// SkillRepository defines the interface for skill persistence
+// SkillEventRepository defines the interface for skill persistence
 //
 //nolint:interfacebloat // Repository interfaces require CRUD + query + relation methods
 type SkillRepository interface {
@@ -30,7 +30,7 @@ type SkillRepository interface {
 	GetByName(ctx context.Context, name string) (*career.Skill, error)
 
 	// List retrieves skills with optional filtering
-	List(ctx context.Context, filters *SkillFilters) ([]*career.Skill, error)
+	List(ctx context.Context, filters *SkillListFilters) ([]*career.Skill, error)
 
 	// Update modifies an existing skill
 	Update(ctx context.Context, skill *career.Skill) error
@@ -54,8 +54,8 @@ type SkillRepository interface {
 	GetEventsUsingSkill(ctx context.Context, skillID string) ([]*career.CareerEvent, error)
 }
 
-// SkillFilters provides flexible filtering options for skills
-type SkillFilters struct {
+// SkillListFilters provides flexible filtering options for skills
+type SkillListFilters struct {
 	// Category to filter by
 	Category string
 

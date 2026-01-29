@@ -8,6 +8,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/service"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
+	careersql "github.com/baphled/kariya/internal/repository/career/sql"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -21,7 +22,7 @@ var _ = Describe("Data Persistence", func() {
 			dbPath := filepath.Join(tmpDir, "test-events.db")
 
 			// Create ORM repositories
-			repos, err := careerrepo.NewRepositoriesFromPath(dbPath)
+			repos, err := careersql.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
 				repos.Close()
@@ -47,7 +48,7 @@ var _ = Describe("Data Persistence", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Verify event was persisted to database
-			events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
+			events, err := svc.ListEvents(ctx, careerrepo.EventListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events).To(HaveLen(1), "Event should be persisted to database")
 			Expect(events[0].Text).To(Equal(eventText))
@@ -61,7 +62,7 @@ var _ = Describe("Data Persistence", func() {
 			dbPath := filepath.Join(tmpDir, "persistent-events.db")
 
 			// Create first repository instance and add event
-			repos1, err := careerrepo.NewRepositoriesFromPath(dbPath)
+			repos1, err := careersql.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
 				repos1.Close()
@@ -84,7 +85,7 @@ var _ = Describe("Data Persistence", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Verify event was saved in first instance
-			events1, err := svc1.ListEvents(ctx, careerrepo.ListFilters{})
+			events1, err := svc1.ListEvents(ctx, careerrepo.EventListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events1).To(HaveLen(1))
 
@@ -92,7 +93,7 @@ var _ = Describe("Data Persistence", func() {
 			repos1.Close()
 
 			// Create second repository instance pointing to same database
-			repos2, err := careerrepo.NewRepositoriesFromPath(dbPath)
+			repos2, err := careersql.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
 				repos2.Close()
@@ -101,7 +102,7 @@ var _ = Describe("Data Persistence", func() {
 			svc2 := careerservice.NewService(repos2.Event)
 
 			// Verify event persists across instances
-			events2, err := svc2.ListEvents(ctx, careerrepo.ListFilters{})
+			events2, err := svc2.ListEvents(ctx, careerrepo.EventListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events2).To(HaveLen(1), "Event should persist across database connections")
 			Expect(events2[0].Text).To(Equal(eventText))
@@ -114,7 +115,7 @@ var _ = Describe("Data Persistence", func() {
 			dbPath := filepath.Join(tmpDir, "custom-location.db")
 
 			// Create ORM repository at custom path
-			repos, err := careerrepo.NewRepositoriesFromPath(dbPath)
+			repos, err := careersql.NewRepositoriesFromPath(dbPath)
 			Expect(err).ToNot(HaveOccurred())
 			DeferCleanup(func() {
 				repos.Close()
@@ -136,7 +137,7 @@ var _ = Describe("Data Persistence", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Verify persistence
-			events, err := svc.ListEvents(ctx, careerrepo.ListFilters{})
+			events, err := svc.ListEvents(ctx, careerrepo.EventListFilters{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(events).To(HaveLen(1))
 		})

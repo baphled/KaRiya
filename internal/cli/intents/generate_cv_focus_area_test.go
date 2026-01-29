@@ -10,6 +10,7 @@ import (
 
 	"github.com/baphled/kariya/internal/domain/career"
 	careerRepo "github.com/baphled/kariya/internal/repository/career"
+	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/cv"
 	"github.com/baphled/kariya/internal/service/career/technology"
 )
@@ -19,7 +20,7 @@ var _ = Describe("GenerateCV Focus Area Selection", func() {
 		intent      *GenerateCVIntent
 		ctx         *GenerateCVContext
 		skillRepo   careerRepo.SkillRepository
-		eventRepo   careerRepo.Repository
+		eventRepo   careerRepo.EventRepository
 		testContext context.Context
 	)
 
@@ -27,8 +28,8 @@ var _ = Describe("GenerateCV Focus Area Selection", func() {
 		testContext = context.Background()
 
 		// Create in-memory repositories
-		skillRepo = careerRepo.NewMemorySkillRepository()
-		eventRepo = careerRepo.NewMemoryRepository()
+		skillRepo = careermemory.NewSkillRepository()
+		eventRepo = careermemory.NewEventRepository()
 
 		// Create test context with repositories
 		ctx = &GenerateCVContext{
