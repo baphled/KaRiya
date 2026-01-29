@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -51,7 +52,7 @@ func ParseDateString(s string) (time.Time, error) {
 
 // Common validation errors.
 var (
-	ErrRequired         = fmt.Errorf("this field is required")
+	ErrRequired         = errors.New("this field is required")
 	ErrInvalidDate      = fmt.Errorf("invalid date format (expected YYYY-MM-DD)")
 	ErrInvalidEmail     = fmt.Errorf("invalid email address")
 	ErrTooShort         = fmt.Errorf("value is too short")
@@ -364,5 +365,5 @@ func GitHubURL(username string) string {
 	if username == "" {
 		return ""
 	}
-	return fmt.Sprintf("https://github.com/%s", username)
+	return "https://github.com/" + username
 }

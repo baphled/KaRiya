@@ -1,7 +1,7 @@
 package burst_management
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
@@ -44,7 +44,7 @@ func burstRowFormatter(burst *career.Burst, _ int) []string {
 		confirmedStr = "✓ Yes"
 	}
 
-	eventCount := fmt.Sprintf("%d", len(burst.EventIDs))
+	eventCount := strconv.Itoa(len(burst.EventIDs))
 
 	createdStr := burst.CreatedAt.Format("2006-01-02")
 

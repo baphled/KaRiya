@@ -69,7 +69,6 @@ var _ = Describe("Logger", func() {
 		})
 
 		for _, tc := range testCases {
-			tc := tc // capture range variable
 			It(tc.name, func() {
 				logger = New(&buf, tc.logLevel)
 				tc.logFunc(logger, tc.logMessage)
@@ -143,7 +142,6 @@ var _ = Describe("Logger", func() {
 		}
 
 		for _, tc := range testCases {
-			tc := tc // capture range variable
 			It(tc.expected+" should have correct string representation", func() {
 				Expect(tc.level.String()).To(Equal(tc.expected))
 			})

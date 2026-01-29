@@ -1,7 +1,7 @@
 package forms
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/charmbracelet/huh"
 )
@@ -71,7 +71,7 @@ func NewCVConfigForm(
 			Value(&data.ProfileID).
 			Validate(func(s string) error {
 				if s == "" {
-					return fmt.Errorf("please select a profile")
+					return errors.New("please select a profile")
 				}
 				return nil
 			}),

@@ -44,7 +44,7 @@ func CreateSampleEvents(count int) []*career.Event {
 	}
 
 	now := time.Now()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		event := &career.Event{
 			ID:         fmt.Sprintf("event_%d", i+1),
 			Text:       eventTexts[i%len(eventTexts)],
@@ -84,7 +84,7 @@ func CreateSampleBursts(count int, events []*career.Event) []*career.Burst {
 	}
 
 	now := time.Now()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		// Assign 2-3 events to each burst
 		eventIDs := make([]string, 0)
 		startIdx := (i * 2) % len(events)
@@ -154,7 +154,7 @@ func CreateSampleFacts(count int, events []*career.Event) []*career.Fact {
 	signals := []string{"high", "high", "medium", "medium", "high"}
 
 	now := time.Now()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		// Link to an event
 		eventIdx := i % len(events)
 		sourceEventID := ""

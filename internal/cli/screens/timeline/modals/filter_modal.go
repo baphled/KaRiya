@@ -204,7 +204,9 @@ func (m *FilterModal) Update(msg tea.Msg) (tea.Cmd, bool, *FilterFormData) {
 
 	// Update form.
 	form, cmd := m.form.Update(msg)
-	m.form = form.(*huh.Form)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+	}
 
 	// Check if form is complete.
 	if m.form.State == huh.StateCompleted {

@@ -300,7 +300,7 @@ func (m *EditSettingsModal) GetChanges() map[string]interface{} {
 
 		if setting.Type == "bool" {
 			if boolPtr, ok := m.formData.BoolValues[setting.Key]; ok && boolPtr != nil {
-				newStrVal = fmt.Sprintf("%v", *boolPtr)
+				newStrVal = strconv.FormatBool(*boolPtr)
 			}
 		} else {
 			if strPtr, ok := m.formData.Values[setting.Key]; ok && strPtr != nil {

@@ -163,7 +163,7 @@ func (sl *ScreenLayout) Render() string {
 
 	// Add logo spacing (blank lines before logo)
 	if sl.ShowLogo && sl.Logo != nil {
-		for i := 0; i < sl.LogoSpacing; i++ {
+		for range sl.LogoSpacing {
 			parts = append(parts, "")
 		}
 
