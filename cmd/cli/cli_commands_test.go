@@ -48,7 +48,7 @@ var _ = Describe("CLI Command Handlers", func() {
 				// Create clustered events that will trigger burst detection
 				baseDate := time.Now().AddDate(0, 0, -30)
 				for i := 0; i < 5; i++ {
-					err := repo.Create(ctx, &career.CareerEvent{
+					err := repo.Create(ctx, &career.Event{
 						ID:      "evt" + string(rune('1'+i)),
 						Text:    "Cloud migration task",
 						Date:    baseDate.AddDate(0, 0, i),
@@ -96,7 +96,7 @@ var _ = Describe("CLI Command Handlers", func() {
 		Context("when events exist", func() {
 			BeforeEach(func() {
 				// Create events with factual content
-				err := repo.Create(ctx, &career.CareerEvent{
+				err := repo.Create(ctx, &career.Event{
 					ID:      "e1",
 					Text:    "Led a team of 5 engineers to deliver microservices architecture",
 					Date:    time.Now().AddDate(0, 0, -10),

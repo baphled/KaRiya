@@ -30,7 +30,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 		Context("when capturing a new event", func() {
 			It("should generate a unique event ID", func() {
 				// Create event
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Built REST API with Go and PostgreSQL",
 					Date: time.Now(),
 				}
@@ -46,7 +46,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 
 			It("should allow using the event ID for enrichment", func() {
 				// Create and save event
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Implemented OAuth2 authentication for API",
 					Date: time.Now(),
 				}
@@ -67,7 +67,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 		Context("when event is saved with valid ID", func() {
 			It("should extract facts from the event", func() {
 				// Create and save event
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Led migration of legacy monolith to microservices, reducing deployment time by 60%",
 					Date: time.Now(),
 				}
@@ -87,7 +87,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 
 			It("should save extracted facts to the database", func() {
 				// Create and save event
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Optimized database queries reducing load time from 3s to 200ms",
 					Date: time.Now(),
 				}
@@ -134,7 +134,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 			It("should detect bursts across events", func() {
 				// Create and save multiple related events
 				baseDate := time.Now().Add(-45 * 24 * time.Hour)
-				events := []*career.CareerEvent{
+				events := []*career.Event{
 					{
 						Text: "Migrated authentication service to Kubernetes",
 						Date: baseDate,
@@ -170,7 +170,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 		Context("when only one event exists", func() {
 			It("should return empty burst suggestions", func() {
 				// Create and save single event
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Implemented Redis caching",
 					Date: time.Now(),
 				}
@@ -190,7 +190,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 		Context("when capturing an event with enrichment", func() {
 			It("should save event, extract facts, and save facts in sequence", func() {
 				// 1. Create event
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "Implemented CI/CD pipeline with Jenkins and Docker, reducing deployment time by 70%",
 					Date: time.Now(),
 				}
@@ -236,7 +236,7 @@ var _ = Describe("CaptureEvent Enrichment Integration", func() {
 
 		Context("when event text is empty", func() {
 			It("should fail validation", func() {
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: "", // Empty text
 					Date: time.Now(),
 				}

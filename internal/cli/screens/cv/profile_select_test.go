@@ -17,7 +17,7 @@ func TestCVProfileSelect(t *testing.T) {
 	RunSpecs(t, "CVProfileSelect Screen Suite")
 }
 
-var _ = Describe("CVProfileSelectScreen", func() {
+var _ = Describe("ProfileSelectScreen", func() {
 	var (
 		screen   screens.Screen
 		profiles []*intents.CVProfile
@@ -176,8 +176,8 @@ var _ = Describe("CVProfileSelectScreen", func() {
 				Expect(result.Type()).To(Equal(screens.ResultCancel))
 			})
 
-			// Note: 'q' key behavior depends on BaseSelectScreen implementation
-			// If 'q' doesn't trigger cancel, this test should be removed or BaseSelectScreen updated
+			// Note: 'q' key behavior depends on SelectScreen implementation
+			// If 'q' doesn't trigger cancel, this test should be removed or SelectScreen updated
 		})
 
 		Context("window resize", func() {
@@ -227,7 +227,7 @@ var _ = Describe("CVProfileSelectScreen", func() {
 
 			view := screen.View()
 
-			// BaseSelectScreen uses combined format like "↑/↓/j/k: Navigate"
+			// SelectScreen uses combined format like "↑/↓/j/k: Navigate"
 			Expect(view).To(MatchRegexp("↑|↓|j|k"))
 			Expect(view).To(ContainSubstring("Enter"))
 			Expect(view).To(ContainSubstring("Esc"))
@@ -240,7 +240,7 @@ var _ = Describe("CVProfileSelectScreen", func() {
 				emptyScreen := cv.NewCVProfileSelectScreen([]*intents.CVProfile{})
 
 				view := emptyScreen.View()
-				// BaseSelectScreen shows "No items available"
+				// SelectScreen shows "No items available"
 				Expect(view).To(ContainSubstring("No items available"))
 			})
 		})

@@ -9,7 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	"github.com/baphled/kariya/internal/testutil/fixtures"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -158,7 +158,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 
 	Describe("SuggestBurstsWithOptions", func() {
 		It("should return empty list when fewer than 2 events provided", func() {
-			opts := &burst_fact.DetectionOptions{
+			opts := &burstfact.DetectionOptions{
 				MinConfidence:       0.7,
 				TemporalWindow:      3 * 30 * 24 * time.Hour,
 				MinEventCount:       2,
@@ -183,7 +183,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 			err = repo.Create(ctx, event2)
 			Expect(err).NotTo(HaveOccurred())
 
-			opts := &burst_fact.DetectionOptions{
+			opts := &burstfact.DetectionOptions{
 				MinConfidence:       0.5,
 				TemporalWindow:      6 * 30 * 24 * time.Hour,
 				MinEventCount:       2,
@@ -196,7 +196,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 
 		It("should handle missing event IDs gracefully", func() {
-			opts := &burst_fact.DetectionOptions{
+			opts := &burstfact.DetectionOptions{
 				MinConfidence:       0.6,
 				TemporalWindow:      6 * 30 * 24 * time.Hour,
 				MinEventCount:       2,
@@ -217,7 +217,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 
 		It("should save valid burst suggestions as unconfirmed", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Backend Platform Initiative",
 					Description:     "Series of backend infrastructure improvements",
@@ -247,14 +247,14 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 
 		It("should handle empty suggestions list", func() {
-			savedBursts, err := service.SaveBurstSuggestions(ctx, []burst_fact.BurstSuggestion{})
+			savedBursts, err := service.SaveBurstSuggestions(ctx, []burstfact.BurstSuggestion{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(savedBursts).To(BeEmpty())
 		})
 
 		It("should return nil when no burst repository configured", func() {
 			serviceWithoutBurstRepo := NewService(repo)
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "Test Burst",
 					Description:     "Test description",
@@ -269,7 +269,7 @@ var _ = Describe("Career Service - Burst Methods", func() {
 		})
 
 		It("should continue saving other suggestions if one fails validation", func() {
-			suggestions := []burst_fact.BurstSuggestion{
+			suggestions := []burstfact.BurstSuggestion{
 				{
 					Name:            "", // Invalid: empty name
 					Description:     "Invalid burst",

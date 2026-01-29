@@ -10,9 +10,9 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-var _ = Describe("CVReviewScreen", func() {
+var _ = Describe("ReviewScreen", func() {
 	var (
-		screen   *cv.CVReviewScreen
+		screen   *cv.ReviewScreen
 		testCV   *career.CVView
 		sections []*career.CVSection
 	)

@@ -23,7 +23,7 @@ var (
 // - Viewing burst details, events, and facts
 // - Creating, editing, and deleting bursts
 // - Confirming bursts and extracting facts
-// - Suggesting bursts from events using AI detection
+// - Suggesting bursts from events using AI detection.
 type Intent struct {
 	// Embed BaseIntent for terminal awareness, logo, and state management.
 	*intents.BaseIntent
@@ -55,7 +55,7 @@ type Intent struct {
 	viewedBursts []*career.Burst
 
 	// burstEvents are the events for the current burst.
-	burstEvents []*career.CareerEvent
+	burstEvents []*career.Event
 
 	// burstFacts are the facts for the current burst.
 	burstFacts []*career.Fact
@@ -289,7 +289,7 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		filteredBursts: ctx.Bursts,
 		selectedIndex:  0,
 		viewedBursts:   make([]*career.Burst, 0),
-		burstEvents:    make([]*career.CareerEvent, 0),
+		burstEvents:    make([]*career.Event, 0),
 		burstFacts:     make([]*career.Fact, 0),
 		modalRegistry:  intents.NewModalRegistry(),
 	}

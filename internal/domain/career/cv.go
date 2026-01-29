@@ -10,8 +10,8 @@ import (
 	"github.com/baphled/kariya/internal/constants"
 )
 
-// CVView represents an in-memory, ephemeral CV generated from career events and facts
-// CVViews are NOT stored in the database - they are generated on-demand
+// CVView represents an in-memory, ephemeral CV generated from career events and facts.
+// CVViews are NOT stored in the database - they are generated on-demand.
 type CVView struct {
 	ID               string                 `json:"id"`
 	Name             string                 `json:"name"`
@@ -21,10 +21,10 @@ type CVView struct {
 	GeneratedAt      time.Time              `json:"generated_at"`
 	SourceEventCount int                    `json:"source_event_count"`
 	SourceFactCount  int                    `json:"source_fact_count"`
-	Sections         []*CVSection           `json:"sections,omitempty"` // CV sections (experience, skills, summary, etc.)
+	Sections         []*CVSection           `json:"sections,omitempty"`
 }
 
-// Validate checks if the CVView meets all defined criteria
+// Validate checks if the CVView meets all defined criteria.
 func (cv *CVView) Validate() error {
 	// Validate ID
 	if err := cv.validateID(); err != nil {
@@ -54,7 +54,7 @@ func (cv *CVView) Validate() error {
 	return nil
 }
 
-// validateID ensures ID is not empty
+// validateID ensures ID is not empty.
 func (cv *CVView) validateID() error {
 	if strings.TrimSpace(cv.ID) == "" {
 		return errors.New("CV ID cannot be empty")
@@ -62,7 +62,7 @@ func (cv *CVView) validateID() error {
 	return nil
 }
 
-// validateName ensures name is not empty and within length constraints
+// validateName ensures name is not empty and within length constraints.
 func (cv *CVView) validateName() error {
 	trimmedName := strings.TrimSpace(cv.Name)
 	if trimmedName == "" {
@@ -74,7 +74,7 @@ func (cv *CVView) validateName() error {
 	return nil
 }
 
-// validateTargetRole ensures target role is from the allowed set
+// validateTargetRole ensures target role is from the allowed set.
 func (cv *CVView) validateTargetRole() error {
 	trimmedRole := strings.TrimSpace(strings.ToLower(cv.TargetRole))
 	if trimmedRole == "" {
@@ -86,7 +86,7 @@ func (cv *CVView) validateTargetRole() error {
 	return nil
 }
 
-// validateTargetAudience ensures a valid audience is specified
+// validateTargetAudience ensures a valid audience is specified.
 func (cv *CVView) validateTargetAudience() error {
 	trimmedAudience := strings.TrimSpace(strings.ToLower(cv.TargetAudience))
 	if trimmedAudience == "" {
@@ -98,7 +98,7 @@ func (cv *CVView) validateTargetAudience() error {
 	return nil
 }
 
-// validateSourceCounts ensures source counts are non-negative
+// validateSourceCounts ensures source counts are non-negative.
 func (cv *CVView) validateSourceCounts() error {
 	if cv.SourceEventCount < 0 {
 		return errors.New("source event count cannot be negative")
@@ -109,26 +109,26 @@ func (cv *CVView) validateSourceCounts() error {
 	return nil
 }
 
-// SectionContentGroup represents a grouped section (company/project with date and bullets)
+// SectionContentGroup represents a grouped section (company/project with date and bullets).
 type SectionContentGroup struct {
-	Header    string      `json:"header"`               // Company or Project name
-	StartDate string      `json:"start_date,omitempty"` // Format: "Jan 2006" (month+year only)
-	EndDate   string      `json:"end_date,omitempty"`   // Format: "Jan 2006" (month+year only)
+	Header    string      `json:"header"`
+	StartDate string      `json:"start_date,omitempty"`
+	EndDate   string      `json:"end_date,omitempty"`
 	Bullets   []*CVBullet `json:"bullets"`
 }
 
-// CVSection represents a section within a CV (e.g., Experience, Skills, Summary)
+// CVSection represents a section within a CV (e.g., Experience, Skills, Summary).
 type CVSection struct {
 	ID          string                 `json:"id"`
 	CVViewID    string                 `json:"cv_view_id"`
-	SectionType string                 `json:"section_type"` // "experience", "projects", "skills", "summary"
+	SectionType string                 `json:"section_type"`
 	Title       string                 `json:"title"`
 	Order       int                    `json:"order"`
-	Content     []*SectionContentGroup `json:"content,omitempty"` // For experience, projects, skills
-	Summary     string                 `json:"summary,omitempty"` // For summary section only (prose)
+	Content     []*SectionContentGroup `json:"content,omitempty"`
+	Summary     string                 `json:"summary,omitempty"`
 }
 
-// Validate checks if the CVSection meets all defined criteria
+// Validate checks if the CVSection meets all defined criteria.
 func (cs *CVSection) Validate() error {
 	// Validate ID
 	if err := cs.validateID(); err != nil {
@@ -158,7 +158,7 @@ func (cs *CVSection) Validate() error {
 	return nil
 }
 
-// validateID ensures ID is not empty
+// validateID ensures ID is not empty.
 func (cs *CVSection) validateID() error {
 	if strings.TrimSpace(cs.ID) == "" {
 		return errors.New("section ID cannot be empty")
@@ -166,7 +166,7 @@ func (cs *CVSection) validateID() error {
 	return nil
 }
 
-// validateCVViewID ensures CVViewID is not empty
+// validateCVViewID ensures CVViewID is not empty.
 func (cs *CVSection) validateCVViewID() error {
 	if strings.TrimSpace(cs.CVViewID) == "" {
 		return errors.New("CV view ID cannot be empty")
@@ -174,7 +174,7 @@ func (cs *CVSection) validateCVViewID() error {
 	return nil
 }
 
-// validateSectionType ensures section type is from the allowed set
+// validateSectionType ensures section type is from the allowed set.
 func (cs *CVSection) validateSectionType() error {
 	trimmedType := strings.TrimSpace(strings.ToLower(cs.SectionType))
 	if trimmedType == "" {
@@ -186,7 +186,7 @@ func (cs *CVSection) validateSectionType() error {
 	return nil
 }
 
-// validateTitle ensures title is not empty and within length constraints
+// validateTitle ensures title is not empty and within length constraints.
 func (cs *CVSection) validateTitle() error {
 	trimmedTitle := strings.TrimSpace(cs.Title)
 	if trimmedTitle == "" {
@@ -198,7 +198,7 @@ func (cs *CVSection) validateTitle() error {
 	return nil
 }
 
-// validateOrder ensures order is non-negative
+// validateOrder ensures order is non-negative.
 func (cs *CVSection) validateOrder() error {
 	if cs.Order < 0 {
 		return errors.New("section order cannot be negative")
@@ -206,29 +206,29 @@ func (cs *CVSection) validateOrder() error {
 	return nil
 }
 
-// CVBullet represents a single bullet point within a CV section
+// CVBullet represents a single bullet point within a CV section.
 type CVBullet struct {
 	ID              string   `json:"id"`
 	SectionID       string   `json:"section_id"`
 	Text            string   `json:"text"`
 	SourceEventIDs  []string `json:"source_event_ids"`
 	SourceFactIDs   []string `json:"source_fact_ids"`
-	Rank            float64  `json:"rank"`             // 0.0 - 1.0
-	InclusionReason string   `json:"inclusion_reason"` // why this bullet was included
-	Confidence      float64  `json:"confidence"`       // 0.0 - 1.0
+	Rank            float64  `json:"rank"`
+	InclusionReason string   `json:"inclusion_reason"`
+	Confidence      float64  `json:"confidence"`
 
 	// Enhanced fields from BulletGenerator (Task 44)
-	EnhancedText   string                       `json:"enhanced_text,omitempty"`   // Professionally improved text
-	Category       constants.CompetencyCategory `json:"category,omitempty"`        // Primary competency category (BUG-008)
-	RoleScore      float64                      `json:"role_score,omitempty"`      // 0.0-1.0 role relevance
-	AudienceScore  float64                      `json:"audience_score,omitempty"`  // 0.0-1.0 audience fit
-	MetricScore    float64                      `json:"metric_score,omitempty"`    // 0.0-1.0 metric quality
-	ImpactScore    float64                      `json:"impact_score,omitempty"`    // 0.0-1.0 impact level
-	ImpactLevel    string                       `json:"impact_level,omitempty"`    // "low", "medium", "high"
-	KeywordMatches []string                     `json:"keyword_matches,omitempty"` // Matched role/audience keywords
+	EnhancedText   string                       `json:"enhanced_text,omitempty"`
+	Category       constants.CompetencyCategory `json:"category,omitempty"`
+	RoleScore      float64                      `json:"role_score,omitempty"`
+	AudienceScore  float64                      `json:"audience_score,omitempty"`
+	MetricScore    float64                      `json:"metric_score,omitempty"`
+	ImpactScore    float64                      `json:"impact_score,omitempty"`
+	ImpactLevel    string                       `json:"impact_level,omitempty"`
+	KeywordMatches []string                     `json:"keyword_matches,omitempty"`
 }
 
-// Validate checks if the CVBullet meets all defined criteria
+// Validate checks if the CVBullet meets all defined criteria.
 func (cb *CVBullet) Validate() error {
 	// Validate ID
 	if err := cb.validateID(); err != nil {
@@ -273,7 +273,7 @@ func (cb *CVBullet) Validate() error {
 	return nil
 }
 
-// validateID ensures ID is not empty
+// validateID ensures ID is not empty.
 func (cb *CVBullet) validateID() error {
 	if strings.TrimSpace(cb.ID) == "" {
 		return errors.New("bullet ID cannot be empty")
@@ -281,7 +281,7 @@ func (cb *CVBullet) validateID() error {
 	return nil
 }
 
-// validateSectionID ensures SectionID is not empty
+// validateSectionID ensures SectionID is not empty.
 func (cb *CVBullet) validateSectionID() error {
 	if strings.TrimSpace(cb.SectionID) == "" {
 		return errors.New("section ID cannot be empty")
@@ -289,7 +289,7 @@ func (cb *CVBullet) validateSectionID() error {
 	return nil
 }
 
-// validateText ensures text is not empty and within length constraints
+// validateText ensures text is not empty and within length constraints.
 func (cb *CVBullet) validateText() error {
 	trimmedText := strings.TrimSpace(cb.Text)
 	if trimmedText == "" {
@@ -301,7 +301,7 @@ func (cb *CVBullet) validateText() error {
 	return nil
 }
 
-// validateSourceEventIDs ensures at least one source event
+// validateSourceEventIDs ensures at least one source event.
 func (cb *CVBullet) validateSourceEventIDs() error {
 	if len(cb.SourceEventIDs) == 0 {
 		return ErrNoSourceEvents
@@ -321,7 +321,7 @@ func (cb *CVBullet) validateSourceEventIDs() error {
 	return nil
 }
 
-// validateScores ensures rank and confidence are between 0.0 and 1.0
+// validateScores ensures rank and confidence are between 0.0 and 1.0.
 func (cb *CVBullet) validateScores() error {
 	if cb.Rank < 0.0 || cb.Rank > 1.0 {
 		return fmt.Errorf("rank must be between 0.0 and 1.0, got %f", cb.Rank)
@@ -332,7 +332,7 @@ func (cb *CVBullet) validateScores() error {
 	return nil
 }
 
-// validateInclusionReason ensures inclusion reason is from the allowed set
+// validateInclusionReason ensures inclusion reason is from the allowed set.
 func (cb *CVBullet) validateInclusionReason() error {
 	trimmedReason := strings.TrimSpace(strings.ToLower(cb.InclusionReason))
 	if trimmedReason == "" {
@@ -344,8 +344,8 @@ func (cb *CVBullet) validateInclusionReason() error {
 	return nil
 }
 
-// validateEnhancedScores ensures enhanced score fields are in valid range (0.0-1.0)
-// These fields are optional, so 0.0 is valid (not set)
+// validateEnhancedScores ensures enhanced score fields are in valid range (0.0-1.0).
+// These fields are optional, so 0.0 is valid (not set).
 func (cb *CVBullet) validateEnhancedScores() error {
 	if cb.RoleScore < 0.0 || cb.RoleScore > 1.0 {
 		return fmt.Errorf("role score must be between 0.0 and 1.0, got %f", cb.RoleScore)
@@ -362,7 +362,7 @@ func (cb *CVBullet) validateEnhancedScores() error {
 	return nil
 }
 
-// validateImpactLevel ensures impact level is valid
+// validateImpactLevel ensures impact level is valid.
 func (cb *CVBullet) validateImpactLevel() error {
 	if !constants.IsValidImpactLevel(cb.ImpactLevel) {
 		return fmt.Errorf("invalid impact level: %s (must be low, medium, high, or empty)", cb.ImpactLevel)
@@ -370,9 +370,9 @@ func (cb *CVBullet) validateImpactLevel() error {
 	return nil
 }
 
-// CVConfig represents the configuration for CV generation
+// CVConfig represents the configuration for CV generation.
 // Stored as YAML files in $HOME/.kariya/cv_configs/
-// NOT stored in database - file-based configuration only
+// NOT stored in database - file-based configuration only.
 type CVConfig struct {
 	Name           string                 `yaml:"name" json:"name"`
 	TargetRole     string                 `yaml:"target_role" json:"target_role"`
@@ -390,14 +390,14 @@ type CVConfig struct {
 	LengthFormat string `yaml:"length_format,omitempty" json:"length_format,omitempty"`
 
 	// Skills section format (Phase 11 enhancement)
-	SkillsFormat string `yaml:"skills_format,omitempty" json:"skills_format,omitempty"` // flat, grouped
-	SkillsLimit  int    `yaml:"skills_limit,omitempty" json:"skills_limit,omitempty"`   // max skills per section/group (0 = no limit)
+	SkillsFormat string `yaml:"skills_format,omitempty" json:"skills_format,omitempty"`
+	SkillsLimit  int    `yaml:"skills_limit,omitempty" json:"skills_limit,omitempty"`
 
 	CreatedAt time.Time `yaml:"created_at" json:"created_at"`
 	UpdatedAt time.Time `yaml:"updated_at" json:"updated_at"`
 }
 
-// Validate checks if the CVConfig meets all defined criteria
+// Validate checks if the CVConfig meets all defined criteria.
 func (cc *CVConfig) Validate() error {
 	// Validate name
 	if err := cc.validateName(); err != nil {
@@ -417,7 +417,7 @@ func (cc *CVConfig) Validate() error {
 	return nil
 }
 
-// validateName ensures name is not empty and contains valid filename characters
+// validateName ensures name is not empty and contains valid filename characters.
 func (cc *CVConfig) validateName() error {
 	trimmedName := strings.TrimSpace(cc.Name)
 	if trimmedName == "" {
@@ -438,7 +438,7 @@ func (cc *CVConfig) validateName() error {
 	return nil
 }
 
-// validateTargetRole ensures target role is from the allowed set
+// validateTargetRole ensures target role is from the allowed set.
 func (cc *CVConfig) validateTargetRole() error {
 	trimmedRole := strings.TrimSpace(strings.ToLower(cc.TargetRole))
 	if trimmedRole == "" {
@@ -450,7 +450,7 @@ func (cc *CVConfig) validateTargetRole() error {
 	return nil
 }
 
-// validateTargetAudience ensures a valid audience is specified
+// validateTargetAudience ensures a valid audience is specified.
 func (cc *CVConfig) validateTargetAudience() error {
 	trimmedAudience := strings.TrimSpace(strings.ToLower(cc.TargetAudience))
 	if trimmedAudience == "" {
@@ -462,12 +462,12 @@ func (cc *CVConfig) validateTargetAudience() error {
 	return nil
 }
 
-// ToJSON converts CVConfig to JSON bytes
+// ToJSON converts CVConfig to JSON bytes.
 func (cc *CVConfig) ToJSON() ([]byte, error) {
 	return json.Marshal(cc)
 }
 
-// FromJSON populates CVConfig from JSON bytes
+// FromJSON populates CVConfig from JSON bytes.
 func (cc *CVConfig) FromJSON(data []byte) error {
 	return json.Unmarshal(data, cc)
 }
@@ -528,9 +528,9 @@ func IsSingleClaimBullet(text string) bool {
 	return count <= 1
 }
 
-// HasInferredMetrics checks if text contains inferred or assumed metrics
+// HasInferredMetrics checks if text contains inferred or assumed metrics.
 // Inferred metrics are vague quantifiers without specific numbers or context
-// Note: "improved", "increased", "decreased" are valid action verbs when used with specific metrics
+// Note: "improved", "increased", "decreased" are valid action verbs when used with specific metrics.
 func HasInferredMetrics(text string) bool {
 	lowerText := strings.ToLower(text)
 
@@ -546,8 +546,8 @@ func HasInferredMetrics(text string) bool {
 		"much faster",
 		"much better",
 		"greatly improved",
-		"x%",      // Placeholder percentage
-		"n users", // Placeholder count
+		"x%",
+		"n users",
 		"many users",
 		"numerous",
 	}
@@ -561,8 +561,8 @@ func HasInferredMetrics(text string) bool {
 	return false
 }
 
-// IsRoleInflation checks if text exaggerates the scope of work for a given role
-// This is a placeholder function - real implementation would need role context
+// IsRoleInflation checks if text exaggerates the scope of work for a given role.
+// This is a placeholder function - real implementation would need role context.
 func IsRoleInflation(text string, targetRole string) bool {
 	lowerText := strings.ToLower(text)
 	lowerRole := strings.ToLower(targetRole)
@@ -601,21 +601,21 @@ func IsRoleInflation(text string, targetRole string) bool {
 // Error Types for CV Validation
 
 var (
-	// ErrInvalidCVRole is returned when the target role is invalid
+	// ErrInvalidCVRole is returned when the target role is invalid.
 	ErrInvalidCVRole = errors.New("invalid target role for CV")
 
-	// ErrInvalidAudience is returned when no valid target audience is specified
+	// ErrInvalidAudience is returned when no valid target audience is specified.
 	ErrInvalidAudience = errors.New("a valid target audience must be specified")
 
-	// ErrBulletMultipleClaims is returned when a bullet contains multiple claims
+	// ErrBulletMultipleClaims is returned when a bullet contains multiple claims.
 	ErrBulletMultipleClaims = errors.New("bullet contains multiple claims - only single-claim bullets allowed")
 
-	// ErrBulletAspirationLanguage is returned when a bullet contains aspirational language
+	// ErrBulletAspirationLanguage is returned when a bullet contains aspirational language.
 	ErrBulletAspirationLanguage = errors.New("bullet contains aspirational language - use factual language only")
 
-	// ErrBulletInferredMetrics is returned when a bullet contains inferred metrics
+	// ErrBulletInferredMetrics is returned when a bullet contains inferred metrics.
 	ErrBulletInferredMetrics = errors.New("bullet contains inferred metrics without clear attribution")
 
-	// ErrNoSourceEvents is returned when a bullet has no source events
+	// ErrNoSourceEvents is returned when a bullet has no source events.
 	ErrNoSourceEvents = errors.New("bullet must have at least one source event")
 )

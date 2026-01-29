@@ -28,9 +28,9 @@ import (
 // Related:
 // - internal/cli/models/capture_form.go (CaptureForm model)
 // - internal/cli/forms/capture_event_form.go (Form configuration)
-// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration)
+// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type EventFormScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	// captureForm is the underlying form model
 	captureForm *models.CaptureForm
@@ -59,7 +59,7 @@ func NewEventFormScreen(
 	captureForm.SetStrategy(string(strategy))
 
 	return &EventFormScreen{
-		BaseScreen:  base.NewBaseScreen(),
+		Screen:      base.NewBaseScreen(),
 		captureForm: captureForm,
 		breadcrumbs: breadcrumbs,
 		strategy:    strategy,
@@ -81,7 +81,7 @@ func NewEventFormScreenWithEvent(
 	cliService *service.CLIEventService,
 	breadcrumbs []string,
 	strategy types.CaptureStrategy,
-	event *career.CareerEvent,
+	event *career.Event,
 ) *EventFormScreen {
 	screen := NewEventFormScreen(cliService, breadcrumbs, strategy)
 
@@ -105,10 +105,10 @@ func (s *EventFormScreen) Init() tea.Cmd {
 // - Escape key → returns CancelResult
 // - WindowSizeMsg → updates form dimensions
 // - SubmitMsg → returns SubmitResult with event data
-// - Other messages → delegates to CaptureForm
+// - Other messages → delegates to CaptureForm.
 func (s *EventFormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via BaseScreen
-	if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+	// Handle window size via Screen
+	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		// Also update CaptureForm's dimensions
 		if wsMsg, ok := msg.(tea.WindowSizeMsg); ok {
 			s.captureForm.Update(wsMsg)

@@ -1,0 +1,10 @@
+# Revive configuration for exported documentation checks.
+# golangci-lint's revive integration does not report missing doc comments
+# (only stuttering names), so we run revive standalone for this check.
+#
+# Usage: revive -config revive.toml ./...
+# Makefile: make check-doc-comments
+
+# Only enable the exported rule (doc comments on exported symbols).
+[rule.exported]
+  arguments = ["checkPrivateReceivers", "sayRepetitiveInsteadOfStutters"]

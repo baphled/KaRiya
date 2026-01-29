@@ -11,7 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
-	burstfact "github.com/baphled/kariya/internal/service/career/burst_fact"
+	burstfact "github.com/baphled/kariya/internal/service/career/burstfact"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -35,9 +35,9 @@ type BurstSuggestionModelNew struct {
 	editing       bool
 	editForm      *huh.Form
 	editFormData  *forms.BurstSuggestionFormData
-	editedNames   map[int]string                // Map of suggestion index to edited name
-	editedDescs   map[int]string                // Map of suggestion index to edited description
-	relatedEvents map[int][]*career.CareerEvent // Cache of related events
+	editedNames   map[int]string
+	editedDescs   map[int]string
+	relatedEvents map[int][]*career.Event
 	width         int
 	height        int
 }
@@ -59,7 +59,7 @@ func NewBurstSuggestionModelNew(
 		editFormData:      nil,
 		editedNames:       make(map[int]string),
 		editedDescs:       make(map[int]string),
-		relatedEvents:     make(map[int][]*career.CareerEvent),
+		relatedEvents:     make(map[int][]*career.Event),
 		width:             80,
 		height:            24,
 	}
@@ -452,7 +452,7 @@ func (m *BurstSuggestionModelNew) renderRelatedEvents(suggestion burstfact.Burst
 			Render()
 	}
 
-	var events []*career.CareerEvent
+	var events []*career.Event
 
 	// Try to load from cache first
 	if cachedEvents, exists := m.relatedEvents[m.currentIdx]; exists {
@@ -471,7 +471,7 @@ func (m *BurstSuggestionModelNew) renderRelatedEvents(suggestion burstfact.Burst
 
 	var eventLines []string
 	for i, event := range events {
-		if i >= 3 { // Show max 3 events
+		if i >= 3 {
 			eventLines = append(eventLines, fmt.Sprintf("  ... and %d more", len(events)-3))
 			break
 		}

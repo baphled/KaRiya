@@ -503,7 +503,7 @@ scoring:
     impact_score: 0.15
     confidence: 0.10
 `
-				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				cfg, err := config.LoadConfigFromPath(configPath)
@@ -525,7 +525,7 @@ scoring:
     high_confidence: 0.85
     high_impact_confidence: 0.90
 `
-				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				cfg, err := config.LoadConfigFromPath(configPath)
@@ -548,7 +548,7 @@ scoring:
       min_confidence: 0.80
       max_bullets_per_company: 4
 `
-				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				cfg, err := config.LoadConfigFromPath(configPath)
@@ -567,7 +567,7 @@ scoring:
 profile:
   name: Test User
 `
-				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				cfg, err := config.LoadConfigFromPath(configPath)
@@ -587,7 +587,7 @@ profile:
 cv:
   max_bullets: 100
 `
-				err := os.WriteFile(configPath, []byte(yamlContent), 0600)
+				err := os.WriteFile(configPath, []byte(yamlContent), 0o600)
 				Expect(err).NotTo(HaveOccurred())
 
 				cfg, err := config.LoadConfigFromPath(configPath)

@@ -68,7 +68,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 	Describe("Review State", func() {
 		BeforeEach(func() {
 			intent.state.currentState = CaptureStateReview
-			intent.state.reviewState.Event = &career.CareerEvent{
+			intent.state.reviewState.Event = &career.Event{
 				Text: "Test event",
 				Date: time.Now(),
 			}
@@ -87,7 +87,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 			// Set up a realistic scenario: form submitted, error occurred, modal showing
 			intent.state.currentState = CaptureStateForm
 			intent.state.reviewState = &ReviewInferredEventState{
-				Event: &career.CareerEvent{
+				Event: &career.Event{
 					Text: "Test event",
 					Date: time.Now(),
 				},
@@ -141,7 +141,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 		It("should show 'esc' and 'm' in Review footer", func() {
 			intent.state.currentState = CaptureStateReview
-			intent.state.reviewState.Event = &career.CareerEvent{
+			intent.state.reviewState.Event = &career.Event{
 				Text: "Test",
 				Date: time.Now(),
 			}

@@ -13,7 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// SkillsListState represents the state constant for this screen
+// SkillsListState represents the state constant for this screen.
 const SkillsListState = "skills_list"
 
 // skillRowFormatter formats a skill for table display.
@@ -82,14 +82,14 @@ func skillRowFormatter(skill *career.Skill, _ int, eventCounts map[string]int) [
 //	}
 //
 // Related:
-// - internal/cli/screens/base/select_screen.go (BaseSelectScreen pattern)
-// - docs/workflows/MANAGE_SKILLS_WORKFLOW.md (Skills workflow guide)
+// - internal/cli/screens/base/select_screen.go (SelectScreen pattern)
+// - docs/workflows/MANAGE_SKILLS_WORKFLOW.md (Skills workflow guide).
 type SkillsListScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	skills        []*career.Skill
 	tableBehavior *behaviors.TableBehavior[*career.Skill]
-	eventCounts   map[string]int // Skill ID -> event count
+	eventCounts   map[string]int
 }
 
 // NewSkillsListScreen creates a new skills list screen.
@@ -121,7 +121,7 @@ func NewSkillsListScreen(skills []*career.Skill) *SkillsListScreen {
 	tableBehavior.SetItems(skills)
 
 	screen := &SkillsListScreen{
-		BaseScreen:    base.NewBaseScreen(),
+		Screen:        base.NewBaseScreen(),
 		skills:        skills,
 		tableBehavior: tableBehavior,
 		eventCounts:   eventCounts,
@@ -275,7 +275,7 @@ func (s *SkillsListScreen) View() string {
 
 // SetTheme applies theme to the table behavior.
 func (s *SkillsListScreen) SetTheme(theme interface{}) {
-	s.BaseScreen.SetTheme(theme)
+	s.Screen.SetTheme(theme)
 	// Apply theme to table behavior if available
 	if t, ok := theme.(themes.Theme); ok && t != nil {
 		s.tableBehavior.SetTheme(t)

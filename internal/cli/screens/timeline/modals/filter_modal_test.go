@@ -14,11 +14,11 @@ import (
 var _ = Describe("FilterModal", func() {
 	var (
 		modal  *modals.FilterModal
-		events []*career.CareerEvent
+		events []*career.Event
 	)
 
 	BeforeEach(func() {
-		events = []*career.CareerEvent{
+		events = []*career.Event{
 			{
 				ID:         "1",
 				Text:       "Event 1",
@@ -74,13 +74,13 @@ var _ = Describe("FilterModal", func() {
 		})
 
 		It("handles empty events list", func() {
-			modal = modals.NewFilterModal([]*career.CareerEvent{}, nil, 80, 24)
+			modal = modals.NewFilterModal([]*career.Event{}, nil, 80, 24)
 
 			Expect(modal).NotTo(BeNil())
 		})
 
 		It("handles events with empty company and project", func() {
-			eventsWithEmpty := []*career.CareerEvent{
+			eventsWithEmpty := []*career.Event{
 				{ID: "1", Text: "Event", Company: "", Project: ""},
 			}
 			modal = modals.NewFilterModal(eventsWithEmpty, nil, 80, 24)

@@ -13,6 +13,9 @@ type staticViewModel struct {
 	content string
 }
 
+// View returns the pre-rendered string content stored in this model. It satisfies the
+// overlay.Viewable interface so that static markup (such as a modal or background view)
+// can be composed via bubbletea-overlay without requiring a full Bubble Tea model.
 func (m staticViewModel) View() string { return m.content }
 
 // RenderOverlayModal renders a modal view over a background using bubbletea-overlay.
@@ -22,12 +25,12 @@ func RenderOverlayModal(modalView, backgroundView string) string {
 	bgModel := staticViewModel{content: backgroundView}
 
 	overlayModel := overlay.New(
-		modalContent,   // Foreground: the modal
-		bgModel,        // Background: the rendered view
-		overlay.Center, // X position
-		overlay.Center, // Y position
-		0,              // X offset
-		-2,             // Y offset: shift modal slightly up to leave space for footer
+		modalContent,
+		bgModel,
+		overlay.Center,
+		overlay.Center,
+		0,
+		-2,
 	)
 
 	return overlayModel.View()

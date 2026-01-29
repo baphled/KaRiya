@@ -56,13 +56,13 @@ func BenchmarkCaptureEventUpdate(b *testing.B) {
 	}
 }
 
-// BrowseTimeline benchmarks have been moved to internal/cli/intents/browse_timeline/benchmarks_test.go
+// BrowseTimeline benchmarks have been moved to internal/cli/intents/browsetimeline/benchmarks_test.go
 
 // BenchmarkGenerateCVInit benchmarks GenerateCV intent initialization
 func BenchmarkGenerateCVInit(b *testing.B) {
 	ctx := &GenerateCVContext{
 		AvailableProfiles: make([]*CVProfile, 0),
-		Events:            make([]*career.CareerEvent, 0),
+		Events:            make([]*career.Event, 0),
 		Facts:             make([]*career.Fact, 0),
 		DefaultProfile:    nil,
 	}
@@ -78,7 +78,7 @@ func BenchmarkGenerateCVInit(b *testing.B) {
 func BenchmarkGenerateCVView(b *testing.B) {
 	ctx := &GenerateCVContext{
 		AvailableProfiles: make([]*CVProfile, 0),
-		Events:            make([]*career.CareerEvent, 0),
+		Events:            make([]*career.Event, 0),
 		Facts:             make([]*career.Fact, 0),
 		DefaultProfile:    nil,
 	}

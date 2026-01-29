@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// CategoryMapper maps CSV categories to KaRiya's supported competency categories
+// CategoryMapper maps CSV categories to KaRiya's supported competency categories.
 type CategoryMapper struct {
 	// Mapping of keywords to competency categories
 	technicalKeywords  []string
@@ -15,7 +15,7 @@ type CategoryMapper struct {
 	mentoringKeywords  []string
 }
 
-// NewCategoryMapper creates a new category mapper
+// NewCategoryMapper creates a new category mapper.
 func NewCategoryMapper() *CategoryMapper {
 	return &CategoryMapper{
 		technicalKeywords: []string{
@@ -50,8 +50,8 @@ func NewCategoryMapper() *CategoryMapper {
 	}
 }
 
-// MapCategories converts CSV categories to KaRiya competency categories
-// It analyzes all provided category keywords and returns the most appropriate category
+// MapCategories converts CSV categories to KaRiya competency categories.
+// It analyzes all provided category keywords and returns the most appropriate category.
 func (m *CategoryMapper) MapCategories(csvCategories []string) []string {
 	if len(csvCategories) == 0 {
 		return []string{}
@@ -135,14 +135,14 @@ func (m *CategoryMapper) MapCategories(csvCategories []string) []string {
 	return result
 }
 
-// TagMapper maps CSV tags to KaRiya's supported tags
+// TagMapper maps CSV tags to KaRiya's supported tags.
 type TagMapper struct {
 	allowedTags []string
 	// Mapping of common domain tags to allowed tags
 	tagMappings map[string]string
 }
 
-// NewTagMapper creates a new tag mapper
+// NewTagMapper creates a new tag mapper.
 func NewTagMapper() *TagMapper {
 	return &TagMapper{
 		allowedTags: []string{
@@ -243,14 +243,14 @@ func NewTagMapper() *TagMapper {
 	}
 }
 
-// MapTags converts CSV tags to KaRiya's supported tags
-// It filters and maps domain-specific tags to allowed tags
+// MapTags converts CSV tags to KaRiya's supported tags.
+// It filters and maps domain-specific tags to allowed tags.
 func (m *TagMapper) MapTags(csvTags []string) []string {
 	if len(csvTags) == 0 {
 		return []string{}
 	}
 
-	result := make(map[string]bool) // Use map to avoid duplicates
+	result := make(map[string]bool)
 
 	for _, tag := range csvTags {
 		tag = strings.TrimSpace(strings.ToLower(tag))
@@ -284,7 +284,7 @@ func (m *TagMapper) MapTags(csvTags []string) []string {
 	return tags
 }
 
-// isAllowedTag checks if a tag is in the allowed tags list
+// isAllowedTag checks if a tag is in the allowed tags list.
 func (m *TagMapper) isAllowedTag(tag string) bool {
 	tag = strings.ToLower(tag)
 	for _, allowed := range m.allowedTags {
@@ -295,7 +295,7 @@ func (m *TagMapper) isAllowedTag(tag string) bool {
 	return false
 }
 
-// GetAllowedTags returns the list of allowed tags
+// GetAllowedTags returns the list of allowed tags.
 func (m *TagMapper) GetAllowedTags() []string {
 	return m.allowedTags
 }

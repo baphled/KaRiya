@@ -11,7 +11,7 @@
 // Behaviors follow an embeddable pattern:
 //
 //	type MyScreen struct {
-//	    *base.BaseScreen
+//	    *base.Screen
 //	    *behaviors.TableBehavior[*domain.Item]
 //	}
 //

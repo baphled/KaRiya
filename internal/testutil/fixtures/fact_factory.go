@@ -101,7 +101,7 @@ func FactFromBurst(id, sourceBurstID string) *career.Fact {
 }
 
 // Facts creates n facts with sequential IDs, linked to the provided events.
-func Facts(n int, events []*career.CareerEvent) []*career.Fact {
+func Facts(n int, events []*career.Event) []*career.Fact {
 	facts := make([]*career.Fact, n)
 	for i := 0; i < n; i++ {
 		fact := FactFactory.MustCreate().(*career.Fact)

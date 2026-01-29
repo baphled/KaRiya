@@ -30,7 +30,7 @@ func TickCmd() tea.Cmd {
 	})
 }
 
-// BaseProgressScreen provides a reusable progress/loading screen.
+// ProgressScreen provides a reusable progress/loading screen.
 //
 // This screen handles:
 // - Animated spinner for visual feedback
@@ -70,9 +70,9 @@ func TickCmd() tea.Cmd {
 // Related:
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
 // - docs/TUI_STANDARDS.md (Keyboard shortcuts)
-// - internal/cli/screens/cv/generating.go (Example progress screen)
-type BaseProgressScreen struct {
-	*BaseScreen
+// - internal/cli/screens/cv/generating.go (Example progress screen).
+type ProgressScreen struct {
+	*Screen
 
 	// breadcrumbs for navigation context
 	breadcrumbs []string
@@ -110,21 +110,21 @@ type BaseProgressScreen struct {
 func NewBaseProgressScreen(
 	breadcrumbs []string,
 	title, message string,
-) *BaseProgressScreen {
-	return &BaseProgressScreen{
-		BaseScreen:   NewBaseScreen(),
+) *ProgressScreen {
+	return &ProgressScreen{
+		Screen:       NewBaseScreen(),
 		breadcrumbs:  breadcrumbs,
 		title:        title,
 		message:      message,
 		spinnerFrame: 0,
-		allowCancel:  true, // Allow cancellation by default
+		allowCancel:  true,
 		footer:       "Esc: Cancel (operation will complete in background)",
 		spinnerChars: []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
 	}
 }
 
 // Update handles messages and returns result when operation completes or is cancelled.
-func (s *BaseProgressScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *ProgressScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Handle window resize
@@ -160,13 +160,13 @@ func (s *BaseProgressScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult)
 }
 
 // Init initializes the screen and starts the spinner animation.
-func (s *BaseProgressScreen) Init() tea.Cmd {
+func (s *ProgressScreen) Init() tea.Cmd {
 	return TickCmd()
 }
 
 // RenderContent returns the progress content without StandardView wrapper.
 // This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
-func (s *BaseProgressScreen) RenderContent() string {
+func (s *ProgressScreen) RenderContent() string {
 	var b strings.Builder
 
 	// Title (bold and colored)
@@ -190,36 +190,36 @@ func (s *BaseProgressScreen) RenderContent() string {
 }
 
 // View renders the progress screen using StandardView.
-func (s *BaseProgressScreen) View() string {
+func (s *ProgressScreen) View() string {
 	// Update footer based on cancellation setting
 	footer := s.footer
 	if !s.allowCancel {
 		footer = "Please wait... (cancellation disabled)"
 	}
 
-	// Use BaseScreen's CreateView helper for StandardView integration
+	// Use Screen's CreateView helper for StandardView integration
 	return s.CreateView(s.breadcrumbs, s.RenderContent(), footer)
 }
 
 // SetFooter updates the footer help text.
-func (s *BaseProgressScreen) SetFooter(footer string) {
+func (s *ProgressScreen) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetTitle returns the operation title.
-func (s *BaseProgressScreen) GetTitle() string {
+func (s *ProgressScreen) GetTitle() string {
 	return s.title
 }
 
 // SetTitle updates the operation title.
 //
 // This is useful for updating the title mid-operation.
-func (s *BaseProgressScreen) SetTitle(title string) {
+func (s *ProgressScreen) SetTitle(title string) {
 	s.title = title
 }
 
 // GetMessage returns the progress message.
-func (s *BaseProgressScreen) GetMessage() string {
+func (s *ProgressScreen) GetMessage() string {
 	return s.message
 }
 
@@ -234,12 +234,12 @@ func (s *BaseProgressScreen) GetMessage() string {
 //	screen.SetMessage("Step 2: Analyzing facts...")
 //	// ... do work
 //	screen.SetMessage("Step 3: Generating output...")
-func (s *BaseProgressScreen) SetMessage(message string) {
+func (s *ProgressScreen) SetMessage(message string) {
 	s.message = message
 }
 
 // GetSpinnerFrame returns the current spinner frame.
-func (s *BaseProgressScreen) GetSpinnerFrame() int {
+func (s *ProgressScreen) GetSpinnerFrame() int {
 	return s.spinnerFrame
 }
 
@@ -247,7 +247,7 @@ func (s *BaseProgressScreen) GetSpinnerFrame() int {
 //
 // This is rarely needed in normal usage, but can be useful for testing
 // or for synchronizing spinner state.
-func (s *BaseProgressScreen) SetSpinnerFrame(frame int) {
+func (s *ProgressScreen) SetSpinnerFrame(frame int) {
 	s.spinnerFrame = frame
 }
 
@@ -259,6 +259,6 @@ func (s *BaseProgressScreen) SetSpinnerFrame(frame int) {
 //
 //	screen := NewBaseProgressScreen(...)
 //	screen.SetAllowCancel(false) // Disable cancellation
-func (s *BaseProgressScreen) SetAllowCancel(allow bool) {
+func (s *ProgressScreen) SetAllowCancel(allow bool) {
 	s.allowCancel = allow
 }

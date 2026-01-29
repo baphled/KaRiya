@@ -47,17 +47,17 @@ const maxEventTextLength = 42
 type EventsModal struct {
 	skillID       string
 	skillName     string
-	events        []*career.CareerEvent
+	events        []*career.Event
 	theme         themes.Theme
 	visible       bool
 	width         int
 	height        int
-	table         *behaviors.TableBehavior[*career.CareerEvent]
-	selectedEvent *career.CareerEvent // Set when user selects an event.
+	table         *behaviors.TableBehavior[*career.Event]
+	selectedEvent *career.Event
 }
 
 // eventRowFormatter formats a career event for table display.
-func eventRowFormatter(event *career.CareerEvent, _ int) []string {
+func eventRowFormatter(event *career.Event, _ int) []string {
 	if event == nil {
 		return []string{"-", "(No event)", "-"}
 	}
@@ -87,9 +87,9 @@ func eventRowFormatter(event *career.CareerEvent, _ int) []string {
 }
 
 // NewEventsModal creates a new events modal for a skill.
-func NewEventsModal(skillID, skillName string, events []*career.CareerEvent, theme themes.Theme) *EventsModal {
+func NewEventsModal(skillID, skillName string, events []*career.Event, theme themes.Theme) *EventsModal {
 	// Filter out nil events.
-	filteredEvents := make([]*career.CareerEvent, 0, len(events))
+	filteredEvents := make([]*career.Event, 0, len(events))
 	for _, e := range events {
 		if e != nil {
 			filteredEvents = append(filteredEvents, e)
@@ -294,9 +294,9 @@ func (m *EventsModal) GetSkillName() string {
 }
 
 // SetEvents updates the events being displayed.
-func (m *EventsModal) SetEvents(events []*career.CareerEvent) {
+func (m *EventsModal) SetEvents(events []*career.Event) {
 	// Filter out nil events.
-	filteredEvents := make([]*career.CareerEvent, 0, len(events))
+	filteredEvents := make([]*career.Event, 0, len(events))
 	for _, e := range events {
 		if e != nil {
 			filteredEvents = append(filteredEvents, e)
@@ -314,7 +314,7 @@ func (m *EventsModal) HasSelection() bool {
 }
 
 // GetSelectedEvent returns the selected event (nil if none selected).
-func (m *EventsModal) GetSelectedEvent() *career.CareerEvent {
+func (m *EventsModal) GetSelectedEvent() *career.Event {
 	return m.selectedEvent
 }
 

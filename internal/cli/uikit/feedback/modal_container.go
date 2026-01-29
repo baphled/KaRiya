@@ -24,8 +24,8 @@ type ModalContainer struct {
 	hasButtons      bool
 	hasInstructions bool
 	theme           themes.Theme
-	width           int  // 0 means auto
-	showScrollHint  bool // Show scroll indicator when content is scrollable
+	width           int
+	showScrollHint  bool
 }
 
 // NewModalContainer creates a new ModalContainer.
@@ -40,7 +40,7 @@ func NewModalContainer() *ModalContainer {
 	}
 }
 
-// getTheme returns the theme or default if nil
+// getTheme returns the theme or default if nil.
 func (mc *ModalContainer) getTheme() themes.Theme {
 	if mc.theme != nil {
 		return mc.theme

@@ -13,14 +13,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("TimelineEventDetailScreen", func() {
+var _ = Describe("EventDetailScreen", func() {
 	var (
-		screen *timeline.TimelineEventDetailScreen
-		event  *career.CareerEvent
+		screen *timeline.EventDetailScreen
+		event  *career.Event
 	)
 
 	BeforeEach(func() {
-		event = &career.CareerEvent{
+		event = &career.Event{
 			ID:         "event-1",
 			Date:       time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			Text:       "Backend Developer at TechCorp - Built scalable APIs using Go and PostgreSQL",

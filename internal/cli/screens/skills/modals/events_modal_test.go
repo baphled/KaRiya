@@ -16,20 +16,20 @@ var _ = Describe("EventsModal", func() {
 	var (
 		modal     *modals.EventsModal
 		theme     themes.Theme
-		testEvent *career.CareerEvent
-		events    []*career.CareerEvent
+		testEvent *career.Event
+		events    []*career.Event
 	)
 
 	BeforeEach(func() {
 		theme = themes.NewDefaultTheme()
-		testEvent = &career.CareerEvent{
+		testEvent = &career.Event{
 			ID:      "event-1",
 			Text:    "Implemented new feature",
 			Date:    time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
 			Company: "Test Corp",
 			Project: "Project Alpha",
 		}
-		events = []*career.CareerEvent{testEvent}
+		events = []*career.Event{testEvent}
 		modal = modals.NewEventsModal("skill-1", "Go Programming", events, theme)
 	})
 
@@ -147,12 +147,12 @@ var _ = Describe("EventsModal", func() {
 		})
 
 		It("truncates long event text", func() {
-			longEvent := &career.CareerEvent{
+			longEvent := &career.Event{
 				ID:   "event-long",
 				Text: "This is a very long event description that should be truncated when displayed in the modal to prevent layout issues",
 				Date: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
 			}
-			longModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{longEvent}, theme)
+			longModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{longEvent}, theme)
 			longModal.SetDimensions(60, 24) // Small width to force truncation
 			longModal.Show()
 			view := longModal.View()
@@ -164,7 +164,7 @@ var _ = Describe("EventsModal", func() {
 		var multiEventModal *modals.EventsModal
 
 		BeforeEach(func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{ID: "event-1", Text: "First event", Date: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)},
 				{ID: "event-2", Text: "Second event", Date: time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)},
 				{ID: "event-3", Text: "Third event", Date: time.Date(2024, 1, 3, 0, 0, 0, 0, time.UTC)},
@@ -309,7 +309,7 @@ var _ = Describe("EventsModal", func() {
 
 	Describe("SetEvents", func() {
 		It("updates events list", func() {
-			newEvents := []*career.CareerEvent{
+			newEvents := []*career.Event{
 				{ID: "new-1", Text: "New event", Date: time.Now()},
 			}
 			modal.SetEvents(newEvents)
@@ -322,7 +322,7 @@ var _ = Describe("EventsModal", func() {
 			modal.Show()
 			modal.Update(tea.KeyMsg{Type: tea.KeyDown})
 
-			modal.SetEvents([]*career.CareerEvent{
+			modal.SetEvents([]*career.Event{
 				{ID: "new-1", Text: "New event"},
 			})
 			Expect(modal.GetSelectedIndex()).To(Equal(0))
@@ -333,7 +333,7 @@ var _ = Describe("EventsModal", func() {
 			modal.Update(tea.KeyMsg{Type: tea.KeyEnter})
 			Expect(modal.HasSelection()).To(BeTrue())
 
-			modal.SetEvents([]*career.CareerEvent{})
+			modal.SetEvents([]*career.Event{})
 			Expect(modal.HasSelection()).To(BeFalse())
 		})
 	})
@@ -363,7 +363,7 @@ var _ = Describe("EventsModal", func() {
 
 	Describe("Handles nil events in list", func() {
 		It("skips nil events when rendering", func() {
-			eventsWithNil := []*career.CareerEvent{
+			eventsWithNil := []*career.Event{
 				{ID: "event-1", Text: "First event", Date: time.Now()},
 				nil,
 				{ID: "event-3", Text: "Third event", Date: time.Now()},
@@ -378,25 +378,25 @@ var _ = Describe("EventsModal", func() {
 
 	Describe("Handles events with missing optional fields", func() {
 		It("renders event without company", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "event-1",
 				Text: "Event without company",
 				Date: time.Now(),
 			}
-			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("Event without company"))
 		})
 
 		It("renders event without project", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:      "event-1",
 				Text:    "Event without project",
 				Date:    time.Now(),
 				Company: "Company",
 			}
-			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("Event without project"))
@@ -404,23 +404,23 @@ var _ = Describe("EventsModal", func() {
 		})
 
 		It("renders event with zero date", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "event-1",
 				Text: "Event without date",
 			}
-			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("Event without date"))
 		})
 
 		It("shows placeholder for empty text", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "event-1",
 				Text: "",
 				Date: time.Now(),
 			}
-			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.CareerEvent{event}, theme)
+			simpleModal := modals.NewEventsModal("skill-1", "Go", []*career.Event{event}, theme)
 			simpleModal.Show()
 			view := simpleModal.View()
 			Expect(view).To(ContainSubstring("No description"))

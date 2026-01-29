@@ -15,12 +15,12 @@ import (
 var _ = Describe("EventDetailModal", func() {
 	var (
 		modal *modals.EventDetailModal
-		event *career.CareerEvent
+		event *career.Event
 		theme themes.Theme
 	)
 
 	BeforeEach(func() {
-		event = &career.CareerEvent{
+		event = &career.Event{
 			ID:         "test-event-id",
 			Text:       "Event description text",
 			Date:       time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),
@@ -162,7 +162,7 @@ var _ = Describe("EventDetailModal", func() {
 	Describe("SetEvent", func() {
 		It("updates the displayed event", func() {
 			modal = modals.NewEventDetailModal(event, theme)
-			newEvent := &career.CareerEvent{
+			newEvent := &career.Event{
 				ID:   "new-id",
 				Text: "New event text",
 				Date: time.Now(),

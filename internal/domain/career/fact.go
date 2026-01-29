@@ -20,7 +20,7 @@ const (
 	RoleFitSeniorIC  = constants.RoleFitSeniorIC
 )
 
-// AspirationKeywords contains words that indicate aspirational language
+// AspirationKeywords contains words that indicate aspirational language.
 var AspirationKeywords = map[string]bool{
 	"will":    true,
 	"should":  true,
@@ -37,7 +37,7 @@ var AspirationKeywords = map[string]bool{
 	"would":   true,
 }
 
-// Fact represents an extracted or inferred competency fact from an event or burst
+// Fact represents an extracted or inferred competency fact from an event or burst.
 type Fact struct {
 	ID                   string    `json:"id"`
 	Text                 string    `json:"text"`
@@ -51,7 +51,7 @@ type Fact struct {
 	UpdatedAt            time.Time `json:"updated_at"`
 }
 
-// Validate checks if the Fact meets all defined criteria
+// Validate checks if the Fact meets all defined criteria.
 func (f *Fact) Validate() error {
 	// Validate ID
 	if err := f.validateID(); err != nil {
@@ -91,7 +91,7 @@ func (f *Fact) Validate() error {
 	return nil
 }
 
-// validateID ensures ID is not empty
+// validateID ensures ID is not empty.
 func (f *Fact) validateID() error {
 	if strings.TrimSpace(f.ID) == "" {
 		return errors.New("fact ID cannot be empty")
@@ -99,7 +99,7 @@ func (f *Fact) validateID() error {
 	return nil
 }
 
-// validateText ensures text is not empty and within length constraints
+// validateText ensures text is not empty and within length constraints.
 func (f *Fact) validateText() error {
 	trimmedText := strings.TrimSpace(f.Text)
 	if trimmedText == "" {
@@ -111,7 +111,7 @@ func (f *Fact) validateText() error {
 	return nil
 }
 
-// validateCompetencyCategories ensures categories are valid and not empty
+// validateCompetencyCategories ensures categories are valid and not empty.
 func (f *Fact) validateCompetencyCategories() error {
 	if len(f.CompetencyCategories) == 0 {
 		return errors.New("fact must have at least one competency category")
@@ -132,7 +132,7 @@ func (f *Fact) validateCompetencyCategories() error {
 	return nil
 }
 
-// validateRoleFit ensures role fit is valid
+// validateRoleFit ensures role fit is valid.
 func (f *Fact) validateRoleFit() error {
 	if string(f.RoleFit) == "" {
 		return errors.New("fact role fit cannot be empty")
@@ -143,7 +143,7 @@ func (f *Fact) validateRoleFit() error {
 	return nil
 }
 
-// validateAudienceRelevance ensures audience relevance values are valid
+// validateAudienceRelevance ensures audience relevance values are valid.
 func (f *Fact) validateAudienceRelevance() error {
 	if len(f.AudienceRelevance) == 0 {
 		return errors.New("fact must have at least one audience relevance type")
@@ -164,7 +164,7 @@ func (f *Fact) validateAudienceRelevance() error {
 	return nil
 }
 
-// validateSourceReferences ensures at least one source is provided
+// validateSourceReferences ensures at least one source is provided.
 func (f *Fact) validateSourceReferences() error {
 	if strings.TrimSpace(f.SourceEventID) == "" && strings.TrimSpace(f.SourceBurstID) == "" {
 		return errors.New("fact must have at least one source (event or burst)")

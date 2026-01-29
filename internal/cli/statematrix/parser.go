@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-// ParseIntentFile parses an intent Go file and extracts state information
+// ParseIntentFile parses an intent Go file and extracts state information.
 func ParseIntentFile(filename string) ComponentInfo {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
@@ -53,7 +53,7 @@ func ParseIntentFile(filename string) ComponentInfo {
 	return component
 }
 
-// ParseScreenFile parses a screen Go file and extracts state information
+// ParseScreenFile parses a screen Go file and extracts state information.
 func ParseScreenFile(filename string) ComponentInfo {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
@@ -95,7 +95,7 @@ func ParseScreenFile(filename string) ComponentInfo {
 	return component
 }
 
-// extractIntentName derives the intent name from the filename
+// extractIntentName derives the intent name from the filename.
 func extractIntentName(filename string) string {
 	base := filepath.Base(filename)
 	// Remove _intent.go or .go suffix
@@ -110,7 +110,7 @@ func extractIntentName(filename string) string {
 	return strings.Join(parts, "")
 }
 
-// extractScreenName derives the screen name from the filename
+// extractScreenName derives the screen name from the filename.
 func extractScreenName(filename string) string {
 	base := filepath.Base(filename)
 	// Remove _screen.go or .go suffix
@@ -132,7 +132,7 @@ func extractScreenName(filename string) string {
 	return result
 }
 
-// isStateConstant checks if a constant name represents a state
+// isStateConstant checks if a constant name represents a state.
 func isStateConstant(name string) bool {
 	return strings.Contains(name, "State") &&
 		!strings.HasSuffix(name, "Model") &&
@@ -140,7 +140,7 @@ func isStateConstant(name string) bool {
 		!strings.HasSuffix(name, "Result")
 }
 
-// ClassifyState determines the type of state based on naming patterns
+// ClassifyState determines the type of state based on naming patterns.
 func ClassifyState(name string) string {
 	nameLower := strings.ToLower(name)
 
@@ -193,7 +193,7 @@ func ClassifyState(name string) string {
 	return "Intermediate"
 }
 
-// InferEscapeBehavior infers the escape key behavior based on state type
+// InferEscapeBehavior infers the escape key behavior based on state type.
 func InferEscapeBehavior(stateType string) string {
 	switch stateType {
 	case "ROOT":

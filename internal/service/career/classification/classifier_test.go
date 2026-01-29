@@ -17,7 +17,7 @@ var _ = Describe("Classifier", func() {
 	Context("Classification", func() {
 		DescribeTable("Event Classification",
 			func(eventText string, tags []string, expectedCategory CompetencyCategory, expectedMulti []CompetencyCategory) {
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text: eventText,
 					Tags: tags,
 				}
@@ -75,7 +75,7 @@ var _ = Describe("Classifier", func() {
 		)
 
 		It("Should have default technical classification", func() {
-			defaultEvent := &career.CareerEvent{
+			defaultEvent := &career.Event{
 				Text: "Some generic event description",
 			}
 

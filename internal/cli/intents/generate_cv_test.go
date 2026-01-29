@@ -19,7 +19,7 @@ var _ = Describe("GenerateCVIntent", func() {
 
 	BeforeEach(func() {
 		// Create test events.
-		events := []*career.CareerEvent{
+		events := []*career.Event{
 			{
 				ID:         "event1",
 				Text:       "Implemented feature X",

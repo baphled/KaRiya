@@ -17,7 +17,7 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 		intent       *GenerateCVIntent
 		ctx          *GenerateCVContext
 		testProfiles []*CVProfile
-		testEvents   []*career.CareerEvent
+		testEvents   []*career.Event
 		testFacts    []*career.Fact
 	)
 
@@ -41,7 +41,7 @@ var _ = Describe("GenerateCV Wizard E2E Tests", func() {
 		}
 
 		// Create test events
-		testEvents = []*career.CareerEvent{
+		testEvents = []*career.Event{
 			{
 				ID:         "event_1",
 				Text:       "Led team standup meetings and improved communication",
@@ -707,7 +707,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 	var (
 		intent       *GenerateCVIntent
 		testProfiles []*CVProfile
-		testEvents   []*career.CareerEvent
+		testEvents   []*career.Event
 		testFacts    []*career.Fact
 	)
 
@@ -727,7 +727,7 @@ var _ = Describe("GenerateCV Wizard Complete E2E Workflow", func() {
 			},
 		}
 
-		testEvents = []*career.CareerEvent{
+		testEvents = []*career.Event{
 			{
 				ID:      "event_1",
 				Text:    "Led team standup meetings",
@@ -1756,7 +1756,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 	var (
 		intent       *GenerateCVIntent
 		testProfiles []*CVProfile
-		testEvents   []*career.CareerEvent
+		testEvents   []*career.Event
 		testFacts    []*career.Fact
 	)
 
@@ -1788,7 +1788,7 @@ var _ = Describe("GenerateCV Complete Workflow E2E Tests", func() {
 			},
 		}
 
-		testEvents = []*career.CareerEvent{
+		testEvents = []*career.Event{
 			{
 				ID:      "event_1",
 				Text:    "Led migration to microservices architecture using Go and Kubernetes",

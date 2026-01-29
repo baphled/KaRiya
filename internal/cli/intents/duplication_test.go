@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
-	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browse_timeline"
+	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browsetimeline"
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,11 +15,11 @@ var _ = Describe("View Duplication Prevention", func() {
 	Describe("BrowseTimeline", func() {
 		var (
 			intent *browse_timeline.Intent
-			events []*career.CareerEvent
+			events []*career.Event
 		)
 
 		BeforeEach(func() {
-			events = []*career.CareerEvent{
+			events = []*career.Event{
 				{
 					ID:        "event1",
 					Text:      "Test event",
@@ -81,7 +81,7 @@ var _ = Describe("View Duplication Prevention", func() {
 				},
 			}
 
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{
 					ID:        "event1",
 					Text:      "Test achievement",

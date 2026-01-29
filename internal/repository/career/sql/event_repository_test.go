@@ -52,7 +52,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("Create", func() {
 		It("creates an event with generated ID", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Implemented feature X",
 				Date:    time.Now(),
 				Company: "TechCo",
@@ -67,7 +67,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("creates an event with provided ID", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:      "custom-id",
 				Text:    "Fixed bug Y",
 				Date:    time.Now(),
@@ -81,7 +81,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("stores tags and categories", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:       "Led project",
 				Date:       time.Now(),
 				Tags:       []string{"leadership", "project-management"},
@@ -104,7 +104,7 @@ var _ = Describe("Event Repository", func() {
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
 			Expect(skillRepo.Create(ctx, skill2)).To(Succeed())
 
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:   "Built microservice",
 				Date:   time.Now(),
 				Skills: []string{skill1.ID, skill2.ID},
@@ -120,7 +120,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("GetByID", func() {
 		It("returns the event", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Did something",
 				Date:    time.Now(),
 				Company: "Corp",
@@ -145,7 +145,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("Update", func() {
 		It("updates the event", func() {
-			event := &career.CareerEvent{Text: "Original", Date: time.Now()}
+			event := &career.Event{Text: "Original", Date: time.Now()}
 			Expect(repo.Create(ctx, event)).To(Succeed())
 			originalUpdatedAt := event.UpdatedAt
 
@@ -167,7 +167,7 @@ var _ = Describe("Event Repository", func() {
 			Expect(skillRepo.Create(ctx, skill1)).To(Succeed())
 			Expect(skillRepo.Create(ctx, skill2)).To(Succeed())
 
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:   "Work",
 				Date:   time.Now(),
 				Skills: []string{skill1.ID},
@@ -183,7 +183,7 @@ var _ = Describe("Event Repository", func() {
 		})
 
 		It("returns ErrEventNotFound for missing event", func() {
-			event := &career.CareerEvent{ID: "nonexistent", Text: "Test", Date: time.Now()}
+			event := &career.Event{ID: "nonexistent", Text: "Test", Date: time.Now()}
 
 			err := repo.Update(ctx, event)
 
@@ -193,7 +193,7 @@ var _ = Describe("Event Repository", func() {
 
 	Describe("Delete", func() {
 		It("deletes the event", func() {
-			event := &career.CareerEvent{Text: "To delete", Date: time.Now()}
+			event := &career.Event{Text: "To delete", Date: time.Now()}
 			Expect(repo.Create(ctx, event)).To(Succeed())
 
 			err := repo.Delete(ctx, event.ID)
@@ -214,7 +214,7 @@ var _ = Describe("Event Repository", func() {
 	Describe("List", func() {
 		BeforeEach(func() {
 			now := time.Now()
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{Text: "Event 1", Date: now.AddDate(0, 0, -2), Tags: []string{"tag1"}},
 				{Text: "Event 2", Date: now.AddDate(0, 0, -1), Tags: []string{"tag2"}},
 				{Text: "Event 3", Date: now, Tags: []string{"tag1", "tag2"}},
@@ -274,7 +274,7 @@ var _ = Describe("Event Repository", func() {
 	Describe("Count", func() {
 		BeforeEach(func() {
 			now := time.Now()
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{Text: "Event 1", Date: now, Tags: []string{"tag1"}},
 				{Text: "Event 2", Date: now, Tags: []string{"tag2"}},
 				{Text: "Event 3", Date: now, Tags: []string{"tag1"}},

@@ -9,9 +9,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/cv"
 )
 
-var _ = Describe("CVAudienceSelectScreen", func() {
+var _ = Describe("AudienceSelectScreen", func() {
 	var (
-		screen    *cv.CVAudienceSelectScreen
+		screen    *cv.AudienceSelectScreen
 		audiences []*cv.AudienceOption
 	)
 

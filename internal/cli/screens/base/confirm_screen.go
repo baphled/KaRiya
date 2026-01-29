@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// BaseConfirmScreen provides a reusable confirmation dialog screen.
+// ConfirmScreen provides a reusable confirmation dialog screen.
 //
 // This screen handles:
 // - Yes/No selection with keyboard navigation
@@ -42,9 +42,9 @@ import (
 //
 // Related:
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
-type BaseConfirmScreen struct {
-	*BaseScreen
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
+type ConfirmScreen struct {
+	*Screen
 
 	// breadcrumbs for navigation context
 	breadcrumbs []string
@@ -84,13 +84,13 @@ type BaseConfirmScreen struct {
 func NewBaseConfirmScreen(
 	breadcrumbs []string,
 	title, message string,
-) *BaseConfirmScreen {
-	return &BaseConfirmScreen{
-		BaseScreen:  NewBaseScreen(),
+) *ConfirmScreen {
+	return &ConfirmScreen{
+		Screen:      NewBaseScreen(),
 		breadcrumbs: breadcrumbs,
 		title:       title,
 		message:     message,
-		selectedYes: false, // Default to No (safer)
+		selectedYes: false,
 		yesText:     "Yes",
 		noText:      "No",
 		footer:      "y/n: Choose  Enter: Confirm  ←→/hl: Toggle  Esc: Cancel",
@@ -98,7 +98,7 @@ func NewBaseConfirmScreen(
 }
 
 // Update handles messages and returns result when user makes a choice.
-func (s *BaseConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *ConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Handle window resize
@@ -141,7 +141,7 @@ func (s *BaseConfirmScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 
 // RenderContent returns the confirmation content without StandardView wrapper.
 // This allows intents to wrap in their own StandardView with custom breadcrumbs/help.
-func (s *BaseConfirmScreen) RenderContent() string {
+func (s *ConfirmScreen) RenderContent() string {
 	var b strings.Builder
 
 	// Title (bold and centered)
@@ -183,33 +183,33 @@ func (s *BaseConfirmScreen) RenderContent() string {
 }
 
 // View renders the confirmation screen using StandardView.
-func (s *BaseConfirmScreen) View() string {
-	// Use BaseScreen's CreateView helper for StandardView integration
+func (s *ConfirmScreen) View() string {
+	// Use Screen's CreateView helper for StandardView integration
 	return s.CreateView(s.breadcrumbs, s.RenderContent(), s.footer)
 }
 
 // SetFooter updates the footer help text.
-func (s *BaseConfirmScreen) SetFooter(footer string) {
+func (s *ConfirmScreen) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetTitle returns the confirmation title.
-func (s *BaseConfirmScreen) GetTitle() string {
+func (s *ConfirmScreen) GetTitle() string {
 	return s.title
 }
 
 // GetMessage returns the confirmation message.
-func (s *BaseConfirmScreen) GetMessage() string {
+func (s *ConfirmScreen) GetMessage() string {
 	return s.message
 }
 
 // GetSelection returns the current selection (true = Yes, false = No).
-func (s *BaseConfirmScreen) GetSelection() bool {
+func (s *ConfirmScreen) GetSelection() bool {
 	return s.selectedYes
 }
 
 // SetSelection sets the current selection (true = Yes, false = No).
-func (s *BaseConfirmScreen) SetSelection(yes bool) {
+func (s *ConfirmScreen) SetSelection(yes bool) {
 	s.selectedYes = yes
 }
 
@@ -219,7 +219,7 @@ func (s *BaseConfirmScreen) SetSelection(yes bool) {
 //
 //	screen.SetYesText("Delete")   // "Delete" instead of "Yes"
 //	screen.SetYesText("Proceed")  // "Proceed" instead of "Yes"
-func (s *BaseConfirmScreen) SetYesText(text string) {
+func (s *ConfirmScreen) SetYesText(text string) {
 	s.yesText = text
 }
 
@@ -229,6 +229,6 @@ func (s *BaseConfirmScreen) SetYesText(text string) {
 //
 //	screen.SetNoText("Cancel")  // "Cancel" instead of "No"
 //	screen.SetNoText("Keep")    // "Keep" instead of "No"
-func (s *BaseConfirmScreen) SetNoText(text string) {
+func (s *ConfirmScreen) SetNoText(text string) {
 	s.noText = text
 }

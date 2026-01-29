@@ -32,12 +32,12 @@ import (
 //
 // Related:
 // - internal/cli/intents/capture_event.go (ReviewInferredEventState)
-// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration)
+// - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type EventReviewScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	// event being reviewed
-	event *career.CareerEvent
+	event *career.Event
 
 	// bursts inferred from event
 	bursts []*career.Burst
@@ -60,12 +60,12 @@ type EventReviewScreen struct {
 // Returns a EventReviewScreen displaying event details with bursts and facts.
 func NewEventReviewScreen(
 	breadcrumbs []string,
-	event *career.CareerEvent,
+	event *career.Event,
 	bursts []*career.Burst,
 	facts []*career.Fact,
 ) *EventReviewScreen {
 	return &EventReviewScreen{
-		BaseScreen:  base.NewBaseScreen(),
+		Screen:      base.NewBaseScreen(),
 		event:       event,
 		bursts:      bursts,
 		facts:       facts,
@@ -79,10 +79,10 @@ func NewEventReviewScreen(
 // - Enter → returns SubmitResult with event, bursts, facts
 // - e/b/f → returns NavigateResult with edit action
 // - Esc → returns CancelResult
-// - WindowSizeMsg → updates dimensions
+// - WindowSizeMsg → updates dimensions.
 func (s *EventReviewScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via BaseScreen
-	if cmd := s.BaseScreen.HandleWindowSizeMsg(msg); cmd != nil {
+	// Handle window size via Screen
+	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 
@@ -199,14 +199,14 @@ func (s *EventReviewScreen) renderEventDetails(b *strings.Builder) {
 		return
 	}
 
-	b.WriteString(fmt.Sprintf("  %s\n", s.event.Text))
-	b.WriteString(fmt.Sprintf("  Date: %s\n", s.event.Date.Format("2006-01-02")))
+	fmt.Fprintf(b, "  %s\n", s.event.Text)
+	fmt.Fprintf(b, "  Date: %s\n", s.event.Date.Format("2006-01-02"))
 
 	if s.event.Company != "" {
-		b.WriteString(fmt.Sprintf("  Company: %s\n", s.event.Company))
+		fmt.Fprintf(b, "  Company: %s\n", s.event.Company)
 	}
 	if s.event.Project != "" {
-		b.WriteString(fmt.Sprintf("  Project: %s\n", s.event.Project))
+		fmt.Fprintf(b, "  Project: %s\n", s.event.Project)
 	}
 }
 
@@ -270,7 +270,7 @@ func (s *EventReviewScreen) renderFacts(b *strings.Builder) {
 	}
 
 	for i, fact := range s.facts {
-		b.WriteString(fmt.Sprintf("  %d. %s\n", i+1, fact.Text))
+		fmt.Fprintf(b, "  %d. %s\n", i+1, fact.Text)
 	}
 }
 

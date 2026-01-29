@@ -17,7 +17,7 @@ import (
 // Use forms.Form (which is an alias for *huh.Form) to avoid direct huh imports.
 type FormBuilder[T any] func(data T, width, height int) forms.Form
 
-// BaseFormScreen provides a reusable screen for forms using the huh library.
+// FormScreen provides a reusable screen for forms using the huh library.
 //
 // This screen handles:
 // - Form rendering with proper dimensions
@@ -55,9 +55,9 @@ type FormBuilder[T any] func(data T, width, height int) forms.Form
 // Related:
 // - docs/FORMS_GUIDE.md (Form patterns and best practices)
 // - internal/cli/forms/ (Form builders and validators)
-// - internal/cli/models/capture_form.go (Example of form wrapper pattern)
-type BaseFormScreen[T any] struct {
-	*BaseScreen
+// - internal/cli/models/capture_form.go (Example of form wrapper pattern).
+type FormScreen[T any] struct {
+	*Screen
 
 	// breadcrumbs for navigation context
 	breadcrumbs []string
@@ -88,9 +88,9 @@ func NewBaseFormScreen[T any](
 	breadcrumbs []string,
 	builder FormBuilder[T],
 	formData T,
-) *BaseFormScreen[T] {
-	screen := &BaseFormScreen[T]{
-		BaseScreen:  NewBaseScreen(),
+) *FormScreen[T] {
+	screen := &FormScreen[T]{
+		Screen:      NewBaseScreen(),
 		breadcrumbs: breadcrumbs,
 		formBuilder: builder,
 		formData:    formData,
@@ -108,8 +108,8 @@ func NewBaseFormScreen[T any](
 // This is called:
 // - On initialization
 // - When terminal dimensions change (WindowSizeMsg)
-// - When SetTerminalInfo is called
-func (s *BaseFormScreen[T]) rebuildForm() {
+// - When SetTerminalInfo is called.
+func (s *FormScreen[T]) rebuildForm() {
 	// Nil check to prevent panic
 	if s.formBuilder == nil {
 		return
@@ -128,13 +128,13 @@ func (s *BaseFormScreen[T]) rebuildForm() {
 }
 
 // SetTerminalInfo updates terminal dimensions and rebuilds form.
-func (s *BaseFormScreen[T]) SetTerminalInfo(width, height int) {
-	s.BaseScreen.SetTerminalInfo(width, height)
+func (s *FormScreen[T]) SetTerminalInfo(width, height int) {
+	s.Screen.SetTerminalInfo(width, height)
 	s.rebuildForm()
 }
 
 // Update handles messages and returns result when form is complete or cancelled.
-func (s *BaseFormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+func (s *FormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// Handle window resize (rebuilds form with new dimensions)
@@ -175,22 +175,22 @@ func (s *BaseFormScreen[T]) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 }
 
 // View renders the form screen using StandardView.
-func (s *BaseFormScreen[T]) View() string {
+func (s *FormScreen[T]) View() string {
 	// Render form content
 	formView := s.form.View()
 
-	// Use BaseScreen's CreateView helper for StandardView integration
+	// Use Screen's CreateView helper for StandardView integration
 	return s.CreateView(s.breadcrumbs, formView, s.footer)
 }
 
 // SetFooter updates the footer help text.
-func (s *BaseFormScreen[T]) SetFooter(footer string) {
+func (s *FormScreen[T]) SetFooter(footer string) {
 	s.footer = footer
 }
 
 // GetFormData returns the form data structure.
 //
 // This allows the intent to access the filled form data after submission.
-func (s *BaseFormScreen[T]) GetFormData() T {
+func (s *FormScreen[T]) GetFormData() T {
 	return s.formData
 }

@@ -16,9 +16,9 @@ type TestDetailData struct {
 	Metadata    map[string]string
 }
 
-var _ = Describe("BaseDetailScreen", func() {
+var _ = Describe("DetailScreen", func() {
 	var (
-		screen     *base.BaseDetailScreen[*TestDetailData]
+		screen     *base.DetailScreen[*TestDetailData]
 		detailData *TestDetailData
 	)
 

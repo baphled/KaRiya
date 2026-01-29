@@ -420,7 +420,7 @@ var _ = Describe("App Unit Tests", func() {
 	Describe("handleEditEventRequest", func() {
 		It("should handle RequestEditEventMsg and transition to intent state", func() {
 			// Create an event to edit.
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "test-event-1",
 				Text: "Test Event Description",
 			}
@@ -438,7 +438,7 @@ var _ = Describe("App Unit Tests", func() {
 
 		It("should activate capture_event_edit intent with event context", func() {
 			// Create an event with specific details.
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "edit-event-1",
 				Text: "Event to Edit",
 			}
@@ -837,7 +837,7 @@ var _ = Describe("App Unit Tests", func() {
 			Expect(model.GetState()).To(Equal(app.StateIntent))
 
 			// Create a valid event for form submission.
-			testEvent := &career.CareerEvent{
+			testEvent := &career.Event{
 				ID:   "test-event-123",
 				Text: "Test event for coverage",
 				Date: time.Now(),
@@ -1198,8 +1198,8 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 
 			// Set state to something that's not Menu or Intent.
 			// Note: This requires using a state that's neither StateMenu nor StateIntent.
-			// Since AppState is a string type, we can set it to an invalid value.
-			model.SetStateForTesting(app.AppState("invalid"))
+			// Since State is a string type, we can set it to an invalid value.
+			model.SetStateForTesting(app.State("invalid"))
 
 			// View should return empty string for unknown state.
 			view := model.View()
@@ -1228,7 +1228,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			model := app.NewModel(cliService, svc, bootstrapResult, app.WithIntentRegistrar(mockReg))
 
 			// Set state to invalid value.
-			model.SetStateForTesting(app.AppState("invalid"))
+			model.SetStateForTesting(app.State("invalid"))
 
 			// Send a key message - should hit the fallback.
 			msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}
@@ -1247,7 +1247,7 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			model := app.NewModel(cliService, svc, bootstrapResult)
 
 			// Create a test event.
-			testEvent := &career.CareerEvent{
+			testEvent := &career.Event{
 				ID:   "edit-test-event",
 				Text: "Test event for editing",
 			}

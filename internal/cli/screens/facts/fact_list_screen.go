@@ -9,18 +9,21 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// State constant for state matrix tracking (REQUIRED)
+// FactListState identifies the fact list screen in the state matrix.
+// On this screen the user sees a read-only, paginated table of career
+// facts with two columns: the fact text (truncated to 80 characters) and
+// its creation date. Arrow keys or j/k scroll through rows; Page Up/Down
+// and Ctrl+D/U jump by page. Pressing Escape or Backspace returns to the
+// parent screen. No editing or selection actions are available.
 const FactListState = "fact_list"
 
 // factRowFormatter formats a fact for table display.
 func factRowFormatter(fact *career.Fact, _ int) []string {
-	// Truncate text to 80 chars for display
 	text := fact.Text
 	if len(text) > 80 {
 		text = text[:77] + "..."
 	}
 
-	// Created date
 	createdStr := fact.CreatedAt.Format("2006-01-02")
 
 	return []string{text, createdStr}
@@ -43,11 +46,11 @@ func factRowFormatter(fact *career.Fact, _ int) []string {
 //	}
 //
 // Related:
-// - BaseScreen provides the foundation
+// - Screen provides the foundation
 // - docs/TUI_DEVELOPER_GUIDE.md (Screen patterns)
-// - docs/TUI_STANDARDS.md (Keyboard shortcuts)
+// - docs/TUI_STANDARDS.md (Keyboard shortcuts).
 type FactListScreen struct {
-	*base.BaseScreen
+	*base.Screen
 	facts         []*career.Fact
 	tableBehavior *behaviors.TableBehavior[*career.Fact]
 }
@@ -67,23 +70,20 @@ func NewFactListScreen(facts []*career.Fact) *FactListScreen {
 		facts = []*career.Fact{}
 	}
 
-	// Create table columns
 	columns := []behaviors.ColumnDef{
 		{Title: "Fact", Width: 80},
 		{Title: "Created", Width: 12},
 	}
 
-	// Create TableBehavior for facts list (theme set later via SetTheme)
 	tableBehavior := behaviors.NewTableBehavior[*career.Fact](nil, columns, factRowFormatter).
 		PageSize(15).
 		PaginationPrefix("Facts").
 		EmptyMessage("No facts found.")
 
-	// Set items after creation
 	tableBehavior.SetItems(facts)
 
 	screen := &FactListScreen{
-		BaseScreen:    base.NewBaseScreen(),
+		Screen:        base.NewBaseScreen(),
 		facts:         facts,
 		tableBehavior: tableBehavior,
 	}
@@ -107,7 +107,6 @@ func (s *FactListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 
 // handleKeyMsg processes keyboard input for navigation and actions.
 func (s *FactListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenResult) {
-	// Handle special keys by type (use tea.Key* constants).
 	if nav := s.handleKeyType(msg.Type); nav != "" {
 		if nav == "cancel" {
 			return nil, &screens.CancelResult{}
@@ -116,7 +115,6 @@ func (s *FactListScreen) handleKeyMsg(msg tea.KeyMsg) (tea.Cmd, screens.ScreenRe
 		return nil, nil
 	}
 
-	// Handle vim-style keys (rune-based).
 	if nav := s.handleVimKey(msg.String()); nav != "" {
 		s.tableBehavior.HandleNavigation(nav)
 		return nil, nil
@@ -182,8 +180,7 @@ func (s *FactListScreen) View() string {
 
 // SetTheme sets the theme for the screen and its table behavior.
 func (s *FactListScreen) SetTheme(theme interface{}) {
-	s.BaseScreen.SetTheme(theme)
-	// Propagate theme to TableBehavior for consistent styling.
+	s.Screen.SetTheme(theme)
 	if t, ok := theme.(themes.Theme); ok && t != nil {
 		s.tableBehavior.SetTheme(t)
 	}

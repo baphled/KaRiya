@@ -49,7 +49,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 
 	Describe("Event Capture Workflow", func() {
 		It("should capture events with TimelineJournaling mode", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Developed a high-performance backend service",
 				Date:    time.Now().AddDate(0, 0, -10), // 10 days ago
 				Tags:    []string{"technical", "project"},
@@ -68,7 +68,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 		})
 
 		It("should capture events with CVBackfill mode", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Led major system redesign",
 				Date:    time.Now().AddDate(-2, 0, 0), // 2 years ago
 				Tags:    []string{"leadership", "technical"},
@@ -85,7 +85,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 		})
 
 		It("should capture events with ManualEntry mode", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Mentored junior developers on best practices",
 				Date:    time.Now(),
 				Tags:    []string{"mentoring"},
@@ -104,7 +104,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 
 	Describe("Event Tag Handling", func() {
 		It("should preserve tags for technical development event", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Developed a scalable microservices architecture using Go",
 				Date:    time.Now(),
 				Tags:    []string{"technical"},
@@ -120,7 +120,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 		})
 
 		It("should preserve tags for leadership event", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Led a cross-functional team to deliver a critical project",
 				Date:    time.Now(),
 				Tags:    []string{"leadership"},
@@ -139,7 +139,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 	Describe("Event Filtering", func() {
 		BeforeEach(func() {
 			// Create multiple test events
-			testEvents := []*career.CareerEvent{
+			testEvents := []*career.Event{
 				{
 					Text:    "Developed backend service in Go",
 					Date:    time.Now().AddDate(0, 0, -30),
@@ -199,7 +199,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 	Describe("Event Management Operations", func() {
 		It("should update an existing event", func() {
 			// Create initial event
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Initial event description",
 				Date:    time.Now(),
 				Tags:    []string{"project"},
@@ -222,7 +222,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 
 		It("should delete an existing event", func() {
 			// Create event
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Event to be deleted",
 				Date:    time.Now(),
 				Tags:    []string{"project"},
@@ -242,7 +242,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 		})
 
 		It("should retrieve event by ID", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Test event for retrieval",
 				Date:    time.Now(),
 				Tags:    []string{"technical"},
@@ -260,7 +260,7 @@ var _ = Describe("Career Service Integration Tests", func() {
 
 		It("should count events with filters", func() {
 			// Create multiple events
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{
 					Text:    "Technical event",
 					Date:    time.Now(),

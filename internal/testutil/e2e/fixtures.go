@@ -10,8 +10,8 @@ import (
 
 // CreateSampleEvents generates test career events with varied data.
 // Events are created with realistic data spanning multiple dates, companies, and categories.
-func CreateSampleEvents(count int) []*career.CareerEvent {
-	events := make([]*career.CareerEvent, count)
+func CreateSampleEvents(count int) []*career.Event {
+	events := make([]*career.Event, count)
 
 	companies := []string{"Acme Corp", "TechStart Inc", "BigCorp", "StartupXYZ", "MegaTech"}
 	projects := []string{"Project Alpha", "Backend Refactor", "Customer Portal", "API Gateway", "Data Pipeline"}
@@ -45,10 +45,10 @@ func CreateSampleEvents(count int) []*career.CareerEvent {
 
 	now := time.Now()
 	for i := 0; i < count; i++ {
-		event := &career.CareerEvent{
+		event := &career.Event{
 			ID:         fmt.Sprintf("event_%d", i+1),
 			Text:       eventTexts[i%len(eventTexts)],
-			Date:       now.AddDate(0, 0, -i*7), // Each event 1 week apart
+			Date:       now.AddDate(0, 0, -i*7),
 			Company:    companies[i%len(companies)],
 			Project:    projects[i%len(projects)],
 			Categories: categories[i%len(categories)],
@@ -64,7 +64,7 @@ func CreateSampleEvents(count int) []*career.CareerEvent {
 
 // CreateSampleBursts generates test bursts linked to the provided events.
 // Each burst groups 2-3 related events together.
-func CreateSampleBursts(count int, events []*career.CareerEvent) []*career.Burst {
+func CreateSampleBursts(count int, events []*career.Event) []*career.Burst {
 	bursts := make([]*career.Burst, count)
 
 	burstNames := []string{
@@ -88,7 +88,7 @@ func CreateSampleBursts(count int, events []*career.CareerEvent) []*career.Burst
 		// Assign 2-3 events to each burst
 		eventIDs := make([]string, 0)
 		startIdx := (i * 2) % len(events)
-		eventCount := 2 + (i % 2) // 2 or 3 events per burst
+		eventCount := 2 + (i % 2)
 
 		for j := 0; j < eventCount && startIdx+j < len(events); j++ {
 			eventIDs = append(eventIDs, events[startIdx+j].ID)
@@ -99,7 +99,7 @@ func CreateSampleBursts(count int, events []*career.CareerEvent) []*career.Burst
 			Name:        burstNames[i%len(burstNames)],
 			Description: burstDescriptions[i%len(burstDescriptions)],
 			EventIDs:    eventIDs,
-			Confirmed:   i%2 == 0, // Half confirmed, half not
+			Confirmed:   i%2 == 0,
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
@@ -111,7 +111,7 @@ func CreateSampleBursts(count int, events []*career.CareerEvent) []*career.Burst
 
 // CreateSampleFacts generates test facts linked to the provided events.
 // Facts have varied competency categories, role fits, and audience relevance.
-func CreateSampleFacts(count int, events []*career.CareerEvent) []*career.Fact {
+func CreateSampleFacts(count int, events []*career.Event) []*career.Fact {
 	facts := make([]*career.Fact, count)
 
 	factTexts := []string{
@@ -213,7 +213,7 @@ func CreateSampleProfiles() []CVProfile {
 	}
 }
 
-// CVProfile represents a CV profile for testing (mirrors intents.CVProfile)
+// CVProfile represents a CV profile for testing (mirrors intents.CVProfile).
 type CVProfile struct {
 	ID             string
 	Name           string
@@ -252,9 +252,9 @@ func (e *TestEnv) PopulateTestData(eventCount, burstCount, factCount int) *TestE
 }
 
 // CreateMinimalEvent creates a single minimal valid event for testing.
-func CreateMinimalEvent(id string) *career.CareerEvent {
+func CreateMinimalEvent(id string) *career.Event {
 	now := time.Now()
-	return &career.CareerEvent{
+	return &career.Event{
 		ID:        id,
 		Text:      "Test event " + id,
 		Date:      now,

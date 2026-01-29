@@ -366,7 +366,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 	Describe("Integration: Event to Fact to Validation", func() {
 		It("should successfully extract and validate facts from event", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:        uuid.New().String(),
 				Text:      "Led platform architecture project and mentored team",
 				Date:      time.Now().Add(-30 * 24 * time.Hour),
@@ -388,7 +388,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 		})
 
 		It("should successfully extract and validate facts from burst", func() {
-			event1 := &career.CareerEvent{
+			event1 := &career.Event{
 				ID:        uuid.New().String(),
 				Text:      "Designed system architecture",
 				Date:      time.Now().Add(-60 * 24 * time.Hour),
@@ -396,7 +396,7 @@ var _ = Describe("Career Service - Fact Methods", func() {
 				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
 				UpdatedAt: time.Now().Add(-60 * 24 * time.Hour),
 			}
-			event2 := &career.CareerEvent{
+			event2 := &career.Event{
 				ID:        uuid.New().String(),
 				Text:      "Led implementation and delivered solution",
 				Date:      time.Now().Add(-50 * 24 * time.Hour),
@@ -455,13 +455,13 @@ var _ = Describe("Career Service - Fact Methods", func() {
 
 	Describe("GetFactsBySourceEventID", func() {
 		var factRepo *careermemory.FactRepository
-		var event *career.CareerEvent
+		var event *career.Event
 
 		BeforeEach(func() {
 			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
-			event = &career.CareerEvent{
+			event = &career.Event{
 				ID:        uuid.New().String(),
 				Text:      "Led migration to microservices",
 				Date:      time.Now().Add(-30 * 24 * time.Hour),
@@ -509,14 +509,14 @@ var _ = Describe("Career Service - Fact Methods", func() {
 			factRepo = careermemory.NewFactRepository()
 			service.SetFactRepository(factRepo)
 
-			event1 := &career.CareerEvent{
+			event1 := &career.Event{
 				ID:        uuid.New().String(),
 				Text:      "Led platform migration",
 				Date:      time.Now().Add(-60 * 24 * time.Hour),
 				CreatedAt: time.Now().Add(-60 * 24 * time.Hour),
 				UpdatedAt: time.Now(),
 			}
-			event2 := &career.CareerEvent{
+			event2 := &career.Event{
 				ID:        uuid.New().String(),
 				Text:      "Architected microservices",
 				Date:      time.Now().Add(-60 * 24 * time.Hour),

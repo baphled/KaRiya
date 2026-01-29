@@ -9,8 +9,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("BaseProgressScreen", func() {
-	var screen *base.BaseProgressScreen
+var _ = Describe("ProgressScreen", func() {
+	var screen *base.ProgressScreen
 
 	Describe("Construction", func() {
 		It("should create a progress screen with title and message", func() {

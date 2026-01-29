@@ -13,7 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// SkillDetailState represents the state constant for this screen
+// SkillDetailState represents the state constant for this screen.
 const SkillDetailState = "skill_detail"
 
 // SkillDetailScreen displays detailed information about a skill.
@@ -43,9 +43,9 @@ const SkillDetailState = "skill_detail"
 //	}
 //
 // Related:
-// - internal/cli/screens/base/detail_screen.go (BaseDetailScreen pattern)
+// - internal/cli/screens/base/detail_screen.go (DetailScreen pattern).
 type SkillDetailScreen struct {
-	*base.BaseScreen
+	*base.Screen
 
 	skill *career.Skill
 }
@@ -53,8 +53,8 @@ type SkillDetailScreen struct {
 // NewSkillDetailScreen creates a new skill detail screen.
 func NewSkillDetailScreen(skill *career.Skill) *SkillDetailScreen {
 	return &SkillDetailScreen{
-		BaseScreen: base.NewBaseScreen(),
-		skill:      skill,
+		Screen: base.NewBaseScreen(),
+		skill:  skill,
 	}
 }
 
@@ -167,21 +167,22 @@ func (s *SkillDetailScreen) renderField(b *strings.Builder, label, value string,
 }
 
 // getCategoryColor returns a color for the skill category.
+// Currently uses hardcoded ANSI indices; tracked for refactoring in issue #137.
 func (s *SkillDetailScreen) getCategoryColor(category string) lipgloss.Color {
 	colors := map[string]lipgloss.Color{
-		"backend":  lipgloss.Color("10"), // Green
-		"frontend": lipgloss.Color("12"), // Blue
-		"devops":   lipgloss.Color("11"), // Yellow
-		"database": lipgloss.Color("13"), // Magenta
-		"cloud":    lipgloss.Color("14"), // Cyan
-		"mobile":   lipgloss.Color("9"),  // Red
-		"tooling":  lipgloss.Color("8"),  // Gray
+		"backend":  lipgloss.Color("10"),
+		"frontend": lipgloss.Color("12"),
+		"devops":   lipgloss.Color("11"),
+		"database": lipgloss.Color("13"),
+		"cloud":    lipgloss.Color("14"),
+		"mobile":   lipgloss.Color("9"),
+		"tooling":  lipgloss.Color("8"),
 	}
 
 	if color, ok := colors[category]; ok {
 		return color
 	}
-	return lipgloss.Color("7") // Default white
+	return lipgloss.Color("7")
 }
 
 // GetSkill returns the skill being displayed.

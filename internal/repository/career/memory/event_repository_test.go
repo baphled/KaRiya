@@ -29,7 +29,7 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("Create", func() {
 		It("should successfully create an event", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
@@ -55,7 +55,7 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("GetByID", func() {
 		It("should retrieve existing event", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
@@ -76,7 +76,7 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("Update", func() {
 		It("should successfully update an event", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
@@ -97,7 +97,7 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should prevent update of non-existent event", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			// Don't create it - just try to update
 
 			err := repo.Update(ctx, event)
@@ -108,7 +108,7 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("Delete", func() {
 		It("should successfully delete an event", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			event.ID = "" // Clear to test auto-generation
 
 			err := repo.Create(ctx, event)
@@ -132,7 +132,7 @@ var _ = Describe("EventRepository", func() {
 	Describe("List", func() {
 		It("should list events with no filters", func() {
 			for i := 0; i < 5; i++ {
-				event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+				event := fixtures.EventFactory.MustCreate().(*career.Event)
 				event.ID = "" // Clear to test auto-generation
 				err := repo.Create(ctx, event)
 				Expect(err).NotTo(HaveOccurred())
@@ -146,11 +146,11 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should list events with tag filter", func() {
-			event1 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event1 := fixtures.EventFactory.MustCreate().(*career.Event)
 			event1.ID = ""
 			event1.Tags = []string{"project"}
 
-			event2 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event2 := fixtures.EventFactory.MustCreate().(*career.Event)
 			event2.ID = ""
 			event2.Tags = []string{"technical"}
 
@@ -171,7 +171,7 @@ var _ = Describe("EventRepository", func() {
 		It("should filter events by date range", func() {
 			baseDate := time.Now()
 			for i := 0; i < 10; i++ {
-				event := &career.CareerEvent{
+				event := &career.Event{
 					Text:    fmt.Sprintf("Event %d", i),
 					Date:    baseDate.AddDate(0, 0, -i*30),
 					Tags:    []string{"project"},
@@ -195,7 +195,7 @@ var _ = Describe("EventRepository", func() {
 	Describe("Count", func() {
 		It("should count events with no filters", func() {
 			for i := 0; i < 5; i++ {
-				event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+				event := fixtures.EventFactory.MustCreate().(*career.Event)
 				event.ID = "" // Clear to test auto-generation
 				err := repo.Create(ctx, event)
 				Expect(err).NotTo(HaveOccurred())
@@ -207,11 +207,11 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should count events with tag filter", func() {
-			event1 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event1 := fixtures.EventFactory.MustCreate().(*career.Event)
 			event1.ID = ""
 			event1.Tags = []string{"project"}
 
-			event2 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event2 := fixtures.EventFactory.MustCreate().(*career.Event)
 			event2.ID = ""
 			event2.Tags = []string{"technical"}
 
@@ -230,7 +230,7 @@ var _ = Describe("EventRepository", func() {
 
 	Describe("Company and Project Fields", func() {
 		It("should persist both fields correctly", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Developed new microservice architecture",
 				Date:    time.Now().Add(-24 * time.Hour),
 				Company: "TechCorp Inc.",
@@ -248,7 +248,7 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should handle empty company and project", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Simple event without company or project",
 				Date:    time.Now().Add(-24 * time.Hour),
 				Company: "",
@@ -266,7 +266,7 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should update company and project correctly", func() {
-			event := &career.CareerEvent{
+			event := &career.Event{
 				Text:    "Initial event",
 				Date:    time.Now().Add(-24 * time.Hour),
 				Company: "OldCorp",
@@ -289,7 +289,7 @@ var _ = Describe("EventRepository", func() {
 		})
 
 		It("should list events with company and project", func() {
-			events := []*career.CareerEvent{
+			events := []*career.Event{
 				{
 					Text:    "Event 1",
 					Date:    time.Now().Add(-48 * time.Hour),
@@ -338,7 +338,7 @@ var _ = Describe("EventRepository", func() {
 				go func() {
 					defer wg.Done()
 
-					event := &career.CareerEvent{
+					event := &career.Event{
 						Text:    fmt.Sprintf("Test Event %d", rand.Intn(10000)),
 						Date:    time.Now().Add(time.Duration(rand.Intn(365)) * -24 * time.Hour),
 						Tags:    []string{"project"},

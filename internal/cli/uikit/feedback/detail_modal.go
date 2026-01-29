@@ -214,7 +214,7 @@ func (m *DetailModal) View() string {
 		Render()
 }
 
-// formatPercent formats a percentage for display (0-100)
+// formatPercent formats a percentage for display (0-100).
 func formatPercent(percent int) string {
 	return fmt.Sprintf("[%d%%]", percent)
 }

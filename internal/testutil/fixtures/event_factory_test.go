@@ -15,7 +15,7 @@ var _ = Describe("EventFactory", func() {
 
 	Describe("MustCreate", func() {
 		It("should create an event with all required fields", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			Expect(event).NotTo(BeNil())
 			Expect(event.ID).NotTo(BeEmpty())
 			Expect(event.Text).NotTo(BeEmpty())
@@ -25,19 +25,19 @@ var _ = Describe("EventFactory", func() {
 		})
 
 		It("should create events with unique sequential IDs", func() {
-			event1 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
-			event2 := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event1 := fixtures.EventFactory.MustCreate().(*career.Event)
+			event2 := fixtures.EventFactory.MustCreate().(*career.Event)
 			Expect(event1.ID).NotTo(Equal(event2.ID))
 		})
 
 		It("should create events with company and project", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			Expect(event.Company).NotTo(BeEmpty())
 			Expect(event.Project).NotTo(BeEmpty())
 		})
 
 		It("should create events with tags and categories", func() {
-			event := fixtures.EventFactory.MustCreate().(*career.CareerEvent)
+			event := fixtures.EventFactory.MustCreate().(*career.Event)
 			Expect(event.Tags).NotTo(BeEmpty())
 			Expect(event.Categories).NotTo(BeEmpty())
 		})
@@ -48,7 +48,7 @@ var _ = Describe("EventFactory", func() {
 			event := fixtures.EventFactory.MustCreateWithOption(map[string]interface{}{
 				"Company": "CustomCorp",
 				"Project": "CustomProject",
-			}).(*career.CareerEvent)
+			}).(*career.Event)
 			Expect(event.Company).To(Equal("CustomCorp"))
 			Expect(event.Project).To(Equal("CustomProject"))
 		})

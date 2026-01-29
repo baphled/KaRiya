@@ -10,7 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/containers"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	themes2 "github.com/baphled/kariya/internal/cli/uikit/theme"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -18,9 +18,26 @@ import (
 // SuggestionAction represents an action taken on a suggestion.
 type SuggestionAction string
 
+// SuggestionAction constants represent the decisions a user can make on an
+// individual burst suggestion during the review workflow. The user sees a
+// paginated table of suggestions sorted by confidence score; navigating
+// with j/k or arrow keys highlights a row, and pressing the corresponding
+// key applies an action to the highlighted suggestion.
 const (
+	// SuggestionActionAccept marks the highlighted suggestion as approved
+	// and moves it to the accepted list. The suggestion is removed from the
+	// review table and will be persisted as a confirmed burst fact when the
+	// review session ends. The user presses a to trigger this action.
 	SuggestionActionAccept SuggestionAction = "accept"
+	// SuggestionActionReject discards the highlighted suggestion, removing
+	// it from the review table without recording it as a fact. The
+	// suggestion cannot be recovered after rejection. The user presses r to
+	// trigger this action.
 	SuggestionActionReject SuggestionAction = "reject"
+	// SuggestionActionCancel aborts the entire review session, closing the
+	// modal and discarding all pending accept or reject decisions made so
+	// far. No suggestions are persisted. The user presses Escape to trigger
+	// this action.
 	SuggestionActionCancel SuggestionAction = "cancel"
 )
 
@@ -28,11 +45,11 @@ const (
 // Suggestions are sorted by confidence (highest first).
 // User can navigate through suggestions and accept/reject them.
 type SuggestionReviewModal struct {
-	table       *behaviors.TableBehavior[burst_fact.BurstSuggestion]
-	suggestions []burst_fact.BurstSuggestion
+	table       *behaviors.TableBehavior[burstfact.BurstSuggestion]
+	suggestions []burstfact.BurstSuggestion
 	theme       themes.Theme
 	action      SuggestionAction
-	accepted    []burst_fact.BurstSuggestion
+	accepted    []burstfact.BurstSuggestion
 	visible     bool
 	width       int
 	height      int
@@ -40,28 +57,24 @@ type SuggestionReviewModal struct {
 
 // NewSuggestionReviewModal creates a new suggestion review modal.
 // Suggestions are automatically sorted by confidence (highest first).
-func NewSuggestionReviewModal(suggestions []burst_fact.BurstSuggestion, theme themes.Theme) *SuggestionReviewModal {
+func NewSuggestionReviewModal(suggestions []burstfact.BurstSuggestion, theme themes.Theme) *SuggestionReviewModal {
 	if theme == nil {
 		theme = themes.NewDefaultTheme()
 	}
 
-	// Sort suggestions by confidence (highest first).
-	sortedSuggestions := make([]burst_fact.BurstSuggestion, len(suggestions))
+	sortedSuggestions := make([]burstfact.BurstSuggestion, len(suggestions))
 	copy(sortedSuggestions, suggestions)
 	sort.Slice(sortedSuggestions, func(i, j int) bool {
 		return sortedSuggestions[i].ConfidenceScore > sortedSuggestions[j].ConfidenceScore
 	})
 
-	// Define table columns.
 	columns := []behaviors.ColumnDef{
 		{Title: "Name", Width: 30},
 		{Title: "Events", Width: 8},
 		{Title: "Confidence", Width: 24},
 	}
 
-	// Row formatter for suggestions.
-	// Use width 15 for bar to show meaningful differences between confidence levels.
-	formatter := func(s burst_fact.BurstSuggestion, _ int) []string {
+	formatter := func(s burstfact.BurstSuggestion, _ int) []string {
 		confidenceBar := primitives.CompactBar(s.ConfidenceScore, 15, nil).
 			ShowPercentage(true).
 			Render()
@@ -72,7 +85,6 @@ func NewSuggestionReviewModal(suggestions []burst_fact.BurstSuggestion, theme th
 		}
 	}
 
-	// Create table behavior with pagination.
 	table := behaviors.NewTableBehavior(theme, columns, formatter).
 		EmptyMessage("No suggestions available").
 		PaginationPrefix("Suggestions").
@@ -84,7 +96,7 @@ func NewSuggestionReviewModal(suggestions []burst_fact.BurstSuggestion, theme th
 		table:       table,
 		suggestions: sortedSuggestions,
 		theme:       theme,
-		accepted:    []burst_fact.BurstSuggestion{},
+		accepted:    []burstfact.BurstSuggestion{},
 		visible:     true,
 		width:       80,
 		height:      24,
@@ -110,11 +122,9 @@ func (m *SuggestionReviewModal) buildContent() string {
 	theme := m.getTheme()
 	var content strings.Builder
 
-	// Render the table.
 	content.WriteString(m.table.Render())
 	content.WriteString("\n\n")
 
-	// Show selected suggestion details.
 	selected := m.table.GetSelectedItem()
 	if selected != nil {
 		content.WriteString(primitives.NewText("Selected:", theme).Bold().Render())
@@ -185,16 +195,13 @@ func (m *SuggestionReviewModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "a":
-			// Accept current suggestion.
 			selected := m.table.GetSelectedItem()
 			if selected != nil {
 				m.action = SuggestionActionAccept
 				m.accepted = append(m.accepted, *selected)
 
-				// Remove accepted suggestion from list.
 				m.removeCurrentSuggestion()
 
-				// If no suggestions left, close modal.
 				if len(m.suggestions) == 0 {
 					m.visible = false
 				}
@@ -202,15 +209,12 @@ func (m *SuggestionReviewModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "r":
-			// Reject current suggestion.
 			selected := m.table.GetSelectedItem()
 			if selected != nil {
 				m.action = SuggestionActionReject
 
-				// Remove rejected suggestion from list.
 				m.removeCurrentSuggestion()
 
-				// If no suggestions left, close modal.
 				if len(m.suggestions) == 0 {
 					m.visible = false
 				}
@@ -229,7 +233,6 @@ func (m *SuggestionReviewModal) removeCurrentSuggestion() {
 		m.suggestions = append(m.suggestions[:idx], m.suggestions[idx+1:]...)
 		m.table.SetItems(m.suggestions)
 
-		// Preserve selection at same index, or adjust if at end.
 		if idx >= len(m.suggestions) && len(m.suggestions) > 0 {
 			idx = len(m.suggestions) - 1
 		}
@@ -247,19 +250,11 @@ func (m *SuggestionReviewModal) View() string {
 
 	theme := m.getTheme()
 
-	// Build title.
 	title := primitives.Title("Review Burst Suggestions", theme).Render()
-
-	// Build content (table + selected details).
 	content := m.buildContent()
-
-	// Build footer.
 	footer := m.buildFooter()
-
-	// Combine all parts.
 	modalContent := lipgloss.JoinVertical(lipgloss.Left, title, "", content, "", footer)
 
-	// Calculate modal dimensions.
 	maxModalHeight := 30
 	terminalMaxHeight := int(float64(m.height) * 0.8)
 	if terminalMaxHeight < maxModalHeight {
@@ -277,7 +272,6 @@ func (m *SuggestionReviewModal) View() string {
 		modalWidth = 90
 	}
 
-	// Wrap in styled box with solid background.
 	return containers.NewBox(theme).
 		Content(modalContent).
 		Width(modalWidth).
@@ -308,8 +302,6 @@ func (m *SuggestionReviewModal) SetDimensions(width, height int) {
 	m.width = width
 	m.height = height
 
-	// Calculate the actual content width available inside the modal.
-	// Modal width is capped at 90 with padding of 2 on each side.
 	modalWidth := width - 12
 	if modalWidth < 60 {
 		modalWidth = 60
@@ -317,7 +309,6 @@ func (m *SuggestionReviewModal) SetDimensions(width, height int) {
 	if modalWidth > 90 {
 		modalWidth = 90
 	}
-	// Subtract padding (2 on each side = 4 total) and some margin.
 	contentWidth := modalWidth - 8
 
 	m.table.Dimensions(contentWidth, height-16)
@@ -334,12 +325,12 @@ func (m *SuggestionReviewModal) ClearAction() {
 }
 
 // GetAcceptedSuggestions returns all accepted suggestions.
-func (m *SuggestionReviewModal) GetAcceptedSuggestions() []burst_fact.BurstSuggestion {
+func (m *SuggestionReviewModal) GetAcceptedSuggestions() []burstfact.BurstSuggestion {
 	return m.accepted
 }
 
 // GetCurrentSuggestion returns the currently selected suggestion.
-func (m *SuggestionReviewModal) GetCurrentSuggestion() *burst_fact.BurstSuggestion {
+func (m *SuggestionReviewModal) GetCurrentSuggestion() *burstfact.BurstSuggestion {
 	return m.table.GetSelectedItem()
 }
 
@@ -354,6 +345,6 @@ func (m *SuggestionReviewModal) GetSuggestionsCount() int {
 }
 
 // GetAllSuggestions returns all suggestions in their current order (sorted by confidence).
-func (m *SuggestionReviewModal) GetAllSuggestions() []burst_fact.BurstSuggestion {
+func (m *SuggestionReviewModal) GetAllSuggestions() []burstfact.BurstSuggestion {
 	return m.suggestions
 }

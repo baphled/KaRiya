@@ -18,7 +18,7 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 		intent       *intents.GenerateCVIntent
 		ctx          *intents.GenerateCVContext
 		testProfiles []*intents.CVProfile
-		testEvents   []*career.CareerEvent
+		testEvents   []*career.Event
 		testFacts    []*career.Fact
 	)
 
@@ -58,7 +58,7 @@ var _ = Describe("GenerateCV Intent Integration", func() {
 		}
 
 		// Create test events
-		testEvents = []*career.CareerEvent{
+		testEvents = []*career.Event{
 			{
 				ID:         "event_1",
 				Text:       "Led team standup meetings and improved communication across the team",

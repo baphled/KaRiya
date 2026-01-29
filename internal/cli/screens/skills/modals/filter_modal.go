@@ -14,8 +14,8 @@ import (
 )
 
 // Filters represents the current filter state for skills.
-// NOTE: Search is handled by SearchModal (`/` key)
-// NOTE: Sort is handled by SortModal (`s` key)
+// Search is handled by SearchModal (`/` key).
+// Sort is handled by SortModal (`s` key).
 type Filters struct {
 	Categories []string
 	Levels     []string
@@ -24,7 +24,7 @@ type Filters struct {
 }
 
 // FilterFormData holds the form field values for skill filtering.
-// NOTE: Search and Sort are handled by separate modals
+// Search and Sort are handled by separate modals.
 type FilterFormData struct {
 	Categories  []string
 	Levels      []string
@@ -43,7 +43,7 @@ type FilterModal struct {
 }
 
 // NewFilterModal creates a new skill filter modal.
-// NOTE: Search and Sort are handled by separate modals
+// Search and Sort are handled by separate modals.
 func NewFilterModal(skills []*career.Skill, currentFilter *Filters, width, height int) *FilterModal {
 	formData := initFilterFormData(currentFilter)
 
@@ -264,7 +264,7 @@ func (m *FilterModal) Hide() {
 }
 
 // ToFilters converts form data to Filters.
-// NOTE: Search and Sort are handled separately by other modals
+// Search and Sort are handled separately by other modals.
 func (m *FilterModal) ToFilters() *Filters {
 	filters := &Filters{
 		Categories: m.formData.Categories,

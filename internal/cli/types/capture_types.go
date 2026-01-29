@@ -4,9 +4,9 @@ package types
 type CaptureStrategy string
 
 const (
-	// StrategyQuick captures only required fields (event text), date defaults to today
+	// StrategyQuick captures only required fields (event text), date defaults to today.
 	StrategyQuick CaptureStrategy = "quick"
 
-	// StrategyManual shows all fields with optional field toggle
+	// StrategyManual shows all fields with optional field toggle.
 	StrategyManual CaptureStrategy = "manual"
 )

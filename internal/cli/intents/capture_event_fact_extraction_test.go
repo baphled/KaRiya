@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/baphled/kariya/internal/domain/career"
-	"github.com/baphled/kariya/internal/service/career/burst_fact"
+	"github.com/baphled/kariya/internal/service/career/burstfact"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -13,19 +13,19 @@ import (
 var _ = Describe("CaptureEvent Fact Extraction", func() {
 	var (
 		ctx           context.Context
-		classifier    *burst_fact.Classifier
-		extractor     *burst_fact.Extractor
-		sampleEvent   *career.CareerEvent
+		classifier    *burstfact.Classifier
+		extractor     *burstfact.Extractor
+		sampleEvent   *career.Event
 		extractedFact career.Fact
 	)
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		classifier = burst_fact.NewClassifier()
-		extractor = burst_fact.NewExtractor(classifier)
+		classifier = burstfact.NewClassifier()
+		extractor = burstfact.NewExtractor(classifier)
 
 		// Create a sample event similar to what user would enter
-		sampleEvent = &career.CareerEvent{
+		sampleEvent = &career.Event{
 			ID:      "test-event-123",
 			Text:    "Led migration of legacy monolith to microservices architecture, reducing deployment time by 60%",
 			Date:    time.Now(),
@@ -161,7 +161,7 @@ var _ = Describe("CaptureEvent Fact Extraction", func() {
 			// - Fact.Text is what gets displayed to the user
 
 			eventText := "Optimized database queries reducing load time from 3s to 200ms"
-			event := &career.CareerEvent{
+			event := &career.Event{
 				ID:   "evt-123",
 				Text: eventText,
 			}

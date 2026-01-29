@@ -9,31 +9,29 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-// CLIEventService wraps the existing career service to provide CLI-specific event operations
+// CLIEventService wraps the existing career service to provide CLI-specific event operations.
 type CLIEventService struct {
 	service *careerservice.Service
 }
 
-// NewCLIEventService creates a new CLI event service
+// NewCLIEventService creates a new CLI event service.
 func NewCLIEventService(service *careerservice.Service) *CLIEventService {
 	return &CLIEventService{
 		service: service,
 	}
 }
 
-// CaptureEvent captures a new career event using the existing service
+// CaptureEvent captures a new career event using the existing service.
 func (c *CLIEventService) CaptureEvent(
 	ctx context.Context, text string, date time.Time,
 	mode careerservice.EventCaptureMode, opts ...Option,
 ) error {
-	// Apply default and optional configurations
 	config := defaultConfig()
 	for _, opt := range opts {
 		opt(config)
 	}
 
-	// Create event
-	event := &career.CareerEvent{
+	event := &career.Event{
 		Text:       text,
 		Date:       date,
 		Company:    config.Company,
@@ -42,33 +40,30 @@ func (c *CLIEventService) CaptureEvent(
 		Categories: config.Categories,
 	}
 
-	// Capture event using existing service
 	return c.service.CaptureEvent(ctx, event, mode)
 }
 
-// ListEvents retrieves a list of events with optional filtering
-func (c *CLIEventService) ListEvents(ctx context.Context, filters *careerrepo.EventListFilters) ([]*career.CareerEvent, error) {
+// ListEvents retrieves a list of events with optional filtering.
+func (c *CLIEventService) ListEvents(ctx context.Context, filters *careerrepo.EventListFilters) ([]*career.Event, error) {
 	if filters == nil {
 		filters = &careerrepo.EventListFilters{}
 	}
 	return c.service.ListEvents(ctx, *filters)
 }
 
-// GetEventByID retrieves a specific event by its ID
-func (c *CLIEventService) GetEventByID(ctx context.Context, eventID string) (*career.CareerEvent, error) {
+// GetEventByID retrieves a specific event by its ID.
+func (c *CLIEventService) GetEventByID(ctx context.Context, eventID string) (*career.Event, error) {
 	return c.service.GetEventByID(ctx, eventID)
 }
 
-// UpdateEvent updates an existing career event
+// UpdateEvent updates an existing career event.
 func (c *CLIEventService) UpdateEvent(ctx context.Context, eventID string, text string, date time.Time, opts ...Option) error {
-	// Apply default and optional configurations
 	config := defaultConfig()
 	for _, opt := range opts {
 		opt(config)
 	}
 
-	// Create updated event
-	event := &career.CareerEvent{
+	event := &career.Event{
 		ID:         eventID,
 		Text:       text,
 		Date:       date,
@@ -78,19 +73,35 @@ func (c *CLIEventService) UpdateEvent(ctx context.Context, eventID string, text 
 		Categories: config.Categories,
 	}
 
-	// Update event using existing service
 	return c.service.UpdateEvent(ctx, event)
 }
 
-// DeleteEvent deletes a career event by ID
+// DeleteEvent deletes a career event by ID.
 func (c *CLIEventService) DeleteEvent(ctx context.Context, eventID string) error {
 	return c.service.DeleteEvent(ctx, eventID)
 }
 
-// Configuration options for event capture
+// Option is a functional option that configures optional metadata for event
+// capture and update operations.
+//
+// Callers pass zero or more Option values to CaptureEvent or UpdateEvent to
+// attach secondary fields without requiring all parameters up-front. Each
+// Option receives a mutable *EventConfig and sets one field on it.
+//
+// Available options:
+//
+//   - WithCompany sets the EventConfig.Company field to the given string.
+//   - WithProject sets the EventConfig.Project field to the given string.
+//   - WithTags replaces the EventConfig.Tags slice with the given []string.
+//   - WithCategories replaces the EventConfig.Categories slice with the
+//     given []string.
+//
+// When no options are supplied the service falls back to the defaults
+// returned by defaultConfig, which initialises Tags and Categories to
+// empty slices and leaves Company and Project as zero-value strings.
 type Option func(*EventConfig)
 
-// EventConfig holds optional configuration for event capture
+// EventConfig holds optional configuration for event capture.
 type EventConfig struct {
 	Company    string
 	Project    string
@@ -98,7 +109,7 @@ type EventConfig struct {
 	Categories []string
 }
 
-// defaultConfig provides default event configuration
+// defaultConfig provides default event configuration.
 func defaultConfig() *EventConfig {
 	return &EventConfig{
 		Tags:       []string{},
@@ -106,37 +117,37 @@ func defaultConfig() *EventConfig {
 	}
 }
 
-// WithCompany sets the company for the event
+// WithCompany sets the company for the event.
 func WithCompany(company string) Option {
 	return func(ec *EventConfig) {
 		ec.Company = company
 	}
 }
 
-// WithProject sets the project for the event
+// WithProject sets the project for the event.
 func WithProject(project string) Option {
 	return func(ec *EventConfig) {
 		ec.Project = project
 	}
 }
 
-// WithTags sets tags for the event
+// WithTags sets tags for the event.
 func WithTags(tags []string) Option {
 	return func(ec *EventConfig) {
 		ec.Tags = tags
 	}
 }
 
-// WithCategories sets categories for the event
+// WithCategories sets categories for the event.
 func WithCategories(categories []string) Option {
 	return func(ec *EventConfig) {
 		ec.Categories = categories
 	}
 }
 
-// UpdateEventMetadata updates only the metadata fields of an event (company, project, tags, categories)
-// This is used by the metadata editor to update event metadata without changing the text or date
-func (c *CLIEventService) UpdateEventMetadata(ctx context.Context, event *career.CareerEvent) error {
+// UpdateEventMetadata updates only the metadata fields of an event (company, project, tags, categories).
+// This is used by the metadata editor to update event metadata without changing the text or date.
+func (c *CLIEventService) UpdateEventMetadata(ctx context.Context, event *career.Event) error {
 	if event == nil {
 		return ErrNilEvent
 	}
@@ -145,51 +156,46 @@ func (c *CLIEventService) UpdateEventMetadata(ctx context.Context, event *career
 		return ErrEmptyEventID
 	}
 
-	// Get the existing event first
 	existingEvent, err := c.service.GetEventByID(ctx, event.ID)
 	if err != nil {
 		return err
 	}
 
-	// Preserve original text and date, only update metadata fields
 	event.Text = existingEvent.Text
 	event.Date = existingEvent.Date
 	event.CreatedAt = existingEvent.CreatedAt
 
-	// Update the event with the new metadata
 	return c.service.UpdateEvent(ctx, event)
 }
 
-// Error definitions for metadata operations
+// Error definitions for metadata operations.
 var (
 	ErrNilEvent     = NewMetadataError("event cannot be nil")
 	ErrEmptyEventID = NewMetadataError("event ID cannot be empty")
 )
 
-// MetadataError represents an error during metadata operations
+// MetadataError represents an error during metadata operations.
 type MetadataError struct {
 	message string
 }
 
-// NewMetadataError creates a new metadata error
+// NewMetadataError creates a new metadata error.
 func NewMetadataError(message string) *MetadataError {
 	return &MetadataError{message: message}
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (me *MetadataError) Error() string {
 	return me.message
 }
 
-// GetSkillsForEvent retrieves all skills associated with an event
+// GetSkillsForEvent retrieves all skills associated with an event.
 func (c *CLIEventService) GetSkillsForEvent(ctx context.Context, eventID string) ([]*career.Skill, error) {
 	if c.service == nil {
-		// No service configured, return empty slice
 		return []*career.Skill{}, nil
 	}
 	skillRepo := c.service.GetSkillRepository()
 	if skillRepo == nil {
-		// No skill repository configured, return empty slice
 		return []*career.Skill{}, nil
 	}
 	return skillRepo.GetSkillsForEvent(ctx, eventID)

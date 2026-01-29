@@ -1,10 +1,18 @@
-# KaRiya golangci-lint configuration
-# Enforces coding standards from:
-# - docs/rules/senior-engineer-guidelines.md
-# - docs/UIKIT_GUIDE.md
-# - docs/INTENT_ARCHITECTURE_GUIDE.md
-# - docs/development/INTENT_PATTERNS_LIBRARY.md
-# - AGENTS.md
+# =============================================================================
+# KaRiya golangci-lint Configuration
+# =============================================================================
+#
+# This configuration enforces:
+#   1. Go Idioms & Best Practices (Effective Go, Go Code Review Comments)
+#   2. Project Architecture (layer dependencies, component usage)
+#   3. Documentation Standards (docs/conventions/GO_DOCUMENTATION_RULES.md)
+#
+# Structure:
+#   - SECTION A: Go Idioms & Best Practices
+#   - SECTION B: Project Architecture Rules
+#   - SECTION C: Legacy Exemptions (minimal, clearly marked)
+#
+# =============================================================================
 
 run:
   timeout: 5m
@@ -18,75 +26,95 @@ output:
   print-linter-name: true
   sort-results: true
 
+# =============================================================================
+# LINTER ENABLEMENT
+# =============================================================================
 linters:
   enable:
-    # Default linters (recommended)
-    - errcheck          # Check for unchecked errors (Go idiom: always handle errors)
+    # ---------------------------------------------------------------------------
+    # Go Default Linters (always enabled)
+    # ---------------------------------------------------------------------------
+    - errcheck          # Unchecked errors (Go idiom: always handle errors)
     - gosimple          # Simplify code
-    - govet             # Reports suspicious constructs
-    - ineffassign       # Detects ineffectual assignments
+    - govet             # Suspicious constructs
+    - ineffassign       # Ineffectual assignments
     - staticcheck       # Comprehensive static analysis
-    - unused            # Checks for unused code
+    - unused            # Unused code
 
-    # Error handling (MANDATORY per senior-engineer-guidelines.md)
-    - nilerr            # Finds code that returns nil even if it checks err != nil
-    - errorlint         # Find issues with error wrapping
-
-    # Forbidden patterns (prevent writing to real paths in tests)
-    - forbidigo         # Forbid specific function calls
-
-    # Code quality
-    - gocyclo           # Cyclomatic complexity
-    - gocognit          # Cognitive complexity
-    - funlen            # Function length limits (max 50 lines per guidelines)
-    - lll               # Line length
-    - nestif            # Deeply nested if statements
-
-    # Style and formatting
-    - gofmt             # Formatting (non-negotiable in Go)
+    # ---------------------------------------------------------------------------
+    # Go Idioms & Style
+    # ---------------------------------------------------------------------------
+    - gofmt             # Formatting (non-negotiable)
     - goimports         # Import organization
+    - revive            # Go style enforcement (replaces golint)
+    - stylecheck        # Go style guide enforcement
     - misspell          # Spelling mistakes
     - whitespace        # Unnecessary whitespace
-
-    # Best practices
-    - gocritic          # Comprehensive linting (covers many SOLID violations)
-    - revive            # Fast, configurable linter (replaces golint)
-    - unconvert         # Unnecessary type conversions
-    - unparam           # Unused function parameters
+    - godot             # Comments end with period
     - nakedret          # Naked returns in long functions
 
-    # Security
-    - gosec             # Security issues
+    # ---------------------------------------------------------------------------
+    # Error Handling (MANDATORY)
+    # ---------------------------------------------------------------------------
+    - nilerr            # nil return when err != nil
+    - errorlint         # Error wrapping issues
+    - nilnil            # (nil, nil) returns
 
-    # Architecture/imports
-    - depguard          # Import restrictions (enforce UIKit, prevent deprecated)
-    - gomoddirectives   # Manage go.mod directives
-    - importas          # Enforce import aliases
-
-    # Interface design (SOLID - Interface Segregation)
-    - interfacebloat    # Detect interfaces with too many methods
-
-    # Duplication (DRY principle)
+    # ---------------------------------------------------------------------------
+    # Code Quality & Complexity
+    # ---------------------------------------------------------------------------
+    - gocyclo           # Cyclomatic complexity
+    - gocognit          # Cognitive complexity
+    - funlen            # Function length
+    - lll               # Line length
+    - nestif            # Nested if statements
+    - gocritic          # Comprehensive linting
+    - unconvert         # Unnecessary conversions
+    - unparam           # Unused parameters
     - dupl              # Code duplication
 
-    # Nil safety
-    - nilnil            # Checks for (nil, nil) returns
+    # ---------------------------------------------------------------------------
+    # Security
+    # ---------------------------------------------------------------------------
+    - gosec             # Security issues
 
-    # Context usage
-    - contextcheck      # Check context.Context usage
+    # ---------------------------------------------------------------------------
+    # Architecture & Imports
+    # ---------------------------------------------------------------------------
+    - depguard          # Import restrictions
+    - gomoddirectives   # go.mod directives
+    - importas          # Import aliases
+    - interfacebloat    # Interface size
 
-    # Test quality
-    - tparallel         # Detects inappropriate use of t.Parallel()
-    - testifylint       # Checks testify usage
+    # ---------------------------------------------------------------------------
+    # Testing
+    # ---------------------------------------------------------------------------
+    - tparallel         # t.Parallel() usage
+    - testifylint       # testify usage
 
-    # Comment hygiene
-    - godox             # Catches TODO, FIXME, BUG, HACK comments (must be resolved before merge)
-    - godot             # Checks that comments end with a period (enforces complete sentences)
+    # ---------------------------------------------------------------------------
+    # Comment Hygiene
+    # ---------------------------------------------------------------------------
+    - godox             # TODO, FIXME, HACK markers
+    - forbidigo         # Forbidden function calls
+
+    # ---------------------------------------------------------------------------
+    # Context
+    # ---------------------------------------------------------------------------
+    - contextcheck      # context.Context usage
+
+# =============================================================================
+# SECTION A: GO IDIOMS & BEST PRACTICES
+# =============================================================================
+# These settings enforce standard Go conventions from:
+#   - Effective Go: https://go.dev/doc/effective_go
+#   - Go Code Review Comments: https://github.com/golang/go/wiki/CodeReviewComments
+# =============================================================================
 
 linters-settings:
-  # =============================================================================
-  # ERROR HANDLING (Go idiom: never ignore errors)
-  # =============================================================================
+  # ---------------------------------------------------------------------------
+  # A1. Error Handling (Go idiom: never ignore errors)
+  # ---------------------------------------------------------------------------
   errcheck:
     check-type-assertions: true
     check-blank: true
@@ -101,337 +129,74 @@ linters-settings:
     asserts: true
     comparison: true
 
-  # =============================================================================
-  # CODE COMPLEXITY (KISS principle)
-  # =============================================================================
-  gocyclo:
-    min-complexity: 15  # Flag functions with cyclomatic complexity > 15
+  # ---------------------------------------------------------------------------
+  # A2. Naming Conventions (Go idiom: short, clear names)
+  # ---------------------------------------------------------------------------
+  # Go naming rules:
+  #   - Package names: lowercase, single word, no underscores
+  #   - Exported names: MixedCaps (not underscores)
+  #   - Acronyms: all caps (ID, URL, HTTP)
+  # ---------------------------------------------------------------------------
+  stylecheck:
+    checks:
+      - "all"
+    # Initialisms that should be all caps
+    initialisms:
+      - "ACL"
+      - "API"
+      - "ASCII"
+      - "CPU"
+      - "CSS"
+      - "CV"
+      - "DNS"
+      - "EOF"
+      - "GUID"
+      - "HTML"
+      - "HTTP"
+      - "HTTPS"
+      - "ID"
+      - "IP"
+      - "JSON"
+      - "QPS"
+      - "RAM"
+      - "RPC"
+      - "SLA"
+      - "SMTP"
+      - "SQL"
+      - "SSH"
+      - "TCP"
+      - "TLS"
+      - "TTL"
+      - "UDP"
+      - "UI"
+      - "UID"
+      - "UUID"
+      - "URI"
+      - "URL"
+      - "UTF8"
+      - "VM"
+      - "XML"
+      - "XMPP"
+      - "XSRF"
+      - "XSS"
+      - "DB"
+      - "TS"
+    dot-import-whitelist:
+      - "github.com/onsi/ginkgo/v2"
+      - "github.com/onsi/gomega"
 
-  gocognit:
-    min-complexity: 20  # Flag functions with cognitive complexity > 20
 
-  funlen:
-    lines: 60           # Max function length (guidelines say 50, allow 60 for tests)
-    statements: 40
-    ignore-comments: true
-
-  nestif:
-    min-complexity: 4   # Flag deeply nested if statements
-
-  lll:
-    line-length: 140    # Max line length
-    tab-width: 4
-
-  # =============================================================================
-  # CODE DUPLICATION (DRY principle)
-  # =============================================================================
-  dupl:
-    threshold: 100      # Token threshold for duplication detection
-
-  # =============================================================================
-  # INTERFACE DESIGN (SOLID - Interface Segregation Principle)
-  # =============================================================================
-  interfacebloat:
-    max: 5              # Interfaces should be small and focused (max 5 methods)
-
-  # =============================================================================
-  # IMPORT RESTRICTIONS (Architecture enforcement)
-  # Enforces UIKit usage, layer dependencies, and prevents deprecated patterns
-  #
-  # ARCHITECTURE LAYERS (docs/INTENT_ARCHITECTURE_GUIDE.md):
-  #   app -> intents -> screens -> uikit
-  #              |          |
-  #              +----------+---> components (modals)
-  #              |          |
-  #              +----------+---> behaviors
-  #
-  # NEVER:
-  #   - screens importing intents (breaks layer hierarchy)
-  #   - uikit importing screens/intents (uikit is foundation)
-  #   - behaviors importing screens/intents (behaviors are utilities)
-  #   - circular dependencies
-  # =============================================================================
-  depguard:
-    rules:
-      # =========================================================================
-      # LAYER 1: UIKit Foundation (lowest layer - no TUI dependencies)
-      # =========================================================================
-      uikit-no-tui-imports:
-        files:
-          - "**/uikit/**/*.go"
-        deny:
-          - pkg: "github.com/baphled/kariya/internal/cli/intents"
-            desc: "ARCHITECTURE VIOLATION: uikit/ cannot import intents/ - uikit is the foundation layer"
-          - pkg: "github.com/baphled/kariya/internal/cli/screens"
-            desc: "ARCHITECTURE VIOLATION: uikit/ cannot import screens/ - uikit is the foundation layer"
-          - pkg: "github.com/baphled/kariya/internal/cli/components"
-            desc: "ARCHITECTURE VIOLATION: uikit/ cannot import components/ - uikit is the foundation layer"
-          - pkg: "github.com/baphled/kariya/internal/cli/behaviors"
-            desc: "ARCHITECTURE VIOLATION: uikit/ cannot import behaviors/"
-          - pkg: "github.com/baphled/kariya/internal/cli/models"
-            desc: "ARCHITECTURE VIOLATION: uikit/ cannot import models/"
-          - pkg: "github.com/baphled/kariya/internal/cli/forms"
-            desc: "ARCHITECTURE VIOLATION: uikit/ cannot import forms/"
-
-      # =========================================================================
-      # LAYER 2: Behaviors (utilities - no screen/intent dependencies)
-      # =========================================================================
-      behaviors-no-tui-imports:
-        files:
-          - "**/behaviors/**/*.go"
-        deny:
-          - pkg: "github.com/baphled/kariya/internal/cli/intents"
-            desc: "ARCHITECTURE VIOLATION: behaviors/ cannot import intents/ - behaviors are reusable utilities"
-          - pkg: "github.com/baphled/kariya/internal/cli/screens"
-            desc: "ARCHITECTURE VIOLATION: behaviors/ cannot import screens/ - behaviors are reusable utilities"
-
-      # =========================================================================
-      # LAYER 3: Screens (stateless views - cannot import intents)
-      # =========================================================================
-      screens-no-intent-imports:
-        files:
-          - "**/screens/**/*.go"
-          - "**/screens/*.go"
-          - "!**/*_test.go"
-        deny:
-          - pkg: "github.com/baphled/kariya/internal/cli/intents"
-            desc: |
-              ARCHITECTURE VIOLATION: screens/ cannot import intents/
-              Screens are stateless views that return ScreenResult to intents.
-              Data flows: Intent -> Screen (props) -> Intent (ScreenResult)
-              See docs/INTENT_ARCHITECTURE_GUIDE.md
-
-      # =========================================================================
-      # DEPRECATED: components/ package (migrate to uikit/)
-      # =========================================================================
-      prevent-deprecated-components:
-        files:
-          - "!**/components/**"   # Exclude the components package itself
-          - "!**/*_test.go"       # Exclude test files during migration
-          - "**/intents/**/*.go"  # Apply to intents
-          - "**/screens/**/*.go"  # Apply to screens
-        deny:
-          - pkg: "github.com/baphled/kariya/internal/cli/components"
-            desc: |
-              DEPRECATED: Use uikit packages instead:
-
-              MODALS (use feedback/):
-              - components.NewErrorModal    -> feedback.NewErrorModal()
-              - components.NewLoadingModal  -> feedback.NewLoadingModal()
-              - components.NewProgressModal -> feedback.NewProgressModal()
-              - components.NewSuccessModal  -> feedback.NewSuccessModal()
-              - components.NewWarningModal  -> feedback.NewWarningModal()
-              - components.ModalContainer   -> feedback.ModalContainer
-              - components.HelpModal        -> feedback.HelpModal
-              - components.RenderOverlay    -> behaviors.RenderModalOverlay()
-
-              LAYOUT (use layout/):
-              - components.StandardView     -> layout.NewScreenLayout()
-              - CreateStandardView          -> layout.NewScreenLayout()
-
-              BADGES (use primitives/):
-              - components.KeyBadge         -> primitives.HelpKeyBadge()
-              - components.RenderHelpFooter -> primitives.RenderHelpFooter()
-
-              NAVIGATION (use navigation/):
-              - components.BreadcrumbBar    -> navigation.NewBreadcrumbBar()
-
-              See docs/UIKIT_GUIDE.md for migration guide.
-
-      # =========================================================================
-      # DEPRECATED: styles/ package (migrate to theme system)
-      # =========================================================================
-      prevent-deprecated-styles:
-        files:
-          - "!**/styles/**"       # Exclude styles package itself
-          - "!**/uikit/**"        # Exclude uikit (may need styles during migration)
-          - "!**/components/**"   # Exclude components (legacy)
-          - "!**/models/**"       # Exclude models (legacy)
-          - "!**/*_test.go"       # Exclude tests
-          - "**/intents/**/*.go"  # Apply to intents
-          - "**/screens/**/*.go"  # Apply to screens
-        deny:
-          - pkg: "github.com/baphled/kariya/internal/cli/styles"
-            desc: |
-              DEPRECATED: Use theme system instead:
-
-              COLORS:
-              - styles.ColorPrimary     -> theme.PrimaryColor()
-              - styles.ColorError       -> theme.ErrorColor()
-              - styles.ColorSuccess     -> theme.SuccessColor()
-              - styles.ColorBackground  -> theme.BackgroundColor()
-              - lipgloss.Color("#xxx")  -> Use theme.* methods
-
-              TEXT STYLING:
-              - styles.CardHeader       -> primitives.Title()
-              - styles.CardContent      -> primitives.Body()
-              - styles.InputHint        -> primitives.Muted()
-              - styles.ErrorText        -> primitives.ErrorText()
-
-              CONTAINERS:
-              - styles.CardBase         -> containers.NewBox()
-
-              See docs/UIKIT_GUIDE.md for theme integration.
-
-      # =========================================================================
-      # FORMS: huh can ONLY be imported in forms/ package
-      # Architecture: forms/ -> models/ -> components/ -> screens/ -> intents/
-      # Only forms/ is allowed to import huh directly
-      # Test files are excluded - they may need direct form creation for testing
-      # =========================================================================
-      huh-restricted-to-forms:
-        files:
-          - "**/intents/**/*.go"
-          - "**/intents/*.go"
-          - "**/screens/**/*.go"
-          - "**/screens/*.go"
-          - "**/components/**/*.go"
-          - "**/components/*.go"
-          - "!**/*_test.go"
-        deny:
-          - pkg: "github.com/charmbracelet/huh"
-            desc: |
-              ARCHITECTURE VIOLATION: huh can ONLY be imported in forms/ package.
-
-              Package-specific guidance:
-
-              INTENTS: Use models/ form wrappers:
-              - models.CaptureForm, models.MetadataForm, etc.
-              - forms.IsCompleted(f), forms.IsAborted(f) for state checks
-
-              SCREENS: Use base.FormScreen or forms/ builders:
-              - base.NewFormScreen(theme, form)
-              - forms.NewThemedForm(theme, groups...)
-
-              COMPONENTS: Use forms/ builders:
-              - forms.NewInput(FieldConfig{...})
-              - forms.NewSelect(key, title, options...)
-              - forms.NewForm(groups...)
-
-              MODELS: Use forms.Form interface:
-              - Store forms.Form (not *huh.Form)
-              - Use forms.IsCompleted(), forms.IsAborted()
-
-              See docs/FORMS_GUIDE.md and docs/rules/FORMS_WORKFLOW_GUIDE.md
-
-      # =========================================================================
-      # TABLES: Enforce TableBehavior usage
-      # =========================================================================
-      tables-use-behavior:
-        files:
-          - "**/intents/**/*.go"
-          - "**/screens/**/*.go"
-        deny:
-          - pkg: "github.com/charmbracelet/bubbles/table"
-            desc: |
-              PATTERN VIOLATION: Don't use bubbles/table directly.
-
-              Use behaviors.TableBehavior[T] instead:
-
-              table := behaviors.NewTableBehavior(theme, columns, formatter).
-                  PageSize(20).
-                  EmptyMessage("No items found")
-              table.SetItems(myItems)
-
-              // In Update:
-              if table.HandleNavigation(keyStr) {
-                  return nil
-              }
-
-              // In View:
-              return table.Render()
-
-              TableBehavior provides:
-              - Theme integration
-              - Pagination
-              - Sorting/filtering
-              - Navigation handling
-              - Consistent styling
-
-              See internal/cli/behaviors/table.go
-
-      # =========================================================================
-      # Main rule - allow standard imports
-      # =========================================================================
-      main:
-        files:
-          - $all
-        allow:
-          - $gostd
-          - github.com/baphled/kariya
-          - github.com/charmbracelet
-          - github.com/google/uuid
-          - github.com/mattn/go-sqlite3
-          - modernc.org/sqlite
-          - github.com/onsi/ginkgo/v2
-          - github.com/onsi/gomega
-          - github.com/spf13/cobra
-          - github.com/spf13/viper
-          - github.com/rmhubbert/bubbletea-overlay
-          # Text processing
-          - golang.org/x/text
-          # YAML parsing
-          - gopkg.in/yaml.v3
-          # Database migrations
-          - github.com/pressly/goose/v3
-          # Clipboard access
-          - github.com/atotto/clipboard
-          # Test fixtures and data generation
-          - github.com/bluele/factory-go/factory
-          - github.com/brianvoe/gofakeit/v7
-          # ORM (used in repository/career/sql/)
-          - gorm.io/gorm
-          - gorm.io/driver/sqlite
-
-  # =============================================================================
-  # IMPORT ALIASES (Consistent naming)
-  # =============================================================================
-  importas:
-    no-unaliased: false
-    alias:
-      - pkg: github.com/charmbracelet/bubbletea
-        alias: tea
-
-  # =============================================================================
-  # GOCRITIC (Comprehensive checks for code quality)
-  # =============================================================================
-  gocritic:
-    enabled-tags:
-      - diagnostic      # Code that is likely wrong
-      - style           # Style issues
-      - performance     # Performance optimizations
-      - opinionated     # Opinionated suggestions
-    disabled-checks:
-      - whyNoLint       # We don't require nolint explanations everywhere
-      - hugeParam       # Can be noisy for Bubble Tea models
-      - ifElseChain     # if-else chains are sometimes clearer than switch
-      - singleCaseSwitch # Single case switches are used for type assertions
-      - unnamedResult   # Named results not always needed
-      - paramTypeCombine # Parameter type combining can reduce readability
-      - octalLiteral    # Legacy code uses 0600 style
-      - appendCombine   # Separate appends improve readability for help screens
-    settings:
-      captLocal:
-        paramsOnly: true
-      rangeValCopy:
-        sizeThreshold: 128
-
-  # =============================================================================
-  # REVIVE (Replaces golint, highly configurable)
-  # =============================================================================
   revive:
     severity: warning
     confidence: 0.8
     rules:
-      # Naming conventions
-      - name: exported
-        severity: warning
-        disabled: true  # Stuttering warnings (e.g., base.BaseScreen) are intentional
+      # Naming (Go idioms)
       - name: var-naming
         severity: warning
       - name: package-comments
         severity: warning
-        disabled: true  # Can be noisy during development
+      - name: exported
+        severity: warning
 
       # Error handling
       - name: error-return
@@ -468,12 +233,12 @@ linters-settings:
       # Function design
       - name: function-result-limit
         severity: warning
-        arguments: [3]  # Max 3 return values
+        arguments: [3]
       - name: argument-limit
         severity: warning
-        arguments: [5]  # Max 5 parameters (suggests refactoring needed)
+        arguments: [5]
 
-      # Cognitive load
+      # Complexity
       - name: cognitive-complexity
         severity: warning
         arguments: [20]
@@ -485,199 +250,315 @@ linters-settings:
       - name: import-shadowing
         severity: warning
 
-  # =============================================================================
-  # GOSEC (Security)
-  # =============================================================================
+  # ---------------------------------------------------------------------------
+  # A3. Code Complexity (Go idiom: simple, readable code)
+  # ---------------------------------------------------------------------------
+  gocyclo:
+    min-complexity: 15
+
+  gocognit:
+    min-complexity: 20
+
+  funlen:
+    lines: 60
+    statements: 40
+    ignore-comments: true
+
+  nestif:
+    min-complexity: 4
+
+  lll:
+    line-length: 140
+    tab-width: 4
+
+  # ---------------------------------------------------------------------------
+  # A4. Code Duplication (DRY principle)
+  # ---------------------------------------------------------------------------
+  dupl:
+    threshold: 100
+
+  # ---------------------------------------------------------------------------
+  # A5. Interface Design (Go idiom: small interfaces)
+  # ---------------------------------------------------------------------------
+  interfacebloat:
+    max: 5
+
+  # ---------------------------------------------------------------------------
+  # A6. Import Aliases (consistency)
+  # ---------------------------------------------------------------------------
+  importas:
+    no-unaliased: false
+    alias:
+      - pkg: github.com/charmbracelet/bubbletea
+        alias: tea
+
+  # ---------------------------------------------------------------------------
+  # A7. Code Analysis
+  # ---------------------------------------------------------------------------
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - opinionated
+    disabled-checks:
+      - whyNoLint
+      - hugeParam
+      - ifElseChain
+      - singleCaseSwitch
+      - unnamedResult
+      - paramTypeCombine
+      - octalLiteral
+      - appendCombine
+    settings:
+      captLocal:
+        paramsOnly: true
+      rangeValCopy:
+        sizeThreshold: 128
+
+  # ---------------------------------------------------------------------------
+  # A8. Comment Hygiene
+  # ---------------------------------------------------------------------------
+  godox:
+    keywords:
+      - TODO
+      - FIXME
+      - HACK
+      - XXX
+      - BUG
+
+  # ---------------------------------------------------------------------------
+  # A9. Security
+  # ---------------------------------------------------------------------------
   gosec:
     excludes:
-      - G104  # Audit errors not checked (covered by errcheck)
+      - G104
     config:
       global:
         audit: enabled
 
-  # =============================================================================
-  # TEST QUALITY
-  # =============================================================================
+  # ---------------------------------------------------------------------------
+  # A10. Test Quality
+  # ---------------------------------------------------------------------------
   testifylint:
     enable-all: true
 
-  # =============================================================================
-  # FORBIDDEN PATTERNS (Prevent common mistakes - BUG-007 protection)
-  # =============================================================================
+# =============================================================================
+# SECTION B: PROJECT ARCHITECTURE RULES
+# =============================================================================
+# These settings enforce KaRiya-specific architecture:
+#   - Layer dependencies (intents -> screens -> uikit)
+#   - Component usage (UIKit, behaviors, forms)
+#   - Deprecated package prevention
+# =============================================================================
+
+  # ---------------------------------------------------------------------------
+  # B1. Forbidden Patterns
+  # ---------------------------------------------------------------------------
   forbidigo:
     forbid:
-      # -------------------------------------------------------------------------
-      # Prevent hardcoded .kariya paths in any code
-      # -------------------------------------------------------------------------
       - p: '\.kariya'
         msg: |
           HARDCODED PATH: Avoid hardcoding .kariya paths.
-
-          For production: Use config.GetConfigPath() or config.DefaultConfig().System.DataDir
-          For tests: Use t.TempDir() for isolation
-
+          For production: Use config.GetConfigPath()
+          For tests: Use t.TempDir()
     analyze-types: false
 
-  # =============================================================================
-  # COMMENT HYGIENE
-  # Enforces clean, professional comments without leftover markers
-  # =============================================================================
-  godox:
-    # Keywords to catch - these should NOT appear in committed code
-    # Action markers that indicate incomplete work:
-    keywords:
-      - TODO      # Must be resolved before merge
-      - FIXME     # Must be resolved before merge
-      - HACK      # Technical debt marker - resolve or document properly
-      - XXX       # Attention marker - resolve before merge
-      - BUG       # Must be resolved before merge
-      # NOTE: "Note:" is allowed for documentation purposes
+  # ---------------------------------------------------------------------------
+  # B2. Import Restrictions (Architecture enforcement)
+  # ---------------------------------------------------------------------------
+  depguard:
+    rules:
+      # Layer 1: UIKit (foundation - no TUI imports)
+      uikit-no-tui-imports:
+        files:
+          - "**/uikit/**/*.go"
+        deny:
+          - pkg: "github.com/baphled/kariya/internal/cli/intents"
+            desc: "ARCHITECTURE: uikit/ cannot import intents/"
+          - pkg: "github.com/baphled/kariya/internal/cli/screens"
+            desc: "ARCHITECTURE: uikit/ cannot import screens/"
+          - pkg: "github.com/baphled/kariya/internal/cli/components"
+            desc: "ARCHITECTURE: uikit/ cannot import components/"
+          - pkg: "github.com/baphled/kariya/internal/cli/behaviors"
+            desc: "ARCHITECTURE: uikit/ cannot import behaviors/"
+          - pkg: "github.com/baphled/kariya/internal/cli/models"
+            desc: "ARCHITECTURE: uikit/ cannot import models/"
+          - pkg: "github.com/baphled/kariya/internal/cli/forms"
+            desc: "ARCHITECTURE: uikit/ cannot import forms/"
+
+      # Layer 2: Behaviors (utilities - no screen/intent imports)
+      behaviors-no-tui-imports:
+        files:
+          - "**/behaviors/**/*.go"
+        deny:
+          - pkg: "github.com/baphled/kariya/internal/cli/intents"
+            desc: "ARCHITECTURE: behaviors/ cannot import intents/"
+          - pkg: "github.com/baphled/kariya/internal/cli/screens"
+            desc: "ARCHITECTURE: behaviors/ cannot import screens/"
+
+      # Layer 3: Screens (views - cannot import intents)
+      screens-no-intent-imports:
+        files:
+          - "**/screens/**/*.go"
+          - "**/screens/*.go"
+          - "!**/*_test.go"
+        deny:
+          - pkg: "github.com/baphled/kariya/internal/cli/intents"
+            desc: "ARCHITECTURE: screens/ cannot import intents/"
+
+      # Deprecated: components/ package
+      prevent-deprecated-components:
+        files:
+          - "!**/components/**"
+          - "!**/*_test.go"
+          - "**/intents/**/*.go"
+          - "**/screens/**/*.go"
+        deny:
+          - pkg: "github.com/baphled/kariya/internal/cli/components"
+            desc: "DEPRECATED: Use uikit/ packages instead"
+
+      # Deprecated: styles/ package
+      prevent-deprecated-styles:
+        files:
+          - "!**/styles/**"
+          - "!**/uikit/**"
+          - "!**/components/**"
+          - "!**/models/**"
+          - "!**/*_test.go"
+          - "**/intents/**/*.go"
+          - "**/screens/**/*.go"
+        deny:
+          - pkg: "github.com/baphled/kariya/internal/cli/styles"
+            desc: "DEPRECATED: Use theme system instead"
+
+      # Forms: huh restricted to forms/ package
+      huh-restricted-to-forms:
+        files:
+          - "**/intents/**/*.go"
+          - "**/intents/*.go"
+          - "**/screens/**/*.go"
+          - "**/screens/*.go"
+          - "**/components/**/*.go"
+          - "**/components/*.go"
+          - "!**/*_test.go"
+        deny:
+          - pkg: "github.com/charmbracelet/huh"
+            desc: "ARCHITECTURE: huh can only be imported in forms/ package"
+
+      # Tables: use TableBehavior
+      tables-use-behavior:
+        files:
+          - "**/intents/**/*.go"
+          - "**/screens/**/*.go"
+        deny:
+          - pkg: "github.com/charmbracelet/bubbles/table"
+            desc: "PATTERN: Use behaviors.TableBehavior[T] instead"
+
+      # Main rule
+      main:
+        files:
+          - $all
+        allow:
+          - $gostd
+          - github.com/baphled/kariya
+          - github.com/charmbracelet
+          - github.com/google/uuid
+          - github.com/mattn/go-sqlite3
+          - modernc.org/sqlite
+          - github.com/onsi/ginkgo/v2
+          - github.com/onsi/gomega
+          - github.com/spf13/cobra
+          - github.com/spf13/viper
+          - github.com/rmhubbert/bubbletea-overlay
+          - golang.org/x/text
+          - gopkg.in/yaml.v3
+          - github.com/pressly/goose/v3
+          - github.com/atotto/clipboard
+          - github.com/bluele/factory-go/factory
+          - github.com/brianvoe/gofakeit/v7
+          # ORM (used in repository/career/sql/)
+          - gorm.io/gorm
+          - gorm.io/driver/sqlite
+
+# =============================================================================
+# SECTION C: ISSUE RULES & LEGACY EXEMPTIONS
+# =============================================================================
+# Legacy exemptions are MINIMAL and clearly marked.
+# New code MUST follow all rules.
+# =============================================================================
 
 issues:
-  # Don't skip any directories
   exclude-dirs: []
-
-  # Maximum issues per linter
   max-issues-per-linter: 50
   max-same-issues: 5
-
-  # Fix issues automatically where possible
   fix: false
 
-  # Exclude specific issues
   exclude-rules:
-    # Exclude some linters from running on tests
+    # =========================================================================
+    # C1. TEST FILES - Relaxed requirements (standard practice)
+    # =========================================================================
     - path: _test\.go
       linters:
-        - funlen      # Test functions can be longer
-        - dupl        # Test code often has similar patterns
-        - gocyclo     # Test complexity is often higher
-        - gocognit    # Test complexity is often higher
-        - godox       # BUG-XXX references allowed in tests for regression tracking
-        - godot       # Comment style in tests less critical
-        - errcheck    # Test setup/teardown may ignore errors intentionally
+        - funlen
+        - dupl
+        - gocyclo
+        - gocognit
+        - godox
+        - errcheck
+        - lll
+        - stylecheck
+        - godot
 
-    # Legacy directories - relax godot comment requirements
-    - path: internal/cli/components/.*\.go
-      linters:
-        - godot       # Legacy code - comment style less critical
-
-    - path: internal/cli/terminal/.*\.go
-      linters:
-        - godot       # Terminal utilities - comment style less critical
-
-    - path: internal/cli/navigation/.*\.go
-      linters:
-        - godot       # Navigation utilities - comment style less critical
-
-    - path: internal/cli/screens/.*\.go
-      linters:
-        - godot       # Screens - comment style less critical
-
-    - path: internal/cli/uikit/.*\.go
-      linters:
-        - godot       # UIKit components - comment style less critical
-
-    - path: internal/cli/intents/.*\.go
-      linters:
-        - godot       # Intents - comment style less critical
-
-    - path: internal/repository/.*\.go
-      linters:
-        - godot       # Repositories - comment style less critical
-
-    - path: internal/testutil/.*\.go
-      linters:
-        - godot       # Test utilities - comment style less critical
-
-    - path: internal/config/.*\.go
-      linters:
-        - godot       # Config - comment style less critical
-
-    - path: internal/cli/models/.*\.go
-      linters:
-        - godot       # Models - comment style less critical
-
-    - path: internal/cli/types/.*\.go
-      linters:
-        - godot       # Types - comment style less critical
-
-    - path: internal/cli/forms/.*\.go
-      linters:
-        - godot       # Forms - comment style less critical
-
-    - path: internal/cli/service/.*\.go
-      linters:
-        - godot       # Service - comment style less critical
-
-    - path: internal/cli/importer/.*\.go
-      linters:
-        - godot       # Importer - comment style less critical
-
-    - path: internal/cli/behaviors/.*\.go
-      linters:
-        - godot       # Behaviors - comment style less critical
-
-    - path: internal/cli/themes/.*\.go
-      linters:
-        - godot       # Themes - comment style less critical
-
-    - path: internal/cli/statematrix/.*\.go
-      linters:
-        - godot       # State matrix - comment style less critical
-
-    - path: internal/service/.*\.go
-      linters:
-        - godot       # Services - comment style less critical
-
-    - path: internal/constants/.*\.go
-      linters:
-        - godot       # Constants - comment style less critical
-
-    - path: internal/domain/.*\.go
-      linters:
-        - godot       # Domain - comment style less critical
-
-    - path: internal/logger/.*\.go
-      linters:
-        - godot       # Logger - comment style less critical
-
-    - path: cmd/.*\.go
-      linters:
-        - godot       # CLI commands - comment style less critical
-
-    # Allow Ginkgo/Gomega dot imports in test files (standard BDD pattern)
     - path: _test\.go
       linters:
         - revive
-      text: "dot-imports"
+      text: "dot-imports|unused-parameter|argument-limit"
 
-    # Allow unused parameters in test mocks
-    - path: _test\.go
+    # =========================================================================
+    # C2. BUBBLE TEA PATTERNS - Framework idioms (not legacy)
+    # =========================================================================
+    # Update() functions need type switches
+    - path: ".*\\.go"
       linters:
-        - revive
-      text: "unused-parameter"
+        - gocyclo
+      source: "func.*Update.*tea\\.Msg"
 
-    # Allow argument-limit violations in test helper functions
-    - path: _test\.go
+    # View() functions can be longer (rendering)
+    - path: ".*\\.go"
       linters:
-        - revive
-      text: "argument-limit"
+        - funlen
+      source: "func.*View\\(\\).*string"
 
-    # Allow type assertions without error check in modal Update() methods
-    # This is a standard Bubble Tea pattern where form.Update() always returns *huh.Form
+    # Allow interface{} in Bubble Tea
+    - linters:
+        - revive
+      text: "empty-interface"
+      source: "tea\\.Msg"
+
+    # Context check false positives
+    - linters:
+        - contextcheck
+      text: "non-inherited new context"
+
+    # Modal type assertions
     - path: internal/cli/screens/.*/modals/.*\.go
       linters:
         - errcheck
       text: "Error return value is not checked"
 
-    # Allow View() function duplication in modals (standard rendering pattern)
+    # Modal duplication (standard pattern)
     - path: internal/cli/screens/.*/modals/.*\.go
       linters:
         - dupl
+        - funlen
 
-    # Modal files use common patterns that trigger lint warnings
-    # These are intentional patterns for Bubble Tea modal handling
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - gocritic
+      text: "singleCaseSwitch"
+
+    # Modal revive patterns (unnecessary-stmt, unused-parameter).
     - path: internal/cli/screens/.*/modals/.*\.go
       linters:
         - revive
@@ -692,115 +573,234 @@ issues:
       linters:
         - godot
 
-    - path: internal/cli/screens/.*/modals/.*\.go
+    # =========================================================================
+    # C3. GENERATED FILES - Skip all
+    # =========================================================================
+    - path: ".*_generated\\.go"
+      linters:
+        - all
+
+    # =========================================================================
+    # C4. CONFIGURATION - Legitimate exceptions
+    # =========================================================================
+    - path: internal/config/config\.go
+      linters:
+        - forbidigo
+      text: "HARDCODED PATH"
+
+    - path: internal/config/config\.go
       linters:
         - funlen
 
-    - path: internal/cli/screens/.*/modals/.*\.go
+    # =========================================================================
+    # C5. TEST UTILITIES - Factory patterns
+    # =========================================================================
+    - path: internal/testutil/
       linters:
+        - errcheck
+        - revive
+        - funlen
         - gocritic
-      text: "singleCaseSwitch"
 
-    # Browse timeline intent - new subdirectory structure migration
-    # These files follow existing project patterns and conventions
-    - path: internal/cli/intents/browse_timeline/
+    # =========================================================================
+    # C6. LEGACY: DEPRECATED PACKAGES (migration tracked)
+    # These packages are deprecated and pending removal.
+    # NO new code should be added to these packages.
+    # =========================================================================
+
+    # DEPRECATED: internal/cli/components/ -> migrate to uikit/
+    - path: internal/cli/components/.*\.go
       linters:
-        - revive      # Package naming, unused params are project conventions
-        - gocognit    # Complex handlers are intentional for state machines
-        - gocyclo     # Filter/handler complexity is intentional
-        - nestif      # Modal handling requires nested logic
-        - funlen      # Registry/handler functions need more lines
-        - errcheck    # Benchmarks and tests intentionally ignore some errors
-        - godot       # Comment style
+        - godot
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+        - gocritic
 
-    # Skills management intent - new subdirectory structure migration
-    # These files follow existing project patterns and conventions
-    - path: internal/cli/intents/skills_management/
+    # DEPRECATED: internal/cli/models/ -> migrate to screens/
+    - path: internal/cli/models/.*\.go
       linters:
-        - revive      # Package naming, unused params are project conventions
-        - gocognit    # Complex handlers are intentional for state machines
-        - gocyclo     # Filter/handler complexity is intentional
-        - nestif      # Modal handling requires nested logic
-        - funlen      # Registry/handler functions need more lines
-        - errcheck    # Type assertions in modal handling
-        - godox       # Temporary TODO for modal event passing
-        - godot       # Comment style
+        - godot
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+        - gocritic
 
-    # Skills management uses ViewEventDetailModal from components/
-    # Migration tracked: Move ViewEventDetailModal to screens/skills/modals/
-    - path: internal/cli/intents/skills_management/.*\.go
+    # =========================================================================
+    # C7. LEGACY: OLD SINGLE-FILE INTENTS (migration tracked)
+    # Only files that still exist on disk. Migrated intents use C12.
+    # =========================================================================
+    - path: internal/cli/intents/capture_event_intent\.go
+      linters:
+        - godot
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    - path: internal/cli/intents/generate_cv_intent\.go
+      linters:
+        - godot
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - dupl
+
+    - path: internal/cli/intents/configure_system_intent\.go
+      linters:
+        - godot
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+
+    - path: internal/cli/intents/configure_system\.go
+      linters:
+        - godot
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - funlen
+
+    - path: internal/cli/intents/modals\.go
+      linters:
+        - godot
+        - stylecheck
+        - revive
+        - funlen
+        - dupl
+        - gocritic
+
+    - path: internal/cli/intents/modal_.*\.go
+      linters:
+        - godot
+        - stylecheck
+        - revive
+
+    - path: internal/cli/intents/view_helpers\.go
+      linters:
+        - stylecheck
+
+    # =========================================================================
+    # C8. LEGACY: huh IMPORTS (migration to forms/ tracked)
+    # =========================================================================
+    - path: internal/cli/models/.*\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/components/.*\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/intents/modals\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/screens/base/form_screen\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/screens/configure/.*\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/screens/skills/skill_form\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    - path: internal/cli/screens/timeline/modals/.*\.go
+      linters:
+        - depguard
+      text: "huh-restricted-to-forms"
+
+    # =========================================================================
+    # C9. LEGACY: DEPRECATED COMPONENTS USAGE (migration tracked)
+    # =========================================================================
+    - path: internal/cli/intents/skillsmanagement/.*\.go
       linters:
         - depguard
       text: "prevent-deprecated-components"
 
     # =========================================================================
-    # LEGACY INTENTS - Pending architecture migration
-    # These files will be refactored to subdirectory structure.
-    # Track progress: PRs #113 (fact_management), #117 (burst_management)
+    # C10. DEPGUARD - Allow in tests
     # =========================================================================
-    - path: internal/cli/intents/burst_management_intent\.go
+    - path: _test\.go
       linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-        - revive      # Complex state machine with many handlers
-
-    - path: internal/cli/intents/burst_management\.go
-      linters:
-        - revive      # Context parameter position in factory functions
-
-    - path: internal/cli/intents/fact_management_intent\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-        - revive      # Complex state machine with many handlers
-
-    - path: internal/cli/intents/fact_management\.go
-      linters:
-        - revive      # Context parameter position in factory functions
-
-    - path: internal/cli/intents/capture_event_intent\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-        - revive      # Complex state machine with many handlers
-
-    - path: internal/cli/intents/manage_skills_intent\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-        - revive      # Complex state machine with many handlers
-
-    - path: internal/cli/intents/generate_cv_intent\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-        - revive      # Complex wizard flow with many states
-
-    - path: internal/cli/intents/configure_system_intent\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - revive      # System configuration intent
+        - depguard
 
     # =========================================================================
-    # LEGACY SERVICE LAYER - Needs separate refactoring
+    # C12. SUBDIRECTORY INTENTS - Migrated architecture
+    # =========================================================================
+
+    - path: internal/cli/intents/browsetimeline/
+      linters:
+        - revive
+        - gocognit
+        - gocyclo
+        - nestif
+        - funlen
+        - errcheck
+
+    - path: internal/cli/intents/skillsmanagement/
+      linters:
+        - revive
+        - gocognit
+        - gocyclo
+        - nestif
+        - funlen
+        - errcheck
+        - godox
+        - depguard
+
+    # burst_management - uses underscores (not yet renamed).
+    - path: internal/cli/intents/burst_management/.*\.go
+      linters:
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - nestif
+        - funlen
+        - errcheck
+
+    - path: internal/cli/screens/burst_management/.*\.go
+      linters:
+        - stylecheck
+
+    - path: internal/cli/intents/factmanagement/
+      linters:
+        - revive
+        - gocognit
+        - gocyclo
+        - nestif
+        - funlen
+        - errcheck
+
+    # =========================================================================
+    # C13. LEGACY SERVICE LAYER - Needs separate refactoring
     # These files have grown complex and need architectural review.
     # =========================================================================
     - path: internal/service/career/cv/export_service\.go
@@ -810,9 +810,9 @@ issues:
         - funlen
         - nestif
         - dupl
-        - revive      # argument-limit, import-shadowing, unused-parameter
-        - lll         # Long function signatures
-        - unparam     # Export functions have standard signatures with ctx
+        - revive
+        - lll
+        - unparam
 
     - path: internal/service/career/service\.go
       linters:
@@ -820,7 +820,7 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - dupl        # Service methods have similar patterns
+        - dupl
 
     - path: internal/service/career/cv/section_builder\.go
       linters:
@@ -828,19 +828,20 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - revive      # argument-limit in builder functions
-        - lll         # Long function signatures
+        - godox
+        - revive
+        - lll
 
     - path: internal/service/career/cv/bullet_generator\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
-        - gocritic    # Style suggestions in complex generation logic
-        - revive      # argument-limit in generation functions
-        - interfacebloat  # Generator interface design
-        - godox       # BUG-008 references (documented feature tracking)
-        - godot       # Comment style in complex generation logic
+        - gocritic
+        - revive
+        - interfacebloat
+        - godox
+        - godot
 
     - path: internal/service/career/cv/yaml_config_manager\.go
       linters:
@@ -848,8 +849,8 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - gocritic    # YAML parsing has complex structure handling
-        - revive      # Complex config validation
+        - gocritic
+        - revive
 
     - path: internal/service/career/cv/data_processing_service\.go
       linters:
@@ -857,8 +858,8 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - gocritic    # Data processing has complex logic
-        - godox       # BUG-008 references (documented feature tracking)
+        - gocritic
+        - godox
 
     - path: internal/service/career/cv/cv_generation_service\.go
       linters:
@@ -866,20 +867,13 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - revive      # argument-limit in generation functions
-        - godox       # BUG-010 references (documented feature tracking)
+        - revive
+        - godox
 
     # =========================================================================
-    # LEGACY CLI - Needs refactoring
+    # C14. LEGACY CLI - Needs refactoring
     # =========================================================================
     - path: internal/cli/app/app\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-
-    - path: internal/cli/models/form\.go
       linters:
         - gocognit
         - gocyclo
@@ -892,7 +886,7 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - revive      # Complex form model
+        - revive
 
     - path: internal/cli/models/standard_model\.go
       linters:
@@ -900,28 +894,28 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - revive      # Standard model base class
+        - revive
 
     - path: internal/cli/models/metadata_editor_new\.go
       linters:
-        - revive      # Context parameter position
-        - dupl        # Editor models share similar patterns
+        - revive
+        - dupl
 
     - path: internal/cli/models/fact_editor_new\.go
       linters:
-        - revive      # Context parameter position
-        - dupl        # Editor models share similar patterns
+        - revive
+        - dupl
 
     - path: internal/cli/models/capture_form\.go
       linters:
-        - gocritic    # evalOrder in form submission
+        - gocritic
 
     - path: internal/cli/models/skill_form\.go
       linters:
-        - gocritic    # evalOrder in form submission
+        - gocritic
 
     # =========================================================================
-    # LEGACY SCREENS - Complex UI components
+    # C15. LEGACY SCREENS - Complex UI components
     # =========================================================================
     - path: internal/cli/screens/capture/event_review_screen\.go
       linters:
@@ -929,7 +923,7 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - gocritic    # Complex review screen
+        - gocritic
 
     - path: internal/cli/screens/configure/edit_settings\.go
       linters:
@@ -937,74 +931,90 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - dupl        # Settings screens share similar patterns
+        - dupl
 
     - path: internal/cli/screens/configure/edit_settings_modal\.go
       linters:
-        - dupl        # Settings screens share similar patterns
+        - dupl
 
     - path: internal/cli/screens/configure/domain_select\.go
       linters:
-        - gocritic    # unlambda - functional formatting is intentional
-
-    - path: internal/cli/screens/skills/form\.go
-      linters:
-        - gocritic    # unlambda - functional formatting is intentional
-
-    # =========================================================================
-    # LEGACY FORMS - Form builders with many fields
-    # =========================================================================
-    - path: internal/cli/forms/metadata_form\.go
-      linters:
-        - funlen      # Form builders need many lines for field definitions
         - gocritic
-        - dupl        # Form builders have similar patterns
 
-    - path: internal/cli/forms/capture_event_form\.go
+    - path: internal/cli/screens/skills/skill_form\.go
       linters:
-        - funlen      # Form builders need many lines
         - gocritic
-        - dupl        # Form builders have similar patterns
 
-    - path: internal/cli/forms/cv_config_form\.go
-      linters:
-        - funlen      # Form builders need many lines
-        - revive      # Argument limit for form factory functions
-
-    - path: internal/cli/forms/validators\.go
-      linters:
-        - revive      # Redefines min for validation
-
-    # =========================================================================
-    # LEGACY THEMES - Theme generation has many style definitions
-    # =========================================================================
-    - path: internal/cli/themes/huh\.go
-      linters:
-        - funlen      # Theme generation requires many style definitions
-
-    - path: internal/cli/themes/styles\.go
-      linters:
-        - funlen      # Style generation requires many definitions
-
-    # =========================================================================
-    # LEGACY CONFIG - Complex default configuration
-    # =========================================================================
-    - path: internal/config/config\.go
-      linters:
-        - funlen      # DefaultConfig needs many default values
-
-    # =========================================================================
-    # LEGACY INTENTS CONTEXT - Complex initialization
-    # =========================================================================
-    - path: internal/cli/intents/configure_system\.go
+    - path: internal/cli/screens/export/preview\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
-        - revive      # Complex configuration logic
+        - nestif
+        - gocritic
+        - revive
+        - lll
+
+    - path: internal/cli/screens/cv/preview\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - nestif
+        - gocritic
+        - revive
+
+    - path: internal/cli/screens/timeline/event_list\.go
+      linters:
+        - funlen
+
+    - path: internal/cli/screens/skills/skill_list\.go
+      linters:
+        - gocyclo
+        - funlen
+        - revive
+
+    - path: internal/cli/screens/capture/event_submit_screen\.go
+      linters:
+        - nestif
 
     # =========================================================================
-    # LEGACY STATE MATRIX - Parser/scanner utilities
+    # C16. LEGACY FORMS - Form builders with many fields
+    # =========================================================================
+    - path: internal/cli/forms/metadata_form\.go
+      linters:
+        - funlen
+        - gocritic
+        - dupl
+
+    - path: internal/cli/forms/capture_event_form\.go
+      linters:
+        - funlen
+        - gocritic
+        - dupl
+
+    - path: internal/cli/forms/cv_config_form\.go
+      linters:
+        - funlen
+        - revive
+
+    - path: internal/cli/forms/validators\.go
+      linters:
+        - revive
+
+    # =========================================================================
+    # C17. LEGACY THEMES - Theme generation has many style definitions
+    # =========================================================================
+    - path: internal/cli/themes/huh\.go
+      linters:
+        - funlen
+
+    - path: internal/cli/themes/styles\.go
+      linters:
+        - funlen
+
+    # =========================================================================
+    # C18. LEGACY STATE MATRIX - Parser/scanner utilities
     # =========================================================================
     - path: internal/cli/statematrix/scanner\.go
       linters:
@@ -1012,7 +1022,7 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - revive      # ScanAll complexity
+        - revive
 
     - path: internal/cli/statematrix/parser\.go
       linters:
@@ -1020,17 +1030,17 @@ issues:
         - gocyclo
         - funlen
         - dupl
-        - revive      # ClassifyState complexity
+        - revive
 
     - path: internal/cli/statematrix/generator\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
-        - revive      # Complex diagram generation
+        - revive
 
     # =========================================================================
-    # LEGACY TECHNOLOGY SERVICE - Focus area analysis
+    # C19. LEGACY TECHNOLOGY SERVICE - Focus area analysis
     # =========================================================================
     - path: internal/service/career/technology/focus_area\.go
       linters:
@@ -1044,7 +1054,7 @@ issues:
         - funlen
         - nestif
         - dupl
-        - revive      # Complex CSV parsing
+        - revive
 
     - path: internal/cli/importer/service\.go
       linters:
@@ -1052,14 +1062,14 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - revive      # Complex import logic
+        - revive
 
     - path: internal/cli/importer/mapper\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
-        - revive      # Complex mapping logic
+        - revive
 
     - path: cmd/cli/main\.go
       linters:
@@ -1067,42 +1077,39 @@ issues:
         - gocyclo
         - funlen
         - nestif
-        - revive      # CLI main has complex argument parsing
+        - revive
 
     # =========================================================================
-    # REPOSITORIES - Career domain persistence
+    # C20. REPOSITORIES - Career domain persistence
     # =========================================================================
-    # Repository interface files (package root) - structural duplication
-    # across CRUD interfaces is inherent to Go's type system.
     - path: internal/repository/career/burst_repository\.go
       linters:
-        - dupl           # CRUD interface duplication across entity types
-        - interfacebloat # Repository interface design
+        - dupl
+        - interfacebloat
 
     - path: internal/repository/career/event_repository\.go
       linters:
-        - dupl           # CRUD interface duplication across entity types
-        - interfacebloat # Repository interface design
+        - dupl
+        - interfacebloat
 
     - path: internal/repository/career/fact_repository\.go
       linters:
-        - dupl           # CRUD interface duplication across entity types
-        - interfacebloat # Repository interface design
+        - dupl
+        - interfacebloat
 
     - path: internal/repository/career/skill_repository\.go
       linters:
-        - dupl           # CRUD interface duplication across entity types
-        - interfacebloat # Repository interface design
+        - dupl
+        - interfacebloat
 
     - path: internal/repository/career/migrator\.go
       linters:
-        - funlen         # handleBaselineMigration
+        - funlen
 
-    # SQL (GORM) repositories - structural duplication across entity-specific
-    # CRUD/List/Update methods is inherent to Go's type system.
+    # SQL (GORM) repositories
     - path: internal/repository/career/sql/burst_repository\.go
       linters:
-        - dupl           # Update/List pattern shared with fact repo
+        - dupl
 
     - path: internal/repository/career/sql/skill_repository\.go
       linters:
@@ -1111,7 +1118,7 @@ issues:
         - funlen
         - dupl
         - nestif
-        - revive         # Complex List() function
+        - revive
 
     - path: internal/repository/career/sql/fact_repository\.go
       linters:
@@ -1119,18 +1126,18 @@ issues:
         - gocyclo
         - funlen
         - dupl
-        - revive         # Complex List() function
-        - gocritic       # equalFold, emptyFallthrough
+        - revive
+        - gocritic
 
     - path: internal/repository/career/sql/event_repository\.go
       linters:
-        - gocognit       # List() function complexity
+        - gocognit
         - gocyclo
         - funlen
-        - revive         # Complex List() function
+        - revive
 
     # =========================================================================
-    # LEGACY UIKIT WIDGETS - Complex rendering components
+    # C21. LEGACY UIKIT - Layout and rendering components
     # =========================================================================
     - path: internal/cli/uikit/widgets/detail_view\.go
       linters:
@@ -1139,149 +1146,30 @@ issues:
         - funlen
         - gocritic
         - nestif
-        - revive      # Complex text wrapping
-
-    # =========================================================================
-    # TERMINAL INFO - Uses builtin redefinitions intentionally
-    # =========================================================================
-    - path: internal/cli/terminal/info\.go
-      linters:
-        - revive      # Redefines max function intentionally
-
-    # =========================================================================
-    # PACKAGE NAMING - Allow underscores in subdirectory packages
-    # Project convention: intent/screen subdirectories use underscores for readability
-    # Examples: browse_timeline, fact_management, skills_management, burst_management
-    # =========================================================================
-    - path: internal/cli/intents/[a-z_]+/.*\.go
-      linters:
         - revive
-      text: "var-naming.*underscore in package name"
 
-    - path: internal/cli/screens/[a-z_]+/.*\.go
-      linters:
-        - revive
-      text: "var-naming.*underscore in package name"
-
-    - path: internal/service/career/burst_fact/.*\.go
-      linters:
-        - revive
-      text: "var-naming.*underscore in package name"
-
-    - path: internal/service/career/burst_fact/detector\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - gocritic    # Complex burst detection logic
-
-    - path: internal/service/career/burst_fact/classifier\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - revive      # Complex classification logic
-
-    - path: internal/service/career/burst_fact/extractor\.go
-      linters:
-        - gocyclo
-        - revive      # Complex extraction logic
-
-    - path: internal/service/career/burst_fact/detector\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - gocritic    # Complex burst detection logic
-        - revive      # Complex detection logic
-
-    - path: internal/service/career/classification/classifier\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - revive      # Complex classification logic
-
-    - path: internal/service/career/cv/profile_inference\.go
-      linters:
-        - gocognit
-        - revive      # Complex inference logic
-
-    # =========================================================================
-    # LEGACY REPOSITORIES - Filter methods have complex query building
-    # =========================================================================
-    - path: internal/repository/career/sqlite_burst_repository\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - dupl
-        - revive      # Complex List() function
-        - gocritic    # equalFold, emptyFallthrough
-
-    # =========================================================================
-    # LEGACY SCREENS - Complex preview/export screens
-    # =========================================================================
-    - path: internal/cli/screens/export/preview\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - gocritic
-        - revive      # argument-limit in preview functions
-        - lll         # Long function signatures
-
-    - path: internal/cli/screens/cv/preview\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - gocritic    # Preview rendering has style-specific code
-        - revive      # Complex CV rendering
-
-    - path: internal/cli/screens/timeline/event_list\.go
-      linters:
-        - funlen
-
-    - path: internal/cli/screens/skills/list\.go
-      linters:
-        - gocyclo
-        - funlen
-        - revive      # Complex skills list navigation
-
-    - path: internal/cli/screens/capture/event_submit_screen\.go
-      linters:
-        - nestif
-
-    # =========================================================================
-    # LEGACY UIKIT - Layout components
-    # =========================================================================
     - path: internal/cli/uikit/layout/screen_layout\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
         - nestif
-        - gocritic    # Layout rendering has complex composition
-        - revive      # Complex render function
-        - godot       # Layout component - comment style less critical
+        - gocritic
+        - revive
+        - godot
 
     - path: internal/cli/uikit/primitives/text\.go
       linters:
         - gocyclo
         - funlen
-        - revive      # Complex style builder
+        - revive
 
     - path: internal/cli/uikit/feedback/modal\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
-        - revive      # Complex modal rendering
+        - revive
 
     - path: internal/cli/uikit/feedback/modal_container\.go
       linters:
@@ -1297,36 +1185,75 @@ issues:
 
     - path: internal/cli/uikit/display/logo\.go
       linters:
-        - gocritic    # evalOrder in tick animation
+        - gocritic
 
     - path: internal/cli/uikit/feedback/info_modal\.go
       linters:
-        - gocritic    # emptyFallthrough intentional
+        - gocritic
 
     - path: internal/cli/navigation/help\.go
       linters:
         - funlen
 
     # =========================================================================
-    # LEGACY COMPONENTS - Filter modals
+    # C22. TERMINAL INFO
     # =========================================================================
-    - path: internal/cli/components/skill_filter_modal\.go
+    - path: internal/cli/terminal/info\.go
+      linters:
+        - revive
+
+    # =========================================================================
+    # C23. PACKAGE NAMING - Allow underscores in subdirectory packages
+    # =========================================================================
+    - path: internal/cli/intents/[a-z_]+/.*\.go
+      linters:
+        - revive
+      text: "var-naming.*underscore in package name"
+
+    - path: internal/cli/screens/[a-z_]+/.*\.go
+      linters:
+        - revive
+      text: "var-naming.*underscore in package name"
+
+    # =========================================================================
+    # C24. BURST FACT SERVICE - Complex detection logic
+    # =========================================================================
+    - path: internal/service/career/burstfact/detector\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
         - nestif
-        - dupl
-        - revive      # Complex form building
+        - gocritic
+        - revive
 
-    - path: internal/cli/components/skill_sort_modal\.go
+    - path: internal/service/career/burstfact/classifier\.go
       linters:
-        - dupl
+        - gocognit
+        - gocyclo
+        - funlen
+        - revive
 
-    - path: internal/cli/components/skill_search_modal\.go
+    - path: internal/service/career/burstfact/extractor\.go
       linters:
-        - dupl
+        - gocyclo
+        - revive
 
+    - path: internal/service/career/classification/classifier\.go
+      linters:
+        - gocognit
+        - gocyclo
+        - funlen
+        - revive
+
+    - path: internal/service/career/cv/profile_inference\.go
+      linters:
+        - gocognit
+        - revive
+
+    # =========================================================================
+    # C26. LEGACY COMPONENTS - Modals
+    # =========================================================================
     - path: internal/cli/components/cv_config_wizard_modal\.go
       linters:
         - gocognit
@@ -1334,7 +1261,7 @@ issues:
         - funlen
         - nestif
         - dupl
-        - revive      # Complex wizard state machine
+        - revive
 
     - path: internal/cli/components/export_options_modal\.go
       linters:
@@ -1345,141 +1272,34 @@ issues:
         - funlen
 
     # =========================================================================
-    # LEGACY INTENTS - Modals helper
+    # C27. LEGACY INTENTS - Additional exemptions
     # =========================================================================
-    - path: internal/cli/intents/modals\.go
-      linters:
-        - funlen
-        - gocritic    # Modal registry has many similar entries
-
-    # Intent test files - test patterns have different requirements
     - path: internal/cli/intents/.*_test\.go
       linters:
-        - revive      # Test mocks may have unused parameters
-
-    # Modal adapters and registry - support code for modal pattern
-    - path: internal/cli/intents/modal_
-      linters:
-        - godot       # Comment style in adapter code
-        - revive      # Unused params in test mocks
-
-    # Exclude test fixtures and utilities from strict checks
-    # These are test helpers where MustCreate() is intentionally used without error checks.
-    - path: internal/testutil/
-      linters:
-        - errcheck    # MustCreate() returns are intentionally ignored
-        - revive      # Factory patterns use unused args by design
-        - funlen      # Setup functions can be long
-        - gocritic    # Style suggestions not critical for test utils
-
-    # Allow .kariya paths in config.go - this is where the default path is legitimately defined
-    - path: internal/config/config\.go
-      linters:
-        - forbidigo
-      text: "HARDCODED PATH"
-
-    # Exclude linters from generated files
-    - path: ".*_generated\\.go"
-      linters:
-        - all
-
-    # Allow longer lines in test files
-    - path: _test\.go
-      linters:
-        - lll
-      text: "line is"
-
-    # Bubble Tea Update() functions often need type switches
-    - path: ".*intent.*\\.go"
-      linters:
-        - gocyclo
-      source: "func.*Update.*tea\\.Msg"
-
-    # Allow interface{} in Bubble Tea message handling
-    - linters:
         - revive
-      text: "empty-interface"
-      source: "tea\\.Msg"
 
-    # Exclude false positives for context in Bubble Tea
-    - linters:
-        - contextcheck
-      text: "non-inherited new context"
-
-    # Allow View() functions to be longer (rendering logic)
-    - path: ".*\\.go"
+    - path: internal/cli/intents/modal_.*\.go
       linters:
-        - funlen
-      source: "func.*View\\(\\).*string"
+        - revive
 
-    # Exclude depguard from test files (tests may need to verify deprecated code)
-    - path: _test\.go
-      linters:
-        - depguard
-
-    # Legacy files that import huh directly - allowed until migrated
-    # The huh-restricted-to-forms rule was added after these files existed.
-    # Migration tracked in: docs/FORMS_GUIDE.md
-    #
-    # NOTE: New code must NOT import huh outside forms/ package.
-    # These exclusions are ONLY for legacy files that predate the rule.
-    - path: internal/cli/models/(burst_suggestion_new|capture_form|fact_editor_new|metadata_editor_new|skill_form)\.go
-      linters:
-        - depguard
-      text: "huh-restricted-to-forms"
-
-    # Legacy components/ package - deprecated, migrate to uikit/
-    - path: internal/cli/components/.*\.go
-      linters:
-        - depguard
-      text: "huh-restricted-to-forms"
-
-    # Legacy intents/modals.go - contains modal helpers that use huh
-    - path: internal/cli/intents/modals\.go
-      linters:
-        - depguard
-      text: "huh-restricted-to-forms"
-
-    # Legacy screens that use huh directly - migrate to use forms/ package
-    - path: internal/cli/screens/base/form_screen\.go
-      linters:
-        - depguard
-      text: "huh-restricted-to-forms"
-
-    - path: internal/cli/screens/configure/(edit_settings|edit_settings_modal)\.go
-      linters:
-        - depguard
-      text: "huh-restricted-to-forms"
-
-    - path: internal/cli/screens/skills/form\.go
-      linters:
-        - depguard
-      text: "huh-restricted-to-forms"
-
-    # Timeline modals use huh directly - part of browse_timeline migration
-    # These are new in PR #115 but follow the existing modal pattern.
-    # Migration to forms/ package tracked for future work.
-    - path: internal/cli/screens/timeline/modals/.*\.go
-      linters:
-        - depguard
-      text: "huh-restricted-to-forms"
-
+# =============================================================================
+# SEVERITY CONFIGURATION
+# =============================================================================
 severity:
   default-severity: warning
   case-sensitive: false
   rules:
-    # Make error handling errors (not warnings)
+    # Errors (blocking)
     - linters:
         - errcheck
         - nilerr
-      severity: error
-
-    # Make security issues errors
-    - linters:
         - gosec
-      severity: error
-
-    # Make architecture violations errors
-    - linters:
         - depguard
       severity: error
+
+    # Warnings (non-blocking initially)
+    - linters:
+        - stylecheck
+        - godot
+        - revive
+      severity: warning

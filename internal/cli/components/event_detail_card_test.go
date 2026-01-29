@@ -13,12 +13,12 @@ import (
 var _ = Describe("EventDetailCard", func() {
 	var (
 		testTheme themes.Theme
-		testEvent *career.CareerEvent
+		testEvent *career.Event
 	)
 
 	BeforeEach(func() {
 		testTheme = themes.NewDefaultTheme()
-		testEvent = &career.CareerEvent{
+		testEvent = &career.Event{
 			ID:         "test-123",
 			Text:       "Implemented new feature for the product",
 			Date:       time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),

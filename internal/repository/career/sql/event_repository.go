@@ -28,7 +28,7 @@ func NewEventRepository(db *gorm.DB) *EventRepository {
 }
 
 // Create adds a new career event to the database.
-func (r *EventRepository) Create(ctx context.Context, event *career.CareerEvent) error {
+func (r *EventRepository) Create(ctx context.Context, event *career.Event) error {
 	if event.ID == "" {
 		event.ID = uuid.New().String()
 	}
@@ -51,7 +51,7 @@ func (r *EventRepository) Create(ctx context.Context, event *career.CareerEvent)
 }
 
 // GetByID retrieves a career event by its ID.
-func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.CareerEvent, error) {
+func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.Event, error) {
 	var model models.Event
 	err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -74,7 +74,7 @@ func (r *EventRepository) GetByID(ctx context.Context, id string) (*career.Caree
 }
 
 // Update modifies an existing career event.
-func (r *EventRepository) Update(ctx context.Context, event *career.CareerEvent) error {
+func (r *EventRepository) Update(ctx context.Context, event *career.Event) error {
 	// Check if record exists first.
 	var count int64
 	if err := r.db.WithContext(ctx).Model(&models.Event{}).Where("id = ?", event.ID).Count(&count).Error; err != nil {
@@ -108,7 +108,7 @@ func (r *EventRepository) Delete(ctx context.Context, id string) error {
 }
 
 // List retrieves career events with optional filtering.
-func (r *EventRepository) List(ctx context.Context, filters career_repo.EventListFilters) ([]*career.CareerEvent, error) {
+func (r *EventRepository) List(ctx context.Context, filters career_repo.EventListFilters) ([]*career.Event, error) {
 	query := r.db.WithContext(ctx).Model(&models.Event{})
 	query = r.applyFilters(query, filters)
 	query = r.applySorting(query, filters)
@@ -131,7 +131,7 @@ func (r *EventRepository) List(ctx context.Context, filters career_repo.EventLis
 		return nil, err
 	}
 
-	events := make([]*career.CareerEvent, len(results))
+	events := make([]*career.Event, len(results))
 	for i := range results {
 		events[i] = results[i].ToDomain()
 		// Assign preloaded skill IDs from the batched lookup.
@@ -195,7 +195,7 @@ func (r *EventRepository) applySorting(query *gorm.DB, filters career_repo.Event
 func (r *EventRepository) applyPagination(query *gorm.DB, filters career_repo.EventListFilters) *gorm.DB {
 	limit := filters.Limit
 	if limit == 0 {
-		limit = 100 // Default limit.
+		limit = 100
 	}
 	return query.Limit(limit).Offset(filters.Offset)
 }

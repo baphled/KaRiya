@@ -59,7 +59,7 @@ var _ = PDescribe("CaptureEvent Post-Save Enrichment E2E", func() {
 		// Submit event using helper to bypass huh form navigation issues
 		// (TextArea fields don't respond to Enter/Tab as expected in tests)
 		testEventText := "Built REST API with Go and PostgreSQL for high-throughput data processing"
-		testEvent := &career.CareerEvent{
+		testEvent := &career.Event{
 			Text:      testEventText,
 			Date:      time.Now(),
 			CreatedAt: time.Now(),
