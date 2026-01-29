@@ -463,4 +463,143 @@ var _ = Describe("DefaultSectionBuilder", func() {
 			Expect(expSection.Content[1].Header).To(Equal("OldCorp"))
 		})
 	})
+
+	// BUG-014: Date calculation in groupBulletsByCompany ignores primary company.
+	Context("BUG-014: date calculation filters by primary company", func() {
+		It("should compute date range using only events from the primary company", func() {
+			// Bullet has SourceEventIDs from two companies:
+			// - BEIS event from Jun 2019
+			// - BEIS event from Dec 2019
+			// - We Are Friday event from Nov 2012
+			// Primary company is BEIS (2 events vs 1), so dates should be Jun 2019 - Dec 2019.
+
+			beisEvent1 := fixtures.EventWith("beis1", "Policy work", "BEIS", "")
+			beisEvent1.Date = time.Date(2019, 6, 15, 0, 0, 0, 0, time.UTC)
+
+			beisEvent2 := fixtures.EventWith("beis2", "Delivery work", "BEIS", "")
+			beisEvent2.Date = time.Date(2019, 12, 15, 0, 0, 0, 0, time.UTC)
+
+			wafEvent := fixtures.EventWith("waf1", "Old project", "We Are Friday", "")
+			wafEvent.Date = time.Date(2012, 11, 15, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{beisEvent1, beisEvent2, wafEvent}
+
+			// Bullet references all three events (cross-company SourceEventIDs from BUG-013).
+			bullet := &career.CVBullet{
+				ID:             "bullet-cross",
+				Text:           "Cross-company bullet",
+				SourceEventIDs: []string{"beis1", "beis2", "waf1"},
+				Rank:           0.8,
+			}
+			bullets := []*career.CVBullet{bullet}
+
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find experience section.
+			var expSection *career.CVSection
+			for _, s := range sections {
+				if s.SectionType == "experience" {
+					expSection = s
+					break
+				}
+			}
+			Expect(expSection).NotTo(BeNil())
+
+			// The bullet should be assigned to BEIS (primary company).
+			Expect(expSection.Content).To(HaveLen(1))
+			Expect(expSection.Content[0].Header).To(Equal("BEIS"))
+
+			// Dates should reflect BEIS events only: Jun 2019 - Dec 2019.
+			Expect(expSection.Content[0].StartDate).To(Equal("Jun 2019"))
+			Expect(expSection.Content[0].EndDate).To(Equal("Dec 2019"))
+		})
+
+		It("should produce correct dates for a cross-cutting bullet with many source companies", func() {
+			// Bullet with events from 3 companies: CompanyA (x3, 2023), CompanyB (x1, 2020), CompanyC (x1, 2018).
+			// Primary = CompanyA. Dates should only reflect CompanyA events.
+
+			eventA1 := fixtures.EventWith("a1", "Work A1", "CompanyA", "")
+			eventA1.Date = time.Date(2023, 3, 1, 0, 0, 0, 0, time.UTC)
+
+			eventA2 := fixtures.EventWith("a2", "Work A2", "CompanyA", "")
+			eventA2.Date = time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC)
+
+			eventA3 := fixtures.EventWith("a3", "Work A3", "CompanyA", "")
+			eventA3.Date = time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)
+
+			eventB := fixtures.EventWith("b1", "Work B", "CompanyB", "")
+			eventB.Date = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+			eventC := fixtures.EventWith("c1", "Work C", "CompanyC", "")
+			eventC.Date = time.Date(2018, 5, 1, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{eventA1, eventA2, eventA3, eventB, eventC}
+
+			bullet := &career.CVBullet{
+				ID:             "bullet-multi",
+				Text:           "Multi-company bullet",
+				SourceEventIDs: []string{"a1", "a2", "a3", "b1", "c1"},
+				Rank:           0.8,
+			}
+			bullets := []*career.CVBullet{bullet}
+
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find experience section.
+			var expSection *career.CVSection
+			for _, s := range sections {
+				if s.SectionType == "experience" {
+					expSection = s
+					break
+				}
+			}
+			Expect(expSection).NotTo(BeNil())
+
+			// Should be assigned to CompanyA (3 events, most frequent).
+			Expect(expSection.Content).To(HaveLen(1))
+			Expect(expSection.Content[0].Header).To(Equal("CompanyA"))
+
+			// Dates should be Mar 2023 - Sep 2023 (CompanyA only), NOT May 2018 - Sep 2023.
+			Expect(expSection.Content[0].StartDate).To(Equal("Mar 2023"))
+			Expect(expSection.Content[0].EndDate).To(Equal("Sep 2023"))
+		})
+
+		It("should handle a single-company bullet without date corruption", func() {
+			// Sanity check: a bullet with events from only one company should still work.
+
+			event1 := fixtures.EventWith("e1", "Work 1", "SingleCo", "")
+			event1.Date = time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
+
+			event2 := fixtures.EventWith("e2", "Work 2", "SingleCo", "")
+			event2.Date = time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
+
+			events := []*career.CareerEvent{event1, event2}
+
+			bullet := &career.CVBullet{
+				ID:             "bullet-single",
+				Text:           "Single-company bullet",
+				SourceEventIDs: []string{"e1", "e2"},
+				Rank:           0.8,
+			}
+			bullets := []*career.CVBullet{bullet}
+
+			sections, err := builder.BuildSections(ctx, bullets, events, []*career.Fact{}, "senior_ic", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			var expSection *career.CVSection
+			for _, s := range sections {
+				if s.SectionType == "experience" {
+					expSection = s
+					break
+				}
+			}
+			Expect(expSection).NotTo(BeNil())
+			Expect(expSection.Content).To(HaveLen(1))
+			Expect(expSection.Content[0].Header).To(Equal("SingleCo"))
+			Expect(expSection.Content[0].StartDate).To(Equal("Apr 2021"))
+			Expect(expSection.Content[0].EndDate).To(Equal("Aug 2021"))
+		})
+	})
 })
