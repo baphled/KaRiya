@@ -195,10 +195,8 @@ linters-settings:
         severity: warning
       - name: package-comments
         severity: warning
-        disabled: true
       - name: exported
         severity: warning
-        disabled: true
 
       # Error handling
       - name: error-return
@@ -384,6 +382,10 @@ linters-settings:
             desc: "ARCHITECTURE: uikit/ cannot import components/"
           - pkg: "github.com/baphled/kariya/internal/cli/behaviors"
             desc: "ARCHITECTURE: uikit/ cannot import behaviors/"
+          - pkg: "github.com/baphled/kariya/internal/cli/models"
+            desc: "ARCHITECTURE: uikit/ cannot import models/"
+          - pkg: "github.com/baphled/kariya/internal/cli/forms"
+            desc: "ARCHITECTURE: uikit/ cannot import forms/"
 
       # Layer 2: Behaviors (utilities - no screen/intent imports)
       behaviors-no-tui-imports:
@@ -399,6 +401,7 @@ linters-settings:
       screens-no-intent-imports:
         files:
           - "**/screens/**/*.go"
+          - "**/screens/*.go"
           - "!**/*_test.go"
         deny:
           - pkg: "github.com/baphled/kariya/internal/cli/intents"
@@ -423,6 +426,8 @@ linters-settings:
           - "!**/components/**"
           - "!**/models/**"
           - "!**/*_test.go"
+          - "**/intents/**/*.go"
+          - "**/screens/**/*.go"
         deny:
           - pkg: "github.com/baphled/kariya/internal/cli/styles"
             desc: "DEPRECATED: Use theme system instead"
@@ -431,8 +436,11 @@ linters-settings:
       huh-restricted-to-forms:
         files:
           - "**/intents/**/*.go"
+          - "**/intents/*.go"
           - "**/screens/**/*.go"
+          - "**/screens/*.go"
           - "**/components/**/*.go"
+          - "**/components/*.go"
           - "!**/*_test.go"
         deny:
           - pkg: "github.com/charmbracelet/huh"
@@ -550,6 +558,21 @@ issues:
         - gocritic
       text: "singleCaseSwitch"
 
+    # Modal revive patterns (unnecessary-stmt, unused-parameter).
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - revive
+      text: "unnecessary-stmt"
+
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - revive
+      text: "unused-parameter"
+
+    - path: internal/cli/screens/.*/modals/.*\.go
+      linters:
+        - godot
+
     # =========================================================================
     # C3. GENERATED FILES - Skip all
     # =========================================================================
@@ -576,7 +599,8 @@ issues:
       linters:
         - errcheck
         - revive
-      text: "unused-parameter"
+        - funlen
+        - gocritic
 
     # =========================================================================
     # C6. LEGACY: DEPRECATED PACKAGES (migration tracked)
@@ -612,55 +636,9 @@ issues:
 
     # =========================================================================
     # C7. LEGACY: OLD SINGLE-FILE INTENTS (migration tracked)
-    # These will be migrated to subdirectory structure.
-    # NO new single-file intents should be created.
+    # Only files that still exist on disk. Migrated intents use C12.
     # =========================================================================
-    - path: internal/cli/intents/burst_management_intent\.go
-      linters:
-        - godot
-        - stylecheck
-        - revive
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-
-    - path: internal/cli/intents/burst_management\.go
-      linters:
-        - godot
-        - stylecheck
-        - revive
-
-    - path: internal/cli/intents/fact_management_intent\.go
-      linters:
-        - godot
-        - stylecheck
-        - revive
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-
-    - path: internal/cli/intents/fact_management\.go
-      linters:
-        - godot
-        - stylecheck
-        - revive
-
     - path: internal/cli/intents/capture_event_intent\.go
-      linters:
-        - godot
-        - stylecheck
-        - revive
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-
-    - path: internal/cli/intents/manage_skills_intent\.go
       linters:
         - godot
         - stylecheck
@@ -707,11 +685,17 @@ issues:
         - stylecheck
         - revive
         - funlen
+        - dupl
         - gocritic
 
     - path: internal/cli/intents/modal_.*\.go
       linters:
         - godot
+        - stylecheck
+        - revive
+
+    - path: internal/cli/intents/view_helpers\.go
+      linters:
         - stylecheck
 
     # =========================================================================
@@ -742,7 +726,7 @@ issues:
         - depguard
       text: "huh-restricted-to-forms"
 
-    - path: internal/cli/screens/skills/form\.go
+    - path: internal/cli/screens/skills/skill_form\.go
       linters:
         - depguard
       text: "huh-restricted-to-forms"
@@ -755,7 +739,7 @@ issues:
     # =========================================================================
     # C9. LEGACY: DEPRECATED COMPONENTS USAGE (migration tracked)
     # =========================================================================
-    - path: internal/cli/intents/skills_management/.*\.go
+    - path: internal/cli/intents/skillsmanagement/.*\.go
       linters:
         - depguard
       text: "prevent-deprecated-components"
@@ -768,102 +752,10 @@ issues:
         - depguard
 
     # =========================================================================
-    # C11. GODOT - Relaxed for existing directories
-    # Godot requires comments to end with a period. These directories have
-    # legacy comments that predate the enforcement.
+    # C12. SUBDIRECTORY INTENTS - Migrated architecture
     # =========================================================================
-    - path: internal/cli/components/.*\.go
-      linters:
-        - godot
 
-    - path: internal/cli/terminal/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/navigation/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/screens/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/uikit/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/intents/.*\.go
-      linters:
-        - godot
-
-    - path: internal/repository/.*\.go
-      linters:
-        - godot
-
-    - path: internal/testutil/.*\.go
-      linters:
-        - godot
-
-    - path: internal/config/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/models/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/types/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/forms/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/service/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/importer/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/behaviors/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/themes/.*\.go
-      linters:
-        - godot
-
-    - path: internal/cli/statematrix/.*\.go
-      linters:
-        - godot
-
-    - path: internal/service/.*\.go
-      linters:
-        - godot
-
-    - path: internal/constants/.*\.go
-      linters:
-        - godot
-
-    - path: internal/domain/.*\.go
-      linters:
-        - godot
-
-    - path: internal/logger/.*\.go
-      linters:
-        - godot
-
-    - path: cmd/.*\.go
-      linters:
-        - godot
-
-    # =========================================================================
-    # C12. NEW SUBDIRECTORY INTENTS - Migrated architecture
-    # =========================================================================
-    - path: internal/cli/intents/browse_timeline/
+    - path: internal/cli/intents/browsetimeline/
       linters:
         - revive
         - gocognit
@@ -871,9 +763,8 @@ issues:
         - nestif
         - funlen
         - errcheck
-        - godot
 
-    - path: internal/cli/intents/skills_management/
+    - path: internal/cli/intents/skillsmanagement/
       linters:
         - revive
         - gocognit
@@ -882,12 +773,31 @@ issues:
         - funlen
         - errcheck
         - godox
-        - godot
-
-    - path: internal/cli/intents/skills_management/.*\.go
-      linters:
         - depguard
-      text: "prevent-deprecated-components"
+
+    # burst_management - uses underscores (not yet renamed).
+    - path: internal/cli/intents/burst_management/.*\.go
+      linters:
+        - stylecheck
+        - revive
+        - gocognit
+        - gocyclo
+        - nestif
+        - funlen
+        - errcheck
+
+    - path: internal/cli/screens/burst_management/.*\.go
+      linters:
+        - stylecheck
+
+    - path: internal/cli/intents/factmanagement/
+      linters:
+        - revive
+        - gocognit
+        - gocyclo
+        - nestif
+        - funlen
+        - errcheck
 
     # =========================================================================
     # C13. LEGACY SERVICE LAYER - Needs separate refactoring
@@ -918,6 +828,7 @@ issues:
         - gocyclo
         - funlen
         - nestif
+        - godox
         - revive
         - lll
 
@@ -963,13 +874,6 @@ issues:
     # C14. LEGACY CLI - Needs refactoring
     # =========================================================================
     - path: internal/cli/app/app\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-
-    - path: internal/cli/models/form\.go
       linters:
         - gocognit
         - gocyclo
@@ -1037,7 +941,7 @@ issues:
       linters:
         - gocritic
 
-    - path: internal/cli/screens/skills/form\.go
+    - path: internal/cli/screens/skills/skill_form\.go
       linters:
         - gocritic
 
@@ -1064,7 +968,7 @@ issues:
       linters:
         - funlen
 
-    - path: internal/cli/screens/skills/list\.go
+    - path: internal/cli/screens/skills/skill_list\.go
       linters:
         - gocyclo
         - funlen
@@ -1311,15 +1215,10 @@ issues:
         - revive
       text: "var-naming.*underscore in package name"
 
-    - path: internal/service/career/burst_fact/.*\.go
-      linters:
-        - revive
-      text: "var-naming.*underscore in package name"
-
     # =========================================================================
     # C24. BURST FACT SERVICE - Complex detection logic
     # =========================================================================
-    - path: internal/service/career/burst_fact/detector\.go
+    - path: internal/service/career/burstfact/detector\.go
       linters:
         - gocognit
         - gocyclo
@@ -1328,14 +1227,14 @@ issues:
         - gocritic
         - revive
 
-    - path: internal/service/career/burst_fact/classifier\.go
+    - path: internal/service/career/burstfact/classifier\.go
       linters:
         - gocognit
         - gocyclo
         - funlen
         - revive
 
-    - path: internal/service/career/burst_fact/extractor\.go
+    - path: internal/service/career/burstfact/extractor\.go
       linters:
         - gocyclo
         - revive
@@ -1353,37 +1252,8 @@ issues:
         - revive
 
     # =========================================================================
-    # C25. LEGACY REPOSITORIES - Filter methods with complex query building
+    # C26. LEGACY COMPONENTS - Modals
     # =========================================================================
-    - path: internal/repository/career/sqlite_burst_repository\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - dupl
-        - revive
-        - gocritic
-
-    # =========================================================================
-    # C26. LEGACY COMPONENTS - Filter modals
-    # =========================================================================
-    - path: internal/cli/components/skill_filter_modal\.go
-      linters:
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
-        - revive
-
-    - path: internal/cli/components/skill_sort_modal\.go
-      linters:
-        - dupl
-
-    - path: internal/cli/components/skill_search_modal\.go
-      linters:
-        - dupl
-
     - path: internal/cli/components/cv_config_wizard_modal\.go
       linters:
         - gocognit
@@ -1408,9 +1278,8 @@ issues:
       linters:
         - revive
 
-    - path: internal/cli/intents/modal_
+    - path: internal/cli/intents/modal_.*\.go
       linters:
-        - godot
         - revive
 
 # =============================================================================
