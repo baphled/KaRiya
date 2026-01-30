@@ -78,7 +78,7 @@ func (m *Model) viewMenu() string {
 	// Start with 2 blank lines before logo for breathing room
 	allParts := []string{"", "", logoView, content}
 	// Add spacer lines individually (not as a joined string)
-	for i := 0; i < spacerHeight; i++ {
+	for range spacerHeight {
 		allParts = append(allParts, "")
 	}
 	allParts = append(allParts, "") // Blank line before help

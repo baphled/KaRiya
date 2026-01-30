@@ -320,7 +320,7 @@ func (sl *ScreenLayout) Render() string {
 		allParts = append(allParts, content)
 	}
 	// Add spacer lines individually (not as a joined string)
-	for i := 0; i < spacerHeight; i++ {
+	for range spacerHeight {
 		allParts = append(allParts, "")
 	}
 	if footer != "" {

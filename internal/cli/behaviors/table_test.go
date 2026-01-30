@@ -709,7 +709,7 @@ var _ = Describe("TableBehavior", func() {
 
 			It("should scroll down when navigating beyond viewport", func() {
 				// Navigate down multiple times
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					table.HandleNavigation("down")
 				}
 
@@ -720,12 +720,12 @@ var _ = Describe("TableBehavior", func() {
 
 			It("should scroll up when navigating up", func() {
 				// First scroll down
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					table.HandleNavigation("down")
 				}
 
 				// Then scroll up
-				for i := 0; i < 5; i++ {
+				for range 5 {
 					table.HandleNavigation("up")
 				}
 
