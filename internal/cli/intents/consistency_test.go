@@ -65,7 +65,6 @@ var _ = Describe("StandardView Consistency", func() {
 			testStandardViewConsistency("ConfigureSystem", view)
 		})
 	})
-
 })
 
 var _ = Describe("All Intents Initialization", func() {
