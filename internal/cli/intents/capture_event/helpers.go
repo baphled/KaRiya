@@ -3,12 +3,15 @@ package capture_event
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -259,7 +262,7 @@ func (i *Intent) getMetadataModalContent() *modalContentData {
 	return &modalContentData{
 		title:   i.reviewState.metadataModal.GetTitle(),
 		content: i.reviewState.metadataModal.GetContent(),
-		footer:  i.reviewState.metadataModal.GetFooter(),
+		footer:  renderFormModalFooter(),
 	}
 }
 
@@ -272,10 +275,13 @@ func (i *Intent) getBurstModalContent() *modalContentData {
 	if i.reviewState.burstModal == nil {
 		return nil
 	}
+	// Detect editing state from the model's footer text.
+	// The deprecated models package does not export an IsEditing() method.
+	editing := strings.Contains(i.reviewState.burstModal.GetFooter(), "Save")
 	return &modalContentData{
 		title:   i.reviewState.burstModal.GetTitle(),
 		content: i.reviewState.burstModal.GetContent(),
-		footer:  i.reviewState.burstModal.GetFooter(),
+		footer:  renderBurstModalFooter(editing),
 	}
 }
 
@@ -291,7 +297,7 @@ func (i *Intent) getFactModalContent() *modalContentData {
 	return &modalContentData{
 		title:   i.reviewState.factModal.GetTitle(),
 		content: i.reviewState.factModal.GetContent(),
-		footer:  i.reviewState.factModal.GetFooter(),
+		footer:  renderFormModalFooter(),
 	}
 }
 
@@ -325,6 +331,10 @@ func (i *Intent) getEditingModalContent() *modalContentData {
 // Returns:
 //   - The composited string with the modal centred over the background.
 //   - The unmodified background if modalContent is nil.
+//
+// The footer is appended to the content rather than passed via SetFooter()
+// to avoid OverlayModal.buildContent() applying MutedColor styling that
+// would conflict with pre-styled UIKit badge text.
 func (i *Intent) renderModalOverlay(background string, modalContent *modalContentData) string {
 	if modalContent == nil {
 		return background
@@ -338,9 +348,51 @@ func (i *Intent) renderModalOverlay(background string, modalContent *modalConten
 		height = info.Height
 	}
 
-	overlay := feedback.NewOverlayModal(modalContent.title, modalContent.content)
-	overlay.SetFooter(modalContent.footer)
+	// Include the footer as part of the content body to preserve
+	// badge styling. OverlayModal.SetFooter() wraps text in MutedColor
+	// which strips pre-styled badge colours.
+	content := modalContent.content
+	if modalContent.footer != "" {
+		content = content + "\n\n" + modalContent.footer
+	}
+
+	overlay := feedback.NewOverlayModal(modalContent.title, content)
 	overlay.SetWidth(80)
 
 	return overlay.RenderCentered(background, width, height)
+}
+
+// renderFormModalFooter returns a UIKit badge-styled footer for form modals.
+//
+// Used by metadata and fact editing modals that share the same key bindings.
+func renderFormModalFooter() string {
+	th := themes.NewDefaultTheme()
+	return primitives.RenderHelpFooter(th,
+		primitives.ConfirmBadge(th),
+		primitives.NextFieldBadge(th),
+		primitives.PrevBadge(th),
+		primitives.CancelBadge(th),
+	)
+}
+
+// renderBurstModalFooter returns a UIKit badge-styled footer for the burst modal.
+//
+// The burst modal has two modes: editing (form fields) and navigating (suggestion list).
+// Each mode shows different key bindings.
+func renderBurstModalFooter(editing bool) string {
+	th := themes.NewDefaultTheme()
+	if editing {
+		return primitives.RenderHelpFooter(th,
+			primitives.NextFieldBadge(th),
+			primitives.ConfirmBadge(th),
+			primitives.CancelBadge(th),
+		)
+	}
+	return primitives.RenderHelpFooter(th,
+		primitives.NavigateBadge(th),
+		primitives.HelpKeyBadge("y", "Confirm", th),
+		primitives.HelpKeyBadge("n", "Reject", th),
+		primitives.EditBadge(th),
+		primitives.BackBadge(th),
+	)
 }
