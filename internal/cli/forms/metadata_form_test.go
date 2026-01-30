@@ -192,8 +192,27 @@ var _ = Describe("MetadataForm", func() {
 			Expect(form).NotTo(BeNil())
 		})
 
+		It("should create a dimension-constrained form with fixed confirm", func() {
+			data := &forms.MetadataFormData{
+				Date:       "2024-01-15",
+				Company:    "Dimension Co",
+				Project:    "Modal Project",
+				Tags:       []string{"tag1"},
+				Categories: []string{"cat1"},
+			}
+
+			availableTags := []string{"tag1", "tag2", "tag3"}
+			availableCategories := []string{"cat1", "cat2"}
+			availableSkills := []*career.Skill{}
+
+			form := forms.NewMetadataEditorFormWithDataAndDimensions(
+				data, availableTags, availableCategories, availableSkills, 74, 20,
+			)
+
+			Expect(form).NotTo(BeNil())
+		})
+
 		It("should use DefaultFormHeight to calculate appropriate height", func() {
-			// Terminal height 40 should give reasonable form height.
 			height := forms.DefaultFormHeight(40)
 			Expect(height).To(BeNumerically(">=", 10))
 			Expect(height).To(BeNumerically("<=", 30))
@@ -202,6 +221,30 @@ var _ = Describe("MetadataForm", func() {
 		It("should enforce minimum height for small terminals", func() {
 			height := forms.DefaultFormHeight(15)
 			Expect(height).To(BeNumerically(">=", 10))
+		})
+	})
+
+	Describe("Modal form dimensions", func() {
+		It("should calculate ModalFormHeight with proper overhead", func() {
+			// A 40-line terminal should give reasonable modal form height.
+			height := forms.ModalFormHeight(40)
+			Expect(height).To(BeNumerically(">=", 12))
+			Expect(height).To(Equal(40 - 21))
+		})
+
+		It("should enforce minimum ModalFormHeight for small terminals", func() {
+			height := forms.ModalFormHeight(20)
+			Expect(height).To(BeNumerically(">=", 12))
+		})
+
+		It("should calculate ModalFormWidth from modal width", func() {
+			width := forms.ModalFormWidth(80)
+			Expect(width).To(Equal(74))
+		})
+
+		It("should enforce minimum ModalFormWidth", func() {
+			width := forms.ModalFormWidth(20)
+			Expect(width).To(BeNumerically(">=", 30))
 		})
 	})
 })

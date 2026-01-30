@@ -21,57 +21,91 @@ type MetadataFormData struct {
 // plus a Submit confirmation button.
 //
 // This form has no height constraint and renders all fields at once.
-// For modal overlays where space is limited, use NewMetadataEditorFormWithHeight.
+// For modal overlays where space is limited, use NewMetadataEditorFormWithDimensions.
 func NewMetadataEditorForm(
 	event *career.Event, availableTags, availableCategories []string, availableSkills []*career.Skill,
 ) *huh.Form {
 	data := GetMetadataFormData(event)
-	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, 0)
+	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, 0, 0)
 }
 
 // NewMetadataEditorFormWithHeight creates a height-constrained metadata form.
-// When height > 0, the huh library enables built-in scrolling so the form
-// fits within modal overlays without overflowing.
+// When height > 0, the form fields scroll and the submit button stays fixed.
 func NewMetadataEditorFormWithHeight(
 	event *career.Event, availableTags, availableCategories []string, availableSkills []*career.Skill,
 	height int,
 ) *huh.Form {
 	data := GetMetadataFormData(event)
-	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, height)
+	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, 0, height)
 }
 
 // NewMetadataEditorFormWithData creates a form for editing event metadata with initial form data.
 //
 // This form has no height constraint and renders all fields at once.
-// For modal overlays, use NewMetadataEditorFormWithDataAndHeight.
+// For modal overlays, use NewMetadataEditorFormWithDataAndDimensions.
 func NewMetadataEditorFormWithData(
 	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
 ) *huh.Form {
-	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, 0)
+	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, 0, 0)
 }
 
 // NewMetadataEditorFormWithDataAndHeight creates a height-constrained metadata form with initial data.
-// When height > 0, the huh library enables built-in scrolling so the form
-// fits within modal overlays without overflowing.
+// When height > 0, the form fields scroll and the submit button stays fixed.
 func NewMetadataEditorFormWithDataAndHeight(
 	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
 	height int,
 ) *huh.Form {
-	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, height)
+	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, 0, height)
+}
+
+// NewMetadataEditorFormWithDataAndDimensions creates a dimension-constrained metadata form.
+// When height > 0, the form fields scroll with the submit button always visible.
+// When width > 0, the form content is constrained to that width.
+func NewMetadataEditorFormWithDataAndDimensions(
+	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
+	width, height int,
+) *huh.Form {
+	return buildMetadataForm(data, availableTags, availableCategories, availableSkills, width, height)
 }
 
 // buildMetadataForm constructs the metadata editor form fields and groups.
 //
-// When height > 0, the form is created with NewFormWithHeight to enable
-// scrolling within constrained containers like modal overlays.
-// When height <= 0, the form is created with NewForm (no height constraint).
+// When height > 0, the form uses NewFormWithFixedConfirm so the submit
+// button remains visible while the fields group scrolls independently.
+// When height <= 0, all fields (including confirm) go in a single group.
 func buildMetadataForm(
 	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
-	height int,
+	width, height int,
 ) *huh.Form {
 	// Initialize submit confirmation to false.
 	data.SubmitConfirmed = false
 
+	fields := metadataFields(data, availableTags, availableCategories, availableSkills)
+
+	// When height is provided, use a fixed confirm layout so the submit
+	// button is always visible while the fields scroll independently.
+	if height > 0 {
+		fieldsGroup := huh.NewGroup(fields...)
+		return NewFormWithFixedConfirm(fieldsGroup, &data.SubmitConfirmed, width, height)
+	}
+
+	// No height constraint: put all fields including confirm in one group.
+	confirmField := huh.NewConfirm().
+		Key("submit").
+		Title("Save Changes").
+		Description("Submit the form to save your changes").
+		Affirmative("Submit").
+		Negative("Cancel").
+		Value(&data.SubmitConfirmed)
+
+	allFields := append(fields, confirmField)
+	return NewForm(huh.NewGroup(allFields...))
+}
+
+// metadataFields builds the editable field list shared by both form layouts.
+func metadataFields(
+	data *MetadataFormData, availableTags, availableCategories []string, availableSkills []*career.Skill,
+) []huh.Field {
 	// Convert tags and categories to options.
 	tagOptions := make([]huh.Option[string], len(availableTags))
 	for i, tag := range availableTags {
@@ -89,7 +123,7 @@ func buildMetadataForm(
 		skillOptions[i] = huh.NewOption(skill.Name, skill.ID)
 	}
 
-	group := huh.NewGroup(
+	return []huh.Field{
 		NewInput(FieldConfig{
 			Key:         "date",
 			Title:       "Date",
@@ -138,20 +172,7 @@ func buildMetadataForm(
 			Options(skillOptions...).
 			Value(&data.Skills).
 			Limit(10),
-
-		huh.NewConfirm().
-			Key("submit").
-			Title("Save Changes").
-			Description("Submit the form to save your changes").
-			Affirmative("Submit").
-			Negative("Cancel").
-			Value(&data.SubmitConfirmed),
-	)
-
-	if height > 0 {
-		return NewFormWithHeight(height, group)
 	}
-	return NewForm(group)
 }
 
 // ApplyMetadataFormData applies the form data to an event domain object.

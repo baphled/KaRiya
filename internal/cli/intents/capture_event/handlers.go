@@ -51,6 +51,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 				i.context.CareerService,
 				i.context.CLIEventService,
 				context.Background(),
+				i.terminalDimensions(),
 			)
 			return i.reviewState.metadataModal.Init()
 

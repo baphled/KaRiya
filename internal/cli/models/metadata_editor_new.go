@@ -45,50 +45,79 @@ type MetadataEditorModelNew struct {
 	theme            themes.Theme
 }
 
+// MetadataEditorDimensions holds terminal dimensions for the metadata editor.
+// Pass these from the intent so the form sizes correctly inside the overlay.
+type MetadataEditorDimensions struct {
+	TerminalWidth  int
+	TerminalHeight int
+}
+
 // NewMetadataEditorModelNew creates a new metadata editor model using huh forms.
+//
+// dims may be nil, in which case defaults (80x40) are used.
 func NewMetadataEditorModelNew(
 	event *career.Event, service *careerservice.Service,
 	cliSvc *cliservice.CLIEventService, ctx context.Context,
+	dims *MetadataEditorDimensions,
 ) *MetadataEditorModelNew {
-	// Create a copy of the event for reverting
+	// Apply defaults for nil dimensions.
+	termWidth := 80
+	termHeight := 40
+	if dims != nil {
+		if dims.TerminalWidth > 0 {
+			termWidth = dims.TerminalWidth
+		}
+		if dims.TerminalHeight > 0 {
+			termHeight = dims.TerminalHeight
+		}
+	}
+
+	// Create a copy of the event for reverting.
 	eventCopy := *event
 
-	// Create tag and category selectors to get available options
+	// Create tag and category selectors to get available options.
 	tagSelector := selectors.NewTagSelector()
 	tagSelector.SetSelectedTags(event.Tags)
 	availableTags := tagSelector.AvailableTags()
 
 	categorySelector := selectors.NewCategorySelector()
 	if err := categorySelector.SetSelected(event.Categories); err != nil {
-		// Existing event categories should be valid, ignore
+		// Existing event categories should be valid, ignore.
 		_ = err
 	}
 	availableCategories := categorySelector.AvailableCategories()
 
-	// Load all available skills from repository
+	// Load all available skills from repository.
 	allSkills, err := service.GetSkillRepository().List(ctx, nil)
 	if err != nil {
 		allSkills = []*career.Skill{}
 	}
 
 	skillSelector := selectors.NewSkillSelector(allSkills)
-	// Pre-select skills from event
+	// Pre-select skills from event.
 	for _, skillID := range event.Skills {
 		if err := skillSelector.SelectSkill(skillID); err != nil {
-			// Event skills should be valid, ignore
+			// Event skills should be valid, ignore.
 			_ = err
 		}
 	}
 	availableSkills := skillSelector.AvailableSkills()
 
-	// Extract form data from event
+	// Extract form data from event.
 	formData := forms.GetMetadataFormData(event)
 
-	// Create huh form with available tags, categories, and skills.
-	// Use height-constrained form so multi-selects with many options
-	// scroll within the modal overlay instead of overflowing.
-	formHeight := forms.DefaultFormHeight(24)
-	form := forms.NewMetadataEditorFormWithDataAndHeight(formData, availableTags, availableCategories, availableSkills, formHeight)
+	// Calculate form dimensions for the modal overlay context.
+	// The modal has a fixed width of 80 with border+padding chrome.
+	const modalWidth = 80
+	formWidth := forms.ModalFormWidth(modalWidth)
+	formHeight := forms.ModalFormHeight(termHeight)
+
+	// Use NewFormWithFixedConfirm (via buildMetadataForm) so the submit
+	// button stays visible while fields scroll independently.
+	form := forms.NewMetadataEditorFormWithDataAndDimensions(
+		formData, availableTags, availableCategories, availableSkills,
+		formWidth, formHeight,
+	)
 
 	return &MetadataEditorModelNew{
 		BaseStandardModel: NewBaseStandardModel(),
@@ -105,8 +134,8 @@ func NewMetadataEditorModelNew(
 		err:               nil,
 		submitted:         false,
 		cancelled:         false,
-		width:             80,
-		height:            24,
+		width:             termWidth,
+		height:            termHeight,
 		theme:             themes.NewDefaultTheme(),
 	}
 }

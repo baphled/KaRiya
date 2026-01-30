@@ -16,6 +16,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// terminalDimensions returns the current terminal dimensions for modal sizing.
+// Falls back to nil if terminal info is unavailable, letting the model
+// apply its own defaults.
+func (i *Intent) terminalDimensions() *models.MetadataEditorDimensions {
+	info := i.GetTerminalInfo()
+	if info == nil {
+		return nil
+	}
+	return &models.MetadataEditorDimensions{
+		TerminalWidth:  info.Width,
+		TerminalHeight: info.Height,
+	}
+}
+
 // setCancelled marks the intent as cancelled by the user.
 //
 // Side effects:
@@ -257,6 +271,7 @@ func (i *Intent) getMetadataModalContent() *modalContentData {
 			i.context.CareerService,
 			i.context.CLIEventService,
 			context.Background(),
+			i.terminalDimensions(),
 		)
 	}
 	return &modalContentData{

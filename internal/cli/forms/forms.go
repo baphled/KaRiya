@@ -103,7 +103,11 @@ func NewForm(groups ...*huh.Group) *huh.Form {
 // When height is set, the form becomes scrollable if content exceeds the height.
 // Use this for forms displayed in modals or constrained containers.
 func NewFormWithHeight(height int, groups ...*huh.Group) *huh.Form {
-	return huh.NewForm(groups...).WithTheme(Theme()).WithHeight(height)
+	return huh.NewForm(groups...).
+		WithTheme(Theme()).
+		WithShowHelp(false).
+		WithShowErrors(false).
+		WithHeight(height)
 }
 
 // NewFormWithDimensions creates a new form with KaRiya's default theme and fixed dimensions.
@@ -139,6 +143,42 @@ func DefaultFormHeight(terminalHeight int) int {
 		height = minHeight
 	}
 	return height
+}
+
+// ModalFormHeight calculates the form height for forms displayed inside an
+// overlay modal. The overlay is positioned below the logo and has additional
+// chrome (border, padding, title, badge footer) that reduces available space.
+//
+// Overhead breakdown:
+//   - Logo + spacing: 10 lines (DefaultLogoHeight=9 + 1 gap)
+//   - Bottom margin: 2 lines
+//   - Modal border: 2 lines (top + bottom)
+//   - Modal padding: 2 lines (top + bottom)
+//   - Title + margin: 2 lines
+//   - Badge footer + spacing: 3 lines
+//   - Total: ~21 lines
+//
+// Minimum height is 12 lines to show at least 2-3 fields comfortably.
+func ModalFormHeight(terminalHeight int) int {
+	const modalOverhead = 21
+	const minHeight = 12
+
+	height := terminalHeight - modalOverhead
+	if height < minHeight {
+		height = minHeight
+	}
+	return height
+}
+
+// ModalFormWidth calculates the usable form width inside an overlay modal.
+// The modal has border (2) and padding (4) that reduce the available width.
+func ModalFormWidth(modalWidth int) int {
+	const chromeWidth = 6
+	width := modalWidth - chromeWidth
+	if width < 30 {
+		width = 30
+	}
+	return width
 }
 
 // ConfirmButtonHeight is the space reserved for the fixed confirm button group.
