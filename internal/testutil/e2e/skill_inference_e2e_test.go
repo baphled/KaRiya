@@ -9,6 +9,7 @@ import (
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
 	"github.com/baphled/kariya/internal/testutil/mocks"
+	tea "github.com/charmbracelet/bubbletea"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -51,6 +52,31 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 		intent, err = burstmgmt.NewIntent(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		intent.Init()
+	})
+
+	Describe("Manual Skill Inference Trigger - Burst Detail Modal", func() {
+		It("should infer skills when user presses 'i' in burst detail modal", func() {
+			// Given: A confirmed burst is selected and detail modal is showing
+			burst.Confirmed = true
+
+			// Navigate to burst detail (sets selectedBurst and shows modal)
+			intent.HandleNavigate(&screens.NavigateResult{
+				ResultData: burst,
+			})
+
+			// Verify we're still in list state (modal overlays on top)
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateList))
+
+			// When: User presses 'i' to infer skills from the detail modal
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			// Then: State should transition to StateInferringSkills
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateInferringSkills))
+
+			// And: Loading modal should show skill inference in progress
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Detecting skills from burst events"))
+		})
 	})
 
 	Describe("Auto Skill Inference Trigger", func() {
