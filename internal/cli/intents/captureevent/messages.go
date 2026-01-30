@@ -1,4 +1,4 @@
-package capture_event
+package captureevent
 
 // SubmitCompleteMsg is sent when event persistence succeeds.
 type SubmitCompleteMsg struct{}

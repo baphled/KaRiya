@@ -1,4 +1,4 @@
-package capture_event
+package captureevent
 
 import (
 	"github.com/baphled/kariya/internal/cli/behaviors"

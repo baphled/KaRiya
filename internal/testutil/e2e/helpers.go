@@ -12,7 +12,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
-	captureevent "github.com/baphled/kariya/internal/cli/intents/capture_event"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/models"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/config"

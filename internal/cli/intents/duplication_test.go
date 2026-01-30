@@ -6,7 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browsetimeline"
-	captureevent "github.com/baphled/kariya/internal/cli/intents/capture_event"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

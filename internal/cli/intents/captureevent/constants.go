@@ -1,4 +1,4 @@
-// Package capture_event implements the CaptureEvent intent for capturing career events.
+// Package captureevent implements the CaptureEvent intent for capturing career events.
 //
 // Responsibilities:
 //   - Orchestrating the event capture workflow (strategy -> form -> review -> submit)
@@ -9,7 +9,7 @@
 //   - Define UI components (those live in screens/capture/)
 //   - Perform enrichment logic (delegated to service/career/)
 //   - Handle form rendering (delegated to models.CaptureForm and forms/)
-package capture_event
+package captureevent
 
 // State represents the current workflow step of the capture event intent.
 //

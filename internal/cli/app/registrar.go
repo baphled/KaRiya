@@ -6,7 +6,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/intents/browsetimeline"
 	burstmanagement "github.com/baphled/kariya/internal/cli/intents/burst_management"
-	captureevent "github.com/baphled/kariya/internal/cli/intents/capture_event"
+	"github.com/baphled/kariya/internal/cli/intents/captureevent"
 	"github.com/baphled/kariya/internal/cli/intents/factmanagement"
 	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"

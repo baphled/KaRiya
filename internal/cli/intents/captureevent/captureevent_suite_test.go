@@ -1,4 +1,4 @@
-package capture_event_test
+package captureevent_test
 
 import (
 	"os"
