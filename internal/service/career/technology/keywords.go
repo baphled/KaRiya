@@ -6,14 +6,14 @@ package technology
 type TechnologyKeyword struct {
 	Keyword  string // Lowercase search term for matching (e.g., "golang")
 	Skill    string // Canonical skill name for display (e.g., "Go")
-	Category string // Skill category: backend, frontend, database, devops, cloud, mobile, tooling
+	Category string // Skill category: backend, frontend, database, devops, cloud, mobile, tooling, testing, build, ml, data, monitoring, documentation, os
 }
 
 // technologyKeywords is the master dictionary organized by category.
-// This comprehensive list covers ~100 keywords across 7 categories.
+// This comprehensive list covers ~224 keywords across 14 categories.
 var technologyKeywords = []TechnologyKeyword{
 	// ========================================
-	// BACKEND LANGUAGES & FRAMEWORKS (25)
+	// BACKEND LANGUAGES & FRAMEWORKS (28)
 	// ========================================
 	{"go", "Go", "backend"},
 	{"golang", "Go", "backend"},
@@ -42,7 +42,7 @@ var technologyKeywords = []TechnologyKeyword{
 	{"phoenix", "Phoenix", "backend"},
 
 	// ========================================
-	// FRONTEND FRAMEWORKS & LIBRARIES (30)
+	// FRONTEND FRAMEWORKS & LIBRARIES (35)
 	// ========================================
 	{"react", "React", "frontend"},
 	{"reactjs", "React", "frontend"},
@@ -189,6 +189,112 @@ var technologyKeywords = []TechnologyKeyword{
 	{"jwt", "JWT", "tooling"},
 	{"websocket", "WebSocket", "tooling"},
 	{"protobuf", "Protocol Buffers", "tooling"},
+
+	// ========================================
+	// TESTING FRAMEWORKS (15)
+	// ========================================
+	{"jest", "Jest", "testing"},
+	{"mocha", "Mocha", "testing"},
+	{"chai", "Chai", "testing"},
+	{"jasmine", "Jasmine", "testing"},
+	{"pytest", "Pytest", "testing"},
+	{"junit", "JUnit", "testing"},
+	{"testng", "TestNG", "testing"},
+	{"rspec", "RSpec", "testing"},
+	{"cypress", "Cypress", "testing"},
+	{"selenium", "Selenium", "testing"},
+	{"playwright", "Playwright", "testing"},
+	{"webdriverio", "WebDriverIO", "testing"},
+	{"cucumber", "Cucumber", "testing"},
+	{"postman", "Postman", "testing"},
+	{"insomnia", "Insomnia", "testing"},
+
+	// ========================================
+	// BUILD TOOLS & PACKAGE MANAGERS (12)
+	// ========================================
+	{"maven", "Maven", "build"},
+	{"gradle", "Gradle", "build"},
+	{"make", "Make", "build"},
+	{"bazel", "Bazel", "build"},
+	{"npm", "npm", "build"},
+	{"yarn", "Yarn", "build"},
+	{"pnpm", "pnpm", "build"},
+	{"pip", "pip", "build"},
+	{"poetry", "Poetry", "build"},
+	{"bundler", "Bundler", "build"},
+	{"cargo", "Cargo", "build"},
+	{"cmake", "CMake", "build"},
+
+	// ========================================
+	// MACHINE LEARNING & DATA SCIENCE (10)
+	// ========================================
+	{"tensorflow", "TensorFlow", "ml"},
+	{"pytorch", "PyTorch", "ml"},
+	{"scikit-learn", "scikit-learn", "ml"},
+	{"sklearn", "scikit-learn", "ml"},
+	{"pandas", "Pandas", "ml"},
+	{"numpy", "NumPy", "ml"},
+	{"keras", "Keras", "ml"},
+	{"jupyter", "Jupyter", "ml"},
+	{"openai", "OpenAI", "ml"},
+	{"langchain", "LangChain", "ml"},
+
+	// ========================================
+	// DATA ENGINEERING (9)
+	// ========================================
+	{"apache spark", "Apache Spark", "data"},
+	{"spark", "Apache Spark", "data"},
+	{"airflow", "Apache Airflow", "data"},
+	{"databricks", "Databricks", "data"},
+	{"snowflake", "Snowflake", "data"},
+	{"dbt", "dbt", "data"},
+	{"hadoop", "Hadoop", "data"},
+	{"hive", "Hive", "data"},
+	{"presto", "Presto", "data"},
+
+	// ========================================
+	// MONITORING & OBSERVABILITY (7)
+	// ========================================
+	{"splunk", "Splunk", "monitoring"},
+	{"elk stack", "ELK Stack", "monitoring"},
+	{"kibana", "Kibana", "monitoring"},
+	{"logstash", "Logstash", "monitoring"},
+	{"sentry", "Sentry", "monitoring"},
+	{"pagerduty", "PagerDuty", "monitoring"},
+	{"honeycomb", "Honeycomb", "monitoring"},
+
+	// ========================================
+	// DOCUMENTATION TOOLS (6)
+	// ========================================
+	{"swagger", "Swagger", "documentation"},
+	{"openapi", "OpenAPI", "documentation"},
+	{"redoc", "Redoc", "documentation"},
+	{"docusaurus", "Docusaurus", "documentation"},
+	{"mkdocs", "MkDocs", "documentation"},
+	{"sphinx", "Sphinx", "documentation"},
+
+	// ========================================
+	// OPERATING SYSTEMS (7)
+	// ========================================
+	{"linux", "Linux", "os"},
+	{"unix", "Unix", "os"},
+	{"ubuntu", "Ubuntu", "os"},
+	{"debian", "Debian", "os"},
+	{"centos", "CentOS", "os"},
+	{"macos", "macOS", "os"},
+	{"windows server", "Windows Server", "os"},
+
+	// ========================================
+	// MODERN RUNTIMES & FRAMEWORKS (8)
+	// ========================================
+	{"deno", "Deno", "backend"},
+	{"bun", "Bun", "backend"},
+	{"astro", "Astro", "frontend"},
+	{"remix", "Remix", "frontend"},
+	{"solidjs", "SolidJS", "frontend"},
+	{"qwik", "Qwik", "frontend"},
+	{"fresh", "Fresh", "frontend"},
+	{"hono", "Hono", "backend"},
 }
 
 // GetTechnologyKeywords returns the complete list of technology keywords.

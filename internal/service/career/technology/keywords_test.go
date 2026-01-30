@@ -8,10 +8,10 @@ import (
 
 var _ = Describe("TechnologyKeywords", func() {
 	Describe("Dictionary Structure", func() {
-		It("should have at least 100 keyword entries", func() {
+		It("should have at least 200 keyword entries", func() {
 			keywords := technology.GetTechnologyKeywords()
-			Expect(len(keywords)).To(BeNumerically(">=", 100),
-				"Expected at least 100 comprehensive keywords")
+			Expect(len(keywords)).To(BeNumerically(">=", 200),
+				"Expected at least 200 comprehensive keywords")
 		})
 
 		It("should have all keywords in lowercase", func() {
@@ -41,18 +41,25 @@ var _ = Describe("TechnologyKeywords", func() {
 		It("should have valid categories from CommonSkillCategories", func() {
 			keywords := technology.GetTechnologyKeywords()
 			validCategories := map[string]bool{
-				"backend":  true,
-				"frontend": true,
-				"database": true,
-				"devops":   true,
-				"cloud":    true,
-				"mobile":   true,
-				"tooling":  true,
+				"backend":       true,
+				"frontend":      true,
+				"database":      true,
+				"devops":        true,
+				"cloud":         true,
+				"mobile":        true,
+				"tooling":       true,
+				"testing":       true,
+				"build":         true,
+				"ml":            true,
+				"data":          true,
+				"monitoring":    true,
+				"documentation": true,
+				"os":            true,
 			}
 
 			for _, kw := range keywords {
 				if !validCategories[kw.Category] {
-					Fail("Invalid category \"" + kw.Category + "\" for keyword \"" + kw.Keyword + "\". Valid: backend, frontend, database, devops, cloud, mobile, tooling")
+					Fail("Invalid category \"" + kw.Category + "\" for keyword \"" + kw.Keyword + "\"")
 				}
 			}
 		})
@@ -169,6 +176,54 @@ var _ = Describe("TechnologyKeywords", func() {
 			}
 			Expect(cloudCount).To(BeNumerically(">=", 10),
 				"Expected at least 10 cloud keywords, got %d", cloudCount)
+		})
+
+		It("should have testing keywords", func() {
+			keywords := technology.GetTechnologyKeywords()
+			count := 0
+			for _, kw := range keywords {
+				if kw.Category == "testing" {
+					count++
+				}
+			}
+			Expect(count).To(BeNumerically(">=", 10),
+				"Expected at least 10 testing keywords, got %d", count)
+		})
+
+		It("should have build tool keywords", func() {
+			keywords := technology.GetTechnologyKeywords()
+			count := 0
+			for _, kw := range keywords {
+				if kw.Category == "build" {
+					count++
+				}
+			}
+			Expect(count).To(BeNumerically(">=", 10),
+				"Expected at least 10 build tool keywords, got %d", count)
+		})
+
+		It("should have ML/data keywords", func() {
+			keywords := technology.GetTechnologyKeywords()
+			count := 0
+			for _, kw := range keywords {
+				if kw.Category == "ml" || kw.Category == "data" {
+					count++
+				}
+			}
+			Expect(count).To(BeNumerically(">=", 15),
+				"Expected at least 15 ML/data keywords, got %d", count)
+		})
+
+		It("should have monitoring keywords", func() {
+			keywords := technology.GetTechnologyKeywords()
+			count := 0
+			for _, kw := range keywords {
+				if kw.Category == "monitoring" {
+					count++
+				}
+			}
+			Expect(count).To(BeNumerically(">=", 5),
+				"Expected at least 5 monitoring keywords, got %d", count)
 		})
 	})
 
