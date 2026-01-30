@@ -373,6 +373,11 @@ func CloseBadge(th theme.Theme) *Badge {
 	return HelpKeyBadge("Enter/Esc", "Close", th)
 }
 
+// InferSkillsBadge returns a badge for inferring skills from burst events.
+func InferSkillsBadge(th theme.Theme) *Badge {
+	return HelpKeyBadge("i", "Infer Skills", th)
+}
+
 // =============================================================================
 // Help Footer Rendering
 // =============================================================================

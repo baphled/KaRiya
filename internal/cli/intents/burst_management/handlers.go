@@ -463,6 +463,9 @@ func (i *Intent) handleDetailModalKeypress(keyMsg tea.KeyMsg) tea.Cmd {
 	case "c":
 		i.detailModal.Hide()
 		return i.showConfirmBurstModal()
+	case "i":
+		i.detailModal.Hide()
+		return i.startSkillInference()
 	}
 
 	if keyMsg.Type == tea.KeyEsc || keyMsg.Type == tea.KeyEnter {

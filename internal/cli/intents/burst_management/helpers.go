@@ -611,6 +611,30 @@ func (i *Intent) startBurstDetection() tea.Cmd {
 	return tea.Batch(asyncCmd, i.loadingModal.Init())
 }
 
+// startSkillInference triggers skill inference for the selected burst.
+func (i *Intent) startSkillInference() tea.Cmd {
+	if i.selectedBurst == nil {
+		i.ShowErrorModal("Inference Failed", "No burst selected")
+		i.state = StateList
+		return nil
+	}
+
+	if i.context.SkillInferenceService == nil {
+		i.ShowErrorModal("Inference Failed", "Skill inference service not available")
+		i.state = StateList
+		return nil
+	}
+
+	i.cancelPreviousOperation()
+
+	i.inferringSkills = true
+	i.state = StateInferringSkills
+	i.loadingModal = feedback.NewLoadingModal("Detecting skills from burst events...", true).WithTheme(i.Theme())
+
+	asyncCmd := i.inferSkillsFromBurst(i.selectedBurst)
+	return tea.Batch(asyncCmd, i.loadingModal.Init())
+}
+
 // cancelPreviousOperation cancels any in-progress async operation.
 func (i *Intent) cancelPreviousOperation() {
 	if i.cancelFunc != nil {
