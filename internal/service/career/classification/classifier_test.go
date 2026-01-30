@@ -84,4 +84,105 @@ var _ = Describe("Classifier", func() {
 			Expect(defaultMultiCategories).To(Equal([]CompetencyCategory{TechnicalCompetency}), "Default multi-classification should be technical")
 		})
 	})
+
+	Context("Soft Skill Classification", func() {
+		DescribeTable("Soft Skill Event Classification",
+			func(eventText string, tags []string, expectedCategory CompetencyCategory) {
+				event := &career.Event{
+					Text: eventText,
+					Tags: tags,
+				}
+
+				category := classifier.Classify(event)
+				Expect(category).To(Equal(expectedCategory))
+			},
+			Entry("Communication event via explicit tag",
+				"Presented quarterly results to stakeholders",
+				[]string{"communication"},
+				CommunicationCompetency,
+			),
+			Entry("Collaboration event via explicit tag",
+				"Worked with cross-functional teams on delivery",
+				[]string{"collaboration"},
+				CollaborationCompetency,
+			),
+			Entry("Problem-solving event via explicit tag",
+				"Debugged critical production issue",
+				[]string{"problem-solving"},
+				ProblemSolvingCompetency,
+			),
+			Entry("Project management event via explicit tag",
+				"Planned sprint milestones for Q3 delivery",
+				[]string{"project-management"},
+				ProjectManagementCompetency,
+			),
+			Entry("Architecture event via explicit tag",
+				"Designed scalable microservices platform",
+				[]string{"architecture"},
+				ArchitectureCompetency,
+			),
+		)
+
+		DescribeTable("Soft Skill Keyword Detection",
+			func(eventText string, expectedCategory CompetencyCategory) {
+				event := &career.Event{
+					Text: eventText,
+					Tags: []string{},
+				}
+
+				category := classifier.Classify(event)
+				Expect(category).To(Equal(expectedCategory))
+			},
+			Entry("Communication via presentation keywords",
+				"Communicated updates and clarified the brief to explain the report",
+				CommunicationCompetency,
+			),
+			Entry("Collaboration via teamwork keywords",
+				"Collaborated with a joint partner to align and facilitate together",
+				CollaborationCompetency,
+			),
+			Entry("Problem-solving via debugging keywords",
+				"Debugged and diagnosed the root cause then resolved the identified issue",
+				ProblemSolvingCompetency,
+			),
+			Entry("Project management via planning keywords",
+				"Estimated the deadline and scheduled the milestone for the timeline",
+				ProjectManagementCompetency,
+			),
+			Entry("Architecture via design keywords",
+				"Architected a distributed and modular decoupled platform",
+				ArchitectureCompetency,
+			),
+		)
+
+		It("should classify communication keywords in categoryKeywords map", func() {
+			keywords := classifier.GetCategoryKeywords(CommunicationCompetency)
+			Expect(keywords).ToNot(BeEmpty())
+			Expect(len(keywords)).To(BeNumerically(">=", 8))
+		})
+
+		It("should classify collaboration keywords in categoryKeywords map", func() {
+			keywords := classifier.GetCategoryKeywords(CollaborationCompetency)
+			Expect(keywords).ToNot(BeEmpty())
+			Expect(len(keywords)).To(BeNumerically(">=", 8))
+		})
+
+		It("should classify problem-solving keywords in categoryKeywords map", func() {
+			keywords := classifier.GetCategoryKeywords(ProblemSolvingCompetency)
+			Expect(keywords).ToNot(BeEmpty())
+			Expect(len(keywords)).To(BeNumerically(">=", 8))
+		})
+
+		It("should classify project-management keywords in categoryKeywords map", func() {
+			keywords := classifier.GetCategoryKeywords(ProjectManagementCompetency)
+			Expect(keywords).ToNot(BeEmpty())
+			Expect(len(keywords)).To(BeNumerically(">=", 8))
+		})
+
+		It("should classify architecture keywords in categoryKeywords map", func() {
+			keywords := classifier.GetCategoryKeywords(ArchitectureCompetency)
+			Expect(keywords).ToNot(BeEmpty())
+			Expect(len(keywords)).To(BeNumerically(">=", 8))
+		})
+	})
 })
