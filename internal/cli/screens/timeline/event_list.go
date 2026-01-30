@@ -178,6 +178,16 @@ func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 // This enables the table to fill available space and scroll when content exceeds height.
 // Should be called by the intent after getting available height from ScreenLayout.
 func (s *EventListScreen) SetContentHeight(height int) {
+	width := s.Width()
+	if width == 0 {
+		width = 100
+	}
+
+	if height < 10 || width < 50 {
+		return
+	}
+
+	s.tableBehavior.Dimensions(width, height)
 	s.tableBehavior.SetHeight(height)
 }
 

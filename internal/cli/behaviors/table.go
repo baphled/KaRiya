@@ -143,24 +143,17 @@ func (tb *TableBehavior[T]) SetHeight(height int) *TableBehavior[T] {
 	tb.height = height
 	tb.useViewport = true
 
-	// Initialize or update viewport
+	tableHeight := height - 3
+	if tableHeight < 5 {
+		tableHeight = 5
+	}
+	tb.table.SetHeight(tableHeight)
+
 	if tb.viewport.Width == 0 {
-		// First time - create viewport
 		tb.viewport = viewport.New(tb.width, height)
 	} else {
-		// Update existing viewport
 		tb.viewport.Width = tb.width
 		tb.viewport.Height = height
-	}
-
-	// Set table height based on item count so it renders all rows without truncation.
-	// The viewport will handle scrolling if content exceeds the visible height.
-	itemCount := len(tb.displayItems)
-	if itemCount > 0 {
-		tb.table.SetHeight(itemCount)
-	} else {
-		// Minimum height to show empty state
-		tb.table.SetHeight(height)
 	}
 
 	return tb
@@ -410,22 +403,18 @@ func (tb *TableBehavior[T]) Render() string {
 		return lipgloss.JoinVertical(lipgloss.Left, parts...)
 	}
 
-	// Update table rows for current page
 	tb.updateTableRows()
 
-	// Render table
 	tableView := tb.table.View()
 	parts := []string{tableView}
 
-	// Add pagination if enabled
 	if tb.showPagination {
 		parts = append(parts, "", tb.RenderPaginationInfo())
 	}
 
 	combined := lipgloss.JoinVertical(lipgloss.Left, parts...)
 
-	// Use viewport if enabled
-	if tb.useViewport {
+	if tb.useViewport && tb.viewport.Width > 0 && tb.viewport.Height > 0 {
 		tb.viewport.SetContent(combined)
 		return tb.viewport.View()
 	}
