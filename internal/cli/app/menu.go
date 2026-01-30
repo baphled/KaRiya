@@ -5,6 +5,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/terminal"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Menu column widths for different terminal sizes.
@@ -38,7 +39,7 @@ const (
 	menuUnselectedIndicator = "  "
 )
 
-// viewMenu renders the main menu using UIKit primitives for consistent centering.
+// viewMenu renders the main menu using pinned layout (logo at top, help at bottom).
 func (m *Model) viewMenu() string {
 	// Ensure terminalInfo has current dimensions.
 	if !m.terminalInfo.IsValid && m.width > 0 && m.height > 0 {
@@ -47,32 +48,46 @@ func (m *Model) viewMenu() string {
 		m.terminalInfo.IsValid = true
 	}
 
-	// Build menu components.
-	var parts []string
-
-	// 1. Logo (static view, no animation during menu).
+	// Build menu sections for pinned layout.
+	// Header: Logo
 	logoView := m.logo.ViewStatic()
-	parts = append(parts, logoView)
 
-	// 2. Spacing between logo and menu.
-	parts = append(parts, "")
-	parts = append(parts, "")
-
-	// 3. Menu table with responsive columns.
+	// Content: Menu table with spacing
 	tableView := m.renderResponsiveTable()
-	parts = append(parts, tableView)
+	content := primitives.JoinVertical(primitives.AlignCenter,
+		"", "", // Spacing after logo
+		tableView,
+	)
 
-	// 4. Spacing between menu and help.
-	parts = append(parts, "")
-	parts = append(parts, "")
-
-	// 5. Help text.
+	// Footer: Help text
 	helpText := "↑/k Up  ↓/j Down  Enter Select  ? Help  q Quit"
-	parts = append(parts, helpText)
 
-	// Join all parts with center alignment and center in terminal.
-	combined := primitives.JoinVertical(primitives.AlignCenter, parts...)
-	return primitives.CenterInTerminal(combined, m.width, m.height)
+	// Calculate heights for spacer
+	logoHeight := lipgloss.Height(logoView)
+	contentHeight := lipgloss.Height(content)
+	helpHeight := lipgloss.Height(helpText)
+
+	// Calculate spacer to push help to bottom
+	// Account for 2 blank lines before logo
+	spacerHeight := m.height - 2 - logoHeight - contentHeight - helpHeight
+	if spacerHeight < 0 {
+		spacerHeight = 0
+	}
+
+	// Combine all sections with spacer lines added individually
+	// Start with 2 blank lines before logo for breathing room
+	allParts := []string{"", "", logoView, content}
+	// Add spacer lines individually (not as a joined string)
+	for range spacerHeight {
+		allParts = append(allParts, "")
+	}
+	allParts = append(allParts, "") // Blank line before help
+	allParts = append(allParts, helpText)
+
+	combined := primitives.JoinVertical(primitives.AlignCenter, allParts...)
+
+	// Place at top-center (pinned layout)
+	return primitives.PlaceInTerminal(combined, m.width, m.height)
 }
 
 // renderResponsiveTable creates the menu as simple text lines that can be centered.

@@ -156,30 +156,23 @@ func (sl *ScreenLayout) WithTheme(theme themes.Theme) *ScreenLayout {
 	return sl
 }
 
-// Render renders the complete view with all components
-func (sl *ScreenLayout) Render() string {
-	theme := sl.getTheme()
+// buildHeaderParts constructs the header section parts (logo, breadcrumbs, title/subtitle).
+// This is shared by both GetAvailableContentHeight and Render to ensure consistent layout calculations.
+func (sl *ScreenLayout) buildHeaderParts(theme themes.Theme) []string {
 	var parts []string
 
-	// Add logo spacing (blank lines before logo)
+	// Add logo section
 	if sl.ShowLogo && sl.Logo != nil {
-		for range sl.LogoSpacing {
-			parts = append(parts, "")
-		}
-
-		// Render logo (logo will be centered by JoinVertical)
+		parts = append(parts, "", "") // 2 blank lines before logo
 		sl.Logo.SetWidth(sl.TerminalInfo.Width)
 		logoOutput := sl.Logo.ViewStatic()
 		parts = append(parts, logoOutput)
-
-		// Add one blank line after logo
-		parts = append(parts, "")
+		parts = append(parts, "") // Blank line after logo
 	}
 
-	// Add header (breadcrumbs or title/subtitle)
+	// Add header section (breadcrumbs or title/subtitle)
 	if sl.ShowHeader {
 		if len(sl.Breadcrumbs) > 0 {
-			// Convert string breadcrumbs to Breadcrumb structs with icons
 			crumbs := make([]navigation.Breadcrumb, len(sl.Breadcrumbs))
 			for i, label := range sl.Breadcrumbs {
 				intent := strings.ToLower(strings.ReplaceAll(label, " ", "_"))
@@ -215,22 +208,16 @@ func (sl *ScreenLayout) Render() string {
 		}
 	}
 
-	// Add content
-	if sl.Content != "" {
-		contentToRender := sl.Content
-		// Check if custom style has been applied
-		hasStyle := sl.ContentStyle.GetBackground() != lipgloss.NoColor{} || sl.ContentStyle.GetForeground() != lipgloss.NoColor{}
-		if hasStyle {
-			contentToRender = sl.ContentStyle.Render(sl.Content)
-		}
-		parts = append(parts, contentToRender)
-	}
+	return parts
+}
 
-	// Add footer
+// buildFooterParts constructs the footer section parts (separator and help text).
+// This is shared by both GetAvailableContentHeight and Render to ensure consistent layout calculations.
+func (sl *ScreenLayout) buildFooterParts(theme themes.Theme) []string {
+	var parts []string
+
 	if sl.ShowFooter && sl.HelpText != "" {
-		// Add visual separator if enabled
 		if sl.ShowFooterSeparator {
-			// Separator will match widest content line via JoinVertical
 			separator := strings.Repeat("─", 100)
 			separatorStyle := lipgloss.NewStyle().
 				Foreground(theme.BorderColor())
@@ -239,19 +226,112 @@ func (sl *ScreenLayout) Render() string {
 			parts = append(parts, "") // Just blank line
 		}
 
-		// Render help text
 		helpStyle := lipgloss.NewStyle().
 			Foreground(theme.MutedColor())
 		styledHelp := helpStyle.Render(sl.HelpText)
 		parts = append(parts, styledHelp)
 	}
 
-	// Join all parts with center alignment - aligns to widest line
-	combined := lipgloss.JoinVertical(lipgloss.Center, parts...)
+	return parts
+}
 
-	// Center within terminal (both horizontal and vertical)
+// GetAvailableContentHeight calculates the height available for content between header and footer.
+// This is useful for screens that need to size their content (tables, viewports) to fill available space.
+//
+// Returns: terminalHeight - headerHeight - footerHeight
+//
+// Example:
+//
+//	contentHeight := screenLayout.GetAvailableContentHeight()
+//	viewport := viewport.New(width, contentHeight)
+func (sl *ScreenLayout) GetAvailableContentHeight() int {
+	theme := sl.getTheme()
+
+	// Build header and footer using shared helpers
+	headerParts := sl.buildHeaderParts(theme)
+	footerParts := sl.buildFooterParts(theme)
+
+	// Calculate heights
+	header := lipgloss.JoinVertical(lipgloss.Center, headerParts...)
+	footer := lipgloss.JoinVertical(lipgloss.Center, footerParts...)
+
+	headerHeight := lipgloss.Height(header)
+	footerHeight := lipgloss.Height(footer)
+
+	// Calculate available content height
+	availableHeight := sl.TerminalInfo.Height - headerHeight - footerHeight
+
+	// Ensure minimum height of 1
+	if availableHeight < 1 {
+		availableHeight = 1
+	}
+
+	return availableHeight
+}
+
+// Render renders the complete view with all components.
+// Layout strategy: pin logo to top (line 0), footer to bottom, content flows after header.
+func (sl *ScreenLayout) Render() string {
+	theme := sl.getTheme()
+	var contentParts []string
+
+	// === HEADER SECTION (pinned to top) ===
+	// Use shared helper to ensure consistent layout with GetAvailableContentHeight
+	headerParts := sl.buildHeaderParts(theme)
+
+	// === CONTENT SECTION (flows after header) ===
+	if sl.Content != "" {
+		contentToRender := sl.Content
+		// Check if custom style has been applied
+		hasStyle := sl.ContentStyle.GetBackground() != lipgloss.NoColor{} || sl.ContentStyle.GetForeground() != lipgloss.NoColor{}
+		if hasStyle {
+			contentToRender = sl.ContentStyle.Render(sl.Content)
+		}
+		contentParts = append(contentParts, contentToRender)
+	}
+
+	// === FOOTER SECTION (pinned to bottom) ===
+	// Use shared helper to ensure consistent layout with GetAvailableContentHeight
+	footerParts := sl.buildFooterParts(theme)
+
+	// === ASSEMBLE WITH SPACER ===
+	// Build each section
+	header := lipgloss.JoinVertical(lipgloss.Center, headerParts...)
+	content := lipgloss.JoinVertical(lipgloss.Center, contentParts...)
+	footer := lipgloss.JoinVertical(lipgloss.Center, footerParts...)
+
+	// Calculate heights
+	headerHeight := lipgloss.Height(header)
+	contentHeight := lipgloss.Height(content)
+	footerHeight := lipgloss.Height(footer)
+
+	// Calculate spacer to fill the gap
+	spacerHeight := sl.TerminalInfo.Height - headerHeight - contentHeight - footerHeight
+	if spacerHeight < 0 {
+		spacerHeight = 0 // Graceful: don't go negative
+	}
+
+	// Combine all sections with spacer lines added individually
+	var allParts []string
+	if header != "" {
+		allParts = append(allParts, header)
+	}
+	if content != "" {
+		allParts = append(allParts, content)
+	}
+	// Add spacer lines individually (not as a joined string)
+	for range spacerHeight {
+		allParts = append(allParts, "")
+	}
+	if footer != "" {
+		allParts = append(allParts, footer)
+	}
+
+	combined := lipgloss.JoinVertical(lipgloss.Center, allParts...)
+
+	// Place with Top vertical alignment (pins to top)
 	rendered := lipgloss.Place(sl.TerminalInfo.Width, sl.TerminalInfo.Height,
-		lipgloss.Center, lipgloss.Center, combined)
+		lipgloss.Center, lipgloss.Top, combined)
 
 	// Add modal overlay if needed
 	if sl.ShowModal && sl.Modal != nil {
