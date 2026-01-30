@@ -16,6 +16,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 	careerrepo "github.com/baphled/kariya/internal/repository/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -818,5 +819,102 @@ func (i *Intent) extractFactsForBurst(burst *career.Burst) tea.Cmd {
 		}
 
 		return FactExtractionCompleteMsg{Facts: savedFacts}
+	}
+}
+
+// inferSkillsFromBurst runs skill inference on burst events and returns suggestions.
+func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
+	if burst == nil {
+		return func() tea.Msg {
+			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("no burst provided")}
+		}
+	}
+
+	// Cancel any previous async operation.
+	if i.cancelFunc != nil {
+		i.cancelFunc()
+	}
+
+	// Create cancellable context for this operation.
+	ctx, cancel := context.WithCancel(context.Background())
+	i.cancelFunc = cancel
+
+	// Capture service reference to avoid race conditions.
+	service := i.context.SkillInferenceService
+
+	return func() tea.Msg {
+		// Check if cancelled before starting.
+		if ctx.Err() != nil {
+			return SkillSuggestionsErrorMsg{Err: ctx.Err()}
+		}
+
+		if service == nil {
+			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("skill inference service not available")}
+		}
+
+		// Load events for this burst.
+		events := i.loadBurstEvents(burst)
+		if len(events) == 0 {
+			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("no events found for burst")}
+		}
+
+		// Check if cancelled after loading events.
+		if ctx.Err() != nil {
+			return SkillSuggestionsErrorMsg{Err: ctx.Err()}
+		}
+
+		// Run skill detection.
+		suggestions, err := service.DetectSkills(ctx, events)
+		if err != nil {
+			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("skill detection failed: %w", err)}
+		}
+
+		return SkillSuggestionsLoadedMsg{
+			Suggestions: suggestions,
+			Error:       nil,
+		}
+	}
+}
+
+// createSkillsFromSuggestions persists accepted skill suggestions as confirmed skills.
+func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillSuggestion) tea.Cmd {
+	if len(suggestions) == 0 {
+		return func() tea.Msg {
+			return SkillsCreatedMsg{Skills: []*career.Skill{}, Error: nil}
+		}
+	}
+
+	// Cancel any previous async operation.
+	if i.cancelFunc != nil {
+		i.cancelFunc()
+	}
+
+	// Create cancellable context for this operation.
+	ctx, cancel := context.WithCancel(context.Background())
+	i.cancelFunc = cancel
+
+	// Capture service reference to avoid race conditions.
+	service := i.context.SkillInferenceService
+
+	return func() tea.Msg {
+		// Check if cancelled before starting.
+		if ctx.Err() != nil {
+			return SkillsCreatedMsg{Error: ctx.Err()}
+		}
+
+		if service == nil {
+			return SkillsCreatedMsg{Error: fmt.Errorf("skill inference service not available")}
+		}
+
+		// Create skills from suggestions.
+		skills, err := service.CreateSkillsFromSuggestions(ctx, suggestions)
+		if err != nil {
+			return SkillsCreatedMsg{Error: fmt.Errorf("failed to create skills: %w", err)}
+		}
+
+		return SkillsCreatedMsg{
+			Skills: skills,
+			Error:  nil,
+		}
 	}
 }
