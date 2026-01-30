@@ -18,7 +18,7 @@ var _ = Describe("DefaultSkillInferenceService", func() {
 
 	BeforeEach(func() {
 		ctx = context.Background()
-		service = skillinference.NewSkillInferenceService()
+		service = skillinference.NewSkillInferenceService(nil, nil) // No persistence needed for detection tests
 	})
 
 	Describe("Word Boundary Detection", func() {
