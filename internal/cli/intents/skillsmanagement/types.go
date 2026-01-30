@@ -114,6 +114,11 @@ func (i *Intent) IsActive() bool {
 	return i.active
 }
 
+// HasActiveModal returns true if a loading or error modal is currently active.
+func (i *Intent) HasActiveModal() bool {
+	return i.loadingModal != nil || i.errorModal != nil
+}
+
 // GetSkills provides access to the loaded skills for testing and screen rendering.
 //
 // Returns: the current slice of skills held by the intent.

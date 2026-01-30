@@ -13,6 +13,40 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// noopCmd is a command that does nothing but prevents message propagation.
+func noopCmd() tea.Msg { return nil }
+
+// handleErrorModalUpdate handles error modal updates (highest priority).
+func (i *Intent) handleErrorModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.errorModal == nil {
+		return nil
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
+		i.errorModal = nil
+	}
+	return noopCmd
+}
+
+// handleLoadingModalUpdate handles loading modal updates (cancellable with Esc).
+func (i *Intent) handleLoadingModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.loadingModal == nil {
+		return nil
+	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyEsc {
+			i.loadingModal = nil
+			i.state = StateList
+			return noopCmd
+		}
+		return noopCmd
+	case feedback.ModalSpinnerTickMsg:
+		return i.loadingModal.Update(msg)
+	default:
+		return noopCmd
+	}
+}
+
 // handleSkillsLoaded handles the SkillsLoadedMsg.
 func (i *Intent) handleSkillsLoaded(msg SkillsLoadedMsg) tea.Cmd {
 	if msg.Error != nil {
@@ -449,8 +483,6 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 		return nil
 	}
 
-	// TODO: Show skill suggestion modal
-	// For now, transition to StateSkillSuggestionReview
 	i.state = StateSkillSuggestionReview
 	return nil
 }

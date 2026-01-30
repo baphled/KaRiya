@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
 	burst_management "github.com/baphled/kariya/internal/cli/intents/burst_management"
+	"github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
@@ -1362,6 +1363,47 @@ var _ = Describe("IntentRegistrar DI Tests", func() {
 			testCtx := burstIntent.GetTestContext()
 			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
 			Expect(testCtx.SkillInferenceService).NotTo(BeNil(), "SkillInferenceService should be wired up in context")
+		})
+
+		It("should wire SkillInferenceService and EventRepository into ManageSkills intent context", func() {
+			eventRepo := careermemory.NewEventRepository()
+			skillRepo := careermemory.NewSkillRepository()
+			burstRepo := careermemory.NewBurstRepository()
+			factRepo := careermemory.NewFactRepository()
+
+			careerSvc := careerservice.NewService(eventRepo)
+			careerSvc.SetSkillRepository(skillRepo)
+			careerSvc.SetBurstRepository(burstRepo)
+			careerSvc.SetFactRepository(factRepo)
+
+			skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+			log := logger.DefaultLogger()
+			registrar := app.NewDefaultIntentRegistrar(&app.RegistrarConfig{
+				CLIService:            nil,
+				CareerService:         careerSvc,
+				SkillInferenceService: skillInferenceService,
+				Log:                   log,
+			})
+
+			router := intents.NewDefaultIntentRouter()
+			err := registrar.RegisterAll(context.Background(), router)
+			Expect(err).To(BeNil())
+
+			_, err = router.ActivateIntent("manage_skills", nil)
+			Expect(err).To(BeNil())
+
+			activeIntent := router.GetActiveIntent()
+			Expect(activeIntent).NotTo(BeNil())
+
+			skillsIntent, ok := activeIntent.(*skillsmanagement.Intent)
+			Expect(ok).To(BeTrue(), "Active intent should be *skillsmanagement.Intent")
+			Expect(skillsIntent).NotTo(BeNil())
+
+			testCtx := skillsIntent.GetTestContext()
+			Expect(testCtx).NotTo(BeNil(), "Intent context should not be nil")
+			Expect(testCtx.SkillInferenceService).NotTo(BeNil(), "SkillInferenceService should be wired up in context")
+			Expect(testCtx.EventRepository).NotTo(BeNil(), "EventRepository should be wired up in context")
 		})
 	})
 })

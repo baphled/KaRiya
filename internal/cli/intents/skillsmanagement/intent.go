@@ -114,8 +114,16 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	// PATTERN 4: Global Key Interception - 3-tier priority.
-	// 1. Check global keys FIRST (work everywhere, even in modals).
+	// 1. Async result messages FIRST (must bypass modal blocking).
+	switch msg := msg.(type) {
+	case SkillSuggestionsLoadedMsg:
+		return i.handleSkillSuggestionsLoaded(msg)
+	case SkillsCreatedMsg:
+		return i.handleSkillsCreatedFromInference(msg)
+	default:
+	}
+
+	// 2. Global keys (work everywhere, even in modals).
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		switch intents.HandleGlobalKeys(keyMsg) {
 		case intents.KeyQuit:
@@ -126,7 +134,15 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 
-	// 2. SECOND PRIORITY: Modal updates (if visible).
+	// 3. Loading/error modal updates (highest modal priority).
+	if cmd := i.handleErrorModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleLoadingModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+
+	// 4. Form/view modal updates (if visible).
 	// Pass full tea.Msg (not tea.KeyMsg) to modals for huh forms to work.
 	if i.searchModal != nil && i.searchModal.IsVisible() {
 		return i.handleSearchModalUpdate(msg)
@@ -153,7 +169,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleEventDetailModalUpdate(msg)
 	}
 
-	// 3. THIRD PRIORITY: Message and state handling.
+	// 5. Message and state handling.
 	switch msg := msg.(type) {
 	case SkillsLoadedMsg:
 		return i.handleSkillsLoaded(msg)
@@ -173,14 +189,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	case SkillEventsForModalLoadedMsg:
 		return i.handleSkillEventsForModalLoaded(msg)
 
-	case SkillSuggestionsLoadedMsg:
-		return i.handleSkillSuggestionsLoaded(msg)
-
-	case SkillsCreatedMsg:
-		return i.handleSkillsCreatedFromInference(msg)
-
 	case tea.KeyMsg:
-		// Handle key shortcuts at intent level (filter/sort/search modal openers).
 		if cmd := i.handleKeyShortcuts(msg); cmd != nil {
 			return cmd
 		}
@@ -270,6 +279,12 @@ func (i *Intent) SetCancelled() {
 		},
 	}
 	i.active = false
+}
+
+// GetTestContext returns the intent context for testing purposes.
+// This method is only for testing and should not be used in production code.
+func (i *Intent) GetTestContext() *IntentContext {
+	return i.context
 }
 
 // FilterBehavior interface implementation.

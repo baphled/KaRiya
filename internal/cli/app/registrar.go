@@ -125,6 +125,10 @@ func (r *DefaultIntentRegistrar) registerManageSkills(ctx context.Context, route
 			ctx,
 			r.config.CareerService.GetSkillRepository(),
 		)
+		skillsCtx.EventRepository = r.config.CareerService.GetEventRepository()
+		if r.config.SkillInferenceService != nil {
+			skillsCtx.SkillInferenceService = r.config.SkillInferenceService
+		}
 		intent, err := skillsmanagement.NewIntent(skillsCtx)
 		if err != nil {
 			r.config.Log.Error("Failed to create ManageSkills intent: %v", err)

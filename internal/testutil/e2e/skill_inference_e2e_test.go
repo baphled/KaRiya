@@ -6,6 +6,7 @@ import (
 	burstmgmt "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	skillsmgmt "github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
@@ -16,43 +17,155 @@ import (
 )
 
 var _ = Describe("E2E Skill Inference from ManageSkills", func() {
-	It("should infer skills from all events when user presses 'i' in ManageSkills list", func() {
-		// Given: ManageSkills intent is active
-		skillRepo := careermemory.NewSkillRepository()
-		eventRepo := careermemory.NewEventRepository()
-		skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+	var (
+		skillsIntent          *skillsmgmt.Intent
+		skillRepo             *careermemory.SkillRepository
+		eventRepo             *careermemory.EventRepository
+		skillInferenceService skillinference.SkillInferenceService
+	)
 
-		// Create some events to analyze
+	BeforeEach(func() {
+		skillRepo = careermemory.NewSkillRepository()
+		eventRepo = careermemory.NewEventRepository()
+		skillInferenceService = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
 		ctx := context.Background()
-		event1 := &career.Event{ID: "event-1", Text: "Built API with Go"}
-		event2 := &career.Event{ID: "event-2", Text: "Deployed with Kubernetes"}
-		_ = eventRepo.Create(ctx, event1)
-		_ = eventRepo.Create(ctx, event2)
-
-		// Create ManageSkills intent context
 		skillsCtx := skillsmgmt.NewIntentContext(ctx, skillRepo)
 		skillsCtx.EventRepository = eventRepo
 		skillsCtx.SkillInferenceService = skillInferenceService
-		err := skillsCtx.Validate()
-		Expect(err).NotTo(HaveOccurred())
 
-		// Create and initialize intent
-		skillsIntent, err := skillsmgmt.NewIntent(skillsCtx)
+		var err error
+		skillsIntent, err = skillsmgmt.NewIntent(skillsCtx)
 		Expect(err).NotTo(HaveOccurred())
 		skillsIntent.Init()
+	})
 
-		// Verify we're in list state
-		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+	Describe("Keybadges", func() {
+		It("should show Infer Skills keybadge in the list view help footer", func() {
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
 
-		// When: User presses 'i' to infer skills from all events
-		skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Infer Skills"))
+		})
 
-		// Then: State should transition to StateInferringSkills
-		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+		It("should preserve keybadges after pressing 'i' and returning to list", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
 
-		// And: Loading modal should show skill inference in progress
-		view := skillsIntent.View()
-		Expect(view).To(ContainSubstring("Analyzing all events for skills"))
+			// Simulate async completing with no results
+			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{},
+			})
+
+			// Dismiss the error modal with Esc
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Back in list state - badges should be intact
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Infer Skills"))
+			Expect(view).To(ContainSubstring("Navigate"))
+			Expect(view).To(ContainSubstring("Search"))
+		})
+	})
+
+	Describe("Loading modal", func() {
+		It("should show loading modal with correct text when user presses 'i'", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Analyzing all events for skills"))
+		})
+
+		It("should forward spinner ticks to keep the loading modal animating", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			// Send a spinner tick - should not crash and should return a cmd (next tick)
+			cmd := skillsIntent.Update(feedback.ModalSpinnerTickMsg{})
+
+			// The cmd should not be nil - loading modal returns the next tick
+			Expect(cmd).NotTo(BeNil())
+		})
+
+		It("should block key shortcuts while loading modal is active", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+			// Pressing other keys should NOT trigger actions (modal consumes them)
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+
+			// Should still be in inferring state, not showing filter/sort modals
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+		})
+
+		It("should cancel inference and return to list when Esc is pressed during loading", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+			// Pressing Esc should cancel loading, NOT cancel the entire intent
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+			// Intent should still be active (not cancelled)
+			Expect(skillsIntent.IsActive()).To(BeTrue())
+		})
+	})
+
+	Describe("No skills found", func() {
+		It("should show 'No Skills Found' modal when inference returns empty suggestions", func() {
+			ctx := context.Background()
+			_ = eventRepo.Create(ctx, &career.Event{ID: "evt-1", Text: "Did something"})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			// Simulate async completing with no suggestions
+			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{},
+			})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("No Skills Found"))
+		})
+
+		It("should show error modal when inference returns an error", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			// Simulate async completing with an error
+			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+				Error: context.DeadlineExceeded,
+			})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Skill Inference Failed"))
+		})
+
+		It("should dismiss error modal with Esc and return to normal list view", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			// Simulate no skills found
+			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{},
+			})
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("No Skills Found"))
+
+			// Press Esc to dismiss
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			// Error modal should be gone
+			view = skillsIntent.View()
+			Expect(view).NotTo(ContainSubstring("No Skills Found"))
+			// Intent should still be active
+			Expect(skillsIntent.IsActive()).To(BeTrue())
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+		})
 	})
 })
 

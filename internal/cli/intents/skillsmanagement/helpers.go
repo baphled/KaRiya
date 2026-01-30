@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	career "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
@@ -91,13 +92,23 @@ func (i *Intent) getContextHelp() string {
 	switch i.state {
 	case StateList:
 		return intents.CombineThemedFooters(
-			intents.ThemedListFooter(theme),
+			intents.ThemedCustomFooter(theme,
+				primitives.NavigateBadge(theme),
+				primitives.SelectBadge(theme),
+				primitives.InferSkillsBadge(theme),
+				primitives.SearchBadge(theme),
+				primitives.BackBadge(theme),
+			),
 			intents.ThemedGlobalBadges(theme),
 		)
 	case StateDetail:
 		return intents.CombineThemedFooters(
 			intents.ThemedDetailViewFooter(theme),
 			intents.ThemedGlobalBadges(theme),
+		)
+	case StateInferringSkills, StateSkillSuggestionReview:
+		return intents.ThemedCustomFooter(theme,
+			primitives.CancelBadge(theme),
 		)
 	case StateDelete:
 		return intents.ThemedGlobalBadges(theme)
