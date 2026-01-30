@@ -901,7 +901,7 @@ func (i *Intent) inferSkillsFromBurst(burst *career.Burst) tea.Cmd {
 		}
 
 		// Run skill detection.
-		suggestions, err := service.DetectSkills(ctx, events)
+		suggestions, err := service.InferSkillsFromEvents(ctx, events)
 		if err != nil {
 			return SkillSuggestionsErrorMsg{Err: fmt.Errorf("skill detection failed: %w", err)}
 		}

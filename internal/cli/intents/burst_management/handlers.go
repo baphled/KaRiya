@@ -838,12 +838,12 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 		action := i.skillSuggestionModal.GetAction()
 
 		switch action {
-		case burstmodals.SkillSuggestionActionAccept, burstmodals.SkillSuggestionActionReject:
+		case burstmodals.SuggestionActionAccept, burstmodals.SuggestionActionReject:
 			// Individual accept/reject - keep modal open until all processed.
 			// Modal automatically closes when no suggestions remain.
 			if !i.skillSuggestionModal.IsVisible() {
 				// All suggestions processed - create skills from accepted.
-				accepted := i.skillSuggestionModal.GetAcceptedSuggestions()
+				accepted := i.skillSuggestionModal.GetAcceptedSkills()
 
 				if len(accepted) > 0 {
 					// Create skills from accepted suggestions.
@@ -861,17 +861,7 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 			}
 			return cmd
 
-		case burstmodals.SkillSuggestionActionAcceptAll:
-			// Accept all and close - create skills immediately.
-			accepted := i.skillSuggestionModal.GetAcceptedSuggestions()
-			i.loadingModal = feedback.NewLoadingModal(
-				fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
-				true,
-			).WithTheme(i.Theme())
-			i.skillSuggestionModal = nil
-			return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
-
-		case burstmodals.SkillSuggestionActionCancel:
+		case burstmodals.SuggestionActionCancel:
 			// User cancelled - return to list.
 			i.skillSuggestionModal = nil
 			i.state = StateList

@@ -126,7 +126,7 @@ type Intent struct {
 	suggestionModal *burstmodals.SuggestionReviewModal
 
 	// skillSuggestionModal holds the skill suggestion review modal.
-	skillSuggestionModal *burstmodals.SkillSuggestionModal
+	skillSuggestionModal *burstmodals.SuggestionReviewModal
 
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal
