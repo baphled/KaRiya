@@ -66,6 +66,12 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return i.handleSuggestionReviewComplete(msg)
 	case FactExtractionCompleteMsg:
 		return i.handleFactExtractionComplete(msg)
+	case SkillSuggestionsLoadedMsg:
+		return i.handleSkillSuggestionsLoaded(msg)
+	case SkillSuggestionsErrorMsg:
+		return i.handleSkillSuggestionsError(msg)
+	case SkillsCreatedMsg:
+		return i.handleSkillsCreated(msg)
 	}
 
 	// Handle modals first (highest priority).

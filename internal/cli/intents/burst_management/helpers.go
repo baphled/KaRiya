@@ -568,6 +568,15 @@ func (i *Intent) rebuildModalRegistry() {
 			i.suggestionModal.Update,
 		))
 	}
+
+	// Skill suggestion review modal.
+	if i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillSuggestionModal.IsVisible,
+			i.skillSuggestionModal.View,
+			i.skillSuggestionModal.Update,
+		))
+	}
 }
 
 // modalWithDimensions is an interface for modals that support dimensions.

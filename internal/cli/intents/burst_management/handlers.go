@@ -266,6 +266,9 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	if cmd := i.handleSuggestionModalUpdate(msg); cmd != nil {
 		return cmd
 	}
+	if cmd := i.handleSkillSuggestionModalUpdate(msg); cmd != nil {
+		return cmd
+	}
 	if cmd := i.handleDetailModalUpdate(msg); cmd != nil {
 		return cmd
 	}
@@ -325,6 +328,7 @@ func (i *Intent) cancelAsyncOperation() {
 	i.loadingModal = nil
 	i.suggestionsLoading = false
 	i.extractingFacts = false
+	i.inferringSkills = false
 	i.state = StateList
 }
 
@@ -824,24 +828,48 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	cmd, action := i.skillSuggestionModal.Update(msg)
+	_, cmd := i.skillSuggestionModal.Update(msg)
 
-	if action != nil {
-		switch action.(type) {
-		case burstmodals.SkillSuggestionAction:
-			// Modal closed - check what action was taken.
-			accepted := i.skillSuggestionModal.GetAcceptedSuggestions()
+	// Check if modal was closed (action != "").
+	if !i.skillSuggestionModal.IsVisible() {
+		action := i.skillSuggestionModal.GetAction()
 
-			if len(accepted) > 0 {
-				// Create skills from accepted suggestions.
-				i.loadingModal = feedback.NewLoadingModal(
-					fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
-					true,
-				).WithTheme(i.Theme())
-				return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
+		switch action {
+		case burstmodals.SkillSuggestionActionAccept, burstmodals.SkillSuggestionActionReject:
+			// Individual accept/reject - keep modal open until all processed.
+			// Modal automatically closes when no suggestions remain.
+			if !i.skillSuggestionModal.IsVisible() {
+				// All suggestions processed - create skills from accepted.
+				accepted := i.skillSuggestionModal.GetAcceptedSuggestions()
+
+				if len(accepted) > 0 {
+					// Create skills from accepted suggestions.
+					i.loadingModal = feedback.NewLoadingModal(
+						fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
+						true,
+					).WithTheme(i.Theme())
+					i.skillSuggestionModal = nil
+					return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
+				}
+
+				// No accepted suggestions - just return to list.
+				i.skillSuggestionModal = nil
+				i.state = StateList
 			}
+			return cmd
 
-			// No accepted suggestions - just return to list.
+		case burstmodals.SkillSuggestionActionAcceptAll:
+			// Accept all and close - create skills immediately.
+			accepted := i.skillSuggestionModal.GetAcceptedSuggestions()
+			i.loadingModal = feedback.NewLoadingModal(
+				fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
+				true,
+			).WithTheme(i.Theme())
+			i.skillSuggestionModal = nil
+			return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
+
+		case burstmodals.SkillSuggestionActionCancel:
+			// User cancelled - return to list.
 			i.skillSuggestionModal = nil
 			i.state = StateList
 			return cmd

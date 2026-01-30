@@ -92,6 +92,11 @@ func NewSkillSuggestionModal(suggestions []skillinference.SkillSuggestion, theme
 	}
 }
 
+// Init initializes the modal.
+func (m *SkillSuggestionModal) Init() tea.Cmd {
+	return nil
+}
+
 // Show makes the modal visible.
 func (m *SkillSuggestionModal) Show() {
 	m.visible = true
@@ -125,9 +130,9 @@ func (m *SkillSuggestionModal) SetDimensions(width, height int) {
 }
 
 // Update handles input events.
-func (m *SkillSuggestionModal) Update(msg tea.Msg) (tea.Cmd, interface{}) {
+func (m *SkillSuggestionModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if !m.visible {
-		return nil, nil
+		return m, nil
 	}
 
 	switch msg := msg.(type) {
@@ -135,45 +140,47 @@ func (m *SkillSuggestionModal) Update(msg tea.Msg) (tea.Cmd, interface{}) {
 		switch msg.Type {
 		case tea.KeyUp:
 			m.table.HandleNavigation("up")
-			return nil, nil
+			return m, nil
 		case tea.KeyDown:
 			m.table.HandleNavigation("down")
-			return nil, nil
+			return m, nil
 		case tea.KeyPgUp:
 			m.table.HandleNavigation("pgup")
-			return nil, nil
+			return m, nil
 		case tea.KeyPgDown:
 			m.table.HandleNavigation("pgdn")
-			return nil, nil
+			return m, nil
 		case tea.KeyHome:
 			m.table.HandleNavigation("home")
-			return nil, nil
+			return m, nil
 		case tea.KeyEnd:
 			m.table.HandleNavigation("end")
-			return nil, nil
+			return m, nil
 		case tea.KeyEsc:
 			m.action = SkillSuggestionActionCancel
 			m.Hide()
-			return nil, m.action
+			return m, nil
 		case tea.KeyRunes:
 			switch msg.String() {
 			case "k":
 				m.table.HandleNavigation("up")
-				return nil, nil
+				return m, nil
 			case "j":
 				m.table.HandleNavigation("down")
-				return nil, nil
+				return m, nil
 			case "a":
 				m.acceptCurrent()
-				return nil, SkillSuggestionActionAccept
+				m.action = SkillSuggestionActionAccept
+				return m, nil
 			case "r":
 				m.rejectCurrent()
-				return nil, SkillSuggestionActionReject
+				m.action = SkillSuggestionActionReject
+				return m, nil
 			case "A":
 				m.acceptAll()
 				m.action = SkillSuggestionActionAcceptAll
 				m.Hide()
-				return nil, m.action
+				return m, nil
 			}
 		}
 
@@ -181,9 +188,10 @@ func (m *SkillSuggestionModal) Update(msg tea.Msg) (tea.Cmd, interface{}) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.table.Dimensions(msg.Width-12, msg.Height-16)
+		return m, nil
 	}
 
-	return nil, nil
+	return m, nil
 }
 
 // acceptCurrent marks the current suggestion as accepted and removes it from the table.
@@ -240,6 +248,16 @@ func (m *SkillSuggestionModal) acceptAll() {
 // GetAcceptedSuggestions returns all accepted suggestions.
 func (m *SkillSuggestionModal) GetAcceptedSuggestions() []skillinference.SkillSuggestion {
 	return m.accepted
+}
+
+// GetAction returns the last action taken.
+func (m *SkillSuggestionModal) GetAction() SkillSuggestionAction {
+	return m.action
+}
+
+// ClearAction clears the current action.
+func (m *SkillSuggestionModal) ClearAction() {
+	m.action = ""
 }
 
 // getTheme returns the theme or default if nil.
