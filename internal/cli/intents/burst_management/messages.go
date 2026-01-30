@@ -4,6 +4,7 @@ package burst_management
 import (
 	"github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/service/career/burstfact"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
 // Custom message types for BurstManagement state transitions.
@@ -69,4 +70,21 @@ type EditBurstMsg struct {
 	BurstID     string
 	Name        string
 	Description string
+}
+
+// SkillSuggestionsLoadedMsg is sent when skill inference completes.
+type SkillSuggestionsLoadedMsg struct {
+	Suggestions []skillinference.SkillSuggestion
+	Error       error
+}
+
+// SkillSuggestionsErrorMsg is sent when skill inference fails.
+type SkillSuggestionsErrorMsg struct {
+	Err error
+}
+
+// SkillsCreatedMsg is sent when skills are created from accepted suggestions.
+type SkillsCreatedMsg struct {
+	Skills []*career.Skill
+	Error  error
 }

@@ -74,6 +74,9 @@ type Intent struct {
 	// suggestionsLoading indicates if burst suggestions are being loaded.
 	suggestionsLoading bool
 
+	// inferringSkills indicates if skills are being inferred.
+	inferringSkills bool
+
 	// --- Error states ---
 
 	// deleteError stores any error from delete operation.
@@ -87,6 +90,9 @@ type Intent struct {
 
 	// suggestionsError stores any error from suggestion detection.
 	suggestionsError error
+
+	// skillInferenceError stores any error from skill inference.
+	skillInferenceError error
 
 	// --- Progress tracking ---
 
@@ -118,6 +124,9 @@ type Intent struct {
 
 	// suggestionModal holds the suggestion review modal.
 	suggestionModal *burstmodals.SuggestionReviewModal
+
+	// skillSuggestionModal holds the skill suggestion review modal.
+	skillSuggestionModal *burstmodals.SkillSuggestionModal
 
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal
