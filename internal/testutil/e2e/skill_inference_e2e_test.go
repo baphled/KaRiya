@@ -574,6 +574,27 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Detecting skills from burst events"))
 		})
+
+		It("should not allow skill inference on unconfirmed bursts", func() {
+			// Given: An unconfirmed burst
+			burst.Confirmed = false
+
+			// Navigate to burst detail
+			intent.HandleNavigate(&screens.NavigateResult{
+				ResultData: burst,
+			})
+
+			// When: User presses 'i' to infer skills
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			// Then: State should NOT transition to inferring - should stay on list
+			Expect(intent.GetState()).NotTo(Equal(burstmgmt.StateInferringSkills))
+
+			// And: View should tell user to confirm burst first
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Confirm"))
+			Expect(intent.IsActive()).To(BeTrue())
+		})
 	})
 
 	Describe("Auto Skill Inference Trigger", func() {
@@ -709,10 +730,12 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 			// Then: State should return to list
 			Expect(intent.GetState()).To(Equal(burstmgmt.StateList))
 
-			// And: Success message should be shown
+			// And: Success message should be shown with success icon, not warning
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Skills Created"))
 			Expect(view).To(ContainSubstring("Successfully created 2 skill"))
+			Expect(view).To(ContainSubstring("✅"))
+			Expect(view).NotTo(ContainSubstring("⚠️"))
 		})
 
 		It("should handle skill creation errors gracefully", func() {

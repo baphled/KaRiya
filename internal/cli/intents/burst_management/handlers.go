@@ -467,6 +467,10 @@ func (i *Intent) handleDetailModalKeypress(keyMsg tea.KeyMsg) tea.Cmd {
 		i.detailModal.Hide()
 		return i.showConfirmBurstModal()
 	case "i":
+		if i.selectedBurst != nil && !i.selectedBurst.Confirmed {
+			i.ShowErrorModal("Burst Not Confirmed", "Please confirm this burst before inferring skills.")
+			return noopCmd
+		}
 		i.detailModal.Hide()
 		i.inferredFromDetail = true
 		return i.startSkillInference()
@@ -828,9 +832,10 @@ func (i *Intent) handleSkillsCreated(msg SkillsCreatedMsg) tea.Cmd {
 		return nil
 	}
 
-	// Skills created successfully - show success message and return to list.
 	successMsg := fmt.Sprintf("Successfully created %d skill(s)", len(msg.Skills))
-	i.ShowErrorModal("Skills Created", successMsg)
+	successModal := feedback.NewSuccessModal(successMsg)
+	successModal.Title = "Skills Created"
+	i.errorModal = successModal
 	i.state = StateList
 	return nil
 }
