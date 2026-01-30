@@ -847,11 +847,15 @@ var _ = Describe("BurstManagement E2E Workflow Tests", func() {
 
 			_ = intent.Update(msg)
 
-			// Should show error about no suggestions and stay at list
+			// Should show warning about no suggestions and stay at list (not error — no failure occurred)
 			Expect(intent.GetState()).To(Equal(burst_management.StateList))
 			Expect(intent.HasVisibleErrorModal()).To(BeTrue())
 			view := intent.View()
 			Expect(view).To(ContainSubstring("No suggestions"))
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalWarning))
 		})
 	})
 })

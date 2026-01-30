@@ -147,7 +147,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	// Store error and show error modal.
 	i.deleteError = result.Err
-	i.errorModal = feedback.NewErrorModal("Operation Failed", result.Err.Error())
+	i.feedbackModal = feedback.NewErrorModal("Operation Failed", result.Err.Error())
 	return nil
 }
 
@@ -251,7 +251,7 @@ func (i *Intent) handleActionData(actionData map[string]interface{}) tea.Cmd {
 // Returns a command (possibly noopCmd) if a modal consumed the message.
 func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	// Process modals in priority order - first match handles the message.
-	if cmd := i.handleErrorModalUpdate(msg); cmd != nil {
+	if cmd := i.handleFeedbackModalUpdate(msg); cmd != nil {
 		return cmd
 	}
 	if cmd := i.handleLoadingModalUpdate(msg); cmd != nil {
@@ -287,13 +287,13 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// handleErrorModalUpdate handles error modal updates (highest priority).
-func (i *Intent) handleErrorModalUpdate(msg tea.Msg) tea.Cmd {
-	if i.errorModal == nil {
+// handleFeedbackModalUpdate handles feedback modal updates (highest priority).
+func (i *Intent) handleFeedbackModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.feedbackModal == nil {
 		return nil
 	}
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
-		i.errorModal = nil
+		i.feedbackModal = nil
 	}
 	return noopCmd
 }
@@ -468,7 +468,7 @@ func (i *Intent) handleDetailModalKeypress(keyMsg tea.KeyMsg) tea.Cmd {
 		return i.showConfirmBurstModal()
 	case "i":
 		if i.selectedBurst != nil && !i.selectedBurst.Confirmed {
-			i.ShowErrorModal("Burst Not Confirmed", "Please confirm this burst before inferring skills.")
+			i.ShowWarningModal("Burst Not Confirmed", "Please confirm this burst before inferring skills.")
 			return noopCmd
 		}
 		i.detailModal.Hide()
@@ -589,7 +589,7 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 			i.state = StateList
 			return nil
 		}
-		i.errorModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
+		i.feedbackModal = feedback.NewErrorModal("Extraction Failed", msg.Error.Error())
 		// Only transition to list if suggestion modal is not visible.
 		// User may still be reviewing remaining suggestions.
 		if i.suggestionModal == nil || !i.suggestionModal.IsVisible() {
@@ -630,7 +630,7 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 	if i.selectedBurst == nil || i.selectedBurst.ID != msg.BurstID {
 		// Burst mismatch or nil - show error.
-		i.errorModal = feedback.NewErrorModal("Edit Failed", "Burst not found")
+		i.feedbackModal = feedback.NewErrorModal("Edit Failed", "Burst not found")
 		i.state = StateDetail
 		return nil
 	}
@@ -663,7 +663,7 @@ func (i *Intent) handleEditBurstMsg(msg EditBurstMsg) tea.Cmd {
 			i.selectedBurst.Name = originalName
 			i.selectedBurst.Description = originalDescription
 			i.editError = err
-			i.errorModal = feedback.NewErrorModal("Update Failed", err.Error())
+			i.feedbackModal = feedback.NewErrorModal("Update Failed", err.Error())
 			return nil
 		}
 	}
@@ -723,8 +723,7 @@ func (i *Intent) handleBurstSuggestionsLoaded(msg BurstSuggestionsLoadedMsg) tea
 	}
 
 	if len(msg.Suggestions) == 0 {
-		// No suggestions found - show message and return to list.
-		i.ShowErrorModal("No Suggestions Found",
+		i.ShowWarningModal("No Suggestions Found",
 			"No suggestions were generated from your events. "+
 				"Try adding more events or adjusting detection settings.")
 		i.state = StateList
@@ -783,8 +782,7 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 	}
 
 	if len(msg.Suggestions) == 0 {
-		// No skills detected - show message and return to list.
-		i.ShowErrorModal("No Skills Detected",
+		i.ShowWarningModal("No Skills Detected",
 			"No skills were detected from the burst events. "+
 				"The events may not contain enough technical details.")
 		i.state = StateList
@@ -833,9 +831,7 @@ func (i *Intent) handleSkillsCreated(msg SkillsCreatedMsg) tea.Cmd {
 	}
 
 	successMsg := fmt.Sprintf("Successfully created %d skill(s)", len(msg.Skills))
-	successModal := feedback.NewSuccessModal(successMsg)
-	successModal.Title = "Skills Created"
-	i.errorModal = successModal
+	i.ShowSuccessModal("Skills Created", successMsg)
 	i.state = StateList
 	return nil
 }

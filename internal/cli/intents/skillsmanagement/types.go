@@ -51,7 +51,7 @@ type Intent struct {
 
 	// Skill inference modals.
 	loadingModal          *feedback.Modal
-	errorModal            *feedback.Modal
+	feedbackModal         *feedback.Modal
 	skillSuggestionModal  *burstmodals.SuggestionReviewModal
 	suggestionEventsModal *modals.EventsModal
 
@@ -117,11 +117,16 @@ func (i *Intent) IsActive() bool {
 	return i.active
 }
 
-// HasActiveModal returns true if a loading, error, suggestion, or events modal is currently active.
+// HasActiveModal returns true if a loading, feedback, suggestion, or events modal is currently active.
 func (i *Intent) HasActiveModal() bool {
-	return i.loadingModal != nil || i.errorModal != nil ||
+	return i.loadingModal != nil || i.feedbackModal != nil ||
 		(i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible()) ||
 		(i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible())
+}
+
+// GetFeedbackModal returns the current feedback modal for testing.
+func (i *Intent) GetFeedbackModal() *feedback.Modal {
+	return i.feedbackModal
 }
 
 // GetSkills provides access to the loaded skills for testing and screen rendering.

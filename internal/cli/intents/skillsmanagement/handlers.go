@@ -19,13 +19,13 @@ import (
 // noopCmd is a command that does nothing but prevents message propagation.
 func noopCmd() tea.Msg { return nil }
 
-// handleErrorModalUpdate handles error modal updates (highest priority).
-func (i *Intent) handleErrorModalUpdate(msg tea.Msg) tea.Cmd {
-	if i.errorModal == nil {
+// handleFeedbackModalUpdate handles feedback modal updates (highest priority).
+func (i *Intent) handleFeedbackModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.feedbackModal == nil {
 		return nil
 	}
 	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.Type == tea.KeyEsc {
-		i.errorModal = nil
+		i.feedbackModal = nil
 	}
 	return noopCmd
 }
@@ -475,13 +475,13 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 			i.state = StateList
 			return nil
 		}
-		i.errorModal = feedback.NewErrorModal("Skill Inference Failed", msg.Error.Error())
+		i.feedbackModal = feedback.NewErrorModal("Skill Inference Failed", msg.Error.Error())
 		i.state = StateList
 		return nil
 	}
 
 	if len(msg.Suggestions) == 0 {
-		i.errorModal = feedback.NewErrorModal("No Skills Found", "No skills were detected from the events")
+		i.feedbackModal = feedback.NewWarningModal("No Skills Found", "No skills were detected from the events")
 		i.state = StateList
 		return nil
 	}
@@ -585,7 +585,7 @@ func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillS
 // handleSkillsCreatedFromInference handles skills created from accepted suggestions.
 func (i *Intent) handleSkillsCreatedFromInference(msg SkillsCreatedMsg) tea.Cmd {
 	if msg.Error != nil {
-		i.errorModal = feedback.NewErrorModal("Skill Creation Failed", msg.Error.Error())
+		i.feedbackModal = feedback.NewErrorModal("Skill Creation Failed", msg.Error.Error())
 		i.state = StateList
 		return nil
 	}

@@ -168,7 +168,7 @@ func (i *Intent) hasVisibleActionModal() bool {
 
 // hasVisibleFeedbackModal checks if feedback modals (error, loading) are active.
 func (i *Intent) hasVisibleFeedbackModal() bool {
-	return i.errorModal != nil || i.loadingModal != nil
+	return i.feedbackModal != nil || i.loadingModal != nil
 }
 
 // isLoadingAsync returns true if any async loading operation is in progress.
@@ -186,7 +186,7 @@ func (i *Intent) deleteBurst(burst *career.Burst) {
 	if i.context.BurstRepository != nil {
 		if err := i.context.BurstRepository.Delete(ctx, burst.ID); err != nil {
 			i.deleteError = err
-			i.errorModal = feedback.NewErrorModal("Delete Failed", err.Error())
+			i.feedbackModal = feedback.NewErrorModal("Delete Failed", err.Error())
 			i.deleteModal = nil
 			i.selectedBurst = nil
 			i.state = StateList
@@ -286,7 +286,7 @@ func (i *Intent) confirmBurst() tea.Cmd {
 		ctx := i.getContext()
 		if err := i.context.Service.ConfirmBurst(ctx, i.selectedBurst); err != nil {
 			i.confirmError = err
-			i.errorModal = feedback.NewErrorModal("Confirmation Failed", err.Error())
+			i.feedbackModal = feedback.NewErrorModal("Confirmation Failed", err.Error())
 			return nil
 		}
 	} else {
@@ -300,7 +300,14 @@ func (i *Intent) confirmBurst() tea.Cmd {
 	return i.extractFactsForBurst(i.selectedBurst)
 }
 
+// HasVisibleFeedbackModal returns true if the feedback modal is visible.
+func (i *Intent) HasVisibleFeedbackModal() bool {
+	return i.feedbackModal != nil
+}
+
 // HasVisibleErrorModal checks whether an error modal is currently displayed.
+//
+// Deprecated: Use HasVisibleFeedbackModal instead.
 //
 // Returns:
 //   - True if the error modal reference is non-nil.
@@ -308,7 +315,12 @@ func (i *Intent) confirmBurst() tea.Cmd {
 // Side effects:
 //   - None.
 func (i *Intent) HasVisibleErrorModal() bool {
-	return i.errorModal != nil
+	return i.HasVisibleFeedbackModal()
+}
+
+// GetFeedbackModal returns the current feedback modal for testing.
+func (i *Intent) GetFeedbackModal() *feedback.Modal {
+	return i.feedbackModal
 }
 
 // HasVisibleDeleteModal checks whether the delete confirmation modal is currently displayed.
@@ -353,7 +365,19 @@ func (i *Intent) HasVisibleEditModal() bool {
 // Side effects:
 //   - Replaces any existing error modal on the intent.
 func (i *Intent) ShowErrorModal(title, message string) {
-	i.errorModal = feedback.NewErrorModal(title, message)
+	i.feedbackModal = feedback.NewErrorModal(title, message)
+}
+
+// ShowWarningModal creates and shows a warning modal with the given title and message.
+func (i *Intent) ShowWarningModal(title, message string) {
+	i.feedbackModal = feedback.NewWarningModal(title, message)
+}
+
+// ShowSuccessModal creates and shows a success modal with the given message.
+func (i *Intent) ShowSuccessModal(title, message string) {
+	modal := feedback.NewSuccessModal(message)
+	modal.Title = title
+	i.feedbackModal = modal
 }
 
 // GetTerminalDimensions exposes terminal dimensions for testing purposes.
@@ -525,10 +549,10 @@ func (i *Intent) rebuildModalRegistry() {
 	i.modalRegistry.Clear()
 
 	// Register modals in priority order (highest priority first).
-	// Error modal has highest priority.
-	if i.errorModal != nil {
+	// Feedback modal has highest priority.
+	if i.feedbackModal != nil {
 		width, height := i.getTerminalDimensions()
-		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme()))
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.feedbackModal, width, height, i.Theme()))
 	}
 
 	// Loading modal (for StateExtractingFacts and StateSuggesting).

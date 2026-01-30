@@ -134,8 +134,8 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 
-	// 3. Loading/error modal updates (highest modal priority).
-	if cmd := i.handleErrorModalUpdate(msg); cmd != nil {
+	// 3. Loading/feedback modal updates (highest modal priority).
+	if cmd := i.handleFeedbackModalUpdate(msg); cmd != nil {
 		return cmd
 	}
 	if cmd := i.handleLoadingModalUpdate(msg); cmd != nil {

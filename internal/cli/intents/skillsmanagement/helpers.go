@@ -127,9 +127,9 @@ func (i *Intent) rebuildModalRegistry() {
 
 	// Register modals in priority order (highest priority first).
 	// Error modal has highest priority.
-	if i.errorModal != nil {
+	if i.feedbackModal != nil {
 		width, height := i.getTerminalDimensions()
-		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme()))
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.feedbackModal, width, height, i.Theme()))
 	}
 
 	// Loading modal (for StateInferringSkills).
@@ -412,12 +412,12 @@ func (i *Intent) loadEventsForSkillModal() tea.Cmd {
 // startSkillInference triggers skill inference from all events.
 func (i *Intent) startSkillInference() tea.Cmd {
 	if i.context.SkillInferenceService == nil {
-		i.errorModal = feedback.NewErrorModal("Inference Failed", "Skill inference service not available")
+		i.feedbackModal = feedback.NewErrorModal("Inference Failed", "Skill inference service not available")
 		return nil
 	}
 
 	if i.context.EventRepository == nil {
-		i.errorModal = feedback.NewErrorModal("Inference Failed", "Event repository not available")
+		i.feedbackModal = feedback.NewErrorModal("Inference Failed", "Event repository not available")
 		return nil
 	}
 

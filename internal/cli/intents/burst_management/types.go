@@ -135,8 +135,8 @@ type Intent struct {
 	// inferredFromDetail tracks whether skill inference was triggered from burst detail modal.
 	inferredFromDetail bool
 
-	// errorModal holds the error modal (shown when operations fail).
-	errorModal *feedback.Modal
+	// feedbackModal holds the feedback modal (shown for errors, warnings, and success messages).
+	feedbackModal *feedback.Modal
 
 	// loadingModal holds the loading modal (shown during async operations).
 	loadingModal *feedback.Modal

@@ -164,6 +164,10 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
 			view := skillsIntent.View()
 			Expect(view).To(ContainSubstring("No Skills Found"))
+
+			modal := skillsIntent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalWarning))
 		})
 
 		It("should show error modal when inference returns an error", func() {
@@ -590,10 +594,14 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 			// Then: State should NOT transition to inferring - should stay on list
 			Expect(intent.GetState()).NotTo(Equal(burstmgmt.StateInferringSkills))
 
-			// And: View should tell user to confirm burst first
+			// And: Warning modal should tell user to confirm burst first (not error — no failure occurred)
 			view := intent.View()
 			Expect(view).To(ContainSubstring("Confirm"))
 			Expect(intent.IsActive()).To(BeTrue())
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalWarning))
 		})
 	})
 
@@ -701,9 +709,13 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 			// Then: State should return to list
 			Expect(intent.GetState()).To(Equal(burstmgmt.StateList))
 
-			// And: Informative error should be shown
+			// And: Informative warning should be shown (not error — no failure occurred)
 			view := intent.View()
 			Expect(view).To(ContainSubstring("No skills were detected"))
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalWarning))
 		})
 
 		It("should show success message when skills are created", func() {
@@ -736,6 +748,10 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 			Expect(view).To(ContainSubstring("Successfully created 2 skill"))
 			Expect(view).To(ContainSubstring("✅"))
 			Expect(view).NotTo(ContainSubstring("⚠️"))
+
+			modal := intent.GetFeedbackModal()
+			Expect(modal).NotTo(BeNil())
+			Expect(modal.Type).To(Equal(feedback.ModalSuccess))
 		})
 
 		It("should handle skill creation errors gracefully", func() {
