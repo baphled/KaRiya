@@ -177,7 +177,7 @@ func (s *EventListScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 // SetContentHeight configures the table to use the specified height with viewport scrolling.
 // This enables the table to fill available space and scroll when content exceeds height.
 // Should be called by the intent after getting available height from ScreenLayout.
-func (s *TimelineEventListScreen) SetContentHeight(height int) {
+func (s *EventListScreen) SetContentHeight(height int) {
 	s.tableBehavior.SetHeight(height)
 }
 

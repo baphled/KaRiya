@@ -297,8 +297,9 @@ func CenterInTerminal(content string, width, height int) string {
 	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, content)
 }
 
-// PlaceInTerminal places content at the top-center of the terminal (pinned layout).
-// Logo appears at line 0, footer at bottom, content flows naturally between them.
+// PlaceInTerminal places content at the top-center of the available area.
+// It does not enforce logo/footer positioning; higher-level layout helpers are
+// responsible for arranging full-screen pinned layouts.
 func PlaceInTerminal(content string, width, height int) string {
 	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Top, content)
 }

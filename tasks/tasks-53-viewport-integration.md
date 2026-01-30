@@ -22,7 +22,7 @@ Currently, content flows naturally without height constraints. With pinned layou
 
 ### Files to Modify
 
-- `internal/cli/behaviors/table_behavior.go` - Add viewport integration
+- `internal/cli/behaviors/table.go` - Add viewport integration
 - `internal/cli/uikit/layout/screen_layout.go` - Calculate content height, pass to content
 - `internal/cli/uikit/feedback/modal.go` - Add viewport for modal content
 - `internal/cli/screens/*/` - Update screens to use viewport

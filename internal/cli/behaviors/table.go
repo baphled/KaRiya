@@ -153,8 +153,15 @@ func (tb *TableBehavior[T]) SetHeight(height int) *TableBehavior[T] {
 		tb.viewport.Height = height
 	}
 
-	// Update table to not limit its own height - viewport will handle scrolling
-	tb.table.SetHeight(1000) // Large height so table doesn't truncate
+	// Set table height based on item count so it renders all rows without truncation.
+	// The viewport will handle scrolling if content exceeds the visible height.
+	itemCount := len(tb.displayItems)
+	if itemCount > 0 {
+		tb.table.SetHeight(itemCount)
+	} else {
+		// Minimum height to show empty state
+		tb.table.SetHeight(height)
+	}
 
 	return tb
 }

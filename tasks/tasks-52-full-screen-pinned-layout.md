@@ -1,12 +1,12 @@
-# TASK-001: Full-screen pinned layout - logo at top, footer at bottom
+# TASK-52: Full-screen pinned layout - logo at top, footer at bottom
 
 ## Summary
 
-Modify the TUI layout so the screen maximises the terminal: logo pinned to line 0 at the top, footer pinned to the bottom, and content flows immediately below the header. Currently everything is vertically centered which wastes screen real estate.
+Modify the TUI layout so the screen maximises the terminal: logo pinned near the top (with 2 blank lines for breathing room), footer pinned to the bottom, and content flows immediately below the header. Currently everything is vertically centered which wastes screen real estate.
 
 ## Acceptance Criteria
 
-- [ ] Logo renders at line 0 (no blank lines before it)
+- [ ] Logo renders at line 2 (with 2 blank lines before it for breathing room)
 - [ ] Footer/help text renders on the last lines of the terminal
 - [ ] Content flows immediately below the header (logo + breadcrumbs)
 - [ ] Dynamic spacer fills the gap between content and footer
@@ -46,7 +46,8 @@ rendered := lipgloss.Place(width, height, lipgloss.Center, lipgloss.Top, combine
 ### Dependencies
 
 - No external dependencies
-- `LogoSpacing` field semantics change: spacing now means "after logo" only (no pre-logo blank lines)
+- 2 blank lines added before logo for visual breathing room
+- Footer pinned to bottom with dynamic spacer filling the gap
 
 ### Patterns to Use
 
