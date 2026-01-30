@@ -110,7 +110,7 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 		})
 
 		It("should render footer at bottom even with logo", func() {
-			logo := NewMockLogo("LOGO\nLOGO LINE 2")
+			logo := NewMockLogo("LOGO\nLINE 2")
 			view := layout.NewScreenLayout(termInfo).
 				WithLogo(logo, 0).
 				WithTheme(theme).
@@ -180,7 +180,7 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 			lines := strings.Split(rendered, "\n")
 
 			// Total lines should equal terminal height
-			Expect(len(lines)).To(Equal(termInfo.Height))
+			Expect(lines).To(HaveLen(termInfo.Height))
 		})
 
 		It("should calculate spacer correctly with logo and footer", func() {
@@ -195,7 +195,7 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 			lines := strings.Split(rendered, "\n")
 
 			// Should have exactly termInfo.Height lines
-			Expect(len(lines)).To(Equal(termInfo.Height))
+			Expect(lines).To(HaveLen(termInfo.Height))
 		})
 	})
 
@@ -327,7 +327,7 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 			rendered := view.Render()
 			lines := strings.Split(rendered, "\n")
 
-			Expect(len(lines)).To(Equal(termInfo.Height))
+			Expect(lines).To(HaveLen(termInfo.Height))
 		})
 
 		It("should maintain terminal height with different sizes", func() {
@@ -340,7 +340,7 @@ var _ = Describe("ScreenLayout Pinned Layout", func() {
 			rendered := view.Render()
 			lines := strings.Split(rendered, "\n")
 
-			Expect(len(lines)).To(Equal(10))
+			Expect(lines).To(HaveLen(10))
 		})
 	})
 
