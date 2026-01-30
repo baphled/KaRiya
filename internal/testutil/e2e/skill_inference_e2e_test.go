@@ -4,6 +4,7 @@ import (
 	"context"
 
 	burstmgmt "github.com/baphled/kariya/internal/cli/intents/burst_management"
+	skillsmgmt "github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
@@ -13,6 +14,47 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("E2E Skill Inference from ManageSkills", func() {
+	It("should infer skills from all events when user presses 'i' in ManageSkills list", func() {
+		// Given: ManageSkills intent is active
+		skillRepo := careermemory.NewSkillRepository()
+		eventRepo := careermemory.NewEventRepository()
+		skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+		// Create some events to analyze
+		ctx := context.Background()
+		event1 := &career.Event{ID: "event-1", Text: "Built API with Go"}
+		event2 := &career.Event{ID: "event-2", Text: "Deployed with Kubernetes"}
+		_ = eventRepo.Create(ctx, event1)
+		_ = eventRepo.Create(ctx, event2)
+
+		// Create ManageSkills intent context
+		skillsCtx := skillsmgmt.NewIntentContext(ctx, skillRepo)
+		skillsCtx.EventRepository = eventRepo
+		skillsCtx.SkillInferenceService = skillInferenceService
+		err := skillsCtx.Validate()
+		Expect(err).NotTo(HaveOccurred())
+
+		// Create and initialize intent
+		skillsIntent, err := skillsmgmt.NewIntent(skillsCtx)
+		Expect(err).NotTo(HaveOccurred())
+		skillsIntent.Init()
+
+		// Verify we're in list state
+		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+
+		// When: User presses 'i' to infer skills from all events
+		skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+		// Then: State should transition to StateInferringSkills
+		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
+
+		// And: Loading modal should show skill inference in progress
+		view := skillsIntent.View()
+		Expect(view).To(ContainSubstring("Analyzing all events for skills"))
+	})
+})
 
 var _ = Describe("E2E Skill Inference Workflow", func() {
 	var intent *burstmgmt.Intent

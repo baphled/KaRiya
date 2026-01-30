@@ -48,6 +48,10 @@ type Intent struct {
 	skillEventsModal *modals.EventsModal
 	eventDetailModal *components.ViewEventDetailModal
 
+	// Skill inference modals.
+	loadingModal *feedback.Modal
+	errorModal   *feedback.Modal
+
 	// Screen orchestration (new architecture).
 	activeScreen screens.Screen
 	listScreen   *skills.SkillsListScreen

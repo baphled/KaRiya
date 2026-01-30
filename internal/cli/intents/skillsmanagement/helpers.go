@@ -10,6 +10,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	career "github.com/baphled/kariya/internal/repository/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -114,6 +115,21 @@ func (i *Intent) rebuildModalRegistry() {
 	i.modalRegistry.Clear()
 
 	// Register modals in priority order (highest priority first).
+	// Error modal has highest priority.
+	if i.errorModal != nil {
+		width, height := i.getTerminalDimensions()
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.errorModal, width, height, i.Theme()))
+	}
+
+	// Loading modal (for StateInferringSkills).
+	// When loading is active, it should be the only modal visible.
+	if i.loadingModal != nil {
+		width, height := i.getTerminalDimensions()
+		i.modalRegistry.Register(intents.NewErrorModalAdapter(i.loadingModal, width, height, i.Theme()))
+		// Don't register other modals when loading - loading takes full precedence.
+		return
+	}
+
 	// Form modals (search, filter, sort, add/edit).
 	if i.searchModal != nil {
 		i.modalRegistry.Register(intents.NewFormModalAdapter(
@@ -362,6 +378,51 @@ func (i *Intent) loadEventsForSkillModal() tea.Cmd {
 		return SkillEventsForModalLoadedMsg{
 			Events: events,
 			Error:  err,
+		}
+	}
+}
+
+// startSkillInference triggers skill inference from all events.
+func (i *Intent) startSkillInference() tea.Cmd {
+	if i.context.SkillInferenceService == nil {
+		i.errorModal = feedback.NewErrorModal("Inference Failed", "Skill inference service not available")
+		return nil
+	}
+
+	if i.context.EventRepository == nil {
+		i.errorModal = feedback.NewErrorModal("Inference Failed", "Event repository not available")
+		return nil
+	}
+
+	i.state = StateInferringSkills
+	i.loadingModal = feedback.NewLoadingModal("Analyzing all events for skills...", true).WithTheme(i.Theme())
+
+	return tea.Batch(
+		i.loadingModal.Init(),
+		i.inferSkillsFromAllEvents(),
+	)
+}
+
+// inferSkillsFromAllEvents creates async command for skill inference from all events.
+func (i *Intent) inferSkillsFromAllEvents() tea.Cmd {
+	return func() tea.Msg {
+		// Get all events from repository
+		events, err := i.context.EventRepository.List(i.context.Ctx, career.EventListFilters{})
+		if err != nil {
+			return SkillSuggestionsLoadedMsg{Error: err}
+		}
+
+		if len(events) == 0 {
+			return SkillSuggestionsLoadedMsg{
+				Error: fmt.Errorf("no events available for skill analysis"),
+			}
+		}
+
+		// Call service to infer skills from all events
+		suggestions, err := i.context.SkillInferenceService.InferSkillsFromEvents(i.context.Ctx, events)
+		return SkillSuggestionsLoadedMsg{
+			Suggestions: suggestions,
+			Error:       err,
 		}
 	}
 }

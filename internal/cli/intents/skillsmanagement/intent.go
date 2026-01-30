@@ -173,6 +173,12 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	case SkillEventsForModalLoadedMsg:
 		return i.handleSkillEventsForModalLoaded(msg)
 
+	case SkillSuggestionsLoadedMsg:
+		return i.handleSkillSuggestionsLoaded(msg)
+
+	case SkillsCreatedMsg:
+		return i.handleSkillsCreatedFromInference(msg)
+
 	case tea.KeyMsg:
 		// Handle key shortcuts at intent level (filter/sort/search modal openers).
 		if cmd := i.handleKeyShortcuts(msg); cmd != nil {

@@ -1,10 +1,14 @@
 package skillsmanagement
 
 import (
+	"context"
+	"errors"
+
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
+	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	domain "github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -153,6 +157,8 @@ func (i *Intent) handleKeyShortcuts(keyMsg tea.KeyMsg) tea.Cmd {
 		return i.openSortModal()
 	case "/":
 		return i.openSearchModal()
+	case "i":
+		return i.startSkillInference()
 	case "x":
 		if i.HasActiveFilters() {
 			i.ClearFilters()
@@ -420,4 +426,44 @@ func (i *Intent) updateSkill(skill *domain.Skill) tea.Cmd {
 			Error: err,
 		}
 	}
+}
+
+// handleSkillSuggestionsLoaded handles the SkillSuggestionsLoadedMsg.
+func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea.Cmd {
+	i.loadingModal = nil
+
+	if msg.Error != nil {
+		// Silently ignore cancelled operations.
+		if errors.Is(msg.Error, context.Canceled) {
+			i.state = StateList
+			return nil
+		}
+		i.errorModal = feedback.NewErrorModal("Skill Inference Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	if len(msg.Suggestions) == 0 {
+		i.errorModal = feedback.NewErrorModal("No Skills Found", "No skills were detected from the events")
+		i.state = StateList
+		return nil
+	}
+
+	// TODO: Show skill suggestion modal
+	// For now, transition to StateSkillSuggestionReview
+	i.state = StateSkillSuggestionReview
+	return nil
+}
+
+// handleSkillsCreatedFromInference handles skills created from accepted suggestions.
+func (i *Intent) handleSkillsCreatedFromInference(msg SkillsCreatedMsg) tea.Cmd {
+	if msg.Error != nil {
+		i.errorModal = feedback.NewErrorModal("Skill Creation Failed", msg.Error.Error())
+		i.state = StateList
+		return nil
+	}
+
+	// Skills created successfully - refresh the list to show them
+	i.state = StateList
+	return i.RefreshData()
 }

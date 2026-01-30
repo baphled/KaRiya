@@ -6,6 +6,7 @@ import (
 
 	domain "github.com/baphled/kariya/internal/domain/career"
 	"github.com/baphled/kariya/internal/repository/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 )
 
 var (
@@ -83,8 +84,20 @@ type IntentContext struct {
 	// SkillRepository is the repository for skill CRUD operations.
 	SkillRepository career.SkillRepository
 
+	// EventRepository is the repository for event operations (needed for skill inference).
+	EventRepository career.EventRepository
+
+	// SkillInferenceService provides skill inference from events.
+	SkillInferenceService SkillInferenceService
+
 	// Filters holds the active filter and sort state.
 	Filters *Filters
+}
+
+// SkillInferenceService defines the interface for skill inference operations.
+type SkillInferenceService interface {
+	// InferSkillsFromEvents analyzes all events and suggests skills.
+	InferSkillsFromEvents(ctx context.Context, events []*domain.Event) ([]skillinference.SkillSuggestion, error)
 }
 
 // NewIntentContext constructs an IntentContext wired to the given repository with default empty filters.
