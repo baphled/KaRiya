@@ -41,7 +41,7 @@ func (s *DefaultSkillInferenceService) InferSkillsFromEvents(
 		return nil, ctx.Err()
 	}
 
-	if events == nil || len(events) == 0 {
+	if len(events) == 0 {
 		return []SkillSuggestion{}, nil
 	}
 
