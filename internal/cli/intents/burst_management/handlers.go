@@ -598,6 +598,12 @@ func (i *Intent) handleFactExtractionComplete(msg FactExtractionCompleteMsg) tea
 		return nil
 	}
 
+	// Auto-trigger skill inference if we have a confirmed burst with facts
+	if i.selectedBurst != nil && i.selectedBurst.Confirmed && len(msg.Facts) > 0 {
+		// Automatically infer skills from this burst
+		return i.startSkillInference()
+	}
+
 	i.state = StateList
 
 	// Only show detail modal if a burst was selected (e.g., from confirm flow).

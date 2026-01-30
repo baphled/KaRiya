@@ -4,6 +4,7 @@ import (
 	"context"
 
 	burstmgmt "github.com/baphled/kariya/internal/cli/intents/burst_management"
+	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/domain/career"
 	careermemory "github.com/baphled/kariya/internal/repository/career/memory"
 	"github.com/baphled/kariya/internal/service/career/skillinference"
@@ -22,6 +23,13 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 		burstRepo := careermemory.NewBurstRepository()
 		mockService = mocks.NewBurstServiceMock()
 
+		// Create repositories for skill inference
+		skillRepo := careermemory.NewSkillRepository()
+		eventRepo := careermemory.NewEventRepository()
+
+		// Create skill inference service
+		skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
 		// Create a burst with events
 		burst = &career.Burst{
 			ID:          "burst-1",
@@ -32,9 +40,10 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 		}
 
 		ctx = &burstmgmt.IntentContext{
-			Bursts:          []*career.Burst{burst},
-			Service:         mockService,
-			BurstRepository: burstRepo,
+			Bursts:                []*career.Burst{burst},
+			Service:               mockService,
+			BurstRepository:       burstRepo,
+			SkillInferenceService: skillInferenceService,
 		}
 		ctx.Validate()
 
@@ -42,6 +51,48 @@ var _ = Describe("E2E Skill Inference Workflow", func() {
 		intent, err = burstmgmt.NewIntent(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		intent.Init()
+	})
+
+	Describe("Auto Skill Inference Trigger", func() {
+		It("should automatically infer skills after fact extraction completes on a confirmed burst", func() {
+			// Given: A confirmed burst that was selected for fact extraction
+			burst.Confirmed = true
+
+			// Simulate burst selection by navigating to it (this sets selectedBurst)
+			// This happens when user selects a burst from the list screen
+			intent.HandleNavigate(&screens.NavigateResult{
+				ResultData: burst,
+			})
+
+			// Create some extracted facts
+			facts := []*career.Fact{
+				{
+					ID:                   "fact-1",
+					Text:                 "Expert in Go programming",
+					SourceEventID:        burst.EventIDs[0],
+					CompetencyCategories: []string{"technical"},
+				},
+				{
+					ID:                   "fact-2",
+					Text:                 "PostgreSQL database design",
+					SourceEventID:        burst.EventIDs[1],
+					CompetencyCategories: []string{"technical"},
+				},
+			}
+
+			// When: Fact extraction completes successfully
+			intent.Update(burstmgmt.FactExtractionCompleteMsg{
+				Facts: facts,
+				Error: nil,
+			})
+
+			// Then: State should transition to StateInferringSkills
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateInferringSkills))
+
+			// And: View should show skill inference in progress
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Detecting skills from burst events"))
+		})
 	})
 
 	Describe("Skill Inference Message Handling", func() {
