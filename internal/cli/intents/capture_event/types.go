@@ -41,10 +41,6 @@ type Intent struct {
 	// activeScreen is the currently displayed screen component.
 	activeScreen screens.Screen
 
-	// useScreens controls whether the screens architecture is enabled.
-	// When false, the intent falls back to legacy inline rendering.
-	useScreens bool
-
 	// currentState tracks which workflow step is active.
 	currentState State
 
@@ -150,16 +146,6 @@ func (i *Intent) GetForm() *models.CaptureForm {
 		return nil
 	}
 	return i.captureForm
-}
-
-// DisableScreens turns off the screens architecture, falling back to legacy
-// inline rendering.
-//
-// Side effects:
-//   - Sets useScreens to false and nils the activeScreen.
-func (i *Intent) DisableScreens() {
-	i.useScreens = false
-	i.activeScreen = nil
 }
 
 // SetStateForTesting sets the current workflow state for cross-package tests.

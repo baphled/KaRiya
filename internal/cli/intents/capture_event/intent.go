@@ -1,7 +1,6 @@
 package capture_event
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -37,7 +36,6 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		context:      ctx,
 		eventService: ctx.CLIEventService,
 		active:       true,
-		useScreens:   true,
 		currentState: StateChooseStrategy,
 		captureForm:  formModel,
 		reviewState: &ReviewInferredEventState{
@@ -54,32 +52,26 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 //   - A tea.Cmd to initialise the active screen, or nil.
 //
 // Side effects:
-//   - Creates and configures the strategy selection screen when screens are enabled.
-//   - Falls back to initialising the legacy form when screens are disabled.
+//   - Creates and configures the strategy selection screen.
 func (i *Intent) Init() tea.Cmd {
-	if i.useScreens {
-		breadcrumbs := []string{"Main Menu", "Capture Event"}
-		i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
+	breadcrumbs := []string{"Main Menu", "Capture Event"}
+	i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
 
-		termInfo := i.GetTerminalInfo()
-		width, height := 120, 40
-		if termInfo != nil {
-			width = termInfo.Width
-			height = termInfo.Height
-		}
-
-		i.activeScreen.SetTerminalInfo(width, height)
-		i.activeScreen.SetTheme(i.Theme())
-		i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
-
-		if initable, ok := i.activeScreen.(interface{ Init() tea.Cmd }); ok {
-			return initable.Init()
-		}
-		return nil
+	termInfo := i.GetTerminalInfo()
+	width, height := 120, 40
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
 	}
 
-	i.initializeFormForNew()
-	return func() tea.Msg { return nil }
+	i.activeScreen.SetTerminalInfo(width, height)
+	i.activeScreen.SetTheme(i.Theme())
+	i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+
+	if initable, ok := i.activeScreen.(interface{ Init() tea.Cmd }); ok {
+		return initable.Init()
+	}
+	return nil
 }
 
 // Update processes a single Bubble Tea message and advances the workflow.
@@ -99,29 +91,6 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	switch msg := msg.(type) {
-	case FormSubmittedMsg:
-		if msg.Event == nil {
-			i.setFailed("INVALID_FORM", "Form submission with nil event", nil)
-			return nil
-		}
-
-		if err := msg.Event.Validate(); err != nil {
-			i.setFailed("VALIDATION_ERROR", fmt.Sprintf("Form validation failed: %v", err), err)
-			return nil
-		}
-
-		i.reviewState = &ReviewInferredEventState{
-			Event:          msg.Event,
-			InferredBursts: make([]*career.Burst, 0),
-			InferredFacts:  make([]*career.Fact, 0),
-			AcceptedBursts: make([]*career.Burst, 0),
-			AcceptedFacts:  make([]*career.Fact, 0),
-			RejectedItems:  make(map[string]string),
-		}
-		i.currentState = StateReview
-		i.activeScreen = nil
-		return nil
-
 	case SubmitCompleteMsg:
 		i.submitModal = feedback.NewSuccessModal("Event saved!")
 		return tea.Tick(2*time.Second, func(_ time.Time) tea.Msg {
@@ -138,26 +107,24 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 			i.postSaveReview = true
 			i.currentState = StateReview
 
-			if i.useScreens {
-				breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
-				i.activeScreen = captureScreens.NewEventReviewScreen(
-					breadcrumbs,
-					i.reviewState.Event,
-					i.reviewState.InferredBursts,
-					i.reviewState.InferredFacts,
-				)
+			breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
+			i.activeScreen = captureScreens.NewEventReviewScreen(
+				breadcrumbs,
+				i.reviewState.Event,
+				i.reviewState.InferredBursts,
+				i.reviewState.InferredFacts,
+			)
 
-				termInfo := i.GetTerminalInfo()
-				width, height := 120, 40
-				if termInfo != nil {
-					width = termInfo.Width
-					height = termInfo.Height
-				}
-
-				i.activeScreen.SetTerminalInfo(width, height)
-				i.activeScreen.SetTheme(i.Theme())
-				i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
+			termInfo := i.GetTerminalInfo()
+			width, height := 120, 40
+			if termInfo != nil {
+				width = termInfo.Width
+				height = termInfo.Height
 			}
+
+			i.activeScreen.SetTerminalInfo(width, height)
+			i.activeScreen.SetTheme(i.Theme())
+			i.activeScreen.SetLogo(i.GetLogo(), i.GetLogoSpacing())
 		}
 		return nil
 	}
@@ -190,7 +157,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 
-	if i.useScreens && i.activeScreen != nil {
+	if i.activeScreen != nil {
 		if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
 			return i.updateEditingModal(msg)
 		}
@@ -204,22 +171,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
-	switch i.currentState {
-	case StateChooseStrategy:
-		return i.updateChooseStrategy(msg)
-
-	case StateForm:
-		return i.updateCaptureForm(msg)
-
-	case StateReview:
-		return i.updateReviewInferredEvent(msg)
-
-	case StateSubmit:
-		return i.updateSubmit(msg)
-
-	default:
-		return nil
-	}
+	return nil
 }
 
 // View renders the intent's current visual state.
@@ -227,58 +179,39 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 // Returns:
 //   - A string containing the full terminal output for the current frame.
 //
-// When screens are enabled, View delegates to the active screen and overlays
-// any visible modal. When screens are disabled, it uses the legacy
-// breadcrumb-based view with inline content rendering.
+// View delegates to the active screen and overlays any visible modal
+// (submit progress/result or editing form).
 func (i *Intent) View() string {
 	if !i.active {
 		return "CaptureEvent intent is not active"
 	}
 
-	if i.useScreens && i.activeScreen != nil {
-		baseView := i.activeScreen.View()
-
-		termInfo := i.GetTerminalInfo()
-		width, height := 80, 24
-		if termInfo != nil {
-			width = termInfo.Width
-			height = termInfo.Height
-		}
-
-		if i.submitModal != nil {
-			modalContent := i.submitModal.Render(width, height)
-			return i.overlayModal(baseView, modalContent, width, height)
-		}
-
-		if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
-			modalContent := i.getEditingModalContent()
-			if modalContent != nil {
-				return i.renderModalOverlay(baseView, modalContent)
-			}
-		}
-
-		return baseView
+	if i.activeScreen == nil {
+		return "No active screen"
 	}
 
-	view := i.CreateViewWithBreadcrumbs("Main Menu", "Capture Event", i.getStateName())
+	baseView := i.activeScreen.View()
 
-	if info := i.GetTerminalInfo(); info != nil && info.Height < 30 {
-		if logo := i.GetLogo(); logo != nil {
-			view.WithLogo(logo, 0)
+	termInfo := i.GetTerminalInfo()
+	width, height := 80, 24
+	if termInfo != nil {
+		width = termInfo.Width
+		height = termInfo.Height
+	}
+
+	if i.submitModal != nil {
+		modalContent := i.submitModal.Render(width, height)
+		return i.overlayModal(baseView, modalContent, width, height)
+	}
+
+	if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
+		modalContent := i.getEditingModalContent()
+		if modalContent != nil {
+			return i.renderModalOverlay(baseView, modalContent)
 		}
 	}
 
-	if i.intentError != nil {
-		i.SetError(i.intentError)
-	}
-
-	content := i.getStateContent()
-	view.WithContent(content)
-
-	help := i.getContextHelp()
-	view.WithHelp(help).WithFooterSeparator(true)
-
-	return view.Render()
+	return baseView
 }
 
 // Result returns the intent's outcome as a type-erased IntentResult.

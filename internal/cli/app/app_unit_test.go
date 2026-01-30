@@ -9,7 +9,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
-	captureevent "github.com/baphled/kariya/internal/cli/intents/capture_event"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
@@ -831,58 +830,11 @@ var _ = Describe("App Unit Tests", func() {
 			Expect(model.GetState()).To(Equal(app.StateMenu))
 		})
 
-		It("should handle intent completion via non-key message (handleDefaultMsg result path)", func() {
-			// Activate capture_event intent.
-			newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
-			model = newModel.(*app.Model)
-			Expect(model.GetState()).To(Equal(app.StateIntent))
-
-			// Create a valid event for form submission.
-			testEvent := &career.Event{
-				ID:   "test-event-123",
-				Text: "Test event for coverage",
-				Date: time.Now(),
-			}
-
-			// Send FormSubmittedMsg to transition intent to review state.
-			// This is a non-key message that goes through handleDefaultMsg.
-			formMsg := captureevent.FormSubmittedMsg{Event: testEvent}
-			newModel, _ = model.Update(formMsg)
-			model = newModel.(*app.Model)
-
-			// Intent should still be active (now in review state).
-			Expect(model.GetState()).To(Equal(app.StateIntent))
-
-			// Now send ReviewCancelledMsg - this should complete the intent
-			// via the handleDefaultMsg -> result != nil path.
-			cancelMsg := captureevent.ReviewCancelledMsg{}
-			newModel, cmd := model.Update(cancelMsg)
-			model = newModel.(*app.Model)
-
-			// Process any batch command returned.
-			if cmd != nil {
-				resultMsg := cmd()
-				if resultMsg != nil {
-					if batchMsg, ok := resultMsg.(tea.BatchMsg); ok {
-						for _, bCmd := range batchMsg {
-							if bCmd != nil {
-								innerMsg := bCmd()
-								if innerMsg != nil {
-									newModel, _ = model.Update(innerMsg)
-									model = newModel.(*app.Model)
-								}
-							}
-						}
-					} else {
-						newModel, _ = model.Update(resultMsg)
-						model = newModel.(*app.Model)
-					}
-				}
-			}
-
-			// Should be back in menu after intent completion.
-			Expect(model.GetState()).To(Equal(app.StateMenu))
-		})
+		// NOTE: The "intent completion via non-key message" test was removed because
+		// it relied on legacy FormSubmittedMsg/ReviewCancelledMsg messages that no
+		// longer exist after the dead-code removal. The handleDefaultMsg routing path
+		// is already covered by the "route message to intent" and "return to menu
+		// when intent completes with result" tests above.
 		It("should handle fallback when state is neither Menu nor Intent", func() {
 			// This tests line 207 - the final return m, nil
 			// This is technically unreachable with current state enum,
