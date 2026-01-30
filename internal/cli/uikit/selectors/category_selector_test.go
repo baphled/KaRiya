@@ -111,13 +111,18 @@ var _ = Describe("CategorySelector", func() {
 	Describe("FilterCategories", func() {
 		It("should return all categories when no prefix", func() {
 			filtered := selector.FilterCategories("")
-			Expect(filtered).To(HaveLen(6))
+			Expect(filtered).To(HaveLen(11))
 			Expect(filtered).To(ContainElement("technical"))
 			Expect(filtered).To(ContainElement("leadership"))
 			Expect(filtered).To(ContainElement("product"))
 			Expect(filtered).To(ContainElement("consulting"))
 			Expect(filtered).To(ContainElement("research"))
 			Expect(filtered).To(ContainElement("mentoring"))
+			Expect(filtered).To(ContainElement("communication"))
+			Expect(filtered).To(ContainElement("collaboration"))
+			Expect(filtered).To(ContainElement("problem-solving"))
+			Expect(filtered).To(ContainElement("project-management"))
+			Expect(filtered).To(ContainElement("architecture"))
 		})
 
 		It("should filter categories by prefix", func() {
@@ -145,15 +150,20 @@ var _ = Describe("CategorySelector", func() {
 	})
 
 	Describe("AvailableCategories", func() {
-		It("should return all available categories", func() {
+		It("should return all available categories including soft skills", func() {
 			categories := selector.AvailableCategories()
-			Expect(categories).To(HaveLen(6))
+			Expect(categories).To(HaveLen(11))
 			Expect(categories).To(ContainElement("technical"))
 			Expect(categories).To(ContainElement("leadership"))
 			Expect(categories).To(ContainElement("product"))
 			Expect(categories).To(ContainElement("consulting"))
 			Expect(categories).To(ContainElement("research"))
 			Expect(categories).To(ContainElement("mentoring"))
+			Expect(categories).To(ContainElement("communication"))
+			Expect(categories).To(ContainElement("collaboration"))
+			Expect(categories).To(ContainElement("problem-solving"))
+			Expect(categories).To(ContainElement("project-management"))
+			Expect(categories).To(ContainElement("architecture"))
 		})
 
 		It("should return sorted categories", func() {
@@ -266,6 +276,31 @@ var _ = Describe("CategorySelector", func() {
 		It("should return description for mentoring", func() {
 			desc := selectors.GetCategoryDescription("mentoring")
 			Expect(desc).To(ContainSubstring("Mentoring"))
+		})
+
+		It("should return description for communication", func() {
+			desc := selectors.GetCategoryDescription("communication")
+			Expect(desc).To(ContainSubstring("Communication"))
+		})
+
+		It("should return description for collaboration", func() {
+			desc := selectors.GetCategoryDescription("collaboration")
+			Expect(desc).To(ContainSubstring("collaboration"))
+		})
+
+		It("should return description for problem-solving", func() {
+			desc := selectors.GetCategoryDescription("problem-solving")
+			Expect(desc).To(ContainSubstring("problem-solving"))
+		})
+
+		It("should return description for project-management", func() {
+			desc := selectors.GetCategoryDescription("project-management")
+			Expect(desc).To(ContainSubstring("Project"))
+		})
+
+		It("should return description for architecture", func() {
+			desc := selectors.GetCategoryDescription("architecture")
+			Expect(desc).To(ContainSubstring("architecture"))
 		})
 
 		It("should handle case-insensitive lookup", func() {
