@@ -42,48 +42,48 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	if action, ok := data.(string); ok {
 		switch action {
 		case "edit_metadata":
-			if i.state.reviewState == nil || i.state.reviewState.Event == nil {
+			if i.reviewState == nil || i.reviewState.Event == nil {
 				return i.setFailedCmd("NO_EVENT", "No event to edit", nil)
 			}
-			i.state.reviewState.EditingMode = EditingModeMetadata
-			i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
-				i.state.reviewState.Event,
+			i.reviewState.EditingMode = EditingModeMetadata
+			i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+				i.reviewState.Event,
 				i.context.CareerService,
 				i.context.CLIEventService,
 				context.Background(),
 			)
-			return i.state.reviewState.metadataModal.Init()
+			return i.reviewState.metadataModal.Init()
 
 		case "edit_bursts":
-			i.state.reviewState.EditingMode = EditingModeBursts
+			i.reviewState.EditingMode = EditingModeBursts
 			var suggestions []burstfact.BurstSuggestion
-			for _, b := range i.state.reviewState.InferredBursts {
+			for _, b := range i.reviewState.InferredBursts {
 				suggestions = append(suggestions, burstfact.BurstSuggestion{
 					Name:        b.Name,
 					Description: b.Description,
 				})
 			}
-			i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+			i.reviewState.burstModal = models.NewBurstSuggestionModelNew(
 				i.context.CareerService,
 				suggestions,
 				context.Background(),
 			)
-			return i.state.reviewState.burstModal.Init()
+			return i.reviewState.burstModal.Init()
 
 		case "edit_facts":
-			i.state.reviewState.EditingMode = EditingModeFacts
+			i.reviewState.EditingMode = EditingModeFacts
 			var fact *career.Fact
-			if len(i.state.reviewState.InferredFacts) > 0 {
-				fact = i.state.reviewState.InferredFacts[0]
+			if len(i.reviewState.InferredFacts) > 0 {
+				fact = i.reviewState.InferredFacts[0]
 			} else {
 				fact = &career.Fact{Text: ""}
 			}
-			i.state.reviewState.factModal = models.NewFactEditorModelNew(
+			i.reviewState.factModal = models.NewFactEditorModelNew(
 				fact,
 				i.context.CareerService,
 				context.Background(),
 			)
-			return i.state.reviewState.factModal.Init()
+			return i.reviewState.factModal.Init()
 
 		default:
 			return i.setFailedCmd("INVALID_NAVIGATION", fmt.Sprintf("Unknown navigation action: %s", action), nil)
@@ -91,7 +91,7 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	}
 
 	if strategy, ok := data.(CaptureStrategy); ok {
-		i.state.strategy = strategy
+		i.strategy = strategy
 		return i.transitionToFormScreen(strategy)
 	}
 
@@ -111,26 +111,26 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 //
 // Implements behaviors.ScreenResultHandler.
 func (i *Intent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
-	switch i.state.currentState {
+	switch i.currentState {
 	case StateChooseStrategy:
 		i.setCancelled()
 		return nil
 
 	case StateForm:
-		if i.state.context.PreviousEvent != nil {
+		if i.context.PreviousEvent != nil {
 			i.setCancelled()
 			return nil
 		}
 		return i.transitionToStrategyScreen()
 
 	case StateReview:
-		return i.transitionToFormScreen(i.state.strategy)
+		return i.transitionToFormScreen(i.strategy)
 
 	case StateSubmit:
 		return nil
 
 	default:
-		return i.setFailedCmd("INVALID_CANCEL_STATE", fmt.Sprintf("Cannot cancel from state: %s", i.state.currentState), nil)
+		return i.setFailedCmd("INVALID_CANCEL_STATE", fmt.Sprintf("Cannot cancel from state: %s", i.currentState), nil)
 	}
 }
 
@@ -153,14 +153,14 @@ func (i *Intent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	data := result.Data()
 
-	switch i.state.currentState {
+	switch i.currentState {
 	case StateForm:
 		if event, ok := data.(*career.Event); ok {
 			if err := event.Validate(); err != nil {
 				return i.setFailedCmd("VALIDATION_ERROR", fmt.Sprintf("Event validation failed: %v", err), err)
 			}
 
-			i.state.reviewState = &ReviewInferredEventState{
+			i.reviewState = &ReviewInferredEventState{
 				Event:          event,
 				InferredBursts: make([]*career.Burst, 0),
 				InferredFacts:  make([]*career.Fact, 0),
@@ -182,9 +182,9 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			//nolint:errcheck // Type assertions are safe for map data extraction.
 			facts, _ := reviewData["facts"].([]*career.Fact)
 
-			i.state.reviewState.Event = event
-			i.state.reviewState.AcceptedBursts = bursts
-			i.state.reviewState.AcceptedFacts = facts
+			i.reviewState.Event = event
+			i.reviewState.AcceptedBursts = bursts
+			i.reviewState.AcceptedFacts = facts
 
 			return i.showSubmitModal()
 		}
@@ -213,7 +213,7 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 		return i.setFailedCmd("INVALID_SUBMIT_DATA", fmt.Sprintf("Invalid submit data type: %T", data), nil)
 
 	default:
-		return i.setFailedCmd("INVALID_SUBMIT_STATE", fmt.Sprintf("Cannot submit from state: %s", i.state.currentState), nil)
+		return i.setFailedCmd("INVALID_SUBMIT_STATE", fmt.Sprintf("Cannot submit from state: %s", i.currentState), nil)
 	}
 }
 
@@ -252,18 +252,18 @@ func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 //   - Completes the intent with review data if post-save review is active.
 //   - Transitions to StateSubmit and triggers persistence otherwise.
 func (i *Intent) handleReviewSubmit() tea.Cmd {
-	if i.state.postSaveReview {
+	if i.postSaveReview {
 		result := &Result{
-			Event:          i.state.reviewState.Event,
-			Bursts:         i.state.reviewState.InferredBursts,
-			Facts:          i.state.reviewState.InferredFacts,
+			Event:          i.reviewState.Event,
+			Bursts:         i.reviewState.InferredBursts,
+			Facts:          i.reviewState.InferredFacts,
 			AcceptedFields: make(map[string]bool),
-			RejectedFields: i.state.reviewState.RejectedItems,
+			RejectedFields: i.reviewState.RejectedItems,
 		}
 		i.setCompleted(result)
 		return nil
 	}
-	i.state.currentState = StateSubmit
+	i.currentState = StateSubmit
 	return i.performSubmit()
 }
 
@@ -285,35 +285,35 @@ func (i *Intent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyUp:
-			if i.state.selectedStrategyIndex > 0 {
-				i.state.selectedStrategyIndex--
+			if i.selectedStrategyIndex > 0 {
+				i.selectedStrategyIndex--
 			}
 			return nil
 
 		case tea.KeyDown:
-			if i.state.selectedStrategyIndex < 1 {
-				i.state.selectedStrategyIndex++
+			if i.selectedStrategyIndex < 1 {
+				i.selectedStrategyIndex++
 			}
 			return nil
 
 		case tea.KeyEnter:
 			strategies := []CaptureStrategy{StrategyQuick, StrategyManual}
-			i.state.strategy = strategies[i.state.selectedStrategyIndex]
-			i.state.captureForm.SetStrategy(string(i.state.strategy))
-			i.state.currentState = StateForm
-			return i.state.captureForm.Init()
+			i.strategy = strategies[i.selectedStrategyIndex]
+			i.captureForm.SetStrategy(string(i.strategy))
+			i.currentState = StateForm
+			return i.captureForm.Init()
 		}
 
 		switch msg.String() {
 		case "k":
-			if i.state.selectedStrategyIndex > 0 {
-				i.state.selectedStrategyIndex--
+			if i.selectedStrategyIndex > 0 {
+				i.selectedStrategyIndex--
 			}
 			return nil
 
 		case "j":
-			if i.state.selectedStrategyIndex < 1 {
-				i.state.selectedStrategyIndex++
+			if i.selectedStrategyIndex < 1 {
+				i.selectedStrategyIndex++
 			}
 			return nil
 		}
@@ -330,7 +330,7 @@ func (i *Intent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 		}
 
 	case StrategySelectedMsg:
-		i.state.currentState = StateForm
+		i.currentState = StateForm
 		return nil
 	}
 
@@ -365,18 +365,18 @@ func (i *Intent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 				i.setCancelled()
 				return nil
 			}
-			i.state.currentState = StateChooseStrategy
+			i.currentState = StateChooseStrategy
 			return nil
 		}
 
 		switch msg.String() {
 		case "ctrl+s":
-			return i.state.captureForm.SubmitForm()
+			return i.captureForm.SubmitForm()
 		}
 
 	case models.SubmitMsg:
 		if msg.Err != nil {
-			i.state.error = &intents.IntentError{
+			i.intentError = &intents.IntentError{
 				Code:    "FORM_SUBMISSION_ERROR",
 				Message: msg.Err.Error(),
 				Cause:   msg.Err,
@@ -394,8 +394,8 @@ func (i *Intent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-		i.state.reviewState.Event = msg.Event
-		i.state.currentState = StateReview
+		i.reviewState.Event = msg.Event
+		i.currentState = StateReview
 		return nil
 
 	case FormSubmittedMsg:
@@ -409,12 +409,12 @@ func (i *Intent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-		i.state.reviewState.Event = msg.Event
-		i.state.currentState = StateReview
+		i.reviewState.Event = msg.Event
+		i.currentState = StateReview
 		return nil
 	}
 
-	_, formCmd := i.state.captureForm.Update(msg)
+	_, formCmd := i.captureForm.Update(msg)
 
 	return formCmd
 }
@@ -446,57 +446,57 @@ func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			i.ToggleHelp()
 			return nil
 		case intents.KeyBack:
-			if i.state.reviewState.EditingMode != EditingModeNone {
-				i.state.reviewState.metadataModal = nil
-				i.state.reviewState.burstModal = nil
-				i.state.reviewState.factModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
+			if i.reviewState.EditingMode != EditingModeNone {
+				i.reviewState.metadataModal = nil
+				i.reviewState.burstModal = nil
+				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
 				return nil
 			}
-			i.state.currentState = StateForm
+			i.currentState = StateForm
 			return nil
 		}
 	}
 
-	switch i.state.reviewState.EditingMode {
+	switch i.reviewState.EditingMode {
 	case EditingModeMetadata:
-		if i.state.reviewState.metadataModal != nil {
-			modal, cmd := i.state.reviewState.metadataModal.Update(msg)
+		if i.reviewState.metadataModal != nil {
+			modal, cmd := i.reviewState.metadataModal.Update(msg)
 			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.state.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
+			i.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
 
-			if i.state.reviewState.metadataModal.IsSubmitted() {
-				i.state.reviewState.Event = i.state.reviewState.metadataModal.GetEvent()
-				i.state.reviewState.metadataModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
-			} else if i.state.reviewState.metadataModal.IsCancelled() {
-				i.state.reviewState.metadataModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
+			if i.reviewState.metadataModal.IsSubmitted() {
+				i.reviewState.Event = i.reviewState.metadataModal.GetEvent()
+				i.reviewState.metadataModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			} else if i.reviewState.metadataModal.IsCancelled() {
+				i.reviewState.metadataModal = nil
+				i.reviewState.EditingMode = EditingModeNone
 			}
 			return cmd
 		}
 
 	case EditingModeBursts:
-		if i.state.reviewState.burstModal != nil {
-			modal, cmd := i.state.reviewState.burstModal.Update(msg)
+		if i.reviewState.burstModal != nil {
+			modal, cmd := i.reviewState.burstModal.Update(msg)
 			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
+			i.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
 
 			return cmd
 		}
 
 	case EditingModeFacts:
-		if i.state.reviewState.factModal != nil {
-			modal, cmd := i.state.reviewState.factModal.Update(msg)
+		if i.reviewState.factModal != nil {
+			modal, cmd := i.reviewState.factModal.Update(msg)
 			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.state.reviewState.factModal = modal.(*models.FactEditorModelNew)
+			i.reviewState.factModal = modal.(*models.FactEditorModelNew)
 
-			if i.state.reviewState.factModal.IsSubmitted() {
-				i.state.reviewState.factModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
-			} else if i.state.reviewState.factModal.IsCancelled() {
-				i.state.reviewState.factModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
+			if i.reviewState.factModal.IsSubmitted() {
+				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			} else if i.reviewState.factModal.IsCancelled() {
+				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
 			}
 			return cmd
 		}
@@ -524,40 +524,40 @@ func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 			return i.handleReviewSubmit()
 
 		case "e":
-			i.state.reviewState.EditingMode = EditingModeMetadata
-			if i.state.reviewState.metadataModal == nil && i.state.reviewState.Event != nil {
-				i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
-					i.state.reviewState.Event,
+			i.reviewState.EditingMode = EditingModeMetadata
+			if i.reviewState.metadataModal == nil && i.reviewState.Event != nil {
+				i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+					i.reviewState.Event,
 					i.context.CareerService,
 					i.context.CLIEventService,
 					context.Background(),
 				)
-				return i.state.reviewState.metadataModal.Init()
+				return i.reviewState.metadataModal.Init()
 			}
 			return nil
 
 		case "b":
-			i.state.reviewState.EditingMode = EditingModeBursts
-			if i.state.reviewState.burstModal == nil {
+			i.reviewState.EditingMode = EditingModeBursts
+			if i.reviewState.burstModal == nil {
 				var suggestions []burstfact.BurstSuggestion
-				i.state.reviewState.burstModal = models.NewBurstSuggestionModelNew(
+				i.reviewState.burstModal = models.NewBurstSuggestionModelNew(
 					i.context.CareerService,
 					suggestions,
 					context.Background(),
 				)
-				return i.state.reviewState.burstModal.Init()
+				return i.reviewState.burstModal.Init()
 			}
 			return nil
 
 		case "f":
-			i.state.reviewState.EditingMode = EditingModeFacts
-			if i.state.reviewState.factModal == nil {
-				i.state.reviewState.factModal = models.NewFactEditorModelNew(
+			i.reviewState.EditingMode = EditingModeFacts
+			if i.reviewState.factModal == nil {
+				i.reviewState.factModal = models.NewFactEditorModelNew(
 					&career.Fact{},
 					i.context.CareerService,
 					context.Background(),
 				)
-				return i.state.reviewState.factModal.Init()
+				return i.reviewState.factModal.Init()
 			}
 			return nil
 
@@ -579,10 +579,10 @@ func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 		}
 
 	case ReviewConfirmedMsg:
-		i.state.reviewState.AcceptedBursts = msg.AcceptedBursts
-		i.state.reviewState.AcceptedFacts = msg.AcceptedFacts
-		i.state.reviewState.RejectedItems = msg.RejectedItems
-		i.state.currentState = StateSubmit
+		i.reviewState.AcceptedBursts = msg.AcceptedBursts
+		i.reviewState.AcceptedFacts = msg.AcceptedFacts
+		i.reviewState.RejectedItems = msg.RejectedItems
+		i.currentState = StateSubmit
 		return i.performSubmit()
 
 	case ReviewCancelledMsg:
@@ -590,7 +590,7 @@ func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 		return nil
 
 	case ReviewBackMsg:
-		i.state.currentState = StateForm
+		i.currentState = StateForm
 		return nil
 	}
 
@@ -615,17 +615,17 @@ func (i *Intent) updateSubmit(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
 		result := &Result{
-			Event:          i.state.reviewState.Event,
-			Bursts:         i.state.reviewState.AcceptedBursts,
-			Facts:          i.state.reviewState.AcceptedFacts,
+			Event:          i.reviewState.Event,
+			Bursts:         i.reviewState.AcceptedBursts,
+			Facts:          i.reviewState.AcceptedFacts,
 			AcceptedFields: make(map[string]bool),
-			RejectedFields: i.state.reviewState.RejectedItems,
+			RejectedFields: i.reviewState.RejectedItems,
 		}
 		i.setCompleted(result)
 		return nil
 
 	case SubmitErrorMsg:
-		i.state.error = &intents.IntentError{
+		i.intentError = &intents.IntentError{
 			Code:    msg.Code,
 			Message: msg.Message,
 			Cause:   msg.Cause,
@@ -640,7 +640,7 @@ func (i *Intent) updateSubmit(msg tea.Msg) tea.Cmd {
 			i.ToggleHelp()
 			return nil
 		case intents.KeyBack:
-			i.state.currentState = StateReview
+			i.currentState = StateReview
 			return nil
 		}
 
@@ -671,52 +671,52 @@ func (i *Intent) updateSubmit(msg tea.Msg) tea.Cmd {
 func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		if keyMsg.Type == tea.KeyEsc {
-			i.state.reviewState.metadataModal = nil
-			i.state.reviewState.burstModal = nil
-			i.state.reviewState.factModal = nil
-			i.state.reviewState.EditingMode = EditingModeNone
+			i.reviewState.metadataModal = nil
+			i.reviewState.burstModal = nil
+			i.reviewState.factModal = nil
+			i.reviewState.EditingMode = EditingModeNone
 			return nil
 		}
 	}
 
-	switch i.state.reviewState.EditingMode {
+	switch i.reviewState.EditingMode {
 	case EditingModeMetadata:
-		if i.state.reviewState.metadataModal != nil {
-			modal, cmd := i.state.reviewState.metadataModal.Update(msg)
+		if i.reviewState.metadataModal != nil {
+			modal, cmd := i.reviewState.metadataModal.Update(msg)
 			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.state.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
+			i.reviewState.metadataModal = modal.(*models.MetadataEditorModelNew)
 
-			if i.state.reviewState.metadataModal.IsSubmitted() {
-				i.state.reviewState.Event = i.state.reviewState.metadataModal.GetEvent()
-				i.state.reviewState.metadataModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
-			} else if i.state.reviewState.metadataModal.IsCancelled() {
-				i.state.reviewState.metadataModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
+			if i.reviewState.metadataModal.IsSubmitted() {
+				i.reviewState.Event = i.reviewState.metadataModal.GetEvent()
+				i.reviewState.metadataModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			} else if i.reviewState.metadataModal.IsCancelled() {
+				i.reviewState.metadataModal = nil
+				i.reviewState.EditingMode = EditingModeNone
 			}
 			return cmd
 		}
 
 	case EditingModeBursts:
-		if i.state.reviewState.burstModal != nil {
-			modal, cmd := i.state.reviewState.burstModal.Update(msg)
+		if i.reviewState.burstModal != nil {
+			modal, cmd := i.reviewState.burstModal.Update(msg)
 			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.state.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
+			i.reviewState.burstModal = modal.(*models.BurstSuggestionModelNew)
 			return cmd
 		}
 
 	case EditingModeFacts:
-		if i.state.reviewState.factModal != nil {
-			modal, cmd := i.state.reviewState.factModal.Update(msg)
+		if i.reviewState.factModal != nil {
+			modal, cmd := i.reviewState.factModal.Update(msg)
 			//nolint:errcheck // Type assertion is safe - Update always returns same type.
-			i.state.reviewState.factModal = modal.(*models.FactEditorModelNew)
+			i.reviewState.factModal = modal.(*models.FactEditorModelNew)
 
-			if i.state.reviewState.factModal.IsSubmitted() {
-				i.state.reviewState.factModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
-			} else if i.state.reviewState.factModal.IsCancelled() {
-				i.state.reviewState.factModal = nil
-				i.state.reviewState.EditingMode = EditingModeNone
+			if i.reviewState.factModal.IsSubmitted() {
+				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
+			} else if i.reviewState.factModal.IsCancelled() {
+				i.reviewState.factModal = nil
+				i.reviewState.EditingMode = EditingModeNone
 			}
 			return cmd
 		}

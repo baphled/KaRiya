@@ -36,22 +36,15 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 		BaseIntent:   base,
 		context:      ctx,
 		eventService: ctx.CLIEventService,
-		state: &Model{
-			context:      ctx,
-			currentState: StateChooseStrategy,
-			captureForm:  formModel,
-			reviewState: &ReviewInferredEventState{
-				AcceptedBursts: make([]*career.Burst, 0),
-				AcceptedFacts:  make([]*career.Fact, 0),
-				RejectedItems:  make(map[string]string),
-			},
-			result: &Result{
-				AcceptedFields: make(map[string]bool),
-				RejectedFields: make(map[string]string),
-			},
+		active:       true,
+		useScreens:   true,
+		currentState: StateChooseStrategy,
+		captureForm:  formModel,
+		reviewState: &ReviewInferredEventState{
+			AcceptedBursts: make([]*career.Burst, 0),
+			AcceptedFacts:  make([]*career.Fact, 0),
+			RejectedItems:  make(map[string]string),
 		},
-		active:     true,
-		useScreens: true,
 	}, nil
 }
 
@@ -117,7 +110,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 
-		i.state.reviewState = &ReviewInferredEventState{
+		i.reviewState = &ReviewInferredEventState{
 			Event:          msg.Event,
 			InferredBursts: make([]*career.Burst, 0),
 			InferredFacts:  make([]*career.Fact, 0),
@@ -125,33 +118,33 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 			AcceptedFacts:  make([]*career.Fact, 0),
 			RejectedItems:  make(map[string]string),
 		}
-		i.state.currentState = StateReview
+		i.currentState = StateReview
 		i.activeScreen = nil
 		return nil
 
 	case SubmitCompleteMsg:
-		i.state.submitModal = feedback.NewSuccessModal("Event saved!")
+		i.submitModal = feedback.NewSuccessModal("Event saved!")
 		return tea.Tick(2*time.Second, func(_ time.Time) tea.Msg {
 			return DismissModalMsg{}
 		})
 
 	case SubmitErrorMsg:
-		i.state.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
+		i.submitModal = feedback.NewErrorModal("Save Failed", msg.Message)
 		return nil
 
 	case DismissModalMsg:
-		if i.state.submitModal != nil {
-			i.state.submitModal = nil
-			i.state.postSaveReview = true
-			i.state.currentState = StateReview
+		if i.submitModal != nil {
+			i.submitModal = nil
+			i.postSaveReview = true
+			i.currentState = StateReview
 
 			if i.useScreens {
 				breadcrumbs := []string{"Main Menu", "Capture Event", "Review Enrichment"}
 				i.activeScreen = captureScreens.NewEventReviewScreen(
 					breadcrumbs,
-					i.state.reviewState.Event,
-					i.state.reviewState.InferredBursts,
-					i.state.reviewState.InferredFacts,
+					i.reviewState.Event,
+					i.reviewState.InferredBursts,
+					i.reviewState.InferredFacts,
 				)
 
 				termInfo := i.GetTerminalInfo()
@@ -169,17 +162,17 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 
-	if i.state.submitModal != nil {
+	if i.submitModal != nil {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			if msg.Type == tea.KeyEsc {
-				i.state.submitModal = nil
+				i.submitModal = nil
 				return nil
 			}
 			return nil
 		case feedback.ModalSpinnerTickMsg:
-			if i.state.submitModal.Type == feedback.ModalLoading {
-				return i.state.submitModal.Update(msg)
+			if i.submitModal.Type == feedback.ModalLoading {
+				return i.submitModal.Update(msg)
 			}
 			return nil
 		default:
@@ -198,7 +191,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	}
 
 	if i.useScreens && i.activeScreen != nil {
-		if i.state.reviewState != nil && i.state.reviewState.EditingMode != EditingModeNone {
+		if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
 			return i.updateEditingModal(msg)
 		}
 
@@ -211,7 +204,7 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 		return cmd
 	}
 
-	switch i.state.currentState {
+	switch i.currentState {
 	case StateChooseStrategy:
 		return i.updateChooseStrategy(msg)
 
@@ -252,12 +245,12 @@ func (i *Intent) View() string {
 			height = termInfo.Height
 		}
 
-		if i.state.submitModal != nil {
-			modalContent := i.state.submitModal.Render(width, height)
+		if i.submitModal != nil {
+			modalContent := i.submitModal.Render(width, height)
 			return i.overlayModal(baseView, modalContent, width, height)
 		}
 
-		if i.state.reviewState != nil && i.state.reviewState.EditingMode != EditingModeNone {
+		if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {
 			modalContent := i.getEditingModalContent()
 			if modalContent != nil {
 				return i.renderModalOverlay(baseView, modalContent)
@@ -275,8 +268,8 @@ func (i *Intent) View() string {
 		}
 	}
 
-	if i.state.error != nil {
-		i.SetError(i.state.error)
+	if i.intentError != nil {
+		i.SetError(i.intentError)
 	}
 
 	content := i.getStateContent()

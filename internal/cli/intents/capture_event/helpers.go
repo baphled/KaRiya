@@ -79,17 +79,17 @@ func (i *Intent) setFailedCmd(code, message string, cause error) tea.Cmd {
 //   - A batched tea.Cmd that runs both performSubmit and the modal's Init.
 //
 // Side effects:
-//   - Creates a new LoadingModal on i.state.submitModal.
+//   - Creates a new LoadingModal on i.submitModal.
 func (i *Intent) showSubmitModal() tea.Cmd {
-	i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
-	return tea.Batch(i.performSubmit(), i.state.submitModal.Init())
+	i.submitModal = feedback.NewLoadingModal("Saving event...", false)
+	return tea.Batch(i.performSubmit(), i.submitModal.Init())
 }
 
 // performSubmit persists the captured event and accepted facts via domain services.
 //
 // Expected:
-//   - i.state.reviewState.Event is non-nil and valid.
-//   - i.eventService and i.state.context.CareerService are non-nil.
+//   - i.reviewState.Event is non-nil and valid.
+//   - i.eventService and i.context.CareerService are non-nil.
 //
 // Returns:
 //   - A tea.Cmd that runs asynchronously and produces a SubmitCompleteMsg
@@ -100,10 +100,10 @@ func (i *Intent) showSubmitModal() tea.Cmd {
 //   - Calls CareerService.SaveFact for each accepted fact without an ID.
 //   - Sets a default date for quick-strategy events with a zero date.
 func (i *Intent) performSubmit() tea.Cmd {
-	event := i.state.reviewState.Event
-	acceptedFacts := i.state.reviewState.AcceptedFacts
-	strategy := i.state.strategy
-	careerService := i.state.context.CareerService
+	event := i.reviewState.Event
+	acceptedFacts := i.reviewState.AcceptedFacts
+	strategy := i.strategy
+	careerService := i.context.CareerService
 	eventService := i.eventService
 
 	return func() tea.Msg {
@@ -182,10 +182,10 @@ func (i *Intent) performSubmit() tea.Cmd {
 //   - A no-op tea.Cmd (returns nil message).
 //
 // Side effects:
-//   - Sets i.state.reviewState.Event to a fresh career.Event with current
+//   - Sets i.reviewState.Event to a fresh career.Event with current
 //     timestamps and empty slices for tags and categories.
 func (i *Intent) initializeFormForNew() tea.Cmd {
-	i.state.reviewState.Event = &career.Event{
+	i.reviewState.Event = &career.Event{
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 		Tags:       make([]string, 0),
@@ -200,11 +200,11 @@ func (i *Intent) initializeFormForNew() tea.Cmd {
 //   - nil (always). The screen is rendered on the next View call.
 //
 // Side effects:
-//   - Sets i.state.currentState to StateChooseStrategy.
+//   - Sets i.currentState to StateChooseStrategy.
 //   - Creates a new StrategySelectScreen and assigns it to i.activeScreen.
 //   - Configures the screen with terminal dimensions, theme, and logo.
 func (i *Intent) transitionToStrategyScreen() tea.Cmd {
-	i.state.currentState = StateChooseStrategy
+	i.currentState = StateChooseStrategy
 	breadcrumbs := []string{"Main Menu", "Capture Event"}
 	i.activeScreen = captureScreens.NewStrategySelectScreen(breadcrumbs)
 
@@ -231,12 +231,12 @@ func (i *Intent) transitionToStrategyScreen() tea.Cmd {
 //   - A tea.Cmd from the screen's Init method if it implements Init, nil otherwise.
 //
 // Side effects:
-//   - Sets i.state.currentState to StateForm and i.state.strategy.
+//   - Sets i.currentState to StateForm and i.strategy.
 //   - Creates a new EventFormScreen and assigns it to i.activeScreen.
 //   - Configures the screen with terminal dimensions, theme, and logo.
 func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
-	i.state.currentState = StateForm
-	i.state.strategy = strategy
+	i.currentState = StateForm
+	i.strategy = strategy
 	breadcrumbs := []string{"Main Menu", "Capture Event", "Form"}
 	i.activeScreen = captureScreens.NewEventFormScreen(
 		i.eventService,
@@ -265,66 +265,66 @@ func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 //
 // Expected:
 //   - delta is +1 (down) or -1 (up).
-//   - i.state.reviewState is non-nil.
+//   - i.reviewState is non-nil.
 //
 // Side effects:
 //   - Updates SelectedIndex with wraparound at both ends.
 //   - Updates SelectedItemType to "burst" or "fact" based on the new position
 //     relative to the burst/fact boundary.
 func (i *Intent) navigateReviewItems(delta int) {
-	totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
+	totalItems := len(i.reviewState.InferredBursts) + len(i.reviewState.InferredFacts)
 	if totalItems == 0 {
 		return
 	}
 
-	i.state.reviewState.SelectedIndex += delta
-	if i.state.reviewState.SelectedIndex >= totalItems {
-		i.state.reviewState.SelectedIndex = 0
+	i.reviewState.SelectedIndex += delta
+	if i.reviewState.SelectedIndex >= totalItems {
+		i.reviewState.SelectedIndex = 0
 	}
-	if i.state.reviewState.SelectedIndex < 0 {
-		i.state.reviewState.SelectedIndex = totalItems - 1
+	if i.reviewState.SelectedIndex < 0 {
+		i.reviewState.SelectedIndex = totalItems - 1
 	}
 
-	if i.state.reviewState.SelectedIndex < len(i.state.reviewState.InferredBursts) {
-		i.state.reviewState.SelectedItemType = "burst"
+	if i.reviewState.SelectedIndex < len(i.reviewState.InferredBursts) {
+		i.reviewState.SelectedItemType = "burst"
 	} else {
-		i.state.reviewState.SelectedItemType = "fact"
-		i.state.reviewState.SelectedIndex -= len(i.state.reviewState.InferredBursts)
+		i.reviewState.SelectedItemType = "fact"
+		i.reviewState.SelectedIndex -= len(i.reviewState.InferredBursts)
 	}
 }
 
 // acceptCurrentItem moves the currently selected item to the accepted list.
 //
 // Expected:
-//   - i.state.reviewState is non-nil with a valid SelectedItemType and index.
+//   - i.reviewState is non-nil with a valid SelectedItemType and index.
 //
 // Side effects:
 //   - Appends the selected burst or fact to AcceptedBursts/AcceptedFacts.
 //   - Removes it from InferredBursts/InferredFacts.
 //   - Clamps SelectedIndex to remain within bounds after removal.
 func (i *Intent) acceptCurrentItem() {
-	if i.state.reviewState.SelectedItemType == "burst" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredBursts) {
-			burst := i.state.reviewState.InferredBursts[idx]
-			i.state.reviewState.AcceptedBursts = append(i.state.reviewState.AcceptedBursts, burst)
-			i.state.reviewState.InferredBursts = append(
-				i.state.reviewState.InferredBursts[:idx],
-				i.state.reviewState.InferredBursts[idx+1:]...)
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredBursts) && len(i.state.reviewState.InferredBursts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredBursts) - 1
+	if i.reviewState.SelectedItemType == "burst" {
+		idx := i.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.reviewState.InferredBursts) {
+			burst := i.reviewState.InferredBursts[idx]
+			i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, burst)
+			i.reviewState.InferredBursts = append(
+				i.reviewState.InferredBursts[:idx],
+				i.reviewState.InferredBursts[idx+1:]...)
+			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredBursts) && len(i.reviewState.InferredBursts) > 0 {
+				i.reviewState.SelectedIndex = len(i.reviewState.InferredBursts) - 1
 			}
 		}
-	} else if i.state.reviewState.SelectedItemType == "fact" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
-			fact := i.state.reviewState.InferredFacts[idx]
-			i.state.reviewState.AcceptedFacts = append(i.state.reviewState.AcceptedFacts, fact)
-			i.state.reviewState.InferredFacts = append(
-				i.state.reviewState.InferredFacts[:idx],
-				i.state.reviewState.InferredFacts[idx+1:]...)
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredFacts) && len(i.state.reviewState.InferredFacts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredFacts) - 1
+	} else if i.reviewState.SelectedItemType == "fact" {
+		idx := i.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.reviewState.InferredFacts) {
+			fact := i.reviewState.InferredFacts[idx]
+			i.reviewState.AcceptedFacts = append(i.reviewState.AcceptedFacts, fact)
+			i.reviewState.InferredFacts = append(
+				i.reviewState.InferredFacts[:idx],
+				i.reviewState.InferredFacts[idx+1:]...)
+			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredFacts) && len(i.reviewState.InferredFacts) > 0 {
+				i.reviewState.SelectedIndex = len(i.reviewState.InferredFacts) - 1
 			}
 		}
 	}
@@ -333,41 +333,41 @@ func (i *Intent) acceptCurrentItem() {
 // rejectCurrentItem marks the currently selected item as rejected.
 //
 // Expected:
-//   - i.state.reviewState is non-nil with a valid SelectedItemType and index.
+//   - i.reviewState is non-nil with a valid SelectedItemType and index.
 //
 // Side effects:
 //   - Adds the item's ID to RejectedItems with reason "user_rejected".
 //   - Removes the item from InferredBursts/InferredFacts.
 //   - Clamps SelectedIndex to remain within bounds after removal.
 func (i *Intent) rejectCurrentItem() {
-	if i.state.reviewState.SelectedItemType == "burst" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredBursts) {
-			burst := i.state.reviewState.InferredBursts[idx]
-			if i.state.reviewState.RejectedItems == nil {
-				i.state.reviewState.RejectedItems = make(map[string]string)
+	if i.reviewState.SelectedItemType == "burst" {
+		idx := i.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.reviewState.InferredBursts) {
+			burst := i.reviewState.InferredBursts[idx]
+			if i.reviewState.RejectedItems == nil {
+				i.reviewState.RejectedItems = make(map[string]string)
 			}
-			i.state.reviewState.RejectedItems[burst.ID] = "user_rejected"
-			i.state.reviewState.InferredBursts = append(
-				i.state.reviewState.InferredBursts[:idx],
-				i.state.reviewState.InferredBursts[idx+1:]...)
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredBursts) && len(i.state.reviewState.InferredBursts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredBursts) - 1
+			i.reviewState.RejectedItems[burst.ID] = "user_rejected"
+			i.reviewState.InferredBursts = append(
+				i.reviewState.InferredBursts[:idx],
+				i.reviewState.InferredBursts[idx+1:]...)
+			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredBursts) && len(i.reviewState.InferredBursts) > 0 {
+				i.reviewState.SelectedIndex = len(i.reviewState.InferredBursts) - 1
 			}
 		}
-	} else if i.state.reviewState.SelectedItemType == "fact" {
-		idx := i.state.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.state.reviewState.InferredFacts) {
-			fact := i.state.reviewState.InferredFacts[idx]
-			if i.state.reviewState.RejectedItems == nil {
-				i.state.reviewState.RejectedItems = make(map[string]string)
+	} else if i.reviewState.SelectedItemType == "fact" {
+		idx := i.reviewState.SelectedIndex
+		if idx >= 0 && idx < len(i.reviewState.InferredFacts) {
+			fact := i.reviewState.InferredFacts[idx]
+			if i.reviewState.RejectedItems == nil {
+				i.reviewState.RejectedItems = make(map[string]string)
 			}
-			i.state.reviewState.RejectedItems[fact.ID] = "user_rejected"
-			i.state.reviewState.InferredFacts = append(
-				i.state.reviewState.InferredFacts[:idx],
-				i.state.reviewState.InferredFacts[idx+1:]...)
-			if i.state.reviewState.SelectedIndex >= len(i.state.reviewState.InferredFacts) && len(i.state.reviewState.InferredFacts) > 0 {
-				i.state.reviewState.SelectedIndex = len(i.state.reviewState.InferredFacts) - 1
+			i.reviewState.RejectedItems[fact.ID] = "user_rejected"
+			i.reviewState.InferredFacts = append(
+				i.reviewState.InferredFacts[:idx],
+				i.reviewState.InferredFacts[idx+1:]...)
+			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredFacts) && len(i.reviewState.InferredFacts) > 0 {
+				i.reviewState.SelectedIndex = len(i.reviewState.InferredFacts) - 1
 			}
 		}
 	}
@@ -414,7 +414,7 @@ func (i *Intent) getAccentColor() lipgloss.Color {
 //   - A display string such as "Choose Strategy", "Enter Details", "Review",
 //     or "Submit". Falls back to the raw state string for unknown states.
 func (i *Intent) getStateName() string {
-	switch i.state.currentState {
+	switch i.currentState {
 	case StateChooseStrategy:
 		return "Choose Strategy"
 	case StateForm:
@@ -424,7 +424,7 @@ func (i *Intent) getStateName() string {
 	case StateSubmit:
 		return "Submit"
 	default:
-		return string(i.state.currentState)
+		return string(i.currentState)
 	}
 }
 
@@ -435,11 +435,11 @@ func (i *Intent) getStateName() string {
 //   - The appropriate state-specific view (strategy, form, review, submit).
 //   - A fallback "Unknown state" message for unrecognised states.
 func (i *Intent) getStateContent() string {
-	if i.state.error != nil && !i.HasError() {
+	if i.intentError != nil && !i.HasError() {
 		return i.viewError()
 	}
 
-	switch i.state.currentState {
+	switch i.currentState {
 	case StateChooseStrategy:
 		return i.viewChooseStrategy()
 	case StateForm:
@@ -449,7 +449,7 @@ func (i *Intent) getStateContent() string {
 	case StateSubmit:
 		return i.viewSubmit()
 	default:
-		return fmt.Sprintf("Unknown state: %s", i.state.currentState)
+		return fmt.Sprintf("Unknown state: %s", i.currentState)
 	}
 }
 
@@ -461,14 +461,14 @@ func (i *Intent) getStateContent() string {
 func (i *Intent) getContextHelp() string {
 	theme := i.Theme()
 
-	switch i.state.currentState {
+	switch i.currentState {
 	case StateChooseStrategy:
 		return intents.CombineThemedFooters(
 			intents.ThemedNavigationFooter(theme),
 			intents.ThemedGlobalBadges(theme),
 		)
 	case StateForm:
-		if i.state.strategy == StrategyManual {
+		if i.strategy == StrategyManual {
 			return intents.CombineThemedFooters(
 				intents.ThemedFormFooter(theme),
 				intents.ThemedCustomFooter(theme,
@@ -482,7 +482,7 @@ func (i *Intent) getContextHelp() string {
 			intents.ThemedGlobalBadges(theme),
 		)
 	case StateReview:
-		if i.state.reviewState.EditingMode != EditingModeNone {
+		if i.reviewState.EditingMode != EditingModeNone {
 			return intents.ThemedCustomFooter(theme,
 				primitives.HelpKeyBadge("Editing", "...", theme),
 				primitives.CancelBadge(theme),
@@ -537,18 +537,18 @@ type modalContentData struct {
 // Side effects:
 //   - Lazily creates the metadataModal if it is nil.
 func (i *Intent) getMetadataModalContent() *modalContentData {
-	if i.state.reviewState.metadataModal == nil {
-		i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
-			i.state.reviewState.Event,
+	if i.reviewState.metadataModal == nil {
+		i.reviewState.metadataModal = models.NewMetadataEditorModelNew(
+			i.reviewState.Event,
 			i.context.CareerService,
 			i.context.CLIEventService,
 			context.Background(),
 		)
 	}
 	return &modalContentData{
-		title:   i.state.reviewState.metadataModal.GetTitle(),
-		content: i.state.reviewState.metadataModal.GetContent(),
-		footer:  i.state.reviewState.metadataModal.GetFooter(),
+		title:   i.reviewState.metadataModal.GetTitle(),
+		content: i.reviewState.metadataModal.GetContent(),
+		footer:  i.reviewState.metadataModal.GetFooter(),
 	}
 }
 
@@ -558,13 +558,13 @@ func (i *Intent) getMetadataModalContent() *modalContentData {
 //   - A modalContentData with title, content, and footer from the burst modal.
 //   - nil if the burstModal has not been created.
 func (i *Intent) getBurstModalContent() *modalContentData {
-	if i.state.reviewState.burstModal == nil {
+	if i.reviewState.burstModal == nil {
 		return nil
 	}
 	return &modalContentData{
-		title:   i.state.reviewState.burstModal.GetTitle(),
-		content: i.state.reviewState.burstModal.GetContent(),
-		footer:  i.state.reviewState.burstModal.GetFooter(),
+		title:   i.reviewState.burstModal.GetTitle(),
+		content: i.reviewState.burstModal.GetContent(),
+		footer:  i.reviewState.burstModal.GetFooter(),
 	}
 }
 
@@ -574,13 +574,13 @@ func (i *Intent) getBurstModalContent() *modalContentData {
 //   - A modalContentData with title, content, and footer from the fact modal.
 //   - nil if the factModal has not been created.
 func (i *Intent) getFactModalContent() *modalContentData {
-	if i.state.reviewState.factModal == nil {
+	if i.reviewState.factModal == nil {
 		return nil
 	}
 	return &modalContentData{
-		title:   i.state.reviewState.factModal.GetTitle(),
-		content: i.state.reviewState.factModal.GetContent(),
-		footer:  i.state.reviewState.factModal.GetFooter(),
+		title:   i.reviewState.factModal.GetTitle(),
+		content: i.reviewState.factModal.GetContent(),
+		footer:  i.reviewState.factModal.GetFooter(),
 	}
 }
 
@@ -590,10 +590,10 @@ func (i *Intent) getFactModalContent() *modalContentData {
 //   - A modalContentData for metadata, burst, or fact editing.
 //   - nil if reviewState is nil or EditingMode is EditingModeNone.
 func (i *Intent) getEditingModalContent() *modalContentData {
-	if i.state.reviewState == nil {
+	if i.reviewState == nil {
 		return nil
 	}
-	switch i.state.reviewState.EditingMode {
+	switch i.reviewState.EditingMode {
 	case EditingModeMetadata:
 		return i.getMetadataModalContent()
 	case EditingModeBursts:
@@ -688,12 +688,12 @@ func (i *Intent) viewChooseStrategy() string {
 
 	for idx, s := range strategies {
 		prefix := "  "
-		if idx == i.state.selectedStrategyIndex {
+		if idx == i.selectedStrategyIndex {
 			prefix = "▶ "
 		}
 
 		optStyle := lipgloss.NewStyle().Foreground(i.getPrimaryColor())
-		if idx == i.state.selectedStrategyIndex {
+		if idx == i.selectedStrategyIndex {
 			optStyle = optStyle.Foreground(i.getAccentColor()).Bold(true)
 		}
 
@@ -709,10 +709,10 @@ func (i *Intent) viewChooseStrategy() string {
 // Returns:
 //   - The form model's View() output, or an error message if the form is nil.
 func (i *Intent) viewCaptureForm() string {
-	if i.state.captureForm == nil {
+	if i.captureForm == nil {
 		return "Error: Form not initialized"
 	}
-	return i.state.captureForm.View()
+	return i.captureForm.View()
 }
 
 // viewReviewInferredEvent renders the review view, optionally with an editing modal overlay.
@@ -723,7 +723,7 @@ func (i *Intent) viewCaptureForm() string {
 func (i *Intent) viewReviewInferredEvent() string {
 	baseView := i.buildReviewBaseView()
 
-	switch i.state.reviewState.EditingMode {
+	switch i.reviewState.EditingMode {
 	case EditingModeMetadata:
 		return i.renderModalOverlay(baseView, i.getMetadataModalContent())
 	case EditingModeBursts:
@@ -746,8 +746,8 @@ func (i *Intent) buildReviewBaseView() string {
 	sb.WriteString("┌─ Review Inferred Event ────────────────────────┐\n")
 	sb.WriteString("│                                                │\n")
 
-	if i.state.reviewState.Event != nil {
-		title := i.state.reviewState.Event.Text
+	if i.reviewState.Event != nil {
+		title := i.reviewState.Event.Text
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
@@ -756,9 +756,9 @@ func (i *Intent) buildReviewBaseView() string {
 	}
 
 	sb.WriteString("│ Inferred Bursts:                               │\n")
-	bursts := i.state.reviewState.InferredBursts
+	bursts := i.reviewState.InferredBursts
 	if len(bursts) == 0 {
-		bursts = i.state.reviewState.AcceptedBursts
+		bursts = i.reviewState.AcceptedBursts
 	}
 	if len(bursts) > 0 {
 		for idx, burst := range bursts {
@@ -774,9 +774,9 @@ func (i *Intent) buildReviewBaseView() string {
 	sb.WriteString("│                                                │\n")
 
 	sb.WriteString("│ Inferred Facts:                                │\n")
-	facts := i.state.reviewState.InferredFacts
+	facts := i.reviewState.InferredFacts
 	if len(facts) == 0 {
-		facts = i.state.reviewState.AcceptedFacts
+		facts = i.reviewState.AcceptedFacts
 	}
 	if len(facts) > 0 {
 		for idx, fact := range facts {
@@ -805,16 +805,16 @@ func (i *Intent) viewSubmit() string {
 	sb.WriteString("┌─ Confirm Submission ───────────────────────────┐\n")
 	sb.WriteString("│                                                │\n")
 
-	if i.state.reviewState.Event != nil {
-		title := i.state.reviewState.Event.Text
+	if i.reviewState.Event != nil {
+		title := i.reviewState.Event.Text
 		if len(title) > 40 {
 			title = title[:37] + "..."
 		}
 		sb.WriteString(fmt.Sprintf("│ Event: %s                    │\n", title))
-		sb.WriteString(fmt.Sprintf("│ Date: %s                      │\n", i.state.reviewState.Event.Date))
+		sb.WriteString(fmt.Sprintf("│ Date: %s                      │\n", i.reviewState.Event.Date))
 		sb.WriteString("│                                                │\n")
-		sb.WriteString(fmt.Sprintf("│ Bursts: %d                                    │\n", len(i.state.reviewState.AcceptedBursts)))
-		sb.WriteString(fmt.Sprintf("│ Facts: %d                                     │\n", len(i.state.reviewState.AcceptedFacts)))
+		sb.WriteString(fmt.Sprintf("│ Bursts: %d                                    │\n", len(i.reviewState.AcceptedBursts)))
+		sb.WriteString(fmt.Sprintf("│ Facts: %d                                     │\n", len(i.reviewState.AcceptedFacts)))
 		sb.WriteString("│                                                │\n")
 	}
 
@@ -835,14 +835,14 @@ func (i *Intent) viewError() string {
 	sb.WriteString("┌─ Error ─────────────────────────────────────────┐\n")
 	sb.WriteString("│                                                │\n")
 
-	if i.state.error != nil {
-		code := i.state.error.Code
+	if i.intentError != nil {
+		code := i.intentError.Code
 		if len(code) > 40 {
 			code = code[:37] + "..."
 		}
 		sb.WriteString(fmt.Sprintf("│ Code: %s                        │\n", code))
 
-		msg := i.state.error.Message
+		msg := i.intentError.Message
 		if len(msg) > 40 {
 			msg = msg[:37] + "..."
 		}

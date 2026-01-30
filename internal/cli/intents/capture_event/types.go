@@ -29,9 +29,6 @@ type Intent struct {
 	// context holds the input parameters passed to the intent at creation.
 	context *IntentContext
 
-	// state holds all mutable workflow state (current step, form, review data).
-	state *Model
-
 	// active is true while the intent is running.
 	active bool
 
@@ -47,15 +44,6 @@ type Intent struct {
 	// useScreens controls whether the screens architecture is enabled.
 	// When false, the intent falls back to legacy inline rendering.
 	useScreens bool
-}
-
-// Model holds the mutable state owned by the CaptureEvent intent.
-//
-// This is the single source of truth for the workflow's progress. It will be
-// flattened into Intent in a future refactoring phase.
-type Model struct {
-	// context is the input context passed to the intent.
-	context *IntentContext
 
 	// currentState tracks which workflow step is active.
 	currentState State
@@ -66,11 +54,8 @@ type Model struct {
 	// reviewState holds the review sub-flow's data (event, bursts, facts, modals).
 	reviewState *ReviewInferredEventState
 
-	// result is the raw result data (initialised at construction, unused after).
-	result *Result
-
-	// error tracks any errors that occur during the intent.
-	error *intents.IntentError
+	// intentError tracks any errors that occur during the intent.
+	intentError *intents.IntentError
 
 	// selectedStrategyIndex is the cursor position in the strategy list (0=Quick, 1=Manual).
 	selectedStrategyIndex int
@@ -153,18 +138,18 @@ func (i *Intent) GetResult() *intents.IntentResult[*Result] {
 // Returns:
 //   - The State value cast to string (e.g. "choose_strategy", "form").
 func (i *Intent) GetState() string {
-	return string(i.state.currentState)
+	return string(i.currentState)
 }
 
 // GetForm returns the capture form model instance.
 //
 // Returns:
-//   - The CaptureForm, or nil if the intent or its state is nil.
+//   - The CaptureForm, or nil if the intent is nil.
 func (i *Intent) GetForm() *models.CaptureForm {
-	if i == nil || i.state == nil {
+	if i == nil {
 		return nil
 	}
-	return i.state.captureForm
+	return i.captureForm
 }
 
 // DisableScreens turns off the screens architecture, falling back to legacy
@@ -185,16 +170,13 @@ func (i *Intent) DisableScreens() {
 // Side effects:
 //   - Directly mutates the internal state machine.
 func (i *Intent) SetStateForTesting(state State) {
-	i.state.currentState = state
+	i.currentState = state
 }
 
 // GetReviewState returns the review sub-flow state for test assertions.
 //
 // Returns:
-//   - The ReviewInferredEventState, or nil if state is nil.
+//   - The ReviewInferredEventState, or nil if the intent is nil.
 func (i *Intent) GetReviewState() *ReviewInferredEventState {
-	if i.state == nil {
-		return nil
-	}
-	return i.state.reviewState
+	return i.reviewState
 }
