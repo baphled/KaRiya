@@ -179,62 +179,8 @@ func (c *Classifier) InferCompetencies(text string, tags []string) []string {
 	lowerText := strings.ToLower(text)
 	competencies := make(map[string]bool)
 
-	// Check explicit tags first
-	for _, tag := range tags {
-		lowerTag := strings.ToLower(tag)
-		if strings.Contains(lowerTag, "leadership") {
-			competencies["leadership"] = true
-		}
-		if strings.Contains(lowerTag, "technical") {
-			competencies["technical"] = true
-		}
-		if strings.Contains(lowerTag, "product") {
-			competencies["product"] = true
-		}
-		if strings.Contains(lowerTag, "consulting") {
-			competencies["consulting"] = true
-		}
-		if strings.Contains(lowerTag, "research") {
-			competencies["research"] = true
-		}
-		if strings.Contains(lowerTag, "mentoring") {
-			competencies["mentoring"] = true
-		}
-	}
-
-	// Keyword-based inference
-	if strings.Contains(lowerText, "led") || strings.Contains(lowerText, "lead") || strings.Contains(lowerText, "manage") ||
-		strings.Contains(lowerText, "directed") || strings.Contains(lowerText, "strategy") {
-		competencies["leadership"] = true
-	}
-
-	if strings.Contains(lowerText, "code") || strings.Contains(lowerText, "engineer") ||
-		strings.Contains(lowerText, "technical") || strings.Contains(lowerText, "architect") ||
-		strings.Contains(lowerText, "system") || strings.Contains(lowerText, "backend") ||
-		strings.Contains(lowerText, "frontend") || strings.Contains(lowerText, "database") {
-		competencies["technical"] = true
-	}
-
-	if strings.Contains(lowerText, "product") || strings.Contains(lowerText, "feature") ||
-		strings.Contains(lowerText, "user") || strings.Contains(lowerText, "customer") {
-		competencies["product"] = true
-	}
-
-	if strings.Contains(lowerText, "consult") || strings.Contains(lowerText, "advise") ||
-		strings.Contains(lowerText, "client") || strings.Contains(lowerText, "solution") {
-		competencies["consulting"] = true
-	}
-
-	if strings.Contains(lowerText, "research") || strings.Contains(lowerText, "analyze") ||
-		strings.Contains(lowerText, "investigate") || strings.Contains(lowerText, "study") {
-		competencies["research"] = true
-	}
-
-	if strings.Contains(lowerText, "mentor") || strings.Contains(lowerText, "coach") ||
-		strings.Contains(lowerText, "train") || strings.Contains(lowerText, "teach") ||
-		strings.Contains(lowerText, "develop") || strings.Contains(lowerText, "grow") {
-		competencies["mentoring"] = true
-	}
+	c.inferFromTags(tags, competencies)
+	c.inferFromText(lowerText, competencies)
 
 	// Default to technical if nothing found
 	if len(competencies) == 0 {
@@ -248,6 +194,81 @@ func (c *Classifier) InferCompetencies(text string, tags []string) []string {
 	}
 
 	return result
+}
+
+func (c *Classifier) inferFromTags(tags []string, competencies map[string]bool) {
+	tagMap := map[string]string{
+		"leadership":         "leadership",
+		"technical":          "technical",
+		"product":            "product",
+		"consulting":         "consulting",
+		"research":           "research",
+		"mentoring":          "mentoring",
+		"communication":      "communication",
+		"collaboration":      "collaboration",
+		"problem-solving":    "problem-solving",
+		"project-management": "project-management",
+		"architecture":       "architecture",
+	}
+	for _, tag := range tags {
+		lowerTag := strings.ToLower(tag)
+		if comp, ok := tagMap[lowerTag]; ok {
+			competencies[comp] = true
+		}
+	}
+}
+
+func (c *Classifier) inferFromText(lowerText string, competencies map[string]bool) {
+	keywordGroups := map[string][]string{
+		"leadership": {
+			"led", "lead", "manage", "directed", "strategy",
+		},
+		"technical": {
+			"code", "engineer", "technical", "system",
+			"backend", "frontend", "database",
+		},
+		"product": {
+			"product", "feature", "user", "customer",
+		},
+		"consulting": {
+			"consult", "advise", "client", "solution",
+		},
+		"research": {
+			"research", "analyze", "investigate", "study",
+		},
+		"mentoring": {
+			"mentor", "coach", "train", "teach", "develop", "grow",
+		},
+		"communication": {
+			"present", "document", "explain", "stakeholder",
+			"articulate", "communicate", "clarify", "brief",
+		},
+		"collaboration": {
+			"collaborate", "cross-functional", "partner",
+			"facilitate", "align", "together", "joint", "cooperate",
+		},
+		"problem-solving": {
+			"debug", "troubleshoot", "diagnose",
+			"root cause", "resolve",
+		},
+		"project-management": {
+			"plan", "estimate", "schedule", "milestone",
+			"sprint", "roadmap", "prioritize", "deadline",
+		},
+		"architecture": {
+			"architect", "distributed", "microservices",
+			"scalable", "platform", "modular", "decoupled",
+		},
+	}
+
+	for comp, keywords := range keywordGroups {
+		for _, kw := range keywords {
+			if strings.Contains(lowerText, kw) {
+				competencies[comp] = true
+				break
+			}
+		}
+	}
 }
 
 // scoreText returns a score based on keyword matches.
