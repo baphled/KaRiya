@@ -10,7 +10,6 @@ import (
 	"github.com/baphled/kariya/internal/cli/models"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
-	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -174,24 +173,6 @@ func (i *Intent) performSubmit() tea.Cmd {
 	}
 }
 
-// initializeFormForNew prepares an empty event for a new capture session.
-//
-// Returns:
-//   - A no-op tea.Cmd (returns nil message).
-//
-// Side effects:
-//   - Sets i.reviewState.Event to a fresh career.Event with current
-//     timestamps and empty slices for tags and categories.
-func (i *Intent) initializeFormForNew() tea.Cmd {
-	i.reviewState.Event = &career.Event{
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-		Tags:       make([]string, 0),
-		Categories: make([]string, 0),
-	}
-	return func() tea.Msg { return nil }
-}
-
 // transitionToStrategyScreen creates the strategy selection screen and activates it.
 //
 // Returns:
@@ -257,118 +238,6 @@ func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 		return initable.Init()
 	}
 	return nil
-}
-
-// navigateReviewItems moves the selection cursor through inferred review items.
-//
-// Expected:
-//   - delta is +1 (down) or -1 (up).
-//   - i.reviewState is non-nil.
-//
-// Side effects:
-//   - Updates SelectedIndex with wraparound at both ends.
-//   - Updates SelectedItemType to "burst" or "fact" based on the new position
-//     relative to the burst/fact boundary.
-func (i *Intent) navigateReviewItems(delta int) {
-	totalItems := len(i.reviewState.InferredBursts) + len(i.reviewState.InferredFacts)
-	if totalItems == 0 {
-		return
-	}
-
-	i.reviewState.SelectedIndex += delta
-	if i.reviewState.SelectedIndex >= totalItems {
-		i.reviewState.SelectedIndex = 0
-	}
-	if i.reviewState.SelectedIndex < 0 {
-		i.reviewState.SelectedIndex = totalItems - 1
-	}
-
-	if i.reviewState.SelectedIndex < len(i.reviewState.InferredBursts) {
-		i.reviewState.SelectedItemType = "burst"
-	} else {
-		i.reviewState.SelectedItemType = "fact"
-		i.reviewState.SelectedIndex -= len(i.reviewState.InferredBursts)
-	}
-}
-
-// acceptCurrentItem moves the currently selected item to the accepted list.
-//
-// Expected:
-//   - i.reviewState is non-nil with a valid SelectedItemType and index.
-//
-// Side effects:
-//   - Appends the selected burst or fact to AcceptedBursts/AcceptedFacts.
-//   - Removes it from InferredBursts/InferredFacts.
-//   - Clamps SelectedIndex to remain within bounds after removal.
-func (i *Intent) acceptCurrentItem() {
-	if i.reviewState.SelectedItemType == "burst" {
-		idx := i.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.reviewState.InferredBursts) {
-			burst := i.reviewState.InferredBursts[idx]
-			i.reviewState.AcceptedBursts = append(i.reviewState.AcceptedBursts, burst)
-			i.reviewState.InferredBursts = append(
-				i.reviewState.InferredBursts[:idx],
-				i.reviewState.InferredBursts[idx+1:]...)
-			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredBursts) && len(i.reviewState.InferredBursts) > 0 {
-				i.reviewState.SelectedIndex = len(i.reviewState.InferredBursts) - 1
-			}
-		}
-	} else if i.reviewState.SelectedItemType == "fact" {
-		idx := i.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.reviewState.InferredFacts) {
-			fact := i.reviewState.InferredFacts[idx]
-			i.reviewState.AcceptedFacts = append(i.reviewState.AcceptedFacts, fact)
-			i.reviewState.InferredFacts = append(
-				i.reviewState.InferredFacts[:idx],
-				i.reviewState.InferredFacts[idx+1:]...)
-			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredFacts) && len(i.reviewState.InferredFacts) > 0 {
-				i.reviewState.SelectedIndex = len(i.reviewState.InferredFacts) - 1
-			}
-		}
-	}
-}
-
-// rejectCurrentItem marks the currently selected item as rejected.
-//
-// Expected:
-//   - i.reviewState is non-nil with a valid SelectedItemType and index.
-//
-// Side effects:
-//   - Adds the item's ID to RejectedItems with reason "user_rejected".
-//   - Removes the item from InferredBursts/InferredFacts.
-//   - Clamps SelectedIndex to remain within bounds after removal.
-func (i *Intent) rejectCurrentItem() {
-	if i.reviewState.SelectedItemType == "burst" {
-		idx := i.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.reviewState.InferredBursts) {
-			burst := i.reviewState.InferredBursts[idx]
-			if i.reviewState.RejectedItems == nil {
-				i.reviewState.RejectedItems = make(map[string]string)
-			}
-			i.reviewState.RejectedItems[burst.ID] = "user_rejected"
-			i.reviewState.InferredBursts = append(
-				i.reviewState.InferredBursts[:idx],
-				i.reviewState.InferredBursts[idx+1:]...)
-			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredBursts) && len(i.reviewState.InferredBursts) > 0 {
-				i.reviewState.SelectedIndex = len(i.reviewState.InferredBursts) - 1
-			}
-		}
-	} else if i.reviewState.SelectedItemType == "fact" {
-		idx := i.reviewState.SelectedIndex
-		if idx >= 0 && idx < len(i.reviewState.InferredFacts) {
-			fact := i.reviewState.InferredFacts[idx]
-			if i.reviewState.RejectedItems == nil {
-				i.reviewState.RejectedItems = make(map[string]string)
-			}
-			i.reviewState.RejectedItems[fact.ID] = "user_rejected"
-			i.reviewState.InferredFacts = append(
-				i.reviewState.InferredFacts[:idx],
-				i.reviewState.InferredFacts[idx+1:]...)
-			if i.reviewState.SelectedIndex >= len(i.reviewState.InferredFacts) && len(i.reviewState.InferredFacts) > 0 {
-				i.reviewState.SelectedIndex = len(i.reviewState.InferredFacts) - 1
-			}
-		}
-	}
 }
 
 // modalContentData holds the rendered parts of an editing modal overlay.
@@ -491,17 +360,21 @@ func (i *Intent) renderModalOverlay(background string, modalContent *modalConten
 	return overlay.RenderCentered(background, width, height)
 }
 
-// overlayModal composites modal lines over background lines, centred horizontally.
+// overlayModal composites a pre-rendered modal over a dimmed background.
+//
+// Uses feedback.DimContent for the background dimming effect and line-level
+// replacement to centre the modal vertically and horizontally.
 //
 // Expected:
-//   - background and modal are newline-separated rendered strings.
+//   - background is a fully rendered base view string.
+//   - modal is a pre-rendered modal string (from feedback.Modal.Render).
 //   - width is the terminal width for horizontal centring.
 //
 // Returns:
-//   - A newline-joined string with modal lines replacing background lines
-//     at the vertical centre.
+//   - A composited string with the modal centred over the dimmed background.
 func (i *Intent) overlayModal(background, modal string, width, _ int) string {
-	bgLines := strings.Split(background, "\n")
+	dimmed := feedback.DimContent(background)
+	bgLines := strings.Split(dimmed, "\n")
 	modalLines := strings.Split(modal, "\n")
 
 	bgHeight := len(bgLines)
@@ -517,8 +390,7 @@ func (i *Intent) overlayModal(background, modal string, width, _ int) string {
 	for idx, modalLine := range modalLines {
 		lineIndex := startLine + idx
 		if lineIndex >= 0 && lineIndex < len(result) {
-			centeredModalLine := lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
-			result[lineIndex] = centeredModalLine
+			result[lineIndex] = lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
 		}
 	}
 
