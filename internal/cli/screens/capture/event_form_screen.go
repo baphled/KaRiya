@@ -1,3 +1,4 @@
+// Package capture provides screen components for the capture event workflow.
 package capture
 
 import (

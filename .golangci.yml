@@ -536,6 +536,37 @@ issues:
   max-same-issues: 5
   fix: false
 
+  # Disable default exclusions to enable revive's exported/package-comments
+  # enforcement for migrated intents (capture_event). Default EXC0002/EXC0012-EXC0015
+  # globally suppressed all exported-comment checks, preventing documentation linting.
+  exclude-use-default: false
+  exclude:
+    # Re-add EXC0001 (errcheck): common close/flush/print errors.
+    - 'Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*print(f|ln)?|os\.(Un)?Setenv). is not checked'
+    # Re-add EXC0003 (golint): test package stuttering.
+    - 'func name will be used as test\.Test.* by other packages, and that stutters; consider calling this'
+    # Re-add EXC0004 (govet): unsafe.Pointer false positives.
+    - '(possible misuse of unsafe.Pointer|should have signature)'
+    # Re-add EXC0005 (staticcheck): explicit break in switch.
+    - 'SA4011'
+    # Re-add EXC0006 (gosec): unsafe calls.
+    - 'G103: Use of unsafe calls should be audited'
+    # Re-add EXC0007 (gosec): parameterized shell calls.
+    - 'G204: Subprocess launched with variable'
+    # Re-add EXC0008 (gosec): duplicated errcheck.
+    - 'G104'
+    # Re-add EXC0009 (gosec): directory/file permissions.
+    - '(G301|G302|G307): Expect (directory permissions to be 0750|file permissions to be 0600) or less'
+    # Re-add EXC0010 (gosec): file inclusion via variable.
+    - 'G304: Potential file inclusion via variable'
+    # Re-add EXC0011 (stylecheck): exported comment checks (handled by revive).
+    - '(ST1000|ST1020|ST1021|ST1022)'
+    # NOTE: EXC0002, EXC0012-EXC0015 intentionally NOT re-added.
+    # This enables revive exported/package-comments enforcement for capture_event
+    # and future migrated intents. Packages with blanket `- revive` in exclude-rules
+    # are unaffected. Packages without revive suppression that have pre-existing
+    # violations are covered by C25 below.
+
   exclude-rules:
     # =========================================================================
     # C1. TEST FILES - Relaxed requirements (standard practice)
@@ -692,16 +723,7 @@ issues:
     # C7. LEGACY: OLD SINGLE-FILE INTENTS (migration tracked)
     # Only files that still exist on disk. Migrated intents use C12.
     # =========================================================================
-    - path: internal/cli/intents/capture_event_intent\.go
-      linters:
-        - godot
-        - stylecheck
-        - revive
-        - gocognit
-        - gocyclo
-        - funlen
-        - nestif
-        - dupl
+    # capture_event_intent.go migrated to intents/capture_event/ (see C12)
 
     - path: internal/cli/intents/generate_cv_intent\.go
       linters:
@@ -807,7 +829,27 @@ issues:
 
     # =========================================================================
     # C12. SUBDIRECTORY INTENTS - Migrated architecture
+    #
+    # capture_event uses NARROWED revive exemptions: only specific rules
+    # are suppressed so that `exported` and `package-comments` still fire.
+    # Other intents use blanket revive suppression (to be narrowed later).
     # =========================================================================
+
+    # capture_event - migrated from C7 with narrowed revive enforcement.
+    - path: internal/cli/intents/capture_event/
+      linters:
+        - gocognit
+        - gocyclo
+        - nestif
+        - funlen
+        - errcheck
+
+    # capture_event: suppress only specific revive rules.
+    # Keeps exported and package-comments active for documentation enforcement.
+    - path: internal/cli/intents/capture_event/
+      linters:
+        - revive
+      text: "cognitive-complexity|cyclomatic|unnecessary-stmt|unused-parameter"
 
     - path: internal/cli/intents/browsetimeline/
       linters:
@@ -1304,6 +1346,97 @@ issues:
       linters:
         - gocognit
         - revive
+
+    # =========================================================================
+    # C25. LEGACY EXPORTED/PACKAGE-COMMENTS - Pre-existing documentation gaps
+    # These packages pre-date documentation enforcement. Suppress exported
+    # and package-comments violations until they are migrated.
+    # Tracked for cleanup in a future documentation sweep.
+    # =========================================================================
+    - path: internal/cli/behaviors/
+      linters:
+        - revive
+      text: "exported.*should be of the form"
+
+    - path: internal/cli/screens/base/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/screens/burst_management/modals/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/screens/contract\.go
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/screens/facts/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/screens/timeline/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/screens/burst_management/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/screens/configure/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/uikit/feedback/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/config/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/logger/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/repository/career/mocks/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/service/career/technology/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/app/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/service/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/uikit/containers/
+      linters:
+        - revive
+      text: "package-comments"
+
+    - path: internal/cli/uikit/selectors/
+      linters:
+        - revive
+      text: "package-comments"
 
     # =========================================================================
     # C26. LEGACY COMPONENTS - Modals
