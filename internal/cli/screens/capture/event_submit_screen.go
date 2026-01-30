@@ -2,10 +2,13 @@ package capture
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
+	"github.com/baphled/kariya/internal/cli/themes"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
+	"github.com/baphled/kariya/internal/cli/uikit/theme"
+	"github.com/baphled/kariya/internal/cli/uikit/widgets"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -24,23 +27,10 @@ type SubmitErrorMsg struct {
 
 // EventSubmitScreen handles async submission of captured event to database.
 //
-// NOTE(TECHNICAL DEBT): This should be a modal overlay, not a full screen.
-// Currently this renders as a full screen replacement, but the correct
-// architecture is to:
-// 1. Keep the form screen visible in the background
-// 2. Show a loading modal overlay during submission
-// 3. Show success/error modal when complete
-// 4. Return to previous screen (or complete intent) on modal dismiss
-//
-// See BrowseTimeline intent for the correct modal overlay pattern.
-// This refactor requires:
-// - Moving submission logic to intent level
-// - Using components.NewLoadingModal() during submission
-// - Using components.NewSuccessModal() / NewErrorModal() for results
-// - Removing this full screen entirely
-//
-// Priority: MEDIUM (works but not ideal UX)
-// Effort: ~2 hours
+// NOTE(TECHNICAL DEBT): This screen is no longer used by the capture_event
+// intent, which now handles submission via feedback.Modal overlays directly.
+// This screen is retained for backward compatibility and testing but may be
+// removed in a future cleanup pass.
 //
 // This screen:
 // - Shows progress indicator while submitting
@@ -48,40 +38,37 @@ type SubmitErrorMsg struct {
 // - Returns SubmitResult on success
 // - Returns ErrorResult on failure
 //
-// The actual submission is handled by the intent (via service),
-// this screen just coordinates the async flow and displays progress.
-//
 // Keyboard Shortcuts:
 // - Esc: (No effect during submission - prevents accidental cancel)
 //
 // Related:
-// - internal/cli/intents/capture_event.go (performSubmit)
+// - internal/cli/intents/capture_event/intent.go (submitModal handling)
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type EventSubmitScreen struct {
 	*base.Screen
 
-	// event being submitted
+	// event being submitted.
 	event *career.Event
 
-	// bursts to submit
+	// bursts to submit.
 	bursts []*career.Burst
 
-	// facts to submit
+	// facts to submit.
 	facts []*career.Fact
 
-	// breadcrumbs for the view header
+	// breadcrumbs for the view header.
 	breadcrumbs []string
 
-	// submitting indicates submission is in progress
+	// submitting indicates submission is in progress.
 	submitting bool
 
-	// completed indicates submission finished (success or error)
+	// completed indicates submission finished (success or error).
 	completed bool
 
-	// error stores submission error (if any)
+	// error stores submission error (if any).
 	error error
 
-	// simulateError forces an error for testing
+	// simulateError forces an error for testing.
 	simulateError error
 }
 
@@ -140,12 +127,10 @@ func (s *EventSubmitScreen) Init() tea.Cmd {
 // For screens architecture, the intent will provide the actual submission command.
 func (s *EventSubmitScreen) performSubmit() tea.Cmd {
 	return func() tea.Msg {
-		// Simulate submission error if configured
 		if s.simulateError != nil {
 			return SubmitErrorMsg{Err: s.simulateError}
 		}
 
-		// Simulate successful submission
 		return SubmitCompleteMsg{
 			Event:  s.event,
 			Bursts: s.bursts,
@@ -157,20 +142,17 @@ func (s *EventSubmitScreen) performSubmit() tea.Cmd {
 // Update implements the Screen interface.
 //
 // Handles:
-// - SubmitCompleteMsg → returns SubmitResult
-// - SubmitErrorMsg → returns ErrorResult
-// - WindowSizeMsg → updates dimensions
-// - Esc → ignored during submission (prevents accidental cancel).
+// - SubmitCompleteMsg -> returns SubmitResult
+// - SubmitErrorMsg -> returns ErrorResult
+// - WindowSizeMsg -> updates dimensions
+// - Esc -> ignored during submission (prevents accidental cancel).
 func (s *EventSubmitScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
-	// Handle window size via Screen
 	if cmd := s.Screen.HandleWindowSizeMsg(msg); cmd != nil {
 		return cmd, nil
 	}
 
-	// Handle submission messages
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
-		// Submission succeeded
 		s.submitting = false
 		s.completed = true
 
@@ -183,7 +165,6 @@ func (s *EventSubmitScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		}
 
 	case SubmitErrorMsg:
-		// Submission failed
 		s.submitting = false
 		s.completed = true
 		s.error = msg.Err
@@ -194,9 +175,7 @@ func (s *EventSubmitScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 		}
 
 	case tea.KeyMsg:
-		// Ignore Esc during submission to prevent accidental cancel
-		// User must wait for submission to complete (or fail)
-		if msg.String() == "esc" {
+		if msg.Type == tea.KeyEsc {
 			return nil, nil
 		}
 	}
@@ -206,7 +185,7 @@ func (s *EventSubmitScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) 
 
 // View implements the Screen interface.
 //
-// Renders the submission progress screen.
+// Renders the submission progress screen using UIKit components.
 func (s *EventSubmitScreen) View() string {
 	content := s.renderContent()
 	footer := s.renderFooter()
@@ -214,50 +193,121 @@ func (s *EventSubmitScreen) View() string {
 	return s.CreateView(s.breadcrumbs, content, footer)
 }
 
-// renderContent renders the submission status.
+// renderContent renders the submission status using UIKit primitives.
 func (s *EventSubmitScreen) renderContent() string {
-	var b strings.Builder
-
-	b.WriteString("\n")
+	th := s.resolveTheme()
 
 	if s.error != nil {
-		// Show error state
-		b.WriteString("❌ Submission Failed\n")
-		b.WriteString("═══════════════════\n\n")
-		b.WriteString(fmt.Sprintf("Error: %s\n", s.error.Error()))
-		b.WriteString("\nPress Esc to go back and try again.\n")
-	} else if s.completed {
-		// Show success state
-		b.WriteString("✅ Event Submitted Successfully\n")
-		b.WriteString("══════════════════════════════\n\n")
-		if s.event != nil {
-			b.WriteString(fmt.Sprintf("Event: %s\n", s.event.Text))
-		}
-		if len(s.bursts) > 0 {
-			b.WriteString(fmt.Sprintf("Bursts: %d\n", len(s.bursts)))
-		}
-		if len(s.facts) > 0 {
-			b.WriteString(fmt.Sprintf("Facts: %d\n", len(s.facts)))
-		}
-	} else if s.submitting {
-		// Show progress state
-		b.WriteString("⏳ Submitting Event...\n")
-		b.WriteString("═══════════════════\n\n")
-		if s.event != nil {
-			b.WriteString(fmt.Sprintf("Event: %s\n", s.event.Text))
-		}
-		b.WriteString("\nPlease wait...\n")
+		return s.renderErrorState(th)
 	}
-
-	return b.String()
+	if s.completed {
+		return s.renderSuccessState(th)
+	}
+	return s.renderSubmittingState(th)
 }
 
-// renderFooter renders footer with status message.
-func (s *EventSubmitScreen) renderFooter() string {
-	if s.error != nil {
-		return "Esc: Back  q: Quit"
-	} else if s.completed {
-		return "Submission complete"
+// renderErrorState renders the error view using UIKit primitives.
+func (s *EventSubmitScreen) renderErrorState(th theme.Theme) string {
+	var parts []string
+
+	parts = append(parts, primitives.ErrorText("Submission Failed", th).
+		Bold().
+		MarginBottom(1).
+		Render())
+
+	parts = append(parts, primitives.Body(
+		fmt.Sprintf("Error: %s", s.error.Error()), th).
+		MarginBottom(1).
+		Render())
+
+	parts = append(parts, primitives.Muted(
+		"Press Esc to go back and try again.", th).
+		Render())
+
+	return primitives.JoinVertical(primitives.AlignLeft, parts...)
+}
+
+// renderSuccessState renders the success view using UIKit DetailView.
+func (s *EventSubmitScreen) renderSuccessState(th theme.Theme) string {
+	var parts []string
+
+	parts = append(parts, primitives.SuccessText("Event Submitted Successfully", th).
+		Bold().
+		MarginBottom(1).
+		Render())
+
+	dv := widgets.NewDetailView(th)
+	if s.event != nil {
+		dv.Field("Event", s.event.Text)
 	}
-	return "Submitting... Please wait"
+	if len(s.bursts) > 0 {
+		dv.Field("Bursts", fmt.Sprintf("%d", len(s.bursts)))
+	}
+	if len(s.facts) > 0 {
+		dv.Field("Facts", fmt.Sprintf("%d", len(s.facts)))
+	}
+	parts = append(parts, dv.Render())
+
+	return primitives.JoinVertical(primitives.AlignLeft, parts...)
+}
+
+// renderSubmittingState renders the progress view using UIKit primitives.
+func (s *EventSubmitScreen) renderSubmittingState(th theme.Theme) string {
+	var parts []string
+
+	parts = append(parts, primitives.InfoText("Submitting Event...", th).
+		Bold().
+		MarginBottom(1).
+		Render())
+
+	if s.event != nil {
+		dv := widgets.NewDetailView(th).
+			Field("Event", s.event.Text)
+		parts = append(parts, dv.Render())
+	}
+
+	parts = append(parts, primitives.Muted("Please wait...", th).
+		MarginTop(1).
+		Render())
+
+	return primitives.JoinVertical(primitives.AlignLeft, parts...)
+}
+
+// renderFooter renders footer with status message using UIKit badge primitives.
+func (s *EventSubmitScreen) renderFooter() string {
+	th := s.resolveThemesTheme()
+
+	if s.error != nil {
+		return primitives.RenderHelpFooter(th,
+			primitives.BackBadge(th),
+			primitives.QuitBadge(th),
+		)
+	}
+	if s.completed {
+		return primitives.RenderHelpFooter(th,
+			primitives.ContinueBadge(th),
+		)
+	}
+
+	return primitives.Muted("Submitting... Please wait", th).Render()
+}
+
+// resolveTheme returns the screen's theme or a default if none is set.
+func (s *EventSubmitScreen) resolveTheme() theme.Theme {
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if th, ok := screenTheme.(theme.Theme); ok {
+			return th
+		}
+	}
+	return theme.Default()
+}
+
+// resolveThemesTheme returns the screen's theme as themes.Theme for badge rendering.
+func (s *EventSubmitScreen) resolveThemesTheme() themes.Theme {
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if th, ok := screenTheme.(themes.Theme); ok {
+			return th
+		}
+	}
+	return themes.NewDefaultTheme()
 }
