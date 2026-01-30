@@ -95,10 +95,21 @@ func ParseScreenFile(filename string) ComponentInfo {
 	return component
 }
 
+// packageDisplayNames maps concatenated Go package names (no underscores)
+// to their proper display names. Go package naming convention (ST1003)
+// requires lowercase without underscores, but display names need
+// word boundaries for readability in generated documentation.
+var packageDisplayNames = map[string]string{
+	"browsetimeline":   "BrowseTimeline",
+	"captureevent":     "CaptureEvent",
+	"factmanagement":   "FactManagement",
+	"skillsmanagement": "SkillsManagement",
+}
+
 // extractIntentName derives the intent name from the filename.
 //
-// Supports both flat structure (capture_event.go -> CaptureEvent)
-// and subdirectory structure (capture_event/constants.go -> CaptureEvent).
+// Supports both flat structure (browse_timeline.go -> BrowseTimeline)
+// and subdirectory structure (captureevent/constants.go -> CaptureEvent).
 // For subdirectory files (constants.go, intent.go, etc.), the parent
 // directory name is used instead of the filename.
 func extractIntentName(filename string) string {
@@ -115,6 +126,10 @@ func extractIntentName(filename string) string {
 	if standardFiles[base] {
 		dir := filepath.Base(filepath.Dir(filename))
 		if dir != "." && dir != "intents" {
+			// Check known package display names for concatenated names.
+			if displayName, ok := packageDisplayNames[dir]; ok {
+				return displayName
+			}
 			base = dir
 		}
 	} else {

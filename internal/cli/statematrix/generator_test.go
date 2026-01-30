@@ -327,8 +327,8 @@ var _ = Describe("Scanner", func() {
 			foundCaptureEvent := false
 			foundBrowseTimeline := false
 			for _, file := range files {
-				// capture_event uses subdirectory structure: capture_event/constants.go
-				if strings.Contains(file, "capture_event") && filepath.Base(file) == "constants.go" {
+				// captureevent uses subdirectory structure: captureevent/constants.go
+				if strings.Contains(file, "captureevent") && filepath.Base(file) == "constants.go" {
 					foundCaptureEvent = true
 				}
 				// browsetimeline uses subdirectory structure: browsetimeline/intent.go
@@ -336,7 +336,7 @@ var _ = Describe("Scanner", func() {
 					foundBrowseTimeline = true
 				}
 			}
-			Expect(foundCaptureEvent).To(BeTrue(), "Should find capture_event/constants.go (subdirectory structure)")
+			Expect(foundCaptureEvent).To(BeTrue(), "Should find captureevent/constants.go (subdirectory structure)")
 			Expect(foundBrowseTimeline).To(BeTrue(), "Should find browsetimeline/intent.go (subdirectory structure)")
 		})
 
@@ -450,8 +450,8 @@ var _ = Describe("Parser", func() {
 	})
 
 	Describe("ParseIntentFile", func() {
-		It("should parse intent states from capture_event subdirectory", func() {
-			file := filepath.Join(projectRoot, "internal", "cli", "intents", "capture_event", "constants.go")
+		It("should parse intent states from captureevent subdirectory", func() {
+			file := filepath.Join(projectRoot, "internal", "cli", "intents", "captureevent", "constants.go")
 			component := statematrix.ParseIntentFile(file)
 
 			Expect(component.Name).To(Equal("CaptureEvent"))
@@ -468,7 +468,7 @@ var _ = Describe("Parser", func() {
 		})
 
 		It("should classify state types correctly", func() {
-			file := filepath.Join(projectRoot, "internal", "cli", "intents", "capture_event", "constants.go")
+			file := filepath.Join(projectRoot, "internal", "cli", "intents", "captureevent", "constants.go")
 			component := statematrix.ParseIntentFile(file)
 
 			// StateChooseStrategy should be ROOT.
@@ -481,8 +481,8 @@ var _ = Describe("Parser", func() {
 		})
 
 		It("should handle files with no states", func() {
-			// Use a file that doesn't have state constants
-			file := filepath.Join(projectRoot, "internal", "cli", "styles", "styles.go")
+			// Use a file that doesn't have state constants.
+			file := filepath.Join(projectRoot, "internal", "cli", "intents", "captureevent", "result.go")
 			component := statematrix.ParseIntentFile(file)
 
 			// Should return empty component or handle gracefully

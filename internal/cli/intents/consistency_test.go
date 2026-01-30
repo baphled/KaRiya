@@ -22,7 +22,7 @@ func testStandardViewConsistency(intentName, view string) {
 }
 
 var _ = Describe("StandardView Consistency", func() {
-	// CaptureEvent consistency tests are in internal/cli/intents/capture_event/
+	// CaptureEvent consistency tests are in internal/cli/intents/captureevent/
 
 	// BrowseTimeline consistency tests are in internal/cli/intents/browsetimeline/
 
@@ -89,7 +89,7 @@ var _ = Describe("All Intents Initialization", func() {
 			Expect(len(strings.TrimSpace(view))).To(BeNumerically(">=", 10),
 				"%s view is too short", name)
 		},
-		// CaptureEvent Entry is in internal/cli/intents/capture_event/
+		// CaptureEvent Entry is in internal/cli/intents/captureevent/
 		// BrowseTimeline Entry is in internal/cli/intents/browsetimeline/
 		Entry("GenerateCV",
 			"GenerateCV",

@@ -34,7 +34,7 @@ import (
 // - Esc: Cancel and return to form
 //
 // Related:
-// - internal/cli/intents/capture_event.go (ReviewInferredEventState)
+// - internal/cli/intents/captureevent/types.go (ReviewInferredEventState)
 // - tasks/tasks-42-tui-architecture-refactor.md (Phase 1: CaptureEvent Migration).
 type EventReviewScreen struct {
 	*base.Screen

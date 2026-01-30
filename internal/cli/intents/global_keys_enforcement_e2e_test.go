@@ -313,11 +313,11 @@ var _ = Describe("Global Keys Enforcement E2E", func() {
 	// =========================================================================
 
 	Describe("Context-Aware Navigation", func() {
-		// CaptureEvent Edit vs New tests moved to capture_event subpackage
-		// See: internal/cli/intents/capture_event/global_keys_test.go
+		// CaptureEvent Edit vs New tests moved to captureevent subpackage.
+		// See: internal/cli/intents/captureevent/global_keys_test.go
 
-		// FactManagement moved to fact_management subpackage - has own tests
-		// See: internal/cli/intents/fact_management/intent_test.go
+		// FactManagement moved to factmanagement subpackage - has own tests.
+		// See: internal/cli/intents/factmanagement/intent_test.go
 	})
 
 	// =========================================================================

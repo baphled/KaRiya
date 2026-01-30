@@ -8,7 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/domain/career"
 )
 
-// CaptureEvent benchmarks have been moved to internal/cli/intents/capture_event/benchmarks_test.go
+// CaptureEvent benchmarks have been moved to internal/cli/intents/captureevent/benchmarks_test.go
 
 // BrowseTimeline benchmarks have been moved to internal/cli/intents/browsetimeline/benchmarks_test.go
 
