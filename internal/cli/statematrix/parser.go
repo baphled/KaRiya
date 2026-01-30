@@ -96,14 +96,36 @@ func ParseScreenFile(filename string) ComponentInfo {
 }
 
 // extractIntentName derives the intent name from the filename.
+//
+// Supports both flat structure (capture_event.go -> CaptureEvent)
+// and subdirectory structure (capture_event/constants.go -> CaptureEvent).
+// For subdirectory files (constants.go, intent.go, etc.), the parent
+// directory name is used instead of the filename.
 func extractIntentName(filename string) string {
 	base := filepath.Base(filename)
-	// Remove _intent.go or .go suffix
-	name := strings.TrimSuffix(base, "_intent.go")
-	name = strings.TrimSuffix(name, ".go")
-	// Convert snake_case to TitleCase
+
+	// For subdirectory structure, use the parent directory name when the
+	// filename is a standard subdirectory file (intent.go, constants.go, etc.).
+	standardFiles := map[string]bool{
+		"intent.go": true, "constants.go": true, "context.go": true,
+		"result.go": true, "messages.go": true, "types.go": true,
+		"handlers.go": true, "helpers.go": true, "interfaces.go": true,
+		"filters.go": true,
+	}
+	if standardFiles[base] {
+		dir := filepath.Base(filepath.Dir(filename))
+		if dir != "." && dir != "intents" {
+			base = dir
+		}
+	} else {
+		// Remove _intent.go or .go suffix for flat files.
+		base = strings.TrimSuffix(base, "_intent.go")
+		base = strings.TrimSuffix(base, ".go")
+	}
+
+	// Convert snake_case to TitleCase.
 	caser := cases.Title(language.English)
-	parts := strings.Split(name, "_")
+	parts := strings.Split(base, "_")
 	for i := range parts {
 		parts[i] = caser.String(parts[i])
 	}
