@@ -131,34 +131,36 @@ var _ = Describe("CaptureEvent E2E Workflow", func() {
 			), "Should be in submit or post-submit state")
 		})
 
-		It("should NOT double-save when pressing Enter in post-save review", func() {
-			// Complete workflow up to post-save review
+		It("should complete intent without re-saving in post-save review", func() {
+			// Complete workflow up to post-save review.
 			env.SelectIntentByName("capture_event")
 			env.Confirm() // Choose Quick strategy
 
-			// Submit event using helper
-			testEvent := createTestEvent("Test event for double-save check")
+			// Submit event using helper.
+			testEvent := createTestEvent("Test event for post-save review")
 			env.SubmitEvent(testEvent)
 
-			// Wait for save to complete and return to main menu
-			maxAttempts := 10
-			for attempt := 0; attempt < maxAttempts; attempt++ {
-				view := env.GetView()
-				if isAtMainMenu(view) {
-					break
-				}
-				env.Confirm()
-			}
+			// After SubmitEvent, the E2E helper processes:
+			// SubmitMsg -> HandleSubmit(StateForm) -> showSubmitModal -> performSubmit
+			// -> SubmitCompleteMsg -> success modal -> DismissModalMsg -> StateReview
+			// We should now be on the post-save review screen.
+			view := env.GetView()
+			Expect(view).To(SatisfyAny(
+				ContainSubstring("Review"),
+				ContainSubstring("Enrichment"),
+			), "Should be on post-save review screen")
 
-			// Verify only 1 event exists
-			env.AssertEventCount(1)
+			// Pressing Enter should complete the intent and return to main menu
+			// WITHOUT showing a loading/saving modal.
+			env.Confirm()
 
-			// Press Enter multiple times - should NOT create more events
-			for i := 0; i < 3; i++ {
-				env.Confirm()
-			}
+			view = env.GetView()
+			Expect(view).NotTo(ContainSubstring("Saving"),
+				"Should NOT show saving modal in post-save review")
+			Expect(isAtMainMenu(view)).To(BeTrue(),
+				"Should return to main menu after confirming post-save review")
 
-			// CRITICAL: Should still only have 1 event (not multiple from double-save)
+			// Verify only 1 event exists - no duplicate save.
 			env.AssertEventCount(1)
 		})
 	})

@@ -186,6 +186,20 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 			i.reviewState.AcceptedBursts = bursts
 			i.reviewState.AcceptedFacts = facts
 
+			// Post-save review: event already persisted, just complete the intent.
+			if i.postSaveReview {
+				i.result = &intents.IntentResult[*Result]{
+					Status: intents.Completed,
+					Data: &Result{
+						Event:  event,
+						Bursts: bursts,
+						Facts:  facts,
+					},
+				}
+				i.active = false
+				return nil
+			}
+
 			return i.showSubmitModal()
 		}
 		return i.setFailedCmd("INVALID_REVIEW_DATA", fmt.Sprintf("Invalid review data type: %T", data), nil)
