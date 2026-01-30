@@ -5,11 +5,16 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-// EventService defines the service interface for event operations used by
-// the capture event intent. It provides access to both the CLI-level event
-// service (for form operations) and the domain career service (for enrichment).
+// EventService defines the contract for accessing event-related services.
+//
+// Expected:
+//   - Implementations must return fully initialised service instances
+//   - Both methods must be safe to call concurrently
+//
+// This interface decouples the intent from concrete service construction.
 type EventService interface {
-	// GetCLIService returns the CLI event service used for form submission.
+	// GetCLIService returns the CLI event service used for form submission
+	// and event creation.
 	GetCLIService() *service.CLIEventService
 
 	// GetCareerService returns the domain career service used for enrichment

@@ -8,42 +8,58 @@ import (
 	careerservice "github.com/baphled/kariya/internal/service/career"
 )
 
-// CaptureStrategy defines the event capture approach and controls which form fields
-// are presented during the capture workflow. This type alias re-exports
-// types.CaptureStrategy so that the capture_event package can reference it without
-// requiring callers to import the types package.
+// CaptureStrategy defines the event capture approach and controls which form
+// fields are presented during the capture workflow.
+//
+// This type alias re-exports types.CaptureStrategy so callers do not need to
+// import the types package directly.
 type CaptureStrategy = types.CaptureStrategy
 
 const (
-	// StrategyQuick captures only required fields (event text), date defaults to today.
+	// StrategyQuick captures only the event text; date defaults to today.
 	StrategyQuick = types.StrategyQuick
 
-	// StrategyManual shows all fields with optional field toggle.
+	// StrategyManual presents all fields with an optional field toggle.
 	StrategyManual = types.StrategyManual
 )
 
-// IntentContext is the minimal context passed to the CaptureEvent intent.
-// It contains only what's necessary to start the intent.
+// IntentContext holds the input parameters required to start the CaptureEvent intent.
+//
+// Expected:
+//   - CaptureStrategy must not be empty
+//   - CLIEventService should be non-nil for form submission
+//   - CareerService should be non-nil for enrichment operations
+//
+// PreviousEvent may be nil (new capture) or set (edit existing event).
 type IntentContext struct {
-	// CaptureStrategy determines how the event is captured (manual, quick, enriched).
+	// CaptureStrategy determines how the event is captured (e.g. "quick", "manual").
 	CaptureStrategy string
 
-	// PreviousEvent is an optional existing event to edit (nil for new capture).
+	// PreviousEvent is the existing event to edit, or nil for a new capture.
 	PreviousEvent *career.Event
 
-	// Metadata is the initial metadata for the event (may be empty).
+	// Metadata holds initial metadata key-value pairs for the event.
 	Metadata map[string]string
 
-	// CLIEventService is the service for CLI operations (for form submission).
+	// CLIEventService provides CLI-level operations needed by the capture form.
 	CLIEventService *service.CLIEventService
 
-	// CareerService is the domain service for enrichment operations.
-	// Used for suggesting bursts and extracting facts in enriched mode.
+	// CareerService provides domain operations for enrichment (burst detection,
+	// fact extraction) during the review phase.
 	CareerService *careerservice.Service
 }
 
-// Validate ensures the context has all required fields. It returns an error if
-// CaptureStrategy is empty, and initialises Metadata to an empty map if nil.
+// Validate checks that all required fields are present.
+//
+// Expected:
+//   - CaptureStrategy must not be empty
+//
+// Returns:
+//   - nil on success
+//   - error if CaptureStrategy is empty
+//
+// Side effects:
+//   - Initialises Metadata to an empty map if nil.
 func (c *IntentContext) Validate() error {
 	if c.CaptureStrategy == "" {
 		return intents.NewFailedResult[*IntentContext](

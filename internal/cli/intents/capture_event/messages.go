@@ -2,22 +2,22 @@ package capture_event
 
 import "github.com/baphled/kariya/internal/domain/career"
 
-// StrategySelectedMsg indicates the user selected a capture strategy.
+// StrategySelectedMsg is sent when the user selects a capture strategy.
 type StrategySelectedMsg struct {
 	// Strategy is the chosen capture approach (e.g. "quick", "manual").
 	Strategy string
 }
 
-// FormSubmittedMsg indicates the form was submitted with event data.
+// FormSubmittedMsg is sent when the capture form is submitted with valid event data.
 type FormSubmittedMsg struct {
 	// Event is the career event built from the form fields.
 	Event *career.Event
 }
 
-// FormCancelledMsg indicates the form was cancelled.
+// FormCancelledMsg is sent when the user cancels the capture form.
 type FormCancelledMsg struct{}
 
-// ReviewConfirmedMsg indicates the user confirmed the review and is ready to submit.
+// ReviewConfirmedMsg is sent when the user confirms the review and is ready to submit.
 type ReviewConfirmedMsg struct {
 	// AcceptedBursts are the bursts the user chose to keep.
 	AcceptedBursts []*career.Burst
@@ -29,16 +29,16 @@ type ReviewConfirmedMsg struct {
 	RejectedItems map[string]string
 }
 
-// ReviewCancelledMsg indicates the user cancelled the review.
+// ReviewCancelledMsg is sent when the user cancels the review.
 type ReviewCancelledMsg struct{}
 
-// ReviewBackMsg indicates the user wants to go back to the form.
+// ReviewBackMsg is sent when the user navigates back from review to form.
 type ReviewBackMsg struct{}
 
-// SubmitCompleteMsg indicates submission succeeded.
+// SubmitCompleteMsg is sent when event persistence succeeds.
 type SubmitCompleteMsg struct{}
 
-// SubmitErrorMsg indicates submission failed.
+// SubmitErrorMsg is sent when event persistence fails.
 type SubmitErrorMsg struct {
 	// Code is a machine-readable error identifier (e.g. "PERSISTENCE_ERROR").
 	Code string
@@ -50,7 +50,7 @@ type SubmitErrorMsg struct {
 	Cause error
 }
 
-// EnrichmentCompleteMsg indicates enrichment (burst/fact extraction) completed.
+// EnrichmentCompleteMsg is sent when enrichment (burst/fact extraction) finishes.
 type EnrichmentCompleteMsg struct {
 	// Bursts are the activity bursts detected from the event.
 	Bursts []*career.Burst
@@ -59,7 +59,8 @@ type EnrichmentCompleteMsg struct {
 	Facts []*career.Fact
 }
 
-// EnrichmentErrorMsg indicates enrichment failed (non-fatal).
+// EnrichmentErrorMsg is sent when enrichment fails (non-fatal; the event is
+// still saved).
 type EnrichmentErrorMsg struct {
 	// Code is a machine-readable error identifier.
 	Code string
@@ -71,5 +72,6 @@ type EnrichmentErrorMsg struct {
 	Cause error
 }
 
-// DismissModalMsg indicates the submit modal should be dismissed (after success).
+// DismissModalMsg is sent to dismiss the submit result modal (after a timed delay
+// following a successful save).
 type DismissModalMsg struct{}

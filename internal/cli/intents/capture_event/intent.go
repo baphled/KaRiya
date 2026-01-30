@@ -12,8 +12,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// NewIntent creates a new CaptureEvent intent from the given context.
-// It validates the context and returns an error if required fields are missing.
+// NewIntent creates and returns a fully initialised CaptureEvent intent.
+//
+// Expected:
+//   - ctx must be non-nil and pass Validate()
+//   - ctx.CLIEventService should be set for form submission
+//
+// Returns:
+//   - A ready-to-use Intent on success
+//   - error if context validation fails
+//
+// Side effects:
+//   - Allocates the form model and empty review state.
 func NewIntent(ctx *IntentContext) (*Intent, error) {
 	if err := ctx.Validate(); err != nil {
 		return nil, err
@@ -45,7 +55,14 @@ func NewIntent(ctx *IntentContext) (*Intent, error) {
 	}, nil
 }
 
-// Init is called when the intent is activated.
+// Init prepares the intent for its first render cycle.
+//
+// Returns:
+//   - A tea.Cmd to initialise the active screen, or nil.
+//
+// Side effects:
+//   - Creates and configures the strategy selection screen when screens are enabled.
+//   - Falls back to initialising the legacy form when screens are disabled.
 func (i *Intent) Init() tea.Cmd {
 	if i.useScreens {
 		breadcrumbs := []string{"Main Menu", "Capture Event"}
@@ -72,7 +89,17 @@ func (i *Intent) Init() tea.Cmd {
 	return func() tea.Msg { return nil }
 }
 
-// Update processes a message in the intent.
+// Update processes a single Bubble Tea message and advances the workflow.
+//
+// Expected:
+//   - The intent must be active (returns nil otherwise).
+//
+// Returns:
+//   - A tea.Cmd for follow-up work, or nil.
+//
+// Side effects:
+//   - May transition between states, create/dismiss modals, or mark the
+//     intent as completed/cancelled/failed.
 func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if !i.active {
 		return nil
@@ -202,9 +229,14 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	}
 }
 
-// View renders the intent's current state. When screens are active, it delegates
-// to the active screen and overlays any modal. Otherwise it falls back to the
-// legacy breadcrumb-based view.
+// View renders the intent's current visual state.
+//
+// Returns:
+//   - A string containing the full terminal output for the current frame.
+//
+// When screens are enabled, View delegates to the active screen and overlays
+// any visible modal. When screens are disabled, it uses the legacy
+// breadcrumb-based view with inline content rendering.
 func (i *Intent) View() string {
 	if !i.active {
 		return "CaptureEvent intent is not active"
@@ -257,6 +289,10 @@ func (i *Intent) View() string {
 }
 
 // Result returns the intent's outcome as a type-erased IntentResult.
+//
+// Returns:
+//   - An IntentResult[interface{}] wrapping the typed result, or nil if
+//     the intent has not yet completed.
 func (i *Intent) Result() *intents.IntentResult[interface{}] {
 	if i.result == nil {
 		return nil

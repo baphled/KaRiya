@@ -1,24 +1,54 @@
 // Package capture_event implements the CaptureEvent intent for capturing career events.
+//
+// Responsibilities:
+//   - Orchestrating the event capture workflow (strategy -> form -> review -> submit)
+//   - Managing editing modals for metadata, bursts, and facts during review
+//   - Persisting captured events and associated enrichment data
+//
+// This package does NOT:
+//   - Define UI components (those live in screens/capture/)
+//   - Perform enrichment logic (delegated to service/career/)
+//   - Handle form rendering (delegated to models.CaptureForm and forms/)
 package capture_event
 
-// State represents the current workflow state of the capture event intent.
+// State represents the current workflow step of the capture event intent.
+//
+// The intent progresses through states linearly:
+//
+//	StateChooseStrategy -> StateForm -> StateReview -> StateSubmit
 type State string
 
-// States for navigation within the capture event workflow.
+// Workflow states for the capture event intent.
 const (
+	// StateChooseStrategy is the initial state where the user picks quick or manual capture.
 	StateChooseStrategy State = "choose_strategy"
-	StateForm           State = "form"
-	StateReview         State = "review"
-	StateSubmit         State = "submit"
+
+	// StateForm is the state where the user fills in event details via a form.
+	StateForm State = "form"
+
+	// StateReview is the state where the user reviews inferred bursts and facts.
+	StateReview State = "review"
+
+	// StateSubmit is the final state where the event is persisted.
+	StateSubmit State = "submit"
 )
 
-// EditingMode represents the active editing sub-flow within the review state.
+// EditingMode represents which editing sub-flow is active within the review state.
+//
+// When a mode is active, the corresponding modal is shown as an overlay.
 type EditingMode string
 
-// Editing modes for the ReviewInferredEvent sub-flow.
+// Editing modes for the review state.
 const (
-	EditingModeNone     EditingMode = ""
+	// EditingModeNone means no editing modal is active.
+	EditingModeNone EditingMode = ""
+
+	// EditingModeMetadata means the metadata editor modal is active.
 	EditingModeMetadata EditingMode = "metadata"
-	EditingModeBursts   EditingMode = "bursts"
-	EditingModeFacts    EditingMode = "facts"
+
+	// EditingModeBursts means the burst editor modal is active.
+	EditingModeBursts EditingMode = "bursts"
+
+	// EditingModeFacts means the fact editor modal is active.
+	EditingModeFacts EditingMode = "facts"
 )

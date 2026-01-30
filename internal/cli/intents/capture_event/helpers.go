@@ -18,38 +18,87 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// setCompleted marks the intent as completed with a result.
+// setCompleted marks the intent as successfully completed.
+//
+// Expected:
+//   - result must be non-nil.
+//
+// Side effects:
+//   - Sets i.result to a completed IntentResult wrapping the given data.
+//   - Sets i.active to false, stopping further Update processing.
 func (i *Intent) setCompleted(result *Result) {
 	i.result = intents.NewCompletedResult(result)
 	i.active = false
 }
 
 // setCancelled marks the intent as cancelled by the user.
+//
+// Side effects:
+//   - Sets i.result to a cancelled IntentResult.
+//   - Sets i.active to false, stopping further Update processing.
 func (i *Intent) setCancelled() {
 	i.result = intents.NewCancelledResult[*Result]()
 	i.active = false
 }
 
-// setFailed marks the intent as failed with an error.
+// setFailed marks the intent as failed with a structured error.
+//
+// Expected:
+//   - code is a non-empty error code string (e.g. "VALIDATION_ERROR").
+//   - message describes the failure in human-readable form.
+//   - cause may be nil if no underlying error exists.
+//
+// Side effects:
+//   - Sets i.result to a failed IntentResult.
+//   - Sets i.active to false, stopping further Update processing.
 func (i *Intent) setFailed(code, message string, cause error) {
 	i.result = intents.NewFailedResult[*Result](code, message, cause)
 	i.active = false
 }
 
-// setFailedCmd is a helper to set failed result and return nil command.
+// setFailedCmd marks the intent as failed and returns nil.
+//
+// Expected:
+//   - code is a non-empty error code string.
+//   - message describes the failure in human-readable form.
+//   - cause may be nil if no underlying error exists.
+//
+// Returns:
+//   - nil (always). Intended as a terminal return in Update branches.
+//
+// Side effects:
+//   - Delegates to setFailed to mark the intent as failed and inactive.
 func (i *Intent) setFailedCmd(code, message string, cause error) tea.Cmd {
 	i.setFailed(code, message, cause)
 	return nil
 }
 
-// showSubmitModal creates and shows the loading modal for event submission.
+// showSubmitModal creates the loading modal and starts event submission.
+//
+// Returns:
+//   - A batched tea.Cmd that runs both performSubmit and the modal's Init.
+//
+// Side effects:
+//   - Creates a new LoadingModal on i.state.submitModal.
 func (i *Intent) showSubmitModal() tea.Cmd {
 	i.state.submitModal = feedback.NewLoadingModal("Saving event...", false)
 	return tea.Batch(i.performSubmit(), i.state.submitModal.Init())
 }
 
-// performSubmit performs the actual submission of the event.
-// It calls the domain service to persist the event to the database and optionally enriches it.
+// performSubmit persists the captured event and accepted facts via domain services.
+//
+// Expected:
+//   - i.state.reviewState.Event is non-nil and valid.
+//   - i.eventService and i.state.context.CareerService are non-nil.
+//
+// Returns:
+//   - A tea.Cmd that runs asynchronously and produces a SubmitCompleteMsg
+//     on success or a SubmitErrorMsg on failure.
+//
+// Side effects:
+//   - Calls CareerService.CaptureEvent to persist the event.
+//   - Calls CareerService.SaveFact for each accepted fact without an ID.
+//   - Sets a default date for quick-strategy events with a zero date.
 func (i *Intent) performSubmit() tea.Cmd {
 	event := i.state.reviewState.Event
 	acceptedFacts := i.state.reviewState.AcceptedFacts
@@ -127,7 +176,14 @@ func (i *Intent) performSubmit() tea.Cmd {
 	}
 }
 
-// initializeFormForNew initializes the form for capturing a new event.
+// initializeFormForNew prepares an empty event for a new capture session.
+//
+// Returns:
+//   - A no-op tea.Cmd (returns nil message).
+//
+// Side effects:
+//   - Sets i.state.reviewState.Event to a fresh career.Event with current
+//     timestamps and empty slices for tags and categories.
 func (i *Intent) initializeFormForNew() tea.Cmd {
 	i.state.reviewState.Event = &career.Event{
 		CreatedAt:  time.Now(),
@@ -138,7 +194,15 @@ func (i *Intent) initializeFormForNew() tea.Cmd {
 	return func() tea.Msg { return nil }
 }
 
-// transitionToStrategyScreen transitions to the strategy selection screen.
+// transitionToStrategyScreen creates the strategy selection screen and activates it.
+//
+// Returns:
+//   - nil (always). The screen is rendered on the next View call.
+//
+// Side effects:
+//   - Sets i.state.currentState to StateChooseStrategy.
+//   - Creates a new StrategySelectScreen and assigns it to i.activeScreen.
+//   - Configures the screen with terminal dimensions, theme, and logo.
 func (i *Intent) transitionToStrategyScreen() tea.Cmd {
 	i.state.currentState = StateChooseStrategy
 	breadcrumbs := []string{"Main Menu", "Capture Event"}
@@ -158,7 +222,18 @@ func (i *Intent) transitionToStrategyScreen() tea.Cmd {
 	return nil
 }
 
-// transitionToFormScreen transitions to the event form screen.
+// transitionToFormScreen creates the event form screen for the given strategy.
+//
+// Expected:
+//   - strategy is a valid CaptureStrategy (StrategyQuick or StrategyManual).
+//
+// Returns:
+//   - A tea.Cmd from the screen's Init method if it implements Init, nil otherwise.
+//
+// Side effects:
+//   - Sets i.state.currentState to StateForm and i.state.strategy.
+//   - Creates a new EventFormScreen and assigns it to i.activeScreen.
+//   - Configures the screen with terminal dimensions, theme, and logo.
 func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 	i.state.currentState = StateForm
 	i.state.strategy = strategy
@@ -186,9 +261,16 @@ func (i *Intent) transitionToFormScreen(strategy CaptureStrategy) tea.Cmd {
 	return nil
 }
 
-// navigateReviewItems moves the selection cursor through inferred bursts and facts
-// by the given delta (+1 for down, -1 for up). It wraps around at both ends and
-// automatically updates the SelectedItemType based on the new index position.
+// navigateReviewItems moves the selection cursor through inferred review items.
+//
+// Expected:
+//   - delta is +1 (down) or -1 (up).
+//   - i.state.reviewState is non-nil.
+//
+// Side effects:
+//   - Updates SelectedIndex with wraparound at both ends.
+//   - Updates SelectedItemType to "burst" or "fact" based on the new position
+//     relative to the burst/fact boundary.
 func (i *Intent) navigateReviewItems(delta int) {
 	totalItems := len(i.state.reviewState.InferredBursts) + len(i.state.reviewState.InferredFacts)
 	if totalItems == 0 {
@@ -211,7 +293,15 @@ func (i *Intent) navigateReviewItems(delta int) {
 	}
 }
 
-// acceptCurrentItem accepts the currently selected burst or fact.
+// acceptCurrentItem moves the currently selected item to the accepted list.
+//
+// Expected:
+//   - i.state.reviewState is non-nil with a valid SelectedItemType and index.
+//
+// Side effects:
+//   - Appends the selected burst or fact to AcceptedBursts/AcceptedFacts.
+//   - Removes it from InferredBursts/InferredFacts.
+//   - Clamps SelectedIndex to remain within bounds after removal.
 func (i *Intent) acceptCurrentItem() {
 	if i.state.reviewState.SelectedItemType == "burst" {
 		idx := i.state.reviewState.SelectedIndex
@@ -240,7 +330,15 @@ func (i *Intent) acceptCurrentItem() {
 	}
 }
 
-// rejectCurrentItem rejects the currently selected burst or fact.
+// rejectCurrentItem marks the currently selected item as rejected.
+//
+// Expected:
+//   - i.state.reviewState is non-nil with a valid SelectedItemType and index.
+//
+// Side effects:
+//   - Adds the item's ID to RejectedItems with reason "user_rejected".
+//   - Removes the item from InferredBursts/InferredFacts.
+//   - Clamps SelectedIndex to remain within bounds after removal.
 func (i *Intent) rejectCurrentItem() {
 	if i.state.reviewState.SelectedItemType == "burst" {
 		idx := i.state.reviewState.SelectedIndex
@@ -275,7 +373,10 @@ func (i *Intent) rejectCurrentItem() {
 	}
 }
 
-// getTheme returns the theme or a default.
+// getTheme returns the current theme, falling back to the default theme.
+//
+// Returns:
+//   - The intent's configured theme, or a DefaultTheme if none is set.
 func (i *Intent) getTheme() themes.Theme {
 	if theme := i.Theme(); theme != nil {
 		return theme
@@ -283,22 +384,35 @@ func (i *Intent) getTheme() themes.Theme {
 	return themes.NewDefaultTheme()
 }
 
-// getCardStyle returns the card base style from the current theme for content containers.
+// getCardStyle returns the card base style from the current theme.
+//
+// Returns:
+//   - A lipgloss.Style suitable for content container rendering.
 func (i *Intent) getCardStyle() lipgloss.Style {
 	return i.getTheme().Styles().CardBase
 }
 
-// getPrimaryColor returns the primary text color from theme.
+// getPrimaryColor returns the foreground text colour from the current theme.
+//
+// Returns:
+//   - A lipgloss.Color for primary text rendering.
 func (i *Intent) getPrimaryColor() lipgloss.Color {
 	return i.getTheme().ForegroundColor()
 }
 
-// getAccentColor returns the accent color from theme.
+// getAccentColor returns the primary accent colour from the current theme.
+//
+// Returns:
+//   - A lipgloss.Color for highlighted or accented text.
 func (i *Intent) getAccentColor() lipgloss.Color {
 	return i.getTheme().PrimaryColor()
 }
 
-// getStateName returns a human-readable name for the current state.
+// getStateName returns a human-readable label for the current state.
+//
+// Returns:
+//   - A display string such as "Choose Strategy", "Enter Details", "Review",
+//     or "Submit". Falls back to the raw state string for unknown states.
 func (i *Intent) getStateName() string {
 	switch i.state.currentState {
 	case StateChooseStrategy:
@@ -314,7 +428,12 @@ func (i *Intent) getStateName() string {
 	}
 }
 
-// getStateContent returns the content for the current state.
+// getStateContent returns the rendered view string for the current state.
+//
+// Returns:
+//   - The error view if an error is set but not yet surfaced via HasError.
+//   - The appropriate state-specific view (strategy, form, review, submit).
+//   - A fallback "Unknown state" message for unrecognised states.
 func (i *Intent) getStateContent() string {
 	if i.state.error != nil && !i.HasError() {
 		return i.viewError()
@@ -334,7 +453,11 @@ func (i *Intent) getStateContent() string {
 	}
 }
 
-// getContextHelp returns context-aware help text for the current state.
+// getContextHelp returns context-aware help badge text for the current state.
+//
+// Returns:
+//   - A themed footer string with key badges appropriate to the active state
+//     and editing mode. Includes global badges (quit, help) in all states.
 func (i *Intent) getContextHelp() string {
 	theme := i.Theme()
 
@@ -391,8 +514,10 @@ func (i *Intent) getContextHelp() string {
 	}
 }
 
-// modalContentData holds the title, body content, and footer text used to render
-// an editing modal overlay on top of the review screen.
+// modalContentData holds the rendered parts of an editing modal overlay.
+//
+// Used by renderModalOverlay to compose a centred overlay on top of the
+// review screen's base view.
 type modalContentData struct {
 	// title is the modal header text (e.g. "Edit Metadata").
 	title string
@@ -404,7 +529,13 @@ type modalContentData struct {
 	footer string
 }
 
-// getMetadataModalContent returns the modal content for metadata editing.
+// getMetadataModalContent returns the rendered modal parts for metadata editing.
+//
+// Returns:
+//   - A modalContentData with title, content, and footer from the metadata modal.
+//
+// Side effects:
+//   - Lazily creates the metadataModal if it is nil.
 func (i *Intent) getMetadataModalContent() *modalContentData {
 	if i.state.reviewState.metadataModal == nil {
 		i.state.reviewState.metadataModal = models.NewMetadataEditorModelNew(
@@ -421,7 +552,11 @@ func (i *Intent) getMetadataModalContent() *modalContentData {
 	}
 }
 
-// getBurstModalContent returns the modal content for burst editing.
+// getBurstModalContent returns the rendered modal parts for burst editing.
+//
+// Returns:
+//   - A modalContentData with title, content, and footer from the burst modal.
+//   - nil if the burstModal has not been created.
 func (i *Intent) getBurstModalContent() *modalContentData {
 	if i.state.reviewState.burstModal == nil {
 		return nil
@@ -433,7 +568,11 @@ func (i *Intent) getBurstModalContent() *modalContentData {
 	}
 }
 
-// getFactModalContent returns the modal content for fact editing.
+// getFactModalContent returns the rendered modal parts for fact editing.
+//
+// Returns:
+//   - A modalContentData with title, content, and footer from the fact modal.
+//   - nil if the factModal has not been created.
 func (i *Intent) getFactModalContent() *modalContentData {
 	if i.state.reviewState.factModal == nil {
 		return nil
@@ -445,7 +584,11 @@ func (i *Intent) getFactModalContent() *modalContentData {
 	}
 }
 
-// getEditingModalContent returns the modal content based on current editing mode.
+// getEditingModalContent returns the modal content for the active editing mode.
+//
+// Returns:
+//   - A modalContentData for metadata, burst, or fact editing.
+//   - nil if reviewState is nil or EditingMode is EditingModeNone.
 func (i *Intent) getEditingModalContent() *modalContentData {
 	if i.state.reviewState == nil {
 		return nil
@@ -462,7 +605,15 @@ func (i *Intent) getEditingModalContent() *modalContentData {
 	}
 }
 
-// renderModalOverlay renders a modal overlay on top of the background content.
+// renderModalOverlay renders a centred modal overlay on top of background content.
+//
+// Expected:
+//   - background is the fully rendered base view string.
+//   - modalContent may be nil, in which case background is returned unchanged.
+//
+// Returns:
+//   - The composited string with the modal centred over the background.
+//   - The unmodified background if modalContent is nil.
 func (i *Intent) renderModalOverlay(background string, modalContent *modalContentData) string {
 	if modalContent == nil {
 		return background
@@ -483,7 +634,15 @@ func (i *Intent) renderModalOverlay(background string, modalContent *modalConten
 	return overlay.RenderCentered(background, width, height)
 }
 
-// overlayModal overlays modal content on top of background content (centered).
+// overlayModal composites modal lines over background lines, centred horizontally.
+//
+// Expected:
+//   - background and modal are newline-separated rendered strings.
+//   - width is the terminal width for horizontal centring.
+//
+// Returns:
+//   - A newline-joined string with modal lines replacing background lines
+//     at the vertical centre.
 func (i *Intent) overlayModal(background, modal string, width, _ int) string {
 	bgLines := strings.Split(background, "\n")
 	modalLines := strings.Split(modal, "\n")
@@ -509,7 +668,11 @@ func (i *Intent) overlayModal(background, modal string, width, _ int) string {
 	return strings.Join(result, "\n")
 }
 
-// viewChooseStrategy renders the strategy selection UI.
+// viewChooseStrategy renders the inline strategy selection UI.
+//
+// Returns:
+//   - A themed card string listing Quick and Manual strategies with the
+//     current selection highlighted.
 func (i *Intent) viewChooseStrategy() string {
 	var content strings.Builder
 	content.WriteString("\n📝 Select Capture Strategy\n\n")
@@ -541,7 +704,10 @@ func (i *Intent) viewChooseStrategy() string {
 	return i.getCardStyle().Render(content.String())
 }
 
-// viewCaptureForm renders the form for capturing event details.
+// viewCaptureForm renders the capture form's current view.
+//
+// Returns:
+//   - The form model's View() output, or an error message if the form is nil.
 func (i *Intent) viewCaptureForm() string {
 	if i.state.captureForm == nil {
 		return "Error: Form not initialized"
@@ -549,7 +715,11 @@ func (i *Intent) viewCaptureForm() string {
 	return i.state.captureForm.View()
 }
 
-// viewReviewInferredEvent renders the review UI for inferred bursts and facts.
+// viewReviewInferredEvent renders the review view, optionally with an editing modal overlay.
+//
+// Returns:
+//   - The base review view with a modal overlay if an editing mode is active.
+//   - The base review view alone if no editing modal is open.
 func (i *Intent) viewReviewInferredEvent() string {
 	baseView := i.buildReviewBaseView()
 
@@ -565,7 +735,11 @@ func (i *Intent) viewReviewInferredEvent() string {
 	return baseView
 }
 
-// buildReviewBaseView builds the base review view content.
+// buildReviewBaseView renders the boxed review layout showing the event summary,
+// inferred bursts, and inferred facts.
+//
+// Returns:
+//   - A box-drawn string listing the event title, burst names, and fact text.
 func (i *Intent) buildReviewBaseView() string {
 	var sb strings.Builder
 	sb.WriteString("\n")
@@ -620,7 +794,11 @@ func (i *Intent) buildReviewBaseView() string {
 	return sb.String()
 }
 
-// viewSubmit renders the submit confirmation.
+// viewSubmit renders the submit confirmation view with event summary and counts.
+//
+// Returns:
+//   - A box-drawn string showing event details, burst/fact counts, and a
+//     confirmation prompt.
 func (i *Intent) viewSubmit() string {
 	var sb strings.Builder
 	sb.WriteString("\n")
@@ -646,7 +824,11 @@ func (i *Intent) viewSubmit() string {
 	return sb.String()
 }
 
-// viewError renders an error state.
+// viewError renders the error state showing the error code, message, and
+// retry/cancel instructions.
+//
+// Returns:
+//   - A box-drawn string with error details and available actions.
 func (i *Intent) viewError() string {
 	var sb strings.Builder
 	sb.WriteString("\n")

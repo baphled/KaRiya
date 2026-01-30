@@ -13,15 +13,29 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// handleScreenResult processes results from screen updates.
-// This is the central hub for all screen-to-intent communication.
+// handleScreenResult dispatches a screen result to the appropriate handler method.
+//
+// Returns:
+//   - A tea.Cmd from the matched handler, or nil.
 func (i *Intent) handleScreenResult(result screens.ScreenResult) tea.Cmd {
 	return behaviors.NewScreenResultDispatcher(i).Dispatch(result)
 }
 
-// HandleNavigate handles navigation actions from screens.
+// HandleNavigate processes navigation results from screens.
 //
-// Implements ScreenResultHandler interface.
+// Expected:
+//   - result.Data() is either a string action ("edit_metadata", "edit_bursts",
+//     "edit_facts") or a CaptureStrategy value.
+//
+// Returns:
+//   - A tea.Cmd to initialise the appropriate modal or screen.
+//   - nil and marks intent as failed if data type is unrecognised.
+//
+// Side effects:
+//   - Sets editing mode and creates modal instances for edit actions.
+//   - Transitions to the form screen for strategy selection.
+//
+// Implements behaviors.ScreenResultHandler.
 func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	data := result.Data()
 
@@ -84,9 +98,18 @@ func (i *Intent) HandleNavigate(result *screens.NavigateResult) tea.Cmd {
 	return i.setFailedCmd("INVALID_NAVIGATION_DATA", fmt.Sprintf("Invalid navigation data type: %T", data), nil)
 }
 
-// HandleCancel handles cancellation from screens.
+// HandleCancel processes cancellation results from screens.
 //
-// Implements ScreenResultHandler interface.
+// Returns:
+//   - nil after marking the intent cancelled (from StateChooseStrategy or
+//     StateForm with a previous event).
+//   - A tea.Cmd to transition back to the strategy or form screen.
+//
+// Side effects:
+//   - Marks the intent as cancelled when no back-navigation is possible.
+//   - Transitions to a prior state when cancellation acts as "go back".
+//
+// Implements behaviors.ScreenResultHandler.
 func (i *Intent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	switch i.state.currentState {
 	case StateChooseStrategy:
@@ -111,9 +134,22 @@ func (i *Intent) HandleCancel(_ *screens.CancelResult) tea.Cmd {
 	}
 }
 
-// HandleSubmit handles form/data submission from screens.
+// HandleSubmit processes form and data submission results from screens.
 //
-// Implements ScreenResultHandler interface.
+// Expected:
+//   - result.Data() is a *career.Event (StateForm), map[string]interface{} with
+//     "event", "bursts", "facts" keys (StateReview/StateSubmit).
+//
+// Returns:
+//   - A tea.Cmd to show the submit modal or nil on completion.
+//   - A failure command if the data type is unrecognised or validation fails.
+//
+// Side effects:
+//   - Initialises review state from form data.
+//   - Updates accepted bursts/facts from review data.
+//   - Completes the intent with final result on submit confirmation.
+//
+// Implements behaviors.ScreenResultHandler.
 func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	data := result.Data()
 
@@ -181,9 +217,19 @@ func (i *Intent) HandleSubmit(result *screens.SubmitResult) tea.Cmd {
 	}
 }
 
-// HandleError handles errors from screens.
+// HandleError processes error results from screens.
 //
-// Implements ScreenResultHandler interface.
+// Expected:
+//   - result.Data() is a map[string]interface{} with "error" (error) and
+//     "message" (string) keys, or any value convertible to a string.
+//
+// Returns:
+//   - nil after marking the intent as failed.
+//
+// Side effects:
+//   - Marks the intent as failed with the extracted error details.
+//
+// Implements behaviors.ScreenResultHandler.
 func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	data := result.Data()
 	if errorData, ok := data.(map[string]interface{}); ok {
@@ -196,10 +242,15 @@ func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	return i.setFailedCmd("SCREEN_ERROR", "Unknown screen error", fmt.Errorf("%v", data))
 }
 
-// handleReviewSubmit handles submit/confirm actions from the review state.
-// When postSaveReview is true (we're reviewing after a successful save), it
-// completes the intent with the current review data. Otherwise, it transitions
-// to the submit state and triggers event persistence.
+// handleReviewSubmit processes submit/confirm actions from the review state.
+//
+// Returns:
+//   - nil after completing the intent (when postSaveReview is true).
+//   - A tea.Cmd to perform event persistence (when postSaveReview is false).
+//
+// Side effects:
+//   - Completes the intent with review data if post-save review is active.
+//   - Transitions to StateSubmit and triggers persistence otherwise.
 func (i *Intent) handleReviewSubmit() tea.Cmd {
 	if i.state.postSaveReview {
 		result := &Result{
@@ -216,7 +267,19 @@ func (i *Intent) handleReviewSubmit() tea.Cmd {
 	return i.performSubmit()
 }
 
-// updateChooseStrategy handles messages while choosing capture strategy.
+// updateChooseStrategy handles messages in the strategy selection state.
+//
+// Expected:
+//   - msg is a tea.KeyMsg or StrategySelectedMsg.
+//
+// Returns:
+//   - A tea.Cmd to initialise the form (on enter/strategy selection).
+//   - tea.Quit on quit key, nil for navigation and help.
+//
+// Side effects:
+//   - Updates selectedStrategyIndex on arrow/vim key navigation.
+//   - Transitions to StateForm and initialises the capture form on selection.
+//   - Toggles help or cancels the intent on global keys.
 func (i *Intent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -274,7 +337,20 @@ func (i *Intent) updateChooseStrategy(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// updateCaptureForm handles messages while capturing event details.
+// updateCaptureForm handles messages in the form entry state.
+//
+// Expected:
+//   - msg is a tea.KeyMsg, models.SubmitMsg, or FormSubmittedMsg.
+//
+// Returns:
+//   - A tea.Cmd from the form's Update method for input handling.
+//   - tea.Quit on quit key, nil for navigation and help.
+//
+// Side effects:
+//   - Delegates non-global key messages to the capture form model.
+//   - Transitions to StateReview on successful form submission.
+//   - Sets an error on validation failure or nil event submission.
+//   - Transitions back to StateChooseStrategy on back key (unless editing).
 func (i *Intent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -343,7 +419,23 @@ func (i *Intent) updateCaptureForm(msg tea.Msg) tea.Cmd {
 	return formCmd
 }
 
-// updateReviewInferredEvent handles messages while reviewing inferred bursts and facts.
+// updateReviewInferredEvent handles messages in the review state.
+//
+// Expected:
+//   - msg is a tea.KeyMsg, ReviewConfirmedMsg, ReviewCancelledMsg, or
+//     ReviewBackMsg.
+//
+// Returns:
+//   - A tea.Cmd from modal Update when an editing modal is active.
+//   - A tea.Cmd from handleReviewSubmit on enter/ctrl+s.
+//   - tea.Quit on quit key, nil for navigation and item accept/reject.
+//
+// Side effects:
+//   - Delegates to the active editing modal (metadata, bursts, facts).
+//   - Clears editing mode when a modal is submitted or cancelled.
+//   - Navigates review items, accepts/rejects the selected item.
+//   - Opens editing modals on e/b/f keys.
+//   - Transitions to StateSubmit on ReviewConfirmedMsg.
 func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -505,7 +597,20 @@ func (i *Intent) updateReviewInferredEvent(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// updateSubmit handles messages while submitting the event.
+// updateSubmit handles messages in the submission state.
+//
+// Expected:
+//   - msg is a SubmitCompleteMsg, SubmitErrorMsg, or tea.KeyMsg.
+//
+// Returns:
+//   - nil after completing or failing the intent on submit messages.
+//   - A tea.Cmd to retry submission on "r" key.
+//   - tea.Quit on quit key, nil for help and back navigation.
+//
+// Side effects:
+//   - Completes the intent with the final result on SubmitCompleteMsg.
+//   - Sets an error on SubmitErrorMsg.
+//   - Transitions back to StateReview on back key.
 func (i *Intent) updateSubmit(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case SubmitCompleteMsg:
@@ -548,8 +653,21 @@ func (i *Intent) updateSubmit(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-// updateEditingModal handles modal updates when using screens architecture.
-// This is called when an editing modal (metadata, bursts, facts) is active.
+// updateEditingModal handles messages when an editing modal is active in the
+// screens architecture path.
+//
+// Expected:
+//   - reviewState.EditingMode is not EditingModeNone.
+//   - The corresponding modal (metadataModal, burstModal, factModal) is non-nil.
+//
+// Returns:
+//   - nil on escape key (closes the modal).
+//   - A tea.Cmd from the active modal's Update method.
+//
+// Side effects:
+//   - Clears all modals and resets EditingMode to EditingModeNone on escape.
+//   - Updates the event from metadata modal on submission.
+//   - Resets editing state when a modal is submitted or cancelled.
 func (i *Intent) updateEditingModal(msg tea.Msg) tea.Cmd {
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
 		if keyMsg.Type == tea.KeyEsc {
