@@ -9,6 +9,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/app"
 	"github.com/baphled/kariya/internal/cli/bootstrap"
 	"github.com/baphled/kariya/internal/cli/intents"
+	captureevent "github.com/baphled/kariya/internal/cli/intents/capture_event"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/display"
 	"github.com/baphled/kariya/internal/config"
@@ -845,7 +846,7 @@ var _ = Describe("App Unit Tests", func() {
 
 			// Send FormSubmittedMsg to transition intent to review state.
 			// This is a non-key message that goes through handleDefaultMsg.
-			formMsg := intents.FormSubmittedMsg{Event: testEvent}
+			formMsg := captureevent.FormSubmittedMsg{Event: testEvent}
 			newModel, _ = model.Update(formMsg)
 			model = newModel.(*app.Model)
 
@@ -854,7 +855,7 @@ var _ = Describe("App Unit Tests", func() {
 
 			// Now send ReviewCancelledMsg - this should complete the intent
 			// via the handleDefaultMsg -> result != nil path.
-			cancelMsg := intents.ReviewCancelledMsg{}
+			cancelMsg := captureevent.ReviewCancelledMsg{}
 			newModel, cmd := model.Update(cancelMsg)
 			model = newModel.(*app.Model)
 

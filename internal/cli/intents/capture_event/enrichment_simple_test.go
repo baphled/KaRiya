@@ -1,11 +1,11 @@
-package intents_test
+package capture_event_test
 
 import (
 	"context"
 	"strings"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/capture_event"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
@@ -16,19 +16,19 @@ import (
 // Simple, focused test to reproduce the enrichment review blank screen bug
 var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 	var env *e2e.TestEnv
-	var intent *intents.CaptureEventIntent
+	var intent *capture_event.Intent
 
 	BeforeEach(func() {
 		env = e2e.Setup(GinkgoT())
 
 		// Create intent with proper context
-		intentContext := &intents.CaptureEventContext{
+		intentContext := &capture_event.IntentContext{
 			CaptureStrategy: "quick",
 			CLIEventService: env.CLIService,
 			CareerService:   env.Service,
 		}
 		var err error
-		intent, err = intents.NewCaptureEventIntent(intentContext)
+		intent, err = capture_event.NewIntent(intentContext)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Initialize the intent (makes it active)
@@ -48,7 +48,7 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			Expect(view).To(ContainSubstring("Strategy"), "Should start at choose strategy")
 
 			// Step 2: Select Quick strategy
-			intent.Update(intents.StrategySelectedMsg{Strategy: "quick"})
+			intent.Update(capture_event.StrategySelectedMsg{Strategy: "quick"})
 			_ = intent.View()
 			// Should now be in form state
 
@@ -60,7 +60,7 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			}
 
 			// Send FormSubmittedMsg (simulates form submission)
-			intent.Update(intents.FormSubmittedMsg{Event: testEvent})
+			intent.Update(capture_event.FormSubmittedMsg{Event: testEvent})
 			view = intent.View()
 
 			// Should be in pre-save review
@@ -83,14 +83,14 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			Expect(savedEvent.ID).NotTo(BeEmpty(), "Event should have ID after save")
 
 			// Send SubmitCompleteMsg
-			intent.Update(intents.SubmitCompleteMsg{})
+			intent.Update(capture_event.SubmitCompleteMsg{})
 
 			// Should show success modal
 			_ = intent.View()
 			// Modal might show "Success" or "saved"
 
 			// Step 5: Modal auto-dismisses after 2s → DismissModalMsg
-			intent.Update(intents.DismissModalMsg{})
+			intent.Update(capture_event.DismissModalMsg{})
 
 			// Should transition to Enrichment state
 			view = intent.View()
@@ -100,7 +100,7 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 
 			// Step 6: Enrichment completes → EnrichmentCompleteMsg
 			// Simulate enrichment returning results (could be empty)
-			intent.Update(intents.EnrichmentCompleteMsg{
+			intent.Update(capture_event.EnrichmentCompleteMsg{
 				Bursts: []*career.Burst{}, // Empty results for simplicity
 				Facts:  []*career.Fact{},
 			})
@@ -148,16 +148,16 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			Expect(eventID).NotTo(BeEmpty())
 
 			// Navigate through workflow
-			intent.Update(intents.StrategySelectedMsg{Strategy: "quick"})
-			intent.Update(intents.FormSubmittedMsg{Event: event})
+			intent.Update(capture_event.StrategySelectedMsg{Strategy: "quick"})
+			intent.Update(capture_event.FormSubmittedMsg{Event: event})
 			// Note: event passed here has the ID
 
 			// Submit
-			intent.Update(intents.SubmitCompleteMsg{})
-			intent.Update(intents.DismissModalMsg{})
+			intent.Update(capture_event.SubmitCompleteMsg{})
+			intent.Update(capture_event.DismissModalMsg{})
 
 			// Enrichment
-			intent.Update(intents.EnrichmentCompleteMsg{
+			intent.Update(capture_event.EnrichmentCompleteMsg{
 				Bursts: []*career.Burst{},
 				Facts:  []*career.Fact{},
 			})
@@ -195,11 +195,11 @@ var _ = Describe("CaptureEvent Enrichment - Simple Reproduction", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Complete workflow to enrichment review
-			intent.Update(intents.StrategySelectedMsg{Strategy: "quick"})
-			intent.Update(intents.FormSubmittedMsg{Event: event})
-			intent.Update(intents.SubmitCompleteMsg{})
-			intent.Update(intents.DismissModalMsg{})
-			intent.Update(intents.EnrichmentCompleteMsg{
+			intent.Update(capture_event.StrategySelectedMsg{Strategy: "quick"})
+			intent.Update(capture_event.FormSubmittedMsg{Event: event})
+			intent.Update(capture_event.SubmitCompleteMsg{})
+			intent.Update(capture_event.DismissModalMsg{})
+			intent.Update(capture_event.EnrichmentCompleteMsg{
 				Bursts: []*career.Burst{},
 				Facts:  []*career.Fact{},
 			})

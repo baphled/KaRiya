@@ -6,6 +6,7 @@ import (
 
 	"github.com/baphled/kariya/internal/cli/intents"
 	browse_timeline "github.com/baphled/kariya/internal/cli/intents/browsetimeline"
+	captureevent "github.com/baphled/kariya/internal/cli/intents/capture_event"
 	"github.com/baphled/kariya/internal/domain/career"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -122,17 +123,17 @@ var _ = Describe("View Duplication Prevention", func() {
 	})
 
 	Describe("CaptureEvent", func() {
-		var intent *intents.CaptureEventIntent
+		var intent *captureevent.Intent
 
 		BeforeEach(func() {
-			ctx := &intents.CaptureEventContext{
+			ctx := &captureevent.IntentContext{
 				CaptureStrategy: "manual",
 				PreviousEvent:   nil,
 				Metadata:        make(map[string]string),
 			}
 
 			var err error
-			intent, err = intents.NewCaptureEventIntent(ctx)
+			intent, err = captureevent.NewIntent(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			intent.Init()
 		})

@@ -1,4 +1,4 @@
-package intents_test
+package capture_event_test
 
 import (
 	"strings"

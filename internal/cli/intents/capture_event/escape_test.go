@@ -1,8 +1,9 @@
-package intents
+package capture_event
 
 import (
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/service"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -14,7 +15,7 @@ import (
 
 var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 	var (
-		intent         *CaptureEventIntent
+		intent         *Intent
 		testCLIService *service.CLIEventService
 	)
 
@@ -23,7 +24,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		testCLIService = &service.CLIEventService{}
 
 		// Setup intent with test context
-		ctx := &CaptureEventContext{
+		ctx := &IntentContext{
 			CLIEventService: testCLIService,
 			CareerService:   &careerservice.Service{},
 			CaptureStrategy: "manual",
@@ -31,7 +32,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		}
 
 		var err error
-		intent, err = NewCaptureEventIntent(ctx)
+		intent, err = NewIntent(ctx)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(intent).NotTo(BeNil())
 		intent.Init()
@@ -39,7 +40,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 	Describe("ChooseStrategy State", func() {
 		BeforeEach(func() {
-			intent.state.currentState = CaptureStateChooseStrategy
+			intent.state.currentState = StateChooseStrategy
 		})
 
 		It("should cancel intent when esc is pressed", func() {
@@ -47,27 +48,27 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 			Expect(intent.active).To(BeFalse())
 			Expect(intent.result).NotTo(BeNil())
-			Expect(intent.result.Status).To(Equal(Cancelled))
+			Expect(intent.result.Status).To(Equal(intents.Cancelled))
 		})
 
 	})
 
 	Describe("Form State", func() {
 		BeforeEach(func() {
-			intent.state.currentState = CaptureStateForm
+			intent.state.currentState = StateForm
 		})
 
 		It("should go back to ChooseStrategy when esc is pressed", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			Expect(intent.state.currentState).To(Equal(CaptureStateChooseStrategy))
+			Expect(intent.state.currentState).To(Equal(StateChooseStrategy))
 			Expect(intent.active).To(BeTrue())
 		})
 	})
 
 	Describe("Review State", func() {
 		BeforeEach(func() {
-			intent.state.currentState = CaptureStateReview
+			intent.state.currentState = StateReview
 			intent.state.reviewState.Event = &career.Event{
 				Text: "Test event",
 				Date: time.Now(),
@@ -77,7 +78,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		It("should go back to Form when esc is pressed", func() {
 			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+			Expect(intent.state.currentState).To(Equal(StateForm))
 			Expect(intent.active).To(BeTrue())
 		})
 	})
@@ -85,7 +86,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 	Describe("Error Modal (after submission failure)", func() {
 		BeforeEach(func() {
 			// Set up a realistic scenario: form submitted, error occurred, modal showing
-			intent.state.currentState = CaptureStateForm
+			intent.state.currentState = StateForm
 			intent.state.reviewState = &ReviewInferredEventState{
 				Event: &career.Event{
 					Text: "Test event",
@@ -106,7 +107,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 			// Modal should be dismissed
 			Expect(intent.state.submitModal).To(BeNil())
 			// Should stay in Form state (not transition back)
-			Expect(intent.state.currentState).To(Equal(CaptureStateForm))
+			Expect(intent.state.currentState).To(Equal(StateForm))
 			Expect(intent.active).To(BeTrue())
 		})
 
@@ -124,7 +125,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 	Describe("View Methods", func() {
 		It("should show 'esc' and 'm' in ChooseStrategy footer", func() {
-			intent.state.currentState = CaptureStateChooseStrategy
+			intent.state.currentState = StateChooseStrategy
 			view := intent.View()
 
 			Expect(view).To(ContainSubstring("Esc"))
@@ -132,7 +133,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		})
 
 		It("should show 'esc' and 'm' in Form footer", func() {
-			intent.state.currentState = CaptureStateForm
+			intent.state.currentState = StateForm
 			view := intent.View()
 
 			Expect(view).To(ContainSubstring("Esc"))
@@ -140,7 +141,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 		})
 
 		It("should show 'esc' and 'm' in Review footer", func() {
-			intent.state.currentState = CaptureStateReview
+			intent.state.currentState = StateReview
 			intent.state.reviewState.Event = &career.Event{
 				Text: "Test",
 				Date: time.Now(),
@@ -153,7 +154,7 @@ var _ = Describe("CaptureEvent - Escape Key Behavior", func() {
 
 		It("should show error modal overlay when submission fails", func() {
 			// Set up error modal scenario
-			intent.state.currentState = CaptureStateForm
+			intent.state.currentState = StateForm
 			intent.state.submitModal = feedback.NewErrorModal("Save Failed", "Submission failed")
 
 			view := intent.View()

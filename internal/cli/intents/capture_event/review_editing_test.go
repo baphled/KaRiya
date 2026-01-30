@@ -1,10 +1,10 @@
-package intents_test
+package capture_event_test
 
 import (
 	"context"
 	"time"
 
-	"github.com/baphled/kariya/internal/cli/intents"
+	"github.com/baphled/kariya/internal/cli/intents/capture_event"
 	"github.com/baphled/kariya/internal/domain/career"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	"github.com/baphled/kariya/internal/testutil/e2e"
@@ -17,19 +17,19 @@ import (
 // User should be able to press 'e' (metadata), 'b' (bursts), 'f' (facts) to edit
 var _ = Describe("CaptureEvent Review Enrichment Editing", func() {
 	var env *e2e.TestEnv
-	var intent *intents.CaptureEventIntent
+	var intent *capture_event.Intent
 
 	BeforeEach(func() {
 		env = e2e.Setup(GinkgoT())
 
 		// Create intent with proper context - must include CaptureStrategy
-		intentContext := &intents.CaptureEventContext{
-			CaptureStrategy: string(intents.StrategyManual),
+		intentContext := &capture_event.IntentContext{
+			CaptureStrategy: string(capture_event.StrategyManual),
 			CLIEventService: env.CLIService,
 			CareerService:   env.Service,
 		}
 		var err error
-		intent, err = intents.NewCaptureEventIntent(intentContext)
+		intent, err = capture_event.NewIntent(intentContext)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Disable screens architecture for these tests - we're testing the legacy
@@ -57,10 +57,10 @@ var _ = Describe("CaptureEvent Review Enrichment Editing", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		// Navigate through workflow to enrichment review
-		intent.Update(intents.StrategySelectedMsg{Strategy: "quick"})
-		intent.Update(intents.FormSubmittedMsg{Event: event})
-		intent.Update(intents.SubmitCompleteMsg{})
-		intent.Update(intents.DismissModalMsg{})
+		intent.Update(capture_event.StrategySelectedMsg{Strategy: "quick"})
+		intent.Update(capture_event.FormSubmittedMsg{Event: event})
+		intent.Update(capture_event.SubmitCompleteMsg{})
+		intent.Update(capture_event.DismissModalMsg{})
 
 		// Add some test bursts and facts for editing
 		testBursts := []*career.Burst{
@@ -72,7 +72,7 @@ var _ = Describe("CaptureEvent Review Enrichment Editing", func() {
 			{Text: "Reduced database queries by 30%"},
 		}
 
-		intent.Update(intents.EnrichmentCompleteMsg{
+		intent.Update(capture_event.EnrichmentCompleteMsg{
 			Bursts: testBursts,
 			Facts:  testFacts,
 		})
