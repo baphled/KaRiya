@@ -266,6 +266,9 @@ func (i *Intent) handleModalUpdates(msg tea.Msg) tea.Cmd {
 	if cmd := i.handleSuggestionModalUpdate(msg); cmd != nil {
 		return cmd
 	}
+	if cmd := i.handleSuggestionEventsModalUpdate(msg); cmd != nil {
+		return cmd
+	}
 	if cmd := i.handleSkillSuggestionModalUpdate(msg); cmd != nil {
 		return cmd
 	}
@@ -465,6 +468,7 @@ func (i *Intent) handleDetailModalKeypress(keyMsg tea.KeyMsg) tea.Cmd {
 		return i.showConfirmBurstModal()
 	case "i":
 		i.detailModal.Hide()
+		i.inferredFromDetail = true
 		return i.startSkillInference()
 	}
 
@@ -867,13 +871,40 @@ func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
 			}
 			return cmd
 
+		case burstmodals.SuggestionActionViewEvents:
+			return i.openSuggestionEventsModal()
+
 		case burstmodals.SuggestionActionCancel:
-			// User cancelled - return to list.
 			i.skillSuggestionModal = nil
+			if i.inferredFromDetail && i.selectedBurst != nil {
+				i.inferredFromDetail = false
+				i.state = StateList
+				i.showBurstDetailModal(i.selectedBurst)
+				return noopCmd
+			}
+			i.inferredFromDetail = false
 			i.state = StateList
-			return cmd
+			return noopCmd
 		}
 	}
 
+	return cmd
+}
+
+// handleSuggestionEventsModalUpdate handles updates when the suggestion events modal is visible.
+func (i *Intent) handleSuggestionEventsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.suggestionEventsModal == nil || !i.suggestionEventsModal.IsVisible() {
+		return nil
+	}
+
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc {
+			i.suggestionEventsModal = nil
+			i.skillSuggestionModal.Show()
+			return noopCmd
+		}
+	}
+
+	_, cmd := i.suggestionEventsModal.Update(msg)
 	return cmd
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstscreens "github.com/baphled/kariya/internal/cli/screens/burst_management"
 	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	skillmodals "github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
@@ -154,7 +155,8 @@ func (i *Intent) hasVisibleModal() bool {
 func (i *Intent) hasVisibleContentModal() bool {
 	return (i.detailModal != nil && i.detailModal.IsVisible()) ||
 		(i.eventsModal != nil && i.eventsModal.IsVisible()) ||
-		(i.factsModal != nil && i.factsModal.IsVisible())
+		(i.factsModal != nil && i.factsModal.IsVisible()) ||
+		(i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible())
 }
 
 // hasVisibleActionModal checks if action modals (edit, delete, confirm) are visible.
@@ -569,6 +571,15 @@ func (i *Intent) rebuildModalRegistry() {
 		))
 	}
 
+	// Suggestion events modal (drill-down from skill suggestions).
+	if i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.suggestionEventsModal.IsVisible,
+			i.suggestionEventsModal.View,
+			i.suggestionEventsModal.Update,
+		))
+	}
+
 	// Skill suggestion review modal.
 	if i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible() {
 		i.modalRegistry.Register(intents.NewViewModalAdapter(
@@ -590,6 +601,50 @@ func (i *Intent) showModalWithDimensions(modal modalWithDimensions) {
 	width, height := i.getTerminalDimensions()
 	modal.SetDimensions(width, height)
 	modal.Show()
+}
+
+// openSuggestionEventsModal resolves event IDs from the currently selected skill suggestion
+// and opens an events modal to display them.
+func (i *Intent) openSuggestionEventsModal() tea.Cmd {
+	if i.skillSuggestionModal == nil {
+		return noopCmd
+	}
+
+	selected := i.skillSuggestionModal.GetCurrentSkill()
+	if selected == nil {
+		return noopCmd
+	}
+
+	events := i.resolveEventsByIDs(selected.EventIDs)
+
+	width, height := i.getTerminalDimensions()
+	i.suggestionEventsModal = skillmodals.NewEventsModal(
+		"suggestion",
+		selected.Name,
+		events,
+		i.Theme(),
+	)
+	i.suggestionEventsModal.SetDimensions(width, height)
+	i.suggestionEventsModal.Show()
+
+	return noopCmd
+}
+
+// resolveEventsByIDs resolves event IDs to Event objects using the burst service.
+func (i *Intent) resolveEventsByIDs(eventIDs []string) []*career.Event {
+	if i.context.Service == nil || len(eventIDs) == 0 {
+		return []*career.Event{}
+	}
+
+	ctx := i.getContext()
+	events := make([]*career.Event, 0, len(eventIDs))
+	for _, id := range eventIDs {
+		event, err := i.context.Service.GetEventByID(ctx, id)
+		if err == nil && event != nil {
+			events = append(events, event)
+		}
+	}
+	return events
 }
 
 // startBurstDetection loads all events and triggers AI burst detection.

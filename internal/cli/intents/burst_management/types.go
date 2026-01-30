@@ -8,6 +8,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
 	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
+	skillmodals "github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	"github.com/baphled/kariya/internal/domain/career"
 )
@@ -127,6 +128,12 @@ type Intent struct {
 
 	// skillSuggestionModal holds the skill suggestion review modal.
 	skillSuggestionModal *burstmodals.SuggestionReviewModal
+
+	// suggestionEventsModal holds the events sub-modal for drill-down from skill suggestions.
+	suggestionEventsModal *skillmodals.EventsModal
+
+	// inferredFromDetail tracks whether skill inference was triggered from burst detail modal.
+	inferredFromDetail bool
 
 	// errorModal holds the error modal (shown when operations fail).
 	errorModal *feedback.Modal

@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"context"
+	"time"
 
 	burstmgmt "github.com/baphled/kariya/internal/cli/intents/burst_management"
 	skillsmgmt "github.com/baphled/kariya/internal/cli/intents/skillsmanagement"
@@ -42,29 +43,39 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 
 	Describe("Keybadges", func() {
 		It("should show Infer Skills keybadge in the list view help footer", func() {
-			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
-
 			view := skillsIntent.View()
 			Expect(view).To(ContainSubstring("Infer Skills"))
 		})
 
-		It("should preserve keybadges after pressing 'i' and returning to list", func() {
+		It("should restore full footer after dismissing 'No Skills Found' modal", func() {
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
-
-			// Simulate async completing with no results
 			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
 				Suggestions: []skillinference.SkillSuggestion{},
 			})
-
-			// Dismiss the error modal with Esc
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Back in list state - badges should be intact
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
 			view := skillsIntent.View()
 			Expect(view).To(ContainSubstring("Infer Skills"))
 			Expect(view).To(ContainSubstring("Navigate"))
 			Expect(view).To(ContainSubstring("Search"))
+		})
+
+		It("should restore full footer after cancelling suggestion review modal", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "Backend", Confidence: 0.9, EventIDs: []string{"e1"}},
+				},
+			})
+
+			// Cancel the suggestion review modal
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Infer Skills"))
+			Expect(view).To(ContainSubstring("Navigate"))
 		})
 	})
 
@@ -73,7 +84,6 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
 
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
-
 			view := skillsIntent.View()
 			Expect(view).To(ContainSubstring("Analyzing all events for skills"))
 		})
@@ -81,52 +91,77 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 		It("should forward spinner ticks to keep the loading modal animating", func() {
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
 
-			// Send a spinner tick - should not crash and should return a cmd (next tick)
 			cmd := skillsIntent.Update(feedback.ModalSpinnerTickMsg{})
-
-			// The cmd should not be nil - loading modal returns the next tick
 			Expect(cmd).NotTo(BeNil())
 		})
 
 		It("should block key shortcuts while loading modal is active", func() {
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
-			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
 
-			// Pressing other keys should NOT trigger actions (modal consumes them)
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'f'}})
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 
-			// Should still be in inferring state, not showing filter/sort modals
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
 		})
 
 		It("should cancel inference and return to list when Esc is pressed during loading", func() {
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
-			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateInferringSkills))
 
-			// Pressing Esc should cancel loading, NOT cancel the entire intent
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
-			// Intent should still be active (not cancelled)
+			Expect(skillsIntent.IsActive()).To(BeTrue())
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Infer Skills"))
+		})
+	})
+
+	Describe("Skill suggestions found", func() {
+		It("should show skill suggestion review modal with detected skills", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"e1"}},
+					{Name: "PostgreSQL", Category: "Database", Confidence: 0.85, EventIDs: []string{"e2"}},
+				},
+			})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateSkillSuggestionReview))
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Skill Suggestions"))
+			Expect(view).To(ContainSubstring("Go"))
+			Expect(view).To(ContainSubstring("PostgreSQL"))
+		})
+
+		It("should return to list view when user cancels suggestion review", func() {
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+
+			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "Backend", Confidence: 0.9, EventIDs: []string{"e1"}},
+				},
+			})
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateSkillSuggestionReview))
+
+			// Cancel the modal
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
 			Expect(skillsIntent.IsActive()).To(BeTrue())
 		})
 	})
 
 	Describe("No skills found", func() {
 		It("should show 'No Skills Found' modal when inference returns empty suggestions", func() {
-			ctx := context.Background()
-			_ = eventRepo.Create(ctx, &career.Event{ID: "evt-1", Text: "Did something"})
-
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
 
-			// Simulate async completing with no suggestions
 			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
 				Suggestions: []skillinference.SkillSuggestion{},
 			})
 
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
-
 			view := skillsIntent.View()
 			Expect(view).To(ContainSubstring("No Skills Found"))
 		})
@@ -134,13 +169,11 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 		It("should show error modal when inference returns an error", func() {
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
 
-			// Simulate async completing with an error
 			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
 				Error: context.DeadlineExceeded,
 			})
 
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
-
 			view := skillsIntent.View()
 			Expect(view).To(ContainSubstring("Skill Inference Failed"))
 		})
@@ -148,7 +181,6 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 		It("should dismiss error modal with Esc and return to normal list view", func() {
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
 
-			// Simulate no skills found
 			skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
 				Suggestions: []skillinference.SkillSuggestion{},
 			})
@@ -156,15 +188,325 @@ var _ = Describe("E2E Skill Inference from ManageSkills", func() {
 			view := skillsIntent.View()
 			Expect(view).To(ContainSubstring("No Skills Found"))
 
-			// Press Esc to dismiss
 			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
 
-			// Error modal should be gone
 			view = skillsIntent.View()
 			Expect(view).NotTo(ContainSubstring("No Skills Found"))
-			// Intent should still be active
 			Expect(skillsIntent.IsActive()).To(BeTrue())
 			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateList))
+		})
+	})
+})
+
+var _ = Describe("E2E Skill Suggestion Event Drill-Down from ManageSkills", func() {
+	var (
+		skillsIntent          *skillsmgmt.Intent
+		skillRepo             *careermemory.SkillRepository
+		eventRepo             *careermemory.EventRepository
+		skillInferenceService skillinference.SkillInferenceService
+	)
+
+	BeforeEach(func() {
+		skillRepo = careermemory.NewSkillRepository()
+		eventRepo = careermemory.NewEventRepository()
+		skillInferenceService = skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+		ctx := context.Background()
+
+		event1 := &career.Event{
+			ID:      "e1",
+			Text:    "Built REST API with Go and gRPC",
+			Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		}
+		event2 := &career.Event{
+			ID:      "e2",
+			Text:    "Designed PostgreSQL schema for user service",
+			Date:    time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		}
+		_ = eventRepo.Create(ctx, event1)
+		_ = eventRepo.Create(ctx, event2)
+
+		skillsCtx := skillsmgmt.NewIntentContext(ctx, skillRepo)
+		skillsCtx.EventRepository = eventRepo
+		skillsCtx.SkillInferenceService = skillInferenceService
+
+		var err error
+		skillsIntent, err = skillsmgmt.NewIntent(skillsCtx)
+		Expect(err).NotTo(HaveOccurred())
+		skillsIntent.Init()
+	})
+
+	openSuggestionModal := func(suggestions []skillinference.SkillSuggestion) {
+		skillsIntent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+		skillsIntent.Update(skillsmgmt.SkillSuggestionsLoadedMsg{
+			Suggestions: suggestions,
+		})
+		Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateSkillSuggestionReview))
+	}
+
+	Describe("Enter on skill suggestion shows events", func() {
+		It("should show events table when pressing Enter on a skill suggestion", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"e1"}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Events"))
+			Expect(view).To(ContainSubstring("Built REST API"))
+		})
+
+		It("should show multiple events in the table for a multi-event suggestion", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"e1", "e2"}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Built REST API"))
+			Expect(view).To(ContainSubstring("Designed PostgreSQL"))
+		})
+
+		It("should show event date and company in the events table", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"e1"}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("2024"))
+			Expect(view).To(ContainSubstring("Acme Corp"))
+		})
+
+		It("should return to suggestion review when pressing Esc from events table", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"e1"}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(skillsIntent.GetState()).To(Equal(skillsmgmt.StateSkillSuggestionReview))
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Skill Suggestions"))
+			Expect(view).To(ContainSubstring("Go"))
+		})
+
+		It("should remain active after closing events table", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"e1"}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(skillsIntent.IsActive()).To(BeTrue())
+		})
+	})
+
+	Describe("Edge cases for event drill-down", func() {
+		It("should handle suggestion with non-existent event IDs gracefully", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"nonexistent-id"}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			Expect(skillsIntent.IsActive()).To(BeTrue())
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("No events"))
+		})
+
+		It("should handle suggestion with empty event IDs gracefully", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			Expect(skillsIntent.IsActive()).To(BeTrue())
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("No events"))
+		})
+
+		It("should handle mixed valid and invalid event IDs", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"e1", "nonexistent"}},
+			})
+
+			skillsIntent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			view := skillsIntent.View()
+			Expect(view).To(ContainSubstring("Built REST API"))
+		})
+	})
+})
+
+var _ = Describe("E2E Skill Suggestion Event Drill-Down from BurstManagement", func() {
+	var (
+		intent      *burstmgmt.Intent
+		mockService *mocks.BurstServiceMock
+		burst       *career.Burst
+		event1      *career.Event
+		event2      *career.Event
+	)
+
+	BeforeEach(func() {
+		burstRepo := careermemory.NewBurstRepository()
+		mockService = mocks.NewBurstServiceMock()
+
+		skillRepo := careermemory.NewSkillRepository()
+		eventRepo := careermemory.NewEventRepository()
+		skillInferenceService := skillinference.NewSkillInferenceService(skillRepo, eventRepo)
+
+		event1 = &career.Event{
+			ID:      "event-1",
+			Text:    "Built REST API with Go and gRPC",
+			Date:    time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		}
+		event2 = &career.Event{
+			ID:      "event-2",
+			Text:    "Designed PostgreSQL schema for user service",
+			Date:    time.Date(2024, 7, 20, 0, 0, 0, 0, time.UTC),
+			Company: "Acme Corp",
+		}
+		mockService.SetEvents([]*career.Event{event1, event2})
+
+		burst = &career.Burst{
+			ID:          "burst-1",
+			Name:        "API Development",
+			Description: "Built REST API with Go and PostgreSQL",
+			EventIDs:    []string{"event-1", "event-2"},
+			Confirmed:   true,
+		}
+
+		ctx := &burstmgmt.IntentContext{
+			Bursts:                []*career.Burst{burst},
+			Service:               mockService,
+			BurstRepository:       burstRepo,
+			SkillInferenceService: skillInferenceService,
+		}
+		ctx.Validate()
+
+		var err error
+		intent, err = burstmgmt.NewIntent(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		intent.Init()
+	})
+
+	openSuggestionModal := func(suggestions []skillinference.SkillSuggestion) {
+		intent.Update(burstmgmt.SkillSuggestionsLoadedMsg{
+			Suggestions: suggestions,
+		})
+		Expect(intent.GetState()).To(Equal(burstmgmt.StateSkillSuggestionReview))
+	}
+
+	Describe("Enter on skill suggestion shows events", func() {
+		It("should show events table when pressing Enter on a skill suggestion", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"event-1"}},
+			})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Events"))
+			Expect(view).To(ContainSubstring("Built REST API"))
+		})
+
+		It("should return to suggestion review when pressing Esc from events table", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"event-1"}},
+			})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateSkillSuggestionReview))
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Skill Suggestions"))
+		})
+	})
+
+	Describe("Esc from suggestion review returns to burst detail", func() {
+		It("should return to burst detail when Esc is pressed after inference from detail", func() {
+			intent.HandleNavigate(&screens.NavigateResult{
+				ResultData: burst,
+			})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateInferringSkills))
+
+			intent.Update(burstmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"event-1"}},
+				},
+			})
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateSkillSuggestionReview))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			view := intent.View()
+			Expect(view).To(ContainSubstring("API Development"))
+			Expect(intent.IsActive()).To(BeTrue())
+		})
+
+		It("should return to list when Esc is pressed after inference NOT from detail", func() {
+			intent.Update(burstmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"event-1"}},
+				},
+			})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateList))
+			Expect(intent.IsActive()).To(BeTrue())
+		})
+
+		It("should return to burst detail after completing event drill-down from detail inference", func() {
+			intent.HandleNavigate(&screens.NavigateResult{
+				ResultData: burst,
+			})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'i'}})
+			intent.Update(burstmgmt.SkillSuggestionsLoadedMsg{
+				Suggestions: []skillinference.SkillSuggestion{
+					{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"event-1"}},
+				},
+			})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			Expect(intent.GetState()).To(Equal(burstmgmt.StateSkillSuggestionReview))
+			view := intent.View()
+			Expect(view).To(ContainSubstring("Skill Suggestions"))
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEsc})
+
+			view = intent.View()
+			Expect(view).To(ContainSubstring("API Development"))
+		})
+	})
+
+	Describe("Edge cases", func() {
+		It("should handle Enter with no events found gracefully", func() {
+			openSuggestionModal([]skillinference.SkillSuggestion{
+				{Name: "Go", Category: "Backend", Confidence: 0.95, EventIDs: []string{"nonexistent"}},
+			})
+
+			intent.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+			Expect(intent.IsActive()).To(BeTrue())
+			view := intent.View()
+			Expect(view).To(ContainSubstring("No events"))
 		})
 	})
 })

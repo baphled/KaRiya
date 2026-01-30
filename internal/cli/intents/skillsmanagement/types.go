@@ -5,6 +5,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/components"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/screens/skills/modals"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
@@ -49,8 +50,10 @@ type Intent struct {
 	eventDetailModal *components.ViewEventDetailModal
 
 	// Skill inference modals.
-	loadingModal *feedback.Modal
-	errorModal   *feedback.Modal
+	loadingModal          *feedback.Modal
+	errorModal            *feedback.Modal
+	skillSuggestionModal  *burstmodals.SuggestionReviewModal
+	suggestionEventsModal *modals.EventsModal
 
 	// Screen orchestration (new architecture).
 	activeScreen screens.Screen
@@ -114,9 +117,11 @@ func (i *Intent) IsActive() bool {
 	return i.active
 }
 
-// HasActiveModal returns true if a loading or error modal is currently active.
+// HasActiveModal returns true if a loading, error, suggestion, or events modal is currently active.
 func (i *Intent) HasActiveModal() bool {
-	return i.loadingModal != nil || i.errorModal != nil
+	return i.loadingModal != nil || i.errorModal != nil ||
+		(i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible()) ||
+		(i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible())
 }
 
 // GetSkills provides access to the loaded skills for testing and screen rendering.

@@ -141,6 +141,12 @@ func (i *Intent) Update(msg tea.Msg) tea.Cmd {
 	if cmd := i.handleLoadingModalUpdate(msg); cmd != nil {
 		return cmd
 	}
+	if cmd := i.handleSuggestionEventsModalUpdate(msg); cmd != nil {
+		return cmd
+	}
+	if cmd := i.handleSkillSuggestionModalUpdate(msg); cmd != nil {
+		return cmd
+	}
 
 	// 4. Form/view modal updates (if visible).
 	// Pass full tea.Msg (not tea.KeyMsg) to modals for huh forms to work.

@@ -3,13 +3,16 @@ package skillsmanagement
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/screens"
+	burstmodals "github.com/baphled/kariya/internal/cli/screens/burst_management/modals"
 	"github.com/baphled/kariya/internal/cli/screens/skills"
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	domain "github.com/baphled/kariya/internal/domain/career"
+	"github.com/baphled/kariya/internal/service/career/skillinference"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -483,8 +486,100 @@ func (i *Intent) handleSkillSuggestionsLoaded(msg SkillSuggestionsLoadedMsg) tea
 		return nil
 	}
 
+	i.skillSuggestionModal = burstmodals.NewSkillSuggestionModal(msg.Suggestions, i.Theme())
+	width, height := i.getTerminalDimensions()
+	i.skillSuggestionModal.SetDimensions(width, height)
+	i.skillSuggestionModal.Show()
 	i.state = StateSkillSuggestionReview
 	return nil
+}
+
+// handleSkillSuggestionModalUpdate handles skill suggestion modal updates.
+func (i *Intent) handleSkillSuggestionModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.skillSuggestionModal == nil || !i.skillSuggestionModal.IsVisible() {
+		return nil
+	}
+
+	_, cmd := i.skillSuggestionModal.Update(msg)
+
+	if !i.skillSuggestionModal.IsVisible() {
+		action := i.skillSuggestionModal.GetAction()
+
+		switch action {
+		case burstmodals.SuggestionActionAccept, burstmodals.SuggestionActionReject:
+			if !i.skillSuggestionModal.IsVisible() {
+				accepted := i.skillSuggestionModal.GetAcceptedSkills()
+
+				if len(accepted) > 0 {
+					i.loadingModal = feedback.NewLoadingModal(
+						fmt.Sprintf("Creating %d skill(s)...", len(accepted)),
+						true,
+					).WithTheme(i.Theme())
+					i.skillSuggestionModal = nil
+					return tea.Batch(cmd, i.createSkillsFromSuggestions(accepted))
+				}
+
+				i.skillSuggestionModal = nil
+				i.state = StateList
+			}
+			return noopCmd
+
+		case burstmodals.SuggestionActionViewEvents:
+			return i.openSuggestionEventsModal()
+
+		case burstmodals.SuggestionActionCancel:
+			i.skillSuggestionModal = nil
+			i.state = StateList
+			return noopCmd
+		}
+	}
+
+	return noopCmd
+}
+
+// handleSuggestionEventsModalUpdate handles updates when the suggestion events modal is visible.
+func (i *Intent) handleSuggestionEventsModalUpdate(msg tea.Msg) tea.Cmd {
+	if i.suggestionEventsModal == nil || !i.suggestionEventsModal.IsVisible() {
+		return nil
+	}
+
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if keyMsg.Type == tea.KeyEsc {
+			i.suggestionEventsModal = nil
+			i.skillSuggestionModal.Show()
+			return noopCmd
+		}
+	}
+
+	_, cmd := i.suggestionEventsModal.Update(msg)
+	return cmd
+}
+
+// createSkillsFromSuggestions persists accepted skill suggestions as confirmed skills.
+func (i *Intent) createSkillsFromSuggestions(suggestions []skillinference.SkillSuggestion) tea.Cmd {
+	if len(suggestions) == 0 {
+		return func() tea.Msg {
+			return SkillsCreatedMsg{Skills: nil, Error: nil}
+		}
+	}
+
+	service := i.context.SkillInferenceService
+
+	return func() tea.Msg {
+		if service == nil {
+			return SkillsCreatedMsg{Error: fmt.Errorf("skill inference service not available")}
+		}
+
+		skills, err := service.CreateSkillsFromSuggestions(i.context.Ctx, suggestions)
+		if err != nil {
+			return SkillsCreatedMsg{Error: fmt.Errorf("failed to create skills: %w", err)}
+		}
+
+		return SkillsCreatedMsg{
+			Skills: skills,
+			Error:  nil,
+		}
+	}
 }
 
 // handleSkillsCreatedFromInference handles skills created from accepted suggestions.

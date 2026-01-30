@@ -203,6 +203,22 @@ func (i *Intent) rebuildModalRegistry() {
 			i.eventDetailModal.Update,
 		))
 	}
+
+	if i.suggestionEventsModal != nil && i.suggestionEventsModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.suggestionEventsModal.IsVisible,
+			i.suggestionEventsModal.View,
+			i.suggestionEventsModal.Update,
+		))
+	}
+
+	if i.skillSuggestionModal != nil && i.skillSuggestionModal.IsVisible() {
+		i.modalRegistry.Register(intents.NewViewModalAdapter(
+			i.skillSuggestionModal.IsVisible,
+			i.skillSuggestionModal.View,
+			i.skillSuggestionModal.Update,
+		))
+	}
 }
 
 // getTerminalDimensions returns current terminal dimensions with fallback defaults.
@@ -412,6 +428,49 @@ func (i *Intent) startSkillInference() tea.Cmd {
 		i.loadingModal.Init(),
 		i.inferSkillsFromAllEvents(),
 	)
+}
+
+// openSuggestionEventsModal resolves event IDs from the currently selected skill suggestion
+// and opens an events modal to display them.
+func (i *Intent) openSuggestionEventsModal() tea.Cmd {
+	if i.skillSuggestionModal == nil {
+		return noopCmd
+	}
+
+	selected := i.skillSuggestionModal.GetCurrentSkill()
+	if selected == nil {
+		return noopCmd
+	}
+
+	events := i.resolveEventsFromIDs(selected.EventIDs)
+
+	width, height := i.getTerminalDimensions()
+	i.suggestionEventsModal = modals.NewEventsModal(
+		"suggestion",
+		selected.Name,
+		events,
+		i.Theme(),
+	)
+	i.suggestionEventsModal.SetDimensions(width, height)
+	i.suggestionEventsModal.Show()
+
+	return noopCmd
+}
+
+// resolveEventsFromIDs resolves event IDs to Event objects using the EventRepository.
+func (i *Intent) resolveEventsFromIDs(eventIDs []string) []*domain.Event {
+	if i.context.EventRepository == nil || len(eventIDs) == 0 {
+		return []*domain.Event{}
+	}
+
+	events := make([]*domain.Event, 0, len(eventIDs))
+	for _, id := range eventIDs {
+		event, err := i.context.EventRepository.GetByID(i.context.Ctx, id)
+		if err == nil && event != nil {
+			events = append(events, event)
+		}
+	}
+	return events
 }
 
 // inferSkillsFromAllEvents creates async command for skill inference from all events.

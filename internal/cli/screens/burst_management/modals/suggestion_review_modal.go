@@ -41,6 +41,11 @@ const (
 	// far. No suggestions are persisted. The user presses Escape to trigger
 	// this action.
 	SuggestionActionCancel SuggestionAction = "cancel"
+	// SuggestionActionViewEvents requests the intent to display events
+	// associated with the currently selected suggestion. The modal hides
+	// itself so the intent can show an events sub-modal. The user presses
+	// Enter to trigger this action.
+	SuggestionActionViewEvents SuggestionAction = "view_events"
 )
 
 // SuggestionReviewModal displays suggestions (burst or skill) for review in a table format.
@@ -277,6 +282,7 @@ func (m *SuggestionReviewModal) buildFooter() string {
 	theme := m.getTheme()
 
 	badges := []*primitives.Badge{
+		primitives.HelpKeyBadge("Enter", "View Events", theme),
 		primitives.AcceptBadge(theme),
 		primitives.RejectBadge(theme),
 		primitives.NavigateBadge(theme),
@@ -350,6 +356,11 @@ func (m *SuggestionReviewModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.HasSuggestions() {
 				m.visible = false
 			}
+			return m, nil
+
+		case "enter":
+			m.action = SuggestionActionViewEvents
+			m.visible = false
 			return m, nil
 		}
 	}

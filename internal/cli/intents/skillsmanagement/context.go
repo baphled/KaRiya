@@ -98,6 +98,9 @@ type IntentContext struct {
 type SkillInferenceService interface {
 	// InferSkillsFromEvents analyzes all events and suggests skills.
 	InferSkillsFromEvents(ctx context.Context, events []*domain.Event) ([]skillinference.SkillSuggestion, error)
+
+	// CreateSkillsFromSuggestions persists accepted suggestions as skills.
+	CreateSkillsFromSuggestions(ctx context.Context, suggestions []skillinference.SkillSuggestion) ([]*domain.Skill, error)
 }
 
 // NewIntentContext constructs an IntentContext wired to the given repository with default empty filters.
