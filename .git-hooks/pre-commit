@@ -94,8 +94,22 @@ if [ -n "$COVERAGE_FILES" ]; then
     exit 1
 fi
 
+# Check for forbidden comment markers
+FORBIDDEN_MARKERS='TODO|FIXME|XXX|HACK|NOTE:|IMPORTANT:|BUG'
+if git diff --cached | grep -E "$FORBIDDEN_MARKERS" | grep -v '_test.go' > /dev/null 2>&1; then
+    echo -e "${RED}❌ ERROR: Forbidden comment markers detected${NC}"
+    echo ""
+    echo "Found: TODO, FIXME, XXX, HACK, NOTE, IMPORTANT, or BUG"
+    echo ""
+    git diff --cached | grep -E "$FORBIDDEN_MARKERS" | grep -v '_test.go' | head -5
+    echo ""
+    echo "Action: Complete the work, create an issue, or refactor the code"
+    echo "See: Comment Rules in AGENTS.md"
+    exit 1
+fi
+
 # Check for debug statements
-DEBUG_PATTERNS='TODO|FIXME|XXX|fmt\.Println\("DEBUG'
+DEBUG_PATTERNS='fmt\.Println\("DEBUG'
 if git diff --cached | grep -E "$DEBUG_PATTERNS" > /dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  WARNING: Debug statements found${NC}"
     git diff --cached | grep -E "$DEBUG_PATTERNS" | head -3

@@ -77,16 +77,17 @@ done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "3. TODO/FIXME CHECK"
+echo "3. FORBIDDEN COMMENT MARKERS CHECK"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $ALL_STAGED; do
-    TODOS=$(grep -n 'TODO\|FIXME\|XXX\|HACK' "$file" 2>/dev/null | grep -v '_test.go' || true)
-    if [ -n "$TODOS" ]; then
-        echo -e "${RED}❌ TODO/FIXME comments found${NC}"
+    FORBIDDEN=$(grep -n 'TODO\|FIXME\|XXX\|HACK\|NOTE:\|IMPORTANT:\|BUG' "$file" 2>/dev/null | grep -v '_test.go' || true)
+    if [ -n "$FORBIDDEN" ]; then
+        echo -e "${RED}❌ Forbidden comment markers found${NC}"
         echo "   File: $file"
-        echo "   Use task tracking instead of TODO comments"
-        echo "$TODOS" | head -3 | sed 's/^/   /'
+        echo "   Forbidden: TODO, FIXME, XXX, HACK, NOTE, IMPORTANT, BUG"
+        echo "   Use task tracking instead or refactor code"
+        echo "$FORBIDDEN" | head -3 | sed 's/^/   /'
         VIOLATIONS=$((VIOLATIONS+1))
     fi
 done
@@ -140,28 +141,49 @@ done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "6. INLINE COMMENTS CHECK"
+echo "6. INLINE COMMENTS CHECK (NEW FILES ONLY)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 for file in $NEW_FILES; do
-    INLINE_COUNT=0
+    # Check for end-of-line comments (code before //)
+    EOL_COMMENTS=$(grep -nE '^[[:space:]]*[^/].*[[:space:]]+//' "$file" 2>/dev/null | grep -v '_test.go' | grep -v '//go:' || true)
+    if [ -n "$EOL_COMMENTS" ]; then
+        echo -e "${RED}❌ End-of-line comments found${NC}"
+        echo "   File: $file"
+        echo "   Comments must be on their own line above the code (except in test files)"
+        echo "$EOL_COMMENTS" | head -3 | sed 's/^/   /'
+        VIOLATIONS=$((VIOLATIONS+1))
+    fi
+    
+    # Check for mid-function comments (comments not followed by type/func/var/const)
+    MID_FUNC_COUNT=0
     while IFS= read -r line; do
-        if [[ "$line" =~ ^[[:space:]]*//[^/] ]]; then
-            NEXT_LINE_NUM=$(($(echo "$line" | cut -d: -f1) + 1))
-            NEXT_LINE=$(sed -n "${NEXT_LINE_NUM}p" "$file" 2>/dev/null || true)
-            if [[ ! "$NEXT_LINE" =~ ^[[:space:]]*(func|type|var|const|package)[[:space:]] ]]; then
-                if [[ ! "$line" =~ //go: ]]; then
-                    INLINE_COUNT=$((INLINE_COUNT+1))
-                fi
-            fi
+        LINE_NUM=$(echo "$line" | cut -d: -f1)
+        LINE_CONTENT=$(echo "$line" | cut -d: -f2-)
+        
+        # Skip godoc comments (// followed by capital letter or Package)
+        if [[ "$LINE_CONTENT" =~ ^[[:space:]]*//[[:space:]][A-Z] ]] || [[ "$LINE_CONTENT" =~ ^[[:space:]]*//[[:space:]]Package ]]; then
+            continue
+        fi
+        
+        # Skip compiler directives
+        if [[ "$LINE_CONTENT" =~ //go: ]] || [[ "$LINE_CONTENT" =~ //nolint ]]; then
+            continue
+        fi
+        
+        # Check next line - if it's not a declaration, it's mid-function
+        NEXT_LINE_NUM=$((LINE_NUM + 1))
+        NEXT_LINE=$(sed -n "${NEXT_LINE_NUM}p" "$file" 2>/dev/null || true)
+        if [[ ! "$NEXT_LINE" =~ ^[[:space:]]*(func|type|var|const|package|import)[[:space:]] ]] && [[ ! "$NEXT_LINE" =~ ^[[:space:]]*$ ]]; then
+            MID_FUNC_COUNT=$((MID_FUNC_COUNT+1))
         fi
     done < <(grep -n '^[[:space:]]*//[^/]' "$file" 2>/dev/null || true)
 
-    if [ "$INLINE_COUNT" -gt 0 ]; then
-        echo -e "${RED}❌ Inline comments found in new file${NC}"
+    if [ "$MID_FUNC_COUNT" -gt 0 ]; then
+        echo -e "${RED}❌ Mid-function comments found${NC}"
         echo "   File: $file"
-        echo "   Count: $INLINE_COUNT"
-        echo "   Code should be self-documenting. Refactor instead of commenting."
+        echo "   Count: $MID_FUNC_COUNT"
+        echo "   Extract to named methods instead of explaining with comments"
         VIOLATIONS=$((VIOLATIONS+1))
     fi
 done
