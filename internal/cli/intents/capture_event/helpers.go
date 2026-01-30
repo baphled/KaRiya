@@ -3,7 +3,6 @@ package capture_event
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/baphled/kariya/internal/cli/intents"
@@ -12,21 +11,7 @@ import (
 	"github.com/baphled/kariya/internal/cli/uikit/feedback"
 	careerservice "github.com/baphled/kariya/internal/service/career"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
-
-// setCompleted marks the intent as successfully completed.
-//
-// Expected:
-//   - result must be non-nil.
-//
-// Side effects:
-//   - Sets i.result to a completed IntentResult wrapping the given data.
-//   - Sets i.active to false, stopping further Update processing.
-func (i *Intent) setCompleted(result *Result) {
-	i.result = intents.NewCompletedResult(result)
-	i.active = false
-}
 
 // setCancelled marks the intent as cancelled by the user.
 //
@@ -358,41 +343,4 @@ func (i *Intent) renderModalOverlay(background string, modalContent *modalConten
 	overlay.SetWidth(80)
 
 	return overlay.RenderCentered(background, width, height)
-}
-
-// overlayModal composites a pre-rendered modal over a dimmed background.
-//
-// Uses feedback.DimContent for the background dimming effect and line-level
-// replacement to centre the modal vertically and horizontally.
-//
-// Expected:
-//   - background is a fully rendered base view string.
-//   - modal is a pre-rendered modal string (from feedback.Modal.Render).
-//   - width is the terminal width for horizontal centring.
-//
-// Returns:
-//   - A composited string with the modal centred over the dimmed background.
-func (i *Intent) overlayModal(background, modal string, width, _ int) string {
-	dimmed := feedback.DimContent(background)
-	bgLines := strings.Split(dimmed, "\n")
-	modalLines := strings.Split(modal, "\n")
-
-	bgHeight := len(bgLines)
-	modalHeight := len(modalLines)
-	startLine := (bgHeight - modalHeight) / 2
-	if startLine < 0 {
-		startLine = 0
-	}
-
-	result := make([]string, len(bgLines))
-	copy(result, bgLines)
-
-	for idx, modalLine := range modalLines {
-		lineIndex := startLine + idx
-		if lineIndex >= 0 && lineIndex < len(result) {
-			result[lineIndex] = lipgloss.PlaceHorizontal(width, lipgloss.Center, modalLine)
-		}
-	}
-
-	return strings.Join(result, "\n")
 }

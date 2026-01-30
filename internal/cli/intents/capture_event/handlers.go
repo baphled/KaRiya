@@ -242,31 +242,6 @@ func (i *Intent) HandleError(result *screens.ErrorResult) tea.Cmd {
 	return i.setFailedCmd("SCREEN_ERROR", "Unknown screen error", fmt.Errorf("%v", data))
 }
 
-// handleReviewSubmit processes submit/confirm actions from the review state.
-//
-// Returns:
-//   - nil after completing the intent (when postSaveReview is true).
-//   - A tea.Cmd to perform event persistence (when postSaveReview is false).
-//
-// Side effects:
-//   - Completes the intent with review data if post-save review is active.
-//   - Transitions to StateSubmit and triggers persistence otherwise.
-func (i *Intent) handleReviewSubmit() tea.Cmd {
-	if i.postSaveReview {
-		result := &Result{
-			Event:          i.reviewState.Event,
-			Bursts:         i.reviewState.InferredBursts,
-			Facts:          i.reviewState.InferredFacts,
-			AcceptedFields: make(map[string]bool),
-			RejectedFields: i.reviewState.RejectedItems,
-		}
-		i.setCompleted(result)
-		return nil
-	}
-	i.currentState = StateSubmit
-	return i.performSubmit()
-}
-
 // updateEditingModal handles messages when an editing modal is active in the
 // screens architecture path.
 //

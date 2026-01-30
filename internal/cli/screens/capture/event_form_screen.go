@@ -6,7 +6,9 @@ import (
 	"github.com/baphled/kariya/internal/cli/screens"
 	"github.com/baphled/kariya/internal/cli/screens/base"
 	"github.com/baphled/kariya/internal/cli/service"
+	"github.com/baphled/kariya/internal/cli/themes"
 	"github.com/baphled/kariya/internal/cli/types"
+	"github.com/baphled/kariya/internal/cli/uikit/primitives"
 	"github.com/baphled/kariya/internal/domain/career"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -117,11 +119,10 @@ func (s *EventFormScreen) Update(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
 		return cmd, nil
 	}
 
-	// Handle key messages
+	// Handle key messages.
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "esc" {
-			// User pressed Escape - cancel and return to previous screen
+		if msg.Type == tea.KeyEsc {
 			return nil, &screens.CancelResult{}
 		}
 
@@ -164,7 +165,24 @@ func (s *EventFormScreen) View() string {
 	return s.CreateView(s.breadcrumbs, content, footer)
 }
 
-// renderFooter renders footer with form shortcuts.
+// renderFooter renders footer with form shortcuts using UIKit badge primitives.
 func (s *EventFormScreen) renderFooter() string {
-	return "Tab: Next field  Ctrl+S: Submit  Esc: Cancel  q: Quit"
+	th := s.resolveThemesTheme()
+
+	return primitives.RenderHelpFooter(th,
+		primitives.NextFieldBadge(th),
+		primitives.HelpKeyBadge("Ctrl+S", "Submit", th),
+		primitives.CancelBadge(th),
+		primitives.QuitBadge(th),
+	)
+}
+
+// resolveThemesTheme returns the screen's theme as themes.Theme for badge rendering.
+func (s *EventFormScreen) resolveThemesTheme() themes.Theme {
+	if screenTheme := s.Theme(); screenTheme != nil {
+		if th, ok := screenTheme.(themes.Theme); ok {
+			return th
+		}
+	}
+	return themes.NewDefaultTheme()
 }

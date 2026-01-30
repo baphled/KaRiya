@@ -50,12 +50,6 @@ type Intent struct {
 	// reviewState holds the review sub-flow's data (event, bursts, facts, modals).
 	reviewState *ReviewInferredEventState
 
-	// intentError tracks any errors that occur during the intent.
-	intentError *intents.IntentError
-
-	// selectedStrategyIndex is the cursor position in the strategy list (0=Quick, 1=Manual).
-	selectedStrategyIndex int
-
 	// strategy is the capture strategy chosen by the user.
 	strategy CaptureStrategy
 

@@ -113,8 +113,167 @@ var _ = Describe("EventSubmitScreen", func() {
 
 		It("should show progress indicator", func() {
 			view := screen.View()
-			// Should have some indication of progress (spinner, dots, etc.)
 			Expect(view).NotTo(BeEmpty())
+		})
+
+		Context("submitting state", func() {
+			BeforeEach(func() {
+				screen.Init()
+			})
+
+			It("should display UIKit InfoText title", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Submitting Event..."))
+			})
+
+			It("should display event text in DetailView", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Test event"))
+			})
+
+			It("should display please wait message", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Please wait"))
+			})
+
+			It("should handle nil event gracefully", func() {
+				screen = capture.NewEventSubmitScreen(breadcrumbs, nil, testBursts, testFacts)
+				screen.Init()
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Submitting Event..."))
+				Expect(view).To(ContainSubstring("Please wait"))
+			})
+		})
+
+		Context("error state", func() {
+			BeforeEach(func() {
+				screen = capture.NewEventSubmitScreenWithError(
+					breadcrumbs,
+					testEvent,
+					testBursts,
+					testFacts,
+					errors.New("database connection failed"),
+				)
+				cmd := screen.Init()
+				errorMsg := cmd()
+				screen.Update(errorMsg)
+			})
+
+			It("should display UIKit ErrorText title", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Submission Failed"))
+			})
+
+			It("should display error message", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("database connection failed"))
+			})
+
+			It("should display retry instruction", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Press Esc to go back and try again"))
+			})
+		})
+
+		Context("success state", func() {
+			BeforeEach(func() {
+				cmd := screen.Init()
+				successMsg := cmd()
+				screen.Update(successMsg)
+			})
+
+			It("should display UIKit SuccessText title", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Event Submitted Successfully"))
+			})
+
+			It("should display event text in DetailView", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Test event"))
+			})
+
+			It("should display bursts count", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Bursts"))
+				Expect(view).To(ContainSubstring("1"))
+			})
+
+			It("should display facts count", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Facts"))
+				Expect(view).To(ContainSubstring("1"))
+			})
+
+			It("should omit bursts field when empty", func() {
+				screen = capture.NewEventSubmitScreen(breadcrumbs, testEvent, nil, testFacts)
+				cmd := screen.Init()
+				successMsg := cmd()
+				screen.Update(successMsg)
+				view := screen.View()
+				Expect(view).NotTo(ContainSubstring("Bursts"))
+			})
+
+			It("should omit facts field when empty", func() {
+				screen = capture.NewEventSubmitScreen(breadcrumbs, testEvent, testBursts, nil)
+				cmd := screen.Init()
+				successMsg := cmd()
+				screen.Update(successMsg)
+				view := screen.View()
+				Expect(view).NotTo(ContainSubstring("Facts"))
+			})
+		})
+	})
+
+	Describe("Footer Rendering", func() {
+		Context("during submission", func() {
+			BeforeEach(func() {
+				screen.Init()
+			})
+
+			It("should show please wait message", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Please wait"))
+			})
+		})
+
+		Context("after error", func() {
+			BeforeEach(func() {
+				screen = capture.NewEventSubmitScreenWithError(
+					breadcrumbs,
+					testEvent,
+					testBursts,
+					testFacts,
+					errors.New("submission failed"),
+				)
+				cmd := screen.Init()
+				errorMsg := cmd()
+				screen.Update(errorMsg)
+			})
+
+			It("should show back badge", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Esc"))
+				Expect(view).To(ContainSubstring("Back"))
+			})
+
+			It("should show quit badge", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Quit"))
+			})
+		})
+
+		Context("after success", func() {
+			BeforeEach(func() {
+				cmd := screen.Init()
+				successMsg := cmd()
+				screen.Update(successMsg)
+			})
+
+			It("should show continue badge", func() {
+				view := screen.View()
+				Expect(view).To(ContainSubstring("Enter"))
+				Expect(view).To(ContainSubstring("Continue"))
+			})
 		})
 	})
 

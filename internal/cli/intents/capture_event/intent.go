@@ -3,6 +3,7 @@ package capture_event
 import (
 	"time"
 
+	"github.com/baphled/kariya/internal/cli/behaviors"
 	"github.com/baphled/kariya/internal/cli/intents"
 	"github.com/baphled/kariya/internal/cli/models"
 	captureScreens "github.com/baphled/kariya/internal/cli/screens/capture"
@@ -192,16 +193,16 @@ func (i *Intent) View() string {
 
 	baseView := i.activeScreen.View()
 
-	termInfo := i.GetTerminalInfo()
-	width, height := 80, 24
-	if termInfo != nil {
-		width = termInfo.Width
-		height = termInfo.Height
-	}
-
 	if i.submitModal != nil {
-		modalContent := i.submitModal.Render(width, height)
-		return i.overlayModal(baseView, modalContent, width, height)
+		termInfo := i.GetTerminalInfo()
+		width, height := 80, 24
+		if termInfo != nil {
+			width = termInfo.Width
+			height = termInfo.Height
+		}
+		rendered := i.submitModal.Render(width, height)
+		modal := &behaviors.StaticViewModel{Content: rendered}
+		return behaviors.RenderModalOverlay(modal, baseView)
 	}
 
 	if i.reviewState != nil && i.reviewState.EditingMode != EditingModeNone {

@@ -201,7 +201,8 @@ func (s *EventReviewScreen) renderBursts(th theme.Theme) string {
 	}
 
 	for i, burst := range s.bursts {
-		b.WriteString(fmt.Sprintf("  %d. %s\n", i+1, burst.Name))
+		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s", i+1, burst.Name), th).Render())
+		b.WriteString("\n")
 		if burst.Description != "" {
 			b.WriteString(primitives.Muted(fmt.Sprintf("     %s", burst.Description), th).Render())
 			b.WriteString("\n")
@@ -227,7 +228,8 @@ func (s *EventReviewScreen) renderFacts(th theme.Theme) string {
 	}
 
 	for i, fact := range s.facts {
-		b.WriteString(fmt.Sprintf("  %d. %s\n", i+1, fact.Text))
+		b.WriteString(primitives.Body(fmt.Sprintf("  %d. %s", i+1, fact.Text), th).Render())
+		b.WriteString("\n")
 	}
 
 	return b.String()
