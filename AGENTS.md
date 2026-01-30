@@ -24,7 +24,156 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 
 ---
 
-## Comment Rules (Enforced by Linter)
+## Comment Rules (STRICTLY ENFORCED)
+
+### Philosophy: Code Over Comments
+
+**Write self-documenting code.** Use clear variable names, extract methods, and apply SOLID principles instead of explaining what code does.
+
+**Comments should explain WHY, never WHAT.** If you need a comment to explain what code does, the code needs refactoring.
+
+---
+
+### Allowed Comment Locations (ONLY)
+
+Comments are ONLY permitted in these locations:
+
+| Location | Purpose | Example |
+|----------|---------|---------|
+| **Package documentation** | Describe package purpose | `// Package intents implements...` |
+| **Type documentation** | Describe type/struct (godoc) | `// BrowseTimelineIntent manages...` |
+| **Public function documentation** | Describe exported functions (godoc) | `// NewIntent creates a new...` |
+| **Constant/variable groups** | Document const/var blocks | `// State constants for...` |
+| **Complex algorithms** | Explain non-obvious "why" | `// Using binary search because...` |
+
+**All other comments are FORBIDDEN.**
+
+---
+
+### Forbidden Comment Locations
+
+#### 1. Inside Function Bodies (STRICTLY FORBIDDEN)
+
+```go
+// ❌ BAD - Comments inside function
+func (i *Intent) Update(msg tea.Msg) tea.Cmd {
+    // Handle screen updates
+    cmd, result := i.activeScreen.Update(msg)
+    
+    // Process the result
+    if result != nil {
+        return i.handleScreenResult(result)
+    }
+    
+    return cmd
+}
+
+// ✅ GOOD - Extract to well-named methods
+func (i *Intent) Update(msg tea.Msg) tea.Cmd {
+    cmd, result := i.delegateToActiveScreen(msg)
+    
+    if result != nil {
+        return i.handleScreenResult(result)
+    }
+    
+    return cmd
+}
+
+func (i *Intent) delegateToActiveScreen(msg tea.Msg) (tea.Cmd, screens.ScreenResult) {
+    return i.activeScreen.Update(msg)
+}
+```
+
+#### 2. Inline Comments at End of Lines (FORBIDDEN)
+
+```go
+// ❌ BAD - Inline comment
+x := 42 // magic number for calculation
+
+// ✅ GOOD - Use named constant instead
+const defaultRetryCount = 42
+
+x := defaultRetryCount
+```
+
+#### 3. Struct Field Comments (FORBIDDEN)
+
+```go
+// ❌ BAD - Field comments
+type TableBehavior[T any] struct {
+    allItems      []T // Original unfiltered items
+    displayItems  []T // Filtered/sorted items
+    selectedIndex int // Current selection
+}
+
+// ✅ GOOD - Godoc explains data model
+// TableBehavior maintains three data representations:
+// allItems (original data), displayItems (after filter/sort),
+// and selectedIndex (current selection in displayItems).
+type TableBehavior[T any] struct {
+    allItems      []T
+    displayItems  []T
+    selectedIndex int
+}
+```
+
+#### 4. Section Divider Comments (FORBIDDEN)
+
+```go
+// ❌ BAD - Section dividers
+func (i *Intent) processModals(msg tea.Msg) tea.Cmd {
+    // Error modal handling
+    if i.errorModal != nil && i.errorModal.IsVisible() {
+        return i.updateErrorModal(msg)
+    }
+    
+    // Help modal handling
+    if i.helpModal != nil && i.helpModal.IsVisible() {
+        return i.updateHelpModal(msg)
+    }
+    
+    return nil
+}
+
+// ✅ GOOD - Extract to named methods
+func (i *Intent) processModals(msg tea.Msg) tea.Cmd {
+    if cmd := i.tryUpdateErrorModal(msg); cmd != nil {
+        return cmd
+    }
+    
+    if cmd := i.tryUpdateHelpModal(msg); cmd != nil {
+        return cmd
+    }
+    
+    return nil
+}
+```
+
+#### 5. Switch Case Explanations (FORBIDDEN)
+
+```go
+// ❌ BAD - Comments in switch cases
+switch action {
+case "edit":
+    // Extract burst and show edit modal
+    burst := actionData["burst"].(*career.Burst)
+    i.showEditModal(burst)
+    
+case "delete":
+    // Show delete confirmation
+    i.showDeleteConfirmation()
+}
+
+// ✅ GOOD - Extract to named handlers
+switch action {
+case "edit":
+    return i.handleEditAction(actionData)
+case "delete":
+    return i.handleDeleteAction()
+}
+```
+
+---
 
 ### Forbidden Comment Markers (must resolve before merge)
 
@@ -34,25 +183,48 @@ make session-start   # MUST run first - validates environment, acknowledges rule
 | `FIXME` | Known bug | Fix it or create a bug report |
 | `HACK` | Technical debt | Refactor properly |
 | `XXX` | Attention needed | Resolve the issue |
+| `NOTE` | Explanatory comment | Remove or move to godoc |
+| `IMPORTANT` | Emphasis | Remove or move to godoc |
+| `BUG` | Bug marker | Fix the bug or create a tracked issue |
 
-**Allowed**: `BUG-XXX` references (e.g., `BUG-004: Fixed in this commit`)
+**No exceptions.** All markers are forbidden.
 
-### Inline Comments - FORBIDDEN
+---
+
+### Exception: Test Files
+
+Test files (`*_test.go`) MAY use inline comments for readability:
 
 ```go
-// BAD - inline comment at end of line
-x := 42 // magic number for calculation
-
-// GOOD - comment on its own line above the code
-// Number of retries before giving up.
-x := 42
+// ✅ ALLOWED in tests only
+env.NavigateDown() // Go to Manual
+env.Confirm()      // Select Manual strategy
+env.Cancel()       // Go back
 ```
 
-### Comment Style
+**Rationale**: Test comments document expected behavior for readers.
 
-- Top-level comments should end with a period.
-- Use complete sentences for documentation.
-- Place comments above the code they describe, not beside it.
+---
+
+### Comment Style (When Comments Are Used)
+
+When writing allowed comments:
+
+1. **Use complete sentences** - Comments should end with a period.
+2. **Explain WHY, not WHAT** - The code shows what; comments explain why.
+3. **Keep above code** - Never beside it (except in tests).
+4. **Be concise** - If it takes a paragraph, refactor the code instead.
+
+---
+
+### Enforcement
+
+Pre-commit hooks check for:
+- Forbidden markers (TODO, FIXME, HACK, XXX, NOTE, IMPORTANT)
+- Inline comments (except in test files)
+- Comments inside function bodies (linter warning)
+
+**When in doubt, delete the comment and refactor the code.**
 
 ---
 
@@ -821,6 +993,17 @@ The AI agent MUST refuse if asked to:
 - Use `git commit` directly (must use `make ai-commit`)
 - Skip compliance checks (`make check-compliance`, `make check-intent-architecture`)
 - Create PR targeting `main` (must target `next`)
+
+### Comment Violations
+- Add comments inside function bodies (extract to named methods instead)
+- Add inline comments at end of lines (except in test files)
+- Add section divider comments within functions
+- Add field-level inline comments in structs
+- Use forbidden markers (TODO, FIXME, HACK, XXX, NOTE, IMPORTANT)
+- Explain WHAT code does (use better names instead)
+- Add comments when explicit code would be clearer
+
+**When user requests a comment**: Suggest refactoring instead (extract method, rename variable, add godoc).
 
 ### Architecture Violations (AUTOMATED ENFORCEMENT)
 
